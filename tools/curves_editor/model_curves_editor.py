@@ -22,11 +22,12 @@ from curves_editor.model_curves import Model_curves
 
 from models.model_database import Model_database
 
-from parsers.parser_curves import get_curves_names
 from utils.common import K_ALL_PARTS
 from utils.common import K_GENERIQUES
 from utils.common import recursive_update
 from utils.get_filters import FILTER_BASE_NO
+from parsers.parser_editions import get_available_editions
+from parsers.parser_generiques import parse_get_dependencies_for_generique
 
 
 class Model_curves_editor(QObject):
@@ -162,10 +163,11 @@ class Model_curves_editor(QObject):
             self.model_database.consolidate_database(k_ep=k_ep_tmp, k_part=k_part,
                 do_parse_curves=True,
                 do_parse_replace=False,
-                do_parse_geometry=False)
+                do_parse_geometry=False,
+                apply_patch_for_study=True)
 
             # List of shots and curves in shotlist
-            shotlist_tmp = get_curves_names(self.model_database.database(), k_ep=k_ep_tmp, k_part=k_part)
+            shotlist_tmp = self.get_curves_names(self.model_database.database(), k_ep=k_ep_tmp, k_part=k_part)
             recursive_update(out_dict=shotlist, in_dict=shotlist_tmp)
         # print("---------------------------------------------------------")
         # pprint(shotlist)
@@ -423,3 +425,50 @@ class Model_curves_editor(QObject):
         self.signal_refresh_modified_shots.emit(self.model_curves.get_modified_shots())
 
         self.signal_refresh_frame_properties.emit(frame)
+
+
+    def get_curves_names(self, db, k_ep, k_part) -> dict:
+        """ Returns a list of crops per shot for each edition
+        TODO: remove this after havin reworked the curves editor
+        """
+        curves_names = dict()
+
+        if k_part in K_GENERIQUES:
+            dependencies = parse_get_dependencies_for_generique(db, k_part_g=k_part)
+            if k_part == 'g_debut':
+                # This is awful but necessary to study differences between editions
+                dependencies.update({
+                    'k': ['ep01'],
+                    's': ['ep01', 'ep02'],
+                })
+        else:
+            k_eds = get_available_editions(db)
+            dependencies = dict()
+            for k_ed_tmp in k_eds:
+                dependencies[k_ed_tmp] = [k_ep]
+
+        for k_ed_tmp, k_eps in dependencies.items():
+            for k_ep_tmp in k_eps:
+                # print("\t%s:%s:%s" % (k_ed_tmp, k_ep_tmp, k_part))
+                db_video = db[k_ep_tmp][k_ed_tmp][k_part]['video']
+                for shot in db_video['shots']:
+                    # print("\t--------------")
+                    # print("\t%s:%s:%s" % (k_ed_tmp, k_ep_tmp, shot['no']))
+                    # pprint(shot)
+
+                    shot_no = shot['no']
+                    if shot_no not in curves_names.keys():
+                        curves_names[shot_no] = dict()
+                    if k_ed_tmp not in curves_names[shot_no].keys():
+                        curves_names[shot_no][k_ed_tmp] = dict()
+
+                    # print("%s:%s:%s ->" % (k_ed, k_ep_tmp, shot['no']), shot['curves'])
+                    if shot['curves'] is not None:
+                        curves_names[shot_no][k_ed_tmp][k_ep_tmp] = shot['curves']['k_curves']
+                    else:
+                        curves_names[shot_no][k_ed_tmp][k_ep_tmp] = ''
+
+        # print("%s.get_curves_names: %s:%s" % (__name__, k_ep_tmp, k_part))
+        # pprint(curves_names)
+        # sys.exit()
+        return curves_names

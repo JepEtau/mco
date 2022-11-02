@@ -42,7 +42,7 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>img/edit-undo.png</normaloff>img/edit-undo.png</iconset>
+       <normaloff>img/purple/undo.svg</normaloff>img/purple/undo.svg</iconset>
      </property>
      <property name="checkable">
       <bool>false</bool>
@@ -68,7 +68,7 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>img/document-save.png</normaloff>img/document-save.png</iconset>
+       <normaloff>img/purple/save.svg</normaloff>img/purple/save.svg</iconset>
      </property>
      <property name="checkable">
       <bool>false</bool>
@@ -107,7 +107,7 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>img/application-minimize.png</normaloff>img/application-minimize.png</iconset>
+       <normaloff>img/purple/minus-square.svg</normaloff>img/purple/minus-square.svg</iconset>
      </property>
      <property name="checkable">
       <bool>false</bool>
@@ -133,7 +133,7 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>img/application-exit.png</normaloff>img/application-exit.png</iconset>
+       <normaloff>img/purple/x-square.svg</normaloff>img/purple/x-square.svg</iconset>
      </property>
      <property name="checkable">
       <bool>false</bool>
