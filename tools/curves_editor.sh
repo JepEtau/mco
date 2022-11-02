@@ -1,0 +1,10 @@
+#!/bin/sh
+
+pyside6-uic common/ui/ui_widget_app_controls.ui      -o common/ui/widget_app_controls_ui.py
+pyside6-uic curves_editor/ui/ui_widget_curves_editor.ui     -o curves_editor/ui/widget_curves_editor_ui.py
+pyside6-uic curves_editor/ui/ui_widget_rgb_curves.ui        -o curves_editor/ui/widget_rgb_curves_ui.py
+pyside6-uic curves_editor/ui/ui_widget_curves_browser.ui    -o curves_editor/ui/widget_curves_browser_ui.py
+pyside6-uic logger/ui_logger.ui -o logger/ui_logger.py
+
+export NO_AT_BRIDGE=1
+python curves_editor.py
