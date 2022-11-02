@@ -20,13 +20,17 @@ from PySide6.QtGui import (
     QPen,
     QPolygon,
 )
-
+from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet
 
-from images.curve import Curve, Curve_point, calculate_lut_for_bgd
+from images.curve import (
+    Curve,
+    Curve_point,
+    calculate_lut_for_bgd,
+)
 
 
-class Widget_hist_curve(QWidget):
+class Widget_hist_curve(Widget_common):
     signal_point_selected = Signal(list)
     # Current curves have been modified, the model shall be updated
     signal_curves_modified = Signal(str)
@@ -44,6 +48,7 @@ class Widget_hist_curve(QWidget):
     def __init__(self, ui):
         super(Widget_hist_curve, self).__init__()
         self.ui = ui
+        self.setObjectName('hist_curves')
 
         # default width and sample count
         self.set_widget_width(self.GRAPH_WIDTH)
@@ -71,6 +76,7 @@ class Widget_hist_curve(QWidget):
         self.update_lookup_tables()
         set_stylesheet(self)
         self.adjustSize()
+
 
     def set_style(self, grid_color:QColor=None, grid_axis_color:QColor=None, pen_width:int=None,
                     selected_point_color:QColor=None, unselected_point_color:QColor=None,

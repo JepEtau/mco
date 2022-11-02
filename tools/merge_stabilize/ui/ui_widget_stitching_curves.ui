@@ -597,7 +597,7 @@
   <customwidget>
    <class>Widget_hist_curve</class>
    <extends>QWidget</extends>
-   <header>merge_stabilize.widget_hist_curve</header>
+   <header>merge_stabilize.widget_hist_curves</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

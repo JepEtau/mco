@@ -20,7 +20,7 @@ from common.sylesheet import set_curves_radiobutton_stylesheet, set_stylesheet
 
 from video_editor.model_video_editor import Model_video_editor
 from video_editor.ui.widget_curves_ui import Ui_widget_curves
-from video_editor.widget_common import Widget_common
+from common.widget_common import Widget_common
 
 
 GRID_COLOR = QColor(110, 110, 110)

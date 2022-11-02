@@ -106,14 +106,10 @@ class Model_merge_stabilize(QObject):
 
         self.view.widget_selection.signal_ep_or_part_selection_changed[dict].connect(self.ep_or_part_selection_changed)
         self.view.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
-        self.view.widget_controls.signal_frame_replaced[dict].connect(self.event_frame_replaced)
-        self.view.widget_controls.signal_crop_modified[dict].connect(self.event_geometry_modified)
-        # self.view.signal_save_modifications.signal_save.connect(partial(self.event_save_modifications, 'all'))
 
         self.view.signal_generate_cache[list].connect(self.event_prepare_frames_for_preview)
 
         self.view.widget_stitching.signal_calculation_requested[dict].connect(self.event_stitching_do_calculate)
-
 
         self.view.widget_stitching_curves.signal_curves_modified[dict].connect(self.event_stitching_curves_modified)
         self.view.widget_stitching_curves.signal_save_curves_as[dict].connect(self.event_save_stitching_curves_as)

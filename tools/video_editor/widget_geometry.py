@@ -12,13 +12,12 @@ from PySide6.QtCore import (
     QObject,
     QEvent,
 )
-
-
-from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
+from common.widget_common import Widget_common
+from common.sylesheet import set_stylesheet
 
 from video_editor.model_video_editor import Model_video_editor
 from video_editor.ui.widget_geometry_ui import Ui_widget_geometry
-from video_editor.widget_common import Widget_common
+
 
 class Widget_geometry(Widget_common, Ui_widget_geometry):
     signal_geometry_modified = Signal(dict)

@@ -348,7 +348,7 @@
   <customwidget>
    <class>Widget_app_controls</class>
    <extends>QWidget</extends>
-   <header location="global">video_editor.widget_app_controls</header>
+   <header location="global">common.widget_app_controls</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

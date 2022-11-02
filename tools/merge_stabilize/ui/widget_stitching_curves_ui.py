@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QHBoxLayout, QLa
     QPushButton, QRadioButton, QSizePolicy, QSpacerItem,
     QVBoxLayout, QWidget)
 
-from merge_stabilize.widget_hist_curve import Widget_hist_curve
+from merge_stabilize.widget_hist_curves import Widget_hist_curve
 from merge_stabilize.widget_hist_graph import Widget_hist_graph
 
 class Ui_widget_stitching_curves(object):

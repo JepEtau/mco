@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 from common.sylesheet import set_stylesheet, set_widget_stylesheet
 
 from video_editor.model_video_editor import Model_video_editor
-from video_editor.ui.widget_controls_ui import Ui_widget_controls
+from common.ui.widget_controls_ui import Ui_widget_controls
 
 
 class Widget_controls(QWidget, Ui_widget_controls):

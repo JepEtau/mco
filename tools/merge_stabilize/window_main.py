@@ -15,6 +15,7 @@ from PySide6.QtCore import (
     QEvent,
     Qt,
     QPoint,
+    QSize,
     Signal,
 )
 from PySide6.QtGui import (
@@ -37,7 +38,7 @@ from common.window_common import Window_common
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
 from merge_stabilize.model_merge_stabilize import process_single_frame
 from merge_stabilize.widget_selection import Widget_selection
-from merge_stabilize.widget_controls import Widget_controls
+from common.widget_controls import Widget_controls
 from merge_stabilize.widget_stitching_curves import Widget_stitching_curves
 from merge_stabilize.widget_stitching import Widget_stitching
 from merge_stabilize.widget_stabilize import Widget_stabilize
@@ -50,7 +51,7 @@ COLOR_STITCHING_FGD_CROP_RECT = QColor(255, 50, 50)
 PEN_CROP_SIZE = 1
 
 
-class Window_main(Window_common, QMainWindow):
+class Window_main(QMainWindow):
     signal_generate_cache = Signal(list)
     signal_save_modifications = Signal(bool)
     signal_preview_options_changed = Signal(dict)
@@ -58,8 +59,34 @@ class Window_main(Window_common, QMainWindow):
     def __init__(self, model:Model_merge_stabilize):
         super(Window_main, self).__init__()
 
-        # Set model
+        window_icon = QIcon()
+        window_icon.addFile("img/icon_16.png", QSize(16,16))
+        window_icon.addFile("img/icon_24.png", QSize(24,24))
+        window_icon.addFile("img/icon_32.png", QSize(32,32))
+        window_icon.addFile("img/icon_48.png", QSize(48,48))
+        window_icon.addFile("img/icon_64.png", QSize(64,64))
+        window_icon.addFile("img/icon_128.png", QSize(128,128))
+        window_icon.addFile("img/icon_256.png", QSize(256,256))
+        self.setWindowIcon(window_icon)
+
+        self.setWindowFlags(Qt.Window)
+        self.setStyleSheet("background-color: black")
+        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+
+
+        # Add painter
+        self.painter = QPainter()
+
+        # Internal variables
         self.model = model
+        self.widgets = {
+            'controls': None,
+            'stitching_curves': None,
+            'stitching': None,
+            'stabilize': None,
+            'geometry': None,
+            'selection': None,
+        }
 
         # Reset variables
         self.image = None
@@ -76,13 +103,6 @@ class Window_main(Window_common, QMainWindow):
         self.timer = QBasicTimer()
         self.timer.stop()
 
-        self.do_display_rgb_image = False
-        self.do_display_replaced_image = False
-        self.do_display_resized_image = False
-        self.do_display_cropped_image = False
-        self.do_display_crop_rect = False
-        self.do_display_final = False
-
 
         self.do_display_rect_for_stitching = False
         self.do_display_crop_for_stitching = False
@@ -90,64 +110,56 @@ class Window_main(Window_common, QMainWindow):
 
         self.is_cache_ready = False
 
-        self.setWindowIcon(QIcon("img/icon.png"))
-        self.patch_ui()
-
-        # Add painter
-        self.painter = QPainter()
-
         # Get preferences from model
         p = self.model.get_preferences()
 
-        self.set_initial_options(p)
-
-
-        # Tools are displayed in a separate window,
-        self.widget_selection = Widget_selection(self, self.model)
-        self.widget_selection.refresh_browsing_folder(self.model.get_available_episode_and_parts())
-        self.widget_selection.set_initial_options(p)
-
-        self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
-        self.widget_selection.show()
-
         # Controls
-        self.widget_controls = Widget_controls(self, self.model)
-        self.widget_controls.set_initial_options(p)
-        self.widget_controls.set_enabled(False)
-
-        self.widget_controls.signal_button_pushed[str].connect(self.event_control_button_pressed)
-        self.widget_controls.signal_slider_moved[int].connect(self.event_move_to_frame_no)
-        # self.widget_controls.signal_preview_options_changed.connect(self.event_preview_options_changed)
-        self.widget_controls.signal_upper_lower_preview_changed[str].connect(self.event_upper_lower_preview_changed)
-        self.widget_controls.show()
+        if 'controls' in self.widgets.keys():
+            self.widget_controls = Widget_controls(self, self.model)
+            self.widgets['controls'] = self.widget_controls
+            self.widget_controls.set_initial_options(p)
+            self.widget_controls.signal_button_pushed[str].connect(self.event_control_button_pressed)
+            self.widget_controls.signal_slider_moved[int].connect(self.event_move_to_frame_no)
+            self.widget_controls.signal_preview_options_changed.connect(self.event_preview_options_changed)
 
         # Stitching
-        self.widget_stitching = Widget_stitching(self, self.model)
-        self.widget_stitching.set_initial_options(p)
-        self.widget_stitching.show()
-        self.widget_stitching.signal_preview_options_changed.connect(self.event_preview_options_changed)
-        self.widget_stitching.signal_enabled_modified[bool].connect(self.event_st_enabled_changed)
+        if 'stitching' in self.widgets.keys():
+            self.widget_stitching = Widget_stitching(self, self.model)
+            self.widgets['stitching'] = self.widget_stitching
+            self.widget_stitching.set_initial_options(p)
+            self.widget_stitching.signal_preview_options_changed.connect(self.event_preview_options_changed)
+            self.widget_stitching.signal_enabled_modified[bool].connect(self.event_st_enabled_changed)
 
         # Stitching curves: histogram, curves edition and selection
-        self.widget_stitching_curves = Widget_stitching_curves(self, self.model)
-        self.widget_stitching_curves.set_initial_options(p)
-        self.widget_stitching_curves.show()
-        self.widget_stitching_curves.signal_channel_selected.connect(self.event_stitching_curves_channel_selected)
-        self.widget_stitching_curves.signal_preview_options_changed.connect(self.event_preview_options_changed)
-        self.widget_stitching_curves.widget_hist_curve.signal_curves_editing.connect(self.event_refresh_image)
+        if 'stitching_curves' in self.widgets.keys():
+            self.widget_stitching_curves = Widget_stitching_curves(self, self.model)
+            self.widgets['stitching_curves'] = self.widget_stitching_curves
+            self.widget_stitching_curves.set_initial_options(p)
+            self.widget_stitching_curves.signal_channel_selected.connect(self.event_stitching_curves_channel_selected)
+            self.widget_stitching_curves.signal_preview_options_changed.connect(self.event_preview_options_changed)
+            self.widget_stitching_curves.widget_hist_curve.signal_curves_editing.connect(self.event_refresh_image)
 
         # Stabilization
-        self.widget_stabilize = Widget_stabilize(self, self.model)
-        self.widget_stabilize.set_initial_options(p)
-        self.widget_stabilize.show()
-        self.widget_stabilize.signal_preview_options_changed.connect(self.event_preview_options_changed)
-        self.widget_stabilize.signal_enabled_modified[bool].connect(self.event_st_enabled_changed)
+        if 'stabilize' in self.widgets.keys():
+            self.widget_stabilize = Widget_stabilize(self, self.model)
+            self.widgets['stabilize'] = self.widget_stabilize
+            self.widget_stabilize.set_initial_options(p)
+            self.widget_stabilize.signal_preview_options_changed.connect(self.event_preview_options_changed)
+            self.widget_stabilize.signal_enabled_modified[bool].connect(self.event_st_enabled_changed)
 
         # Crop and resize
-        self.widget_geometry = Widget_geometry(self, self.model)
-        self.widget_geometry.set_initial_options(p)
-        self.widget_geometry.show()
-        self.widget_geometry.signal_preview_options_changed.connect(self.event_preview_options_changed)
+        if 'geometry' in self.widgets.keys():
+            self.widget_geometry = Widget_geometry(self, self.model)
+            self.widgets['geometry'] = self.widget_geometry
+            self.widget_geometry.set_initial_options(p)
+            self.widget_geometry.signal_preview_options_changed.connect(self.event_preview_options_changed)
+
+        # Selection
+        self.widget_selection = Widget_selection(self, self.model)
+        self.widgets['selection'] = self.widget_selection
+        self.widget_selection.refresh_browsing_folder(self.model.get_available_episode_and_parts())
+        self.widget_selection.set_initial_options(p)
+        self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
 
         # Events
         self.model.signal_ready_to_play[dict].connect(self.event_ready_to_play)
@@ -159,10 +171,43 @@ class Window_main(Window_common, QMainWindow):
         self.setContextMenuPolicy(Qt.CustomContextMenu)
         self.customContextMenuRequested[QPoint].connect(self.event_right_click)
 
-        # Show window/widgets
-        self.setWindowFlags(Qt.Window)
-        self.setStyleSheet("background-color: rgb(50, 50, 50);")
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        # Show window/widgets and connect signals
+        for w in self.widgets.values():
+            w.signal_close.connect(self.event_editor_action)
+            w.show()
+
+
+    def event_show_fullscreen(self):
+        self.blockSignals(True)
+        # print("window_main: event_show_fullscreen (required for w11)")
+        saved_current_editor = self.current_editor
+        for w in self.widgets.values():
+            w.blockSignals(True)
+            w.showNormal()
+            w.activateWindow()
+            # w.blockSignals(False)
+        self.set_current_editor(saved_current_editor)
+
+        for w in self.widgets.values():
+            w.blockSignals(False)
+
+        self.widgets[saved_current_editor].blockSignals(True)
+        self.widgets[saved_current_editor].showNormal()
+        self.widgets[saved_current_editor].activateWindow()
+        self.widgets[saved_current_editor].blockSignals(False)
+
+        self.is_activated = True
+        self.blockSignals(False)
+
+
+    def event_selection_changed(self, selection):
+        # Disable crop edition if image is not >= HD
+        print("event_selection_changed")
+        if selection['k_step'] in ['', 'deinterlace', 'pre_upscale']:
+            self.widget_geometry.set_geometry_edition_enabled(False)
+        else:
+            self.widget_geometry.set_geometry_edition_enabled(True)
+        self.event_preview_options_changed()
 
 
     def event_activated(self):
@@ -173,13 +218,6 @@ class Window_main(Window_common, QMainWindow):
         self.widget_stabilize.activateWindow()
         self.widget_geometry.activateWindow()
 
-    def event_show_fullscreen(self):
-        self.widget_selection.showNormal()
-        self.widget_controls.showNormal()
-        self.widget_stitching.showNormal()
-        self.widget_stitching_curves.showNormal()
-        self.widget_stabilize.showNormal()
-        self.widget_geometry.showNormal()
 
 
     def event_refresh_image(self):

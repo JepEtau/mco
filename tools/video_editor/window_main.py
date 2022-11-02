@@ -40,7 +40,7 @@ from common.sylesheet import set_widget_stylesheet
 from common.window_common import Window_common
 from video_editor.model_video_editor import Model_video_editor
 from video_editor.widget_selection import Widget_selection
-from video_editor.widget_controls import Widget_controls
+from common.widget_controls import Widget_controls
 from video_editor.widget_curves import Widget_curves
 from video_editor.widget_replace import Widget_replace
 from video_editor.widget_geometry import Widget_geometry
@@ -166,7 +166,6 @@ class Window_main(QMainWindow):
         for w in self.widgets.values():
             w.signal_close.connect(self.event_editor_action)
             w.show()
-        self.widget_selection.show()
 
         # Set initial values
         self.set_initial_options(p)
@@ -211,8 +210,6 @@ class Window_main(QMainWindow):
     def event_editor_action(self, event='exit'):
         # log.info("event=%s" % (event))
         # print("event=%s" % (event))
-
-
         if event == 'exit':
             if self.is_closing:
                 return

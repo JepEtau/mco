@@ -21,7 +21,7 @@ from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
 
 from video_editor.model_video_editor import Model_video_editor
 from video_editor.ui.widget_replace_ui import Ui_widget_replace
-from video_editor.widget_common import Widget_common
+from common.widget_common import Widget_common
 
 class Widget_replace(Widget_common, Ui_widget_replace):
     signal_replace_modified = Signal(dict)
