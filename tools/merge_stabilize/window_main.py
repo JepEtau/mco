@@ -137,7 +137,7 @@ class Window_main(QMainWindow):
             self.widget_stitching_curves.set_initial_options(p)
             self.widget_stitching_curves.signal_channel_selected.connect(self.event_stitching_curves_channel_selected)
             self.widget_stitching_curves.signal_preview_options_changed.connect(self.event_preview_options_changed)
-            self.widget_stitching_curves.widget_hist_curve.signal_curves_editing.connect(self.event_refresh_image)
+            self.widget_stitching_curves.widget_hist_curves.signal_curves_editing.connect(self.event_refresh_image)
 
         # Stabilization
         if 'stabilize' in self.widgets.keys():
@@ -159,7 +159,7 @@ class Window_main(QMainWindow):
         self.widgets['selection'] = self.widget_selection
         self.widget_selection.refresh_browsing_folder(self.model.get_available_episode_and_parts())
         self.widget_selection.set_initial_options(p)
-        self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
+        # self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
 
         # Events
         self.model.signal_ready_to_play[dict].connect(self.event_ready_to_play)
@@ -172,9 +172,9 @@ class Window_main(QMainWindow):
         self.customContextMenuRequested[QPoint].connect(self.event_right_click)
 
         # Show window/widgets and connect signals
-        for w in self.widgets.values():
-            w.signal_close.connect(self.event_editor_action)
-            w.show()
+        # for w in self.widgets.values():
+        #     w.signal_close.connect(self.event_editor_action)
+        #     w.show()
 
 
     def event_show_fullscreen(self):

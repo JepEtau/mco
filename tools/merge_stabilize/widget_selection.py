@@ -23,7 +23,6 @@ from PySide6.QtWidgets import (
     QWidget,
     QTableWidgetItem,
 )
-
 from common.sylesheet import set_stylesheet
 
 from utils.common import K_GENERIQUES, K_PARTS, K_ALL_PARTS
@@ -36,17 +35,10 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
     def __init__(self, ui, model):
-        super(Widget_selection, self).__init__()
-
+        super(Widget_selection, self).__init__(ui)
         self.setupUi(self)
         self.model = model
         self.ui = ui
-
-        # Setup and patch ui
-        self.setAutoFillBackground(True)
-        self.setWindowFlags(Qt.Tool)
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
-        self.setWindowModality(Qt.NonModal)
 
         # Variables
         self.episodes_and_parts = dict()

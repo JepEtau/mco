@@ -20,7 +20,6 @@ from PySide6.QtGui import (
     QPen,
     QPolygon,
 )
-from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet
 
 from images.curve import (
@@ -30,7 +29,7 @@ from images.curve import (
 )
 
 
-class Widget_hist_curve(Widget_common):
+class Widget_hist_curves(QWidget):
     signal_point_selected = Signal(list)
     # Current curves have been modified, the model shall be updated
     signal_curves_modified = Signal(str)
@@ -46,7 +45,7 @@ class Widget_hist_curve(Widget_common):
     GRAPH_WIDTH = 256
 
     def __init__(self, ui):
-        super(Widget_hist_curve, self).__init__()
+        super(Widget_hist_curves, self).__init__()
         self.ui = ui
         self.setObjectName('hist_curves')
 

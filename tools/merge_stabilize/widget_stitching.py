@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QWidget,
 )
-
+from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet
 
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
@@ -27,7 +27,7 @@ from merge_stabilize.ui.widget_stitching_ui import Ui_widget_stitching
 from parsers.parser_stitching import STITCHING_SHOT_PARAMETERS_DEFAULT
 
 
-class Widget_stitching(QWidget, Ui_widget_stitching):
+class Widget_stitching(Widget_common, Ui_widget_stitching):
     signal_calculation_requested = Signal(dict)
     signal_enabled_modified = Signal(bool)
     signal_previous_parameters = Signal(str)
@@ -36,28 +36,10 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
 
 
     def __init__(self, ui, model:Model_merge_stabilize):
-        super(Widget_stitching, self).__init__()
-
-        self.setupUi(self)
+        super(Widget_stitching, self).__init__(ui)
         self.model = model
         self.ui = ui
-
-        # Setup and patch ui
-        self.setAutoFillBackground(True)
-        self.setWindowFlags(Qt.Tool)
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
-        self.setWindowModality(Qt.NonModal)
-
-        # Header
-        self.pushButton_set_preview.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_set_preview.toggled[bool].connect(self.event_global_preview_changed)
-        self.pushButton_save_modifications.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_save_modifications.clicked.connect(self.event_save_modifications)
-        self.pushButton_discard_modifications.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_discard_modifications.clicked.connect(self.event_discard_modifications)
-        self.pushButton_close.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_close.clicked.connect(self.event_close)
-
+        self.setObjectName('stitching')
 
         # Stitching parameters
         self.radioButton_shot_homography.clicked.connect(self.event_select_default_homography)
@@ -383,7 +365,7 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         self.pushButton_undo.setEnabled(True)
         self.pushButton_calculate.setEnabled(True)
         self.pushButton_crop_edition.setEnabled(False)
-        self.pushButton_discard_modifications.setEnabled(False)
+        self.pushButton_discard.setEnabled(False)
 
 
 
@@ -396,7 +378,7 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
 
         self.set_crop_edition_enabled(False)
         self.pushButton_undo.setEnabled(True)
-        self.pushButton_discard_modifications.setEnabled(True)
+        self.pushButton_discard.setEnabled(True)
 
 
 
@@ -410,7 +392,7 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         else:
             # Changed to "no stitching"
             self.pushButton_calculate.setEnabled(False)
-            self.pushButton_save_modifications.setEnabled(True)
+            self.pushButton_save.setEnabled(True)
 
             for w in [self.pushButton_set_preview,
                         self.pushButton_roi_edition,
@@ -422,7 +404,7 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
             self.pushButton_set_preview.setEnabled(False)
             self.set_crop_edition_enabled(False)
 
-        self.pushButton_discard_modifications.setEnabled(True)
+        self.pushButton_discard.setEnabled(True)
         self.signal_enabled_modified.emit(is_enabled)
         self.signal_preview_options_changed.emit()
 
@@ -523,7 +505,7 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         # self.set_parameters(parameters, do_backup=False)
         self.pushButton_undo.setEnabled(True)
         self.pushButton_calculate.setEnabled(True)
-        self.pushButton_discard_modifications.setEnabled(False)
+        self.pushButton_discard.setEnabled(False)
 
 
     def event_save_modifications(self):
@@ -536,7 +518,7 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         parameters = self.get_parameters()
         # self.backup_loaded_parameters(parameters)
         self.pushButton_calculate.setEnabled(False)
-        self.pushButton_save_modifications.setEnabled(False)
+        self.pushButton_save.setEnabled(False)
         self.setEnabled(False)
         self.signal_calculation_requested.emit(parameters)
 
@@ -546,7 +528,7 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         self.setEnabled(True)
         self.pushButton_set_preview.setEnabled(True)
         self.pushButton_crop_edition.setEnabled(True)
-        self.pushButton_save_modifications.setEnabled(True)
+        self.pushButton_save.setEnabled(True)
         self.is_save_action_allowed = True
 
 

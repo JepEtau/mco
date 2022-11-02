@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QWidget,
 )
-
+from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet
 
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
@@ -35,20 +35,23 @@ GRAPH_WIDTH = 512
 class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
     signal_curves_modified = Signal(dict)
     signal_channel_selected = Signal()
-    signal_discard_curves_modifications = Signal(str)
+    signal_discard = Signal(str)
     signal_save_curves_as = Signal(dict)
     signal_selection_changed = Signal(str)
     signal_reset_selection = Signal()
     signal_remove_selection = Signal()
     signal_save_selection = Signal()
     signal_preview_options_changed = Signal()
+    signal_close = Signal()
+
+    signal_save = Signal()
 
     def __init__(self, ui, model:Model_merge_stabilize):
-        super(Widget_stitching_curves, self).__init__()
-
+        super(Widget_stitching_curves, self).__init__(ui)
         self.setupUi(self)
         self.model = model
         self.ui = ui
+        self.setObjectName('stitching_curves')
 
         # Setup and patch ui
         self.setAutoFillBackground(True)
@@ -64,21 +67,21 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
         self.lineEdit_current_curves_selection.clear()
         self.lineEdit_current_curves_selection.setFocusPolicy(Qt.NoFocus)
 
-        self.pushButton_save_modifications.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_save_modifications.clicked.connect(self.event_save_modifications)
-        self.pushButton_save_modifications.setEnabled(False)
+        self.pushButton_save.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_save.clicked.connect(self.event_save_modifications)
+        self.pushButton_save.setEnabled(False)
 
         self.pushButton_remove_selection.setFocusPolicy(Qt.NoFocus)
         self.pushButton_remove_selection.clicked.connect(self.event_remove_selection)
         self.pushButton_remove_selection.setEnabled(False)
 
-        self.pushButton_discard_modifications.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_discard_modifications.clicked.connect(self.event_discard_modifications)
-        self.pushButton_discard_modifications.setEnabled(False)
+        self.pushButton_discard.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_discard.clicked.connect(self.event_discard_modifications)
+        self.pushButton_discard.setEnabled(False)
 
-        self.pushButton_undo_selection.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_undo_selection.clicked.connect(self.event_undo_selection)
-        self.pushButton_undo_selection.setEnabled(False)
+        self.pushButton_undo.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_undo.clicked.connect(self.event_undo_selection)
+        self.pushButton_undo.setEnabled(False)
 
         self.pushButton_close.setFocusPolicy(Qt.NoFocus)
         self.pushButton_close.clicked.connect(self.event_close)
@@ -128,15 +131,15 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
             pen_width=1)
 
         # Curves which controls the histogram modifications
-        self.widget_hist_curve.set_widget_width(GRAPH_WIDTH)
-        self.widget_hist_curve.set_style(
+        self.widget_hist_curves.set_widget_width(GRAPH_WIDTH)
+        self.widget_hist_curves.set_style(
             grid_color=GRID_COLOR,
             grid_axis_color=GRID_AXIS_COLOR,
             pen_width=1,
             selected_point_color=QColor(230, 230, 230),
             unselected_point_color=None)
-        self.widget_hist_curve.signal_point_selected[list].connect(self.refresh_current_coordinates)
-        self.widget_hist_curve.signal_curves_modified[str].connect(self.event_curves_modified)
+        self.widget_hist_curves.signal_point_selected[list].connect(self.refresh_current_coordinates)
+        self.widget_hist_curves.signal_curves_modified[str].connect(self.event_curves_modified)
 
 
         # Curves selection: connect signals
@@ -149,7 +152,7 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
         self.pushButton_discard_curves_modifications.released.connect(self.event_discard_curves_modifications)
         self.pushButton_save_curves_modifications.released.connect(self.event_save_stitching_curves)
 
-        self.pushButton_save_modifications.released.connect(self.event_save_modifications)
+        self.pushButton_save.released.connect(self.event_save_modifications)
 
         # Connect signals emitted by model
         self.model.signal_stitching_curves_list_modified[dict].connect(self.event_refresh_curves_list)
@@ -167,7 +170,7 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
 
     def set_enabled(self, enabled:bool):
         self.widget_hist_graph.set_enabled(enabled)
-        self.widget_hist_curve.set_enabled(enabled)
+        self.widget_hist_curves.set_enabled(enabled)
         # todo: block signals
 
 
@@ -178,9 +181,9 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
     def load_curves(self, curves):
         # Save the previous to undo the selection
         if self.previous_k_curves != '':
-            self.pushButton_undo_selection.setEnabled(True)
+            self.pushButton_undo.setEnabled(True)
         else:
-            self.pushButton_undo_selection.setEnabled(False)
+            self.pushButton_undo.setEnabled(False)
         print("load: previous: %s" % (self.previous_k_curves))
         self.previous_k_curves = self.k_curves
 
@@ -199,13 +202,13 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
 
         print("\t-> load: previous= %s" % (self.previous_k_curves))
 
-        self.widget_hist_curve.load_curves(curves)
+        self.widget_hist_curves.load_curves(curves)
         self.lineEdit_current_curves_selection.setText(self.k_curves)
         self.refresh_curves_actions_status()
 
 
     def get_curve_luts(self):
-        return self.widget_hist_curve.get_curve_luts()
+        return self.widget_hist_curves.get_curve_luts()
 
     def get_current_channel(self):
         return self.current_channel
@@ -214,33 +217,33 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
     def select_channel(self):
         if self.radioButton_select_r_channel.isChecked():
             self.widget_hist_graph.select_channel('r')
-            self.widget_hist_curve.select_channel('r')
+            self.widget_hist_curves.select_channel('r')
             self.current_channel = 'r'
         elif self.radioButton_select_g_channel.isChecked():
             self.widget_hist_graph.select_channel('g')
-            self.widget_hist_curve.select_channel('g')
+            self.widget_hist_curves.select_channel('g')
             self.current_channel = 'g'
         elif self.radioButton_select_b_channel.isChecked():
             self.widget_hist_graph.select_channel('b')
-            self.widget_hist_curve.select_channel('b')
+            self.widget_hist_curves.select_channel('b')
             self.current_channel = 'b'
         # Emit a signal so that the histogram is calculated
         self.signal_channel_selected.emit()
 
 
     def reset_current_channel(self):
-        self.widget_hist_curve.reset_channel('current')
+        self.widget_hist_curves.reset_channel('current')
         self.is_save_action_allowed = True
         if self.k_curves != '':
-            self.pushButton_save_modifications.setEnabled(True)
-            self.pushButton_discard_modifications.setEnabled(True)
+            self.pushButton_save.setEnabled(True)
+            self.pushButton_discard.setEnabled(True)
 
 
     def reset_all_channels(self):
-        self.widget_hist_curve.reset_channel('all')
+        self.widget_hist_curves.reset_channel('all')
         if self.k_curves != '':
-            self.pushButton_save_modifications.setEnabled(True)
-            self.pushButton_discard_modifications.setEnabled(True)
+            self.pushButton_save.setEnabled(True)
+            self.pushButton_discard.setEnabled(True)
 
 
 
@@ -282,11 +285,11 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
         if type == 'modified':
             log.info("curves have been modified")
             if self.k_curves != '':
-                self.signal_curves_modified.emit(self.widget_hist_curve.get_curves())
+                self.signal_curves_modified.emit(self.widget_hist_curves.get_curves())
 
                 # Update the global save/discard buttons
-                self.pushButton_save_modifications.setEnabled(True)
-                self.pushButton_discard_modifications.setEnabled(True)
+                self.pushButton_save.setEnabled(True)
+                self.pushButton_discard.setEnabled(True)
 
                 # Mark the current curves as modified
                 self.mark_current_k_curves_as_modified(is_modified=True)
@@ -299,29 +302,29 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
         if k_type == 'stitching_curves':
             log.info("parameters saved")
             self.is_save_action_allowed = False
-            self.pushButton_discard_modifications.setEnabled(False)
+            self.pushButton_discard.setEnabled(False)
 
 
     def event_remove_selection(self):
         log.info("remove selection")
 
         self.signal_remove_selection.emit()
-        self.pushButton_discard_modifications.setEnabled(True)
-        self.pushButton_save_modifications.setEnabled(True)
+        self.pushButton_discard.setEnabled(True)
+        self.pushButton_save.setEnabled(True)
 
 
     def event_discard_modifications(self):
         log.info("discard modifications")
         self.signal_reset_selection.emit()
-        self.pushButton_undo_selection.setEnabled(False)
-        self.pushButton_discard_modifications.setEnabled(False)
-        self.pushButton_save_modifications.setEnabled(False)
+        self.pushButton_undo.setEnabled(False)
+        self.pushButton_discard.setEnabled(False)
+        self.pushButton_save.setEnabled(False)
 
 
     def event_save_modifications(self):
         # if self.is_save_action_allowed and self.k_curves != '':
         log.info("save all modifications: selection and curves")
-        self.pushButton_save_modifications.setEnabled(False)
+        self.pushButton_save.setEnabled(False)
         self.event_save_stitching_curves()
         self.signal_save_selection.emit()
 
@@ -372,16 +375,16 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
             # log.info("%s is modified" % (k_curves))
             self.pushButton_discard_curves_modifications.setEnabled(True)
             self.pushButton_save_curves_modifications.setEnabled(True)
-            self.pushButton_discard_modifications.setEnabled(True)
-            self.pushButton_save_modifications.setEnabled(True)
+            self.pushButton_discard.setEnabled(True)
+            self.pushButton_save.setEnabled(True)
         else:
             # log.info("%s is initial" % (k_curves))
             self.pushButton_discard_curves_modifications.setEnabled(False)
             self.pushButton_save_curves_modifications.setEnabled(False)
 
         #     log.info("No curves: correct this when no curves where defined at first")
-            # self.pushButton_discard_modifications.setEnabled(True)
-            # self.pushButton_save_modifications.setEnabled(True)
+            # self.pushButton_discard.setEnabled(True)
+            # self.pushButton_save.setEnabled(True)
 
 
 
@@ -418,8 +421,8 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
         self.lineEdit_save_name.blockSignals(False)
 
         # Enable save/discard buttons
-        self.pushButton_save_modifications.setEnabled(True)
-        self.pushButton_discard_modifications.setEnabled(True)
+        self.pushButton_save.setEnabled(True)
+        self.pushButton_discard.setEnabled(True)
 
         self.signal_selection_changed.emit(k_curves)
 
@@ -438,12 +441,12 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
             self.lineEdit_save_name.blockSignals(False)
 
             # Enable save/discard buttons
-            self.pushButton_save_modifications.setEnabled(True)
-            self.pushButton_discard_modifications.setEnabled(True)
+            self.pushButton_save.setEnabled(True)
+            self.pushButton_discard.setEnabled(True)
 
             print("\t-> undo: new: %s" % (k_curves))
             self.signal_selection_changed.emit(k_curves)
-            self.pushButton_undo_selection.setEnabled(False)
+            self.pushButton_undo.setEnabled(False)
         print("\t-> undo: previous: %s" % (self.previous_k_curves))
 
 
@@ -500,14 +503,14 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
 
 
     def event_discard_curves_modifications(self):
-        self.signal_discard_curves_modifications.emit(self.k_curves)
+        self.signal_discard.emit(self.k_curves)
 
 
     def event_save_stitching_curves_as(self):
         self.lineEdit_save_name.blockSignals(True)
         k_curves_new = self.lineEdit_save_name.text()
         log.info("save curves as %s" % (k_curves_new))
-        curves = self.widget_hist_curve.get_curves()
+        curves = self.widget_hist_curves.get_curves()
 
         if len(k_curves_new) > 0:
             # Save curves as...
@@ -532,7 +535,7 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
 
 
     def event_save_stitching_curves(self):
-        curves = self.widget_hist_curve.get_curves()
+        curves = self.widget_hist_curves.get_curves()
         if curves is not None:
             log.info("save curves %s" % (self.k_curves))
             self.signal_save_curves_as.emit(curves)
@@ -574,7 +577,7 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
 
         if (not modifier & Qt.ControlModifier
             and key == Qt.Key_C):
-            self.widget_hist_curve.reset_channel('current')
+            self.widget_hist_curves.reset_channel('current')
             event.accept()
             return True
 
@@ -590,7 +593,7 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
 
         elif key == Qt.Key_Delete or key == Qt.Key_Backspace:
             # Delete a single point
-            self.widget_hist_curve.remove_selected_point()
+            self.widget_hist_curves.remove_selected_point()
             event.accept()
 
         elif modifier & Qt.ControlModifier:

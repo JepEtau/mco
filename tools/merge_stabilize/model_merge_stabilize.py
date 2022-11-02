@@ -113,7 +113,7 @@ class Model_merge_stabilize(QObject):
 
         self.view.widget_stitching_curves.signal_curves_modified[dict].connect(self.event_stitching_curves_modified)
         self.view.widget_stitching_curves.signal_save_curves_as[dict].connect(self.event_save_stitching_curves_as)
-        self.view.widget_stitching_curves.signal_discard_curves_modifications[str].connect(self.event_discard_stitching_curves_modifications)
+        self.view.widget_stitching_curves.signal_discard[str].connect(self.event_discard_stitching_curves_modifications)
 
         self.view.widget_stitching_curves.signal_remove_selection.connect(self.event_remove_stitching_curves_selection)
         self.view.widget_stitching_curves.signal_selection_changed[str].connect(self.event_stitching_curves_selected)
@@ -340,7 +340,10 @@ class Model_merge_stabilize(QObject):
 
                 else:
                     self.filepath_bgd = deepcopy(filepath_tmp)
-                    del shot_src['stitching']
+                    try:
+                        del shot_src['stitching']
+                    except:
+                        print("no stitching structure in shot_src no. %d" % (shot['no']))
 
 
             # print("---------------------")
