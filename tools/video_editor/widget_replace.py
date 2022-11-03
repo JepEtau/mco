@@ -284,8 +284,8 @@ class Widget_replace(Widget_common, Ui_widget_replace):
                 return True
             elif key == Qt.Key_Delete:
                 self.event_selection_removed()
-            else:
-                print("other key:", key)
+                return True
+
             return self.ui.keyPressEvent(event)
 
         # print(event.type())

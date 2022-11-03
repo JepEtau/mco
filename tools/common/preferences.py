@@ -14,23 +14,20 @@ from PySide6.QtWidgets import QApplication
 
 class Preferences(QObject):
 
-    def __init__(self, editors:list=None):
+    def __init__(self, tool:str, widget_list:list):
         super(Preferences, self).__init__()
 
-        self.editors = editors
-        if self.editors is None:
-            self.editors = [
-                'controls',
-                'curves',
-                'replace',
-                'geometry',
-            ]
+        if widget_list is None or tool == '':
+            raise Exception("Error: tool and widget list must be specified")
+
+        self.editors = widget_list
 
         self.settings = QSettings(
             QSettings.Format.IniFormat,
             QSettings.Scope.UserScope,
-            "mco", "video_editor")
+            "mco", tool)
 
+        # Default
         self.preferences = {
             'viewer': dict(),
             'selection': dict(),
@@ -44,7 +41,7 @@ class Preferences(QObject):
         screen_width = screens[0].size().width()
         screen_height = screens[0].size().height()
 
-        # viewer
+        # (Mandatory) Viewer
         if self.settings.contains('viewer/screen'):
             self.preferences['viewer']['screen'] = 0
         else:
@@ -57,7 +54,7 @@ class Preferences(QObject):
         else:
             self.preferences['viewer']['current_editor'] = 'selection'
 
-        # selection widget
+        # Selection: use str keys for debug
         self.preferences['selection']['geometry'] = [screen_width-500, 20, 0, 0]
         if self.settings.contains('selection/geometry'):
             self.preferences['selection']['geometry'] = list(map(lambda x: int(x),
@@ -77,12 +74,21 @@ class Preferences(QObject):
             if self.settings.value('selection/step') != '':
                 self.preferences['selection']['step'] = self.settings.value('selection/step')
 
-        # default widget position
+
+        # Default widget position
         try: self.preferences['controls']['geometry'] = [100, screen_height-150, 0, 0]
         except: pass
         try: self.preferences['curves']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
         except: pass
         try: self.preferences['replace']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
+        except: pass
+        try: self.preferences['stitching_curves']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
+        except: pass
+        try: self.preferences['stitching']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
+        except: pass
+        try: self.preferences['stabilize']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
+        except: pass
+        try: self.preferences['stitching_curves']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
         except: pass
         try: self.preferences['geometry']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
         except: pass
@@ -94,30 +100,33 @@ class Preferences(QObject):
                     self.settings.value('%s/geometry' % (editor)).split(':')))
                 self.preferences[editor]['widget'] =  self.settings.value('%s/widget' % (editor))
             except:
-                print("preferences for widget [%s]cannot be loader" % (editor))
+                print("preferences for widget [%s]cannot be loaded" % (editor))
                 pass
-
 
 
     def save(self, preferences):
         # print("%s.save preferences" % (__name__))
         # pprint(preferences)
 
-        # viewer
+        # (Mandatory) Viewer
         self.settings.setValue('viewer/geometry',
             ':'.join(map(lambda x: "%d" % (x), preferences['viewer']['geometry'])))
         self.settings.setValue('viewer/screen', 0)
 
         self.settings.setValue('viewer/current_editor', preferences['viewer']['current_editor'])
 
-        # selection
+        # (Special) Selection
         self.settings.setValue('selection/geometry',
             ':'.join(map(lambda x: "%d" % (x), preferences['selection']['geometry'])))
         self.settings.setValue('selection/episode', preferences['selection']['episode'])
         self.settings.setValue('selection/part', preferences['selection']['part'])
         self.settings.setValue('selection/step', preferences['selection']['step'])
 
+        # Other widgets (editors)
         for editor in self.editors:
+            if editor == 'selection':
+                # Selection is a special case because and already saved before
+                continue
             try:
                 self.settings.setValue('%s/geometry' % (editor),
                     ':'.join(map(lambda x: "%d" % (x), preferences[editor]['geometry'])))

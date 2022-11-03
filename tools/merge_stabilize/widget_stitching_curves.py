@@ -1,28 +1,23 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import sys
 sys.path.append('../scripts')
+
 from logger import log
 from pprint import pprint
 
 from PySide6.QtCore import (
     Qt,
-    QPoint,
     Signal,
-    QEvent,
 )
 from PySide6.QtGui import (
-    QCursor,
     QColor,
 )
 from PySide6.QtWidgets import (
     QApplication,
     QListWidgetItem,
-    QWidget,
 )
 from common.widget_common import Widget_common
-from common.sylesheet import set_stylesheet
+from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
 
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
 from merge_stabilize.ui.widget_stitching_curves_ui import Ui_widget_stitching_curves
@@ -32,63 +27,34 @@ GRID_AXIS_COLOR = QColor(110, 110, 110)
 WIDGET_MARGIN = 5
 GRAPH_WIDTH = 512
 
-class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
+class Widget_stitching_curves(Widget_common, Ui_widget_stitching_curves):
     signal_curves_modified = Signal(dict)
     signal_channel_selected = Signal()
-    signal_discard = Signal(str)
     signal_save_curves_as = Signal(dict)
     signal_selection_changed = Signal(str)
     signal_reset_selection = Signal()
     signal_remove_selection = Signal()
     signal_save_selection = Signal()
-    signal_preview_options_changed = Signal()
-    signal_close = Signal()
-
-    signal_save = Signal()
 
     def __init__(self, ui, model:Model_merge_stabilize):
         super(Widget_stitching_curves, self).__init__(ui)
-        self.setupUi(self)
         self.model = model
         self.ui = ui
         self.setObjectName('stitching_curves')
 
-        # Setup and patch ui
-        self.setAutoFillBackground(True)
-        self.setWindowFlags(Qt.Tool)
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
-        self.setWindowModality(Qt.NonModal)
-
-
         # Header
-        self.pushButton_set_preview.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_set_preview.toggled[bool].connect(self.event_preview_changed)
-
         self.lineEdit_current_curves_selection.clear()
         self.lineEdit_current_curves_selection.setFocusPolicy(Qt.NoFocus)
-
-        self.pushButton_save.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_save.clicked.connect(self.event_save_modifications)
-        self.pushButton_save.setEnabled(False)
 
         self.pushButton_remove_selection.setFocusPolicy(Qt.NoFocus)
         self.pushButton_remove_selection.clicked.connect(self.event_remove_selection)
         self.pushButton_remove_selection.setEnabled(False)
 
-        self.pushButton_discard.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_discard.clicked.connect(self.event_discard_modifications)
-        self.pushButton_discard.setEnabled(False)
-
         self.pushButton_undo.setFocusPolicy(Qt.NoFocus)
         self.pushButton_undo.clicked.connect(self.event_undo_selection)
         self.pushButton_undo.setEnabled(False)
 
-        self.pushButton_close.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_close.clicked.connect(self.event_close)
-        self.pushButton_close.setEnabled(False)
-
         self.is_save_action_allowed = False
-
 
         # List of curves
         self.list_curves_names.clear()
@@ -98,7 +64,6 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
         self.pushButton_save_curves_modifications.setFocusPolicy(Qt.NoFocus)
         self.pushButton_discard_curves_modifications.setFocusPolicy(Qt.NoFocus)
         self.pushButton_save_curves_as.setFocusPolicy(Qt.NoFocus)
-
 
         self.refresh_current_coordinates([-1,0])
 
@@ -149,7 +114,7 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
         self.lineEdit_save_name.returnPressed.connect(self.event_save_stitching_curves_as)
         self.pushButton_save_curves_as.released.connect(self.event_save_stitching_curves_as)
 
-        self.pushButton_discard_curves_modifications.released.connect(self.event_discard_curves_modifications)
+        self.pushButton_discard_curves_modifications.released.connect(self.event_discard_modifications)
         self.pushButton_save_curves_modifications.released.connect(self.event_save_stitching_curves)
 
         self.pushButton_save.released.connect(self.event_save_modifications)
@@ -165,7 +130,6 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
         self.set_enabled(True)
         set_stylesheet(self)
         self.adjustSize()
-
 
 
     def set_enabled(self, enabled:bool):
@@ -257,18 +221,6 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
             delta += "%.1f" % (coordinates[1])
             self.lineEdit_coordinates.setText("x=%d: %s" % (coordinates[0], delta))
 
-
-    def set_palette(self, palette):
-        self.setPalette(palette)
-
-
-    def get_preferences(self):
-        preferences = {
-            'stitching_curves': {
-                'geometry': self.geometry().getRect(),
-            },
-        }
-        return preferences
 
 
     def set_initial_options(self, preferences:dict):
@@ -502,9 +454,6 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
         self.list_curves_names.blockSignals(False)
 
 
-    def event_discard_curves_modifications(self):
-        self.signal_discard.emit(self.k_curves)
-
 
     def event_save_stitching_curves_as(self):
         self.lineEdit_save_name.blockSignals(True)
@@ -552,25 +501,8 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
         self.signal_preview_options_changed.emit()
 
 
-    def mousePressEvent(self, event):
-        self.previous_position = QCursor().pos()
 
-
-
-    def mouseMoveEvent(self, event):
-        if self.previous_position is not None:
-            cursor_position = QCursor().pos()
-            delta = QPoint(cursor_position - self.previous_position)
-            self.previous_position = cursor_position
-            self.move(self.pos() + delta)
-            event.accept()
-
-
-    def wheelEvent(self, event):
-        return self.ui.wheelEvent(event)
-
-
-    def keyPressEvent(self, event):
+    def event_key_pressed(self, event):
         key = event.key()
         modifier = event.modifiers()
         # print("%s.keyPressEvent: %d" % (__name__, event.key))
@@ -578,23 +510,22 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
         if (not modifier & Qt.ControlModifier
             and key == Qt.Key_C):
             self.widget_hist_curves.reset_channel('current')
-            event.accept()
             return True
 
         if key == Qt.Key_R:
             self.radioButton_select_r_channel.click()
-            event.accept()
+            return True
         elif key == Qt.Key_G:
             self.radioButton_select_g_channel.click()
-            event.accept()
+            return True
         elif key == Qt.Key_B:
             self.radioButton_select_b_channel.click()
-            event.accept()
+            return True
 
         elif key == Qt.Key_Delete or key == Qt.Key_Backspace:
             # Delete a single point
             self.widget_hist_curves.remove_selected_point()
-            event.accept()
+            return True
 
         elif modifier & Qt.ControlModifier:
             focus_object = QApplication.focusObject()
@@ -605,7 +536,6 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
                 else:
                     self.signal_save_selection.emit()
                 # log.info("discard saving as we do not know what to do")
-                event.accept()
                 return True
             elif key == Qt.Key_Z:
                 if (focus_object is self.list_curves_names
@@ -614,17 +544,9 @@ class Widget_stitching_curves(QWidget, Ui_widget_stitching_curves):
                 else:
                     self.signal_reset_selection.emit()
                 # log.info("discard saving as we do not know what to do")
-                event.accept()
                 return True
 
-        return self.ui.keyPressEvent(event)
+        return False
 
 
 
-    def changeEvent(self, event: QEvent) -> None:
-        if event.type() == QEvent.ActivationChange:
-            if self.isActiveWindow():
-                self.ui.set_current_editor('stitching curves')
-                event.accept()
-                return True
-        return super().changeEvent(event)

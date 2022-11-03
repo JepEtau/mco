@@ -68,16 +68,6 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.adjustSize()
 
 
-    def set_palette(self, palette):
-        self.setPalette(palette)
-
-    def get_preferences(self):
-        preferences = {
-            'geometry': {
-                'geometry': self.geometry().getRect(),
-            },
-        }
-        return preferences
 
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
@@ -279,7 +269,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         # self.pushButton_discard.setEnabled(False)
 
 
-    def event_save_modifications(self):
+    def event_save(self):
         if self.is_save_action_allowed:
             self.signal_save.emit()
 
@@ -288,42 +278,17 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         # self.signal_action.emit('close')
 
 
-    def wheelEvent(self, event):
-        # print("window_main: wheel event, forward to widget_control")
-        self.ui.wheelEvent(event)
 
-
-    def mousePressEvent(self, event):
-        self.previous_position = QCursor().pos()
-
-
-    def mouseMoveEvent(self, event):
-        if self.previous_position is not None:
-            cursor_position = QCursor().pos()
-            delta = cursor_position - self.previous_position
-            self.move(self.pos() + delta)
-            self.previous_position = cursor_position
-
-
-    def keyPressEvent(self, event):
+    def event_key_pressed(self, event):
         key = event.key()
         modifiers = event.modifiers()
         # print("%s.keyPressEvent: %d" % (__name__, event.key))
 
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_S:
-                self.event_save_modifications()
-                event.accept()
+                self.event_save()
                 return True
 
-        return self.ui.keyPressEvent(event)
+        return False
 
-
-    def changeEvent(self, event: QEvent) -> None:
-        if event.type() == QEvent.ActivationChange:
-            if self.isActiveWindow():
-                self.ui.set_current_editor('geometry')
-                event.accept()
-                return True
-        return super().changeEvent(event)
 

@@ -22,7 +22,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
+from common.sylesheet import (
+    set_stylesheet,
+    update_selected_widget_stylesheet,
+)
 
 from utils.common import K_GENERIQUES, K_PARTS, K_ALL_PARTS
 from video_editor.ui.widget_selection_ui import Ui_widget_selection
@@ -36,7 +39,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def __init__(self, ui, model):
         super(Widget_selection, self).__init__()
-
         self.setupUi(self)
         self.model = model
         self.ui = ui
@@ -48,7 +50,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.setWindowModality(Qt.NonModal)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
-        # Variables
+        # Internal variables
         self.episodes_and_parts = dict()
         self.comboBox_episode.clear()
         self.comboBox_part.clear()
@@ -71,7 +73,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_episode.currentIndexChanged['int'].connect(self.event_episode_changed)
         self.comboBox_part.currentIndexChanged['int'].connect(self.event_part_changed)
         self.comboBox_step.currentIndexChanged['int'].connect(self.event_step_changed)
-
 
 
         self.tableWidget_shots.clearContents()
@@ -110,6 +111,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def closeEvent(self, event):
         self.signal_close.emit()
+
 
     def get_preferences(self):
         k_ep = ''
