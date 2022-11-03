@@ -158,7 +158,8 @@ def consolidate_shot(db, shot) -> None:
                     shot['start'] = shot['start'] + offsets[i]['offset']
                     break
         except:
-            print("warning: no offset defined in %s:%s:%s" % (k_ed, k_ep, k_part))
+            # print("warning: no offset defined in %s:%s:%s" % (k_ed, k_ep, k_part))
+            pass
 
 
         # Remove unused tasks
@@ -218,9 +219,17 @@ def consolidate_shot(db, shot) -> None:
         # TODO: correct this by using the following ref edition:episode:part
         shot['geometry'] = db[k_ep][k_ed][k_part[2:]]['video']['geometry']
         # Overwrite resize parameters by the ones defined in the edition:episode:part
-        shot['geometry'].update({
-            'resize': db[k_ep][k_ed][k_part]['video']['geometry']['resize']
-        })
+        try:
+            resize = {
+                'resize': db[k_ep][k_ed][k_part]['video']['geometry']['resize']
+            }
+        except:
+            resize = {
+                'resize': [0, 0]
+            }
+
+        try: shot['geometry'].update(resize)
+        except: shot['geometry'] = resize
 
     elif k_part in K_GENERIQUES:
         k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']

@@ -7,36 +7,30 @@ import cv2
 import gc
 import numpy as np
 import time
+
 from pprint import pprint
 from logger import log
 
 from PySide6.QtCore import (
-    QBasicTimer,
-    QEvent,
     Qt,
     QPoint,
     Signal,
 )
 from PySide6.QtGui import (
     QColor,
-    QCursor,
-    QIcon,
     QImage,
-    QPainter,
     QPen,
-)
-from PySide6.QtWidgets import (
-    QApplication,
-    QMenu
 )
 
 from utils.common import FPS
 
 from common.window_common import Window_common
+from common.widget_controls import Widget_controls
+
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
 from merge_stabilize.model_merge_stabilize import process_single_frame
+
 from merge_stabilize.widget_selection import Widget_selection
-from common.widget_controls import Widget_controls
 from merge_stabilize.widget_stitching_curves import Widget_stitching_curves
 from merge_stabilize.widget_stitching import Widget_stitching
 from merge_stabilize.widget_stabilize import Widget_stabilize

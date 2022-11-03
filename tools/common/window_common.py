@@ -120,11 +120,11 @@ class Window_common(QMainWindow):
 
     def event_selection_changed(self, selection):
         # Disable crop/resize edition if image is not >= HD
-        print("event_selection_changed")
-        if selection['k_step'] in ['', 'deinterlace', 'pre_upscale', 'geometry']:
-            self.widget_geometry.set_geometry_edition_enabled(False)
-        else:
-            self.widget_geometry.set_geometry_edition_enabled(True)
+        if 'geometry' in self.model.get_widget_list():
+            if selection['k_step'] in ['', 'deinterlace', 'pre_upscale', 'geometry']:
+                self.widget_geometry.set_geometry_edition_enabled(False)
+            else:
+                self.widget_geometry.set_geometry_edition_enabled(True)
         self.event_preview_options_changed()
 
 
