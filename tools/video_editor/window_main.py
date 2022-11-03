@@ -36,16 +36,15 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 
-from common.sylesheet import set_widget_stylesheet
 from common.window_common import Window_common
 from video_editor.model_video_editor import Model_video_editor
 from video_editor.widget_selection import Widget_selection
-from video_editor.widget_controls import Widget_controls
+from common.widget_controls import Widget_controls
 from video_editor.widget_curves import Widget_curves
 from video_editor.widget_replace import Widget_replace
 from video_editor.widget_geometry import Widget_geometry
 
-from utils.common import FPS
+
 
 COLOR_CROP_RECT = QColor(230, 30, 30)
 COLOR_FINAL_RECT = QColor(0, 255, 0)
@@ -54,61 +53,14 @@ COLOR_DISPLAY_RECT = QColor(255, 255, 255)
 PEN_CROP_SIZE = 1
 PAINTER_MARGIN_LEFT = 20
 PAINTER_MARGIN_TOP = 20
-class Window_main(QMainWindow):
+
+class Window_main(Window_common):
     signal_preview_options_changed = Signal(dict)
     signal_save_and_close = Signal()
 
+
     def __init__(self, model:Model_video_editor):
-        super(Window_main, self).__init__()
-
-        window_icon = QIcon()
-        window_icon.addFile("img/icon_16.png", QSize(16,16))
-        window_icon.addFile("img/icon_24.png", QSize(24,24))
-        window_icon.addFile("img/icon_32.png", QSize(32,32))
-        window_icon.addFile("img/icon_48.png", QSize(48,48))
-        window_icon.addFile("img/icon_64.png", QSize(64,64))
-        window_icon.addFile("img/icon_128.png", QSize(128,128))
-        window_icon.addFile("img/icon_256.png", QSize(256,256))
-        self.setWindowIcon(window_icon)
-
-        self.setWindowFlags(Qt.Window)
-        self.setStyleSheet("background-color: black")
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
-
-        # Add painter
-        self.painter = QPainter()
-
-
-        # Internal variables
-        self.model = model
-        self.widgets = {
-            'controls': None,
-            'replace': None,
-            'geometry': None,
-            'selection': None,
-            'curves': None,
-        }
-
-        self.image = None
-        self.is_repainting = False
-        self.is_activated = False
-
-        self.is_closing = False
-        self.discard_modifications = False
-
-
-        self.show_side = 'top'
-        self.current_editor = ''
-        self.current_widget = self.current_editor
-        self.current_frame_index = -1
-        self.playing_frame_start_no = 0
-        self.current_frame_no = 0
-        self.timer = QBasicTimer()
-        self.timer.stop()
-
-
-
-
+        super(Window_main, self).__init__(self, model)
         # Get preferences from model
         p = self.model.get_preferences()
 
@@ -148,7 +100,6 @@ class Window_main(QMainWindow):
         self.widget_selection = Widget_selection(self, self.model)
         self.widgets['selection'] = self.widget_selection
         self.widget_selection.refresh_browsing_folder(self.model.get_available_episode_and_parts())
-
         self.widget_selection.signal_ep_or_part_selection_changed[dict].connect(self.event_selection_changed)
         self.widget_selection.set_initial_options(p)
         self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
@@ -158,15 +109,11 @@ class Window_main(QMainWindow):
         self.model.signal_reload_frame.connect(self.event_reload_frame)
         self.model.signal_close.connect(self.event_close_without_saving)
 
-        # Right click
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested[QPoint].connect(self.event_right_click)
 
         # Show window/widgets and connect signals
         for w in self.widgets.values():
             w.signal_close.connect(self.event_editor_action)
             w.show()
-        self.widget_selection.show()
 
         # Set initial values
         self.set_initial_options(p)
@@ -174,284 +121,44 @@ class Window_main(QMainWindow):
 
 
 
-    def event_show_fullscreen(self):
-        self.blockSignals(True)
-        # print("window_main: event_show_fullscreen (required for w11)")
-        saved_current_editor = self.current_editor
-        for w in self.widgets.values():
-            w.blockSignals(True)
-            w.showNormal()
-            w.activateWindow()
-            # w.blockSignals(False)
-        self.set_current_editor(saved_current_editor)
 
-        for w in self.widgets.values():
-            w.blockSignals(False)
+    # def select_next_editor(self):
+    #     # rework this: use a list of widgets
+    #     print("select next editor from: %s" % (self.current_editor))
+    #     # todo: clean this by using the table of editors
+    #     for i in range(len(self.widgets.keys())):
+    #         if self.current_editor == 'curves':
+    #             try:
+    #                 self.widget_replace.activateWindow()
+    #                 log.info("changed to: %s" % (self.current_editor))
+    #                 return
+    #             except:
+    #                 self.current_editor = 'replace'
 
-        self.widgets[saved_current_editor].blockSignals(True)
-        self.widgets[saved_current_editor].showNormal()
-        self.widgets[saved_current_editor].activateWindow()
-        self.widgets[saved_current_editor].blockSignals(False)
+    #         if self.current_editor == 'replace':
+    #             try:
+    #                 self.widget_geometry.activateWindow()
+    #                 log.info("changed to: %s" % (self.current_editor))
+    #                 return
+    #             except:
+    #                 self.current_editor = 'geometry'
 
-        self.is_activated = True
-        self.blockSignals(False)
+    #         if self.current_editor == 'geometry':
+    #             try:
+    #                 self.widget_curves.activateWindow()
+    #                 log.info("changed to: %s" % (self.current_editor))
+    #                 return
+    #             except:
+    #                 self.current_editor = 'curves'
 
+    #         if self.current_editor in ['selection', 'controls']:
+    #             try:
+    #                 self.widget_curves.activateWindow()
+    #                 log.info("changed to: %s" % (self.current_editor))
+    #                 return
+    #             except:
+    #                 self.current_editor = 'curves'
 
-
-    def event_selection_changed(self, selection):
-        # Disable crop edition if image is not >= HD
-        print("event_selection_changed")
-        if selection['k_step'] in ['', 'deinterlace', 'pre_upscale']:
-            self.widget_geometry.set_geometry_edition_enabled(False)
-        else:
-            self.widget_geometry.set_geometry_edition_enabled(True)
-        self.event_preview_options_changed()
-
-
-    def event_editor_action(self, event='exit'):
-        # log.info("event=%s" % (event))
-        # print("event=%s" % (event))
-
-
-        if event == 'exit':
-            if self.is_closing:
-                return
-
-            if self.discard_modifications:
-                # print("discard modifications")
-                self.event_close()
-                return
-
-            if self.model.model_database.is_db_modified():
-                log.info("Changes are not saved")
-                message_box = QMessageBox()
-                message_box.setIcon(QMessageBox.Warning)
-                message_box.setWindowTitle("Save before closing?")
-                message_box.setText("Some modifications have not been change.");
-                message_box.setInformativeText("Do you want to close before saving?");
-                message_box.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
-                message_box.setDefaultButton(QMessageBox.Save)
-                set_widget_stylesheet(message_box)
-
-                answer = message_box.exec()
-                if answer == QMessageBox.Save:
-                    self.signal_save_and_close.emit()
-                elif answer == QMessageBox.Discard:
-                    # print("discard modifications")
-                    self.discard_modifications = True
-                    self.event_close()
-                return
-            else:
-                self.discard_modifications = True
-                self.event_close()
-        elif event == 'minimize':
-            self.widget_selection.showMinimized()
-            self.widget_controls.showMinimized()
-            self.showMinimized()
-        elif event == 'repaint':
-            self.repaint()
-        else:
-            print("Error: action [%s] is deprecated, discard action")
-
-    def closeEvent(self, event):
-        # print("closeEvent")
-        self.event_editor_action('exit')
-
-    def event_close_without_saving(self):
-        self.discard_modifications = True
-
-
-    def event_close(self):
-        # print("%s:event_close" % (__name__))
-        if not self.is_closing:
-            self.is_closing = True
-            self.model.exit()
-            self.close_all_widgets()
-
-
-    def close_all_widgets(self):
-        # print("close_all_widgets")
-        self.timer.stop()
-        for widget in QApplication.topLevelWidgets():
-            widget.close()
-        self.close()
-        # Not clean but avoid ghost processes: clean this
-        sys.exit()
-
-
-    def set_initial_options(self, preferences:dict):
-        s = preferences['viewer']
-        if False:
-            self.setGeometry(s['geometry'][0],
-                s['geometry'][1],
-                s['geometry'][2],
-                s['geometry'][3])
-        else:
-            # For debug purpose
-            self.setGeometry(s['geometry'][0],
-                s['geometry'][1],
-                1600,
-                s['geometry'][3]-200)
-        log.info("set current editor: %s" % (s['current_editor']))
-        self.set_current_editor(s['current_editor'])
-
-
-    def get_preferences(self) -> dict:
-        # Get preferences from children, merge them and return it
-        preferences = {
-            'viewer': {
-                'screen': 0,
-                'geometry': self.geometry().getRect(),
-                'current_editor': self.current_editor,
-            },
-        }
-        for e, w in self.widgets.items():
-            preferences.update({e: w.get_preferences()})
-        return preferences
-
-
-    def select_next_editor(self):
-        # rework this: use a list of widgets
-        print("select next editor from: %s" % (self.current_editor))
-        # todo: clean this by using the table of editors
-        for i in range(len(self.widgets.keys())):
-            if self.current_editor == 'curves':
-                try:
-                    self.widget_replace.activateWindow()
-                    log.info("changed to: %s" % (self.current_editor))
-                    return
-                except:
-                    self.current_editor = 'replace'
-
-            if self.current_editor == 'replace':
-                try:
-                    self.widget_geometry.activateWindow()
-                    log.info("changed to: %s" % (self.current_editor))
-                    return
-                except:
-                    self.current_editor = 'geometry'
-
-            if self.current_editor == 'geometry':
-                try:
-                    self.widget_curves.activateWindow()
-                    log.info("changed to: %s" % (self.current_editor))
-                    return
-                except:
-                    self.current_editor = 'curves'
-
-            if self.current_editor in ['selection', 'controls']:
-                try:
-                    self.widget_curves.activateWindow()
-                    log.info("changed to: %s" % (self.current_editor))
-                    return
-                except:
-                    self.current_editor = 'curves'
-
-
-    def get_current_widget(self):
-        return self.current_widget
-
-
-    def set_current_editor(self, current_editor):
-        # Set current widget and editor
-        # print("Change widget from [%s] to [%s], editor from [%s] to [%s]" %
-        #     (self.current_widget, current_editor, self.current_editor, current_editor))
-
-        if current_editor == 'selection':
-            # Do not select this widget
-            return
-
-        self.current_widget = current_editor
-
-
-        for e, w in self.widgets.items():
-            if self.current_editor == e:
-                w.set_selected(False)
-
-        self.current_editor = current_editor
-
-        # Activate the selected editor widget
-        for e, w in self.widgets.items():
-            if self.current_editor == e:
-                w.set_selected(True)
-                break
-
-
-    def event_preview_options_changed(self):
-        # log.info("change preview: editor: %s" % (self.current_editor))
-        preview_options = dict()
-        for e, w in self.widgets.items():
-            preview_options.update({e: w.get_preview_options()})
-        self.signal_preview_options_changed.emit(preview_options)
-
-
-
-    def event_ready_to_play(self, playlist_properties):
-        log.info("ready to play")
-        self.current_frame_index = 0
-        self.playing_frame_count = playlist_properties['count']
-        self.playing_frame_start_no = playlist_properties['start']
-        f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no)
-        self.display_frame(f)
-
-
-    def event_move_to_frame_no(self, frame_index):
-        # log.info("move to frame %d" % (frame_index))
-        self.current_frame_index = frame_index
-        f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no)
-        self.display_frame(f)
-
-
-    def event_replace_frame_selected(self, item):
-        frame_no = item['frame_no']
-        log.info("move to frame %d" % (frame_no))
-        index = (frame_no - self.playing_frame_start_no)
-        self.widget_controls.update_slider_value(index)
-
-
-    def event_reload_frame(self):
-        if self.current_frame_index == -1:
-            return
-        # log.info("refresh frame %d" % (self.current_frame_index + self.playing_frame_start_no))
-        f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no)
-        self.display_frame(f)
-
-
-    def event_control_button_pressed(self, action):
-        if action == 'play':
-            self.widget_selection.set_enabled(False)
-            log.info("start playing")
-            speed = self.widget_controls.get_playing_speed()
-            self.timer_delay = int(1000/(FPS*speed))
-            # self.timer_delay = 25
-            print("timer: %dms" % (self.timer_delay))
-            self.timer.start(self.timer_delay, Qt.PreciseTimer, self)
-            self.now = time.time()
-
-        elif action == 'pause':
-            self.timer.stop()
-            self.widget_selection.set_enabled(True)
-
-        elif action == 'stop':
-            self.timer.stop()
-            self.widget_selection.set_enabled(True)
-            self.event_move_to_frame_no(0)
-
-
-
-    def timerEvent(self, e=None):
-        now = time.time()
-        print(int(1000 * (now - self.now)))
-        self.now = now
-
-        self.current_frame_index += 1
-        if self.current_frame_index >= self.playing_frame_count:
-            self.timer.stop()
-            self.widget_controls.event_stop()
-        else:
-            self.widget_controls.set_playing_frame_properties(self.current_frame_index)
-            f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no)
-            self.display_frame(f)
 
 
 
@@ -555,14 +262,6 @@ class Window_main(QMainWindow):
 
 
 
-    def event_right_click(self, qpoint):
-        cursor_position = QCursor.pos()
-        pop_menu = QMenu(self)
-        pop_menu.setStyleSheet("background-color: rgb(128, 128, 128);")
-        action_exit = pop_menu.addAction('Exit')
-        action_exit.triggered.connect(self.event_close)
-        pop_menu.exec_(cursor_position)
-
 
 
     def mousePressEvent(self, event):
@@ -663,7 +362,6 @@ class Window_main(QMainWindow):
 
     def keyReleaseEvent(self, event):
         key = event.key()
-        # print("keyReleaseEvent: main window")
         self.widget_controls.event_key_released(event)
 
 
@@ -688,51 +386,6 @@ class Window_main(QMainWindow):
             return True
         # return self.widget_controls.keyReleaseEvent(event)
 
-
-
-    def changeEvent(self, event: QEvent) -> None:
-        # print("\nwindow_main: changeEvent", event.type(), flush=True)
-        if event.type() == QEvent.ActivationChange:
-            # print("* QEvent.ActivationChange", flush=True)
-            # print("\twindow state:", self.windowState(), flush=True)
-            # print("\t is active? ", self.isActiveWindow(), flush=True)
-
-
-            if self.windowState() == Qt.WindowState().WindowNoState:
-                # print("\tWindowNoState -> show fullscreen")
-                self.setWindowState(Qt.WindowActive)
-                self.event_show_fullscreen()
-                # print("-------------------------------------")
-                event.accept()
-                return True
-
-
-            if self.windowState() & Qt.WindowState().WindowActive:
-                # print("\tWindowMinimized -> show fullscreen")
-                self.setWindowState(Qt.WindowActive)
-                self.event_show_fullscreen()
-                # print("-------------------------------------")
-                event.accept()
-                return True
-
-
-            if (self.windowState() & Qt.WindowState().WindowMinimized
-            and not self.isActiveWindow()):
-                # print("\tWindowMinimized -> show fullscreen")
-                self.setWindowState(Qt.WindowActive)
-                self.event_show_fullscreen()
-                # print("-------------------------------------")
-                event.accept()
-                return True
-
-        # elif event.type() == QEvent.WindowStateChange:
-        #     print("///* QEvent.WindowStateChange", flush=True)
-        #     print("\twindow state:", self.windowState(), flush=True)
-        #     print("\t is active? ", self.isActiveWindow(), flush=True)
-        #     event.accept()
-        #     return True
-
-        return super().changeEvent(event)
 
 
 

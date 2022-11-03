@@ -17,7 +17,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget
-
+from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet
 
 
@@ -26,37 +26,18 @@ from merge_stabilize.ui.widget_stabilize_ui import Ui_widget_stabilize
 from parsers.parser_stabilize import STABILIZATION_SHOT_PARAMETERS_DEFAULT
 
 
-class Widget_stabilize(QWidget, Ui_widget_stabilize):
+class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     signal_calculation_requested = Signal(dict)
     signal_enabled_modified = Signal(bool)
     signal_previous_parameters = Signal(str)
-    signal_save = Signal()
     signal_preview_options_changed = Signal()
 
 
     def __init__(self, ui, model:Model_merge_stabilize):
-        super(Widget_stabilize, self).__init__()
-
-        self.setupUi(self)
+        super(Widget_stabilize, self).__init__(ui)
         self.model = model
         self.ui = ui
-
-        # Setup and patch ui
-        self.setAutoFillBackground(True)
-        self.setWindowFlags(Qt.Tool)
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
-        self.setWindowModality(Qt.NonModal)
-
-        # Header
-        self.pushButton_set_preview.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_set_preview.toggled[bool].connect(self.event_preview_changed)
-        self.pushButton_save_modifications.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_save_modifications.clicked.connect(self.event_save_modifications)
-        self.pushButton_discard_modifications.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_discard_modifications.clicked.connect(self.event_discard_modifications)
-        self.pushButton_close.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_close.clicked.connect(self.event_close)
-
+        self.setObjectName('stabilize')
 
         self.pushButton_set_start.setFocusPolicy(Qt.NoFocus)
         self.pushButton_set_start.clicked.connect(self.event_set_start)
@@ -90,10 +71,6 @@ class Widget_stabilize(QWidget, Ui_widget_stabilize):
         self.model.signal_is_saved[list].connect(self.event_is_saved)
 
 
-        self.pushButton_close.setEnabled(False)
-        self.pushButton_save_modifications.setEnabled(False)
-        self.pushButton_discard_modifications.setEnabled(False)
-
         set_stylesheet(self)
         self.adjustSize()
 
@@ -104,21 +81,9 @@ class Widget_stabilize(QWidget, Ui_widget_stabilize):
             self.pushButton_calculate.setEnabled(True)
         else:
             self.pushButton_calculate.setEnabled(False)
-            self.pushButton_save_modifications.setEnabled(True)
+            self.pushButton_save.setEnabled(True)
 
 
-
-
-    def set_palette(self, palette):
-        self.setPalette(palette)
-
-    def get_preferences(self):
-        preferences = {
-            'stabilize': {
-                'geometry': self.geometry().getRect(),
-            },
-        }
-        return preferences
 
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
@@ -255,12 +220,12 @@ class Widget_stabilize(QWidget, Ui_widget_stabilize):
         if self.spinBox_frame_start.value() >= self.spinBox_frame_end.value():
             log.info("start > end")
             self.pushButton_calculate.setEnabled(False)
-            self.pushButton_save_modifications.setEnabled(False)
+            self.pushButton_save.setEnabled(False)
         else:
             self.pushButton_calculate.setEnabled(True)
             self.pushButton_set_preview.setEnabled(False)
         self.pushButton_undo.setEnabled(True)
-        self.pushButton_discard_modifications.setEnabled(True)
+        self.pushButton_discard.setEnabled(True)
 
 
     def event_enabled_changed(self, is_enabled):
@@ -270,8 +235,8 @@ class Widget_stabilize(QWidget, Ui_widget_stabilize):
             self.pushButton_set_preview.setEnabled(False)
         else:
             self.pushButton_calculate.setEnabled(False)
-            self.pushButton_save_modifications.setEnabled(True)
-        self.pushButton_discard_modifications.setEnabled(True)
+            self.pushButton_save.setEnabled(True)
+        self.pushButton_discard.setEnabled(True)
         self.signal_enabled_modified.emit(is_enabled)
 
 
@@ -291,7 +256,7 @@ class Widget_stabilize(QWidget, Ui_widget_stabilize):
         parameters = self.get_parameters()
         self.save_loaded_parameters(parameters)
         self.pushButton_calculate.setEnabled(False)
-        self.pushButton_save_modifications.setEnabled(False)
+        self.pushButton_save.setEnabled(False)
         self.setEnabled(False)
         self.signal_calculation_requested.emit(parameters)
 
@@ -300,7 +265,7 @@ class Widget_stabilize(QWidget, Ui_widget_stabilize):
         log.info("event_calculation_ended")
         self.setEnabled(True)
         self.pushButton_set_preview.setEnabled(True)
-        self.pushButton_save_modifications.setEnabled(True)
+        self.pushButton_save.setEnabled(True)
         self.is_save_action_allowed = True
 
 
@@ -340,12 +305,6 @@ class Widget_stabilize(QWidget, Ui_widget_stabilize):
 
 
 
-    def event_is_saved(self, k_type):
-        if k_type == 'stabilize':
-            log.info("parameters and values saved")
-            self.is_save_action_allowed = False
-            self.pushButton_discard_modifications.setEnabled(False)
-
 
     def event_discard_modifications(self):
         log.info("discard modifications")
@@ -353,58 +312,25 @@ class Widget_stabilize(QWidget, Ui_widget_stabilize):
         self.set_parameters(parameters, do_backup=False)
         self.pushButton_undo.setEnabled(True)
         self.pushButton_calculate.setEnabled(True)
-        self.pushButton_discard_modifications.setEnabled(False)
+
+        self.pushButton_save.setEnabled(False)
+        self.pushButton_discard.setEnabled(False)
+        self.signal_discard.emit()
 
 
-    def event_save_modifications(self):
-        if self.is_save_action_allowed:
-            self.signal_save.emit()
 
-    def event_close(self):
-        log.info("close button clicked")
-        # self.signal_action.emit('close')
-
-
-    def wheelEvent(self, event):
-        # print("window_main: wheel event, forward to widget_control")
-        self.ui.wheelEvent(event)
-
-
-    def mousePressEvent(self, event):
-        self.previous_position = QCursor().pos()
-
-
-    def mouseMoveEvent(self, event):
-        if self.previous_position is not None:
-            cursor_position = QCursor().pos()
-            delta = cursor_position - self.previous_position
-            self.move(self.pos() + delta)
-            self.previous_position = cursor_position
-
-
-    def keyPressEvent(self, event):
+    def event_key_pressed(self, event):
         key = event.key()
         modifiers = event.modifiers()
         # print("%s.keyPressEvent: %d" % (__name__, event.key))
 
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_S:
-                self.event_save_modifications()
-                event.accept()
+                self.event_save()
                 return True
 
         if key == Qt.Key_F5:
             self.signal_calculation_requested.emit(self.get_parameters())
 
-
-        return self.ui.keyPressEvent(event)
-
-
-    def changeEvent(self, event: QEvent) -> None:
-        if event.type() == QEvent.ActivationChange:
-            if self.isActiveWindow():
-                self.ui.set_current_editor('stabilize')
-                event.accept()
-                return True
-        return super().changeEvent(event)
+        return False
 

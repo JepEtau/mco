@@ -1,38 +1,41 @@
 # -*- coding: utf-8 -*-
 
-import time
-from PySide6.QtCore import Signal
-from PySide6.QtCore import QObject
-from PySide6.QtWidgets import QApplication
+import sys
+sys.path.append('../scripts')
 
+import time
 import os
 import gc
 import os.path
-import re
 from pprint import pprint
-from images.filtering import filter_rgb
 from logger import log
 from copy import deepcopy
 import cv2
 import numpy as np
 
-from video_editor.preferences import Preferences
+from PySide6.QtCore import (
+    QObject,
+    Signal,
+)
 
+from common.preferences import Preferences
 from models.model_database import Model_database
+from models.model_common import Model_common
 
-PATH_CACHE = "../cache"
+from images.filtering import filter_rgb
 
-import sys
-sys.path.append('../scripts')
-from utils.common import K_NON_GENERIQUE_PARTS, get_frame_no_from_filepath, get_k_part_from_frame_no, get_shot_from_frame_no_new
-from utils.common import K_GENERIQUES
+from utils.common import (
+    K_GENERIQUES,
+    K_NON_GENERIQUE_PARTS,
+    get_frame_no_from_filepath,
+    get_k_part_from_frame_no,
+    get_shot_from_frame_no_new,
+)
 from utils.get_filters import FILTER_BASE_NO
 from utils.get_framelist import get_framelist, get_framelist_2
 from utils.consolidate import consolidate_shot
 
-class Model_video_editor(QObject):
-    signal_close = Signal()
-    signal_shotlist_modified = Signal(dict)
+class Model_video_editor(Model_common):
     signal_current_shot_modified = Signal(dict)
     signal_ready_to_play = Signal(dict)
     signal_is_modified = Signal(dict)
@@ -43,38 +46,39 @@ class Model_video_editor(QObject):
     signal_curves_library_modified = Signal(dict)
     signal_shot_per_curves_modified = Signal(list)
 
+    WIDGET_LIST = [
+        'controls',
+        'replace',
+        'geometry',
+        'curves',
+        'selection'
+    ]
+
+    SELECTABLE_WIDGET_LIST = [
+        'curves',
+        'replace',
+        'geometry',
+    ]
+
     def __init__(self):
         super(Model_video_editor, self).__init__()
-        self.view = None
 
         # Load saved preferences
-        self.editors = ['controls', 'curves', 'replace', 'geometry']
-        self.preferences = Preferences(self.editors)
+        self.preferences = Preferences(
+            tool='video_editor',
+            widget_list=self.WIDGET_LIST)
 
         # Variables
-        self.step_labels = [k for k, v in sorted(FILTER_BASE_NO.items(), key=lambda item: item[1])]
         self.model_database = Model_database()
-        self.frames = dict()
+
         self.filepath = list()
-        self.shots = dict()
-        self.playlist_properties = dict()
-        self.playlist_frames = list()
-        self.current_selection = dict()
+
         self.list_replace = list()
 
-        self.preview_options = None
-        self.current_frame = None
+        for step in ['bgd', 'stitching']:
+            self.step_labels.remove(step)
 
 
-    def exit(self):
-        # print("%s:exit" % (__name__))
-        p = self.view.get_preferences()
-        self.preferences.save(p)
-        try:
-            log.handlers[0].close()
-        except:
-            pass
-        # print("model: exit")
 
     def set_view(self, view):
         self.view = view
@@ -110,45 +114,6 @@ class Model_video_editor(QObject):
             'k_part': p['selection']['part'],
             'k_step': p['selection']['step'],
         })
-
-
-    def get_preferences(self):
-        p = self.preferences.get_preferences()
-        return p
-
-
-
-    def save_preferences(self, preferences:dict):
-        preferences = self.ui.get_preferences()
-        self.preferences.save(preferences)
-
-
-
-    def get_available_episode_and_parts(self):
-        episode_and_parts = dict()
-        path_cache = self.model_database.get_cache_path()
-        if os.path.exists(path_cache):
-            # Rather than walking through, try every possibilities
-            # another option would be to select a folder, then the combobox
-            # will be disabled
-
-            for ep_no in range(1, 39):
-                k_ep = 'ep%02d' % (ep_no)
-                if os.path.exists(os.path.join(path_cache, k_ep)):
-                    episode_and_parts[k_ep] = list()
-
-                    for k_part in K_NON_GENERIQUE_PARTS:
-                        if os.path.exists(os.path.join(path_cache, k_ep, k_part)):
-                            episode_and_parts[k_ep].append(k_part)
-
-            episode_and_parts[' '] = list()
-            for k_part_g in K_GENERIQUES:
-                if os.path.exists(os.path.join(path_cache, k_part_g)):
-                    episode_and_parts[' '].append(k_part_g)
-
-        # pprint(episode_and_parts)
-        # sys.exit()
-        return episode_and_parts
 
 
 
@@ -379,9 +344,23 @@ class Model_video_editor(QObject):
         self.signal_ready_to_play.emit(self.playlist_properties)
 
 
+    def event_save_and_close_requested(self):
+        k_ep = self.current_selection['k_ep']
+        k_part = self.current_selection['k_part']
 
-    def event_control_button_pressed(self, action):
-        print("%s:event_control_button_pressed action=%s" % (__name__, action))
+        self.event_save_replace_requested()
+
+        self.model_database.save_curves_selection_database(
+            self.shots,
+            k_ed='',
+            k_ep='',
+            k_part=k_part,
+            shot_no=-1)
+        self.model_database.move_curves_selection_to_initial()
+
+        self.event_save_geometry_requested()
+        self.model_database.save_all_curves(k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
+        self.signal_close.emit()
 
 
 
@@ -457,39 +436,6 @@ class Model_video_editor(QObject):
         return self.current_frame
 
 
-    def get_step_labels(self):
-        return self.step_labels
-
-    def get_current_frame(self):
-        return self.current_frame
-
-    def set_current_frame_cache(self, img):
-        self.current_frame['cache'] = img
-
-    def purge_current_frame_cache(self):
-        try:
-            del self.current_frame['cache']
-            self.current_frame['cache'] = None
-        except:
-            pass
-        # try:
-        #     del self.current_frame['cache_fgd']
-        #     self.current_frame['cache_fgd'] = None
-        # except:
-        #     pass
-
-
-    def get_shot_no_from_frame_no(self, frame_no):
-        index = frame_no - self.playlist_properties['start']
-        return self.playlist_frames[index]['shot_no']
-
-
-    def get_shot(self, shot_no):
-        print("%s.get_shot: shot no. %d:" % (__name__, shot_no))
-        return self.shots[shot_no]
-
-
-
     def event_geometry_modified(self, modification:dict):
         """modification:
             - type
@@ -548,41 +494,6 @@ class Model_video_editor(QObject):
         self.signal_replace_list_refreshed.emit(self.list_replace)
 
 
-    def event_frame_replaced(self, replace:dict):
-        action = replace['action']
-        frame_no = replace['dst']
-        shot_no = self.get_shot_no_from_frame_no(frame_no)
-        shot_src = self.shots[shot_no]
-        index = frame_no - self.frames[shot_no][0]['frame_no']
-
-        if action == 'replace':
-            log.info("replace: shot_no=%d, frame_no=%d (index=%d) by %d" % (shot_no, frame_no, index, replace['src']))
-            self.model_database.set_replaced_frame(
-                shot=shot_src,
-                frame_no=frame_no,
-                new_frame_no=replace['src'])
-            # update the frame as it is required to refresh the list of the widget_replace
-            self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
-
-        elif action == 'remove':
-            log.info("remove: shot_no=%d, frame_no=%d (index=%d)" % (shot_no, frame_no, index))
-            self.model_database.remove_replaced_frame(shot=shot_src, frame_no=frame_no)
-
-            # update the frame as it is required to refresh the list of the widget_replace
-            self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
-
-        self.refresh_replace_list()
-        self.signal_reload_frame.emit()
-
-
-
-    def event_replace_discard_requested(self):
-        log.info("discard modifications requested")
-        self.model_database.discard_replace_modifications()
-        self.refresh_replace_list()
-        self.signal_reload_frame.emit()
-
-
     def event_rgb_graph_modified(self, rgb_channels):
         shot_no = self.current_frame['shot_no']
         self.model_database.set_shot_rgb_channels(
@@ -623,6 +534,7 @@ class Model_video_editor(QObject):
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
         self.signal_load_curves.emit(curves)
         self.signal_reload_frame.emit()
+
 
     def event_save_curves_as(self, curves):
         # Save the curves in the curves library
@@ -694,22 +606,37 @@ class Model_video_editor(QObject):
         return -1
 
 
+    def event_frame_replaced(self, replace:dict):
+        action = replace['action']
+        frame_no = replace['dst']
+        shot_no = self.get_shot_no_from_frame_no(frame_no)
+        shot_src = self.shots[shot_no]
+        index = frame_no - self.frames[shot_no][0]['frame_no']
 
-    def get_preview_options(self):
-        return self.preview_options
+        if action == 'replace':
+            log.info("replace: shot_no=%d, frame_no=%d (index=%d) by %d" % (shot_no, frame_no, index, replace['src']))
+            self.model_database.set_replaced_frame(
+                shot=shot_src,
+                frame_no=frame_no,
+                new_frame_no=replace['src'])
+            # update the frame as it is required to refresh the list of the widget_replace
+            self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
 
-    def event_preview_options_changed(self, preview_options):
-        if False:
-            print("\nchanged preview mode:" % (preview_options))
-            print("---------------------------------------")
-            pprint(preview_options)
-            print("")
+        elif action == 'remove':
+            log.info("remove: shot_no=%d, frame_no=%d (index=%d)" % (shot_no, frame_no, index))
+            self.model_database.remove_replaced_frame(shot=shot_src, frame_no=frame_no)
 
-        self.preview_options = preview_options
+            # update the frame as it is required to refresh the list of the widget_replace
+            self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
 
-        # Regenerate image
-        # index, img = generate_single_image(self.current_frame, preview_options=self.preview_options)
-        # self.set_current_frame_cache(img=img)
+        self.refresh_replace_list()
+        self.signal_reload_frame.emit()
+
+
+    def event_replace_discard_requested(self):
+        log.info("discard modifications requested")
+        self.model_database.discard_replace_modifications()
+        self.refresh_replace_list()
         self.signal_reload_frame.emit()
 
 
@@ -745,25 +672,6 @@ class Model_video_editor(QObject):
         self.model_database.move_part_geometry_to_initial()
         self.signal_is_saved.emit('geometry')
 
-
-
-    def event_save_and_close_requested(self):
-        k_ep = self.current_selection['k_ep']
-        k_part = self.current_selection['k_part']
-
-        self.event_save_replace_requested()
-
-        self.model_database.save_curves_selection_database(
-            self.shots,
-            k_ed='',
-            k_ep='',
-            k_part=k_part,
-            shot_no=-1)
-        self.model_database.move_curves_selection_to_initial()
-
-        self.event_save_geometry_requested()
-        self.model_database.save_all_curves(k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
-        self.signal_close.emit()
 
 
 

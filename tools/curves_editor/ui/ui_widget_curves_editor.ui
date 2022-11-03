@@ -435,7 +435,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>img/edit-undo.png</normaloff>img/edit-undo.png</iconset>
+                   <normaloff>img/purple/undo.svg</normaloff>img/purple/undo.svg</iconset>
                  </property>
                  <property name="flat">
                   <bool>true</bool>
@@ -455,7 +455,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>img/edit-delete.png</normaloff>img/edit-delete.png</iconset>
+                   <normaloff>img/purple/x-square.svg</normaloff>img/purple/x-square.svg</iconset>
                  </property>
                  <property name="flat">
                   <bool>true</bool>
@@ -488,7 +488,7 @@
                  </property>
                  <property name="icon">
                   <iconset>
-                   <normaloff>img/document-save.png</normaloff>img/document-save.png</iconset>
+                   <normaloff>img/purple/save.svg</normaloff>img/purple/save.svg</iconset>
                  </property>
                  <property name="flat">
                   <bool>true</bool>

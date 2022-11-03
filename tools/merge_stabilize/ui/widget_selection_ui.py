@@ -26,18 +26,26 @@ class Ui_widget_selection(object):
     def setupUi(self, widget_selection):
         if not widget_selection.objectName():
             widget_selection.setObjectName(u"widget_selection")
-        widget_selection.resize(434, 739)
+        widget_selection.resize(453, 734)
         widget_selection.setMaximumSize(QSize(500, 16777215))
-        self.layout_main = QVBoxLayout(widget_selection)
-        self.layout_main.setSpacing(4)
-        self.layout_main.setObjectName(u"layout_main")
-        self.layout_main.setContentsMargins(6, 6, 6, 6)
-        self.widget_app_controls = Widget_app_controls(widget_selection)
+        self.verticalLayout_2 = QVBoxLayout(widget_selection)
+        self.verticalLayout_2.setSpacing(0)
+        self.verticalLayout_2.setObjectName(u"verticalLayout_2")
+        self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
+        self.frame = QFrame(widget_selection)
+        self.frame.setObjectName(u"frame")
+        self.frame.setFrameShape(QFrame.Panel)
+        self.frame.setFrameShadow(QFrame.Plain)
+        self.verticalLayout = QVBoxLayout(self.frame)
+        self.verticalLayout.setSpacing(4)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(6, 6, 6, 6)
+        self.widget_app_controls = Widget_app_controls(self.frame)
         self.widget_app_controls.setObjectName(u"widget_app_controls")
 
-        self.layout_main.addWidget(self.widget_app_controls)
+        self.verticalLayout.addWidget(self.widget_app_controls)
 
-        self.comboBox_episode = QComboBox(widget_selection)
+        self.comboBox_episode = QComboBox(self.frame)
         self.comboBox_episode.addItem("")
         self.comboBox_episode.addItem("")
         self.comboBox_episode.setObjectName(u"comboBox_episode")
@@ -47,9 +55,9 @@ class Ui_widget_selection(object):
         sizePolicy.setHeightForWidth(self.comboBox_episode.sizePolicy().hasHeightForWidth())
         self.comboBox_episode.setSizePolicy(sizePolicy)
 
-        self.layout_main.addWidget(self.comboBox_episode)
+        self.verticalLayout.addWidget(self.comboBox_episode)
 
-        self.comboBox_part = QComboBox(widget_selection)
+        self.comboBox_part = QComboBox(self.frame)
         self.comboBox_part.addItem("")
         self.comboBox_part.addItem("")
         self.comboBox_part.addItem("")
@@ -66,26 +74,26 @@ class Ui_widget_selection(object):
         self.comboBox_part.setSizePolicy(sizePolicy1)
         self.comboBox_part.setMaximumSize(QSize(140, 16777215))
 
-        self.layout_main.addWidget(self.comboBox_part)
+        self.verticalLayout.addWidget(self.comboBox_part)
 
-        self.comboBox_step = QComboBox(widget_selection)
+        self.comboBox_step = QComboBox(self.frame)
         self.comboBox_step.addItem("")
         self.comboBox_step.setObjectName(u"comboBox_step")
         sizePolicy1.setHeightForWidth(self.comboBox_step.sizePolicy().hasHeightForWidth())
         self.comboBox_step.setSizePolicy(sizePolicy1)
         self.comboBox_step.setMaximumSize(QSize(120, 16777215))
 
-        self.layout_main.addWidget(self.comboBox_step)
+        self.verticalLayout.addWidget(self.comboBox_step)
 
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(-1, -1, -1, 0)
-        self.label = QLabel(widget_selection)
+        self.label = QLabel(self.frame)
         self.label.setObjectName(u"label")
 
         self.horizontalLayout.addWidget(self.label)
 
-        self.lineEdit_crop_coordinates = QLineEdit(widget_selection)
+        self.lineEdit_crop_coordinates = QLineEdit(self.frame)
         self.lineEdit_crop_coordinates.setObjectName(u"lineEdit_crop_coordinates")
         self.lineEdit_crop_coordinates.setMaximumSize(QSize(150, 16777215))
         self.lineEdit_crop_coordinates.setReadOnly(True)
@@ -97,9 +105,9 @@ class Ui_widget_selection(object):
         self.horizontalLayout.addItem(self.horizontalSpacer)
 
 
-        self.layout_main.addLayout(self.horizontalLayout)
+        self.verticalLayout.addLayout(self.horizontalLayout)
 
-        self.tableWidget_shots = QTableWidget(widget_selection)
+        self.tableWidget_shots = QTableWidget(self.frame)
         if (self.tableWidget_shots.columnCount() < 5):
             self.tableWidget_shots.setColumnCount(5)
         __qtablewidgetitem = QTableWidgetItem()
@@ -159,7 +167,10 @@ class Ui_widget_selection(object):
         self.tableWidget_shots.verticalHeader().setProperty("showSortIndicator", False)
         self.tableWidget_shots.verticalHeader().setStretchLastSection(False)
 
-        self.layout_main.addWidget(self.tableWidget_shots)
+        self.verticalLayout.addWidget(self.tableWidget_shots)
+
+
+        self.verticalLayout_2.addWidget(self.frame)
 
 
         self.retranslateUi(widget_selection)
@@ -194,7 +205,7 @@ class Ui_widget_selection(object):
         ___qtablewidgetitem3 = self.tableWidget_shots.horizontalHeaderItem(3)
         ___qtablewidgetitem3.setText(QCoreApplication.translate("widget_selection", u"src", None));
         ___qtablewidgetitem4 = self.tableWidget_shots.horizontalHeaderItem(4)
-        ___qtablewidgetitem4.setText(QCoreApplication.translate("widget_selection", u"cruves", None));
+        ___qtablewidgetitem4.setText(QCoreApplication.translate("widget_selection", u"curves", None));
         ___qtablewidgetitem5 = self.tableWidget_shots.verticalHeaderItem(0)
         ___qtablewidgetitem5.setText(QCoreApplication.translate("widget_selection", u"001", None));
         ___qtablewidgetitem6 = self.tableWidget_shots.verticalHeaderItem(1)

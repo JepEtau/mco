@@ -189,7 +189,8 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
     end = start + shot['count']
 
     # Get the filter id
-    try: filter_id = get_filter_id(db, shot, shot['tasks'][-1])
+    try:
+        filter_id = get_filter_id(db, shot, shot['tasks'][-1])
     except:
         print("warning: filter for shot (start: %d) is not found for last task [%s]" % (shot['start'], shot['tasks'][-1]))
         filter_id = 999

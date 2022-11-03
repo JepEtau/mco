@@ -27,7 +27,6 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QApplication,
-    QMainWindow,
     QMenu
 )
 
@@ -37,7 +36,7 @@ from common.window_common import Window_common
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
 from merge_stabilize.model_merge_stabilize import process_single_frame
 from merge_stabilize.widget_selection import Widget_selection
-from merge_stabilize.widget_controls import Widget_controls
+from common.widget_controls import Widget_controls
 from merge_stabilize.widget_stitching_curves import Widget_stitching_curves
 from merge_stabilize.widget_stitching import Widget_stitching
 from merge_stabilize.widget_stabilize import Widget_stabilize
@@ -50,104 +49,69 @@ COLOR_STITCHING_FGD_CROP_RECT = QColor(255, 50, 50)
 PEN_CROP_SIZE = 1
 
 
-class Window_main(Window_common, QMainWindow):
+class Window_main(Window_common):
     signal_generate_cache = Signal(list)
     signal_save_modifications = Signal(bool)
     signal_preview_options_changed = Signal(dict)
 
     def __init__(self, model:Model_merge_stabilize):
-        super(Window_main, self).__init__()
+        super(Window_main, self).__init__(self, model)
 
-        # Set model
-        self.model = model
-
-        # Reset variables
-        self.image = None
+        # Internal variables
         self.image_bgd = None
-
-        self.is_repainting = False
-        self.is_closing = False
-
-        self.show_side = 'top'
-        self.current_editor = ''
-
-        self.current_frame_index = -1
-        self.current_frame_no = 0
-        self.timer = QBasicTimer()
-        self.timer.stop()
-
-        self.do_display_rgb_image = False
-        self.do_display_replaced_image = False
-        self.do_display_resized_image = False
-        self.do_display_cropped_image = False
-        self.do_display_crop_rect = False
-        self.do_display_final = False
-
-
-        self.do_display_rect_for_stitching = False
-        self.do_display_crop_for_stitching = False
-        self.do_display_crop_rect_for_stitching = False
-
         self.is_cache_ready = False
-
-        self.setWindowIcon(QIcon("img/icon.png"))
-        self.patch_ui()
-
-        # Add painter
-        self.painter = QPainter()
 
         # Get preferences from model
         p = self.model.get_preferences()
 
-        self.set_initial_options(p)
-
-
-        # Tools are displayed in a separate window,
-        self.widget_selection = Widget_selection(self, self.model)
-        self.widget_selection.refresh_browsing_folder(self.model.get_available_episode_and_parts())
-        self.widget_selection.set_initial_options(p)
-
-        self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
-        self.widget_selection.show()
-
         # Controls
-        self.widget_controls = Widget_controls(self, self.model)
-        self.widget_controls.set_initial_options(p)
-        self.widget_controls.set_enabled(False)
-
-        self.widget_controls.signal_button_pushed[str].connect(self.event_control_button_pressed)
-        self.widget_controls.signal_slider_moved[int].connect(self.event_move_to_frame_no)
-        # self.widget_controls.signal_preview_options_changed.connect(self.event_preview_options_changed)
-        self.widget_controls.signal_upper_lower_preview_changed[str].connect(self.event_upper_lower_preview_changed)
-        self.widget_controls.show()
+        if 'controls' in self.widgets.keys():
+            self.widget_controls = Widget_controls(self, self.model)
+            self.widgets['controls'] = self.widget_controls
+            self.widget_controls.set_initial_options(p)
+            self.widget_controls.signal_button_pushed[str].connect(self.event_control_button_pressed)
+            self.widget_controls.signal_slider_moved[int].connect(self.event_move_to_frame_no)
+            self.widget_controls.signal_preview_options_changed.connect(self.event_preview_options_changed)
 
         # Stitching
-        self.widget_stitching = Widget_stitching(self, self.model)
-        self.widget_stitching.set_initial_options(p)
-        self.widget_stitching.show()
-        self.widget_stitching.signal_preview_options_changed.connect(self.event_preview_options_changed)
-        self.widget_stitching.signal_enabled_modified[bool].connect(self.event_st_enabled_changed)
+        if 'stitching' in self.widgets.keys():
+            self.widget_stitching = Widget_stitching(self, self.model)
+            self.widgets['stitching'] = self.widget_stitching
+            self.widget_stitching.set_initial_options(p)
+            self.widget_stitching.signal_preview_options_changed.connect(self.event_preview_options_changed)
+            self.widget_stitching.signal_enabled_modified[bool].connect(self.event_st_enabled_changed)
 
         # Stitching curves: histogram, curves edition and selection
-        self.widget_stitching_curves = Widget_stitching_curves(self, self.model)
-        self.widget_stitching_curves.set_initial_options(p)
-        self.widget_stitching_curves.show()
-        self.widget_stitching_curves.signal_channel_selected.connect(self.event_stitching_curves_channel_selected)
-        self.widget_stitching_curves.signal_preview_options_changed.connect(self.event_preview_options_changed)
-        self.widget_stitching_curves.widget_hist_curve.signal_curves_editing.connect(self.event_refresh_image)
+        if 'stitching_curves' in self.widgets.keys():
+            self.widget_stitching_curves = Widget_stitching_curves(self, self.model)
+            self.widgets['stitching_curves'] = self.widget_stitching_curves
+            self.widget_stitching_curves.set_initial_options(p)
+            self.widget_stitching_curves.signal_channel_selected.connect(self.event_stitching_curves_channel_selected)
+            self.widget_stitching_curves.signal_preview_options_changed.connect(self.event_preview_options_changed)
+            self.widget_stitching_curves.widget_hist_curves.signal_curves_editing.connect(self.event_refresh_image)
 
         # Stabilization
-        self.widget_stabilize = Widget_stabilize(self, self.model)
-        self.widget_stabilize.set_initial_options(p)
-        self.widget_stabilize.show()
-        self.widget_stabilize.signal_preview_options_changed.connect(self.event_preview_options_changed)
-        self.widget_stabilize.signal_enabled_modified[bool].connect(self.event_st_enabled_changed)
+        if 'stabilize' in self.widgets.keys():
+            self.widget_stabilize = Widget_stabilize(self, self.model)
+            self.widgets['stabilize'] = self.widget_stabilize
+            self.widget_stabilize.set_initial_options(p)
+            self.widget_stabilize.signal_preview_options_changed.connect(self.event_preview_options_changed)
+            self.widget_stabilize.signal_enabled_modified[bool].connect(self.event_st_enabled_changed)
 
         # Crop and resize
-        self.widget_geometry = Widget_geometry(self, self.model)
-        self.widget_geometry.set_initial_options(p)
-        self.widget_geometry.show()
-        self.widget_geometry.signal_preview_options_changed.connect(self.event_preview_options_changed)
+        if 'geometry' in self.widgets.keys():
+            self.widget_geometry = Widget_geometry(self, self.model)
+            self.widgets['geometry'] = self.widget_geometry
+            self.widget_geometry.set_initial_options(p)
+            self.widget_geometry.signal_preview_options_changed.connect(self.event_preview_options_changed)
+
+        # Selection
+        self.widget_selection = Widget_selection(self, self.model)
+        self.widgets['selection'] = self.widget_selection
+        self.widget_selection.refresh_browsing_folder(self.model.get_available_episode_and_parts())
+        self.widget_selection.signal_ep_or_part_selection_changed[dict].connect(self.event_selection_changed)
+        self.widget_selection.set_initial_options(p)
+        self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
 
         # Events
         self.model.signal_ready_to_play[dict].connect(self.event_ready_to_play)
@@ -155,31 +119,15 @@ class Window_main(Window_common, QMainWindow):
         self.model.signal_cache_is_ready.connect(self.event_cache_is_ready)
         self.model.signal_refresh_image.connect(self.event_refresh_image)
 
-        # Right click
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested[QPoint].connect(self.event_right_click)
+        # Show window/widgets and connect signals
+        for w in self.widgets.values():
+            w.signal_close.connect(self.event_editor_action)
+            w.show()
 
-        # Show window/widgets
-        self.setWindowFlags(Qt.Window)
-        self.setStyleSheet("background-color: rgb(50, 50, 50);")
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+        # Set initial values
+        self.set_initial_options(p)
+        self.event_show_fullscreen()
 
-
-    def event_activated(self):
-        self.widget_selection.activateWindow()
-        self.widget_controls.activateWindow()
-        self.widget_stitching.activateWindow()
-        self.widget_stitching_curves.activateWindow()
-        self.widget_stabilize.activateWindow()
-        self.widget_geometry.activateWindow()
-
-    def event_show_fullscreen(self):
-        self.widget_selection.showNormal()
-        self.widget_controls.showNormal()
-        self.widget_stitching.showNormal()
-        self.widget_stitching_curves.showNormal()
-        self.widget_stabilize.showNormal()
-        self.widget_geometry.showNormal()
 
 
     def event_refresh_image(self):
@@ -191,122 +139,7 @@ class Window_main(Window_common, QMainWindow):
         print("event_stitching_curves_channel_selected")
         self.repaint()
 
-    def event_editor_action(self, event):
-        print("event=%s" % (event))
-        if event == 'exit':
-            if self.model.model_database.is_db_modified():
-                log.info("Changes are not saved")
-                print("Changes are not saved")
-                return
-            self.event_close()
-        elif event == 'minimize':
-            self.widget_selection.showMinimized()
-            self.widget_controls.showMinimized()
-            self.showMinimized()
-        elif event == 'save':
-            self.widget_controls.signal_save_modifications.emit(True)
-        elif event == 'discard':
-            self.widget_controls.signal_save_modifications.emit(False)
-        elif event == 'repaint':
-            self.repaint()
 
-
-    def closeEvent(self, event):
-        print("close_event")
-        self.event_editor_action('exit')
-
-
-    def event_close(self):
-        print("%s:event_close" % (__name__))
-        if not self.is_closing:
-            self.is_closing = True
-            self.model.exit()
-            self.close_all_widgets()
-
-
-    def close_all_widgets(self):
-        print("close_all_widgets")
-        for widget in QApplication.topLevelWidgets():
-            widget.close()
-        self.close()
-
-
-    def set_initial_options(self, preferences:dict):
-        s = preferences['viewer']
-        if False:
-            self.setGeometry(s['geometry'][0],
-                s['geometry'][1],
-                s['geometry'][2],
-                s['geometry'][3])
-        else:
-            # For debug purpose
-            self.setGeometry(s['geometry'][0],
-                s['geometry'][1],
-                1600,
-                s['geometry'][3]-200)
-
-        self.do_display_rgb_image = preferences['controls']['preview_rgb']
-        self.do_display_replaced_image = preferences['controls']['preview_replace']
-        self.do_display_cropped_image = preferences['controls']['preview_crop']
-        self.do_display_crop_rect = preferences['controls']['show_crop_rect']
-        self.do_display_final = preferences['controls']['preview_final']
-
-
-
-    def get_preferences(self) -> dict:
-        # print("%s:get_preferences" % (__name__))
-        # get preferences from children, merge them and return it
-        new_preferences = {
-            'viewer': {
-                'screen': 0,
-                'geometry': self.geometry().getRect()
-            }
-        }
-        new_preferences.update(self.widget_selection.get_preferences())
-        new_preferences.update(self.widget_controls.get_preferences())
-        new_preferences.update(self.widget_stitching_curves.get_preferences())
-        new_preferences.update(self.widget_stabilize.get_preferences())
-        new_preferences.update(self.widget_stitching.get_preferences())
-        new_preferences.update(self.widget_geometry.get_preferences())
-        return new_preferences
-
-
-    def set_current_editor(self, current_editor):
-        self.current_editor = current_editor
-        print("editor: %s" % (current_editor))
-
-
-    def event_ready_to_play(self, playlist_properties):
-        # log.info("ready to play")
-        self.current_frame_index = 0
-        self.playing_frame_count = playlist_properties['count']
-        self.playing_frame_start_no = playlist_properties['start']
-        f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no,
-            original=not self.do_display_replaced_image)
-        self.display_frame(f)
-
-
-    def event_move_to_frame_no(self, frame_index):
-        # log.info("move to frame %d" % (frame_index))
-        self.current_frame_index = frame_index
-        f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no,
-            original=not self.do_display_replaced_image)
-        self.display_frame(f)
-
-
-    def event_reload_frame(self):
-        # log.info("refresh frame %d" % (self.current_frame_index + self.playing_frame_start_no))
-        f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no,
-            original=not self.do_display_replaced_image)
-        # self.widget_controls.refresh_frame_replace_no(f['replaced_by'])
-        self.display_frame(f)
-
-
-    # def event_shot_changed(self):
-    #     # Get current shot settings to update the UI
-    #     details = self.model.get_current_shot_parameters(['stitching', 'stabilize'])
-    #     if details is not None:
-    #         self.widget_stitching_curves.load_curves(details['stitching']['curves'])
 
 
 
@@ -335,26 +168,6 @@ class Window_main(Window_common, QMainWindow):
             self.timer_delay = int(1000/(FPS*speed))
             self.timer.start(self.timer_delay, self)
             self.now = time.time()
-
-    def event_control_button_pressed(self, action):
-        if action == 'play':
-            self.widget_selection.set_enabled(False)
-            log.info("start playing")
-            print("start playing")
-            if self.is_cache_ready:
-                self.event_cache_is_ready()
-            else:
-                self.signal_generate_cache.emit([self.model.get_preview_options(), self.current_frame_index])
-            return True
-
-        elif action == 'pause':
-            self.timer.stop()
-            self.widget_selection.set_enabled(True)
-
-        elif action == 'stop':
-            self.timer.stop()
-            self.widget_selection.set_enabled(True)
-            self.event_move_to_frame_no(0)
 
 
     def event_st_enabled_changed(self):
@@ -397,13 +210,6 @@ class Window_main(Window_common, QMainWindow):
         self.signal_preview_options_changed.emit(preview_options)
 
 
-
-
-    def event_upper_lower_preview_changed(self, side:str):
-        self.show_side = side
-        self.repaint()
-
-
     def event_crop_enabled(self, side:str):
         self.show_side = side
         if not self.timer.isActive() and self.current_frame_index!= -1:
@@ -414,75 +220,72 @@ class Window_main(Window_common, QMainWindow):
             # change view to see the lower part of the image when the screen size is < image size
 
 
-    def timerEvent(self, e=None):
-        now = time.time()
-        print("elapsed:", int(1000 * (now - self.now)))
-        self.now = now
-
-        self.current_frame_index += 1
-        if self.current_frame_index >= self.playing_frame_count:
-            self.timer.stop()
-            self.widget_controls.event_stop()
-        else:
-            self.widget_controls.set_playing_frame_properties(self.current_frame_index)
-            f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no,
-                original=not self.do_display_replaced_image)
-            # if f['cache'] is None:
-            #     print("regenerate cache")
-            self.display_frame(f)
-
-
-
-    def event_right_click(self, qpoint):
-        cursor_position = QCursor.pos()
-        pop_menu = QMenu(self)
-        pop_menu.setStyleSheet("background-color: rgb(128, 128, 128);")
-        action_exit = pop_menu.addAction('Exit')
-        action_exit.triggered.connect(self.event_close)
-        pop_menu.exec_(cursor_position)
-
-
 
     def wheelEvent(self, event):
         # print("window_main: wheel event, forward to widget_control")
         self.widget_controls.wheelEvent(event)
 
 
-    def keyReleaseEvent(self, event):
-        return self.widget_controls.keyReleaseEvent(event)
 
     def keyPressEvent(self, event):
         key = event.key()
-        modifier = event.modifiers()
+        modifiers = event.modifiers()
 
-        if modifier & Qt.ControlModifier:
-            if key == Qt.Key_S:
-                log.info("key event: save modifications")
-                self.signal_save_modifications.emit(True)
+
+        if modifiers & Qt.ControlModifier:
+            if key == Qt.Key_Tab:
+                self.select_next_editor()
+                event.accept()
+                return True
+        elif modifiers & Qt.AltModifier:
+            if key == Qt.Key_F4:
+                event.accept()
+                return True
+            elif key == Qt.Key_F9:
+                self.showMinimized()
                 event.accept()
                 return True
 
+        for e, w in self.widgets.items():
+            if self.current_editor == e:
+                is_accepted = w.event_key_pressed(event)
+                if is_accepted:
+                    event.accept()
+                    return True
 
-    def changeEvent(self, event: QEvent) -> None:
-        if event.type() == QEvent.ActivationChange:
-            if self.isActiveWindow():
-                self.event_activated()
-                event.accept()
-                return True
-        elif event.type() == QEvent.WindowStateChange:
-            if self.windowState() & Qt.WindowFullScreen:
-                # From minimized to normal
-                self.event_show_fullscreen()
+        event.accept()
+        return True
+
+
+    def keyReleaseEvent(self, event):
+        self.widget_controls.event_key_released(event)
+
+        # Forward to current widget
+
+        if self.widget_controls.event_key_released(event):
             event.accept()
             return True
-        return super().changeEvent(event)
+
+
+
+
 
 
 
     def display_frame(self, frame: dict):
-        if frame is None:
+        if frame is None or not os.path.exists(frame['filepath']):
             self.flush_image()
         else:
+            if self.image is not None:
+                del self.image
+                self.image = None
+
+
+            # Get preview options
+            options = self.model.get_preview_options()
+            if options is None:
+                sys.exit("preview options are not set!")
+
 
             # Foreground image
             if self.image is not None:
@@ -532,11 +335,12 @@ class Window_main(Window_common, QMainWindow):
                 # self.image_bgd['img_bgd'] = cv2.imread(frame['filepath_bgd'], cv2.IMREAD_COLOR)
                 self.image['cache'] = None
 
-
-            # Global variables
-            self.setMinimumWidth(1920)
+            # Update info in the other widgets
+            # for e, w in self.widgets.items():
+            #     w.refresh_values(frame)
 
             if frame['reload_parameters']:
+                # TODO: replace by values provided in frame
                 parameters = self.model.get_current_shot_parameters(['stitching', 'stabilize'])
                 if parameters is not None:
                     self.widget_stitching_curves.load_curves(parameters['stitching']['curves'])

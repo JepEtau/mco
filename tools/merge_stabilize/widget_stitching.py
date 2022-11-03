@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QWidget,
 )
-
+from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet
 
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
@@ -27,7 +27,7 @@ from merge_stabilize.ui.widget_stitching_ui import Ui_widget_stitching
 from parsers.parser_stitching import STITCHING_SHOT_PARAMETERS_DEFAULT
 
 
-class Widget_stitching(QWidget, Ui_widget_stitching):
+class Widget_stitching(Widget_common, Ui_widget_stitching):
     signal_calculation_requested = Signal(dict)
     signal_enabled_modified = Signal(bool)
     signal_previous_parameters = Signal(str)
@@ -36,28 +36,10 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
 
 
     def __init__(self, ui, model:Model_merge_stabilize):
-        super(Widget_stitching, self).__init__()
-
-        self.setupUi(self)
+        super(Widget_stitching, self).__init__(ui)
         self.model = model
         self.ui = ui
-
-        # Setup and patch ui
-        self.setAutoFillBackground(True)
-        self.setWindowFlags(Qt.Tool)
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
-        self.setWindowModality(Qt.NonModal)
-
-        # Header
-        self.pushButton_set_preview.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_set_preview.toggled[bool].connect(self.event_global_preview_changed)
-        self.pushButton_save_modifications.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_save_modifications.clicked.connect(self.event_save_modifications)
-        self.pushButton_discard_modifications.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_discard_modifications.clicked.connect(self.event_discard_modifications)
-        self.pushButton_close.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_close.clicked.connect(self.event_close)
-
+        self.setObjectName('stitching')
 
         # Stitching parameters
         self.radioButton_shot_homography.clicked.connect(self.event_select_default_homography)
@@ -125,18 +107,6 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         self.adjustSize()
 
 
-    def set_palette(self, palette):
-        self.setPalette(palette)
-
-
-    def get_preferences(self):
-        preferences = {
-            'stitching': {
-                'geometry': self.geometry().getRect(),
-            },
-        }
-        return preferences
-
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
         s = preferences['stitching']
@@ -144,12 +114,6 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
-
-
-    def event_close(self):
-        log.info("close button clicked")
-        # self.signal_action.emit('close')
-
 
 
 
@@ -383,7 +347,10 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         self.pushButton_undo.setEnabled(True)
         self.pushButton_calculate.setEnabled(True)
         self.pushButton_crop_edition.setEnabled(False)
-        self.pushButton_discard_modifications.setEnabled(False)
+
+        self.pushButton_save.setEnabled(False)
+        self.pushButton_discard.setEnabled(False)
+        self.signal_discard.emit()
 
 
 
@@ -396,7 +363,7 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
 
         self.set_crop_edition_enabled(False)
         self.pushButton_undo.setEnabled(True)
-        self.pushButton_discard_modifications.setEnabled(True)
+        self.pushButton_discard.setEnabled(True)
 
 
 
@@ -410,7 +377,7 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         else:
             # Changed to "no stitching"
             self.pushButton_calculate.setEnabled(False)
-            self.pushButton_save_modifications.setEnabled(True)
+            self.pushButton_save.setEnabled(True)
 
             for w in [self.pushButton_set_preview,
                         self.pushButton_roi_edition,
@@ -422,7 +389,7 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
             self.pushButton_set_preview.setEnabled(False)
             self.set_crop_edition_enabled(False)
 
-        self.pushButton_discard_modifications.setEnabled(True)
+        self.pushButton_discard.setEnabled(True)
         self.signal_enabled_modified.emit(is_enabled)
         self.signal_preview_options_changed.emit()
 
@@ -471,12 +438,6 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         self.event_preview_changed()
 
 
-
-    def event_preview_changed(self):
-        self.signal_preview_options_changed.emit()
-
-
-
     def event_roi_edition_changed(self, state):
         self.pushButton_crop_edition.blockSignals(True)
         if state:
@@ -518,25 +479,13 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         self.pushButton_undo.setEnabled(False)
 
 
-    def event_discard_modifications(self):
-        log.info("discard modifications")
-        # self.set_parameters(parameters, do_backup=False)
-        self.pushButton_undo.setEnabled(True)
-        self.pushButton_calculate.setEnabled(True)
-        self.pushButton_discard_modifications.setEnabled(False)
-
-
-    def event_save_modifications(self):
-        if self.is_save_action_allowed:
-            self.signal_save.emit()
-
 
     def event_calculate(self):
         log.info("event_calculate")
         parameters = self.get_parameters()
         # self.backup_loaded_parameters(parameters)
         self.pushButton_calculate.setEnabled(False)
-        self.pushButton_save_modifications.setEnabled(False)
+        self.pushButton_save.setEnabled(False)
         self.setEnabled(False)
         self.signal_calculation_requested.emit(parameters)
 
@@ -546,24 +495,11 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         self.setEnabled(True)
         self.pushButton_set_preview.setEnabled(True)
         self.pushButton_crop_edition.setEnabled(True)
-        self.pushButton_save_modifications.setEnabled(True)
+        self.pushButton_save.setEnabled(True)
         self.is_save_action_allowed = True
 
 
-
-    def mousePressEvent(self, event):
-        self.previous_position = QCursor().pos()
-
-
-    def mouseMoveEvent(self, event):
-        if self.previous_position is not None:
-            cursor_position = QCursor().pos()
-            delta = cursor_position - self.previous_position
-            self.move(self.pos() + delta)
-            self.previous_position = cursor_position
-
-
-    def keyPressEvent(self, event):
+    def event_key_pressed(self, event):
         key = event.key()
         modifiers = event.modifiers()
         # print("%s.keyPressEvent: %d" % (__name__, event.key))
@@ -571,43 +507,49 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_S:
                 self.event_save_modifications()
-                event.accept()
                 return True
 
         elif key == Qt.Key_F5:
             self.signal_calculation_requested.emit(self.get_parameters())
-
+            return True
 
 
         # Homography
         elif key == Qt.Key_D:
             self.radioButton_shot_homography.click()
+            return True
         elif key == Qt.Key_E:
             self.checkBox_edit_default_homography.click()
+            return True
         elif key == Qt.Key_C:
             self.radioButton_frame_homography.click()
+            return True
 
         # (1) Extract keypoints: detection method
         elif key == Qt.Key_S:
             self.radioButton_sift.click()
+            return True
         elif key == Qt.Key_U:
             self.radioButton_surf.click()
+            return True
         elif key == Qt.Key_B:
             self.radioButton_brisk.click()
+            return True
         elif key == Qt.Key_O:
             self.radioButton_orb.click()
+            return True
         # (2) Match descriptors
         elif key == Qt.Key_M:
             if self.radioButton_bf.isChecked():
                 self.radioButton_knn.click()
             else:
                 self.radioButton_bf.click()
+            return True
         # (3) Find Homography (RANSAC)
         elif key == Qt.Key_R:
             self.event_select_doubleSpinBox_ransac_reproj_threshold()
-
-
-        return self.ui.keyPressEvent(event)
+            return True
+        return False
 
 
 
@@ -631,14 +573,4 @@ class Widget_stitching(QWidget, Ui_widget_stitching):
                     return False
 
         return super().eventFilter(watched, event)
-
-
-
-    def changeEvent(self, event: QEvent) -> None:
-        if event.type() == QEvent.ActivationChange:
-            if self.isActiveWindow():
-                self.ui.set_current_editor('stitching')
-                event.accept()
-                return True
-        return super().changeEvent(event)
 

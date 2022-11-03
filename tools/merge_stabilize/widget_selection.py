@@ -24,7 +24,10 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
 )
 
-from common.sylesheet import set_stylesheet
+from common.sylesheet import (
+    set_stylesheet,
+    update_selected_widget_stylesheet,
+)
 
 from utils.common import K_GENERIQUES, K_PARTS, K_ALL_PARTS
 from merge_stabilize.ui.widget_selection_ui import Ui_widget_selection
@@ -33,11 +36,10 @@ from merge_stabilize.ui.widget_selection_ui import Ui_widget_selection
 class Widget_selection(QWidget, Ui_widget_selection):
     signal_ep_or_part_selection_changed = Signal(dict)
     signal_selected_shots_changed = Signal(dict)
-
+    signal_close = Signal()
 
     def __init__(self, ui, model):
         super(Widget_selection, self).__init__()
-
         self.setupUi(self)
         self.model = model
         self.ui = ui
@@ -47,8 +49,9 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.setWindowFlags(Qt.Tool)
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
         self.setWindowModality(Qt.NonModal)
+        self.setAttribute(Qt.WA_DeleteOnClose)
 
-        # Variables
+        # Internal variables
         self.episodes_and_parts = dict()
         self.comboBox_episode.clear()
         self.comboBox_part.clear()
@@ -56,8 +59,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.is_modified = False
 
         # Initialize widgets
-        self.lineEdit_crop_coordinates.setFocusPolicy(Qt.NoFocus)
-
         step_labels = self.model.get_step_labels()
         self.comboBox_step.clear()
         for s in step_labels:
@@ -94,14 +95,13 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.model.signal_is_modified[dict].connect(self.refresh_modification_status)
 
         self.set_enabled(False)
-
         set_stylesheet(self)
+        self.set_selected(False)
         self.adjustSize()
 
 
-
-    def set_palette(self, palette):
-        self.setPalette(palette)
+    def closeEvent(self, event):
+        self.signal_close.emit()
 
 
     def get_preferences(self):
@@ -110,14 +110,13 @@ class Widget_selection(QWidget, Ui_widget_selection):
         and self.comboBox_episode.currentText() != ''):
             k_ep = int(self.comboBox_episode.currentText())
         preferences = {
-            'selection': {
-                'geometry': self.geometry().getRect(),
-                'episode': k_ep,
-                'part': self.comboBox_part.currentText(),
-                'step': self.comboBox_step.currentText(),
-            },
+            'geometry': self.geometry().getRect(),
+            'episode': k_ep,
+            'part': self.comboBox_part.currentText(),
+            'step': self.comboBox_step.currentText(),
         }
         return preferences
+
 
 
     def set_initial_options(self, preferences:dict):
@@ -169,6 +168,10 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
+
+
+    def set_selected(self, is_selected):
+        update_selected_widget_stylesheet(self.frame, is_selected=is_selected)
 
 
     def refresh_modification_status(self, modifications:dict):
@@ -328,12 +331,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
         # print("end refresh")
 
 
-    def set_crop_coordinates(self, coordinates:list):
-        if coordinates is not None:
-            self.lineEdit_crop_coordinates.setText("(%s)" % (', '.join(map(lambda x: "%s" % (x), coordinates))))
-        else:
-            self.lineEdit_crop_coordinates.clear()
-
 
     def event_episode_changed(self, index=0):
         log.info("select ep: %s, part: %s" % (self.comboBox_episode.currentText(), self.comboBox_part.currentText()))
@@ -420,7 +417,40 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_part.setEnabled(enabled)
         self.comboBox_step.setEnabled(enabled)
         # self.tableWidget_shots.setEnabled(enabled)
-        self.clearFocus()
+
+
+    def refresh_values(self, frame:dict):
+        pass
+
+    def get_preview_options(self):
+        return None
+
+
+    def select_next_shot(self):
+        if len(self.tableWidget_shots.selectionModel().selectedRows()) > 1:
+            return
+        try:
+            row_no = self.tableWidget_shots.currentRow() + 1
+            if row_no >= self.tableWidget_shots.rowCount():
+                row_no = 0
+            self.tableWidget_shots.clearSelection()
+            self.tableWidget_shots.selectRow(row_no)
+        except:
+            pass
+
+    def select_previous_shot(self):
+        if len(self.tableWidget_shots.selectionModel().selectedRows()) > 1:
+            return
+        try:
+            row_no = self.tableWidget_shots.currentRow()
+            if row_no == 0:
+                row_no = self.tableWidget_shots.rowCount() - 1
+            else:
+                row_no -= 1
+            self.tableWidget_shots.clearSelection()
+            self.tableWidget_shots.selectRow(row_no)
+        except:
+            pass
 
 
     def mousePressEvent(self, event):
@@ -436,48 +466,67 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
     def keyPressEvent(self, event):
-        key = event.key()
-        modifier = event.modifiers()
-
-        if modifier & Qt.AltModifier and key == Qt.Key_F4:
+        # print("event_key_pressed")
+        if self.event_key_pressed(event):
             event.accept()
             return True
-
-        elif key == Qt.Key_Space:
-            log.info("widget_selection")
-            self.ui.setFocus()
-            return self.ui.keyPressEvent(event)
-            # return super().keyPressEvent(event)
-
-        self.ui.setFocus()
-        # return self.ui.keyPressEvent(event)
-        # return super().keyPressEvent(event)
         return self.ui.keyPressEvent(event)
+
+
+    def event_key_pressed(self, event):
+        key = event.key()
+        modifiers = event.modifiers()
+        if modifiers & Qt.ControlModifier and key == Qt.Key_A:
+            self.tableWidget_shots.selectAll()
+            event.accept()
+            return True
+        return False
 
 
 
     def keyReleaseEvent(self, event):
-        self.ui.setFocus()
+        # print("event_key_released")
+        if self.event_key_released(event):
+            event.accept()
+            return True
         return self.ui.keyReleaseEvent(event)
 
+
+    def event_key_released(self, event):
+        return False
+
+
+
+
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        # Filter press/release events
+        # return super().eventFilter(watched, event)
+        # # Filter press/release events
         if event.type() == QEvent.KeyPress:
-            self.ui.setFocus()
-            key = event.key()
-            modifier = event.modifiers()
-            if modifier & Qt.ControlModifier and key == Qt.Key_A:
-                self.tableWidget_shots.selectAll()
-                event.accept()
-                return True
+            event.accept()
+            return self.ui.keyPressEvent(event)
+        elif event.type() == QEvent.KeyRelease:
+            event.accept()
+            return self.ui.keyReleaseEvent(event)
 
-            super().keyPressEvent(event)
-            return True
-
-        if event.type() == QEvent.KeyPress:
-            self.ui.setFocus()
-            self.ui.keyReleaseEvent(event)
+        if event.type() == QEvent.Wheel:
+            if event.angleDelta().y() > 0:
+                self.select_previous_shot()
+            else:
+                self.select_next_shot()
+            event.accept()
             return True
 
         return super().eventFilter(watched, event)
+        # return True
 
+
+
+
+    def changeEvent(self, event: QEvent) -> None:
+        if event.type() == QEvent.ActivationChange:
+            if self.isActiveWindow():
+                self.ui.set_current_editor('selection')
+                event.accept()
+                return True
+        return False
+        # super().changeEvent(event)

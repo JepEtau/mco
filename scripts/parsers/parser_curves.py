@@ -9,9 +9,6 @@ from pathlib import Path
 from pathlib import PosixPath
 from pprint import pprint
 import re
-import sys
-from parsers.parser_editions import get_available_editions
-from parsers.parser_generiques import parse_get_dependencies_for_generique
 
 from utils.common import (
     get_k_part_from_frame_no,
@@ -19,7 +16,6 @@ from utils.common import (
     nested_dict_set,
 )
 from images.curve import Curve
-from utils.common import K_GENERIQUES
 
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages
@@ -127,48 +123,6 @@ def write_curves_file(filepath, channels):
         curve_file.write(valueStr + '\n')
     curve_file.close()
 
-
-
-
-def get_curves_names(db, k_ep, k_part) -> dict:
-    """ Returns a list of crops per shot for each edition
-    TODO: remove this after havin reworked the curves editor
-    """
-    curves_names = dict()
-
-    if k_part in K_GENERIQUES:
-        dependencies = parse_get_dependencies_for_generique(db, k_part_g=k_part)
-    else:
-        k_eds = get_available_editions(db)
-        dependencies = dict()
-        for k_ed_tmp in k_eds:
-            dependencies[k_ed_tmp] = [k_ep]
-
-    for k_ed_tmp, k_eps in dependencies.items():
-        for k_ep_tmp in k_eps:
-            # print("\t%s:%s:%s" % (k_ed_tmp, k_ep_tmp, k_part))
-            db_video = db[k_ep_tmp][k_ed_tmp][k_part]['video']
-            for shot in db_video['shots']:
-                # print("\t--------------")
-                # print("\t%s:%s:%s" % (k_ed_tmp, k_ep_tmp, shot['no']))
-                # pprint(shot)
-
-                shot_no = shot['no']
-                if shot_no not in curves_names.keys():
-                    curves_names[shot_no] = dict()
-                if k_ed_tmp not in curves_names[shot_no].keys():
-                    curves_names[shot_no][k_ed_tmp] = dict()
-
-                # print("%s:%s:%s ->" % (k_ed, k_ep_tmp, shot['no']), shot['curves'])
-                if shot['curves'] is not None:
-                    curves_names[shot_no][k_ed_tmp][k_ep_tmp] = shot['curves']['k_curves']
-                else:
-                    curves_names[shot_no][k_ed_tmp][k_ep_tmp] = ''
-
-    # print("%s.get_curves_names: %s:%s" % (__name__, k_ep_tmp, k_part))
-    # pprint(curves_names)
-    # sys.exit()
-    return curves_names
 
 
 

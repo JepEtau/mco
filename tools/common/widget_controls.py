@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
 from common.sylesheet import set_stylesheet, set_widget_stylesheet
 
 from video_editor.model_video_editor import Model_video_editor
-from video_editor.ui.widget_controls_ui import Ui_widget_controls
+from common.ui.widget_controls_ui import Ui_widget_controls
 
 
 class Widget_controls(QWidget, Ui_widget_controls):
@@ -89,7 +89,6 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.slider_frames.valueChanged.connect(self.event_slider_moved)
 
         self.model.signal_ready_to_play[dict].connect(self.event_refresh_slider)
-        self.model.signal_shotlist_modified[dict].connect(self.event_directory_changed)
 
         self.set_selected(False)
         set_stylesheet(self)
@@ -134,10 +133,8 @@ class Widget_controls(QWidget, Ui_widget_controls):
     def get_preview_options(self):
         return None
 
-    def event_directory_changed(self, values:dict):
-        log.info("directory has been parsed, reset variables")
-        self.copied_frame_no = -1
-
+    def set_widget_enabled(self, enabled):
+        self.setEnabled(enabled)
 
     def set_enabled(self, enabled):
         self.pushButton_previous_frame.setEnabled(enabled)

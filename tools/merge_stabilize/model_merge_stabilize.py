@@ -1,11 +1,10 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
+sys.path.append('../scripts')
 
 from functools import partial
 import time
-from PySide6.QtCore import Signal
-from PySide6.QtCore import QObject
-from PySide6.QtWidgets import QApplication
+
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
@@ -17,17 +16,27 @@ import os
 import gc
 import numpy as np
 import os.path
-from pprint import pprint
-from logger import log
+
 from copy import deepcopy
-import sys
 from multiprocessing import *
 
-PATH_CACHE = "../cache"
-sys.path.append('../scripts')
 
-from merge_stabilize.preferences import Preferences
+from pprint import pprint
+from logger import log
+
+from PySide6.QtCore import (
+    Signal,
+)
+from PySide6.QtWidgets import QApplication
+
+
+PATH_CACHE = "../cache"
+
+
+from common.preferences import Preferences
 from models.model_database import Model_database
+from models.model_common import Model_common
+
 from parsers.parser_stitching import STICTHING_FGD_PAD, STITCHING_SHOT_PARAMETERS_DEFAULT, save_shot_stitching_curves, write_stitching_curves_to_database
 from images.filtering import stabilize_image
 
@@ -49,8 +58,7 @@ SHOT_MAX = 25
 PAD_stabilize_REF = [80, 40, 20, 20]
 
 
-class Model_merge_stabilize(QObject):
-    signal_shotlist_modified = Signal(dict)
+class Model_merge_stabilize(Model_common):
     signal_ready_to_play = Signal(dict)
     signal_reload_frame = Signal()
     signal_is_modified = Signal(dict)
@@ -68,37 +76,39 @@ class Model_merge_stabilize(QObject):
 
     signal_is_saved = Signal(list)
 
+    WIDGET_LIST = [
+        'controls',
+        'stitching_curves',
+        'stitching',
+        'stabilize',
+        'geometry',
+        'selection'
+    ]
+
+    SELECTABLE_WIDGET_LIST = [
+        'stitching_curves',
+        'stitching',
+        'stabilize',
+        'geometry'
+    ]
 
     def __init__(self):
         super(Model_merge_stabilize, self).__init__()
         self.view = None
 
         # Load saved preferences
-        self.preferences = Preferences()
+        self.preferences = Preferences(
+            tool='merge_stabilize',
+            widget_list=self.WIDGET_LIST)
 
         # Variables
-        self.step_labels = [k for k, v in sorted(FILTER_BASE_NO.items(), key=lambda item: item[1])]
         self.model_database = Model_database()
-        self.frames = dict()
+
         self.filepath_fgd = list()
         self.filepath_bgd = list()
-        self.shots = dict()
-        self.playlist_properties = dict()
-        self.playlist_frames = list()
-        self.current_selection = dict()
-        self.current_frame = None
 
-        self.preview_steps = list()
-
-
-    def exit(self):
-        # print("%s:exit" % (__name__))
-        p = self.view.get_preferences()
-        self.preferences.save(p)
-        try:
-            log.handlers[0].close()
-        except:
-            pass
+        for step in ['deinterlace', 'pre_upscale', 'upscale', 'stitching', 'sharpen', 'rgb', 'geometry']:
+            self.step_labels.remove(step)
 
 
     def set_view(self, view):
@@ -106,18 +116,14 @@ class Model_merge_stabilize(QObject):
 
         self.view.widget_selection.signal_ep_or_part_selection_changed[dict].connect(self.ep_or_part_selection_changed)
         self.view.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
-        self.view.widget_controls.signal_frame_replaced[dict].connect(self.event_frame_replaced)
-        self.view.widget_controls.signal_crop_modified[dict].connect(self.event_geometry_modified)
-        # self.view.signal_save_modifications.signal_save.connect(partial(self.event_save_modifications, 'all'))
 
         self.view.signal_generate_cache[list].connect(self.event_prepare_frames_for_preview)
 
         self.view.widget_stitching.signal_calculation_requested[dict].connect(self.event_stitching_do_calculate)
 
-
         self.view.widget_stitching_curves.signal_curves_modified[dict].connect(self.event_stitching_curves_modified)
         self.view.widget_stitching_curves.signal_save_curves_as[dict].connect(self.event_save_stitching_curves_as)
-        self.view.widget_stitching_curves.signal_discard_curves_modifications[str].connect(self.event_discard_stitching_curves_modifications)
+        self.view.widget_stitching_curves.signal_discard.connect(self.event_discard_stitching_curves_modifications)
 
         self.view.widget_stitching_curves.signal_remove_selection.connect(self.event_remove_stitching_curves_selection)
         self.view.widget_stitching_curves.signal_selection_changed[str].connect(self.event_stitching_curves_selected)
@@ -132,6 +138,9 @@ class Model_merge_stabilize(QObject):
         # self.view.widget_stabilize.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
         # self.view.widget_stitching_curves.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
+
+        # Force refresh of previe options
+        self.view.event_preview_options_changed()
 
         p = self.preferences.get_preferences()
         k_ep = 'ep%02d' % (p['selection']['episode']) if p['selection']['episode'] != '' else ''
@@ -149,43 +158,6 @@ class Model_merge_stabilize(QObject):
         # self.view.widget_merge_stabilize.signal_mark_shot_as_modified[str].connect(self.event_mark_shot_as_modified)
         # self.view.widget_merge_stabilize.signal_save_database[dict].connect(self.event_save_database)
 
-
-    def get_preferences(self):
-        p = self.preferences.get_preferences()
-        return p
-
-
-
-    def save_preferences(self, preferences:dict):
-        preferences = self.ui.get_preferences()
-        self.preferences.save(preferences)
-
-
-
-    def get_available_episode_and_parts(self):
-        episode_and_parts = dict()
-        if os.path.exists(PATH_CACHE):
-            # Rather than walking through, try every possibilities
-            # another option would be to select a folder, then the combobox
-            # will be disabled
-
-            for ep_no in range(1, 39):
-                k_ep = 'ep%02d' % (ep_no)
-                if os.path.exists(os.path.join(PATH_CACHE, k_ep)):
-                    episode_and_parts[k_ep] = list()
-
-                    for k_part in K_NON_GENERIQUE_PARTS:
-                        if os.path.exists(os.path.join(PATH_CACHE, k_ep, k_part)):
-                            episode_and_parts[k_ep].append(k_part)
-
-            episode_and_parts[' '] = list()
-            for k_part_g in K_GENERIQUES:
-                if os.path.exists(os.path.join(PATH_CACHE, k_part_g)):
-                    episode_and_parts[' '].append(k_part_g)
-
-        # pprint(episode_and_parts)
-        # sys.exit()
-        return episode_and_parts
 
 
 
@@ -211,8 +183,10 @@ class Model_merge_stabilize(QObject):
         self.model_database.consolidate_database(
             k_ep=k_ep,
             k_part=k_part,
-            do_parse_replace=True,
-            do_parse_geometry=True)
+            do_parse_curves=False,
+            do_parse_replace=False,
+            do_parse_geometry=True,
+            do_parse_stitching=True)
 
         # self.shots is a pointer to the shots for this episode/part
         db = self.model_database.database()
@@ -344,7 +318,10 @@ class Model_merge_stabilize(QObject):
 
                 else:
                     self.filepath_bgd = deepcopy(filepath_tmp)
-                    del shot_src['stitching']
+                    try:
+                        del shot_src['stitching']
+                    except:
+                        print("no stitching structure in shot_src no. %d" % (shot['no']))
 
 
             # print("---------------------")
@@ -443,14 +420,6 @@ class Model_merge_stabilize(QObject):
         print("shots: %0.1fkB" % (get_database_size(self.shots)/1000.0))
         print("current_selection: %0.1fkB" % (get_database_size(self.current_selection)/1000.0))
 
-        # sys.exit()
-        # shots = self.framelist.shot_list()
-        # self.model_curves.set_shotlist(shots)
-
-        # # print("%s:directory_changed: %s:%s" % (__name__, k_ep, k_part))
-        # pprint(new_widget_values)
-        # # print("-")
-        # self.signal_refresh_curves_list.emit(self.model_curves.names())
 
         if k_part not in K_GENERIQUES:
             self.signal_stitching_curves_list_modified.emit(self.model_database.get_stitching_curves_names())
@@ -535,36 +504,43 @@ class Model_merge_stabilize(QObject):
 
 
 
-    def event_control_button_pressed(self, action):
-        print("%s:event_control_button_pressed action=%s" % (__name__, action))
+    def event_save_and_close_requested(self):
+        k_ep = self.current_selection['k_ep']
+        k_part = self.current_selection['k_part']
+
+        # TODO: save all parameters from widgets
+
+        self.signal_close.emit()
 
 
 
-    def get_step_labels(self):
-        return self.step_labels
-
-
-
-    def get_frame(self, frame_no, original:bool=False):
-        """ returns the replace frame unless there is no replacemed frame or
-        the initial flag is set to True
-        framelist contains all path for each frame of this playlist
-        """
+    def get_frame(self, frame_no):
         # print("%s.get_frame: get_frame no. %d" % (__name__, frame_no))
-        if original:
+        shot_no = self.get_shot_no_from_frame_no(frame_no)
+        new_frame_no = self.model_database.get_replace_frame_no(shot_no, frame_no)
+        if new_frame_no == -1:
             frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
-            # print("\tinitial")
-        else:
-            shot_no = self.get_shot_no_from_frame_no(frame_no)
-            new_frame_no = self.model_database.get_replace_frame_no(shot_no, frame_no)
-            if new_frame_no == -1:
-                frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
-                # print("\tnew_frame_no=-1")
-                # print("\t%s" % (frame['filepath']))
+            # print("\tnew_frame_no=-1")
+            # print("\t%s" % (frame['filepath']))
 
-            else:
-                index = new_frame_no - self.playlist_properties['start']
-                frame = self.playlist_frames[index]
+        else:
+            index = new_frame_no - self.playlist_properties['start']
+            frame = self.playlist_frames[index]
+
+
+        # Shot has changed: update UI with parameters for this shot (curves, crop, resize)
+        if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
+            frame['reload_parameters'] = True
+        else:
+            frame['reload_parameters'] = False
+
+
+        # Purge image from the previous frame
+        # self.purge_current_frame_cache()
+
+        # Set current frame
+        self.current_frame = frame
+
 
         # print("\t%s" % (frame['filepath']))
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
@@ -573,25 +549,28 @@ class Model_merge_stabilize(QObject):
         else:
             frame['reload_parameters'] = False
 
+
+        # Set current frame
         self.current_frame = frame
+
+        # Update geometry
+        k_ed = self.current_selection['reference']['k_ed']
+        k_part = self.current_selection['k_part']
+
+        # TODO: update this for merge and stabilize
+        # frame['geometry'] = self.model_database.get_part_geometry(k_ed=k_ed, k_part=k_part)
+
+        # Generate the image for this frame
+        options = self.preview_options
+        if options is not None:
+            index, img = generate_single_image(self.current_frame, preview_options=options)
+            self.set_current_frame_cache(img=img)
+        # else:
+            # Cannot generate the image because no preview option is defined
+            # The preview options will be updated by the window UI
+
         return self.current_frame
 
-
-    def get_current_frame(self):
-        return self.current_frame
-
-    def set_current_frame_cache(self, img):
-        self.current_frame['cache'] = img
-
-
-    def get_shot_no_from_frame_no(self, frame_no):
-        index = frame_no - self.playlist_properties['start']
-        return self.playlist_frames[index]['shot_no']
-
-
-    def get_shot(self, shot_no):
-        print("%s.get_shot: shot no. %d:" % (__name__, shot_no))
-        return self.shots[shot_no]
 
 
 
@@ -685,56 +664,15 @@ class Model_merge_stabilize(QObject):
         self.signal_reload_frame.emit()
 
 
-
-    def event_frame_replaced(self, replace:dict):
-        action = replace['type']
-        frame_no = replace['dst']
-        index = frame_no - self.playlist_properties['start']
-        shot_no = self.get_shot_no_from_frame_no(frame_no)
-
-        if action == 'replace':
-            self.model_database.set_replace_frame_no(shot_no, frame_no, replace['src'])
-            self.frames[shot_no][index]['replaced_by'] = replace['src']
-        elif action == 'undo':
-            self.model_database.set_replace_frame_no(shot_no, frame_no, -1)
-            self.frames[shot_no][index]['replaced_by'] = -1
-        elif action == 'remove':
-            self.model_database.set_replace_frame_no(shot_no, frame_no, -1)
-            self.frames[shot_no][index]['replaced_by'] = -1
-
-        self.signal_is_modified.emit({'status': True, 'shot_no': None})
-        self.signal_reload_frame.emit()
+    def event_geometry_discard_requested(self):
+        log.info("TODO")
+        print("TODO")
 
 
+    def event_save_geometry_requested(self):
+        log.info("TODO")
+        print("TODO")
 
-    def get_replace_frame_no_str(self, index) -> str:
-        # print("get_replace_frame_no_str: %d" % (index))
-        frame_no = self.playlist_frames[index]['frame_no']
-        shot_no = self.playlist_frames[index]['shot_no']
-        new_frame_no = self.model_database.get_replace_frame_no(shot_no, frame_no)
-        # print("get_replace_frame_no: %d -> %d" % (frame_no, new_frame_no))
-        if new_frame_no != -1:
-            return str(new_frame_no)
-        return ''
-
-
-
-    def get_next_replaced_frame_index(self, index):
-        # print("find following replaced frame")
-        frame_no = self.playlist_properties['start'] + index
-        # print("\tsearch in %d -> %d" % (frame_no + 1, self.playlist_properties['start'] + self.playlist_properties['count']))
-        for f_no in range(frame_no + 1, self.playlist_properties['start'] + self.playlist_properties['count']):
-            shot_no = self.get_shot_no_from_frame_no(f_no)
-            if self.model_database.get_replace_frame_no(shot_no, f_no) != -1:
-                return f_no - self.playlist_properties['start']
-
-        # print("\tsearch in %d -> %d" % (self.playlist_properties['start'], frame_no-1))
-        for f_no in range(self.playlist_properties['start'], frame_no-1):
-            shot_no = self.get_shot_no_from_frame_no(f_no)
-            if self.model_database.get_replace_frame_no(shot_no, f_no) != -1:
-                return f_no - self.playlist_properties['start']
-
-        return -1
 
 
     def event_save_modifications(self, k_settings=''):
@@ -775,44 +713,8 @@ class Model_merge_stabilize(QObject):
 
 
 
-
-
-    def __event_save_modifications(self, do_save):
-        k_ep = self.current_selection['k_ep']
-        k_part = self.current_selection['k_part']
-
-        # pprint(self.shots)
-        # self.model_database.save_replace_database(k_ep=k_ep, k_part=k_part, shots=self.shots)
-        # sys.exit()
-        if do_save:
-            # Save modifications
-            log.info("save changes")
-
-            # self.model_database.save_stitching_database(k_ep=k_ep, k_part=k_part, shots=self.shots)
-
-            self.model_database.save_replace_database(k_ep=k_ep, k_part=k_part, shots=self.shots)
-            self.model_database.save_crop_database(k_ep=k_ep, k_part=k_part)
-
-            # Send a signal if the database has been saved
-            # pprint(self.current_selection)
-            self.signal_is_modified.emit({'status': False, 'shot_no': None})
-            # self.signal_shotlist_modified.emit(self.current_selection)
-
-
-        else:
-            # Discard modifications, reload file
-            log.info("discard changes")
-            self.model_database.consolidate_database(k_ep=k_ep, k_part=k_part,
-                do_parse_curves=False,
-                do_parse_replace=True,
-                do_parse_geometry=True)
-            self.signal_is_modified.emit({'status': False, 'shot_no': None})
-            self.signal_reload_frame.emit()
-
-
-
-
-    def event_preview_options_changed(self, preview_options_dict):
+    def __event_preview_options_changed(self, preview_options_dict):
+        # TODO: remove this
         print("\nchanged preview mode:" % (preview_options_dict))
         print("---------------------------------------")
         pprint(preview_options_dict)
@@ -920,77 +822,6 @@ class Model_merge_stabilize(QObject):
 
 
 
-    def get_preview_options(self):
-        return self.preview_steps
-
-
-
-
-
-    def event_prepare_frames_for_preview(self, preview_options_frame_index):
-        print("prepare cache:", preview_options_frame_index)
-        index = preview_options_frame_index[1]
-
-        do_compute_stabilize_values = False
-        if do_compute_stabilize_values:
-            self.calculate_stabilize_values(self.playlist_frames, index)
-            if True:
-                # Save for debug
-                k_ep = self.current_selection['k_ep']
-                k_part = self.current_selection['k_part']
-                print("save stabilization database %s:%s" % (k_ep, k_part))
-                self.model_database.save_stabilize_database(k_ep=k_ep, k_part=k_part, shots=self.shots)
-
-        # playlist = [self.playlist_frames[0]]
-        playlist = self.playlist_frames
-
-        do_compute_stitching_values = False
-        if do_compute_stitching_values:
-            # Calculate Stiching values for each frame
-            now = time.time()
-            with ThreadPoolExecutor(max_workers=4) as executor:
-                future_stitching_image = {
-                    executor.submit(calculate_stitching_values, frame): frame for frame in playlist
-                }
-                for future in concurrent.futures.as_completed(future_stitching_image):
-                    # frame_no, img = future_stitching_image[future]
-                    index, m = future.result()
-                    frame = self.playlist_frames[index]
-                    self.model_database.set_frame_stitching_transformation(
-                        shot_no=frame['shot_no'],
-                        frame_no=frame['frame_no'],
-                        transformation=m)
-                    frame['stitching']['m'] = self.model_database.get_frame_stitching_transformation(frame['shot_no'], frame['frame_no'])
-
-            self.model_database.set_shot_stitching_parameters(frame['shot_no'], {'is_enabled': True})
-            print("calculate_stitching_values: %.3f" % (time.time() - now))
-
-            # if True:
-            #     # Save for debug
-            #     k_ep = self.current_selection['k_ep']
-            #     k_part = self.current_selection['k_part']
-            #     self.model_database.save_stitching_database(k_ep=k_ep, k_part=k_part, shots=self.shots)
-
-
-        if False:
-            curves = self.view.widget_stitching_curves.get_curve_luts()
-            now = time.time()
-            with ThreadPoolExecutor(max_workers=8) as executor:
-                future_load_image = {executor.submit(process_single_frame, frame, self.get_preview_options(), curves): frame for frame in playlist}
-                for future in concurrent.futures.as_completed(future_load_image):
-                    # frame_no, img = future_load_image[future]
-                    index, img, hist = future.result()
-                    self.playlist_frames[index]['cache'] = img
-            print("process_single_frame: %.3f" % (time.time() - now))
-
-        print("send signal")
-        self.signal_cache_is_ready.emit()
-
-
-
-
-
-
     def event_save_shot_stitching_curves(self):
         print("todo: event_save_shot_stitching_curves")
 
@@ -1020,7 +851,7 @@ class Model_merge_stabilize(QObject):
         self.signal_refresh_image.emit()
 
 
-    def event_discard_stitching_curves_modifications(self, k_curves):
+    def event_discard_stitching_curves_modifications(self, k_curves=''):
         # Remove modifications of the selected curves
         log.info("discard modifications %s" % (k_curves))
 
@@ -1054,6 +885,16 @@ class Model_merge_stabilize(QObject):
         self.signal_stitching_curves_selected.emit(None)
         self.signal_refresh_image.emit()
 
+
+    def event_stitching_curves_modified(self, curves:dict):
+        log.info("modify stitching curves database")
+        self.model_database.modify_stitching_curves(curves=curves)
+        self.signal_refresh_image.emit()
+
+
+    def reset_to_initial_stitching_curves(self):
+        print("TODO: reset to initial stitching curves")
+        # 2 cases:
 
 
     def event_reset_stitching_curves_selection(self):
@@ -1109,16 +950,39 @@ class Model_merge_stabilize(QObject):
         self.signal_refresh_image.emit()
 
 
+    def event_stitching_do_calculate(self, parameters):
+        do_recalculate = False
 
-    def event_stitching_curves_modified(self, curves:dict):
-        log.info("modify stitching curves database")
-        self.model_database.modify_stitching_curves(curves=curves)
+        frame_no = self.current_frame['frame_no']
+        shot_no = self.get_shot_no_from_frame_no(frame_no=frame_no)
+
+        current_parameters = self.model_database.get_frame_stitching_parameters(shot_no=shot_no, frame_no=frame_no)
+        pprint(current_parameters)
+        pprint(parameters)
+        # current_parameters = self.model_database.get_shot_stitching_parameters(shot_no)
+
+        for k in STITCHING_SHOT_PARAMETERS_DEFAULT:
+            # Do not verify these parameters
+            if k in ['is_default', 'is_ready']:
+                continue
+            # set flag if at least one parameter differs
+            if parameters[k] != current_parameters[k]:
+                do_recalculate = True
+                break
+
+        if do_recalculate:
+            print("Recalculate")
+            parameters['is_processed'] = False
+            if current_parameters['is_shot'] and not parameters['is_shot']:
+                # Remove the customized parameters as it changed from 'frame' to 'shot
+                self.model_database.remove_frame_stitching_parameters(shot_no, frame_no)
+            self.model_database.set_frame_stitching_parameters(shot_no, frame_no, parameters)
+            # self.calculate_stitching_values(shot_no=shot_no)
+        else:
+            print("no need to recalculate")
+
+        self.signal_stitching_calculated.emit()
         self.signal_refresh_image.emit()
-
-
-    def reset_to_initial_stitching_curves(self):
-        print("TODO: reset to initial stitching curves")
-        # 2 cases:
 
 
 
@@ -1173,43 +1037,6 @@ class Model_merge_stabilize(QObject):
         self.signal_refresh_image.emit()
 
 
-
-    def event_stitching_do_calculate(self, parameters):
-        do_recalculate = False
-
-        frame_no = self.current_frame['frame_no']
-        shot_no = self.get_shot_no_from_frame_no(frame_no=frame_no)
-
-        current_parameters = self.model_database.get_frame_stitching_parameters(shot_no=shot_no, frame_no=frame_no)
-        pprint(current_parameters)
-        pprint(parameters)
-        # current_parameters = self.model_database.get_shot_stitching_parameters(shot_no)
-
-        for k in STITCHING_SHOT_PARAMETERS_DEFAULT:
-            # Do not verify these parameters
-            if k in ['is_default', 'is_ready']:
-                continue
-            # set flag if at least one parameter differs
-            if parameters[k] != current_parameters[k]:
-                do_recalculate = True
-                break
-
-        if do_recalculate:
-            print("Recalculate")
-            parameters['is_processed'] = False
-            if current_parameters['is_shot'] and not parameters['is_shot']:
-                # Remove the customized parameters as it changed from 'frame' to 'shot
-                self.model_database.remove_frame_stitching_parameters(shot_no, frame_no)
-            self.model_database.set_frame_stitching_parameters(shot_no, frame_no, parameters)
-            # self.calculate_stitching_values(shot_no=shot_no)
-        else:
-            print("no need to recalculate")
-
-        self.signal_stitching_calculated.emit()
-        self.signal_refresh_image.emit()
-
-
-
     def event_stabilize_do_calculate(self, parameters):
         do_recalculate = False
 
@@ -1236,8 +1063,6 @@ class Model_merge_stabilize(QObject):
 
         self.signal_stabilize_calculated.emit()
         self.signal_refresh_image.emit()
-
-
 
 
     def calculate_stabilize_values(self, shot_no):
@@ -1356,6 +1181,80 @@ class Model_merge_stabilize(QObject):
         for f_no in range(shot['start'], shot['start'] + shot['count']):
             f_index = f_no - shot['start']
             framelist[f_index]['stabilize']['dx_dy'] = self.model_database.get_frame_stabilize(shot_no, f_no)
+
+
+
+
+
+    def event_prepare_frames_for_preview(self, preview_options_frame_index):
+        print("prepare cache:", preview_options_frame_index)
+        index = preview_options_frame_index[1]
+
+        do_compute_stabilize_values = False
+        if do_compute_stabilize_values:
+            self.calculate_stabilize_values(self.playlist_frames, index)
+            if True:
+                # Save for debug
+                k_ep = self.current_selection['k_ep']
+                k_part = self.current_selection['k_part']
+                print("save stabilization database %s:%s" % (k_ep, k_part))
+                self.model_database.save_stabilize_database(k_ep=k_ep, k_part=k_part, shots=self.shots)
+
+        # playlist = [self.playlist_frames[0]]
+        playlist = self.playlist_frames
+
+        do_compute_stitching_values = False
+        if do_compute_stitching_values:
+            # Calculate Stiching values for each frame
+            now = time.time()
+            with ThreadPoolExecutor(max_workers=4) as executor:
+                future_stitching_image = {
+                    executor.submit(calculate_stitching_values, frame): frame for frame in playlist
+                }
+                for future in concurrent.futures.as_completed(future_stitching_image):
+                    # frame_no, img = future_stitching_image[future]
+                    index, m = future.result()
+                    frame = self.playlist_frames[index]
+                    self.model_database.set_frame_stitching_transformation(
+                        shot_no=frame['shot_no'],
+                        frame_no=frame['frame_no'],
+                        transformation=m)
+                    frame['stitching']['m'] = self.model_database.get_frame_stitching_transformation(frame['shot_no'], frame['frame_no'])
+
+            self.model_database.set_shot_stitching_parameters(frame['shot_no'], {'is_enabled': True})
+            print("calculate_stitching_values: %.3f" % (time.time() - now))
+
+            # if True:
+            #     # Save for debug
+            #     k_ep = self.current_selection['k_ep']
+            #     k_part = self.current_selection['k_part']
+            #     self.model_database.save_stitching_database(k_ep=k_ep, k_part=k_part, shots=self.shots)
+
+
+        if False:
+            curves = self.view.widget_stitching_curves.get_curve_luts()
+            now = time.time()
+            with ThreadPoolExecutor(max_workers=8) as executor:
+                future_load_image = {executor.submit(process_single_frame, frame, self.get_preview_options(), curves): frame for frame in playlist}
+                for future in concurrent.futures.as_completed(future_load_image):
+                    # frame_no, img = future_load_image[future]
+                    index, img, hist = future.result()
+                    self.playlist_frames[index]['cache'] = img
+            print("process_single_frame: %.3f" % (time.time() - now))
+
+        print("send signal")
+        self.signal_cache_is_ready.emit()
+
+
+
+def generate_single_image(frame:dict, preview_options:dict):
+    # Foreground image (shall be denoised)
+    image_fgd = frame['cache_fgd']
+    if image_fgd is None:
+        # return (frame['index'], cv2.imread(frame['filepath'], cv2.IMREAD_COLOR))
+        sys.exit("cache is not ready")
+
+    return image_fgd
 
 
 

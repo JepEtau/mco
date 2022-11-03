@@ -15,13 +15,14 @@ from PySide6.QtCore import (
 from PySide6.QtGui import QCursor
 from PySide6.QtWidgets import QWidget
 
+from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet
 
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
 from merge_stabilize.ui.widget_geometry_ui import Ui_widget_geometry
 
 
-class Widget_geometry(QWidget, Ui_widget_geometry):
+class Widget_geometry(Widget_common, Ui_widget_geometry):
     signal_calculation_requested = Signal(dict)
     signal_enabled_modified = Signal(bool)
     signal_previous_parameters = Signal(str)
@@ -30,27 +31,10 @@ class Widget_geometry(QWidget, Ui_widget_geometry):
 
 
     def __init__(self, ui, model:Model_merge_stabilize):
-        super(Widget_geometry, self).__init__()
-
-        self.setupUi(self)
+        super(Widget_geometry, self).__init__(ui)
         self.model = model
         self.ui = ui
-
-        # Setup and patch ui
-        self.setAutoFillBackground(True)
-        self.setWindowFlags(Qt.Tool)
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
-        self.setWindowModality(Qt.NonModal)
-
-        # Header
-        self.pushButton_set_preview.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_set_preview.toggled[bool].connect(self.event_preview_changed)
-        self.pushButton_save_modifications.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_save_modifications.clicked.connect(self.event_save_modifications)
-        self.pushButton_discard_modifications.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_discard_modifications.clicked.connect(self.event_discard_modifications)
-        self.pushButton_close.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_close.clicked.connect(self.event_close)
+        self.setObjectName('geometry')
 
         # Disable focus
         self.lineEdit_st_crop_rectangle.setFocusPolicy(Qt.NoFocus)
@@ -76,10 +60,6 @@ class Widget_geometry(QWidget, Ui_widget_geometry):
         self.pushButton_final_resize_preview.toggled[bool].connect(self.event_resize_edition_changed)
         self.checkBox_keep_ratio.toggled[bool].connect(self.event_keep_ratio_changed)
 
-        self.pushButton_close.setEnabled(False)
-        self.pushButton_save_modifications.setEnabled(False)
-        self.pushButton_discard_modifications.setEnabled(False)
-
 
         self.set_edition_mode('st')
         # self.model.signal_is_saved[list].connect(self.event_is_saved)
@@ -88,16 +68,6 @@ class Widget_geometry(QWidget, Ui_widget_geometry):
         self.adjustSize()
 
 
-    def set_palette(self, palette):
-        self.setPalette(palette)
-
-    def get_preferences(self):
-        preferences = {
-            'geometry': {
-                'geometry': self.geometry().getRect(),
-            },
-        }
-        return preferences
 
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
@@ -135,12 +105,12 @@ class Widget_geometry(QWidget, Ui_widget_geometry):
         # if self.spinBox_frame_start.value() >= self.spinBox_frame_end.value():
         #     log.info("start > end")
         #     self.pushButton_calculate.setEnabled(False)
-        #     self.pushButton_save_modifications.setEnabled(False)
+        #     self.pushButton_save.setEnabled(False)
         # else:
         #     self.pushButton_calculate.setEnabled(True)
         #     self.pushButton_set_preview.setEnabled(False)
         # self.pushButton_undo.setEnabled(True)
-        # self.pushButton_discard_modifications.setEnabled(True)
+        # self.pushButton_discard.setEnabled(True)
 
 
     def event_load_default(self):
@@ -287,7 +257,7 @@ class Widget_geometry(QWidget, Ui_widget_geometry):
         if k_type == 'geometry':
             log.info("parameters and values saved")
             self.is_save_action_allowed = False
-            self.pushButton_discard_modifications.setEnabled(False)
+            self.pushButton_discard.setEnabled(False)
 
 
     def event_discard_modifications(self):
@@ -296,10 +266,10 @@ class Widget_geometry(QWidget, Ui_widget_geometry):
         # self.set_parameters(parameters, do_backup=False)
         # self.pushButton_undo.setEnabled(True)
         # self.pushButton_calculate.setEnabled(True)
-        # self.pushButton_discard_modifications.setEnabled(False)
+        # self.pushButton_discard.setEnabled(False)
 
 
-    def event_save_modifications(self):
+    def event_save(self):
         if self.is_save_action_allowed:
             self.signal_save.emit()
 
@@ -308,42 +278,17 @@ class Widget_geometry(QWidget, Ui_widget_geometry):
         # self.signal_action.emit('close')
 
 
-    def wheelEvent(self, event):
-        # print("window_main: wheel event, forward to widget_control")
-        self.ui.wheelEvent(event)
 
-
-    def mousePressEvent(self, event):
-        self.previous_position = QCursor().pos()
-
-
-    def mouseMoveEvent(self, event):
-        if self.previous_position is not None:
-            cursor_position = QCursor().pos()
-            delta = cursor_position - self.previous_position
-            self.move(self.pos() + delta)
-            self.previous_position = cursor_position
-
-
-    def keyPressEvent(self, event):
+    def event_key_pressed(self, event):
         key = event.key()
         modifiers = event.modifiers()
         # print("%s.keyPressEvent: %d" % (__name__, event.key))
 
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_S:
-                self.event_save_modifications()
-                event.accept()
+                self.event_save()
                 return True
 
-        return self.ui.keyPressEvent(event)
+        return False
 
-
-    def changeEvent(self, event: QEvent) -> None:
-        if event.type() == QEvent.ActivationChange:
-            if self.isActiveWindow():
-                self.ui.set_current_editor('geometry')
-                event.accept()
-                return True
-        return super().changeEvent(event)
 

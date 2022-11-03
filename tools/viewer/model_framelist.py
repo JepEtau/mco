@@ -36,7 +36,8 @@ class Model_framelist(Model_framelist_common):
             do_parse_curves=False,
             do_parse_replace=False,
             do_parse_geometry=False,
-            do_parse_stitching=False)
+            do_parse_stitching=False,
+            apply_patch_for_study=True)
 
 
     def get_hide_struct(self):

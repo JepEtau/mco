@@ -73,6 +73,8 @@ class Widget_common(QWidget):
         # Install events for this widget
         self.installEventFilter(self)
 
+
+
     def closeEvent(self, event):
         self.signal_close.emit()
 
@@ -92,6 +94,7 @@ class Widget_common(QWidget):
     def set_selected(self, is_selected):
         update_selected_widget_stylesheet(self.frame, is_selected=is_selected)
 
+
     def was_active(self):
         # Call this only one time after activation
         current_widget = self.ui.get_current_widget()
@@ -99,12 +102,13 @@ class Widget_common(QWidget):
         self.previous_active_widget = current_widget
         return return_value
 
+    def set_widget_enabled(self, enabled):
+        self.blockSignals(True)
+        self.frame.setEnabled(enabled)
+        self.blockSignals(False)
 
-    # def get_preview_options(self):
-    #     preview_options = {
-    #         'is_enabled': self.pushButton_set_preview.isChecked(),
-    #     }
-    #     return preview_options
+    def get_preview_options(self):
+        raise("Error: override this function")
 
 
     def event_preview_changed(self, is_checked:bool=False):
@@ -157,15 +161,16 @@ class Widget_common(QWidget):
     def changeEvent(self, event: QEvent) -> None:
         # print("* widget_%s: QEvent.changeEvent" % (self.objectName()), event.type())
         if event.type() == QEvent.ActivationChange:
-            # print("widget_common: window state:", self.windowState())
             if self.is_entered:
+                # print("   changeEvent: %s: widget_common: entered, window state:" % (self.objectName()), self.windowState())
                 if self.isActiveWindow():
                     self.previous_active_widget = self.ui.get_current_widget()
                     # print("* widget_%s: QEvent.WindowStateChange, previous widget=%s" % (self.objectName(), self.previous_active_widget))
                     self.ui.set_current_editor(self.objectName())
                     event.accept()
                     return True
-
+            # else:
+            #     print("   changeEvent: %s: widget_common: leaved, window state:" % (self.objectName()), self.windowState())
         return super().changeEvent(event)
 
 
@@ -183,11 +188,16 @@ class Widget_common(QWidget):
 
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        # print("* eventFilter: widget_%s: " % (self.objectName()), event.type())
+        # print("  * eventFilter: widget_%s: " % (self.objectName()), event.type())
         if event.type() == QEvent.Enter:
+            # print("         QEvent.Enter")
             self.is_entered = True
+            return True
         elif event.type() == QEvent.Leave:
+            # print("         QEvent.Leave")
             self.is_entered = False
-
+            return True
         return super().eventFilter(watched, event)
 
+    def enter(self):
+        self.is_entered = True

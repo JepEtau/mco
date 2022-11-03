@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (QApplication, QDoubleSpinBox, QHBoxLayout, QLayou
     QLineEdit, QPushButton, QSizePolicy, QSpacerItem,
     QVBoxLayout, QWidget)
 
-from video_editor.widget_custom_qslider import Widget_custom_qslider
+from common.widget_custom_qslider import Widget_custom_qslider
 
 class Ui_widget_controls(object):
     def setupUi(self, widget_controls):
