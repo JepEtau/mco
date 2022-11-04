@@ -16,8 +16,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QDoubleSpinBox, QHBoxLayout, QLayout,
-    QLineEdit, QPushButton, QSizePolicy, QSpacerItem,
-    QVBoxLayout, QWidget)
+    QLineEdit, QPushButton, QSizePolicy, QVBoxLayout,
+    QWidget)
 
 from common.widget_custom_qslider import Widget_custom_qslider
 
@@ -25,16 +25,15 @@ class Ui_widget_controls(object):
     def setupUi(self, widget_controls):
         if not widget_controls.objectName():
             widget_controls.setObjectName(u"widget_controls")
-        widget_controls.resize(938, 61)
-        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        widget_controls.resize(959, 40)
+        sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(widget_controls.sizePolicy().hasHeightForWidth())
         widget_controls.setSizePolicy(sizePolicy)
+        widget_controls.setMaximumSize(QSize(16777215, 40))
         self.horizontalLayout_6 = QHBoxLayout(widget_controls)
-        self.horizontalLayout_6.setSpacing(3)
         self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        self.horizontalLayout_6.setContentsMargins(3, 3, 9, 3)
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setSpacing(0)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
@@ -73,61 +72,10 @@ class Ui_widget_controls(object):
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.pushButton_play_pause = QPushButton(widget_controls)
-        self.pushButton_play_pause.setObjectName(u"pushButton_play_pause")
-        icon = QIcon()
-        icon.addFile(u"img/play.png", QSize(), QIcon.Normal, QIcon.Off)
-        icon.addFile(u"img/play.png", QSize(), QIcon.Selected, QIcon.Off)
-        icon.addFile(u"img/pause.png", QSize(), QIcon.Selected, QIcon.On)
-        self.pushButton_play_pause.setIcon(icon)
-        self.pushButton_play_pause.setCheckable(True)
-        self.pushButton_play_pause.setFlat(True)
-
-        self.horizontalLayout.addWidget(self.pushButton_play_pause)
-
-        self.pushButton_previous_frame = QPushButton(widget_controls)
-        self.pushButton_previous_frame.setObjectName(u"pushButton_previous_frame")
-        icon1 = QIcon()
-        icon1.addFile(u"img/go-first-view.png", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_previous_frame.setIcon(icon1)
-        self.pushButton_previous_frame.setFlat(True)
-
-        self.horizontalLayout.addWidget(self.pushButton_previous_frame)
-
-        self.pushButton_next_frame = QPushButton(widget_controls)
-        self.pushButton_next_frame.setObjectName(u"pushButton_next_frame")
-        icon2 = QIcon()
-        icon2.addFile(u"img/go-last-view.png", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_next_frame.setIcon(icon2)
-        self.pushButton_next_frame.setFlat(True)
-
-        self.horizontalLayout.addWidget(self.pushButton_next_frame)
-
-        self.horizontalSpacer_3 = QSpacerItem(5, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
-
-        self.horizontalLayout.addItem(self.horizontalSpacer_3)
-
-
-        self.verticalLayout_4.addLayout(self.horizontalLayout)
-
-        self.horizontalLayout_7 = QHBoxLayout()
-        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        self.pushButton_stop = QPushButton(widget_controls)
-        self.pushButton_stop.setObjectName(u"pushButton_stop")
-        icon3 = QIcon()
-        icon3.addFile(u"img/stop.png", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_stop.setIcon(icon3)
-        self.pushButton_stop.setCheckable(False)
-        self.pushButton_stop.setFlat(True)
-
-        self.horizontalLayout_7.addWidget(self.pushButton_stop)
-
-        self.horizontalSpacer_2 = QSpacerItem(10, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
-
-        self.horizontalLayout_7.addItem(self.horizontalSpacer_2)
-
         self.spinBox_speed = QDoubleSpinBox(widget_controls)
         self.spinBox_speed.setObjectName(u"spinBox_speed")
+        sizePolicy1.setHeightForWidth(self.spinBox_speed.sizePolicy().hasHeightForWidth())
+        self.spinBox_speed.setSizePolicy(sizePolicy1)
         self.spinBox_speed.setWrapping(False)
         self.spinBox_speed.setFrame(True)
         self.spinBox_speed.setAlignment(Qt.AlignCenter)
@@ -138,14 +86,20 @@ class Ui_widget_controls(object):
         self.spinBox_speed.setSingleStep(0.500000000000000)
         self.spinBox_speed.setValue(1.000000000000000)
 
-        self.horizontalLayout_7.addWidget(self.spinBox_speed)
+        self.horizontalLayout.addWidget(self.spinBox_speed)
+
+        self.pushButton_play_pause = QPushButton(widget_controls)
+        self.pushButton_play_pause.setObjectName(u"pushButton_play_pause")
+        icon = QIcon()
+        icon.addFile(u"img/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.pushButton_play_pause.setIcon(icon)
+        self.pushButton_play_pause.setCheckable(True)
+        self.pushButton_play_pause.setFlat(True)
+
+        self.horizontalLayout.addWidget(self.pushButton_play_pause)
 
 
-        self.verticalLayout_4.addLayout(self.horizontalLayout_7)
-
-        self.verticalSpacer_4 = QSpacerItem(20, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
-
-        self.verticalLayout_4.addItem(self.verticalSpacer_4)
+        self.verticalLayout_4.addLayout(self.horizontalLayout)
 
 
         self.horizontalLayout_6.addLayout(self.verticalLayout_4)
@@ -160,8 +114,5 @@ class Ui_widget_controls(object):
         widget_controls.setWindowTitle(QCoreApplication.translate("widget_controls", u"Form", None))
         self.lineEdit_frame_no.setText(QCoreApplication.translate("widget_controls", u"123456", None))
         self.pushButton_play_pause.setText("")
-        self.pushButton_previous_frame.setText("")
-        self.pushButton_next_frame.setText("")
-        self.pushButton_stop.setText("")
     # retranslateUi
 

@@ -395,7 +395,8 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>img/blue/eye.svg</normaloff>img/blue/eye.svg</iconset>
+             <normaloff>img/grey/eye.svg</normaloff>
+             <normalon>img/blue/eye.svg</normalon>img/grey/eye.svg</iconset>
            </property>
            <property name="checkable">
             <bool>true</bool>

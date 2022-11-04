@@ -109,47 +109,6 @@ class Window_main(Window_common):
 
 
 
-
-    # def select_next_editor(self):
-    #     # rework this: use a list of widgets
-    #     print("select next editor from: %s" % (self.current_editor))
-    #     # todo: clean this by using the table of editors
-    #     for i in range(len(self.widgets.keys())):
-    #         if self.current_editor == 'curves':
-    #             try:
-    #                 self.widget_replace.activateWindow()
-    #                 log.info("changed to: %s" % (self.current_editor))
-    #                 return
-    #             except:
-    #                 self.current_editor = 'replace'
-
-    #         if self.current_editor == 'replace':
-    #             try:
-    #                 self.widget_geometry.activateWindow()
-    #                 log.info("changed to: %s" % (self.current_editor))
-    #                 return
-    #             except:
-    #                 self.current_editor = 'geometry'
-
-    #         if self.current_editor == 'geometry':
-    #             try:
-    #                 self.widget_curves.activateWindow()
-    #                 log.info("changed to: %s" % (self.current_editor))
-    #                 return
-    #             except:
-    #                 self.current_editor = 'curves'
-
-    #         if self.current_editor in ['selection', 'controls']:
-    #             try:
-    #                 self.widget_curves.activateWindow()
-    #                 log.info("changed to: %s" % (self.current_editor))
-    #                 return
-    #             except:
-    #                 self.current_editor = 'curves'
-
-
-
-
     def flush_image(self):
         log.info("flush image")
         del self.image

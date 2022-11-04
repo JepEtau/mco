@@ -221,9 +221,7 @@ class Ui_widget_geometry(object):
 
         self.pushButton_part_crop_preview = QPushButton(self.groupBox_part_geometry)
         self.pushButton_part_crop_preview.setObjectName(u"pushButton_part_crop_preview")
-        icon6 = QIcon()
-        icon6.addFile(u"img/blue/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_part_crop_preview.setIcon(icon6)
+        self.pushButton_part_crop_preview.setIcon(icon)
         self.pushButton_part_crop_preview.setCheckable(True)
         self.pushButton_part_crop_preview.setFlat(True)
 

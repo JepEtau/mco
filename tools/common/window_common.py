@@ -235,8 +235,17 @@ class Window_common(QMainWindow):
         enabled = True if len(shotlist['shots']) > 0 else False
         for w_str in self.model.get_widget_list():
             log.info("%s: set enabled: %s" % (self.widgets[w_str].objectName(), 'true' if enabled else 'false'))
+
+            if w_str == 'geometry':
+                if shotlist['k_step'] in ['deinterlace', 'pre_upscale']:
+                    self.widgets[w_str].set_edition_and_preview_enabled(False)
+                else:
+                    self.widgets[w_str].set_edition_and_preview_enabled(enabled)
+                continue
+
             try: self.widgets[w_str].set_widget_enabled(enabled)
             except: pass
+
 
 
     def get_current_widget(self):
