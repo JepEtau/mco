@@ -6,10 +6,12 @@ from pprint import pprint
 from logger import log
 
 from PySide6.QtCore import (
-        QPoint,
-        QSize,
-        Qt,
-        Signal,
+    QEvent,
+    QObject,
+    QPoint,
+    QSize,
+    Qt,
+    Signal,
 )
 from PySide6.QtGui import (
     QCursor,
@@ -20,10 +22,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from common.sylesheet import set_stylesheet, set_widget_stylesheet
-
-from video_editor.model_video_editor import Model_video_editor
+from common.sylesheet import (
+    set_stylesheet,
+    set_widget_stylesheet,
+)
 from common.ui.widget_controls_ui import Ui_widget_controls
+from video_editor.model_video_editor import Model_video_editor
 
 
 class Widget_controls(QWidget, Ui_widget_controls):
@@ -53,21 +57,24 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.slider_frames.setTickPosition(QSlider.NoTicks)
         self.slider_frames.setTickInterval(1)
 
-        self.lineEdit_frame_no.setFocusPolicy(Qt.NoFocus)
-        self.lineEdit_frame_no.clear()
-
         self.set_enabled(False)
 
         self.icon_play = QIcon()
-        self.icon_play.addFile("img/arrow-right.png", QSize(), QIcon.Normal, QIcon.Off)
+        self.icon_play.addFile("icons/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_play_pause.setIcon(self.icon_play)
 
         self.icon_pause = QIcon()
-        self.icon_pause.addFile("img/pause.png", QSize(), QIcon.Normal, QIcon.Off)
+        self.icon_pause.addFile("icons/blue/pause.svg", QSize(), QIcon.Normal, QIcon.Off)
         # self.pushButton_play_pause.setIcon(self.icon_pause)
 
 
         self.spinBox_speed.setFocusPolicy(Qt.NoFocus)
+        self.label_ed_ep_part.setFocusPolicy(Qt.NoFocus)
+        self.label_ed_ep_part.clear()
+        self.label_shot_no.setFocusPolicy(Qt.NoFocus)
+        self.label_shot_no.clear()
+        self.lineEdit_frame_no.setFocusPolicy(Qt.NoFocus)
+        self.lineEdit_frame_no.clear()
 
         # variables
         self.previous_position = None
@@ -82,16 +89,17 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.current_key_pressed = None
 
         # Signals
-        self.pushButton_previous_frame.clicked.connect(self.event_previous_frame)
-        self.pushButton_next_frame.clicked.connect(self.event_next_frame)
         self.pushButton_play_pause.toggled.connect(self.event_play_pause)
-        self.pushButton_stop.clicked.connect(self.event_stop)
         self.slider_frames.valueChanged.connect(self.event_slider_moved)
 
         self.model.signal_ready_to_play[dict].connect(self.event_refresh_slider)
 
+        self.slider_frames.installEventFilter(self)
+
         self.set_selected(False)
         set_stylesheet(self)
+        set_widget_stylesheet(self.label_ed_ep_part)
+        set_widget_stylesheet(self.label_shot_no)
         self.adjustSize()
 
 
@@ -137,16 +145,17 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.setEnabled(enabled)
 
     def set_enabled(self, enabled):
-        self.pushButton_previous_frame.setEnabled(enabled)
-        self.pushButton_next_frame.setEnabled(enabled)
         self.pushButton_play_pause.setEnabled(enabled)
-        self.pushButton_stop.setEnabled(enabled)
         self.spinBox_speed.setEnabled(enabled)
         self.slider_frames.setEnabled(enabled)
 
 
     def refresh_values(self, frame:dict):
+        k_ed_ep_part = "%s:%s:%s" % (frame['k_ed'], frame['k_ep'], frame['k_part'])
+        self.label_ed_ep_part.setText(k_ed_ep_part)
+        self.label_shot_no.setText(str(frame['shot_no']))
         self.lineEdit_frame_no.setText(str(frame['frame_no']))
+
 
 
     def refresh(self, values:dict):
@@ -159,22 +168,17 @@ class Widget_controls(QWidget, Ui_widget_controls):
     def refresh_status(self, status:str):
         self.status = status
         if self.status == 'stopped' or self.status == 'paused':
-            self.pushButton_previous_frame.setEnabled(True)
-            self.pushButton_next_frame.setEnabled(True)
             self.pushButton_play_pause.setEnabled(True)
-            self.pushButton_stop.setEnabled(True)
             self.spinBox_speed.setEnabled(True)
             self.slider_frames.setEnabled(True)
         elif self.status == 'playing':
-            self.pushButton_previous_frame.setEnabled(False)
-            self.pushButton_next_frame.setEnabled(False)
             self.pushButton_play_pause.setEnabled(True)
-            self.pushButton_stop.setEnabled(True)
             self.spinBox_speed.setEnabled(False)
             self.slider_frames.setEnabled(False)
 
 
     def update_slider_value(self, index:int):
+        # log.info("update_slider_value: %d" % (index))
         if index >= len(self.frame_nos):
             log.info("out of range: %d" % (index))
             index = len(self.frame_nos) - 1
@@ -245,6 +249,7 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
 
     def event_previous_frame(self, delta=1):
+        # log.info("event_previous_frame: %d" % (self.slider_frames.value()))
         self.update_slider_value(
             max(0, self.slider_frames.value() - delta))
 
@@ -282,7 +287,6 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.slider_frames.setValue(0)
         self.slider_frames.blockSignals(False)
         self.slider_frames.setFocus()
-
         self.signal_button_pushed.emit('stop')
 
 
@@ -390,6 +394,13 @@ class Widget_controls(QWidget, Ui_widget_controls):
             return True
 
         return False
+
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        # print("  * eventFilter: widget_%s: " % (self.objectName()), event.type())
+        if event.type() == QEvent.Wheel:
+            return self.wheel_event(event)
+        return super().eventFilter(watched, event)
 
 
     def mousePressEvent(self, event):

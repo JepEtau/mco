@@ -24,7 +24,7 @@ class Ui_widget_geometry(object):
     def setupUi(self, widget_geometry):
         if not widget_geometry.objectName():
             widget_geometry.setObjectName(u"widget_geometry")
-        widget_geometry.resize(411, 160)
+        widget_geometry.resize(411, 162)
         self.mainLayout = QVBoxLayout(widget_geometry)
         self.mainLayout.setSpacing(0)
         self.mainLayout.setObjectName(u"mainLayout")
@@ -48,8 +48,8 @@ class Ui_widget_geometry(object):
         sizePolicy.setHeightForWidth(self.pushButton_set_preview.sizePolicy().hasHeightForWidth())
         self.pushButton_set_preview.setSizePolicy(sizePolicy)
         icon = QIcon()
-        icon.addFile(u"img/grey/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon.addFile(u"img/blue/eye.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon.addFile(u"icons/grey/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"icons/blue/eye.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_set_preview.setIcon(icon)
         self.pushButton_set_preview.setCheckable(True)
         self.pushButton_set_preview.setFlat(True)
@@ -61,8 +61,8 @@ class Ui_widget_geometry(object):
         sizePolicy.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
         self.pushButton_save.setSizePolicy(sizePolicy)
         icon1 = QIcon()
-        icon1.addFile(u"img/grey/save.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon1.addFile(u"img/purple/save.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon1.addFile(u"icons/grey/save.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_save.setIcon(icon1)
         self.pushButton_save.setCheckable(False)
         self.pushButton_save.setAutoDefault(False)
@@ -75,8 +75,8 @@ class Ui_widget_geometry(object):
         sizePolicy.setHeightForWidth(self.pushButton_discard.sizePolicy().hasHeightForWidth())
         self.pushButton_discard.setSizePolicy(sizePolicy)
         icon2 = QIcon()
-        icon2.addFile(u"img/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon2.addFile(u"img/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon2.addFile(u"icons/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_discard.setIcon(icon2)
         self.pushButton_discard.setCheckable(False)
         self.pushButton_discard.setAutoDefault(False)
@@ -93,8 +93,8 @@ class Ui_widget_geometry(object):
         sizePolicy.setHeightForWidth(self.pushButton_close.sizePolicy().hasHeightForWidth())
         self.pushButton_close.setSizePolicy(sizePolicy)
         icon3 = QIcon()
-        icon3.addFile(u"img/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon3.addFile(u"img/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon3.addFile(u"icons/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon3.addFile(u"icons/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_close.setIcon(icon3)
         self.pushButton_close.setCheckable(False)
         self.pushButton_close.setAutoDefault(False)
@@ -116,7 +116,7 @@ class Ui_widget_geometry(object):
         self.groupBox_part_geometry.setChecked(False)
         self.gridLayout = QGridLayout(self.groupBox_part_geometry)
         self.gridLayout.setObjectName(u"gridLayout")
-        self.gridLayout.setContentsMargins(3, 3, 3, 3)
+        self.gridLayout.setContentsMargins(3, 5, 3, 3)
         self.horizontalLayout_5 = QHBoxLayout()
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
         self.label_15 = QLabel(self.groupBox_part_geometry)
@@ -166,8 +166,8 @@ class Ui_widget_geometry(object):
         self.pushButton_part_crop_edition = QPushButton(self.groupBox_part_geometry)
         self.pushButton_part_crop_edition.setObjectName(u"pushButton_part_crop_edition")
         icon4 = QIcon()
-        icon4.addFile(u"img/grey/crop.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon4.addFile(u"img/blue/crop.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon4.addFile(u"icons/grey/crop.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(u"icons/blue/crop.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_part_crop_edition.setIcon(icon4)
         self.pushButton_part_crop_edition.setCheckable(True)
         self.pushButton_part_crop_edition.setAutoDefault(False)
@@ -177,6 +177,7 @@ class Ui_widget_geometry(object):
 
         self.label_14 = QLabel(self.groupBox_part_geometry)
         self.label_14.setObjectName(u"label_14")
+        self.label_14.setLineWidth(0)
 
         self.gridLayout.addWidget(self.label_14, 1, 0, 1, 1)
 
@@ -211,7 +212,7 @@ class Ui_widget_geometry(object):
         self.pushButton_part_resize_edition.setObjectName(u"pushButton_part_resize_edition")
         self.pushButton_part_resize_edition.setEnabled(False)
         icon5 = QIcon()
-        icon5.addFile(u"img/blue/scaling.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon5.addFile(u"icons/blue/scaling.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_part_resize_edition.setIcon(icon5)
         self.pushButton_part_resize_edition.setCheckable(True)
         self.pushButton_part_resize_edition.setAutoDefault(False)
@@ -221,9 +222,7 @@ class Ui_widget_geometry(object):
 
         self.pushButton_part_crop_preview = QPushButton(self.groupBox_part_geometry)
         self.pushButton_part_crop_preview.setObjectName(u"pushButton_part_crop_preview")
-        icon6 = QIcon()
-        icon6.addFile(u"img/blue/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_part_crop_preview.setIcon(icon6)
+        self.pushButton_part_crop_preview.setIcon(icon)
         self.pushButton_part_crop_preview.setCheckable(True)
         self.pushButton_part_crop_preview.setFlat(True)
 
@@ -231,6 +230,7 @@ class Ui_widget_geometry(object):
 
         self.label_9 = QLabel(self.groupBox_part_geometry)
         self.label_9.setObjectName(u"label_9")
+        self.label_9.setLineWidth(0)
 
         self.gridLayout.addWidget(self.label_9, 0, 0, 1, 1)
 

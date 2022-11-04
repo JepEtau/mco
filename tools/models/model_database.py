@@ -718,7 +718,7 @@ class Model_database(object):
                         self.db_part_geometry_initial]:
             if k_ed in db_tmp.keys() and k_part in db_tmp[k_ed].keys():
                 return db_tmp[k_ed][k_part]
-        return None
+        return {'crop': [0, 0, 0, 0]}
 
     def set_part_geometry(self, k_ed, k_part, geometry):
         # db_modified = self.db_part_geometry

@@ -15,16 +15,16 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QFrame, QGridLayout,
-    QGroupBox, QHBoxLayout, QHeaderView, QLabel,
-    QLineEdit, QPushButton, QSizePolicy, QSpacerItem,
-    QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QApplication, QFrame, QGroupBox,
+    QHBoxLayout, QHeaderView, QLineEdit, QPushButton,
+    QSizePolicy, QSpacerItem, QTableWidget, QTableWidgetItem,
+    QVBoxLayout, QWidget)
 
 class Ui_widget_replace(object):
     def setupUi(self, widget_replace):
         if not widget_replace.objectName():
             widget_replace.setObjectName(u"widget_replace")
-        widget_replace.resize(304, 370)
+        widget_replace.resize(270, 370)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -54,8 +54,7 @@ class Ui_widget_replace(object):
         sizePolicy1.setHeightForWidth(self.pushButton_set_preview.sizePolicy().hasHeightForWidth())
         self.pushButton_set_preview.setSizePolicy(sizePolicy1)
         icon = QIcon()
-        icon.addFile(u"img/grey/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon.addFile(u"img/blue/eye.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon.addFile(u"icons/grey/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_set_preview.setIcon(icon)
         self.pushButton_set_preview.setCheckable(True)
         self.pushButton_set_preview.setFlat(True)
@@ -67,8 +66,8 @@ class Ui_widget_replace(object):
         sizePolicy1.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
         self.pushButton_save.setSizePolicy(sizePolicy1)
         icon1 = QIcon()
-        icon1.addFile(u"img/grey/save.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon1.addFile(u"img/purple/save.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon1.addFile(u"icons/grey/save.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_save.setIcon(icon1)
         self.pushButton_save.setCheckable(False)
         self.pushButton_save.setAutoDefault(False)
@@ -81,8 +80,8 @@ class Ui_widget_replace(object):
         sizePolicy1.setHeightForWidth(self.pushButton_discard.sizePolicy().hasHeightForWidth())
         self.pushButton_discard.setSizePolicy(sizePolicy1)
         icon2 = QIcon()
-        icon2.addFile(u"img/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon2.addFile(u"img/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon2.addFile(u"icons/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_discard.setIcon(icon2)
         self.pushButton_discard.setCheckable(False)
         self.pushButton_discard.setAutoDefault(False)
@@ -99,8 +98,8 @@ class Ui_widget_replace(object):
         sizePolicy1.setHeightForWidth(self.pushButton_close.sizePolicy().hasHeightForWidth())
         self.pushButton_close.setSizePolicy(sizePolicy1)
         icon3 = QIcon()
-        icon3.addFile(u"img/grey/x-square.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon3.addFile(u"img/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon3.addFile(u"icons/grey/x-square.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon3.addFile(u"icons/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_close.setIcon(icon3)
         self.pushButton_close.setCheckable(False)
         self.pushButton_close.setAutoDefault(False)
@@ -120,33 +119,25 @@ class Ui_widget_replace(object):
         self.groupBox_replace.setSizePolicy(sizePolicy2)
         self.groupBox_replace.setCheckable(False)
         self.groupBox_replace.setChecked(False)
-        self.gridLayout = QGridLayout(self.groupBox_replace)
-        self.gridLayout.setObjectName(u"gridLayout")
-        self.lineEdit_replaced_by = QLineEdit(self.groupBox_replace)
-        self.lineEdit_replaced_by.setObjectName(u"lineEdit_replaced_by")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.lineEdit_replaced_by.sizePolicy().hasHeightForWidth())
-        self.lineEdit_replaced_by.setSizePolicy(sizePolicy3)
-        self.lineEdit_replaced_by.setMaximumSize(QSize(70, 16777215))
-        self.lineEdit_replaced_by.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-        self.lineEdit_replaced_by.setReadOnly(True)
-
-        self.gridLayout.addWidget(self.lineEdit_replaced_by, 1, 3, 1, 1)
-
+        self.horizontalLayout_2 = QHBoxLayout(self.groupBox_replace)
+        self.horizontalLayout_2.setSpacing(4)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalLayout_2.setContentsMargins(3, 3, 3, 3)
         self.pushButton_copy = QPushButton(self.groupBox_replace)
         self.pushButton_copy.setObjectName(u"pushButton_copy")
         self.pushButton_copy.setMaximumSize(QSize(70, 16777215))
         icon4 = QIcon()
-        icon4.addFile(u"img/page_copy.png", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(u"icons/blue/copy.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_copy.setIcon(icon4)
         self.pushButton_copy.setFlat(True)
 
-        self.gridLayout.addWidget(self.pushButton_copy, 1, 1, 1, 1)
+        self.horizontalLayout_2.addWidget(self.pushButton_copy)
 
         self.lineEdit_frame_no = QLineEdit(self.groupBox_replace)
         self.lineEdit_frame_no.setObjectName(u"lineEdit_frame_no")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.lineEdit_frame_no.sizePolicy().hasHeightForWidth())
         self.lineEdit_frame_no.setSizePolicy(sizePolicy3)
         self.lineEdit_frame_no.setMinimumSize(QSize(60, 0))
@@ -154,39 +145,37 @@ class Ui_widget_replace(object):
         self.lineEdit_frame_no.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
         self.lineEdit_frame_no.setReadOnly(True)
 
-        self.gridLayout.addWidget(self.lineEdit_frame_no, 1, 0, 1, 1)
-
-        self.horizontalSpacer_5 = QSpacerItem(5, 10, QSizePolicy.Expanding, QSizePolicy.Minimum)
-
-        self.gridLayout.addItem(self.horizontalSpacer_5, 1, 2, 1, 1)
+        self.horizontalLayout_2.addWidget(self.lineEdit_frame_no)
 
         self.pushButton_paste = QPushButton(self.groupBox_replace)
         self.pushButton_paste.setObjectName(u"pushButton_paste")
         icon5 = QIcon()
-        icon5.addFile(u"img/page_paste.png", QSize(), QIcon.Normal, QIcon.Off)
+        icon5.addFile(u"icons/grey/arrow-left.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon5.addFile(u"icons/blue/arrow-left.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_paste.setIcon(icon5)
         self.pushButton_paste.setFlat(True)
 
-        self.gridLayout.addWidget(self.pushButton_paste, 1, 4, 1, 1)
+        self.horizontalLayout_2.addWidget(self.pushButton_paste)
+
+        self.lineEdit_replaced_by = QLineEdit(self.groupBox_replace)
+        self.lineEdit_replaced_by.setObjectName(u"lineEdit_replaced_by")
+        sizePolicy3.setHeightForWidth(self.lineEdit_replaced_by.sizePolicy().hasHeightForWidth())
+        self.lineEdit_replaced_by.setSizePolicy(sizePolicy3)
+        self.lineEdit_replaced_by.setMaximumSize(QSize(70, 16777215))
+        self.lineEdit_replaced_by.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+        self.lineEdit_replaced_by.setReadOnly(True)
+
+        self.horizontalLayout_2.addWidget(self.lineEdit_replaced_by)
 
         self.pushButton_remove = QPushButton(self.groupBox_replace)
         self.pushButton_remove.setObjectName(u"pushButton_remove")
         icon6 = QIcon()
-        icon6.addFile(u"img/edit-delete.png", QSize(), QIcon.Normal, QIcon.Off)
+        icon6.addFile(u"icons/grey/eraser.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon6.addFile(u"icons/blue/eraser.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_remove.setIcon(icon6)
         self.pushButton_remove.setFlat(True)
 
-        self.gridLayout.addWidget(self.pushButton_remove, 1, 5, 1, 1)
-
-        self.label = QLabel(self.groupBox_replace)
-        self.label.setObjectName(u"label")
-
-        self.gridLayout.addWidget(self.label, 0, 0, 1, 1)
-
-        self.label_2 = QLabel(self.groupBox_replace)
-        self.label_2.setObjectName(u"label_2")
-
-        self.gridLayout.addWidget(self.label_2, 0, 3, 1, 1)
+        self.horizontalLayout_2.addWidget(self.pushButton_remove)
 
 
         self.verticalLayout_2.addWidget(self.groupBox_replace)
@@ -251,8 +240,6 @@ class Ui_widget_replace(object):
         self.lineEdit_frame_no.setText(QCoreApplication.translate("widget_replace", u"123456", None))
         self.pushButton_paste.setText("")
         self.pushButton_remove.setText("")
-        self.label.setText(QCoreApplication.translate("widget_replace", u"Frame no.", None))
-        self.label_2.setText(QCoreApplication.translate("widget_replace", u"replaced by", None))
         ___qtablewidgetitem = self.tableWidget_replace.horizontalHeaderItem(0)
         ___qtablewidgetitem.setText(QCoreApplication.translate("widget_replace", u"shot no.", None));
         ___qtablewidgetitem1 = self.tableWidget_replace.horizontalHeaderItem(1)

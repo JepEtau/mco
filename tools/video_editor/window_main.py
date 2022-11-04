@@ -1,49 +1,37 @@
 # -*- coding: utf-8 -*-
 
 import sys
-
-
-
 sys.path.append('../scripts')
+
 import cv2
 import gc
 import time
 import numpy as np
 import os
+
 from pprint import pprint
 from logger import log
 
 from PySide6.QtCore import (
-    QBasicTimer,
-    QEvent,
     QPoint,
-    QSize,
     Qt,
     Signal,
 )
 from PySide6.QtGui import (
     QColor,
-    QCursor,
-    QIcon,
     QImage,
-    QPainter,
     QPen,
 )
-from PySide6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QMenu,
-    QMessageBox,
-)
+
 
 from common.window_common import Window_common
+from common.widget_controls import Widget_controls
+
 from video_editor.model_video_editor import Model_video_editor
 from video_editor.widget_selection import Widget_selection
-from common.widget_controls import Widget_controls
 from video_editor.widget_curves import Widget_curves
 from video_editor.widget_replace import Widget_replace
 from video_editor.widget_geometry import Widget_geometry
-
 
 
 COLOR_CROP_RECT = QColor(230, 30, 30)
@@ -118,47 +106,6 @@ class Window_main(Window_common):
         # Set initial values
         self.set_initial_options(p)
         self.event_show_fullscreen()
-
-
-
-
-    # def select_next_editor(self):
-    #     # rework this: use a list of widgets
-    #     print("select next editor from: %s" % (self.current_editor))
-    #     # todo: clean this by using the table of editors
-    #     for i in range(len(self.widgets.keys())):
-    #         if self.current_editor == 'curves':
-    #             try:
-    #                 self.widget_replace.activateWindow()
-    #                 log.info("changed to: %s" % (self.current_editor))
-    #                 return
-    #             except:
-    #                 self.current_editor = 'replace'
-
-    #         if self.current_editor == 'replace':
-    #             try:
-    #                 self.widget_geometry.activateWindow()
-    #                 log.info("changed to: %s" % (self.current_editor))
-    #                 return
-    #             except:
-    #                 self.current_editor = 'geometry'
-
-    #         if self.current_editor == 'geometry':
-    #             try:
-    #                 self.widget_curves.activateWindow()
-    #                 log.info("changed to: %s" % (self.current_editor))
-    #                 return
-    #             except:
-    #                 self.current_editor = 'curves'
-
-    #         if self.current_editor in ['selection', 'controls']:
-    #             try:
-    #                 self.widget_curves.activateWindow()
-    #                 log.info("changed to: %s" % (self.current_editor))
-    #                 return
-    #             except:
-    #                 self.current_editor = 'curves'
-
 
 
 
@@ -352,7 +299,7 @@ class Window_main(Window_common):
                     return True
 
         if self.widget_controls.event_key_pressed(event):
-            print("forwarded to controls", key)
+            # print("forwarded to controls", key)
             event.accept()
             return True
 

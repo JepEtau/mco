@@ -183,7 +183,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>img/document-save-as.png</normaloff>img/document-save-as.png</iconset>
+               <normaloff>icons/purple/save.svg</normaloff>icons/purple/save.svg</iconset>
              </property>
              <property name="flat">
               <bool>true</bool>

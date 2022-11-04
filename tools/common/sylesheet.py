@@ -74,11 +74,20 @@ def set_widget_stylesheet(widget):
             }
             QLabel {
                 background-color: rgb(35, 35, 35);
-                border-color: rgb(35, 35, 35);
                 color: rgb(220, 220, 220);
             }
             QPushButton {
                 background-color: rgb(60, 60, 60);
+                color: rgb(220, 220, 220);
+            }
+        """)
+
+    elif type(widget) is QLabel:
+        # Customized Label with border
+        widget.setStyleSheet("""
+            QLabel {
+                background-color: rgb(35, 35, 35);
+                border: 1px solid rgb(60, 60, 60);
                 color: rgb(220, 220, 220);
             }
         """)
@@ -120,10 +129,10 @@ def set_stylesheet(widget):
 
     # QLabel
     for w in widget.findChildren(QLabel, options=Qt.FindChildrenRecursively):
-        w.setStyleSheet("""QLabel {
-            background-color: rgb(35, 35, 35);
-            border-color: rgb(35, 35, 35);
-            color: rgb(220, 220, 220);
+        w.setStyleSheet("""
+            QLabel {
+                background-color: rgb(35, 35, 35);
+                color: rgb(220, 220, 220);
             }
         """)
 
@@ -230,7 +239,7 @@ def set_stylesheet(widget):
             }
 
             QComboBox::down-arrow {
-                image: url(./img/drop_down_arrow_gray.svg);
+                image: url(./icons/drop_down_arrow_gray.svg);
                 margin: 0px;
             }
 

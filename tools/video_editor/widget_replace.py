@@ -164,7 +164,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
     def refresh_values(self, frame:dict):
         if 'replaces' in frame.keys():
-            print("this frame (%d) replaces %d" % (frame['frame_no'], frame['replaces']))
+            # print("this frame (%d) replaces %d" % (frame['frame_no'], frame['replaces']))
             self.lineEdit_frame_no.setText(str(frame['replaces']))
             self.lineEdit_replaced_by.setText(str(frame['frame_no']))
             self.pushButton_remove.setEnabled(True)
@@ -179,16 +179,17 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_frame_no_copied(self):
-        log.info("event: copy")
         self.copied_frame_no = int(self.lineEdit_frame_no.text())
+        log.info("event: copy %d" % (self.copied_frame_no))
         self.pushButton_paste.setEnabled(True)
 
 
     def event_frame_no_paste(self):
         log.info("event: paste")
         frame_no = int(self.lineEdit_frame_no.text())
-        if self.copied_frame_no != -1 and frame_no != self.copied_frame_no:
-            log.info("event: paste")
+        if (self.copied_frame_no != -1
+        and frame_no != self.copied_frame_no):
+            log.info("event: paste to %d" % (frame_no))
             self.pushButton_discard.setEnabled(True)
             self.pushButton_save.setEnabled(True)
             self.signal_replace_modified.emit({

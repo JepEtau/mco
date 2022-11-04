@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>304</width>
+    <width>270</width>
     <height>370</height>
    </rect>
   </property>
@@ -80,8 +80,7 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/grey/eye.svg</normaloff>
-            <normalon>img/blue/eye.svg</normalon>img/grey/eye.svg</iconset>
+            <normaloff>icons/grey/eye.svg</normaloff>icons/grey/eye.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -104,8 +103,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/grey/save.svg</normaloff>
-            <normalon>img/purple/save.svg</normalon>img/grey/save.svg</iconset>
+            <normaloff>icons/grey/save.svg</normaloff>
+            <normalon>icons/purple/save.svg</normalon>icons/grey/save.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>
@@ -131,8 +130,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/grey/undo.svg</normaloff>
-            <normalon>img/purple/undo.svg</normalon>img/grey/undo.svg</iconset>
+            <normaloff>icons/grey/undo.svg</normaloff>
+            <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>
@@ -171,8 +170,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/grey/x-square.svg</normaloff>
-            <normalon>img/purple/x-square.svg</normalon>img/grey/x-square.svg</iconset>
+            <normaloff>icons/grey/x-square.svg</normaloff>
+            <normalon>icons/purple/x-square.svg</normalon>icons/grey/x-square.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>
@@ -204,30 +203,23 @@
         <property name="checked">
          <bool>false</bool>
         </property>
-        <layout class="QGridLayout" name="gridLayout">
-         <item row="1" column="3">
-          <widget class="QLineEdit" name="lineEdit_replaced_by">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>70</width>
-             <height>16777215</height>
-            </size>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-           </property>
-           <property name="readOnly">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
+         <property name="spacing">
+          <number>4</number>
+         </property>
+         <property name="leftMargin">
+          <number>3</number>
+         </property>
+         <property name="topMargin">
+          <number>3</number>
+         </property>
+         <property name="rightMargin">
+          <number>3</number>
+         </property>
+         <property name="bottomMargin">
+          <number>3</number>
+         </property>
+         <item>
           <widget class="QPushButton" name="pushButton_copy">
            <property name="maximumSize">
             <size>
@@ -240,14 +232,14 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>img/page_copy.png</normaloff>img/page_copy.png</iconset>
+             <normaloff>icons/blue/copy.svg</normaloff>icons/blue/copy.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
+         <item>
           <widget class="QLineEdit" name="lineEdit_frame_no">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -278,58 +270,55 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
-          <spacer name="horizontalSpacer_5">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>5</width>
-             <height>10</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-         <item row="1" column="4">
+         <item>
           <widget class="QPushButton" name="pushButton_paste">
            <property name="text">
             <string/>
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>img/page_paste.png</normaloff>img/page_paste.png</iconset>
+             <normaloff>icons/grey/arrow-left.svg</normaloff>
+             <normalon>icons/blue/arrow-left.svg</normalon>icons/grey/arrow-left.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
            </property>
           </widget>
          </item>
-         <item row="1" column="5">
+         <item>
+          <widget class="QLineEdit" name="lineEdit_replaced_by">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>70</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="readOnly">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="pushButton_remove">
            <property name="text">
             <string/>
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>img/edit-delete.png</normaloff>img/edit-delete.png</iconset>
+             <normaloff>icons/grey/eraser.svg</normaloff>
+             <normalon>icons/blue/eraser.svg</normalon>icons/grey/eraser.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label">
-           <property name="text">
-            <string>Frame no.</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
-          <widget class="QLabel" name="label_2">
-           <property name="text">
-            <string>replaced by</string>
            </property>
           </widget>
          </item>

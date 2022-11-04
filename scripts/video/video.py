@@ -109,12 +109,21 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
                 shot_src['count']),
                 flush=True)
 
-            if (k_part_src in db[k_ep_src]['common']['video'].keys()
-                and 'layers' in db[k_ep_src]['common']['video'][k_part_src].keys()):
-                # print("Layer specified", db[k_ep_src]['common']['video'][k_part_src]['layers'])
+            # if (k_part_src in db[k_ep_src]['common']['video'].keys()
+            #     and 'layers' in db[k_ep_src]['common']['video'][k_part_src].keys()):
+            #     # print("Layer specified", db[k_ep_src]['common']['video'][k_part_src]['layers'])
+            #     shot_src.update({
+            #         'layers': db[k_ep_src]['common']['video'][k_part_src]['layers']
+            #     })
+
+            try:
                 shot_src.update({
                     'layers': db[k_ep_src]['common']['video'][k_part_src]['layers']
                 })
+            except:
+                # no layers specified
+                pass
+
 
             shot_src.update({
                 'k_ed': k_ed_src,

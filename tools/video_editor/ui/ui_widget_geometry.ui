@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>411</width>
-    <height>160</height>
+    <height>162</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="mainLayout">
@@ -68,8 +68,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/grey/eye.svg</normaloff>
-            <normalon>img/blue/eye.svg</normalon>img/grey/eye.svg</iconset>
+            <normaloff>icons/grey/eye.svg</normaloff>
+            <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -92,8 +92,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/grey/save.svg</normaloff>
-            <normalon>img/purple/save.svg</normalon>img/grey/save.svg</iconset>
+            <normaloff>icons/grey/save.svg</normaloff>
+            <normalon>icons/purple/save.svg</normalon>icons/grey/save.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>
@@ -119,8 +119,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/grey/undo.svg</normaloff>
-            <normalon>img/purple/undo.svg</normalon>img/grey/undo.svg</iconset>
+            <normaloff>icons/grey/undo.svg</normaloff>
+            <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>
@@ -159,8 +159,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/purple/x-square.svg</normaloff>
-            <normalon>img/purple/x-square.svg</normalon>img/purple/x-square.svg</iconset>
+            <normaloff>icons/purple/x-square.svg</normaloff>
+            <normalon>icons/purple/x-square.svg</normalon>icons/purple/x-square.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>
@@ -197,7 +197,7 @@
           <number>3</number>
          </property>
          <property name="topMargin">
-          <number>3</number>
+          <number>5</number>
          </property>
          <property name="rightMargin">
           <number>3</number>
@@ -292,8 +292,8 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>img/grey/crop.svg</normaloff>
-             <normalon>img/blue/crop.svg</normalon>img/grey/crop.svg</iconset>
+             <normaloff>icons/grey/crop.svg</normaloff>
+             <normalon>icons/blue/crop.svg</normalon>icons/grey/crop.svg</iconset>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -308,6 +308,9 @@
          </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_14">
+           <property name="lineWidth">
+            <number>0</number>
+           </property>
            <property name="text">
             <string>resize</string>
            </property>
@@ -320,8 +323,8 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>img/grey/eye.svg</normaloff>
-             <normalon>img/blue/eye.svg</normalon>img/grey/eye.svg</iconset>
+             <normaloff>icons/grey/eye.svg</normaloff>
+             <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -344,8 +347,8 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>img/grey/undo.svg</normaloff>
-             <normalon>img/purple/undo.svg</normalon>img/grey/undo.svg</iconset>
+             <normaloff>icons/grey/undo.svg</normaloff>
+             <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -375,7 +378,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>img/blue/scaling.svg</normaloff>img/blue/scaling.svg</iconset>
+             <normaloff>icons/blue/scaling.svg</normaloff>icons/blue/scaling.svg</iconset>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -395,7 +398,8 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>img/blue/eye.svg</normaloff>img/blue/eye.svg</iconset>
+             <normaloff>icons/grey/eye.svg</normaloff>
+             <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
            </property>
            <property name="checkable">
             <bool>true</bool>
@@ -407,6 +411,9 @@
          </item>
          <item row="0" column="0">
           <widget class="QLabel" name="label_9">
+           <property name="lineWidth">
+            <number>0</number>
+           </property>
            <property name="text">
             <string>crop</string>
            </property>

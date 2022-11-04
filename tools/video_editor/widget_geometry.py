@@ -12,6 +12,12 @@ from PySide6.QtCore import (
     QObject,
     QEvent,
 )
+from PySide6.QtWidgets import (
+    QPushButton,
+    QLineEdit,
+    QRadioButton,
+    QCheckBox,
+)
 from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet
 
@@ -32,6 +38,8 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.current_key_pressed = None
         self.current_modification_type = 'part'
         self.saved_preview_options = None
+        self.saved_states = dict()
+        self.current_edition_and_preview_enabled = True
 
 
         # Disable focus
@@ -50,10 +58,9 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.pushButton_part_resize_edition.toggled[bool].connect(self.event_part_resize_edition_changed)
         self.checkBox_part_keep_ratio.toggled[bool].connect(self.event_part_keep_ratio_changed)
 
+
         set_stylesheet(self)
         self.adjustSize()
-
-
 
 
 
@@ -82,8 +89,12 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
             self.block_signals(False)
         except:
-            log.warning("cannot set inbitial options")
+            log.warning("cannot set initial options")
             pass
+
+        # Force enabled/disable to save the current states for all widgets
+        self.set_edition_and_preview_enabled(False)
+        self.set_edition_and_preview_enabled(True)
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
@@ -97,9 +108,85 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.lineEdit_part_crop_rectangle.setText(crop_str)
 
 
+    def set_edition_and_preview_enabled(self, enabled):
+        # Disable all action button because it cannot be applied for this
+        # Save current state to reenable it
+        if (not self.current_edition_and_preview_enabled
+        and not enabled):
+            # already disabled, do not save another time
+            return
+
+        self.current_edition_and_preview_enabled = enabled
+        if not enabled:
+            log.info("disable edition and preview")
+            self.saved_states['push_buttons'] = dict()
+            for w in self.findChildren(QPushButton, options=Qt.FindChildrenRecursively):
+                w.blockSignals(True)
+                self.saved_states['push_buttons'][w.objectName()] = {
+                    'is_enabled': w.isEnabled(),
+                    'is_checked': w.isChecked(),
+                }
+                w.setEnabled(False)
+                w.setChecked(False)
+
+            self.saved_states['line_edit'] = dict()
+            for w in self.findChildren(QLineEdit, options=Qt.FindChildrenRecursively):
+                w.blockSignals(True)
+                self.saved_states['line_edit'][w.objectName()] = {
+                    'is_enabled': w.isEnabled(),
+                    'is_read_only': w.isReadOnly(),
+                }
+                w.setEnabled(False)
+                w.setReadOnly(False)
+
+            self.saved_states['radio_buttons'] = dict()
+            for w in self.findChildren(QRadioButton, options=Qt.FindChildrenRecursively):
+                w.blockSignals(True)
+                self.saved_states['radio_buttons'][w.objectName()] = {
+                    'is_enabled': w.isEnabled(),
+                }
+                w.setEnabled(False)
+
+            self.saved_states['check_box'] = dict()
+            for w in self.findChildren(QCheckBox, options=Qt.FindChildrenRecursively):
+                w.blockSignals(True)
+                self.saved_states['check_box'][w.objectName()] = {
+                    'is_enabled': w.isEnabled(),
+                }
+                w.setEnabled(False)
+
+        else:
+            log.info("enable edition and preview")
+            try:
+                for w in self.findChildren(QPushButton, options=Qt.FindChildrenRecursively):
+                    w.setEnabled(self.saved_states['push_buttons'][w.objectName()]['is_enabled'])
+                    w.setChecked(self.saved_states['push_buttons'][w.objectName()]['is_checked'])
+                    w.blockSignals(False)
+
+                for w in self.findChildren(QLineEdit, options=Qt.FindChildrenRecursively):
+                    w.setEnabled(self.saved_states['line_edit'][w.objectName()]['is_enabled'])
+                    w.setReadOnly(self.saved_states['line_edit'][w.objectName()]['is_read_only'])
+                    w.blockSignals(False)
+
+                for w in self.findChildren(QRadioButton, options=Qt.FindChildrenRecursively):
+                    w.setEnabled(self.saved_states['radio_buttons'][w.objectName()]['is_enabled'])
+                    w.blockSignals(False)
+
+                for w in self.findChildren(QCheckBox, options=Qt.FindChildrenRecursively):
+                    w.setEnabled(self.saved_states['check_box'][w.objectName()]['is_enabled'])
+                    w.blockSignals(False)
+
+            except:
+                print("warning: state was not saved")
+
+
+
+
+
     def set_geometry_edition_enabled(self, enabled):
         log.info("enable edition: %s" % ('true' if enabled else 'false'))
         print("TODO: enable edition: %s" % ('true' if enabled else 'false'))
+
 
 
     def event_undo(self):

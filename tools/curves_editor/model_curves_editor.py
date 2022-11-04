@@ -41,6 +41,7 @@ class Model_curves_editor(QObject):
     signal_refresh_curves_shot_list = Signal(list)
     signal_load_curves = Signal(dict)
     signal_folders_parsed = Signal(dict)
+    signal_shotlist_modified = Signal(dict)
 
 
 
@@ -95,6 +96,9 @@ class Model_curves_editor(QObject):
 
         self.event_reload_folders()
         # self.event_directory_changed({'k_ep': k_ep, 'k_part': p['tools']['part']})
+
+    def get_widget_list(self):
+        return list()
 
     def get_preferences(self):
         p = self.preferences.get_preferences()

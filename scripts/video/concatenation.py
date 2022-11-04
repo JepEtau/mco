@@ -90,7 +90,7 @@ def _create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fi
             concatenation_filepath = os.path.join(
                 db[k_ep_or_g]['common']['path']['cache'],
                 "concatenation",
-                "%s_%s_%s_video.txt" % (k_ep_or_g, k_ed_ref, k_ep_ref))
+                "%s_video.txt" % (k_ep_or_g))
         else:
             concatenation_filepath = os.path.join(db[k_ep_or_g]['common']['path']['cache'],
                 "concatenation", "%s_%s__%s__%05d.txt" % (k_ep, k_part, k_ed, 0))

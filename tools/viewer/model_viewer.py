@@ -26,7 +26,7 @@ class Model_viewer(QObject):
     signal_refresh_browser = Signal(dict)
     signal_refresh_framelist = Signal(list)
     signal_display_frame = Signal(dict)
-
+    signal_shotlist_modified = Signal(dict)
 
     def __init__(self):
         super(Model_viewer, self).__init__()
@@ -66,17 +66,18 @@ class Model_viewer(QObject):
         })
 
 
+    def get_widget_list(self):
+        return list()
+
 
     def get_preferences(self):
         p = self.preferences.get_preferences()
         return p
 
 
-
     def save_preferences(self, preferences:dict):
         preferences = self.ui.get_preferences()
         self.preferences.save(preferences)
-
 
 
     def get_available_episode_and_parts(self):

@@ -37,9 +37,8 @@ study_mode = True
 
 
 def main():
-    print(cv2.ocl.haveOpenCL() )
-    cv2.ocl.setUseOpenCL(True)
-    print(cv2.ocl.haveOpenCL() )
+    # if cv2.ocl.haveOpenCL():
+    #     cv2.ocl.setUseOpenCL(True)
 
     # from scripts.frames_extract import frames_extract
     verbose = False
@@ -165,6 +164,8 @@ def main():
     episode_no = arguments.episode
     k_episode = 'ep%02d' % (episode_no)
 
+    if episode_no == 0 and arguments.part == '':
+        sys.exit("Error: épisode ou partie non spécifiée")
 
     # Consolidate tasks: what will be done
     print("Edition(s): %s" % (', '.join(list_editions)))

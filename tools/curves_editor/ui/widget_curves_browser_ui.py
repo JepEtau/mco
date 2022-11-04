@@ -110,7 +110,7 @@ class Ui_widget_curves_browser(object):
         sizePolicy2.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
         self.pushButton_save.setSizePolicy(sizePolicy2)
         icon = QIcon()
-        icon.addFile(u"img/document-save-as.png", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_save.setIcon(icon)
         self.pushButton_save.setFlat(True)
 

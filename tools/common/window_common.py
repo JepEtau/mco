@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
+sys.path.append('../scripts')
+
 import time
 
 from pprint import pprint
@@ -36,13 +38,13 @@ class Window_common(QMainWindow):
 
 
         window_icon = QIcon()
-        window_icon.addFile("img/icon_16.png", QSize(16,16))
-        window_icon.addFile("img/icon_24.png", QSize(24,24))
-        window_icon.addFile("img/icon_32.png", QSize(32,32))
-        window_icon.addFile("img/icon_48.png", QSize(48,48))
-        window_icon.addFile("img/icon_64.png", QSize(64,64))
-        window_icon.addFile("img/icon_128.png", QSize(128,128))
-        window_icon.addFile("img/icon_256.png", QSize(256,256))
+        window_icon.addFile("icons/icon_16.png", QSize(16,16))
+        window_icon.addFile("icons/icon_24.png", QSize(24,24))
+        window_icon.addFile("icons/icon_32.png", QSize(32,32))
+        window_icon.addFile("icons/icon_48.png", QSize(48,48))
+        window_icon.addFile("icons/icon_64.png", QSize(64,64))
+        window_icon.addFile("icons/icon_128.png", QSize(128,128))
+        window_icon.addFile("icons/icon_256.png", QSize(256,256))
         self.setWindowIcon(window_icon)
 
         self.setWindowFlags(Qt.Window)
@@ -120,11 +122,11 @@ class Window_common(QMainWindow):
 
     def event_selection_changed(self, selection):
         # Disable crop/resize edition if image is not >= HD
-        print("event_selection_changed")
-        if selection['k_step'] in ['', 'deinterlace', 'pre_upscale', 'geometry']:
-            self.widget_geometry.set_geometry_edition_enabled(False)
-        else:
-            self.widget_geometry.set_geometry_edition_enabled(True)
+        if 'geometry' in self.model.get_widget_list():
+            if selection['k_step'] in ['', 'deinterlace', 'pre_upscale', 'geometry']:
+                self.widget_geometry.set_geometry_edition_enabled(False)
+            else:
+                self.widget_geometry.set_geometry_edition_enabled(True)
         self.event_preview_options_changed()
 
 
@@ -235,8 +237,16 @@ class Window_common(QMainWindow):
         enabled = True if len(shotlist['shots']) > 0 else False
         for w_str in self.model.get_widget_list():
             log.info("%s: set enabled: %s" % (self.widgets[w_str].objectName(), 'true' if enabled else 'false'))
+
+            if w_str == 'geometry':
+                if shotlist['k_step'] in ['deinterlace', 'pre_upscale']:
+                    self.widgets[w_str].set_edition_and_preview_enabled(False)
+                else:
+                    self.widgets[w_str].set_edition_and_preview_enabled(enabled)
+
             try: self.widgets[w_str].set_widget_enabled(enabled)
             except: pass
+
 
 
     def get_current_widget(self):

@@ -71,8 +71,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/grey/eye.svg</normaloff>
-            <normalon>img/blue/eye.svg</normalon>img/grey/eye.svg</iconset>
+            <normaloff>icons/grey/eye.svg</normaloff>
+            <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -95,8 +95,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/grey/save.svg</normaloff>
-            <normalon>img/purple/save.svg</normalon>img/grey/save.svg</iconset>
+            <normaloff>icons/grey/save.svg</normaloff>
+            <normalon>icons/purple/save.svg</normalon>icons/grey/save.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>
@@ -122,8 +122,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/grey/undo.svg</normaloff>
-            <normalon>img/purple/undo.svg</normalon>img/grey/undo.svg</iconset>
+            <normaloff>icons/grey/undo.svg</normaloff>
+            <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>
@@ -162,8 +162,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>img/purple/x-square.svg</normaloff>
-            <normalon>img/purple/x-square.svg</normalon>img/purple/x-square.svg</iconset>
+            <normaloff>icons/purple/x-square.svg</normaloff>
+            <normalon>icons/purple/x-square.svg</normalon>icons/purple/x-square.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>
@@ -265,7 +265,7 @@
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>img/page_white_pick.png</normaloff>img/page_white_pick.png</iconset>
+                  <normaloff>icons/page_white_pick.png</normaloff>icons/page_white_pick.png</iconset>
                 </property>
                 <property name="flat">
                  <bool>true</bool>
@@ -298,7 +298,7 @@
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>img/page_white_pick.png</normaloff>img/page_white_pick.png</iconset>
+                  <normaloff>icons/page_white_pick.png</normaloff>icons/page_white_pick.png</iconset>
                 </property>
                 <property name="flat">
                  <bool>true</bool>
@@ -344,7 +344,7 @@
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>img/page_white_pick.png</normaloff>img/page_white_pick.png</iconset>
+                  <normaloff>icons/page_white_pick.png</normaloff>icons/page_white_pick.png</iconset>
                 </property>
                 <property name="flat">
                  <bool>true</bool>
@@ -646,7 +646,7 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>img/edit-undo.png</normaloff>img/edit-undo.png</iconset>
+               <normaloff>icons/purple/undo.svg</normaloff>icons/purple/undo.svg</iconset>
              </property>
              <property name="flat">
               <bool>true</bool>

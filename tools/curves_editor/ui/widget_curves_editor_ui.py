@@ -228,7 +228,7 @@ class Ui_widget_curves_editor(object):
         sizePolicy5.setHeightForWidth(self.pushButton_reset_to_initial_curves.sizePolicy().hasHeightForWidth())
         self.pushButton_reset_to_initial_curves.setSizePolicy(sizePolicy5)
         icon = QIcon()
-        icon.addFile(u"img/purple/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_reset_to_initial_curves.setIcon(icon)
         self.pushButton_reset_to_initial_curves.setFlat(True)
 
@@ -239,7 +239,7 @@ class Ui_widget_curves_editor(object):
         sizePolicy5.setHeightForWidth(self.pushButton_remove_shot_curve.sizePolicy().hasHeightForWidth())
         self.pushButton_remove_shot_curve.setSizePolicy(sizePolicy5)
         icon1 = QIcon()
-        icon1.addFile(u"img/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u"icons/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_remove_shot_curve.setIcon(icon1)
         self.pushButton_remove_shot_curve.setFlat(True)
 
@@ -254,7 +254,7 @@ class Ui_widget_curves_editor(object):
         sizePolicy5.setHeightForWidth(self.pushButton_save_database.sizePolicy().hasHeightForWidth())
         self.pushButton_save_database.setSizePolicy(sizePolicy5)
         icon2 = QIcon()
-        icon2.addFile(u"img/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_save_database.setIcon(icon2)
         self.pushButton_save_database.setFlat(True)
 

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import gc
@@ -12,13 +11,10 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import (
     QCursor,
-    QIcon,
     QImage,
-    QPainter,
 )
 from PySide6.QtWidgets import (
     QApplication,
-    QMainWindow,
     QMenu,
 )
 
@@ -29,30 +25,10 @@ from viewer.widget_browser import Widget_browser
 PAINTER_MARGIN_LEFT = 20
 PAINTER_MARGIN_TOP = 20
 
-class Window_main(Window_common, QMainWindow):
+class Window_main(Window_common):
 
     def __init__(self, model:Model_viewer):
-        super(Window_main, self).__init__()
-
-        # Set model
-        self.model = model
-
-        # Reset variables
-        self.image = None
-        self.is_repainting = False
-        self.is_closing = False
-
-        self.setWindowIcon(QIcon("img/icon.png"))
-
-        # Add painter
-        self.painter = QPainter()
-
-        self.patch_ui()
-        self.setWindowFlags(Qt.Window)
-        self.setStyleSheet("background-color: black")
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
-
-        # Verify that folder exists
+        super(Window_main, self).__init__(self, model)
 
         # Get preferences from model
         p = self.model.get_preferences()
@@ -65,10 +41,6 @@ class Window_main(Window_common, QMainWindow):
 
         # Events
         self.model.signal_display_frame[dict].connect(self.display_frame)
-
-        # Right click
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested[QPoint].connect(self.event_right_click)
 
         # Set initial values
         self.set_initial_options(p)
@@ -151,14 +123,10 @@ class Window_main(Window_common, QMainWindow):
         else:
             self.image = QImage(frame['filepath'])
             # log.info("image size: %dx%d" % (self.image.width(), self.image.height()))
-            self.is_repainting = False
-            self.setMinimumWidth(self.image.width())
-
             frame.update({
                 'dimensions': {'w':self.image.width(), 'h': self.image.height()}
             })
         self.widget_browser.display_frame_properties(frame)
-        gc.collect()
         self.repaint()
 
 
@@ -173,20 +141,13 @@ class Window_main(Window_common, QMainWindow):
             return
         self.is_repainting = True
 
-        # w = min(self.image.width(), self.width())
-        # h = min(self.image.height(), self.height())
-        # log.info("viewer size: %dx%d" % (self.width(), self.height()))
-        # log.info("image size: %dx%d" % (w, h))
-
         if self.painter.begin(self):
-            self.is_repainting = True
             if self.widget_browser.is_fit_to_image_enabled():
                 self.painter.drawImage(QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP),
                     self.image.scaled(min(self.width(), 1920), min(self.height(), 1080), Qt.KeepAspectRatio))
             else:
                 self.painter.drawImage(QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP), self.image)
             self.painter.end()
-            # self.setFocus()
         self.is_repainting = False
 
 
