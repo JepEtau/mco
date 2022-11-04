@@ -78,6 +78,8 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.adjustSize()
 
 
+    def set_edition_and_preview_enabled(self, enabled):
+        pass
 
     def set_parameters(self, parameters, do_backup=True):
         log.info("set geometry parameters")

@@ -70,11 +70,7 @@ class Model_video_editor(Model_common):
 
         # Variables
         self.model_database = Model_database()
-
         self.filepath = list()
-
-        self.list_replace = list()
-
         for step in ['bgd', 'stitching']:
             self.step_labels.remove(step)
 
@@ -291,7 +287,6 @@ class Model_video_editor(Model_common):
                     'cache': None,
                 })
 
-
         # Create a dict to update the "browser" part of the editor widget
         if k_part in K_GENERIQUES:
             k_ed = db[k_part]['common']['video']['reference']['k_ed']
@@ -308,6 +303,8 @@ class Model_video_editor(Model_common):
             },
             'geometry': self.model_database.get_part_geometry(k_ed, k_part),
         }
+
+
 
         self.model_database.initialize_shots_per_curves(self.shots)
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
@@ -483,15 +480,18 @@ class Model_video_editor(Model_common):
     def refresh_replace_list(self):
         # List of frames to replace
         log.info("refresh list")
-        self.list_replace.clear()
+        list_replace = list()
         for frame in self.playlist_frames:
-            if frame['replaced_by'] != -1:
-                self.list_replace.append({
+            frame_no = self.model_database.get_replace_frame_no(
+                    shot=self.shots[frame['shot_no']],
+                    frame_no=frame['frame_no'])
+            if frame_no != -1:
+                list_replace.append({
                     'shot_no': frame['shot_no'],
-                    'src': frame['replaced_by'],
+                    'src': frame_no,
                     'dst': frame['frame_no'],
                 })
-        self.signal_replace_list_refreshed.emit(self.list_replace)
+        self.signal_replace_list_refreshed.emit(list_replace)
 
 
     def event_rgb_graph_modified(self, rgb_channels):
@@ -620,14 +620,15 @@ class Model_video_editor(Model_common):
                 frame_no=frame_no,
                 new_frame_no=replace['src'])
             # update the frame as it is required to refresh the list of the widget_replace
-            self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
+            # print("index: %d" % )
+            # self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
 
         elif action == 'remove':
             log.info("remove: shot_no=%d, frame_no=%d (index=%d)" % (shot_no, frame_no, index))
             self.model_database.remove_replaced_frame(shot=shot_src, frame_no=frame_no)
 
             # update the frame as it is required to refresh the list of the widget_replace
-            self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
+            # self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
 
         self.refresh_replace_list()
         self.signal_reload_frame.emit()
@@ -760,14 +761,14 @@ def generate_single_image(frame:dict, preview_options:dict):
             cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
         # print("\t-> final: ", img_finalized.shape)
-        print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
+        # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
 
         return (frame['index'], img_finalized)
 
     if img_resized is not None:
-        print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
+        # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
         return (frame['index'], img_resized)
     else:
-        print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
+        # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
         return (frame['index'], img)
 

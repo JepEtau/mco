@@ -22,10 +22,12 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from common.sylesheet import set_stylesheet
-
-from video_editor.model_video_editor import Model_video_editor
+from common.sylesheet import (
+    set_stylesheet,
+    set_widget_stylesheet,
+)
 from common.ui.widget_controls_ui import Ui_widget_controls
+from video_editor.model_video_editor import Model_video_editor
 
 
 class Widget_controls(QWidget, Ui_widget_controls):
@@ -55,21 +57,24 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.slider_frames.setTickPosition(QSlider.NoTicks)
         self.slider_frames.setTickInterval(1)
 
-        self.lineEdit_frame_no.setFocusPolicy(Qt.NoFocus)
-        self.lineEdit_frame_no.clear()
-
         self.set_enabled(False)
 
         self.icon_play = QIcon()
-        self.icon_play.addFile("img/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.icon_play.addFile("icons/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_play_pause.setIcon(self.icon_play)
 
         self.icon_pause = QIcon()
-        self.icon_pause.addFile("img/blue/pause.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.icon_pause.addFile("icons/blue/pause.svg", QSize(), QIcon.Normal, QIcon.Off)
         # self.pushButton_play_pause.setIcon(self.icon_pause)
 
 
         self.spinBox_speed.setFocusPolicy(Qt.NoFocus)
+        self.label_ed_ep_part.setFocusPolicy(Qt.NoFocus)
+        self.label_ed_ep_part.clear()
+        self.label_shot_no.setFocusPolicy(Qt.NoFocus)
+        self.label_shot_no.clear()
+        self.lineEdit_frame_no.setFocusPolicy(Qt.NoFocus)
+        self.lineEdit_frame_no.clear()
 
         # variables
         self.previous_position = None
@@ -93,6 +98,8 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
         self.set_selected(False)
         set_stylesheet(self)
+        set_widget_stylesheet(self.label_ed_ep_part)
+        set_widget_stylesheet(self.label_shot_no)
         self.adjustSize()
 
 
@@ -144,7 +151,11 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
 
     def refresh_values(self, frame:dict):
+        k_ed_ep_part = "%s:%s:%s" % (frame['k_ed'], frame['k_ep'], frame['k_part'])
+        self.label_ed_ep_part.setText(k_ed_ep_part)
+        self.label_shot_no.setText(str(frame['shot_no']))
         self.lineEdit_frame_no.setText(str(frame['frame_no']))
+
 
 
     def refresh(self, values:dict):
@@ -167,7 +178,7 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
 
     def update_slider_value(self, index:int):
-        log.info("update_slider_value: %d" % (index))
+        # log.info("update_slider_value: %d" % (index))
         if index >= len(self.frame_nos):
             log.info("out of range: %d" % (index))
             index = len(self.frame_nos) - 1
@@ -238,7 +249,7 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
 
     def event_previous_frame(self, delta=1):
-        log.info("event_previous_frame: %d" % (self.slider_frames.value()))
+        # log.info("event_previous_frame: %d" % (self.slider_frames.value()))
         self.update_slider_value(
             max(0, self.slider_frames.value() - delta))
 
@@ -266,18 +277,17 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
 
 
-    # def event_stop(self):
-    #     self.refresh_status('stopped')
-    #     self.pushButton_play_pause.blockSignals(True)
-    #     self.pushButton_play_pause.setChecked(False)
-    #     self.pushButton_play_pause.setIcon(self.icon_play)
-    #     self.pushButton_play_pause.blockSignals(False)
-    #     self.slider_frames.blockSignals(True)
-    #     self.slider_frames.setValue(0)
-    #     self.slider_frames.blockSignals(False)
-    #     self.slider_frames.setFocus()
-
-    #     self.signal_button_pushed.emit('stop')
+    def event_stop(self):
+        self.refresh_status('stopped')
+        self.pushButton_play_pause.blockSignals(True)
+        self.pushButton_play_pause.setChecked(False)
+        self.pushButton_play_pause.setIcon(self.icon_play)
+        self.pushButton_play_pause.blockSignals(False)
+        self.slider_frames.blockSignals(True)
+        self.slider_frames.setValue(0)
+        self.slider_frames.blockSignals(False)
+        self.slider_frames.setFocus()
+        self.signal_button_pushed.emit('stop')
 
 
 

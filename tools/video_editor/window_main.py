@@ -299,7 +299,7 @@ class Window_main(Window_common):
                     return True
 
         if self.widget_controls.event_key_pressed(event):
-            print("forwarded to controls", key)
+            # print("forwarded to controls", key)
             event.accept()
             return True
 

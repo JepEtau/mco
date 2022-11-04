@@ -19,14 +19,11 @@ from PySide6.QtCore import (
 from PySide6.QtGui import (
     QColor,
     QCursor,
-    QIcon,
     QImage,
-    QPainter,
     QPen,
 )
 from PySide6.QtWidgets import (
     QApplication,
-    QMainWindow,
     QMenu,
 )
 
@@ -35,26 +32,11 @@ from curves_editor.model_curves_editor import Model_curves_editor
 from curves_editor.widget_curves_editor import Widget_curves_editor
 
 
-class Window_main(Window_common, QMainWindow):
+class Window_main(Window_common):
     signal_reload_folder = Signal()
 
     def __init__(self, model:Model_curves_editor):
-        super(Window_main, self).__init__()
-
-        # Set model
-        self.model = model
-
-        # Reset variables
-        self.image = None
-        self.is_repainting = False
-        self.is_closing = False
-
-        self.setWindowIcon(QIcon("img/icon.png"))
-
-        # Add painter
-        self.painter = QPainter()
-
-        self.patch_ui()
+        super(Window_main, self).__init__(self, model)
 
         # Get preferences from model
         p = self.model.get_preferences()
@@ -81,15 +63,6 @@ class Window_main(Window_common, QMainWindow):
         # Signals/events
         self.model.signal_display_frame[dict].connect(self.display_frame)
         self.model.signal_folders_parsed[dict].connect(self.event_folders_parsed)
-
-        # Right click
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested[QPoint].connect(self.event_right_click)
-
-        # Show window
-        self.setWindowFlags(Qt.Window)
-        self.setStyleSheet("background-color: black")
-        self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
 
 
     def event_activated(self):

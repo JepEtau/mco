@@ -42,7 +42,7 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>img/purple/undo.svg</normaloff>img/purple/undo.svg</iconset>
+       <normaloff>icons/purple/undo.svg</normaloff>icons/purple/undo.svg</iconset>
      </property>
      <property name="checkable">
       <bool>false</bool>
@@ -68,7 +68,7 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>img/purple/save.svg</normaloff>img/purple/save.svg</iconset>
+       <normaloff>icons/purple/save.svg</normaloff>icons/purple/save.svg</iconset>
      </property>
      <property name="checkable">
       <bool>false</bool>
@@ -107,7 +107,7 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>img/purple/minus-square.svg</normaloff>img/purple/minus-square.svg</iconset>
+       <normaloff>icons/purple/minus-square.svg</normaloff>icons/purple/minus-square.svg</iconset>
      </property>
      <property name="checkable">
       <bool>false</bool>
@@ -133,7 +133,7 @@
      </property>
      <property name="icon">
       <iconset>
-       <normaloff>img/purple/x-square.svg</normaloff>img/purple/x-square.svg</iconset>
+       <normaloff>icons/purple/x-square.svg</normaloff>icons/purple/x-square.svg</iconset>
      </property>
      <property name="checkable">
       <bool>false</bool>

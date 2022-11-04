@@ -150,16 +150,17 @@ def consolidate_shot(db, shot) -> None:
 
         shot['ref'] = shot['start']
 
-        # Patch start with offset
-        try:
-            offsets = db_video['offsets']
-            for i in range(len(offsets)):
-                if offsets[i]['start'] <= shot['start'] <= offsets[i]['end']:
-                    shot['start'] = shot['start'] + offsets[i]['offset']
-                    break
-        except:
-            # print("warning: no offset defined in %s:%s:%s" % (k_ed, k_ep, k_part))
-            pass
+        # Patch start with offset ...
+        # TODO: correct this!!!!
+        # try:
+        #     offsets = db_video['offsets']
+        #     for i in range(len(offsets)):
+        #         if offsets[i]['start'] <= shot['start'] <= offsets[i]['end']:
+        #             shot['start'] = shot['start'] + offsets[i]['offset']
+        #             break
+        # except:
+        #     # print("warning: no offset defined in %s:%s:%s" % (k_ed, k_ep, k_part))
+        #     pass
 
 
         # Remove unused tasks
