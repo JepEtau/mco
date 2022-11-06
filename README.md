@@ -2,7 +2,7 @@
 
 ## Exigences et installations
 
-- Python >= 3.10.2
+- Python 3.10
 - Modules python
     * numpy
     * opencv-python
