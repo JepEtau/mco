@@ -22,7 +22,6 @@ from skimage.util import img_as_ubyte
 from skimage.util import img_as_float
 # from skimage.io import imshow, imread
 # from skimage.color import rgb2yuv, rgb2hsv, rgb2gray, yuv2rgb, hsv2rgb
-from scipy.signal import convolve2d
 # from skimage.restoration import denoise_tv_bregman
 from skimage.restoration import (calibrate_denoiser,
                                  denoise_wavelet,
@@ -31,17 +30,10 @@ from skimage.restoration import (calibrate_denoiser,
                                  denoise_bilateral,
                                  estimate_sigma)
 from functools import partial
-
 from pprint import pprint
-
-from scipy.signal import convolve2d as conv2
-
 from skimage import color
 from skimage import restoration
 
-
-# https://pyflowopencv.readthedocs.io/en/latest/index.html
-# Grip
 
 
 def filter_denoise(frame, img):
