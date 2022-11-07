@@ -75,7 +75,7 @@ def filter_upscale(frame, img):
         imgTmp = filters_opencv(img, filter_array, multi=False)
         return imgTmp
     else:
-        print("warning: no upscale filter defined")
+        print("warning: opencv: no upscale filter defined")
     return None
 
 

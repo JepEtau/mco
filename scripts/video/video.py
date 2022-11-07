@@ -48,6 +48,8 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
             k_episode = db[k_p]['common']['video']['reference']['k_ep']
             create_video_directory(db, k_p)
         else:
+            if k_ep == 'ep00':
+                sys.exit("Erreur: le numéro de l'épisode est manquant")
             db_video = db[k_ep]['common']['video'][k_p]
             k_episode = k_ep
 

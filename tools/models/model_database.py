@@ -1,9 +1,7 @@
 # -*- coding: utf-8 -*-
-
 import sys
-
-from utils.get_curves import calculate_channel_lut, get_lut_from_curves
 sys.path.append('../scripts')
+
 from copy import deepcopy
 import gc
 import os
@@ -18,15 +16,22 @@ import numpy as np
 from pprint import pprint
 from logger import log
 
-from PySide6.QtCore import(
-    QObject,
-    Signal,
-)
 
 from models.model_stitching_curves import Model_stitching_curves
 
 from utils.path import PATH_DATABASE
-from utils.common import K_GENERIQUES, K_NON_GENERIQUE_PARTS, get_k_part_from_frame_no, get_shot_from_frame_no_new, nested_dict_clean, nested_dict_set, pprint_video
+from utils.common import (
+    K_GENERIQUES,
+    K_NON_GENERIQUE_PARTS,
+    get_k_part_from_frame_no,
+    get_shot_from_frame_no_new,
+    nested_dict_clean,
+    nested_dict_set,
+    pprint_video,
+    recursive_update,
+)
+
+from utils.get_curves import calculate_channel_lut
 
 from parsers.parser_common import parse_common_configuration
 from parsers.parser_database import pprint_episode
@@ -51,14 +56,17 @@ from parsers.parser_stabilize import parse_stabilize_configurations
 from parsers.parser_stabilize import get_shots_stabilize_parameters, get_frames_stabilize
 
 
-from parsers.parser_stitching import STITCHING_SHOT_PARAMETERS_DEFAULT
-from parsers.parser_stitching import get_frames_stitching_parameters
-from parsers.parser_stitching import get_frames_stitching_transformation
-from parsers.parser_stitching import get_shot_stitching_curves
-from parsers.parser_stitching import get_shots_stitching_fgd_crop
-from parsers.parser_stitching import parse_stitching_configurations
-from parsers.parser_stitching import get_shots_stitching_parameters
-from parsers.parser_stitching import STITCHING_CURVES_DEFAULT, parse_stitching_curves_database
+from parsers.parser_stitching import (
+    STITCHING_SHOT_PARAMETERS_DEFAULT,
+    get_frames_stitching_parameters,
+    get_frames_stitching_transformation,
+    get_shot_stitching_curves,
+    get_shots_stitching_fgd_crop,
+    parse_stitching_configurations,
+    get_shots_stitching_parameters,
+    STITCHING_CURVES_DEFAULT,
+    parse_stitching_curves_database,
+)
 
 from parsers.parser_curves import (
     get_curves_selection,
@@ -238,7 +246,12 @@ class Model_database(Model_stitching_curves, object):
                     self.db_replaced_frames = dict()
 
                 if do_parse_geometry:
-                    self.db_part_geometry_initial = get_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
+                    if k_part in ['g_asuivre', 'g_reportage']:
+                        self.db_part_geometry_initial = get_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part[2:])
+                        recursive_update(self.db_part_geometry_initial, get_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part))
+                        pprint(self.db_part_geometry_initial)
+                    else:
+                        self.db_part_geometry_initial = get_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_part_geometry = dict()
 
                 if do_parse_stitching:
@@ -277,12 +290,19 @@ class Model_database(Model_stitching_curves, object):
                     # concatenate libraries for up to 3 episodes?
                     # better solution would be to parse dynamicaly the folders. i.e. load and save the curves
                     # from the other directory if the src episode is not the same.
-                    self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_ep)
-                    self.db_curves_library = dict()
+                    if k_part in ['g_asuivre', 'g_reportage']:
+                        self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_part)
+                        k_ep_ref = self.global_database[k_part]['common']['video']['reference']['k_ep']
+                        self.db_curves_selection_initial = get_curves_selection(self.global_database,
+                            k_ep=k_ep_ref, k_part=k_part)
+                    else:
+                        self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_ep)
+                        self.db_curves_selection_initial = get_curves_selection(self.global_database,
+                            k_ep=k_ep, k_part=k_part)
 
-                    # This ok when replacing the shots form another episode:
-                    self.db_curves_selection_initial = get_curves_selection(self.global_database, k_ep=k_ep, k_part=k_part)
+                    self.db_curves_library = dict()
                     self.db_curves_selection = dict()
+
 
                 # print("<<<<<<<<<<<<<<<<< %s:%s: shot stabilization parameters >>>>>>>>>>>>>>>>>>>>" % (k_ep, k_part))
                 # for k_shot_no, parameters in self.db_stabilize_shots_parameters.items():
@@ -730,7 +750,10 @@ class Model_database(Model_stitching_curves, object):
                         self.db_part_geometry_initial]:
             if k_ed in db_tmp.keys() and k_part in db_tmp[k_ed].keys():
                 return db_tmp[k_ed][k_part]
+
+        # TODO: correct this by using the image dimensions
         return {'crop': [0, 0, 0, 0]}
+
 
     def set_part_geometry(self, k_ed, k_part, geometry):
         # db_modified = self.db_part_geometry

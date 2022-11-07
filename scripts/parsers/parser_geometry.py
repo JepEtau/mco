@@ -58,13 +58,14 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                 db[k_ep][k_ed][k_part]['video']['geometry']['crop'] = list(map(lambda x: int(x), coordinates))
 
 
+
 def get_part_geometry(db, k_ep, k_part) -> dict:
     """ Returns a list of crops/resize per part for each edition
     """
     part_geometry = dict()
 
     # Get the list of editions and episode that are used by this ep/part
-    if k_part in K_GENERIQUES:
+    if k_part in ['g_debut', 'g_fin']:
         dependencies = parse_get_dependencies_for_generique(db, k_part_g=k_part)
         k_ep_src = db[k_part]['common']['video']['reference']['k_ep']
         k_ed = db[k_part]['common']['video']['reference']['k_ed']
@@ -72,7 +73,7 @@ def get_part_geometry(db, k_ep, k_part) -> dict:
         dependencies = db['editions']
         k_ep_src = k_ep
 
-    # for each dependency, get the list of crop
+    # For each dependency, get the list of crop/resize
     part_geometry = dict()
     for k_ed in dependencies.keys():
         if k_ed == 'layers':
@@ -86,7 +87,6 @@ def get_part_geometry(db, k_ep, k_part) -> dict:
             part_geometry[k_ed][k_part] = db_video['geometry'].copy()
 
     return part_geometry
-
 
 
 

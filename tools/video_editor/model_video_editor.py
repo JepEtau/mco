@@ -260,6 +260,7 @@ class Model_video_editor(Model_common):
             if k_part in K_GENERIQUES:
                 k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
 
+
             # Create a list of frames for this shot
             self.frames[shot_no] = list()
             for p in filepath_tmp:
@@ -287,8 +288,26 @@ class Model_video_editor(Model_common):
                     'cache': None,
                 })
 
+
+                print("ep_or_part_selection_changed")
+                print(k_ed_src)
+                print(k_part)
+                if k_part in ['g_asuivre', 'g_reportage']:
+
+                    # Geometry
+                    self.frames[shot_no].update()
+
+
+                    # Use the crop area defined in the following part
+                    k_ed = db[k_ep]['common']['video']['reference']['k_ed']
+                    print("%s -> %s ->  %s:%s" % (k_part, k_part[2:], k_ed, k_ep))
+                    self.model_database.get_part_geometry(k_ed_src, k_part)
+
+
+
+
         # Create a dict to update the "browser" part of the editor widget
-        if k_part in K_GENERIQUES:
+        if k_part in ['g_debut', 'g_fin']:
             k_ed = db[k_part]['common']['video']['reference']['k_ed']
         else:
             k_ed = db[k_ep]['common']['video']['reference']['k_ed']

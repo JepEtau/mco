@@ -12,6 +12,7 @@ from pprint import pprint
 import re
 
 from utils.common import (
+    K_GENERIQUES,
     get_k_part_from_frame_no,
     get_shot_from_frame_no_new,
     nested_dict_set,
@@ -73,23 +74,21 @@ def parse_curves_file(db, k_ep_or_g, k_curves:str) -> dict:
         returns a curve object for each channel
         returns None if there is a problem with the curve file
     """
-    # print("%s.parse_curves_file: %s, %s" % (__name__, k_ep_or_g, path))
+    # print("%s.parse_curves_file: %s, %s" % (__name__, k_ep_or_g, k_curves))
     library_path = db['common']['directories']['curves']
     filepath = os.path.join(library_path, k_ep_or_g, "%s.crv" % (k_curves))
-    if not os.path.exists(filepath):
-        filepath = os.path.join(library_path, "%s.crv" % (k_curves))
-        if not os.path.exists(filepath):
-            print("Error: %s.parse_curves_file: %s, fichier manquant: %s" % (__name__, k_ep_or_g, filepath))
-            return None
+    try:
+        curves_file = open(filepath, 'r')
+    except:
+        print("Error: %s.parse_curves_file: %s, fichier manquant ou erroné: %s" % (__name__, k_ep_or_g, filepath))
+        raise()
     try:
         rgb_channels = {
             'r': Curve(),
             'g': Curve(),
             'b': Curve(),
             'm': Curve()
-        }
-
-        curves_file = open(filepath, 'r')
+        }       
         for line in curves_file.readlines():
             match = re.match("([r|g|b|m])=(.*)", line)
             k_channel = match.group(1)
@@ -136,25 +135,24 @@ def get_curves_selection(db, k_ep, k_part) -> dict:
     # Create a dictionary of curves selection for each shot
     # It uses the shot_src so that this will work when replacing shots
     # from another episode/part
-
     shot_curves = dict()
 
     # Get the list of editions and episode that are used by this ep/part
-    if k_part in ['g_debut', 'g_fin']:
+    if k_part in ['g_debut', 'g_fin', 'g_reportage']:
         db_video = db[k_part]['common']['video']
     else:
         print("%s.get_curves_selection: %s:%s" % (__name__, k_ep, k_part))
         k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
-        print("%s.get_curves_selection: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
+        # print("%s.get_curves_selection: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
 
     for shot in db_video['shots']:
-        # print(shot)
         if ('src' not in shot.keys()
             or ('use' in shot['src'].keys()
             and not shot['src']['use'])):
             shot_src = shot
+            k_part_src = k_part
         else:
             if 'k_ed' in shot['src'].keys():
                 k_ed_src = shot['src']['k_ed']

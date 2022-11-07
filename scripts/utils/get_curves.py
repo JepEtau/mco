@@ -49,13 +49,13 @@ def get_curves(db, frame:dict, k_part:str):
 
 
 
-def get_lut_from_curves(db, k_ep, k_curves:str):
+def get_lut_from_curves(db, k_ep_or_g, k_curves:str):
     """ This function reads a curve file and
         returns the luts for each RGB channel. Returns None
         if there is a problem with the curve
     """
-    # print("%s:get_lut_from_curves %s, %s" % (__name__, k_ep, k_curves))
-    rgb_channels = parse_curves_file(db, k_ep, k_curves)
+    # print("%s:get_lut_from_curves %s, %s" % (__name__, k_ep_or_g, k_curves))
+    rgb_channels = parse_curves_file(db, k_ep_or_g, k_curves)
     if rgb_channels is None:
         return None
 

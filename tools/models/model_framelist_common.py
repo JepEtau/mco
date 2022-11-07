@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
 sys.path.append('../scripts')
@@ -10,12 +9,11 @@ import gc
 import re
 from copy import deepcopy
 
-from utils.get_filters import FILTER_BASE_NO
 from utils.get_filters import filter_id_to_step
-from utils.common import K_ALL_PARTS
-from utils.common import K_GENERIQUES
-from utils.common import get_shot_from_frame_no
-from utils.common import get_shot_from_frame_no_new
+from utils.common import (
+    K_GENERIQUES,
+    get_shot_from_frame_no_new,
+)
 
 
 class Model_framelist_common(object):

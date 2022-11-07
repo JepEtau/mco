@@ -243,7 +243,7 @@ def consolidate_shot(db, shot) -> None:
 
     # RGB correction: calculate the lut from the curves
     if shot['curves'] is not None:
-        k_ep_or_g = k_part if k_part in ['g_debut', 'g_fin'] else k_ep
+        k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
         shot['curves']['lut'] = get_lut_from_curves(db,
                                     k_ep_or_g,
                                     shot['curves']['k_curves'])
