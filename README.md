@@ -41,7 +41,7 @@ Note:
 
 
 # Implémentation et documentation
-N'ayant qu'un temps limité, vu l'ampleur du projet, et que j'avais commencé ce projet pour mon usage personnel. Donc:
+N'ayant qu'un temps limité, vu l'ampleur du projet, et que j'avais commencé ce projet pour mon usage personnel:
 - J'utilise de nombreux anglicismes, ne maîtrisant pas les termes techniques en français (et ne voulant pas, c'est une véritable torture).
 - De nombreux commentaires sont, soit en français, soit en anglais, soit en très mauvais anglais selon la température ambiante, la phase lunaire, mon humeur, le temps que j'ai à consacrer, etc.
 - De même, l'implémentation est tantôt propre, tantôt pas pythonique pour un sou(ce n'est pas mon language de développement habituel). De nombreuses parties seraient à re-travailler, optimiser, mais je n'ai pas le temps.
