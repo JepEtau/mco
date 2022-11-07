@@ -72,19 +72,19 @@ def main():
         type=int,
         default=0,
         required=False,
-        help="plans à processer: début")
+        help="plans à processer: début. NON VERIFIE")
 
     parser.add_argument("--shot_max",
         type=int,
         default=999999,
         required=False,
-        help="plans à processer: fin")
+        help="plans à processer: fin. NON VERIFIE")
 
     parser.add_argument("--shot",
         type=int,
         default=-1,
         required=False,
-        help="plan à processer")
+        help="numéro du plan à processer")
 
 
     parser.add_argument("--vfilter",
@@ -298,6 +298,13 @@ def main():
 
         # Get the list of tasks
         tasks = get_tasklist(final_task=arguments.vfilter)
+
+        # Check if nnedi3_weights.bin exists
+        if 'deinterlace' in tasks:
+            nnedi_file = "./nnedi3_weights.bin"
+            if not os.path.exists(nnedi_file):
+                sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
+
 
         if arguments.frames:
             # Extract frames
