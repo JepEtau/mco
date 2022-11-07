@@ -93,3 +93,18 @@ def calculate_channel_lut(rgb_channels, verbose=False):
             pprint.pprint(lut[k])
 
     return lut
+
+
+
+def calculate_channel_lut_for_stitching(rgb_channels):
+    lut = dict()
+
+    depth = 256.0
+    for k in ['r', 'g', 'b']:
+        lut_tmp = rgb_channels[k].calculate(sample_count=256, depth=depth, verbose=False)
+        lut_tmp = (lut_tmp - depth/2) / 10
+        tmp = np.arange(start=0, stop=256, step=1, dtype=np.float32)
+        tmp32 = np.add(tmp, lut_tmp)
+        lut[k] = np.clip(tmp32, 0, 255).astype(np.uint8)
+
+    return lut

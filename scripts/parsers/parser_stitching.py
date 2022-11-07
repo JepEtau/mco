@@ -12,6 +12,7 @@ from pathlib import PosixPath
 from pprint import pprint
 import re
 import sys
+from images.curve import Curve
 
 from utils.common import K_GENERIQUES, get_k_part_from_frame_no
 from utils.common import get_shot_from_frame_no_new
@@ -515,12 +516,30 @@ def parse_stitching_curves_database(db, k_ep:str):
     for k_curves in config.sections():
         db_stitching_curves[k_curves] = deepcopy(STITCHING_CURVES_DEFAULT)
         db_stitching_curves[k_curves]['k_curves'] = k_curves
+        db_stitching_curves[k_curves]['channels'] = {
+            'r': Curve(),
+            'g': Curve(),
+            'b': Curve(),
+        }
         for k_channel in ['r', 'g', 'b']:
             points_str = config.get(k_curves, k_channel).replace(' ', '').strip()
-            db_stitching_curves[k_curves]['points'][k_channel] = list()
-            for point_str in points_str.split(','):
-                xy = np.fromstring(point_str, dtype=np.float32, count=2, sep=':')
-                db_stitching_curves[k_curves]['points'][k_channel].append([xy[0], xy[1]])
+            match = re.match("([r|g|b)=(.*)", points_str)
+            groups = match.group(2).split(',')
+            db_stitching_curves[k_curves]['channels'][k_channel].remove_all_points()
+            for group in groups:
+                xy = group.split(':')
+                db_stitching_curves[k_curves]['channels'][k_channel].add_point(
+                    np.float32(xy[0]),np.float32(xy[1]))
+
+            # db_stitching_curves[k_curves]['points'][k_channel] = list()
+            # for point_str in points_str.split(','):
+            #     xy = np.fromstring(point_str, dtype=np.float32, count=2, sep=':')
+            #     db_stitching_curves[k_curves]['points'][k_channel].append([xy[0], xy[1]])
+
+            # curve = Curve()
+            # curve.remove_all_points()
+            # for p in curves['points'][k_c]:
+            #     curve.add_point(p[0], p[1])
 
         # print("curve name: %s" % (k_curves))
         # for c in ['r', 'g', 'b']:
@@ -528,6 +547,7 @@ def parse_stitching_curves_database(db, k_ep:str):
         #     points = db_stitching_curves[k_curves]['points'][c]
         #     for p in points:
         #         print("\t ", p)
+
 
     return db_stitching_curves
 

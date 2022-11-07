@@ -399,6 +399,8 @@ class Widget_stitching(Widget_common, Ui_widget_stitching):
             'is_enabled': self.pushButton_set_preview.isChecked(),
             'roi_edition': self.pushButton_roi_edition.isChecked(),
             'crop_edition': self.pushButton_crop_edition.isChecked(),
+            # Blend or replace
+            'blend_images': True,
         }
         return preview_options
 

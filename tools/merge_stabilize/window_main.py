@@ -44,9 +44,12 @@ PEN_CROP_SIZE = 1
 
 
 class Window_main(Window_common):
+    signal_preview_options_changed = Signal(dict)
+    signal_save_and_close = Signal()
+
     signal_generate_cache = Signal(list)
     signal_save_modifications = Signal(bool)
-    signal_preview_options_changed = Signal(dict)
+
 
     def __init__(self, model:Model_merge_stabilize):
         super(Window_main, self).__init__(self, model)
@@ -176,6 +179,26 @@ class Window_main(Window_common):
             self.widget_geometry.set_edition_mode('final')
 
 
+
+
+    def event_preview_options_changed(self):
+        log.info("change preview: editor: %s" % (self.current_editor))
+        print("\nchange preview: editor: %s" % (self.current_editor))
+        preview_options = dict()
+        for e, w in self.widgets.items():
+            preview_options.update({e: w.get_preview_options()})
+
+        # TODO: add pushbuttons for curves/replace
+        preview_options.update({
+            'replace': {'is_enabled': False},
+            'curves': {'is_enabled': False},
+        })
+        pprint(preview_options)
+        self.signal_preview_options_changed.emit(preview_options)
+
+
+
+
     def event_preview_options_changed(self):
         log.info("change preview: editor: %s" % (self.current_editor))
         print("\nchange preview: editor: %s" % (self.current_editor))
@@ -185,21 +208,6 @@ class Window_main(Window_common):
             'stabilize': self.widget_stabilize.get_preview_options(),
             'geometry': self.widget_geometry.get_preview_options(),
         }
-
-        if self.current_editor == 'stitching':
-            if preview_options['stitching']['crop_edition']:
-                print("edit fgd crop")
-            elif preview_options['stitching']['roi_edition']:
-                print("edit fgd roi")
-        elif self.current_editor == 'stitching_curves':
-            print("edit fgd curves")
-
-        elif self.current_editor == 'stabilize':
-            print("edit stabilization")
-
-        elif self.current_editor == 'geometry':
-            print("edit crop and resize")
-                #
 
         self.signal_preview_options_changed.emit(preview_options)
 

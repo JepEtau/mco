@@ -23,6 +23,7 @@ from PySide6.QtCore import(
     Signal,
 )
 
+from models.model_stitching_curves import Model_stitching_curves
 
 from utils.path import PATH_DATABASE
 from utils.common import K_GENERIQUES, K_NON_GENERIQUE_PARTS, get_k_part_from_frame_no, get_shot_from_frame_no_new, nested_dict_clean, nested_dict_set, pprint_video
@@ -74,11 +75,10 @@ from parsers.parser_geometry import parse_geometry_configurations
 from parsers.parser_geometry import get_part_geometry
 from parsers.parser_geometry import get_shots_st_geometry
 
-from images.curve import Curve, calculate_lut_for_bgd
 
 
 
-class Model_database(object):
+class Model_database(Model_stitching_curves, object):
 
     def __init__(self):
         super(Model_database, self).__init__()
@@ -106,7 +106,6 @@ class Model_database(object):
         self.is_replace_db_modified = False
         self.is_stabilize_db_modified = False
         self.is_stitching_db_modified = False
-        self.is_stitching_curves_db_modified = False
         self.is_geometry_db_modified = False
 
 
@@ -227,7 +226,7 @@ class Model_database(object):
                 if do_parse_geometry:
                     parse_geometry_configurations(self.global_database, k_ep_or_g=k_part_g)
 
-                # Create shots used for the generatio
+                # Create shots used for the generation
                 create_dst_shots_g(self.global_database, k_ep=k_ep, k_part_g=k_part_g)
 
             determine_av_sync(self.global_database, k_ep=k_ep)
@@ -251,6 +250,11 @@ class Model_database(object):
                     self.db_stitching_frames_initial = get_frames_stitching_transformation(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_stitching_frames = dict()
 
+                    # !!!!! TODO: this won't work when replacing shots from another episode:
+                    # use a duplicated curves file parameters?
+                    # concatenate libraries for up to 3 episodes?
+                    # better solution would be to parse dynamicaly the folders. i.e. load and save the curves
+                    # from the other directory if the src episode is not the same.
                     self.parse_stitching_curves_database(k_ep=k_ep)
                     self.db_stitching_shots_curves_initial = get_shot_stitching_curves(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_stitching_shots_curves = dict()
@@ -268,10 +272,18 @@ class Model_database(object):
                 self.db_st_geometry = dict()
 
                 if do_parse_curves:
+                    # !!!!! TODO: this won't work when replacing shots from another episode:
+                    # use a duplicated curves file?
+                    # concatenate libraries for up to 3 episodes?
+                    # better solution would be to parse dynamicaly the folders. i.e. load and save the curves
+                    # from the other directory if the src episode is not the same.
                     self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_ep)
                     self.db_curves_library = dict()
+
+                    # This ok when replacing the shots form another episode:
                     self.db_curves_selection_initial = get_curves_selection(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_curves_selection = dict()
+
                 # print("<<<<<<<<<<<<<<<<< %s:%s: shot stabilization parameters >>>>>>>>>>>>>>>>>>>>" % (k_ep, k_part))
                 # for k_shot_no, parameters in self.db_stabilize_shots_parameters.items():
                 #     for parameter in parameters:
@@ -1003,172 +1015,6 @@ class Model_database(object):
 
 
 
-    # Curve to apply to bgd before merging bgd and fgd images
-    #---------------------------------------------------------------------------
-    def parse_stitching_curves_database(self, k_ep):
-        # Create 2 db, one for the initial, the second for modified curves
-        self.db_stitching_curves_initial = parse_stitching_curves_database(
-            self.global_database, k_ep=k_ep)
-        self.db_stitching_curves = dict()
-
-
-    def reload_stitching_curves_databse(self, k_ep):
-        # Reload the database but keep the modified ones
-        self.db_stitching_curves_initial = parse_stitching_curves_database(
-            self.global_database, k_ep=k_ep)
-
-
-    def get_stitching_curves_names(self) -> dict:
-        names = list(self.db_stitching_curves_initial.keys())
-        names += list(self.db_stitching_curves.keys())
-        names_sorted = sorted(list(dict.fromkeys(names)))
-        return {'all':names_sorted, 'modified': self.db_stitching_curves.keys()}
-
-
-    def discard_stitching_curves_modifications(self, k_curves):
-        if k_curves in self.db_stitching_curves.keys():
-            log.info("remove the stitching curves from modified db [%s]" % k_curves)
-            del self.db_stitching_curves[k_curves]
-        else:
-            log.info("[%s] has not been modified, cannot remove it" % k_curves)
-
-
-    def get_stitching_curves(self, k_curves):
-        # Return a dict of k_curves and (Curve, lut) for each channel
-        if (k_curves not in self.db_stitching_curves_initial.keys()
-            and k_curves not in self.db_stitching_curves.keys()):
-            print("get_stitching_curves: [%s] is not in modified/initial db" % (k_curves))
-            return STITCHING_CURVES_DEFAULT
-
-        if k_curves in self.db_stitching_curves.keys():
-            print("get_stitching_curves: %s: modified" % (k_curves))
-            curves = self.db_stitching_curves[k_curves]
-
-        elif k_curves in self.db_stitching_curves_initial.keys():
-            print("get_stitching_curves: %s: initial" % (k_curves))
-            curves = self.db_stitching_curves_initial[k_curves]
-
-        if curves['lut'] is None:
-            # Calculate lut from channels
-            curves['lut'] = dict()
-            for k_c in ['r', 'g', 'b']:
-                curve = Curve()
-                curve.remove_all_points()
-                for p in curves['points'][k_c]:
-                    curve.add_point(p[0], p[1])
-                curves['lut'][k_c] = calculate_lut_for_bgd(curve=curve)
-        return curves
-
-
-    def modify_stitching_curves(self, curves:dict):
-        k_curves = curves['k_curves']
-        if k_curves != '':
-            self.db_stitching_curves[k_curves] = deepcopy(curves)
-            self.is_stitching_curves_db_modified = True
-
-
-    def select_shot_stitching_curves(self, shot_no, k_curves):
-        if shot_no not in self.db_stitching_shots_curves.keys():
-            self.db_stitching_shots_curves[shot_no] = dict()
-
-        log.info("select_shot_stitching_curves: shot_no. %d, k_curves=%s" % (shot_no, k_curves))
-        self.db_stitching_shots_curves[shot_no] = self.get_stitching_curves(k_curves)
-
-
-    def set_shot_stitching_curves_as_initial(self, shot_no):
-        # Move from modified to initial db
-        if shot_no in self.db_stitching_shots_curves.keys():
-            self.db_stitching_shots_curves_initial[shot_no] = deepcopy(self.db_stitching_shots_curves[shot_no])
-            del self.db_stitching_shots_curves[shot_no]
-
-
-    def reset_shot_stitching_curves_selection(self, shot_no):
-        if shot_no in self.db_stitching_shots_curves.keys():
-            del self.db_stitching_shots_curves[shot_no]
-
-
-    def get_shot_stitching_curves(self, shot_no):
-        print("get_shot_stitching_curves for shot_no: %d" % (shot_no))
-        if shot_no in self.db_stitching_shots_curves.keys():
-            shot = self.db_stitching_shots_curves[shot_no]
-        elif shot_no in self.db_stitching_shots_curves_initial.keys():
-            shot = self.db_stitching_shots_curves_initial[shot_no]
-        else:
-            print("\t-> None")
-            return None
-
-        if shot is None:
-            print("\t-> removed from initial")
-            return None
-
-        k_curves = shot['k_curves']
-        if k_curves != '':
-            # Get the curve from the global database
-            print("\t-> %s (get_stitching_curves)" % (k_curves))
-            return self.get_stitching_curves(k_curves)
-
-        points = shot['points']
-        if points is not None:
-            print("\t-> %s" % (k_curves))
-            return {
-                'k_curves': k_curves,
-                'points': points,
-                'lut': shot['lut'],
-            }
-        print("\t-> None")
-        return None
-
-    def get_modified_shot_stitching_curves(self):
-        return self.db_stitching_shots_curves
-
-    def set_shot_stitching_curves(self, shot_no, curves_dict):
-        # curves_dict:
-        #     'k_curves' : curve name
-        #     'points': dict of Curves objects for each r,g,b channel
-        # if k_curve == '', this means that the curve jas not yet been "saved as"
-        if shot_no not in self.db_stitching_shots_curves.keys():
-            self.db_stitching_shots_curves[shot_no] = dict()
-
-        # if 'curves' not in self.db_stitching_shots_curves[shot_no].keys():
-        #     # Create a new curve for this shot
-        #     self.db_stitching_shots_curves[shot_no] = deepcopy(STITCHING_CURVES_DEFAULT)
-
-        print("set_shot_stitching_curves")
-        # pprint(curves_dict)
-
-        self.db_stitching_shots_curves[shot_no] = {
-            'k_curves': curves_dict['k_curves'],
-            'points': curves_dict['points'],
-            'lut': curves_dict['lut']
-        }
-        self.is_stitching_db_modified = True
-
-        if curves_dict['k_curves'] != '':
-            self.modify_stitching_curves(curves_dict)
-        else:
-            print("no selected curves")
-
-
-    def remove_shot_stitching_curves(self, shot_no):
-        # Remove the curves of this shot
-        print("remove_shot_stitching_curves: %d" % (shot_no))
-        print(self.db_stitching_shots_curves_initial.keys())
-        print("---")
-        print(self.db_stitching_shots_curves.keys())
-        print("")
-        if shot_no in self.db_stitching_shots_curves.keys():
-            if shot_no in self.db_stitching_shots_curves_initial.keys():
-                # Force to none to overwrite the initial curves
-                # del self.db_stitching_shots_curves[shot_no]
-                # self.db_stitching_shots_curves[shot_no] = {'k_curves': ''}
-                self.db_stitching_shots_curves[shot_no] = None
-                log.info("Force to none to overwrite the initial curves")
-            else:
-                del self.db_stitching_shots_curves[shot_no]
-        elif shot_no in self.db_stitching_shots_curves_initial.keys():
-                # Force to none to overwrite the initial curves
-                self.db_stitching_shots_curves[shot_no] = None
-                log.info("Force to none to overwrite the initial curves")
 
 
     def is_db_modified(self, type:str=''):

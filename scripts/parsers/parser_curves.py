@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import configparser
 import os
@@ -105,6 +106,7 @@ def parse_curves_file(db, k_ep_or_g, k_curves:str) -> dict:
     return rgb_channels
 
 
+
 def write_curves_file(filepath, channels):
     """ This function writes a curve file
     """
@@ -113,7 +115,12 @@ def write_curves_file(filepath, channels):
     #     filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
 
     # Write file
-    curve_file = open(filepath, 'w')
+    try:
+        curve_file = open(filepath, 'w')
+    except:
+        os.makedirs(os.path.dirname(filepath))
+        curve_file = open(filepath, 'w')
+
     # pprint.pprint(curves)
     for k in ['m', 'r', 'g', 'b']:
         valueStr = "%s=" % (k)
@@ -125,8 +132,11 @@ def write_curves_file(filepath, channels):
 
 
 
-
 def get_curves_selection(db, k_ep, k_part) -> dict:
+    # Create a dictionary of curves selection for each shot
+    # It uses the shot_src so that this will work when replacing shots
+    # from another episode/part
+
     shot_curves = dict()
 
     # Get the list of editions and episode that are used by this ep/part
@@ -170,9 +180,11 @@ def get_curves_selection(db, k_ep, k_part) -> dict:
 
 
 
-def parse_curves_folder(db, k_ep_or_g=''):
+def parse_curves_folder(db, k_ep_or_g):
     # Curves contained in the curves directory:
     #  filename, key but do not parse files (will be done dynamically)
+    # TODO: it lists all curves for a folder but this function has to be modified
+    #       to also list the curves from another episode (dependancies)
     print("browse folder which contains curves: %s" % (k_ep_or_g))
     db_curves = dict()
 
@@ -197,19 +209,24 @@ def parse_curves_folder(db, k_ep_or_g=''):
                 }
 
     # Browse curves in the common directory
-    for f in os.listdir(path):
-        if f.endswith(".crv"):
-            # Create an element for each curve
-            k_curves = os.path.splitext(f)[0]
-            if k_curves in db_curves.keys():
-                # Do not add if already in base
-                continue
-            db_curves[k_curves] = {
-                'k_curves': k_curves,
-                'filepath': f,
-                'channels': None,
-                'lut': None,
-                'shots': []
-            }
+    # NO!
+    # for f in os.listdir(path):
+    #     if f.endswith(".crv"):
+    #         # Create an element for each curve
+    #         k_curves = os.path.splitext(f)[0]
+    #         if k_curves in db_curves.keys():
+    #             # Do not add if already in base
+    #             continue
+    #         db_curves[k_curves] = {
+    #             'k_curves': k_curves,
+    #             'filepath': f,
+    #             'channels': None,
+    #             'lut': None,
+    #             'shots': []
+    #         }
+
+
+    # for each shot, get the src episode
+    # and get the curves from the other folder.
 
     return db_curves
