@@ -46,16 +46,40 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
         k_ed, k_ep, k_part = k_section.split('.')
 
         # print("%s:%s:%s:\t" % (k_ed, k_ep, k_part), end='')
-        db[k_ep][k_ed][k_part]['video']['geometry'] = {
-            'crop': [0,0,0,0],
-            'resize': [0,0],
-            'keep_ratio': True,
-        }
+
         for k_str in config.options(k_section):
-            if k_str == 'crop':
-                coordinates = config.get(k_section, k_str).strip().split(':')
-                # x0, y0, x1, y1
-                db[k_ep][k_ed][k_part]['video']['geometry']['crop'] = list(map(lambda x: int(x), coordinates))
+            # if k_str == 'crop':
+            #     coordinates = config.get(k_section, k_str).strip().split(':')
+            #     # x0, y0, x1, y1
+            #     part_geometry['crop'] = list(map(lambda x: int(x), coordinates))
+
+            if k_str == 'geometry':
+                # Global settings for this part
+                db[k_ep][k_ed][k_part]['video']['geometry'] = {
+                    'crop': [0, 0, 0, 0]
+                }
+                part_geometry = db[k_ep][k_ed][k_part]['video']['geometry']
+
+                properties = config.get(k_section, k_str).strip().replace(' ', '').split(',')
+                for property in properties:
+                    property_array_str = property.split('=')
+                    property_name = property_array_str[0]
+
+                    if property_name == 'keep_ratio':
+                        part_geometry[property_name] = True if property_array_str[1] == 'yes' else False
+
+                    elif property_name in ['resize', 'crop']:
+                        # crop: x0, y0, x1, y1
+                        # resize: w,h
+                        values = property_array_str[1].split(':')
+                        part_geometry[property_name] = list(map(lambda x: int(x), values))
+
+            elif k_str.endswith('_geometry'):
+                sys.exit("TODO: custom geometry for shots has to be implemented")
+                # Frame no. = int(k_str[:-1 * len('_geometry')])
+                # Get shot no from frame no
+                # Get properties for this shot
+
 
 
 
@@ -85,6 +109,23 @@ def get_part_geometry(db, k_ep, k_part) -> dict:
             part_geometry[k_ed] = dict()
         if db_video['geometry'] is not None:
             part_geometry[k_ed][k_part] = db_video['geometry'].copy()
+
+
+    # if k_part in ['g_asuivre', 'g_reportage']:
+    #     # Overwrite resize and crop from the following part
+    #     k_part_tmp = k_part[2:]
+    #     k_ep_ref = db[k_ep]['common']['video']['reference']['k_ep']
+    #     k_ed_ref = db[k_ep]['common']['video']['reference']['k_ed']
+    #     print("%s:%s:%s" % ('?', k_ep, k_part))
+    #     print("\t-> %s:%s:%s" % (k_ed_ref, k_ep_ref, k_part_tmp))
+    #     pprint(db[k_ep]['common']['video']['reference'])
+    #     db_video = db[k_ep_ref][k_ed_ref][k_part_tmp]['video']
+    #     try:
+    #         part_geometry[k_ed_ref][k_part].update(db_video['geometry'])
+    #     except:
+    #         part_geometry[k_ed_ref][k_part] = db_video['geometry']
+    #     pprint(part_geometry)
+    #     sys.exit()
 
     return part_geometry
 

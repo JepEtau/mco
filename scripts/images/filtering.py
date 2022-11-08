@@ -132,13 +132,23 @@ def stabilize_image(frame, img):
 def filter_geometry(frame, img):
     # print("crop and resize: %s -> %s" % (frame['filepath']['rgb'], frame['filepath']['geometry']))
 
-    # Crop
+    # Pre-resize image (mainly used for generiques)
+    # It allows modifications of size (keep ratio or not)
+    # to fit the crop area wich is common to all shots of the part
+    try:
+        w_pre_resize, h_pre_resize = frame['geometry']['pre_resize']
+        img_pre_resized = cv2.resize(img,
+            (w_pre_resize, h_pre_resize),
+            interpolation=cv2.INTER_LANCZOS4)
+    except:
+        img_pre_resized = img
 
+    # Crop
     if frame['geometry'] is not None:
         c_x0, c_y0, c_w, c_h = frame['geometry']['crop']
-        img_cropped = img[c_y0:c_y0+c_h, c_x0:c_x0+c_w]
+        img_cropped = img_pre_resized[c_y0:c_y0+c_h, c_x0:c_x0+c_w]
     else:
-        img_cropped = img
+        img_cropped = img_pre_resized
 
     # Resize
     h_c, w_c, channel_count = img_cropped.shape

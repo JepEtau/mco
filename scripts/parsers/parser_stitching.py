@@ -52,6 +52,8 @@ STITCHING_SHOT_PARAMETERS_DEFAULT = {
 
 
 # top, bottom, left, right
+# !!!! These values shall never be modified
+# because crop values for sticthich (stabilized?) depends on theses values.
 STICTHING_FGD_PAD = [60, 60, 80, 60]
 
 
