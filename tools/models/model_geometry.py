@@ -32,13 +32,17 @@ class Model_geometry():
 
     # Final geometry for each part
     def get_part_geometry(self, k_ed, k_part):
-        # print("get_part_geometry: %s:%s" % (k_ed, k_part))
-        # pprint(self.db_part_geometry_initial)
-        for db_tmp in [self.db_part_geometry,
-                        self.db_part_geometry_initial]:
-            if k_ed in db_tmp.keys() and k_part in db_tmp[k_ed].keys():
-                return db_tmp[k_ed][k_part]
+        print("get_part_geometry: %s:%s" % (k_ed, k_part))
+        pprint(self.db_part_geometry_initial)
+        try:
+            return self.db_part_geometry[k_ed][k_part]
+        except:
+            try:
+                return self.db_part_geometry_initial[k_ed][k_part]
+            except:
+                pass
 
+        print("-> not found")
         return {'crop': [0, 0, 0, 0]}
 
 
@@ -79,8 +83,7 @@ class Model_geometry():
         # TODO: set the geometry for this shot
 
 
-    def get_shot_geometry(self, k_ed, k_ep, shot):
-        k_part = shot['k_part']
+    def get_shot_geometry(self, k_ed, k_ep, k_part, shot):
         print("get shot geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
 
         # Geometry

@@ -96,7 +96,6 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
             self.block_signals(True)
-
             self.pushButton_part_crop_edition.setChecked(w['part']['crop_edition'])
             self.pushButton_part_crop_preview.setChecked(w['part']['crop_preview'])
             self.pushButton_part_resize_edition.setChecked(w['part']['resize_edition'])
@@ -106,13 +105,8 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.pushButton_custom_crop_preview.setChecked(w['custom']['crop_preview'])
             self.pushButton_custom_resize_edition.setChecked(w['custom']['resize_edition'])
             self.pushButton_custom_resize_preview.setChecked(w['custom']['resize_preview'])
-
-            if w['part']['is_enabled']:
-                log.info('enable part widget')
-            else:
-                log.info('enable custom widget')
-
             self.block_signals(False)
+
         except:
             log.warning("cannot set initial options")
             pass
@@ -127,6 +121,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
     def refresh_values(self, frame:dict):
+        print("refresh_values")
         part_geometry = frame['geometry']['part']
         try:
             c_t, c_b, c_l, c_r = part_geometry['crop']
@@ -150,11 +145,36 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.groupBox_custom_geometry.show()
             self.setMaximumHeight(100)
             self.adjustSize()
+
+            # Disable widgets used for part
+            self.block_signals(True)
+            self.pushButton_part_crop_edition.setEnabled(True)
+
+            self.pushButton_part_crop_preview.setEnabled(False)
+            self.pushButton_part_crop_preview.setChecked(False)
+
+            self.pushButton_part_resize_edition.setEnabled(False)
+            self.pushButton_part_resize_edition.setChecked(False)
+
+            self.pushButton_part_resize_preview.setEnabled(True)
+            # self.pushButton_part_resize_preview.setChecked(True)
+
+            self.checkBox_part_keep_ratio.setEnabled(False)
+            self.block_signals(False)
+
         else:
             self.current_type = 'part'
             self.groupBox_custom_geometry.hide()
             self.setMaximumHeight(100)
             self.adjustSize()
+
+            self.block_signals(True)
+            self.pushButton_part_crop_edition.setEnabled(True)
+            self.pushButton_part_crop_preview.setEnabled(True)
+            # self.pushButton_part_resize_edition.setEnabled(True)
+            self.pushButton_part_resize_preview.setEnabled(True)
+            self.checkBox_part_keep_ratio.setEnabled(False)
+            self.block_signals(False)            
 
 
     def set_edition_and_preview_enabled(self, enabled):

@@ -271,7 +271,7 @@ class Model_video_editor(Model_common):
             #   - part geometry
             #   - custom geometry: if g_asuivre/g_reportage, staabilize or stitched images
             shot_geometry = self.model_database.get_shot_geometry(
-                k_ed=k_ed_src, k_ep=k_ep, shot=current_shot)
+                k_ed=k_ed_src, k_ep=k_ep, k_part=k_part, shot=current_shot)
 
             # Create a list of frames for this shot
             self.frames[shot_no] = list()
@@ -386,7 +386,7 @@ class Model_video_editor(Model_common):
         the initial flag is set to True
         framelist contains all path for each frame of this playlist
         """
-        # log.info("%s.get_frame: get_frame no. %d" % (__name__, frame_no))
+        log.info("%s.get_frame: get_frame no. %d" % (__name__, frame_no))
         if not self.preview_options['replace']['is_enabled']:
             frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
             # print("\tinitial")
@@ -440,7 +440,11 @@ class Model_video_editor(Model_common):
 
         # Update geometry
         k_ed = self.current_selection['reference']['k_ed']
-        frame['geometry'] = self.model_database.get_shot_geometry(k_ed=k_ed, k_ep=self.current_selection['k_ep'], shot=shot)
+        frame['geometry'] = self.model_database.get_shot_geometry(
+            k_ed=k_ed,
+            k_ep=self.current_selection['k_ep'],
+            k_part=self.current_selection['k_part'],
+            shot=shot)
         pprint(frame['geometry'])
 
 
@@ -497,6 +501,7 @@ class Model_video_editor(Model_common):
                 geometry['crop'][3] = max(0, min(c_r + value, 400))
 
         if type == 'part':
+            print("Get the modified crop ")
             self.model_database.set_part_geometry(k_ed=k_ed, k_part=k_part, geometry=geometry)
         else:
             print("TODO: set custom geometry")
@@ -705,7 +710,7 @@ class Model_video_editor(Model_common):
 
 
 
-def get_dimensions_from_crop_values(width, height, crop):
+def get_dimensions_from_crop_values(width, height, crop) -> list:
     c_t, c_b, c_l, c_r = crop
     c_w = width - (c_l + c_r)
     c_h = height - (c_t + c_b)
@@ -713,7 +718,8 @@ def get_dimensions_from_crop_values(width, height, crop):
 
 
 def generate_single_image(frame:dict, preview_options:dict):
-    print("generate_single_image")
+    log.info("generate single image")
+    print("\ngenerate_single_image\n-------------------------------------")
     now = time.time()
     img = None
 
@@ -726,27 +732,27 @@ def generate_single_image(frame:dict, preview_options:dict):
 
     img_original = frame['cache_fgd']
     h, w, c = img_original.shape
-    # print("\t-> initial: ", frame['cache_fgd'].shape)
+    print("\t-> initial: ", frame['cache_fgd'].shape)
     pprint(preview_options)
 
     # Calculate dimensions to crop the image
-    c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(h, w, frame['geometry']['part']['crop'])
+    c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
     if ('custom' in frame['geometry'].keys()
         and frame['geometry']['custom'] is not None):
         # Use the customized geometry
         print("\t-> use the custom geometry")
         type = 'custom'
-        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(h, w, frame['geometry']['custom']['crop'])
+        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['custom']['crop'])
     else:
         # Use the part geometry
-        print("\t-> use the part geometry")
         type = 'part'
-        c_t, c_b, c_l, c_r, c_w, c_h = (c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p)
+        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
+        print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
     w_final, h_final = (1440, 1080)
 
     # Preview options
     options = preview_options['geometry'][type]
-
+    print("\t -> cropped: %dx%d" % (c_w, c_h))
 
     # Apply rgb curves
     if preview_options['curves']['is_enabled'] and frame['curves'] is not None:
@@ -775,13 +781,13 @@ def generate_single_image(frame:dict, preview_options:dict):
 
     elif options['crop_preview']:
         # Crop and no rect
-        # print("\t-> Crop the image")
+        print("\t-> Crop the image")
         img = np.ascontiguousarray(img_rgb[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
-        # print("\t-> cropped: ", img.shape)
+        print("\t-> cropped: ", img.shape)
 
     else:
         if options['resize_preview']:
-            sys.exit("resize not possible because no crop")
+            sys.exit("generate_single_image: resize not possible because no crop")
         # Use original image
         # print("\t-> Use the original image")
         img = img_rgb
@@ -796,19 +802,22 @@ def generate_single_image(frame:dict, preview_options:dict):
         w_tmp = int((c_w * h_final) / float(c_h))
 
         # width and height of the resized cropped image for the part
-        w_p_tmp = int((c_w_p * h_final) / float(c_h_p))
 
-        if not options['crop_preview']:
-            # Resize the orignal image and add rect
-            w_tmp = int((w * h_final) / float(c_h))
+        if options['crop_preview']:
+            # Resize the cropped image
+            w_p_tmp = int((c_w_p * h_final) / float(c_h_p))
+
+            w_tmp = int((c_w * h_final) / float(c_h))
+            img_resized = cv2.resize(img, (w_tmp, h_final), interpolation=cv2.INTER_LANCZOS4)
+            print("\t-> resized cropped image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_final ))
+        else:
+            # Resize the original image and add rect
             w_p_tmp = int((w * h_final) / float(c_h_p))
+
+            w_tmp = int((w * h_final) / float(c_h))
             h_tmp = int((h * h_final) / float(c_h))
             img_resized = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_LANCZOS4)
-            # print("\t-> resized original image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_tmp ))
-        else:
-            # Resize the cropped image
-            img_resized = cv2.resize(img, (w_tmp, h_final), interpolation=cv2.INTER_LANCZOS4)
-            # print("\t-> resized cropped image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_final ))
+            print("\t-> resized original image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_tmp ))
 
         # TODO: crop the resized image if custom resize and width != w_p_tmp
         if w_tmp != w_p_tmp:
@@ -817,9 +826,9 @@ def generate_single_image(frame:dict, preview_options:dict):
 
     if preview_options['geometry']['final_preview']:
         # Add padding to the cropped&resized image
-        pad_left = int((w_final - w_tmp) / 2)
-        pad_right = w_final - (w_tmp + pad_left)
-        # print("\t-> pad=%d,%d" % (pad_left, pad_right))
+        pad_left = int((w_final - w_p_tmp) / 2)
+        pad_right = w_final - (w_p_tmp + pad_left)
+        print("\t-> pad=%d,%d" % (pad_left, pad_right))
 
         img_finalized = cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
             cv2.BORDER_CONSTANT, value=[0, 0, 0])
