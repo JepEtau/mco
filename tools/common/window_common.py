@@ -201,7 +201,7 @@ class Window_common(QMainWindow):
 
     def set_initial_options(self, preferences:dict):
         s = preferences['viewer']
-        if False:
+        if True:
             self.setGeometry(s['geometry'][0],
                 s['geometry'][1],
                 s['geometry'][2],
@@ -295,8 +295,9 @@ class Window_common(QMainWindow):
                 break
 
 
-    def event_preview_options_changed(self):
+    def event_preview_options_changed(self, widget):
         # log.info("change preview: editor: %s" % (self.current_editor))
+        log.info("change preview: editor: %s" % (widget))
         preview_options = dict()
         for e, w in self.widgets.items():
             preview_options.update({e: w.get_preview_options()})

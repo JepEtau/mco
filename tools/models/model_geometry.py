@@ -110,81 +110,23 @@ class Model_geometry():
 
 
 
-    def save_geometry_database(self, k_ep, k_part):
+    def save_geometry_database(self, k_ed, k_ep, k_part):
         if not self.is_geometry_db_modified:
             return True
 
-        log.info("Save part_geometry")
+        log.info("save geometry database %s:%s" % (k_ep, k_part))
+        print("\n\nsave_geometry_database: %s:%s:%s\n---------------------------------------" % (k_ed, k_ep, k_part))
         db = self.global_database
 
         # Open configuration file
-        if k_part in K_GENERIQUES:
+        if k_part in ['g_debut', 'g_fin']:
             filepath = os.path.join(db['common']['directories']['config'], k_part, "%s_geometry.ini" % (k_part))
         else:
             filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_geometry.ini" % (k_ep))
         if filepath.startswith("~/"):
             filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
 
-        # Parse the file
-        if os.path.exists(filepath):
-            config_geometry_coordinates = configparser.ConfigParser()
-            config_geometry_coordinates.read(filepath)
-        else:
-            config_geometry_coordinates = configparser.ConfigParser({}, collections.OrderedDict)
-            # config_geometry_coordinates[k_part] = {}
-
-        if k_part in K_GENERIQUES:
-            k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
-            k_ep_src = db[k_part]['common']['video']['reference']['k_ep']
-            # print(k_ed_src)
-            # print(k_ep_src)
-            # print(k_part)
-            coordinates = self.get_crop_coordinates(k_ed_src, k_part)
-            k_section = '%s.%s.%s' % (k_ed_src, k_ep_src, k_part)
-        else:
-            k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
-            coordinates = self.get_crop_coordinates(k_ed_src, k_part)
-            k_section = '%s.%s.%s' % (k_ed_src, k_ep, k_part)
-
-        # Set the coordinates
-        if not config_geometry_coordinates.has_section(k_section):
-            config_geometry_coordinates[k_section] = dict()
-        config_geometry_coordinates.set(k_section, 'crop', ','.join([str(i) for i in coordinates]))
-
-        # Remove unused sections and sort
-        for k_section in config_geometry_coordinates.sections():
-            if len(config_geometry_coordinates[k_section]) == 0:
-                config_geometry_coordinates.remove_section(k_section)
-
-            # Sort the section
-            config_geometry_coordinates[k_section] = collections.OrderedDict(sorted(config_geometry_coordinates[k_section].items(), key=lambda x: x[0]))
-
-
-        # Write to the database
-        with open(filepath, 'w') as config_file:
-            config_geometry_coordinates.write(config_file)
-
-        self.is_geometry_db_modified = False
-        return True
-
-
-
-    def save_geometry_database(self, k_ed, k_ep, k_part):
-        if not self.is_geometry_db_modified:
-            return True
-
-        log.info("save geometry database %s:%s" % (k_ep, k_part))
-        db = self.global_database
-
-        if k_part in K_GENERIQUES:
-            # Open configuration file
-            if k_part in K_GENERIQUES:
-                filepath = os.path.join(db['common']['directories']['config'], k_part, "%s_geometry.ini" % (k_part))
-            else:
-                filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_geometry.ini" % (k_ep))
-            if filepath.startswith("~/"):
-                filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
-
+        print("file: %s" % (filepath))
 
         # Parse the file
         if os.path.exists(filepath):
@@ -200,13 +142,21 @@ class Model_geometry():
             config_geometry[k_section] = dict()
 
         # Update the values
-        if (k_ed in self.db_part_geometry.keys()
-        and k_part in self.db_part_geometry[k_ed].keys()):
-            config_geometry.set(k_section, 'crop',
-                ':'.join(map(lambda x: "%d" % (x), self.db_part_geometry[k_ed][k_part]['crop'])))
+        try:
+            value_array = []
+            try: value_array.append("crop=%s" % (':'.join(map(lambda x: "%d" % (x), self.db_part_geometry[k_ed][k_part]['crop']))))
+            except: pass
 
-        # TODO: Add resize of shots
-        # TODO: Add values coming from st geometry
+            try: value_array.append("resize=%s" % (':'.join(map(lambda x: "%d" % (x), self.db_part_geometry[k_ed][k_part]['resize']))))
+            except: pass
+
+            try: value_array.append("keep_ration=%s" % ('true' if self.db_part_geometry[k_ed][k_part]['resize'] else 'false'))
+            except: pass
+
+            config_geometry.set(k_section, 'geometry', ', '.join(value_array))
+        except: pass
+
+        # TODO: Add values coming from custom geometry
 
         # Write to the database
         with open(filepath, 'w') as config_file:

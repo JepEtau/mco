@@ -101,7 +101,7 @@ class Model_video_editor(Model_common):
         self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
 
         # Force refresh of previe options
-        self.view.event_preview_options_changed()
+        self.view.event_preview_options_changed('model')
 
         p = self.preferences.get_preferences()
         k_ep = 'ep%02d' % (p['selection']['episode']) if p['selection']['episode'] != '' else ''
@@ -698,12 +698,12 @@ class Model_video_editor(Model_common):
     def event_save_geometry_requested(self):
         k_part = self.current_selection['k_part']
         db = self.model_database.database()
-        if k_part in K_GENERIQUES:
+        if k_part in ['g_debut', 'g_fin']:
             k_ed = db[k_part]['common']['video']['reference']['k_ed']
             k_ep = db[k_part]['common']['video']['reference']['k_ep']
         else:
-            k_ed =self.current_selection['k_ed']
-            k_ep =self.current_selection['k_ep']
+            k_ed =self.current_selection['reference']['k_ed']
+            k_ep =self.current_selection['reference']['k_ep']
         self.model_database.save_geometry_database(k_ed=k_ed, k_ep=k_ep, k_part=k_part)
         self.model_database.move_part_geometry_to_initial()
         self.signal_is_saved.emit('geometry')
@@ -819,9 +819,22 @@ def generate_single_image(frame:dict, preview_options:dict):
             img_resized = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_LANCZOS4)
             print("\t-> resized original image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_tmp ))
 
-        # TODO: crop the resized image if custom resize and width != w_p_tmp
         if w_tmp != w_p_tmp:
-            print("crop the customized image")
+            if options['crop_preview']:
+                # print("!!!! crop the customized image: w_tmp=%d vs w_p_tmp=%d" % (w_tmp, w_p_tmp))
+                if w_tmp > w_p_tmp:
+                    c_l_new = int((c_l_p * h_final) / float(c_h))
+                    x1_new = min(w_p_tmp + c_l_new, w_tmp)
+                    # print("\t-> c_l_new: %d, x1_new=%d" % (c_l_new, x1_new))
+                    img_resized = np.ascontiguousarray(img_resized[0:h_final,c_l_new:x1_new,])
+                    # print("\t-> cropped: %dx%d" % (img_resized.shape[1], img_resized.shape[0]))
+                    # print("\t-> should be: %dx%d" % (w_p_tmp, h_final))
+                elif w_p_tmp > w_tmp:
+                    pad_left = int((w_p_tmp - w_tmp)/2)
+                    pad_right = w_p_tmp - w_tmp - pad_left
+                    print("!!!! TODO: add padding: %d, %d" % (pad_left, pad_right))
+                    img_resized = np.ascontiguousarray(cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
+                        cv2.BORDER_CONSTANT, value=[0, 255, 0]))
 
 
     if preview_options['geometry']['final_preview']:
