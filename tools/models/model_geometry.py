@@ -34,10 +34,10 @@ class Model_geometry():
     def get_part_geometry(self, k_ed, k_ep, k_part):
         # pprint(self.db_part_geometry_initial)
         try:
-            return self.db_part_geometry[k_ed][k_part]
+            return self.db_part_geometry[k_ed][k_ep][k_part]
         except:
             try:
-                return self.db_part_geometry_initial[k_ed][k_part]
+                return self.db_part_geometry_initial[k_ed][k_ep][k_part]
             except:
                 pass
         print("get_part_geometry: %s:%s:%s" % (k_ed, k_ep, k_part))
@@ -46,25 +46,22 @@ class Model_geometry():
 
 
     def set_part_geometry(self, k_ed, k_ep, k_part, geometry):
-        # db_modified = self.db_part_geometry
-        # if k_ed not in db_modified.keys():
-        #     db_modified[k_ed] = dict()
-        # if k_part not in db_modified[k_ed].keys():
-        #     db_modified[k_ed][k_part] = dict()
-        # db_modified[k_ed][k_part] = geometry
         print("set_part_geometry: %s:%s:%s" % (k_ed, k_ep, k_part))
-        nested_dict_set(self.db_part_geometry, geometry, k_ed, k_part)
+        nested_dict_set(self.db_part_geometry, geometry, k_ed, k_ep, k_part)
         self.is_geometry_db_modified = True
 
 
-    def discard_part_geometry_modifications(self, k_ed, k_part):
+    def discard_part_geometry_modifications(self, k_ed, k_ep, k_part):
         log.info("discard_part_geometry_modifications")
         db_modified = self.db_part_geometry
-        try: del db_modified[k_ed][k_part]
+        try: del db_modified[k_ed][k_ep][k_part]
         except: pass
+        if len(db_modified[k_ed][k_ep].keys()) == 0:
+            del db_modified[k_ed][k_ep]
         if len(db_modified[k_ed].keys()) == 0:
             del db_modified[k_ed]
         self.is_geometry_db_modified = False
+
 
     def move_part_geometry_to_initial(self):
         # Move modifications from modified to initial
@@ -84,8 +81,8 @@ class Model_geometry():
 
 
     def get_shot_geometry(self, k_ed, k_ep, k_part, shot):
-        print("get shot geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
-        print("\t%s:%s:%s" % (shot['k_ed'], shot['k_ep'], shot['k_part']))
+        print("get shot geometry for %s:%s:%s" % (k_ed, k_ep, k_part), end='')
+        print("\t<- shot: %s:%s:%s)" % (shot['k_ed'], shot['k_ep'], shot['k_part']))
         db = self.global_database
         if k_part in ['g_asuivre', 'g_reportage']:
             # Consider this part geometry as a customized one.
@@ -100,15 +97,30 @@ class Model_geometry():
                             k_ep=db[k_part]['common']['video']['reference']['k_ep'],
                             k_part=k_part),
             }
+
+        elif k_part in ['g_debut', 'g_fin']:
+            # In this case, the custom geometry is the part of the dependency
+            k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
+            k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
+            shot_geometry = {
+                'part': self.get_part_geometry(
+                            k_ed=k_ed_ref, k_ep=k_ep_ref, k_part=k_part),
+                'custom': None
+            }
+            if shot['k_ed'] != k_ed_ref or shot['k_ep'] != k_ep_ref:
+                shot_geometry.update({
+                    'custom': self.get_part_geometry(
+                                k_ed=shot['k_ed'], k_ep=shot['k_ep'], k_part=k_part),
+                })
+
         else:
             shot_geometry = {
                 'part': self.get_part_geometry(k_ed=k_ed, k_ep=k_ep, k_part=k_part),
                 'custom': self.get_custom_geometry(shot=shot),
             }
 
-        # print("shot_geometry")
-        # pprint(shot_geometry)
-        # sys.exit()
+        print("\tshot_geometry:", shot_geometry)
+
         return shot_geometry
 
 
@@ -156,13 +168,13 @@ class Model_geometry():
         # Update the values
         try:
             value_array = []
-            try: value_array.append("crop=%s" % (':'.join(map(lambda x: "%d" % (x), self.db_part_geometry[k_ed_src][k_part]['crop']))))
+            try: value_array.append("crop=%s" % (':'.join(map(lambda x: "%d" % (x), self.db_part_geometry[k_ed_src][k_ep_src][k_part]['crop']))))
             except: pass
 
-            try: value_array.append("resize=%s" % (':'.join(map(lambda x: "%d" % (x), self.db_part_geometry[k_ed_src][k_part]['resize']))))
+            try: value_array.append("resize=%s" % (':'.join(map(lambda x: "%d" % (x), self.db_part_geometry[k_ed_src][k_ep_src][k_part]['resize']))))
             except: pass
 
-            try: value_array.append("keep_ration=%s" % ('true' if self.db_part_geometry[k_ed_src][k_part]['resize'] else 'false'))
+            try: value_array.append("keep_ration=%s" % ('true' if self.db_part_geometry[k_ed_src][k_ep_src][k_part]['resize'] else 'false'))
             except: pass
 
             config_geometry.set(k_section, 'geometry', ', '.join(value_array))

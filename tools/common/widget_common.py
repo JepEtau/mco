@@ -108,7 +108,7 @@ class Widget_common(QWidget):
         self.blockSignals(False)
 
     def get_preview_options(self):
-        raise("Error: override this function")
+        raise Exception("Error: override this function")
 
 
     def event_preview_changed(self, is_checked:bool=False):

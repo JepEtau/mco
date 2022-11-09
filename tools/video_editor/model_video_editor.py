@@ -272,8 +272,8 @@ class Model_video_editor(Model_common):
             #   - custom geometry: if g_asuivre/g_reportage, staabilize or stitched images
             if k_part in ['g_debut', 'g_fin']:
                 shot_geometry = self.model_database.get_shot_geometry(
-                    k_ed=db[k_part]['common']['video']['reference']['k_ed'],
-                    k_ep=k_ep,
+                    k_ed='-',
+                    k_ep=k_ep_src,
                     k_part=k_part,
                     shot=current_shot)
             else:
@@ -316,7 +316,7 @@ class Model_video_editor(Model_common):
         else:
             k_ed = db[k_ep]['common']['video']['reference']['k_ed']
         self.current_selection = {
-            'k_ed': db[k_ep]['common']['video']['reference']['k_ed'],
+            'k_ed': k_ed,
             'k_ep': k_ep,
             'k_part': k_part,
             'k_step': k_step,
@@ -473,12 +473,19 @@ class Model_video_editor(Model_common):
 
         # Update geometry
         db = self.model_database.database()
-        print("get_frame:")
-        frame['geometry'] = self.model_database.get_shot_geometry(
-            k_ed=db[self.current_selection['k_ep']]['common']['video']['reference']['k_ed'],
-            k_ep=self.current_selection['k_ep'],
-            k_part=self.current_selection['k_part'],
-            shot=shot)
+        print("get_frame -> (%s:%s:%s:%d)" % (frame['k_ed'], frame['k_ep'], frame['k_part'], frame['frame_no']))
+        if frame['k_part'] in ['g_debut', 'g_fin']:
+            frame['geometry'] = self.model_database.get_shot_geometry(
+                k_ed=frame['k_ed'],
+                k_ep=frame['k_ep'],
+                k_part=frame['k_part'],
+                shot=shot)
+        else:
+            frame['geometry'] = self.model_database.get_shot_geometry(
+                k_ed=db[self.current_selection['k_ep']]['common']['video']['reference']['k_ed'],
+                k_ep=self.current_selection['k_ep'],
+                k_part=self.current_selection['k_part'],
+                shot=shot)
         pprint(frame['geometry'])
 
 
@@ -540,7 +547,7 @@ class Model_video_editor(Model_common):
                 geometry['crop'][0] = max(0, min(c_t + value, 400))
 
             elif modification['parameter'] == 'crop_bottom':
-                geometry['crop'][1] = max(0, min(c_b + value, 400))
+                geometry['crop'][1] = max(0, min(c_b - value, 400))
 
             elif modification['parameter'] == 'crop_left':
                 geometry['crop'][2] = max(0, min(c_l + value, 400))

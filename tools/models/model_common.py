@@ -49,14 +49,14 @@ class Model_common(QObject):
         try:
             return self.WIDGET_LIST
         except:
-            raise("Error: WIDGET_LIST shall be define in the model class")
+            raise Exception("Error: WIDGET_LIST shall be define in the model class")
 
     def get_selectable_widgets(self):
         try:
             # This list shall be ordered
             return self.SELECTABLE_WIDGET_LIST
         except:
-            raise("Error: SELECTABLE_WIDGET_LIST shalle be define in the model class")
+            raise Exception("Error: SELECTABLE_WIDGET_LIST shalle be define in the model class")
 
 
     def exit(self):

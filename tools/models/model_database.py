@@ -297,9 +297,9 @@ class Model_database(Model_stitching_curves, Model_geometry, object):
                         k_ep_ref = self.global_database[k_part]['common']['video']['reference']['k_ep']
                         self.db_curves_selection_initial = get_curves_selection(self.global_database,
                             k_ep=k_ep_ref, k_part=k_part)
-                        print("db_curves_selection_initial: %s:%s" % (k_ep_ref, k_part))
-                        pprint(self.db_curves_selection_initial)
-                        print()
+                        # print("db_curves_selection_initial: %s:%s" % (k_ep_ref, k_part))
+                        # pprint(self.db_curves_selection_initial)
+                        # print()
                     else:
                         self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_ep)
                         self.db_curves_selection_initial = get_curves_selection(self.global_database,
@@ -439,8 +439,8 @@ class Model_database(Model_stitching_curves, Model_geometry, object):
         k_ep = shot['k_ep']
         k_part = shot['k_part']
         shot_no = shot['no']
-        print("db_curves_selection_initial")
-        pprint(self.db_curves_selection_initial)
+        # print("db_curves_selection_initial")
+        # pprint(self.db_curves_selection_initial)
         try: shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
         except:
             try: shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_no]

@@ -81,7 +81,7 @@ def parse_curves_file(db, k_ep_or_g, k_curves:str) -> dict:
         curves_file = open(filepath, 'r')
     except:
         print("Error: %s.parse_curves_file: %s, fichier manquant ou erroné: %s" % (__name__, k_ep_or_g, filepath))
-        raise()
+        raise
     try:
         rgb_channels = {
             'r': Curve(),
