@@ -270,8 +270,18 @@ class Model_video_editor(Model_common):
             # Geometry for this shot:
             #   - part geometry
             #   - custom geometry: if g_asuivre/g_reportage, staabilize or stitched images
-            shot_geometry = self.model_database.get_shot_geometry(
-                k_ed=k_ed_src, k_ep=k_ep, k_part=k_part, shot=current_shot)
+            if k_part in ['g_debut', 'g_fin']:
+                shot_geometry = self.model_database.get_shot_geometry(
+                    k_ed=db[k_part]['common']['video']['reference']['k_ed'],
+                    k_ep=k_ep,
+                    k_part=k_part,
+                    shot=current_shot)
+            else:
+                shot_geometry = self.model_database.get_shot_geometry(
+                    k_ed=db[k_ep]['common']['video']['reference']['k_ed'],
+                    k_ep=k_ep,
+                    k_part=k_part,
+                    shot=current_shot)
 
             # Create a list of frames for this shot
             self.frames[shot_no] = list()
@@ -301,11 +311,12 @@ class Model_video_editor(Model_common):
                 })
 
         # Create a dict to update the "browser" part of the editor widget
-        if k_part in ['g_debut', 'g_fin']:
+        if k_part in K_GENERIQUES:
             k_ed = db[k_part]['common']['video']['reference']['k_ed']
         else:
             k_ed = db[k_ep]['common']['video']['reference']['k_ed']
         self.current_selection = {
+            'k_ed': db[k_ep]['common']['video']['reference']['k_ed'],
             'k_ep': k_ep,
             'k_part': k_part,
             'k_step': k_step,
@@ -314,16 +325,25 @@ class Model_video_editor(Model_common):
                 'k_ed': k_ed,
                 'k_ep': k_ep
             },
-            'geometry': self.model_database.get_part_geometry(k_ed, k_part),
+            'geometry': None,
         }
 
         # Update selection with the part geometry
         if k_part in ['g_asuivre', 'g_reportage']:
             # Use the following part
             self.current_selection.update({
-                'geometry': self.model_database.get_part_geometry(k_ed, k_part[2:]),
+                'geometry': self.model_database.get_part_geometry(
+                    k_ed=db[k_ep]['common']['video']['reference']['k_ed'],
+                    k_ep=k_ep,
+                    k_part=k_part[2:]),
             })
-
+        else:
+            self.current_selection.update({
+                'geometry': self.model_database.get_part_geometry(
+                    k_ed=k_ed,
+                    k_ep=k_ep,
+                    k_part=k_part),
+            })
 
         self.model_database.initialize_shots_per_curves(self.shots)
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
@@ -331,9 +351,17 @@ class Model_video_editor(Model_common):
 
 
 
-    def event_selected_shots_changed(self, selected_shots):
+
+    def event_selected_shots_changed(self, selected_shots:dict):
+        log.info("selected shots changed %s:%s, %s, %s" % (
+            selected_shots['k_ep'],
+            selected_shots['k_part'],
+            ','.join(map(lambda x: str(x), selected_shots['shotlist'])),
+            selected_shots['k_step']))
+
         if len(selected_shots['shotlist']) == 0:
             return
+
         frame_nos = list()
         index = 0
         ticklist = [0]
@@ -354,6 +382,11 @@ class Model_video_editor(Model_common):
             'count': len(self.playlist_frames),
             'ticks': ticklist,
         })
+
+        # Flush internal variables
+        self.current_frame = None
+
+
         gc.collect()
         # pprint(self.framelist)
 
@@ -386,7 +419,7 @@ class Model_video_editor(Model_common):
         the initial flag is set to True
         framelist contains all path for each frame of this playlist
         """
-        log.info("%s.get_frame: get_frame no. %d" % (__name__, frame_no))
+        # log.info("%s.get_frame: get_frame no. %d" % (__name__, frame_no))
         if not self.preview_options['replace']['is_enabled']:
             frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
             # print("\tinitial")
@@ -439,9 +472,10 @@ class Model_video_editor(Model_common):
         self.current_frame = frame
 
         # Update geometry
-        k_ed = self.current_selection['reference']['k_ed']
+        db = self.model_database.database()
+        print("get_frame:")
         frame['geometry'] = self.model_database.get_shot_geometry(
-            k_ed=k_ed,
+            k_ed=db[self.current_selection['k_ep']]['common']['video']['reference']['k_ed'],
             k_ep=self.current_selection['k_ep'],
             k_part=self.current_selection['k_part'],
             shot=shot)
@@ -466,18 +500,27 @@ class Model_video_editor(Model_common):
             - parameter
             - value
         """
-        k_ed = self.current_selection['reference']['k_ed']
+        k_ed = self.current_selection['k_ed']
         k_ep = self.current_selection['k_ep']
         k_part = self.current_selection['k_part']
         shot_no = self.current_frame['shot_no']
         print("\nevent_geometry_modified for %s:%s:%s" % (k_ed, k_ep, k_part))
-        pprint(modification)
 
-        if (modification['type'] == 'part'
-            or k_part in ['g_asuivre', 'g_reportage']):
+        if modification['type'] == 'part':
             type = 'part'
             # Use a copy of parameters to not modify the initial values
-            geometry = deepcopy(self.model_database.get_part_geometry(k_ed=k_ed, k_part=k_part))
+            k_ed_src = k_ed
+            k_ep_src = k_ep
+            geometry = deepcopy(self.model_database.get_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part))
+
+        elif k_part in ['g_asuivre', 'g_reportage']:
+            type = 'part'
+            # Use a copy of parameters to not modify the initial values
+            db = self.model_database.database()
+            k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
+            k_ep_src = db[k_part]['common']['video']['reference']['k_ep']
+            geometry = deepcopy(self.model_database.get_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part))
+
         else:
             type = 'custom'
             geometry = deepcopy(self.model_database.get_custom_geometry(shot=self.shots[shot_no]))
@@ -487,7 +530,12 @@ class Model_video_editor(Model_common):
         # Modify parameter
         value = modification['value']
         if 'crop' in modification['parameter']:
-            c_t, c_b, c_l, c_r = geometry['crop']
+            try:
+                c_t, c_b, c_l, c_r = geometry['crop']
+            except:
+                geometry['crop'] = [0, 0, 0, 0]
+                c_t, c_b, c_l, c_r = geometry['crop']
+
             if modification['parameter'] == 'crop_top':
                 geometry['crop'][0] = max(0, min(c_t + value, 400))
 
@@ -501,8 +549,10 @@ class Model_video_editor(Model_common):
                 geometry['crop'][3] = max(0, min(c_r + value, 400))
 
         if type == 'part':
-            print("Get the modified crop ")
-            self.model_database.set_part_geometry(k_ed=k_ed, k_part=k_part, geometry=geometry)
+            print("Set the modified crop ")
+            self.model_database.set_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part, geometry=geometry)
+
+
         else:
             print("TODO: set custom geometry")
             self.model_database.set_custom_geometry(shot=self.shots[shot_no], geometry=geometry)
@@ -702,8 +752,10 @@ class Model_video_editor(Model_common):
             k_ed = db[k_part]['common']['video']['reference']['k_ed']
             k_ep = db[k_part]['common']['video']['reference']['k_ep']
         else:
-            k_ed =self.current_selection['reference']['k_ed']
-            k_ep =self.current_selection['reference']['k_ep']
+            k_ep = self.current_selection['k_ep']
+            k_ed = db[k_ep]['common']['video']['reference']['k_ed']
+        # pprint(self.current_selection)
+
         self.model_database.save_geometry_database(k_ed=k_ed, k_ep=k_ep, k_part=k_part)
         self.model_database.move_part_geometry_to_initial()
         self.signal_is_saved.emit('geometry')
@@ -718,7 +770,7 @@ def get_dimensions_from_crop_values(width, height, crop) -> list:
 
 
 def generate_single_image(frame:dict, preview_options:dict):
-    log.info("generate single image")
+    # log.info("generate single image")
     print("\ngenerate_single_image\n-------------------------------------")
     now = time.time()
     img = None

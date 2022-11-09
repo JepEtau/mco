@@ -88,7 +88,7 @@ def parse_curves_file(db, k_ep_or_g, k_curves:str) -> dict:
             'g': Curve(),
             'b': Curve(),
             'm': Curve()
-        }       
+        }
         for line in curves_file.readlines():
             match = re.match("([r|g|b|m])=(.*)", line)
             k_channel = match.group(1)
@@ -137,9 +137,16 @@ def get_curves_selection(db, k_ep, k_part) -> dict:
     # from another episode/part
     shot_curves = dict()
 
+    print("%s.get_curves_selection: src=?:%s:%s" % (__name__, k_ep, k_part))
+
     # Get the list of editions and episode that are used by this ep/part
-    if k_part in ['g_debut', 'g_fin', 'g_reportage']:
+    if k_part in ['g_debut', 'g_fin']:
         db_video = db[k_part]['common']['video']
+    elif k_part in ['g_asuivre', 'g_reportage']:
+        k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
+        k_ep_src = k_ep
+        print("\t-> %s:%s:%s" % (k_ed_src, k_ep_src, k_part))
+        db_video = db[k_ep_src][k_ed_src][k_part]['video']
     else:
         print("%s.get_curves_selection: %s:%s" % (__name__, k_ep, k_part))
         k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
@@ -194,7 +201,7 @@ def parse_curves_folder(db, k_ep_or_g):
     # Browse curves in the subdirectories
     if os.path.exists(os.path.join(path, k_ep_or_g)):
         for f in os.listdir(os.path.join(path, k_ep_or_g)):
-            # print("\t%s" % (f))
+            print("\t%s" % (f))
             if f.endswith(".crv"):
                 # Create an element for each curve
                 k_curves = os.path.splitext(f)[0]

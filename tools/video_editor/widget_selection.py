@@ -451,10 +451,10 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         log.info("event_ep_or_part_selection_changed: %s" % (', '.join(map(lambda x: "%s" % (x), selected_row_no))))
 
-        selected_shots_no = list()
+        selected_shot_nos = list()
         for row_no in selected_row_no:
             shot_no_str = self.tableWidget_shots.item(row_no, 0).text()
-            selected_shots_no.append(int(shot_no_str))
+            selected_shot_nos.append(int(shot_no_str))
 
         k_ep = ''
         if self.comboBox_episode.currentText() not in ['', ' ']:
@@ -463,7 +463,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             'k_ep': k_ep,
             'k_part': self.comboBox_part.currentText(),
             'k_step': self.comboBox_step.currentText(),
-            'shotlist': selected_shots_no
+            'shotlist': selected_shot_nos
         }
         self.signal_selected_shots_changed.emit(selected_shots)
 

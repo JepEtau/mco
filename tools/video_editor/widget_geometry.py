@@ -3,6 +3,7 @@
 import sys
 sys.path.append('../scripts')
 
+
 from functools import partial
 from logger import log
 from pprint import pprint
@@ -17,6 +18,9 @@ from PySide6.QtWidgets import (
     QRadioButton,
     QCheckBox,
 )
+
+from utils.common import K_GENERIQUES
+
 from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet
 
@@ -136,7 +140,8 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.lineEdit_custom_crop_rectangle.clear()
 
         print("\nwidget_%s: refresh_values" % (self.objectName()))
-        if frame['geometry']['custom'] is not None:
+        if (frame['geometry']['custom'] is not None
+            or frame['k_part'] in K_GENERIQUES):
             # Customized
             self.current_type = 'custom'
             self.groupBox_custom_geometry.show()
@@ -275,7 +280,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
     def event_is_modified(self, type, parameter, value):
-        # log.info("parameter has been modified: %s: %s, %d" % (type, parameter, value))
+        log.info("parameter has been modified: %s: %s, %d" % (type, parameter, value))
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
         self.pushButton_undo.setEnabled(True)

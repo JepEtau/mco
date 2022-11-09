@@ -127,7 +127,7 @@ class Window_common(QMainWindow):
                 self.widget_geometry.set_geometry_edition_enabled(False)
             else:
                 self.widget_geometry.set_geometry_edition_enabled(True)
-        self.event_preview_options_changed()
+        self.event_preview_options_changed('model')
 
 
     def event_editor_action(self, event='exit'):

@@ -125,7 +125,7 @@ class Window_main(Window_common):
 
     def display_frame(self, frame: dict):
         # now = time.time()
-        log.info("display frame: %s" % (frame['filepath']))
+        # log.info("display frame: %s" % (frame['filepath']))
         if frame is None or not os.path.exists(frame['filepath']):
             self.flush_image()
         else:

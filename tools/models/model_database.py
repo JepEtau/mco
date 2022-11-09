@@ -81,7 +81,7 @@ from parsers.parser_replace import parse_replace_configurations
 from parsers.parser_replace import get_replaced_frames
 
 from parsers.parser_geometry import parse_geometry_configurations
-from parsers.parser_geometry import get_part_geometry
+from parsers.parser_geometry import get_part_geometry_list
 from parsers.parser_geometry import get_shots_st_geometry
 
 
@@ -248,11 +248,12 @@ class Model_database(Model_stitching_curves, Model_geometry, object):
 
                 if do_parse_geometry:
                     if k_part in ['g_asuivre', 'g_reportage']:
-                        self.db_part_geometry_initial = get_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part[2:])
-                        recursive_update(self.db_part_geometry_initial, get_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part))
+                        self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep=k_ep, k_part=k_part[2:])
+                        recursive_update(self.db_part_geometry_initial, get_part_geometry_list(self.global_database, k_ep=k_ep, k_part=k_part))
+                        print("db_part_geometry_initial:")
                         pprint(self.db_part_geometry_initial)
                     else:
-                        self.db_part_geometry_initial = get_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
+                        self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_part_geometry = dict()
 
                 if do_parse_stitching:
@@ -296,6 +297,9 @@ class Model_database(Model_stitching_curves, Model_geometry, object):
                         k_ep_ref = self.global_database[k_part]['common']['video']['reference']['k_ep']
                         self.db_curves_selection_initial = get_curves_selection(self.global_database,
                             k_ep=k_ep_ref, k_part=k_part)
+                        print("db_curves_selection_initial: %s:%s" % (k_ep_ref, k_part))
+                        pprint(self.db_curves_selection_initial)
+                        print()
                     else:
                         self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_ep)
                         self.db_curves_selection_initial = get_curves_selection(self.global_database,
@@ -366,8 +370,8 @@ class Model_database(Model_stitching_curves, Model_geometry, object):
                         parse_curve_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
                     if do_parse_replace:
                         parse_replace_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
-                    if do_parse_geometry:
-                        parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
+                    # if do_parse_geometry:
+                    #     parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
                 break
 
             # Stabilization and stitching
@@ -390,8 +394,9 @@ class Model_database(Model_stitching_curves, Model_geometry, object):
             if do_parse_geometry:
                 # print("\tparse_geometry_configurations: k_part_g=%s" % (k_part))
                 parse_geometry_configurations(self.global_database, k_ep_or_g=k_part)
-                self.db_part_geometry_initial = get_part_geometry(self.global_database, k_ep='', k_part=k_part)
+                self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep='', k_part=k_part)
                 self.db_part_geometry = dict()
+                pprint(self.db_part_geometry_initial)
 
             # Curves
             if do_parse_curves:
@@ -434,6 +439,8 @@ class Model_database(Model_stitching_curves, Model_geometry, object):
         k_ep = shot['k_ep']
         k_part = shot['k_part']
         shot_no = shot['no']
+        print("db_curves_selection_initial")
+        pprint(self.db_curves_selection_initial)
         try: shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
         except:
             try: shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_no]

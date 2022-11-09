@@ -28,7 +28,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
     TODO: it uses the first frame of a shot to identify the shot rather the index, so that
     a modification of shots will not break anything
     """
-
+    print("\nparse_geometry_configurations: %s" % (k_ep_or_g))
     # Open configuration file
     filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_geometry.ini" % (k_ep_or_g))
     if filepath.startswith("~/"):
@@ -40,7 +40,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
     config = configparser.ConfigParser()
     config.read(filepath)
     for k_section in config.sections():
-        # print("\tsection:%s" % (k_section))
+        print("\tsection:%s" % (k_section))
         if '.' not in k_section:
             sys.exit("__parse_curve_configurations: error, no edition,ep,part specified")
         k_ed, k_ep, k_part = k_section.split('.')
@@ -55,10 +55,12 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
 
             if k_str == 'geometry':
                 # Global settings for this part
-                db[k_ep][k_ed][k_part]['video']['geometry'] = {
-                    'crop': [0, 0, 0, 0]
-                }
-                part_geometry = db[k_ep][k_ed][k_part]['video']['geometry']
+                if k_ep_or_g in ['g_debut', 'g_fin']:
+                    db[k_ep_or_g][k_ed]['video']['geometry'] = {'crop': [0, 0, 0, 0]}
+                    part_geometry = db[k_ep_or_g][k_ed]['video']['geometry']
+                else:
+                    db[k_ep_or_g][k_ed][k_part]['video']['geometry'] = {'crop': [0, 0, 0, 0]}
+                    part_geometry = db[k_ep_or_g][k_ed][k_part]['video']['geometry']
 
                 properties = config.get(k_section, k_str).strip().replace(' ', '').split(',')
                 for property in properties:
@@ -80,10 +82,11 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                 # Get shot no from frame no
                 # Get properties for this shot
 
+    # if k_ep_or_g == 'g_debut':
+    #     pprint(db[k_ep_or_g])
 
 
-
-def get_part_geometry(db, k_ep, k_part) -> dict:
+def get_part_geometry_list(db, k_ep, k_part) -> dict:
     """ Returns a list of crops/resize per part for each edition
     """
     part_geometry = dict()
@@ -93,40 +96,40 @@ def get_part_geometry(db, k_ep, k_part) -> dict:
         dependencies = parse_get_dependencies_for_generique(db, k_part_g=k_part)
         k_ep_src = db[k_part]['common']['video']['reference']['k_ep']
         k_ed = db[k_part]['common']['video']['reference']['k_ed']
+
+        # For each dependency, get the list of crop/resize
+        part_geometry = dict()
+        for k_ed in dependencies.keys():
+            if k_ed == 'layers':
+                continue
+            db_video = db[k_part][k_ed]['video']
+            # print("get_part_geometry: %s:%s:%s" % (k_ed,k_ep_src,k_part))
+            # pprint(db[k_ep_src][k_ed][k_part])
+            if k_ed not in part_geometry.keys():
+                part_geometry[k_ed] = dict()
+            if db_video['geometry'] is not None:
+                part_geometry[k_ed][k_part] = db_video['geometry'].copy()
+
     else:
         dependencies = db['editions']
         k_ep_src = k_ep
 
-    # For each dependency, get the list of crop/resize
-    part_geometry = dict()
-    for k_ed in dependencies.keys():
-        if k_ed == 'layers':
-            continue
-        db_video = db[k_ep_src][k_ed][k_part]['video']
-        # print("get_part_geometry: %s:%s:%s" % (k_ed,k_ep_src,k_part))
-        # pprint(db[k_ep_src][k_ed][k_part])
-        if k_ed not in part_geometry.keys():
-            part_geometry[k_ed] = dict()
-        if db_video['geometry'] is not None:
-            part_geometry[k_ed][k_part] = db_video['geometry'].copy()
+        # For each dependency, get the list of crop/resize
+        part_geometry = dict()
+        for k_ed in dependencies.keys():
+            if k_ed == 'layers':
+                continue
+            db_video = db[k_ep_src][k_ed][k_part]['video']
+            # print("get_part_geometry: %s:%s:%s" % (k_ed,k_ep_src,k_part))
+            # pprint(db[k_ep_src][k_ed][k_part])
+            if k_ed not in part_geometry.keys():
+                part_geometry[k_ed] = dict()
+            if db_video['geometry'] is not None:
+                part_geometry[k_ed][k_part] = db_video['geometry'].copy()
 
-
-    # if k_part in ['g_asuivre', 'g_reportage']:
-    #     # Overwrite resize and crop from the following part
-    #     k_part_tmp = k_part[2:]
-    #     k_ep_ref = db[k_ep]['common']['video']['reference']['k_ep']
-    #     k_ed_ref = db[k_ep]['common']['video']['reference']['k_ed']
-    #     print("%s:%s:%s" % ('?', k_ep, k_part))
-    #     print("\t-> %s:%s:%s" % (k_ed_ref, k_ep_ref, k_part_tmp))
-    #     pprint(db[k_ep]['common']['video']['reference'])
-    #     db_video = db[k_ep_ref][k_ed_ref][k_part_tmp]['video']
-    #     try:
-    #         part_geometry[k_ed_ref][k_part].update(db_video['geometry'])
-    #     except:
-    #         part_geometry[k_ed_ref][k_part] = db_video['geometry']
-    #     pprint(part_geometry)
-    #     sys.exit()
-
+    print("get_part_geometry_list")
+    pprint(part_geometry)
+    sys.exit()
     return part_geometry
 
 
