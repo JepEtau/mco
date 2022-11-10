@@ -78,7 +78,7 @@ def parse_stitching_configurations(db, k_ep_or_g:str, parse_parameters=False):
     # Parse the file
     config = configparser.ConfigParser()
     config.read(filepath)
-    print("%s.parse_stitching_configurations: %s" % (__name__, k_ep_or_g))
+    # print("%s.parse_stitching_configurations: %s" % (__name__, k_ep_or_g))
     for k_section in config.sections():
         if '.' not in k_section:
             sys.exit("parse_stitching_configurations: error, no edition,ep,part specified")

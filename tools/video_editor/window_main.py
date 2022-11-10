@@ -26,13 +26,14 @@ from common.window_common import (
     PAINTER_MARGIN_LEFT,
     PAINTER_MARGIN_TOP,
 )
+from utils.common import get_dimensions_from_crop_values
+
 from common.widget_controls import Widget_controls
 from video_editor.widget_selection import Widget_selection
 from video_editor.widget_curves import Widget_curves
 from video_editor.widget_replace import Widget_replace
 from video_editor.widget_geometry import Widget_geometry
 
-from models.model_common import get_dimensions_from_crop_values
 from video_editor.model_video_editor import Model_video_editor
 
 

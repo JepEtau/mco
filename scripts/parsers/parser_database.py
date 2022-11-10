@@ -137,9 +137,12 @@ def parse_database(database, editions, k_ep, mode='', verbose=False):
 
             parse_curve_configurations(database, k_ep_or_g=k_ep_tmp)
             parse_replace_configurations(database, k_ep_or_g=k_ep_tmp)
-            parse_geometry_configurations(database, k_ep_or_g=k_ep_tmp)
         break
 
+    # Parse the geometry for the target episode only
+    # Otherwise it is overwritten by the following episodes
+    if k_ep != 'ep00':
+        parse_geometry_configurations(database, k_ep_or_g=k_ep)
 
     # Génériques: debut/fin
     for k_part_g in ['g_debut', 'g_fin']:

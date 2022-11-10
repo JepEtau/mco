@@ -176,7 +176,7 @@ def main():
     print("\t- parse database")
     print("\t- consolidate generiques")
 
-    vfilter = arguments.vfilter.replace('final', 'geometry')
+    video_filter = arguments.vfilter.replace('final', 'geometry')
     do_av_merge = False
     if (not arguments.study
     and arguments.afilter == ''
@@ -185,10 +185,12 @@ def main():
         or arguments.part == ''):
             print("\t- force processing audio and video")
             arguments.afilter = 'final'
-            if vfilter == '':
-                vfilter = 'geometry'
+            if video_filter == '':
+                video_filter = 'geometry'
+        elif arguments.part != '':
+            if video_filter == '':
+                video_filter = 'geometry'
             do_av_merge = True
-
 
     if arguments.parse_only:
         # Parse database only
@@ -209,7 +211,6 @@ def main():
 
         sys.exit()
 
-
     if arguments.afilter != '':
         print("\t- audio:")
         if arguments.part in K_GENERIQUES:
@@ -224,11 +225,11 @@ def main():
         elif arguments.afilter == 'final':
             print("final")
 
-    if arguments.frames and vfilter == '':
+    if arguments.frames and video_filter == '':
         # Force to final if vfilter is not specified
-        vfilter = 'geometry'
+        video_filter = 'geometry'
 
-    if vfilter != '':
+    if video_filter != '':
         if arguments.frames:
             print("\t- frames:")
         else:
@@ -238,7 +239,7 @@ def main():
             print("\t\t- %s" % (arguments.part))
         else:
             print("\t\t- all parts")
-        print("\t\t- last task=%s" % (vfilter))
+        print("\t\t- last task=%s" % (video_filter))
 
     if do_av_merge:
         # Full generation of this episode
@@ -293,11 +294,11 @@ def main():
 
     # Video
     #-------------------------------------------------
-    if vfilter in ['deinterlace', 'upscale', 'geometry']:
+    if video_filter in ['deinterlace', 'upscale', 'geometry']:
         # Video and frames
 
         # Get the list of tasks
-        tasks = get_tasklist(final_task=vfilter)
+        tasks = get_tasklist(final_task=video_filter)
 
         # Check if nnedi3_weights.bin exists
         if 'deinterlace' in tasks:

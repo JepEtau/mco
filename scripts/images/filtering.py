@@ -3,10 +3,9 @@
 
 
 from parsers.parser_stitching import STICTHING_FGD_PAD
+from utils.common import get_dimensions_from_crop_values
 from utils.get_filters import FILTER_BASE_NO
 import cv2
-import numpy
-import os
 import os.path
 from copy import deepcopy
 
@@ -35,10 +34,16 @@ from skimage import restoration
 
 def filter_denoise(frame, img):
     # print("denoise: %s -> %s" % (frame['filepath']['upscale'], frame['filepath']['denoise']))
+    if 'denoise' not in frame['filters']['opencv'].keys():
+        print("Warning: no denoise filter defined")
+        return None
+
     if frame['filters']['opencv']['denoise'] is not None:
         return filters_opencv(img, frame['filters']['opencv']['denoise'], multi=False)
-    elif frame['filters']['ffmpeg']['denoise'] is not None:
-        print("error: FFMPEG denoise filter shall be implemented before this function call")
+
+
+    # elif frame['filters']['ffmpeg']['denoise'] is not None:
+    #     print("error: FFMPEG denoise filter shall be implemented before this function call")
     # else:
     #     print("warning: no denoise filter defined")
     return None
@@ -128,117 +133,60 @@ def stabilize_image(frame, img):
 
 def filter_geometry(frame, img):
     # print("crop and resize: %s -> %s" % (frame['filepath']['rgb'], frame['filepath']['geometry']))
-
-    # Pre-resize image (mainly used for generiques)
-    # It allows modifications of size (keep ratio or not)
-    # to fit the crop area wich is common to all shots of the part
-    try:
-        w_pre_resize, h_pre_resize = frame['geometry']['pre_resize']
-        img_pre_resized = cv2.resize(img,
-            (w_pre_resize, h_pre_resize),
-            interpolation=cv2.INTER_LANCZOS4)
-    except:
-        img_pre_resized = img
+    h, w, c = img.shape
 
     # Crop
     if frame['geometry'] is not None:
-        c_x0, c_y0, c_w, c_h = frame['geometry']['crop']
-        img_cropped = img_pre_resized[c_y0:c_y0+c_h, c_x0:c_x0+c_w]
-    else:
-        img_cropped = img_pre_resized
+        c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
+        if ('custom' in frame['geometry'].keys()
+            and frame['geometry']['custom'] is not None):
+            # Use the customized geometry
+            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['custom']['crop'])
+        else:
+            # Use the part geometry
+            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
+            print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
+
+        # Crop the image
+        img = np.ascontiguousarray(img[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
+
+    # Final width and height
+    w_final = frame['dimensions']['final']['w']
+    h_final = frame['dimensions']['final']['h']
+
+    # Calculate width for both part and (part or custom)
+    w_p_tmp = int((c_w_p * h_final) / float(c_h_p))
+    w_tmp = int((c_w * h_final) / float(c_h))
 
     # Resize
-    h_c, w_c, channel_count = img_cropped.shape
-    h_final = frame['dimensions']['final']['h']
-    w_tmp = int((w_c * h_final) / float(h_c))
-    img_resized = cv2.resize(img_cropped,
+    img_resized = cv2.resize(img,
         (w_tmp, h_final),
         interpolation=cv2.INTER_LANCZOS4)
 
-    # Add padding
-    w_final = frame['dimensions']['final']['w']
-    pad_left = int((w_final - w_tmp) / 2)
-    pad_right = w_final - (w_tmp + pad_left)
+    # Verify custom vs part cropped and resized image
+    if w_tmp != w_p_tmp:
+        # This is a custom geometry, width shall be the same as the part's one
+        if w_tmp > w_p_tmp:
+            # Crop the image
+            c_l_new = int((c_l_p * h_final) / float(c_h))
+            x1_new = min(w_p_tmp + c_l_new, w_tmp)
+            img_resized = np.ascontiguousarray(img_resized[0:h_final,c_l_new:x1_new,])
+        elif w_p_tmp > w_tmp:
+            # Add RED padding, for debug
+            print("Error: custom geometry is incorrect")
+            # TODO: exit?
+            pad_left = int((w_p_tmp - w_tmp)/2)
+            pad_right = w_p_tmp - w_tmp - pad_left
+            img_resized = np.ascontiguousarray(cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
+                cv2.BORDER_CONSTANT, value=[255, 0, 0]))
+
+    # Add padding to the cropped & resized image
+    pad_left = int((w_final - w_p_tmp) / 2)
+    pad_right = w_final - (w_p_tmp + pad_left)
     img_finalized = cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
         cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
     return img_finalized
-
-
-
-
-    # s = get_shot_from_frame(database, edition, episode_no, frame, part:str=''):
-
-
-    # if step == 'deinterlace':
-
-    #     get_filter_id(database, frame, step):
-    #     return
-    # elif step == 'upscale':
-    # elif step == 'denoise':
-    # elif step == 'sharpen':
-    # elif step == 'backgroung_color_correction':
-    # elif step == 'merge':
-
-
-# get_filter_id(database, frame, step):
-
-
-# extract_frame(database, frame, step='deinterlace', 'upscale', 'denoise', save='intermediate')
-# denoise_image(database, frame, img, save='intermediate')
-# sharpen_image(database, frame, img, save='intermediate')
-# merge_images(database, db_geometry, frame, img_foreground, img_background)
-# apply_rgb_curves(database, curves)
-
-
-# def video_to_frame_for_study(database, edition, part, frames, filter:str):
-#     for f in frames:
-#         f['no']
-#         f['ref']
-#         f['']
-
-#         get_filename
-#         part = get_part_from_frame_no(database, 'k', 1, f['no'])
-#     if database
-
-
-# pprint(cfg_episodes_common)
-#
-# Parse configuration files
-#     1) parse common files
-#     2) parse episode common file
-#     3) parse episode file
-#
-# Extract frames
-#
-# Merge images
-#     1) apply RGB curve on background image
-#     2) Merge 2 images
-#         (*) save (only for testing purpose)
-#     3) Sharpen image
-#     4) Save image
-
-# Apply RGB curve
-
-# class Frame():
-#     def __init__(self):
-#         self.cfg_common
-#         self.cfg_part
-#         self.edition
-#         pass
-
-#     def extract_frames(self):
-
-#         pass
-
-
-
-
-# def extract_single(configs:dict, command:dict):
-#     # edition
-#     pprint(cfg_episodes['a']['ep01'])
-
-
 
 
 

@@ -22,7 +22,6 @@ from common.preferences import Preferences
 from models.model_database import Model_database
 from models.model_common import (
     Model_common,
-    get_dimensions_from_crop_values,
 )
 from images.filtering import filter_rgb
 
@@ -32,6 +31,7 @@ from utils.common import (
     get_frame_no_from_filepath,
     get_k_part_from_frame_no,
     get_shot_from_frame_no_new,
+    get_dimensions_from_crop_values,
 )
 from utils.get_filters import FILTER_BASE_NO
 from utils.get_framelist import get_framelist, get_framelist_2

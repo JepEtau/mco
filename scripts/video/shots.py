@@ -109,7 +109,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
         img_denoised = filter_denoise(frame, img_upscaled)
         if img_denoised is None:
             # There is no defined filter, use the input image
-            img_denoised = img_input
+            img_denoised = img_upscaled
         elif tasklist[-1] == 'denoise':
             cv2.imwrite(frame['filepath']['denoise'], img_denoised)
         tasklist.remove('denoise')
@@ -173,8 +173,8 @@ def process_single_frame(work_no:int, frame:dict) -> None:
         # sys.exit()
         if img_stitching is None:
             if not os.path.exists(frame['filepath']['stitching']):
-                # use the upscaled image
-                img_stitching = cv2.imread(frame['filepath']['upscale'], cv2.IMREAD_COLOR)
+                # use the denoised image
+                img_stitching = cv2.imread(frame['filepath']['denoised'], cv2.IMREAD_COLOR)
             else:
                 img_stitching = cv2.imread(frame['filepath']['stitching'], cv2.IMREAD_COLOR)
         img_sharpened = filter_sharpen(frame, img_stitching)
@@ -185,6 +185,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
     if 'rgb' in tasklist:
         print("apply RGB curves: %d" % (frame['no']))
         if img_sharpened is None:
+            # Open the saved sharpened image
             img_sharpened = cv2.imread(frame['filepath']['sharpen'], cv2.IMREAD_COLOR)
         try:
             img_rgb = filter_rgb(frame, img_sharpened)
@@ -192,13 +193,13 @@ def process_single_frame(work_no:int, frame:dict) -> None:
                 cv2.imwrite(frame['filepath']['rgb'], img_rgb)
         except:
             # no RGB curves
-            # print("no RGB curves for shot %d" % (frame['shot_no']))
+            print("no RGB curves for shot %d" % (frame['shot_no']))
             img_rgb = img_sharpened
         tasklist.remove('rgb')
 
 
     if 'geometry' in tasklist:
-        # print("geometry: %d" % (frame['no']))
+        print("geometry: %d" % (frame['no']))
         if img_rgb is None:
             img_rgb = cv2.imread(frame['filepath']['rgb'], cv2.IMREAD_COLOR)
         img_finalized = filter_geometry(frame, img_rgb)
@@ -276,7 +277,7 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
     for l in layers.keys():
         consolidate_shot(db, layers[l]['shot'])
 
-    if False:
+    if True:
         # For debug
         print("--------------- Foreground ---------------")
         pprint(layers['fgd']['shot'])

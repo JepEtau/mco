@@ -216,29 +216,40 @@ def consolidate_shot(db, shot) -> None:
 
 
     # Geometry
-    if k_part in ['g_asuivre', 'g_reportage']:
-        # TODO: correct this by using the following ref edition:episode:part
-        shot['geometry'] = db[k_ep][k_ed][k_part[2:]]['video']['geometry']
-        # Overwrite resize parameters by the ones defined in the edition:episode:part
-        try:
-            resize = {
-                'resize': db[k_ep][k_ed][k_part]['video']['geometry']['resize']
-            }
-        except:
-            resize = {
-                'resize': [0, 0]
-            }
-
-        try: shot['geometry'].update(resize)
-        except: shot['geometry'] = resize
-
-    elif k_part in K_GENERIQUES:
+    print("consolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
+    if k_part in ['g_debut', 'g_fin']:
+        # Get the geometry for the part wich is the target
         k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
         k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
-        shot['geometry'] = db[k_ep_ref][k_ed_ref][k_part]['video']['geometry']
+        shot['geometry'] = {
+            'part': db[k_ep_ref][k_ed_ref][k_part]['video']['geometry'],
+        }
+        # Add a different geometry because it is not the same k_ed:k_ep
+        if k_ed != k_ed_ref or k_ep != k_ep_ref:
+            shot['geometry'].update({
+                'custom': db[k_ep][k_ed][k_part]['video']['geometry'],
+            })
+
+    elif k_part in ['g_asuivre', 'g_reportage']:
+        pprint(shot)
+        k_ed_dst = shot['dst']['k_ed']
+        k_ep_dst = shot['dst']['k_ep']
+        shot['geometry'] = {
+            'part':  db[k_ep_dst][k_ed_dst][k_part[2:]]['video']['geometry'],
+            'custom': db[k_ep][k_ed][k_part]['video']['geometry'],
+        }
 
     else:
-        shot['geometry'] = db[k_ep][k_ed][k_part]['video']['geometry']
+        print("TODO: consolidate_shot: update when replacing the shots in episode")
+        k_ep_dst = shot['dst']['k_ep']
+        k_part_dst = shot['dst']['k_part']
+        shot['geometry'] = {
+            'part':  db[k_ep_dst][k_ed][k_part_dst]['video']['geometry'],
+        }
+        if k_ep != k_ep_dst or k_part != k_part_dst:
+            shot['geometry'].update({
+                'custom': db[k_ep][k_ed][k_part]['video']['geometry'],
+            })
 
 
     # RGB correction: calculate the lut from the curves

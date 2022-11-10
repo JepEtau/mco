@@ -41,12 +41,12 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
     config = configparser.ConfigParser()
     config.read(filepath)
     for k_section in config.sections():
-        print("\tsection:%s" % (k_section))
+        # print("\tsection:%s" % (k_section))
         if '.' not in k_section:
             sys.exit("__parse_curve_configurations: error, no edition,ep,part specified")
         k_ed, k_ep, k_part = k_section.split('.')
 
-        # print("%s:%s:%s:\t" % (k_ed, k_ep, k_part), end='')
+        print("%s:%s:%s:\t" % (k_ed, k_ep, k_part))
 
         for k_str in config.options(k_section):
 
@@ -58,8 +58,8 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                     db[k_ep][k_ed][k_ep_or_g]['video']['geometry'] = {'crop': [0, 0, 0, 0]}
                     part_geometry = db[k_ep][k_ed][k_ep_or_g]['video']['geometry']
                 else:
-                    db[k_ep_or_g][k_ed][k_part]['video']['geometry'] = {'crop': [0, 0, 0, 0]}
-                    part_geometry = db[k_ep_or_g][k_ed][k_part]['video']['geometry']
+                    db[k_ep][k_ed][k_part]['video']['geometry'] = {'crop': [0, 0, 0, 0]}
+                    part_geometry = db[k_ep][k_ed][k_part]['video']['geometry']
 
                 properties = config.get(k_section, k_str).strip().replace(' ', '').split(',')
                 for property in properties:
@@ -81,10 +81,6 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                 # Get shot no from frame no
                 # Get properties for this shot
 
-    if k_ep_or_g == 'g_debut':
-        pprint(db['ep01']['k']['g_debut']['video']['geometry'])
-        pprint(db['ep01']['s']['g_debut']['video']['geometry'])
-        pprint(db['ep02']['s']['g_debut']['video']['geometry'])
 
 
 def get_part_geometry_list(db, k_ep, k_part) -> dict:
