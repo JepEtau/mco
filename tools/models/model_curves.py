@@ -186,7 +186,7 @@ class Model_curves():
     def get_curves(self, k_ep_or_g:str, k_curves:str):
         try:
             curves = self.db_curves_library[k_curves]
-            log.info("[%s] is found in the modified db" % (k_curves))
+            # log.info("[%s] is found in the modified db" % (k_curves))
         except:
             try:
                 curves = self.db_curves_library_initial[k_curves]
@@ -244,55 +244,34 @@ class Model_curves():
 
 
     def save_curves_as(self, k_ep_or_g, curves):
-        k_curves = curves['k_curves']
+        k_curves_current = curves['k_curves_current']
+        log.info("Try to remove [%s] from modified db" % (k_curves_current))
+        print(self.db_curves_library.keys())
         try:
             # Remove from modified db
-            del self.db_curves_library[k_curves]
-            log.info("removed [%s] from modified db" % (k_curves))
+            del self.db_curves_library[k_curves_current]
         except:
             # These curves were not modified
             pass
 
         # Append these curves in the initial db
-        try:
-            # overwrite curves
-            filepath = filepath = os.path.join(
-                self.global_database['common']['directories']['curves'],
-                self.db_curves_library_initial[k_curves]['filepath'])
-        except:
-            # new curves
-            log.error("filepath is not specified for [%s]" % (k_curves))
-            filepath = os.path.join(
-                self.global_database['common']['directories']['curves'],
-                k_ep_or_g,
-                "%s.crv" % (k_curves))
-
+        k_curves_new = k_curves_current if curves['k_curves_new'] is None else curves['k_curves_new']
+        filepath = os.path.join(
+            self.global_database['common']['directories']['curves'],
+            k_ep_or_g,
+            "%s.crv" % (k_curves_new))
         log.info("write curves file as [%s]" % (filepath))
         pprint(curves)
         write_curves_file(filepath=filepath, channels=curves['channels'])
 
-        self.db_curves_library_initial[k_curves] = {
-            'k_curves': k_curves,
+        # Add it to the initial library
+        self.db_curves_library_initial[k_curves_new] = {
+            'k_curves': k_curves_new,
             'filepath': filepath,
             'channels': deepcopy(curves['channels']),
             'lut': None,
             'shots': []
         }
-
-        # Consider as not modified
-        # self.db_curves_library_initial[k_curves]['is_modified'] = False
-
-        # Write or overwrite the curves files
-
-        # if k_curves in self.db_curves_library_initial.keys():
-        #     # These curves where already defined in the initial db
-        #     log.info("mark [%s] as modified" % (k_curves))
-        #     self.db_curves_library[k_curves]['is_modified'] = True
-        # else:
-        #     log.info("mark [%s] is a new one" % (k_curves))
-        #     self.db_curves_library[k_curves]['is_modified'] = False
-
-
 
 
 

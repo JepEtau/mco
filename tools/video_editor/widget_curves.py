@@ -74,7 +74,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         # Graph
         self.widget_rgb_graph.signal_point_selected[list].connect(self.refresh_current_coordinates)
         self.widget_rgb_graph.signal_graph_modified[dict].connect(self.event_rgb_graph_modified)
-        self.widget_curves_selection.signal_save_curves_as[str].connect(self.event_curves_as)
+        self.widget_curves_selection.signal_curves_name_changed[dict].connect(self.event_save_curves_as)
 
 
         self.pushButton_close.setEnabled(False)
@@ -224,9 +224,10 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.widget_curves_selection.mark_current_as_modified(True)
 
 
-    def event_curves_as(self, k_curves):
+    def event_save_curves_as(self, names):
         curves = {
-            'k_curves': k_curves,
+            'k_curves_new': names['new'],
+            'k_curves_current': names['current'],
             'channels': self.widget_rgb_graph.get_curves_channels(),
         }
         self.signal_save_curves_as.emit(curves)

@@ -352,8 +352,6 @@ class Model_video_editor(Model_common):
         self.signal_shotlist_modified.emit(self.current_selection)
 
 
-
-
     def event_selected_shots_changed(self, selected_shots:dict):
         log.info("selected shots changed %s:%s, %s, %s" % (
             selected_shots['k_ep'],
@@ -414,8 +412,10 @@ class Model_video_editor(Model_common):
         self.model_database.save_all_curves(k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
         self.signal_close.emit()
 
+
     def get_modified_db(self):
         return self.model_database.get_modified_db()
+
 
     def get_frame(self, frame_no):
         """ returns the replace frame unless there is no replacemed frame or
@@ -633,10 +633,11 @@ class Model_video_editor(Model_common):
 
     def event_save_curves_as(self, curves):
         # Save the curves in the curves library
-        if curves['k_curves'] == '':
-            log.error("No name defined in the curves struct")
-            return
-        log.info("save curves as: %s" % (curves['k_curves']))
+        log.info("save the curves: %s -> %s" % (curves['k_curves_current'], curves['k_curves_new']))
+        # if curves['k_curves_new'] == '':
+        #     log.error("No name defined in the curves struct")
+        #     return
+
         k_part = self.current_selection['k_part']
         k_ep = self.current_selection['k_ep']
         self.model_database.save_curves_as(
@@ -644,6 +645,9 @@ class Model_video_editor(Model_common):
             curves=curves)
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
 
+        # Modify the current selection
+        k_curves_new = curves['k_curves_current'] if curves['k_curves_new'] is None else curves['k_curves_new']
+        self.event_curves_selection_changed(k_curves_new)
 
     def event_save_curves_selection_requested(self):
         # Save the curves selected for this shot
@@ -740,7 +744,6 @@ class Model_video_editor(Model_common):
         self.model_database.save_replace_database()
         self.model_database.move_replace_to_initial()
         self.signal_is_saved.emit('replace')
-
 
 
     def event_geometry_discard_requested(self):
