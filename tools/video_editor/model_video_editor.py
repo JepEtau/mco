@@ -77,7 +77,6 @@ class Model_video_editor(Model_common):
             self.step_labels.remove(step)
 
 
-
     def set_view(self, view):
         self.view = view
 
@@ -331,7 +330,15 @@ class Model_video_editor(Model_common):
         }
 
         # Update selection with the part geometry
-        if k_part in ['g_asuivre', 'g_reportage']:
+        print("ep_or_part_selection_changed: update geometry: %s" % (k_part))
+        if k_part in ['g_debut', 'g_fin']:
+            self.current_selection.update({
+                'geometry': self.model_database.get_part_geometry(
+                    k_ed=db[k_part]['common']['video']['reference']['k_ed'],
+                    k_ep=db[k_part]['common']['video']['reference']['k_ep'],
+                    k_part=k_part),
+            })
+        elif k_part in ['g_asuivre', 'g_reportage']:
             # Use the following part
             self.current_selection.update({
                 'geometry': self.model_database.get_part_geometry(
@@ -415,6 +422,285 @@ class Model_video_editor(Model_common):
 
     def get_modified_db(self):
         return self.model_database.get_modified_db()
+
+
+
+    def event_rgb_graph_modified(self, rgb_channels):
+        shot_no = self.current_frame['shot_no']
+        self.model_database.set_shot_rgb_channels(
+            shot=self.shots[shot_no],
+            rgb_channels=rgb_channels)
+        self.signal_reload_frame.emit()
+
+
+    def event_curves_selection_changed(self, k_curves:str):
+        log.info("select the new curves for this shot [%s]" % (k_curves))
+        shot_no = self.current_frame['shot_no']
+
+        # Update the modifications structure to update the selection widget
+        self.shots[shot_no]['modifications']['curves']['new'] = k_curves
+
+        self.model_database.set_curves_selection(
+            shot=self.shots[shot_no],
+            k_curves=k_curves)
+        curves = self.model_database.get_curves_selection(shot=self.shots[shot_no])
+
+        # Refresh the list of shot for these curves
+        shot_list = self.model_database.get_shots_per_curves(k_curves)
+        self.signal_shot_per_curves_modified.emit(shot_list)
+
+        self.signal_current_shot_modified.emit(self.shots[shot_no]['modifications'])
+        self.signal_load_curves.emit(curves)
+        self.signal_reload_frame.emit()
+
+
+    def event_discard_curves(self, k_curves:str):
+        self.model_database.discard_curves_modifications(k_curves)
+        k_part = self.current_selection['k_part']
+        k_ep = self.current_selection['k_ep']
+        curves = self.model_database.get_curves(
+            k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep,
+            k_curves=k_curves)
+
+        self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+        self.signal_load_curves.emit(curves)
+        self.signal_reload_frame.emit()
+
+
+    def event_save_curves_as(self, curves):
+        # Save the curves in the curves library
+        log.info("save the curves: %s -> %s" % (curves['k_curves_current'], curves['k_curves_new']))
+        # if curves['k_curves_new'] == '':
+        #     log.error("No name defined in the curves struct")
+        #     return
+
+        k_part = self.current_selection['k_part']
+        k_ep = self.current_selection['k_ep']
+        self.model_database.save_curves_as(
+            k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep,
+            curves=curves)
+        self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+
+        # Modify the current selection
+        k_curves_new = curves['k_curves_current'] if curves['k_curves_new'] is None else curves['k_curves_new']
+        self.event_curves_selection_changed(k_curves_new)
+
+
+    def event_save_curves_selection_requested(self):
+        # Save the curves selected for this shot
+        k_ed = self.current_frame['k_ed']
+        k_ep = self.current_frame['k_ep']
+        k_part = self.current_frame['k_part']
+        shot_no = self.current_frame['shot_no']
+        print("event_save_curves_selection_requested %s:%s:%s:%d" % (k_ed, k_ep, k_part, shot_no))
+        self.model_database.save_curves_selection_database(
+            self.shots,
+            k_ed=k_ed,
+            k_ep=k_ep,
+            k_part=k_part,
+            shot_no=shot_no)
+        self.model_database.move_curves_selection_to_initial()
+
+        # Update the modifications structure to update the selection widget
+        k_new_curves = self.shots[shot_no]['modifications']['curves']['new']
+        self.shots[shot_no]['modifications']['curves'] = {
+            'initial': k_new_curves,
+            'new': None,
+        }
+        self.signal_current_shot_modified.emit(self.shots[shot_no]['modifications'])
+
+        self.signal_is_saved.emit('curves_selection')
+
+
+
+    def refresh_replace_list(self):
+        # List of frames to replace
+        log.info("refresh list")
+        list_replace = list()
+        for frame in self.playlist_frames:
+            frame_no = self.model_database.get_replace_frame_no(
+                    shot=self.shots[frame['shot_no']],
+                    frame_no=frame['frame_no'])
+            if frame_no != -1:
+                list_replace.append({
+                    'shot_no': frame['shot_no'],
+                    'src': frame_no,
+                    'dst': frame['frame_no'],
+                })
+        self.signal_replace_list_refreshed.emit(list_replace)
+
+
+    def get_replace_frame_no_str(self, index) -> str:
+        # print("get_replace_frame_no_str: %d" % (index))
+        frame_no = self.playlist_frames[index]['frame_no']
+        shot_no = self.playlist_frames[index]['shot_no']
+        new_frame_no = self.model_database.get_replace_frame_no(shot_no, frame_no)
+        # print("get_replace_frame_no: %d -> %d" % (frame_no, new_frame_no))
+        if new_frame_no != -1:
+            return str(new_frame_no)
+        return ''
+
+
+    def get_next_replaced_frame_index(self, index):
+        # TODO: replace this: use the list_replace
+        # print("find following replaced frame")
+        frame_no = self.playlist_properties['start'] + index
+        # print("\tsearch in %d -> %d" % (frame_no + 1, self.playlist_properties['start'] + self.playlist_properties['count']))
+        for f_no in range(frame_no + 1, self.playlist_properties['start'] + self.playlist_properties['count']):
+            shot_no = self.get_shot_no_from_frame_no(f_no)
+            if self.model_database.get_replace_frame_no(shot_no, f_no) != -1:
+                return f_no - self.playlist_properties['start']
+
+        # print("\tsearch in %d -> %d" % (self.playlist_properties['start'], frame_no-1))
+        for f_no in range(self.playlist_properties['start'], frame_no-1):
+            shot_no = self.get_shot_no_from_frame_no(f_no)
+            if self.model_database.get_replace_frame_no(shot_no, f_no) != -1:
+                return f_no - self.playlist_properties['start']
+
+        return -1
+
+
+    def event_frame_replaced(self, replace:dict):
+        action = replace['action']
+        frame_no = replace['dst']
+        shot_no = self.get_shot_no_from_frame_no(frame_no)
+        shot_src = self.shots[shot_no]
+        index = frame_no - self.frames[shot_no][0]['frame_no']
+
+        if action == 'replace':
+            log.info("replace: shot_no=%d, frame_no=%d (index=%d) by %d" % (shot_no, frame_no, index, replace['src']))
+            self.model_database.set_replaced_frame(
+                shot=shot_src,
+                frame_no=frame_no,
+                new_frame_no=replace['src'])
+            # update the frame as it is required to refresh the list of the widget_replace
+            # print("index: %d" % )
+            # self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
+
+        elif action == 'remove':
+            log.info("remove: shot_no=%d, frame_no=%d (index=%d)" % (shot_no, frame_no, index))
+            self.model_database.remove_replaced_frame(shot=shot_src, frame_no=frame_no)
+
+            # update the frame as it is required to refresh the list of the widget_replace
+            # self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
+
+        self.refresh_replace_list()
+        self.signal_reload_frame.emit()
+
+
+    def event_replace_discard_requested(self):
+        log.info("discard modifications requested")
+        self.model_database.discard_replace_modifications()
+        self.refresh_replace_list()
+        self.signal_reload_frame.emit()
+
+
+    def event_save_replace_requested(self):
+        self.model_database.save_replace_database()
+        self.model_database.move_replace_to_initial()
+        self.signal_is_saved.emit('replace')
+
+
+
+    def event_geometry_modified(self, modification:dict):
+        """modification:
+            - type
+            - parameter
+            - value
+        """
+        k_ed = self.current_selection['k_ed']
+        k_ep = self.current_selection['k_ep']
+        k_part = self.current_selection['k_part']
+        shot_no = self.current_frame['shot_no']
+        shot = self.shots[shot_no]
+        print("\nevent_geometry_modified for %s:%s:%s as %s" % (k_ed, k_ep, k_part, modification['type']))
+        print("----------------------------------------------")
+        print("shot: %s:%s:%s" % (shot['k_ed'], shot['k_ep'], shot['k_part']))
+
+        if modification['type'] == 'part':
+            type = 'part'
+            # Use a copy of parameters to not modify the initial values
+            k_ed_src = k_ed
+            k_ep_src = k_ep
+            geometry = deepcopy(self.model_database.get_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part))
+
+        elif k_part in ['g_asuivre', 'g_reportage']:
+            type = 'part'
+            # Use a copy of parameters to not modify the initial values
+            db = self.model_database.database()
+            k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
+            k_ep_src = db[k_part]['common']['video']['reference']['k_ep']
+            geometry = deepcopy(self.model_database.get_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part))
+
+        else:
+            type = 'custom'
+            geometry = deepcopy(self.model_database.get_custom_geometry(shot=self.shots[shot_no]))
+        print("geometry")
+        pprint(geometry)
+
+        # Modify parameter
+        value = modification['value']
+        if 'crop' in modification['parameter']:
+            if geometry is not None:
+                c_t, c_b, c_l, c_r = geometry['crop']
+            else:
+                geometry = {'crop':  [0, 0, 0, 0]}
+                c_t, c_b, c_l, c_r = geometry['crop']
+
+            if modification['parameter'] == 'crop_top':
+                geometry['crop'][0] = max(0, min(c_t + value, 400))
+
+            elif modification['parameter'] == 'crop_bottom':
+                geometry['crop'][1] = max(0, min(c_b - value, 400))
+
+            elif modification['parameter'] == 'crop_left':
+                geometry['crop'][2] = max(0, min(c_l + value, 400))
+
+            elif modification['parameter'] == 'crop_right':
+                geometry['crop'][3] = max(0, min(c_r + value, 400))
+
+        if type == 'part':
+            print("Set the modified crop ")
+            self.model_database.set_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part, geometry=geometry)
+
+
+        else:
+            print("TODO: set custom geometry")
+            self.model_database.set_custom_geometry(shot=self.shots[shot_no], geometry=geometry)
+
+        # No need to flush cache as generation of a new image will be done (fast enough)
+
+        self.signal_reload_frame.emit()
+
+
+    def event_geometry_discard_requested(self):
+        log.info("discard modifications requested")
+        k_part = self.current_selection['k_part']
+        db = self.model_database.database()
+        if k_part in K_GENERIQUES:
+            k_ed = db[k_part]['common']['video']['reference']['k_ed']
+        else:
+            k_ed =self.current_selection['k_ed']
+        self.model_database.discard_part_geometry_modifications(k_ed=k_ed, k_part=k_part)
+        self.signal_reload_frame.emit()
+
+
+    def event_save_geometry_requested(self):
+        k_part = self.current_selection['k_part']
+        db = self.model_database.database()
+        if k_part in ['g_debut', 'g_fin']:
+            k_ed = self.current_frame['k_ed']
+            k_ep = self.current_frame['k_ep']
+        else:
+            k_ep = self.current_selection['k_ep']
+            k_ed = db[k_ep]['common']['video']['reference']['k_ed']
+        # pprint(self.current_selection)
+        shot = self.shots[self.current_frame['shot_no']]
+
+        self.model_database.save_geometry_database(k_ed=k_ed, k_ep=k_ep, k_part=k_part, shot=shot)
+        self.model_database.move_part_geometry_to_initial()
+        self.signal_is_saved.emit('geometry')
+
 
 
     def get_frame(self, frame_no):
@@ -502,278 +788,6 @@ class Model_video_editor(Model_common):
             # The preview options will be updated by the window UI
 
         return self.current_frame
-
-
-    def event_geometry_modified(self, modification:dict):
-        """modification:
-            - type
-            - parameter
-            - value
-        """
-        k_ed = self.current_selection['k_ed']
-        k_ep = self.current_selection['k_ep']
-        k_part = self.current_selection['k_part']
-        shot_no = self.current_frame['shot_no']
-        print("\nevent_geometry_modified for %s:%s:%s" % (k_ed, k_ep, k_part))
-
-        if modification['type'] == 'part':
-            type = 'part'
-            # Use a copy of parameters to not modify the initial values
-            k_ed_src = k_ed
-            k_ep_src = k_ep
-            geometry = deepcopy(self.model_database.get_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part))
-
-        elif k_part in ['g_asuivre', 'g_reportage']:
-            type = 'part'
-            # Use a copy of parameters to not modify the initial values
-            db = self.model_database.database()
-            k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
-            k_ep_src = db[k_part]['common']['video']['reference']['k_ep']
-            geometry = deepcopy(self.model_database.get_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part))
-
-        else:
-            type = 'custom'
-            geometry = deepcopy(self.model_database.get_custom_geometry(shot=self.shots[shot_no]))
-        print("geometry")
-        pprint(geometry)
-
-        # Modify parameter
-        value = modification['value']
-        if 'crop' in modification['parameter']:
-            if geometry is not None:
-                c_t, c_b, c_l, c_r = geometry['crop']
-            else:
-                geometry = {'crop':  [0, 0, 0, 0]}
-                c_t, c_b, c_l, c_r = geometry['crop']
-
-            if modification['parameter'] == 'crop_top':
-                geometry['crop'][0] = max(0, min(c_t + value, 400))
-
-            elif modification['parameter'] == 'crop_bottom':
-                geometry['crop'][1] = max(0, min(c_b - value, 400))
-
-            elif modification['parameter'] == 'crop_left':
-                geometry['crop'][2] = max(0, min(c_l + value, 400))
-
-            elif modification['parameter'] == 'crop_right':
-                geometry['crop'][3] = max(0, min(c_r + value, 400))
-
-        if type == 'part':
-            print("Set the modified crop ")
-            self.model_database.set_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part, geometry=geometry)
-
-
-        else:
-            print("TODO: set custom geometry")
-            self.model_database.set_custom_geometry(shot=self.shots[shot_no], geometry=geometry)
-
-        # No need to flush cache as generation of a new image will be done (fast enough)
-
-        self.signal_reload_frame.emit()
-
-
-    def refresh_replace_list(self):
-        # List of frames to replace
-        log.info("refresh list")
-        list_replace = list()
-        for frame in self.playlist_frames:
-            frame_no = self.model_database.get_replace_frame_no(
-                    shot=self.shots[frame['shot_no']],
-                    frame_no=frame['frame_no'])
-            if frame_no != -1:
-                list_replace.append({
-                    'shot_no': frame['shot_no'],
-                    'src': frame_no,
-                    'dst': frame['frame_no'],
-                })
-        self.signal_replace_list_refreshed.emit(list_replace)
-
-
-    def event_rgb_graph_modified(self, rgb_channels):
-        shot_no = self.current_frame['shot_no']
-        self.model_database.set_shot_rgb_channels(
-            shot=self.shots[shot_no],
-            rgb_channels=rgb_channels)
-        self.signal_reload_frame.emit()
-
-
-    def event_curves_selection_changed(self, k_curves:str):
-        log.info("select the new curves for this shot [%s]" % (k_curves))
-        shot_no = self.current_frame['shot_no']
-
-        # Update the modifications structure to update the selection widget
-        self.shots[shot_no]['modifications']['curves']['new'] = k_curves
-
-        self.model_database.set_curves_selection(
-            shot=self.shots[shot_no],
-            k_curves=k_curves)
-        curves = self.model_database.get_curves_selection(shot=self.shots[shot_no])
-
-        # Refresh the list of shot for these curves
-        shot_list = self.model_database.get_shots_per_curves(k_curves)
-        self.signal_shot_per_curves_modified.emit(shot_list)
-
-        self.signal_current_shot_modified.emit(self.shots[shot_no]['modifications'])
-        self.signal_load_curves.emit(curves)
-        self.signal_reload_frame.emit()
-
-
-    def event_discard_curves(self, k_curves:str):
-        self.model_database.discard_curves_modifications(k_curves)
-        k_part = self.current_selection['k_part']
-        k_ep = self.current_selection['k_ep']
-        curves = self.model_database.get_curves(
-            k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep,
-            k_curves=k_curves)
-
-        self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
-        self.signal_load_curves.emit(curves)
-        self.signal_reload_frame.emit()
-
-
-    def event_save_curves_as(self, curves):
-        # Save the curves in the curves library
-        log.info("save the curves: %s -> %s" % (curves['k_curves_current'], curves['k_curves_new']))
-        # if curves['k_curves_new'] == '':
-        #     log.error("No name defined in the curves struct")
-        #     return
-
-        k_part = self.current_selection['k_part']
-        k_ep = self.current_selection['k_ep']
-        self.model_database.save_curves_as(
-            k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep,
-            curves=curves)
-        self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
-
-        # Modify the current selection
-        k_curves_new = curves['k_curves_current'] if curves['k_curves_new'] is None else curves['k_curves_new']
-        self.event_curves_selection_changed(k_curves_new)
-
-    def event_save_curves_selection_requested(self):
-        # Save the curves selected for this shot
-        k_ed = self.current_frame['k_ed']
-        k_ep = self.current_frame['k_ep']
-        k_part = self.current_frame['k_part']
-        shot_no = self.current_frame['shot_no']
-        print("event_save_curves_selection_requested %s:%s:%s:%d" % (k_ed, k_ep, k_part, shot_no))
-        self.model_database.save_curves_selection_database(
-            self.shots,
-            k_ed=k_ed,
-            k_ep=k_ep,
-            k_part=k_part,
-            shot_no=shot_no)
-        self.model_database.move_curves_selection_to_initial()
-
-        # Update the modifications structure to update the selection widget
-        k_new_curves = self.shots[shot_no]['modifications']['curves']['new']
-        self.shots[shot_no]['modifications']['curves'] = {
-            'initial': k_new_curves,
-            'new': None,
-        }
-        self.signal_current_shot_modified.emit(self.shots[shot_no]['modifications'])
-
-        self.signal_is_saved.emit('curves_selection')
-
-
-    def get_replace_frame_no_str(self, index) -> str:
-        # print("get_replace_frame_no_str: %d" % (index))
-        frame_no = self.playlist_frames[index]['frame_no']
-        shot_no = self.playlist_frames[index]['shot_no']
-        new_frame_no = self.model_database.get_replace_frame_no(shot_no, frame_no)
-        # print("get_replace_frame_no: %d -> %d" % (frame_no, new_frame_no))
-        if new_frame_no != -1:
-            return str(new_frame_no)
-        return ''
-
-
-    def get_next_replaced_frame_index(self, index):
-        # TODO: replace this: use the list_replace
-        # print("find following replaced frame")
-        frame_no = self.playlist_properties['start'] + index
-        # print("\tsearch in %d -> %d" % (frame_no + 1, self.playlist_properties['start'] + self.playlist_properties['count']))
-        for f_no in range(frame_no + 1, self.playlist_properties['start'] + self.playlist_properties['count']):
-            shot_no = self.get_shot_no_from_frame_no(f_no)
-            if self.model_database.get_replace_frame_no(shot_no, f_no) != -1:
-                return f_no - self.playlist_properties['start']
-
-        # print("\tsearch in %d -> %d" % (self.playlist_properties['start'], frame_no-1))
-        for f_no in range(self.playlist_properties['start'], frame_no-1):
-            shot_no = self.get_shot_no_from_frame_no(f_no)
-            if self.model_database.get_replace_frame_no(shot_no, f_no) != -1:
-                return f_no - self.playlist_properties['start']
-
-        return -1
-
-
-    def event_frame_replaced(self, replace:dict):
-        action = replace['action']
-        frame_no = replace['dst']
-        shot_no = self.get_shot_no_from_frame_no(frame_no)
-        shot_src = self.shots[shot_no]
-        index = frame_no - self.frames[shot_no][0]['frame_no']
-
-        if action == 'replace':
-            log.info("replace: shot_no=%d, frame_no=%d (index=%d) by %d" % (shot_no, frame_no, index, replace['src']))
-            self.model_database.set_replaced_frame(
-                shot=shot_src,
-                frame_no=frame_no,
-                new_frame_no=replace['src'])
-            # update the frame as it is required to refresh the list of the widget_replace
-            # print("index: %d" % )
-            # self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
-
-        elif action == 'remove':
-            log.info("remove: shot_no=%d, frame_no=%d (index=%d)" % (shot_no, frame_no, index))
-            self.model_database.remove_replaced_frame(shot=shot_src, frame_no=frame_no)
-
-            # update the frame as it is required to refresh the list of the widget_replace
-            # self.frames[shot_no][index]['replaced_by'] = self.model_database.get_replace_frame_no(shot_src, frame_no)
-
-        self.refresh_replace_list()
-        self.signal_reload_frame.emit()
-
-
-    def event_replace_discard_requested(self):
-        log.info("discard modifications requested")
-        self.model_database.discard_replace_modifications()
-        self.refresh_replace_list()
-        self.signal_reload_frame.emit()
-
-
-    def event_save_replace_requested(self):
-        self.model_database.save_replace_database()
-        self.model_database.move_replace_to_initial()
-        self.signal_is_saved.emit('replace')
-
-
-    def event_geometry_discard_requested(self):
-        log.info("discard modifications requested")
-        k_part = self.current_selection['k_part']
-        db = self.model_database.database()
-        if k_part in K_GENERIQUES:
-            k_ed = db[k_part]['common']['video']['reference']['k_ed']
-        else:
-            k_ed =self.current_selection['k_ed']
-        self.model_database.discard_part_geometry_modifications(k_ed=k_ed, k_part=k_part)
-        self.signal_reload_frame.emit()
-
-
-    def event_save_geometry_requested(self):
-        k_part = self.current_selection['k_part']
-        db = self.model_database.database()
-        if k_part in ['g_debut', 'g_fin']:
-            k_ed = db[k_part]['common']['video']['reference']['k_ed']
-            k_ep = db[k_part]['common']['video']['reference']['k_ep']
-        else:
-            k_ep = self.current_selection['k_ep']
-            k_ed = db[k_ep]['common']['video']['reference']['k_ed']
-        # pprint(self.current_selection)
-
-        self.model_database.save_geometry_database(k_ed=k_ed, k_ep=k_ep, k_part=k_part)
-        self.model_database.move_part_geometry_to_initial()
-        self.signal_is_saved.emit('geometry')
-
-
 
 
 

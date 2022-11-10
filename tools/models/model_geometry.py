@@ -75,13 +75,29 @@ class Model_geometry():
 
 
     def get_custom_geometry(self, shot):
-        print("return the geometry for this shot")
-        # TODO: return the geometry for this shot
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        if k_part in ['g_debut', 'g_fin']:
+            # Use the part geometry for this to simplify
+            return self.get_part_geometry(k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+        else:
+            print("TODO: get_custom_geometry for %s:%s:%s (%d)" % (
+                k_ed, k_ep, k_part, shot['shot_no']))
+            # TODO: return the geometry for this shot
         return None
 
 
     def set_custom_geometry(self, shot, geometry):
-        print("set the customized geometry for this shot")
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        if k_part in ['g_debut', 'g_fin']:
+            # Use the part geometry for this to simplify
+            return self.set_part_geometry(k_ed=k_ed, k_ep=k_ep, k_part=k_part, geometry=geometry)
+        else:
+            print("TODO: set_custom_geometry for %s:%s:%s (%d)" % (
+                k_ed, k_ep, k_part, shot['shot_no']))
         # TODO: set the geometry for this shot
 
 
@@ -105,6 +121,7 @@ class Model_geometry():
 
         elif k_part in ['g_debut', 'g_fin']:
             # In this case, the custom geometry is the part of the dependency
+            print("\t-> k_part=%s" % (k_part))
             k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
             k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
             shot_geometry = {
@@ -113,12 +130,11 @@ class Model_geometry():
                 'custom': None
             }
             if shot['k_ed'] != k_ed_ref or shot['k_ep'] != k_ep_ref:
-                print("\tshot k_ed:k_ep is <> ref k_ed:k_ep")
+                print("\t   shot k_ed:k_ep is <> ref k_ed:k_ep")
                 shot_geometry.update({
                     'custom': self.get_part_geometry(
                                 k_ed=shot['k_ed'], k_ep=shot['k_ep'], k_part=k_part),
                 })
-
         else:
             shot_geometry = {
                 'part': self.get_part_geometry(k_ed=k_ed, k_ep=k_ep, k_part=k_part),
@@ -126,12 +142,11 @@ class Model_geometry():
             }
 
         print("\tshot_geometry:", shot_geometry)
-
         return shot_geometry
 
 
 
-    def save_geometry_database(self, k_ed, k_ep, k_part):
+    def save_geometry_database(self, k_ed, k_ep, k_part, shot):
         if not self.is_geometry_db_modified:
             return True
 
@@ -157,7 +172,10 @@ class Model_geometry():
         else:
             config_geometry = configparser.ConfigParser({}, collections.OrderedDict)
 
-        if k_part in ['g_asuivre', 'g_reportage']:
+        if k_part in ['g_debut', 'g_fin']:
+            k_ed_src = shot['k_ed']
+            k_ep_src = shot['k_ep']
+        elif k_part in ['g_asuivre', 'g_reportage']:
             k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
             k_ep_src = db[k_part]['common']['video']['reference']['k_ep']
         else:
