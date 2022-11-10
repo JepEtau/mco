@@ -20,8 +20,10 @@ from PySide6.QtCore import (
 
 from common.preferences import Preferences
 from models.model_database import Model_database
-from models.model_common import Model_common
-
+from models.model_common import (
+    Model_common,
+    get_dimensions_from_crop_values,
+)
 from images.filtering import filter_rgb
 
 from utils.common import (
@@ -412,7 +414,8 @@ class Model_video_editor(Model_common):
         self.model_database.save_all_curves(k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
         self.signal_close.emit()
 
-
+    def get_modified_db(self):
+        return self.model_database.get_modified_db()
 
     def get_frame(self, frame_no):
         """ returns the replace frame unless there is no replacemed frame or
@@ -537,10 +540,10 @@ class Model_video_editor(Model_common):
         # Modify parameter
         value = modification['value']
         if 'crop' in modification['parameter']:
-            try:
+            if geometry is not None:
                 c_t, c_b, c_l, c_r = geometry['crop']
-            except:
-                geometry['crop'] = [0, 0, 0, 0]
+            else:
+                geometry = {'crop':  [0, 0, 0, 0]}
                 c_t, c_b, c_l, c_r = geometry['crop']
 
             if modification['parameter'] == 'crop_top':
@@ -769,16 +772,12 @@ class Model_video_editor(Model_common):
 
 
 
-def get_dimensions_from_crop_values(width, height, crop) -> list:
-    c_t, c_b, c_l, c_r = crop
-    c_w = width - (c_l + c_r)
-    c_h = height - (c_t + c_b)
-    return [c_t, c_b, c_l, c_r, c_w, c_h]
+
 
 
 def generate_single_image(frame:dict, preview_options:dict):
     # log.info("generate single image")
-    print("\ngenerate_single_image\n-------------------------------------")
+    # print("\ngenerate_single_image\n-------------------------------------")
     now = time.time()
     img = None
 
@@ -791,8 +790,7 @@ def generate_single_image(frame:dict, preview_options:dict):
 
     img_original = frame['cache_fgd']
     h, w, c = img_original.shape
-    print("\t-> initial: ", frame['cache_fgd'].shape)
-    pprint(preview_options)
+    # print("\t-> initial: ", frame['cache_fgd'].shape)
 
     # Calculate dimensions to crop the image
     c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
@@ -811,7 +809,7 @@ def generate_single_image(frame:dict, preview_options:dict):
 
     # Preview options
     options = preview_options['geometry'][type]
-    print("\t -> cropped: %dx%d" % (c_w, c_h))
+    # print("\t -> cropped: %dx%d" % (c_w, c_h))
 
     # Apply rgb curves
     if preview_options['curves']['is_enabled'] and frame['curves'] is not None:
@@ -840,9 +838,9 @@ def generate_single_image(frame:dict, preview_options:dict):
 
     elif options['crop_preview']:
         # Crop and no rect
-        print("\t-> Crop the image")
+        # print("\t-> Crop the image")
         img = np.ascontiguousarray(img_rgb[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
-        print("\t-> cropped: ", img.shape)
+        # print("\t-> cropped: ", img.shape)
 
     else:
         if options['resize_preview']:
@@ -868,7 +866,7 @@ def generate_single_image(frame:dict, preview_options:dict):
 
             w_tmp = int((c_w * h_final) / float(c_h))
             img_resized = cv2.resize(img, (w_tmp, h_final), interpolation=cv2.INTER_LANCZOS4)
-            print("\t-> resized cropped image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_final ))
+            # print("\t-> resized cropped image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_final ))
         else:
             # Resize the original image and add rect
             w_p_tmp = int((w * h_final) / float(c_h_p))
@@ -876,7 +874,7 @@ def generate_single_image(frame:dict, preview_options:dict):
             w_tmp = int((w * h_final) / float(c_h))
             h_tmp = int((h * h_final) / float(c_h))
             img_resized = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_LANCZOS4)
-            print("\t-> resized original image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_tmp ))
+            # print("\t-> resized original image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_tmp ))
 
         if w_tmp != w_p_tmp:
             if options['crop_preview']:
@@ -891,7 +889,7 @@ def generate_single_image(frame:dict, preview_options:dict):
                 elif w_p_tmp > w_tmp:
                     pad_left = int((w_p_tmp - w_tmp)/2)
                     pad_right = w_p_tmp - w_tmp - pad_left
-                    print("!!!! TODO: add padding: %d, %d" % (pad_left, pad_right))
+                    # print("!!!! TODO: add padding: %d, %d" % (pad_left, pad_right))
                     img_resized = np.ascontiguousarray(cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
                         cv2.BORDER_CONSTANT, value=[0, 255, 0]))
 
@@ -900,7 +898,7 @@ def generate_single_image(frame:dict, preview_options:dict):
         # Add padding to the cropped&resized image
         pad_left = int((w_final - w_p_tmp) / 2)
         pad_right = w_final - (w_p_tmp + pad_left)
-        print("\t-> pad=%d,%d" % (pad_left, pad_right))
+        # print("\t-> pad=%d,%d" % (pad_left, pad_right))
 
         img_finalized = cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
             cv2.BORDER_CONSTANT, value=[0, 0, 0])

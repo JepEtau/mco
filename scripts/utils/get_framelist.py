@@ -30,6 +30,7 @@ def _get_frames_until_effects(db, k_part, shot, suffix, count=0):
         input_folder = os.path.join(db[k_part]['common']['path']['cache'])
         input_folder = os.path.join(input_folder, '%05d' % (shot_src['start']))
     else:
+        # Use the episode for even for the others generiques
         # input_folder = os.path.join(db[k_ep_src]['common']['path']['cache'], k_part_src)
         input_folder = shot['output_path']
 

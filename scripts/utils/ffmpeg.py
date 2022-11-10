@@ -14,12 +14,15 @@ from pprint import pprint
 
 from images.frames import frame_no_to_sexagesimal
 
-from utils.common import remove_spaces
 from utils.common import create_pipe_in
 from utils.path import get_output_filepath_list
 from utils.time_conversions import timestamp2sexagesimal
 
 
+def ffmeg_clean_filter_complex(a_string):
+    for c in ['\"', '\r', '\n']:
+        a_string = a_string.replace(c, '')
+    return a_string
 
 def ffmpeg_execute_command(command=None, filename='', mode='', print_msg=False):
     # if mode == 'debug' or True:
@@ -222,7 +225,7 @@ def ffmpeg_extract_single_frame(database, frame, filter_str, width, height):
         "-i", frame['input'],
         "-t", str(frames_count/database['common']['fps']),
         "-f", "image2pipe",
-        "-filter_complex", remove_spaces(filter_str),
+        "-filter_complex", ffmeg_clean_filter_complex(filter_str),
         "-map", "[outv]",
         "-pix_fmt", "bgr24",
         "-vcodec", "rawvideo",
@@ -304,7 +307,7 @@ def ffmpeg_extract_shot(database, shot, filter_str, width, height, step='upscale
         "-i", shot['input'],
         "-t", str(frames_count/database['common']['fps']),
         "-f", "image2pipe",
-        "-filter_complex", remove_spaces(filter_str),
+        "-filter_complex", ffmeg_clean_filter_complex(filter_str),
         "-map", "[outv]",
         "-pix_fmt", "bgr24",
         "-vcodec", "rawvideo",

@@ -186,6 +186,7 @@ def simplify_tasks(frames):
                     f['tasks'].remove('deinterlace')
             i += 1
 
+
 def create_framelist_from_shot(db:dict, shot) -> list:
     """This function returns a list of all frames that shall be
     processed (extracted, sharpened, etc.) for this shot

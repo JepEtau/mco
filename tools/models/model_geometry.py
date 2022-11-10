@@ -15,7 +15,6 @@ from pprint import pprint
 from logger import log
 
 from utils.common import (
-    K_GENERIQUES,
     nested_dict_set,
 )
 
@@ -27,7 +26,12 @@ from parsers.parser_geometry import get_shots_st_geometry
 class Model_geometry():
 
     def __init__(self):
+        self.db_part_geometry_initial = dict()
+        # Use a single database to store the modified values
+        # Thus, no history is possible with this implementation
+        self.db_part_geometry = dict()
         self.is_geometry_db_modified = False
+        print("Model_geometry: __init__")
 
 
     # Final geometry for each part
@@ -48,6 +52,7 @@ class Model_geometry():
     def set_part_geometry(self, k_ed, k_ep, k_part, geometry):
         print("set_part_geometry: %s:%s:%s" % (k_ed, k_ep, k_part))
         nested_dict_set(self.db_part_geometry, geometry, k_ed, k_ep, k_part)
+        pprint(self.db_part_geometry)
         self.is_geometry_db_modified = True
 
 

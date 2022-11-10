@@ -176,7 +176,7 @@ def main():
     print("\t- parse database")
     print("\t- consolidate generiques")
 
-    arguments.vfilter.replace('final', 'geometry')
+    vfilter = arguments.vfilter.replace('final', 'geometry')
     do_av_merge = False
     if (not arguments.study
     and arguments.afilter == ''
@@ -185,8 +185,8 @@ def main():
         or arguments.part == ''):
             print("\t- force processing audio and video")
             arguments.afilter = 'final'
-            if arguments.vfilter == '':
-                arguments.vfilter = 'geometry'
+            if vfilter == '':
+                vfilter = 'geometry'
             do_av_merge = True
 
 
@@ -224,11 +224,11 @@ def main():
         elif arguments.afilter == 'final':
             print("final")
 
-    if arguments.frames and arguments.vfilter == '':
+    if arguments.frames and vfilter == '':
         # Force to final if vfilter is not specified
-        arguments.vfilter = 'geometry'
+        vfilter = 'geometry'
 
-    if arguments.vfilter != '':
+    if vfilter != '':
         if arguments.frames:
             print("\t- frames:")
         else:
@@ -238,7 +238,7 @@ def main():
             print("\t\t- %s" % (arguments.part))
         else:
             print("\t\t- all parts")
-        print("\t\t- last task=%s" % (arguments.vfilter))
+        print("\t\t- last task=%s" % (vfilter))
 
     if do_av_merge:
         # Full generation of this episode
@@ -293,11 +293,11 @@ def main():
 
     # Video
     #-------------------------------------------------
-    if arguments.vfilter != '':
+    if vfilter in ['deinterlace', 'upscale', 'geometry']:
         # Video and frames
 
         # Get the list of tasks
-        tasks = get_tasklist(final_task=arguments.vfilter)
+        tasks = get_tasklist(final_task=vfilter)
 
         # Check if nnedi3_weights.bin exists
         if 'deinterlace' in tasks:

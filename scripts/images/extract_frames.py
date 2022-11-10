@@ -14,23 +14,25 @@ import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
 
-from utils.common import K_GENERIQUES, get_shot_from_frame_no, get_shot_from_frame_no_new
+from utils.common import K_GENERIQUES
 from utils.get_filters import get_filters
 from utils.get_curves import get_curves
-from utils.get_crop import get_crop
 from utils.path import get_input_filepath
 from utils.path import get_output_frame_filepaths_for_study
-from utils.ffmpeg import ffmpeg_deinterlace_single_frame
-from utils.ffmpeg import ffmpeg_deinterlace_and_pre_upscale_single_frame
-from utils.ffmpeg import ffmpeg_deinterlace_and_upscale_single_frame
-
+from utils.ffmpeg import (
+    ffmpeg_deinterlace_single_frame,
+    ffmpeg_deinterlace_and_pre_upscale_single_frame,
+    ffmpeg_deinterlace_and_upscale_single_frame,
+)
 from images.frames import get_frames_for_study
-from images.filtering import filter_upscale
-from images.filtering import filter_denoise
-from images.filtering import filter_bgd
-from images.filtering import filter_sharpen
-from images.filtering import filter_geometry
-from images.filtering import filter_rgb
+from images.filtering import (
+    filter_upscale,
+    filter_denoise,
+    filter_bgd,
+    filter_sharpen,
+    filter_geometry,
+    filter_rgb,
+)
 from images.combine import combine_images
 
 study_mode = True
@@ -423,7 +425,8 @@ def get_framelist_for_study(database, editions, episode_no, k_part, tasks, force
             # else:
             #     shot = get_shot_from_frame_no(database[f['k_ep']][edition], f['no'], k_part)
 
-            f['geometry'] = get_crop(database, frame_or_shot=f, k_part=k_part)
+            # TODO: add geometry
+
             # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             # pprint(f)
 

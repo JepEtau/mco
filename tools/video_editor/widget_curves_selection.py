@@ -120,7 +120,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
     def event_curves_library_modified(self, curves_library:dict):
         # curves_library is a simplified library which indicates if the curves are modified
         log.info("refresh the list of available curves")
-        # pprint(curves_library)
+        pprint(curves_library)
 
         self.list_curves.blockSignals(True)
 

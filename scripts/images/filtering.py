@@ -10,11 +10,8 @@ import os
 import os.path
 from copy import deepcopy
 
-# import torch
-
 import sys
 import numpy as np
-# import bm3d
 import cv2
 from skimage import data
 from skimage.filters import unsharp_mask
@@ -75,7 +72,7 @@ def filter_upscale(frame, img):
         imgTmp = filters_opencv(img, filter_array, multi=False)
         return imgTmp
     else:
-        print("warning: opencv: no upscale filter defined")
+        raise Exception("error: opencv: no upscale filter defined to generate %s" % (frame['filepath']['upscale']))
     return None
 
 
@@ -307,9 +304,13 @@ def filter_brightness_contrast(input_img, brightness = 255, contrast = 127):
 
 
 
-def filters_scale_opencv(image, width, height):
-    # print("upscale image to %d x %d" % (width, height))
-    return cv2.resize(image, (width, height), interpolation=cv2.INTER_LANCZOS4)
+def filters_scale_opencv(image, width, height, interpolation):
+    # print("upscale image to %dx%d, inter=%s" % (width, height, interpolation))
+    if interpolation == 'bicubic':
+        cv2_interpolation = cv2.INTER_CUBIC
+    else:
+        cv2_interpolation = cv2.INTER_LANCZOS4
+    return cv2.resize(image, (width, height), interpolation=cv2_interpolation)
 
 
 
@@ -460,7 +461,8 @@ def filters_opencv(images, filters, multi=True):
         elif function == 'scale':
             image = filters_scale_opencv(image,
                 width=int(args[0]),
-                height=int(args[1]))
+                height=int(args[1]),
+                interpolation=args[2])
 
     return image
 

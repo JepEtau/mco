@@ -30,6 +30,7 @@ from video_editor.ui.widget_geometry_ui import Ui_widget_geometry
 
 class Widget_geometry(Widget_common, Ui_widget_geometry):
     signal_geometry_modified = Signal(dict)
+    signal_position_changed = Signal(str)
 
     def __init__(self, ui, model:Model_video_editor):
         super(Widget_geometry, self).__init__(ui)
@@ -280,7 +281,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
     def event_is_modified(self, type, parameter, value):
-        log.info("parameter has been modified: %s: %s, %d" % (type, parameter, value))
+        # log.info("parameter has been modified: %s: %s, %d" % (type, parameter, value))
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
         self.pushButton_undo.setEnabled(True)
@@ -478,6 +479,15 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             else:
                 return False
 
+        if modifiers & Qt.AltModifier:
+            if key == Qt.Key_S:
+                if self.current_key_pressed != Qt.Key_S:
+                    self.signal_position_changed.emit('switch')
+                self.current_key_pressed = Qt.Key_S
+                return True
+            else:
+                return False
+
         if key == Qt.Key_F2:
             if self.pushButton_set_preview.isEnabled():
                 self.pushButton_set_preview.toggle()
@@ -488,13 +498,13 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.current_key_pressed = key
             return True
         elif key == Qt.Key_Z:
-            # if key != self.current_key_pressed:
-            #     self.signal_crop_enabled.emit('top')
+            if key != self.current_key_pressed:
+                self.signal_position_changed.emit('top')
             self.current_key_pressed = key
             return True
         elif key == Qt.Key_S:
-            # if key != self.current_key_pressed:
-                # self.signal_crop_enabled.emit('bottom')
+            if key != self.current_key_pressed:
+                self.signal_position_changed.emit('bottom')
             self.current_key_pressed = key
             return True
         return False

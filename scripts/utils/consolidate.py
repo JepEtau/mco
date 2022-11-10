@@ -8,7 +8,7 @@ from pprint import pprint
 from utils.common import FPS, K_GENERIQUES, pprint_audio, pprint_dict, pprint_video
 from utils.get_filters import get_filters_from_shot
 from utils.get_curves import get_lut_from_curves
-from utils.path import get_output_folder_from_shot
+from utils.path import get_output_path_from_shot
 
 from utils.time_conversions import frames_to_ms, ms_to_frames
 
@@ -136,7 +136,7 @@ def consolidate_shot(db, shot) -> None:
     db_video = db[k_ep][k_ed][k_part]['video']
     shot_no = shot['no']
 
-    shot['output_path'] = get_output_folder_from_shot(db, shot)
+    shot['output_path'] = get_output_path_from_shot(db, shot)
 
     if 'layer' not in shot.keys() or shot['layer'] == 'fgd':
         # Foreground

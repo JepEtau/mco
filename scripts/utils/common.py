@@ -325,10 +325,7 @@ def get_tasklist(final_task='geometry'):
     return tasks
 
 
-def remove_spaces(aString):
-    for c in ['\"', '\r', '\n']:
-        aString = aString.replace(c, '')
-    return aString
+
 
 def get_database_size(obj, seen=None):
     """Recursively finds size of objects"""

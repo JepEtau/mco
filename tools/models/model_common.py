@@ -21,6 +21,13 @@ from utils.common import (
 from utils.get_filters import FILTER_BASE_NO
 
 
+def get_dimensions_from_crop_values(width, height, crop) -> list:
+    c_t, c_b, c_l, c_r = crop
+    c_w = width - (c_l + c_r)
+    c_h = height - (c_t + c_b)
+    return [c_t, c_b, c_l, c_r, c_w, c_h]
+
+
 class Model_common(QObject):
     signal_close = Signal()
     signal_shotlist_modified = Signal(dict)

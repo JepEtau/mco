@@ -95,7 +95,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
             if img_upscaled is None:
                 # There is no defined filter, use the input image
                 img_upscaled = img_input
-            elif 'upscale' == tasklist[-1]:
+            elif tasklist[-1] == 'upscale':
                 # Last task, save the file
                 cv2.imwrite(frame['filepath']['upscale'], img_upscaled)
         tasklist.remove('upscale')
@@ -110,7 +110,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
         if img_denoised is None:
             # There is no defined filter, use the input image
             img_denoised = img_input
-        else:
+        elif tasklist[-1] == 'denoise':
             cv2.imwrite(frame['filepath']['denoise'], img_denoised)
         tasklist.remove('denoise')
     if (img_denoised is None
@@ -186,7 +186,10 @@ def process_single_frame(work_no:int, frame:dict) -> None:
         print("apply RGB curves: %d" % (frame['no']))
         if img_sharpened is None:
             img_sharpened = cv2.imread(frame['filepath']['sharpen'], cv2.IMREAD_COLOR)
-        try: img_rgb = filter_rgb(frame, img_sharpened)
+        try:
+            img_rgb = filter_rgb(frame, img_sharpened)
+            if tasklist[-1] == 'rgb':
+                cv2.imwrite(frame['filepath']['rgb'], img_rgb)
         except:
             # no RGB curves
             # print("no RGB curves for shot %d" % (frame['shot_no']))

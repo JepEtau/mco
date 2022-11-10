@@ -61,18 +61,27 @@ def create_folder_for_concatenation(db, k_ep):
 
 
 
-def get_output_folder_from_shot(db, shot):
+def get_output_path_from_shot(db, shot):
     if shot['k_part'] in ['g_debut', 'g_fin']:
         # Put all images in a single folder for 'génériques'
         return os.path.join(db['common']['directories']['cache'],
                 shot['k_part'],
                 '%05d' % (shot['start']))
 
-    return os.path.join(db['common']['directories']['cache'],
-                shot['k_ep'],
-                shot['k_part'],
-                '%05d' % (shot['start']))
-
+    if shot['tasks'][-1] == 'geometry':
+        # If last task is geometry, use the dst structure
+        output_path = os.path.join(db['common']['directories']['cache'],
+            shot['dst']['k_ep'],
+            shot['dst']['k_part'],
+            '%05d' % (shot['start']))
+    else:
+        # Otherwise, use the src directory as these images are shared by
+        # multiple episode
+        output_path = os.path.join(db['common']['directories']['cache'],
+            shot['k_ep'],
+            shot['k_part'],
+            '%05d' % (shot['start']))
+    return output_path
 
 
 def get_input_filepath(database, frame):

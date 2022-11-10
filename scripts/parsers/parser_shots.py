@@ -11,69 +11,7 @@ from utils.common import pprint_video
 from utils.time_conversions import ms_to_frames
 
 
-
-
-
-def parse_shotlist_generique(db_shots, shotlist_str) -> None:
-    """This procedure parses a string wich contains the list of shots
-        and update the structure of the database.
-        Specific to 'génériques'
-
-        TODO: deprecate this function and replace by the parse_shotlist function???
-
-    Args:
-        db_shots: the structure where to store the shots
-        shotlist_str: the string to parse
-
-    Returns:
-        None
-
-    """
-    # print("%s.parse_shotlist_generique: shotlist_str=%s" % (__name__, shotlist_str))
-    shot_list = shotlist_str.split()
-    for shot_no, shot in zip(range(len(shot_list)), shot_list):
-        # print(shot)
-        shot_properties = shot.split(',')
-
-        # first field is the start and end of the shot
-        start_end = shot_properties[0].split(':')
-        start = int(start_end[0])
-        if len(start_end) > 1:
-            end = int(start_end[1])
-        else:
-            # print("Error: %s.parse_shotlist_generique: todo consolidate the shotlist" % (__name__))
-            end = start
-
-        db_shots.append({
-            'start': start,
-            'count': end - start,
-            'no': shot_no,
-            'filters': 'default',
-            'curves': None,
-            'replace': dict(),
-        })
-        current_shot = db_shots[-1]
-
-        if len(shot_properties) > 1:
-            for f in shot_properties:
-                d = f.split('=')
-                if d[0] == 'filters':
-                    # custom filter
-                    current_shot['filters'] = d[1]
-
-                elif d[0] == 'ep':
-                    # custom episode
-                    if d[1] == '0':
-                        current_shot['k_ep'] = d[1]
-                    else:
-                        db_shots[-1]['k_ep'] = 'ep%02d' % (int(d[1]))
-
-                elif d[0] == 'effects':
-                    current_shot['effects'] = d[1].split(':')
-
-
-
-def parse_shotlist(db_shots, shotlist_str) -> None:
+def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
     """This procedure parse a string wich contains the list of shots
         and update the structure of the database.
         Used for 'épisodes' and 'reportage'
@@ -100,7 +38,6 @@ def parse_shotlist(db_shots, shotlist_str) -> None:
             if len(start_end) > 1:
                 end = int(start_end[1])
             else:
-                # print("Error: %s.parse_shotlist_generique: todo consolidate the shotlist" % (__name__))
                 end = start
             count = end - start
         else:
@@ -109,9 +46,13 @@ def parse_shotlist(db_shots, shotlist_str) -> None:
 
         # Append this shot to the list of shots
         db_shots.append({
+            'no': shot_no,
             'start': start,
             'count': count,
-            'no': shot_no,
+            'dst': {
+                'k_ep': k_ep,
+                'k_part': k_part,
+            },
             'filters': 'default',
             'curves': None,
             'replace': dict(),
@@ -168,7 +109,7 @@ def parse_shotlist(db_shots, shotlist_str) -> None:
 
 
 
-def parse_shotlist_precedemment_asuivre(db_shots, shotlist_str) -> None:
+def parse_shotlist_precedemment_asuivre(db_shots, k_ep, k_part, shotlist_str) -> None:
     """This procedure parse a string wich contains the list of shots
         and update the structure of the database.
         Used for 'précédemment' and 'à suivre'
@@ -186,9 +127,13 @@ def parse_shotlist_precedemment_asuivre(db_shots, shotlist_str) -> None:
     for shot_no, shot in zip(range(len(shot_list)), shot_list):
         shot_properties = shot.split(',')
         db_shots.append({
+            'no': shot_no,
             'start': int(shot_properties[0]),
             'count': 0,
-            'no': shot_no,
+            'dst': {
+                'k_ep': k_ep,
+                'k_part': k_part,
+            },
             'filters': 'default',
             'curves': None,
             'replace': dict(),
@@ -256,6 +201,10 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
             'count': db_video['count'],
             'curves': None,
             'replace': dict(),
+            'dst':{
+                'k_ep': k_ep,
+                'k_part': k_part,
+            }
         }]
         return
 

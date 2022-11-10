@@ -143,7 +143,7 @@ def parse_generiques_common(database, verbose=False):
                         db_g_common['video']['reference']['k_ep'] ='ep%02d' % (int(value_str))
 
                     elif k_option == 'shots':
-                        parse_shotlist(db_g_common['video']['shots'], value_str)
+                        parse_shotlist(db_g_common['video']['shots'], '', k_part_g, value_str)
                         for shot in db_g_common['video']['shots']:
                             # Force src as this is the common config file which
                             # specify the k_ed:k_ep to use
@@ -242,17 +242,6 @@ def parse_generiques(database, k_ed, verbose=False):
                     value_str = value_str.replace(' ','')
                     # print("%s:%s=" % (k_section, k_option), value_str)
 
-                    # Shots
-                    # if k_option == 'shots':
-                    #     parse_shotlist(db_generique['video']['shots'], value_str)
-                    #     print("---------------- %s, %s:video ----------------" % (k_ed, k_part_g))
-                    #     pprint(db_generique['video']['shots'])
-                    #     sys.exit()
-                    #     for shot in db_generique['video']['shots']:
-                    #         if 'src' in shot.keys():
-                    #             shot['src']['use'] = True
-                    #             shot['src']['count'] = shot['count']
-
                     # Episode used as reference
                     if k_option == 'episode':
                         k_episode = 'ep%02d' % (int(value_str))
@@ -303,15 +292,6 @@ def parse_generiques(database, k_ed, verbose=False):
             label="[%s:%s]" % (k_ed, k_part_g),
             verbose=False)
 
-        # print("parse_generiques: consolidate_shots: %s, %s: activate" % (edition, k_part_g))
-        # if ((edition=='s' and k_part_g == 'g_asuivre')
-        #     or (edition=='k' and k_part_g == 'g_reportage')):
-        #     # consolidate_shots(db_generique['video'])
-
-        #     if k_part_g == 'g_reportage':
-        #         pprint(db_generique['video'])
-        #         print("===============================")
-            #     sys.exit()
 
 
 

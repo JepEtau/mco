@@ -15,8 +15,10 @@ import sys
 
 from parsers.parser_filters import *
 from parsers.parser_av import *
-from parsers.parser_shots import *
-from parsers.parser_shots import consolidate_shots_after_parse
+from parsers.parser_shots import (
+    consolidate_shots_after_parse,
+    parse_shotlist,
+)
 from utils.common import K_ALL_PARTS, K_NON_GENERIQUE_PARTS
 
 
@@ -270,14 +272,14 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
                                     'g_reportage']:
                         # if 'shots' not in db_episode[k_part]['video'].keys():
                         db_episode[k_part]['video']['shots'] = list()
-                        parse_shotlist(db_episode[k_part]['video']['shots'], value_str)
+                        parse_shotlist(db_episode[k_part]['video']['shots'], k_ep, k_part, value_str)
 
                     elif k_section in ['precedemment', 'asuivre']:
                         # Precedemment and asuivre are different as some shots
                         # may be replaced
                         # if 'shots' not in db_episode[k_part]['video'].keys():
                         db_episode[k_part]['video']['shots'] = list()
-                        parse_shotlist(db_episode[k_part]['video']['shots'], value_str)
+                        parse_shotlist(db_episode[k_part]['video']['shots'], k_ep, k_part, value_str)
                         # if k_ep == 'ep01' and k_part == 'asuivre':
                         #     pprint(db_episode[k_part]['video']['shots'])
                         #     sys.exit()

@@ -292,7 +292,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             self.radioButton_select_m_channel.click()
             return True
 
-        if key == Qt.Key_S:
+        if key == Qt.Key_S and not modifiers & Qt.AltModifier:
             # Display/Hide split line
             if self.pushButton_set_preview.isChecked():
                 self.show_split_line = not self.show_split_line

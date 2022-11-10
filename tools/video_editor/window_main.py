@@ -21,16 +21,19 @@ from PySide6.QtGui import (
     QImage,
     QPen,
 )
-
-
-from common.window_common import Window_common
+from common.window_common import (
+    Window_common,
+    PAINTER_MARGIN_LEFT,
+    PAINTER_MARGIN_TOP,
+)
 from common.widget_controls import Widget_controls
-
-from video_editor.model_video_editor import Model_video_editor, get_dimensions_from_crop_values
 from video_editor.widget_selection import Widget_selection
 from video_editor.widget_curves import Widget_curves
 from video_editor.widget_replace import Widget_replace
 from video_editor.widget_geometry import Widget_geometry
+
+from models.model_common import get_dimensions_from_crop_values
+from video_editor.model_video_editor import Model_video_editor
 
 
 COLOR_PART_CROP_RECT = QColor(30, 230, 30)
@@ -39,8 +42,7 @@ COLOR_FINAL_RECT = QColor(0, 255, 0)
 COLOR_DISPLAY_RECT = QColor(255, 255, 255)
 # PEN_CROP_SIZE must be equal to 1 or 2
 PEN_CROP_SIZE = 1
-PAINTER_MARGIN_LEFT = 20
-PAINTER_MARGIN_TOP = 20
+
 
 class Window_main(Window_common):
     signal_preview_options_changed = Signal(dict)
@@ -74,6 +76,8 @@ class Window_main(Window_common):
             self.widgets['geometry'] = self.widget_geometry
             self.widget_geometry.set_initial_options(p)
             self.widget_geometry.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'geometry'))
+            if self.display_height <= 1080:
+                self.widget_geometry.signal_position_changed[str].connect(self.event_screen_position_changed)
 
         # Player controls
         if 'controls' in self.widgets.keys():
@@ -91,7 +95,7 @@ class Window_main(Window_common):
         self.widget_selection.signal_ep_or_part_selection_changed[dict].connect(self.event_selection_changed)
         self.widget_selection.set_initial_options(p)
         self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
-        self.widget_selection.signal_selected_shots_changed[dict].connect(partial(self.event_preview_options_changed, 'selection'))
+        self.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
 
         # Model
         self.model.signal_ready_to_play[dict].connect(self.event_ready_to_play)
@@ -210,8 +214,6 @@ class Window_main(Window_common):
 
 
 
-
-
     def mousePressEvent(self, event):
         x = event.x()
         y = event.y()
@@ -285,6 +287,10 @@ class Window_main(Window_common):
                 self.showMinimized()
                 event.accept()
                 return True
+            elif key == Qt.Key_S:
+                self.switch_display_side()
+                event.accept()
+                return True
         else:
             if key == Qt.Key_F5:
                 log.info("Reload")
@@ -352,11 +358,11 @@ class Window_main(Window_common):
             log.error("error: self.is_repainting is True!!")
             return
         self.is_repainting = True
-        delta_y = 0
+        delta_y = self.display_position_y
 
         options = self.image['preview_options']
         h_i, w_i, c = self.image['cache_fgd'].shape
-        print("paintEvent: initial image = %dx%d" % (h_i, w_i))
+        # print("paintEvent: initial image = %dx%d" % (h_i, w_i))
         h, w, c = img.shape
         q_image = QImage(img.data, w, h, w * 3, QImage.Format_BGR888)
         w_final, h_final = (1440, 1080)
@@ -370,7 +376,7 @@ class Window_main(Window_common):
                     QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
             else:
                 type = 'custom' if self.image['geometry']['custom'] is not None else 'part'
-                print("paintEvent: type = %s" % (type))
+                # print("paintEvent: type = %s" % (type))
                 geometry_options = options['geometry'][type]
 
                 if geometry_options['crop_edition'] and not geometry_options['crop_preview']:
