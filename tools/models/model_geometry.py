@@ -108,6 +108,7 @@ class Model_geometry():
                 'custom': None
             }
             if shot['k_ed'] != k_ed_ref or shot['k_ep'] != k_ep_ref:
+                print("\tshot k_ed:k_ep is <> ref k_ed:k_ep")
                 shot_geometry.update({
                     'custom': self.get_part_geometry(
                                 k_ed=shot['k_ed'], k_ep=shot['k_ep'], k_part=k_part),

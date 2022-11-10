@@ -105,7 +105,7 @@ def get_part_geometry_list(db, k_ep, k_part) -> dict:
                 # print("get_part_geometry: %s:%s:%s" % (k_ed,k_ep_src,k_part))
                 # pprint(db[k_ep_src][k_ed][k_part])
                 try: geometry = db_video['geometry'].copy()
-                except: geometry = None
+                except: geometry = {'crop': [0, 0, 0, 0]}
                 nested_dict_set(part_geometry, geometry, k_ed, k_ep_tmp, k_part)
 
     elif k_part in ['g_asuivre', 'g_reportage']:
@@ -114,7 +114,7 @@ def get_part_geometry_list(db, k_ep, k_part) -> dict:
         k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
         db_video = db[k_ep_ref][k_ed_ref][k_part]['video']
         try: geometry = db_video['geometry'].copy()
-        except: geometry = None
+        except: geometry = {'crop': [0, 0, 0, 0]}
         nested_dict_set(part_geometry, geometry, k_ed_ref, k_ep_ref, k_part)
 
     else:
@@ -124,7 +124,7 @@ def get_part_geometry_list(db, k_ep, k_part) -> dict:
                 continue
             db_video = db[k_ep][k_ed][k_part]['video']
             try: geometry = db_video['geometry'].copy()
-            except: geometry = None
+            except: geometry = {'crop': [0, 0, 0, 0]}
             nested_dict_set(part_geometry, geometry, k_ed, k_ep, k_part)
 
     # pprint(part_geometry)
