@@ -27,7 +27,6 @@ from images.frames import simplify_tasks
 from utils.consolidate import consolidate_shot
 from utils.ffmpeg import ffmpeg_deinterlace_and_pre_upscale_shot, ffmpeg_deinterlace_shot
 from utils.ffmpeg import ffmpeg_deinterlace_and_upscale_shot
-from utils.path import create_output_folder_for_shot
 
 from video.effects import effect_comb
 from video.effects import effect_loop_and_fadeout
@@ -237,7 +236,10 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
                 'frame_format': db['common']['settings']['frame_format'],
             },
             'process': db['common']['process'],
-            'fps': db['common']['fps']
+            'fps': db['common']['fps'],
+            'directories': {
+                'cache': db['common']['directories']['cache']
+            }
         }
     }
 
@@ -343,9 +345,6 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
                 worklist.append([db_common, layer, layers[layer]['shot']])
                 break
 
-
-    # Create the output folder for this shot
-    create_output_folder_for_shot(layers)
 
     # Create a pool of processes to extract all frames from shot
     if cpu_count == 0:

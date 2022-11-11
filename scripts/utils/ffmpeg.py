@@ -15,7 +15,7 @@ from pprint import pprint
 from images.frames import frame_no_to_sexagesimal
 
 from utils.common import create_pipe_in
-from utils.path import get_output_filepath_list
+from utils.path import get_deinterlaced_filepath_list
 from utils.time_conversions import timestamp2sexagesimal
 
 
@@ -294,7 +294,7 @@ def ffmpeg_deinterlace_and_upscale_single_frame(database, frame):
 
 
 
-def ffmpeg_extract_shot(database, shot, filter_str, width, height, step='upscale'):
+def ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale'):
 
     command_ffmpeg = [database['common']['settings']['ffmpeg_exe']]
     command_ffmpeg.extend(database['common']['settings']['verbose'].split(' '))
@@ -318,7 +318,7 @@ def ffmpeg_extract_shot(database, shot, filter_str, width, height, step='upscale
     pipe_in = create_pipe_in(command_ffmpeg, process_cfg)
 
     # list of filepaths
-    img_filepaths = get_output_filepath_list(database, shot, k_step=step)
+    img_filepaths = get_deinterlaced_filepath_list(database, shot, task=task)
 
     # Get frame(s) extracted by FFMPEG
     no = 0
@@ -343,7 +343,7 @@ def ffmpeg_extract_shot(database, shot, filter_str, width, height, step='upscale
 
 def ffmpeg_deinterlace_shot(database, shot):
     filter_str, width, height = get_ffmpeg_filter(shot, 'deinterlace')
-    return ffmpeg_extract_shot(database, shot, filter_str, width, height, step='deinterlace')
+    return ffmpeg_extract_shot(database, shot, filter_str, width, height, task='deinterlace')
 
 
 
@@ -354,7 +354,7 @@ def ffmpeg_deinterlace_and_pre_upscale_shot(database, shot):
     # get FFMPEG filter
     filter_str, width, height = get_ffmpeg_filter(shot, 'pre_upscale')
 
-    return ffmpeg_extract_shot(database, shot, filter_str, width, height, step='pre_upscale')
+    return ffmpeg_extract_shot(database, shot, filter_str, width, height, task='pre_upscale')
 
 
 
@@ -365,6 +365,6 @@ def ffmpeg_deinterlace_and_upscale_shot(database, shot):
         filter_str, width, height = get_ffmpeg_filter(shot, 'upscale')
         print(filter_str)
 
-    return ffmpeg_extract_shot(database, shot, filter_str, width, height, step='upscale')
+    return ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale')
 
 

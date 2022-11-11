@@ -7,6 +7,7 @@ from pprint import pprint
 
 from utils.common import get_shot_from_frame_no_new
 from utils.get_filters import get_filter_id
+from utils.path import get_output_path_from_shot
 from utils.time_conversions import ms_to_frames
 
 
@@ -15,28 +16,31 @@ def _get_frames_until_effects(db, k_part, shot, suffix, count=0):
     k_ep_src = shot['k_ep']
     k_ed = shot['k_ed']
 
-    start = shot['start']
+    shot_start = shot['start']
     shot_count = shot['count'] if count == 0 else count
-    end = start + shot_count
-
-    # Get src shot
-    shot_src = get_shot_from_frame_no_new(db, start, k_ed, k_ep_src, k_part_src)
 
     # replace
     frames_to_replace = db[k_ep_src][k_ed][k_part_src]['video']['replace']
 
     # Input folder
     if k_part in ['g_debut', 'g_fin']:
-        input_folder = os.path.join(db[k_part]['common']['path']['cache'])
-        input_folder = os.path.join(input_folder, '%05d' % (shot_src['start']))
+        input_folder = os.path.join(
+            db[k_part]['common']['path']['cache'],
+            '%05d' % (shot_start))
     else:
-        # Use the episode for even for the others generiques
-        # input_folder = os.path.join(db[k_ep_src]['common']['path']['cache'], k_part_src)
-        input_folder = shot['output_path']
+        pprint("last task: [%s]" % (shot['tasks'][-1]))
+        input_folder = get_output_path_from_shot(db=db, shot=shot, task=shot['tasks'][-1])
+        print("_get_frames_until_effects: input_folder=%s" % (input_folder))
 
 
     # Append images
     images = list()
+    try:
+        start = shot['dst']['start']
+        end = start + shot['dst']['count']
+    except:
+        start = shot_start
+        end = shot_start + shot_count
     for f_no in range(start, end):
         if f_no in frames_to_replace:
             filename = "%s_%05d%s" % (k_ep_src, frames_to_replace[f_no], suffix)
@@ -148,12 +152,21 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
             images += _get_frames_until_effects(db, k_part=k_part, shot=shot, suffix=suffix,
                 count=shot['count'] - fadeout_count)
 
+            print("----------------------------------------------")
+            print("----------------------------------------------")
+            print("----------------------------------------------")
+            pprint(images)
+            print("----------------------------------------------")
+
             # Fadeout
             k_part_src = shot['k_part']
             k_ep_src = shot['k_ep']
             k_ed = shot['k_ed']
 
             shot_src = get_shot_from_frame_no_new(db, frame_no, k_ed, k_ep_src, k_part_src)
+
+
+
             input_folder = os.path.join(db[k_ep_src]['common']['path']['cache'], k_part, '%05d' % (shot_src['start']))
 
             for f_no in range(fadeout_start, fadeout_start+fadeout_count):
@@ -187,10 +200,14 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
 
     extension = db['common']['settings']['frame_format']
 
-    # print("%s:get_framelist_2: use %s for %s:%s" % (__name__, k_ep_src, k_ep, k_part))
+    print("%s:get_framelist_2: use %s for %s:%s" % (__name__, k_ep_src, k_ep, k_part))
     k_part_src = shot['k_part']
-    start = shot['start']
-    end = start + shot['count']
+    if 'start' in shot['dst']:
+        print("use the dst start and count for the concatenation file")
+    else:
+        start = shot['start']
+        end = start + shot['count']
+
 
     # Get the filter id
     try:
@@ -223,8 +240,19 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
         if shot['effects'][0] == 'loop':
             frame_no = shot['effects'][1]
             loop_count = shot['effects'][2]
-            input_folder = os.path.join(db[k_ep_src]['common']['path']['cache'], k_part_src, '%05d' % (shot['start']))
+
+            input_folder = get_output_path_from_shot(db=db, shot=shot, task=shot['tasks'][-1])
+
+            # input_folder = os.path.join(db[k_ep_src]['common']['path']['cache'], k_part_src, '%05d' % (shot['start']))
             # print("\t\tloop: loop %d times on %d" % (loop_count, frame_no))
+
+
+            # print("----------------------------------------------")
+            # print("----------------------------------------------")
+            # print("----------------------------------------------")
+            # pprint(images)
+            # print("----------------------------------------------")
+
 
             # Add the frames before the loop
             for f_no in range(start, end):

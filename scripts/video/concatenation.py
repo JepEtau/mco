@@ -28,7 +28,7 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
                     'asuivre',
                     'g_reportage',
                     'g_fin']:
-        return _create_concatenation_file(db,
+        return create_concatenation_file_2(db,
                     k_ep=k_ep, k_part=k_part, shot=shot,
                     previous_concatenation_filepath=previous_concatenation_filepath)
 
@@ -65,7 +65,7 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
 
 
 
-def _create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_filepath=''):
+def create_concatenation_file_2(db, k_ep, k_part, shot, previous_concatenation_filepath=''):
     # print("%s._create_concatenation_file" % (__name__))
     # pprint(shot)
     # This function is used for the following parts:

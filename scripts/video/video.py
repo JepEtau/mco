@@ -71,10 +71,10 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
                 continue
 
             # Select the shot used for the generation
-            print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            print("target:")
-            pprint(shot)
-            print("")
+            # print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            # print("target:")
+            # pprint(shot)
+            # print("")
             # sys.exit()
             if 'src' in shot.keys() and shot['src']['use']:
                 k_ed_src = shot['src']['k_ed']
@@ -92,9 +92,9 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
                     print("error: cannot generate shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
                     print("target:")
                     pprint(shot)
-                print("source:")
-                pprint(shot_src)
-                print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+                # print("source:")
+                # pprint(shot_src)
+                # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
                 # sys.exit()
             else:
                 k_ed_src = db[k_episode]['common']['video']['reference']['k_ed']
@@ -134,14 +134,16 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
                 'k_ep': k_ep_src,
                 'k_part': k_part_src,
                 'tasks': tasks.copy(),
+                'dst': shot['dst'],
             })
             if 'effects' in shot.keys():
                 shot_src.update({'effects': shot['effects']})
-            if 'dst' in shot.keys():
-                print("--> detected dst to generate the video: target: %s:%s -->" % (k_ep, k_part))
-                pprint(shot)
-                print("")
-                shot_src['dst'] = shot['dst']
+
+            # if 'dst' in shot.keys():
+            #     print("--> detected dst to generate the video: target: %s:%s -->" % (k_ep, k_part))
+            #     pprint(shot)
+            #     print("")
+            #     shot_src['dst'] = shot['dst']
             if shot == shots[-1]:
                 shot_src['last'] = True
 
@@ -156,13 +158,19 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
 
             # Patch the shot to create the concatenation file
             if 'src' in shot.keys() and shot['src']['use']:
-                shot_properties_saved = ({'start': shot_src['start'], 'count': shot_src['count']})
-                shot_src.update({
+                # shot_properties_saved = ({'start': shot_src['start'], 'count': shot_src['count']})
+                shot_src['dst'].update({
                     'start': shot['src']['start'],
                     'count': shot['src']['count']
                 })
-            shot_src['count'] = shot['count']
+            # shot_src['count'] = shot['count']
 
+            print("+++++++++++++++++++ shot SRC for concatenation +++++++++++++++++++")
+            pprint(shot_src)
+            print("+++++++++++++++++++++++++++ shot  ++++++++++++++++++++++++++++++++")
+            pprint(shot)
+            print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
             # Create concatenation file
             tmp = create_concatenation_file(db,
                 k_ep=k_episode, k_part=k_p, shot=shot_src,
@@ -173,8 +181,8 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
             previous_concatenation_filepath = tmp
 
             # Restore shot values
-            if 'src' in shot.keys() and shot['src']['use']:
-                shot_src.update(shot_properties_saved)
+            # if 'src' in shot.keys() and shot['src']['use']:
+            #     shot_src.update(shot_properties_saved)
 
 
     # Combine images to mkv
