@@ -70,9 +70,16 @@ def get_output_path_from_shot(db, shot):
 
     if shot['tasks'][-1] == 'geometry':
         # If last task is geometry, use the dst structure
+        print("get_output_path_from_shot: shall be modified for dst")
+        # print("--> detected dst for the get_output_path_from_shot")
+        # output_path = os.path.join(db['common']['directories']['cache'],
+        #     shot['dst']['k_ep'],
+        #     shot['dst']['k_part'],
+        #     '%05d' % (shot['start']))
+
         output_path = os.path.join(db['common']['directories']['cache'],
-            shot['dst']['k_ep'],
-            shot['dst']['k_part'],
+            shot['k_ep'],
+            shot['k_part'],
             '%05d' % (shot['start']))
     else:
         # Otherwise, use the src directory as these images are shared by

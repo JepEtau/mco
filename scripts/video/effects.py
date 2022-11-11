@@ -140,6 +140,7 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
     k_part = shot['k_part']
     output_filepath = shot['output_path']
     if 'dst' in shot.keys():
+        print("--> detected dst for the effect_loop_and_fadeout")
         k_ep_dst = shot['dst']['k_ep']
         k_part_dst = shot['dst']['k_part']
         if k_ep_dst != k_ep and k_part_dst != k_part:
@@ -225,6 +226,7 @@ def effect_fadeout(db, shot, frames, last_task):
     k_part = shot['k_part']
     output_filepath = shot['output_path']
     if 'dst' in shot.keys():
+        print("--> detected dst for the effect_loop_and_fadeout")
         k_ep_dst = shot['dst']['k_ep']
         k_part_dst = shot['dst']['k_part']
         if k_ep_dst != k_ep and k_part_dst != k_part:

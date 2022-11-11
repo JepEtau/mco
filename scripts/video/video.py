@@ -136,6 +136,7 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
             if 'effects' in shot.keys():
                 shot_src.update({'effects': shot['effects']})
             if 'dst' in shot.keys():
+                print("--> detected dst to generate the video: target: %s:%s" % (k_ep, k_part))
                 shot_src['dst'] = shot['dst']
             if shot == shots[-1]:
                 shot_src['last'] = True

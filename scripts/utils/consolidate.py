@@ -475,7 +475,7 @@ def align_audio_video_durations(db, k_ep):
 
         if audio_count > video_count:
             # Frames shall be added: use the loop (and fadeout) effect for this
-            # print("info: %s:align_audio_video_durations: %s:%s: add video frames, video(%d) < audio (%d)" % (__name__, k_ep, k_part, video_count, audio_count))
+            print("info: %s:align_audio_video_durations: %s:%s: add video frames, video(%d) < audio (%d)" % (__name__, k_ep, k_part, video_count, audio_count))
 
             frame_no = last_shot['start'] + last_shot['count'] - 1
             loop_count = audio_count - video_count
@@ -485,12 +485,14 @@ def align_audio_video_durations(db, k_ep):
                     last_k_ep = last_shot['src']['k_ep']
                     last_use = last_shot['src']['use']
                     frame_no = last_shot['src']['start'] + last_shot['src']['count'] - 1
+                    print("--> align_audio_video_durations: audio_count > video_count: add dst struct in this shot %s:%s" % (k_ep, k_part))
                     last_shot.update({
                         'dst':{
                             'k_ep': k_ep,
                             'k_part': k_part,
                         }
                     })
+                    pprint(last_shot)
 
                 last_shot.update({
                     'effects': ['loop_and_fadeout', frame_no, loop_count, min(loop_count, 25)]
@@ -554,6 +556,7 @@ def align_audio_video_durations(db, k_ep):
                     else:
                         frame_no = last_shot['start'] + last_shot['count'] - 1
 
+                    print("--> fadeout: add dst struct in this shot %s:%s" % (k_ep, k_part))
                     last_shot.update({
                         'effects': ['fadeout', frame_no-fadeout_count, fadeout_count],
                         'dst': {
@@ -561,6 +564,7 @@ def align_audio_video_durations(db, k_ep):
                             'k_part': k_part,
                         }
                     })
+                    pprint(last_shot)
 
     return
 

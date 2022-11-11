@@ -118,6 +118,7 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
             shot_src = get_shot_from_frame_no_new(db, frame_no, k_ed, k_ep_src, k_part_src)
 
             if 'dst' in shot.keys():
+                print("--> detected dst for the loop_and_fadeout effect")
                 k_part_src = shot['k_part']
                 k_ep_src = shot['dst']['k_ep']
 
@@ -270,6 +271,7 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
             shot_src = get_shot_from_frame_no_new(db, frame_no, k_ed, k_ep_src, k_part_src)
 
             if 'dst' in shot.keys():
+                print("--> detected dst for the loop_and_fadeout effect")
                 k_part_src = shot['k_part']
                 k_ep_src = shot['dst']['k_ep']
 
@@ -306,6 +308,7 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
             # k_ep_dst = k_ep
             # k_part_dst = k_part
             if 'dst' in shot.keys():
+                print("--> detected dst for the fadeout effect")
                 # pprint(shot)
                 # sys.exit()
                 # Use dst folder

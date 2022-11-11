@@ -49,10 +49,6 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
             'no': shot_no,
             'start': start,
             'count': count,
-            'dst': {
-                'k_ep': k_ep,
-                'k_part': k_part,
-            },
             'filters': 'default',
             'curves': None,
             'replace': dict(),
@@ -130,10 +126,6 @@ def parse_shotlist_precedemment_asuivre(db_shots, k_ep, k_part, shotlist_str) ->
             'no': shot_no,
             'start': int(shot_properties[0]),
             'count': 0,
-            'dst': {
-                'k_ep': k_ep,
-                'k_part': k_part,
-            },
             'filters': 'default',
             'curves': None,
             'replace': dict(),
@@ -201,10 +193,6 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
             'count': db_video['count'],
             'curves': None,
             'replace': dict(),
-            'dst':{
-                'k_ep': k_ep,
-                'k_part': k_part,
-            }
         }]
         return
 
