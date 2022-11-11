@@ -49,6 +49,10 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
             'no': shot_no,
             'start': start,
             'count': count,
+            'dst': {
+                'k_ep': k_ep,
+                'k_part': k_part,
+            },
             'filters': 'default',
             'curves': None,
             'replace': dict(),
@@ -126,6 +130,10 @@ def parse_shotlist_precedemment_asuivre(db_shots, k_ep, k_part, shotlist_str) ->
             'no': shot_no,
             'start': int(shot_properties[0]),
             'count': 0,
+            'dst': {
+                'k_ep': k_ep,
+                'k_part': k_part,
+            },
             'filters': 'default',
             'curves': None,
             'replace': dict(),
@@ -193,7 +201,14 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
             'count': db_video['count'],
             'curves': None,
             'replace': dict(),
+            'dst':{
+                'k_ep': k_ep,
+                'k_part': k_part,
+            }
         }]
+        # print("consolidate_shots_after_parse: -->")
+        # pprint(db_video['shots'])
+        # print("")
         return
 
 
@@ -410,18 +425,24 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
         })
 
     elif k_part_g == 'g_asuivre':
-        # This part was not yet defined because it depends on audio start/duration
+        # Create the g_sauivre structure:
+        #   this part was not yet defined because it depends on audio start/duration
         db_audio = db[k_ep]['common']['audio'][k_part_g]
         db_audio['avsync'] = 0
         db[k_ep]['common']['video'][k_part_g] = {
             'start': 0,
             'count': ms_to_frames(db_audio['duration']),
             'avsync': 0,
+            'dst': {
+                'k_ep': k_ep,
+                'k_part': k_part_g,
+            },
         }
         db_video_dst = db[k_ep]['common']['video'][k_part_g]
 
     elif k_part_g == 'g_reportage':
-        # This part was not yet defined because it depends on audio start/duration
+        # Create the g_reportage structure:
+        #   this part was not yet defined because it depends on audio start/duration
         db_audio = db[k_ep]['common']['audio'][k_part_g]
         audio_count = ms_to_frames(db_audio['duration'])
         db_audio.update({
@@ -431,7 +452,11 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
         db[k_ep]['common']['video'][k_part_g] = {
             'start': ms_to_frames(db_audio['start']),
             'count': audio_count,
-            'avsync': 0
+            'avsync': 0,
+            'dst': {
+                'k_ep': k_ep,
+                'k_part': k_part_g,
+            },
         }
         db_video_dst = db[k_ep]['common']['video'][k_part_g]
 
@@ -450,6 +475,7 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
                 'no': shot_src['no'],
                 'start': shot_src['start'],
                 'count': shot_src['count'],
+                'dst': db[k_ep]['common']['video'][k_part_g]['dst'],
                 'src': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep_src,

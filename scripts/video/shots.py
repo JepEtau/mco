@@ -174,7 +174,12 @@ def process_single_frame(work_no:int, frame:dict) -> None:
         if img_stitching is None:
             if not os.path.exists(frame['filepath']['stitching']):
                 # use the denoised image
-                img_stitching = cv2.imread(frame['filepath']['denoised'], cv2.IMREAD_COLOR)
+                if img_denoised is None:
+                    # Denoise dimage has been saved in a file
+                    img_stitching = cv2.imread(frame['filepath']['denoised'], cv2.IMREAD_COLOR)
+                else:
+                    # Use the denoise image which is in memory
+                    img_stitching = img_denoised
             else:
                 img_stitching = cv2.imread(frame['filepath']['stitching'], cv2.IMREAD_COLOR)
         img_sharpened = filter_sharpen(frame, img_stitching)
@@ -285,7 +290,7 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
             print("--------------- Background ---------------")
             pprint(layers['bgd']['shot'])
         print("------------------------------------------")
-        sys.exit()
+        # sys.exit()
 
 
     # 2) Create list(s) of frames

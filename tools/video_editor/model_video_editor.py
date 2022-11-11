@@ -822,7 +822,10 @@ def generate_single_image(frame:dict, preview_options:dict):
         type = 'part'
         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
         print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
-    w_final, h_final = (1440, 1080)
+
+    # Final width and height
+    w_final = frame['dimensions']['final']['w']
+    h_final = frame['dimensions']['final']['h']
 
     # Preview options
     options = preview_options['geometry'][type]

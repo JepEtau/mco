@@ -52,6 +52,7 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
                 sys.exit("Erreur: le numéro de l'épisode est manquant")
             db_video = db[k_ep]['common']['video'][k_p]
             k_episode = k_ep
+            pprint(db_video)
 
         if db_video['count'] == 0:
             continue
@@ -70,9 +71,10 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
                 continue
 
             # Select the shot used for the generation
-            # print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            # print("target:")
-            # pprint(shot)
+            print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            print("target:")
+            pprint(shot)
+            print("")
             # sys.exit()
             if 'src' in shot.keys() and shot['src']['use']:
                 k_ed_src = shot['src']['k_ed']
@@ -90,9 +92,9 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
                     print("error: cannot generate shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
                     print("target:")
                     pprint(shot)
-                # print("source:")
-                # pprint(shot_src)
-                # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+                print("source:")
+                pprint(shot_src)
+                print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
                 # sys.exit()
             else:
                 k_ed_src = db[k_episode]['common']['video']['reference']['k_ed']
@@ -136,7 +138,9 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
             if 'effects' in shot.keys():
                 shot_src.update({'effects': shot['effects']})
             if 'dst' in shot.keys():
-                print("--> detected dst to generate the video: target: %s:%s" % (k_ep, k_part))
+                print("--> detected dst to generate the video: target: %s:%s -->" % (k_ep, k_part))
+                pprint(shot)
+                print("")
                 shot_src['dst'] = shot['dst']
             if shot == shots[-1]:
                 shot_src['last'] = True

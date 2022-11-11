@@ -135,17 +135,22 @@ def filter_geometry(frame, img):
     # print("crop and resize: %s -> %s" % (frame['filepath']['rgb'], frame['filepath']['geometry']))
     h, w, c = img.shape
 
+    # pprint(frame['geometry'])
+    # print(img.shape)
+
     # Crop
     if frame['geometry'] is not None:
         c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
         if ('custom' in frame['geometry'].keys()
             and frame['geometry']['custom'] is not None):
             # Use the customized geometry
+            print("use the customized geometry")
             c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['custom']['crop'])
         else:
             # Use the part geometry
+            print("use the part geometry")
             c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
-            print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
+            # print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
 
         # Crop the image
         img = np.ascontiguousarray(img[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
@@ -154,23 +159,33 @@ def filter_geometry(frame, img):
     w_final = frame['dimensions']['final']['w']
     h_final = frame['dimensions']['final']['h']
 
-    # Calculate width for both part and (part or custom)
+    # Calculate resized width for both part and (part or custom)
     w_p_tmp = int((c_w_p * h_final) / float(c_h_p))
     w_tmp = int((c_w * h_final) / float(c_h))
+    # print("cropped image: ", img.shape)
+    # pprint("w_p_tmp=%d, w_tmp=%d" % (w_p_tmp, w_tmp))
+    # pprint("h_final=%d" % (h_final))
 
     # Resize
     img_resized = cv2.resize(img,
         (w_tmp, h_final),
         interpolation=cv2.INTER_LANCZOS4)
+    # print("img_resized before adjustments: ", img_resized.shape)
 
     # Verify custom vs part cropped and resized image
     if w_tmp != w_p_tmp:
         # This is a custom geometry, width shall be the same as the part's one
+        # It is done AFTER resizing because the resize may be different:
+        #   i.e. when keep_ratio is disabled (custom width)
         if w_tmp > w_p_tmp:
             # Crop the image
-            c_l_new = int((c_l_p * h_final) / float(c_h))
-            x1_new = min(w_p_tmp + c_l_new, w_tmp)
-            img_resized = np.ascontiguousarray(img_resized[0:h_final,c_l_new:x1_new,])
+            # Calculate the position of the left crop of the part after resizing
+            c_l_p_resized = int(((c_l_p) * h_final) / float(c_h_p))
+            c_l_resized = int(((c_l) * h_final) / float(c_h))
+            x1_new = w_p_tmp + (c_l_p_resized - c_l_resized)
+            # print("crop the image: c_l_p_resized=%d, c_l_resized=%d, x1_new=%d -> new resized width=%d" % (
+            #     c_l_p_resized, c_l_resized, x1_new, (x1_new - c_l_p_resized)))
+            img_resized = np.ascontiguousarray(img_resized[0:h_final,  (c_l_p_resized - c_l_resized):x1_new,])
         elif w_p_tmp > w_tmp:
             # Add RED padding, for debug
             print("Error: custom geometry is incorrect")
@@ -180,11 +195,17 @@ def filter_geometry(frame, img):
             img_resized = np.ascontiguousarray(cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
                 cv2.BORDER_CONSTANT, value=[255, 0, 0]))
 
+    # print("img_resized after adjustments: ", img_resized.shape)
+    # print("   w_resized should be: %s" % (w_p_tmp))
+
     # Add padding to the cropped & resized image
     pad_left = int((w_final - w_p_tmp) / 2)
     pad_right = w_final - (w_p_tmp + pad_left)
     img_finalized = cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
         cv2.BORDER_CONSTANT, value=[0, 0, 0])
+
+    print("img_finalized: ", img_finalized.shape)
+    # sys.exit()
 
     return img_finalized
 

@@ -366,9 +366,12 @@ def main():
     # Merge A/V streams
     #-------------------------------------------------
     if do_av_merge and not arguments.simulate:
-        if arguments.part != '':
+        if arguments.part in ['g_debut', 'g_fin']:
+            # I we process specified parts, merge video and audio tracks
+            # is only possible for these generiques
             merge_audio_and_video_tracks(g_database, arguments.part, force=arguments.force)
-        else:
+        elif arguments.part == '':
+
             # Merge all video and audio tracks
             for k in ['g_debut', 'g_fin']:
                 merge_audio_and_video_tracks(g_database, k_ep=k, force=arguments.force)
@@ -379,9 +382,9 @@ def main():
             # Concatenate all parts
             concatenate_all_clips(g_database, k_episode, force=arguments.force)
 
-        # Add chapters to the video file
-        if k_episode != 'ep00':
-            add_chapters(g_database, k_episode)
+            # Add chapters to the video file
+            if k_episode != 'ep00':
+                add_chapters(g_database, k_episode)
 
 
 if __name__ == "__main__":
