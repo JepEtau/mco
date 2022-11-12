@@ -1,8 +1,7 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import argparse
-import configparser
+import gc
 from pprint import pprint
 import signal
 
@@ -15,11 +14,13 @@ from parsers.parser_editions import *
 from parsers.parser_episodes import *
 from parsers.parser_generiques import *
 
-from utils.common import K_ALL_PARTS
-from utils.common import K_GENERIQUES
-from utils.common import get_database_size
-from utils.common import delete_items
-from utils.common import get_tasklist
+from utils.common import (
+    K_ALL_PARTS,
+    K_GENERIQUES,
+    get_database_size,
+    delete_items,
+)
+from utils.tasks import get_tasklist
 from utils.path import PATH_DATABASE_COMBINE
 
 from audio.audio import extract_audio
@@ -299,7 +300,8 @@ def main():
         # Video and frames
 
         # Get the list of tasks
-        tasks = get_tasklist(final_task=video_filter)
+        tasks = get_tasklist(db=g_database, final_task=video_filter)
+        print ("tasks:", tasks)
 
         # Check if nnedi3_weights.bin exists
         if 'deinterlace' in tasks:

@@ -1,15 +1,17 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import configparser
 import os
 import os.path
-from pathlib import Path
-from pathlib import PosixPath
+from pathlib import (
+    Path,
+    PosixPath,
+)
 from pprint import pprint
-from parsers.parser_filters import *
 import re
-import sys
+
+from parsers.parser_filters import parse_and_update_filters
 
 
 
@@ -181,8 +183,6 @@ def parse_editions(database, cfg_foldername="../database", verbose=False):
 
     return db_editions
 
-# if __name__ == "__main__":
-#     get_editions("../mkv/576p", verbose=False)
 
 
 def get_available_editions(db):

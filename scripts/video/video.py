@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import os
 from pprint import pprint
 
-from utils.common import K_ALL_PARTS
-from utils.common import get_k_part_from_frame_no
-from utils.common import get_shot_from_frame_no_new
-from video.concatenation import combine_images_into_video
-from video.concatenation import concatenate_shots
-from video.concatenation import create_concatenation_file
-from video.concatenation import create_concatenation_file_silence
-from video.concatenation import create_concatenation_file_video
+from utils.common import (
+    K_ALL_PARTS,
+    K_ALL_PARTS_ORDERED,
+    get_k_part_from_frame_no,
+    get_shot_from_frame_no_new,
+)
 from utils.ffmpeg import ffmpeg_execute_command
-
-# from utils.concatenation import *
 from utils.path import create_video_directory
 from utils.time_conversions import current_datetime_str
 
+from video.concatenation import (
+    combine_images_into_video,
+    concatenate_shots,
+    create_concatenation_file,
+    create_concatenation_file_silence,
+    create_concatenation_file_video,
+)
 from video.effects import *
 from video.shots import *
 
@@ -40,7 +42,7 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
     # print("Generate video: %s, %s, tasks=%s" % (edition, k_ep, ', '.join(tasks)))
 
     # Process part(s)
-    k_parts = K_ALL_PARTS if k_part == '' else [k_part]
+    k_parts = K_ALL_PARTS_ORDERED if k_part == '' else [k_part]
     for k_p in k_parts:
 
         if k_p in ['g_debut', 'g_fin']:

@@ -219,7 +219,7 @@ def filter_geometry(frame, img):
     img_finalized = cv2.copyMakeBorder(img_resized_final, 0, 0, pad_left, pad_right,
         cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
-    print("img_finalized: ", img_finalized.shape)
+    # print("img_finalized: ", img_finalized.shape)
     # sys.exit()
 
     return img_finalized
@@ -451,10 +451,10 @@ def filters_opencv(images, filters, multi=True):
     return image
 
 
-def filters_bm3d(image, sigma):
-    tmp = img_as_float(image)
-    tmp2 = bm3d.bm3d_rgb(tmp, sigma)
-    return img_as_ubyte(tmp2)
+# def filters_bm3d(image, sigma):
+#     tmp = img_as_float(image)
+#     tmp2 = bm3d.bm3d_rgb(tmp, sigma)
+#     return img_as_ubyte(tmp2)
 
 
 

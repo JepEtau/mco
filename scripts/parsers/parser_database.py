@@ -1,7 +1,6 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-from email.mime import audio
 import sys
+
 from pprint import pprint
 
 from parsers.parser_common import parse_common_configuration
@@ -23,16 +22,23 @@ from parsers.parser_shots import (
     create_dst_shots_g,
 )
 
+
 from parsers.parser_curves import parse_curve_configurations
-from parsers.parser_replace import parse_replace_configurations
 from parsers.parser_geometry import parse_geometry_configurations
+from parsers.parser_replace import parse_replace_configurations
 from parsers.parser_stitching import parse_stitching_configurations
 
-
-from utils.common import K_GENERIQUES, K_NON_GENERIQUE_PARTS, K_PARTS, pprint_video
-from utils.consolidate import align_audio_video_durations
-from utils.consolidate import align_audio_video_durations_g_debut_fin
-from utils.consolidate import determine_av_sync
+from utils.common import (
+    K_GENERIQUES,
+    K_NON_GENERIQUE_PARTS,
+    K_PARTS,
+    pprint_video,
+)
+from utils.consolidate import (
+    align_audio_video_durations,
+    align_audio_video_durations_g_debut_fin,
+    calculate_av_sync,
+)
 from utils.path import PATH_DATABASE
 from utils.time_conversions import ms_to_frames
 
@@ -179,7 +185,7 @@ def parse_database(database, editions, k_ep, mode='', verbose=False):
 
             create_dst_shots_g(database, k_ep=k_ep, k_part_g=k_part_g)
 
-        determine_av_sync(database, k_ep=k_ep)
+        calculate_av_sync(database, k_ep=k_ep)
         align_audio_video_durations(database, k_ep=k_ep)
 
         pprint_episode(database, k_ep=k_ep)

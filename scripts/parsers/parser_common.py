@@ -1,22 +1,15 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
-import argparse
 import configparser
-import datetime
-import gc
-from operator import itemgetter
 import os
 import os.path
-from os import stat_result, system
-from pathlib import Path
-from pathlib import PosixPath
+from pathlib import (
+    Path,
+    PosixPath,
+)
 from pprint import pprint
-import re
 import subprocess
-import sys
-import time
-import copy
 from parsers.parser_filters import *
 
 DATABASE_PATH = "../database"
@@ -72,15 +65,14 @@ def parse_common_configuration(config_path, verbose=False):
         sys.exit("Unexpected error:", sys.exc_info()[0])
 
 
-    # Commands
+    # Options
     #=============================================================================
-    for key in db_common['commands'].keys():
-        valueStr = db_common['commands'][key]
-        if valueStr == "false":
-            db_common['commands'][key] = False
-        elif valueStr == "true":
-            db_common['commands'][key] = True
+    for key in db_common['options'].keys():
+        value_str = db_common['options'][key]
+        db_common['options'][key] = list(value_str.replace(' ', '').split(','))
 
+    print("options:")
+    pprint(db_common['options'])
 
     # Directories
     #=============================================================================

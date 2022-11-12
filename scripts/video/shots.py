@@ -1,39 +1,44 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import gc
+import os
+import os.path
 from copy import deepcopy
+import cv2
+
 import multiprocessing
 from multiprocessing import *
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
-import os
-import os.path
-import cv2
-import sys
-
 from pprint import pprint
 
-from images.filtering import filter_denoise, filter_rgb, filter_upscale
-from images.filtering import filter_bgd
-from images.filtering import filter_sharpen
-from images.filtering import filter_geometry
 from images.combine import combine_images
-from images.frames import create_framelist_from_shot
-from images.frames import patch_frames_for_combination
-from images.frames import simplify_tasks
-
+from images.filtering import (
+    filter_denoise,
+    filter_rgb,
+    filter_upscale,
+    filter_bgd,
+    filter_sharpen,
+    filter_geometry,
+)
+from images.frames import (
+    create_framelist_from_shot,
+    patch_frames_for_combination,
+)
 from utils.consolidate import consolidate_shot
-from utils.ffmpeg import ffmpeg_deinterlace_and_pre_upscale_shot, ffmpeg_deinterlace_shot
-from utils.ffmpeg import ffmpeg_deinterlace_and_upscale_shot
-
-from video.effects import effect_comb
-from video.effects import effect_loop_and_fadeout
-from video.effects import effect_fadeout
-
-
-
+from utils.ffmpeg import (
+    ffmpeg_deinterlace_and_pre_upscale_shot,
+    ffmpeg_deinterlace_shot,
+    ffmpeg_deinterlace_and_upscale_shot,
+)
+from utils.tasks import simplify_tasks
+from video.effects import (
+    effect_comb,
+    effect_loop_and_fadeout,
+    effect_fadeout,
+)
 
 
 def extract_frames_from_shot(database:dict, k_layer:str, shot:dict) -> None:
@@ -187,7 +192,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
 
 
     if 'rgb' in tasklist:
-        print("apply RGB curves: %d" % (frame['no']))
+        # print("apply RGB curves: %d" % (frame['no']))
         is_rgb_valid = False
         if img_sharpened is None:
             # Open the saved sharpened image
@@ -199,14 +204,14 @@ def process_single_frame(work_no:int, frame:dict) -> None:
             is_rgb_valid = True
         except:
             # no RGB curves
-            print("no RGB curves for shot %d" % (frame['shot_no']))
+            # print("no RGB curves for shot %d" % (frame['shot_no']))
             img_rgb = img_sharpened
         tasklist.remove('rgb')
 
 
     if 'geometry' in tasklist:
-        print("geometry: %d" % (frame['no']))
-        pprint(frame['geometry'])
+        # print("geometry: %d" % (frame['no']))
+        # pprint(frame['geometry'])
         if img_rgb is None:
             img_rgb = cv2.imread(frame['filepath']['rgb'], cv2.IMREAD_COLOR)
         img_finalized = filter_geometry(frame, img_rgb)
@@ -317,7 +322,7 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
 
     # 4) Determine what to do for each frame
     # ==========================================================================
-    simplify_tasks(frames)
+    simplify_tasks(db, frames)
 
 
     if False:

@@ -1,15 +1,12 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-from pathlib import Path
-from pathlib import PosixPath
-import os
 import sys
-import re
 import numpy as np
 from pprint import pprint
 
-from utils.common import K_GENERIQUES, get_shot_from_frame_no
+from utils.common import (
+    K_GENERIQUES,
+    get_shot_from_frame_no
+)
 from images.curve import Curve
 from parsers.parser_curves import parse_curves_file
 

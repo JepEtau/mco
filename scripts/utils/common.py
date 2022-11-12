@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
 from pprint import pprint
@@ -40,6 +39,19 @@ K_NON_GENERIQUE_PARTS = [
 ]
 
 K_AUDIO_PARTS = K_PARTS
+
+
+# order for processing: generique, then from shortest to longest
+K_ALL_PARTS_ORDERED = [
+    'g_debut',
+    'g_fin',
+    'g_asuivre',
+    'g_reportage',
+    'precedemment',
+    'asuivre',
+    'reportage',
+    'episode',
+]
 
 
 FPS = 25.0
@@ -300,29 +312,6 @@ def pprint_audio(db_audio, first_indent:int=0, ignore=list()):
 
 
 
-
-def get_tasklist(final_task='geometry'):
-    # Create the list of tasks
-    tasks = list()
-    if final_task == 'deinterlace':
-        tasks = ['deinterlace']
-    if final_task == 'pre_upscale':
-        tasks = ['deinterlace', 'pre_upscale']
-    if final_task == 'upscale':
-        tasks = ['deinterlace', 'pre_upscale', 'upscale']
-    if final_task == 'denoise':
-        tasks = ['deinterlace', 'pre_upscale', 'upscale', 'denoise']
-    if final_task == 'bgd':
-        tasks = ['deinterlace', 'pre_upscale', 'upscale', 'denoise', 'bgd']
-    if final_task == 'stitching':
-        tasks = ['deinterlace', 'pre_upscale', 'upscale', 'denoise', 'bgd', 'stitching']
-    if final_task == 'sharpen':
-        tasks = ['deinterlace', 'pre_upscale', 'upscale', 'denoise', 'bgd', 'stitching', 'sharpen']
-    if final_task == 'rgb':
-        tasks = ['deinterlace', 'pre_upscale', 'upscale', 'denoise', 'bgd', 'stitching', 'sharpen', 'rgb']
-    if final_task in ['all', 'geometry']:
-        tasks = ['deinterlace', 'pre_upscale', 'upscale', 'denoise', 'bgd', 'stitching', 'sharpen', 'rgb', 'geometry']
-    return tasks
 
 
 

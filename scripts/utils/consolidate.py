@@ -1,114 +1,18 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import sys
 from copy import deepcopy
 from pprint import pprint
 
-from utils.common import FPS, K_GENERIQUES, pprint_audio, pprint_dict, pprint_video
+from utils.common import (
+    FPS,
+    K_GENERIQUES,
+    pprint_audio,
+    pprint_dict,
+    pprint_video
+)
 from utils.get_filters import get_filters_from_shot
 from utils.get_curves import get_lut_from_curves
 from utils.time_conversions import frames_to_ms, ms_to_frames
-
-
-
-
-def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
-    """This function compares the audio and video tracks of a generique
-    It aligns these 2 durations by:
-    - adding silences
-    - adding frames (loop, loop and fadeout)
-    """
-    # print("%s.align_audio_video_durations_g_debut_fin: %s:%s" % (__name__, k_ep, k_part_g))
-
-    if k_part_g not in ['g_debut', 'g_fin']:
-        return
-
-    # video and audio tracks
-    db_video = db[k_part_g]['common']['video']
-    db_audio = db[k_part_g]['common']['audio']
-
-    shots = db_video['shots']
-
-    if len(shots) == 1:
-        if db_video['count'] != shots[0]['count']:
-            sys.exit("%s.align_audio_video_durations_g_debut_fin : %s:%s todo: correct and remove this as this shall not occur: end" % (__name__, k_ep, k_part_g))
-
-    # Get the duration in ms
-    if k_part_g in db_audio.keys():
-        audio_duration = db_audio[k_part_g]['duration']
-        print("Warning: %s:align_audio_video_durations_g_debut_fin : correct this!!!" % (__name__))
-    elif 'duration' in db_audio.keys():
-        audio_duration = db_audio['duration']
-
-    video_count = 0
-    for s in shots:
-        video_count += s['count']
-    if db_video['count'] != video_count:
-        sys.exit("%s.align_audio_video_durations_g_debut_fin : error: %s:%s consolidate has not been done before: why?" % (__name__, k_ep, k_part_g))
-
-
-    # Use avsync for audio duration:
-    if 'avsync' in db_audio.keys():
-        audio_duration += db_audio['avsync']
-
-    # Patch silence to a multiple of frames
-    if 'silence' in db_audio.keys():
-        silence_duration = db_audio['silence']
-        silence_count_rounded = float(int((silence_duration * FPS / 1000) + 0.5))
-        # silence_count_float = (silence_duration * FPS / 1000)
-        # print("silence_count_rounded=%f" % (silence_count_rounded))
-        # print("silence_count_float=%f" % (silence_count_float))
-        db_audio['silence'] = int(silence_count_rounded * 1000 / FPS)
-
-
-    audio_count = ms_to_frames(db_audio['duration'])
-    # print("----------------- align_audio_video_durations_g_debut_fin: AUDIO ------------------")
-    # pprint(db_audio)
-    # sys.exit()
-
-    # patch audio duration to a multiple of 1000/FPS ms
-    audio_count_rounded = float(int((audio_duration * FPS / 1000) + 0.5))
-    audio_count_float = (audio_duration * FPS / 1000)
-    # print("audio_count_rounded=%f" % (audio_count_rounded))
-    # print("audio_count_float=%f" % (audio_count_float))
-    if audio_count_float != audio_count_rounded:
-        # Add silence to the latest segment
-        s = db_audio['segments'][-1]
-        silence = int(((audio_count_rounded - audio_count_float) * 1000 / FPS) + 0.5)
-        if 'segments' in s.keys():
-            s['silence'] += silence
-        else:
-            s['silence'] = silence
-        db_audio['duration'] = int(audio_count_rounded * 1000 / FPS)
-        audio_count = audio_count_rounded
-    db_audio['count'] = audio_count
-
-    # print("\tk_part_g=%s" % (k_part_g))
-    # print("\t- audio_count=%d" % (audio_count))
-    # print("\t- video_count=%d" % (db_video['count']))
-
-    if audio_count > video_count:
-        # Frames shall be added: use the loop effect for this
-        last_shot = shots[-1]
-        frame_no = last_shot['start'] + last_shot['count'] - 1
-        # print("info: %s:align_audio_video_durations_g_debut_fin: add video frames, video(%d) < audio (%d)" % (__name__, video_count, audio_count))
-        loop_count = audio_count - video_count
-        last_shot.update({'effects': ['loop_and_fadeout', frame_no, loop_count, min(loop_count, 25)]})
-        db_video['count'] = db_audio['count']
-
-    elif video_count > audio_count:
-        # Add silence to the audio track by adding a new segment
-        video_duration = int(video_count * 1000 / FPS)
-        audio_duration = db_audio['duration']
-        db_audio['segments'].append({
-            'start': 0,
-            'end': 0,
-            'silence': video_duration - audio_duration,
-        })
-        db_audio['count'] = db_video['count']
-        # print("info: %s:align_audio_video_durations_g_debut_fin: video(%d) > audio (%d)" % (__name__, video_count, audio_count))
-
 
 
 
@@ -214,6 +118,7 @@ def consolidate_shot(db, shot) -> None:
             if t in shot['tasks']:
                 shot['tasks'].remove(t)
 
+
     else:
         sys.exit("Did not detected FGD/BGD in shot structure")
 
@@ -273,13 +178,112 @@ def consolidate_shot(db, shot) -> None:
     # sys.exit()
 
 
-def determine_av_sync(db, k_ep):
+
+def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
+    """This function compares the audio and video tracks of a generique
+    It aligns these 2 durations by:
+    - adding silences
+    - adding frames (loop, loop and fadeout)
+    """
+    # print("%s.align_audio_video_durations_g_debut_fin: %s:%s" % (__name__, k_ep, k_part_g))
+
+    if k_part_g not in ['g_debut', 'g_fin']:
+        return
+
+    # video and audio tracks
+    db_video = db[k_part_g]['common']['video']
+    db_audio = db[k_part_g]['common']['audio']
+
+    shots = db_video['shots']
+
+    if len(shots) == 1:
+        if db_video['count'] != shots[0]['count']:
+            sys.exit("%s.align_audio_video_durations_g_debut_fin : %s:%s todo: correct and remove this as this shall not occur: end" % (__name__, k_ep, k_part_g))
+
+    # Get the duration in ms
+    if k_part_g in db_audio.keys():
+        audio_duration = db_audio[k_part_g]['duration']
+        print("Warning: %s:align_audio_video_durations_g_debut_fin : correct this!!!" % (__name__))
+    elif 'duration' in db_audio.keys():
+        audio_duration = db_audio['duration']
+
+    video_count = 0
+    for s in shots:
+        video_count += s['count']
+    if db_video['count'] != video_count:
+        sys.exit("%s.align_audio_video_durations_g_debut_fin : error: %s:%s consolidate has not been done before: why?" % (__name__, k_ep, k_part_g))
+
+
+    # Use avsync for audio duration:
+    if 'avsync' in db_audio.keys():
+        audio_duration += db_audio['avsync']
+
+    # Patch silence to a multiple of frames
+    if 'silence' in db_audio.keys():
+        silence_duration = db_audio['silence']
+        silence_count_rounded = float(int((silence_duration * FPS / 1000) + 0.5))
+        # silence_count_float = (silence_duration * FPS / 1000)
+        # print("silence_count_rounded=%f" % (silence_count_rounded))
+        # print("silence_count_float=%f" % (silence_count_float))
+        db_audio['silence'] = int(silence_count_rounded * 1000 / FPS)
+
+
+    audio_count = ms_to_frames(db_audio['duration'])
+    # print("----------------- align_audio_video_durations_g_debut_fin: AUDIO ------------------")
+    # pprint(db_audio)
+    # sys.exit()
+
+    # patch audio duration to a multiple of 1000/FPS ms
+    audio_count_rounded = float(int((audio_duration * FPS / 1000) + 0.5))
+    audio_count_float = (audio_duration * FPS / 1000)
+    # print("audio_count_rounded=%f" % (audio_count_rounded))
+    # print("audio_count_float=%f" % (audio_count_float))
+    if audio_count_float != audio_count_rounded:
+        # Add silence to the latest segment
+        s = db_audio['segments'][-1]
+        silence = int(((audio_count_rounded - audio_count_float) * 1000 / FPS) + 0.5)
+        if 'segments' in s.keys():
+            s['silence'] += silence
+        else:
+            s['silence'] = silence
+        db_audio['duration'] = int(audio_count_rounded * 1000 / FPS)
+        audio_count = audio_count_rounded
+    db_audio['count'] = audio_count
+
+    # print("\tk_part_g=%s" % (k_part_g))
+    # print("\t- audio_count=%d" % (audio_count))
+    # print("\t- video_count=%d" % (db_video['count']))
+
+    if audio_count > video_count:
+        # Frames shall be added: use the loop effect for this
+        last_shot = shots[-1]
+        frame_no = last_shot['start'] + last_shot['count'] - 1
+        # print("info: %s:align_audio_video_durations_g_debut_fin: add video frames, video(%d) < audio (%d)" % (__name__, video_count, audio_count))
+        loop_count = audio_count - video_count
+        last_shot.update({'effects': ['loop_and_fadeout', frame_no, loop_count, min(loop_count, 25)]})
+        db_video['count'] = db_audio['count']
+
+    elif video_count > audio_count:
+        # Add silence to the audio track by adding a new segment
+        video_duration = int(video_count * 1000 / FPS)
+        audio_duration = db_audio['duration']
+        db_audio['segments'].append({
+            'start': 0,
+            'end': 0,
+            'silence': video_duration - audio_duration,
+        })
+        db_audio['count'] = db_video['count']
+        # print("info: %s:align_audio_video_durations_g_debut_fin: video(%d) > audio (%d)" % (__name__, video_count, audio_count))
+
+
+
+def calculate_av_sync(db, k_ep):
     K_EP_DEBUG = ''
     db_common = db[k_ep]['common']
 
     if ('audio' not in db_common.keys()
         or 'video' not in db_common.keys()):
-        sys.exit("%s.determine_av_sync: error, audio or video does not exist in %s:common" % (__name__, k_ep))
+        sys.exit("%s.calculate_av_sync: error, audio or video does not exist in %s:common" % (__name__, k_ep))
         return
     db_video = db_common['video']
     db_audio = db_common['audio']
@@ -309,7 +313,7 @@ def determine_av_sync(db, k_ep):
         db_video[k_part]['avsync'] = video_avsync
 
         if db_video['episode']['start'] != db_video['episode']['shots'][0]['start']:
-            sys.exit("determine_av_sync: error: start of episode (%d) != start of 1st shot (%d)" % (
+            sys.exit("calculate_av_sync: error: start of episode (%d) != start of 1st shot (%d)" % (
                 db_video['episode']['start'], db_video['shots']['start']))
     else:
         # precedemment does not exist
@@ -383,7 +387,7 @@ def determine_av_sync(db, k_ep):
     })
 
     if k_ep == K_EP_DEBUG:
-        print("<<<<<<<<<<<<<<<< determine_av_sync ep=%s >>>>>>>>>>>>>>>>" % (k_ep))
+        print("<<<<<<<<<<<<<<<< calculate_av_sync ep=%s >>>>>>>>>>>>>>>>" % (k_ep))
         print(db_common.keys())
         print("<<<<<<<<<<<<<<<< VIDEO >>>>>>>>>>>>>>>>")
         pprint_video(db_video, ignore='shots', first_indent=4)

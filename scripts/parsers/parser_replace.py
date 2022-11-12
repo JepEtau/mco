@@ -61,7 +61,7 @@ def parse_replace_configurations(db, k_ep_or_g:str):
 
 
 def get_replaced_frames(db, k_ep, k_part) -> dict:
-    """ Returns a list of crops per shot for each edition
+    """ Returns a dict of frames to replace
     """
     replace = dict()
 

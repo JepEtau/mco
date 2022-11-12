@@ -19,8 +19,12 @@ def _get_frames_until_effects(db, k_part, shot, suffix, count=0):
     shot_start = shot['start']
     shot_count = shot['count'] if count == 0 else count
 
-    # replace
-    frames_to_replace = db[k_ep_src][k_ed][k_part_src]['video']['replace']
+    # Replace images
+    if 'replace' not in db['common']['options']['discard_tasks']:
+        frames_to_replace = db[k_ep_src][k_ed][k_part_src]['video']['replace']
+    else:
+        # defined in discarded tasks
+        frames_to_replace = dict()
 
     # Input folder
     if k_part in ['g_debut', 'g_fin']:

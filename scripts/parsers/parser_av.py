@@ -1,14 +1,20 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import re
-import sys
 from pprint import pprint
 from copy import deepcopy
-from utils.common import FPS, K_GENERIQUES, pprint_audio, pprint_video
-from utils.time_conversions import frames_to_ms
-from utils.time_conversions import ms_to_frames
-from utils.common import K_PARTS
+
+from utils.common import (
+    FPS,
+    K_PARTS,
+    pprint_audio,
+    pprint_video,
+)
+from utils.time_conversions import (
+    frames_to_ms,
+    ms_to_frames,
+)
 
 
 def parse_audio_generique(db_audio, config, verbose=False):

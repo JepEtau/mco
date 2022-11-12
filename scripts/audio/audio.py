@@ -1,21 +1,25 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import numpy as np
 import os
-import sys
 from pprint import pprint
 
-from utils.common import K_AUDIO_PARTS
-from utils.common import pprint_audio
-from utils.path import create_audio_directory
-from utils.time_conversions import current_datetime_str
-from utils.time_conversions import ms_to_frames
-from utils.time_conversions import frames_to_ms
+from utils.common import (
+    K_AUDIO_PARTS,
+    pprint_audio,
+)
 from utils.ffmpeg import ffmpeg_execute_command
-
-from audio.utils import read_single_track_audio_file
-from audio.utils import write_single_track_audio_file
+from utils.path import create_audio_directory
+from utils.time_conversions import (
+    current_datetime_str,
+    ms_to_frames,
+    frames_to_ms,
+)
+from audio.utils import (
+    read_single_track_audio_file,
+    write_single_track_audio_file,
+)
 
 
 def extract_audio(db, k_ep:str, editions, force=False, verbose=False) -> None:

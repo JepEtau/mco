@@ -1,12 +1,14 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 from pprint import pprint
-import sys
 from collections import OrderedDict
-from utils.common import K_GENERIQUES, get_shot_no_from_frame_no
-from utils.common import get_k_part_from_frame_no
-from utils.common import get_shot_from_frame
+from utils.common import (
+    K_GENERIQUES,
+    get_shot_no_from_frame_no,
+    get_k_part_from_frame_no,
+    get_shot_from_frame,
+)
 
 FILTER_BASE_NO = {
     'deinterlace': 0,
@@ -16,8 +18,15 @@ FILTER_BASE_NO = {
     'bgd': 400,
     'stitching': 500,
     'sharpen': 600,
-    'rgb': 800,
-    'geometry': 900,
+    'rgb': 700,
+    'geometry': 800,
+}
+
+# The following are used for debug purpose
+FILTER_BASE_NO_DEBUG = {
+    'deinterlace_rgb': 900,
+    'deinterlace_replace': 940,
+    'deinterlace_rgb_replace': 980,
 }
 
 
