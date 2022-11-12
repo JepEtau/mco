@@ -187,6 +187,7 @@ def main():
             arguments.afilter = 'final'
             if video_filter == '':
                 video_filter = 'geometry'
+            do_av_merge = True
         elif arguments.part != '':
             if video_filter == '':
                 video_filter = 'geometry'

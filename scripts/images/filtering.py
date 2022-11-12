@@ -138,6 +138,11 @@ def filter_geometry(frame, img):
     # print("------------------")
     # pprint(frame['geometry'])
     # print(img.shape)
+    if (frame['geometry'] is None
+    or (frame['geometry']['part'] is None and frame['geometry']['custom'] is None)):
+        print("Error: no geometry defined, cannot modify the image")
+        return None
+
 
     # Crop
     if frame['geometry'] is not None:

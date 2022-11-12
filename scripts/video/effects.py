@@ -135,14 +135,14 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
     else:
         output_filepath = get_output_path_from_shot(db=db, shot=shot, task=last_task)
     print("\toutput filepath=%s" % (output_filepath))
-
     if not os.path.exists(output_filepath):
         os.makedirs(output_filepath)
+
+    # Suffix for each image
     suffix = "__%s__%03d.%s" % (
         shot['k_ed'],
         get_filter_id(db, shot, last_task),
         db['common']['settings']['frame_format'])
-
 
     # Get dimensions from last task
     if last_task == 'deinterlace':
@@ -151,7 +151,6 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
         dimensions = db['common']['dimensions']['final']
     else:
         dimensions = db['common']['dimensions']['upscale']
-
 
     # Create a  black image for fadeout and open the src image
     img_black = np.zeros([dimensions['h'], dimensions['w'], 3], dtype=np.uint8)
@@ -166,24 +165,17 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
     for count in range(0, fadeout_count):
         # Input file
         if count < fadeout_count - loop_count:
-            # print("\tfadeout before loop")
-            # Use the src
             input_img_filepath = frames[-1 * (fadeout_count - loop_count - count)]['filepath'][last_task]
-        #    input_img_filepath = frames[-1]['filepath'][last_task]
         elif count == fadeout_count - loop_count:
-            # print("\tstart loop")
-            # if count == 0:
-            #     # Use the loop
-            #     input_img_filepath = os.path.join(output_filepath, filename)
-            # else:
             input_img_filepath = os.path.join(output_filepath, filename)
 
         # Output file
         filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
         output_img_filepath = os.path.join(output_filepath, filename)
 
-        # Calculate coefficient
-        coef = float(count) / (fadeout_count-1)
+        # Calculate coefficient: last frame is not completely black because there is always
+        # a silence after this (i.e. black frames)
+        coef = float(count) / fadeout_count
 
         print("\t% 2d: %s -> %s, coef=%f" % (count, input_img_filepath, output_img_filepath, coef))
 
@@ -204,24 +196,20 @@ def effect_fadeout(db, shot, frames, last_task):
     # pprint(shot)
     # sys.exit()
 
-    # Destination
-    k_ep = shot['k_ep']
+    # Output directory
     k_part = shot['k_part']
-    output_filepath = shot['output_path']
-    if 'dst' in shot.keys():
-        print("--> detected dst for the effect_loop_and_fadeout")
-        k_ep_dst = shot['dst']['k_ep']
-        k_part_dst = shot['dst']['k_part']
-        if k_ep_dst != k_ep and k_part_dst != k_part:
-            # Use the same folder when src=dst
-            output_filepath = os.path.join(db['common']['directories']['cache'], k_ep_dst, k_part_dst, "%05d" % (shot['start']))
-    elif shot['k_part'] in ['g_debut', 'g_fin']:
-        output_filepath = os.path.join(db['common']['directories']['cache'], shot['k_part'], "99999")
-
-    # print("\toutput filepath=%s" % (output_filepath))
+    if k_part in ['g_debut', 'g_fin']:
+        output_filepath = os.path.join(
+            db['common']['directories']['cache'],
+            k_part,
+            "99999")
+    else:
+        output_filepath = get_output_path_from_shot(db=db, shot=shot, task=last_task)
+    print("\toutput filepath=%s" % (output_filepath))
     if not os.path.exists(output_filepath):
         os.makedirs(output_filepath)
 
+    # Suffix for each image
     suffix = "__%s__%03d.%s" % (
         shot['k_ed'],
         get_filter_id(db, shot, last_task),
@@ -246,10 +234,11 @@ def effect_fadeout(db, shot, frames, last_task):
         filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
         output_img_filepath = os.path.join(output_filepath, filename)
 
-        # print("\t% 2d: %s -> %s" % (count, input_img_filepath, output_img_filepath))
+        # Calculate coefficient: last frame is not completely black because there is always
+        # a silence after this (i.e. black frames)
+        coef = float(count) / fadeout_count
 
-        # Calculate coefficient
-        coef = count / fadeout_count
+        print("\t% 2d: %s -> %s, coef=%f" % (count, input_img_filepath, output_img_filepath, coef))
 
         # Mix images
         img_src = cv2.imread(input_img_filepath, cv2.IMREAD_COLOR)

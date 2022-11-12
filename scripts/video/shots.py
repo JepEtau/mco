@@ -188,6 +188,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
 
     if 'rgb' in tasklist:
         print("apply RGB curves: %d" % (frame['no']))
+        is_rgb_valid = False
         if img_sharpened is None:
             # Open the saved sharpened image
             img_sharpened = cv2.imread(frame['filepath']['sharpen'], cv2.IMREAD_COLOR)
@@ -195,6 +196,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
             img_rgb = filter_rgb(frame, img_sharpened)
             if tasklist[-1] == 'rgb':
                 cv2.imwrite(frame['filepath']['rgb'], img_rgb)
+            is_rgb_valid = True
         except:
             # no RGB curves
             print("no RGB curves for shot %d" % (frame['shot_no']))
@@ -204,10 +206,16 @@ def process_single_frame(work_no:int, frame:dict) -> None:
 
     if 'geometry' in tasklist:
         print("geometry: %d" % (frame['no']))
+        pprint(frame['geometry'])
         if img_rgb is None:
             img_rgb = cv2.imread(frame['filepath']['rgb'], cv2.IMREAD_COLOR)
         img_finalized = filter_geometry(frame, img_rgb)
-        cv2.imwrite(frame['filepath']['geometry'], img_finalized)
+        if img_finalized is not None:
+            cv2.imwrite(frame['filepath']['geometry'], img_finalized)
+        # elif is_rgb_valid:
+        #     # Save the corrected image because the finalized image cannot be saved
+        #     cv2.imwrite(frame['filepath']['rgb'], img_rgb)
+
         tasklist.remove('geometry')
 
     return (work_no, tasklist)

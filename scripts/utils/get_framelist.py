@@ -41,6 +41,7 @@ def _get_frames_until_effects(db, k_part, shot, suffix, count=0):
     except:
         start = shot_start
         end = shot_start + shot_count
+
     for f_no in range(start, end):
         if f_no in frames_to_replace:
             filename = "%s_%05d%s" % (k_ep_src, frames_to_replace[f_no], suffix)
@@ -105,8 +106,17 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
                 shot_count = shot['count']
             else:
                 shot_count = shot['count'] - (fadeout_count - loop_count)
-            images += _get_frames_until_effects(db, k_part=k_part, shot=shot, suffix=suffix,
-                count=shot_count)
+
+            # Patch the dst structure to get the toatal images UNTIL effect
+            if 'start' in shot['dst']:
+                shot['dst']['count'] -= (fadeout_count - loop_count)
+            else:
+                shot['dst'].update({
+                    'count': shot_count,
+                    'start': shot['start'],
+                })
+
+            images += _get_frames_until_effects(db, k_part=k_part, shot=shot, suffix=suffix)
             # print("\t\t\t+ ... %s" % (images[-1]))
 
             if loop_count > fadeout_count:
@@ -144,19 +154,23 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
             frame_no = shot['effects'][1]
             fadeout_start = end
             fadeout_count = shot['effects'][2]
-
             # print("\t\tfadeout: fadeout %d->%d (%d)" % (
             #     fadeout_start, fadeout_start+fadeout_count, fadeout_count))
 
-            # Append images until start of fadeout
-            images += _get_frames_until_effects(db, k_part=k_part, shot=shot, suffix=suffix,
-                count=shot['count'] - fadeout_count)
+            # Patch the dst structure to get the toatal images UNTIL effect
+            if 'start' in shot['dst']:
+                shot['dst']['count'] -= fadeout_count
+            else:
+                shot['dst'].update({
+                    'count': shot['start'] - fadeout_count,
+                    'start': shot['start'],
+                })
 
-            print("----------------------------------------------")
-            print("----------------------------------------------")
-            print("----------------------------------------------")
-            pprint(images)
-            print("----------------------------------------------")
+            # Append images until start of fadeout
+            images += _get_frames_until_effects(db, k_part=k_part, shot=shot, suffix=suffix)
+
+            print("nb of images = %d" % (len (images)))
+
 
             # Fadeout
             k_part_src = shot['k_part']
@@ -164,10 +178,8 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
             k_ed = shot['k_ed']
 
             shot_src = get_shot_from_frame_no_new(db, frame_no, k_ed, k_ep_src, k_part_src)
-
-
-
-            input_folder = os.path.join(db[k_ep_src]['common']['path']['cache'], k_part, '%05d' % (shot_src['start']))
+            input_folder = os.path.join(db[k_ep_src]['common']['path']['cache'],
+                k_part, '%05d' % (shot_src['start']))
 
             for f_no in range(fadeout_start, fadeout_start+fadeout_count):
                 filename = "%s_%05d%s" % (k_ep_src, f_no, suffix)
@@ -177,6 +189,7 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
 
     else:
         images += _get_frames_until_effects(db, k_part=k_part, shot=shot, suffix=suffix)
+
 
     return images
 
@@ -204,6 +217,8 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
     k_part_src = shot['k_part']
     if 'start' in shot['dst']:
         print("use the dst start and count for the concatenation file")
+        start = shot['dst']['start']
+        end = start + shot['dst']['count']
     else:
         start = shot['start']
         end = start + shot['count']
@@ -240,19 +255,9 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
         if shot['effects'][0] == 'loop':
             frame_no = shot['effects'][1]
             loop_count = shot['effects'][2]
-
-            input_folder = get_output_path_from_shot(db=db, shot=shot, task=shot['tasks'][-1])
-
-            # input_folder = os.path.join(db[k_ep_src]['common']['path']['cache'], k_part_src, '%05d' % (shot['start']))
             # print("\t\tloop: loop %d times on %d" % (loop_count, frame_no))
 
-
-            # print("----------------------------------------------")
-            # print("----------------------------------------------")
-            # print("----------------------------------------------")
-            # pprint(images)
-            # print("----------------------------------------------")
-
+            input_folder = get_output_path_from_shot(db=db, shot=shot, task=shot['tasks'][-1])
 
             # Add the frames before the loop
             for f_no in range(start, end):
@@ -328,10 +333,19 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
             fadeout_count = shot['effects'][2]
             # print("\t\tfadeout: fadeout %d->%d (%d)" % (fadeout_start, fadeout_start+fadeout_count, fadeout_count))
 
+
+            # Patch the dst structure to get the toatal images UNTIL effect
+            if 'start' in shot['dst']:
+                shot['dst']['count'] -= fadeout_count
+            else:
+                shot['dst'].update({
+                    'count': shot['start'] - fadeout_count,
+                    'start': shot['start'],
+                })
+
             # Append images until start of fadeout
             images += _get_frames_until_effects(db,
-                k_part=k_part, shot=shot, suffix=suffix,
-                count=shot['count'] - fadeout_count)
+                k_part=k_part, shot=shot, suffix=suffix)
 
 
             # Add the frames generated by the fadeout effect
@@ -341,7 +355,7 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
                 print("--> detected dst for the fadeout effect")
                 pprint(shot)
                 print("")
-                # sys.exit()
+                sys.exit()
                 # Use dst folder
                 k_ep_dst = shot['dst']['k_ep']
                 k_part_dst = shot['dst']['k_part']
@@ -349,7 +363,8 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
                 frame_no = shot['start'] + shot['count']
                 shot_src = get_shot_from_frame_no_new(db, shot['start'], k_ed, k_ep_src, k_part_src)
                 input_folder = os.path.join(db[k_ep_dst]['common']['path']['cache'], k_part_dst, '%05d' % (shot_src['start']))
-                for f_no in range(shot_src['start']+shot_src['count'], shot_src['start']+shot_src['count']+fadeout_count):
+                for f_no in range(shot_src['start'] + shot_src['count'],
+                                    shot_src['start'] + shot_src['count'] + fadeout_count):
                     filename = "%s_%05d%s" % (k_ep_src, f_no, suffix)
                     p = os.path.join(input_folder, filename)
                     images.append(p)
@@ -372,6 +387,7 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
     else:
         images += _get_frames_until_effects(db,
             k_part=k_part, shot=shot, suffix=suffix)
+
 
 
     # Append silence to this part

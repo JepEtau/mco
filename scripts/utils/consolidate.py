@@ -141,6 +141,14 @@ def consolidate_shot(db, shot) -> None:
     db_video = db[k_ep][k_ed][k_part]['video']
     shot_no = shot['no']
 
+    # Input and dimensions
+    shot.update({
+        'input': db['editions'][k_ed]['inputs'][k_ep],
+        'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
+    })
+    print("input: %s" % (shot['input']))
+
+
     if 'layer' not in shot.keys() or shot['layer'] == 'fgd':
         k_ed = db['common']['layers']['fgd']
         # Foreground
@@ -209,15 +217,9 @@ def consolidate_shot(db, shot) -> None:
     else:
         sys.exit("Did not detected FGD/BGD in shot structure")
 
-    # Patch shot properties
-    shot.update({
-        'input': db['editions'][k_ed]['inputs'][k_ep],
-        'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
-    })
 
     # Get filters used by this shot
     shot['filters'] = get_filters_from_shot(db, shot)
-
 
     # Geometry
     print("consolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
