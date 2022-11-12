@@ -2,6 +2,11 @@
 import sys
 from copy import deepcopy
 import os
+
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
+import multiprocessing
+
 from pprint import pprint
 
 from utils.common import (
@@ -183,10 +188,6 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
                 video_files[k_p].append(tmp)
             previous_concatenation_filepath = tmp
 
-            # Restore shot values
-            # if 'src' in shot.keys() and shot['src']['use']:
-            #     shot_src.update(shot_properties_saved)
-
 
     # Combine images to mkv
     for kp, files in video_files.items():
@@ -194,8 +195,21 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
             # Do not combine when a single part has to be processed
             continue
 
-        for f in files:
-            combine_images_into_video(db, k_part=kp, files=f, force=force, simulation=simulation)
+        # for f in files:
+        #     combine_images_into_video(
+        #         db_settings= db['common']['settings'],
+        #         k_part=kp,
+        #         input_filename=f,
+        #         force=force,
+        #         simulation=simulation)
+
+        cpu_count = int(multiprocessing.cpu_count() / 2)
+        with ThreadPoolExecutor(max_workers=cpu_count) as executor:
+            work_result = {executor.submit(combine_images_into_video,
+                            db['common']['settings'], k_p, work, force=force, simulation=simulation): None
+                            for work in files}
+            for future in concurrent.futures.as_completed(work_result):
+                pass
 
     if k_part in ['g_debut', 'g_fin']:
         return

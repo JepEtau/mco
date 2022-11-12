@@ -190,8 +190,8 @@ def create_concatenation_file_silence(db, k_ed, k_ep):
 
 
 
-def combine_images_into_video(db, k_part, files, force=False, simulation:bool=False):
-    shot_filepath = files.replace("concatenation", "video")
+def combine_images_into_video(db_settings, k_part, input_filename, force=False, simulation:bool=False):
+    shot_filepath = input_filename.replace("concatenation", "video")
     shot_filepath = shot_filepath.replace('.txt', '.mkv')
 
     # print("%s.combine_images_into_video: %s: %s -> %s" % (__name__, k_part, files, shot_filepath))
@@ -200,22 +200,22 @@ def combine_images_into_video(db, k_part, files, force=False, simulation:bool=Fa
         print("%s concatenate images to %s" % (current_datetime_str(), shot_filepath))
 
         filter_complexStr = "[0]setsar=1[outv]"
-        command_ffmpeg = [db['common']['settings']['ffmpeg_exe']]
-        command_ffmpeg.extend(db['common']['settings']['verbose'].split(' '))
+        command_ffmpeg = [['ffmpeg_exe']]
+        command_ffmpeg.extend(db_settings['verbose'].split(' '))
 
         # rework this with settings from database
         command_ffmpeg.extend([
             "-r", str(FPS),
             "-f", "concat",
             "-safe", "0",
-            "-i", files,
+            "-i", input_filename,
             "-filter_complex", filter_complexStr, "-map", "[outv]",
-            "-pix_fmt", db['common']['settings']['video_pixel_format']])
-        command_ffmpeg.extend(db['common']['settings']['video_quality'].split(' '))
+            "-pix_fmt", db_settings['video_pixel_format']])
+        command_ffmpeg.extend(db_settings['video_quality'].split(' '))
         if 'reportage' in k_part:
-            command_ffmpeg.extend(db['common']['settings']['video_film_tune'].split(' '))
+            command_ffmpeg.extend(db_settings['video_film_tune'].split(' '))
         else:
-            command_ffmpeg.extend(db['common']['settings']['video_tune'].split(' '))
+            command_ffmpeg.extend(db_settings['video_tune'].split(' '))
         command_ffmpeg.extend(["-y", shot_filepath])
 
         if simulation:
