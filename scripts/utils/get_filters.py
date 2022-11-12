@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
 import sys
-
-from pprint import pprint
 from collections import OrderedDict
+from pprint import pprint
+
 from utils.common import (
     K_GENERIQUES,
-    get_shot_no_from_frame_no,
     get_k_part_from_frame_no,
     get_shot_from_frame,
 )

@@ -1,18 +1,19 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import os
 from pprint import pprint
 
-from utils.get_filters import FILTER_BASE_NO
-from utils.get_filters import get_filter_id
-from utils.get_filters import get_filter_id_generique
-from utils.common import K_GENERIQUES, get_k_part_from_frame_no
+from utils.common import (
+    K_GENERIQUES,
+    get_k_part_from_frame_no,
+)
+from utils.get_filters import (
+    FILTER_BASE_NO,
+    get_filter_id,
+    get_filter_id_generique,
+)
 
-import os
 
 PATH_DATABASE = "../database"
-PATH_DATABASE_COMBINE = "../db"
-PATH_CURVES = "../curves"
 
 
 def create_video_directory(db, k_ep):

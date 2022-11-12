@@ -21,13 +21,10 @@ from parsers.parser_shots import (
     create_dst_shots,
     create_dst_shots_g,
 )
-
-
 from parsers.parser_curves import parse_curve_configurations
 from parsers.parser_geometry import parse_geometry_configurations
 from parsers.parser_replace import parse_replace_configurations
 from parsers.parser_stitching import parse_stitching_configurations
-
 from utils.common import (
     K_GENERIQUES,
     K_NON_GENERIQUE_PARTS,
@@ -41,7 +38,6 @@ from utils.consolidate import (
 )
 from utils.path import PATH_DATABASE
 from utils.time_conversions import ms_to_frames
-
 
 
 

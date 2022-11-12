@@ -2,8 +2,6 @@
 import os
 
 
-
-
 def get_tasklist(db, final_task='geometry'):
     # Create the list of tasks
     tasks = list()

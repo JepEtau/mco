@@ -3,13 +3,12 @@ import sys
 import numpy as np
 from pprint import pprint
 
+from images.curve import Curve
+from parsers.parser_curves import parse_curves_file
 from utils.common import (
     K_GENERIQUES,
     get_shot_from_frame_no
 )
-from images.curve import Curve
-from parsers.parser_curves import parse_curves_file
-
 
 def get_curves(db, frame:dict, k_part:str):
     k_ed = frame['k_ed']

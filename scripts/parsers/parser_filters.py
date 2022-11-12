@@ -1,13 +1,10 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import re
-import sys
 from pprint import pprint
-from copy import deepcopy
-import configparser
 
-# ID used to identify filtering step
+# ID used to identify stage
 FILTERS_IDS = [
     'deinterlace',
     'pre_upscale',

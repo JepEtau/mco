@@ -1,19 +1,17 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import sys
 import datetime
 import os
 import re
-import numpy
+import numpy as np
 import cv2
 import signal
 import subprocess
-import sys
 import time
+
 from pprint import pprint
 
 from images.frames import frame_no_to_sexagesimal
-
 from utils.common import create_pipe_in
 from utils.path import get_deinterlaced_filepath_list
 from utils.time_conversions import timestamp2sexagesimal
@@ -249,7 +247,7 @@ def ffmpeg_extract_single_frame(database, frame, filter_str, width, height):
             sys.exit()
 
         if no == 1:
-            rawFrame = numpy.frombuffer(rawFrame, dtype=numpy.uint8)
+            rawFrame = np.frombuffer(rawFrame, dtype=np.uint8)
             rgbFrame = rawFrame.reshape((height, width, 3))
         no += 1
     return rgbFrame
@@ -329,7 +327,7 @@ def ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale
         if rawFrame is None or len(rawFrame) == 0:
             sys.exit("error: frame %d (%s) has not been extracted\n\t%s" % (frame_start + no, shot['k_ed'], command_ffmpeg))
 
-        rawFrame = numpy.frombuffer(rawFrame, dtype=numpy.uint8)
+        rawFrame = np.frombuffer(rawFrame, dtype=np.uint8)
         img = rawFrame.reshape((height, width, 3))
         cv2.imwrite(img_filepaths[no], img)
         # print("extracted frame no. %d (%s) " % (frame_start + no, shot['k_ed']), flush = True)

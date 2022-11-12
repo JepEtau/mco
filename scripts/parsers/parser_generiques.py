@@ -1,21 +1,24 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-import configparser
-from operator import itemgetter
-import os
-import os.path
-
-from pathlib import Path
-from pathlib import PosixPath
-from pprint import pprint
-import re
 import sys
 
-from parsers.parser_filters import *
-from parsers.parser_shots import *
-from parsers.parser_frames import *
-from parsers.parser_av import *
+import configparser
+import os
+import os.path
+from pathlib import (
+    Path,
+    PosixPath,
+)
+import re
+
+from pprint import pprint
+
+from parsers.parser_av import parse_audio_generique
+from parsers.parser_filters import (
+    parse_filters_initialize,
+    parser_filters_consolidate,
+)
+from parsers.parser_frames import parse_framelist
+from parsers.parser_shots import parse_shotlist
 from utils.common import K_GENERIQUES
 
 

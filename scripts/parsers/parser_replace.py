@@ -1,17 +1,19 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-import configparser
-from copy import deepcopy
-import os
-import os.path
-from pathlib import Path
-from pathlib import PosixPath
-from pprint import pprint
 import sys
 
-from utils.common import get_k_part_from_frame_no
-from utils.common import get_shot_from_frame_no_new
+import configparser
+import os
+import os.path
+from pathlib import (
+    Path,
+    PosixPath,
+)
+from pprint import pprint
+
+from utils.common import (
+    get_k_part_from_frame_no,
+    get_shot_from_frame_no_new,
+)
 
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages

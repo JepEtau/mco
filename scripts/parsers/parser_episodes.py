@@ -9,12 +9,19 @@ from pathlib import (
     Path,
     PosixPath,
 )
-from pprint import pprint
 import re
-from parsers.parser_av import parse_audio, parse_video
-from parsers.parser_filters import parse_and_update_filters, parse_filters_initialize, parser_filters_consolidate
 
+from pprint import pprint
 
+from parsers.parser_av import (
+    parse_audio,
+    parse_video,
+)
+from parsers.parser_filters import (
+    parse_and_update_filters,
+    parse_filters_initialize,
+    parser_filters_consolidate,
+)
 from parsers.parser_shots import (
     consolidate_shots_after_parse,
     parse_shotlist,

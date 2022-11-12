@@ -1,5 +1,6 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
+from copy import deepcopy
 import os
 from pprint import pprint
 
@@ -9,10 +10,10 @@ from utils.common import (
     get_k_part_from_frame_no,
     get_shot_from_frame_no_new,
 )
+from utils.consolidate import consolidate_shot
 from utils.ffmpeg import ffmpeg_execute_command
 from utils.path import create_video_directory
 from utils.time_conversions import current_datetime_str
-
 from video.concatenation import (
     combine_images_into_video,
     concatenate_shots,
@@ -20,8 +21,8 @@ from video.concatenation import (
     create_concatenation_file_silence,
     create_concatenation_file_video,
 )
-from video.effects import *
-from video.shots import *
+from video.effects import create_black_frame
+from video.shots import process_shot
 
 
 def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_part:str='', force:bool=False, simulation:bool=False, shot_min:int=0, shot_max:int=999999):

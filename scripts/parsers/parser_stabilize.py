@@ -1,18 +1,21 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-import configparser
-from copy import deepcopy
-import os
-import os.path
-from pathlib import Path
-from pathlib import PosixPath
-from pprint import pprint
-import re
 import sys
 
-from utils.common import get_k_part_from_frame_no
-from utils.common import get_shot_from_frame_no_new
+import configparser
+import os
+import os.path
+from pathlib import (
+    Path,
+    PosixPath,
+)
+import re
+
+from pprint import pprint
+
+from utils.common import (
+    get_k_part_from_frame_no,
+    get_shot_from_frame_no_new,
+)
 
 # cv2.goodFeaturesToTrack
 STABILIZATION_SHOT_PARAMETERS_DEFAULT = {

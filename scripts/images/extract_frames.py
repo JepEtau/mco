@@ -1,10 +1,9 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import cv2
 import gc
 import os
-import sys
 import time
 from pprint import pprint
 
@@ -13,12 +12,13 @@ from multiprocessing import *
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
-
 from utils.common import K_GENERIQUES
 from utils.get_filters import get_filters
 from utils.get_curves import get_curves
-from utils.path import get_input_filepath
-from utils.path import get_output_frame_filepaths_for_study
+from utils.path import (
+    get_input_filepath,
+    get_output_frame_filepaths_for_study,
+)
 from utils.ffmpeg import (
     ffmpeg_deinterlace_single_frame,
     ffmpeg_deinterlace_and_pre_upscale_single_frame,
@@ -36,7 +36,6 @@ from images.filtering import (
 from images.combine import combine_images
 
 study_mode = True
-
 
 
 def process_single_frame(database:dict, work_no, frame):

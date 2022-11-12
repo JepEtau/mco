@@ -1,21 +1,23 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import sys
 import configparser
-from operator import itemgetter
-from copy import deepcopy
 import os
 import os.path
-from os import stat_result, system
-from pathlib import Path
-from pathlib import PosixPath
-from pprint import pprint
+from pathlib import (
+    Path,
+    PosixPath,
+)
 import re
-import sys
+
+from pprint import pprint
+
 from parsers.parser_generiques import parse_get_dependencies_for_generique
-from time import sleep
-from utils.common import get_k_part_from_frame_no, get_shot_from_frame_no_new, nested_dict_set
-from utils.common import K_GENERIQUES
+from utils.common import (
+    K_GENERIQUES,
+    get_k_part_from_frame_no,
+    get_shot_from_frame_no_new,
+    nested_dict_set,
+)
 
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages

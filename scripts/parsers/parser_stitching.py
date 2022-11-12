@@ -1,21 +1,26 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
-import collections
+from collections import OrderedDict
 import configparser
 from copy import deepcopy
 import numpy as np
 import os
 import os.path
-from pathlib import Path
-from pathlib import PosixPath
-from pprint import pprint
+from pathlib import (
+    Path,
+    PosixPath,
+)
 import re
-import sys
-from images.curve import Curve
 
-from utils.common import K_GENERIQUES, get_k_part_from_frame_no
-from utils.common import get_shot_from_frame_no_new
+from pprint import pprint
+
+from images.curve import Curve
+from utils.common import (
+    K_GENERIQUES,
+    get_k_part_from_frame_no,
+    get_shot_from_frame_no_new,
+)
 
 STITCHING_EXTRACTORS = [
     'sift',
@@ -462,10 +467,10 @@ def save_shot_stitching_curves(db, k_ep, k_part, shots:dict, stitching_curves) -
 
         # Parse the file
         if os.path.exists(filepath):
-            config_stitching = configparser.ConfigParser(dict_type=collections.OrderedDict)
+            config_stitching = configparser.ConfigParser(dict_type=OrderedDict)
             config_stitching.read(filepath)
         else:
-            config_stitching = configparser.ConfigParser({}, collections.OrderedDict)
+            config_stitching = configparser.ConfigParser({}, OrderedDict)
 
         # Select the section
         k_section = '%s.%s.%s' % (k_ed_src, k_ep_src, k_part_src)
@@ -490,7 +495,7 @@ def save_shot_stitching_curves(db, k_ep, k_part, shots:dict, stitching_curves) -
             print("not in modified")
 
         # Sort the section
-        config_stitching[k_section] = collections.OrderedDict(sorted(config_stitching[k_section].items(), key=lambda x: x[0]))
+        config_stitching[k_section] = OrderedDict(sorted(config_stitching[k_section].items(), key=lambda x: x[0]))
 
         # Write to the database
         with open(filepath, 'w') as config_file:
@@ -562,10 +567,10 @@ def write_stitching_curves_to_database(db, k_ep:str, curves:dict):
         filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
 
     if os.path.exists(filepath):
-        config_stitching_curves_db = configparser.ConfigParser(dict_type=collections.OrderedDict)
+        config_stitching_curves_db = configparser.ConfigParser(dict_type=OrderedDict)
         config_stitching_curves_db.read(filepath)
     else:
-        config_stitching_curves_db = configparser.ConfigParser({}, collections.OrderedDict)
+        config_stitching_curves_db = configparser.ConfigParser({}, OrderedDict)
 
     k_curves = curves['k_curves']
 
@@ -588,7 +593,7 @@ def write_stitching_curves_to_database(db, k_ep:str, curves:dict):
             config_stitching_curves_db.set(k_curves, c, matrix_str[:-2])
 
     # Sort the section
-    config_stitching_curves_db[k_section] = collections.OrderedDict(sorted(config_stitching_curves_db[k_section].items(), key=lambda x: x[0]))
+    config_stitching_curves_db[k_section] = OrderedDict(sorted(config_stitching_curves_db[k_section].items(), key=lambda x: x[0]))
 
     # Write to the database
     with open(filepath, 'w') as config_file:

@@ -10,7 +10,9 @@ from pathlib import (
 )
 from pprint import pprint
 import subprocess
-from parsers.parser_filters import *
+
+from parsers.parser_filters import parse_and_update_filters
+
 
 DATABASE_PATH = "../database"
 
@@ -71,17 +73,9 @@ def parse_common_configuration(config_path, verbose=False):
         value_str = db_common['options'][key]
         db_common['options'][key] = list(value_str.replace(' ', '').split(','))
 
-    print("options:")
-    pprint(db_common['options'])
 
     # Directories
     #=============================================================================
-    # Merge directories sections:
-    # if 'directories' in configuration_episode.keys():
-    #     for key in ['frames", "vobs", "dvdrip", "output", "curves']:
-    #         if key in configuration_episode['directories'].keys():
-    #             db_common['directories'][key] = configuration_episode['directories'][key].replace('\"", "')
-
     # Save relative directory as this is mandatory for ffmpeg
     db_common['directories']['config'] = config_path
 

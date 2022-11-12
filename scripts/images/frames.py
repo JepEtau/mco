@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
 from datetime import timedelta
 import copy
-import os
 from pprint import pprint
-from utils.common import K_GENERIQUES
 
+from utils.common import K_GENERIQUES
 from utils.path import get_output_frame_filepaths
 
 

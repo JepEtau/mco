@@ -1,23 +1,27 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import sys
 import os
 from pprint import pprint
-import sys
-
-from utils.common import FPS
-from utils.common import K_PARTS
-from utils.ffmpeg import get_duration
-from utils.ffmpeg import ffmpeg_execute_command
-from utils.get_framelist import get_framelist
-from utils.get_framelist import get_framelist_2
-from utils.path import create_folder_for_concatenation
-from utils.time_conversions import ms_to_frames
-from utils.time_conversions import current_datetime_str
-from utils.time_conversions import frame2sexagesimal
 
 from audio.utils import read_single_track_audio_file
-
+from utils.common import (
+    FPS,
+    K_PARTS,
+)
+from utils.ffmpeg import (
+    get_duration,
+    ffmpeg_execute_command,
+)
+from utils.get_framelist import (
+    get_framelist,
+    get_framelist_2,
+)
+from utils.path import create_folder_for_concatenation
+from utils.time_conversions import (
+    ms_to_frames,
+    current_datetime_str,
+    frame2sexagesimal,
+)
 
 
 

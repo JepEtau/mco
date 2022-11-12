@@ -1,14 +1,11 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import re
 from datetime import *
 from datetime import timedelta
 import time
 from utils.common import FPS
 
-# This utility is used to round timestamp (HH:MM:SS.MS) to a multiple
-# of a video frame (25fps)
+# Used to round timestamp (HH:MM:SS.MS) to a multiple of a video frame duration (at 25fps)
 
 HMS_MS = "^([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2}).([0-9]{3})$"
 MS_MS = "^([0-9]{1,2}):([0-9]{1,2}).([0-9]{3})$"

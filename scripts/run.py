@@ -1,19 +1,16 @@
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import argparse
 import gc
 from pprint import pprint
 import signal
 
-import cv2
-
+from audio.audio import (
+    extract_audio,
+    generate_audio,
+)
+from images.extract_frames import extract_frames_for_study
 from parsers.parser_database import parse_database
-from parsers.parser_stitching import *
-from parsers.parser_common import *
-from parsers.parser_editions import *
-from parsers.parser_episodes import *
-from parsers.parser_generiques import *
-
 from utils.common import (
     K_ALL_PARTS,
     K_GENERIQUES,
@@ -21,21 +18,16 @@ from utils.common import (
     delete_items,
 )
 from utils.tasks import get_tasklist
-from utils.path import PATH_DATABASE_COMBINE
-
-from audio.audio import extract_audio
-from audio.audio import generate_audio
-
+from video.concatenation import (
+    merge_audio_and_video_tracks,
+    concatenate_all_clips,
+    add_chapters,
+)
 from video.video import generate_video
-from video.concatenation import merge_audio_and_video_tracks
-from video.concatenation import concatenate_all_clips
-from video.concatenation import add_chapters
-from images.extract_frames import extract_frames_for_study
+
 
 g_database = dict()
-g_database_combine = dict()
 study_mode = True
-
 
 def main():
     # if cv2.ocl.haveOpenCL():

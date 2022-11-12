@@ -1,17 +1,18 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
 import os.path
+
 import numpy as np
 import cv2
-from shutil import copy
 from pprint import pprint
-import sys
 
 from utils.common import get_shot_no_from_frame_no
 from utils.get_filters import get_filter_id
-from utils.path import get_output_frame_filepaths, get_output_path_from_shot
+from utils.path import (
+    get_output_frame_filepaths,
+    get_output_path_from_shot,
+)
 
 
 

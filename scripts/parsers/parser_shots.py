@@ -1,13 +1,9 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-import re
 import sys
 from pprint import pprint
 from copy import deepcopy
-import configparser
-from utils.common import pprint_video
 
+from utils.common import pprint_video
 from utils.time_conversions import ms_to_frames
 
 

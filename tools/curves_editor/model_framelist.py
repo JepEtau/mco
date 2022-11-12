@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import sys
 sys.path.append('../scripts')
 
@@ -11,13 +9,13 @@ import gc
 import re
 from copy import deepcopy
 
-from models.model_framelist_common import *
+from models.model_framelist_common import Model_framelist_common
 from models.model_database import Model_database
-
-
-
-from utils.common import get_shot_no_from_frame_no
-from utils.common import get_shot_from_frame_no
+from utils.common import (
+    get_shot_from_frame_no_new,
+    get_shot_no_from_frame_no,
+    get_shot_from_frame_no,
+)
 
 
 class Model_framelist(Model_framelist_common):

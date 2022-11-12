@@ -1,17 +1,9 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-
-from parsers.parser_stitching import STICTHING_FGD_PAD
-from utils.common import get_dimensions_from_crop_values
-from utils.get_filters import FILTER_BASE_NO
-import cv2
-import os.path
-from copy import deepcopy
-
 import sys
-import numpy as np
+from copy import deepcopy
 import cv2
+import numpy as np
+
 from skimage import data
 from skimage.filters import unsharp_mask
 from skimage.util import img_as_ubyte
@@ -25,11 +17,13 @@ from skimage.restoration import (calibrate_denoiser,
                                  denoise_nl_means,
                                  denoise_bilateral,
                                  estimate_sigma)
-from functools import partial
+# from functools import partial
 from pprint import pprint
 from skimage import color
 from skimage import restoration
 
+from parsers.parser_stitching import STICTHING_FGD_PAD
+from utils.common import get_dimensions_from_crop_values
 
 
 def filter_denoise(frame, img):

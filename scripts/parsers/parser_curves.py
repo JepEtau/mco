@@ -5,18 +5,20 @@ import configparser
 import os
 import os.path
 import numpy as np
-from pathlib import Path
-from pathlib import PosixPath
+from pathlib import (
+    Path,
+    PosixPath,
+)
 from pprint import pprint
 import re
 
+from images.curve import Curve
 from utils.common import (
     K_GENERIQUES,
     get_k_part_from_frame_no,
     get_shot_from_frame_no_new,
     nested_dict_set,
 )
-from images.curve import Curve
 
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages
