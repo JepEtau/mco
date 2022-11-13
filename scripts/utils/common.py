@@ -527,15 +527,15 @@ def get_shot_from_frame_no_new(db, frame_no:int, k_ed, k_ep, k_part) -> dict:
         the shot structure. Returns None if not found
 
     """
-    if k_part in K_GENERIQUES:
-        # Use the ed:ep defined as reference
-        k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
-        k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
+    # Use the ed:ep defined as reference to calculate offsets
 
-        # TODO: correct this!
-        # use offset defined in k_ed config file if k_ed != k_ed_ref
+    if k_part in K_GENERIQUES:
+        # TODO: replace this but the edition set as reference once the shots
+        # are defined in g_fin, g_asuivre for edition k
+        k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
+        k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
     else:
-        k_ed_ref = k_ed
+        k_ed_ref = db['editions']['k_ed_ref']
         k_ep_ref = k_ep
     # print("get_shot_from_frame_no_new: %s:%s:%s" % (k_ed_ref, k_ep_ref, k_part))
 

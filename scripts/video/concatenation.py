@@ -117,7 +117,7 @@ def create_concatenation_file_2(db, k_ep, k_part, shot, previous_concatenation_f
 
 
 
-def create_concatenation_file_video(db, edition, k_ep, video_files:dict):
+def create_concatenation_file_video(db, k_ed, k_ep, video_files:dict):
     """ This function creates a concatenation file which lists
         all video files to merge:
         - precedemment
@@ -133,7 +133,7 @@ def create_concatenation_file_video(db, edition, k_ep, video_files:dict):
     create_folder_for_concatenation(db, k_ep)
     concatenation_filepath = os.path.join(db[k_ep]['common']['path']['cache'],
         "concatenation",
-        "%s_%s.txt" % (k_ep, edition))
+        "%s_%s.txt" % (k_ep, k_ed))
     concatenation_file = open(concatenation_filepath, "w")
     for k in K_PARTS:
         for f in video_files[k]:

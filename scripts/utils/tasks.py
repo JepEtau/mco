@@ -8,18 +8,23 @@ def get_tasklist(db, final_task='geometry'):
 
     if final_task == 'deinterlace':
         tasks = ['deinterlace']
-        if 'rgb' in db['common']['options']['deinterlace_add_tasks']:
-            tasks.append('deinterlace_rgb')
-
+        try:
+            if 'rgb' in db['common']['options']['deinterlace_add_tasks']:
+                tasks.append('deinterlace_rgb')
+        except:
+            pass
     elif final_task == 'pre_upscale':
         tasks = ['deinterlace', 'pre_upscale']
 
     elif final_task == 'upscale':
         tasks = ['deinterlace', 'pre_upscale', 'upscale']
-        if 'geometry' in db['common']['options']['upscale_add_tasks']:
-            try: tasks.remove('pre_upscale')
-            except: pass
-            tasks.append('upscale_rgb_geometry')
+        try:
+            if 'geometry' in db['common']['options']['upscale_add_tasks']:
+                try: tasks.remove('pre_upscale')
+                except: pass
+                tasks.append('upscale_rgb_geometry')
+        except:
+            pass
 
     elif final_task == 'denoise':
         tasks = ['deinterlace', 'pre_upscale', 'upscale', 'denoise']

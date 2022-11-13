@@ -18,8 +18,8 @@ from parsers.parser_generiques import (
     parse_get_dependencies_for_generique,
 )
 from parsers.parser_shots import (
-    create_dst_shots,
-    create_dst_shots_g,
+    create_target_shots,
+    create_target_shots_g,
 )
 from parsers.parser_curves import parse_curve_configurations
 from parsers.parser_geometry import parse_geometry_configurations
@@ -41,7 +41,7 @@ from utils.time_conversions import ms_to_frames
 
 
 
-def parse_database(database, editions, k_ep, mode='', verbose=False):
+def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
 
     # Parse and merge dictionaries -> common configuration
     database['common'] = parse_common_configuration(PATH_DATABASE, verbose=verbose)
@@ -50,20 +50,25 @@ def parse_database(database, editions, k_ep, mode='', verbose=False):
         print("------------------------------------")
         pprint(database)
         print("------------------------------------")
+        sys.exit()
 
 
     # Parse editions: folders, files and additional settings: dimension
     database['editions'] = parse_editions(database, verbose=verbose)
+    # Set the target (i.e. the edition used as foreground)
+    database['editions']['fgd'] = k_ed
+    # Set the edition used as the ereference for the calculation of the frame no.
+    database['editions']['k_ed_ref'] = database['common']['reference']['edition']
     if False:
         print("parse_editions")
         print("------------------------------------")
-        pprint(database)
+        pprint(database['editions'])
         print("------------------------------------")
         sys.exit()
 
 
     # Parse database file which contains common settings for all episodes
-    parse_episodes_common(database)
+    parse_episodes_common(database, study_mode=study_mode)
     if False:
         print("parse_episodes_common")
         print("------------------------------------")
@@ -72,31 +77,40 @@ def parse_database(database, editions, k_ep, mode='', verbose=False):
         sys.exit()
 
     # Initialize dictionary for episodes per edition
-    cfg_episodes = dict()
-    for k_ed in editions:
-        db_init_episodes(database, k_ed=k_ed)
+    for k_ed_tmp in database['editions']['available']:
+        db_init_episodes(database, k_ed=k_ed_tmp)
     if False:
         print("db_init_episodes")
         print("------------------------------------")
-        pprint(database)
+        pprint(database[k_ep])
         print("------------------------------------")
         sys.exit()
 
 
     # Initialize dictionary for generiques
-    for k_ed in editions:
-        db_init_generiques(database, k_ed=k_ed, verbose=verbose)
-
+    for k_ed_tmp in database['editions']['available']:
+        db_init_generiques(database, k_ed=k_ed_tmp, verbose=verbose)
+    if False:
+        print("db_init_generiques")
+        print("------------------------------------")
+        for k_part_g in K_GENERIQUES:
+            print("--------------- %s ---------------------" % (k_part_g))
+            pprint(database[k_part_g])
+        print("------------------------------------")
+        sys.exit()
 
     # Parse database file which contains common settings for generiques
-    parse_generiques_common(database, verbose=verbose)
-    for k_ed in editions:
-        parse_generiques(database, k_ed=k_ed, verbose=verbose)
-
-
-    # Define the default edition
-    database['editions']['default'] = editions[0]
-
+    parse_generiques_common(database, study_mode=study_mode, verbose=verbose)
+    for k_ed_tmp in database['editions']['available']:
+        parse_generiques(database, k_ed=k_ed_tmp, verbose=verbose)
+    if False:
+        print("parse_generiques")
+        print("------------------------------------")
+        for k_part_g in K_GENERIQUES:
+            print("--------------- %s ---------------------" % (k_part_g))
+            pprint(database[k_part_g])
+        print("------------------------------------")
+        sys.exit()
 
     # Create a dict of dependencies for generiques
     dependencies = dict()
@@ -107,10 +121,9 @@ def parse_database(database, editions, k_ep, mode='', verbose=False):
                 dependencies[k] = list()
             dependencies[k] = list(set(dependencies[k] + v))
 
-
     if k_ep != 'ep00':
         # Parse episode at first (required to generate dependencies)
-        for k_ed_tmp in editions:
+        for k_ed_tmp in database['editions']['available']:
             parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep)
 
         # Get dependencies for this episode
@@ -118,13 +131,12 @@ def parse_database(database, editions, k_ep, mode='', verbose=False):
 
 
     # Merge dependencies
-    for k,v in dependencies_tmp.items():
+    for k, v in dependencies_tmp.items():
         if k not in dependencies.keys():
             dependencies[k] = list()
         dependencies[k] = list(set(dependencies[k] + v))
 
     # Parse episodes which are required (dependencies)
-    # pprint(dependencies)
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in v:
             if k_ep_tmp == k_ep:
@@ -162,7 +174,7 @@ def parse_database(database, editions, k_ep, mode='', verbose=False):
         parse_geometry_configurations(database, k_ep_or_g=k_part_g)
 
         # Create shots used for the generation
-        create_dst_shots_g(database, k_ep='', k_part_g=k_part_g)
+        create_target_shots_g(database, k_ep='', k_part_g=k_part_g)
 
         # Consolidate by aligning the A/V tracks of generiques
         align_audio_video_durations_g_debut_fin(database, k_ep='', k_part_g=k_part_g)
@@ -172,14 +184,14 @@ def parse_database(database, editions, k_ep, mode='', verbose=False):
     # Consolidate database for the episode ONLY
     if k_ep != 'ep00':
         for k_p in K_NON_GENERIQUE_PARTS:
-            create_dst_shots(database, k_ep=k_ep, k_part=k_p)
+            create_target_shots(database, k_ep=k_ep, k_part=k_p)
 
         for k_part_g in ['g_asuivre', 'g_reportage']:
             parse_curve_configurations(database, k_ep_or_g=k_part_g)
             parse_replace_configurations(database, k_ep_or_g=k_part_g)
             parse_geometry_configurations(database, k_ep_or_g=k_part_g)
 
-            create_dst_shots_g(database, k_ep=k_ep, k_part_g=k_part_g)
+            create_target_shots_g(database, k_ep=k_ep, k_part_g=k_part_g)
 
         calculate_av_sync(database, k_ep=k_ep)
         align_audio_video_durations(database, k_ep=k_ep)
@@ -199,7 +211,7 @@ def pprint_g_debut_fin(db):
         # print last shot of every part
         for k_part_g in ['g_debut', 'g_fin']:
             print("%s" % (k_part_g))
-            db_video = db[k_part_g]['common']['video']
+            db_video = db[k_part_g]['target']['video']
             if db_video['count'] == 0:
                 continue
             print("  ", db_video['shots'][-1])
@@ -218,8 +230,8 @@ def pprint_g_debut_fin(db):
     for k_part_g in ['g_debut', 'g_fin']:
         episode_audio_count = 0
         episode_video_count = 0
-        db_video = db[k_part_g]['common']['video']
-        db_audio = db[k_part_g]['common']['audio']
+        db_video = db[k_part_g]['target']['video']
+        db_audio = db[k_part_g]['target']['audio']
         frames_count = 0
 
         if db_video['count'] == 0:
@@ -300,7 +312,7 @@ def pprint_g_debut_fin(db):
         # print(">>> db[%s]" % (k_ep))
         # pprint(db[k_ep])
 
-        silence_count = ms_to_frames(db[k_part_g]['common']['audio']['silence'])
+        silence_count = ms_to_frames(db[k_part_g]['target']['audio']['silence'])
         episode_audio_count += silence_count
         episode_video_count += silence_count
 
@@ -316,7 +328,7 @@ def pprint_episode(db, k_ep):
         # print last shot of every part
         for k_p in K_PARTS:
             print("%s" % (k_p))
-            db_video = db[k_ep]['common']['video'][k_p]
+            db_video = db[k_ep]['target']['video'][k_p]
             if db_video['count'] == 0:
                 continue
             print("  ", db_video['shots'][-1])
@@ -335,8 +347,8 @@ def pprint_episode(db, k_ep):
     episode_audio_count = 0
     episode_video_count = 0
     for k_p in K_PARTS:
-        db_video = db[k_ep]['common']['video'][k_p]
-        db_audio = db[k_ep]['common']['audio'][k_p]
+        db_video = db[k_ep]['target']['video'][k_p]
+        db_audio = db[k_ep]['target']['audio'][k_p]
         frames_count = 0
         print("    %s" % (k_p.ljust(12)), end='')
 
@@ -416,7 +428,7 @@ def pprint_episode(db, k_ep):
         # pprint(db[k_ep])
 
     for k_p in ['episode', 'asuivre', 'reportage']:
-        silence_count = ms_to_frames(db[k_ep]['common']['audio'][k_p]['silence'])
+        silence_count = ms_to_frames(db[k_ep]['target']['audio'][k_p]['silence'])
         episode_audio_count += silence_count
         episode_video_count += silence_count
 

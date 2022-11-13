@@ -249,7 +249,7 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
 
 
 
-def create_dst_shots(database, k_ep, k_part):
+def create_target_shots(database, k_ep, k_part):
     """This procedure is used to consolidate part of an 'épisode': it uses the 'replace'
     field to generate a new list of shots in the 'common' structure of the 'épisode'. This list
     will be used for processing instead of the list defined in the edition.
@@ -272,17 +272,17 @@ def create_dst_shots(database, k_ep, k_part):
     K_EP_DEBUG = ''
     K_PART_DEBUG = ''
 
-    k_ed_src = database[k_ep]['common']['video']['reference']['k_ed']
+    k_ed_src = database[k_ep]['target']['video']['src']['k_ed']
     db_video_src = database[k_ep][k_ed_src][k_part]['video']
-    db_video_dst = database[k_ep]['common']['video'][k_part]
+    db_video_dst = database[k_ep]['target']['video'][k_part]
 
     if k_ed_src=='k' and k_part == K_PART_DEBUG:
-        print("\n%s.create_dst_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
+        print("\n%s.create_target_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
         print(" start")
         print("\tvideo (src): %d\t(%d)" % (db_video_src['start'], db_video_src['count']))
         print("\tvideo (dst): %d\t(%d)" % (db_video_dst['start'], db_video_dst['count']))
     if k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
-        print("\n%s.create_dst_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
+        print("\n%s.create_target_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
         print("------------------- before -----------------------------")
         print("db_video_src:")
         print("   start: %d" % (db_video_src['start']))
@@ -307,11 +307,11 @@ def create_dst_shots(database, k_ep, k_part):
     if ('shots' not in db_video_dst.keys()
         and 'shots' not in db_video_src.keys()):
         # Cannot consolidate because no shots are defined
-        # print("\t\tinfo: %s.create_dst_shots: no shots in src/dst %s:%s" % (__name__, k_ep, k_part))
+        # print("\t\tinfo: %s.create_target_shots: no shots in src/dst %s:%s" % (__name__, k_ep, k_part))
         return
 
     if 'shots' not in db_video_dst.keys():
-        # print("\n%s.create_dst_shots: consolidate %s:%s, create DST shot" % (__name__, k_ep, k_part))
+        # print("\n%s.create_target_shots: consolidate %s:%s, create DST shot" % (__name__, k_ep, k_part))
         # print("------------------------------------------------")
         db_video_dst['shots'] = deepcopy(db_video_src['shots'])
         for shot in  db_video_dst['shots']:
@@ -332,8 +332,8 @@ def create_dst_shots(database, k_ep, k_part):
 
     shots = db_video_dst['shots']
 
-    # Update the reference episode because it is maybe not specified in config files
-    database[k_ep]['common']['video']['reference']['k_ep'] = k_ep
+    # TODO: verify this
+    database[k_ep]['target']['video']['src']['k_ep'] = k_ep
 
     # Calculate frames count
     if db_video_dst['start'] != db_video_src['start']:
@@ -408,7 +408,7 @@ def create_dst_shots(database, k_ep, k_part):
 
 
 
-def create_dst_shots_g(db, k_ep, k_part_g) -> None:
+def create_target_shots_g(db, k_ep, k_part_g) -> None:
     """This procedure is used
      to consolidate the parsed shots
     It updates the total duration (in frames of the video for a part
@@ -422,11 +422,12 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
 
     """
 
-    k_ed_src = db[k_part_g]['common']['video']['reference']['k_ed']
-    k_ep_src = db[k_part_g]['common']['video']['reference']['k_ep']
+    # Get the default source: edition:episode
+    k_ed_src = db[k_part_g]['target']['video']['src']['k_ed']
+    k_ep_src = db[k_part_g]['target']['video']['src']['k_ep']
 
     if k_part_g in ['g_debut', 'g_fin']:
-        db_video_dst = db[k_part_g]['common']['video']
+        db_video_dst = db[k_part_g]['target']['video']
         db_video_dst.update({
             'avsync': 0,
         })
@@ -434,9 +435,9 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
     elif k_part_g == 'g_asuivre':
         # Create the g_sauivre structure:
         #   this part was not yet defined because it depends on audio start/duration
-        db_audio = db[k_ep]['common']['audio'][k_part_g]
+        db_audio = db[k_ep]['target']['audio'][k_part_g]
         db_audio['avsync'] = 0
-        db[k_ep]['common']['video'][k_part_g] = {
+        db[k_ep]['target']['video'][k_part_g] = {
             'start': 0,
             'count': ms_to_frames(db_audio['duration']),
             'avsync': 0,
@@ -445,18 +446,18 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
                 'k_part': k_part_g,
             },
         }
-        db_video_dst = db[k_ep]['common']['video'][k_part_g]
+        db_video_dst = db[k_ep]['target']['video'][k_part_g]
 
     elif k_part_g == 'g_reportage':
         # Create the g_reportage structure:
         #   this part was not yet defined because it depends on audio start/duration
-        db_audio = db[k_ep]['common']['audio'][k_part_g]
+        db_audio = db[k_ep]['target']['audio'][k_part_g]
         audio_count = ms_to_frames(db_audio['duration'])
         db_audio.update({
             'count': audio_count,
             'avsync': 0,
         })
-        db[k_ep]['common']['video'][k_part_g] = {
+        db[k_ep]['target']['video'][k_part_g] = {
             'start': ms_to_frames(db_audio['start']),
             'count': audio_count,
             'avsync': 0,
@@ -465,7 +466,7 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
                 'k_part': k_part_g,
             },
         }
-        db_video_dst = db[k_ep]['common']['video'][k_part_g]
+        db_video_dst = db[k_ep]['target']['video'][k_part_g]
 
 
     if ('shots' not in db_video_dst.keys()
@@ -473,7 +474,7 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
         frame_count = 0
         db_video_dst['shots'] = list()
         # if k_part_g == 'g_reportage':
-        #     print("create_dst_shots_g for %s:%s:%s" % (k_ed_src, k_ep, k_part_g))
+        #     print("create_target_shots_g for %s:%s:%s" % (k_ed_src, k_ep, k_part_g))
         #     print("\tfrom %s:%s:%s" % (k_ep_src, k_ed_src, k_part_g))
         #     pprint(db[k_ep_src][k_ed_src][k_part_g]['video'])
         for shot_src in db[k_ep_src][k_ed_src][k_part_g]['video']['shots']:
@@ -482,7 +483,7 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
                 'no': shot_src['no'],
                 'start': shot_src['start'],
                 'count': shot_src['count'],
-                'dst': db[k_ep]['common']['video'][k_part_g]['dst'],
+                'dst': db[k_ep]['target']['video'][k_part_g]['dst'],
                 'src': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep_src,

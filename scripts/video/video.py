@@ -30,8 +30,7 @@ from video.effects import create_black_frame
 from video.shots import process_shot
 
 
-def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_part:str='', force:bool=False, simulation:bool=False, shot_min:int=0, shot_max:int=999999):
-    k_ep = 'ep%02d' % (episode_no)
+def generate_video(db, k_ed, k_ep:str, tasks:list, cpu_count=0, k_part:str='', force:bool=False, simulation:bool=False, shot_min:int=0, shot_max:int=999999):
 
     # Create the video directory
     create_video_directory(db, k_ep)
@@ -52,22 +51,19 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
     for k_p in k_parts:
 
         if k_p in ['g_debut', 'g_fin']:
-            db_video = db[k_p]['common']['video']
-            k_episode = db[k_p]['common']['video']['reference']['k_ep']
+            db_video = db[k_p]['target']['video']
+            k_ep_src_main = db[k_p]['target']['video']['src']['k_ep']
             create_video_directory(db, k_p)
         elif k_ep == 'ep00':
             sys.exit("Erreur: le numéro de l'épisode est manquant")
         else:
             db_video = db[k_ep]['common']['video'][k_p]
-            k_episode = k_ep
+            k_ep_src_main = k_ep
             # pprint(db_video)
 
         if db_video['count'] == 0:
             continue
 
-        if 'shots' not in db_video.keys():
-            # print("\t\tnot shot defined in %s, ignoring" % (k_p))
-            continue
         print("%s %s: extract and process images" % (current_datetime_str(), k_p))
 
         previous_concatenation_filepath = ''
@@ -116,8 +112,8 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
                 # print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 # sys.exit()
             else:
-                k_ed_src = db[k_episode]['common']['video']['reference']['k_ed']
-                k_ep_src = k_episode
+                k_ed_src = db[k_ep_src_main]['common']['video']['reference']['k_ed']
+                k_ep_src = k_ep_src_main
                 k_part_src = k_p
                 shot_src = deepcopy(shot)
 
@@ -192,7 +188,7 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
             print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
             # Create concatenation file
             tmp = create_concatenation_file(db,
-                k_ep=k_episode, k_part=k_p, shot=shot_src,
+                k_ep=k_ep_src_main, k_part=k_p, shot=shot_src,
                 previous_concatenation_filepath=previous_concatenation_filepath)
             if tmp != previous_concatenation_filepath and tmp != '':
                 # Add the filepath to the the concatenation video file
@@ -228,13 +224,13 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
     # Concatenate shots in a single clip
     for k_p, filepaths in video_files.items():
         if len(filepaths) > 1 and not simulation:
-            concatenate_shots(db, k_ed=edition, k_ep=k_ep, k_part=k_p, video_files=video_files, force=force)
+            concatenate_shots(db, k_ed=k_ed, k_ep=k_ep, k_part=k_p, video_files=video_files, force=force)
 
 
     # Create concatenation files and video files for silences
     if k_part == '' and not simulation:
         # Only if a full generation is asked
-        video_files_tmp = create_concatenation_file_silence(db, k_ed=edition, k_ep=k_ep)
+        video_files_tmp = create_concatenation_file_silence(db, k_ed=k_ed, k_ep=k_ep)
         for k_p, filepaths in video_files_tmp.items():
             video_files[k_p] += filepaths
             for f in filepaths:
@@ -245,7 +241,7 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
     # Concatenate video clips from all parts
     if k_part == '' and not simulation:
         # Generate a concatenation file that contains all video files except g_debut and g_fin
-        concatenation_filepath = create_concatenation_file_video(db, edition, k_ep, video_files)
+        concatenation_filepath = create_concatenation_file_video(db, k_ed=k_ed, k_ep=k_ep, video_files=video_files)
 
         # Concatenate video clips
         episode_video_filepath = os.path.join(db[k_ep]['common']['path']['cache'],

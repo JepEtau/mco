@@ -19,6 +19,7 @@ from utils.common import (
     get_database_size,
     delete_items,
 )
+from utils.consolidate_shots import consolidate_target_shots
 from utils.tasks import get_tasklist
 from video.concatenation import (
     merge_audio_and_video_tracks,
@@ -51,17 +52,16 @@ def main():
         help="Numéro d'épisode de 1 à 39. Ignoré pour la génération des génériques.")
 
     parser.add_argument("--edition",
-        default='',
+        default='k',
         required=False,
         choices=editions,
-        help="Utilise uniquement cette edition")
+        help="Utilise cette edition, par défaut: k")
 
     parser.add_argument("--part",
         default='',
         required=False,
         choices=K_ALL_PARTS,
         help="Partie à traiter")
-
 
     parser.add_argument("--shot_min",
         type=int,
@@ -116,10 +116,6 @@ def main():
         action="store_true",
         help="Utilisé pour les études des trames, des filtres, etc.")
 
-    parser.add_argument("--compare",
-        action="store_true",
-        help="debug: utilisé pour comparer les éditions (non fonctionnel)")
-
     parser.add_argument("--force",
         action="store_true",
         required=False,
@@ -138,23 +134,6 @@ def main():
     arguments = parser.parse_args()
 
 
-    if arguments.compare:
-        mode = 'compare'
-    else:
-        mode = 'normal'
-
-    # Edition
-    list_editions = ['']
-    if arguments.edition == '' and arguments.compare:
-        list_editions = editions
-    elif arguments.edition == '':
-        list_editions = [editions[0]]
-    elif arguments.edition != '':
-        list_editions = [arguments.edition]
-    elif arguments.compare:
-        list_editions = [arguments.edition]
-
-
     # Episode no.
     episode_no = arguments.episode
     k_episode = 'ep%02d' % (episode_no)
@@ -163,7 +142,7 @@ def main():
         sys.exit("Error: épisode ou partie non spécifiée")
 
     # Consolidate tasks: what will be done
-    print("Edition(s): %s" % (', '.join(list_editions)))
+    print("Edition: %s" % (arguments.edition))
     print("Episode: %d" % (episode_no))
     if arguments.part != '':
         print("Part: %s" % (arguments.part))
@@ -191,7 +170,7 @@ def main():
     if arguments.parse_only:
         # Parse database only
         # Parse database
-        parse_database(g_database, editions, k_ep=k_episode, mode=mode, verbose=verbose)
+        parse_database(g_database, k_ed=arguments.edition, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
         gc.collect()
         print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
 
@@ -204,7 +183,8 @@ def main():
             pprint(g_database[k_episode])
         else:
             print("\t\t- all: ", end='')
-
+        print()
+        pprint(g_database)
         sys.exit()
 
     if arguments.afilter != '':
@@ -250,7 +230,7 @@ def main():
         sys.exit("Error: a part shall be one of the following: %s" % (", ".join(K_ALL_PARTS)))
 
     # Parse database
-    parse_database(g_database, editions, k_ep=k_episode, mode=mode, verbose=verbose)
+    parse_database(g_database, k_ed=arguments.edition, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
     gc.collect()
     print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
     print("processing, please wait...", flush=True)
@@ -262,29 +242,29 @@ def main():
             # Generiques
             k_part_g = arguments.part
             if arguments.afilter == 'extract':
-                extract_audio(g_database, k_part_g, editions=list_editions, verbose=True, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=arguments.edition, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
                 generate_audio(g_database, k_part_g, verbose=True, force=arguments.force)
 
         elif arguments.part != '':
             # precedemment, episode, g_asuivre, asuivre, g_reportage, reportage
             if arguments.afilter == 'extract':
-                extract_audio(g_database, k_episode, editions=list_editions, verbose=True, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=arguments.edition, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
-                generate_audio(g_database, k_episode, verbose=True, force=arguments.force)
+                generate_audio(g_database, k_ep=k_episode, verbose=True, force=arguments.force)
 
         else:
             # All
             if arguments.afilter == 'extract':
                 for k_part_g in ['g_debut', 'g_fin']:
-                    extract_audio(g_database, k_part_g, editions=list_editions, force=arguments.force)
-                extract_audio(g_database, k_episode, editions=list_editions, force=arguments.force)
+                    extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=arguments.edition, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=arguments.edition, force=arguments.force)
 
             elif arguments.afilter == 'final':
                 for k_part_g in ['g_debut', 'g_fin']:
                     generate_audio(g_database, k_part_g, force=arguments.force)
                 v = True if arguments.force else False
-                generate_audio(g_database, k_episode, verbose=v, force=arguments.force)
+                generate_audio(g_database, k_ep=k_episode, verbose=v, force=arguments.force)
 
 
 
@@ -304,6 +284,16 @@ def main():
                 sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
 
 
+        # Consolidate each shot in the target structure
+        consolidate_target_shots(
+            db=g_database,
+            k_ed=arguments.edition,
+            k_ep=k_episode,
+            k_part=arguments.part,
+        )
+
+        sys.exit
+
         if arguments.frames:
             # Extract frames
             extract_frames_for_study(
@@ -312,47 +302,23 @@ def main():
                 episode_no=episode_no,
                 k_part=arguments.part,
                 tasks=tasks,
-                force=arguments.force,
-                compare=arguments.compare)
+                force=arguments.force)
 
         else:
             # Video
-
-            # Shrink database
-            for no in range(1, 40):
-                k_ep_tmp = 'ep%02d' % (no)
-                delete_items(g_database[k_ep_tmp], 'frames')
-                continue
-
-                # Cannot clean because we do not know the episodes for generiques
-                if (episode_no - 1) <= no <= (episode_no + 1):
-                    delete_items(g_database[k_ep_tmp], 'frames')
-                    # print(d)
-                    # del d['frames']
-                    # d['frames'] = None
-                else:
-                    del g_database[k_ep_tmp]
-
-            for k in K_GENERIQUES:
-                if k in g_database.keys():
-                    delete_items(g_database[k], 'frames')
-
-            gc.collect()
-            print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
-
             shot_min = arguments.shot_min
             shot_max = arguments.shot_max
             if arguments.shot != -1:
                 shot_min = arguments.shot
                 shot_max = arguments.shot + 1
 
-            # Generate the video for the first edition only
+            # Generate the video
             generate_video(
                 g_database,
-                episode_no=episode_no,
+                k_ed=arguments.edition,
+                k_ep=k_episode,
                 k_part=arguments.part,
                 tasks=tasks,
-                edition=list_editions[0],
                 force=arguments.force,
                 simulation=arguments.simulate,
                 shot_min=shot_min, shot_max=shot_max)

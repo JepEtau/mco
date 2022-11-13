@@ -190,8 +190,8 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
         return
 
     # video and audio tracks
-    db_video = db[k_part_g]['common']['video']
-    db_audio = db[k_part_g]['common']['audio']
+    db_video = db[k_part_g]['target']['video']
+    db_audio = db[k_part_g]['target']['audio']
 
     shots = db_video['shots']
 
@@ -278,14 +278,14 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
 
 def calculate_av_sync(db, k_ep):
     K_EP_DEBUG = ''
-    db_common = db[k_ep]['common']
+    db_target = db[k_ep]['target']
 
-    if ('audio' not in db_common.keys()
-        or 'video' not in db_common.keys()):
+    if ('audio' not in db_target.keys()
+        or 'video' not in db_target.keys()):
         sys.exit("%s.calculate_av_sync: error, audio or video does not exist in %s:common" % (__name__, k_ep))
         return
-    db_video = db_common['video']
-    db_audio = db_common['audio']
+    db_video = db_target['video']
+    db_audio = db_target['audio']
 
     # precedemment
     k_part = 'precedemment'
@@ -316,11 +316,11 @@ def calculate_av_sync(db, k_ep):
                 db_video['episode']['start'], db_video['shots']['start']))
     else:
         # precedemment does not exist
-        db_common['audio']['precedemment'].update({
+        db_target['audio']['precedemment'].update({
             'avsync': 0,
             'count': 0,
         })
-        db_common['video']['precedemment'].update({
+        db_target['video']['precedemment'].update({
             'avsync': 0,
             'count': 0,
         })
@@ -387,7 +387,7 @@ def calculate_av_sync(db, k_ep):
 
     if k_ep == K_EP_DEBUG:
         print("<<<<<<<<<<<<<<<< calculate_av_sync ep=%s >>>>>>>>>>>>>>>>" % (k_ep))
-        print(db_common.keys())
+        print(db_target.keys())
         print("<<<<<<<<<<<<<<<< VIDEO >>>>>>>>>>>>>>>>")
         pprint_video(db_video, ignore='shots', first_indent=4)
         print("<<<<<<<<<<<<<<<< AUDIO >>>>>>>>>>>>>>>>")
@@ -398,14 +398,14 @@ def calculate_av_sync(db, k_ep):
 
 def align_audio_video_durations(db, k_ep):
     K_EP_DEBUG = ''
-    db_common = db[k_ep]['common']
+    db_target = db[k_ep]['target']
 
-    if ('audio' not in db_common.keys()
-        or 'video' not in db_common.keys()):
+    if ('audio' not in db_target.keys()
+        or 'video' not in db_target.keys()):
         sys.exit("%s.align_audio_video_durations: error, audio or video does not exist in %s:common" % (__name__, k_ep))
         return
-    db_video = db_common['video']
-    db_audio = db_common['audio']
+    db_video = db_target['video']
+    db_audio = db_target['audio']
 
     if k_ep == K_EP_DEBUG:
         print("%s.align_audio_video_durations: %s:common" % (__name__, k_ep))

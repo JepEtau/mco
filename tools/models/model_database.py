@@ -38,7 +38,6 @@ from parsers.parser_common import parse_common_configuration
 from parsers.parser_database import pprint_episode
 
 from parsers.parser_editions import parse_editions
-from parsers.parser_editions import get_available_editions
 
 from parsers.parser_generiques import db_init_generiques
 from parsers.parser_generiques import parse_generiques_common, parse_generiques
@@ -47,7 +46,7 @@ from parsers.parser_generiques import parse_get_dependencies_for_generique
 from parsers.parser_episodes import db_init_episodes, parse_get_dependencies_for_episodes
 from parsers.parser_episodes import parse_episodes_common, parse_episode
 
-from parsers.parser_shots import create_dst_shots, create_dst_shots_g
+from parsers.parser_shots import create_target_shots, create_target_shots_g
 
 from utils.consolidate import align_audio_video_durations, calculate_av_sync
 from utils.consolidate import align_audio_video_durations_g_debut_fin
@@ -114,7 +113,7 @@ class Model_database(Model_stitching_curves, Model_geometry, Model_curves, objec
         self.initial_database['editions'] = parse_editions(self.initial_database)
         parse_episodes_common(self.initial_database)
 
-        self.k_editions = get_available_editions(self.initial_database)
+        self.k_editions = self.initial_database['editions']['available']
         for k_ed in self.k_editions:
             db_init_episodes(self.initial_database, k_ed=k_ed)
 
@@ -216,7 +215,7 @@ class Model_database(Model_stitching_curves, Model_geometry, Model_curves, objec
 
             # Consolidate database for the episode
             for k_p in K_NON_GENERIQUE_PARTS:
-                create_dst_shots(self.global_database, k_ep=k_ep, k_part=k_p)
+                create_target_shots(self.global_database, k_ep=k_ep, k_part=k_p)
 
             for k_part_g in ['g_asuivre', 'g_reportage']:
                 if do_parse_curves:
@@ -227,7 +226,7 @@ class Model_database(Model_stitching_curves, Model_geometry, Model_curves, objec
                     parse_geometry_configurations(self.global_database, k_ep_or_g=k_part_g)
 
                 # Create shots used for the generation
-                create_dst_shots_g(self.global_database, k_ep=k_ep, k_part_g=k_part_g)
+                create_target_shots_g(self.global_database, k_ep=k_ep, k_part_g=k_part_g)
 
             calculate_av_sync(self.global_database, k_ep=k_ep)
             align_audio_video_durations(self.global_database, k_ep=k_ep)
@@ -397,8 +396,8 @@ class Model_database(Model_stitching_curves, Model_geometry, Model_curves, objec
                 self.db_curves_library = dict()
 
             # Create shots used for the generation
-            # print("\tcreate_dst_shots_g: k_part_g=%s" % (k_part))
-            create_dst_shots_g(self.global_database, k_ep='', k_part_g=k_part)
+            # print("\tcreate_target_shots_g: k_part_g=%s" % (k_part))
+            create_target_shots_g(self.global_database, k_ep='', k_part_g=k_part)
 
             # Consolidate by aligning the A/V tracks of generiques
             # print("\talign_audio_video_durations_g_debut_fin: k_part_g=%s" % (k_part))

@@ -335,7 +335,7 @@ def process_frames(database, frames, cpu_count):
 
 
 
-def extract_frames_for_study(database, editions, episode_no, k_part, tasks, force:bool=False, compare:bool=False):
+def extract_frames_for_study(database, editions, episode_no, k_part, tasks, force:bool=False):
     print("%s.extract_frames_for_study: episode no. %d, k_part=%s, tasks=%s" % (__name__, episode_no, k_part, ', '.join(tasks)))
 
     # Use the default edition if none specified
@@ -369,7 +369,7 @@ def extract_frames_for_study(database, editions, episode_no, k_part, tasks, forc
 
 
 
-def get_framelist_for_study(database, editions, episode_no, k_part, tasks, force:bool=False, compare:bool=False):
+def get_framelist_for_study(database, editions, episode_no, k_part, tasks, force:bool=False):
     # print("%s.get_framelist: episode no. %d, k_part=%s, tasks=%s, editions: " % (__name__, episode_no, k_part, ', '.join(tasks)), editions)
 
     # Create a list of frames, each frame has all
@@ -416,23 +416,7 @@ def get_framelist_for_study(database, editions, episode_no, k_part, tasks, force
             f['curves'] = get_curves(database, frame=f, k_part=k_part)
             f['force'] = force
 
-
-
-            # Get shot from frame_no.
-            # if k_part in K_GENERIQUES:
-            #     shot = get_shot_from_frame_no(database[k_part], f['no'], edition)
-            # else:
-            #     shot = get_shot_from_frame_no(database[f['k_ep']][edition], f['no'], k_part)
-
-            # TODO: add geometry
-
-            # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            # pprint(f)
-
-
-            # if f['curves']['lut'] is not None:
-            # pprint(f, indent=4)
-
+            # .... NOT WORKING
 
     # if not compare:
     if False:
@@ -493,11 +477,6 @@ def get_framelist_for_study(database, editions, episode_no, k_part, tasks, force
     else:
         # k_ep = 'ep%02d' % (episode_no + 1)
         # edition = editions[0]
-
-        # print(k_ep)
-        # shot = get_shot_from_frame_no(database[k_ep][edition], 2671)
-        # shot2 = get_shot_from_frame_no(database['ep%02d' % (episode_no)][edition], shot['src']['start'])
-
 
         # pprint(shot)
         # print("-------------")
