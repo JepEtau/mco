@@ -74,67 +74,19 @@ def generate_video(db, k_ed, k_ep:str, tasks:list, cpu_count=0, k_part:str='', f
             if not (shot_min <= shot['no'] < shot_max):
                 continue
 
-            # Select the shot used for the generation
-            # print("\n++++++++++++++++++++++++++ target ++++++++++++++++++++++++++")
-            # pprint(shot)
-            # print("")
-            # sys.exit()
-            if 'src' in shot.keys() and shot['src']['use']:
-                k_ed_src = shot['src']['k_ed']
-                k_ep_src = shot['src']['k_ep']
-                k_part_src = get_k_part_from_frame_no(db, k_ed=k_ed_src, k_ep=k_ep_src, frame_no=shot['src']['start'])
-                # pprint(shot)
-                # print("\nfind %d  in %s:%s:%s" % (shot['src']['start'], k_ed_src, k_ep_src, k_part_src))
-                shot_src = deepcopy(get_shot_from_frame_no_new(db,
-                    shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src))
 
-                print("++++++++++++++++++++++++++  shot_src : %s:%s:%s ++++++++++++++++++++++++++" % (k_ed_src, k_ep_src, k_part_src))
-                pprint(shot_src)
-                print("")
-
-                # Remove 'src' from the source shot (it would create infinite loop!)
-                try: del shot_src['src']
-                except: pass
-
-                # Use the entire shot
-                if 'count' not in shot['src'].keys():
-                    shot['src']['count'] = shot_src['count']
-
-                # Verify that this shot can be replaced
-                if ((shot['src']['start'] + shot['src']['count']) > (shot_src['start'] + shot_src['count'])
-                    and 'effects' not in shot.keys()):
-                    print("Error: cannot generate shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
-                    print("target:")
-                    pprint(shot)
-                # print("++++++++++++++++++++++++++ modified shot_src ++++++++++++++++++++++++++")
-                # pprint(shot_src)
-                # print("")
-                # print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                # sys.exit()
-            else:
-                k_ed_src = db[k_ep_src_main]['common']['video']['reference']['k_ed']
-                k_ep_src = k_ep_src_main
-                k_part_src = k_p
-                shot_src = deepcopy(shot)
-
-            print("\t\t%s: %s\t(%d)\t<- %s:%s:%s %d (%d)" % (
+            print("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
                 "{:3d}".format(shot['no']),
                 "{:5d}".format(shot['start']),
-                shot['count'],
-                k_ed_src,
-                k_ep_src,
-                k_part_src,
-                shot_src['start'],
-                shot_src['count']),
+                shot['dst']['count'],
+                shot['k_ed'],
+                shot['k_ep'],
+                shot['k_part'],
+                shot['start'],
+                shot['count']),
                 flush=True)
 
-            # if (k_part_src in db[k_ep_src]['common']['video'].keys()
-            #     and 'layers' in db[k_ep_src]['common']['video'][k_part_src].keys()):
-            #     # print("Layer specified", db[k_ep_src]['common']['video'][k_part_src]['layers'])
-            #     shot_src.update({
-            #         'layers': db[k_ep_src]['common']['video'][k_part_src]['layers']
-            #     })
-
+            shot['']
             try:
                 shot_src.update({
                     'layers': db[k_ep_src]['common']['video'][k_part_src]['layers']

@@ -292,8 +292,6 @@ def main():
             k_part=arguments.part,
         )
 
-        sys.exit
-
         if arguments.frames:
             # Extract frames
             extract_frames_for_study(
