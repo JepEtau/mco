@@ -101,7 +101,7 @@ class Model_video_editor(Model_common):
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
         self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
 
-        # Force refresh of previe options
+        # Force refresh of preview options
         self.view.event_preview_options_changed('model')
 
         p = self.preferences.get_preferences()
@@ -162,10 +162,20 @@ class Model_video_editor(Model_common):
                 shot_src = deepcopy(get_shot_from_frame_no_new(db,
                     shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src))
 
+                # Remove 'src' from the source shot (it would create infinite loop!)
+                try: del shot_src['src']
+                except: pass
+
+                # Use the entire shot
                 if 'count' not in shot['src'].keys():
                     shot['src']['count'] = shot_src['count']
-                if shot_src is None:
-                    sys.exit("error: ep_or_part_selection_changed: shot src is None")
+
+                # Verify that this shot can be replaced
+                if ((shot['src']['start'] + shot['src']['count']) > (shot_src['start'] + shot_src['count'])
+                    and 'effects' not in shot.keys()):
+                    print("Error: cannot use shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
+                    print("target:")
+                    pprint(shot)
             else:
                 k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
                 k_ep_src = k_ep
@@ -190,8 +200,7 @@ class Model_video_editor(Model_common):
             })
             if 'effects' in shot.keys():
                 shot_src.update({'effects': shot['effects']})
-            if 'dst' in shot.keys():
-                shot_src['dst'] = shot['dst']
+
             if shot == shots[-1]:
                 shot_src['last'] = True
 
@@ -213,9 +222,7 @@ class Model_video_editor(Model_common):
                 filepath_tmp = get_framelist_2(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
             self.filepath.append(filepath_tmp)
 
-            # Restore shot values
-            if 'src' in shot.keys() and shot['src']['use']:
-                shot_src.update(shot_properties_saved)
+
 
             # if 'src' in shot.keys() and shot['src']['use']:
             #     # restore src shot
@@ -304,6 +311,7 @@ class Model_video_editor(Model_common):
                     'frame_no': frame_no,
 
                     'filepath': image_filepath,
+                    'dimensions': shot_src['dimensions'],
                     'replaced_by': self.model_database.get_replace_frame_no(shot=current_shot, frame_no=frame_no),
                     'curves': curves,
                     'geometry': shot_geometry,

@@ -49,7 +49,7 @@ from parsers.parser_episodes import parse_episodes_common, parse_episode
 
 from parsers.parser_shots import create_dst_shots, create_dst_shots_g
 
-from utils.consolidate import align_audio_video_durations, determine_av_sync
+from utils.consolidate import align_audio_video_durations, calculate_av_sync
 from utils.consolidate import align_audio_video_durations_g_debut_fin
 
 from parsers.parser_stabilize import STABILIZATION_SHOT_PARAMETERS_DEFAULT
@@ -229,7 +229,7 @@ class Model_database(Model_stitching_curves, Model_geometry, Model_curves, objec
                 # Create shots used for the generation
                 create_dst_shots_g(self.global_database, k_ep=k_ep, k_part_g=k_part_g)
 
-            determine_av_sync(self.global_database, k_ep=k_ep)
+            calculate_av_sync(self.global_database, k_ep=k_ep)
             align_audio_video_durations(self.global_database, k_ep=k_ep)
 
             if k_part != '':
