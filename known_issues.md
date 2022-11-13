@@ -1,3 +1,5 @@
+# curves editor
+- Many issues: the graph/selection shall be replaced by the one in the video_editor
 # video_editor
 - When selecting curves on multiple shots, saving does not work (save all ?)
 
