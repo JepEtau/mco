@@ -6,4 +6,4 @@
 
 # scripts
 - extract is not working with offset (e.g. s:ep2:g_debut, shot no.2)
-- geometry cannor work with g_asuivre, g_reportage
+- verify replacement of episode shot from precedemment/asuivre

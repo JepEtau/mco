@@ -986,7 +986,7 @@ class Model_database(Model_stitching_curves, Model_geometry, Model_curves, objec
                             ':'.join(map(lambda x: "%d" % (x), p['delta_interval']))
                         )
                     else:
-                        print("error: calculations have not been done, discard")
+                        print("Error: calculations have not been done, discard")
                         self.is_stabilize_db_modified = False
                         return False
                 config_stabilize.set(k_section, key_str, parameters_str)

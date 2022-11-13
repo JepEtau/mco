@@ -145,7 +145,7 @@ class Model_curves():
                             nested_dict_set(self.db_curves_selection_initial,
                                 deepcopy(shot_curves), k_ed, k_ep, k_part, shot_no)
                         else:
-                            print("error: curves are not saved for shot no. %d" % (shot_no))
+                            print("Error: curves are not saved for shot no. %d" % (shot_no))
         self.db_curves_selection.clear()
         self.is_curves_selection_db_modified = False
 
@@ -310,7 +310,7 @@ class Model_curves():
                                 # These curves are not saved in the database (=error)
                                 # we consider that the curves selection cannot be removed
                                 # TODO
-                                print("error: these curves have not been saved")
+                                print("Error: these curves have not been saved")
                                 continue
 
                             k_section = '%s.%s.%s' % (k_ed_tmp, k_ep_tmp, k_part_tmp)
@@ -327,7 +327,7 @@ class Model_curves():
                 # These curves are not saved in the database (=error)
                 # we consider that the curves selection cannot be removed
                 # TODO
-                print("error: these curves have not been saved")
+                print("Error: these curves have not been saved")
 
             k_section = '%s.%s.%s' % (k_ed, k_ep, k_part)
             shot_start_str = str(shots[shot_no]['start'])

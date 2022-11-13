@@ -37,7 +37,7 @@ def filter_denoise(frame, img):
 
 
     # elif frame['filters']['ffmpeg']['denoise'] is not None:
-    #     print("error: FFMPEG denoise filter shall be implemented before this function call")
+    #     print("Error: FFMPEG denoise filter shall be implemented before this function call")
     # else:
     #     print("warning: no denoise filter defined")
     return None
@@ -541,7 +541,7 @@ def  filters_morphologyEx(image, type, radius, iterations):
     elif type == 'MORPH_ELLIPSE':
         kernelType = cv2.MORPH_ELLIPSE
     else:
-        print("error: unrecognized kernel type")
+        print("Error: unrecognized kernel type")
         sys.exit()
 
     kernel = cv2.getStructuringElement(kernelType, (radius, radius))

@@ -53,9 +53,11 @@ def effect_comb(db, shot, frame, last_task):
     frames_per_band = frames_per_band - 3
 
     # Get dimensions from last task
-    if last_task == 'deinterlace':
+    if 'deinterlace' in last_task:
+        # deinterlace (or deinterlace_rgb for debug)
         dimensions = db['common']['dimensions']['initial']
-    elif last_task == 'geometry':
+    elif 'geometry' in last_task:
+        # geometry (or upscale_rgb_geometry for debug)
         dimensions = db['common']['dimensions']['final']
     else:
         dimensions = db['common']['dimensions']['upscale']
@@ -146,9 +148,11 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
         db['common']['settings']['frame_format'])
 
     # Get dimensions from last task
-    if last_task == 'deinterlace':
+    if 'deinterlace' in last_task:
+        # deinterlace (or deinterlace_rgb for debug)
         dimensions = db['common']['dimensions']['initial']
-    elif last_task == 'geometry':
+    elif 'geometry' in last_task:
+        # geometry (or upscale_rgb_geometry for debug)
         dimensions = db['common']['dimensions']['final']
     else:
         dimensions = db['common']['dimensions']['upscale']
@@ -217,9 +221,11 @@ def effect_fadeout(db, shot, frames, last_task):
         db['common']['settings']['frame_format'])
 
     # Get dimensions from last task
-    if last_task == 'deinterlace':
+    if 'deinterlace' in last_task:
+        # deinterlace (or deinterlace_rgb for debug)
         dimensions = db['common']['dimensions']['initial']
-    elif last_task == 'geometry':
+    elif 'geometry' in last_task:
+        # geometry (or upscale_rgb_geometry for debug)
         dimensions = db['common']['dimensions']['final']
     else:
         dimensions = db['common']['dimensions']['upscale']

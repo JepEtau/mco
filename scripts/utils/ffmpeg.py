@@ -79,7 +79,7 @@ def ffmpeg_execute_command(command=None, filename='', mode='', print_msg=False):
             sys.exit()
         except:
             _process.kill()
-            print("error: timeout")
+            print("Error: timeout")
             _stdout, _stderr = _process.communicate()
 
         line = _stderr.decode(encoding='UTF-8')
@@ -242,7 +242,7 @@ def ffmpeg_extract_single_frame(database, frame, filter_str, width, height):
         rawFrame = pipe_in.stdout.read(3 * height * width)
         pipe_in.stdout.flush()
         if rawFrame is None or len(rawFrame) == 0:
-            print("error: frame has not been extracted\n\t%s" % (command_ffmpeg))
+            print("Error: frame has not been extracted\n\t%s" % (command_ffmpeg))
             print(pipe_in.stderr)
             sys.exit()
 
@@ -357,12 +357,12 @@ def ffmpeg_deinterlace_and_pre_upscale_shot(database, shot):
 
 
 def ffmpeg_deinterlace_and_upscale_shot(database, shot):
-    filter_str = ""
-    if shot['filters']['ffmpeg']['upscale'] is not None:
-        # get FFMPEG filter
-        filter_str, width, height = get_ffmpeg_filter(shot, 'upscale')
-        print(filter_str)
-
+    # filter_str = ""
+    # if shot['filters']['ffmpeg']['upscale'] is not None:
+    # get FFMPEG filter
+    filter_str, width, height = get_ffmpeg_filter(shot, 'upscale')
+    print(filter_str)
     return ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale')
+
 
 

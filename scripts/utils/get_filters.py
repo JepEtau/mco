@@ -18,14 +18,13 @@ FILTER_BASE_NO = {
     'stitching': 500,
     'sharpen': 600,
     'rgb': 700,
-    'geometry': 800,
+    'geometry': 900,
 }
 
 # The following are used for debug purpose
 FILTER_BASE_NO_DEBUG = {
-    'deinterlace_rgb': 900,
-    'deinterlace_replace': 940,
-    'deinterlace_rgb_replace': 980,
+    'deinterlace_rgb': 990,
+    'upscale_rgb_geometry': 995,
 }
 
 
@@ -210,8 +209,12 @@ def get_filter_id(db, shot, k_step):
     filters = shot['filters']
     if type(filters) is dict:
         filter_ids = filters['id']
+
         if k_step in filter_ids.keys():
             filter_id = filter_ids[k_step] + FILTER_BASE_NO[k_step]
+        elif k_step in FILTER_BASE_NO_DEBUG.keys():
+            # For debug and verifications
+            return FILTER_BASE_NO_DEBUG[k_step]
         else:
             filter_id = FILTER_BASE_NO[k_step]
         return filter_id
@@ -245,8 +248,15 @@ def get_filter_id(db, shot, k_step):
             filter_ids = db_ep['filters'][filters]['id']
             sys.exit("Error: TODO: %s: correct this" % (__name__))
 
+    # For debug and verifications
+    if k_step in FILTER_BASE_NO_DEBUG.keys():
+        return FILTER_BASE_NO_DEBUG[k_step]
+
     if k_step in filter_ids.keys():
         filter_id = filter_ids[k_step] + FILTER_BASE_NO[k_step]
+    elif k_step in FILTER_BASE_NO_DEBUG.keys():
+        # For debug and verifications
+        return FILTER_BASE_NO_DEBUG[k_step]
     else:
         filter_id = FILTER_BASE_NO[k_step]
 

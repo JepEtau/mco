@@ -25,7 +25,7 @@ from images.filtering import (
 )
 from images.frames import (
     create_framelist_from_shot,
-    patch_frames_for_combination,
+    patch_frames_for_stitching,
 )
 from utils.consolidate import consolidate_shot
 from utils.ffmpeg import (
@@ -64,13 +64,19 @@ def extract_frames_from_shot(database:dict, k_layer:str, shot:dict) -> None:
             sys.exit("Missing upscale filter for %s:%s:%s" % (shot['k_ed'], shot['k_ep'], shot['k_part']))
 
     # Deinterlace and upscale
-    elif 'upscale' in tasks:
+    elif 'upscale' in tasks and shot['filters']['ffmpeg']['upscale'] is not None:
         # print("\tFFMPEG: Deinterlace, pre_upscale and upscale")
         extracted_images_count = ffmpeg_deinterlace_and_upscale_shot(database, shot)
         tasks.remove('deinterlace')
         try: tasks.remove('pre_upscale')
         except: pass
         tasks.remove('upscale')
+
+    else:
+        # print("\tFFMPEG: Deinterlace only")
+        extracted_images_count = ffmpeg_deinterlace_shot(database, shot)
+        tasks.remove('deinterlace')
+
 
     return (k_layer, tasks, extracted_images_count)
 
@@ -79,33 +85,80 @@ def extract_frames_from_shot(database:dict, k_layer:str, shot:dict) -> None:
 
 def process_single_frame(work_no:int, frame:dict) -> None:
     tasklist = frame['tasks'].copy()
+    img_input = None
     img_denoised = None
     img_stitching = None
     img_sharpened = None
     img_upscaled = None
-
-    # Upscale image
     if False:
         print("---------------------------------------------------------------------------",flush=True)
         print("%d: " % (frame['no']), tasklist,flush=True)
         pprint(frame)
         print("---------------------------------------------------------------------------",flush=True)
+
+    # For debug and verificattions: deinterlace->RGB
+    if 'deinterlace_rgb' in tasklist:
+        img_input = cv2.imread(frame['filepath']['deinterlace'], cv2.IMREAD_COLOR)
+        try:
+            # print("apply RGB curves: %d" % (frame['no']))
+            img_rgb = filter_rgb(frame, img_input)
+        except:
+            # print("Warning: no RGB curves are defined")
+            img_rgb = img_input
+        cv2.imwrite(frame['filepath']['deinterlace_rgb'], img_rgb)
+        return (work_no, list())
+
+
+    # Upscale image
     if 'upscale' in tasklist:
         # print("upscale image: %d" % (frame['no']))
         if not os.path.exists(frame['filepath']['upscale']):
-            # Upscale the pre-upscaled image
-            img_input = cv2.imread(frame['filepath']['pre_upscale'], cv2.IMREAD_COLOR)
+            # Get the input image: deinterlaced or pre_upscaled
+            if img_input is None:
+                if os.path.exists(frame['filepath']['pre_upscale']):
+                    # Upscale the pre-upscaled image
+                    img_input = cv2.imread(frame['filepath']['pre_upscale'], cv2.IMREAD_COLOR)
+                elif os.path.exists(frame['filepath']['deinterlace']):
+                    # Upscale the deinterlaced image
+                    img_input = cv2.imread(frame['filepath']['deinterlace'], cv2.IMREAD_COLOR)
+                else:
+                    sys.exit("Error: cannot find the image to upscale frame no." % (frame['no']))
+
             img_upscaled = filter_upscale(frame, img_input)
             if img_upscaled is None:
-                # There is no defined filter, use the input image
-                img_upscaled = img_input
+                # There is no defined filter, or an error occured
+                sys.exit("Error: upscaling frame no. %d has failed" % (frame['no']))
+
             elif tasklist[-1] == 'upscale':
                 # Last task, save the file
                 cv2.imwrite(frame['filepath']['upscale'], img_upscaled)
         tasklist.remove('upscale')
+
     if img_upscaled is None and 'denoise' in tasklist:
         # This image is already upscaled, and required for the following task
-        img_upscaled = cv2.imread(frame['filepath']['upscale'], cv2.IMREAD_COLOR)
+        try:
+            img_upscaled = cv2.imread(frame['filepath']['upscale'], cv2.IMREAD_COLOR)
+        except:
+            sys.exit("Error: cannot find the upscaled image for frame no. %d" % (frame['no']))
+
+
+    # For debug and verificattions: deinterlace->upscale->RGB->geometry
+    if 'upscale_rgb_geometry' in tasklist:
+        try:
+            # print("apply RGB curves: %d" % (frame['no']))
+            img_upscaled_rgb = filter_rgb(frame, img_upscaled)
+            cv2.imwrite(frame['filepath']['deinterlace_rgb'], img_upscaled_rgb)
+        except:
+            # print("Warning: no RGB curves are defined")
+            img_upscaled_rgb = img_upscaled
+        # print("apply geometry: %d" % (frame['no']))
+        img_upscaled_rgb_geometry = filter_geometry(frame, img_upscaled_rgb)
+        if img_upscaled_rgb_geometry is None:
+            img_upscaled_rgb_geometry = img_upscaled_rgb
+        cv2.imwrite(frame['filepath']['upscale_rgb_geometry'], img_upscaled_rgb_geometry)
+        return (work_no, list())
+
+
 
     # Denoise image
     if 'denoise' in tasklist:
@@ -258,6 +311,7 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
 
     last_task = shot['tasks'][-1]
 
+
     # 1) Create layer(s) and consolidate
     # ==========================================================================
 
@@ -315,9 +369,9 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
         frames[l] = create_framelist_from_shot(db, layers[l]['shot'])
 
 
-    # 3) Patch frames for combination
+    # 3) Patch frames to combine images (image stitching)
     # ==========================================================================
-    patch_frames_for_combination(frames, db_combine, do_stitching)
+    patch_frames_for_stitching(frames, db_combine, do_stitching)
 
 
     # 4) Determine what to do for each frame

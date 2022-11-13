@@ -194,13 +194,13 @@ def combine_images_into_video(db_settings, k_part, input_filename, force=False, 
     shot_filepath = input_filename.replace("concatenation", "video")
     shot_filepath = shot_filepath.replace('.txt', '.mkv')
 
-    # print("%s.combine_images_into_video: %s: %s -> %s" % (__name__, k_part, files, shot_filepath))
+    # print("%s.combine_images_into_video: %s: %s -> %s" % (__name__, k_part, input_filename, shot_filepath))
 
     if not os.path.exists(shot_filepath) or force:
         print("%s concatenate images to %s" % (current_datetime_str(), shot_filepath))
 
         filter_complexStr = "[0]setsar=1[outv]"
-        command_ffmpeg = [['ffmpeg_exe']]
+        command_ffmpeg = [db_settings['ffmpeg_exe']]
         command_ffmpeg.extend(db_settings['verbose'].split(' '))
 
         # rework this with settings from database
@@ -230,7 +230,7 @@ def combine_images_into_video(db_settings, k_part, input_filename, force=False, 
                 if os.path.exists(shot_filepath):
                     os.remove(shot_filepath)
                 sys.exit("error: cannot create %s" % (shot_filepath))
-
+    return None
 
 
 def merge_audio_and_video_tracks(db, k_ep, force=False):

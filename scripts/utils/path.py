@@ -8,6 +8,7 @@ from utils.common import (
 )
 from utils.get_filters import (
     FILTER_BASE_NO,
+    FILTER_BASE_NO_DEBUG,
     get_filter_id,
     get_filter_id_generique,
 )
@@ -69,7 +70,7 @@ def get_output_path_from_shot(db, shot, task):
                 shot['k_part'],
                 '%05d' % (shot['start']))
 
-    if task == 'geometry':
+    if task in ['geometry', 'deinterlace_rgb', 'upscale_rgb_geometry']:
         # If last task is geometry, use the dst structure
         # print("get_output_path_from_shot: shall be modified for dst")
         # print("--> detected dst for the get_output_path_from_shot")
@@ -173,9 +174,11 @@ def get_output_frame_filepaths(db, shot:dict, frame_no:int):
     extension = db['common']['settings']['frame_format']
 
     filepaths = dict()
-    for task in FILTER_BASE_NO.keys():
+    for task in FILTER_BASE_NO:
         if task == 'stitching':
             suffix = "__%s__%03d" % (k_ed, get_filter_id(db, shot, 'sharpen'))
+        elif task == 'upscale_rgb_geometry':
+            suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO_DEBUG['upscale_rgb_geometry'])
         else:
             suffix = "__%s__%03d" % (k_ed, get_filter_id(db, shot, task))
 
@@ -185,6 +188,17 @@ def get_output_frame_filepaths(db, shot:dict, frame_no:int):
             os.makedirs(output_directory)
 
         filepaths[task] = os.path.join(output_directory, outputFilename).strip('\n')
+
+    # For debug and verification of video edition
+    for task in FILTER_BASE_NO_DEBUG:
+        if task in shot['tasks']:
+            suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO_DEBUG[task])
+            outputFilename = "%s_%05d%s.%s" % (k_ep, frame_no, suffix, extension)
+            output_directory = get_output_path_from_shot(db=db, shot=shot, task=task)
+            if not os.path.exists(output_directory):
+                os.makedirs(output_directory)
+            filepaths[task] = os.path.join(output_directory, outputFilename).strip('\n')
+            break
 
     return filepaths
 

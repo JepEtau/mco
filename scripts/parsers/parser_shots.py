@@ -85,12 +85,14 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
                         db_shots[shot_no]['src'].update({
                             'k_ep': 'ep%02d' % (int(src[0])),
                             'start': int(src[1]),
+# 2022-11-13: replacement does not work: to verify
                             'count': -1
                         })
                     else:
                         db_shots[shot_no]['src'].update({
                             'k_ep': 'ep%02d' % (int(src[0])),
                             'start': start,
+# 2022-11-13: replacement does not work: to verify
                             'count': -1
                         })
 
@@ -176,11 +178,12 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
     """
     K_PART_DEBUG = ''
     K_EP_DEBUG = ''
+    SHOT_NO = 0
 
     if k_ed=='k' and k_ep==K_EP_DEBUG and k_part==K_PART_DEBUG:
         print("%s:consolidate_shots_after_parse: %s:%s:%s" % (__name__, k_ed, k_ep, k_part))
-        pprint(db[k_ep][k_ed][k_part]['video'])
-        print("\n")
+        pprint(db[k_ep][k_ed][k_part]['video']['shots'][SHOT_NO])
+        print("")
 
     db_video = db[k_ep][k_ed][k_part]['video']
 
@@ -220,13 +223,17 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
             else:
                 shots[i]['count'] = shots[i+1]['start'] - shots[i]['start']
 
+            # Update count in the src structure
+            if 'src' in shots[i].keys():
+                shots[i]['src']['count'] = shots[i]['count']
+
         if 'effects' in shots[i]:
             if shots[i]['effects'][0] == 'loop':
                 frames_count += shots[i]['effects'][2]
                 sys.exit("%s: add loop duration" % (__name__))
 
         if shots[i]['count'] <= 0 and i < len(shots)-1:
-            print("error: %s:%s:%s: shot start=%d, shot length (%d) < 0 " % (k_ed, k_ep, k_part, shots[i]['start'], shots[i]['count']))
+            print("Error: %s:%s:%s: shot start=%d, shot length (%d) < 0 " % (k_ed, k_ep, k_part, shots[i]['start'], shots[i]['count']))
             # pprint(shots)
             sys.exit()
 
@@ -234,7 +241,11 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
 
     # The new part duration is the sum of all shots duration
     # db_video['count'] = frames_count
-
+    if k_ed=='k' and k_ep==K_EP_DEBUG and k_part==K_PART_DEBUG:
+        print("----->")
+        pprint(db[k_ep][k_ed][k_part]['video']['shots'][SHOT_NO])
+        print("")
+        # sys.exit()
 
 
 

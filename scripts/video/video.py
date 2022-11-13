@@ -55,12 +55,12 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
             db_video = db[k_p]['common']['video']
             k_episode = db[k_p]['common']['video']['reference']['k_ep']
             create_video_directory(db, k_p)
+        elif k_ep == 'ep00':
+            sys.exit("Erreur: le numéro de l'épisode est manquant")
         else:
-            if k_ep == 'ep00':
-                sys.exit("Erreur: le numéro de l'épisode est manquant")
             db_video = db[k_ep]['common']['video'][k_p]
             k_episode = k_ep
-            pprint(db_video)
+            # pprint(db_video)
 
         if db_video['count'] == 0:
             continue
@@ -79,8 +79,7 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
                 continue
 
             # Select the shot used for the generation
-            # print("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            # print("target:")
+            # print("\n++++++++++++++++++++++++++ target ++++++++++++++++++++++++++")
             # pprint(shot)
             # print("")
             # sys.exit()
@@ -93,16 +92,28 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
                 shot_src = deepcopy(get_shot_from_frame_no_new(db,
                     shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src))
 
+                print("++++++++++++++++++++++++++  shot_src : %s:%s:%s ++++++++++++++++++++++++++" % (k_ed_src, k_ep_src, k_part_src))
+                pprint(shot_src)
+                print("")
+
+                # Remove 'src' from the source shot (it would create infinite loop!)
+                try: del shot_src['src']
+                except: pass
+
+                # Use the entire shot
                 if 'count' not in shot['src'].keys():
                     shot['src']['count'] = shot_src['count']
+
+                # Verify that this shot can be replaced
                 if ((shot['src']['start'] + shot['src']['count']) > (shot_src['start'] + shot_src['count'])
                     and 'effects' not in shot.keys()):
-                    print("error: cannot generate shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
+                    print("Error: cannot generate shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
                     print("target:")
                     pprint(shot)
-                # print("source:")
+                # print("++++++++++++++++++++++++++ modified shot_src ++++++++++++++++++++++++++")
                 # pprint(shot_src)
-                # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+                # print("")
+                # print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
                 # sys.exit()
             else:
                 k_ed_src = db[k_episode]['common']['video']['reference']['k_ed']
@@ -190,15 +201,15 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
 
 
     # Combine images to mkv
-    for kp, files in video_files.items():
-        if k_part != '' and kp != k_part or simulation:
+    for k_p, files in video_files.items():
+        if k_part != '' and k_p != k_part or simulation:
             # Do not combine when a single part has to be processed
             continue
 
         # for f in files:
         #     combine_images_into_video(
         #         db_settings= db['common']['settings'],
-        #         k_part=kp,
+        #         k_part=k_p,
         #         input_filename=f,
         #         force=force,
         #         simulation=simulation)
@@ -228,7 +239,7 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
             video_files[k_p] += filepaths
             for f in filepaths:
                 # print("%s: %s" % (k_p, f))
-                combine_images_into_video(db, k_part=k_p, files=f, force=force, simulation=simulation)
+                combine_images_into_video(db['common']['settings'], k_part=k_p, input_filename=f, force=force, simulation=simulation)
 
 
     # Concatenate video clips from all parts

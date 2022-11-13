@@ -326,7 +326,7 @@ def process_frames(database, frames, cpu_count):
             # Do not continue if it is not possible to combine images
             print("Warning: cannot combine images, end of processing")
         else:
-            print("error: todo, correct this: img_combine_count [%d]!= len(frames_2) [%d]!" %
+            print("Error: todo, correct this: img_combine_count [%d]!= len(frames_2) [%d]!" %
                 (img_combine_count, len(frames_2)))
 
 

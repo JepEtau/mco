@@ -138,14 +138,14 @@ def create_framelist_from_shot(db:dict, shot) -> list:
             'geometry': None if 'geometry' not in shot.keys() else shot['geometry'],
             'curves': None if 'curves' not in shot.keys() else shot['curves'],
         }
-        f['filepath'] = get_output_frame_filepaths(db, shot=shot, frame_no=f['ref']).copy()
+        f['filepath'] = get_output_frame_filepaths(db, shot=shot, frame_no=f['ref'])
         framelist.append(f)
 
     return framelist
 
 
 
-def patch_frames_for_combination(frames, db_combine, do_combine=False):
+def patch_frames_for_stitching(frames, db_combine, do_combine=False):
     # print_combine_database(db_combine, k_ep=layers['bgd']['shot']['k_ep'])
 
     if do_combine:

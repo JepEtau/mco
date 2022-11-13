@@ -126,7 +126,7 @@ class Model_framelist_common(object):
                     do_parse_geometry=False)
             if 'shots' not in db[k_ep_ref][k_ed_ref][k_part]['video'].keys():
                 # pprint(db[frame_k_ep][frame_k_ed][k_part])
-                print("error: shots for %s:%s:%s were not consolidated" % (k_ep_ref, k_ed_ref, k_part))
+                print("Error: shots for %s:%s:%s were not consolidated" % (k_ep_ref, k_ed_ref, k_part))
             # print("\tGet shot: %d in %s:%s:%s" % (frame_no, frame_k_ed, frame_k_ep, k_part))
 
             # Apply offset

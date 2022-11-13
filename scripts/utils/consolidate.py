@@ -50,7 +50,6 @@ def consolidate_shot(db, shot) -> None:
         'input': db['editions'][k_ed]['inputs'][k_ep],
         'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
     })
-    print("input: %s" % (shot['input']))
 
 
     if 'layer' not in shot.keys() or shot['layer'] == 'fgd':
@@ -421,18 +420,6 @@ def align_audio_video_durations(db, k_ep):
         'loop',
         last_shot['start'] + last_shot['count'] - 1,
         db_audio[k_part_g]['count'] - 1]
-    # db_video[k_part_g]['count'] = db_audio[k_part_g]['count']
-    print("align_audio_video_durations: g_asuivre from the g_asuivre structure")
-    pprint(last_shot)
-    print("->")
-    print('k_ep01:g_asuivre')
-    print(db['ep01']['common'].keys())
-    pprint(db['ep01']['common']['video']['g_asuivre'])
-    print("")
-    print("src")
-    pprint(db['ep12']['s']['g_asuivre'])
-    print()
-    # sys.exit()
 
 
     # g_reportage
@@ -451,6 +438,7 @@ def align_audio_video_durations(db, k_ep):
         # print("%s: remove %d frames" % (k_part_g, db_video[k_part_g]['count'] - db_audio[k_part_g]['count']))
         last_shot['count'] -= db_video[k_part_g]['count'] - db_audio[k_part_g]['count']
     db_video[k_part_g]['count'] = db_audio[k_part_g]['count']
+
 
     # precedemment+episode, asuivre, reportage
     #---------------------------------------------------------------------------
