@@ -1,23 +1,27 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import sys
 import os
 from pprint import pprint
-import sys
-
-from utils.common import FPS
-from utils.common import K_PARTS
-from utils.ffmpeg import get_duration
-from utils.ffmpeg import ffmpeg_execute_command
-from utils.get_framelist import get_framelist
-from utils.get_framelist import get_framelist_2
-from utils.path import create_folder_for_concatenation
-from utils.time_conversions import ms_to_frames
-from utils.time_conversions import current_datetime_str
-from utils.time_conversions import frame2sexagesimal
 
 from audio.utils import read_single_track_audio_file
-
+from utils.common import (
+    FPS,
+    K_PARTS,
+)
+from utils.ffmpeg import (
+    get_duration,
+    ffmpeg_execute_command,
+)
+from utils.get_framelist import (
+    get_framelist,
+    get_framelist_2,
+)
+from utils.path import create_folder_for_concatenation
+from utils.time_conversions import (
+    ms_to_frames,
+    current_datetime_str,
+    frame2sexagesimal,
+)
 
 
 
@@ -28,7 +32,7 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
                     'asuivre',
                     'g_reportage',
                     'g_fin']:
-        return _create_concatenation_file(db,
+        return create_concatenation_file_2(db,
                     k_ep=k_ep, k_part=k_part, shot=shot,
                     previous_concatenation_filepath=previous_concatenation_filepath)
 
@@ -43,7 +47,8 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
     create_folder_for_concatenation(db, k_ep)
     if len(images_filepath) >= 5 or previous_concatenation_filepath == '':
         k_ed = shot['k_ed']
-        concatenation_filepath = os.path.join(db[k_ep]['common']['path']['cache'],
+        concatenation_filepath = os.path.join(
+            db[k_ep]['target']['path']['cache'],
             "concatenation",
             "%s_%s__%s__%05d.txt" % (k_ep, k_part, k_ed, shot['start']))
         previous_concatenation_filepath = concatenation_filepath
@@ -65,7 +70,7 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
 
 
 
-def _create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_filepath=''):
+def create_concatenation_file_2(db, k_ep, k_part, shot, previous_concatenation_filepath=''):
     # print("%s._create_concatenation_file" % (__name__))
     # pprint(shot)
     # This function is used for the following parts:
@@ -85,14 +90,12 @@ def _create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fi
         k_ed = shot['k_ed']
         if k_part in ['g_debut', 'g_fin']:
             # Use the edition/episode defined as reference
-            k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
-            k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
             concatenation_filepath = os.path.join(
-                db[k_ep_or_g]['common']['path']['cache'],
+                db[k_ep_or_g]['target']['path']['cache'],
                 "concatenation",
                 "%s_video.txt" % (k_ep_or_g))
         else:
-            concatenation_filepath = os.path.join(db[k_ep_or_g]['common']['path']['cache'],
+            concatenation_filepath = os.path.join(db[k_ep_or_g]['target']['path']['cache'],
                 "concatenation", "%s_%s__%s__%05d.txt" % (k_ep, k_part, k_ed, 0))
         previous_concatenation_filepath = concatenation_filepath
         concatenation_file = open(concatenation_filepath, "w")
@@ -113,7 +116,7 @@ def _create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fi
 
 
 
-def create_concatenation_file_video(db, edition, k_ep, video_files:dict):
+def create_concatenation_file_video(db, k_ed, k_ep, video_files:dict):
     """ This function creates a concatenation file which lists
         all video files to merge:
         - precedemment
@@ -127,9 +130,9 @@ def create_concatenation_file_video(db, edition, k_ep, video_files:dict):
           Concatenation file path
     """
     create_folder_for_concatenation(db, k_ep)
-    concatenation_filepath = os.path.join(db[k_ep]['common']['path']['cache'],
+    concatenation_filepath = os.path.join(db[k_ep]['target']['path']['cache'],
         "concatenation",
-        "%s_%s.txt" % (k_ep, edition))
+        "%s_%s.txt" % (k_ep, k_ed))
     concatenation_file = open(concatenation_filepath, "w")
     for k in K_PARTS:
         for f in video_files[k]:
@@ -148,17 +151,17 @@ def create_concatenation_file_silence(db, k_ed, k_ep):
     for k_p in K_PARTS:
         files[k_p] = list()
         # print("%s:%s:%s" % (k_ed, k_ep, k_p))
-        if k_p not in db[k_ep]['common']['audio'].keys():
+        if k_p not in db[k_ep]['target']['audio'].keys():
             continue
 
-        if ('silence' in db[k_ep]['common']['audio'][k_p].keys()
-                and db[k_ep]['common']['audio'][k_p]['silence'] > 0):
+        if ('silence' in db[k_ep]['target']['audio'][k_p].keys()
+                and db[k_ep]['target']['audio'][k_p]['silence'] > 0):
 
             print("%s create silence after %s" % (current_datetime_str(), k_p))
 
             # Convert silence duration in nb of frames
-            # print(db[k_ep]['common']['audio'][k_p]['silence'])
-            silence_count = int(db[k_ep]['common']['audio'][k_p]['silence'] * FPS / 1000)
+            # print(db[k_ep]['target']['audio'][k_p]['silence'])
+            silence_count = int(db[k_ep]['target']['audio'][k_p]['silence'] * FPS / 1000)
             # print("silence = %d frames" % (silence_count))
 
             # Frame duration
@@ -168,7 +171,7 @@ def create_concatenation_file_silence(db, k_ed, k_ep):
 
             # Create the concatenation file for the silence
             create_folder_for_concatenation(db, k_ep)
-            concatenation_filepath = os.path.join(db[k_ep]['common']['path']['cache'],
+            concatenation_filepath = os.path.join(db[k_ep]['target']['path']['cache'],
                 "concatenation",
                 "%s_%s__%s__999_silence.txt" % (k_ep, k_p, k_ed))
             concatenation_file = open(concatenation_filepath, "w")
@@ -186,32 +189,32 @@ def create_concatenation_file_silence(db, k_ed, k_ep):
 
 
 
-def combine_images_into_video(db, k_part, files, force=False, simulation:bool=False):
-    shot_filepath = files.replace("concatenation", "video")
+def combine_images_into_video(db_settings, k_part, input_filename, force=False, simulation:bool=False):
+    shot_filepath = input_filename.replace("concatenation", "video")
     shot_filepath = shot_filepath.replace('.txt', '.mkv')
 
-    # print("%s.combine_images_into_video: %s: %s -> %s" % (__name__, k_part, files, shot_filepath))
+    # print("%s.combine_images_into_video: %s: %s -> %s" % (__name__, k_part, input_filename, shot_filepath))
 
     if not os.path.exists(shot_filepath) or force:
         print("%s concatenate images to %s" % (current_datetime_str(), shot_filepath))
 
         filter_complexStr = "[0]setsar=1[outv]"
-        command_ffmpeg = [db['common']['settings']['ffmpeg_exe']]
-        command_ffmpeg.extend(db['common']['settings']['verbose'].split(' '))
+        command_ffmpeg = [db_settings['ffmpeg_exe']]
+        command_ffmpeg.extend(db_settings['verbose'].split(' '))
 
         # rework this with settings from database
         command_ffmpeg.extend([
             "-r", str(FPS),
             "-f", "concat",
             "-safe", "0",
-            "-i", files,
+            "-i", input_filename,
             "-filter_complex", filter_complexStr, "-map", "[outv]",
-            "-pix_fmt", db['common']['settings']['video_pixel_format']])
-        command_ffmpeg.extend(db['common']['settings']['video_quality'].split(' '))
+            "-pix_fmt", db_settings['video_pixel_format']])
+        command_ffmpeg.extend(db_settings['video_quality'].split(' '))
         if 'reportage' in k_part:
-            command_ffmpeg.extend(db['common']['settings']['video_film_tune'].split(' '))
+            command_ffmpeg.extend(db_settings['video_film_tune'].split(' '))
         else:
-            command_ffmpeg.extend(db['common']['settings']['video_tune'].split(' '))
+            command_ffmpeg.extend(db_settings['video_tune'].split(' '))
         command_ffmpeg.extend(["-y", shot_filepath])
 
         if simulation:
@@ -226,7 +229,7 @@ def combine_images_into_video(db, k_part, files, force=False, simulation:bool=Fa
                 if os.path.exists(shot_filepath):
                     os.remove(shot_filepath)
                 sys.exit("error: cannot create %s" % (shot_filepath))
-
+    return None
 
 
 def merge_audio_and_video_tracks(db, k_ep, force=False):
@@ -234,17 +237,17 @@ def merge_audio_and_video_tracks(db, k_ep, force=False):
     # print("%s.merge_audio_and_video_tracks: %s" % (__name__, k_ep))
     suffix = "" if k_ep in ['g_debut', 'g_fin'] else "_audio_video"
     audio_video_filepath = os.path.join(
-        db[k_ep]['common']['path']['cache'],
+        db[k_ep]['target']['path']['cache'],
         "%s%s.mkv" % (k_ep, suffix))
     if os.path.exists(audio_video_filepath) and not force:
         return
 
     # Get nb of frames from video stream
-    video_filepath = os.path.join(db[k_ep]['common']['path']['cache'], "video", "%s_video.mkv" % (k_ep))
+    video_filepath = os.path.join(db[k_ep]['target']['path']['cache'], "video", "%s_video.mkv" % (k_ep))
     video_frames_count = int(get_duration(db, video_filepath, integrity=False) * FPS)
 
     # Get equivalent nb of frames from audio stream
-    audio_filepath = os.path.join(db[k_ep]['common']['path']['cache'], "audio", "%s_audio.%s" % (k_ep, db['common']['settings']['audio_format']))
+    audio_filepath = os.path.join(db[k_ep]['target']['path']['cache'], "audio", "%s_audio.%s" % (k_ep, db['common']['settings']['audio_format']))
     sample_rate, in_track, duration = read_single_track_audio_file(audio_filepath)
     audio_frames_count = int(duration*FPS)
 
@@ -273,7 +276,7 @@ def merge_audio_and_video_tracks(db, k_ep, force=False):
 
 
 def concatenate_shots(db, k_ed:str, k_ep:str, k_part:str, video_files:dict, force:bool=False):
-    cache_directory = db[k_ep]['common']['path']['cache']
+    cache_directory = db[k_ep]['target']['path']['cache']
 
     # Concatenation file
     create_folder_for_concatenation(db, k_ep)
@@ -315,7 +318,7 @@ def concatenate_shots(db, k_ed:str, k_ep:str, k_part:str, video_files:dict, forc
 
 def concatenate_all_clips(db, k_ep:str, force=False) -> None:
 
-    cache_directory = db[k_ep]['common']['path']['cache']
+    cache_directory = db[k_ep]['target']['path']['cache']
     output_filename = "%s_full.mkv" % (k_ep)
     output_filepath = os.path.join(cache_directory, output_filename)
 
@@ -328,13 +331,13 @@ def concatenate_all_clips(db, k_ep:str, force=False) -> None:
     concatenation_filepath = os.path.normpath(os.path.join(os.getcwd(), concatenation_filepath))
     concatenation_file = open(concatenation_filepath, "w")
 
-    p = os.path.join(db['g_debut']['common']['path']['cache'], "g_debut.mkv")
+    p = os.path.join(db['g_debut']['target']['path']['cache'], "g_debut.mkv")
     concatenation_file.write("file \'%s\' \n" % (p))
 
     p = os.path.join(cache_directory, "%s_audio_video.mkv" % (k_ep))
     concatenation_file.write("file \'%s\' \n" % (p))
 
-    p = os.path.join(db['g_fin']['common']['path']['cache'], "g_fin.mkv")
+    p = os.path.join(db['g_fin']['target']['path']['cache'], "g_fin.mkv")
     concatenation_file.write("file \'%s\' \n" % (p))
 
     concatenation_file.close()
@@ -355,7 +358,7 @@ def concatenate_all_clips(db, k_ep:str, force=False) -> None:
 
 
 def add_chapters(db, k_ep:str) -> str:
-    cache_directory = db[k_ep]['common']['path']['cache']
+    cache_directory = db[k_ep]['target']['path']['cache']
 
     # Create file for chapters
     chapters_filepath = os.path.join(cache_directory, "concatenation", "%s_chapters.txt" % (k_ep))
@@ -367,18 +370,18 @@ def add_chapters(db, k_ep:str) -> str:
 
     chapters_file.write("CHAPTER0%d=00:00:00.000\n" % (index))
     chapters_file.write("CHAPTER0%dNAME=Générique de début\n" % (index))
-    count += db['g_debut']['common']['audio']['count']
-    count += ms_to_frames(db['g_debut']['common']['audio']['silence'])
+    count += db['g_debut']['target']['audio']['count']
+    count += ms_to_frames(db['g_debut']['target']['audio']['silence'])
 
     k_part = 'precedemment'
-    if db[k_ep]['common']['audio'][k_part]['count'] > 0:
+    if db[k_ep]['target']['audio'][k_part]['count'] > 0:
         index += 1
         chapters_file.write("CHAPTER0%d=%s0\n" % (index, frame2sexagesimal(count)))
         chapters_file.write("CHAPTER0%dNAME=Précédemment\n" % (index))
 
-        video_count = db[k_ep]['common']['video'][k_part]['avsync']
-        video_count += db[k_ep]['common']['video'][k_part]['count']
-        # video_count += ms_to_frames(db['g_debut']['common']['audio'][k_part]['silence'])
+        video_count = db[k_ep]['target']['video'][k_part]['avsync']
+        video_count += db[k_ep]['target']['video'][k_part]['count']
+        # video_count += ms_to_frames(db['g_debut']['target']['audio'][k_part]['silence'])
         count += video_count
 
 
@@ -387,23 +390,23 @@ def add_chapters(db, k_ep:str) -> str:
     index += 1
     chapters_file.write("CHAPTER0%d=%s0\n" % (index, frame2sexagesimal(count)))
     chapters_file.write("CHAPTER0%dNAME=Episode\n" % (index))
-    video_count = db[k_ep]['common']['video'][k_part]['avsync']
-    video_count += db[k_ep]['common']['video'][k_part]['count']
-    video_count += ms_to_frames(db[k_ep]['common']['audio'][k_part]['silence'])
+    video_count = db[k_ep]['target']['video'][k_part]['avsync']
+    video_count += db[k_ep]['target']['video'][k_part]['count']
+    video_count += ms_to_frames(db[k_ep]['target']['audio'][k_part]['silence'])
     count += video_count
 
 
     k_part = 'asuivre'
     # print("%s: %d" % (k_part, count))
-    if db[k_ep]['common']['audio'][k_part]['count'] > 0:
+    if db[k_ep]['target']['audio'][k_part]['count'] > 0:
         index += 1
         chapters_file.write("CHAPTER0%d=%s0\n" % (index, frame2sexagesimal(count)))
         chapters_file.write("CHAPTER0%dNAME=A suivre\n" % (index))
 
-        audio_duration = db[k_ep]['common']['audio']['g_'+k_part]['avsync']
-        audio_duration += db[k_ep]['common']['audio']['g_'+k_part]['duration']
-        audio_duration += db[k_ep]['common']['audio'][k_part]['duration']
-        audio_duration += db[k_ep]['common']['audio'][k_part]['silence']
+        audio_duration = db[k_ep]['target']['audio']['g_'+k_part]['avsync']
+        audio_duration += db[k_ep]['target']['audio']['g_'+k_part]['duration']
+        audio_duration += db[k_ep]['target']['audio'][k_part]['duration']
+        audio_duration += db[k_ep]['target']['audio'][k_part]['silence']
         count += ms_to_frames(audio_duration)
 
     k_part = 'reportage'
@@ -412,10 +415,10 @@ def add_chapters(db, k_ep:str) -> str:
     chapters_file.write("CHAPTER0%d=%s0\n" % (index, frame2sexagesimal(count)))
     chapters_file.write("CHAPTER0%dNAME=Reportage\n" % (index))
 
-    audio_duration = db[k_ep]['common']['audio']['g_'+k_part]['avsync']
-    audio_duration += db[k_ep]['common']['audio']['g_'+k_part]['duration']
-    audio_duration += db[k_ep]['common']['audio'][k_part]['duration']
-    audio_duration += db[k_ep]['common']['audio'][k_part]['silence']
+    audio_duration = db[k_ep]['target']['audio']['g_'+k_part]['avsync']
+    audio_duration += db[k_ep]['target']['audio']['g_'+k_part]['duration']
+    audio_duration += db[k_ep]['target']['audio'][k_part]['duration']
+    audio_duration += db[k_ep]['target']['audio'][k_part]['silence']
     count += ms_to_frames(audio_duration)
 
     index += 1

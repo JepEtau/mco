@@ -1,23 +1,37 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import configparser
-from operator import itemgetter
 from copy import deepcopy
 import os
 import os.path
-from os import stat_result, system
-from pathlib import Path
-from pathlib import PosixPath
-from pprint import pprint
+from pathlib import (
+    Path,
+    PosixPath,
+)
 import re
-import sys
 
-from parsers.parser_filters import *
-from parsers.parser_av import *
-from parsers.parser_shots import *
-from parsers.parser_shots import consolidate_shots_after_parse
-from utils.common import K_ALL_PARTS, K_NON_GENERIQUE_PARTS
+from pprint import pprint
+
+from parsers.parser_av import (
+    parse_audio,
+    parse_video,
+)
+from parsers.parser_filters import (
+    parse_and_update_filters,
+    parse_filters_initialize,
+    parser_filters_consolidate,
+)
+from parsers.parser_shots import (
+    consolidate_shots_after_parse,
+    parse_shotlist,
+)
+from utils.common import (
+    K_ALL_PARTS,
+    K_PARTS,
+    nested_dict_set,
+    nested_dict_get,
+)
 
 
 
@@ -40,7 +54,8 @@ def db_init_episodes(database, k_ed, ep_min:int=1, ep_max:int=39):
             continue
 
         # Create structure for this episode/edition
-        if k_ep not in database.keys(): database[k_ep] = dict()
+        if k_ep not in database.keys():
+            database[k_ep] = dict()
         database[k_ep][k_ed] = {
             'filters': dict(),
         }
@@ -77,23 +92,24 @@ def db_init_episodes(database, k_ed, ep_min:int=1, ep_max:int=39):
             db_episode['path'][key] = d
 
 
-
 #===========================================================================
 #
 #   Parse the common episode file for all editions
 #
 #===========================================================================
-def parse_episodes_common(db, ep_min=1, ep_max:int=39):
-    # ep_maxCount is the maximum nb of episodes for debug purpose
+def parse_episodes_common(db, ep_min=1, ep_max:int=39, study_mode=False):
+    # ep_maxCount is the maximum nb of episodes: used for debug
 
     for i in range(ep_min, min(40, ep_max+1)):
         k_ep = 'ep%02d' % i
-        if k_ep not in db.keys(): db[k_ep] = dict()
-        if 'common' not in db[k_ep].keys(): db[k_ep]['common'] = dict()
+        nested_dict_set(db, dict(), k_ep, 'common')
         db_ep_common = db[k_ep]['common']
 
+        nested_dict_set(db, dict(), k_ep, 'target')
+        db_ep_target = db[k_ep]['target']
+
         # Cache
-        db_ep_common['path'] = {
+        db_ep_target['path'] = {
             'cache': os.path.join(db['common']['directories']['cache'], "%s" % (k_ep))
         }
 
@@ -119,58 +135,39 @@ def parse_episodes_common(db, ep_min=1, ep_max:int=39):
             # Audio
             #----------------------------------------------------
             if k_section == 'audio':
-                if 'audio' not in db_ep_common.keys():
-                    db_ep_common['audio'] = dict()
-                parse_audio(db_ep_common['audio'], config, verbose=False)
+                nested_dict_set(db_ep_target, dict(), 'audio')
+                parse_audio(db_ep_target['audio'], config, verbose=False)
 
             # Video
             #----------------------------------------------------
             elif k_section == 'video':
-                if 'video' not in db_ep_common.keys():
-                    db_ep_common['video'] = dict()
-                parse_video(db_ep_common['video'], config, verbose=False)
+                nested_dict_set(db_ep_target, dict(), 'video')
+                parse_video(db_ep_target['video'], config, verbose=False)
 
 
             # Frames (used for studies)
             #----------------------------------------------------
-            # if k_section == 'frames':
-            #     if 'frames' not in db_g_common.keys():
-            #         db_g_common['frames'] = list()
-            #     parse_framelist(db_ep_common['frames'], value_str)
-
-            elif k_section == 'frames':
+            elif k_section == 'frames' and study_mode:
+                # Parse this section only when in study mode (--frames)
                 for k_part in config.options(k_section):
                     value_str = config.get(k_section, k_part)
                     value_str = value_str.replace(' ','')
 
-                    # if k_part not in cfg_episode.keys():
-                    #     print("edition to use: %s" %(edition))
-                    #     print("%s not in cfg_episode" % (k_part))
-                    #     result = re.search("([a-z]+)_([a-z0-9]+)", k_part)
-                    #     if result is not None:
-                    #         print("found edition [%s]" % (result.group(2)))
-                    #         if result.group(2) != edition:
-                    #             print("info ignoring %s" % (k_part))
-                    #             continue
-                    #         else:
-                    #             print("using edition %s" % (result.group(2)))
-                    #             k_part = result.group(1)
-                    if k_part not in db_ep_common.keys(): db_ep_common[k_part] = {}
-                    db_ep_common[k_part]['frames'] = []
-                    for fno in value_str.split('\n'):
+                    nested_dict_set(db_ep_common, list(), 'frames', k_part)
+                    for frame_no in value_str.split('\n'):
                         match = None
-                        match = re.match(re.compile("^([0-9]{1,2}):\s*([0-9]+)$"), fno)
+                        match = re.match(re.compile("^([0-9]{1,2}):\s*([0-9]+)$"), frame_no)
                         if match is not None:
-                            db_ep_common[k_part]['frames'].append({
+                            db_ep_common['frames'][k_part].append({
                                 'k_ep': int(match.group(1)),
                                 'ref': int(match.group(2)),
                             })
                         else:
-                            match = re.match(re.compile("^([0-9]+)$"), fno)
+                            match = re.match(re.compile("^([0-9]+)$"), frame_no)
                             if match is not None:
-                                match = re.match(r"([0-9]+)", fno)
+                                match = re.match(r"([0-9]+)", frame_no)
                                 if match:
-                                    db_ep_common[k_part]['frames'].append({
+                                    db_ep_common['frames'][k_part].append({
                                         'k_ep': 0,
                                         'ref': int(match.group(1)),
                                     })
@@ -181,25 +178,12 @@ def parse_episodes_common(db, ep_min=1, ep_max:int=39):
                 parse_and_update_filters(db_ep_common, config, k_section, verbose=False)
 
 
-            # Layers
+            # Edition used for stitching
             #----------------------------------------------------
-            elif k_section == 'layers':
-                for k_part in config.options(k_section):
-                    if k_part not in K_NON_GENERIQUE_PARTS:
-                        continue
-                    value_str = config.get(k_section, k_part)
-                    value_str = value_str.replace(' ','')
-                    layers = value_str.split(',')
-
-                    db_ep_common['video'][k_part]['layers'] = dict()
-                    for layer in layers:
-                        layer_edition = layer.split('=')
-                        if layer_edition[0] not in ['bgd', 'fgd']:
-                            continue
-                        db_ep_common['video'][k_part]['layers'].update({
-                            layer_edition[0]: layer_edition[1],
-                            layer_edition[1]: layer_edition[0]
-                        })
+            elif k_section == 'stitching':
+                value_str = config.get(k_section, 'bgd')
+                value_str = value_str.replace(' ','')
+                nested_dict_set(db_ep_common, value_str, 'video', 'stitching', 'bgd')
 
 
 #===========================================================================
@@ -270,14 +254,14 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
                                     'g_reportage']:
                         # if 'shots' not in db_episode[k_part]['video'].keys():
                         db_episode[k_part]['video']['shots'] = list()
-                        parse_shotlist(db_episode[k_part]['video']['shots'], value_str)
+                        parse_shotlist(db_episode[k_part]['video']['shots'], k_ep, k_part, value_str)
 
                     elif k_section in ['precedemment', 'asuivre']:
                         # Precedemment and asuivre are different as some shots
                         # may be replaced
                         # if 'shots' not in db_episode[k_part]['video'].keys():
                         db_episode[k_part]['video']['shots'] = list()
-                        parse_shotlist(db_episode[k_part]['video']['shots'], value_str)
+                        parse_shotlist(db_episode[k_part]['video']['shots'], k_ep, k_part, value_str)
                         # if k_ep == 'ep01' and k_part == 'asuivre':
                         #     pprint(db_episode[k_part]['video']['shots'])
                         #     sys.exit()
@@ -347,6 +331,15 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
                         frame['no'] = frame['ref']
 
 
+    # Set the default source edition if not defined in the config file
+    k_ed_src = nested_dict_get(database, k_ep, 'target', 'video', 'src', 'k_ed')
+    if k_ed_src is None:
+        k_ed_src = database['editions']['fgd']
+        nested_dict_set(database, k_ed_src, k_ep, 'target', 'video', 'src', 'k_ed')
+        # sys.exit("Warning: use the edition used as the source not defined for %s, use the fgd edition: %s" % (k_ep, k_ed_src))
+
+
+
     # Set dimensions:
     db_episode['dimensions'] = database['editions'][k_ed]['dimensions']
 
@@ -400,16 +393,15 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
     """
     dependencies = dict()
 
-    k_ed_ref = db[k_ep]['common']['video']['reference']['k_ed']
-    k_ed = k_ed_ref
-    # print("use k_ed_ref=%s" % (k_ed_ref))
+    # Edition used as the default one
+    k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
 
     # Common part
-    for k_p in K_PARTS:
-        if k_p not in db[k_ep]['common']['video'].keys():
+    for k_part in K_PARTS:
+        if k_part not in db[k_ep]['common']['video'].keys():
             continue
 
-        db_video = db[k_ep]['common']['video'][k_p]
+        db_video = db[k_ep]['common']['video'][k_part]
         if 'shots' in db_video.keys():
             shots = db_video['shots']
             for shot in shots:
@@ -418,18 +410,18 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
                     if 'k_ed' in shot['src']:
                         k_ed_dep = shot['src']['k_ed']
                     else:
-                        k_ed_dep = k_ed_ref
+                        k_ed_dep = k_ed_src
 
                     if k_ed_dep not in dependencies.keys():
                         dependencies[k_ed_dep] = list()
                     dependencies[k_ed_dep].append(shot['src']['k_ep'])
 
-    # Edition used as the reference
-    for k_p in K_PARTS:
-        if k_p not in db[k_ep][k_ed].keys():
+    # Edition used as the default source
+    for k_part in K_PARTS:
+        if k_part not in db[k_ep][k_ed_src].keys():
             continue
 
-        db_video = db[k_ep][k_ed][k_p]['video']
+        db_video = db[k_ep][k_ed_src][k_part]['video']
         if 'shots' in db_video.keys():
             shots = db_video['shots']
             for shot in shots:
@@ -438,7 +430,7 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
                     if 'k_ed' in shot['src']:
                         k_ed_dep = shot['src']['k_ed']
                     else:
-                        k_ed_dep = k_ed_ref
+                        k_ed_dep = k_ed_src
 
                     if k_ed_dep not in dependencies.keys():
                         dependencies[k_ed_dep] = list()

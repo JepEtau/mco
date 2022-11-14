@@ -1,15 +1,9 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
-import os.path
-from pprint import pprint
-import gc
-import re
-import sys
 from copy import deepcopy
+from pprint import pprint
 
-from models.model_framelist_common import *
+from models.model_framelist_common import Model_framelist_common
 from models.model_database import Model_database
 
 class Model_framelist(Model_framelist_common):

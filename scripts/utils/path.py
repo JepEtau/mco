@@ -1,18 +1,20 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import os
 from pprint import pprint
 
-from utils.get_filters import FILTER_BASE_NO
-from utils.get_filters import get_filter_id
-from utils.get_filters import get_filter_id_generique
-from utils.common import K_GENERIQUES, get_k_part_from_frame_no
+from utils.common import (
+    K_GENERIQUES,
+    get_k_part_from_frame_no,
+)
+from utils.get_filters import (
+    FILTER_BASE_NO,
+    FILTER_BASE_NO_DEBUG,
+    get_filter_id,
+    get_filter_id_generique,
+)
 
-import os
 
 PATH_DATABASE = "../database"
-PATH_DATABASE_COMBINE = "../db"
-PATH_CURVES = "../curves"
 
 
 def create_video_directory(db, k_ep):
@@ -25,7 +27,7 @@ def create_video_directory(db, k_ep):
     if k_ep in ['ep00', 'ep40']:
         return
 
-    video_directory = os.path.join(db[k_ep]['common']['path']['cache'], "video")
+    video_directory = os.path.join(db[k_ep]['target']['path']['cache'], "video")
     if not os.path.exists(video_directory):
         os.makedirs(video_directory)
     return video_directory
@@ -41,7 +43,7 @@ def create_audio_directory(db, k_ep):
     if k_ep in ['ep00', 'ep40']:
         return
 
-    audio_directory = os.path.join(db[k_ep]['common']['path']['cache'], "audio")
+    audio_directory = os.path.join(db[k_ep]['target']['path']['cache'], "audio")
     if not os.path.exists(audio_directory):
         os.makedirs(audio_directory)
     return audio_directory
@@ -55,24 +57,33 @@ def create_folder_for_concatenation(db, k_ep):
         Returns
             Path of the created folder
     """
-    concatenation_directory = os.path.join(db[k_ep]['common']['path']['cache'], "concatenation")
+    concatenation_directory = os.path.join(db[k_ep]['target']['path']['cache'], "concatenation")
     if not os.path.exists(concatenation_directory):
         os.makedirs(concatenation_directory)
 
 
 
-def get_output_folder_from_shot(db, shot):
+def get_output_path_from_shot(db, shot, task):
     if shot['k_part'] in ['g_debut', 'g_fin']:
         # Put all images in a single folder for 'génériques'
         return os.path.join(db['common']['directories']['cache'],
                 shot['k_part'],
                 '%05d' % (shot['start']))
 
-    return os.path.join(db['common']['directories']['cache'],
-                shot['k_ep'],
-                shot['k_part'],
-                '%05d' % (shot['start']))
-
+    if task in ['geometry', 'deinterlace_rgb', 'upscale_rgb_geometry']:
+        # If last task is geometry, use the dst structure
+        output_path = os.path.join(db['common']['directories']['cache'],
+            shot['dst']['k_ep'],
+            shot['dst']['k_part'],
+            '%05d' % (shot['start']))
+    else:
+        # Otherwise, use the src directory as these images are shared by
+        # multiple episode
+        output_path = os.path.join(db['common']['directories']['cache'],
+            shot['k_ep'],
+            shot['k_part'],
+            '%05d' % (shot['start']))
+    return output_path
 
 
 def get_input_filepath(database, frame):
@@ -125,27 +136,32 @@ def get_output_frame_filepaths_for_study(database, frame:dict, k_part=''):
 
 
 
-def get_output_filepath_list(db, shot:dict, k_step):
-    # Returns a list of filepaths for the filter specified by 'k_step'
+def get_deinterlaced_filepath_list(db, shot:dict, task):
+    # Returns a list of filepath for the specified task
 
-    # print("%s.get_output_filepath_list: k_step=%s, shot=" % (__name__, k_step))
+    if task not in ['deinterlace', 'pre_upscale', 'upscale']:
+        # reworked, thius, this function can be used only for deinterlace task
+        raise Exception("get_deinterlaced_filepath_list: this function cannot be used for task [%s]" % (task))
+
+    # print("%s.task: k_step=%s, shot=" % (__name__, k_step))
     # pprint(shot)
-    filepaths = list()
+    filepath_list = list()
     extension = db['common']['settings']['frame_format']
     prefix = "%s_" % (shot['k_ep'])
 
     if shot['k_part'] in K_GENERIQUES:
-        filter_id = get_filter_id_generique(db, shot, k_step)
+        filter_id = get_filter_id_generique(db, shot, task)
     else:
-        filter_id = get_filter_id(db, shot, k_step)
+        filter_id = get_filter_id(db, shot, task)
 
     suffix = "__%s__%03d" % (shot['k_ed'], filter_id)
 
+    deinterlace_output_path = get_output_path_from_shot(db=db, shot=shot, task=task)
     for no in range(shot['ref'], shot['ref'] + shot['count']):
         filename = "%s%05d%s.%s" % (prefix, no, suffix, extension)
-        filepaths.append(os.path.join(shot['output_path'], filename))
+        filepath_list.append(os.path.join(deinterlace_output_path, filename))
 
-    return filepaths
+    return filepath_list
 
 
 
@@ -153,28 +169,35 @@ def get_output_frame_filepaths(db, shot:dict, frame_no:int):
     k_ep = shot['k_ep']
     k_ed = shot['k_ed']
 
-    output_directory = shot['output_path']
     extension = db['common']['settings']['frame_format']
 
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
-
     filepaths = dict()
-    for k_step in FILTER_BASE_NO.keys():
-        if k_step == 'stitching':
+    for task in FILTER_BASE_NO:
+        if task == 'stitching':
             suffix = "__%s__%03d" % (k_ed, get_filter_id(db, shot, 'sharpen'))
+        elif task == 'upscale_rgb_geometry':
+            suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO_DEBUG['upscale_rgb_geometry'])
         else:
-            suffix = "__%s__%03d" % (k_ed, get_filter_id(db, shot, k_step))
+            suffix = "__%s__%03d" % (k_ed, get_filter_id(db, shot, task))
 
         outputFilename = "%s_%05d%s.%s" % (k_ep, frame_no, suffix, extension)
-        filepaths[k_step] = os.path.join(output_directory, outputFilename).strip('\n')
+        output_directory = get_output_path_from_shot(db=db, shot=shot, task=task)
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+
+        filepaths[task] = os.path.join(output_directory, outputFilename).strip('\n')
+
+    # For debug and verification of video edition
+    for task in FILTER_BASE_NO_DEBUG:
+        if task in shot['tasks']:
+            suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO_DEBUG[task])
+            outputFilename = "%s_%05d%s.%s" % (k_ep, frame_no, suffix, extension)
+            output_directory = get_output_path_from_shot(db=db, shot=shot, task=task)
+            if not os.path.exists(output_directory):
+                os.makedirs(output_directory)
+            filepaths[task] = os.path.join(output_directory, outputFilename).strip('\n')
+            break
 
     return filepaths
 
 
-
-def create_output_folder_for_shot(layers):
-    for layer in layers.keys():
-        output_path = os.path.normpath(layers[layer]['shot']['output_path'])
-        if not os.path.exists(output_path):
-            os.makedirs(output_path)

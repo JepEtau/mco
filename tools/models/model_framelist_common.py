@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
 sys.path.append('../scripts')
@@ -10,12 +9,11 @@ import gc
 import re
 from copy import deepcopy
 
-from utils.get_filters import FILTER_BASE_NO
 from utils.get_filters import filter_id_to_step
-from utils.common import K_ALL_PARTS
-from utils.common import K_GENERIQUES
-from utils.common import get_shot_from_frame_no
-from utils.common import get_shot_from_frame_no_new
+from utils.common import (
+    K_GENERIQUES,
+    get_shot_from_frame_no_new,
+)
 
 
 class Model_framelist_common(object):
@@ -114,8 +112,8 @@ class Model_framelist_common(object):
         if db is not None:
             if k_part in K_GENERIQUES:
                 # Use the ed:ep defined as reference
-                k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
-                k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
+                k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
+                k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
             else:
                 k_ed_ref = frame_k_ed
                 k_ep_ref = frame_k_ep
@@ -128,7 +126,7 @@ class Model_framelist_common(object):
                     do_parse_geometry=False)
             if 'shots' not in db[k_ep_ref][k_ed_ref][k_part]['video'].keys():
                 # pprint(db[frame_k_ep][frame_k_ed][k_part])
-                print("error: shots for %s:%s:%s were not consolidated" % (k_ep_ref, k_ed_ref, k_part))
+                print("Error: shots for %s:%s:%s were not consolidated" % (k_ep_ref, k_ed_ref, k_part))
             # print("\tGet shot: %d in %s:%s:%s" % (frame_no, frame_k_ed, frame_k_ep, k_part))
 
             # Apply offset

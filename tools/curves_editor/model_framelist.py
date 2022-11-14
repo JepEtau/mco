@@ -1,6 +1,4 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
 import sys
 sys.path.append('../scripts')
 
@@ -11,13 +9,13 @@ import gc
 import re
 from copy import deepcopy
 
-from models.model_framelist_common import *
+from models.model_framelist_common import Model_framelist_common
 from models.model_database import Model_database
-
-
-
-from utils.common import get_shot_no_from_frame_no
-from utils.common import get_shot_from_frame_no
+from utils.common import (
+    get_shot_from_frame_no_new,
+    get_shot_no_from_frame_no,
+    get_shot_from_frame_no,
+)
 
 
 class Model_framelist(Model_framelist_common):
@@ -53,21 +51,6 @@ class Model_framelist(Model_framelist_common):
                 frame_no = frame['no']
 
                 shot = get_shot_from_frame_no_new(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
-                if False:
-                    # Get shot from frame_no.
-                    if k_part in K_GENERIQUES:
-                        # print("%s.shot_list: k_ed=%s, k_ep=%s, k_part=%s" % (__name__, k_ed, k_ep, k_part))
-                        # print(self.database[k_part].keys())
-                        k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
-                        shot = get_shot_from_frame_no(db[k_part][k_ed_ref], frame_no, k_part)
-                    else:
-                        shot = get_shot_from_frame_no(db[k_ep][k_ed], frame_no, k_part)
-
-                    if shot is None:
-                        print("%s.shot_list: k_ed=%s, k_ep=%s, k_part=%s" % (__name__, k_ed, k_ep, k_part))
-                        pprint(shot)
-                        sys.exit()
-                        break
 
                 # Add shot and associated curves to this structure
                 if k_ed not in shots.keys():

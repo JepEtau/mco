@@ -1,91 +1,79 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import numpy as np
 import os
-import sys
 from pprint import pprint
 
-from utils.common import K_AUDIO_PARTS
-from utils.common import pprint_audio
-from utils.path import create_audio_directory
-from utils.time_conversions import current_datetime_str
-from utils.time_conversions import ms_to_frames
-from utils.time_conversions import frames_to_ms
+from utils.common import (
+    K_AUDIO_PARTS,
+    pprint_audio,
+)
 from utils.ffmpeg import ffmpeg_execute_command
-
-from audio.utils import read_single_track_audio_file
-from audio.utils import write_single_track_audio_file
-
-
-def extract_audio(db, k_ep:str, editions, force=False, verbose=False) -> None:
-    if k_ep in ['g_debut', 'g_fin']:
-        _extract_audio_generique(db, k_part_g=k_ep, editions=editions, force=force, verbose=verbose)
-        return
-
-    # print("%s.extract_audio: k_ep=%s" % (__name__, k_ep), editions)
-    if type(editions) is not list:
-        editions = [editions]
-
-    for edition in editions:
-        if verbose:
-            print("%s extract audio stream: %s:%s" % (current_datetime_str(), edition, k_ep))
-
-        # Input audio file
-        if edition not in db[k_ep].keys():
-            sys.exit("Erreur: le fichier d'entrée est manquant pour l'édition %s" % (edition))
-        input_filepath = db[k_ep][edition]['path']['input_audio']
-        if not os.path.exists(input_filepath):
-            sys.exit("Erreur: le fichier d'entrée est manquant")
-
-        # Output audio file
-        if 'cache' in db[k_ep][edition]['path'].keys():
-            output_directory = os.path.join(db[k_ep][edition]['path']['cache'], "audio")
-        else:
-            output_directory = os.path.join(db[k_ep]['common']['path']['cache'], "audio")
-        if not os.path.exists(output_directory):
-            os.makedirs(output_directory)
-
-        if len(editions) == 1 and edition == db['editions']['default']:
-            output_filename = "%s_audio_extract.%s" % (k_ep, db['common']['settings']['audio_format'])
-        else:
-            output_filename = "%s_%s_audio_extract.%s" % (k_ep, edition, db['common']['settings']['audio_format'])
-        output_filepath = os.path.join(output_directory, output_filename)
-
-        # Create complex filter
-        filter_complex_str = ""
-        filter_complex_str = filter_complex_str + "[outa]"
-        # print("filter_complex_str = %s" % (filter_complex_str))
-
-        # FFmpeg command
-        command_ffmpeg = [db['common']['settings']['ffmpeg_exe']]
-        command_ffmpeg.extend(db['common']['settings']['verbose'].split(' '))
-        command_ffmpeg.extend(["-i", input_filepath,
-                        # "-filter_complex", filter_complex_str,
-                        # "-map", "[outa]",
-                        "-sn", "-vn",
-                        "-y", output_filepath
-        ])
-        std = ffmpeg_execute_command(command_ffmpeg, output_filepath, mode='', print_msg=False)
+from utils.path import create_audio_directory
+from utils.time_conversions import (
+    current_datetime_str,
+    ms_to_frames,
+    frames_to_ms,
+)
+from audio.utils import (
+    read_single_track_audio_file,
+    write_single_track_audio_file,
+)
 
 
-def _extract_audio_generique(db, k_part_g, editions, force=False, verbose=False) -> None:
-    """Extract the audio track for generique
+def extract_audio(db, k_ep_or_g:str, k_ed='', force=False, verbose=False) -> None:
+    print("%s.extract_audio: %s:%s" % (__name__, k_ed, k_ep_or_g))
+    if k_ep_or_g in ['g_debut', 'g_fin']:
+        k_ep = db[k_ep_or_g]['target']['audio']['src']['k_ep']
+    else:
+        k_ep = k_ep_or_g
 
-    Args:
-        db: the global database
-        k_part_g: keyword for 'generique'
+    if k_ed == '':
+        use_default = True
+        k_ed = db[k_ep_or_g]['target']['audio']['src']['k_ed']
+    else:
+        use_default = True
 
-    Returns:
-        None
 
-    """
-    if k_part_g not in ['g_debut', 'g_fin']:
-        sys.exit("Error: %s.extract_audio_generique: do not use this function for part %s" % (__name__,  k_part_g))
+    if verbose:
+        print("%s extract audio stream: %s:%s" % (current_datetime_str(), k_ed, k_ep))
 
-    edition = db[k_part_g]['common']['audio']['reference']['k_ed']
-    k_ep = db[k_part_g]['common']['audio']['reference']['k_ep']
-    extract_audio(db, k_ep=k_ep, editions=edition, force=force, verbose=verbose)
+    # Input audio file
+    input_filepath = db[k_ep][k_ed]['path']['input_audio']
+    if not os.path.exists(input_filepath):
+        sys.exit("Erreur: le fichier d'entrée est manquant pour l'édition %s" % (k_ed))
+
+    # Output audio file
+    output_directory = os.path.join(db[k_ep]['target']['path']['cache'], "audio")
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+
+    if use_default:
+        output_filename = "%s_audio_extract.%s" % (k_ep, db['common']['settings']['audio_format'])
+    else:
+        output_filename = "%s_%s_audio_extract.%s" % (k_ep, k_ed, db['common']['settings']['audio_format'])
+    output_filepath = os.path.join(output_directory, output_filename)
+
+    # Create complex filter
+    filter_complex_str = ""
+    filter_complex_str = filter_complex_str + "[outa]"
+    # print("filter_complex_str = %s" % (filter_complex_str))
+
+    print(input_filepath)
+
+    # FFmpeg command
+    command_ffmpeg = [db['common']['settings']['ffmpeg_exe']]
+    command_ffmpeg.extend(db['common']['settings']['verbose'].split(' '))
+    command_ffmpeg.extend(["-i", input_filepath,
+                    # "-filter_complex", filter_complex_str,
+                    # "-map", "[outa]",
+                    "-sn", "-vn",
+                    "-y", output_filepath
+    ])
+    std = ffmpeg_execute_command(command_ffmpeg, output_filepath, mode='', print_msg=False)
+
+
 
 
 def generate_audio(db, k_ep:str, force=False, verbose=False):
@@ -108,15 +96,15 @@ def generate_audio(db, k_ep:str, force=False, verbose=False):
     if verbose:
         print("%s.generate_audio: %s" % (__name__, k_ep))
 
-    db_audio = db[k_ep]['common']['audio']
+    db_audio = db[k_ep]['target']['audio']
     # extract audio from edition
-    edition = db_audio['k_ed']
+    k_ed = db_audio['src']['k_ed']
 
     # Create the audio directory
     create_audio_directory(db, k_ep)
 
     # Output audio file
-    output_directory = os.path.join(db[k_ep]['common']['path']['cache'], "audio")
+    output_directory = os.path.join(db[k_ep]['target']['path']['cache'], "audio")
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     output_filename = "%s_audio.%s" % (k_ep, db['common']['settings']['audio_format'])
@@ -127,20 +115,11 @@ def generate_audio(db, k_ep:str, force=False, verbose=False):
 
     print("%s generate audio: %s" % (current_datetime_str(), k_ep))
 
-    # print("%s.generate_audio:>>> db_audio: %s" %(__name__, k_ep))
-    # pprint_audio(db_audio)
-    # print("-------------------")
-
-    # Extract audio file if needed
-    input_directory = os.path.join(db[k_ep]['common']['path']['cache'], "audio")
-
-    if edition == db['editions']['default']:
-        tmp_filename = "%s_audio_extract.%s" % (k_ep, db['common']['settings']['audio_format'])
-    else:
-        tmp_filename = "%s_%s_audio_extract.%s" % (k_ep, edition, db['common']['settings']['audio_format'])
+    input_directory = os.path.join(db[k_ep]['target']['path']['cache'], "audio")
+    tmp_filename = "%s_audio_extract.%s" % (k_ep, db['common']['settings']['audio_format'])
     tmp_filepath = os.path.join(input_directory, tmp_filename)
     if not os.path.exists(tmp_filepath):
-        extract_audio(db, k_ep, edition, force=force, verbose=verbose)
+        extract_audio(db, k_ep, k_ed, force=force, verbose=verbose)
     sample_rate, in_track, duration = read_single_track_audio_file(tmp_filepath)
     in_track_dtype = in_track.dtype
     sample_rate = int(sample_rate / 1000)
@@ -219,6 +198,7 @@ def generate_audio(db, k_ep:str, force=False, verbose=False):
     write_single_track_audio_file(output_filepath, out_track, sample_rate=sample_rate*1000)
 
 
+
 def _generate_audio_generique(db, k_part_g, force=False, verbose=False):
     """Create the audio file for the 'generique'
 
@@ -233,11 +213,11 @@ def _generate_audio_generique(db, k_part_g, force=False, verbose=False):
     if k_part_g not in ['g_debut', 'g_fin']:
         sys.exit("Error: %s.generate_audio_generique: do not use this function for part %s" % (__name__,  k_part_g))
 
-    edition = db[k_part_g]['common']['audio']['reference']['k_ed']
-    k_ep = db[k_part_g]['common']['audio']['reference']['k_ep']
+    k_ed = db[k_part_g]['target']['audio']['src']['k_ed']
+    k_ep = db[k_part_g]['target']['audio']['src']['k_ep']
 
     # Output audio file
-    output_directory = os.path.join(db[k_part_g]['common']['path']['cache'], "audio")
+    output_directory = os.path.join(db[k_part_g]['target']['path']['cache'], "audio")
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     output_filename = "%s_audio.%s" % (k_part_g, db['common']['settings']['audio_format'])
@@ -249,27 +229,22 @@ def _generate_audio_generique(db, k_part_g, force=False, verbose=False):
     print("%s generate audio: %s from %s" % (current_datetime_str(), k_part_g, k_ep))
 
     # Extract audio file if needed
-    if edition == db['editions']['default']:
-        tmp_filename = "%s_audio_extract.%s" % (k_ep, db['common']['settings']['audio_format'])
-    else:
-        tmp_filename = "%s_%s_audio_extract.%s" % (k_ep, edition, db['common']['settings']['audio_format'])
-    tmp_filepath = os.path.join(db[k_ep]['common']['path']['cache'], "audio", tmp_filename)
+    tmp_filename = "%s_audio_extract.%s" % (k_ep, db['common']['settings']['audio_format'])
+    tmp_filepath = os.path.join(db[k_ep]['target']['path']['cache'], "audio", tmp_filename)
     if not os.path.exists(tmp_filepath):
-        extract_audio(db, k_ep, edition, force=force, verbose=verbose)
+        extract_audio(db, k_ep, k_ed, force=force, verbose=verbose)
     sample_rate, in_track, duration = read_single_track_audio_file(tmp_filepath)
     sample_rate = int(sample_rate / 1000)
     in_track_dtype = in_track.dtype
 
-    db_audio = db[k_part_g]['common']['audio']
-    # print(">>> %s.generate_audio_generique: db_audio" % (__name__))
-    # pprint(db_audio)
+    db_audio = db[k_part_g]['target']['audio']
 
     # Generate an output file
     out_track = np.empty((0,0), dtype=in_track_dtype)
 
 
     # Add the audio for this part
-    if 'start' in db[k_part_g]['common']['audio'].keys():
+    if 'start' in db[k_part_g]['target']['audio'].keys():
         # Use the 'start' and 'end' properties from the common section
         # print("Use the common timestamps")
         start = int(db_audio['start'] * sample_rate)
@@ -278,9 +253,8 @@ def _generate_audio_generique(db, k_part_g, force=False, verbose=False):
         # Use the 'start' and 'end' properties from the edition section
         # because no changes are defined in common section
         # print("Use the src timestamps")
-        start = int(db[k_part_g][edition]['audio']['start'] * sample_rate)
-        end = int(db[k_part_g][edition]['audio']['end'] * sample_rate)
-
+        start = int(db[k_part_g][k_ed]['audio']['start'] * sample_rate)
+        end = int(db[k_part_g][k_ed]['audio']['end'] * sample_rate)
 
     # Add silence for A/V sync
     if db_audio['avsync'] > 0:

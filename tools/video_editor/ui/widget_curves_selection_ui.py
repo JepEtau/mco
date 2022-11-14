@@ -144,7 +144,7 @@ class Ui_widget_curves_selection(object):
         sizePolicy1.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
         self.pushButton_save.setSizePolicy(sizePolicy1)
         icon2 = QIcon()
-        icon2.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u"icons/grey/save.svg", QSize(), QIcon.Normal, QIcon.Off)
         icon2.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_save.setIcon(icon2)
         self.pushButton_save.setFlat(True)

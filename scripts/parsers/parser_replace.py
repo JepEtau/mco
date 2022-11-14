@@ -1,17 +1,19 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-import configparser
-from copy import deepcopy
-import os
-import os.path
-from pathlib import Path
-from pathlib import PosixPath
-from pprint import pprint
 import sys
 
-from utils.common import get_k_part_from_frame_no
-from utils.common import get_shot_from_frame_no_new
+import configparser
+import os
+import os.path
+from pathlib import (
+    Path,
+    PosixPath,
+)
+from pprint import pprint
+
+from utils.common import (
+    get_k_part_from_frame_no,
+    get_shot_from_frame_no_new,
+)
 
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages
@@ -61,16 +63,16 @@ def parse_replace_configurations(db, k_ep_or_g:str):
 
 
 def get_replaced_frames(db, k_ep, k_part) -> dict:
-    """ Returns a list of crops per shot for each edition
+    """ Returns a dict of frames to replace
     """
     replace = dict()
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in ['g_debut', 'g_fin']:
-        db_video = db[k_part]['common']['video']
+        db_video = db[k_part]['target']['video']
     else:
         print("%s.get_replaced_frames: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
+        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
         print("%s.get_replaced_frames: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))

@@ -46,7 +46,7 @@ from utils.common import K_NON_GENERIQUE_PARTS, get_database_size, get_frame_no_
 from utils.common import K_GENERIQUES
 from utils.get_filters import FILTER_BASE_NO
 from utils.get_framelist import get_framelist, get_framelist_2
-from utils.consolidate import consolidate_shot
+from utils.consolidate_av import consolidate_shot
 from utils.get_filters import get_filter_id
 
 
@@ -134,10 +134,8 @@ class Model_merge_stabilize(Model_common):
         self.view.widget_stabilize.signal_enabled_modified[bool].connect(self.event_stabilize_set_enabled)
         self.view.widget_stabilize.signal_save.connect(partial(self.event_save_modifications, 'stabilize'))
 
-        # self.view.widget_stitching.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
-        # self.view.widget_stabilize.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
-        # self.view.widget_stitching_curves.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
+        self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
 
         # Force refresh of previe options
         self.view.event_preview_options_changed()
@@ -151,13 +149,6 @@ class Model_merge_stabilize(Model_common):
             'shot_min': 0,
             'shot_max': 999999,
         })
-
-        # self.view.widget_merge_stabilize.signal_set_shot_curves[dict].connect(self.event_select_curves)
-        # self.view.widget_merge_stabilize.signal_reset_shot_curves[str].connect(self.event_reset_curves)
-        # self.view.widget_merge_stabilize.signal_save_curves[dict].connect(self.event_save_curves_as)
-        # self.view.widget_merge_stabilize.signal_mark_shot_as_modified[str].connect(self.event_mark_shot_as_modified)
-        # self.view.widget_merge_stabilize.signal_save_database[dict].connect(self.event_save_database)
-
 
 
 
@@ -183,15 +174,15 @@ class Model_merge_stabilize(Model_common):
         self.model_database.consolidate_database(
             k_ep=k_ep,
             k_part=k_part,
-            do_parse_curves=False,
-            do_parse_replace=False,
+            do_parse_curves=True,
+            do_parse_replace=True,
             do_parse_geometry=True,
             do_parse_stitching=True)
 
         # self.shots is a pointer to the shots for this episode/part
         db = self.model_database.database()
 
-        p_missing_frame = os.path.join('img', 'missing.png')
+        p_missing_frame = os.path.join('icons', 'missing.png')
 
         # Remove all frames
         self.frames.clear()
@@ -312,7 +303,7 @@ class Model_merge_stabilize(Model_common):
                     # create a list of frames for this shot
                     current_shot.update({
                         'is_valid': True,
-                        'frames_no': list()
+                        'frame_nos': list()
                     })
                     self.frames[shot_no] = list()
 
@@ -340,6 +331,7 @@ class Model_merge_stabilize(Model_common):
             stitching_fgd_crop = self.model_database.get_shot_stitching_fgd_crop(shot_no)
             st_geometry = self.model_database.get_shot_st_geometry(shot_no)
             part_geometry = self.model_database.get_part_geometry(k_ed_src, k_part)
+            stitching_curves = self.model_database.get_shot_stitching_curves(shot_no)
 
             for p_fgd, p_bgd in zip(self.filepath_fgd, self.filepath_bgd):
                 frame_no = get_frame_no_from_filepath(p_fgd)
@@ -367,7 +359,7 @@ class Model_merge_stabilize(Model_common):
 
 
                 # pprint(current_shot)
-                current_shot['frames_no'].append(frame_no)
+                current_shot['frame_nos'].append(frame_no)
 
                 # Creat a frame dict which contains all data
                 # to edit effects and to display it
@@ -387,7 +379,7 @@ class Model_merge_stabilize(Model_common):
                         'parameters': self.model_database.get_frame_stitching_parameters(shot_no, frame_no),
                         'm': self.model_database.get_frame_stitching_transformation(shot_no, frame_no),
                         'fgd_crop': stitching_fgd_crop,
-                        # 'curve_luts': shot_stitching_curves,
+                        'curves': stitching_curves,
                     },
                     'stabilize': {
                         'delta_interval': self.model_database.get_shot_stabilize_parameters(shot_no, frame_no)['delta_interval'],
@@ -405,14 +397,18 @@ class Model_merge_stabilize(Model_common):
             k_ed = db[k_part]['common']['video']['reference']['k_ed']
         else:
             k_ed = db[k_ep]['common']['video']['reference']['k_ed']
+        if k_part in K_GENERIQUES:
+            k_ed = db[k_part]['common']['video']['reference']['k_ed']
+        else:
+            k_ed = db[k_ep]['common']['video']['reference']['k_ed']
         self.current_selection = {
             'k_ep': k_ep,
             'k_part': k_part,
             'k_step': k_step,
             'shots': self.shots,
             'reference': {
-                # 'k_ed': db[k_ep]['common']['video']['reference']['k_ed'],
-                'k_ep': k_ep
+                'k_ed': k_ed,
+                'k_ep': k_ep,
             },
             'geometry': self.model_database.get_part_geometry(k_ed, k_part),
         }
@@ -433,7 +429,7 @@ class Model_merge_stabilize(Model_common):
             return
 
         now = time.time()
-        frames_no = list()
+        frame_nos = list()
 
         ticklist = [0]
         self.playlist_frames.clear()
@@ -444,7 +440,7 @@ class Model_merge_stabilize(Model_common):
                 frame['index'] = index
                 index += 1
                 self.playlist_frames.append(frame)
-                frames_no.append(frame['frame_no'])
+                frame_nos.append(frame['frame_no'])
             ticklist.append(ticklist[-1] + len(self.frames[shot_no]))
 
         # Opend fgd images
@@ -492,7 +488,7 @@ class Model_merge_stabilize(Model_common):
 
         self.playlist_properties.update({
             'start': self.shots[selected_shots['shotlist'][0]]['start'],
-            'frames_no': frames_no,
+            'frame_nos': frame_nos,
             'count': len(self.playlist_frames),
             'ticks': ticklist,
         })
@@ -515,18 +511,29 @@ class Model_merge_stabilize(Model_common):
 
 
     def get_frame(self, frame_no):
-        # print("%s.get_frame: get_frame no. %d" % (__name__, frame_no))
-        shot_no = self.get_shot_no_from_frame_no(frame_no)
-        new_frame_no = self.model_database.get_replace_frame_no(shot_no, frame_no)
-        if new_frame_no == -1:
+        """ returns the replace frame unless there is no replacemed frame or
+        the initial flag is set to True
+        framelist contains all path for each frame of this playlist
+        """
+        # log.info("%s.get_frame: get_frame no. %d" % (__name__, frame_no))
+        if not self.preview_options['replace']['is_enabled']:
             frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
-            # print("\tnew_frame_no=-1")
-            # print("\t%s" % (frame['filepath']))
-
+            # print("\tinitial")
+            try: del frame['replaces']
+            except: pass
         else:
-            index = new_frame_no - self.playlist_properties['start']
-            frame = self.playlist_frames[index]
-
+            shot_no = self.get_shot_no_from_frame_no(frame_no)
+            new_frame_no = self.model_database.get_replace_frame_no(self.shots[shot_no], frame_no)
+            if new_frame_no == -1:
+                frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
+                # print("\tnew_frame_no=-1")
+                # print("\t%s" % (frame['filepath']))
+                try: del frame['replaces']
+                except: pass
+            else:
+                index = new_frame_no - self.playlist_properties['start']
+                frame = self.playlist_frames[index]
+                frame['replaces'] = frame_no
 
         # Shot has changed: update UI with parameters for this shot (curves, crop, resize)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
@@ -534,24 +541,19 @@ class Model_merge_stabilize(Model_common):
         else:
             frame['reload_parameters'] = False
 
+        # Stitching
+        frame['curves'] = self.model_database.get_shot_stitching_curves(self.shots[frame['shot_no']])
+
+        # Stabilization
+
+
+        # Update curves
+        frame['curves'] = self.model_database.get_curves_selection(self.shots[frame['shot_no']])
+
 
         # Purge image from the previous frame
         # self.purge_current_frame_cache()
 
-        # Set current frame
-        self.current_frame = frame
-
-
-        # print("\t%s" % (frame['filepath']))
-        if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
-            # update UI with parameters for this shot (stitching)
-            frame['reload_parameters'] = True
-        else:
-            frame['reload_parameters'] = False
-
-
-        # Set current frame
-        self.current_frame = frame
 
         # Update geometry
         k_ed = self.current_selection['reference']['k_ed']
@@ -559,6 +561,9 @@ class Model_merge_stabilize(Model_common):
 
         # TODO: update this for merge and stabilize
         # frame['geometry'] = self.model_database.get_part_geometry(k_ed=k_ed, k_part=k_part)
+
+        # Set current frame
+        self.current_frame = frame
 
         # Generate the image for this frame
         options = self.preview_options
@@ -1247,18 +1252,20 @@ class Model_merge_stabilize(Model_common):
 
 
 
+# def generate_single_image(frame:dict, preview_options:dict):
+#     # Foreground image (shall be denoised)
+#     image_fgd = frame['cache_fgd']
+#     if image_fgd is None:
+#         # return (frame['index'], cv2.imread(frame['filepath'], cv2.IMREAD_COLOR))
+#         sys.exit("cache is not ready")
+
+#     return image_fgd
+
+
 def generate_single_image(frame:dict, preview_options:dict):
-    # Foreground image (shall be denoised)
-    image_fgd = frame['cache_fgd']
-    if image_fgd is None:
-        # return (frame['index'], cv2.imread(frame['filepath'], cv2.IMREAD_COLOR))
-        sys.exit("cache is not ready")
-
-    return image_fgd
-
-
-
-def process_single_frame(frame:dict, preview_options='', bgd_curve_luts=None, current_channel=None):
+    print("generate_single_image")
+    now = time.time()
+    img = None
     print_time = False
 
     if print_time:
@@ -1272,19 +1279,168 @@ def process_single_frame(frame:dict, preview_options='', bgd_curve_luts=None, cu
         # return (frame['index'], cv2.imread(frame['filepath'], cv2.IMREAD_COLOR))
         sys.exit("cache is not ready")
 
-    if preview_options == '' or preview_options == 'initial':
-        return (frame['index'], image_fgd, None)
 
-    # To crop the image before stitching, use the forground image without stabilization
-    if preview_options == 'fgd_roi_edition':
-        return (frame['index'], image_fgd, None)
+    if preview_options['stitching']['roi_edition']:
+        # ROI for stitching: use the original foreground image
+        return (frame['index'], image_fgd)
+
+
+    if preview_options['stitching']['is_enabled']:
+        if frame['cache_bgd'] is not None:
+            img_bgd = frame['cache_bgd']
+        else:
+            filepath_bgd = frame['filepath_bgd']
+            img_bgd = cv2.imread(filepath_bgd, cv2.IMREAD_COLOR)
+
+        # fgd dimensions
+        height_fgd, width_fgd, c = image_fgd.shape
+
+        if preview_options['stitching_curves']['is_enabled']:
+            # Apply RGB curves to get a similar histogram between bgd and fgd
+            lut = frame['stitching']['curves']['lut']
+            b, g, r = cv2.split(img_bgd_modified)
+
+            shape = r.shape
+            img_bgd_r = lut['r'][r.flatten()].reshape(shape).astype(np.uint8)
+
+            shape = g.shape
+            img_bgd_g = lut['g'][g.flatten()].reshape(shape).astype(np.uint8)
+
+            shape = b.shape
+            img_bgd_b = lut['b'][b.flatten()].reshape(shape).astype(np.uint8)
+
+            img_bgd_bgr = cv2.merge((img_bgd_b, img_bgd_g, img_bgd_r))
+        else:
+            # Do not apply stitching curves
+            img_bgd_bgr = image_fgd
+
+
+
+        if frame['stitching']['m'] is not None:
+            # Use the matrix to modify the background image
+            img_bgd_modified = cv2.warpPerspective(
+                img_bgd,
+                frame['stitching']['m'],
+                (width_fgd+STICTHING_FGD_PAD[2]+STICTHING_FGD_PAD[3], height_fgd+STICTHING_FGD_PAD[0]+STICTHING_FGD_PAD[1]),
+                cv2.INTER_LANCZOS4,
+                borderMode=cv2.BORDER_CONSTANT, borderValue=(128,128,128))
+        else:
+            # Cannot modify the background
+            img_bgd_modified = cv2.copyMakeBorder(img_bgd,
+                top=STICTHING_FGD_PAD[0], bottom=STICTHING_FGD_PAD[1],
+                left=STICTHING_FGD_PAD[2], right=STICTHING_FGD_PAD[3],
+                borderType=cv2.BORDER_CONSTANT, value=(0,0,0))
+
+
+
+
+        if preview_options['stitching']['crop_edition']:
+            # Crop the foreground image
+            image_fgd_cropped = image_fgd[y0:y1, x0:x1]
+            image_fgd_with_borders = cv2.copyMakeBorder(image_fgd_cropped,
+                top=pad_h_t, bottom=STICTHING_FGD_PAD[1],
+                left=pad_w_l, right=STICTHING_FGD_PAD[3],
+                borderType=cv2.BORDER_CONSTANT, value=(255,128,128))
+
+
+
+
+            # crop used for stitching
+            crop_top, crop_bottom, crop_left, crop_right = frame['stitching']['geometry']['fgd']
+            y0 = crop_top
+            y1 = height_fgd - crop_bottom
+            x0 = crop_left
+            x1 = width_fgd - crop_right
+            pad_h_t = STICTHING_FGD_PAD[0]
+            pad_w_l = STICTHING_FGD_PAD[2]
+
+
+
+
+            return (frame['index'], image_fgd_with_borders, None)
+
 
 
     # Apply stabilization if enabled before other modifications
-    if frame['stabilize']['dx_dy'] is not None:
-        do_stabilize = True
-    else:
-        do_stabilize = False
+
+    #   1.1. Add padding to the initial image, even if no stabilization
+    width_stabilized = width_fgd + pad_w_l + pad_w_r
+    height_stabilized = height_fgd + pad_h_t + pad_h_b
+    image_fgd_with_borders = cv2.copyMakeBorder(image_fgd,
+        pad_h_t, pad_h_b,
+        pad_w_l, pad_w_r,
+        cv2.BORDER_CONSTANT,
+        value=[0, 0, 0])
+
+    if preview_options['stabilize']['is_enabled']:
+        height_fgd, width_fgd, c = image_fgd.shape
+
+        # 1. Generate the translated image, add padding
+        pad_w_l = 40
+        pad_w_r = 20
+        pad_h_t = 80
+        pad_h_b = 40
+
+
+        if frame['stabilize']['dx_dy'] is not None:
+            #   1.2. Generate a stabilized image
+            if False:
+                # Slower and interpolate pixels
+                transformation_matrix = np.float32([
+                    [1, 0, 0],
+                    [0, 1, frame['stabilize']['dx_dy'][1]]
+                ])
+                img_stabilized = cv2.warpAffine(
+                    image_fgd_with_borders,
+                    transformation_matrix,
+                    (width_stabilized, height_stabilized),
+                    flags=cv2.INTER_LANCZOS4,
+                    borderMode=cv2.BORDER_CONSTANT,
+                    borderValue=(0,0,0))
+            else:
+                # Faster and do not interpolate pixels
+                if frame['stabilize']['dx_dy'][1] >= 1:
+                    # Add padding
+                    dy = abs(int(frame['stabilize']['dx_dy'][1]))
+                    img_fgd_cropped = image_fgd_with_borders[
+                        0:height_stabilized - dy,
+                        0:width_stabilized
+                    ]
+                    img_stabilized = cv2.copyMakeBorder(img_fgd_cropped,
+                        top=dy, bottom=0,
+                        left=0, right=0,
+                        borderType=cv2.BORDER_CONSTANT,
+                        value=[0, 0, 0])
+
+                elif frame['stabilize']['dx_dy'][1] <= -1:
+                    dy = abs(int(frame['stabilize']['dx_dy'][1]))
+                    # Remove
+                    img_fgd_cropped = image_fgd_with_borders[
+                        dy:height_stabilized,
+                        0:width_stabilized
+                    ]
+                    img_stabilized = cv2.copyMakeBorder(img_fgd_cropped,
+                        top = 0, bottom=dy,
+                        left=0, right=0,
+                        borderType=cv2.BORDER_CONSTANT,
+                        value=[0, 0, 0])
+                else:
+                    img_stabilized = image_fgd_with_borders
+
+
+        if preview_options['curves']['is_enabled']:
+            sys.exit("TODO: generate_single_image: apply curves!!!")
+
+
+
+
+
+        if preview_options['geometry']['is_enabled']:
+            # TODO: gloups
+            # 'crop_edition'
+            # 'crop_preview'
+            # 'resize_edition'
+            # 'resize_preview'
 
 
 
@@ -1292,38 +1448,7 @@ def process_single_frame(frame:dict, preview_options='', bgd_curve_luts=None, cu
 
         # print("process_single_frame: stitching")
 
-        # Modify the background image with the matrix
-        if frame['cache_bgd'] is not None:
-            img_bgd = frame['cache_bgd']
-        else:
-            filepath_bgd = frame['filepath_bgd']
-            img_bgd = cv2.imread(filepath_bgd, cv2.IMREAD_COLOR)
 
-        if print_time:
-            print("\topen bgd img: %.1f" % (1000* (time.time() - now)))
-            now = time.time()
-
-        # fgd dimensions
-        height_fgd, width_fgd, channels_fgd = image_fgd.shape
-
-        # crop used for stitching
-        crop_top, crop_bottom, crop_left, crop_right = frame['stitching']['geometry']['fgd']
-        y0 = crop_top
-        y1 = height_fgd - crop_bottom
-        x0 = crop_left
-        x1 = width_fgd - crop_right
-        pad_h_t = STICTHING_FGD_PAD[0]
-        pad_w_l = STICTHING_FGD_PAD[2]
-
-
-        # If no stiching, return the current fgd image
-        if frame['stitching']['m'] is None:
-            image_fgd_cropped = image_fgd[y0:y1, x0:x1]
-            image_fgd_with_borders = cv2.copyMakeBorder(image_fgd_cropped,
-                top=pad_h_t, bottom=STICTHING_FGD_PAD[1],
-                left=pad_w_l, right=STICTHING_FGD_PAD[3],
-                borderType=cv2.BORDER_CONSTANT, value=(255,128,128))
-            return (frame['index'], image_fgd_with_borders, None)
 
 
         # Apply stitching
@@ -1345,21 +1470,7 @@ def process_single_frame(frame:dict, preview_options='', bgd_curve_luts=None, cu
             print("\tstitching: %.1f" % (1000* (time.time() - now)))
             now = time.time()
 
-        # Apply RGB curves modifications to get a similar histogram between bgd and fgd
-        if bgd_curve_luts is not None:
-            b, g, r = cv2.split(img_bgd_modified)
 
-            shape = r.shape
-            img_bgd_r = bgd_curve_luts['r'][r.flatten()].reshape(shape).astype(np.uint8)
-
-            shape = g.shape
-            img_bgd_g = bgd_curve_luts['g'][g.flatten()].reshape(shape).astype(np.uint8)
-
-            shape = b.shape
-            img_bgd_b = bgd_curve_luts['b'][b.flatten()].reshape(shape).astype(np.uint8)
-
-            img_bgd_bgr = cv2.merge((img_bgd_b, img_bgd_g, img_bgd_r))
-        else:
             img_bgd_bgr = img_bgd_modified
         if print_time:
             print("\tRGB curves on fgd: %.1f" % (1000* (time.time() - now)))
@@ -1436,71 +1547,10 @@ def process_single_frame(frame:dict, preview_options='', bgd_curve_luts=None, cu
 
 
     if preview_options in ['stabilize', 'fgd_cropped']:
-        height_fgd, width_fgd, channel_count = image_fgd.shape
-
-        # 1. Generate the translated image, add padding
-        pad_w_l = 40
-        pad_w_r = 20
-        pad_h_t = 80
-        pad_h_b = 40
-
-        #   1.1. Add padding to the initial image, even if no stabilization
-        width_stabilized = width_fgd + pad_w_l + pad_w_r
-        height_stabilized = height_fgd + pad_h_t + pad_h_b
-        image_fgd_with_borders = cv2.copyMakeBorder(image_fgd,
-            pad_h_t, pad_h_b,
-            pad_w_l, pad_w_r,
-            cv2.BORDER_CONSTANT,
-            value=[0, 0, 0])
 
 
         if do_stabilize:
-            #   1.2. Generate a stabilized image
-            if False:
-                transformation_matrix = np.float32([
-                    [1, 0, 0],
-                    [0, 1, frame['stabilize']['dx_dy'][1]]
-                ])
-                img_stabilized = cv2.warpAffine(
-                    image_fgd_with_borders,
-                    transformation_matrix,
-                    (width_stabilized, height_stabilized),
-                    flags=cv2.INTER_LANCZOS4,
-                    borderMode=cv2.BORDER_CONSTANT,
-                    borderValue=(0,0,0))
-            else:
-                if frame['stabilize']['dx_dy'][1] >= 1:
-                    # Add padding
-                    dy = abs(int(frame['stabilize']['dx_dy'][1]))
 
-                    # image_fgd_with_borders_umat = cv2.UMat(image_fgd_with_borders)
-                    # print(type(image_fgd_with_borders))
-                    img_fgd_cropped = image_fgd_with_borders[
-                        0:height_stabilized - dy,
-                        0:width_stabilized
-                    ]
-                    img_stabilized = cv2.copyMakeBorder(img_fgd_cropped,
-                        top=dy, bottom=0,
-                        left=0, right=0,
-                        borderType=cv2.BORDER_CONSTANT,
-                        value=[0, 0, 0])
-
-                elif frame['stabilize']['dx_dy'][1] <= -1:
-                    dy = abs(int(frame['stabilize']['dx_dy'][1]))
-                    # Remove
-                    # image_fgd_with_borders_umat = cv2.UMat(image_fgd_with_borders)
-                    # print(type(image_fgd_with_borders))
-                    img_fgd_cropped = image_fgd_with_borders[
-                        dy:height_stabilized,
-                        0:width_stabilized
-                    ]
-                    img_stabilized = cv2.copyMakeBorder(img_fgd_cropped,
-                        top = 0, bottom=dy,
-                        left=0, right=0,
-                        borderType=cv2.BORDER_CONSTANT,
-                        value=[0, 0, 0])
-                else:
-                    img_stabilized = image_fgd_with_borders
         else:
             img_stabilized = image_fgd_with_borders
 

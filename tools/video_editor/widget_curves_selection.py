@@ -26,7 +26,7 @@ from video_editor.ui.widget_curves_selection_ui import Ui_widget_curves_selectio
 
 class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
     signal_curves_selection_changed = Signal(str)
-    signal_save_curves_as = Signal(str)
+    signal_curves_name_changed = Signal(dict)
     signal_discard_curves = Signal(str)
     signal_delete_curves = Signal(str)
 
@@ -120,7 +120,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
     def event_curves_library_modified(self, curves_library:dict):
         # curves_library is a simplified library which indicates if the curves are modified
         log.info("refresh the list of available curves")
-        # pprint(curves_library)
+        pprint(curves_library)
 
         self.list_curves.blockSignals(True)
 
@@ -167,6 +167,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
                 self.list_shots.addItem(item)
         except:
             pass
+
 
     def deselect_current_k_curves(self):
         if len(self.list_curves.selectedIndexes()) == 0:
@@ -252,6 +253,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
 
     def event_save_as(self):
         self.lineEdit_save.blockSignals(True)
+        k_curves = self.list_curves.currentItem().text().replace('*', '')
         k_curves_new = self.lineEdit_save.text()
         if len(k_curves_new) > 0:
             # 'Save as'
@@ -259,15 +261,20 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
             self.lineEdit_save.clear()
             self.pushButton_save.setEnabled(False)
             log.info("save curve as [%s]" % (k_curves_new))
-            self.signal_save_curves_as.emit(k_curves_new)
+            self.signal_curves_name_changed.emit({
+                'current': k_curves,
+                'new': k_curves_new,
+            })
 
         elif self.list_curves.currentItem() is not None:
             # 'Save'
-            k_curves = self.list_curves.currentItem().text()
             if k_curves.startswith('*'):
                 k_curves = k_curves.replace('*', '')
                 log.info("overwrite [%s]" % (k_curves))
-                self.signal_save_curves_as.emit(k_curves)
+                self.signal_curves_name_changed.emit({
+                    'current': k_curves,
+                    'new': None,
+                })
         else:
             log.info("missing filename")
         self.lineEdit_save.clearFocus()

@@ -45,7 +45,7 @@ N'ayant qu'un temps limité, vu l'ampleur du projet, et que j'avais commencé ce
 - J'utilise de nombreux anglicismes, ne maîtrisant pas les termes techniques en français (et ne voulant pas, c'est une véritable torture).
 - De nombreux commentaires sont, soit en français, soit en anglais, soit en très mauvais anglais selon la température ambiante, la phase lunaire, mon humeur, le temps que j'ai à consacrer, etc.
 - De même, l'implémentation est tantôt propre, tantôt pas pythonique pour un sou(ce n'est pas mon language de développement habituel). De nombreuses parties seraient à re-travailler, optimiser, mais je n'ai pas le temps.
-- Je n'ai pas cherché à optimiser de nombreuses fonctions pour obtenir des résultats rapides et que ce ne sont pas les fonctions qui sont critiques en terme de temps de processing.
+- Je n'ai pas cherché à optimiser de nombreuses fonctions pour obtenir des résultats rapides. La plupart ne sont pas des fonctions critiques en terme de temps de processing.
 <br/><br/>
 
 # Clause de non responsabilité

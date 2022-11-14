@@ -511,7 +511,8 @@
                 </property>
                 <property name="icon">
                  <iconset>
-                  <normaloff>icons/purple/save.svg</normaloff>icons/purple/save.svg</iconset>
+            <normaloff>icons/grey/save.svg</normaloff>
+            <normalon>icons/purple/save.svg</normalon>icons/grey/save.svg</iconset>
                 </property>
                 <property name="flat">
                  <bool>true</bool>
@@ -586,7 +587,8 @@
               </property>
               <property name="icon">
                <iconset>
-                <normaloff>icons/purple/save.svg</normaloff>icons/purple/save.svg</iconset>
+            <normaloff>icons/grey/save.svg</normaloff>
+            <normalon>icons/purple/save.svg</normalon>icons/grey/save.svg</iconset>
               </property>
               <property name="flat">
                <bool>true</bool>

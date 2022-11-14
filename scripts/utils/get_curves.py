@@ -1,18 +1,14 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-from pathlib import Path
-from pathlib import PosixPath
-import os
 import sys
-import re
 import numpy as np
 from pprint import pprint
 
-from utils.common import K_GENERIQUES, get_shot_from_frame_no
 from images.curve import Curve
 from parsers.parser_curves import parse_curves_file
-
+from utils.common import (
+    K_GENERIQUES,
+    get_shot_from_frame_no
+)
 
 def get_curves(db, frame:dict, k_part:str):
     k_ed = frame['k_ed']
@@ -49,13 +45,13 @@ def get_curves(db, frame:dict, k_part:str):
 
 
 
-def get_lut_from_curves(db, k_ep, k_curves:str):
+def get_lut_from_curves(db, k_ep_or_g, k_curves:str):
     """ This function reads a curve file and
         returns the luts for each RGB channel. Returns None
         if there is a problem with the curve
     """
-    # print("%s:get_lut_from_curves %s, %s" % (__name__, k_ep, k_curves))
-    rgb_channels = parse_curves_file(db, k_ep, k_curves)
+    # print("%s:get_lut_from_curves %s, %s" % (__name__, k_ep_or_g, k_curves))
+    rgb_channels = parse_curves_file(db, k_ep_or_g, k_curves)
     if rgb_channels is None:
         return None
 
@@ -91,5 +87,20 @@ def calculate_channel_lut(rgb_channels, verbose=False):
         for k in ['r', 'g', 'b']:
             print("--------------- calculate_channel_lut: %s (%d) -------------------" % (k, len(lut[k])))
             pprint.pprint(lut[k])
+
+    return lut
+
+
+
+def calculate_channel_lut_for_stitching(rgb_channels):
+    lut = dict()
+
+    depth = 256.0
+    for k in ['r', 'g', 'b']:
+        lut_tmp = rgb_channels[k].calculate(sample_count=256, depth=depth, verbose=False)
+        lut_tmp = (lut_tmp - depth/2) / 10
+        tmp = np.arange(start=0, stop=256, step=1, dtype=np.float32)
+        tmp32 = np.add(tmp, lut_tmp)
+        lut[k] = np.clip(tmp32, 0, 255).astype(np.uint8)
 
     return lut

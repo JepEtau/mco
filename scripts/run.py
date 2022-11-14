@@ -1,40 +1,36 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import sys
+import os
 import argparse
-import configparser
+import gc
 from pprint import pprint
 import signal
 
-import cv2
-
-from parsers.parser_database import parse_database
-from parsers.parser_stitching import *
-from parsers.parser_common import *
-from parsers.parser_editions import *
-from parsers.parser_episodes import *
-from parsers.parser_generiques import *
-
-from utils.common import K_ALL_PARTS
-from utils.common import K_GENERIQUES
-from utils.common import get_database_size
-from utils.common import delete_items
-from utils.common import get_tasklist
-from utils.path import PATH_DATABASE_COMBINE
-
-from audio.audio import extract_audio
-from audio.audio import generate_audio
-
-from video.video import generate_video
-from video.concatenation import merge_audio_and_video_tracks
-from video.concatenation import concatenate_all_clips
-from video.concatenation import add_chapters
+from audio.audio import (
+    extract_audio,
+    generate_audio,
+)
 from images.extract_frames import extract_frames_for_study
+from parsers.parser_database import parse_database
+from utils.common import (
+    K_ALL_PARTS,
+    K_GENERIQUES,
+    get_database_size,
+    delete_items,
+)
+from utils.consolidate_shots import consolidate_target_shots
+from utils.tasks import get_tasklist
+from video.concatenation import (
+    merge_audio_and_video_tracks,
+    concatenate_all_clips,
+    add_chapters,
+)
+from video.video import generate_video
+
 
 g_database = dict()
-g_database_combine = dict()
 study_mode = True
-
 
 def main():
     # if cv2.ocl.haveOpenCL():
@@ -56,17 +52,16 @@ def main():
         help="Numéro d'épisode de 1 à 39. Ignoré pour la génération des génériques.")
 
     parser.add_argument("--edition",
-        default='',
+        default='k',
         required=False,
         choices=editions,
-        help="Utilise uniquement cette edition")
+        help="Utilise cette edition, par défaut: k")
 
     parser.add_argument("--part",
         default='',
         required=False,
         choices=K_ALL_PARTS,
         help="Partie à traiter")
-
 
     parser.add_argument("--shot_min",
         type=int,
@@ -121,10 +116,6 @@ def main():
         action="store_true",
         help="Utilisé pour les études des trames, des filtres, etc.")
 
-    parser.add_argument("--compare",
-        action="store_true",
-        help="debug: utilisé pour comparer les éditions (non fonctionnel)")
-
     parser.add_argument("--force",
         action="store_true",
         required=False,
@@ -143,23 +134,6 @@ def main():
     arguments = parser.parse_args()
 
 
-    if arguments.compare:
-        mode = 'compare'
-    else:
-        mode = 'normal'
-
-    # Edition
-    list_editions = ['']
-    if arguments.edition == '' and arguments.compare:
-        list_editions = editions
-    elif arguments.edition == '':
-        list_editions = [editions[0]]
-    elif arguments.edition != '':
-        list_editions = [arguments.edition]
-    elif arguments.compare:
-        list_editions = [arguments.edition]
-
-
     # Episode no.
     episode_no = arguments.episode
     k_episode = 'ep%02d' % (episode_no)
@@ -168,7 +142,7 @@ def main():
         sys.exit("Error: épisode ou partie non spécifiée")
 
     # Consolidate tasks: what will be done
-    print("Edition(s): %s" % (', '.join(list_editions)))
+    print("Edition: %s" % (arguments.edition))
     print("Episode: %d" % (episode_no))
     if arguments.part != '':
         print("Part: %s" % (arguments.part))
@@ -176,7 +150,7 @@ def main():
     print("\t- parse database")
     print("\t- consolidate generiques")
 
-    arguments.vfilter.replace('final', 'geometry')
+    video_filter = arguments.vfilter.replace('final', 'geometry')
     do_av_merge = False
     if (not arguments.study
     and arguments.afilter == ''
@@ -185,15 +159,18 @@ def main():
         or arguments.part == ''):
             print("\t- force processing audio and video")
             arguments.afilter = 'final'
-            if arguments.vfilter == '':
-                arguments.vfilter = 'geometry'
+            if video_filter == '':
+                video_filter = 'geometry'
             do_av_merge = True
-
+        elif arguments.part != '':
+            if video_filter == '':
+                video_filter = 'geometry'
+            do_av_merge = True
 
     if arguments.parse_only:
         # Parse database only
         # Parse database
-        parse_database(g_database, editions, k_ep=k_episode, mode=mode, verbose=verbose)
+        parse_database(g_database, k_ed=arguments.edition, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
         gc.collect()
         print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
 
@@ -206,9 +183,9 @@ def main():
             pprint(g_database[k_episode])
         else:
             print("\t\t- all: ", end='')
-
+        print()
+        pprint(g_database)
         sys.exit()
-
 
     if arguments.afilter != '':
         print("\t- audio:")
@@ -224,11 +201,11 @@ def main():
         elif arguments.afilter == 'final':
             print("final")
 
-    if arguments.frames and arguments.vfilter == '':
+    if arguments.frames and video_filter == '':
         # Force to final if vfilter is not specified
-        arguments.vfilter = 'geometry'
+        video_filter = 'geometry'
 
-    if arguments.vfilter != '':
+    if video_filter != '':
         if arguments.frames:
             print("\t- frames:")
         else:
@@ -238,7 +215,7 @@ def main():
             print("\t\t- %s" % (arguments.part))
         else:
             print("\t\t- all parts")
-        print("\t\t- last task=%s" % (arguments.vfilter))
+        print("\t\t- last task=%s" % (video_filter))
 
     if do_av_merge:
         # Full generation of this episode
@@ -253,7 +230,7 @@ def main():
         sys.exit("Error: a part shall be one of the following: %s" % (", ".join(K_ALL_PARTS)))
 
     # Parse database
-    parse_database(g_database, editions, k_ep=k_episode, mode=mode, verbose=verbose)
+    parse_database(g_database, k_ed=arguments.edition, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
     gc.collect()
     print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
     print("processing, please wait...", flush=True)
@@ -265,39 +242,39 @@ def main():
             # Generiques
             k_part_g = arguments.part
             if arguments.afilter == 'extract':
-                extract_audio(g_database, k_part_g, editions=list_editions, verbose=True, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=arguments.edition, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
                 generate_audio(g_database, k_part_g, verbose=True, force=arguments.force)
 
         elif arguments.part != '':
             # precedemment, episode, g_asuivre, asuivre, g_reportage, reportage
             if arguments.afilter == 'extract':
-                extract_audio(g_database, k_episode, editions=list_editions, verbose=True, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=arguments.edition, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
-                generate_audio(g_database, k_episode, verbose=True, force=arguments.force)
+                generate_audio(g_database, k_ep=k_episode, verbose=True, force=arguments.force)
 
         else:
             # All
             if arguments.afilter == 'extract':
                 for k_part_g in ['g_debut', 'g_fin']:
-                    extract_audio(g_database, k_part_g, editions=list_editions, force=arguments.force)
-                extract_audio(g_database, k_episode, editions=list_editions, force=arguments.force)
+                    extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=arguments.edition, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=arguments.edition, force=arguments.force)
 
             elif arguments.afilter == 'final':
                 for k_part_g in ['g_debut', 'g_fin']:
                     generate_audio(g_database, k_part_g, force=arguments.force)
                 v = True if arguments.force else False
-                generate_audio(g_database, k_episode, verbose=v, force=arguments.force)
+                generate_audio(g_database, k_ep=k_episode, verbose=v, force=arguments.force)
 
 
 
     # Video
     #-------------------------------------------------
-    if arguments.vfilter != '':
+    if video_filter in ['deinterlace', 'upscale', 'geometry']:
         # Video and frames
 
         # Get the list of tasks
-        tasks = get_tasklist(final_task=arguments.vfilter)
+        tasks = get_tasklist(db=g_database, final_task=video_filter)
 
         # Check if nnedi3_weights.bin exists
         if 'deinterlace' in tasks:
@@ -305,6 +282,14 @@ def main():
             if not os.path.exists(nnedi_file):
                 sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
 
+
+        # Consolidate each shot for the target
+        consolidate_target_shots(
+            db=g_database,
+            k_ed=arguments.edition,
+            k_ep=k_episode,
+            k_part=arguments.part,
+        )
 
         if arguments.frames:
             # Extract frames
@@ -314,47 +299,23 @@ def main():
                 episode_no=episode_no,
                 k_part=arguments.part,
                 tasks=tasks,
-                force=arguments.force,
-                compare=arguments.compare)
+                force=arguments.force)
 
         else:
             # Video
-
-            # Shrink database
-            for no in range(1, 40):
-                k_ep_tmp = 'ep%02d' % (no)
-                delete_items(g_database[k_ep_tmp], 'frames')
-                continue
-
-                # Cannot clean because we do not know the episodes for generiques
-                if (episode_no - 1) <= no <= (episode_no + 1):
-                    delete_items(g_database[k_ep_tmp], 'frames')
-                    # print(d)
-                    # del d['frames']
-                    # d['frames'] = None
-                else:
-                    del g_database[k_ep_tmp]
-
-            for k in K_GENERIQUES:
-                if k in g_database.keys():
-                    delete_items(g_database[k], 'frames')
-
-            gc.collect()
-            print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
-
             shot_min = arguments.shot_min
             shot_max = arguments.shot_max
             if arguments.shot != -1:
                 shot_min = arguments.shot
                 shot_max = arguments.shot + 1
 
-            # Generate the video for the first edition only
+            # Generate the video
             generate_video(
                 g_database,
-                episode_no=episode_no,
+                k_ed=arguments.edition,
+                k_ep=k_episode,
                 k_part=arguments.part,
                 tasks=tasks,
-                edition=list_editions[0],
                 force=arguments.force,
                 simulation=arguments.simulate,
                 shot_min=shot_min, shot_max=shot_max)
@@ -365,9 +326,12 @@ def main():
     # Merge A/V streams
     #-------------------------------------------------
     if do_av_merge and not arguments.simulate:
-        if arguments.part != '':
+        if arguments.part in ['g_debut', 'g_fin']:
+            # I we process specified parts, merge video and audio tracks
+            # is only possible for these generiques
             merge_audio_and_video_tracks(g_database, arguments.part, force=arguments.force)
-        else:
+        elif arguments.part == '':
+
             # Merge all video and audio tracks
             for k in ['g_debut', 'g_fin']:
                 merge_audio_and_video_tracks(g_database, k_ep=k, force=arguments.force)
@@ -378,9 +342,9 @@ def main():
             # Concatenate all parts
             concatenate_all_clips(g_database, k_episode, force=arguments.force)
 
-        # Add chapters to the video file
-        if k_episode != 'ep00':
-            add_chapters(g_database, k_episode)
+            # Add chapters to the video file
+            if k_episode != 'ep00':
+                add_chapters(g_database, k_episode)
 
 
 if __name__ == "__main__":

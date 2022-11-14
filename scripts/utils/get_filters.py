@@ -1,12 +1,13 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-from pprint import pprint
 import sys
 from collections import OrderedDict
-from utils.common import K_GENERIQUES, get_shot_no_from_frame_no
-from utils.common import get_k_part_from_frame_no
-from utils.common import get_shot_from_frame
+from pprint import pprint
+
+from utils.common import (
+    K_GENERIQUES,
+    get_k_part_from_frame_no,
+    get_shot_from_frame,
+)
 
 FILTER_BASE_NO = {
     'deinterlace': 0,
@@ -16,8 +17,14 @@ FILTER_BASE_NO = {
     'bgd': 400,
     'stitching': 500,
     'sharpen': 600,
-    'rgb': 800,
+    'rgb': 700,
     'geometry': 900,
+}
+
+# The following are used for debug purpose
+FILTER_BASE_NO_DEBUG = {
+    'deinterlace_rgb': 990,
+    'upscale_rgb_geometry': 995,
 }
 
 
@@ -202,8 +209,12 @@ def get_filter_id(db, shot, k_step):
     filters = shot['filters']
     if type(filters) is dict:
         filter_ids = filters['id']
+
         if k_step in filter_ids.keys():
             filter_id = filter_ids[k_step] + FILTER_BASE_NO[k_step]
+        elif k_step in FILTER_BASE_NO_DEBUG.keys():
+            # For debug and verifications
+            return FILTER_BASE_NO_DEBUG[k_step]
         else:
             filter_id = FILTER_BASE_NO[k_step]
         return filter_id
@@ -237,8 +248,15 @@ def get_filter_id(db, shot, k_step):
             filter_ids = db_ep['filters'][filters]['id']
             sys.exit("Error: TODO: %s: correct this" % (__name__))
 
+    # For debug and verifications
+    if k_step in FILTER_BASE_NO_DEBUG.keys():
+        return FILTER_BASE_NO_DEBUG[k_step]
+
     if k_step in filter_ids.keys():
         filter_id = filter_ids[k_step] + FILTER_BASE_NO[k_step]
+    elif k_step in FILTER_BASE_NO_DEBUG.keys():
+        # For debug and verifications
+        return FILTER_BASE_NO_DEBUG[k_step]
     else:
         filter_id = FILTER_BASE_NO[k_step]
 

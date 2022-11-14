@@ -1,18 +1,21 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-import configparser
-from copy import deepcopy
-import os
-import os.path
-from pathlib import Path
-from pathlib import PosixPath
-from pprint import pprint
-import re
 import sys
 
-from utils.common import get_k_part_from_frame_no
-from utils.common import get_shot_from_frame_no_new
+import configparser
+import os
+import os.path
+from pathlib import (
+    Path,
+    PosixPath,
+)
+import re
+
+from pprint import pprint
+
+from utils.common import (
+    get_k_part_from_frame_no,
+    get_shot_from_frame_no_new,
+)
 
 # cv2.goodFeaturesToTrack
 STABILIZATION_SHOT_PARAMETERS_DEFAULT = {
@@ -155,10 +158,10 @@ def get_shots_stabilize_parameters(db, k_ep, k_part) -> dict:
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in ['g_debut', 'g_fin']:
-        db_video = db[k_part]['common']['video']
+        db_video = db[k_part]['target']['video']
     else:
         print("%s.get_shots_stabilize_parameters: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
+        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
         print("%s.get_shots_stabilize_parameters: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
@@ -206,10 +209,10 @@ def get_frames_stabilize(db, k_ep, k_part) -> dict:
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in ['g_debut', 'g_fin']:
-        db_video = db[k_part]['common']['video']
+        db_video = db[k_part]['target']['video']
     else:
         print("%s.get_frames_stabilize: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
+        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
         print("%s.get_frames_stabilize: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))

@@ -1,23 +1,18 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
-import argparse
 import configparser
-import datetime
-import gc
-from operator import itemgetter
 import os
 import os.path
-from os import stat_result, system
-from pathlib import Path
-from pathlib import PosixPath
+from pathlib import (
+    Path,
+    PosixPath,
+)
 from pprint import pprint
-import re
 import subprocess
-import sys
-import time
-import copy
-from parsers.parser_filters import *
+
+from parsers.parser_filters import parse_and_update_filters
+
 
 DATABASE_PATH = "../database"
 
@@ -72,24 +67,27 @@ def parse_common_configuration(config_path, verbose=False):
         sys.exit("Unexpected error:", sys.exc_info()[0])
 
 
-    # Commands
+    # Options
     #=============================================================================
-    for key in db_common['commands'].keys():
-        valueStr = db_common['commands'][key]
-        if valueStr == "false":
-            db_common['commands'][key] = False
-        elif valueStr == "true":
-            db_common['commands'][key] = True
+    for key in db_common['options'].keys():
+        value_str = db_common['options'][key]
+        db_common['options'][key] = list(value_str.replace(' ', '').split(','))
+
+    # Create empty list if not defined (avoid too many if/except)
+    for o in ['deinterlace_add_tasks',
+                'upscale_add_tasks',
+                'discard_tasks']:
+        if o not in db_common['options'].keys():
+            db_common['options'][o] = list()
+
+    if 'deinterlace_fast' in db_common['options'].keys():
+        db_common['options']['deinterlace_fast'] = True if db_common['options']['deinterlace_fast'][0] == 'y' else False
+    else:
+        db_common['options']['deinterlace_fast'] = False
 
 
     # Directories
     #=============================================================================
-    # Merge directories sections:
-    # if 'directories' in configuration_episode.keys():
-    #     for key in ['frames", "vobs", "dvdrip", "output", "curves']:
-    #         if key in configuration_episode['directories'].keys():
-    #             db_common['directories'][key] = configuration_episode['directories'][key].replace('\"", "')
-
     # Save relative directory as this is mandatory for ffmpeg
     db_common['directories']['config'] = config_path
 
@@ -185,6 +183,13 @@ def parse_common_configuration(config_path, verbose=False):
     if verbose:
         print("%s: parse the default filter" % (__name__))
     parse_and_update_filters(db_common, config_general, k_section='common', verbose=verbose)
+
+    if db_common['options']['deinterlace_fast']:
+        db_common['filters']['default']['ffmpeg']['deinterlace'] = 'fps=fps=25'
+        db_common['filters']['default']['id']['deinterlace'] = 0
+        print("!!! DEINTERLACE is set to \'FAST\', REMOVE the flag in common.ini file,")
+        print("DELETE \'CACHE\' folder AND REGENERATE ALL !!!")
+
 
     # Other common settings
     #===========================================================================

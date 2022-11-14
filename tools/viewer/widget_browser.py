@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import sys
@@ -34,7 +33,7 @@ class Widget_browser(QWidget, Ui_widget_browser):
     signal_directory_changed = Signal(dict)
     signal_filter_by_changed = Signal(dict)
     signal_select_image = Signal(str)
-
+    signal_close = Signal()
 
     def __init__(self, ui, model):
         super(Widget_browser, self).__init__()

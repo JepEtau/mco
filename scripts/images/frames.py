@@ -1,12 +1,10 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
 from datetime import timedelta
 import copy
-import os
 from pprint import pprint
-from utils.common import K_GENERIQUES
 
+from utils.common import K_GENERIQUES
 from utils.path import get_output_frame_filepaths
 
 
@@ -111,80 +109,6 @@ def is_combination_possible(frames, db_combine):
 
 
 
-def simplify_tasks(frames):
-    # TODO:
-    # - add 'force' switch
-
-    for k, layer in frames.items():
-        i = 0
-        for f in layer:
-            # pprint(f['filepath'])
-            # if 'geometry' in f['tasks'] and os.path.exists(f['filepath']['geometry']):
-            #     # Remove all tasks
-            #     f['tasks'].clear()
-            #     if k == 'fgd':
-            #         frames['bgd'][i]['tasks'].clear()
-            if 'geometry' in f['tasks'] and os.path.exists(f['filepath']['geometry']):
-                # print("remove RGB curves from tasks")
-                for t in ['deinterlace', 'pre_upscale', 'upscale', 'denoise', 'bgd', 'stitching', 'sharpen', 'rgb']:
-                    del f['filepath'][t]
-                    try: f['tasks'].remove(t)
-                    except: pass
-                f['tasks'].remove('geometry')
-                try: frames['bgd'][i]['tasks'].clear()
-                except: pass
-
-            if 'rgb' in f['tasks'] and os.path.exists(f['filepath']['rgb']):
-                # print("remove RGB curves from tasks")
-                for t in ['deinterlace', 'pre_upscale', 'upscale', 'denoise', 'bgd', 'stitching', 'sharpen']:
-                    del f['filepath'][t]
-                    try: f['tasks'].remove(t)
-                    except: pass
-                f['tasks'].remove('rgb')
-                try: frames['bgd'][i]['tasks'].clear()
-                except: pass
-
-            elif 'sharpen' in f['tasks'] and os.path.exists(f['filepath']['sharpen']):
-                # print("remove sharpen from tasks")
-                for t in ['deinterlace', 'pre_upscale', 'upscale', 'denoise', 'bgd', 'stitching']:
-                    del f['filepath'][t]
-                    try: f['tasks'].remove(t)
-                    except: pass
-                f['tasks'].remove('sharpen')
-                try: frames['bgd'][i]['tasks'].clear()
-                except: pass
-
-            elif 'stitching' in f['tasks'] and os.path.exists(f['filepath']['stitching']):
-                for t in ['deinterlace', 'pre_upscale', 'upscale', 'denoise', 'bgd', 'stitching']:
-                    if t in f['tasks']:
-                        f['tasks'].remove(t)
-                if k == 'fgd' and 'bgd' in frames.keys():
-                    frames['bgd'][i]['tasks'].clear()
-
-            elif 'bgd' in f['tasks'] and os.path.exists(f['filepath']['bgd']):
-                for t in ['deinterlace', 'pre_upscale', 'upscale', 'denoise', 'bgd']:
-                    if t in f['tasks']:
-                        f['tasks'].remove(t)
-
-            elif 'denoise' in f['tasks'] and os.path.exists(f['filepath']['denoise']):
-                for t in ['deinterlace', 'pre_upscale', 'upscale', 'denoise']:
-                    if t in f['tasks']:
-                        f['tasks'].remove(t)
-
-            elif 'upscale' in f['tasks'] and os.path.exists(f['filepath']['upscale']):
-                for t in ['deinterlace', 'pre_upscale', 'upscale']:
-                    if t in f['tasks']:
-                        f['tasks'].remove(t)
-
-            elif 'pre_upscale' in f['tasks'] and os.path.exists(f['filepath']['pre_upscale']):
-                for t in ['deinterlace', 'pre_upscale']:
-                    if t in f['tasks']:
-                        f['tasks'].remove(t)
-
-            elif 'deinterlace' in f['tasks'] and os.path.exists(f['filepath']['deinterlace']):
-                if 'deinterlace' in f['tasks']:
-                    f['tasks'].remove('deinterlace')
-            i += 1
 
 def create_framelist_from_shot(db:dict, shot) -> list:
     """This function returns a list of all frames that shall be
@@ -214,14 +138,14 @@ def create_framelist_from_shot(db:dict, shot) -> list:
             'geometry': None if 'geometry' not in shot.keys() else shot['geometry'],
             'curves': None if 'curves' not in shot.keys() else shot['curves'],
         }
-        f['filepath'] = get_output_frame_filepaths(db, shot=shot, frame_no=f['ref']).copy()
+        f['filepath'] = get_output_frame_filepaths(db, shot=shot, frame_no=f['ref'])
         framelist.append(f)
 
     return framelist
 
 
 
-def patch_frames_for_combination(frames, db_combine, do_combine=False):
+def patch_frames_for_stitching(frames, db_combine, do_combine=False):
     # print_combine_database(db_combine, k_ep=layers['bgd']['shot']['k_ep'])
 
     if do_combine:

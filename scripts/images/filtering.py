@@ -1,21 +1,9 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-
-from parsers.parser_stitching import STICTHING_FGD_PAD
-from utils.get_filters import FILTER_BASE_NO
-import cv2
-import numpy
-import os
-import os.path
-from copy import deepcopy
-
-# import torch
-
 import sys
-import numpy as np
-# import bm3d
+from copy import deepcopy
 import cv2
+import numpy as np
+
 from skimage import data
 from skimage.filters import unsharp_mask
 from skimage.util import img_as_ubyte
@@ -29,19 +17,27 @@ from skimage.restoration import (calibrate_denoiser,
                                  denoise_nl_means,
                                  denoise_bilateral,
                                  estimate_sigma)
-from functools import partial
+# from functools import partial
 from pprint import pprint
 from skimage import color
 from skimage import restoration
 
+from parsers.parser_stitching import STICTHING_FGD_PAD
+from utils.common import get_dimensions_from_crop_values
 
 
 def filter_denoise(frame, img):
     # print("denoise: %s -> %s" % (frame['filepath']['upscale'], frame['filepath']['denoise']))
+    if 'denoise' not in frame['filters']['opencv'].keys():
+        print("Warning: no denoise filter defined")
+        return None
+
     if frame['filters']['opencv']['denoise'] is not None:
         return filters_opencv(img, frame['filters']['opencv']['denoise'], multi=False)
-    elif frame['filters']['ffmpeg']['denoise'] is not None:
-        print("error: FFMPEG denoise filter shall be implemented before this function call")
+
+
+    # elif frame['filters']['ffmpeg']['denoise'] is not None:
+    #     print("Error: FFMPEG denoise filter shall be implemented before this function call")
     # else:
     #     print("warning: no denoise filter defined")
     return None
@@ -75,7 +71,7 @@ def filter_upscale(frame, img):
         imgTmp = filters_opencv(img, filter_array, multi=False)
         return imgTmp
     else:
-        print("warning: no upscale filter defined")
+        raise Exception("error: opencv: no upscale filter defined to generate %s" % (frame['filepath']['upscale']))
     return None
 
 
@@ -130,108 +126,97 @@ def stabilize_image(frame, img):
 
 
 def filter_geometry(frame, img):
-    # print("crop and resize: %s -> %s" % (frame['filepath']['rgb'], frame['filepath']['geometry']))
+    # print("crop and resize: %s -> %s" % (frame['filepath']['sharpen'], frame['filepath']['geometry']))
+    h, w, c = img.shape
+
+    # print("------------------")
+    # pprint(frame['geometry'])
+    # print(img.shape)
+    if (frame['geometry'] is None
+    or (frame['geometry']['part'] is None and frame['geometry']['custom'] is None)):
+        print("Error: no geometry defined, cannot modify the image")
+        return None
+
 
     # Crop
-
     if frame['geometry'] is not None:
-        c_x0, c_y0, c_w, c_h = frame['geometry']['crop']
-        img_cropped = img[c_y0:c_y0+c_h, c_x0:c_x0+c_w]
-    else:
-        img_cropped = img
+        c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
+        if ('custom' in frame['geometry'].keys()
+            and frame['geometry']['custom'] is not None):
+            # Use the customized geometry
+            # print("use the customized geometry")
+            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['custom']['crop'])
+        else:
+            # Use the part geometry
+            # print:("use the part geometry")
+            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
+            # print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
+
+        # Crop the image
+        img = np.ascontiguousarray(img[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
+
+    # Final width and height
+    w_final = frame['dimensions']['final']['w']
+    h_final = frame['dimensions']['final']['h']
+
+    # Calculate resized width for both part and (part or custom)
+    w_p_tmp = int((c_w_p * h_final) / float(c_h_p))
+    w_tmp = int((c_w * h_final) / float(c_h))
+    # print("cropped image: ", img.shape)
+    # pprint("w_p_tmp=%d, w_tmp=%d" % (w_p_tmp, w_tmp))
+    # pprint("h_final=%d" % (h_final))
 
     # Resize
-    h_c, w_c, channel_count = img_cropped.shape
-    h_final = frame['dimensions']['final']['h']
-    w_tmp = int((w_c * h_final) / float(h_c))
-    img_resized = cv2.resize(img_cropped,
+    img_resized = cv2.resize(img,
         (w_tmp, h_final),
         interpolation=cv2.INTER_LANCZOS4)
+    # print("img_resized before adjustments: ", img_resized.shape)
 
-    # Add padding
-    w_final = frame['dimensions']['final']['w']
-    pad_left = int((w_final - w_tmp) / 2)
-    pad_right = w_final - (w_tmp + pad_left)
-    img_finalized = cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
+    # Verify custom vs part cropped and resized image
+    if w_tmp != w_p_tmp:
+        # This is a custom geometry, width shall be the same as the part's one
+        # It is done AFTER resizing because the resize may be different:
+        #   i.e. when keep_ratio is disabled (custom width)
+        if w_tmp > w_p_tmp:
+            # Crop the image
+            # Calculate the position of the left crop of the part after resizing
+            c_l_p_resized = int(((c_l_p) * h_final) / float(c_h_p))
+            c_l_resized = int(((c_l) * h_final) / float(c_h))
+            x0 = c_l_p_resized - c_l_resized
+            x1 = w_p_tmp + x0
+            # print("crop the image: x0=%d, x1=%d, (w_tmp + x0)=%d" % (x0, x1, w_tmp+x0))
+            if x1 > w_tmp:
+                # Crop is too big on the left
+                # print("crop is too big")
+                x0 = w_tmp - w_p_tmp
+                x1 = w_tmp
+            # print("crop the image: c_l_p_resized=%d, c_l_resized=%d, x0=%d, x1=%d -> new resized width=%d" % (
+                # c_l_p_resized, c_l_resized, x0, x1, x1 - x0))
+            img_resized_final = np.ascontiguousarray(img_resized[0:h_final,  x0:x1,])
+        elif w_p_tmp > w_tmp:
+            # Add RED padding, for debug
+            # print("Error: custom geometry is incorrect")
+            # TODO: exit?
+            pad_left = int((w_p_tmp - w_tmp)/2)
+            pad_right = w_p_tmp - w_tmp - pad_left
+            img_resized_final = np.ascontiguousarray(cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
+                cv2.BORDER_CONSTANT, value=[255, 0, 0]))
+    else:
+        img_resized_final = img_resized
+
+    # print("img_resized after adjustments: ", img_resized_final.shape)
+    # print("   w_resized should be: %s" % (w_p_tmp))
+
+    # Add padding to the cropped & resized image
+    pad_left = int((w_final - w_p_tmp) / 2)
+    pad_right = w_final - (w_p_tmp + pad_left)
+    img_finalized = cv2.copyMakeBorder(img_resized_final, 0, 0, pad_left, pad_right,
         cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
+    # print("img_finalized: ", img_finalized.shape)
+    # sys.exit()
+
     return img_finalized
-
-
-
-
-    # s = get_shot_from_frame(database, edition, episode_no, frame, part:str=''):
-
-
-    # if step == 'deinterlace':
-
-    #     get_filter_id(database, frame, step):
-    #     return
-    # elif step == 'upscale':
-    # elif step == 'denoise':
-    # elif step == 'sharpen':
-    # elif step == 'backgroung_color_correction':
-    # elif step == 'merge':
-
-
-# get_filter_id(database, frame, step):
-
-
-# extract_frame(database, frame, step='deinterlace', 'upscale', 'denoise', save='intermediate')
-# denoise_image(database, frame, img, save='intermediate')
-# sharpen_image(database, frame, img, save='intermediate')
-# merge_images(database, db_geometry, frame, img_foreground, img_background)
-# apply_rgb_curves(database, curves)
-
-
-# def video_to_frame_for_study(database, edition, part, frames, filter:str):
-#     for f in frames:
-#         f['no']
-#         f['ref']
-#         f['']
-
-#         get_filename
-#         part = get_part_from_frame_no(database, 'k', 1, f['no'])
-#     if database
-
-
-# pprint(cfg_episodes_common)
-#
-# Parse configuration files
-#     1) parse common files
-#     2) parse episode common file
-#     3) parse episode file
-#
-# Extract frames
-#
-# Merge images
-#     1) apply RGB curve on background image
-#     2) Merge 2 images
-#         (*) save (only for testing purpose)
-#     3) Sharpen image
-#     4) Save image
-
-# Apply RGB curve
-
-# class Frame():
-#     def __init__(self):
-#         self.cfg_common
-#         self.cfg_part
-#         self.edition
-#         pass
-
-#     def extract_frames(self):
-
-#         pass
-
-
-
-
-# def extract_single(configs:dict, command:dict):
-#     # edition
-#     pprint(cfg_episodes['a']['ep01'])
-
-
 
 
 
@@ -297,9 +282,13 @@ def filter_brightness_contrast(input_img, brightness = 255, contrast = 127):
 
 
 
-def filters_scale_opencv(image, width, height):
-    # print("upscale image to %d x %d" % (width, height))
-    return cv2.resize(image, (width, height), interpolation=cv2.INTER_LANCZOS4)
+def filters_scale_opencv(image, width, height, interpolation):
+    # print("upscale image to %dx%d, inter=%s" % (width, height, interpolation))
+    if interpolation == 'bicubic':
+        cv2_interpolation = cv2.INTER_CUBIC
+    else:
+        cv2_interpolation = cv2.INTER_LANCZOS4
+    return cv2.resize(image, (width, height), interpolation=cv2_interpolation)
 
 
 
@@ -450,15 +439,16 @@ def filters_opencv(images, filters, multi=True):
         elif function == 'scale':
             image = filters_scale_opencv(image,
                 width=int(args[0]),
-                height=int(args[1]))
+                height=int(args[1]),
+                interpolation=args[2])
 
     return image
 
 
-def filters_bm3d(image, sigma):
-    tmp = img_as_float(image)
-    tmp2 = bm3d.bm3d_rgb(tmp, sigma)
-    return img_as_ubyte(tmp2)
+# def filters_bm3d(image, sigma):
+#     tmp = img_as_float(image)
+#     tmp2 = bm3d.bm3d_rgb(tmp, sigma)
+#     return img_as_ubyte(tmp2)
 
 
 
@@ -551,7 +541,7 @@ def  filters_morphologyEx(image, type, radius, iterations):
     elif type == 'MORPH_ELLIPSE':
         kernelType = cv2.MORPH_ELLIPSE
     else:
-        print("error: unrecognized kernel type")
+        print("Error: unrecognized kernel type")
         sys.exit()
 
     kernel = cv2.getStructuringElement(kernelType, (radius, radius))

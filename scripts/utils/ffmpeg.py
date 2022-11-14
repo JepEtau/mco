@@ -1,25 +1,26 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
+import sys
 import datetime
 import os
 import re
-import numpy
+import numpy as np
 import cv2
 import signal
 import subprocess
-import sys
 import time
+
 from pprint import pprint
 
 from images.frames import frame_no_to_sexagesimal
-
-from utils.common import remove_spaces
 from utils.common import create_pipe_in
-from utils.path import get_output_filepath_list
+from utils.path import get_deinterlaced_filepath_list
 from utils.time_conversions import timestamp2sexagesimal
 
 
+def ffmeg_clean_filter_complex(a_string):
+    for c in ['\"', '\r', '\n']:
+        a_string = a_string.replace(c, '')
+    return a_string
 
 def ffmpeg_execute_command(command=None, filename='', mode='', print_msg=False):
     # if mode == 'debug' or True:
@@ -78,7 +79,7 @@ def ffmpeg_execute_command(command=None, filename='', mode='', print_msg=False):
             sys.exit()
         except:
             _process.kill()
-            print("error: timeout")
+            print("Error: timeout")
             _stdout, _stderr = _process.communicate()
 
         line = _stderr.decode(encoding='UTF-8')
@@ -222,7 +223,7 @@ def ffmpeg_extract_single_frame(database, frame, filter_str, width, height):
         "-i", frame['input'],
         "-t", str(frames_count/database['common']['fps']),
         "-f", "image2pipe",
-        "-filter_complex", remove_spaces(filter_str),
+        "-filter_complex", ffmeg_clean_filter_complex(filter_str),
         "-map", "[outv]",
         "-pix_fmt", "bgr24",
         "-vcodec", "rawvideo",
@@ -241,12 +242,12 @@ def ffmpeg_extract_single_frame(database, frame, filter_str, width, height):
         rawFrame = pipe_in.stdout.read(3 * height * width)
         pipe_in.stdout.flush()
         if rawFrame is None or len(rawFrame) == 0:
-            print("error: frame has not been extracted\n\t%s" % (command_ffmpeg))
+            print("Error: frame has not been extracted\n\t%s" % (command_ffmpeg))
             print(pipe_in.stderr)
             sys.exit()
 
         if no == 1:
-            rawFrame = numpy.frombuffer(rawFrame, dtype=numpy.uint8)
+            rawFrame = np.frombuffer(rawFrame, dtype=np.uint8)
             rgbFrame = rawFrame.reshape((height, width, 3))
         no += 1
     return rgbFrame
@@ -291,7 +292,7 @@ def ffmpeg_deinterlace_and_upscale_single_frame(database, frame):
 
 
 
-def ffmpeg_extract_shot(database, shot, filter_str, width, height, step='upscale'):
+def ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale'):
 
     command_ffmpeg = [database['common']['settings']['ffmpeg_exe']]
     command_ffmpeg.extend(database['common']['settings']['verbose'].split(' '))
@@ -304,7 +305,7 @@ def ffmpeg_extract_shot(database, shot, filter_str, width, height, step='upscale
         "-i", shot['input'],
         "-t", str(frames_count/database['common']['fps']),
         "-f", "image2pipe",
-        "-filter_complex", remove_spaces(filter_str),
+        "-filter_complex", ffmeg_clean_filter_complex(filter_str),
         "-map", "[outv]",
         "-pix_fmt", "bgr24",
         "-vcodec", "rawvideo",
@@ -315,7 +316,7 @@ def ffmpeg_extract_shot(database, shot, filter_str, width, height, step='upscale
     pipe_in = create_pipe_in(command_ffmpeg, process_cfg)
 
     # list of filepaths
-    img_filepaths = get_output_filepath_list(database, shot, k_step=step)
+    img_filepaths = get_deinterlaced_filepath_list(database, shot, task=task)
 
     # Get frame(s) extracted by FFMPEG
     no = 0
@@ -326,7 +327,7 @@ def ffmpeg_extract_shot(database, shot, filter_str, width, height, step='upscale
         if rawFrame is None or len(rawFrame) == 0:
             sys.exit("error: frame %d (%s) has not been extracted\n\t%s" % (frame_start + no, shot['k_ed'], command_ffmpeg))
 
-        rawFrame = numpy.frombuffer(rawFrame, dtype=numpy.uint8)
+        rawFrame = np.frombuffer(rawFrame, dtype=np.uint8)
         img = rawFrame.reshape((height, width, 3))
         cv2.imwrite(img_filepaths[no], img)
         # print("extracted frame no. %d (%s) " % (frame_start + no, shot['k_ed']), flush = True)
@@ -340,28 +341,27 @@ def ffmpeg_extract_shot(database, shot, filter_str, width, height, step='upscale
 
 def ffmpeg_deinterlace_shot(database, shot):
     filter_str, width, height = get_ffmpeg_filter(shot, 'deinterlace')
-    return ffmpeg_extract_shot(database, shot, filter_str, width, height, step='deinterlace')
+    return ffmpeg_extract_shot(database, shot, filter_str, width, height, task='deinterlace')
 
 
 
 def ffmpeg_deinterlace_and_pre_upscale_shot(database, shot):
     filter_str = ""
-    if shot['filters']['ffmpeg']['pre_upscale'] is None:
-        print("warning: pre-upscale filter is not defined")
+    # if shot['filters']['ffmpeg']['pre_upscale'] is None:
+    #     print("warning: pre-upscale filter is not defined")
     # get FFMPEG filter
     filter_str, width, height = get_ffmpeg_filter(shot, 'pre_upscale')
 
-    return ffmpeg_extract_shot(database, shot, filter_str, width, height, step='pre_upscale')
+    return ffmpeg_extract_shot(database, shot, filter_str, width, height, task='pre_upscale')
 
 
 
 def ffmpeg_deinterlace_and_upscale_shot(database, shot):
-    filter_str = ""
-    if shot['filters']['ffmpeg']['upscale'] is not None:
-        # get FFMPEG filter
-        filter_str, width, height = get_ffmpeg_filter(shot, 'upscale')
-        print(filter_str)
+    # filter_str = ""
+    # if shot['filters']['ffmpeg']['upscale'] is not None:
+    # get FFMPEG filter
+    filter_str, width, height = get_ffmpeg_filter(shot, 'upscale')
+    return ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale')
 
-    return ffmpeg_extract_shot(database, shot, filter_str, width, height, step='upscale')
 
 

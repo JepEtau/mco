@@ -1,10 +1,9 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import cv2
 import gc
 import os
-import sys
 import time
 from pprint import pprint
 
@@ -13,28 +12,30 @@ from multiprocessing import *
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
-
-from utils.common import K_GENERIQUES, get_shot_from_frame_no, get_shot_from_frame_no_new
+from utils.common import K_GENERIQUES
 from utils.get_filters import get_filters
 from utils.get_curves import get_curves
-from utils.get_crop import get_crop
-from utils.path import get_input_filepath
-from utils.path import get_output_frame_filepaths_for_study
-from utils.ffmpeg import ffmpeg_deinterlace_single_frame
-from utils.ffmpeg import ffmpeg_deinterlace_and_pre_upscale_single_frame
-from utils.ffmpeg import ffmpeg_deinterlace_and_upscale_single_frame
-
+from utils.path import (
+    get_input_filepath,
+    get_output_frame_filepaths_for_study,
+)
+from utils.ffmpeg import (
+    ffmpeg_deinterlace_single_frame,
+    ffmpeg_deinterlace_and_pre_upscale_single_frame,
+    ffmpeg_deinterlace_and_upscale_single_frame,
+)
 from images.frames import get_frames_for_study
-from images.filtering import filter_upscale
-from images.filtering import filter_denoise
-from images.filtering import filter_bgd
-from images.filtering import filter_sharpen
-from images.filtering import filter_geometry
-from images.filtering import filter_rgb
+from images.filtering import (
+    filter_upscale,
+    filter_denoise,
+    filter_bgd,
+    filter_sharpen,
+    filter_geometry,
+    filter_rgb,
+)
 from images.combine import combine_images
 
 study_mode = True
-
 
 
 def process_single_frame(database:dict, work_no, frame):
@@ -325,7 +326,7 @@ def process_frames(database, frames, cpu_count):
             # Do not continue if it is not possible to combine images
             print("Warning: cannot combine images, end of processing")
         else:
-            print("error: todo, correct this: img_combine_count [%d]!= len(frames_2) [%d]!" %
+            print("Error: todo, correct this: img_combine_count [%d]!= len(frames_2) [%d]!" %
                 (img_combine_count, len(frames_2)))
 
 
@@ -334,7 +335,7 @@ def process_frames(database, frames, cpu_count):
 
 
 
-def extract_frames_for_study(database, editions, episode_no, k_part, tasks, force:bool=False, compare:bool=False):
+def extract_frames_for_study(database, editions, episode_no, k_part, tasks, force:bool=False):
     print("%s.extract_frames_for_study: episode no. %d, k_part=%s, tasks=%s" % (__name__, episode_no, k_part, ', '.join(tasks)))
 
     # Use the default edition if none specified
@@ -368,7 +369,7 @@ def extract_frames_for_study(database, editions, episode_no, k_part, tasks, forc
 
 
 
-def get_framelist_for_study(database, editions, episode_no, k_part, tasks, force:bool=False, compare:bool=False):
+def get_framelist_for_study(database, editions, episode_no, k_part, tasks, force:bool=False):
     # print("%s.get_framelist: episode no. %d, k_part=%s, tasks=%s, editions: " % (__name__, episode_no, k_part, ', '.join(tasks)), editions)
 
     # Create a list of frames, each frame has all
@@ -415,22 +416,7 @@ def get_framelist_for_study(database, editions, episode_no, k_part, tasks, force
             f['curves'] = get_curves(database, frame=f, k_part=k_part)
             f['force'] = force
 
-
-
-            # Get shot from frame_no.
-            # if k_part in K_GENERIQUES:
-            #     shot = get_shot_from_frame_no(database[k_part], f['no'], edition)
-            # else:
-            #     shot = get_shot_from_frame_no(database[f['k_ep']][edition], f['no'], k_part)
-
-            f['geometry'] = get_crop(database, frame_or_shot=f, k_part=k_part)
-            # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            # pprint(f)
-
-
-            # if f['curves']['lut'] is not None:
-            # pprint(f, indent=4)
-
+            # .... NOT WORKING
 
     # if not compare:
     if False:
@@ -491,11 +477,6 @@ def get_framelist_for_study(database, editions, episode_no, k_part, tasks, force
     else:
         # k_ep = 'ep%02d' % (episode_no + 1)
         # edition = editions[0]
-
-        # print(k_ep)
-        # shot = get_shot_from_frame_no(database[k_ep][edition], 2671)
-        # shot2 = get_shot_from_frame_no(database['ep%02d' % (episode_no)][edition], shot['src']['start'])
-
 
         # pprint(shot)
         # print("-------------")

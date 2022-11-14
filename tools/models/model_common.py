@@ -16,8 +16,12 @@ from PySide6.QtCore import (
 from utils.common import (
     K_GENERIQUES,
     K_NON_GENERIQUE_PARTS,
+    K_PARTS,
 )
 from utils.get_filters import FILTER_BASE_NO
+
+
+
 
 
 class Model_common(QObject):
@@ -48,14 +52,14 @@ class Model_common(QObject):
         try:
             return self.WIDGET_LIST
         except:
-            raise("Error: WIDGET_LIST shall be define in the model class")
+            raise Exception("Error: WIDGET_LIST shall be define in the model class")
 
     def get_selectable_widgets(self):
         try:
             # This list shall be ordered
             return self.SELECTABLE_WIDGET_LIST
         except:
-            raise("Error: SELECTABLE_WIDGET_LIST shalle be define in the model class")
+            raise Exception("Error: SELECTABLE_WIDGET_LIST shalle be define in the model class")
 
 
     def exit(self):
@@ -92,9 +96,14 @@ class Model_common(QObject):
                 if os.path.exists(os.path.join(path_cache, k_ep)):
                     episode_and_parts[k_ep] = list()
 
-                    for k_part in K_NON_GENERIQUE_PARTS:
+                    for k_part in K_PARTS:
                         if os.path.exists(os.path.join(path_cache, k_ep, k_part)):
                             episode_and_parts[k_ep].append(k_part)
+
+                    # g_asuivre, g_reportage
+                    # Force for debug purpose
+                    episode_and_parts[k_ep].append('g_asuivre')
+                    episode_and_parts[k_ep].append('g_reportage')
 
             episode_and_parts[' '] = list()
             for k_part_g in K_GENERIQUES:
@@ -143,6 +152,7 @@ class Model_common(QObject):
         return self.preview_options
 
     def event_preview_options_changed(self, preview_options):
+        log.info("preview has changed")
         if False:
             print("\nchanged preview mode:" % (preview_options))
             print("---------------------------------------")

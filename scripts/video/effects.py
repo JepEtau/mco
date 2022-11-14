@@ -1,17 +1,20 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 import os
 import os.path
+import shutil
+import sys
+
 import numpy as np
 import cv2
-from shutil import copy
 from pprint import pprint
-import sys
 
 from utils.common import get_shot_no_from_frame_no
 from utils.get_filters import get_filter_id
-from utils.path import get_output_frame_filepaths
+from utils.path import (
+    get_output_frame_filepaths,
+    get_output_path_from_shot,
+)
 
 
 
@@ -52,9 +55,11 @@ def effect_comb(db, shot, frame, last_task):
     frames_per_band = frames_per_band - 3
 
     # Get dimensions from last task
-    if last_task == 'deinterlace':
+    if 'deinterlace' in last_task:
+        # deinterlace (or deinterlace_rgb for debug)
         dimensions = db['common']['dimensions']['initial']
-    elif last_task == 'geometry':
+    elif 'geometry' in last_task:
+        # geometry (or upscale_rgb_geometry for debug)
         dimensions = db['common']['dimensions']['final']
     else:
         dimensions = db['common']['dimensions']['upscale']
@@ -69,10 +74,6 @@ def effect_comb(db, shot, frame, last_task):
 
     # Create the destination image
     img_dst = np.zeros([dimensions['h'], dimensions['w'], 3], dtype=np.uint8)
-
-    # Patch output folder
-    output_folder = os.path.join(db[k_ep_dst]['common']['path']['cache'], shot['k_part'])
-    shot['output_path'] = output_folder
 
     # Create the images and save them
     count = 0
@@ -92,7 +93,6 @@ def effect_comb(db, shot, frame, last_task):
                 y += delta_y
                 img_dst[dimensions['h']-y:dimensions['h'], x:x+delta_x] = img_src[dimensions['h']-y:dimensions['h'], x:x+delta_x]
 
-            output_folder
             output_filepath = get_output_frame_filepaths(db, shot, frame_start_no + count)[last_task]
             # print("\t(x, y) = (%d, %d) -> %s" % (x, y, output_filepath))
             cv2.imwrite(output_filepath, img_dst)
@@ -124,46 +124,44 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
     loop_count = shot['effects'][2]
 
     fadeout_count = shot['effects'][3]
-    fadeout_start = shot['start'] + shot['count'] - fadeout_count
 
     # print("%s.effect_loop_and_fadeout" % (__name__))
     # pprint(shot)
-
+    # fadeout_start = shot['start'] + shot['count'] - fadeout_count
     # print("\n\tloop (%d), fadeout %d->%d, added frames=%d" % (loop_count, fadeout_start, fadeout_start + fadeout_count, loop_count))
 
-    # Initial input filepath
-    input_filepath = shot['output_path']
+    # Input directory: use the latest task even if it is not
+    input_filepath = get_output_path_from_shot(db=db, shot=shot, task='rgb')
     # print("\tinput filepath=%s" % (input_filepath))
 
     # Output directory
-    k_ep = shot['k_ep']
     k_part = shot['k_part']
-    output_filepath = shot['output_path']
-    if 'dst' in shot.keys():
-        k_ep_dst = shot['dst']['k_ep']
-        k_part_dst = shot['dst']['k_part']
-        if k_ep_dst != k_ep and k_part_dst != k_part:
-            output_filepath = os.path.join(db['common']['directories']['cache'], k_ep_dst, k_part_dst, "%05d" % (shot['start']))
-    elif shot['k_part'] in ['g_debut', 'g_fin']:
-        output_filepath = os.path.join(db['common']['directories']['cache'], shot['k_part'], "%05d" % (shot['start']))
-
+    if k_part in ['g_debut', 'g_fin']:
+        output_filepath = os.path.join(
+            db[k_part]['target']['path']['cache'],
+            '%05d' % (shot['start']))
+    else:
+        # Because it is the latest task was geometry to use the dst k_ep:k_part:shot_no
+        output_filepath = get_output_path_from_shot(db=db, shot=shot, task='geometry')
     # print("\toutput filepath=%s" % (output_filepath))
     if not os.path.exists(output_filepath):
         os.makedirs(output_filepath)
+
+    # Suffix for each image
     suffix = "__%s__%03d.%s" % (
         shot['k_ed'],
         get_filter_id(db, shot, last_task),
         db['common']['settings']['frame_format'])
 
-
     # Get dimensions from last task
-    if last_task == 'deinterlace':
+    if 'deinterlace' in last_task:
+        # deinterlace (or deinterlace_rgb for debug)
         dimensions = db['common']['dimensions']['initial']
-    elif last_task == 'geometry':
+    elif 'geometry' in last_task:
+        # geometry (or upscale_rgb_geometry for debug)
         dimensions = db['common']['dimensions']['final']
     else:
         dimensions = db['common']['dimensions']['upscale']
-
 
     # Create a  black image for fadeout and open the src image
     img_black = np.zeros([dimensions['h'], dimensions['w'], 3], dtype=np.uint8)
@@ -171,33 +169,35 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
     # Default filename if loop == fadeout
     filename = "%s_%05d%s" % (shot['k_ep'], loop_start, suffix)
 
+    # Copy to dst because it is only done if last task is geometry
+    if 'geometry' not in last_task:
+        input_img_filepath = os.path.join(input_filepath, filename)
+        output_img_filepath = os.path.join(output_filepath, filename)
+        if output_img_filepath != input_img_filepath:
+            shutil.copy(input_img_filepath, output_img_filepath)
+
     if loop_count > fadeout_count:
-        print("WARNING: loop (%d) is > fadeout (%d)" % (loop_count, fadeout_count))
-        input_img_filepath = os.path.join(shot['output_path'], filename)
+        # print("INFO: loop (%d) is > fadeout (%d)" % (loop_count, fadeout_count))
+        input_img_filepath = os.path.join(output_filepath, filename)
 
     for count in range(0, fadeout_count):
         # Input file
         if count < fadeout_count - loop_count:
-            # print("\tfadeout before loop")
-            # Use the src
+            # Warning: not verified
+            print("TODO: urgent: verify this")
             input_img_filepath = frames[-1 * (fadeout_count - loop_count - count)]['filepath'][last_task]
-        #    input_img_filepath = frames[-1]['filepath'][last_task]
+            raise Exception("effect_loop_and_fadeout")
         elif count == fadeout_count - loop_count:
-            # print("\tstart loop")
-            if count == 0:
-                # Use the loop
-                input_img_filepath = os.path.join(shot['output_path'], filename)
-            else:
-                input_img_filepath = os.path.join(output_filepath, filename)
+            input_img_filepath = os.path.join(output_filepath, filename)
 
         # Output file
         filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
         output_img_filepath = os.path.join(output_filepath, filename)
 
-        # print("\t% 2d: %s -> %s" % (count, input_img_filepath, output_img_filepath))
-
-        # Calculate coefficient
-        coef = count / fadeout_count
+        # Calculate coefficient: last frame is not completely black because there is always
+        # a silence after this (i.e. black frames)
+        coef = float(count) / fadeout_count
+        # print("\t% 2d: %s -> %s, coef=%f" % (count, input_img_filepath, output_img_filepath, coef))
 
         # Mix images
         img_src = cv2.imread(input_img_filepath, cv2.IMREAD_COLOR)
@@ -210,42 +210,42 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
 
 def effect_fadeout(db, shot, frames, last_task):
     fadeout_count = shot['effects'][2]
-    fadeout_start = shot['effects'][1]
 
+    # fadeout_start = shot['effects'][1]
     # print("\n%s.effect_fade_out: start=%d, count=%d" % (__name__, fadeout_start, fadeout_count))
     # pprint(shot)
     # sys.exit()
 
-    # Initial input filepath
-    input_filepath = shot['output_path']
+    # Input directory: use the latest task even if it is not
+    input_filepath = get_output_path_from_shot(db=db, shot=shot, task='rgb')
     # print("\tinput filepath=%s" % (input_filepath))
 
-    # Destination
-    k_ep = shot['k_ep']
+    # Output directory
     k_part = shot['k_part']
-    output_filepath = shot['output_path']
-    if 'dst' in shot.keys():
-        k_ep_dst = shot['dst']['k_ep']
-        k_part_dst = shot['dst']['k_part']
-        if k_ep_dst != k_ep and k_part_dst != k_part:
-            # Use the same folder when src=dst
-            output_filepath = os.path.join(db['common']['directories']['cache'], k_ep_dst, k_part_dst, "%05d" % (shot['start']))
-    elif shot['k_part'] in ['g_debut', 'g_fin']:
-        output_filepath = os.path.join(db['common']['directories']['cache'], shot['k_part'], "99999")
-
+    if k_part in ['g_debut', 'g_fin']:
+        output_filepath = os.path.join(
+            db['common']['directories']['cache'],
+            k_part,
+            "99999")
+    else:
+        # As if the latest task was geometry to use the dst k_ep:k_part:shot_no
+        output_filepath = get_output_path_from_shot(db=db, shot=shot, task='geometry')
     # print("\toutput filepath=%s" % (output_filepath))
     if not os.path.exists(output_filepath):
         os.makedirs(output_filepath)
 
+    # Suffix for each image
     suffix = "__%s__%03d.%s" % (
         shot['k_ed'],
         get_filter_id(db, shot, last_task),
         db['common']['settings']['frame_format'])
 
     # Get dimensions from last task
-    if last_task == 'deinterlace':
+    if 'deinterlace' in last_task:
+        # deinterlace (or deinterlace_rgb for debug)
         dimensions = db['common']['dimensions']['initial']
-    elif last_task == 'geometry':
+    elif 'geometry' in last_task:
+        # geometry (or upscale_rgb_geometry for debug)
         dimensions = db['common']['dimensions']['final']
     else:
         dimensions = db['common']['dimensions']['upscale']
@@ -253,18 +253,29 @@ def effect_fadeout(db, shot, frames, last_task):
     # Create a  black image for fadeout
     img_black = np.zeros([dimensions['h'], dimensions['w'], 3], dtype=np.uint8)
 
+    # Copy to dst because it is only done if last task is geometry
+    if 'geometry' not in last_task:
+        filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'], suffix)
+        input_img_filepath = os.path.join(input_filepath, filename)
+        output_img_filepath = os.path.join(output_filepath, filename)
+        if output_img_filepath != input_img_filepath:
+            print("effect: fadeout: copy %s -> %s" % (input_img_filepath, output_img_filepath))
+            shutil.copy(input_img_filepath, output_img_filepath)
+            raise Exception("urgent: verify this!")
+
     for count in range(0, fadeout_count):
         # Input file
+        # TODO: Warning; this may not work if the dst shot is < src shot
         input_img_filepath = frames[-1 * (fadeout_count - count)]['filepath'][last_task]
 
         # Output file
         filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
-        output_img_filepath = os.path.join(output_filepath, filename)
+        output_img_filepath = os.path.join(input_filepath, filename)
 
-        # print("\t% 2d: %s -> %s" % (count, input_img_filepath, output_img_filepath))
-
-        # Calculate coefficient
-        coef = count / fadeout_count
+        # Calculate coefficient: last frame is not completely black because there is always
+        # a silence after this (i.e. black frames)
+        coef = float(count) / fadeout_count
+        # print("\t% 2d: %s -> %s, coef=%f" % (count, input_img_filepath, output_img_filepath, coef))
 
         # Mix images
         img_src = cv2.imread(input_img_filepath, cv2.IMREAD_COLOR)

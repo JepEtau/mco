@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import sys
 import gc
 from pprint import pprint
 from logger import log
@@ -7,10 +7,12 @@ from logger import log
 from PySide6.QtCore import (
     QEvent,
     QPoint,
+    QSize,
     Qt,
 )
 from PySide6.QtGui import (
     QCursor,
+    QIcon,
     QImage,
 )
 from PySide6.QtWidgets import (
@@ -56,6 +58,18 @@ class Window_main(Window_common):
     def event_show_fullscreen(self):
         self.widget_browser.showNormal()
 
+
+    def event_show_fullscreen(self):
+        self.blockSignals(True)
+        self.widget_browser.blockSignals(True)
+        self.widget_browser.showNormal()
+        self.widget_browser.activateWindow()
+        self.widget_browser.blockSignals(False)
+        self.blockSignals(False)
+
+
+
+
     def event_browser_action(self, event):
         # log.info("event=%s" % (event))
         if event == 'exit':
@@ -82,14 +96,23 @@ class Window_main(Window_common):
         for widget in QApplication.topLevelWidgets():
             widget.close()
         self.close()
+        # Not clean but avoid ghost processes: clean this
+        sys.exit()
 
 
     def set_initial_options(self, preferences:dict):
         s = preferences['viewer']
-        self.setGeometry(s['geometry'][0],
-            s['geometry'][1],
-            s['geometry'][2],
-            s['geometry'][3])
+        if False:
+            self.setGeometry(s['geometry'][0],
+                s['geometry'][1],
+                s['geometry'][2],
+                s['geometry'][3])
+        else:
+            # For debug purpose
+            self.setGeometry(s['geometry'][0],
+                s['geometry'][1],
+                1600,
+                s['geometry'][3])
 
 
     def get_preferences(self) -> dict:
@@ -177,6 +200,11 @@ class Window_main(Window_common):
             if key == Qt.Key_F9:
                 self.event_browser_action('minimize')
 
+        elif key == Qt.Key_F9:
+            self.event_browser_action('minimize')
+            event.accept()
+            return True
+
         elif key == Qt.Key_Up:
             # log.info("previous")
             self.widget_browser.select_previous_image()
@@ -209,16 +237,40 @@ class Window_main(Window_common):
             log.info("keyPressEvent: %d, propagate" % (key))
 
 
+    # def changeEvent(self, event: QEvent) -> None:
+    #     if event.type() == QEvent.ActivationChange:
+    #         if self.isActiveWindow():
+    #             self.event_activated()
+    #             event.accept()
+    #             return True
+    #     elif event.type() == QEvent.WindowStateChange:
+    #         if self.windowState() & Qt.WindowFullScreen:
+    #             # From minimized to normal
+    #             self.event_show_fullscreen()
+    #         event.accept()
+    #         return True
+    #     return super().changeEvent(event)
+
+
     def changeEvent(self, event: QEvent) -> None:
         if event.type() == QEvent.ActivationChange:
-            if self.isActiveWindow():
-                self.event_activated()
+            if self.windowState() == Qt.WindowState().WindowNoState:
+                self.setWindowState(Qt.WindowActive)
+                self.event_show_fullscreen()
                 event.accept()
                 return True
-        elif event.type() == QEvent.WindowStateChange:
-            if self.windowState() & Qt.WindowFullScreen:
-                # From minimized to normal
+
+            if self.windowState() & Qt.WindowState().WindowActive:
+                self.setWindowState(Qt.WindowActive)
                 self.event_show_fullscreen()
-            event.accept()
-            return True
+                event.accept()
+                return True
+
+            if (self.windowState() & Qt.WindowState().WindowMinimized
+            and not self.isActiveWindow()):
+                self.setWindowState(Qt.WindowActive)
+                self.event_show_fullscreen()
+                event.accept()
+                return True
+
         return super().changeEvent(event)

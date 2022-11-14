@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 import sys
 sys.path.append('../scripts')
@@ -30,6 +29,8 @@ from PySide6.QtWidgets import (
 from common.sylesheet import set_widget_stylesheet
 from utils.common import FPS
 
+PAINTER_MARGIN_LEFT = 20
+PAINTER_MARGIN_TOP = 20
 
 class Window_common(QMainWindow):
 
@@ -72,7 +73,10 @@ class Window_common(QMainWindow):
         self.current_editor = ''
         self.current_widget = self.current_editor
 
-        self.show_side = 'top'
+        # This is used  when the screen height is <= 1080 to display
+        # the bottom side
+        self.display_position_y = 0
+        self.display_height = QApplication.screens()[0].size().height()
 
         self.current_frame_index = -1
         self.playing_frame_start_no = 0
@@ -86,9 +90,6 @@ class Window_common(QMainWindow):
 
         # Connect signals coming from model
         self.model.signal_shotlist_modified[dict].connect(self.event_shotlist_modified)
-
-
-
 
 
 
@@ -127,7 +128,7 @@ class Window_common(QMainWindow):
                 self.widget_geometry.set_geometry_edition_enabled(False)
             else:
                 self.widget_geometry.set_geometry_edition_enabled(True)
-        self.event_preview_options_changed()
+        self.event_preview_options_changed('model')
 
 
     def event_editor_action(self, event='exit'):
@@ -174,8 +175,11 @@ class Window_common(QMainWindow):
                 message_box = QMessageBox()
                 message_box.setIcon(QMessageBox.Warning)
                 message_box.setWindowTitle("Save before closing?")
-                message_box.setText("Some modifications have not been change.");
-                message_box.setInformativeText("Do you want to close before saving?");
+                text = "Some modifications have not been saved:"
+                for s in self.model.get_modified_db():
+                    text += "\n  - %s" % (s)
+                message_box.setText(text)
+                message_box.setInformativeText("Do you want to close before saving?")
                 message_box.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
                 message_box.setDefaultButton(QMessageBox.Save)
                 set_widget_stylesheet(message_box)
@@ -195,7 +199,7 @@ class Window_common(QMainWindow):
             self.widget_controls.showMinimized()
             self.showMinimized()
         else:
-            raise("Error: action [%s] is deprecated, discard action")
+            raise Exception("Error: action [%s] is deprecated, discard action")
 
 
 
@@ -211,7 +215,7 @@ class Window_common(QMainWindow):
             self.setGeometry(s['geometry'][0],
                 s['geometry'][1],
                 1600,
-                s['geometry'][3]-200)
+                s['geometry'][3])
         log.info("set current editor: %s" % (s['current_editor']))
         self.set_current_editor(s['current_editor'])
 
@@ -234,6 +238,7 @@ class Window_common(QMainWindow):
 
 
     def event_shotlist_modified(self, shotlist):
+        # episode/part has been changed
         enabled = True if len(shotlist['shots']) > 0 else False
         for w_str in self.model.get_widget_list():
             log.info("%s: set enabled: %s" % (self.widgets[w_str].objectName(), 'true' if enabled else 'false'))
@@ -247,6 +252,26 @@ class Window_common(QMainWindow):
             try: self.widgets[w_str].set_widget_enabled(enabled)
             except: pass
 
+
+    def switch_display_side(self):
+        if self.display_height > 1080:
+            return
+        self.event_screen_position_changed('switch')
+        self.repaint()
+
+
+    def event_screen_position_changed(self, side):
+        # log.info("change side to %s" % (side))
+        if side == 'switch':
+            new_side = 'bottom' if self.display_position_y == 0 else 'top'
+        else:
+            new_side = side
+
+        if new_side == 'bottom':
+            self.display_position_y = 1152 - 1080 + 2*PAINTER_MARGIN_TOP
+        else:
+            self.display_position_y = 0
+        self.repaint()
 
 
     def get_current_widget(self):
@@ -295,14 +320,17 @@ class Window_common(QMainWindow):
                 break
 
 
-    def event_preview_options_changed(self):
+    def event_selected_shots_changed(self, selection):
+        self.event_preview_options_changed('selection')
+
+
+    def event_preview_options_changed(self, widget):
         # log.info("change preview: editor: %s" % (self.current_editor))
+        log.info("change preview: editor: %s" % (widget))
         preview_options = dict()
         for e, w in self.widgets.items():
             preview_options.update({e: w.get_preview_options()})
         self.signal_preview_options_changed.emit(preview_options)
-
-
 
 
     def event_ready_to_play(self, playlist_properties):
@@ -371,12 +399,6 @@ class Window_common(QMainWindow):
             self.widget_controls.set_playing_frame_properties(self.current_frame_index)
             f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no)
             self.display_frame(f)
-
-
-
-    def event_upper_lower_preview_changed(self, side:str):
-        self.show_side = side
-        self.repaint()
 
 
     def event_right_click(self, qpoint):

@@ -1,22 +1,25 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-import configparser
-from operator import itemgetter
-import os
-import os.path
-
-from pathlib import Path
-from pathlib import PosixPath
-from pprint import pprint
-import re
 import sys
 
-from parsers.parser_filters import *
-from parsers.parser_shots import *
-from parsers.parser_frames import *
-from parsers.parser_av import *
-from utils.common import K_GENERIQUES
+import configparser
+import os
+import os.path
+from pathlib import (
+    Path,
+    PosixPath,
+)
+import re
+
+from pprint import pprint
+
+from parsers.parser_av import parse_audio_generique
+from parsers.parser_filters import (
+    parse_filters_initialize,
+    parser_filters_consolidate,
+)
+from parsers.parser_frames import parse_framelist
+from parsers.parser_shots import parse_shotlist
+from utils.common import K_GENERIQUES, nested_dict_set
 
 
 
@@ -32,10 +35,7 @@ def db_init_generiques(database, k_ed, verbose=False):
         # Create structure for this generique
         # set the default episode no. to 1, it will be modified once
         # database files are parsed
-        if k_part_g not in database.keys():
-            database[k_part_g] = dict()
-
-        database[k_part_g][k_ed] = {
+        nested_dict_set(database, {
             'k_ep': 'ep01',
             'video': {
                 'shots': list(),
@@ -43,7 +43,8 @@ def db_init_generiques(database, k_ed, verbose=False):
             },
             'audio': dict(),
             'filters': {'default': parse_filters_initialize(type='default')}
-        }
+        }, k_part_g, k_ed)
+
         db_generique = database[k_part_g][k_ed]
 
         # Default input file
@@ -69,30 +70,29 @@ def db_init_generiques(database, k_ed, verbose=False):
 #   Parse the common episode file for all editions
 #
 #===========================================================================
-def parse_generiques_common(database, verbose=False):
+def parse_generiques_common(database, study_mode=False, verbose=False):
 
     for k_part_g in K_GENERIQUES:
-        if k_part_g not in database.keys(): database[k_part_g] = dict()
-        if 'common' not in database[k_part_g].keys():
-            database[k_part_g]['common'] = {
+        database[k_part_g].update({
+            'common': {
+                'filters': {
+                    'default': parse_filters_initialize(type='default')
+                },
+            },
+            'target': {
+                'audio': dict(),
                 'video': {
                     'shots': list(),
-                    'reference': {
-                        'k_ed': None,
-                        'k_ep': None
-                    }
                 },
-                'audio': {
-                    'reference': {
-                        'k_ed': None,
-                        'k_ep': None
-                    },
-                },
+                'audio': dict(),
                 'filters': {
                     'default': parse_filters_initialize(type='default')
                 },
             }
+        })
+        db_g_target = database[k_part_g]['target']
         db_g_common = database[k_part_g]['common']
+
 
         # Open configuration file
         filepath = os.path.join(database['common']['directories']['config'], k_part_g, "%s_common.ini" % (k_part_g))
@@ -104,7 +104,7 @@ def parse_generiques_common(database, verbose=False):
             continue
 
         # Cache
-        db_g_common['path'] = {
+        db_g_target['path'] = {
             'cache': os.path.join(database['common']['directories']['cache'], k_part_g)
         }
 
@@ -116,7 +116,7 @@ def parse_generiques_common(database, verbose=False):
 
             # Frames (used for studies)
             #----------------------------------------------------
-            if k_section == 'frames':
+            if k_section == 'frames'  and study_mode:
                 for k_option in config.options(k_section):
                     value_str = config.get(k_section, k_option)
                     value_str = value_str.replace(' ','')
@@ -136,15 +136,20 @@ def parse_generiques_common(database, verbose=False):
                     value_str = value_str.replace(' ','')
                     # print("%s:%s=" % (k_section, k_option), value_str)
 
-                    if k_option == 'reference_edition':
-                        db_g_common['video']['reference']['k_ed'] = value_str
+                    if k_option == 'source':
+                        tmp = re.match(re.compile("([a-z_0-9]+):(ep[0-9]{2})"), value_str)
+                        if tmp is None:
+                            sys.exit("Error: wrong value for %s:%s [%s]" % (k_section, k_option, value_str))
+                        nested_dict_set(db_g_target, {
+                                'k_ed': tmp.group(1),
+                                'k_ep': tmp.group(2),
+                            }, 'video', 'src')
+                        continue
 
-                    elif k_option == 'reference_episode':
-                        db_g_common['video']['reference']['k_ep'] ='ep%02d' % (int(value_str))
 
                     elif k_option == 'shots':
-                        parse_shotlist(db_g_common['video']['shots'], value_str)
-                        for shot in db_g_common['video']['shots']:
+                        parse_shotlist(db_g_target['video']['shots'], '', k_part_g, value_str)
+                        for shot in db_g_target['video']['shots']:
                             # Force src as this is the common config file which
                             # specify the k_ed:k_ep to use
                             if 'src' in shot.keys():
@@ -155,7 +160,7 @@ def parse_generiques_common(database, verbose=False):
             # Audio
             #----------------------------------------------------
             elif k_section == 'audio':
-                parse_audio_generique(db_g_common['audio'], config)
+                parse_audio_generique(db_g_target['audio'], config)
 
             # Filters
             #----------------------------------------------------
@@ -163,16 +168,26 @@ def parse_generiques_common(database, verbose=False):
                 print("warning: parse_generiques_common: (%s) parse_and_update_filters_generique is deprecated, ignored" % (k_part_g))
                 # parse_and_update_filters_generique(db_g_common, config, k_section)
 
+
+        # Source must be defined before consolidating
+        #----------------------------------------------------
+        try:
+            k_ed_src = db_g_target['video']['src']['k_ed']
+            k_ep_src = db_g_target['video']['src']['k_ep']
+        except:
+            sys.exit("Error: k_ed:k_ep must be defined in source options for [%s] " % (k_part_g))
+
+
         # Consolidate
         #----------------------------------------------------
-        if 'frames' in db_g_common.keys():
+        if 'frames' in db_g_common.keys() and study_mode:
             db_frames = db_g_common['frames']
-            db_shots = db_g_common['video']['shots']
+            db_shots = db_g_target['video']['shots']
 
             for f in db_frames:
                 # Use the reference episode if not specified in frame
                 if f['k_ep'] == '':
-                    f['k_ep'] = db_g_common['video']['reference']['k_ep']
+                    f['k_ep'] = db_g_target['video']['src']['k_ep']
 
                 # find shot from frame no.
                 for s in db_shots:
@@ -186,6 +201,9 @@ def parse_generiques_common(database, verbose=False):
                             # f['filters'] = s['filters']
                         break
 
+
+
+
 #===========================================================================
 #
 #   Parse generiques configuration file
@@ -194,9 +212,6 @@ def parse_generiques_common(database, verbose=False):
 def parse_generiques(database, k_ed, verbose=False):
 
     for k_part_g in K_GENERIQUES:
-
-        # k_ed = database[k_part_g]['common']['video']['reference']['k_ed']
-
         # Open database file
         filepath = os.path.join(database['common']['directories']['config'], k_part_g, "%s_%s.ini" % (k_part_g, k_ed))
         if filepath.startswith("~/"):
@@ -241,17 +256,6 @@ def parse_generiques(database, k_ed, verbose=False):
                     value_str = config.get(k_section, k_option)
                     value_str = value_str.replace(' ','')
                     # print("%s:%s=" % (k_section, k_option), value_str)
-
-                    # Shots
-                    # if k_option == 'shots':
-                    #     parse_shotlist(db_generique['video']['shots'], value_str)
-                    #     print("---------------- %s, %s:video ----------------" % (k_ed, k_part_g))
-                    #     pprint(db_generique['video']['shots'])
-                    #     sys.exit()
-                    #     for shot in db_generique['video']['shots']:
-                    #         if 'src' in shot.keys():
-                    #             shot['src']['use'] = True
-                    #             shot['src']['count'] = shot['count']
 
                     # Episode used as reference
                     if k_option == 'episode':
@@ -303,15 +307,6 @@ def parse_generiques(database, k_ed, verbose=False):
             label="[%s:%s]" % (k_ed, k_part_g),
             verbose=False)
 
-        # print("parse_generiques: consolidate_shots: %s, %s: activate" % (edition, k_part_g))
-        # if ((edition=='s' and k_part_g == 'g_asuivre')
-        #     or (edition=='k' and k_part_g == 'g_reportage')):
-        #     # consolidate_shots(db_generique['video'])
-
-        #     if k_part_g == 'g_reportage':
-        #         pprint(db_generique['video'])
-        #         print("===============================")
-            #     sys.exit()
 
 
 
@@ -323,12 +318,12 @@ def parse_get_dependencies_for_generique(db, k_part_g='') -> dict:
     if k_part_g not in K_GENERIQUES:
         return dependencies
 
-    db_video = db[k_part_g]['common']['video']
+    db_video = db[k_part_g]['target']['video']
 
-    # Common part
-    if 'k_ep' in db_video['reference'].keys():
-        k_ed_ref = db_video['reference']['k_ed']
-        k_ep_ref = db_video['reference']['k_ep']
+    # Common part contains the source
+    if 'k_ep' in db_video['src'].keys():
+        k_ed_ref = db_video['src']['k_ed']
+        k_ep_ref = db_video['src']['k_ep']
         if k_ed_ref not in dependencies.keys():
             dependencies[k_ed_ref] = list()
         dependencies[k_ed_ref].append(k_ep_ref)
@@ -341,7 +336,7 @@ def parse_get_dependencies_for_generique(db, k_part_g='') -> dict:
     # pprint(db_video['shots'])
     for s in db_video['shots']:
         if 'k_ed' not in s['src'].keys():
-            s['src']['k_ed'] = db_video['reference']['k_ed']
+            s['src']['k_ed'] = db_video['src']['k_ed']
         k_ed = s['src']['k_ed']
         if k_ed not in dependencies.keys():
             dependencies[k_ed] = list()

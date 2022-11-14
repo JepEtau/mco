@@ -1,36 +1,44 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import re
-import sys
 from pprint import pprint
 from copy import deepcopy
-from utils.common import FPS, K_GENERIQUES, pprint_audio, pprint_video
-from utils.time_conversions import frames_to_ms
-from utils.time_conversions import ms_to_frames
-from utils.common import K_PARTS
+
+from utils.common import (
+    FPS,
+    K_PARTS,
+    pprint_audio,
+    pprint_video,
+    nested_dict_set,
+)
+from utils.time_conversions import (
+    frames_to_ms,
+    ms_to_frames,
+)
 
 
 def parse_audio_generique(db_audio, config, verbose=False):
     k_section = 'audio'
 
-    for k in config.options(k_section):
-        value_str = config.get(k_section, k)
+    for k_option in config.options(k_section):
+        value_str = config.get(k_section, k_option)
         value_str = value_str.replace(' ','')
         # print("%s, %s, %s => [%s]" % (k_section, part, k, value_str))
 
-        if k == 'reference_edition':
-            db_audio['reference']['k_ed'] = value_str
-
-        elif k == 'reference_episode':
-            db_audio['reference']['k_ep'] ='ep%02d' % (int(value_str))
-
-        if k == 'reference':
-            db_audio['reference']['k_ed'] = value_str
-            # continue
+        # Source: edition and episode for the audio track
+        if k_option == 'source':
+            tmp = re.match(re.compile("([a-z_0-9]+):(ep[0-9]{2})"), value_str)
+            if tmp is None:
+                sys.exit("Error: wrong value for %s:%s [%s]" % (k_section, k_option, value_str))
+            nested_dict_set(db_audio, {
+                    'k_ed': tmp.group(1),
+                    'k_ep': tmp.group(2),
+                }, 'src')
+            continue
 
         # Parse only supported sections
-        if k not in ['g_debut', 'g_fin']:
+        if k_option not in ['g_debut', 'g_fin']:
             continue
 
         db_audio.update( {
@@ -98,28 +106,31 @@ def parse_audio_generique(db_audio, config, verbose=False):
             'end': db_audio['segments'][0]['start'] + d,
         })
 
+    try:
+        reference = db_audio['src']
+    except:
+        sys.exit("Error: missing source option in audio section for a generique")
 
 
 def parse_audio(db_audio, config, verbose=False):
     k_section = 'audio'
-    # if 'audio' not in db_ep_common.keys():
-    #     db_audio = dict()
 
 
-    for k in config.options(k_section):
-        value_str = config.get(k_section, k)
+    for k_option in config.options(k_section):
+        value_str = config.get(k_section, k_option)
         value_str = value_str.replace(' ','')
         # print("%s, %s, %s => [%s]" % (k_section, part, k, value_str))
 
-        if k == 'reference':
-            db_audio['k_ed'] = value_str
+        if k_option == 'source':
+            nested_dict_set(db_audio, value_str, 'src', 'k_ed')
             continue
 
         # Parse only supported sections
-        if k not in K_PARTS:
+        if k_option not in K_PARTS:
             continue
 
-        db_audio[k] = {
+        k_part = k_option
+        db_audio[k_option] = {
             'segments': list()
         }
 
@@ -147,7 +158,7 @@ def parse_audio(db_audio, config, verbose=False):
 
             # Duration
             d = end - start
-            db_audio[k]['segments'].append({
+            db_audio[k_part]['segments'].append({
                 'start': start,
                 'end': end,
                 'duration': d
@@ -175,14 +186,14 @@ def parse_audio(db_audio, config, verbose=False):
                         # frames_count += part_silence
                         continue
 
-        db_audio[k].update({
+        db_audio[k_part].update({
             'fadein': part_fadein,
             'fadeout': part_fadeout,
             'fade_alg': part_fadeout_alg,
             'silence': part_silence,
-            'start': db_audio[k]['segments'][0]['start'],
+            'start': db_audio[k_part]['segments'][0]['start'],
             'duration': duration,
-            'end': db_audio[k]['segments'][0]['start'] + d,
+            'end': db_audio[k_part]['segments'][0]['start'] + d,
             'avsync': 0
         })
 
@@ -191,18 +202,19 @@ def parse_audio(db_audio, config, verbose=False):
 def parse_video(db_video, config, verbose=False):
     k_section = 'video'
 
-    for k in config.options(k_section):
-        value_str = config.get(k_section, k)
+    for k_option in config.options(k_section):
+        value_str = config.get(k_section, k_option)
         value_str = value_str.replace(' ','')
         # print("%s, %s, %s => [%s]" % (k_section, part, k, value_str))
 
-        if k == 'reference':
-            db_video['reference'] = {'k_ed': value_str}
+        if k_option == 'source':
+            nested_dict_set(db_video, value_str, 'src', 'k_ed')
             continue
 
         # Parse only supported sections
-        if k not in K_PARTS:
+        if k_option not in K_PARTS:
             continue
+        k_part = k_option
 
         # split: start:end:other properties
         properties = value_str.split(':')
@@ -240,7 +252,7 @@ def parse_video(db_video, config, verbose=False):
                     part_fadeout = int(float(search_fadeout.group(1)) * FPS)
                     continue
 
-        db_video[k] = {
+        db_video[k_part] = {
             'effects': {
                 'fadein': part_fadein,
                 'fadeout': part_fadeout,

@@ -1,79 +1,13 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-
-import re
 import sys
 from pprint import pprint
 from copy import deepcopy
-import configparser
-from utils.common import pprint_video
 
+from utils.common import pprint_video
 from utils.time_conversions import ms_to_frames
 
 
-
-
-
-def parse_shotlist_generique(db_shots, shotlist_str) -> None:
-    """This procedure parses a string wich contains the list of shots
-        and update the structure of the database.
-        Specific to 'génériques'
-
-        TODO: deprecate this function and replace by the parse_shotlist function???
-
-    Args:
-        db_shots: the structure where to store the shots
-        shotlist_str: the string to parse
-
-    Returns:
-        None
-
-    """
-    # print("%s.parse_shotlist_generique: shotlist_str=%s" % (__name__, shotlist_str))
-    shot_list = shotlist_str.split()
-    for shot_no, shot in zip(range(len(shot_list)), shot_list):
-        # print(shot)
-        shot_properties = shot.split(',')
-
-        # first field is the start and end of the shot
-        start_end = shot_properties[0].split(':')
-        start = int(start_end[0])
-        if len(start_end) > 1:
-            end = int(start_end[1])
-        else:
-            # print("Error: %s.parse_shotlist_generique: todo consolidate the shotlist" % (__name__))
-            end = start
-
-        db_shots.append({
-            'start': start,
-            'count': end - start,
-            'no': shot_no,
-            'filters': 'default',
-            'curves': None,
-            'replace': dict(),
-        })
-        current_shot = db_shots[-1]
-
-        if len(shot_properties) > 1:
-            for f in shot_properties:
-                d = f.split('=')
-                if d[0] == 'filters':
-                    # custom filter
-                    current_shot['filters'] = d[1]
-
-                elif d[0] == 'ep':
-                    # custom episode
-                    if d[1] == '0':
-                        current_shot['k_ep'] = d[1]
-                    else:
-                        db_shots[-1]['k_ep'] = 'ep%02d' % (int(d[1]))
-
-                elif d[0] == 'effects':
-                    current_shot['effects'] = d[1].split(':')
-
-
-
-def parse_shotlist(db_shots, shotlist_str) -> None:
+def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
     """This procedure parse a string wich contains the list of shots
         and update the structure of the database.
         Used for 'épisodes' and 'reportage'
@@ -100,7 +34,6 @@ def parse_shotlist(db_shots, shotlist_str) -> None:
             if len(start_end) > 1:
                 end = int(start_end[1])
             else:
-                # print("Error: %s.parse_shotlist_generique: todo consolidate the shotlist" % (__name__))
                 end = start
             count = end - start
         else:
@@ -109,9 +42,13 @@ def parse_shotlist(db_shots, shotlist_str) -> None:
 
         # Append this shot to the list of shots
         db_shots.append({
+            'no': shot_no,
             'start': start,
             'count': count,
-            'no': shot_no,
+            'dst': {
+                'k_ep': k_ep,
+                'k_part': k_part,
+            },
             'filters': 'default',
             'curves': None,
             'replace': dict(),
@@ -148,12 +85,14 @@ def parse_shotlist(db_shots, shotlist_str) -> None:
                         db_shots[shot_no]['src'].update({
                             'k_ep': 'ep%02d' % (int(src[0])),
                             'start': int(src[1]),
+# 2022-11-13: replacement does not work: to verify
                             'count': -1
                         })
                     else:
                         db_shots[shot_no]['src'].update({
                             'k_ep': 'ep%02d' % (int(src[0])),
                             'start': start,
+# 2022-11-13: replacement does not work: to verify
                             'count': -1
                         })
 
@@ -168,7 +107,7 @@ def parse_shotlist(db_shots, shotlist_str) -> None:
 
 
 
-def parse_shotlist_precedemment_asuivre(db_shots, shotlist_str) -> None:
+def parse_shotlist_precedemment_asuivre(db_shots, k_ep, k_part, shotlist_str) -> None:
     """This procedure parse a string wich contains the list of shots
         and update the structure of the database.
         Used for 'précédemment' and 'à suivre'
@@ -186,9 +125,13 @@ def parse_shotlist_precedemment_asuivre(db_shots, shotlist_str) -> None:
     for shot_no, shot in zip(range(len(shot_list)), shot_list):
         shot_properties = shot.split(',')
         db_shots.append({
+            'no': shot_no,
             'start': int(shot_properties[0]),
             'count': 0,
-            'no': shot_no,
+            'dst': {
+                'k_ep': k_ep,
+                'k_part': k_part,
+            },
             'filters': 'default',
             'curves': None,
             'replace': dict(),
@@ -235,11 +178,12 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
     """
     K_PART_DEBUG = ''
     K_EP_DEBUG = ''
+    SHOT_NO = 0
 
     if k_ed=='k' and k_ep==K_EP_DEBUG and k_part==K_PART_DEBUG:
         print("%s:consolidate_shots_after_parse: %s:%s:%s" % (__name__, k_ed, k_ep, k_part))
-        pprint(db[k_ep][k_ed][k_part]['video'])
-        print("\n")
+        pprint(db[k_ep][k_ed][k_part]['video']['shots'][SHOT_NO])
+        print("")
 
     db_video = db[k_ep][k_ed][k_part]['video']
 
@@ -256,7 +200,14 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
             'count': db_video['count'],
             'curves': None,
             'replace': dict(),
+            'dst':{
+                'k_ep': k_ep,
+                'k_part': k_part,
+            }
         }]
+        # print("consolidate_shots_after_parse: -->")
+        # pprint(db_video['shots'])
+        # print("")
         return
 
 
@@ -272,13 +223,17 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
             else:
                 shots[i]['count'] = shots[i+1]['start'] - shots[i]['start']
 
+            # Update count in the src structure
+            if 'src' in shots[i].keys():
+                shots[i]['src']['count'] = shots[i]['count']
+
         if 'effects' in shots[i]:
             if shots[i]['effects'][0] == 'loop':
                 frames_count += shots[i]['effects'][2]
                 sys.exit("%s: add loop duration" % (__name__))
 
         if shots[i]['count'] <= 0 and i < len(shots)-1:
-            print("error: %s:%s:%s: shot start=%d, shot length (%d) < 0 " % (k_ed, k_ep, k_part, shots[i]['start'], shots[i]['count']))
+            print("Error: %s:%s:%s: shot start=%d, shot length (%d) < 0 " % (k_ed, k_ep, k_part, shots[i]['start'], shots[i]['count']))
             # pprint(shots)
             sys.exit()
 
@@ -286,11 +241,15 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
 
     # The new part duration is the sum of all shots duration
     # db_video['count'] = frames_count
+    if k_ed=='k' and k_ep==K_EP_DEBUG and k_part==K_PART_DEBUG:
+        print("----->")
+        pprint(db[k_ep][k_ed][k_part]['video']['shots'][SHOT_NO])
+        print("")
+        # sys.exit()
 
 
 
-
-def create_dst_shots(database, k_ep, k_part):
+def create_target_shots(database, k_ep, k_part):
     """This procedure is used to consolidate part of an 'épisode': it uses the 'replace'
     field to generate a new list of shots in the 'common' structure of the 'épisode'. This list
     will be used for processing instead of the list defined in the edition.
@@ -313,17 +272,17 @@ def create_dst_shots(database, k_ep, k_part):
     K_EP_DEBUG = ''
     K_PART_DEBUG = ''
 
-    k_ed_src = database[k_ep]['common']['video']['reference']['k_ed']
+    k_ed_src = database[k_ep]['target']['video']['src']['k_ed']
     db_video_src = database[k_ep][k_ed_src][k_part]['video']
-    db_video_dst = database[k_ep]['common']['video'][k_part]
+    db_video_dst = database[k_ep]['target']['video'][k_part]
 
     if k_ed_src=='k' and k_part == K_PART_DEBUG:
-        print("\n%s.create_dst_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
+        print("\n%s.create_target_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
         print(" start")
         print("\tvideo (src): %d\t(%d)" % (db_video_src['start'], db_video_src['count']))
         print("\tvideo (dst): %d\t(%d)" % (db_video_dst['start'], db_video_dst['count']))
     if k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
-        print("\n%s.create_dst_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
+        print("\n%s.create_target_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
         print("------------------- before -----------------------------")
         print("db_video_src:")
         print("   start: %d" % (db_video_src['start']))
@@ -348,11 +307,11 @@ def create_dst_shots(database, k_ep, k_part):
     if ('shots' not in db_video_dst.keys()
         and 'shots' not in db_video_src.keys()):
         # Cannot consolidate because no shots are defined
-        # print("\t\tinfo: %s.create_dst_shots: no shots in src/dst %s:%s" % (__name__, k_ep, k_part))
+        # print("\t\tinfo: %s.create_target_shots: no shots in src/dst %s:%s" % (__name__, k_ep, k_part))
         return
 
     if 'shots' not in db_video_dst.keys():
-        # print("\n%s.create_dst_shots: consolidate %s:%s, create DST shot" % (__name__, k_ep, k_part))
+        # print("\n%s.create_target_shots: consolidate %s:%s, create DST shot" % (__name__, k_ep, k_part))
         # print("------------------------------------------------")
         db_video_dst['shots'] = deepcopy(db_video_src['shots'])
         for shot in  db_video_dst['shots']:
@@ -373,8 +332,8 @@ def create_dst_shots(database, k_ep, k_part):
 
     shots = db_video_dst['shots']
 
-    # Update the reference episode because it is maybe not specified in config files
-    database[k_ep]['common']['video']['reference']['k_ep'] = k_ep
+    # TODO: verify this
+    database[k_ep]['target']['video']['src']['k_ep'] = k_ep
 
     # Calculate frames count
     if db_video_dst['start'] != db_video_src['start']:
@@ -449,7 +408,7 @@ def create_dst_shots(database, k_ep, k_part):
 
 
 
-def create_dst_shots_g(db, k_ep, k_part_g) -> None:
+def create_target_shots_g(db, k_ep, k_part_g) -> None:
     """This procedure is used
      to consolidate the parsed shots
     It updates the total duration (in frames of the video for a part
@@ -463,40 +422,51 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
 
     """
 
-    k_ed_src = db[k_part_g]['common']['video']['reference']['k_ed']
-    k_ep_src = db[k_part_g]['common']['video']['reference']['k_ep']
+    # Get the default source: edition:episode
+    k_ed_src = db[k_part_g]['target']['video']['src']['k_ed']
+    k_ep_src = db[k_part_g]['target']['video']['src']['k_ep']
 
     if k_part_g in ['g_debut', 'g_fin']:
-        db_video_dst = db[k_part_g]['common']['video']
+        db_video_dst = db[k_part_g]['target']['video']
         db_video_dst.update({
             'avsync': 0,
         })
 
     elif k_part_g == 'g_asuivre':
-        # This part was not yet defined because it depends on audio start/duration
-        db_audio = db[k_ep]['common']['audio'][k_part_g]
+        # Create the g_sauivre structure:
+        #   this part was not yet defined because it depends on audio start/duration
+        db_audio = db[k_ep]['target']['audio'][k_part_g]
         db_audio['avsync'] = 0
-        db[k_ep]['common']['video'][k_part_g] = {
+        db[k_ep]['target']['video'][k_part_g] = {
             'start': 0,
             'count': ms_to_frames(db_audio['duration']),
             'avsync': 0,
+            'dst': {
+                'k_ep': k_ep,
+                'k_part': k_part_g,
+            },
         }
-        db_video_dst = db[k_ep]['common']['video'][k_part_g]
+        db_video_dst = db[k_ep]['target']['video'][k_part_g]
 
     elif k_part_g == 'g_reportage':
-        # This part was not yet defined because it depends on audio start/duration
-        db_audio = db[k_ep]['common']['audio'][k_part_g]
+        # Create the g_reportage structure:
+        #   this part was not yet defined because it depends on audio start/duration
+        db_audio = db[k_ep]['target']['audio'][k_part_g]
         audio_count = ms_to_frames(db_audio['duration'])
         db_audio.update({
             'count': audio_count,
             'avsync': 0,
         })
-        db[k_ep]['common']['video'][k_part_g] = {
+        db[k_ep]['target']['video'][k_part_g] = {
             'start': ms_to_frames(db_audio['start']),
             'count': audio_count,
-            'avsync': 0
+            'avsync': 0,
+            'dst': {
+                'k_ep': k_ep,
+                'k_part': k_part_g,
+            },
         }
-        db_video_dst = db[k_ep]['common']['video'][k_part_g]
+        db_video_dst = db[k_ep]['target']['video'][k_part_g]
 
 
     if ('shots' not in db_video_dst.keys()
@@ -504,7 +474,7 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
         frame_count = 0
         db_video_dst['shots'] = list()
         # if k_part_g == 'g_reportage':
-        #     print("create_dst_shots_g for %s:%s:%s" % (k_ed_src, k_ep, k_part_g))
+        #     print("create_target_shots_g for %s:%s:%s" % (k_ed_src, k_ep, k_part_g))
         #     print("\tfrom %s:%s:%s" % (k_ep_src, k_ed_src, k_part_g))
         #     pprint(db[k_ep_src][k_ed_src][k_part_g]['video'])
         for shot_src in db[k_ep_src][k_ed_src][k_part_g]['video']['shots']:
@@ -513,6 +483,7 @@ def create_dst_shots_g(db, k_ep, k_part_g) -> None:
                 'no': shot_src['no'],
                 'start': shot_src['start'],
                 'count': shot_src['count'],
+                'dst': db[k_ep]['target']['video'][k_part_g]['dst'],
                 'src': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep_src,

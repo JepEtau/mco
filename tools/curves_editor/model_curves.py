@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 from PySide6.QtCore import Signal
@@ -22,8 +21,7 @@ from models.model_database import Model_database
 # from curves_editor.curves_history import Curves_history
 
 sys.path.append('../scripts')
-from utils.common import K_GENERIQUES, K_PARTS, get_shot_from_frame_no_new
-from utils.path import PATH_CURVES
+from utils.common import K_GENERIQUES, get_shot_from_frame_no_new
 from parsers.parser_curves import parse_curves_file
 from parsers.parser_curves import write_curves_file
 
@@ -50,15 +48,15 @@ class Model_curves(object):
         log.info("browse folder which contains curves: %s" % (k_ep_or_g))
         self.db_curves = dict()
 
-        path = os.path.join(PATH_CURVES)
-        if not os.path.exists(path):
-            log.error("%s does not exist" % (path))
+        path_curves = self.model_database.get_curves_library_path()
+        if not os.path.exists(path_curves):
+            log.error("%s does not exist" % (path_curves))
             self.current_k_ep = ''
             return
 
         # Browse curves in the subdirectories
-        if os.path.exists(os.path.join(path, k_ep_or_g)):
-            for f in os.listdir(os.path.join(path, k_ep_or_g)):
+        if os.path.exists(os.path.join(path_curves, k_ep_or_g)):
+            for f in os.listdir(os.path.join(path_curves, k_ep_or_g)):
                 # print("\t%s" % (f))
                 if f.endswith(".crv"):
                     # Create an element for each curve
@@ -71,7 +69,7 @@ class Model_curves(object):
                     }
 
         # Browse curves in the common directory
-        for f in os.listdir(path):
+        for f in os.listdir(path_curves):
             if f.endswith(".crv"):
                 # Create an element for each curve
                 k_curves = os.path.splitext(f)[0]

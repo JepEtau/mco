@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
 # Based on gimp/app/core/gimpcurve.c
@@ -390,12 +389,3 @@ class Curve(object):
         self._selected_point.set_x(x)
         self._selected_point.set_y(y)
 
-
-def calculate_lut_for_bgd(curve:Curve):
-    depth = 256.0
-    lut_tmp = curve.calculate(sample_count=256, depth=depth, verbose=False)
-    lut_tmp = (lut_tmp - depth/2) / 10
-    tmp = np.arange(start=0, stop=256, step=1, dtype=np.float32)
-    tmp32 = np.add(tmp, lut_tmp)
-
-    return np.clip(tmp32, 0, 255).astype(np.uint8)

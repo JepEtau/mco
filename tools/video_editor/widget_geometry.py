@@ -3,14 +3,14 @@
 import sys
 sys.path.append('../scripts')
 
+
+from functools import partial
 from logger import log
 from pprint import pprint
 
 from PySide6.QtCore import (
     Qt,
     Signal,
-    QObject,
-    QEvent,
 )
 from PySide6.QtWidgets import (
     QPushButton,
@@ -18,6 +18,9 @@ from PySide6.QtWidgets import (
     QRadioButton,
     QCheckBox,
 )
+
+from utils.common import K_GENERIQUES
+
 from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet
 
@@ -27,6 +30,7 @@ from video_editor.ui.widget_geometry_ui import Ui_widget_geometry
 
 class Widget_geometry(Widget_common, Ui_widget_geometry):
     signal_geometry_modified = Signal(dict)
+    signal_position_changed = Signal(str)
 
     def __init__(self, ui, model:Model_video_editor):
         super(Widget_geometry, self).__init__(ui)
@@ -36,13 +40,13 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         # Internal variables
         self.current_key_pressed = None
-        self.current_modification_type = 'part'
+        self.current_type = 'part'
         self.saved_preview_options = None
         self.saved_states = dict()
         self.current_edition_and_preview_enabled = True
 
 
-        # Disable focus
+        # Part
         self.lineEdit_part_crop_rectangle.setFocusPolicy(Qt.NoFocus)
         self.pushButton_part_crop_edition.setFocusPolicy(Qt.NoFocus)
         self.pushButton_part_crop_preview.setFocusPolicy(Qt.NoFocus)
@@ -52,12 +56,27 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         self.lineEdit_part_crop_rectangle.clear()
 
-        self.pushButton_part_crop_edition.toggled[bool].connect(self.event_part_crop_edition_changed)
-        self.pushButton_part_crop_preview.toggled[bool].connect(self.event_part_crop_preview_changed)
-        self.pushButton_part_resize_preview.toggled[bool].connect(self.event_part_resize_preview_changed)
-        self.pushButton_part_resize_edition.toggled[bool].connect(self.event_part_resize_edition_changed)
-        self.checkBox_part_keep_ratio.toggled[bool].connect(self.event_part_keep_ratio_changed)
+        self.pushButton_part_crop_edition.toggled[bool].connect(partial(self.event_crop_edition_changed, 'part'))
+        self.pushButton_part_crop_preview.toggled[bool].connect(partial(self.event_crop_preview_changed, 'part'))
+        self.pushButton_part_resize_preview.toggled[bool].connect(partial(self.event_resize_preview_changed, 'part'))
+        self.pushButton_part_resize_edition.toggled[bool].connect(partial(self.event_resize_edition_changed, 'part'))
+        self.checkBox_part_keep_ratio.toggled[bool].connect(partial(self.event_keep_ratio_changed, 'part'))
 
+        # Custom
+        self.lineEdit_custom_crop_rectangle.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_custom_crop_edition.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_custom_crop_preview.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_custom_resize_edition.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_custom_resize_preview.setFocusPolicy(Qt.NoFocus)
+        self.checkBox_custom_keep_ratio.setFocusPolicy(Qt.NoFocus)
+
+        self.lineEdit_custom_crop_rectangle.clear()
+
+        self.pushButton_custom_crop_edition.toggled[bool].connect(partial(self.event_crop_edition_changed, 'custom'))
+        self.pushButton_custom_crop_preview.toggled[bool].connect(partial(self.event_crop_preview_changed, 'custom'))
+        self.pushButton_custom_resize_preview.toggled[bool].connect(partial(self.event_resize_preview_changed, 'custom'))
+        self.pushButton_custom_resize_edition.toggled[bool].connect(partial(self.event_resize_edition_changed, 'custom'))
+        self.checkBox_custom_keep_ratio.toggled[bool].connect(partial(self.event_keep_ratio_changed, 'custom'))
 
         set_stylesheet(self)
         self.adjustSize()
@@ -77,17 +96,19 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.pushButton_set_preview.setChecked(w['final_preview'])
             self.pushButton_set_preview.blockSignals(False)
 
+
             self.block_signals(True)
             self.pushButton_part_crop_edition.setChecked(w['part']['crop_edition'])
             self.pushButton_part_crop_preview.setChecked(w['part']['crop_preview'])
             self.pushButton_part_resize_edition.setChecked(w['part']['resize_edition'])
             self.pushButton_part_resize_preview.setChecked(w['part']['resize_preview'])
-            if w['part']['is_enabled']:
-                log.info('enable part widget')
-            else:
-                log.info('enable st widget')
 
+            self.pushButton_custom_crop_edition.setChecked(w['custom']['crop_edition'])
+            self.pushButton_custom_crop_preview.setChecked(w['custom']['crop_preview'])
+            self.pushButton_custom_resize_edition.setChecked(w['custom']['resize_edition'])
+            self.pushButton_custom_resize_preview.setChecked(w['custom']['resize_preview'])
             self.block_signals(False)
+
         except:
             log.warning("cannot set initial options")
             pass
@@ -102,10 +123,61 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
     def refresh_values(self, frame:dict):
-        geometry = frame['geometry']
-        x_c, y_x, w_c, h_c = geometry['crop']
-        crop_str = "x: %d, y: %d,  w: %d, h: %d" % (x_c, y_x, w_c, h_c)
-        self.lineEdit_part_crop_rectangle.setText(crop_str)
+        print("refresh_values")
+        part_geometry = frame['geometry']['part']
+        try:
+            c_t, c_b, c_l, c_r = part_geometry['crop']
+            crop_str = "t: %d, b: %d,  l: %d, r: %d" % (c_t, c_b, c_l, c_r)
+            self.lineEdit_part_crop_rectangle.setText(crop_str)
+        except:
+            self.lineEdit_part_crop_rectangle.clear()
+
+        custom_geometry = frame['geometry']['custom']
+        try:
+            c_t, c_b, c_l, c_r = custom_geometry['crop']
+            crop_str = "t: %d, b: %d,  l: %d, r: %d" % (c_t, c_b, c_l, c_r)
+            self.lineEdit_custom_crop_rectangle.setText(crop_str)
+        except:
+            self.lineEdit_custom_crop_rectangle.clear()
+
+        print("\nwidget_%s: refresh_values" % (self.objectName()))
+        if (frame['geometry']['custom'] is not None
+            or frame['k_part'] in K_GENERIQUES):
+            # Customized
+            self.current_type = 'custom'
+            self.groupBox_custom_geometry.show()
+            self.setMaximumHeight(100)
+            self.adjustSize()
+
+            # Disable widgets used for part
+            self.block_signals(True)
+            self.pushButton_part_crop_edition.setEnabled(True)
+
+            self.pushButton_part_crop_preview.setEnabled(False)
+            self.pushButton_part_crop_preview.setChecked(False)
+
+            self.pushButton_part_resize_edition.setEnabled(False)
+            self.pushButton_part_resize_edition.setChecked(False)
+
+            self.pushButton_part_resize_preview.setEnabled(True)
+            # self.pushButton_part_resize_preview.setChecked(True)
+
+            self.checkBox_part_keep_ratio.setEnabled(False)
+            self.block_signals(False)
+
+        else:
+            self.current_type = 'part'
+            self.groupBox_custom_geometry.hide()
+            self.setMaximumHeight(100)
+            self.adjustSize()
+
+            self.block_signals(True)
+            self.pushButton_part_crop_edition.setEnabled(True)
+            self.pushButton_part_crop_preview.setEnabled(True)
+            # self.pushButton_part_resize_edition.setEnabled(True)
+            self.pushButton_part_resize_preview.setEnabled(True)
+            self.checkBox_part_keep_ratio.setEnabled(False)
+            self.block_signals(False)
 
 
     def set_edition_and_preview_enabled(self, enabled):
@@ -113,8 +185,16 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         # Save current state to reenable it
         if (not self.current_edition_and_preview_enabled
         and not enabled):
+            log.info("already disabled")
             # already disabled, do not save another time
             return
+
+        if (self.current_edition_and_preview_enabled
+        and enabled):
+            log.info("already enabled")
+            # already disabled, do not save another time
+            return
+
 
         self.current_edition_and_preview_enabled = enabled
         if not enabled:
@@ -157,6 +237,8 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         else:
             log.info("enable edition and preview")
+
+            current_preview_state = self.pushButton_set_preview.isChecked()
             try:
                 for w in self.findChildren(QPushButton, options=Qt.FindChildrenRecursively):
                     w.setEnabled(self.saved_states['push_buttons'][w.objectName()]['is_enabled'])
@@ -175,9 +257,12 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                 for w in self.findChildren(QCheckBox, options=Qt.FindChildrenRecursively):
                     w.setEnabled(self.saved_states['check_box'][w.objectName()]['is_enabled'])
                     w.blockSignals(False)
-
             except:
                 print("warning: state was not saved")
+
+            self.pushButton_set_preview.blockSignals(True)
+            self.pushButton_set_preview.setChecked(current_preview_state)
+            self.pushButton_set_preview.blockSignals(False)
 
 
 
@@ -212,12 +297,20 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         preview_options = {
             'final_preview': self.pushButton_set_preview.isChecked(),
             'part': {
-                'is_enabled': True,
+                'is_enabled': True if self.current_type == 'part' else False,
                 'crop_edition': self.pushButton_part_crop_edition.isChecked(),
                 'crop_preview': self.pushButton_part_crop_preview.isChecked(),
                 'resize_edition': self.pushButton_part_resize_edition.isChecked(),
                 'resize_preview': self.pushButton_part_resize_preview.isChecked(),
             },
+            'custom': {
+                'is_enabled': True if self.current_type == 'custom' else False,
+                'crop_edition': self.pushButton_custom_crop_edition.isChecked(),
+                'crop_preview': self.pushButton_custom_crop_preview.isChecked(),
+                'resize_edition': self.pushButton_custom_resize_edition.isChecked(),
+                'resize_preview': self.pushButton_custom_resize_preview.isChecked(),
+            },
+
         }
         return preview_options
 
@@ -229,6 +322,12 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.pushButton_part_resize_edition.blockSignals(enabled)
         self.checkBox_part_keep_ratio.blockSignals(enabled)
 
+        self.pushButton_custom_crop_preview.blockSignals(enabled)
+        self.pushButton_custom_resize_preview.blockSignals(enabled)
+        self.pushButton_custom_crop_edition.blockSignals(enabled)
+        self.pushButton_custom_resize_edition.blockSignals(enabled)
+        self.checkBox_custom_keep_ratio.blockSignals(enabled)
+
 
 
     def event_preview_changed(self, is_checked:bool=False):
@@ -238,36 +337,47 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             # save current preview options
             self.saved_preview_options = {
                 'part_crop_preview': self.pushButton_part_crop_preview.isChecked(),
-                'part_resize_preview': self.pushButton_part_resize_preview.isChecked()
+                'part_resize_preview': self.pushButton_part_resize_preview.isChecked(),
+                'custom_crop_preview': self.pushButton_custom_crop_preview.isChecked(),
+                'custom_resize_preview': self.pushButton_custom_resize_preview.isChecked(),
             }
             self.pushButton_part_crop_preview.setChecked(is_checked)
             self.pushButton_part_resize_preview.setChecked(is_checked)
+            self.pushButton_custom_crop_preview.setChecked(is_checked)
+            self.pushButton_custom_resize_preview.setChecked(is_checked)
         else:
             if self.saved_preview_options is not None:
                 self.pushButton_part_crop_preview.setChecked(self.saved_preview_options['part_crop_preview'])
                 self.pushButton_part_resize_preview.setChecked(self.saved_preview_options['part_resize_preview'])
+                self.pushButton_custom_crop_preview.setChecked(self.saved_preview_options['custom_crop_preview'])
+                self.pushButton_custom_resize_preview.setChecked(self.saved_preview_options['custom_resize_preview'])
         self.block_signals(False)
         self.signal_preview_options_changed.emit()
 
 
-    def event_part_crop_edition_changed(self, is_checked:bool):
-        log.info("crop edition changed to %s" % ('true' if is_checked else 'false'))
+    def event_crop_edition_changed(self, type, is_checked:bool):
+        log.info("%s: crop edition changed to %s" % (type, 'true' if is_checked else 'false'))
         if is_checked:
             # Disable final preview
             self.pushButton_set_preview.blockSignals(True)
             self.pushButton_set_preview.setChecked(False)
             self.saved_preview_options = None
             self.pushButton_set_preview.blockSignals(False)
-        else:
+        elif type == 'part':
             if not self.pushButton_part_crop_preview.isChecked():
                 self.pushButton_part_resize_preview.blockSignals(True)
                 self.pushButton_part_resize_preview.setChecked(False)
                 self.pushButton_part_resize_preview.blockSignals(False)
+        elif type == 'custom':
+            if not self.pushButton_custom_crop_preview.isChecked():
+                self.pushButton_custom_resize_preview.blockSignals(True)
+                self.pushButton_custom_resize_preview.setChecked(False)
+                self.pushButton_custom_resize_preview.blockSignals(False)
         self.signal_preview_options_changed.emit()
 
 
-    def event_part_crop_preview_changed(self, is_checked:bool):
-        log.info("crop preview changed to %s" % ('true' if is_checked else 'false'))
+    def event_crop_preview_changed(self, type, is_checked:bool):
+        log.info("%s: crop preview changed to %s" % (type, 'true' if is_checked else 'false'))
         if not is_checked:
             # Disable final preview
             self.pushButton_set_preview.blockSignals(True)
@@ -275,42 +385,60 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.saved_preview_options = None
             self.pushButton_set_preview.blockSignals(False)
 
-            if (self.pushButton_part_resize_preview.isChecked()
-            and not self.pushButton_part_crop_edition.isChecked()):
-                self.pushButton_part_resize_preview.blockSignals(True)
-                self.pushButton_part_resize_preview.setChecked(False)
-                self.pushButton_part_resize_preview.blockSignals(False)
+            if type == 'part':
+                if (self.pushButton_part_resize_preview.isChecked()
+                and not self.pushButton_part_crop_edition.isChecked()):
+                    self.pushButton_part_resize_preview.blockSignals(True)
+                    self.pushButton_part_resize_preview.setChecked(False)
+                    self.pushButton_part_resize_preview.blockSignals(False)
+            elif type == 'custom':
+                if (self.pushButton_custom_resize_preview.isChecked()
+                and not self.pushButton_custom_crop_edition.isChecked()):
+                    self.pushButton_custom_resize_preview.blockSignals(True)
+                    self.pushButton_custom_resize_preview.setChecked(False)
+                    self.pushButton_custom_resize_preview.blockSignals(False)
         self.signal_preview_options_changed.emit()
 
 
-    def event_part_resize_edition_changed(self, is_checked:bool):
-        log.info("resize edition changed to %s" % ('true' if is_checked else 'false'))
+    def event_resize_edition_changed(self, type, is_checked:bool):
+        log.info("%s: resize edition changed to %s" % (type, 'true' if is_checked else 'false'))
         if is_checked:
             # Force crop preview
-            self.pushButton_part_crop_preview.blockSignals(True)
-            self.pushButton_part_crop_preview.setChecked(True)
-            self.pushButton_part_crop_preview.blockSignals(False)
+            if type == 'part':
+                self.pushButton_part_crop_preview.blockSignals(True)
+                self.pushButton_part_crop_preview.setChecked(True)
+                self.pushButton_part_crop_preview.blockSignals(False)
+            elif type == 'custom':
+                self.pushButton_custom_crop_preview.blockSignals(True)
+                self.pushButton_custom_crop_preview.setChecked(True)
+                self.pushButton_custom_crop_preview.blockSignals(False)
         self.signal_preview_options_changed.emit()
 
 
-    def event_part_resize_preview_changed(self, is_checked:bool):
-        log.info("resize preview changed to %s" % ('true' if is_checked else 'false'))
+    def event_resize_preview_changed(self, type, is_checked:bool):
+        log.info("%s: resize preview changed to %s" % (type, 'true' if is_checked else 'false'))
         if not is_checked:
             # Disable final preview
             self.pushButton_set_preview.blockSignals(True)
             self.pushButton_set_preview.setChecked(False)
             self.pushButton_set_preview.blockSignals(False)
-        else:
+        elif type == 'part':
             if (not self.pushButton_part_crop_preview.isChecked()
             and not self.pushButton_part_crop_edition.isChecked()):
                 self.pushButton_part_crop_preview.blockSignals(True)
                 self.pushButton_part_crop_preview.setChecked(True)
                 self.pushButton_part_crop_preview.blockSignals(False)
+        elif type == 'custom':
+            if (not self.pushButton_custom_crop_preview.isChecked()
+            and not self.pushButton_custom_crop_edition.isChecked()):
+                self.pushButton_custom_crop_preview.blockSignals(True)
+                self.pushButton_custom_crop_preview.setChecked(True)
+                self.pushButton_custom_crop_preview.blockSignals(False)
         self.signal_preview_options_changed.emit()
 
 
-    def event_part_keep_ratio_changed(self, is_checked:bool):
-        log.info("set final ratio: %s" % ('true' if is_checked else 'false'))
+    def event_keep_ratio_changed(self, type, is_checked:bool):
+        log.info("%s: set final ratio: %s" % (type, 'true' if is_checked else 'false'))
         self.signal_preview_options_changed.emit()
 
 
@@ -331,7 +459,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                 value = +1
             event.accept()
             self.event_is_modified(
-                type=self.current_modification_type,
+                type=self.current_type,
                 parameter=parameter,
                 value=value)
             return True
@@ -351,6 +479,15 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             else:
                 return False
 
+        if modifiers & Qt.AltModifier:
+            if key == Qt.Key_S:
+                if self.current_key_pressed != Qt.Key_S:
+                    self.signal_position_changed.emit('switch')
+                self.current_key_pressed = Qt.Key_S
+                return True
+            else:
+                return False
+
         if key == Qt.Key_F2:
             if self.pushButton_set_preview.isEnabled():
                 self.pushButton_set_preview.toggle()
@@ -361,13 +498,13 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.current_key_pressed = key
             return True
         elif key == Qt.Key_Z:
-            # if key != self.current_key_pressed:
-            #     self.signal_crop_enabled.emit('top')
+            if key != self.current_key_pressed:
+                self.signal_position_changed.emit('top')
             self.current_key_pressed = key
             return True
         elif key == Qt.Key_S:
-            # if key != self.current_key_pressed:
-                # self.signal_crop_enabled.emit('bottom')
+            if key != self.current_key_pressed:
+                self.signal_position_changed.emit('bottom')
             self.current_key_pressed = key
             return True
         return False

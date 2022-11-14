@@ -30,7 +30,7 @@ from utils.common import (
 )
 from utils.get_filters import FILTER_BASE_NO
 from utils.get_framelist import get_framelist, get_framelist_2
-from utils.consolidate import consolidate_shot
+from utils.consolidate_av import consolidate_shot
 
 class Model_filters_editor(Model_common):
     signal_current_shot_modified = Signal(dict)
@@ -119,7 +119,7 @@ class Model_filters_editor(Model_common):
         # self.shots is a pointer to the shots for this episode/part
         db = self.model_database.database()
 
-        p_missing_frame = os.path.join('img', 'missing.png')
+        p_missing_frame = os.path.join('icons', 'missing.png')
 
         # Remove all frames
         self.frames.clear()
@@ -230,7 +230,7 @@ class Model_filters_editor(Model_common):
                 'is_valid': True,
 
                 # Frame no. ... for what?
-                'frames_no': list(),
+                'frame_nos': list(),
 
                 # Structure to display the modifications in the selection widget
                 'modifications': {
@@ -251,7 +251,7 @@ class Model_filters_editor(Model_common):
                 else:
                     image_filepath = p
 
-                current_shot['frames_no'].append(frame_no)
+                current_shot['frame_nos'].append(frame_no)
                 self.frames[shot_no].append({
                     'k_ed': k_ed_src,
                     'k_ep': k_ep_src,

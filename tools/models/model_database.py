@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
-
 import sys
 
-from utils.get_curves import calculate_channel_lut, get_lut_from_curves
+from utils.consolidate_shots import consolidate_target_shots
 sys.path.append('../scripts')
+
 from copy import deepcopy
 import gc
 import os
@@ -14,24 +14,32 @@ from pathlib import PosixPath
 import collections
 import numpy as np
 
-
 from pprint import pprint
 from logger import log
 
-from PySide6.QtCore import(
-    QObject,
-    Signal,
+from utils.path import PATH_DATABASE
+from utils.common import (
+    K_GENERIQUES,
+    K_NON_GENERIQUE_PARTS,
+    get_k_part_from_frame_no,
+    get_shot_from_frame_no_new,
+    nested_dict_clean,
+    nested_dict_set,
+    pprint_video,
+    recursive_update,
 )
 
+from models.model_stitching_curves import Model_stitching_curves
+from models.model_geometry import Model_geometry
+from models.model_curves import Model_curves
 
-from utils.path import PATH_DATABASE
-from utils.common import K_GENERIQUES, K_NON_GENERIQUE_PARTS, get_k_part_from_frame_no, get_shot_from_frame_no_new, nested_dict_clean, nested_dict_set, pprint_video
+
+from utils.get_curves import calculate_channel_lut
 
 from parsers.parser_common import parse_common_configuration
 from parsers.parser_database import pprint_episode
 
 from parsers.parser_editions import parse_editions
-from parsers.parser_editions import get_available_editions
 
 from parsers.parser_generiques import db_init_generiques
 from parsers.parser_generiques import parse_generiques_common, parse_generiques
@@ -40,54 +48,55 @@ from parsers.parser_generiques import parse_get_dependencies_for_generique
 from parsers.parser_episodes import db_init_episodes, parse_get_dependencies_for_episodes
 from parsers.parser_episodes import parse_episodes_common, parse_episode
 
-from parsers.parser_shots import create_dst_shots, create_dst_shots_g
+from parsers.parser_shots import create_target_shots, create_target_shots_g
 
-from utils.consolidate import align_audio_video_durations, determine_av_sync
-from utils.consolidate import align_audio_video_durations_g_debut_fin
+from utils.consolidate_av import align_audio_video_durations, calculate_av_sync
+from utils.consolidate_av import align_audio_video_durations_g_debut_fin
 
 from parsers.parser_stabilize import STABILIZATION_SHOT_PARAMETERS_DEFAULT
 from parsers.parser_stabilize import parse_stabilize_configurations
 from parsers.parser_stabilize import get_shots_stabilize_parameters, get_frames_stabilize
 
 
-from parsers.parser_stitching import STITCHING_SHOT_PARAMETERS_DEFAULT
-from parsers.parser_stitching import get_frames_stitching_parameters
-from parsers.parser_stitching import get_frames_stitching_transformation
-from parsers.parser_stitching import get_shot_stitching_curves
-from parsers.parser_stitching import get_shots_stitching_fgd_crop
-from parsers.parser_stitching import parse_stitching_configurations
-from parsers.parser_stitching import get_shots_stitching_parameters
-from parsers.parser_stitching import STITCHING_CURVES_DEFAULT, parse_stitching_curves_database
+from parsers.parser_stitching import (
+    STITCHING_SHOT_PARAMETERS_DEFAULT,
+    get_frames_stitching_parameters,
+    get_frames_stitching_transformation,
+    get_shot_stitching_curves,
+    get_shots_stitching_fgd_crop,
+    parse_stitching_configurations,
+    get_shots_stitching_parameters,
+    STITCHING_CURVES_DEFAULT,
+    parse_stitching_curves_database,
+)
 
 from parsers.parser_curves import (
     get_curves_selection,
     parse_curve_configurations,
-    parse_curves_file,
     parse_curves_folder,
-    write_curves_file
 )
 
 from parsers.parser_replace import parse_replace_configurations
 from parsers.parser_replace import get_replaced_frames
 
 from parsers.parser_geometry import parse_geometry_configurations
-from parsers.parser_geometry import get_part_geometry
+from parsers.parser_geometry import get_part_geometry_list
 from parsers.parser_geometry import get_shots_st_geometry
 
-from images.curve import Curve, calculate_lut_for_bgd
 
 
 
-class Model_database(object):
+class Model_database(Model_stitching_curves, Model_geometry, Model_curves, object):
 
     def __init__(self):
         super(Model_database, self).__init__()
+        Model_stitching_curves.__init__(self)
+        Model_geometry.__init__(self)
+        Model_curves.__init__(self)
 
         # Variables
         self.global_database = None
         self.initial_database = dict()
-        self.is_parsed_dict = dict()
-        self.shots_per_curves = dict()
 
         self.frame_parameters = dict()
 
@@ -97,25 +106,18 @@ class Model_database(object):
         self.db_stitching_shots_parameters = dict()
         self.db_stitching_frames = dict()
 
-        self.crop_coordinates = dict()
-
         self.replaced_frames = dict()
-
-        self.is_curves_db_modified = False
-        self.is_curves_selection_db_modified = False
         self.is_replace_db_modified = False
         self.is_stabilize_db_modified = False
         self.is_stitching_db_modified = False
-        self.is_stitching_curves_db_modified = False
-        self.is_geometry_db_modified = False
-
-
 
         self.initial_database['common'] = parse_common_configuration(PATH_DATABASE)
-        self.initial_database['editions'] = parse_editions(self.initial_database)
+        k_ed_ref = self.initial_database['common']['reference']['edition']
+        self.initial_database['editions'] = parse_editions(self.initial_database,
+            k_ed_fgd='k', k_ed_ref=k_ed_ref)
         parse_episodes_common(self.initial_database)
 
-        self.k_editions = get_available_editions(self.initial_database)
+        self.k_editions = self.initial_database['editions']['available']
         for k_ed in self.k_editions:
             db_init_episodes(self.initial_database, k_ed=k_ed)
 
@@ -217,7 +219,7 @@ class Model_database(object):
 
             # Consolidate database for the episode
             for k_p in K_NON_GENERIQUE_PARTS:
-                create_dst_shots(self.global_database, k_ep=k_ep, k_part=k_p)
+                create_target_shots(self.global_database, k_ep=k_ep, k_part=k_p)
 
             for k_part_g in ['g_asuivre', 'g_reportage']:
                 if do_parse_curves:
@@ -227,10 +229,10 @@ class Model_database(object):
                 if do_parse_geometry:
                     parse_geometry_configurations(self.global_database, k_ep_or_g=k_part_g)
 
-                # Create shots used for the generatio
-                create_dst_shots_g(self.global_database, k_ep=k_ep, k_part_g=k_part_g)
+                # Create shots used for the generation
+                create_target_shots_g(self.global_database, k_ep=k_ep, k_part_g=k_part_g)
 
-            determine_av_sync(self.global_database, k_ep=k_ep)
+            calculate_av_sync(self.global_database, k_ep=k_ep)
             align_audio_video_durations(self.global_database, k_ep=k_ep)
 
             if k_part != '':
@@ -239,7 +241,13 @@ class Model_database(object):
                     self.db_replaced_frames = dict()
 
                 if do_parse_geometry:
-                    self.db_part_geometry_initial = get_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
+                    if k_part in ['g_asuivre', 'g_reportage']:
+                        self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep=k_ep, k_part=k_part[2:])
+                        recursive_update(self.db_part_geometry_initial, get_part_geometry_list(self.global_database, k_ep=k_ep, k_part=k_part))
+                        print("db_part_geometry_initial:")
+                        pprint(self.db_part_geometry_initial)
+                    else:
+                        self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_part_geometry = dict()
 
                 if do_parse_stitching:
@@ -251,6 +259,11 @@ class Model_database(object):
                     self.db_stitching_frames_initial = get_frames_stitching_transformation(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_stitching_frames = dict()
 
+                    # !!!!! TODO: this won't work when replacing shots from another episode:
+                    # use a duplicated curves file parameters?
+                    # concatenate libraries for up to 3 episodes?
+                    # better solution would be to parse dynamicaly the folders. i.e. load and save the curves
+                    # from the other directory if the src episode is not the same.
                     self.parse_stitching_curves_database(k_ep=k_ep)
                     self.db_stitching_shots_curves_initial = get_shot_stitching_curves(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_stitching_shots_curves = dict()
@@ -268,10 +281,28 @@ class Model_database(object):
                 self.db_st_geometry = dict()
 
                 if do_parse_curves:
-                    self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_ep)
+                    # !!!!! TODO: this won't work when replacing shots from another episode:
+                    # use a duplicated curves file?
+                    # concatenate libraries for up to 3 episodes?
+                    # better solution would be to parse dynamicaly the folders. i.e. load and save the curves
+                    # from the other directory if the src episode is not the same.
+                    if k_part in ['g_asuivre', 'g_reportage']:
+                        self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_part)
+                        k_ep_ref = self.global_database[k_part]['target']['video']['src']['k_ep']
+                        self.db_curves_selection_initial = get_curves_selection(self.global_database,
+                            k_ep=k_ep_ref, k_part=k_part)
+                        # print("db_curves_selection_initial: %s:%s" % (k_ep_ref, k_part))
+                        # pprint(self.db_curves_selection_initial)
+                        # print()
+                    else:
+                        self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_ep)
+                        self.db_curves_selection_initial = get_curves_selection(self.global_database,
+                            k_ep=k_ep, k_part=k_part)
+
                     self.db_curves_library = dict()
-                    self.db_curves_selection_initial = get_curves_selection(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_curves_selection = dict()
+
+
                 # print("<<<<<<<<<<<<<<<<< %s:%s: shot stabilization parameters >>>>>>>>>>>>>>>>>>>>" % (k_ep, k_part))
                 # for k_shot_no, parameters in self.db_stabilize_shots_parameters.items():
                 #     for parameter in parameters:
@@ -333,8 +364,8 @@ class Model_database(object):
                         parse_curve_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
                     if do_parse_replace:
                         parse_replace_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
-                    if do_parse_geometry:
-                        parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
+                    # if do_parse_geometry:
+                    #     parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
                 break
 
             # Stabilization and stitching
@@ -357,8 +388,9 @@ class Model_database(object):
             if do_parse_geometry:
                 # print("\tparse_geometry_configurations: k_part_g=%s" % (k_part))
                 parse_geometry_configurations(self.global_database, k_ep_or_g=k_part)
-                self.db_part_geometry_initial = get_part_geometry(self.global_database, k_ep='', k_part=k_part)
+                self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep='', k_part=k_part)
                 self.db_part_geometry = dict()
+                pprint(self.db_part_geometry_initial)
 
             # Curves
             if do_parse_curves:
@@ -368,8 +400,8 @@ class Model_database(object):
                 self.db_curves_library = dict()
 
             # Create shots used for the generation
-            # print("\tcreate_dst_shots_g: k_part_g=%s" % (k_part))
-            create_dst_shots_g(self.global_database, k_ep='', k_part_g=k_part)
+            # print("\tcreate_target_shots_g: k_part_g=%s" % (k_part))
+            create_target_shots_g(self.global_database, k_ep='', k_part_g=k_part)
 
             # Consolidate by aligning the A/V tracks of generiques
             # print("\talign_audio_video_durations_g_debut_fin: k_part_g=%s" % (k_part))
@@ -379,272 +411,20 @@ class Model_database(object):
             # pprint(self.replaced_frames)
 
 
-        # print("\tended")
-        # if k_ep == 'ep01':
-            # pprint(self.global_database[k_ep]['k'])
-            # pprint_video(self.global_database[k_ep]['k']['episode'])
-            # pprint_episode(self.global_database, k_ep)
-            # sys.exit()
+        # Consolidate each shot for the target
+        consolidate_target_shots(
+            db=self.global_database,
+            k_ed='',
+            k_ep=k_ep,
+            k_part=k_part,
+        )
+
         gc.collect()
 
     def database(self):
         if self.global_database is None:
             return self.initial_database
         return self.global_database
-
-
-
-    # RGB curves
-    def get_curves_selection(self, shot):
-        # Get the curves associated to this shot
-        k_ed = shot['k_ed']
-        k_ep = shot['k_ep']
-        k_part = shot['k_part']
-        shot_no = shot['no']
-        try: shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
-        except:
-            try: shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_no]
-            except: return None
-
-        if 'k_curves' not in shot_curves.keys() or shot_curves['k_curves'] == '':
-            # This shot uses new RGB curves which are not yet been saved in the library
-            return shot_curves
-
-        # Get the curves from the library
-        k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
-        curves = self.get_curves(k_ep_or_g, shot_curves['k_curves'])
-        return curves
-
-
-    def set_shot_rgb_channels(self, shot, rgb_channels):
-        k_ed = shot['k_ed']
-        k_ep = shot['k_ep']
-        k_part = shot['k_part']
-        shot_no = shot['no']
-        # Get the curves frome the db_chot_curves. it points to the curves
-        # stored in the db_curves_library
-        try:
-            shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
-        except:
-            try:
-                shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_no]
-            except:
-                print("these curves does not exist: create an empty one in the db_shot")
-                curves = ({
-                    'k_curves': '',
-                    'channels': deepcopy(rgb_channels),
-                    'lut': calculate_channel_lut(rgb_channels),
-                    'is_modified': True,
-                })
-                nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_no)
-                self.is_curves_db_modified = True
-                return
-
-        if shot_curves['k_curves'] == '':
-            # Curves is not yet saved in library
-            self.db_curves_selection[k_ed][k_ep][k_part][shot_no].update({
-                'channels': deepcopy(rgb_channels),
-                'lut': calculate_channel_lut(rgb_channels),
-                'is_modified': True,
-            })
-            self.is_curves_db_modified = True
-            return
-
-        # Modify the curves in the library
-        is_modified = self.set_curves(k_curves=shot_curves['k_curves'], rgb_channels=rgb_channels)
-        if not is_modified:
-            # No curves found for this k_curves, create a new one in the shot
-            curves = ({
-                'k_curves': '',
-                'channels': deepcopy(rgb_channels),
-                'lut': calculate_channel_lut(rgb_channels),
-                'is_modified': True,
-            })
-            nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_no)
-
-        self.is_curves_db_modified = True
-
-
-
-    def set_curves_selection(self, shot:dict, k_curves:str):
-        k_ed = shot['k_ed']
-        k_ep = shot['k_ep']
-        k_part = shot['k_part']
-        shot_no = shot['no']
-
-        # Get the curves from the library
-        k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
-        curves = self.get_curves(k_ep_or_g, k_curves)
-
-        # Set the modified shot curves
-        nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_no)
-
-        # Refresh the list of shots for each curves
-        for shotlist in self.shots_per_curves.values():
-            try:
-                shotlist.remove(shot_no)
-                break
-            except: pass
-        try: self.shots_per_curves[k_curves].append(shot_no)
-        except: self.shots_per_curves[k_curves] = [shot_no]
-
-        self.is_curves_selection_db_modified = True
-
-
-    def move_curves_selection_to_initial(self):
-        for k_ed in self.db_curves_selection.keys():
-            for k_ep in self.db_curves_selection[k_ed].keys():
-                for k_part in self.db_curves_selection[k_ed][k_ep].keys():
-                    for shot_no, shot_curves in self.db_curves_selection[k_ed][k_ep][k_part].items():
-                        if shot_curves['k_curves'] != '':
-                            nested_dict_set(self.db_curves_selection_initial,
-                                deepcopy(shot_curves), k_ed, k_ep, k_part, shot_no)
-                        else:
-                            print("error: curves are not saved for shot no. %d" % (shot_no))
-        self.db_curves_selection.clear()
-        self.is_curves_selection_db_modified = False
-
-
-    # List the shots which use the  same curves
-    def initialize_shots_per_curves(self, shots):
-        self.shots_per_curves = dict()
-        for shot_no, shot in shots.items():
-            try:
-                k_curves = shot['curves']['k_curves']
-                try: self.shots_per_curves[k_curves].append(shot_no)
-                except: self.shots_per_curves[k_curves] = [shot_no]
-            except:
-                pass
-
-    def get_shots_per_curves(self, k_curves):
-        try:
-            return list(sorted(self.shots_per_curves[k_curves]))
-        except:
-            return None
-
-
-    # RGB curves library
-    def get_library_curves(self):
-        curves_library = dict()
-        for k in self.db_curves_library_initial.keys():
-            if k in self.db_curves_library.keys():
-                # These curves are modified or deleted
-                if not 'deleted' in self.db_curves_library[k].keys():
-                    # These curves are modified
-                    curves_library[k] = True
-            else:
-                curves_library[k] = False
-        return curves_library
-
-
-    def get_curves(self, k_ep_or_g:str, k_curves:str):
-        try:
-            curves = self.db_curves_library[k_curves]
-            log.info("[%s] is found in the modified db" % (k_curves))
-        except:
-            try:
-                curves = self.db_curves_library_initial[k_curves]
-                # log.info("[%s] is found in the initial db" % (k_curves))
-            except:
-                return None
-        if curves['channels'] is None:
-            # print("parse %s.crv file" % (k_curves))
-            curves['channels'] = parse_curves_file(
-                db=self.global_database,
-                k_ep_or_g=k_ep_or_g,
-                k_curves=k_curves)
-        if curves['channels'] is None:
-            # The curves file has not been found
-            log.warning("The curves have not been found")
-            curves = None
-        else:
-            if curves['lut'] is None:
-                curves['lut'] = calculate_channel_lut(curves['channels'])
-        return curves
-
-
-    def set_curves(self, k_curves:str, rgb_channels):
-        try:
-            curves = self.db_curves_library[k_curves]
-        except:
-            try:
-                print("set_curves: copy from initial to modified")
-                self.db_curves_library[k_curves] = deepcopy(self.db_curves_library_initial[k_curves])
-                curves = self.db_curves_library[k_curves]
-            except:
-                print("[%s] does not exists neither in library not in initial library" % (k_curves))
-                return False
-
-        curves.update({
-            'channels': deepcopy(rgb_channels),
-            'lut': calculate_channel_lut(rgb_channels),
-            'is_modified': True,
-        })
-        self.is_curves_db_modified = True
-        return True
-
-
-    def discard_curves_modifications(self, k_curves):
-        try:
-            del self.db_curves_library[k_curves]
-        except:
-            print("Error: discard_curves_modifications: failed")
-            pass
-
-
-    def save_all_curves(self, k_ep_or_g):
-        for curves in self.db_curves_library.values():
-            self.save_curves_as(k_ep_or_g=k_ep_or_g, curves=curves)
-
-
-    def save_curves_as(self, k_ep_or_g, curves):
-        k_curves = curves['k_curves']
-        try:
-            # Remove from modified db
-            del self.db_curves_library[k_curves]
-            log.info("removed [%s] from modified db" % (k_curves))
-        except:
-            # These curves were not modified
-            pass
-
-        # Append these curves in the initial db
-        try:
-            # overwrite curves
-            filepath = filepath = os.path.join(
-                self.global_database['common']['directories']['curves'],
-                self.db_curves_library_initial[k_curves]['filepath'])
-        except:
-            # new curves
-            log.error("filepath is not specified for [%s]" % (k_curves))
-            filepath = os.path.join(
-                self.global_database['common']['directories']['curves'],
-                k_ep_or_g,
-                "%s.crv" % (k_curves))
-
-        log.info("write curves file as [%s]" % (filepath))
-        pprint(curves)
-        write_curves_file(filepath=filepath, channels=curves['channels'])
-
-        self.db_curves_library_initial[k_curves] = {
-            'k_curves': k_curves,
-            'filepath': filepath,
-            'channels': deepcopy(curves['channels']),
-            'lut': None,
-            'shots': []
-        }
-
-        # Consider as not modified
-        # self.db_curves_library_initial[k_curves]['is_modified'] = False
-
-        # Write or overwrite the curves files
-
-        # if k_curves in self.db_curves_library_initial.keys():
-        #     # These curves where already defined in the initial db
-        #     log.info("mark [%s] as modified" % (k_curves))
-        #     self.db_curves_library[k_curves]['is_modified'] = True
-        # else:
-        #     log.info("mark [%s] is a new one" % (k_curves))
-        #     self.db_curves_library[k_curves]['is_modified'] = False
 
 
 
@@ -710,39 +490,6 @@ class Model_database(object):
                                 v, k_ed, k_ep, k_part, frame_no)
         self.db_replaced_frames.clear()
         self.is_replace_db_modified = False
-
-
-    # Final geometry for each part
-    def get_part_geometry(self, k_ed, k_part):
-        for db_tmp in [self.db_part_geometry,
-                        self.db_part_geometry_initial]:
-            if k_ed in db_tmp.keys() and k_part in db_tmp[k_ed].keys():
-                return db_tmp[k_ed][k_part]
-        return {'crop': [0, 0, 0, 0]}
-
-    def set_part_geometry(self, k_ed, k_part, geometry):
-        # db_modified = self.db_part_geometry
-        # if k_ed not in db_modified.keys():
-        #     db_modified[k_ed] = dict()
-        # if k_part not in db_modified[k_ed].keys():
-        #     db_modified[k_ed][k_part] = dict()
-        # db_modified[k_ed][k_part] = geometry
-        nested_dict_set(self.db_part_geometry, geometry, k_ed, k_part)
-        self.is_geometry_db_modified = True
-
-    def discard_part_geometry_modifications(self, k_ed, k_part):
-        log.info("discard_part_geometry_modifications")
-        db_modified = self.db_part_geometry
-        try: del db_modified[k_ed][k_part]
-        except: pass
-        if len(db_modified[k_ed].keys()) == 0:
-            del db_modified[k_ed]
-        self.is_geometry_db_modified = False
-
-    def move_part_geometry_to_initial(self):
-        # Move modifications from modified to initial
-        self.db_part_geometry_initial.update(deepcopy(self.db_part_geometry))
-        self.db_part_geometry.clear()
 
 
 
@@ -1003,172 +750,6 @@ class Model_database(object):
 
 
 
-    # Curve to apply to bgd before merging bgd and fgd images
-    #---------------------------------------------------------------------------
-    def parse_stitching_curves_database(self, k_ep):
-        # Create 2 db, one for the initial, the second for modified curves
-        self.db_stitching_curves_initial = parse_stitching_curves_database(
-            self.global_database, k_ep=k_ep)
-        self.db_stitching_curves = dict()
-
-
-    def reload_stitching_curves_databse(self, k_ep):
-        # Reload the database but keep the modified ones
-        self.db_stitching_curves_initial = parse_stitching_curves_database(
-            self.global_database, k_ep=k_ep)
-
-
-    def get_stitching_curves_names(self) -> dict:
-        names = list(self.db_stitching_curves_initial.keys())
-        names += list(self.db_stitching_curves.keys())
-        names_sorted = sorted(list(dict.fromkeys(names)))
-        return {'all':names_sorted, 'modified': self.db_stitching_curves.keys()}
-
-
-    def discard_stitching_curves_modifications(self, k_curves):
-        if k_curves in self.db_stitching_curves.keys():
-            log.info("remove the stitching curves from modified db [%s]" % k_curves)
-            del self.db_stitching_curves[k_curves]
-        else:
-            log.info("[%s] has not been modified, cannot remove it" % k_curves)
-
-
-    def get_stitching_curves(self, k_curves):
-        # Return a dict of k_curves and (Curve, lut) for each channel
-        if (k_curves not in self.db_stitching_curves_initial.keys()
-            and k_curves not in self.db_stitching_curves.keys()):
-            print("get_stitching_curves: [%s] is not in modified/initial db" % (k_curves))
-            return STITCHING_CURVES_DEFAULT
-
-        if k_curves in self.db_stitching_curves.keys():
-            print("get_stitching_curves: %s: modified" % (k_curves))
-            curves = self.db_stitching_curves[k_curves]
-
-        elif k_curves in self.db_stitching_curves_initial.keys():
-            print("get_stitching_curves: %s: initial" % (k_curves))
-            curves = self.db_stitching_curves_initial[k_curves]
-
-        if curves['lut'] is None:
-            # Calculate lut from channels
-            curves['lut'] = dict()
-            for k_c in ['r', 'g', 'b']:
-                curve = Curve()
-                curve.remove_all_points()
-                for p in curves['points'][k_c]:
-                    curve.add_point(p[0], p[1])
-                curves['lut'][k_c] = calculate_lut_for_bgd(curve=curve)
-        return curves
-
-
-    def modify_stitching_curves(self, curves:dict):
-        k_curves = curves['k_curves']
-        if k_curves != '':
-            self.db_stitching_curves[k_curves] = deepcopy(curves)
-            self.is_stitching_curves_db_modified = True
-
-
-    def select_shot_stitching_curves(self, shot_no, k_curves):
-        if shot_no not in self.db_stitching_shots_curves.keys():
-            self.db_stitching_shots_curves[shot_no] = dict()
-
-        log.info("select_shot_stitching_curves: shot_no. %d, k_curves=%s" % (shot_no, k_curves))
-        self.db_stitching_shots_curves[shot_no] = self.get_stitching_curves(k_curves)
-
-
-    def set_shot_stitching_curves_as_initial(self, shot_no):
-        # Move from modified to initial db
-        if shot_no in self.db_stitching_shots_curves.keys():
-            self.db_stitching_shots_curves_initial[shot_no] = deepcopy(self.db_stitching_shots_curves[shot_no])
-            del self.db_stitching_shots_curves[shot_no]
-
-
-    def reset_shot_stitching_curves_selection(self, shot_no):
-        if shot_no in self.db_stitching_shots_curves.keys():
-            del self.db_stitching_shots_curves[shot_no]
-
-
-    def get_shot_stitching_curves(self, shot_no):
-        print("get_shot_stitching_curves for shot_no: %d" % (shot_no))
-        if shot_no in self.db_stitching_shots_curves.keys():
-            shot = self.db_stitching_shots_curves[shot_no]
-        elif shot_no in self.db_stitching_shots_curves_initial.keys():
-            shot = self.db_stitching_shots_curves_initial[shot_no]
-        else:
-            print("\t-> None")
-            return None
-
-        if shot is None:
-            print("\t-> removed from initial")
-            return None
-
-        k_curves = shot['k_curves']
-        if k_curves != '':
-            # Get the curve from the global database
-            print("\t-> %s (get_stitching_curves)" % (k_curves))
-            return self.get_stitching_curves(k_curves)
-
-        points = shot['points']
-        if points is not None:
-            print("\t-> %s" % (k_curves))
-            return {
-                'k_curves': k_curves,
-                'points': points,
-                'lut': shot['lut'],
-            }
-        print("\t-> None")
-        return None
-
-    def get_modified_shot_stitching_curves(self):
-        return self.db_stitching_shots_curves
-
-    def set_shot_stitching_curves(self, shot_no, curves_dict):
-        # curves_dict:
-        #     'k_curves' : curve name
-        #     'points': dict of Curves objects for each r,g,b channel
-        # if k_curve == '', this means that the curve jas not yet been "saved as"
-        if shot_no not in self.db_stitching_shots_curves.keys():
-            self.db_stitching_shots_curves[shot_no] = dict()
-
-        # if 'curves' not in self.db_stitching_shots_curves[shot_no].keys():
-        #     # Create a new curve for this shot
-        #     self.db_stitching_shots_curves[shot_no] = deepcopy(STITCHING_CURVES_DEFAULT)
-
-        print("set_shot_stitching_curves")
-        # pprint(curves_dict)
-
-        self.db_stitching_shots_curves[shot_no] = {
-            'k_curves': curves_dict['k_curves'],
-            'points': curves_dict['points'],
-            'lut': curves_dict['lut']
-        }
-        self.is_stitching_db_modified = True
-
-        if curves_dict['k_curves'] != '':
-            self.modify_stitching_curves(curves_dict)
-        else:
-            print("no selected curves")
-
-
-    def remove_shot_stitching_curves(self, shot_no):
-        # Remove the curves of this shot
-        print("remove_shot_stitching_curves: %d" % (shot_no))
-        print(self.db_stitching_shots_curves_initial.keys())
-        print("---")
-        print(self.db_stitching_shots_curves.keys())
-        print("")
-        if shot_no in self.db_stitching_shots_curves.keys():
-            if shot_no in self.db_stitching_shots_curves_initial.keys():
-                # Force to none to overwrite the initial curves
-                # del self.db_stitching_shots_curves[shot_no]
-                # self.db_stitching_shots_curves[shot_no] = {'k_curves': ''}
-                self.db_stitching_shots_curves[shot_no] = None
-                log.info("Force to none to overwrite the initial curves")
-            else:
-                del self.db_stitching_shots_curves[shot_no]
-        elif shot_no in self.db_stitching_shots_curves_initial.keys():
-                # Force to none to overwrite the initial curves
-                self.db_stitching_shots_curves[shot_no] = None
-                log.info("Force to none to overwrite the initial curves")
 
 
     def is_db_modified(self, type:str=''):
@@ -1197,164 +778,32 @@ class Model_database(object):
             or self.is_stitching_curves_db_modified)
 
 
+    def get_modified_db(self) -> list:
+        modified_db = list()
 
-    def save_curves_selection_database(self, shots, k_ed, k_ep, k_part, shot_no=-1):
-        if not self.is_curves_selection_db_modified:
-            return True
-        log.info("save shot curves database")
+        if self.is_curves_db_modified:
+            modified_db.append('curves')
 
-        db = self.global_database
+        if self.is_curves_selection_db_modified:
+            modified_db.append('curves selection')
 
-        # Open configuration file
-        if k_part in K_GENERIQUES:
-            filepath = os.path.join(db['common']['directories']['config'], k_part, "%s_curves.ini" % (k_part))
-        else:
-            filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_curves.ini" % (k_ep))
-        if filepath.startswith("~/"):
-            filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+        if self.is_replace_db_modified:
+            modified_db.append('frames to replace')
 
-        print("save_curves_selection_database: %s" % (filepath))
+        if self.is_geometry_db_modified:
+            modified_db.append('part or shot geometry')
 
-        # Parse the file
-        if os.path.exists(filepath):
-            config_curves = configparser.ConfigParser()
-            config_curves.read(filepath)
-        else:
-            config_curves = configparser.ConfigParser({}, collections.OrderedDict)
+        if self.is_stabilize_db_modified:
+            modified_db.append('stabilization values')
 
+        if self.is_stitching_db_modified:
+            modified_db.append('stitching values')
 
-        if shot_no == -1:
-            # Save all shots:
-            for k_ed_tmp in self.db_curves_selection.keys():
-                for k_ep_tmp in self.db_curves_selection[k_ed_tmp].keys():
-                    for k_part_tmp in self.db_curves_selection[k_ed_tmp][k_ep_tmp].keys():
-                        for shot_no, shot in self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp].items():
-                            if 'k_curves' not in shot.keys() or shot['k_curves'] == '':
-                                # These curves are not saved in the database (=error)
-                                # we consider that the curves selection cannot be removed
-                                # TODO
-                                print("error: these curves have not been saved")
-                                continue
+        if self.is_stitching_curves_db_modified:
+            modified_db.append('curves before stitching')
 
-                            k_section = '%s.%s.%s' % (k_ed_tmp, k_ep_tmp, k_part_tmp)
-                            shot_start_str = str(shots[shot_no]['start'])
-                            try:
-                                config_curves.set(k_section, shot_start_str, shot['k_curves'])
-                            except:
-                                config_curves[k_section] = dict()
-                                config_curves.set(k_section, shot_start_str, shot['k_curves'])
-                            shot['k_curves'] = -1
-        else:
-            shot = self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
-            if 'k_curves' not in shot.keys() or shot['k_curves'] == '':
-                # These curves are not saved in the database (=error)
-                # we consider that the curves selection cannot be removed
-                # TODO
-                print("error: these curves have not been saved")
+        return modified_db
 
-            k_section = '%s.%s.%s' % (k_ed, k_ep, k_part)
-            shot_start_str = str(shots[shot_no]['start'])
-            try:
-                config_curves.set(k_section, shot_start_str, shot['k_curves'])
-            except:
-                config_curves[k_section] = dict()
-                config_curves.set(k_section, shot_start_str, shot['k_curves'])
-            del self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
-
-
-        # Write to the database
-        with open(filepath, 'w') as config_file:
-            config_curves.write(config_file)
-
-        # Clean the database and consider as not modified only if all keys have been saved
-        # TODO: replace by a nested dict
-        k_ed_keys = list(self.db_curves_selection.keys())
-        for k_ed_tmp in k_ed_keys:
-            k_ep_keys = list(self.db_curves_selection[k_ed_tmp].keys())
-            for k_ep_tmp in k_ep_keys:
-                k_parts_keys = list(self.db_curves_selection[k_ed_tmp][k_ep_tmp].keys())
-                for k_part_tmp in k_parts_keys:
-                    k_shot_nos = list(self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp].keys())
-                    for shot_no in k_shot_nos:
-                        shot = self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp][shot_no]
-                        if shot['k_curves'] == -1:
-                            del self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp][shot_no]
-
-                    if len(self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp].keys()) == 0:
-                        del self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp]
-
-                if len(self.db_curves_selection[k_ed_tmp][k_ep_tmp].keys()) == 0:
-                    del self.db_curves_selection[k_ed_tmp][k_ep_tmp]
-
-            if len(self.db_curves_selection[k_ed_tmp].keys()) == 0:
-                del self.db_curves_selection[k_ed_tmp]
-
-        if len(self.db_curves_selection.keys()) == 0:
-            self.is_curves_selection_db_modified = False
-        else:
-            print("all selection have not been saved: ")
-            pprint(self.db_curves_selection)
-
-        return True
-
-
-
-    def save_geometry_database(self, k_ep, k_part):
-        if not self.is_geometry_db_modified:
-            return True
-
-        log.info("Save part_geometry")
-        db = self.global_database
-
-        # Open configuration file
-        if k_part in K_GENERIQUES:
-            filepath = os.path.join(db['common']['directories']['config'], k_part, "%s_geometry.ini" % (k_part))
-        else:
-            filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_geometry.ini" % (k_ep))
-        if filepath.startswith("~/"):
-            filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
-
-        # Parse the file
-        if os.path.exists(filepath):
-            config_geometry_coordinates = configparser.ConfigParser()
-            config_geometry_coordinates.read(filepath)
-        else:
-            config_geometry_coordinates = configparser.ConfigParser({}, collections.OrderedDict)
-            # config_geometry_coordinates[k_part] = {}
-
-        if k_part in K_GENERIQUES:
-            k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
-            k_ep_src = db[k_part]['common']['video']['reference']['k_ep']
-            # print(k_ed_src)
-            # print(k_ep_src)
-            # print(k_part)
-            coordinates = self.get_crop_coordinates(k_ed_src, k_part)
-            k_section = '%s.%s.%s' % (k_ed_src, k_ep_src, k_part)
-        else:
-            k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
-            coordinates = self.get_crop_coordinates(k_ed_src, k_part)
-            k_section = '%s.%s.%s' % (k_ed_src, k_ep, k_part)
-
-        # Set the coordinates
-        if not config_geometry_coordinates.has_section(k_section):
-            config_geometry_coordinates[k_section] = dict()
-        config_geometry_coordinates.set(k_section, 'crop', ','.join([str(i) for i in coordinates]))
-
-        # Remove unused sections and sort
-        for k_section in config_geometry_coordinates.sections():
-            if len(config_geometry_coordinates[k_section]) == 0:
-                config_geometry_coordinates.remove_section(k_section)
-
-            # Sort the section
-            config_geometry_coordinates[k_section] = collections.OrderedDict(sorted(config_geometry_coordinates[k_section].items(), key=lambda x: x[0]))
-
-
-        # Write to the database
-        with open(filepath, 'w') as config_file:
-            config_geometry_coordinates.write(config_file)
-
-        self.is_geometry_db_modified = False
-        return True
 
 
 
@@ -1542,7 +991,7 @@ class Model_database(object):
                             ':'.join(map(lambda x: "%d" % (x), p['delta_interval']))
                         )
                     else:
-                        print("error: calculations have not been done, discard")
+                        print("Error: calculations have not been done, discard")
                         self.is_stabilize_db_modified = False
                         return False
                 config_stabilize.set(k_section, key_str, parameters_str)
@@ -1749,53 +1198,6 @@ class Model_database(object):
         self.is_stitching_db_modified = False
         return True
 
-
-
-    def save_geometry_database(self, k_ed, k_ep, k_part):
-        if not self.is_geometry_db_modified:
-            return True
-
-        log.info("save geometry database %s:%s" % (k_ep, k_part))
-        db = self.global_database
-
-        if k_part in K_GENERIQUES:
-            # Open configuration file
-            if k_part in K_GENERIQUES:
-                filepath = os.path.join(db['common']['directories']['config'], k_part, "%s_geometry.ini" % (k_part))
-            else:
-                filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_geometry.ini" % (k_ep))
-            if filepath.startswith("~/"):
-                filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
-
-
-        # Parse the file
-        if os.path.exists(filepath):
-            config_geometry = configparser.ConfigParser(dict_type=collections.OrderedDict)
-            config_geometry.read(filepath)
-        else:
-            config_geometry = configparser.ConfigParser({}, collections.OrderedDict)
-
-        # Update the config file, select section
-        k_section = '%s.%s.%s' % (k_ed, k_ep, k_part)
-
-        if not config_geometry.has_section(k_section):
-            config_geometry[k_section] = dict()
-
-        # Update the values
-        if (k_ed in self.db_part_geometry.keys()
-        and k_part in self.db_part_geometry[k_ed].keys()):
-            config_geometry.set(k_section, 'crop',
-                ':'.join(map(lambda x: "%d" % (x), self.db_part_geometry[k_ed][k_part]['crop'])))
-
-        # TODO: Add resize of shots
-        # TODO: Add values coming from st geometry
-
-        # Write to the database
-        with open(filepath, 'w') as config_file:
-            config_geometry.write(config_file)
-
-        self.is_geometry_db_modified = False
-        return True
 
 
     def event_save_database(self, curves:dict):

@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import sys
 
 import numpy as np
 import wave
-import sys
 
 from pprint import pprint
 
@@ -27,7 +26,7 @@ def read_single_track_audio_file(filepath, verbose=False):
     return sample_rate, in_track, float(nframes)/sample_rate
 
 
-def write_single_track_audio_file(filepath, out, sample_rate=48000):
+def write_single_track_audio_file(filepath, out, sample_rate=48000) -> None:
     out_file = wave.open(filepath, mode='wb')
     out_file.setnchannels(1)
     out_file.setsampwidth(2)

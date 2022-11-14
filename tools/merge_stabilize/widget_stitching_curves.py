@@ -138,6 +138,14 @@ class Widget_stitching_curves(Widget_common, Ui_widget_stitching_curves):
         # todo: block signals
 
 
+
+    def get_preview_options(self):
+        preview_options = {
+            'is_enabled': self.pushButton_set_preview.isChecked(),
+        }
+        return preview_options
+
+
     def display(self, histogram):
         self.widget_hist_graph.display(histogram)
 
@@ -488,17 +496,6 @@ class Widget_stitching_curves(Widget_common, Ui_widget_stitching_curves):
         if curves is not None:
             log.info("save curves %s" % (self.k_curves))
             self.signal_save_curves_as.emit(curves)
-
-
-    def get_preview_options(self):
-        preview_options = {
-            'is_enabled': self.pushButton_set_preview.isChecked(),
-        }
-        return preview_options
-
-
-    def event_preview_changed(self, state:bool=False):
-        self.signal_preview_options_changed.emit()
 
 
 
