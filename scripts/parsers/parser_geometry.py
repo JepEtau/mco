@@ -108,8 +108,8 @@ def get_part_geometry_list(db, k_ep, k_part) -> dict:
 
     elif k_part in ['g_asuivre', 'g_reportage']:
         # Get the geometry in he ed/ep used to generate this generique
-        k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
-        k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
+        k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
+        k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
         db_video = db[k_ep_ref][k_ed_ref][k_part]['video']
         try: geometry = db_video['geometry'].copy()
         except: geometry = {'crop': [0, 0, 0, 0]}
@@ -117,9 +117,7 @@ def get_part_geometry_list(db, k_ep, k_part) -> dict:
 
     else:
         # Get All geometry for all editions ofr this ep/part
-        for k_ed in db['editions'].keys():
-            if k_ed == 'layers':
-                continue
+        for k_ed in db['editions']['available']:
             db_video = db[k_ep][k_ed][k_part]['video']
             try: geometry = db_video['geometry'].copy()
             except: geometry = {'crop': [0, 0, 0, 0]}
@@ -140,10 +138,10 @@ def get_shots_st_geometry(db, k_ep, k_part) -> dict:
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in ['g_debut', 'g_fin']:
-        db_video = db[k_part]['common']['video']
+        db_video = db[k_part]['target']['video']
     else:
         print("%s.get_shots_st_geometry: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
+        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
         print("%s.get_shots_st_geometry: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))

@@ -10,7 +10,6 @@ def get_tasklist(db, final_task='geometry'):
         tasks = ['deinterlace']
         if 'rgb' in db['common']['options']['deinterlace_add_tasks']:
             tasks.append('deinterlace_rgb')
-
     elif final_task == 'pre_upscale':
         tasks = ['deinterlace', 'pre_upscale']
 

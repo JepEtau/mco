@@ -25,7 +25,6 @@ from utils.common import K_ALL_PARTS
 from utils.common import K_GENERIQUES
 from utils.common import recursive_update
 from utils.get_filters import FILTER_BASE_NO
-from parsers.parser_editions import get_available_editions
 from parsers.parser_generiques import parse_get_dependencies_for_generique
 
 
@@ -445,7 +444,7 @@ class Model_curves_editor(QObject):
                     's': ['ep01', 'ep02'],
                 })
         else:
-            k_eds = get_available_editions(db)
+            k_eds = db['editions']['available']
             dependencies = dict()
             for k_ed_tmp in k_eds:
                 dependencies[k_ed_tmp] = [k_ep]

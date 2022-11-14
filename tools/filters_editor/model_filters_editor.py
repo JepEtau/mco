@@ -30,7 +30,7 @@ from utils.common import (
 )
 from utils.get_filters import FILTER_BASE_NO
 from utils.get_framelist import get_framelist, get_framelist_2
-from utils.consolidate import consolidate_shot
+from utils.consolidate_av import consolidate_shot
 
 class Model_filters_editor(Model_common):
     signal_current_shot_modified = Signal(dict)

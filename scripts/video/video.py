@@ -12,10 +12,8 @@ from pprint import pprint
 from utils.common import (
     K_ALL_PARTS,
     K_ALL_PARTS_ORDERED,
-    get_k_part_from_frame_no,
-    get_shot_from_frame_no_new,
 )
-from utils.consolidate import consolidate_shot
+from utils.consolidate_shots import consolidate_shot
 from utils.ffmpeg import ffmpeg_execute_command
 from utils.path import create_video_directory
 from utils.time_conversions import current_datetime_str
@@ -30,8 +28,7 @@ from video.effects import create_black_frame
 from video.shots import process_shot
 
 
-def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_part:str='', force:bool=False, simulation:bool=False, shot_min:int=0, shot_max:int=999999):
-    k_ep = 'ep%02d' % (episode_no)
+def generate_video(db, k_ed, k_ep:str, tasks:list, cpu_count=0, k_part:str='', force:bool=False, simulation:bool=False, shot_min:int=0, shot_max:int=999999):
 
     # Create the video directory
     create_video_directory(db, k_ep)
@@ -52,22 +49,19 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
     for k_p in k_parts:
 
         if k_p in ['g_debut', 'g_fin']:
-            db_video = db[k_p]['common']['video']
-            k_episode = db[k_p]['common']['video']['reference']['k_ep']
+            db_video = db[k_p]['target']['video']
+            k_ep_src_main = db[k_p]['target']['video']['src']['k_ep']
             create_video_directory(db, k_p)
         elif k_ep == 'ep00':
             sys.exit("Erreur: le numéro de l'épisode est manquant")
         else:
-            db_video = db[k_ep]['common']['video'][k_p]
-            k_episode = k_ep
-            # pprint(db_video)
+            db_video = db[k_ep]['target']['video'][k_p]
+            k_ep_src_main = k_ep
 
         if db_video['count'] == 0:
+            # Part is empty: precedemment in ep01, asuivre in ep39
             continue
 
-        if 'shots' not in db_video.keys():
-            # print("\t\tnot shot defined in %s, ignoring" % (k_p))
-            continue
         print("%s %s: extract and process images" % (current_datetime_str(), k_p))
 
         previous_concatenation_filepath = ''
@@ -78,141 +72,47 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
             if not (shot_min <= shot['no'] < shot_max):
                 continue
 
-            # Select the shot used for the generation
-            # print("\n++++++++++++++++++++++++++ target ++++++++++++++++++++++++++")
-            # pprint(shot)
-            # print("")
-            # sys.exit()
-            if 'src' in shot.keys() and shot['src']['use']:
-                k_ed_src = shot['src']['k_ed']
-                k_ep_src = shot['src']['k_ep']
-                k_part_src = get_k_part_from_frame_no(db, k_ed=k_ed_src, k_ep=k_ep_src, frame_no=shot['src']['start'])
-                # pprint(shot)
-                # print("\nfind %d  in %s:%s:%s" % (shot['src']['start'], k_ed_src, k_ep_src, k_part_src))
-                shot_src = deepcopy(get_shot_from_frame_no_new(db,
-                    shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src))
-
-                print("++++++++++++++++++++++++++  shot_src : %s:%s:%s ++++++++++++++++++++++++++" % (k_ed_src, k_ep_src, k_part_src))
-                pprint(shot_src)
-                print("")
-
-                # Remove 'src' from the source shot (it would create infinite loop!)
-                try: del shot_src['src']
-                except: pass
-
-                # Use the entire shot
-                if 'count' not in shot['src'].keys():
-                    shot['src']['count'] = shot_src['count']
-
-                # Verify that this shot can be replaced
-                if ((shot['src']['start'] + shot['src']['count']) > (shot_src['start'] + shot_src['count'])
-                    and 'effects' not in shot.keys()):
-                    print("Error: cannot generate shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
-                    print("target:")
-                    pprint(shot)
-                # print("++++++++++++++++++++++++++ modified shot_src ++++++++++++++++++++++++++")
-                # pprint(shot_src)
-                # print("")
-                # print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-                # sys.exit()
-            else:
-                k_ed_src = db[k_episode]['common']['video']['reference']['k_ed']
-                k_ep_src = k_episode
-                k_part_src = k_p
-                shot_src = deepcopy(shot)
-
-            print("\t\t%s: %s\t(%d)\t<- %s:%s:%s %d (%d)" % (
+            print("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
                 "{:3d}".format(shot['no']),
                 "{:5d}".format(shot['start']),
-                shot['count'],
-                k_ed_src,
-                k_ep_src,
-                k_part_src,
-                shot_src['start'],
-                shot_src['count']),
+                shot['dst']['count'],
+                shot['k_ed'],
+                shot['k_ep'],
+                shot['k_part'],
+                shot['start'],
+                shot['count']),
                 flush=True)
 
-            # if (k_part_src in db[k_ep_src]['common']['video'].keys()
-            #     and 'layers' in db[k_ep_src]['common']['video'][k_part_src].keys()):
-            #     # print("Layer specified", db[k_ep_src]['common']['video'][k_part_src]['layers'])
-            #     shot_src.update({
-            #         'layers': db[k_ep_src]['common']['video'][k_part_src]['layers']
-            #     })
-
-            try:
-                shot_src.update({
-                    'layers': db[k_ep_src]['common']['video'][k_part_src]['layers']
-                })
-            except:
-                # no layers specified
-                pass
-
-
-            shot_src.update({
-                'k_ed': k_ed_src,
-                'k_ep': k_ep_src,
-                'k_part': k_part_src,
-                'tasks': tasks.copy(),
-                'dst': shot['dst'],
-            })
-            if 'effects' in shot.keys():
-                shot_src.update({'effects': shot['effects']})
-
-            # if 'dst' in shot.keys():
-            #     print("--> detected dst to generate the video: target: %s:%s -->" % (k_ep, k_part))
-            #     pprint(shot)
-            #     print("")
-            #     shot_src['dst'] = shot['dst']
-            if shot == shots[-1]:
-                shot_src['last'] = True
+            # Add list of task for this shot
+            shot['tasks'] = tasks.copy()
 
             # Generate frames for this shot
             if not simulation:
                 process_shot(db,
-                    shot=shot_src,
+                    shot=shot,
                     db_combine={},
                     cpu_count=cpu_count)
             else:
-                consolidate_shot(db, shot=shot_src)
+                consolidate_shot(db, shot=shot)
 
-            # Patch the shot to create the concatenation file
-            if 'src' in shot.keys() and shot['src']['use']:
-                # shot_properties_saved = ({'start': shot_src['start'], 'count': shot_src['count']})
-                shot_src['dst'].update({
-                    'start': shot['src']['start'],
-                    'count': shot['src']['count']
-                })
-            # shot_src['count'] = shot['count']
-
-            print("+++++++++++++++++++ shot SRC for concatenation +++++++++++++++++++")
-            pprint(shot_src)
-            print("+++++++++++++++++++++++++++ shot  ++++++++++++++++++++++++++++++++")
-            pprint(shot)
-            print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-            print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
+            # print("+++++++++++++++++++++ shot for concatenation +++++++++++++++++++++")
+            # pprint(shot)
+            # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
+            # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
             # Create concatenation file
             tmp = create_concatenation_file(db,
-                k_ep=k_episode, k_part=k_p, shot=shot_src,
+                k_ep=k_ep_src_main, k_part=k_p, shot=shot,
                 previous_concatenation_filepath=previous_concatenation_filepath)
             if tmp != previous_concatenation_filepath and tmp != '':
                 # Add the filepath to the the concatenation video file
                 video_files[k_p].append(tmp)
             previous_concatenation_filepath = tmp
 
-
     # Combine images to mkv
     for k_p, files in video_files.items():
         if k_part != '' and k_p != k_part or simulation:
             # Do not combine when a single part has to be processed
             continue
-
-        # for f in files:
-        #     combine_images_into_video(
-        #         db_settings= db['common']['settings'],
-        #         k_part=k_p,
-        #         input_filename=f,
-        #         force=force,
-        #         simulation=simulation)
 
         cpu_count = int(multiprocessing.cpu_count() / 2)
         with ThreadPoolExecutor(max_workers=cpu_count) as executor:
@@ -222,19 +122,22 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
             for future in concurrent.futures.as_completed(work_result):
                 pass
 
+    # Do not continue if generique is the only ask part to generate
+    #  and which are not related to an episode
     if k_part in ['g_debut', 'g_fin']:
         return
+
 
     # Concatenate shots in a single clip
     for k_p, filepaths in video_files.items():
         if len(filepaths) > 1 and not simulation:
-            concatenate_shots(db, k_ed=edition, k_ep=k_ep, k_part=k_p, video_files=video_files, force=force)
+            concatenate_shots(db, k_ed=k_ed, k_ep=k_ep, k_part=k_p, video_files=video_files, force=force)
 
 
     # Create concatenation files and video files for silences
     if k_part == '' and not simulation:
         # Only if a full generation is asked
-        video_files_tmp = create_concatenation_file_silence(db, k_ed=edition, k_ep=k_ep)
+        video_files_tmp = create_concatenation_file_silence(db, k_ed=k_ed, k_ep=k_ep)
         for k_p, filepaths in video_files_tmp.items():
             video_files[k_p] += filepaths
             for f in filepaths:
@@ -245,10 +148,10 @@ def generate_video(db, episode_no:int, tasks:list, cpu_count=0, edition='', k_pa
     # Concatenate video clips from all parts
     if k_part == '' and not simulation:
         # Generate a concatenation file that contains all video files except g_debut and g_fin
-        concatenation_filepath = create_concatenation_file_video(db, edition, k_ep, video_files)
+        concatenation_filepath = create_concatenation_file_video(db, k_ed=k_ed, k_ep=k_ep, video_files=video_files)
 
         # Concatenate video clips
-        episode_video_filepath = os.path.join(db[k_ep]['common']['path']['cache'],
+        episode_video_filepath = os.path.join(db[k_ep]['target']['path']['cache'],
             "video", "%s_video.mkv" % (k_ep))
         if not os.path.exists(episode_video_filepath) or force:
             print("%s concatenate video clips to %s" % (current_datetime_str(), episode_video_filepath))

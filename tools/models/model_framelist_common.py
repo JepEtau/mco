@@ -112,8 +112,8 @@ class Model_framelist_common(object):
         if db is not None:
             if k_part in K_GENERIQUES:
                 # Use the ed:ep defined as reference
-                k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
-                k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
+                k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
+                k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
             else:
                 k_ed_ref = frame_k_ed
                 k_ep_ref = frame_k_ep

@@ -5,176 +5,14 @@ from pprint import pprint
 
 from utils.common import (
     FPS,
-    K_GENERIQUES,
     pprint_audio,
     pprint_dict,
     pprint_video
 )
-from utils.get_filters import get_filters_from_shot
-from utils.get_curves import get_lut_from_curves
 from utils.time_conversions import frames_to_ms, ms_to_frames
 
 
 
-
-def consolidate_shot(db, shot) -> None:
-    """This procedure is used to simplify a single shot and add
-    properties to process it: removes unecessary property, add
-    paths to input/output files, update frames no. depending on edition, etc.
-
-    Args:
-        db: the global database
-        shot: a single shot to consolidate
-
-    Returns:
-        None
-
-    """
-    # k_ed, k_ep and k_part are the source keys for this shot
-    # [dst][k_ep] and [dst][k_part] are the destination (i.e. target)
-    k_ep = shot['k_ep']
-    k_ed = shot['k_ed']
-    k_part = shot['k_part']
-
-    print("%s.consolidate_shot: %s:%s:%s" % (__name__, k_ed, shot['dst']['k_ep'], shot['dst']['k_part']))
-    pprint(shot)
-    print("")
-    pprint(db['common']['layers'])
-    print()
-
-    db_video = db[k_ep][k_ed][k_part]['video']
-    shot_no = shot['no']
-
-    # Input and dimensions
-    shot.update({
-        'input': db['editions'][k_ed]['inputs'][k_ep],
-        'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
-    })
-
-
-    if 'layer' not in shot.keys() or shot['layer'] == 'fgd':
-        k_ed = db['common']['layers']['fgd']
-        # Foreground
-        # if 'shots' in db_video.keys():
-        #     print("***********************************")
-        #     pprint(db_video['shots'][shot_no])
-        #     print("***********************************")
-        #     pprint(shot)
-        #     print("***********************************")
-        #     shot.update(deepcopy(db_video['shots'][shot_no]))
-
-        shot['ref'] = shot['start']
-
-        # Patch start with offset ...
-        # TODO: correct this!!!!
-        # try:
-        #     offsets = db_video['offsets']
-        #     for i in range(len(offsets)):
-        #         if offsets[i]['start'] <= shot['start'] <= offsets[i]['end']:
-        #             shot['start'] = shot['start'] + offsets[i]['offset']
-        #             break
-        # except:
-        #     # print("warning: no offset defined in %s:%s:%s" % (k_ed, k_ep, k_part))
-        #     pass
-
-
-        # Remove unused tasks
-        if 'bgd' in shot['tasks']:
-            shot['tasks'].remove('bgd')
-
-        # Remove stitching
-        for t in ['stitching', 'stabilize']:
-            if t not in shot.keys():
-                try: shot['tasks'].remove(t)
-                except: pass
-
-
-    elif 'layer' in shot.keys() and shot['layer'] == 'bgd':
-        k_ed = shot['layers']['bgd']
-        db_video = db[k_ep][k_ed][k_part]['video']
-
-        shot['ref'] = shot['start']
-        shot['k_ed'] = k_ed
-        if True:
-            # Patch start with offset
-            offsets = db_video['offsets']
-            for i in range(len(offsets)):
-                if offsets[i]['start'] <= shot['start'] <= offsets[i]['end']:
-                    shot['start'] = shot['start'] + offsets[i]['offset']
-                    break
-
-        # pprint(db[k_ep][k_ed_bgd][k_part]['video'])
-        # pprint(shot)
-        # sys.exit()
-
-        # Background, use foreground shot details to
-        # update the properties
-        # shot.update(deepcopy(db[k_ep][db['editions']['fgd']][k_part]['video']['shots'][shot_no]))
-        shot['offsets'] = db_video['offsets']
-
-        # Remove unused tasks
-        for t in ['stitching', 'sharpen', 'rgb']:
-            if t in shot['tasks']:
-                shot['tasks'].remove(t)
-
-
-    else:
-        sys.exit("Did not detected FGD/BGD in shot structure")
-
-
-    # Get filters used by this shot
-    shot['filters'] = get_filters_from_shot(db, shot)
-
-    # Geometry
-    print("consolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
-    if k_part in ['g_debut', 'g_fin']:
-        # Get the geometry for the part wich is the target
-        k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
-        k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
-        shot['geometry'] = {
-            'part': db[k_ep_ref][k_ed_ref][k_part]['video']['geometry'],
-        }
-        # Add a different geometry because it is not the same k_ed:k_ep
-        if k_ed != k_ed_ref or k_ep != k_ep_ref:
-            shot['geometry'].update({
-                'custom': db[k_ep][k_ed][k_part]['video']['geometry'],
-            })
-
-    elif k_part in ['g_asuivre', 'g_reportage']:
-        # pprint(shot)
-        # k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
-        k_ep_dst = shot['dst']['k_ep']
-        k_ep_src = shot['k_ep']
-        k_ed_src = shot['k_ed']
-        print("get geometry from part %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
-        shot['geometry'] = {
-            'part':  db[k_ep_dst][k_ed][k_part[2:]]['video']['geometry'],
-            'custom': db[k_ep][k_ed_src][k_part]['video']['geometry'],
-        }
-
-    else:
-        print("TODO: consolidate_shot: update when replacing the shots in episode")
-        k_ep_dst = shot['dst']['k_ep']
-        k_part_dst = shot['dst']['k_part']
-        shot['geometry'] = {
-            'part':  db[k_ep_dst][k_ed][k_part_dst]['video']['geometry'],
-        }
-        if k_ep != k_ep_dst or k_part != k_part_dst:
-            shot['geometry'].update({
-                'custom': db[k_ep][k_ed][k_part]['video']['geometry'],
-            })
-
-
-    # RGB correction: calculate the lut from the curves
-    if shot['curves'] is not None:
-        k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
-        shot['curves']['lut'] = get_lut_from_curves(db,
-                                    k_ep_or_g,
-                                    shot['curves']['k_curves'])
-
-    # print("%s.consolidate_shot: end" % (__name__))
-    # pprint(shot)
-    # sys.exit()
 
 
 
@@ -190,8 +28,8 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
         return
 
     # video and audio tracks
-    db_video = db[k_part_g]['common']['video']
-    db_audio = db[k_part_g]['common']['audio']
+    db_video = db[k_part_g]['target']['video']
+    db_audio = db[k_part_g]['target']['audio']
 
     shots = db_video['shots']
 
@@ -278,14 +116,14 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
 
 def calculate_av_sync(db, k_ep):
     K_EP_DEBUG = ''
-    db_common = db[k_ep]['common']
+    db_target = db[k_ep]['target']
 
-    if ('audio' not in db_common.keys()
-        or 'video' not in db_common.keys()):
+    if ('audio' not in db_target.keys()
+        or 'video' not in db_target.keys()):
         sys.exit("%s.calculate_av_sync: error, audio or video does not exist in %s:common" % (__name__, k_ep))
         return
-    db_video = db_common['video']
-    db_audio = db_common['audio']
+    db_video = db_target['video']
+    db_audio = db_target['audio']
 
     # precedemment
     k_part = 'precedemment'
@@ -316,11 +154,11 @@ def calculate_av_sync(db, k_ep):
                 db_video['episode']['start'], db_video['shots']['start']))
     else:
         # precedemment does not exist
-        db_common['audio']['precedemment'].update({
+        db_target['audio']['precedemment'].update({
             'avsync': 0,
             'count': 0,
         })
-        db_common['video']['precedemment'].update({
+        db_target['video']['precedemment'].update({
             'avsync': 0,
             'count': 0,
         })
@@ -387,7 +225,7 @@ def calculate_av_sync(db, k_ep):
 
     if k_ep == K_EP_DEBUG:
         print("<<<<<<<<<<<<<<<< calculate_av_sync ep=%s >>>>>>>>>>>>>>>>" % (k_ep))
-        print(db_common.keys())
+        print(db_target.keys())
         print("<<<<<<<<<<<<<<<< VIDEO >>>>>>>>>>>>>>>>")
         pprint_video(db_video, ignore='shots', first_indent=4)
         print("<<<<<<<<<<<<<<<< AUDIO >>>>>>>>>>>>>>>>")
@@ -398,14 +236,14 @@ def calculate_av_sync(db, k_ep):
 
 def align_audio_video_durations(db, k_ep):
     K_EP_DEBUG = ''
-    db_common = db[k_ep]['common']
+    db_target = db[k_ep]['target']
 
-    if ('audio' not in db_common.keys()
-        or 'video' not in db_common.keys()):
+    if ('audio' not in db_target.keys()
+        or 'video' not in db_target.keys()):
         sys.exit("%s.align_audio_video_durations: error, audio or video does not exist in %s:common" % (__name__, k_ep))
         return
-    db_video = db_common['video']
-    db_audio = db_common['audio']
+    db_video = db_target['video']
+    db_audio = db_target['audio']
 
     if k_ep == K_EP_DEBUG:
         print("%s.align_audio_video_durations: %s:common" % (__name__, k_ep))
@@ -496,22 +334,13 @@ def align_audio_video_durations(db, k_ep):
             loop_count = audio_count - video_count
             if 'src' in last_shot.keys():
                 if last_shot['src']['k_ep'] != k_ep:
-                    last_k_ed = last_shot['src']['k_ed']
-                    last_k_ep = last_shot['src']['k_ep']
-                    last_use = last_shot['src']['use']
                     frame_no = last_shot['src']['start'] + last_shot['src']['count'] - 1
-                    print("--> align_audio_video_durations: audio_count > video_count: add dst struct in this shot %s:%s" % (k_ep, k_part))
-                    # last_shot.update({
-                    #     'dst':{
-                    #         'k_ep': k_ep,
-                    #         'k_part': k_part,
-                    #     }
-                    # })
-                    pprint(last_shot)
 
                 last_shot.update({
                     'effects': ['loop_and_fadeout', frame_no, loop_count, min(loop_count, 25)]
                 })
+                # last_shot['src']['count'] -= loop_count
+
             db_video[k_part]['count'] += loop_count
 
         elif audio_count < video_count:
@@ -568,18 +397,13 @@ def align_audio_video_durations(db, k_ep):
                     # print("\n%s.align_audio_video_durations: %s:%s, patch the last shot -> fadeout: add effects" % (__name__, k_ep, k_part))
                     if 'src' in last_shot.keys() and last_shot['src']['use']:
                         frame_no = last_shot['src']['start'] + last_shot['src']['count'] - 1
+                        last_shot['src']['count'] -= fadeout_count
                     else:
                         frame_no = last_shot['start'] + last_shot['count'] - 1
 
-                    print("--> fadeout: add dst struct in this shot %s:%s" % (k_ep, k_part))
                     last_shot.update({
                         'effects': ['fadeout', frame_no-fadeout_count, fadeout_count],
-                        # 'dst': {
-                        #     'k_ep': k_ep,
-                        #     'k_part': k_part,
-                        # }
                     })
-                    pprint(last_shot)
 
     return
 

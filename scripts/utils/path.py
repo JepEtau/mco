@@ -27,7 +27,7 @@ def create_video_directory(db, k_ep):
     if k_ep in ['ep00', 'ep40']:
         return
 
-    video_directory = os.path.join(db[k_ep]['common']['path']['cache'], "video")
+    video_directory = os.path.join(db[k_ep]['target']['path']['cache'], "video")
     if not os.path.exists(video_directory):
         os.makedirs(video_directory)
     return video_directory
@@ -43,7 +43,7 @@ def create_audio_directory(db, k_ep):
     if k_ep in ['ep00', 'ep40']:
         return
 
-    audio_directory = os.path.join(db[k_ep]['common']['path']['cache'], "audio")
+    audio_directory = os.path.join(db[k_ep]['target']['path']['cache'], "audio")
     if not os.path.exists(audio_directory):
         os.makedirs(audio_directory)
     return audio_directory
@@ -57,7 +57,7 @@ def create_folder_for_concatenation(db, k_ep):
         Returns
             Path of the created folder
     """
-    concatenation_directory = os.path.join(db[k_ep]['common']['path']['cache'], "concatenation")
+    concatenation_directory = os.path.join(db[k_ep]['target']['path']['cache'], "concatenation")
     if not os.path.exists(concatenation_directory):
         os.makedirs(concatenation_directory)
 
@@ -72,8 +72,6 @@ def get_output_path_from_shot(db, shot, task):
 
     if task in ['geometry', 'deinterlace_rgb', 'upscale_rgb_geometry']:
         # If last task is geometry, use the dst structure
-        # print("get_output_path_from_shot: shall be modified for dst")
-        # print("--> detected dst for the get_output_path_from_shot")
         output_path = os.path.join(db['common']['directories']['cache'],
             shot['dst']['k_ep'],
             shot['dst']['k_part'],

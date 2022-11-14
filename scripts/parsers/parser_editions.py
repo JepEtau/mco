@@ -48,17 +48,19 @@ def parser_edition_common(db_common, filename, verbose=False):
 #   Get editions from folder
 #
 #===========================================================================
-def parse_editions(database, cfg_foldername="../database", verbose=False):
+def parse_editions(database, k_ed_fgd='k', k_ed_ref='k', cfg_foldername="../database", verbose=False):
     db_common = database['common']
 
     mkv_foldername = db_common['directories']['input']
     db_editions = dict()
+    available_editions = list()
 
     # Get directory path
     if mkv_foldername.startswith("~/"):
         mkv_foldername = os.path.join(PosixPath(Path.home()), mkv_foldername)
     if not os.path.isdir(mkv_foldername):
         sys.exit("Error: %s is not a valid folder" % (mkv_foldername))
+
 
     # List directories and files
     #   append it to the global dictionary
@@ -71,6 +73,7 @@ def parse_editions(database, cfg_foldername="../database", verbose=False):
             if verbose:
                 print("found folder(edition)=%s" % (folder))
             db_editions[folder] = {'inputs': {}}
+
             inputs = db_editions[folder]['inputs']
 
             # List episodes and their input files for each edition
@@ -96,6 +99,9 @@ def parse_editions(database, cfg_foldername="../database", verbose=False):
                     else:
                         sys.exit("Error: %s is not a valid filename" % (filename))
 
+            # Add to the list of available editions
+            available_editions.append(folder)
+
     if verbose:
         pprint(db_editions)
 
@@ -107,24 +113,23 @@ def parse_editions(database, cfg_foldername="../database", verbose=False):
         sys.exit("Error: %s is not a valid folder" % (cfg_foldername))
 
     # Get common file for each edition
-    for edition in list(db_editions.keys()):
-        edition_common_filename = os.path.join(cfg_foldername, "common_%s.ini" % (edition))
+    for k_ed in available_editions:
+        edition_common_filename = os.path.join(cfg_foldername, "common_%s.ini" % (k_ed))
         if not os.path.isfile(edition_common_filename):
-            # print("warning: %s: remove edition [%s]" % (__name__, edition))
-            del db_editions[edition]
+            # print("warning: %s: remove edition [%s]" % (__name__, k_ed))
+            # No config file found for this edition, remove it from the available
+            del db_editions[k_ed]
+            available_editions.remove(k_ed)
             continue
         else:
-            if verbose: print("consolidate edition [%s]" % (edition))
+            if verbose: print("consolidate edition [%s]" % (k_ed))
 
             # Parse comon ini file for each edition
             config = configparser.ConfigParser()
             config.read(edition_common_filename)
             for k_section in config.sections():
-                # if k_section not in db_editions[edition].keys():
-                    # db_editions[edition][k_section] = dict()
-
                 if k_section.startswith("filters"):
-                    parse_and_update_filters(db_editions[edition], config, k_section, verbose)
+                    parse_and_update_filters(db_editions[k_ed], config, k_section, verbose)
                     continue
 
                 if k_section == 'dimensions':
@@ -132,28 +137,13 @@ def parse_editions(database, cfg_foldername="../database", verbose=False):
                     for k_option in config.options(k_section):
                         value_str = config.get(k_section, k_option)
                         if k_option == 'width_initial':
-                            db_editions[edition][k_section] = {'initial': {'w': int(value_str)}}
+                            db_editions[k_ed][k_section] = {'initial': {'w': int(value_str)}}
                     continue
-
-                # for _option in config.options(k_section):
-                #     value = config.get(k_section, _option)
-                #     if k_section == 'dimensions' and _option == 'width_initial':
-                #         print(k_section)
-                #         print(value)
-                #         db_editions[edition][k_section] = {'initial': {'w': int(value)}}
-                #     elif k_section == 'dimensions' and _option == 'width_upscale':
-                #         print(k_section)
-                #         print(value)
-                #         db_editions[edition][k_section] = {'upscale': {'w': int(value)}}
-                #     else:
-                #         db_editions[edition][k_section][_option] = value
-            # except:
-            #     print("Warning: %s: fichier de configuration non trouvé ou erroné: %s \n\n" % (__name__, edition_common_filename))
-            #     # sys.exit("Unexpected error:", sys.exc_info()[0])
 
 
     # Consolidate editions
-    for k_ed, edition in db_editions.items():
+    for k_ed in available_editions:
+        edition = db_editions[k_ed]
         # Create filters structure if not exist
         if 'filters' not in edition.keys():
            edition['filters'] = dict()
@@ -173,21 +163,14 @@ def parse_editions(database, cfg_foldername="../database", verbose=False):
             # Create a simple link (do not copy)
             edition['dimensions'] = db_common['dimensions']
 
-        # Layers
-    db_editions.update({
-        'layers': {
-            'fgd': db_common['layers']['fgd'],
-            'bgd': db_common['layers']['bgd'],
-        }
-    })
+    # Available editions
+    db_editions['available'] = available_editions
+
+    # Set the target (i.e. the edition used as foreground)
+    db_editions['fgd'] = k_ed_fgd
+
+    # Set the edition used as the ereference for the calculation of the frame no.
+    db_editions['k_ed_ref'] = k_ed_ref
 
     return db_editions
 
-
-
-def get_available_editions(db):
-    k_editions = list(db['editions'].keys())
-    for k in ['layers', 'common']:
-        if k in k_editions:
-            k_editions.remove(k)
-    return k_editions
