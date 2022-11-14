@@ -31,7 +31,7 @@ from utils.common import (
     K_PARTS,
     pprint_video,
 )
-from utils.consolidate import (
+from utils.consolidate_av import (
     align_audio_video_durations,
     align_audio_video_durations_g_debut_fin,
     calculate_av_sync,

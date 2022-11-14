@@ -89,14 +89,12 @@ def create_concatenation_file_2(db, k_ep, k_part, shot, previous_concatenation_f
         k_ed = shot['k_ed']
         if k_part in ['g_debut', 'g_fin']:
             # Use the edition/episode defined as reference
-            k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
-            k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
             concatenation_filepath = os.path.join(
-                db[k_ep_or_g]['common']['path']['cache'],
+                db[k_ep_or_g]['target']['path']['cache'],
                 "concatenation",
                 "%s_video.txt" % (k_ep_or_g))
         else:
-            concatenation_filepath = os.path.join(db[k_ep_or_g]['common']['path']['cache'],
+            concatenation_filepath = os.path.join(db[k_ep_or_g]['target']['path']['cache'],
                 "concatenation", "%s_%s__%s__%05d.txt" % (k_ep, k_part, k_ed, 0))
         previous_concatenation_filepath = concatenation_filepath
         concatenation_file = open(concatenation_filepath, "w")
@@ -238,17 +236,17 @@ def merge_audio_and_video_tracks(db, k_ep, force=False):
     # print("%s.merge_audio_and_video_tracks: %s" % (__name__, k_ep))
     suffix = "" if k_ep in ['g_debut', 'g_fin'] else "_audio_video"
     audio_video_filepath = os.path.join(
-        db[k_ep]['common']['path']['cache'],
+        db[k_ep]['target']['path']['cache'],
         "%s%s.mkv" % (k_ep, suffix))
     if os.path.exists(audio_video_filepath) and not force:
         return
 
     # Get nb of frames from video stream
-    video_filepath = os.path.join(db[k_ep]['common']['path']['cache'], "video", "%s_video.mkv" % (k_ep))
+    video_filepath = os.path.join(db[k_ep]['target']['path']['cache'], "video", "%s_video.mkv" % (k_ep))
     video_frames_count = int(get_duration(db, video_filepath, integrity=False) * FPS)
 
     # Get equivalent nb of frames from audio stream
-    audio_filepath = os.path.join(db[k_ep]['common']['path']['cache'], "audio", "%s_audio.%s" % (k_ep, db['common']['settings']['audio_format']))
+    audio_filepath = os.path.join(db[k_ep]['target']['path']['cache'], "audio", "%s_audio.%s" % (k_ep, db['common']['settings']['audio_format']))
     sample_rate, in_track, duration = read_single_track_audio_file(audio_filepath)
     audio_frames_count = int(duration*FPS)
 

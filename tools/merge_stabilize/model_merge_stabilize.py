@@ -46,7 +46,7 @@ from utils.common import K_NON_GENERIQUE_PARTS, get_database_size, get_frame_no_
 from utils.common import K_GENERIQUES
 from utils.get_filters import FILTER_BASE_NO
 from utils.get_framelist import get_framelist, get_framelist_2
-from utils.consolidate import consolidate_shot
+from utils.consolidate_av import consolidate_shot
 from utils.get_filters import get_filter_id
 
 

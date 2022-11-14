@@ -27,7 +27,7 @@ from images.frames import (
     create_framelist_from_shot,
     patch_frames_for_stitching,
 )
-from utils.consolidate import consolidate_shot
+from utils.consolidate_shots import consolidate_shot
 from utils.ffmpeg import (
     ffmpeg_deinterlace_and_pre_upscale_shot,
     ffmpeg_deinterlace_shot,
@@ -351,7 +351,7 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
     for l in layers.keys():
         consolidate_shot(db, layers[l]['shot'])
 
-    if True:
+    if False:
         # For debug
         print("--------------- Foreground ---------------")
         pprint(layers['fgd']['shot'])

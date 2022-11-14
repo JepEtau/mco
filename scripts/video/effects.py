@@ -129,14 +129,19 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
 
     # print("\n\tloop (%d), fadeout %d->%d, added frames=%d" % (loop_count, fadeout_start, fadeout_start + fadeout_count, loop_count))
 
+    # Input directory: use the latest task even if it is not
+    input_filepath = get_output_path_from_shot(db=db, shot=shot, task='rgb')
+    print("\tinput filepath=%s" % (input_filepath))
+
     # Output directory
     k_part = shot['k_part']
     if k_part in ['g_debut', 'g_fin']:
         output_filepath = os.path.join(
-            db[k_part]['common']['path']['cache'],
+            db[k_part]['target']['path']['cache'],
             '%05d' % (shot['start']))
     else:
-        output_filepath = get_output_path_from_shot(db=db, shot=shot, task=last_task)
+        # As if the latest task was geometry to use the dst k_ep:k_part:shot_no
+        output_filepath = get_output_path_from_shot(db=db, shot=shot, task='geometry')
     print("\toutput filepath=%s" % (output_filepath))
     if not os.path.exists(output_filepath):
         os.makedirs(output_filepath)
@@ -165,14 +170,14 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
 
     if loop_count > fadeout_count:
         print("WARNING: loop (%d) is > fadeout (%d)" % (loop_count, fadeout_count))
-        input_img_filepath = os.path.join(output_filepath, filename)
+        input_img_filepath = os.path.join(input_filepath, filename)
 
     for count in range(0, fadeout_count):
         # Input file
         if count < fadeout_count - loop_count:
             input_img_filepath = frames[-1 * (fadeout_count - loop_count - count)]['filepath'][last_task]
         elif count == fadeout_count - loop_count:
-            input_img_filepath = os.path.join(output_filepath, filename)
+            input_img_filepath = os.path.join(input_filepath, filename)
 
         # Output file
         filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
@@ -201,6 +206,10 @@ def effect_fadeout(db, shot, frames, last_task):
     # pprint(shot)
     # sys.exit()
 
+    # Input directory: use the latest task even if it is not
+    input_filepath = get_output_path_from_shot(db=db, shot=shot, task='rgb')
+    print("\tinput filepath=%s" % (input_filepath))
+
     # Output directory
     k_part = shot['k_part']
     if k_part in ['g_debut', 'g_fin']:
@@ -209,7 +218,8 @@ def effect_fadeout(db, shot, frames, last_task):
             k_part,
             "99999")
     else:
-        output_filepath = get_output_path_from_shot(db=db, shot=shot, task=last_task)
+        # As if the latest task was geometry to use the dst k_ep:k_part:shot_no
+        output_filepath = get_output_path_from_shot(db=db, shot=shot, task='geometry')
     print("\toutput filepath=%s" % (output_filepath))
     if not os.path.exists(output_filepath):
         os.makedirs(output_filepath)
@@ -239,7 +249,7 @@ def effect_fadeout(db, shot, frames, last_task):
 
         # Output file
         filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
-        output_img_filepath = os.path.join(output_filepath, filename)
+        output_img_filepath = os.path.join(input_filepath, filename)
 
         # Calculate coefficient: last frame is not completely black because there is always
         # a silence after this (i.e. black frames)

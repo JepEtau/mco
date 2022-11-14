@@ -48,8 +48,8 @@ from parsers.parser_episodes import parse_episodes_common, parse_episode
 
 from parsers.parser_shots import create_target_shots, create_target_shots_g
 
-from utils.consolidate import align_audio_video_durations, calculate_av_sync
-from utils.consolidate import align_audio_video_durations_g_debut_fin
+from utils.consolidate_av import align_audio_video_durations, calculate_av_sync
+from utils.consolidate_av import align_audio_video_durations_g_debut_fin
 
 from parsers.parser_stabilize import STABILIZATION_SHOT_PARAMETERS_DEFAULT
 from parsers.parser_stabilize import parse_stabilize_configurations

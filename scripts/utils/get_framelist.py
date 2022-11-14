@@ -10,16 +10,16 @@ from utils.time_conversions import ms_to_frames
 
 
 def _get_frames_until_effects(db, k_part, shot, suffix, count=0):
-    k_part_src = shot['k_part']
-    k_ep_src = shot['k_ep']
     k_ed = shot['k_ed']
+    k_ep = shot['k_ep']
+    k_part = shot['k_part']
 
     shot_start = shot['start']
     shot_count = shot['count'] if count == 0 else count
 
     # Replace images
     if 'replace' not in db['common']['options']['discard_tasks']:
-        frames_to_replace = db[k_ep_src][k_ed][k_part_src]['video']['replace']
+        frames_to_replace = db[k_ep][k_ed][k_part]['video']['replace']
     else:
         # defined in discarded tasks
         frames_to_replace = dict()
@@ -27,7 +27,7 @@ def _get_frames_until_effects(db, k_part, shot, suffix, count=0):
     # Input folder
     if k_part in ['g_debut', 'g_fin']:
         input_folder = os.path.join(
-            db[k_part]['common']['path']['cache'],
+            db[k_part]['target']['path']['cache'],
             '%05d' % (shot_start))
     else:
         pprint("last task: [%s]" % (shot['tasks'][-1]))
@@ -38,17 +38,17 @@ def _get_frames_until_effects(db, k_part, shot, suffix, count=0):
     # Append images
     images = list()
     try:
-        start = shot['dst']['start']
-        end = start + shot['dst']['count']
+        start = shot['src']['start']
+        end = start + shot['src']['count']
     except:
         start = shot_start
         end = shot_start + shot_count
 
     for f_no in range(start, end):
         if f_no in frames_to_replace:
-            filename = "%s_%05d%s" % (k_ep_src, frames_to_replace[f_no], suffix)
+            filename = "%s_%05d%s" % (k_ep, frames_to_replace[f_no], suffix)
         else:
-            filename = "%s_%05d%s" % (k_ep_src, f_no, suffix)
+            filename = "%s_%05d%s" % (k_ep, f_no, suffix)
         p = os.path.join(input_folder, filename)
         images.append(p)
 
@@ -237,9 +237,9 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
     # A/V sync for the first shot
     if shot['no'] == 0:
         if k_part in ['g_debut', 'g_fin']:
-            db_video = db[k_part]['common']['video']
+            db_video = db[k_part]['target']['video']
         else:
-            db_video = db[k_ep]['common']['video'][k_part]
+            db_video = db[k_ep]['target']['video'][k_part]
 
         if db_video['avsync'] != 0 and k_part != 'precedemment':
             sys.exit("get_framelist_2: avsync not supported for %d:%d" % (k_ep, k_part))
@@ -314,9 +314,9 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
 
             # Input folder
             if k_part in ['g_debut', 'g_fin']:
-                input_folder = os.path.join(db[k_part]['common']['path']['cache'])
+                input_folder = os.path.join(db[k_part]['target']['path']['cache'])
             else:
-                input_folder = os.path.join(db[k_ep_src]['common']['path']['cache'], k_part)
+                input_folder = os.path.join(db[k_ep_src]['target']['path']['cache'], k_part)
             input_folder = os.path.join(input_folder, '%05d' % (shot_src['start']))
 
             # Append images to the list
@@ -394,11 +394,11 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
 
     # Append silence to this part
     if k_part in ['g_debut', 'g_fin'] and 'last' in shot.keys():
-        if 'silence' in db[k_part]['common']['audio'].keys():
+        if 'silence' in db[k_part]['target']['audio'].keys():
             # Add black frames to the files
             black_image_filepath = os.path.join(db['common']['directories']['cache'],
                 'black.%s' % (db['common']['settings']['frame_format']))
-            silence_count = ms_to_frames(db[k_part]['common']['audio']['silence'])
+            silence_count = ms_to_frames(db[k_part]['target']['audio']['silence'])
             # print("add black images: %d" % (silence_count))
             for i in range(silence_count):
                 images.append(black_image_filepath)
