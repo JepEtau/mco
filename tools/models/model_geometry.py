@@ -83,7 +83,7 @@ class Model_geometry():
             return self.get_part_geometry(k_ed=k_ed, k_ep=k_ep, k_part=k_part)
         else:
             print("TODO: get_custom_geometry for %s:%s:%s (%d)" % (
-                k_ed, k_ep, k_part, shot['shot_no']))
+                k_ed, k_ep, k_part, shot['no']))
             # TODO: return the geometry for this shot
         return None
 
@@ -114,16 +114,16 @@ class Model_geometry():
                             k_ep=k_ep,
                             k_part=k_part[2:]),
                 'custom': self.get_part_geometry(
-                            k_ed=db[k_part]['common']['video']['reference']['k_ed'],
-                            k_ep=db[k_part]['common']['video']['reference']['k_ep'],
+                            k_ed=db[k_part]['target']['video']['src']['k_ed'],
+                            k_ep=db[k_part]['target']['video']['src']['k_ep'],
                             k_part=k_part),
             }
 
         elif k_part in ['g_debut', 'g_fin']:
             # In this case, the custom geometry is the part of the dependency
             print("\t-> k_part=%s" % (k_part))
-            k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
-            k_ep_ref = db[k_part]['common']['video']['reference']['k_ep']
+            k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
+            k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
             shot_geometry = {
                 'part': self.get_part_geometry(
                             k_ed=k_ed_ref, k_ep=k_ep_ref, k_part=k_part),

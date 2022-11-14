@@ -339,8 +339,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
                 src_txt = "%s:%s" % (shot['src']['k_ed'], shot['src']['k_ep'])
             self.tableWidget_shots.setItem(row_no, 1, QTableWidgetItem(src_txt))
 
-            self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem(str(shot['start'])))
-            self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(str(shot['count'])))
+            self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem(str(shot['src']['start'])))
+            self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(str(shot['src']['count'])))
 
             # Curves
             k_initial_curves = shot['modifications']['curves']['initial']

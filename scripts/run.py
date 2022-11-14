@@ -283,7 +283,7 @@ def main():
                 sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
 
 
-        # Consolidate each shot in the target structure
+        # Consolidate each shot for the target
         consolidate_target_shots(
             db=g_database,
             k_ed=arguments.edition,

@@ -35,7 +35,7 @@ from utils.common import (
 )
 from utils.get_filters import FILTER_BASE_NO
 from utils.get_framelist import get_framelist, get_framelist_2
-from utils.consolidate_av import consolidate_shot
+from utils.consolidate_shots import consolidate_shot
 
 class Model_video_editor(Model_common):
     signal_current_shot_modified = Signal(dict)
@@ -120,16 +120,17 @@ class Model_video_editor(Model_common):
         """
         # print("----------------------- ep_or_part_selection_changed -------------------------")
         # pprint(values)
-        k_ep = values['k_ep']
-        k_part = values['k_part']
+        k_ep_selected = values['k_ep']
+        k_part_selected = values['k_part']
         k_step = 'deinterlace' if values['k_step'] == '' else values['k_step']
-        if (k_ep == '' and k_part == '') or (k_ep != '' and k_part == ''):
+        if ((k_ep_selected == '' and k_part_selected == '')
+            or (k_ep_selected != '' and k_part_selected == '')):
             return
-        log.info("directory_changed: %s:%s" % (k_ep, k_part))
+        log.info("directory_changed: %s:%s" % (k_ep_selected, k_part_selected))
 
         self.model_database.consolidate_database(
-            k_ep=k_ep,
-            k_part=k_part,
+            k_ep=k_ep_selected,
+            k_part=k_part_selected,
             do_parse_replace=True,
             do_parse_geometry=True)
 
@@ -141,120 +142,65 @@ class Model_video_editor(Model_common):
         # Remove all frames
         self.frames.clear()
 
-        if k_part in ['g_debut', 'g_fin']:
-            db_video = db[k_part]['common']['video']
-        else:
-            db_video = db[k_ep]['common']['video'][k_part]
-
-        # will contains all shots for this part
+        # This will contains all shots for this part
         self.shots.clear()
 
         # Contains all path of frames for this part
         self.filepath.clear()
 
+        if k_part_selected in ['g_debut', 'g_fin']:
+            db_video = db[k_part_selected]['target']['video']
+        else:
+            db_video = db[k_ep_selected]['target']['video'][k_part_selected]
+
+        # Walk through shots
         shots = db_video['shots']
         for shot in shots:
-            # Select the shot used for the generation
-            if 'src' in shot.keys() and shot['src']['use']:
-                k_ed_src = shot['src']['k_ed']
-                k_ep_src = shot['src']['k_ep']
-                k_part_src = get_k_part_from_frame_no(db, k_ed=k_ed_src, k_ep=k_ep_src, frame_no=shot['src']['start'])
-                shot_src = deepcopy(get_shot_from_frame_no_new(db,
-                    shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src))
 
-                # Remove 'src' from the source shot (it would create infinite loop!)
-                try: del shot_src['src']
-                except: pass
-
-                # Use the entire shot
-                if 'count' not in shot['src'].keys():
-                    shot['src']['count'] = shot_src['count']
-
-                # Verify that this shot can be replaced
-                if ((shot['src']['start'] + shot['src']['count']) > (shot_src['start'] + shot_src['count'])
-                    and 'effects' not in shot.keys()):
-                    print("Error: cannot use shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
-                    print("target:")
-                    pprint(shot)
-            else:
-                k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
-                k_ep_src = k_ep
-                k_part_src = k_part
-                shot_src = deepcopy(shot)
-
-            print("\t\t%s: %s\t(%d)\t<- %s:%s:%s %d (%d)" % (
+            # For debug only
+            print("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
                 "{:3d}".format(shot['no']),
                 "{:5d}".format(shot['start']),
-                shot['count'],
-                k_ed_src,
-                k_ep_src,
-                k_part_src,
-                shot_src['start'],
-                shot_src['count']))
+                shot['dst']['count'],
+                shot['k_ed'],
+                shot['k_ep'],
+                shot['k_part'],
+                shot['start'],
+                shot['count']),
+                flush=True)
 
-            shot_src.update({
-                'k_ed': k_ed_src,
-                'k_ep': k_ep_src,
-                'k_part': k_part_src,
-                'tasks': [values['k_step']],
-            })
-            if 'effects' in shot.keys():
-                shot_src.update({'effects': shot['effects']})
+            # Consolidate shot
+            shot['tasks'] = [values['k_step']]
+            consolidate_shot(db, shot=shot)
 
-            if shot == shots[-1]:
-                shot_src['last'] = True
-
-            # Consolidation used fot the generation of frames for this shot
-            consolidate_shot(db, shot=shot_src)
-
-            # Patch the shot to create the concatenation file
-            if 'src' in shot.keys() and shot['src']['use']:
-                shot_properties_saved = ({'start': shot_src['start'], 'count': shot_src['count']})
-                shot_src.update({
-                    'start': shot['src']['start'],
-                    'count': shot['src']['count']
-                })
-            shot_src['count'] = shot['count']
-
-            if k_part in ['episode', 'reportage']:
-                filepath_tmp = get_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
+            # Get a list of path for each frame  for this shot
+            if k_part_selected in ['episode', 'reportage']:
+                filepath_tmp = get_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
             else:
-                filepath_tmp = get_framelist_2(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
+                filepath_tmp = get_framelist_2(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
             self.filepath.append(filepath_tmp)
 
 
-
-            # if 'src' in shot.keys() and shot['src']['use']:
-            #     # restore src shot
-            #     shot_src.update(shot_properties_saved)
-
             shot_no = shot['no']
-            self.shots[shot_no] = shot_src
-            current_shot = self.shots[shot_no]
-            if 'src' in shot.keys():
-                current_shot['src'] = shot['src']
+            self.shots[shot_no] = shot
 
-            # patch count to include loop
-            if ('effects' in current_shot.keys()
-                and 'loop' in current_shot['effects'][0]):
-                current_shot['count'] += current_shot['effects'][2]
+            # patch count to include loop???
+            # if ('effects' in current_shot.keys()
+            #     and 'loop' in current_shot['effects'][0]):
+            #     current_shot['count'] += current_shot['effects'][2]
 
             # Get curves for this shot
-            curves = self.model_database.get_curves_selection(shot=current_shot)
+            curves = self.model_database.get_curves_selection(shot=shot)
             try: k_curves = curves['k_curves']
             except: k_curves =''
-            if curves is None and current_shot['curves'] is not None:
+            if curves is None and shot['curves'] is not None:
                 print("Error: curves [%s] is not found in the directory %s, correct this!" % (
-                    current_shot['curves']['k_curves'],
+                    shot['curves']['k_curves'],
                     self.model_database.get_curves_library_path()))
-                current_shot['curves']['k_curves'] = "~" + current_shot['curves']['k_curves']
+                shot['curves']['k_curves'] = "~" + shot['curves']['k_curves']
 
             # Update this shot for UI
-            current_shot.update({
-                # Uncomment if it simplifies following functions
-                # 'k_ep_dst': k_ep,
-                # 'k_part_dst': k_part,
-
+            shot.update({
                 'is_valid': True,
 
                 # Frame no. ... for what?
@@ -271,25 +217,27 @@ class Model_video_editor(Model_common):
 
             # Use the k_ed used for this shot: mandatory to get
             # the correct settings
-            if k_part in K_GENERIQUES:
-                k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
+            # if k_part in K_GENERIQUES:
+            #     k_ed_src = db[k_part]['target']['video']['reference']['k_ed']
 
 
             # Geometry for this shot:
             #   - part geometry
             #   - custom geometry: if g_asuivre/g_reportage, staabilize or stitched images
-            if k_part in ['g_debut', 'g_fin']:
+            if k_part_selected in ['g_debut', 'g_fin']:
                 shot_geometry = self.model_database.get_shot_geometry(
                     k_ed='-',
-                    k_ep=k_ep_src,
-                    k_part=k_part,
-                    shot=current_shot)
+                    k_ep=shot['k_ep'],
+                    k_part=k_part_selected,
+                    shot=shot)
             else:
+                pprint(shot)
+
                 shot_geometry = self.model_database.get_shot_geometry(
-                    k_ed=db[k_ep]['common']['video']['reference']['k_ed'],
-                    k_ep=k_ep,
-                    k_part=k_part,
-                    shot=current_shot)
+                    k_ed=db[k_ep_selected]['target']['video']['src']['k_ed'],
+                    k_ep=k_ep_selected,
+                    k_part=k_part_selected,
+                    shot=shot)
 
             # Create a list of frames for this shot
             self.frames[shot_no] = list()
@@ -298,21 +246,21 @@ class Model_video_editor(Model_common):
 
                 if not os.path.exists(p):
                     image_filepath = p_missing_frame
-                    current_shot['is_valid'] = False
+                    shot['is_valid'] = False
                 else:
                     image_filepath = p
 
-                current_shot['frame_nos'].append(frame_no)
+                shot['frame_nos'].append(frame_no)
                 self.frames[shot_no].append({
-                    'k_ed': k_ed_src,
-                    'k_ep': k_ep_src,
-                    'k_part': k_part_src,
+                    'k_ed': shot['k_ed'],
+                    'k_ep': shot['k_ep'],
+                    'k_part': shot['k_part'],
                     'shot_no': shot_no,
                     'frame_no': frame_no,
 
                     'filepath': image_filepath,
-                    'dimensions': shot_src['dimensions'],
-                    'replaced_by': self.model_database.get_replace_frame_no(shot=current_shot, frame_no=frame_no),
+                    'dimensions': shot['dimensions'],
+                    'replaced_by': self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no),
                     'curves': curves,
                     'geometry': shot_geometry,
                     'cache_fgd': None,
@@ -320,46 +268,44 @@ class Model_video_editor(Model_common):
                 })
 
         # Create a dict to update the "browser" part of the editor widget
-        if k_part in K_GENERIQUES:
-            k_ed = db[k_part]['common']['video']['reference']['k_ed']
+        if k_part_selected in K_GENERIQUES:
+            k_ed_selected = db[k_part_selected]['target']['video']['src']['k_ed']
         else:
-            k_ed = db[k_ep]['common']['video']['reference']['k_ed']
+            k_ed_selected = db[k_ep_selected]['target']['video']['src']['k_ed']
         self.current_selection = {
-            'k_ed': k_ed,
-            'k_ep': k_ep,
-            'k_part': k_part,
+            'k_ed': k_ed_selected,
+            'k_ep': k_ep_selected,
+            'k_part': k_part_selected,
             'k_step': k_step,
             'shots': self.shots,
-            'reference': {
-                'k_ed': k_ed,
-                'k_ep': k_ep
-            },
             'geometry': None,
         }
 
         # Update selection with the part geometry
-        print("ep_or_part_selection_changed: update geometry: %s" % (k_part))
-        if k_part in ['g_debut', 'g_fin']:
+        print("ep_or_part_selection_changed: update geometry: %s" % (k_part_selected))
+        if k_part_selected in ['g_debut', 'g_fin']:
+            # Use the k_ed:k_ep defined as the source for this geometry
             self.current_selection.update({
                 'geometry': self.model_database.get_part_geometry(
-                    k_ed=db[k_part]['common']['video']['reference']['k_ed'],
-                    k_ep=db[k_part]['common']['video']['reference']['k_ep'],
-                    k_part=k_part),
+                    k_ed=db[k_part_selected]['target']['video']['src']['k_ed'],
+                    k_ep=db[k_part_selected]['target']['video']['src']['k_ep'],
+                    k_part=k_part_selected),
             })
-        elif k_part in ['g_asuivre', 'g_reportage']:
-            # Use the following part
+        elif k_part_selected in ['g_asuivre', 'g_reportage']:
+            # Use the following part to get the geometry for this part
             self.current_selection.update({
                 'geometry': self.model_database.get_part_geometry(
-                    k_ed=db[k_ep]['common']['video']['reference']['k_ed'],
-                    k_ep=k_ep,
-                    k_part=k_part[2:]),
+                    k_ed=db[k_ep_selected]['target']['video']['src']['k_ed'],
+                    k_ep=k_ep_selected,
+                    k_part=k_part_selected[2:]),
             })
         else:
+            # Use the selected ed:ep:part
             self.current_selection.update({
                 'geometry': self.model_database.get_part_geometry(
-                    k_ed=k_ed,
-                    k_ep=k_ep,
-                    k_part=k_part),
+                    k_ed=k_ed_selected,
+                    k_ep=k_ep_selected,
+                    k_part=k_part_selected),
             })
 
         self.model_database.initialize_shots_per_curves(self.shots)
@@ -636,8 +582,8 @@ class Model_video_editor(Model_common):
             type = 'part'
             # Use a copy of parameters to not modify the initial values
             db = self.model_database.database()
-            k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
-            k_ep_src = db[k_part]['common']['video']['reference']['k_ep']
+            k_ed_src = db[k_part]['target']['video']['src']['k_ed']
+            k_ep_src = db[k_part]['target']['video']['src']['k_ep']
             geometry = deepcopy(self.model_database.get_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part))
 
         else:
@@ -686,7 +632,7 @@ class Model_video_editor(Model_common):
         k_part = self.current_selection['k_part']
         db = self.model_database.database()
         if k_part in K_GENERIQUES:
-            k_ed = db[k_part]['common']['video']['reference']['k_ed']
+            k_ed = db[k_part]['target']['video']['src']['k_ed']
         else:
             k_ed =self.current_selection['k_ed']
         self.model_database.discard_part_geometry_modifications(k_ed=k_ed, k_part=k_part)
@@ -701,7 +647,7 @@ class Model_video_editor(Model_common):
             k_ep = self.current_frame['k_ep']
         else:
             k_ep = self.current_selection['k_ep']
-            k_ed = db[k_ep]['common']['video']['reference']['k_ed']
+            k_ed = db[k_ep]['target']['video']['src']['k_ed']
         # pprint(self.current_selection)
         shot = self.shots[self.current_frame['shot_no']]
 
@@ -778,7 +724,7 @@ class Model_video_editor(Model_common):
                 shot=shot)
         else:
             frame['geometry'] = self.model_database.get_shot_geometry(
-                k_ed=db[self.current_selection['k_ep']]['common']['video']['reference']['k_ed'],
+                k_ed=db[self.current_selection['k_ep']]['target']['video']['src']['k_ed'],
                 k_ep=self.current_selection['k_ep'],
                 k_part=self.current_selection['k_part'],
                 shot=shot)

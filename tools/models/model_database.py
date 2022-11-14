@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
+
+from utils.consolidate_shots import consolidate_target_shots
 sys.path.append('../scripts')
 
 from copy import deepcopy
@@ -286,7 +288,7 @@ class Model_database(Model_stitching_curves, Model_geometry, Model_curves, objec
                     # from the other directory if the src episode is not the same.
                     if k_part in ['g_asuivre', 'g_reportage']:
                         self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_part)
-                        k_ep_ref = self.global_database[k_part]['common']['video']['reference']['k_ep']
+                        k_ep_ref = self.global_database[k_part]['target']['video']['src']['k_ep']
                         self.db_curves_selection_initial = get_curves_selection(self.global_database,
                             k_ep=k_ep_ref, k_part=k_part)
                         # print("db_curves_selection_initial: %s:%s" % (k_ep_ref, k_part))
@@ -409,12 +411,14 @@ class Model_database(Model_stitching_curves, Model_geometry, Model_curves, objec
             # pprint(self.replaced_frames)
 
 
-        # print("\tended")
-        # if k_ep == 'ep01':
-            # pprint(self.global_database[k_ep]['k'])
-            # pprint_video(self.global_database[k_ep]['k']['episode'])
-            # pprint_episode(self.global_database, k_ep)
-            # sys.exit()
+        # Consolidate each shot for the target
+        consolidate_target_shots(
+            db=self.global_database,
+            k_ed='',
+            k_ep=k_ep,
+            k_part=k_part,
+        )
+
         gc.collect()
 
     def database(self):

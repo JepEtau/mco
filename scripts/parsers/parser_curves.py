@@ -142,15 +142,15 @@ def get_curves_selection(db, k_ep, k_part) -> dict:
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in ['g_debut', 'g_fin']:
-        db_video = db[k_part]['common']['video']
+        db_video = db[k_part]['target']['video']
     elif k_part in ['g_asuivre', 'g_reportage']:
-        k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
+        k_ed_src = db[k_part]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         print("\t-> %s:%s:%s" % (k_ed_src, k_ep_src, k_part))
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
     else:
         print("%s.get_curves_selection: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
+        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
         # print("%s.get_curves_selection: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
@@ -213,24 +213,6 @@ def parse_curves_folder(db, k_ep_or_g):
                     'lut': None,
                     'shots': []
                 }
-
-    # Browse curves in the common directory
-    # NO!
-    # for f in os.listdir(path):
-    #     if f.endswith(".crv"):
-    #         # Create an element for each curve
-    #         k_curves = os.path.splitext(f)[0]
-    #         if k_curves in db_curves.keys():
-    #             # Do not add if already in base
-    #             continue
-    #         db_curves[k_curves] = {
-    #             'k_curves': k_curves,
-    #             'filepath': f,
-    #             'channels': None,
-    #             'lut': None,
-    #             'shots': []
-    #         }
-
 
     # for each shot, get the src episode
     # and get the curves from the other folder.
