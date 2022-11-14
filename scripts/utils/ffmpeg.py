@@ -347,8 +347,8 @@ def ffmpeg_deinterlace_shot(database, shot):
 
 def ffmpeg_deinterlace_and_pre_upscale_shot(database, shot):
     filter_str = ""
-    if shot['filters']['ffmpeg']['pre_upscale'] is None:
-        print("warning: pre-upscale filter is not defined")
+    # if shot['filters']['ffmpeg']['pre_upscale'] is None:
+    #     print("warning: pre-upscale filter is not defined")
     # get FFMPEG filter
     filter_str, width, height = get_ffmpeg_filter(shot, 'pre_upscale')
 
@@ -361,7 +361,6 @@ def ffmpeg_deinterlace_and_upscale_shot(database, shot):
     # if shot['filters']['ffmpeg']['upscale'] is not None:
     # get FFMPEG filter
     filter_str, width, height = get_ffmpeg_filter(shot, 'upscale')
-    print(filter_str)
     return ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale')
 
 

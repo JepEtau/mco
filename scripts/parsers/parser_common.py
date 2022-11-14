@@ -80,6 +80,10 @@ def parse_common_configuration(config_path, verbose=False):
         if o not in db_common['options'].keys():
             db_common['options'][o] = list()
 
+    if 'deinterlace_fast' in db_common['options'].keys():
+        db_common['options']['deinterlace_fast'] = True if db_common['options']['deinterlace_fast'][0] == 'y' else False
+    else:
+        db_common['options']['deinterlace_fast'] = False
 
 
     # Directories
@@ -179,6 +183,13 @@ def parse_common_configuration(config_path, verbose=False):
     if verbose:
         print("%s: parse the default filter" % (__name__))
     parse_and_update_filters(db_common, config_general, k_section='common', verbose=verbose)
+
+    if db_common['options']['deinterlace_fast']:
+        db_common['filters']['default']['ffmpeg']['deinterlace'] = 'fps=fps=25'
+        db_common['filters']['default']['id']['deinterlace'] = 0
+        print("!!! DEINTERLACE is set to \'FAST\', REMOVE the flag in common.ini file,")
+        print("DELETE \'CACHE\' folder AND REGENERATE ALL !!!")
+
 
     # Other common settings
     #===========================================================================
