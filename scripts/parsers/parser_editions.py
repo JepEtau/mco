@@ -48,7 +48,7 @@ def parser_edition_common(db_common, filename, verbose=False):
 #   Get editions from folder
 #
 #===========================================================================
-def parse_editions(database, cfg_foldername="../database", verbose=False):
+def parse_editions(database, k_ed_fgd='k', k_ed_ref='k', cfg_foldername="../database", verbose=False):
     db_common = database['common']
 
     mkv_foldername = db_common['directories']['input']
@@ -163,7 +163,14 @@ def parse_editions(database, cfg_foldername="../database", verbose=False):
             # Create a simple link (do not copy)
             edition['dimensions'] = db_common['dimensions']
 
+    # Available editions
     db_editions['available'] = available_editions
+
+    # Set the target (i.e. the edition used as foreground)
+    db_editions['fgd'] = k_ed_fgd
+
+    # Set the edition used as the ereference for the calculation of the frame no.
+    db_editions['k_ed_ref'] = k_ed_ref
 
     return db_editions
 

@@ -748,7 +748,6 @@ class Model_video_editor(Model_common):
         # Update curves and load it into the graph
         frame['curves'] = self.model_database.get_curves_selection(shot=shot)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
-            # print("----> load RGB curves shot no. %d" % (frame['shot_no']) )
             try:
                 self.signal_load_curves.emit(frame['curves'])
                 shot_list = self.model_database.get_shots_per_curves(frame['curves']['k_curves'])

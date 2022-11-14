@@ -275,7 +275,6 @@ def main():
 
         # Get the list of tasks
         tasks = get_tasklist(db=g_database, final_task=video_filter)
-        print ("tasks:", tasks)
 
         # Check if nnedi3_weights.bin exists
         if 'deinterlace' in tasks:

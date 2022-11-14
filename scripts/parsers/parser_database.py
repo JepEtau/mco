@@ -54,11 +54,8 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
 
 
     # Parse editions: folders, files and additional settings: dimension
-    database['editions'] = parse_editions(database, verbose=verbose)
-    # Set the target (i.e. the edition used as foreground)
-    database['editions']['fgd'] = k_ed
-    # Set the edition used as the ereference for the calculation of the frame no.
-    database['editions']['k_ed_ref'] = database['common']['reference']['edition']
+    k_ed_ref = database['common']['reference']['edition']
+    database['editions'] = parse_editions(database, k_ed_fgd=k_ed, k_ed_ref=k_ed_ref, verbose=verbose)
     if False:
         print("parse_editions")
         print("------------------------------------")

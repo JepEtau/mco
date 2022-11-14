@@ -258,7 +258,7 @@ def consolidate_shot(db, shot) -> None:
     shot['filters'] = get_filters_from_shot(db, shot)
 
     # Geometry
-    print("consolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
+    # print("consolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
     if k_part in ['g_debut', 'g_fin']:
         # Get the geometry for the part wich is the target
         # print("----------- target -------------")
@@ -280,14 +280,14 @@ def consolidate_shot(db, shot) -> None:
         k_ep_dst = shot['dst']['k_ep']
         k_ep_src = shot['k_ep']
         k_ed_src = shot['k_ed']
-        print("get geometry from part %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
+        # print("get geometry from part %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
         shot['geometry'] = {
             'part':  db[k_ep_dst][k_ed][k_part[2:]]['video']['geometry'],
             'custom': db[k_ep][k_ed_src][k_part]['video']['geometry'],
         }
 
     else:
-        print("TODO: consolidate_shot: update when replacing the shots in episode")
+        # print("TODO: consolidate_shot: update when replacing the shots in episode")
         k_ep_dst = shot['dst']['k_ep']
         k_part_dst = shot['dst']['k_part']
         shot['geometry'] = {

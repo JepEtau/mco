@@ -72,8 +72,6 @@ def get_output_path_from_shot(db, shot, task):
 
     if task in ['geometry', 'deinterlace_rgb', 'upscale_rgb_geometry']:
         # If last task is geometry, use the dst structure
-        # print("get_output_path_from_shot: shall be modified for dst")
-        # print("--> detected dst for the get_output_path_from_shot")
         output_path = os.path.join(db['common']['directories']['cache'],
             shot['dst']['k_ep'],
             shot['dst']['k_part'],

@@ -110,7 +110,9 @@ class Model_database(Model_stitching_curves, Model_geometry, Model_curves, objec
         self.is_stitching_db_modified = False
 
         self.initial_database['common'] = parse_common_configuration(PATH_DATABASE)
-        self.initial_database['editions'] = parse_editions(self.initial_database)
+        k_ed_ref = self.initial_database['common']['reference']['edition']
+        self.initial_database['editions'] = parse_editions(self.initial_database,
+            k_ed_fgd='k', k_ed_ref=k_ed_ref)
         parse_episodes_common(self.initial_database)
 
         self.k_editions = self.initial_database['editions']['available']

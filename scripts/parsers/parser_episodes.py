@@ -28,9 +28,9 @@ from parsers.parser_shots import (
 )
 from utils.common import (
     K_ALL_PARTS,
-    K_NON_GENERIQUE_PARTS,
     K_PARTS,
     nested_dict_set,
+    nested_dict_get,
 )
 
 
@@ -332,9 +332,8 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
 
 
     # Set the default source edition if not defined in the config file
-    try:
-        k_ed_src = database[k_ep]['target']['video']['src']['k_ed']
-    except:
+    k_ed_src = nested_dict_get(database, k_ep, 'target', 'video', 'src', 'k_ed')
+    if k_ed_src is None:
         k_ed_src = database['editions']['fgd']
         nested_dict_set(database, k_ed_src, k_ep, 'target', 'video', 'src', 'k_ed')
         # sys.exit("Warning: use the edition used as the source not defined for %s, use the fgd edition: %s" % (k_ep, k_ed_src))
