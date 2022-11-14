@@ -334,9 +334,6 @@ def align_audio_video_durations(db, k_ep):
             loop_count = audio_count - video_count
             if 'src' in last_shot.keys():
                 if last_shot['src']['k_ep'] != k_ep:
-                    last_k_ed = last_shot['src']['k_ed']
-                    last_k_ep = last_shot['src']['k_ep']
-                    last_use = last_shot['src']['use']
                     frame_no = last_shot['src']['start'] + last_shot['src']['count'] - 1
                     print("--> align_audio_video_durations: audio_count > video_count: add dst struct in this shot %s:%s" % (k_ep, k_part))
                     # last_shot.update({
@@ -350,6 +347,8 @@ def align_audio_video_durations(db, k_ep):
                 last_shot.update({
                     'effects': ['loop_and_fadeout', frame_no, loop_count, min(loop_count, 25)]
                 })
+                # last_shot['src']['count'] -= loop_count
+
             db_video[k_part]['count'] += loop_count
 
         elif audio_count < video_count:
@@ -406,6 +405,7 @@ def align_audio_video_durations(db, k_ep):
                     # print("\n%s.align_audio_video_durations: %s:%s, patch the last shot -> fadeout: add effects" % (__name__, k_ep, k_part))
                     if 'src' in last_shot.keys() and last_shot['src']['use']:
                         frame_no = last_shot['src']['start'] + last_shot['src']['count'] - 1
+                        last_shot['src']['count'] -= fadeout_count
                     else:
                         frame_no = last_shot['start'] + last_shot['count'] - 1
 

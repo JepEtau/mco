@@ -328,7 +328,9 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
     # If the edition is specified, it means that combine is disabled,
     # else, create the background layer
     # print("process_shot:")
-    if 'stitching' in shot.keys():
+    if ('stitching' in shot.keys()
+    and 'stitching' not in db['common']['options']['discard_tasks']):
+
         do_stitching = True
         layers.update({
             'bgd': {

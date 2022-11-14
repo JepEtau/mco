@@ -165,22 +165,22 @@ def consolidate_shot(db, shot) -> None:
     k_ed = shot['k_ed']
     k_part = shot['k_part']
 
-    print("%s.consolidate_shot: %s:%s:%s" % (__name__, k_ed, shot['dst']['k_ep'], shot['dst']['k_part']))
-    pprint(shot)
-    print("")
-
-    db_video = db[k_ep][k_ed][k_part]['video']
-    shot_no = shot['no']
-
-    # Input and dimensions
-    shot.update({
-        'input': db['editions'][k_ed]['inputs'][k_ep],
-        'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
-    })
+    # print("%s.consolidate_shot: %s:%s:%s" % (__name__, k_ed, shot['dst']['k_ep'], shot['dst']['k_part']))
+    # pprint(shot)
+    # print("")
 
 
     if 'layer' not in shot.keys() or shot['layer'] == 'fgd':
-        k_ed = db['editions']['fgd']
+
+        db_video = db[k_ep][k_ed][k_part]['video']
+        shot_no = shot['no']
+
+        # Input and dimensions
+        shot.update({
+            'input': db['editions'][k_ed]['inputs'][k_ep],
+            'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
+        })
+
         # Foreground
         # if 'shots' in db_video.keys():
         #     print("***********************************")
@@ -217,6 +217,11 @@ def consolidate_shot(db, shot) -> None:
 
 
     elif 'layer' in shot.keys() and shot['layer'] == 'bgd':
+
+        print("%s.consolidate_shot: %s:%s:%s" % (__name__, k_ed, shot['dst']['k_ep'], shot['dst']['k_part']))
+        pprint(shot)
+        print("")
+
         k_ed = shot['layers']['bgd']
         db_video = db[k_ep][k_ed][k_part]['video']
 

@@ -73,6 +73,14 @@ def parse_common_configuration(config_path, verbose=False):
         value_str = db_common['options'][key]
         db_common['options'][key] = list(value_str.replace(' ', '').split(','))
 
+    # Create empty list if not defined (avoid too many if/except)
+    for o in ['deinterlace_add_tasks',
+                'upscale_add_tasks',
+                'discard_tasks']:
+        if o not in db_common['options'].keys():
+            db_common['options'][o] = list()
+
+
 
     # Directories
     #=============================================================================

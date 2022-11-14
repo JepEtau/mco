@@ -47,7 +47,8 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
     create_folder_for_concatenation(db, k_ep)
     if len(images_filepath) >= 5 or previous_concatenation_filepath == '':
         k_ed = shot['k_ed']
-        concatenation_filepath = os.path.join(db[k_ep]['common']['path']['cache'],
+        concatenation_filepath = os.path.join(
+            db[k_ep]['target']['path']['cache'],
             "concatenation",
             "%s_%s__%s__%05d.txt" % (k_ep, k_part, k_ed, shot['start']))
         previous_concatenation_filepath = concatenation_filepath
