@@ -231,8 +231,6 @@ class Model_video_editor(Model_common):
                     k_part=k_part_selected,
                     shot=shot)
             else:
-                pprint(shot)
-
                 shot_geometry = self.model_database.get_shot_geometry(
                     k_ed=db[k_ep_selected]['target']['video']['src']['k_ed'],
                     k_ep=k_ep_selected,
@@ -284,7 +282,7 @@ class Model_video_editor(Model_common):
         }
 
         # Update selection with the part geometry
-        print("ep_or_part_selection_changed: update geometry: %s" % (k_part_selected))
+        # print("ep_or_part_selection_changed: update geometry: %s" % (k_part_selected))
         if k_part_selected in ['g_debut', 'g_fin']:
             # Use the k_ed:k_ep defined as the source for this geometry
             self.current_selection.update({
@@ -569,9 +567,8 @@ class Model_video_editor(Model_common):
         k_part = self.current_frame['k_part']
         shot_no = self.current_frame['shot_no']
         shot = self.shots[shot_no]
-        print("\nevent_geometry_modified for %s:%s:%s as %s" % (k_ed, k_ep, k_part, modification['type']))
-        print("----------------------------------------------")
-        print("shot: %s:%s:%s" % (shot['k_ed'], shot['k_ep'], shot['k_part']))
+        # print("\nevent_geometry_modified for %s:%s:%s as %s" % (k_ed, k_ep, k_part, modification['type']))
+        # print("\tshot: %s:%s:%s" % (shot['k_ed'], shot['k_ep'], shot['k_part']))
 
         if modification['type'] == 'part':
             type = 'part'
@@ -591,8 +588,7 @@ class Model_video_editor(Model_common):
         else:
             type = 'custom'
             geometry = deepcopy(self.model_database.get_custom_geometry(shot=self.shots[shot_no]))
-        print("geometry")
-        pprint(geometry)
+
 
         # Modify parameter
         value = modification['value']
@@ -616,12 +612,9 @@ class Model_video_editor(Model_common):
                 geometry['crop'][3] = max(0, min(c_r + value, 400))
 
         if type == 'part':
-            print("Set the modified crop ")
             self.model_database.set_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part, geometry=geometry)
-
-
         else:
-            print("TODO: set custom geometry")
+            # TODO: enable modification of a single shot
             self.model_database.set_custom_geometry(shot=self.shots[shot_no], geometry=geometry)
 
         # No need to flush cache as generation of a new image will be done (fast enough)
@@ -716,7 +709,7 @@ class Model_video_editor(Model_common):
 
         # Update geometry
         db = self.model_database.database()
-        print("\nget_frame -> (%s:%s:%s:%d)" % (frame['k_ed'], frame['k_ep'], frame['k_part'], frame['frame_no']))
+        # print("\nget_frame -> (%s:%s:%s:%d)" % (frame['k_ed'], frame['k_ep'], frame['k_part'], frame['frame_no']))
         if frame['k_part'] in ['g_debut', 'g_fin']:
             frame['geometry'] = self.model_database.get_shot_geometry(
                 k_ed=frame['k_ed'],
@@ -729,7 +722,6 @@ class Model_video_editor(Model_common):
                 k_ep=self.current_selection['k_ep'],
                 k_part=self.current_selection['k_part'],
                 shot=shot)
-        pprint(frame['geometry'])
 
 
         # Generate the image for this frame
@@ -748,7 +740,7 @@ class Model_video_editor(Model_common):
 
 def generate_single_image(frame:dict, preview_options:dict):
     # log.info("generate single image")
-    print("\ngenerate_single_image:")
+    # print("\ngenerate_single_image:")
     now = time.time()
     img = None
 
@@ -774,7 +766,7 @@ def generate_single_image(frame:dict, preview_options:dict):
         # Use the part geometry
         type = 'part'
         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
-    print("\t-> use the %s geometry %d:%d:%d:%d  %dx%d" % (type, c_t, c_b, c_l, c_r, c_w, c_h))
+    # print("\t-> use the %s geometry %d:%d:%d:%d  %dx%d" % (type, c_t, c_b, c_l, c_r, c_w, c_h))
 
     # Final width and height
     w_final = frame['dimensions']['final']['w']

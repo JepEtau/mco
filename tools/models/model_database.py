@@ -244,8 +244,6 @@ class Model_database(Model_stitching_curves, Model_geometry, Model_curves, objec
                     if k_part in ['g_asuivre', 'g_reportage']:
                         self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep=k_ep, k_part=k_part[2:])
                         recursive_update(self.db_part_geometry_initial, get_part_geometry_list(self.global_database, k_ep=k_ep, k_part=k_part))
-                        print("db_part_geometry_initial:")
-                        pprint(self.db_part_geometry_initial)
                     else:
                         self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_part_geometry = dict()
@@ -390,7 +388,6 @@ class Model_database(Model_stitching_curves, Model_geometry, Model_curves, objec
                 parse_geometry_configurations(self.global_database, k_ep_or_g=k_part)
                 self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep='', k_part=k_part)
                 self.db_part_geometry = dict()
-                pprint(self.db_part_geometry_initial)
 
             # Curves
             if do_parse_curves:

@@ -298,7 +298,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
     def set_geometry_edition_enabled(self, enabled):
         log.info("enable edition: %s" % ('true' if enabled else 'false'))
-        print("TODO: enable edition: %s" % ('true' if enabled else 'false'))
+        print("TODO: %s: enable edition: %s" % (self.objectName(), 'true' if enabled else 'false'))
 
 
 

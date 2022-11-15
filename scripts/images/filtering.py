@@ -182,7 +182,7 @@ def filter_geometry(frame, img):
             # Calculate the position of the left crop of the part after resizing
             c_l_p_resized = int(((c_l_p) * h_final) / float(c_h_p))
             c_l_resized = int(((c_l) * h_final) / float(c_h))
-            x0 = c_l_p_resized - c_l_resized
+            x0 = c_l_resized - c_l_p_resized
             x1 = w_p_tmp + x0
             # print("crop the image: x0=%d, x1=%d, (w_tmp + x0)=%d" % (x0, x1, w_tmp+x0))
             if x1 > w_tmp:
@@ -195,7 +195,8 @@ def filter_geometry(frame, img):
             img_resized_final = np.ascontiguousarray(img_resized[0:h_final,  x0:x1,])
         elif w_p_tmp > w_tmp:
             # Add RED padding, for debug
-            # print("Error: custom geometry is incorrect")
+            print("Error: custom geometry is incorrect")
+            raise Exception("Error: custom geometry is incorrect")
             # TODO: exit?
             pad_left = int((w_p_tmp - w_tmp)/2)
             pad_right = w_p_tmp - w_tmp - pad_left
