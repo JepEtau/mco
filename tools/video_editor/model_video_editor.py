@@ -252,6 +252,8 @@ class Model_video_editor(Model_common):
 
                 shot['frame_nos'].append(frame_no)
                 self.frames[shot_no].append({
+                    'dst': shot['dst'],
+                    'src': shot['src'],
                     'k_ed': shot['k_ed'],
                     'k_ep': shot['k_ep'],
                     'k_part': shot['k_part'],
@@ -562,9 +564,9 @@ class Model_video_editor(Model_common):
             - parameter
             - value
         """
-        k_ed = self.current_selection['k_ed']
-        k_ep = self.current_selection['k_ep']
-        k_part = self.current_selection['k_part']
+        k_ed = self.current_frame['k_ed']
+        k_ep = self.current_frame['k_ep']
+        k_part = self.current_frame['k_part']
         shot_no = self.current_frame['shot_no']
         shot = self.shots[shot_no]
         print("\nevent_geometry_modified for %s:%s:%s as %s" % (k_ed, k_ep, k_part, modification['type']))
@@ -652,7 +654,6 @@ class Model_video_editor(Model_common):
         shot = self.shots[self.current_frame['shot_no']]
 
         self.model_database.save_geometry_database(k_ed=k_ed, k_ep=k_ep, k_part=k_part, shot=shot)
-        self.model_database.move_part_geometry_to_initial()
         self.signal_is_saved.emit('geometry')
 
 
@@ -715,7 +716,7 @@ class Model_video_editor(Model_common):
 
         # Update geometry
         db = self.model_database.database()
-        print("get_frame -> (%s:%s:%s:%d)" % (frame['k_ed'], frame['k_ep'], frame['k_part'], frame['frame_no']))
+        print("\nget_frame -> (%s:%s:%s:%d)" % (frame['k_ed'], frame['k_ep'], frame['k_part'], frame['frame_no']))
         if frame['k_part'] in ['g_debut', 'g_fin']:
             frame['geometry'] = self.model_database.get_shot_geometry(
                 k_ed=frame['k_ed'],
@@ -747,7 +748,7 @@ class Model_video_editor(Model_common):
 
 def generate_single_image(frame:dict, preview_options:dict):
     # log.info("generate single image")
-    # print("\ngenerate_single_image\n-------------------------------------")
+    print("\ngenerate_single_image:")
     now = time.time()
     img = None
 
@@ -767,14 +768,13 @@ def generate_single_image(frame:dict, preview_options:dict):
     if ('custom' in frame['geometry'].keys()
         and frame['geometry']['custom'] is not None):
         # Use the customized geometry
-        print("\t-> use the custom geometry")
         type = 'custom'
         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['custom']['crop'])
     else:
         # Use the part geometry
         type = 'part'
         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
-        print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
+    print("\t-> use the %s geometry %d:%d:%d:%d  %dx%d" % (type, c_t, c_b, c_l, c_r, c_w, c_h))
 
     # Final width and height
     w_final = frame['dimensions']['final']['w']
@@ -807,73 +807,85 @@ def generate_single_image(frame:dict, preview_options:dict):
     if options['crop_edition'] and not options['crop_preview']:
         # Add a rect
         # print("\t-> Use the original image")
-        img = img_rgb
+        img_cropped = img_rgb
 
     elif options['crop_preview']:
         # Crop and no rect
         # print("\t-> Crop the image")
-        img = np.ascontiguousarray(img_rgb[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
-        # print("\t-> cropped: ", img.shape)
+        img_cropped = np.ascontiguousarray(img_rgb[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
+        # print("\t-> cropped: ", img_cropped.shape)
 
     else:
         if options['resize_preview']:
             sys.exit("generate_single_image: resize not possible because no crop")
         # Use original image
         # print("\t-> Use the original image")
-        img = img_rgb
+        img_cropped = img_rgb
 
 
-    img_resized = None
+    img_resized_final = None
     if options['resize_preview']:
         # TODO: Modify in case of customized values
         # Only width will be used.
 
         # calculate new width and new height
+        w_p_tmp = int((c_w_p * h_final) / float(c_h_p))
         w_tmp = int((c_w * h_final) / float(c_h))
 
         # width and height of the resized cropped image for the part
 
         if options['crop_preview']:
             # Resize the cropped image
-            w_p_tmp = int((c_w_p * h_final) / float(c_h_p))
-
-            w_tmp = int((c_w * h_final) / float(c_h))
-            img_resized = cv2.resize(img, (w_tmp, h_final), interpolation=cv2.INTER_LANCZOS4)
+            img_resized = cv2.resize(img_cropped,
+                (w_tmp, h_final),
+                interpolation=cv2.INTER_LANCZOS4)
             # print("\t-> resized cropped image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_final ))
         else:
             # Resize the original image and add rect
             w_p_tmp = int((w * h_final) / float(c_h_p))
-
             w_tmp = int((w * h_final) / float(c_h))
             h_tmp = int((h * h_final) / float(c_h))
-            img_resized = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_LANCZOS4)
+            img_resized = cv2.resize(img_cropped, (w_tmp, h_tmp), interpolation=cv2.INTER_LANCZOS4)
             # print("\t-> resized original image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_tmp ))
 
         if w_tmp != w_p_tmp:
             if options['crop_preview']:
-                # print("!!!! crop the customized image: w_tmp=%d vs w_p_tmp=%d" % (w_tmp, w_p_tmp))
+                # print("\t!!!! crop the customized image: w_tmp=%d vs w_p_tmp=%d" % (w_tmp, w_p_tmp))
                 if w_tmp > w_p_tmp:
-                    c_l_new = int((c_l_p * h_final) / float(c_h))
-                    x1_new = min(w_p_tmp + c_l_new, w_tmp)
-                    # print("\t-> c_l_new: %d, x1_new=%d" % (c_l_new, x1_new))
-                    img_resized = np.ascontiguousarray(img_resized[0:h_final,c_l_new:x1_new,])
-                    # print("\t-> cropped: %dx%d" % (img_resized.shape[1], img_resized.shape[0]))
-                    # print("\t-> should be: %dx%d" % (w_p_tmp, h_final))
+                    # Crop the image
+                    # Calculate the position of the left crop of the part after resizing
+                    c_l_p_resized = int(((c_l_p) * h_final) / float(c_h_p))
+                    c_l_resized = int(((c_l) * h_final) / float(c_h))
+                    x0 = c_l_resized - c_l_p_resized
+                    x1 = w_p_tmp + x0
+                    # print("crop the image: x0=%d, x1=%d, (w_tmp + x0)=%d" % (x0, x1, w_tmp+x0))
+                    if x1 > w_tmp:
+                        # Crop is too big on the left
+                        # print("crop is too big")
+                        x0 = w_tmp - w_p_tmp
+                        x1 = w_tmp
+                    # print("crop the image: c_l_p_resized=%d, c_l_resized=%d, x0=%d, x1=%d -> new resized width=%d" % (
+                        # c_l_p_resized, c_l_resized, x0, x1, x1 - x0))
+                    img_resized_final = np.ascontiguousarray(img_resized[0:h_final,  x0:x1,])
                 elif w_p_tmp > w_tmp:
                     pad_left = int((w_p_tmp - w_tmp)/2)
                     pad_right = w_p_tmp - w_tmp - pad_left
-                    # print("!!!! TODO: add padding: %d, %d" % (pad_left, pad_right))
-                    img_resized = np.ascontiguousarray(cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
-                        cv2.BORDER_CONSTANT, value=[0, 255, 0]))
+                    img_resized_final = np.ascontiguousarray(cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
+                        cv2.BORDER_CONSTANT, value=[255, 255, 255]))
+                # print("\tfinally: w_tmp=%d vs w_p_tmp=%d" % (img_resized_final.shape[1], w_p_tmp))
+        else:
+            img_resized_final = img_resized
+    else:
+        img_resized_final = img_cropped
 
 
     if preview_options['geometry']['final_preview']:
         # Add padding to the cropped&resized image
-        pad_left = int((w_final - w_p_tmp) / 2)
+        pad_left = int(((w_final - w_p_tmp) / 2) + 0.5)
         pad_right = w_final - (w_p_tmp + pad_left)
         # print("\t-> pad=%d,%d" % (pad_left, pad_right))
 
-        img_finalized = cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
+        img_finalized = cv2.copyMakeBorder(img_resized_final, 0, 0, pad_left, pad_right,
             cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
         # print("\t-> final: ", img_finalized.shape)

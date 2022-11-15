@@ -114,7 +114,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
 
     def set_initial_options(self, preferences:dict):
-        log.info("set_initial_options")
+        log.info("%s: set_initial_options" % (self.objectName()))
         s = preferences[self.objectName()]
 
         try:

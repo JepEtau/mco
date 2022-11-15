@@ -325,7 +325,6 @@ class Window_common(QMainWindow):
 
 
     def event_preview_options_changed(self, widget):
-        # log.info("change preview: editor: %s" % (self.current_editor))
         log.info("change preview: editor: %s" % (widget))
         preview_options = dict()
         for e, w in self.widgets.items():

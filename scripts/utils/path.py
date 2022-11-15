@@ -165,6 +165,28 @@ def get_deinterlaced_filepath_list(db, shot:dict, task):
 
 
 
+
+def get_deinterlaced_path_and_filename(db, shot:dict, task):
+    if task not in ['deinterlace', 'pre_upscale', 'upscale']:
+        # reworked, thius, this function can be used only for deinterlace task
+        raise Exception("get_deinterlaced_path_and_filename: this function cannot be used for task [%s]" % (task))
+
+    extension = db['common']['settings']['frame_format']
+    prefix = "%s_" % (shot['k_ep'])
+
+    if shot['k_part'] in K_GENERIQUES:
+        filter_id = get_filter_id_generique(db, shot, task)
+    else:
+        filter_id = get_filter_id(db, shot, task)
+
+    suffix = "__%s__%03d" % (shot['k_ed'], filter_id)
+    deinterlace_output_path = get_output_path_from_shot(db=db, shot=shot, task=task)
+    filename = prefix + '%' + "05d%s.%s" % (suffix, extension)
+
+    return deinterlace_output_path, filename
+
+
+
 def get_output_frame_filepaths(db, shot:dict, frame_no:int):
     k_ep = shot['k_ep']
     k_ed = shot['k_ed']

@@ -305,7 +305,3 @@ def consolidate_shot(db, shot) -> None:
         shot['curves']['lut'] = get_lut_from_curves(db,
                                     k_ep_or_g,
                                     shot['curves']['k_curves'])
-
-    # print("%s.consolidate_shot: end" % (__name__))
-    # pprint(shot)
-    # sys.exit()

@@ -208,7 +208,7 @@ def filter_geometry(frame, img):
     # print("   w_resized should be: %s" % (w_p_tmp))
 
     # Add padding to the cropped & resized image
-    pad_left = int((w_final - w_p_tmp) / 2)
+    pad_left = int(((w_final - w_p_tmp) / 2) + 0.5)
     pad_right = w_final - (w_p_tmp + pad_left)
     img_finalized = cv2.copyMakeBorder(img_resized_final, 0, 0, pad_left, pad_right,
         cv2.BORDER_CONSTANT, value=[0, 0, 0])

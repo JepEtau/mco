@@ -389,7 +389,7 @@ class Window_main(Window_common):
                         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w_i, h_i,
                             self.image['geometry'][type]['crop'])
                         w_tmp = int((c_w * h_final) / float(c_h))
-                        pad_left = int((w_final - w_tmp) / 2)
+                        pad_left = int(((w_final - w_tmp) / 2)+0.5)
                         c_l = int((c_l * h_final) / float(c_h))
                         c_t = int((c_t * h_final) / float(c_h))
 
@@ -455,7 +455,7 @@ class Window_main(Window_common):
                         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w_i, h_i, self.image['geometry']['part']['crop'])
 
                         w_tmp = int((c_w * h_final) / float(c_h))
-                        pad_left = int((w_final - w) / 2)
+                        pad_left = int(((w_final - w) / 2) + 0.5)
                         print("paintEvent: pad=%d" % (pad_left))
 
                         self.image['origin'] = [
@@ -501,7 +501,7 @@ class Window_main(Window_common):
                         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w_i, h_i,
                             self.image['geometry']['part']['crop'])
                         w_tmp = int((c_w * h_final) / float(c_h))
-                        pad_left = int((w_final - w_tmp) / 2)
+                        pad_left = int(((w_final - w_tmp) / 2) + 0.5)
                         print("\t-> w=%d, c_w=%d, w_tmp=%d, pad: %d" % (w, c_w, w_tmp, pad_left))
 
                         c_l = int((c_l * h_final) / float(c_h))

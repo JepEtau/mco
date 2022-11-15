@@ -13,7 +13,10 @@ from pprint import pprint
 
 from images.frames import frame_no_to_sexagesimal
 from utils.common import create_pipe_in
-from utils.path import get_deinterlaced_filepath_list
+from utils.path import (
+    get_deinterlaced_filepath_list,
+    get_deinterlaced_path_and_filename,
+)
 from utils.time_conversions import timestamp2sexagesimal
 
 
@@ -291,7 +294,6 @@ def ffmpeg_deinterlace_and_upscale_single_frame(database, frame):
 
 
 
-
 def ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale'):
 
     command_ffmpeg = [database['common']['settings']['ffmpeg_exe']]
@@ -335,6 +337,75 @@ def ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale
     return no
 
     # print("", flush=True, end='\r')
+
+
+
+
+def ffmpeg_extract_shot_tests(db, shot, filter_str, width, height, task='upscale'):
+
+    command_ffmpeg = [db['common']['settings']['ffmpeg_exe']]
+    command_ffmpeg.extend(db['common']['settings']['verbose'].split(' '))
+
+    frames_count = shot['count']
+    frame_start = shot['start']
+
+    output_path, filename = get_deinterlaced_path_and_filename(db, shot, task=task)
+    output_filepath = os.path.join(output_path, filename)
+    latest_filepath =  output_filepath % (frame_start + frames_count - 1)
+    # print("%s: %s -> %s" % (output_path, filename, output_filepath))
+
+    command_ffmpeg.extend([
+        "-ss", frame_no_to_sexagesimal(frame_start),
+        "-i", shot['input'],
+        "-t", str(frames_count/db['common']['fps']),
+        "-filter_complex", ffmeg_clean_filter_complex(filter_str),
+        "-start_number", str(frame_start),
+        "-map", "[outv]",
+        "-y", output_filepath
+    ])
+
+    process_cfg = db['common']['process']
+    pipe_in = create_pipe_in(command_ffmpeg, process_cfg)
+    while not os.path.exists(latest_filepath):
+        time.sleep(1)
+
+    # print(command_ffmpeg)
+    # subprocess.call(command_ffmpeg)
+    # print("ended")
+
+
+    # if hasattr(subprocess, 'STARTUPINFO'):
+    #     startupInfo = subprocess.STARTUPINFO()
+    #     startupInfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    #     startupInfo.dwFlags |= subprocess.STARTF_USESTDHANDLES
+    #     osEnvironment = os.environ
+    # else:
+    #     startupInfo = None
+    #     osEnvironment = None
+    # _proc = subprocess.Popen(command_ffmpeg,
+    #                         stdin=subprocess.PIPE,
+    #                         stdout=subprocess.PIPE,
+    #                         stderr=subprocess.PIPE,
+    #                         shell=False,
+    #                         env=osEnvironment,
+    #                         startupinfo=startupInfo,
+    #                         )
+    # try:
+    #     std_out, std_err = _proc.communicate(timeout=300)
+    # except:
+    #     _proc.kill()
+    #     std_out, std_err = _proc.communicate()
+
+    # if len(std_out) > 0:
+    #     print("STDERR")
+    #     print(std_out)
+    #     print("")
+
+    # if len(std_err) > 0:
+    #     print("STDERR")
+    #     print(std_err)
+
+    return shot['count']
 
 
 

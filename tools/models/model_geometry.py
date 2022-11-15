@@ -103,7 +103,7 @@ class Model_geometry():
 
     def get_shot_geometry(self, k_ed, k_ep, k_part, shot):
         print("get shot geometry for %s:%s:%s" % (k_ed, k_ep, k_part), end='')
-        print("\t<- shot: %s:%s:%s)" % (shot['k_ed'], shot['k_ep'], shot['k_part']))
+        print("\t<- shot: %s:%s:%s" % (shot['k_ed'], shot['k_ep'], shot['k_part']))
         db = self.global_database
         if k_part in ['g_asuivre', 'g_reportage']:
             # Consider this part geometry as a customized one.
@@ -121,19 +121,20 @@ class Model_geometry():
 
         elif k_part in ['g_debut', 'g_fin']:
             # In this case, the custom geometry is the part of the dependency
-            print("\t-> k_part=%s" % (k_part))
-            k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
-            k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+            print("* k_part=%s" % (k_part))
+            k_ed_target = db[k_part]['target']['video']['src']['k_ed']
+            k_ep_target = db[k_part]['target']['video']['src']['k_ep']
             shot_geometry = {
                 'part': self.get_part_geometry(
-                            k_ed=k_ed_ref, k_ep=k_ep_ref, k_part=k_part),
+                            k_ed=k_ed_target, k_ep=k_ep_target, k_part=k_part),
                 'custom': None
             }
-            if shot['k_ed'] != k_ed_ref or shot['k_ep'] != k_ep_ref:
-                print("\t   shot k_ed:k_ep is <> ref k_ed:k_ep")
+            if shot['k_ed'] != k_ed_target or shot['k_ep'] != k_ep_target:
+                print("\t   shot k_ed:k_ep is <> ref k_ed:k_ep, use %s:%s:%s" % (
+                    shot['k_ed'], shot['k_ep'], shot['k_part']))
                 shot_geometry.update({
                     'custom': self.get_part_geometry(
-                                k_ed=shot['k_ed'], k_ep=shot['k_ep'], k_part=k_part),
+                                k_ed=shot['k_ed'], k_ep=shot['k_ep'], k_part=shot['k_part']),
                 })
         else:
             shot_geometry = {
@@ -176,8 +177,8 @@ class Model_geometry():
             k_ed_src = shot['k_ed']
             k_ep_src = shot['k_ep']
         elif k_part in ['g_asuivre', 'g_reportage']:
-            k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
-            k_ep_src = db[k_part]['common']['video']['reference']['k_ep']
+            k_ed_src = db[k_part]['target']['video']['src']['k_ed']
+            k_ep_src = db[k_part]['target']['video']['src']['k_ep']
         else:
             k_ed_src = k_ed
             k_ep_src = k_ep
@@ -198,7 +199,7 @@ class Model_geometry():
             try: value_array.append("resize=%s" % (':'.join(map(lambda x: "%d" % (x), self.db_part_geometry[k_ed_src][k_ep_src][k_part]['resize']))))
             except: pass
 
-            try: value_array.append("keep_ration=%s" % ('true' if self.db_part_geometry[k_ed_src][k_ep_src][k_part]['resize'] else 'false'))
+            try: value_array.append("keep_ratio=%s" % ('true' if self.db_part_geometry[k_ed_src][k_ep_src][k_part]['resize'] else 'false'))
             except: pass
 
             config_geometry.set(k_section, 'geometry', ', '.join(value_array))
@@ -209,6 +210,9 @@ class Model_geometry():
         # Write to the database
         with open(filepath, 'w') as config_file:
             config_geometry.write(config_file)
+
+        # self.move_part_geometry_to_initial()
+
 
         self.is_geometry_db_modified = False
         return True
