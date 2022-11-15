@@ -253,7 +253,8 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
 
     def event_save_as(self):
         self.lineEdit_save.blockSignals(True)
-        k_curves = self.list_curves.currentItem().text().replace('*', '')
+        try: k_curves = self.list_curves.currentItem().text().replace('*', '')
+        except: k_curves = ''
         k_curves_new = self.lineEdit_save.text()
         if len(k_curves_new) > 0:
             # 'Save as'
@@ -271,6 +272,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
             if k_curves.startswith('*'):
                 k_curves = k_curves.replace('*', '')
                 log.info("overwrite [%s]" % (k_curves))
+                self.list_curves.currentItem().text().replace('*', '')
                 self.signal_curves_name_changed.emit({
                     'current': k_curves,
                     'new': None,

@@ -136,18 +136,7 @@ class Model_curves():
         self.is_curves_selection_db_modified = True
 
 
-    def move_curves_selection_to_initial(self):
-        for k_ed in self.db_curves_selection.keys():
-            for k_ep in self.db_curves_selection[k_ed].keys():
-                for k_part in self.db_curves_selection[k_ed][k_ep].keys():
-                    for shot_no, shot_curves in self.db_curves_selection[k_ed][k_ep][k_part].items():
-                        if shot_curves['k_curves'] != '':
-                            nested_dict_set(self.db_curves_selection_initial,
-                                deepcopy(shot_curves), k_ed, k_ep, k_part, shot_no)
-                        else:
-                            print("Error: curves are not saved for shot no. %d" % (shot_no))
-        self.db_curves_selection.clear()
-        self.is_curves_selection_db_modified = False
+
 
 
     # List the shots which use the  same curves
@@ -371,6 +360,24 @@ class Model_curves():
         else:
             print("all selection have not been saved: ")
             pprint(self.db_curves_selection)
+
+
+
+
+        # def move_curves_selection_to_initial(self):
+        #     for k_ed in self.db_curves_selection.keys():
+        #         for k_ep in self.db_curves_selection[k_ed].keys():
+        #             for k_part in self.db_curves_selection[k_ed][k_ep].keys():
+        #                 for shot_no, shot_curves in self.db_curves_selection[k_ed][k_ep][k_part].items():
+        #                     if shot_curves['k_curves'] != '':
+        #                         nested_dict_set(self.db_curves_selection_initial,
+        #                             deepcopy(shot_curves), k_ed, k_ep, k_part, shot_no)
+        #                     else:
+        #                         print("Error: curves are not saved for shot no. %d" % (shot_no))
+        #     self.db_curves_selection.clear()
+        #     self.is_curves_selection_db_modified = False
+
+
 
         return True
 

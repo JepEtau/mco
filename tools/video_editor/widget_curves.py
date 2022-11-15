@@ -243,12 +243,19 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
 
     def event_is_saved(self, editor):
+        log.info("%s: event is saved" % (self.objectName()))
         # Override fuction because the key is differs from this widget name
-        if editor == "curves_selection" or editor == 'all':
-            print("widget_curves: event_is_saved")
-            log.info("values saved")
-            self.pushButton_save.setEnabled(False)
-            self.pushButton_discard.setEnabled(False)
+        # if editor == "curves_selection" or editor == 'all':
+        #     print("widget_curves: event_is_saved")
+        #     log.info("values saved")
+        #     self.pushButton_save.setEnabled(False)
+        #     self.pushButton_discard.setEnabled(False)
+
+        # reenable save button, otherwise saving other shots is not possible.
+        # save button should be enables/disables depending on the selected shot
+        # but not yet implemented
+        self.pushButton_save.setEnabled(True)
+        pass
 
 
     def event_close(self):
@@ -267,8 +274,8 @@ class Widget_curves(Widget_common, Ui_widget_curves):
                     self.widget_curves_selection.event_save_as()
                     return True
                 else:
-                    log.info("Save selected curves for all shots")
-                    print("Save selected curves for all shots")
+                    log.info("Save selected curves for this shot")
+                    print("Save selected curves for this shot")
                     self.event_save_modifications()
                     return True
 

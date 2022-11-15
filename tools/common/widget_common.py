@@ -134,6 +134,8 @@ class Widget_common(QWidget):
         if self.pushButton_save.isEnabled():
             self.pushButton_save.setEnabled(False)
             self.signal_save.emit()
+        else:
+            log.info("cannot save, reason: button is disabled")
 
 
     def keyPressEvent(self, event):

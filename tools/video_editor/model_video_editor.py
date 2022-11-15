@@ -367,7 +367,6 @@ class Model_video_editor(Model_common):
             k_ep='',
             k_part=k_part,
             shot_no=-1)
-        self.model_database.move_curves_selection_to_initial()
 
         self.event_save_geometry_requested()
         self.model_database.save_all_curves(k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
@@ -739,7 +738,8 @@ class Model_video_editor(Model_common):
 
 def generate_single_image(frame:dict, preview_options:dict):
     # log.info("generate single image")
-    # print("\ngenerate_single_image:")
+    print("\ngenerate_single_image:")
+    pprint(preview_options)
     now = time.time()
     img = None
 
@@ -815,6 +815,7 @@ def generate_single_image(frame:dict, preview_options:dict):
 
 
     img_resized_final = None
+    img_resized = None
     if options['resize_preview']:
         # TODO: Modify in case of customized values
         # Only width will be used.
@@ -881,13 +882,13 @@ def generate_single_image(frame:dict, preview_options:dict):
 
         # print("\t-> final: ", img_finalized.shape)
         # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
-
         return (frame['index'], img_finalized)
+
 
     if img_resized is not None:
         # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
         return (frame['index'], img_resized)
     else:
         # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
-        return (frame['index'], img)
+        return (frame['index'], img_resized_final)
 
