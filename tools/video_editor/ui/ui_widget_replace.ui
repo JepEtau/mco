@@ -80,7 +80,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>icons/grey/eye.svg</normaloff>icons/grey/eye.svg</iconset>
+            <normaloff>icons/grey/eye.svg</normaloff>
+            <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>

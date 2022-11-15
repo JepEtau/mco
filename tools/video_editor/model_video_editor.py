@@ -551,7 +551,6 @@ class Model_video_editor(Model_common):
 
     def event_save_replace_requested(self):
         self.model_database.save_replace_database()
-        self.model_database.move_replace_to_initial()
         self.signal_is_saved.emit('replace')
 
 

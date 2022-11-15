@@ -55,6 +55,7 @@ class Ui_widget_replace(object):
         self.pushButton_set_preview.setSizePolicy(sizePolicy1)
         icon = QIcon()
         icon.addFile(u"icons/grey/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"icons/blue/eye.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_set_preview.setIcon(icon)
         self.pushButton_set_preview.setCheckable(True)
         self.pushButton_set_preview.setFlat(True)

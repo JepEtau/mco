@@ -179,7 +179,7 @@ class Window_common(QMainWindow):
                 for s in self.model.get_modified_db():
                     text += "\n  - %s" % (s)
                 message_box.setText(text)
-                message_box.setInformativeText("Do you want to close before saving?")
+                message_box.setInformativeText("Do you want to save before closing?")
                 message_box.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
                 message_box.setDefaultButton(QMessageBox.Save)
                 set_widget_stylesheet(message_box)
