@@ -5,6 +5,12 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
+import os
+if os.name == 'nt':
+    import ctypes
+    myappid = 'mycompany.myproduct.subproduct.version' # arbitrary string
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
 def main():
     application = QApplication(sys.argv)
 

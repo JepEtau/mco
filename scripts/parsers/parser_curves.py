@@ -180,7 +180,7 @@ def get_curves_selection(db, k_ep, k_part) -> dict:
             continue
 
         if shot_src['curves'] is not None:
-            nested_dict_set(shot_curves, shot_src['curves'], k_ed_src, k_ep_src, k_part_src, shot['no'])
+            nested_dict_set(shot_curves, shot_src['curves'], k_ed_src, k_ep_src, k_part_src, shot['start'])
 
     return shot_curves
 

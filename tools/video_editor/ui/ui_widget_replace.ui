@@ -104,8 +104,7 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>icons/grey/save.svg</normaloff>
-            <normalon>icons/purple/save.svg</normalon>icons/grey/save.svg</iconset>
+            <normaloff>icons/purple/save.svg</normaloff>icons/purple/save.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>

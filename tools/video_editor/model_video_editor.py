@@ -95,7 +95,7 @@ class Model_video_editor(Model_common):
         self.view.widget_curves.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
         self.view.widget_curves.signal_save_curves_as[dict].connect(self.event_save_curves_as)
         self.view.widget_curves.signal_save.connect(self.event_save_curves_selection_requested)
-        self.view.widget_curves.widget_curves_selection.signal_discard_curves[str].connect(self.event_discard_curves)
+        self.view.widget_curves.widget_curves_selection.signal_discard_curves[str].connect(self.event_discard_rgb_curves_modifications)
 
 
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
@@ -407,15 +407,20 @@ class Model_video_editor(Model_common):
         self.signal_reload_frame.emit()
 
 
-    def event_discard_curves(self, k_curves:str):
-        self.model_database.discard_curves_modifications(k_curves)
+    def event_discard_rgb_curves_modifications(self, k_curves:str):
+        self.model_database.discard_rgb_curves_modifications(k_curves)
         k_part = self.current_selection['k_part']
         k_ep = self.current_selection['k_ep']
+
+        # Get the initial curves
         curves = self.model_database.get_curves(
             k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep,
             k_curves=k_curves)
 
+        # Send the list of curves
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+
+        # Reload curves
         self.signal_load_curves.emit(curves)
         self.signal_reload_frame.emit()
 
@@ -441,18 +446,9 @@ class Model_video_editor(Model_common):
 
     def event_save_curves_selection_requested(self):
         # Save the curves selected for this shot
-        k_ed = self.current_frame['k_ed']
-        k_ep = self.current_frame['k_ep']
-        k_part = self.current_frame['k_part']
         shot_no = self.current_frame['shot_no']
-        print("event_save_curves_selection_requested %s:%s:%s:%d" % (k_ed, k_ep, k_part, shot_no))
-        self.model_database.save_curves_selection_database(
-            self.shots,
-            k_ed=k_ed,
-            k_ep=k_ep,
-            k_part=k_part,
-            shot_no=shot_no)
-        self.model_database.move_curves_selection_to_initial()
+        # print("event_save_curves_selection_requested %s:%s:%s:%d" % (k_ed, k_ep, k_part, shot_no))
+        self.model_database.save_shot_curves_selection(self.shots[shot_no])
 
         # Update the modifications structure to update the selection widget
         k_new_curves = self.shots[shot_no]['modifications']['curves']['new']
@@ -738,8 +734,8 @@ class Model_video_editor(Model_common):
 
 def generate_single_image(frame:dict, preview_options:dict):
     # log.info("generate single image")
-    print("\ngenerate_single_image:")
-    pprint(preview_options)
+    # print("\ngenerate_single_image:")
+    # pprint(preview_options)
     now = time.time()
     img = None
 
