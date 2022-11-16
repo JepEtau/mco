@@ -154,7 +154,7 @@ def get_curves_selection(db, k_ep, k_part) -> dict:
     for shot in db_video['shots']:
         try:
             k_ed = shot['k_ed']
-            k_ep = shot['k_ed']
+            k_ep = shot['k_ep']
             k_part = shot['k_part']
         except:
             k_ed = k_ed_src
@@ -183,6 +183,7 @@ def parse_curves_folder(db, k_ep_or_g):
         return db_curves
 
     # Walk through this dictory
+    # print("parse_curves_folder: walk through %s" % (os.path.join(path, k_ep_or_g)))
     if os.path.exists(os.path.join(path, k_ep_or_g)):
         for f in os.listdir(os.path.join(path, k_ep_or_g)):
             if f.endswith(".crv"):
