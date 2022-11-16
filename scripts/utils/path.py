@@ -70,7 +70,7 @@ def get_output_path_from_shot(db, shot, task):
                 shot['k_part'],
                 '%05d' % (shot['start']))
 
-    if task in ['geometry', 'deinterlace_rgb', 'upscale_rgb_geometry']:
+    if task in ['geometry', 'upscale_rgb_geometry']:
         # If last task is geometry, use the dst structure
         output_path = os.path.join(db['common']['directories']['cache'],
             shot['dst']['k_ep'],

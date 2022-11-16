@@ -353,7 +353,7 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
     for l in layers.keys():
         consolidate_shot(db, layers[l]['shot'])
 
-    if True:
+    if False:
         # For debug
         print("--------------- Foreground ---------------")
         pprint(layers['fgd']['shot'])
