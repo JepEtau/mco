@@ -8,7 +8,7 @@ from utils.common import K_GENERIQUES
 from utils.consolidate_shots import consolidate_shot
 from utils.get_curves import get_lut_from_curves
 from utils.get_filters import get_filters_from_shot
-from utils.path import get_output_frame_filepaths
+from utils.path import get_output_frame_filepaths, get_output_frame_filepaths_for_study
 
 
 
@@ -296,7 +296,7 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False):
 
         # Output file paths, patch this frame to use the function
         frame['start'] = frame['ref']
-        frame['filepath'] = get_output_frame_filepaths(db, shot=frame, frame_no=frame['ref'])
+        frame['filepath'] = get_output_frame_filepaths_for_study(db, frame=frame)
 
         # Remove unused tasks
         if 'bgd' in frame['tasks']:

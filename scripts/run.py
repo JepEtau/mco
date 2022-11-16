@@ -271,63 +271,63 @@ def main():
 
     # Video
     #-------------------------------------------------
-    if video_filter in ['deinterlace', 'upscale', 'geometry']:
-        # Video and frames
 
-        # Get the list of tasks
-        tasks = get_tasklist(db=g_database, final_task=video_filter)
+    # Get the list of tasks
+    tasks = get_tasklist(db=g_database, final_task=video_filter)
 
-        # Check if nnedi3_weights.bin exists
-        if 'deinterlace' in tasks:
-            nnedi_file = "./nnedi3_weights.bin"
-            if not os.path.exists(nnedi_file):
-                sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
+    # Check if nnedi3_weights.bin exists
+    if 'deinterlace' in tasks:
+        nnedi_file = "./nnedi3_weights.bin"
+        if not os.path.exists(nnedi_file):
+            sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
 
 
-        # Consolidate each shot for the target
-        consolidate_target_shots(
+    # Consolidate each shot for the target
+    consolidate_target_shots(
+        db=g_database,
+        k_ed=arguments.edition,
+        k_ep=k_episode,
+        k_part=arguments.part,
+    )
+
+    # Specified shot min. and max
+    shot_min = arguments.shot_min
+    shot_max = arguments.shot_max
+    if arguments.shot != -1:
+        shot_min = arguments.shot
+        shot_max = arguments.shot + 1
+
+    if arguments.frames:
+        # Extract frames
+        extract_frames_for_study(
             db=g_database,
             k_ed=arguments.edition,
             k_ep=k_episode,
             k_part=arguments.part,
-        )
+            tasks=tasks,
+            force=arguments.force,
+            shot_min=shot_min, shot_max=shot_max)
+        return
 
-        # Specified shot min. and max
-        shot_min = arguments.shot_min
-        shot_max = arguments.shot_max
-        if arguments.shot != -1:
-            shot_min = arguments.shot
-            shot_max = arguments.shot + 1
+    elif video_filter in ['deinterlace', 'upscale', 'geometry']:
+        # Generate the video
 
-        if arguments.frames:
-            # Extract frames
-            extract_frames_for_study(
-                db=g_database,
-                k_ed=arguments.edition,
-                k_ep=k_episode,
-                k_part=arguments.part,
-                tasks=tasks,
-                force=arguments.force,
-                shot_min=shot_min, shot_max=shot_max)
+        # Force the edition to default
+        k_ed = 'k'
 
-        else:
-            # Generate the video
+        generate_video(
+            db=g_database,
+            k_ed=k_ed,
+            k_ep=k_episode,
+            k_part=arguments.part,
+            tasks=tasks,
+            force=arguments.force,
+            simulation=arguments.simulate,
+            shot_min=shot_min, shot_max=shot_max)
 
-            # Force the edition to default
-            k_ed = 'k'
+        if shot_min != 0 or shot_max != 999999:
+            do_av_merge = False
 
-            generate_video(
-                db=g_database,
-                k_ed=k_ed,
-                k_ep=k_episode,
-                k_part=arguments.part,
-                tasks=tasks,
-                force=arguments.force,
-                simulation=arguments.simulate,
-                shot_min=shot_min, shot_max=shot_max)
-
-            if shot_min != 0 or shot_max != 999999:
-                do_av_merge = False
 
     # Merge A/V streams
     #-------------------------------------------------

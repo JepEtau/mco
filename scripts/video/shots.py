@@ -41,7 +41,7 @@ from video.effects import (
 )
 
 
-def extract_frames_from_shot(database:dict, k_layer:str, shot:dict) -> None:
+def extract_frames_from_shot(db_common:dict, k_layer:str, shot:dict) -> None:
     tasks = shot['tasks'].copy()
     extracted_images_count = None
 
@@ -51,13 +51,13 @@ def extract_frames_from_shot(database:dict, k_layer:str, shot:dict) -> None:
     # Deinterlace only
     if 'upscale' not in tasks:
         print("\tFFMPEG: Deinterlace only")
-        extracted_images_count = ffmpeg_deinterlace_shot(database, shot)
+        extracted_images_count = ffmpeg_deinterlace_shot(db_common, shot)
         tasks.remove('deinterlace')
 
     # Deinterlace and pre-upscale:
     elif ('pre_upscale' in tasks and shot['filters']['ffmpeg']['upscale'] is None):
         print("\tFFMPEG: Deinterlace and pre-upscale, upscale done by opencv")
-        extracted_images_count = ffmpeg_deinterlace_and_pre_upscale_shot(database, shot)
+        extracted_images_count = ffmpeg_deinterlace_and_pre_upscale_shot(db_common, shot)
         tasks.remove('deinterlace')
         tasks.remove('pre_upscale')
         if shot['filters']['opencv']['upscale'] is None:
@@ -66,15 +66,16 @@ def extract_frames_from_shot(database:dict, k_layer:str, shot:dict) -> None:
     # Deinterlace and upscale
     elif 'upscale' in tasks and shot['filters']['ffmpeg']['upscale'] is not None:
         print("\tFFMPEG: Deinterlace, pre_upscale and upscale")
-        extracted_images_count = ffmpeg_deinterlace_and_upscale_shot(database, shot)
+        extracted_images_count = ffmpeg_deinterlace_and_upscale_shot(db_common, shot)
         tasks.remove('deinterlace')
         try: tasks.remove('pre_upscale')
         except: pass
         tasks.remove('upscale')
 
+    # Other cases: deinterlace only
     else:
         # print("\tFFMPEG: Deinterlace only")
-        extracted_images_count = ffmpeg_deinterlace_shot(database, shot)
+        extracted_images_count = ffmpeg_deinterlace_shot(db_common, shot)
         tasks.remove('deinterlace')
 
 
@@ -84,7 +85,7 @@ def extract_frames_from_shot(database:dict, k_layer:str, shot:dict) -> None:
 
 
 def process_single_frame(work_no:int, frame:dict) -> None:
-    tasklist = frame['tasks'].copy()
+    tasks = frame['tasks'].copy()
     img_input = None
     img_denoised = None
     img_stitching = None
@@ -92,12 +93,12 @@ def process_single_frame(work_no:int, frame:dict) -> None:
     img_upscaled = None
     if False:
         print("---------------------------------------------------------------------------",flush=True)
-        print("%d: " % (frame['no']), tasklist,flush=True)
+        print("%d: " % (frame['no']), tasks,flush=True)
         pprint(frame)
         print("---------------------------------------------------------------------------",flush=True)
 
     # For debug and verificattions: deinterlace->RGB
-    if 'deinterlace_rgb' in tasklist:
+    if 'deinterlace_rgb' in tasks:
         img_input = cv2.imread(frame['filepath']['deinterlace'], cv2.IMREAD_COLOR)
         try:
             # print("apply RGB curves: %d" % (frame['no']))
@@ -110,7 +111,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
 
 
     # Upscale image
-    if 'upscale' in tasklist:
+    if 'upscale' in tasks:
         # print("upscale image: %d" % (frame['no']))
         if not os.path.exists(frame['filepath']['upscale']):
             # Get the input image: deinterlaced or pre_upscaled
@@ -129,12 +130,12 @@ def process_single_frame(work_no:int, frame:dict) -> None:
                 # There is no defined filter, or an error occured
                 sys.exit("Error: upscaling frame no. %d has failed" % (frame['no']))
 
-            elif tasklist[-1] == 'upscale':
+            elif tasks[-1] == 'upscale':
                 # Last task, save the file
                 cv2.imwrite(frame['filepath']['upscale'], img_upscaled)
-        tasklist.remove('upscale')
+        tasks.remove('upscale')
 
-    if img_upscaled is None and 'denoise' in tasklist:
+    if img_upscaled is None and 'denoise' in tasks:
         # This image is already upscaled, and required for the following task
         try:
             img_upscaled = cv2.imread(frame['filepath']['upscale'], cv2.IMREAD_COLOR)
@@ -143,7 +144,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
 
 
     # For debug and verificattions: deinterlace->upscale->RGB->geometry
-    if 'upscale_rgb_geometry' in tasklist:
+    if 'upscale_rgb_geometry' in tasks:
         try:
             # print("apply RGB curves: %d" % (frame['no']))
             img_upscaled_rgb = filter_rgb(frame, img_upscaled)
@@ -161,26 +162,26 @@ def process_single_frame(work_no:int, frame:dict) -> None:
 
 
     # Denoise image
-    if 'denoise' in tasklist:
+    if 'denoise' in tasks:
         # print("denoise image: %d" % (frame['no']))
         img_denoised = filter_denoise(frame, img_upscaled)
         if img_denoised is None:
             # There is no defined filter, use the input image
             img_denoised = img_upscaled
-        elif tasklist[-1] == 'denoise':
+        elif tasks[-1] == 'denoise':
             cv2.imwrite(frame['filepath']['denoise'], img_denoised)
-        tasklist.remove('denoise')
+        tasks.remove('denoise')
     if (img_denoised is None
-    and ('bgd' in tasklist
-        or 'stitching' in tasklist
-        or 'sharpen' in tasklist)):
+    and ('bgd' in tasks
+        or 'stitching' in tasks
+        or 'sharpen' in tasks)):
         # This image is already denoised,
         # required if this frame is bgd or stitching
         img_upscaled = cv2.imread(frame['filepath']['upscale'], cv2.IMREAD_COLOR)
 
 
     # Apply curves to the background image
-    if 'bgd' in tasklist:
+    if 'bgd' in tasks:
         if frame['layer'] == 'bgd':
             if img_denoised is None:
                 img_denoised = cv2.imread(frame['filepath']['denoise'], cv2.IMREAD_COLOR)
@@ -188,18 +189,18 @@ def process_single_frame(work_no:int, frame:dict) -> None:
             cv2.imwrite(frame['filepath']['bgd'], img_bgd)
             # This is a background image, do not continue
             print("\t%d is BGD image, stop here" % (frame['ref']))
-            tasklist.clear()
-            return (work_no, tasklist)
-        tasklist.remove('bgd')
+            tasks.clear()
+            return (work_no, tasks)
+        tasks.remove('bgd')
 
 
     # Combine bgd and fgd image
-    if 'stitching' in tasklist:
+    if 'stitching' in tasks:
         if frame['layer'] == 'fgd':
             if not os.path.exists(frame['filepath']['bgd']):
                 # Cannnot merge because the bgd file does not exist
                 print("\tfailed: waiting for bgd frame %s" % (frame['filepath']['bgd']))
-                return (work_no, tasklist)
+                return (work_no, tasks)
 
             # Open fgd image if exists and is not already loaded
             if img_denoised is None:
@@ -212,18 +213,18 @@ def process_single_frame(work_no:int, frame:dict) -> None:
             img_stitching = combine_images(frame['stitching']['geometry'], img_denoised, img_bgd)
             cv2.imwrite(frame['filepath']['stitching'], img_stitching)
             # if (img_stitching is None:
-            #  and 'sharpen' in tasklist):
+            #  and 'sharpen' in tasks):
             #     # This image is already denoised,
             #     # required if this frame is bgd or stitching
             #     img_upscaled = cv2.imread(frame['filepath']['upscale'], cv2.IMREAD_COLOR)
 
 
-        tasklist.remove('stitching')
+        tasks.remove('stitching')
     # else:
     #     # no stitching
 
     # Sharpen image
-    if 'sharpen' in tasklist:
+    if 'sharpen' in tasks:
         # print("sharpen image: %d" % (frame['no']))
         # print(frame['filepath']['stitching'])
         # # pprint(frame)
@@ -241,10 +242,10 @@ def process_single_frame(work_no:int, frame:dict) -> None:
                 img_stitching = cv2.imread(frame['filepath']['stitching'], cv2.IMREAD_COLOR)
         img_sharpened = filter_sharpen(frame, img_stitching)
         cv2.imwrite(frame['filepath']['sharpen'], img_sharpened)
-        tasklist.remove('sharpen')
+        tasks.remove('sharpen')
 
 
-    if 'rgb' in tasklist:
+    if 'rgb' in tasks:
         # print("apply RGB curves: %d" % (frame['no']))
         is_rgb_valid = False
         if img_sharpened is None:
@@ -252,17 +253,17 @@ def process_single_frame(work_no:int, frame:dict) -> None:
             img_sharpened = cv2.imread(frame['filepath']['sharpen'], cv2.IMREAD_COLOR)
         try:
             img_rgb = filter_rgb(frame, img_sharpened)
-            if tasklist[-1] == 'rgb':
+            if tasks[-1] == 'rgb':
                 cv2.imwrite(frame['filepath']['rgb'], img_rgb)
             is_rgb_valid = True
         except:
             # no RGB curves
             # print("no RGB curves for shot %d" % (frame['shot_no']))
             img_rgb = img_sharpened
-        tasklist.remove('rgb')
+        tasks.remove('rgb')
 
 
-    if 'geometry' in tasklist:
+    if 'geometry' in tasks:
         # print("geometry: %d" % (frame['no']))
         # pprint(frame['geometry'])
         if img_rgb is None:
@@ -274,9 +275,9 @@ def process_single_frame(work_no:int, frame:dict) -> None:
         #     # Save the corrected image because the finalized image cannot be saved
         #     cv2.imwrite(frame['filepath']['rgb'], img_rgb)
 
-        tasklist.remove('geometry')
+        tasks.remove('geometry')
 
-    return (work_no, tasklist)
+    return (work_no, tasks)
 
 
 
@@ -293,7 +294,7 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
     # rgb: save sharpen
     # final: save bgd, combine, final
 
-    # Extract only a part of the common databse used by
+    # Extract only a part of the common database
     db_common = {
         'common': {
             'settings': {
@@ -309,6 +310,7 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
         }
     }
 
+    # Save last task for further processing (effects)
     last_task = shot['tasks'][-1]
 
 
@@ -458,9 +460,9 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
                         for work in worklist}
 
         for future in concurrent.futures.as_completed(work_result):
-            work_no, tasklist = future.result()
+            work_no, tasks = future.result()
             f = worklist[work_no][1]
-            f['tasks'] = tasklist.copy()
+            f['tasks'] = tasks.copy()
 
 
         # Clean useless variables
