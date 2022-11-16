@@ -71,13 +71,11 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             grid_axis_color=GRID_AXIS_COLOR,
             pen_width=1)
 
+        self.pushButton_close.setEnabled(False)
+
         # Graph
         self.widget_rgb_graph.signal_point_selected[list].connect(self.refresh_current_coordinates)
         self.widget_rgb_graph.signal_graph_modified[dict].connect(self.event_rgb_graph_modified)
-        self.widget_curves_selection.signal_curves_name_changed[dict].connect(self.event_save_curves_as)
-
-
-        self.pushButton_close.setEnabled(False)
 
         # Connect signals and filter events
         self.radioButton_select_r_channel.clicked.connect(partial(self.event_select_channel, 'r'))
@@ -89,6 +87,8 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
 
         self.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
+        self.widget_curves_selection.signal_save_rgb_curves_requested[dict].connect(self.event_save_curves_as)
+        self.widget_curves_selection.signal_save_curves_selection_requested[dict].connect(self.event_save_curves_as)
 
         self.model.signal_is_saved[str].connect(self.event_is_saved)
 
@@ -225,6 +225,8 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
 
     def event_save_curves_as(self, names):
+        # Get RGB curves
+        # associate it to the provided name (by the curves selection)
         curves = {
             'k_curves_new': names['new'],
             'k_curves_current': names['current'],
@@ -271,12 +273,12 @@ class Widget_curves(Widget_common, Ui_widget_curves):
                 if self.widget_curves_selection.is_active():
                     log.info("Save RGB curves")
                     print("Save RGB curves")
-                    self.widget_curves_selection.event_save_as()
+                    self.widget_curves_selection.event_save_rgb_curves_as()
                     return True
                 else:
                     log.info("Save selected curves for this shot")
                     print("Save selected curves for this shot")
-                    self.event_save_modifications()
+                    self.widget_curves_selection.event_save_selection()
                     return True
 
         if key == Qt.Key_F2:

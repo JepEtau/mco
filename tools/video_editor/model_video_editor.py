@@ -94,7 +94,7 @@ class Model_video_editor(Model_common):
         self.view.widget_curves.widget_rgb_graph.signal_graph_modified[dict].connect(self.event_rgb_graph_modified)
         self.view.widget_curves.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
         self.view.widget_curves.signal_save_curves_as[dict].connect(self.event_save_curves_as)
-        self.view.widget_curves.signal_save.connect(self.event_save_curves_selection_requested)
+        self.view.widget_curves.widget_curves_selection.signal_save_curves_selection_requested.connect(self.event_save_curves_selection_requested)
         self.view.widget_curves.widget_curves_selection.signal_discard_curves[str].connect(self.event_discard_rgb_curves_modifications)
 
 
@@ -389,20 +389,30 @@ class Model_video_editor(Model_common):
     def event_curves_selection_changed(self, k_curves:str):
         log.info("select the new curves for this shot [%s]" % (k_curves))
         shot_no = self.current_frame['shot_no']
+        shot = self.shots[shot_no]
+        curves = self.model_database.get_curves_selection(shot=shot)
 
         # Update the modifications structure to update the selection widget
-        self.shots[shot_no]['modifications']['curves']['new'] = k_curves
+        if k_curves != self.shots[shot_no]['modifications']['curves']['initial']:
+            log.info("selection has changed")
+            self.shots[shot_no]['modifications']['curves']['new'] = k_curves
+            # Modify the selected curves in the db
+            self.model_database.set_curves_selection(
+                shot=shot,
+                k_curves=k_curves)
+        else:
+            # Discard the current selected curves
+            self.shots[shot_no]['modifications']['curves']['new'] = None
+            self.model_database.discard_curves_selection(shot=shot)
 
-        self.model_database.set_curves_selection(
-            shot=self.shots[shot_no],
-            k_curves=k_curves)
-        curves = self.model_database.get_curves_selection(shot=self.shots[shot_no])
+        # Get the new selected curves
+        curves = self.model_database.get_curves_selection(shot=shot)
 
         # Refresh the list of shot for these curves
         shot_list = self.model_database.get_shots_per_curves(k_curves)
         self.signal_shot_per_curves_modified.emit(shot_list)
 
-        self.signal_current_shot_modified.emit(self.shots[shot_no]['modifications'])
+        self.signal_current_shot_modified.emit(shot['modifications'])
         self.signal_load_curves.emit(curves)
         self.signal_reload_frame.emit()
 
@@ -434,7 +444,7 @@ class Model_video_editor(Model_common):
 
         k_part = self.current_selection['k_part']
         k_ep = self.current_selection['k_ep']
-        self.model_database.save_curves_as(
+        self.model_database.save_rgb_curves_as(
             k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep,
             curves=curves)
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
@@ -457,7 +467,6 @@ class Model_video_editor(Model_common):
             'new': None,
         }
         self.signal_current_shot_modified.emit(self.shots[shot_no]['modifications'])
-
         self.signal_is_saved.emit('curves_selection')
 
 

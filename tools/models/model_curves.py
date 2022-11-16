@@ -17,6 +17,7 @@ from logger import log
 from utils.get_curves import calculate_channel_lut
 from utils.common import (
     K_GENERIQUES,
+    nested_dict_get,
     nested_dict_set,
 )
 from parsers.parser_curves import (
@@ -38,7 +39,7 @@ class Model_curves():
 
 
     # RGB curves
-    def get_curves_selection(self, shot):
+    def get_curves_selection(self, shot) -> dict:
         # Get the curves associated to this shot
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
@@ -128,7 +129,7 @@ class Model_curves():
         # Refresh the list of shots for each curves
         for shotlist in self.shots_per_curves.values():
             try:
-                shotlist.remove(shot_start)
+                shotlist.remove(shot_no)
                 break
             except: pass
         try: self.shots_per_curves[k_curves].append(shot_no)
@@ -137,6 +138,31 @@ class Model_curves():
         self.is_curves_selection_db_modified = True
 
 
+
+    def discard_curves_selection(self, shot:dict):
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        shot_start = shot['start']
+        shot_no = shot['no']
+
+        # Access directly to the modified, because the get_curves_selection function
+        # may return the curves from the initial db
+        # If there is a problem, this will have to be corrected
+        try:
+            k_curves_current = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
+        except:
+            print("Error: %s:%s:%s:%s: current curves are not found in the db_curves_selection (modified db)" % (k_ed, k_ep, k_part, shot_start))
+            raise Exception()
+        del self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
+        curves = self.get_curves_selection(shot)
+        k_curves_initial = curves['k_curves']
+
+        # Refresh the list of shots for each curves
+        try: self.shots_per_curves[k_curves_current].remove(shot_no)
+        except: pass
+        try: self.shots_per_curves[k_curves_initial].append(shot_no)
+        except: self.shots_per_curves[k_curves_initial] = [shot_no]
 
 
 
@@ -239,7 +265,7 @@ class Model_curves():
 
 
 
-    def save_curves_as(self, k_ep_or_g, curves):
+    def save_rgb_curves_as(self, k_ep_or_g, curves):
         k_curves_current = curves['k_curves_current']
         log.info("Try to remove [%s] from modified db" % (k_curves_current))
         print(self.db_curves_library.keys())

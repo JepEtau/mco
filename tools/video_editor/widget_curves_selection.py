@@ -26,7 +26,8 @@ from video_editor.ui.widget_curves_selection_ui import Ui_widget_curves_selectio
 
 class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
     signal_curves_selection_changed = Signal(str)
-    signal_curves_name_changed = Signal(dict)
+    signal_save_rgb_curves_requested = Signal(dict)
+    signal_save_curves_selection_requested = Signal(dict)
     signal_discard_curves = Signal(str)
     signal_delete_curves = Signal(str)
 
@@ -45,22 +46,22 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
         self.lineEdit_save.setFocusPolicy(Qt.ClickFocus)
         self.list_curves.setFocusPolicy(Qt.NoFocus)
         self.list_shots.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_save.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_save_rgb_curves.setFocusPolicy(Qt.NoFocus)
         self.pushButton_delete.setFocusPolicy(Qt.NoFocus)
 
         # Reset widgets
         self.lineEdit_save.clear()
-        self.pushButton_save.setEnabled(False)
+        self.pushButton_save_rgb_curves.setEnabled(False)
         self.list_curves.clear()
         self.list_shots.clear()
         self.pushButton_discard.setEnabled(False)
 
         # Connect signals and filter events
-        self.lineEdit_save.returnPressed.connect(self.event_save_as)
+        self.lineEdit_save.returnPressed.connect(self.event_save_rgb_curves_as)
         self.lineEdit_save.textChanged.connect(self.event_save_filename_entered)
-        self.pushButton_save.released.connect(self.event_save_as)
-        self.pushButton_discard.released.connect(self.event_discard)
-        self.pushButton_delete.released.connect(self.event_delete)
+        self.pushButton_save_rgb_curves.clicked.connect(self.event_save_rgb_curves_as)
+        self.pushButton_discard.clicked.connect(self.event_discard)
+        self.pushButton_delete.clicked.connect(self.event_delete)
 
 
         self.list_curves.itemSelectionChanged.connect(self.event_curves_selection_changed)
@@ -153,7 +154,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
         # self.lineEdit_save.setFocusPolicy(Qt.Focus)
         self.lineEdit_save.clear()
         self.lineEdit_save.clearFocus()
-        self.pushButton_save.setEnabled(False)
+        self.pushButton_save_rgb_curves.setEnabled(False)
 
         self.list_curves.blockSignals(False)
 
@@ -227,7 +228,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
             # log.info("set current as modified, enable save fields")
             self.lineEdit_save.setReadOnly(False)
             self.lineEdit_save.setEnabled(True)
-            self.pushButton_save.setEnabled(True)
+            self.pushButton_save_rgb_curves.setEnabled(True)
             self.pushButton_discard.setEnabled(True)
         else:
             self.pushButton_discard.setEnabled(False)
@@ -247,23 +248,46 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
 
     def event_save_filename_entered(self):
         if self.lineEdit_save.text() == '':
-            self.pushButton_save.setEnabled(False)
+            self.pushButton_save_rgb_curves.setEnabled(False)
         else:
-            self.pushButton_save.setEnabled(True)
+            self.pushButton_save_rgb_curves.setEnabled(True)
 
-    def event_save_as(self):
+
+    def event_save_selection(self):
+        # Discard new name
         self.lineEdit_save.blockSignals(True)
-        try: k_curves = self.list_curves.currentItem().text().replace('*', '')
+        self.lineEdit_save.clearFocus()
+        self.lineEdit_save.blockSignals(False)
+
+        # Get the current selected k_curves
+        try: k_curves = self.list_curves.currentItem().text()
         except: k_curves = ''
+
+        log.info("save selected curves [%s] as new selected" % (k_curves))
+        self.signal_save_curves_selection_requested.emit({
+            'current': '',
+            'new': k_curves.replace('*', ''),
+        })
+
+
+
+    def event_save_rgb_curves_as(self):
+        log.info("requested to save RGB curves or selection?")
+        self.lineEdit_save.blockSignals(True)
+
+        # Get the current selected k_curves
+        try: k_curves = self.list_curves.currentItem().text()
+        except: k_curves = ''
+
         k_curves_new = self.lineEdit_save.text()
         if len(k_curves_new) > 0:
-            # 'Save as'
+            # 'Save as' to a new curves file
             self.deselect_current_k_curves()
             self.lineEdit_save.clear()
-            self.pushButton_save.setEnabled(False)
-            log.info("save curve as [%s]" % (k_curves_new))
-            self.signal_curves_name_changed.emit({
-                'current': k_curves,
+            # self.pushButton_save_rgb_curves.setEnabled(False)
+            log.info("save new RGB curve as [%s]" % (k_curves_new))
+            self.signal_save_rgb_curves_requested.emit({
+                'current': k_curves.replace('*', ''),
                 'new': k_curves_new,
             })
 
@@ -271,12 +295,14 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
             # 'Save'
             if k_curves.startswith('*'):
                 k_curves = k_curves.replace('*', '')
-                log.info("overwrite [%s]" % (k_curves))
+                log.info("overwrite RGB curves [%s]" % (k_curves))
                 self.list_curves.currentItem().text().replace('*', '')
-                self.signal_curves_name_changed.emit({
+                self.signal_save_rgb_curves_requested.emit({
                     'current': k_curves,
                     'new': None,
                 })
+            else:
+                log.info("current RGB curves are not modified [%s]" % (k_curves))
         else:
             log.info("missing filename")
         self.lineEdit_save.clearFocus()
@@ -366,7 +392,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
         if key == Qt.Key_Escape:
             self.lineEdit_save.clear()
             self.lineEdit_save.clearFocus()
-            self.pushButton_save.setEnabled(False)
+            self.pushButton_save_rgb_curves.setEnabled(False)
             return True
         elif key == Qt.Key_Delete:
             self.event_delete()
