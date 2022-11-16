@@ -144,6 +144,7 @@ class Model_curves():
         k_part = shot['k_part']
         shot_start = shot['start']
         shot_no = shot['no']
+        log.info("discard_curves_selection %s:%s:%s:%s" % (k_ed, k_ep, k_part, shot_start))
 
         # Access directly to the modified, because the get_curves_selection function
         # may return the curves from the initial db
@@ -151,8 +152,10 @@ class Model_curves():
         try:
             k_curves_current = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
         except:
-            print("Error: %s:%s:%s:%s: current curves are not found in the db_curves_selection (modified db)" % (k_ed, k_ep, k_part, shot_start))
-            raise Exception()
+            # print("Error: %s:%s:%s:%s: current curves are not found in the db_curves_selection (modified db)" % (k_ed, k_ep, k_part, shot_start))
+            # pprint(self.db_curves_selection)
+            # raise Exception()
+            pass
         del self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
         curves = self.get_curves_selection(shot)
         k_curves_initial = curves['k_curves']
@@ -243,11 +246,11 @@ class Model_curves():
             curves = self.db_curves_library[k_curves]
         except:
             try:
-                print("set_curves: copy from initial to modified")
+                # print("set_curves: copy from initial to modified")
                 self.db_curves_library[k_curves] = deepcopy(self.db_curves_library_initial[k_curves])
                 curves = self.db_curves_library[k_curves]
             except:
-                print("[%s] does not exists neither in library not in initial library" % (k_curves))
+                # print("[%s] does not exists neither in library not in initial library" % (k_curves))
                 return False
 
         curves.update({
@@ -279,7 +282,6 @@ class Model_curves():
     def save_rgb_curves_as(self, k_ep_or_g, curves):
         k_curves_current = curves['k_curves_current']
         log.info("Try to remove [%s] from modified db" % (k_curves_current))
-        print(self.db_curves_library.keys())
         try:
             # Remove from modified db
             del self.db_curves_library[k_curves_current]
@@ -294,7 +296,6 @@ class Model_curves():
             k_ep_or_g,
             "%s.crv" % (k_curves_new))
         log.info("write curves file as [%s]" % (filepath))
-        pprint(curves)
         write_curves_file(filepath=filepath, channels=curves['channels'])
 
         # Add it to the initial library
@@ -320,7 +321,7 @@ class Model_curves():
         shot_start = shot['start']
 
         log.info("save shot curves selection: %s:%s:%s" % (k_ed, k_ep, k_part))
-        print("save shot curves selection: %s:%s:%s shot no. %d, start=%d" % (k_ed, k_ep, k_part, shot['no'], shot_start))
+        # print("save shot curves selection: %s:%s:%s shot no. %d, start=%d" % (k_ed, k_ep, k_part, shot['no'], shot_start))
 
         # Open configuration file
         if k_part in K_GENERIQUES:
@@ -329,7 +330,7 @@ class Model_curves():
             filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_curves.ini" % (k_ep))
         if filepath.startswith("~/"):
             filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
-        print("save_curves_selection_database: %s" % (filepath))
+        # print("save_curves_selection_database: %s" % (filepath))
 
         # Parse the file
         if os.path.exists(filepath):
@@ -394,8 +395,8 @@ class Model_curves():
 
         if len(self.db_curves_selection.keys()) == 0:
             self.is_curves_selection_db_modified = False
-        else:
-            print("all curves selection have not been saved")
+        # else:
+        #     print("all curves selection have not been saved")
 
 
         return True

@@ -153,8 +153,7 @@ class Model_database(Model_stitching_curves,
                                 do_parse_geometry:bool=True,
                                 do_parse_stitching:bool=False,
                                 apply_patch_for_study:bool=False):
-        print("%s:consolidate_database %s:%s" % (__name__, k_ep, k_part))
-
+        # print("%s:consolidate_database %s:%s" % (__name__, k_ep, k_part))
         if k_ep == '' and k_part == '':
             return
 

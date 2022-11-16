@@ -137,26 +137,28 @@ def get_curves_selection(db, k_ep, k_part) -> dict:
     # Create a dictionary of curves selection for each shot
     # It uses the shot_src so that this will work when replacing shots
     # from another episode/part
-    shot_curves = dict()
 
-    print("%s.get_curves_selection: src=?:%s:%s" % (__name__, k_ep, k_part))
+    # print("%s.get_curves_selection: src=?:%s:%s" % (__name__, k_ep, k_part))
+    shot_curves = dict()
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in ['g_debut', 'g_fin']:
         db_video = db[k_part]['target']['video']
     elif k_part in ['g_asuivre', 'g_reportage']:
         k_ed_src = db[k_part]['target']['video']['src']['k_ed']
-        k_ep_src = k_ep
-        print("\t-> %s:%s:%s" % (k_ed_src, k_ep_src, k_part))
+        k_ep_src = db[k_part]['target']['video']['src']['k_ep']
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
     else:
-        print("%s.get_curves_selection: %s:%s" % (__name__, k_ep, k_part))
         db_video = db[k_ep]['target']['video'][k_part]
 
     for shot in db_video['shots']:
-        k_ed = shot['k_ed']
-        k_ep = shot['k_ep']
-        k_part = shot['k_part']
+        try:
+            k_ed = shot['k_ed']
+            k_ep = shot['k_ed']
+            k_part = shot['k_part']
+        except:
+            k_ed = k_ed_src
+            k_ep = k_ep_src
         shot_start = shot['start']
 
         # Append to the dict if stitching curves are defined
@@ -173,9 +175,6 @@ def get_curves_selection(db, k_ep, k_part) -> dict:
 def parse_curves_folder(db, k_ep_or_g):
     # Curves contained in the curves directory:
     #  filename, key but do not parse files (will be done dynamically)
-    # TODO: it lists all curves for a folder but this function has to be modified
-    #       to also list the curves from another episode (dependancies)
-    print("browse folder which contains curves: %s" % (k_ep_or_g))
     db_curves = dict()
 
     path = os.path.join(db['common']['directories']['curves'])
@@ -183,10 +182,9 @@ def parse_curves_folder(db, k_ep_or_g):
         print("%s does not exist" % (path))
         return db_curves
 
-    # Browse curves in the subdirectories
+    # Walk through this dictory
     if os.path.exists(os.path.join(path, k_ep_or_g)):
         for f in os.listdir(os.path.join(path, k_ep_or_g)):
-            print("\t%s" % (f))
             if f.endswith(".crv"):
                 # Create an element for each curve
                 k_curves = os.path.splitext(f)[0]
@@ -197,8 +195,5 @@ def parse_curves_folder(db, k_ep_or_g):
                     'lut': None,
                     'shots': []
                 }
-
-    # for each shot, get the src episode
-    # and get the curves from the other folder.
 
     return db_curves

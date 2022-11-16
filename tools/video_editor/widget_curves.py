@@ -272,12 +272,10 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             if key == Qt.Key_S:
                 if self.widget_curves_selection.is_active():
                     log.info("Save RGB curves")
-                    print("Save RGB curves")
                     self.widget_curves_selection.event_save_rgb_curves_as()
                     return True
                 else:
                     log.info("Save selected curves for this shot")
-                    print("Save selected curves for this shot")
                     self.widget_curves_selection.event_save_selection()
                     return True
 

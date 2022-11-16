@@ -199,7 +199,9 @@ class Model_video_editor(Model_common):
                     self.model_database.get_curves_library_path()))
                 shot['curves']['k_curves'] = '~' + shot['curves']['k_curves']
 
-            # Update this shot for UI
+
+            # Update this shot for UI:
+            # to do: put in a 'ui' structure
             shot.update({
                 'is_valid': True,
 
@@ -214,11 +216,6 @@ class Model_video_editor(Model_common):
                     },
                 },
             })
-
-            # Use the k_ed used for this shot: mandatory to get
-            # the correct settings
-            # if k_part in K_GENERIQUES:
-            #     k_ed_src = db[k_part]['target']['video']['reference']['k_ed']
 
 
             # Geometry for this shot:
@@ -450,8 +447,9 @@ class Model_video_editor(Model_common):
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
 
         # Modify the current selection
-        k_curves_new = curves['k_curves_current'] if curves['k_curves_new'] is None else curves['k_curves_new']
-        self.event_curves_selection_changed(k_curves_new)
+        if curves['k_curves_new'] is not None:
+            k_curves_new = curves['k_curves_new']
+            self.event_curves_selection_changed(k_curves_new)
 
 
     def event_save_curves_selection_requested(self):
@@ -721,9 +719,9 @@ class Model_video_editor(Model_common):
                 shot=shot)
         else:
             frame['geometry'] = self.model_database.get_shot_geometry(
-                k_ed=db[self.current_selection['k_ep']]['target']['video']['src']['k_ed'],
-                k_ep=self.current_selection['k_ep'],
-                k_part=self.current_selection['k_part'],
+                k_ed=self.current_frame['k_ed'],
+                k_ep=self.current_frame['k_ep'],
+                k_part=self.current_frame['k_part'],
                 shot=shot)
 
 

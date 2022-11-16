@@ -121,7 +121,6 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
     def event_curves_library_modified(self, curves_library:dict):
         # curves_library is a simplified library which indicates if the curves are modified
         log.info("refresh the list of available curves")
-        pprint(curves_library)
 
         self.list_curves.blockSignals(True)
 
@@ -209,8 +208,12 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
 
 
     def event_curves_selection_changed(self):
-        if self.list_curves.currentItem() is None:
+        if len(self.list_curves.selectedIndexes()) == 0:
+            self.list_curves.blockSignals(True)
+            self.list_curves.currentItem().setSelected(True)
+            self.list_curves.blockSignals(False)
             return
+
         k_curves = self.list_curves.currentItem().text()
         k_curves = k_curves.replace('*', '')
         log.info("select new curves for this shot [%s]" % (k_curves))
