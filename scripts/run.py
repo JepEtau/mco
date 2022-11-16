@@ -52,10 +52,10 @@ def main():
         help="Numéro d'épisode de 1 à 39. Ignoré pour la génération des génériques.")
 
     parser.add_argument("--edition",
-        default='k',
+        default='',
         required=False,
         choices=editions,
-        help="Utilise cette edition, par défaut: k")
+        help="Utilise cette edition")
 
     parser.add_argument("--part",
         default='',
@@ -235,6 +235,7 @@ def main():
     print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
     print("processing, please wait...", flush=True)
 
+
     # Audio
     #-------------------------------------------------
     if arguments.afilter != '':
@@ -291,28 +292,33 @@ def main():
             k_part=arguments.part,
         )
 
+        # Specified shot min. and max
+        shot_min = arguments.shot_min
+        shot_max = arguments.shot_max
+        if arguments.shot != -1:
+            shot_min = arguments.shot
+            shot_max = arguments.shot + 1
+
         if arguments.frames:
             # Extract frames
             extract_frames_for_study(
-                g_database,
-                editions=[arguments.edition],
-                episode_no=episode_no,
+                db=g_database,
+                k_ed=arguments.edition,
+                k_ep=k_episode,
                 k_part=arguments.part,
                 tasks=tasks,
-                force=arguments.force)
+                force=arguments.force,
+                shot_min=shot_min, shot_max=shot_max)
 
         else:
-            # Video
-            shot_min = arguments.shot_min
-            shot_max = arguments.shot_max
-            if arguments.shot != -1:
-                shot_min = arguments.shot
-                shot_max = arguments.shot + 1
-
             # Generate the video
+
+            # Force the edition to default
+            k_ed = 'k'
+
             generate_video(
-                g_database,
-                k_ed=arguments.edition,
+                db=g_database,
+                k_ed=k_ed,
                 k_ep=k_episode,
                 k_part=arguments.part,
                 tasks=tasks,

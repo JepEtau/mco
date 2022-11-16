@@ -13,18 +13,12 @@ import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
 from utils.common import K_GENERIQUES
-from utils.get_filters import get_filters
-from utils.get_curves import get_curves
-from utils.path import (
-    get_input_filepath,
-    get_output_frame_filepaths_for_study,
-)
 from utils.ffmpeg import (
     ffmpeg_deinterlace_single_frame,
     ffmpeg_deinterlace_and_pre_upscale_single_frame,
     ffmpeg_deinterlace_and_upscale_single_frame,
 )
-from images.frames import get_frames_for_study
+from images.frames import create_framelist_for_study
 from images.filtering import (
     filter_upscale,
     filter_denoise,
@@ -335,178 +329,37 @@ def process_frames(database, frames, cpu_count):
 
 
 
-def extract_frames_for_study(database, editions, episode_no, k_part, tasks, force:bool=False):
-    print("%s.extract_frames_for_study: episode no. %d, k_part=%s, tasks=%s" % (__name__, episode_no, k_part, ', '.join(tasks)))
+def extract_frames_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False, shot_min:int=0, shot_max:int=999999):
+    print("%s.extract_frames_for_study: %s:%s:%s, tasks=%s" % (__name__, k_ed, k_ep, k_part, ', '.join(tasks)))
 
-    # Use the default edition if none specified
-    if editions[0] == '':
+    # Use the default edition/episode if none specified
+    k_ed_src = k_ed
+    k_ep_src = k_ep
+    if k_ed == '':
         if k_part in K_GENERIQUES:
-            # use the edition defined as reference unless specified as argument
-            editions = [database[k_part]['common']['video']['reference']['k_ed']]
-            pprint(database[k_part]['common']['video']['reference'])
+            # Use the edition defined as src unless specified as argument
+            # k_ed_src = db[k_part]['target']['video']['src']['k_ed']
+            if k_ep == 'ep00':
+                k_ep_src = db[k_part]['target']['video']['src']['k_ep']
         else:
-            editions = [database['editions']['default']]
-    print("k_ed=%s" % (', '.join(editions)))
+            # Use the target ed
+            k_ed_src = db['editions']['fgd']
 
     # Get the list of frames for studies
-    frames_count, frames = get_framelist_for_study(database,
-        editions, episode_no, k_part,
+    frames = create_framelist_for_study(db,
+        k_ed_src, k_ep_src, k_part,
         tasks,
-        force=force,
-        compare=False)
-    # print("frames (%d):")
-    # pprint(frames,indent=4)
+        force=force)
+    pprint(frames)
+    sys.exit()
 
     startTime = time.time()
     work = []
     print("Number of cores: %d" % (multiprocessing.cpu_count()))
-    for i in range(frames_count):
-        for edition in editions:
-            f = frames[edition][i]
-            work.append(f)
-    process_frames(database, work, cpu_count=int(multiprocessing.cpu_count() / 2))
+    # for i in range(frames_count):
+    #     for edition in editions:
+    #         f = frames[edition][i]
+    #         work.append(f)
+    # process_frames(db, work, cpu_count=int(multiprocessing.cpu_count() / 2))
     print("=> done in %.04fs" % (time.time() - startTime), flush=True)
-
-
-
-def get_framelist_for_study(database, editions, episode_no, k_part, tasks, force:bool=False):
-    # print("%s.get_framelist: episode no. %d, k_part=%s, tasks=%s, editions: " % (__name__, episode_no, k_part, ', '.join(tasks)), editions)
-
-    # Create a list of frames, each frame has all
-    # properties for the full processing
-    frames = dict()
-    for edition in editions:
-        # Get the list of frames
-        frames[edition] = get_frames_for_study(
-            database,
-            edition=edition,
-            episode_no=episode_no,
-            k_part=k_part)
-
-        # print("%s.get_framelist: frames=" % (__name__))
-        # pprint(frames)
-
-        # Consolidate each frame
-        for f in frames[edition]:
-            # print("||||||||||||||||||||||||||||||||||")
-            # pprint(f)
-            # shot = get_shot_from_frame_no_new(db=database, frame_no=f['no'], k_ed=edition, k_ep=f['k_ep'], k_part=k_part)
-            # pprint(shot)
-            # continue
-
-            f['k_ed'] = edition
-
-            if f['k_ep'] == 0:
-                f['k_ep'] = 'ep%02d' % (episode_no)
-
-            f['k_part'] = k_part
-            f['filters'] = get_filters(database, frame=f, k_part=k_part)
-
-            f['input'] = get_input_filepath(database, frame=f)
-            f['filepath'] = get_output_frame_filepaths_for_study(database,
-                                frame=f, k_part=k_part).copy()
-            f['tasks'] = tasks.copy()
-            f['dimensions'] = database['editions'][edition]['dimensions']
-
-            # firstly, consider all frames as foreground (i.e. no stitching)
-            # TODO: correct this for image stitching
-            f['layer'] = 'fgd'
-            # print("frame no. %d" % (f['no']))
-
-            f['curves'] = get_curves(database, frame=f, k_part=k_part)
-            f['force'] = force
-
-            # .... NOT WORKING
-
-    # if not compare:
-    if False:
-        # Patch frame for image stitching
-        edition_fgd = database['editions']['fgd']
-        edition_bgd = database['editions']['bgd']
-        frames_count = len(frames[database['editions']['fgd']])
-        for i in range(frames_count):
-            f_bgd = frames[edition_bgd][i]
-            f_fgd = frames[edition_fgd][i]
-
-            if f_fgd['ref'] != f_bgd['ref']:
-                sys.exit("error: frame no. differs between bgd and fgd")
-
-            # Patch filepath/layer for foreground/background
-            f_fgd['filepath']['bgd'] = f_bgd['filepath']['bgd']
-            f_fgd['layer'] = 'fgd'
-            f_bgd['layer'] = 'bgd'
-
-            # Remove 'bgd' from tasks
-            if 'bgd' in f_fgd['tasks']:
-                f_fgd['tasks'].remove('bgd')
-
-            # Remove tasks which should not be done for bacground image
-            for t in ['stitching', 'sharpen', 'rgb', 'geometry']:
-                if t in f_bgd['tasks']:
-                    f_bgd['tasks'].remove(t)
-
-            if f_bgd['layer'] == 'bgd':
-                f_ref = f_bgd['ref']
-                k_episode = f['k_ep']
-                if f_ref in database_combine[k_episode].keys():
-                    # print("+++ %d :" % (f_ref), database_combine[k_episode][f_ref])
-                    f_fgd['stitching'] = {'geometry': database_combine[k_episode][f_ref]['geometry'].copy()}
-
-                    if 'bgd' in f_bgd['tasks']:
-                        # Add rgb correction ('bgd') for background image if in tasks
-                        bgd_curve = database_combine[k_episode][f_ref]['curve']
-                        if bgd_curve is not None:
-                            f_bgd['stitching'] = {'curve': database_combine[k_episode][f_ref]['curve']}
-                    else:
-                        # No curve defined: remove 'bgd' task
-                        f_fgd['filepath']['bgd'] = f_bgd['filepath']['denoise']
-
-                else:
-                    # No combine/curve defined: remove 'bgd' task from bgd and combine from fgd
-                    if 'bgd' in f_bgd['tasks']:
-                        f_bgd['tasks'].remove('bgd')
-                    if 'stitching' in f_fgd['tasks']:
-                        f_fgd['tasks'].remove('stitching')
-
-            # Patch filepaths
-            # print("=========================================")
-            # pprint(f_bgd)
-            # print(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-            # pprint(f_fgd)
-            # print("<<<<<<<<<<<<<<<<<<<<>>>>>>>>>>>>>>>>>>>>>")
-    else:
-        # k_ep = 'ep%02d' % (episode_no + 1)
-        # edition = editions[0]
-
-        # pprint(shot)
-        # print("-------------")
-        # pprint(shot2)
-
-        # sys.exit()
-
-
-
-        # Extract frames for comparisons: for each frame,
-        # the combination stage is discarded.
-        frames_count = 9999999
-        for edition in editions:
-            for f in frames[edition]:
-                # Consider all frames as foreground
-                f['layer'] = 'fgd'
-                # Remove tasks which shall not be done for foreground images
-                for t in ['bgd', 'stitching']:
-                    if t in f['tasks']:
-                        f['tasks'].remove(t)
-            frames_count = min(frames_count, len(frames[edition]))
-
-    return frames_count, frames
-
-
-
-
-result_list = []
-def log_result(result):
-    # This is called whenever foo_pool(i) returns a result.
-    # result_list is modified only by the main process, not the pool workers.
-    result_list.append(result)
 

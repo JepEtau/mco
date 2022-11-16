@@ -184,10 +184,6 @@ class Model_video_editor(Model_common):
             shot_no = shot['no']
             self.shots[shot_no] = shot
 
-            # patch count to include loop???
-            # if ('effects' in current_shot.keys()
-            #     and 'loop' in current_shot['effects'][0]):
-            #     current_shot['count'] += current_shot['effects'][2]
 
             # Get curves for this shot
             curves = self.model_database.get_curves_selection(shot=shot)

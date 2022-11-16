@@ -275,6 +275,7 @@ def consolidate_shot(db, shot) -> None:
             })
 
     elif k_part in ['g_asuivre', 'g_reportage']:
+        print("TODO: consolidate_shot: verify geometry for :%s" % (k_part))
         # pprint(shot)
         # k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
         k_ep_dst = shot['dst']['k_ep']

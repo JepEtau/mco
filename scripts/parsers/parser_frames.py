@@ -12,9 +12,7 @@ def parse_framelist(db_frames, framelist_str):
         # print(shot)
         frame_properties = frame.split(',')
         f_tmp = {
-            'ref': int(frame_properties[0]),
-            'filters': 'default',
-            'k_ep': ''
+            'ref': int(frame_properties[0])
         }
         if len(frame_properties) > 1:
             for f in frame_properties:
@@ -28,11 +26,16 @@ def parse_framelist(db_frames, framelist_str):
                         f_tmp['k_ep'] = d[1]
                     else:
                         f_tmp['k_ep'] = 'ep%02d' % (int(d[1]))
-
-        if f_tmp['k_ep'] == '*':
-            for i in range(1,40):
-                f_tmp['k_ep'] = 'ep%02d' % (i)
-                db_frames.append(deepcopy(f_tmp))
-        else:
+                elif d[0] == 'ed':
+                    # custom edition
+                    f_tmp['k_ed'] = d[1]
+        try:
+            if f_tmp['k_ep'] == '*':
+                for i in range(1,40):
+                    f_tmp['k_ep'] = 'ep%02d' % (i)
+                    db_frames.append(deepcopy(f_tmp))
+            else:
+                db_frames.append(f_tmp)
+        except:
             db_frames.append(f_tmp)
 
