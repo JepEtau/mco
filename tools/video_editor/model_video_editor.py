@@ -194,10 +194,10 @@ class Model_video_editor(Model_common):
             try: k_curves = curves['k_curves']
             except: k_curves =''
             if curves is None and shot['curves'] is not None:
-                print("Error: curves [%s] is not found in the directory %s, correct this!" % (
+                print("Error: curves [%s] is not found in directory %s, correct this!" % (
                     shot['curves']['k_curves'],
                     self.model_database.get_curves_library_path()))
-                shot['curves']['k_curves'] = "~" + shot['curves']['k_curves']
+                shot['curves']['k_curves'] = '~' + shot['curves']['k_curves']
 
             # Update this shot for UI
             shot.update({
@@ -442,8 +442,8 @@ class Model_video_editor(Model_common):
         #     log.error("No name defined in the curves struct")
         #     return
 
-        k_part = self.current_selection['k_part']
-        k_ep = self.current_selection['k_ep']
+        k_part = self.current_frame['k_part']
+        k_ep = self.current_frame['k_ep']
         self.model_database.save_rgb_curves_as(
             k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep,
             curves=curves)

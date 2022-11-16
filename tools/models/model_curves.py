@@ -45,8 +45,7 @@ class Model_curves():
         k_ep = shot['k_ep']
         k_part = shot['k_part']
         shot_start = shot['start']
-        # print("db_curves_selection_initial")
-        # pprint(self.db_curves_selection_initial)
+        # print("model: get_curves_selection %s:%s:%s:%s" % (k_ed, k_ep, k_part, shot_start))
         try: shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
         except:
             try: shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_start]
@@ -201,21 +200,33 @@ class Model_curves():
 
 
     def get_curves(self, k_ep_or_g:str, k_curves:str):
-        try:
-            curves = self.db_curves_library[k_curves]
-            # log.info("[%s] is found in the modified db" % (k_curves))
+        # Search these curves in the libraries
+        try: curves = self.db_curves_library[k_curves]
         except:
-            try:
-                curves = self.db_curves_library_initial[k_curves]
-                # log.info("[%s] is found in the initial db" % (k_curves))
-            except:
-                return None
+            try: curves = self.db_curves_library_initial[k_curves]
+            except: curves = None
+
+        # If not found, add these curves to the library as it may be not in the same k_ep
+        if curves is None:
+            # Create a curve structure
+            library_path = self.global_database['common']['directories']['curves']
+            self.db_curves_library_initial[k_curves] = {
+                    'k_curves': k_curves,
+                    'filepath': os.path.join(library_path, k_ep_or_g, "%s.crv" % (k_curves)),
+                    'channels': None,
+                    'lut': None,
+                    'shots': []
+            }
+            curves = self.db_curves_library_initial[k_curves]
+
+        # Parse the file if not already done
         if curves['channels'] is None:
             # print("parse %s.crv file" % (k_curves))
             curves['channels'] = parse_curves_file(
                 db=self.global_database,
                 k_ep_or_g=k_ep_or_g,
                 k_curves=k_curves)
+
         if curves['channels'] is None:
             # The curves file has not been found
             log.warning("The curves have not been found")

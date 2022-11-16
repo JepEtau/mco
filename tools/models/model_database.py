@@ -239,6 +239,15 @@ class Model_database(Model_stitching_curves,
             calculate_av_sync(self.global_database, k_ep=k_ep)
             align_audio_video_durations(self.global_database, k_ep=k_ep)
 
+            # Consolidate each shot for the target
+            consolidate_target_shots(
+                db=self.global_database,
+                k_ed='',
+                k_ep=k_ep,
+                k_part=k_part,
+            )
+
+
             if k_part != '':
                 if do_parse_replace:
                     self.db_replaced_frames_initial = get_replaced_frames(self.global_database, k_ep=k_ep, k_part=k_part)
@@ -283,11 +292,6 @@ class Model_database(Model_stitching_curves,
                 self.db_st_geometry = dict()
 
                 if do_parse_curves:
-                    # !!!!! TODO: this won't work when replacing shots from another episode:
-                    # use a duplicated curves file?
-                    # concatenate libraries for up to 3 episodes?
-                    # better solution would be to parse dynamicaly the folders. i.e. load and save the curves
-                    # from the other directory if the src episode is not the same.
                     if k_part in ['g_asuivre', 'g_reportage']:
                         self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_part)
                         k_ep_ref = self.global_database[k_part]['target']['video']['src']['k_ep']
@@ -305,39 +309,6 @@ class Model_database(Model_stitching_curves,
                     self.db_curves_selection = dict()
 
 
-                # print("<<<<<<<<<<<<<<<<< %s:%s: shot stabilization parameters >>>>>>>>>>>>>>>>>>>>" % (k_ep, k_part))
-                # for k_shot_no, parameters in self.db_stabilize_shots_parameters.items():
-                #     for parameter in parameters:
-                #         if parameter['is_enabled']:
-                #             print("%d:" % (k_shot_no), end='')
-                #             pprint(parameter)
-                # pprint(self.db_stabilize_shots_parameters)
-
-                # self.shots_stitching = get_shots_stitching(self.global_database, k_ep=k_ep, k_part=k_part)
-                # self.db_stitching_frames = get_stitching_frames(self.global_database, k_ep=k_ep, k_part=k_part)
-                # self.shots_stitching_settings = get_shots_stitching_settings(self.global_database, k_ep=k_ep, k_part=k_part)
-
-                # print("<<<<<<<<<<<<<<<<< %s:%s: shot stitching parameters >>>>>>>>>>>>>>>>>>>>" % (k_ep, k_part))
-                # for k_shot_no, parameters in self.db_stitching_shots_parameters.items():
-                #     if parameters['parameters']['is_enabled']:
-                #         print("%d:" % (k_shot_no), end='')
-                #         pprint(parameters)
-
-            # print("<<<<<<<<<<<<<<<<< %s:%s: frame stabilization >>>>>>>>>>>>>>>>>>>>" % (k_ep, k_part))
-            # pprint(self.db_stabilize_frames)
-
-            # print("<<<<<<<<<<<<<<<<< %s:%s: frame stitching >>>>>>>>>>>>>>>>>>>>" % (k_ep, k_part))
-            # pprint(self.db_stitching_frames)
-
-            # print("<<<<<<<<<<<<<<<<< %s:%s: shots stitching settings >>>>>>>>>>>>>>>>>>>>" % (k_ep, k_part))
-            # pprint(self.shots_stitching_settings)
-            # print("<<<<<<<<<<<<<<<<< %s:%s: shots stitching >>>>>>>>>>>>>>>>>>>>" % (k_ep, k_part))
-            # pprint(self.shots_stitching)
-            # print("<<<<<<<<<<<<<<<<< %s:%s: frames stitching >>>>>>>>>>>>>>>>>>>>" % (k_ep, k_part))
-            # pprint(self.db_stitching_frames)
-            # print("<<<<<<<<<<<<<<<<< %s:%s: replaced frames >>>>>>>>>>>>>>>>>>>>" % (k_ep, k_part))
-            # pprint(self.replaced_frames)
-            # sys.exit()
 
         else:
             # Parse the episode used for this generique
@@ -375,23 +346,30 @@ class Model_database(Model_stitching_curves,
                 parse_stitching_configurations(self.global_database, k_ep_or_g=k_part)
 
             # Curves: this parser update the shots for each episode/part
-            # print("\tparse_curve_configurations: k_part_g=%s" % (k_part))
             if do_parse_curves:
                 parse_curve_configurations(self.global_database, k_ep_or_g=k_part)
 
             # Replaced frames
             if do_parse_replace:
-                # print("\tparse_replace_configurations: k_part_g=%s" % (k_part))
                 parse_replace_configurations(self.global_database, k_ep_or_g=k_part)
-                self.db_replaced_frames_initial = get_replaced_frames(self.global_database, k_ep='', k_part=k_part)
-                self.db_replaced_frames = dict()
 
             # Crop
             if do_parse_geometry:
-                # print("\tparse_geometry_configurations: k_part_g=%s" % (k_part))
                 parse_geometry_configurations(self.global_database, k_ep_or_g=k_part)
-                self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep='', k_part=k_part)
-                self.db_part_geometry = dict()
+
+            # Create shots used for the generation
+            create_target_shots_g(self.global_database, k_ep='', k_part_g=k_part)
+
+            # Consolidate by aligning the A/V tracks of generiques
+            align_audio_video_durations_g_debut_fin(self.global_database, k_ep='', k_part_g=k_part)
+
+            # Consolidate each shot for the target
+            consolidate_target_shots(
+                db=self.global_database,
+                k_ed='',
+                k_ep=k_ep,
+                k_part=k_part,
+            )
 
             # Curves
             if do_parse_curves:
@@ -400,25 +378,14 @@ class Model_database(Model_stitching_curves,
                 self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_part)
                 self.db_curves_library = dict()
 
-            # Create shots used for the generation
-            # print("\tcreate_target_shots_g: k_part_g=%s" % (k_part))
-            create_target_shots_g(self.global_database, k_ep='', k_part_g=k_part)
+            if do_parse_geometry:
+                self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep='', k_part=k_part)
+                self.db_part_geometry = dict()
 
-            # Consolidate by aligning the A/V tracks of generiques
-            # print("\talign_audio_video_durations_g_debut_fin: k_part_g=%s" % (k_part))
-            align_audio_video_durations_g_debut_fin(self.global_database, k_ep='', k_part_g=k_part)
+            if do_parse_replace:
+                self.db_replaced_frames_initial = get_replaced_frames(self.global_database, k_ep='', k_part=k_part)
+                self.db_replaced_frames = dict()
 
-            # print("\t%s:%s, replaced frames" % (k_ep, k_part))
-            # pprint(self.replaced_frames)
-
-
-        # Consolidate each shot for the target
-        consolidate_target_shots(
-            db=self.global_database,
-            k_ed='',
-            k_ep=k_ep,
-            k_part=k_part,
-        )
 
         gc.collect()
 
