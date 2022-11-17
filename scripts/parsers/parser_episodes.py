@@ -203,7 +203,8 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
 
     # If the input video file has not been found, do not parse the config file
     if k_ed not in database[k_ep].keys():
-        sys.exit("Erreur: fichier manquant, édition '%s', épisode %d" % (k_ed, int(k_ep[-2:])))
+        print("Erreur: fichier manquant, édition '%s', épisode %d" % (k_ed, int(k_ep[-2:])))
+        return
 
     # Get config from edition
     db_episode = database[k_ep][k_ed]

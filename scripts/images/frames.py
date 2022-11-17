@@ -147,7 +147,7 @@ def patch_frames_for_stitching(frames, db_combine, do_combine=False):
 
 
 
-def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False):
+def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False) -> list:
     # This is an awfull function which should be reworked but no time to spend for this
     print("%s.create_framelist_for_study: %s:%s:%s" % (__name__, k_ed, k_ep, k_part))
 
@@ -176,20 +176,6 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False):
     else:
         # Use the one defined in command line
         k_ed_src = k_ed
-
-    # k_ep
-    # if k_part in ['g_debut', 'g_fin']:
-    #     if k_ep != '':
-    #         print("use %s as src" % (k_ep))
-    #         k_ep_src = k_ep
-    # else:
-    #     if k_ep != '':
-    #         # Use the one defined in command line
-    #         print("use %s as src" % (k_ep))
-    #         k_ep_src = k_ep
-        # else:
-        #     print("use %s as src" % (k_ep))
-
 
     for frame in frame_list:
         # print(frame)
@@ -238,10 +224,13 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False):
         frame['k_ed'] = k_ed_src
 
         # Determine k_ep
+        print("\tdetermine k_ep (note: k_ep=%s)" % (k_ep))
         if 'k_ep' in frame.keys():
             # Use the episode specified by the target
             print("use the k_ep [%s] specified in the common.ini" % (frame['k_ep']))
             k_ep_src = frame['k_ep']
+        elif k_ep != 'ep00':
+            k_ep_src = k_ep
         elif k_ep_src == 'ep00':
             print("use k_ep_ref [%s] as src to generate the frame" % (k_ep_ref))
             k_ep_src = k_ep_ref
@@ -249,10 +238,9 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False):
             print("use k_ep [%s] as src to generate the frame" % (k_ep))
             k_ep_src = k_ep
 
-
         # Get frame no from frame ref
         if k_ed_src != k_ed_ref or k_ep_src != k_ep_ref:
-            print("convert frame_ref into frame_no, ref = %s:%s" % (k_ed_ref, k_ep_ref))
+            # print("convert frame_ref into frame_no, ref = %s:%s" % (k_ed_ref, k_ep_ref))
             if 'offsets' in db[k_ep_src][k_ed_src][k_part]['video']:
                 offsets = db[k_ep_src][k_ed_src][k_part]['video']['offsets']
                 # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
@@ -284,6 +272,7 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False):
         if not is_found:
             print("Error: shot not found for %s in %s:%s:%s" % (frame_no, k_ed_f, k_ep_f, k_part))
 
+        print("=> extract from %s:%s:%s" % (k_ed_f, k_ep_f, k_part))
 
         # Update the frames with the data found in this shot
         if 'filters' not in frame.keys() or frame['filters'] == 'default':
@@ -297,6 +286,9 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False):
             'tasks': tasks.copy(),
             'input': db['editions'][k_ed_f]['inputs'][k_ep_f],
             'dimensions': db['editions'][k_ed_f]['dimensions'],
+
+            # Re-generate all
+            'force': force,
 
             # Stitching is not yet supported
             'layer': 'bgd',

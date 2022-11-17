@@ -34,7 +34,8 @@ study_mode = True
 
 def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     tasks = frame['tasks'].copy()
-    print("%d - %d: %s" % (work_no, frame['no'], ','.join(tasks)), flush=True)
+    force = frame['force']
+    print("%d - %d: %s" % (work_no, frame['no'], ', '.join(tasks)), flush=True)
     # pprint(frame)
 
     # print("processing frame: k_ed=%s, no=%d" % (frame['k_ed'], frame['ref']))
@@ -81,8 +82,8 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     # Upscale image
     img_upscaled = None
     if 'upscale' in tasks:
-        print("upscale image: %d" % (frame['no']))
-        if not os.path.exists(frame['filepath']['upscale']):
+        # print("upscale image: %d" % (frame['no']))
+        if not os.path.exists(frame['filepath']['upscale']) or force:
 
             # Get the input image: deinterlaced or pre_upscaled
             if img_ffmpeg is None:
@@ -108,7 +109,7 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     # Denoise image
     img_denoised = None
     if 'denoise' in tasks:
-        if not os.path.exists(frame['filepath']['denoise']):
+        if not os.path.exists(frame['filepath']['denoise']) or force:
             if img_upscaled is None:
                 print("upscaled image: %s " % (frame['filepath']['upscale']))
                 img_upscaled = cv2.imread(frame['filepath']['upscale'], cv2.IMREAD_COLOR)
@@ -128,7 +129,7 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     # Sharpen image
     img_sharpened = None
     if 'sharpen' in tasks:
-        if not os.path.exists(frame['filepath']['sharpen']):
+        if not os.path.exists(frame['filepath']['sharpen']) or force:
             if img_denoised is None:
                 img_denoised = cv2.imread(frame['filepath']['denoise'], cv2.IMREAD_COLOR)
 

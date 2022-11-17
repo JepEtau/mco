@@ -136,6 +136,8 @@ def main():
     # Edition: force the edition to default
     if arguments.edition == '':
         k_ed = 'k'
+    else:
+        k_ed = arguments.edition
 
     # Episode no.
     episode_no = arguments.episode
