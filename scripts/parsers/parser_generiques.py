@@ -179,31 +179,6 @@ def parse_generiques_common(database, study_mode=False, verbose=False):
             sys.exit("Error: k_ed:k_ep must be defined in source options for [%s] " % (k_part_g))
 
 
-        # # Consolidate
-        # #----------------------------------------------------
-        # if 'frames' in db_g_common.keys():
-        #     pprint(database[k_part_g]['common']['frames'])
-        #     db_frames = db_g_common['frames']
-        #     db_shots = db_g_target['video']['shots']
-
-        #     for f in db_frames:
-        #         # Use the reference episode if not specified in frame
-        #         if f['k_ep'] == '':
-        #             f['k_ep'] = db_g_target['video']['src']['k_ep']
-
-        #         # find shot from frame no.
-        #         for s in db_shots:
-        #             if s['start'] < f['ref'] < (s['start'] + s['count']):
-        #                 # shot has been found
-        #                 if s['filters'] != 'default' and 'filters' not in f.keys():
-        #                     f['filters'] = s['filters']
-        #                 elif f['filters'] != s['filters']:
-        #                     print("warning: frame filter (%s) is different from shot filter (%s), overwrite it" %
-        #                         (f['filters'], s['filters']))
-        #                     # f['filters'] = s['filters']
-        #                 break
-
-
 
 
 #===========================================================================

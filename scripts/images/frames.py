@@ -147,7 +147,7 @@ def patch_frames_for_stitching(frames, db_combine, do_combine=False):
 
 
 
-def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False) -> list:
+def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False) -> list:
     # This is an awfull function which should be reworked but no time to spend for this
     print("%s.create_framelist_for_study: %s:%s:%s" % (__name__, k_ed, k_ep, k_part))
 
@@ -158,7 +158,7 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False) 
         except: return
         k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
         k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
-    if k_part in ['g_asuivre', 'g_reportage']:
+    elif k_part in ['g_asuivre', 'g_reportage']:
         try: frame_list = db[k_part]['common']['frames']
         except: return
         k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
@@ -194,16 +194,16 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False) 
             # print("find k_ed in edition")
 
             # Find shot no in k_ed_ref:k_ep_ref
-            frame_ref = frame['ref']
+            frame_no = frame['no']
             shots = db[k_ep_ref][k_ed_ref][k_part]['video']['shots']
             is_found = False
             for shot in shots:
-                if (frame_ref >= shot['start']
-                and frame_ref < (shot['start'] + shot['count'])):
+                if (frame_no >= shot['start']
+                and frame_no < (shot['start'] + shot['count'])):
                     is_found = True
                     break
             if not is_found:
-                print("shot not found for frame %d in reference: %s:%s:%s" % (frame_ref, k_ed_ref, k_ep, k_part))
+                print("shot not found for frame %d in reference: %s:%s:%s" % (frame_no, k_ed_ref, k_ep, k_part))
                 continue
 
             # Get the shot no.
@@ -245,15 +245,15 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False) 
                 offsets = db[k_ep_src][k_ed_src][k_part]['video']['offsets']
                 # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
                 for offset in offsets:
-                    if offset['start'] <= frame['ref'] <= offset['end']:
-                        frame['no'] = frame['ref'] + offset['offset']
+                    if offset['start'] <= frame['no'] <= offset['end']:
+                        frame['ref'] = frame['no'] + offset['offset']
                         break
             else:
                 # print("No offset:")
-                frame['no'] = frame['ref']
+                frame['ref'] = frame['no']
         else:
             # print("no need to convert")
-            frame['no'] = frame['ref']
+            frame['ref'] = frame['no']
 
         # set k_ep, k_part
         frame['k_part'] = k_part
@@ -309,7 +309,7 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False) 
                                         frame['curves']['k_curves'])
 
         # Output file paths, patch this frame to use the function
-        frame['start'] = frame['ref']
+        frame['start'] = frame['no']
         frame['filepath'] = get_output_frame_filepaths_for_study(db, frame=frame)
 
         # Remove unused tasks

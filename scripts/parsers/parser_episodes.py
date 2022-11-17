@@ -299,22 +299,6 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
                     # print("TODO: reorder offsets")
 
 
-                    # Deactivate this to simplify the structure
-                    if False:
-                        # Now, copy from common and apply offsets
-                        db_episode[k_part]['frames'] = deepcopy(cfg_ep_common[k_part]['frames'])
-                        for i in range(len(offsets)):
-                            offset = offsets[i][1]
-                            for frame in db_episode[k_part]['frames']:
-                                if frame['ref'] > offsets[i][0]:
-                                    frame['no'] = frame['ref'] + offset
-                else:
-                    # Deactivate this to simplify the structure
-                    if False:
-                        db_episode[k_part]['frames'] = deepcopy(cfg_ep_common[k_part]['frames'])
-                        for frame in db_episode[k_part]['frames']:
-                            frame['no'] = frame['ref']
-
 
     # Copy frames dict from common if not specified in configuration file
     for k in database[k_ep]['common'].keys():

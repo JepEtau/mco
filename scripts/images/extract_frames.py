@@ -18,7 +18,7 @@ from utils.ffmpeg import (
     ffmpeg_deinterlace_and_pre_upscale_single_frame,
     ffmpeg_deinterlace_and_upscale_single_frame,
 )
-from images.frames import create_framelist_for_study
+from images.frames import consolidate_frame_list_for_study
 from images.filtering import (
     filter_upscale,
     filter_denoise,
@@ -38,7 +38,7 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     print("%d - %d: %s" % (work_no, frame['no'], ', '.join(tasks)), flush=True)
     # pprint(frame)
 
-    # print("processing frame: k_ed=%s, no=%d" % (frame['k_ed'], frame['ref']))
+    # print("processing frame: k_ed=%s, no=%d" % (frame['k_ed'], frame['no']))
     # Define default values and images
 
 
@@ -206,7 +206,7 @@ def process_frames(database, frames, cpu_count):
                 frames_2.append(f)
 
         for f in frames_2:
-            print("%s,%d: " % (f['k_ed'], f['ref']), end='')
+            print("%s, %d -> %d: " % (f['k_ed'], f['ref'], f['no']), end='')
             print(f['tasks'])
 
         for f in frames_2:
@@ -272,11 +272,13 @@ def extract_frames_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False, sh
             k_ed_src = db['editions']['fgd']
 
     # Get the list of frames for studies
-    frames = create_framelist_for_study(db,
+    frames = consolidate_frame_list_for_study(db,
         k_ed_src, k_ep_src, k_part,
         tasks,
         force=force)
     # pprint(frames)
+    if frames is None:
+        sys.exit("Error: no frame to extract")
 
     # Extract only a few settings for the process
     db_common = {
