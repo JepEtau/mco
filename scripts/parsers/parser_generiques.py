@@ -125,8 +125,7 @@ def parse_generiques_common(database, study_mode=False, verbose=False):
 
                     # Frames
                     if k_option == 'frames':
-                        if 'frames' not in db_g_common.keys():
-                            db_g_common['frames'] = list()
+                        db_g_common['frames'] = list()
                         parse_framelist(db_g_common['frames'], value_str)
 
             # Video

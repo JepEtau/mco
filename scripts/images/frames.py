@@ -165,10 +165,10 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
         print("\tUse %s:%s as reference" % (k_ed_ref, k_ep_ref))
     else:
-        try: frame_list = db[k_ep]['common'][k_part]['frames']
+        try: frame_list = db[k_ep]['common']['frames'][k_part]
         except: return
         k_ep_ref = k_ep
-        k_ed_ref = db['common']['reference']['k_ed']
+        k_ed_ref = db[k_ep]['target']['video']['src']['k_ed']
 
     # k_ed
     if k_ed == '':
