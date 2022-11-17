@@ -18,7 +18,7 @@ from utils.ffmpeg import (
     ffmpeg_deinterlace_and_pre_upscale_single_frame,
     ffmpeg_deinterlace_and_upscale_single_frame,
 )
-from images.frames import create_framelist_for_study
+from images.frames import consolidate_frame_list_for_study
 from images.filtering import (
     filter_upscale,
     filter_denoise,
@@ -34,10 +34,11 @@ study_mode = True
 
 def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     tasks = frame['tasks'].copy()
-    print("%d - %d: %s" % (work_no, frame['no'], ','.join(tasks)), flush=True)
+    force = frame['force']
+    print("%d - %d: %s" % (work_no, frame['no'], ', '.join(tasks)), flush=True)
     # pprint(frame)
 
-    # print("processing frame: k_ed=%s, no=%d" % (frame['k_ed'], frame['ref']))
+    # print("processing frame: k_ed=%s, no=%d" % (frame['k_ed'], frame['no']))
     # Define default values and images
 
 
@@ -81,8 +82,8 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     # Upscale image
     img_upscaled = None
     if 'upscale' in tasks:
-        print("upscale image: %d" % (frame['no']))
-        if not os.path.exists(frame['filepath']['upscale']):
+        # print("upscale image: %d" % (frame['no']))
+        if not os.path.exists(frame['filepath']['upscale']) or force:
 
             # Get the input image: deinterlaced or pre_upscaled
             if img_ffmpeg is None:
@@ -108,7 +109,7 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     # Denoise image
     img_denoised = None
     if 'denoise' in tasks:
-        if not os.path.exists(frame['filepath']['denoise']):
+        if not os.path.exists(frame['filepath']['denoise']) or force:
             if img_upscaled is None:
                 print("upscaled image: %s " % (frame['filepath']['upscale']))
                 img_upscaled = cv2.imread(frame['filepath']['upscale'], cv2.IMREAD_COLOR)
@@ -128,7 +129,7 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     # Sharpen image
     img_sharpened = None
     if 'sharpen' in tasks:
-        if not os.path.exists(frame['filepath']['sharpen']):
+        if not os.path.exists(frame['filepath']['sharpen']) or force:
             if img_denoised is None:
                 img_denoised = cv2.imread(frame['filepath']['denoise'], cv2.IMREAD_COLOR)
 
@@ -205,7 +206,7 @@ def process_frames(database, frames, cpu_count):
                 frames_2.append(f)
 
         for f in frames_2:
-            print("%s,%d: " % (f['k_ed'], f['ref']), end='')
+            print("%s, %d -> %d: " % (f['k_ed'], f['ref'], f['no']), end='')
             print(f['tasks'])
 
         for f in frames_2:
@@ -271,11 +272,13 @@ def extract_frames_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False, sh
             k_ed_src = db['editions']['fgd']
 
     # Get the list of frames for studies
-    frames = create_framelist_for_study(db,
+    frames = consolidate_frame_list_for_study(db,
         k_ed_src, k_ep_src, k_part,
         tasks,
         force=force)
     # pprint(frames)
+    if frames is None:
+        sys.exit("Error: no frame to extract")
 
     # Extract only a few settings for the process
     db_common = {

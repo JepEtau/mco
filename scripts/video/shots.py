@@ -188,7 +188,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
             img_bgd = filter_bgd(frame, img_denoised)
             cv2.imwrite(frame['filepath']['bgd'], img_bgd)
             # This is a background image, do not continue
-            print("\t%d is BGD image, stop here" % (frame['ref']))
+            print("\t%d is BGD image, stop here" % (frame['no']))
             tasks.clear()
             return (work_no, tasks)
         tasks.remove('bgd')
@@ -363,7 +363,7 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
             print("--------------- Background ---------------")
             pprint(layers['bgd']['shot'])
         print("------------------------------------------")
-        # sys.exit()
+        sys.exit()
 
 
     # 2) Create list(s) of frames

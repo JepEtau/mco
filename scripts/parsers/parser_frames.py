@@ -12,7 +12,7 @@ def parse_framelist(db_frames, framelist_str):
         # print(shot)
         frame_properties = frame.split(',')
         f_tmp = {
-            'ref': int(frame_properties[0])
+            'no': int(frame_properties[0])
         }
         if len(frame_properties) > 1:
             for f in frame_properties:

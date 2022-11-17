@@ -534,7 +534,7 @@ def get_shot_from_frame_no_new(db, frame_no:int, k_ed, k_ep, k_part) -> dict:
         # are defined in g_fin, g_asuivre for edition k
         k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
         k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
-        print("%s: use %s:%s as reference to calculate new frame no." % (k_part, k_ed_ref, k_ep_ref))
+        # print("%s: use %s:%s as reference to calculate new frame no." % (k_part, k_ed_ref, k_ep_ref))
     else:
         k_ed_ref = db['editions']['k_ed_ref']
         k_ep_ref = k_ep

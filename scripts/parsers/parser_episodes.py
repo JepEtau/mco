@@ -22,6 +22,7 @@ from parsers.parser_filters import (
     parse_filters_initialize,
     parser_filters_consolidate,
 )
+from parsers.parser_frames import parse_framelist
 from parsers.parser_shots import (
     consolidate_shots_after_parse,
     parse_shotlist,
@@ -149,28 +150,13 @@ def parse_episodes_common(db, ep_min=1, ep_max:int=39, study_mode=False):
             #----------------------------------------------------
             elif k_section == 'frames' and study_mode:
                 # Parse this section only when in study mode (--frames)
+                db_ep_common['frames'] = dict()
                 for k_part in config.options(k_section):
                     value_str = config.get(k_section, k_part)
                     value_str = value_str.replace(' ','')
 
-                    nested_dict_set(db_ep_common, list(), 'frames', k_part)
-                    for frame_no in value_str.split('\n'):
-                        match = None
-                        match = re.match(re.compile("^([0-9]{1,2}):\s*([0-9]+)$"), frame_no)
-                        if match is not None:
-                            db_ep_common['frames'][k_part].append({
-                                'k_ep': int(match.group(1)),
-                                'ref': int(match.group(2)),
-                            })
-                        else:
-                            match = re.match(re.compile("^([0-9]+)$"), frame_no)
-                            if match is not None:
-                                match = re.match(r"([0-9]+)", frame_no)
-                                if match:
-                                    db_ep_common['frames'][k_part].append({
-                                        'k_ep': 0,
-                                        'ref': int(match.group(1)),
-                                    })
+                    db_ep_common['frames'][k_part] = list()
+                    parse_framelist(db_ep_common['frames'][k_part], value_str)
 
             # Filters
             #----------------------------------------------------
@@ -203,7 +189,8 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
 
     # If the input video file has not been found, do not parse the config file
     if k_ed not in database[k_ep].keys():
-        sys.exit("Erreur: fichier manquant, édition '%s', épisode %d" % (k_ed, int(k_ep[-2:])))
+        print("Erreur: fichier manquant, édition '%s', épisode %d" % (k_ed, int(k_ep[-2:])))
+        return
 
     # Get config from edition
     db_episode = database[k_ep][k_ed]
@@ -297,22 +284,6 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
                     # pprint(offsets)
                     # print("TODO: reorder offsets")
 
-
-                    # Deactivate this to simplify the structure
-                    if False:
-                        # Now, copy from common and apply offsets
-                        db_episode[k_part]['frames'] = deepcopy(cfg_ep_common[k_part]['frames'])
-                        for i in range(len(offsets)):
-                            offset = offsets[i][1]
-                            for frame in db_episode[k_part]['frames']:
-                                if frame['ref'] > offsets[i][0]:
-                                    frame['no'] = frame['ref'] + offset
-                else:
-                    # Deactivate this to simplify the structure
-                    if False:
-                        db_episode[k_part]['frames'] = deepcopy(cfg_ep_common[k_part]['frames'])
-                        for frame in db_episode[k_part]['frames']:
-                            frame['no'] = frame['ref']
 
 
     # Copy frames dict from common if not specified in configuration file

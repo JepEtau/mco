@@ -274,7 +274,7 @@ def create_target_shots(database, k_ep, k_part):
     K_PART_DEBUG = ''
 
     k_ed_src = database[k_ep]['target']['video']['src']['k_ed']
-    print("create_target_shots: %s:%s:%s" % (k_ed_src, k_ep, k_part))
+    # print("create_target_shots: %s:%s:%s" % (k_ed_src, k_ep, k_part))
     # pprint(database[k_ep])
     db_video_src = database[k_ep][k_ed_src][k_part]['video']
     db_video_dst = database[k_ep]['target']['video'][k_part]

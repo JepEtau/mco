@@ -118,7 +118,7 @@ def get_deinterlaced_filepath_list(db, shot:dict, task):
     suffix = "__%s__%03d" % (shot['k_ed'], filter_id)
 
     deinterlace_output_path = get_output_path_from_shot(db=db, shot=shot, task=task)
-    for no in range(shot['ref'], shot['ref'] + shot['count']):
+    for no in range(shot['start'], shot['start'] + shot['count']):
         filename = "%s%05d%s.%s" % (prefix, no, suffix, extension)
         filepath_list.append(os.path.join(deinterlace_output_path, filename))
 
@@ -203,7 +203,7 @@ def get_output_path_from_frame(db, frame):
 def get_output_frame_filepaths_for_study(db, frame:dict):
     k_ep = frame['k_ep']
     k_ed = frame['k_ed']
-    frame_ref = frame['ref']
+    frame_no = frame['no']
 
     extension = db['common']['settings']['frame_format']
 
@@ -217,9 +217,9 @@ def get_output_frame_filepaths_for_study(db, frame:dict):
             suffix = "__%s__%03d" % (k_ed, get_filter_id(db, frame, task))
 
         if frame['k_part'] in K_GENERIQUES:
-            outputFilename = "ep00_%05d_%s%s.%s" % (frame_ref, k_ep, suffix, extension)
+            outputFilename = "ep00_%05d_%s%s.%s" % (frame_no, k_ep, suffix, extension)
         else:
-            outputFilename = "%s_%05d%s.%s" % (k_ep, frame_ref, suffix, extension)
+            outputFilename = "%s_%05d%s.%s" % (k_ep, frame_no, suffix, extension)
 
         output_directory = get_output_path_from_frame(db=db, frame=frame)
         if not os.path.exists(output_directory):

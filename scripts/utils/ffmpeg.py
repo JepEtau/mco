@@ -218,7 +218,7 @@ def ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale
     command_ffmpeg.extend(database['common']['settings']['verbose'].split(' '))
 
     frames_count = shot['count']
-    frame_start = shot['start']
+    frame_start = shot['ref']
 
     command_ffmpeg.extend([
         "-ss", frame_no_to_sexagesimal(frame_start),
@@ -264,7 +264,7 @@ def ffmpeg_extract_shot_tests(db, shot, filter_str, width, height, task='upscale
     command_ffmpeg.extend(db['common']['settings']['verbose'].split(' '))
 
     frames_count = shot['count']
-    frame_start = shot['start']
+    frame_start = shot['ref']
 
     output_path, filename = get_deinterlaced_path_and_filename(db, shot, task=task)
     output_filepath = os.path.join(output_path, filename)
@@ -355,7 +355,7 @@ def ffmpeg_extract_single_frame(db, frame, filter_str, width, height, task='upsc
     # 1 if 1st frame
     # 2 otherwise, keep the second one
     frames_count = 2
-    frame_no = frame['no'] - 1
+    frame_no = frame['ref'] - 1
 
     command_ffmpeg.extend([
         "-ss", frame_no_to_sexagesimal(frame_no),

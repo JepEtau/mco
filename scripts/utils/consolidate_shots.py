@@ -181,28 +181,27 @@ def consolidate_shot(db, shot) -> None:
             'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
         })
 
-        # Foreground
-        # if 'shots' in db_video.keys():
-        #     print("***********************************")
-        #     pprint(db_video['shots'][shot_no])
-        #     print("***********************************")
-        #     pprint(shot)
-        #     print("***********************************")
-        #     shot.update(deepcopy(db_video['shots'][shot_no]))
-
+        # Frame no. used for deinterlace
         shot['ref'] = shot['start']
-
-        # Patch start with offset ...
-        # TODO: correct this!!!!
-        # try:
-        #     offsets = db_video['offsets']
-        #     for i in range(len(offsets)):
-        #         if offsets[i]['start'] <= shot['start'] <= offsets[i]['end']:
-        #             shot['start'] = shot['start'] + offsets[i]['offset']
-        #             break
-        # except:
-        #     # print("warning: no offset defined in %s:%s:%s" % (k_ed, k_ep, k_part))
-        #     pass
+        # Modify the ref which is the start of the shot in the k_ed:k_ep
+        # It will be used only for deinterlace, but files will use the 'start' value
+        # It uses the offsets defined in the config files
+        if k_part in K_GENERIQUES:
+            k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+            k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
+        else:
+            k_ep_ref = db[k_ep]['target']['video']['src']['k_ep']
+            k_ed_ref = db[k_ep]['target']['video']['src']['k_ed']
+        if k_ed != k_ed_ref or k_ep != k_ep_ref:
+            try:
+                offsets = db[k_ep][k_ed][k_part]['video']['offsets']
+                # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
+                for offset in offsets:
+                    if offset['start'] <= shot['start'] <= offset['end']:
+                        shot['ref'] = shot['start'] + offset['offset']
+                        break
+            except:
+                print("offsets are not defined in %s:%s for part %s" % (k_ed, k_ep, k_part))
 
 
         # Remove unused tasks
@@ -217,6 +216,7 @@ def consolidate_shot(db, shot) -> None:
 
 
     elif 'layer' in shot.keys() and shot['layer'] == 'bgd':
+        # TODO: correct and implement thsi for stitching
 
         print("%s.consolidate_shot: %s:%s:%s" % (__name__, k_ed, shot['dst']['k_ep'], shot['dst']['k_part']))
         pprint(shot)
