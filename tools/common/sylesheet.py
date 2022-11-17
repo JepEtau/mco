@@ -44,7 +44,7 @@ def set_widget_stylesheet(widget):
             QCheckBox::indicator {
                 width: 13px;
                 height: 13px;
-                background-color: rgb(80, 80, 80);
+                background-color: rgb(60, 60, 60);
                 border: 1px;
                 border-radius: 3px;
             }
@@ -53,7 +53,7 @@ def set_widget_stylesheet(widget):
             }
             QCheckBox::indicator:indeterminate {
                 /* for debug: correct this */
-                background-color: green;
+                background-color: rgb(100, 100, 100);
             }
         """)
     elif type(widget) is QDoubleSpinBox:

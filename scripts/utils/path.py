@@ -186,7 +186,7 @@ def get_output_frame_filepaths(db, shot:dict, frame_no:int):
 
 
 def get_output_path_from_frame(db, frame):
-    if frame['k_part'] in ['g_debut', 'g_fin']:
+    if frame['k_part'] in K_GENERIQUES:
         # Put all images in a single folder for 'génériques'
         return os.path.join(db['common']['directories']['frames'],
                 frame['k_part'])
@@ -216,7 +216,11 @@ def get_output_frame_filepaths_for_study(db, frame:dict):
         else:
             suffix = "__%s__%03d" % (k_ed, get_filter_id(db, frame, task))
 
-        outputFilename = "%s_%05d%s.%s" % (k_ep, frame_ref, suffix, extension)
+        if frame['k_part'] in K_GENERIQUES:
+            outputFilename = "ep00_%05d_%s%s.%s" % (frame_ref, k_ep, suffix, extension)
+        else:
+            outputFilename = "%s_%05d%s.%s" % (k_ep, frame_ref, suffix, extension)
+
         output_directory = get_output_path_from_frame(db=db, frame=frame)
         if not os.path.exists(output_directory):
             os.makedirs(output_directory)

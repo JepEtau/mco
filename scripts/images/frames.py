@@ -153,28 +153,43 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False):
 
 
     # Returns a list of frames for an edition (calculated with offset)
-    if k_part in K_GENERIQUES:
+    if k_part in ['g_debut', 'g_fin']:
         try: frame_list = db[k_part]['common']['frames']
         except: return
         k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
         k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+    if k_part in ['g_asuivre', 'g_reportage']:
+        try: frame_list = db[k_part]['common']['frames']
+        except: return
+        k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
+        k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+        print("\tUse %s:%s as reference" % (k_ed_ref, k_ep_ref))
     else:
         try: frame_list = db[k_ep]['common'][k_part]['frames']
         except: return
         k_ep_ref = k_ep
-        k_ed_ref = db['common']['reference']['edition']
+        k_ed_ref = db['common']['reference']['k_ed']
 
-
+    # k_ed
     if k_ed == '':
         k_ed_src = k_ed_ref
     else:
         # Use the one defined in command line
         k_ed_src = k_ed
-    if k_part in ['g_debut', 'g_fin']:
-        if k_ep != '':
-            k_ep_src = k_ep
-    else:
-        k_ep_src = k_ep
+
+    # k_ep
+    # if k_part in ['g_debut', 'g_fin']:
+    #     if k_ep != '':
+    #         print("use %s as src" % (k_ep))
+    #         k_ep_src = k_ep
+    # else:
+    #     if k_ep != '':
+    #         # Use the one defined in command line
+    #         print("use %s as src" % (k_ep))
+    #         k_ep_src = k_ep
+        # else:
+        #     print("use %s as src" % (k_ep))
+
 
     for frame in frame_list:
         # print(frame)
@@ -222,15 +237,22 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False):
         # We can find the frame_no by using the specified edition
         frame['k_ed'] = k_ed_src
 
-        # Get frame no from frame ref
-        if k_ed_src != k_ed_ref:
-            # print("convert frame_ref into frame_no")
-            if 'k_ep' in frame.keys():
-                # Use the episode specified by the target
-                k_ep_src = frame['k_ep']
-            elif k_ep_src == 'ep00':
-                k_ep_src = k_ep_ref
+        # Determine k_ep
+        if 'k_ep' in frame.keys():
+            # Use the episode specified by the target
+            print("use the k_ep [%s] specified in the common.ini" % (frame['k_ep']))
+            k_ep_src = frame['k_ep']
+        elif k_ep_src == 'ep00':
+            print("use k_ep_ref [%s] as src to generate the frame" % (k_ep_ref))
+            k_ep_src = k_ep_ref
+        else:
+            print("use k_ep [%s] as src to generate the frame" % (k_ep))
+            k_ep_src = k_ep
 
+
+        # Get frame no from frame ref
+        if k_ed_src != k_ed_ref or k_ep_src != k_ep_ref:
+            print("convert frame_ref into frame_no, ref = %s:%s" % (k_ed_ref, k_ep_ref))
             if 'offsets' in db[k_ep_src][k_ed_src][k_part]['video']:
                 offsets = db[k_ep_src][k_ed_src][k_part]['video']['offsets']
                 # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
@@ -325,12 +347,12 @@ def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False):
                 })
         elif k_part in ['g_asuivre', 'g_reportage']:
             print("create_framelist_for_study: verify geometry for %s" % (k_part))
-            k_ep_src = shot['k_ep']
-            k_ed_src = shot['k_ed']
-            # print("get geometry from part %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
+            k_ep_src = frame['k_ep']
+            k_ed_src = frame['k_ed']
+            print("get geometry from part %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
             frame['geometry'] = {
-                'part':  db[k_ep][k_ed][k_part[2:]]['video']['geometry'],
-                'custom': db[k_ep][k_ed][k_part]['video']['geometry'],
+                'part':  db[k_ep][k_ed_f][k_part[2:]]['video']['geometry'],
+                'custom': db[k_ep][k_ed_f][k_part]['video']['geometry'],
             }
         # else:
             # TODO once the shot geometry will be implemented or use the part

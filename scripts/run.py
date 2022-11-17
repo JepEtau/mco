@@ -133,6 +133,9 @@ def main():
 
     arguments = parser.parse_args()
 
+    # Edition: force the edition to default
+    if arguments.edition == '':
+        k_ed = 'k'
 
     # Episode no.
     episode_no = arguments.episode
@@ -170,7 +173,7 @@ def main():
     if arguments.parse_only:
         # Parse database only
         # Parse database
-        parse_database(g_database, k_ed=arguments.edition, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
+        parse_database(g_database, k_ed=k_ed, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
         gc.collect()
         print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
 
@@ -230,7 +233,7 @@ def main():
         sys.exit("Error: a part shall be one of the following: %s" % (", ".join(K_ALL_PARTS)))
 
     # Parse database
-    parse_database(g_database, k_ed=arguments.edition, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
+    parse_database(g_database, k_ed=k_ed, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
     gc.collect()
     print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
     print("processing, please wait...", flush=True)
@@ -243,14 +246,14 @@ def main():
             # Generiques
             k_part_g = arguments.part
             if arguments.afilter == 'extract':
-                extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=arguments.edition, verbose=True, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=k_ed, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
                 generate_audio(g_database, k_part_g, verbose=True, force=arguments.force)
 
         elif arguments.part != '':
             # precedemment, episode, g_asuivre, asuivre, g_reportage, reportage
             if arguments.afilter == 'extract':
-                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=arguments.edition, verbose=True, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=k_ed, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
                 generate_audio(g_database, k_ep=k_episode, verbose=True, force=arguments.force)
 
@@ -258,8 +261,8 @@ def main():
             # All
             if arguments.afilter == 'extract':
                 for k_part_g in ['g_debut', 'g_fin']:
-                    extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=arguments.edition, force=arguments.force)
-                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=arguments.edition, force=arguments.force)
+                    extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=k_ed, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=k_ed, force=arguments.force)
 
             elif arguments.afilter == 'final':
                 for k_part_g in ['g_debut', 'g_fin']:
@@ -285,7 +288,7 @@ def main():
     # Consolidate each shot for the target
     consolidate_target_shots(
         db=g_database,
-        k_ed=arguments.edition,
+        k_ed=k_ed,
         k_ep=k_episode,
         k_part=arguments.part,
     )

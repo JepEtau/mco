@@ -534,6 +534,7 @@ def get_shot_from_frame_no_new(db, frame_no:int, k_ed, k_ep, k_part) -> dict:
         # are defined in g_fin, g_asuivre for edition k
         k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
         k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+        print("%s: use %s:%s as reference to calculate new frame no." % (k_part, k_ed_ref, k_ep_ref))
     else:
         k_ed_ref = db['editions']['k_ed_ref']
         k_ep_ref = k_ep
@@ -542,13 +543,8 @@ def get_shot_from_frame_no_new(db, frame_no:int, k_ed, k_ep, k_part) -> dict:
     shots = db[k_ep_ref][k_ed_ref][k_part]['video']['shots']
     for shot in shots:
         # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
-        if frame_no >= shot['start'] and frame_no < (shot['start'] + shot['count']):
-            if shots[shot['no']]['no'] == shot['no']:
-                # Verify that the shot no. defined in the structure is equal to the index in the array
-                return shot
-            else:
-                print("Error: get_shot_from_frame_no_new, shotsNo!=no")
-                return None
+        if shot['start'] <= frame_no < (shot['start'] + shot['count']):
+            return shot
     print("\nWarning: %s:get_shot_from_frame_no_new: not found, frame no. %d in %s:%s:%s continue" % (__name__, frame_no, k_ed, k_ep, k_part))
     pprint_video(db[k_ep_ref][k_ed_ref][k_part]['video'], ignore='')
     print("-----------------------------------------------")

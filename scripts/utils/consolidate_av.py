@@ -151,7 +151,7 @@ def calculate_av_sync(db, k_ep):
 
         if db_video['episode']['start'] != db_video['episode']['shots'][0]['start']:
             sys.exit("calculate_av_sync: error: start of episode (%d) != start of 1st shot (%d)" % (
-                db_video['episode']['start'], db_video['shots']['start']))
+                db_video['episode']['start'], db_video[k_part]['shots'][0]['start']))
     else:
         # precedemment does not exist
         db_target['audio']['precedemment'].update({

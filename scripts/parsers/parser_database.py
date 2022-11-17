@@ -137,6 +137,7 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in v:
             if k_ep_tmp == k_ep:
+                # Do not parse this episode another time
                 continue
             parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep_tmp, verbose=verbose)
 

@@ -383,7 +383,7 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
     for k_p in K_ALL_PARTS:
         consolidate_shots_after_parse(db=database, k_ep=k_ep, k_part=k_p, k_ed=k_ed)
 
-
+    return True
 
 
 def parse_get_dependencies_for_episodes(db, k_ep) -> dict:

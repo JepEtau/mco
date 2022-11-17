@@ -101,7 +101,6 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
                 # There is no defined filter, or an error occured
                 sys.exit("Error: upscaling frame no. %d has failed" % (frame['no']))
             else:
-                print("upscaled: %s" % (img_upscaled))
                 cv2.imwrite(frame['filepath']['upscale'], img_upscaled)
         tasks.remove('upscale')
 
