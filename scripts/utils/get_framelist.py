@@ -18,7 +18,7 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
 
     # Replace images
     if 'replace' not in db['common']['options']['discard_tasks']:
-        frames_to_replace = db[k_ep][k_ed][k_part]['video']['replace']
+        frames_to_replace = shot['replace']
     else:
         # defined in discarded tasks
         frames_to_replace = dict()

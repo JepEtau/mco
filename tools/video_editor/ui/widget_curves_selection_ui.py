@@ -139,17 +139,17 @@ class Ui_widget_curves_selection(object):
 
         self.horizontalLayout_2.addWidget(self.label)
 
-        self.pushButton_save = QPushButton(widget_curves_selection)
-        self.pushButton_save.setObjectName(u"pushButton_save")
-        sizePolicy1.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
-        self.pushButton_save.setSizePolicy(sizePolicy1)
+        self.pushButton_save_rgb_curves = QPushButton(widget_curves_selection)
+        self.pushButton_save_rgb_curves.setObjectName(u"pushButton_save_rgb_curves")
+        sizePolicy1.setHeightForWidth(self.pushButton_save_rgb_curves.sizePolicy().hasHeightForWidth())
+        self.pushButton_save_rgb_curves.setSizePolicy(sizePolicy1)
         icon2 = QIcon()
         icon2.addFile(u"icons/grey/save.svg", QSize(), QIcon.Normal, QIcon.Off)
         icon2.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.On)
-        self.pushButton_save.setIcon(icon2)
-        self.pushButton_save.setFlat(True)
+        self.pushButton_save_rgb_curves.setIcon(icon2)
+        self.pushButton_save_rgb_curves.setFlat(True)
 
-        self.horizontalLayout_2.addWidget(self.pushButton_save)
+        self.horizontalLayout_2.addWidget(self.pushButton_save_rgb_curves)
 
 
         self.verticalLayout.addLayout(self.horizontalLayout_2)
@@ -178,6 +178,6 @@ class Ui_widget_curves_selection(object):
         self.list_shots.setSortingEnabled(__sortingEnabled)
 
         self.label.setText(QCoreApplication.translate("widget_curves_selection", u".crv", None))
-        self.pushButton_save.setText("")
+        self.pushButton_save_rgb_curves.setText("")
     # retranslateUi
 

@@ -52,10 +52,10 @@ def main():
         help="Numéro d'épisode de 1 à 39. Ignoré pour la génération des génériques.")
 
     parser.add_argument("--edition",
-        default='k',
+        default='',
         required=False,
         choices=editions,
-        help="Utilise cette edition, par défaut: k")
+        help="Utilise cette edition")
 
     parser.add_argument("--part",
         default='',
@@ -133,6 +133,9 @@ def main():
 
     arguments = parser.parse_args()
 
+    # Edition: force the edition to default
+    if arguments.edition == '':
+        k_ed = 'k'
 
     # Episode no.
     episode_no = arguments.episode
@@ -170,7 +173,7 @@ def main():
     if arguments.parse_only:
         # Parse database only
         # Parse database
-        parse_database(g_database, k_ed=arguments.edition, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
+        parse_database(g_database, k_ed=k_ed, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
         gc.collect()
         print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
 
@@ -230,10 +233,11 @@ def main():
         sys.exit("Error: a part shall be one of the following: %s" % (", ".join(K_ALL_PARTS)))
 
     # Parse database
-    parse_database(g_database, k_ed=arguments.edition, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
+    parse_database(g_database, k_ed=k_ed, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
     gc.collect()
     print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
     print("processing, please wait...", flush=True)
+
 
     # Audio
     #-------------------------------------------------
@@ -242,14 +246,14 @@ def main():
             # Generiques
             k_part_g = arguments.part
             if arguments.afilter == 'extract':
-                extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=arguments.edition, verbose=True, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=k_ed, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
                 generate_audio(g_database, k_part_g, verbose=True, force=arguments.force)
 
         elif arguments.part != '':
             # precedemment, episode, g_asuivre, asuivre, g_reportage, reportage
             if arguments.afilter == 'extract':
-                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=arguments.edition, verbose=True, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=k_ed, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
                 generate_audio(g_database, k_ep=k_episode, verbose=True, force=arguments.force)
 
@@ -257,8 +261,8 @@ def main():
             # All
             if arguments.afilter == 'extract':
                 for k_part_g in ['g_debut', 'g_fin']:
-                    extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=arguments.edition, force=arguments.force)
-                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=arguments.edition, force=arguments.force)
+                    extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=k_ed, force=arguments.force)
+                extract_audio(g_database, k_ep_or_g=k_episode, k_ed=k_ed, force=arguments.force)
 
             elif arguments.afilter == 'final':
                 for k_part_g in ['g_debut', 'g_fin']:
@@ -270,58 +274,63 @@ def main():
 
     # Video
     #-------------------------------------------------
-    if video_filter in ['deinterlace', 'upscale', 'geometry']:
-        # Video and frames
 
-        # Get the list of tasks
-        tasks = get_tasklist(db=g_database, final_task=video_filter)
+    # Get the list of tasks
+    tasks = get_tasklist(db=g_database, final_task=video_filter)
 
-        # Check if nnedi3_weights.bin exists
-        if 'deinterlace' in tasks:
-            nnedi_file = "./nnedi3_weights.bin"
-            if not os.path.exists(nnedi_file):
-                sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
+    # Check if nnedi3_weights.bin exists
+    if 'deinterlace' in tasks:
+        nnedi_file = "./nnedi3_weights.bin"
+        if not os.path.exists(nnedi_file):
+            sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
 
 
-        # Consolidate each shot for the target
-        consolidate_target_shots(
+    # Consolidate each shot for the target
+    consolidate_target_shots(
+        db=g_database,
+        k_ed=k_ed,
+        k_ep=k_episode,
+        k_part=arguments.part,
+    )
+
+    # Specified shot min. and max
+    shot_min = arguments.shot_min
+    shot_max = arguments.shot_max
+    if arguments.shot != -1:
+        shot_min = arguments.shot
+        shot_max = arguments.shot + 1
+
+    if arguments.frames:
+        # Extract frames
+        extract_frames_for_study(
             db=g_database,
             k_ed=arguments.edition,
             k_ep=k_episode,
             k_part=arguments.part,
-        )
+            tasks=tasks,
+            force=arguments.force,
+            shot_min=shot_min, shot_max=shot_max)
+        return
 
-        if arguments.frames:
-            # Extract frames
-            extract_frames_for_study(
-                g_database,
-                editions=[arguments.edition],
-                episode_no=episode_no,
-                k_part=arguments.part,
-                tasks=tasks,
-                force=arguments.force)
+    elif video_filter in ['deinterlace', 'upscale', 'geometry']:
+        # Generate the video
 
-        else:
-            # Video
-            shot_min = arguments.shot_min
-            shot_max = arguments.shot_max
-            if arguments.shot != -1:
-                shot_min = arguments.shot
-                shot_max = arguments.shot + 1
+        # Force the edition to default
+        k_ed = 'k'
 
-            # Generate the video
-            generate_video(
-                g_database,
-                k_ed=arguments.edition,
-                k_ep=k_episode,
-                k_part=arguments.part,
-                tasks=tasks,
-                force=arguments.force,
-                simulation=arguments.simulate,
-                shot_min=shot_min, shot_max=shot_max)
+        generate_video(
+            db=g_database,
+            k_ed=k_ed,
+            k_ep=k_episode,
+            k_part=arguments.part,
+            tasks=tasks,
+            force=arguments.force,
+            simulation=arguments.simulate,
+            shot_min=shot_min, shot_max=shot_max)
 
-            if shot_min != 0 or shot_max != 999999:
-                do_av_merge = False
+        if shot_min != 0 or shot_max != 999999:
+            do_av_merge = False
+
 
     # Merge A/V streams
     #-------------------------------------------------

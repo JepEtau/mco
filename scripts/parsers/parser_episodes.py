@@ -383,7 +383,7 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
     for k_p in K_ALL_PARTS:
         consolidate_shots_after_parse(db=database, k_ep=k_ep, k_part=k_p, k_ed=k_ed)
 
-
+    return True
 
 
 def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
@@ -398,10 +398,10 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
 
     # Common part
     for k_part in K_PARTS:
-        if k_part not in db[k_ep]['common']['video'].keys():
+        if k_part not in db[k_ep]['target']['video'].keys():
             continue
 
-        db_video = db[k_ep]['common']['video'][k_part]
+        db_video = db[k_ep]['target']['video'][k_part]
         if 'shots' in db_video.keys():
             shots = db_video['shots']
             for shot in shots:

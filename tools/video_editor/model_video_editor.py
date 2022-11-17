@@ -94,8 +94,8 @@ class Model_video_editor(Model_common):
         self.view.widget_curves.widget_rgb_graph.signal_graph_modified[dict].connect(self.event_rgb_graph_modified)
         self.view.widget_curves.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
         self.view.widget_curves.signal_save_curves_as[dict].connect(self.event_save_curves_as)
-        self.view.widget_curves.signal_save.connect(self.event_save_curves_selection_requested)
-        self.view.widget_curves.widget_curves_selection.signal_discard_curves[str].connect(self.event_discard_curves)
+        self.view.widget_curves.widget_curves_selection.signal_save_curves_selection_requested.connect(self.event_save_curves_selection_requested)
+        self.view.widget_curves.widget_curves_selection.signal_discard_curves[str].connect(self.event_discard_rgb_curves_modifications)
 
 
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
@@ -184,22 +184,20 @@ class Model_video_editor(Model_common):
             shot_no = shot['no']
             self.shots[shot_no] = shot
 
-            # patch count to include loop???
-            # if ('effects' in current_shot.keys()
-            #     and 'loop' in current_shot['effects'][0]):
-            #     current_shot['count'] += current_shot['effects'][2]
 
             # Get curves for this shot
             curves = self.model_database.get_curves_selection(shot=shot)
             try: k_curves = curves['k_curves']
             except: k_curves =''
             if curves is None and shot['curves'] is not None:
-                print("Error: curves [%s] is not found in the directory %s, correct this!" % (
+                print("Error: curves [%s] is not found in directory %s, correct this!" % (
                     shot['curves']['k_curves'],
                     self.model_database.get_curves_library_path()))
-                shot['curves']['k_curves'] = "~" + shot['curves']['k_curves']
+                shot['curves']['k_curves'] = '~' + shot['curves']['k_curves']
 
-            # Update this shot for UI
+
+            # Update this shot for UI:
+            # to do: put in a 'ui' structure
             shot.update({
                 'is_valid': True,
 
@@ -215,11 +213,6 @@ class Model_video_editor(Model_common):
                 },
             })
 
-            # Use the k_ed used for this shot: mandatory to get
-            # the correct settings
-            # if k_part in K_GENERIQUES:
-            #     k_ed_src = db[k_part]['target']['video']['reference']['k_ed']
-
 
             # Geometry for this shot:
             #   - part geometry
@@ -231,8 +224,6 @@ class Model_video_editor(Model_common):
                     k_part=k_part_selected,
                     shot=shot)
             else:
-                pprint(shot)
-
                 shot_geometry = self.model_database.get_shot_geometry(
                     k_ed=db[k_ep_selected]['target']['video']['src']['k_ed'],
                     k_ep=k_ep_selected,
@@ -252,6 +243,8 @@ class Model_video_editor(Model_common):
 
                 shot['frame_nos'].append(frame_no)
                 self.frames[shot_no].append({
+                    'dst': shot['dst'],
+                    'src': shot['src'],
                     'k_ed': shot['k_ed'],
                     'k_ep': shot['k_ep'],
                     'k_part': shot['k_part'],
@@ -282,7 +275,7 @@ class Model_video_editor(Model_common):
         }
 
         # Update selection with the part geometry
-        print("ep_or_part_selection_changed: update geometry: %s" % (k_part_selected))
+        # print("ep_or_part_selection_changed: update geometry: %s" % (k_part_selected))
         if k_part_selected in ['g_debut', 'g_fin']:
             # Use the k_ed:k_ep defined as the source for this geometry
             self.current_selection.update({
@@ -367,7 +360,6 @@ class Model_video_editor(Model_common):
             k_ep='',
             k_part=k_part,
             shot_no=-1)
-        self.model_database.move_curves_selection_to_initial()
 
         self.event_save_geometry_requested()
         self.model_database.save_all_curves(k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
@@ -390,33 +382,48 @@ class Model_video_editor(Model_common):
     def event_curves_selection_changed(self, k_curves:str):
         log.info("select the new curves for this shot [%s]" % (k_curves))
         shot_no = self.current_frame['shot_no']
+        shot = self.shots[shot_no]
+        curves = self.model_database.get_curves_selection(shot=shot)
 
         # Update the modifications structure to update the selection widget
-        self.shots[shot_no]['modifications']['curves']['new'] = k_curves
+        if k_curves != self.shots[shot_no]['modifications']['curves']['initial']:
+            log.info("selection has changed")
+            self.shots[shot_no]['modifications']['curves']['new'] = k_curves
+            # Modify the selected curves in the db
+            self.model_database.set_curves_selection(
+                shot=shot,
+                k_curves=k_curves)
+        else:
+            # Discard the current selected curves
+            self.shots[shot_no]['modifications']['curves']['new'] = None
+            self.model_database.discard_curves_selection(shot=shot)
 
-        self.model_database.set_curves_selection(
-            shot=self.shots[shot_no],
-            k_curves=k_curves)
-        curves = self.model_database.get_curves_selection(shot=self.shots[shot_no])
+        # Get the new selected curves
+        curves = self.model_database.get_curves_selection(shot=shot)
 
         # Refresh the list of shot for these curves
         shot_list = self.model_database.get_shots_per_curves(k_curves)
         self.signal_shot_per_curves_modified.emit(shot_list)
 
-        self.signal_current_shot_modified.emit(self.shots[shot_no]['modifications'])
+        self.signal_current_shot_modified.emit(shot['modifications'])
         self.signal_load_curves.emit(curves)
         self.signal_reload_frame.emit()
 
 
-    def event_discard_curves(self, k_curves:str):
-        self.model_database.discard_curves_modifications(k_curves)
+    def event_discard_rgb_curves_modifications(self, k_curves:str):
+        self.model_database.discard_rgb_curves_modifications(k_curves)
         k_part = self.current_selection['k_part']
         k_ep = self.current_selection['k_ep']
+
+        # Get the initial curves
         curves = self.model_database.get_curves(
             k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep,
             k_curves=k_curves)
 
+        # Send the list of curves
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+
+        # Reload curves
         self.signal_load_curves.emit(curves)
         self.signal_reload_frame.emit()
 
@@ -428,32 +435,24 @@ class Model_video_editor(Model_common):
         #     log.error("No name defined in the curves struct")
         #     return
 
-        k_part = self.current_selection['k_part']
-        k_ep = self.current_selection['k_ep']
-        self.model_database.save_curves_as(
+        k_part = self.current_frame['k_part']
+        k_ep = self.current_frame['k_ep']
+        self.model_database.save_rgb_curves_as(
             k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep,
             curves=curves)
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
 
         # Modify the current selection
-        k_curves_new = curves['k_curves_current'] if curves['k_curves_new'] is None else curves['k_curves_new']
-        self.event_curves_selection_changed(k_curves_new)
+        if curves['k_curves_new'] is not None:
+            k_curves_new = curves['k_curves_new']
+            self.event_curves_selection_changed(k_curves_new)
 
 
     def event_save_curves_selection_requested(self):
         # Save the curves selected for this shot
-        k_ed = self.current_frame['k_ed']
-        k_ep = self.current_frame['k_ep']
-        k_part = self.current_frame['k_part']
         shot_no = self.current_frame['shot_no']
-        print("event_save_curves_selection_requested %s:%s:%s:%d" % (k_ed, k_ep, k_part, shot_no))
-        self.model_database.save_curves_selection_database(
-            self.shots,
-            k_ed=k_ed,
-            k_ep=k_ep,
-            k_part=k_part,
-            shot_no=shot_no)
-        self.model_database.move_curves_selection_to_initial()
+        # print("event_save_curves_selection_requested %s:%s:%s:%d" % (k_ed, k_ep, k_part, shot_no))
+        self.model_database.save_shot_curves_selection(self.shots[shot_no])
 
         # Update the modifications structure to update the selection widget
         k_new_curves = self.shots[shot_no]['modifications']['curves']['new']
@@ -462,7 +461,6 @@ class Model_video_editor(Model_common):
             'new': None,
         }
         self.signal_current_shot_modified.emit(self.shots[shot_no]['modifications'])
-
         self.signal_is_saved.emit('curves_selection')
 
 
@@ -551,7 +549,6 @@ class Model_video_editor(Model_common):
 
     def event_save_replace_requested(self):
         self.model_database.save_replace_database()
-        self.model_database.move_replace_to_initial()
         self.signal_is_saved.emit('replace')
 
 
@@ -562,14 +559,13 @@ class Model_video_editor(Model_common):
             - parameter
             - value
         """
-        k_ed = self.current_selection['k_ed']
-        k_ep = self.current_selection['k_ep']
-        k_part = self.current_selection['k_part']
+        k_ed = self.current_frame['k_ed']
+        k_ep = self.current_frame['k_ep']
+        k_part = self.current_frame['k_part']
         shot_no = self.current_frame['shot_no']
         shot = self.shots[shot_no]
-        print("\nevent_geometry_modified for %s:%s:%s as %s" % (k_ed, k_ep, k_part, modification['type']))
-        print("----------------------------------------------")
-        print("shot: %s:%s:%s" % (shot['k_ed'], shot['k_ep'], shot['k_part']))
+        # print("\nevent_geometry_modified for %s:%s:%s as %s" % (k_ed, k_ep, k_part, modification['type']))
+        # print("\tshot: %s:%s:%s" % (shot['k_ed'], shot['k_ep'], shot['k_part']))
 
         if modification['type'] == 'part':
             type = 'part'
@@ -589,8 +585,7 @@ class Model_video_editor(Model_common):
         else:
             type = 'custom'
             geometry = deepcopy(self.model_database.get_custom_geometry(shot=self.shots[shot_no]))
-        print("geometry")
-        pprint(geometry)
+
 
         # Modify parameter
         value = modification['value']
@@ -614,12 +609,9 @@ class Model_video_editor(Model_common):
                 geometry['crop'][3] = max(0, min(c_r + value, 400))
 
         if type == 'part':
-            print("Set the modified crop ")
             self.model_database.set_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part, geometry=geometry)
-
-
         else:
-            print("TODO: set custom geometry")
+            # TODO: enable modification of a single shot
             self.model_database.set_custom_geometry(shot=self.shots[shot_no], geometry=geometry)
 
         # No need to flush cache as generation of a new image will be done (fast enough)
@@ -652,7 +644,6 @@ class Model_video_editor(Model_common):
         shot = self.shots[self.current_frame['shot_no']]
 
         self.model_database.save_geometry_database(k_ed=k_ed, k_ep=k_ep, k_part=k_part, shot=shot)
-        self.model_database.move_part_geometry_to_initial()
         self.signal_is_saved.emit('geometry')
 
 
@@ -715,7 +706,7 @@ class Model_video_editor(Model_common):
 
         # Update geometry
         db = self.model_database.database()
-        print("get_frame -> (%s:%s:%s:%d)" % (frame['k_ed'], frame['k_ep'], frame['k_part'], frame['frame_no']))
+        # print("\nget_frame -> (%s:%s:%s:%d)" % (frame['k_ed'], frame['k_ep'], frame['k_part'], frame['frame_no']))
         if frame['k_part'] in ['g_debut', 'g_fin']:
             frame['geometry'] = self.model_database.get_shot_geometry(
                 k_ed=frame['k_ed'],
@@ -724,11 +715,10 @@ class Model_video_editor(Model_common):
                 shot=shot)
         else:
             frame['geometry'] = self.model_database.get_shot_geometry(
-                k_ed=db[self.current_selection['k_ep']]['target']['video']['src']['k_ed'],
-                k_ep=self.current_selection['k_ep'],
-                k_part=self.current_selection['k_part'],
+                k_ed=self.current_frame['k_ed'],
+                k_ep=self.current_frame['k_ep'],
+                k_part=self.current_frame['k_part'],
                 shot=shot)
-        pprint(frame['geometry'])
 
 
         # Generate the image for this frame
@@ -747,7 +737,8 @@ class Model_video_editor(Model_common):
 
 def generate_single_image(frame:dict, preview_options:dict):
     # log.info("generate single image")
-    # print("\ngenerate_single_image\n-------------------------------------")
+    # print("\ngenerate_single_image:")
+    # pprint(preview_options)
     now = time.time()
     img = None
 
@@ -767,14 +758,13 @@ def generate_single_image(frame:dict, preview_options:dict):
     if ('custom' in frame['geometry'].keys()
         and frame['geometry']['custom'] is not None):
         # Use the customized geometry
-        print("\t-> use the custom geometry")
         type = 'custom'
         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['custom']['crop'])
     else:
         # Use the part geometry
         type = 'part'
         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
-        print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
+    # print("\t-> use the %s geometry %d:%d:%d:%d  %dx%d" % (type, c_t, c_b, c_l, c_r, c_w, c_h))
 
     # Final width and height
     w_final = frame['dimensions']['final']['w']
@@ -807,84 +797,97 @@ def generate_single_image(frame:dict, preview_options:dict):
     if options['crop_edition'] and not options['crop_preview']:
         # Add a rect
         # print("\t-> Use the original image")
-        img = img_rgb
+        img_cropped = img_rgb
 
     elif options['crop_preview']:
         # Crop and no rect
         # print("\t-> Crop the image")
-        img = np.ascontiguousarray(img_rgb[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
-        # print("\t-> cropped: ", img.shape)
+        img_cropped = np.ascontiguousarray(img_rgb[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
+        # print("\t-> cropped: ", img_cropped.shape)
 
     else:
         if options['resize_preview']:
             sys.exit("generate_single_image: resize not possible because no crop")
         # Use original image
         # print("\t-> Use the original image")
-        img = img_rgb
+        img_cropped = img_rgb
 
 
+    img_resized_final = None
     img_resized = None
     if options['resize_preview']:
         # TODO: Modify in case of customized values
         # Only width will be used.
 
         # calculate new width and new height
+        w_p_tmp = int((c_w_p * h_final) / float(c_h_p))
         w_tmp = int((c_w * h_final) / float(c_h))
 
         # width and height of the resized cropped image for the part
 
         if options['crop_preview']:
             # Resize the cropped image
-            w_p_tmp = int((c_w_p * h_final) / float(c_h_p))
-
-            w_tmp = int((c_w * h_final) / float(c_h))
-            img_resized = cv2.resize(img, (w_tmp, h_final), interpolation=cv2.INTER_LANCZOS4)
+            img_resized = cv2.resize(img_cropped,
+                (w_tmp, h_final),
+                interpolation=cv2.INTER_LANCZOS4)
             # print("\t-> resized cropped image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_final ))
         else:
             # Resize the original image and add rect
             w_p_tmp = int((w * h_final) / float(c_h_p))
-
             w_tmp = int((w * h_final) / float(c_h))
             h_tmp = int((h * h_final) / float(c_h))
-            img_resized = cv2.resize(img, (w_tmp, h_tmp), interpolation=cv2.INTER_LANCZOS4)
+            img_resized = cv2.resize(img_cropped, (w_tmp, h_tmp), interpolation=cv2.INTER_LANCZOS4)
             # print("\t-> resized original image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_tmp ))
 
         if w_tmp != w_p_tmp:
             if options['crop_preview']:
-                # print("!!!! crop the customized image: w_tmp=%d vs w_p_tmp=%d" % (w_tmp, w_p_tmp))
+                # print("\t!!!! crop the customized image: w_tmp=%d vs w_p_tmp=%d" % (w_tmp, w_p_tmp))
                 if w_tmp > w_p_tmp:
-                    c_l_new = int((c_l_p * h_final) / float(c_h))
-                    x1_new = min(w_p_tmp + c_l_new, w_tmp)
-                    # print("\t-> c_l_new: %d, x1_new=%d" % (c_l_new, x1_new))
-                    img_resized = np.ascontiguousarray(img_resized[0:h_final,c_l_new:x1_new,])
-                    # print("\t-> cropped: %dx%d" % (img_resized.shape[1], img_resized.shape[0]))
-                    # print("\t-> should be: %dx%d" % (w_p_tmp, h_final))
+                    # Crop the image
+                    # Calculate the position of the left crop of the part after resizing
+                    c_l_p_resized = int(((c_l_p) * h_final) / float(c_h_p))
+                    c_l_resized = int(((c_l) * h_final) / float(c_h))
+                    x0 = c_l_resized - c_l_p_resized
+                    x1 = w_p_tmp + x0
+                    # print("crop the image: x0=%d, x1=%d, (w_tmp + x0)=%d" % (x0, x1, w_tmp+x0))
+                    if x1 > w_tmp:
+                        # Crop is too big on the left
+                        # print("crop is too big")
+                        x0 = w_tmp - w_p_tmp
+                        x1 = w_tmp
+                    # print("crop the image: c_l_p_resized=%d, c_l_resized=%d, x0=%d, x1=%d -> new resized width=%d" % (
+                        # c_l_p_resized, c_l_resized, x0, x1, x1 - x0))
+                    img_resized_final = np.ascontiguousarray(img_resized[0:h_final,  x0:x1,])
                 elif w_p_tmp > w_tmp:
                     pad_left = int((w_p_tmp - w_tmp)/2)
                     pad_right = w_p_tmp - w_tmp - pad_left
-                    # print("!!!! TODO: add padding: %d, %d" % (pad_left, pad_right))
-                    img_resized = np.ascontiguousarray(cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
-                        cv2.BORDER_CONSTANT, value=[0, 255, 0]))
+                    img_resized_final = np.ascontiguousarray(cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
+                        cv2.BORDER_CONSTANT, value=[255, 255, 255]))
+                # print("\tfinally: w_tmp=%d vs w_p_tmp=%d" % (img_resized_final.shape[1], w_p_tmp))
+        else:
+            img_resized_final = img_resized
+    else:
+        img_resized_final = img_cropped
 
 
     if preview_options['geometry']['final_preview']:
         # Add padding to the cropped&resized image
-        pad_left = int((w_final - w_p_tmp) / 2)
+        pad_left = int(((w_final - w_p_tmp) / 2) + 0.5)
         pad_right = w_final - (w_p_tmp + pad_left)
         # print("\t-> pad=%d,%d" % (pad_left, pad_right))
 
-        img_finalized = cv2.copyMakeBorder(img_resized, 0, 0, pad_left, pad_right,
+        img_finalized = cv2.copyMakeBorder(img_resized_final, 0, 0, pad_left, pad_right,
             cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
         # print("\t-> final: ", img_finalized.shape)
         # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
-
         return (frame['index'], img_finalized)
+
 
     if img_resized is not None:
         # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
         return (frame['index'], img_resized)
     else:
         # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
-        return (frame['index'], img)
+        return (frame['index'], img_resized_final)
 

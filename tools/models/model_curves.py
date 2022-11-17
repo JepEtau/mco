@@ -17,6 +17,7 @@ from logger import log
 from utils.get_curves import calculate_channel_lut
 from utils.common import (
     K_GENERIQUES,
+    nested_dict_get,
     nested_dict_set,
 )
 from parsers.parser_curves import (
@@ -38,17 +39,16 @@ class Model_curves():
 
 
     # RGB curves
-    def get_curves_selection(self, shot):
+    def get_curves_selection(self, shot) -> dict:
         # Get the curves associated to this shot
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
-        shot_no = shot['no']
-        # print("db_curves_selection_initial")
-        # pprint(self.db_curves_selection_initial)
-        try: shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
+        shot_start = shot['start']
+        # print("model: get_curves_selection %s:%s:%s:%s" % (k_ed, k_ep, k_part, shot_start))
+        try: shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
         except:
-            try: shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_no]
+            try: shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_start]
             except: return None
 
         if 'k_curves' not in shot_curves.keys() or shot_curves['k_curves'] == '':
@@ -65,14 +65,14 @@ class Model_curves():
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
-        shot_no = shot['no']
+        shot_start = shot['start']
         # Get the curves frome the db_chot_curves. it points to the curves
         # stored in the db_curves_library
         try:
-            shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
+            shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
         except:
             try:
-                shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_no]
+                shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_start]
             except:
                 print("these curves does not exist: create an empty one in the db_shot")
                 curves = ({
@@ -81,13 +81,13 @@ class Model_curves():
                     'lut': calculate_channel_lut(rgb_channels),
                     'is_modified': True,
                 })
-                nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_no)
+                nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_start)
                 self.is_curves_db_modified = True
                 return
 
         if shot_curves['k_curves'] == '':
             # Curves is not yet saved in library
-            self.db_curves_selection[k_ed][k_ep][k_part][shot_no].update({
+            self.db_curves_selection[k_ed][k_ep][k_part][shot_start].update({
                 'channels': deepcopy(rgb_channels),
                 'lut': calculate_channel_lut(rgb_channels),
                 'is_modified': True,
@@ -105,7 +105,7 @@ class Model_curves():
                 'lut': calculate_channel_lut(rgb_channels),
                 'is_modified': True,
             })
-            nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_no)
+            nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_start)
 
         self.is_curves_db_modified = True
 
@@ -115,6 +115,7 @@ class Model_curves():
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
+        shot_start = shot['start']
         shot_no = shot['no']
 
         # Get the curves from the library
@@ -122,7 +123,7 @@ class Model_curves():
         curves = self.get_curves(k_ep_or_g, k_curves)
 
         # Set the modified shot curves
-        nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_no)
+        nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_start)
 
         # Refresh the list of shots for each curves
         for shotlist in self.shots_per_curves.values():
@@ -136,18 +137,35 @@ class Model_curves():
         self.is_curves_selection_db_modified = True
 
 
-    def move_curves_selection_to_initial(self):
-        for k_ed in self.db_curves_selection.keys():
-            for k_ep in self.db_curves_selection[k_ed].keys():
-                for k_part in self.db_curves_selection[k_ed][k_ep].keys():
-                    for shot_no, shot_curves in self.db_curves_selection[k_ed][k_ep][k_part].items():
-                        if shot_curves['k_curves'] != '':
-                            nested_dict_set(self.db_curves_selection_initial,
-                                deepcopy(shot_curves), k_ed, k_ep, k_part, shot_no)
-                        else:
-                            print("Error: curves are not saved for shot no. %d" % (shot_no))
-        self.db_curves_selection.clear()
-        self.is_curves_selection_db_modified = False
+
+    def discard_curves_selection(self, shot:dict):
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        shot_start = shot['start']
+        shot_no = shot['no']
+        log.info("discard_curves_selection %s:%s:%s:%s" % (k_ed, k_ep, k_part, shot_start))
+
+        # Access directly to the modified, because the get_curves_selection function
+        # may return the curves from the initial db
+        # If there is a problem, this will have to be corrected
+        try:
+            k_curves_current = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
+        except:
+            # print("Error: %s:%s:%s:%s: current curves are not found in the db_curves_selection (modified db)" % (k_ed, k_ep, k_part, shot_start))
+            # pprint(self.db_curves_selection)
+            # raise Exception()
+            pass
+        del self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
+        curves = self.get_curves_selection(shot)
+        k_curves_initial = curves['k_curves']
+
+        # Refresh the list of shots for each curves
+        try: self.shots_per_curves[k_curves_current].remove(shot_no)
+        except: pass
+        try: self.shots_per_curves[k_curves_initial].append(shot_no)
+        except: self.shots_per_curves[k_curves_initial] = [shot_no]
+
 
 
     # List the shots which use the  same curves
@@ -183,22 +201,35 @@ class Model_curves():
         return curves_library
 
 
+
     def get_curves(self, k_ep_or_g:str, k_curves:str):
-        try:
-            curves = self.db_curves_library[k_curves]
-            # log.info("[%s] is found in the modified db" % (k_curves))
+        # Search these curves in the libraries
+        try: curves = self.db_curves_library[k_curves]
         except:
-            try:
-                curves = self.db_curves_library_initial[k_curves]
-                # log.info("[%s] is found in the initial db" % (k_curves))
-            except:
-                return None
+            try: curves = self.db_curves_library_initial[k_curves]
+            except: curves = None
+
+        # If not found, add these curves to the library as it may be not in the same k_ep
+        if curves is None:
+            # Create a curve structure
+            library_path = self.global_database['common']['directories']['curves']
+            self.db_curves_library_initial[k_curves] = {
+                    'k_curves': k_curves,
+                    'filepath': os.path.join(library_path, k_ep_or_g, "%s.crv" % (k_curves)),
+                    'channels': None,
+                    'lut': None,
+                    'shots': []
+            }
+            curves = self.db_curves_library_initial[k_curves]
+
+        # Parse the file if not already done
         if curves['channels'] is None:
             # print("parse %s.crv file" % (k_curves))
             curves['channels'] = parse_curves_file(
                 db=self.global_database,
                 k_ep_or_g=k_ep_or_g,
                 k_curves=k_curves)
+
         if curves['channels'] is None:
             # The curves file has not been found
             log.warning("The curves have not been found")
@@ -209,16 +240,17 @@ class Model_curves():
         return curves
 
 
+
     def set_curves(self, k_curves:str, rgb_channels):
         try:
             curves = self.db_curves_library[k_curves]
         except:
             try:
-                print("set_curves: copy from initial to modified")
+                # print("set_curves: copy from initial to modified")
                 self.db_curves_library[k_curves] = deepcopy(self.db_curves_library_initial[k_curves])
                 curves = self.db_curves_library[k_curves]
             except:
-                print("[%s] does not exists neither in library not in initial library" % (k_curves))
+                # print("[%s] does not exists neither in library not in initial library" % (k_curves))
                 return False
 
         curves.update({
@@ -230,7 +262,9 @@ class Model_curves():
         return True
 
 
-    def discard_curves_modifications(self, k_curves):
+
+    def discard_rgb_curves_modifications(self, k_curves):
+        print("WARNING: discard RGB curves modification")
         try:
             del self.db_curves_library[k_curves]
         except:
@@ -238,15 +272,16 @@ class Model_curves():
             pass
 
 
+
     def save_all_curves(self, k_ep_or_g):
         for curves in self.db_curves_library.values():
             self.save_curves_as(k_ep_or_g=k_ep_or_g, curves=curves)
 
 
-    def save_curves_as(self, k_ep_or_g, curves):
+
+    def save_rgb_curves_as(self, k_ep_or_g, curves):
         k_curves_current = curves['k_curves_current']
         log.info("Try to remove [%s] from modified db" % (k_curves_current))
-        print(self.db_curves_library.keys())
         try:
             # Remove from modified db
             del self.db_curves_library[k_curves_current]
@@ -261,7 +296,6 @@ class Model_curves():
             k_ep_or_g,
             "%s.crv" % (k_curves_new))
         log.info("write curves file as [%s]" % (filepath))
-        pprint(curves)
         write_curves_file(filepath=filepath, channels=curves['channels'])
 
         # Add it to the initial library
@@ -275,12 +309,19 @@ class Model_curves():
 
 
 
-    def save_curves_selection_database(self, shots, k_ed, k_ep, k_part, shot_no=-1):
+
+    def save_shot_curves_selection(self, shot):
         if not self.is_curves_selection_db_modified:
             return True
-        log.info("save shot curves database")
 
         db = self.global_database
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        shot_start = shot['start']
+
+        log.info("save shot curves selection: %s:%s:%s" % (k_ed, k_ep, k_part))
+        # print("save shot curves selection: %s:%s:%s shot no. %d, start=%d" % (k_ed, k_ep, k_part, shot['no'], shot_start))
 
         # Open configuration file
         if k_part in K_GENERIQUES:
@@ -289,60 +330,52 @@ class Model_curves():
             filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_curves.ini" % (k_ep))
         if filepath.startswith("~/"):
             filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
-
-        print("save_curves_selection_database: %s" % (filepath))
+        # print("save_curves_selection_database: %s" % (filepath))
 
         # Parse the file
         if os.path.exists(filepath):
-            config_curves = configparser.ConfigParser()
-            config_curves.read(filepath)
+            config_curves_selection = configparser.ConfigParser()
+            config_curves_selection.read(filepath)
         else:
-            config_curves = configparser.ConfigParser({}, collections.OrderedDict)
+            config_curves_selection = configparser.ConfigParser({}, collections.OrderedDict)
 
+        # Get shot
+        try: shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
+        except:
+            print("Warning: the selection has not been modified")
+        if shot_curves['k_curves'] == '':
+            # These curves are not saved in the database (=error)
+            # we consider that the curves selection cannot be removed
+            print("Error: the RGB curves have not been saved")
 
-        if shot_no == -1:
-            # Save all shots:
-            for k_ed_tmp in self.db_curves_selection.keys():
-                for k_ep_tmp in self.db_curves_selection[k_ed_tmp].keys():
-                    for k_part_tmp in self.db_curves_selection[k_ed_tmp][k_ep_tmp].keys():
-                        for shot_no, shot in self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp].items():
-                            if 'k_curves' not in shot.keys() or shot['k_curves'] == '':
-                                # These curves are not saved in the database (=error)
-                                # we consider that the curves selection cannot be removed
-                                # TODO
-                                print("Error: these curves have not been saved")
-                                continue
-
-                            k_section = '%s.%s.%s' % (k_ed_tmp, k_ep_tmp, k_part_tmp)
-                            shot_start_str = str(shots[shot_no]['start'])
-                            try:
-                                config_curves.set(k_section, shot_start_str, shot['k_curves'])
-                            except:
-                                config_curves[k_section] = dict()
-                                config_curves.set(k_section, shot_start_str, shot['k_curves'])
-                            shot['k_curves'] = -1
-        else:
-            shot = self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
-            if 'k_curves' not in shot.keys() or shot['k_curves'] == '':
-                # These curves are not saved in the database (=error)
-                # we consider that the curves selection cannot be removed
-                # TODO
-                print("Error: these curves have not been saved")
-
-            k_section = '%s.%s.%s' % (k_ed, k_ep, k_part)
-            shot_start_str = str(shots[shot_no]['start'])
-            try:
-                config_curves.set(k_section, shot_start_str, shot['k_curves'])
-            except:
-                config_curves[k_section] = dict()
-                config_curves.set(k_section, shot_start_str, shot['k_curves'])
-            del self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
-
+        k_section = '%s.%s.%s' % (k_ed, k_ep, k_part)
+        try:
+            config_curves_selection.set(k_section, str(shot_start), shot_curves['k_curves'])
+        except:
+            config_curves_selection[k_section] = dict()
+            config_curves_selection.set(k_section, str(shot_start), shot_curves['k_curves'])
 
         # Write to the database
         with open(filepath, 'w') as config_file:
-            config_curves.write(config_file)
+            config_curves_selection.write(config_file)
 
+        # Remove from initial
+        try:
+            del self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_start]
+        except:
+            pass
+
+        # Set the new curves selection in the initial database
+        nested_dict_set(self.db_curves_selection_initial, {
+                'k_curves': shot_curves['k_curves'],
+                'lut': None
+            }, k_ed, k_ep, k_part, shot_start)
+
+        # Remove from modified
+        del self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
+
+
+        # Clean the dictonary
         # Clean the database and consider as not modified only if all keys have been saved
         # TODO: replace by a nested dict
         k_ed_keys = list(self.db_curves_selection.keys())
@@ -351,12 +384,6 @@ class Model_curves():
             for k_ep_tmp in k_ep_keys:
                 k_parts_keys = list(self.db_curves_selection[k_ed_tmp][k_ep_tmp].keys())
                 for k_part_tmp in k_parts_keys:
-                    k_shot_nos = list(self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp].keys())
-                    for shot_no in k_shot_nos:
-                        shot = self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp][shot_no]
-                        if shot['k_curves'] == -1:
-                            del self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp][shot_no]
-
                     if len(self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp].keys()) == 0:
                         del self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp]
 
@@ -368,10 +395,130 @@ class Model_curves():
 
         if len(self.db_curves_selection.keys()) == 0:
             self.is_curves_selection_db_modified = False
-        else:
-            print("all selection have not been saved: ")
-            pprint(self.db_curves_selection)
+        # else:
+        #     print("all curves selection have not been saved")
+
 
         return True
+
+
+
+
+    # def save_curves_selection_database(self, shots, k_ed, k_ep, k_part, shot_no=-1):
+    #     if not self.is_curves_selection_db_modified:
+    #         return True
+    #     log.info("save shot curves database")
+
+    #     db = self.global_database
+
+    #     # Open configuration file
+    #     if k_part in K_GENERIQUES:
+    #         filepath = os.path.join(db['common']['directories']['config'], k_part, "%s_curves.ini" % (k_part))
+    #     else:
+    #         filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_curves.ini" % (k_ep))
+    #     if filepath.startswith("~/"):
+    #         filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+
+    #     print("save_curves_selection_database: %s" % (filepath))
+
+    #     # Parse the file
+    #     if os.path.exists(filepath):
+    #         config_curves = configparser.ConfigParser()
+    #         config_curves.read(filepath)
+    #     else:
+    #         config_curves = configparser.ConfigParser({}, collections.OrderedDict)
+
+
+    #     if shot_no == -1:
+    #         # Save all shots:
+    #         for k_ed_tmp in self.db_curves_selection.keys():
+    #             for k_ep_tmp in self.db_curves_selection[k_ed_tmp].keys():
+    #                 for k_part_tmp in self.db_curves_selection[k_ed_tmp][k_ep_tmp].keys():
+    #                     for shot_no, shot in self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp].items():
+    #                         if 'k_curves' not in shot.keys() or shot['k_curves'] == '':
+    #                             # These curves are not saved in the database (=error)
+    #                             # we consider that the curves selection cannot be removed
+    #                             # TODO
+    #                             print("Error: these curves have not been saved")
+    #                             continue
+
+    #                         k_section = '%s.%s.%s' % (k_ed_tmp, k_ep_tmp, k_part_tmp)
+    #                         shot_start_str = str(shots[shot_no]['start'])
+    #                         try:
+    #                             config_curves.set(k_section, shot_start_str, shot['k_curves'])
+    #                         except:
+    #                             config_curves[k_section] = dict()
+    #                             config_curves.set(k_section, shot_start_str, shot['k_curves'])
+    #                         shot['k_curves'] = -1
+    #     else:
+    #         shot = self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
+    #         if 'k_curves' not in shot.keys() or shot['k_curves'] == '':
+    #             # These curves are not saved in the database (=error)
+    #             # we consider that the curves selection cannot be removed
+    #             # TODO
+    #             print("Error: these curves have not been saved")
+
+    #         k_section = '%s.%s.%s' % (k_ed, k_ep, k_part)
+    #         shot_start_str = str(shots[shot_no]['start'])
+    #         try:
+    #             config_curves.set(k_section, shot_start_str, shot['k_curves'])
+    #         except:
+    #             config_curves[k_section] = dict()
+    #             config_curves.set(k_section, shot_start_str, shot['k_curves'])
+    #         del self.db_curves_selection[k_ed][k_ep][k_part][shot_no]
+
+
+    #     # Write to the database
+    #     with open(filepath, 'w') as config_file:
+    #         config_curves.write(config_file)
+
+    #     # Clean the database and consider as not modified only if all keys have been saved
+    #     # TODO: replace by a nested dict
+    #     k_ed_keys = list(self.db_curves_selection.keys())
+    #     for k_ed_tmp in k_ed_keys:
+    #         k_ep_keys = list(self.db_curves_selection[k_ed_tmp].keys())
+    #         for k_ep_tmp in k_ep_keys:
+    #             k_parts_keys = list(self.db_curves_selection[k_ed_tmp][k_ep_tmp].keys())
+    #             for k_part_tmp in k_parts_keys:
+    #                 k_shot_nos = list(self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp].keys())
+    #                 for shot_no in k_shot_nos:
+    #                     shot = self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp][shot_no]
+    #                     if shot['k_curves'] == -1:
+    #                         del self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp][shot_no]
+
+    #                 if len(self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp].keys()) == 0:
+    #                     del self.db_curves_selection[k_ed_tmp][k_ep_tmp][k_part_tmp]
+
+    #             if len(self.db_curves_selection[k_ed_tmp][k_ep_tmp].keys()) == 0:
+    #                 del self.db_curves_selection[k_ed_tmp][k_ep_tmp]
+
+    #         if len(self.db_curves_selection[k_ed_tmp].keys()) == 0:
+    #             del self.db_curves_selection[k_ed_tmp]
+
+    #     if len(self.db_curves_selection.keys()) == 0:
+    #         self.is_curves_selection_db_modified = False
+    #     else:
+    #         print("all selection have not been saved: ")
+    #         pprint(self.db_curves_selection)
+
+
+
+
+    #     # def move_curves_selection_to_initial(self):
+    #     #     for k_ed in self.db_curves_selection.keys():
+    #     #         for k_ep in self.db_curves_selection[k_ed].keys():
+    #     #             for k_part in self.db_curves_selection[k_ed][k_ep].keys():
+    #     #                 for shot_no, shot_curves in self.db_curves_selection[k_ed][k_ep][k_part].items():
+    #     #                     if shot_curves['k_curves'] != '':
+    #     #                         nested_dict_set(self.db_curves_selection_initial,
+    #     #                             deepcopy(shot_curves), k_ed, k_ep, k_part, shot_no)
+    #     #                     else:
+    #     #                         print("Error: curves are not saved for shot no. %d" % (shot_no))
+    #     #     self.db_curves_selection.clear()
+    #     #     self.is_curves_selection_db_modified = False
+
+
+
+    #     return True
 
 

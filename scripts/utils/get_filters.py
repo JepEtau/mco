@@ -147,16 +147,16 @@ def get_filters(database, frame, k_part=''):
 def get_filters_from_shot(db, shot):
     k_ep = shot['k_ep']
     k_part = shot['k_part']
-    edition = shot['k_ed']
+    k_ed = shot['k_ed']
 
     if shot['filters'] == 'default':
-        filters = db[k_ep][edition]['filters'][k_part]
+        filters = db[k_ep][k_ed]['filters'][k_part]
     elif not isinstance(shot['filters'], dict):
-        filters = db[k_ep][edition]['filters']["%s.%s" % (k_part, shot['filters'])]
+        filters = db[k_ep][k_ed]['filters']["%s.%s" % (k_part, shot['filters'])]
     elif isinstance(shot['filters'], dict):
         return shot['filters']
     else:
-        filters = db[k_ep][edition]['filters'][k_part]
+        filters = db[k_ep][k_ed]['filters'][k_part]
 
     return filters
 

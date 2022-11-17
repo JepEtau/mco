@@ -13,6 +13,7 @@ from pprint import pprint
 from utils.common import (
     get_k_part_from_frame_no,
     get_shot_from_frame_no_new,
+    nested_dict_set,
 )
 
 # n'utilise pas le no. de plan car en cas de modification de la
@@ -37,7 +38,7 @@ def parse_replace_configurations(db, k_ep_or_g:str):
     # Parse the file
     config = configparser.ConfigParser()
     config.read(filepath)
-    # print("%s.parse_replace_configurations" % (__name__))
+    # print("\n%s.parse_replace_configurations" % (__name__))
     for k_section in config.sections():
         # print("\tk_section:%s" % (k_section))
         if '.' not in k_section:
@@ -47,10 +48,6 @@ def parse_replace_configurations(db, k_ep_or_g:str):
         for frame_no_str in config.options(k_section):
             frame_no = int(frame_no_str)
             new_frame_no = int(config.get(k_section, frame_no_str).strip())
-            k_part = get_k_part_from_frame_no(db, k_ed, k_ep, frame_no)
-            if k_part == '':
-                # print("parse_replace_configurations: part not found for frame %d in %s:%s" % (frame_no, k_ed, k_ep))
-                continue
 
             # print("\t%s:%s:%s frame no. %d replaced by %d" % (k_ed, k_ep, k_part, frame_no, new_frame_no))
             shot = get_shot_from_frame_no_new(db, frame_no=frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
@@ -71,35 +68,29 @@ def get_replaced_frames(db, k_ep, k_part) -> dict:
     if k_part in ['g_debut', 'g_fin']:
         db_video = db[k_part]['target']['video']
     else:
-        print("%s.get_replaced_frames: %s:%s" % (__name__, k_ep, k_part))
         k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
-        print("%s.get_replaced_frames: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
+        # print("%s.get_replaced_frames: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
 
     for shot in db_video['shots']:
-        # print(shot)
-        if ('src' not in shot.keys()
-            or ('use' in shot['src'].keys()
-            and not shot['src']['use'])):
-            shot_src = shot
-        else:
+        if 'src' in shot.keys() and 'use' in shot['src'] and shot['src']['use']:
+            # Use the src shot because this one is replaced
             if 'k_ed' in shot['src'].keys():
                 k_ed_src = shot['src']['k_ed']
             k_ep_src = shot['src']['k_ep']
             k_part_src = get_k_part_from_frame_no(db, k_ed_src, k_ep_src, shot['src']['start'])
             shot_src = get_shot_from_frame_no_new(db, frame_no=shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src)
+        else:
+            shot_src = shot
 
-        # pprint(shot_src)
         if len(shot_src['replace'].keys()) > 0:
-            if k_ed_src not in replace.keys():
-                replace[k_ed_src] = dict()
-            if k_ep_src not in replace[k_ed_src].keys():
-                replace[k_ed_src][k_ep_src] = dict()
-            if k_part not in replace[k_ed_src][k_ep_src].keys():
-                replace[k_ed_src][k_ep_src][k_part] = dict()
-
-            replace[k_ed_src][k_ep_src][k_part].update(shot_src['replace'])
+            try:
+                replace[k_ed_src][k_ep_src][k_part].update(shot_src['replace'])
+            except:
+                nested_dict_set(replace, shot_src['replace'], k_ed_src, k_ep_src, k_part)
 
 
+    # print("get_replaced_frames: %s:%s" % (k_ep, k_part))
+    # pprint(replace)
     return replace

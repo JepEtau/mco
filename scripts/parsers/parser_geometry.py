@@ -30,7 +30,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
     TODO: it uses the first frame of a shot to identify the shot rather the index, so that
     a modification of shots will not break anything
     """
-    print("\nparse_geometry_configurations: %s" % (k_ep_or_g))
+    # print("\nparse_geometry_configurations: %s" % (k_ep_or_g))
     # Open configuration file
     filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_geometry.ini" % (k_ep_or_g))
     if filepath.startswith("~/"):
@@ -48,7 +48,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
             sys.exit("__parse_curve_configurations: error, no edition,ep,part specified")
         k_ed, k_ep, k_part = k_section.split('.')
 
-        print("%s:%s:%s:\t" % (k_ed, k_ep, k_part))
+        # print("%s:%s:%s:\t" % (k_ed, k_ep, k_part))
 
         for k_str in config.options(k_section):
 
@@ -88,9 +88,8 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
 def get_part_geometry_list(db, k_ep, k_part) -> dict:
     """ Returns a list of crops/resize per part for each edition
     """
-    print("get_part_geometry_list for %s:%s" % (k_ep, k_part))
+    # print("get_part_geometry_list for %s:%s" % (k_ep, k_part))
     part_geometry = dict()
-
 
     if k_part in ['g_debut', 'g_fin']:
         # Get the list of editions and episode that are used by this generique

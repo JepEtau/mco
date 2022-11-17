@@ -275,6 +275,7 @@ def consolidate_shot(db, shot) -> None:
             })
 
     elif k_part in ['g_asuivre', 'g_reportage']:
+        print("TODO: consolidate_shot: verify geometry for :%s" % (k_part))
         # pprint(shot)
         # k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
         k_ep_dst = shot['dst']['k_ep']
@@ -305,7 +306,3 @@ def consolidate_shot(db, shot) -> None:
         shot['curves']['lut'] = get_lut_from_curves(db,
                                     k_ep_or_g,
                                     shot['curves']['k_curves'])
-
-    # print("%s.consolidate_shot: end" % (__name__))
-    # pprint(shot)
-    # sys.exit()

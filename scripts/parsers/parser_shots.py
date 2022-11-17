@@ -184,6 +184,7 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
         print("%s:consolidate_shots_after_parse: %s:%s:%s" % (__name__, k_ed, k_ep, k_part))
         pprint(db[k_ep][k_ed][k_part]['video']['shots'][SHOT_NO])
         print("")
+        sys.exit()
 
     db_video = db[k_ep][k_ed][k_part]['video']
 
@@ -273,6 +274,8 @@ def create_target_shots(database, k_ep, k_part):
     K_PART_DEBUG = ''
 
     k_ed_src = database[k_ep]['target']['video']['src']['k_ed']
+    print("create_target_shots: %s:%s:%s" % (k_ed_src, k_ep, k_part))
+    # pprint(database[k_ep])
     db_video_src = database[k_ep][k_ed_src][k_part]['video']
     db_video_dst = database[k_ep]['target']['video'][k_part]
 

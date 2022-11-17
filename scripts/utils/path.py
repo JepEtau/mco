@@ -70,7 +70,7 @@ def get_output_path_from_shot(db, shot, task):
                 shot['k_part'],
                 '%05d' % (shot['start']))
 
-    if task in ['geometry', 'deinterlace_rgb', 'upscale_rgb_geometry']:
+    if task in ['geometry', 'upscale_rgb_geometry']:
         # If last task is geometry, use the dst structure
         output_path = os.path.join(db['common']['directories']['cache'],
             shot['dst']['k_ep'],
@@ -94,45 +94,6 @@ def get_input_filepath(database, frame):
         return database['editions'][k_ed]['inputs'][frame['k_ep']]
 
 
-
-def get_output_frame_filepaths_for_study(database, frame:dict, k_part=''):
-    # print("%s.get_output_frame_filepaths_for_study: %s" % (__name__, k_part))
-    # pprint(frame)
-    k_ep = frame['k_ep']
-    k_ed = frame['k_ed']
-    k_part_dst = frame['k_part']
-    if k_part_dst == '':
-        k_part = get_k_part_from_frame_no(database, k_ed, k_ep, frame['no'])
-
-    path_frames = database[k_ep][k_ed]['path']['frames']
-    if k_part_dst in K_GENERIQUES:
-        output_directory = os.path.join(path_frames, k_part_dst)
-    elif k_part_dst in ['precedemment', 'asuivre']:
-        # TODO: clean this
-        output_directory = os.path.join(path_frames, k_ep, k_part_dst)
-    else:
-        output_directory = os.path.join(path_frames, k_ep, k_part_dst)
-
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
-
-    extension = database['common']['settings']['frame_format']
-
-    filepaths = dict()
-    for k_step in FILTER_BASE_NO.keys():
-        if k_step in frame['filters']['id'].keys():
-            # use the id for this frame
-            suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO[k_step] + frame['filters']['id'][k_step])
-        else:
-            # TODO: correct this ?
-            suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO[k_step])
-        if k_part_dst in K_GENERIQUES:
-            outputFilename = "ep00_%05d_%s%s.%s" % (int(frame['ref']), k_ep, suffix, extension)
-        else:
-            outputFilename = "%s_%05d%s.%s" % (k_ep, int(frame['ref']), suffix, extension)
-        filepaths[k_step] = os.path.join(output_directory, outputFilename).strip('\n')
-
-    return filepaths
 
 
 
@@ -162,6 +123,28 @@ def get_deinterlaced_filepath_list(db, shot:dict, task):
         filepath_list.append(os.path.join(deinterlace_output_path, filename))
 
     return filepath_list
+
+
+
+
+def get_deinterlaced_path_and_filename(db, shot:dict, task):
+    if task not in ['deinterlace', 'pre_upscale', 'upscale']:
+        # reworked, thius, this function can be used only for deinterlace task
+        raise Exception("get_deinterlaced_path_and_filename: this function cannot be used for task [%s]" % (task))
+
+    extension = db['common']['settings']['frame_format']
+    prefix = "%s_" % (shot['k_ep'])
+
+    if shot['k_part'] in K_GENERIQUES:
+        filter_id = get_filter_id_generique(db, shot, task)
+    else:
+        filter_id = get_filter_id(db, shot, task)
+
+    suffix = "__%s__%03d" % (shot['k_ed'], filter_id)
+    deinterlace_output_path = get_output_path_from_shot(db=db, shot=shot, task=task)
+    filename = prefix + '%' + "05d%s.%s" % (suffix, extension)
+
+    return deinterlace_output_path, filename
 
 
 
@@ -201,3 +184,47 @@ def get_output_frame_filepaths(db, shot:dict, frame_no:int):
     return filepaths
 
 
+
+def get_output_path_from_frame(db, frame):
+    if frame['k_part'] in K_GENERIQUES:
+        # Put all images in a single folder for 'génériques'
+        return os.path.join(db['common']['directories']['frames'],
+                frame['k_part'])
+
+    # Otherwise, use the src directory as these images are shared by
+    # multiple episode
+    output_path = os.path.join(db['common']['directories']['frames'],
+        frame['k_ep'],
+        frame['k_part'])
+    return output_path
+
+
+
+def get_output_frame_filepaths_for_study(db, frame:dict):
+    k_ep = frame['k_ep']
+    k_ed = frame['k_ed']
+    frame_ref = frame['ref']
+
+    extension = db['common']['settings']['frame_format']
+
+    filepaths = dict()
+    for task in FILTER_BASE_NO:
+        if task == 'stitching':
+            suffix = "__%s__%03d" % (k_ed, get_filter_id(db, frame, 'sharpen'))
+        elif task == 'upscale_rgb_geometry':
+            suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO_DEBUG['upscale_rgb_geometry'])
+        else:
+            suffix = "__%s__%03d" % (k_ed, get_filter_id(db, frame, task))
+
+        if frame['k_part'] in K_GENERIQUES:
+            outputFilename = "ep00_%05d_%s%s.%s" % (frame_ref, k_ep, suffix, extension)
+        else:
+            outputFilename = "%s_%05d%s.%s" % (k_ep, frame_ref, suffix, extension)
+
+        output_directory = get_output_path_from_frame(db=db, frame=frame)
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+
+        filepaths[task] = os.path.join(output_directory, outputFilename).strip('\n')
+
+    return filepaths

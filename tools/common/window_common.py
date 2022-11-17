@@ -179,7 +179,7 @@ class Window_common(QMainWindow):
                 for s in self.model.get_modified_db():
                     text += "\n  - %s" % (s)
                 message_box.setText(text)
-                message_box.setInformativeText("Do you want to close before saving?")
+                message_box.setInformativeText("Do you want to save before closing?")
                 message_box.setStandardButtons(QMessageBox.Save | QMessageBox.Discard | QMessageBox.Cancel)
                 message_box.setDefaultButton(QMessageBox.Save)
                 set_widget_stylesheet(message_box)
@@ -325,7 +325,6 @@ class Window_common(QMainWindow):
 
 
     def event_preview_options_changed(self, widget):
-        # log.info("change preview: editor: %s" % (self.current_editor))
         log.info("change preview: editor: %s" % (widget))
         preview_options = dict()
         for e, w in self.widgets.items():

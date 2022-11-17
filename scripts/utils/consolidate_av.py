@@ -151,7 +151,7 @@ def calculate_av_sync(db, k_ep):
 
         if db_video['episode']['start'] != db_video['episode']['shots'][0]['start']:
             sys.exit("calculate_av_sync: error: start of episode (%d) != start of 1st shot (%d)" % (
-                db_video['episode']['start'], db_video['shots']['start']))
+                db_video['episode']['start'], db_video[k_part]['shots'][0]['start']))
     else:
         # precedemment does not exist
         db_target['audio']['precedemment'].update({
@@ -328,7 +328,7 @@ def align_audio_video_durations(db, k_ep):
 
         if audio_count > video_count:
             # Frames shall be added: use the loop (and fadeout) effect for this
-            print("info: %s:align_audio_video_durations: %s:%s: add video frames, video(%d) < audio (%d)" % (__name__, k_ep, k_part, video_count, audio_count))
+            # print("info: %s:align_audio_video_durations: %s:%s: add video frames, video(%d) < audio (%d)" % (__name__, k_ep, k_part, video_count, audio_count))
 
             frame_no = last_shot['start'] + last_shot['count'] - 1
             loop_count = audio_count - video_count
@@ -355,7 +355,7 @@ def align_audio_video_durations(db, k_ep):
                 'silence': video_duration - audio_duration,
             })
             db_audio[k_part]['count'] = db_video[k_part]['count']
-            print("-> added silence at the end")
+            # print("-> added silence at the end")
 
 
     # Add/modify effect of the last shot

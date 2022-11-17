@@ -52,10 +52,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.pushButton_paste.clicked.connect(self.event_frame_no_paste)
         self.pushButton_remove.clicked.connect(self.event_removed)
 
-        self.pushButton_close.setEnabled(False)
-        self.pushButton_save.setEnabled(False)
-        self.pushButton_discard.setEnabled(False)
-
         # Table
         self.tableWidget_replace.clearContents()
         self.tableWidget_replace.setRowCount(0)
@@ -81,9 +77,10 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.model.signal_replace_list_refreshed[dict].connect(self.event_replace_list_refreshed)
         self.model.signal_is_saved[str].connect(self.event_is_saved)
 
+        self.installEventFilter(self)
+
         set_stylesheet(self)
         self.adjustSize()
-        self.installEventFilter(self)
 
 
 

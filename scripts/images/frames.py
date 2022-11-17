@@ -5,66 +5,13 @@ import copy
 from pprint import pprint
 
 from utils.common import K_GENERIQUES
-from utils.path import get_output_frame_filepaths
+from utils.consolidate_shots import consolidate_shot
+from utils.get_curves import get_lut_from_curves
+from utils.get_filters import get_filters_from_shot
+from utils.path import get_output_frame_filepaths, get_output_frame_filepaths_for_study
 
 
 
-def get_frames_for_study(database, edition:str, episode_no:int, k_part:str=''):
-    print("%s.get_frames_for_study: episode no. %d, k_part=%s, edition=%s" % (__name__, episode_no, k_part, edition))
-
-    # Returns a list of frames for an edition (recalculated with offset)
-    if edition == '' or not episode_no<=39: return
-
-    if k_part in K_GENERIQUES:
-        # Generique
-        if 'frames' not in database[k_part]['common'].keys():
-            print("No frames defined in config file")
-            return []
-        list_of_frames = copy.deepcopy(database[k_part]['common']['frames'])
-
-    else:
-        # Episode
-        k_episode = 'ep%02d' % (episode_no)
-        db_ep_common = database[k_episode]['common']
-
-        if 'frames' not in db_ep_common[k_part].keys():
-            return []
-        list_of_frames = copy.deepcopy(db_ep_common[k_part]['frames'])
-
-    for f in list_of_frames:
-        if f['k_ep'] == 0:
-            f['k_ep'] = k_episode
-
-        k_episode_tmp = f['k_ep']
-        if k_episode_tmp not in database.keys():
-            sys.exit("Error: %s: episode %d is not defined in the database" % (__name__, f['k_ep']))
-
-        # Apply offset
-        # print("k_episode_tmp=%s, edition=%s, k_part=%s" % (k_episode_tmp, edition, k_part))
-        # pprint(database[k_episode_tmp][edition])
-        # print("\n")
-        if 'offsets' in database[k_episode_tmp][edition][k_part]['video']:
-            # print("Apply offset:")
-            offsets = database[k_episode_tmp][edition][k_part]['video']['offsets']
-            # print("edition=%s, episode_no!%d, offsets=" % (edition, episode_no), offsets)
-            for offset in offsets:
-                if offset['start'] <= f['ref'] <= offset['end']:
-                    f['no'] = f['ref'] + offset['offset']
-                    break
-            # if offsets:
-            #     i = 0
-            #     for ff in list_of_frames:
-            #         if not (offsets[i]['start'] <= f['ref'] <= offsets[i]['end']):
-            #             i += 1
-            #
-        else:
-            print("No offset:")
-            # print("edition=%s, episode_no!%d => no offset" % (edition, episode_no))
-            f['no'] = f['ref']
-
-    # 'no': the frame no. for this edition
-    # 'ref': the frame no. defined in ep##_common
-    return list_of_frames
 
 
 
@@ -194,5 +141,223 @@ def patch_frames_for_stitching(frames, db_combine, do_combine=False):
                 if t in f_fgd['tasks']:
                     f_fgd['tasks'].remove(t)
             f_fgd['filepath']['stitching'] = f_fgd['filepath']['denoise']
+
+
+
+
+
+
+def create_framelist_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False):
+    # This is an awfull function which should be reworked but no time to spend for this
+    print("%s.create_framelist_for_study: %s:%s:%s" % (__name__, k_ed, k_ep, k_part))
+
+
+    # Returns a list of frames for an edition (calculated with offset)
+    if k_part in ['g_debut', 'g_fin']:
+        try: frame_list = db[k_part]['common']['frames']
+        except: return
+        k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
+        k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+    if k_part in ['g_asuivre', 'g_reportage']:
+        try: frame_list = db[k_part]['common']['frames']
+        except: return
+        k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
+        k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+        print("\tUse %s:%s as reference" % (k_ed_ref, k_ep_ref))
+    else:
+        try: frame_list = db[k_ep]['common'][k_part]['frames']
+        except: return
+        k_ep_ref = k_ep
+        k_ed_ref = db['common']['reference']['k_ed']
+
+    # k_ed
+    if k_ed == '':
+        k_ed_src = k_ed_ref
+    else:
+        # Use the one defined in command line
+        k_ed_src = k_ed
+
+    # k_ep
+    # if k_part in ['g_debut', 'g_fin']:
+    #     if k_ep != '':
+    #         print("use %s as src" % (k_ep))
+    #         k_ep_src = k_ep
+    # else:
+    #     if k_ep != '':
+    #         # Use the one defined in command line
+    #         print("use %s as src" % (k_ep))
+    #         k_ep_src = k_ep
+        # else:
+        #     print("use %s as src" % (k_ep))
+
+
+    for frame in frame_list:
+        # print(frame)
+
+        do_append_geometry = False
+        if k_ed != '':
+            # k_ed force by command line
+            # print("k_ed forced to [%s]" % (k_ed))
+            k_ed_src = k_ed
+        elif 'k_ed' in frame.keys():
+            # k_ed specified in the frame (i.e. in the config file)
+            # print("k_ed in config file")
+            k_ed_src = frame['k_ed']
+        else:
+            # k_ed not provided, so use the one specified in the shots (target)
+            # print("find k_ed in edition")
+
+            # Find shot no in k_ed_ref:k_ep_ref
+            frame_ref = frame['ref']
+            shots = db[k_ep_ref][k_ed_ref][k_part]['video']['shots']
+            is_found = False
+            for shot in shots:
+                if (frame_ref >= shot['start']
+                and frame_ref < (shot['start'] + shot['count'])):
+                    is_found = True
+                    break
+            if not is_found:
+                print("shot not found for frame %d in reference: %s:%s:%s" % (frame_ref, k_ed_ref, k_ep, k_part))
+                continue
+
+            # Get the shot no.
+            shot_no = shot['no']
+
+            # Get the target shot
+            if k_part in ['g_debut', 'g_fin']:
+                shot = db[k_part]['target']['video']['shots'][shot_no]
+            else:
+                shot = db[k_ep]['target']['video'][k_part]['shots'][shot_no]
+            k_ed_src = shot['src']['k_ed']
+            k_ep_src = shot['src']['k_ep']
+
+            # This shot is the target, geometry is possible
+            do_append_geometry = True
+
+        # We can find the frame_no by using the specified edition
+        frame['k_ed'] = k_ed_src
+
+        # Determine k_ep
+        if 'k_ep' in frame.keys():
+            # Use the episode specified by the target
+            print("use the k_ep [%s] specified in the common.ini" % (frame['k_ep']))
+            k_ep_src = frame['k_ep']
+        elif k_ep_src == 'ep00':
+            print("use k_ep_ref [%s] as src to generate the frame" % (k_ep_ref))
+            k_ep_src = k_ep_ref
+        else:
+            print("use k_ep [%s] as src to generate the frame" % (k_ep))
+            k_ep_src = k_ep
+
+
+        # Get frame no from frame ref
+        if k_ed_src != k_ed_ref or k_ep_src != k_ep_ref:
+            print("convert frame_ref into frame_no, ref = %s:%s" % (k_ed_ref, k_ep_ref))
+            if 'offsets' in db[k_ep_src][k_ed_src][k_part]['video']:
+                offsets = db[k_ep_src][k_ed_src][k_part]['video']['offsets']
+                # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
+                for offset in offsets:
+                    if offset['start'] <= frame['ref'] <= offset['end']:
+                        frame['no'] = frame['ref'] + offset['offset']
+                        break
+            else:
+                # print("No offset:")
+                frame['no'] = frame['ref']
+        else:
+            # print("no need to convert")
+            frame['no'] = frame['ref']
+
+        # set k_ep, k_part
+        frame['k_part'] = k_part
+        frame['k_ep'] = k_ep_src
+
+        # Get shot of this frame
+        k_ed_f = frame['k_ed']
+        k_ep_f = frame['k_ep']
+        frame_no = frame['no']
+        shots = db[k_ep_f][k_ed_f][k_part]['video']['shots']
+        is_found = False
+        for shot in shots:
+            if shot['start'] <= frame_no < (shot['start'] + shot['count']):
+                is_found = True
+                break
+        if not is_found:
+            print("Error: shot not found for %s in %s:%s:%s" % (frame_no, k_ed_f, k_ep_f, k_part))
+
+
+        # Update the frames with the data found in this shot
+        if 'filters' not in frame.keys() or frame['filters'] == 'default':
+            # Use the filters defined in shot
+            frame['filters'] = shot['filters']
+        # else:
+            # This frame is specifying others filters
+
+        frame.update({
+            'curves': shot['curves'],
+            'tasks': tasks.copy(),
+            'input': db['editions'][k_ed_f]['inputs'][k_ep_f],
+            'dimensions': db['editions'][k_ed_f]['dimensions'],
+
+            # Stitching is not yet supported
+            'layer': 'bgd',
+
+            # geometry: consolidated below only if k_ep:k_ed
+            # are the ones defined in the target shot
+            'geometry': None,
+        })
+
+        # Consolidate filters
+        frame['filters'] = get_filters_from_shot(db, frame)
+
+        # Consolidate curves
+        if frame['curves'] is not None:
+            k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
+            shot['curves']['lut'] = get_lut_from_curves(db,
+                                        k_ep_or_g,
+                                        frame['curves']['k_curves'])
+
+        # Output file paths, patch this frame to use the function
+        frame['start'] = frame['ref']
+        frame['filepath'] = get_output_frame_filepaths_for_study(db, frame=frame)
+
+        # Remove unused tasks
+        if 'bgd' in frame['tasks']:
+            frame['tasks'].remove('bgd')
+
+        # Remove stitching
+        for t in ['stitching', 'stabilize']:
+            if t not in frame.keys():
+                try: frame['tasks'].remove(t)
+                except: pass
+
+        # Geometry: try
+        if not do_append_geometry:
+            continue
+
+        if k_part in ['g_debut', 'g_fin']:
+            k_ep_src = db[k_part]['target']['video']['src']['k_ep']
+            k_ed_src = db[k_part]['target']['video']['src']['k_ed']
+            frame['geometry'] = {
+                'part': db[k_ep_src][k_ed_src][k_part]['video']['geometry'],
+            }
+            # Add a different geometry because it is not the same k_ed:k_ep
+            if k_ed_f != k_ed_src or k_ep_f != k_ep_src:
+                frame['geometry'].update({
+                    'custom': db[k_ep_f][k_ed_f][k_part]['video']['geometry'],
+                })
+        elif k_part in ['g_asuivre', 'g_reportage']:
+            print("create_framelist_for_study: verify geometry for %s" % (k_part))
+            k_ep_src = frame['k_ep']
+            k_ed_src = frame['k_ed']
+            print("get geometry from part %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
+            frame['geometry'] = {
+                'part':  db[k_ep][k_ed_f][k_part[2:]]['video']['geometry'],
+                'custom': db[k_ep][k_ed_f][k_part]['video']['geometry'],
+            }
+        # else:
+            # TODO once the shot geometry will be implemented or use the part
+            # refer to consolidate_shot function
+
+    return frame_list
 
 

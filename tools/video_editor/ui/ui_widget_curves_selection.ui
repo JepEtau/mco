@@ -231,7 +231,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QPushButton" name="pushButton_save">
+        <widget class="QPushButton" name="pushButton_save_rgb_curves">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
            <horstretch>0</horstretch>
@@ -243,8 +243,8 @@
          </property>
          <property name="icon">
           <iconset>
-            <normaloff>icons/grey/save.svg</normaloff>
-            <normalon>icons/purple/save.svg</normalon>icons/grey/save.svg</iconset>
+           <normaloff>icons/grey/save.svg</normaloff>
+           <normalon>icons/purple/save.svg</normalon>icons/grey/save.svg</iconset>
          </property>
          <property name="flat">
           <bool>true</bool>
