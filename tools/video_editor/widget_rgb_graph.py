@@ -27,8 +27,7 @@ from PySide6.QtWidgets import (
 
 from images.curve import Curve
 from images.curve import Curve_point
-from common.sylesheet import set_stylesheet
-from video_editor.model_video_editor import Model_video_editor
+
 
 class Widget_rgb_graph(QWidget):
     signal_point_selected = Signal(list)
@@ -78,7 +77,7 @@ class Widget_rgb_graph(QWidget):
         self.is_enabled = True
 
 
-    def set_model(self, model:Model_video_editor):
+    def set_model(self, model):
         self.model = model
 
         # Connect signals

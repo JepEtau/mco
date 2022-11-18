@@ -13,14 +13,10 @@ from PySide6.QtCore import (
     QObject,
 )
 from PySide6.QtWidgets import (
-    QApplication,
     QListWidgetItem,
     QWidget,
 )
 
-from common.sylesheet import set_stylesheet
-
-from video_editor.model_video_editor import Model_video_editor
 from video_editor.ui.widget_curves_selection_ui import Ui_widget_curves_selection
 
 
@@ -99,7 +95,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
         """)
 
 
-    def set_model(self, model:Model_video_editor):
+    def set_model(self, model):
         self.model = model
 
         # Connect signals

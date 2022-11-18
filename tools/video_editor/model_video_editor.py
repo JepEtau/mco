@@ -3,10 +3,11 @@
 import sys
 sys.path.append('../scripts')
 
-import time
-import os
 import gc
+import os
 import os.path
+import time
+
 from pprint import pprint
 from logger import log
 from copy import deepcopy
@@ -14,7 +15,6 @@ import cv2
 import numpy as np
 
 from PySide6.QtCore import (
-    QObject,
     Signal,
 )
 
@@ -23,19 +23,16 @@ from models.model_database import Model_database
 from models.model_common import (
     Model_common,
 )
-from images.filtering import filter_rgb
 
 from utils.common import (
     K_GENERIQUES,
-    K_NON_GENERIQUE_PARTS,
     get_frame_no_from_filepath,
-    get_k_part_from_frame_no,
-    get_shot_from_frame_no_new,
     get_dimensions_from_crop_values,
 )
-from utils.get_filters import FILTER_BASE_NO
 from utils.get_framelist import get_framelist, get_framelist_2
 from utils.consolidate_shots import consolidate_shot
+from images.filtering import filter_rgb
+
 
 class Model_video_editor(Model_common):
     signal_current_shot_modified = Signal(dict)
@@ -44,6 +41,7 @@ class Model_video_editor(Model_common):
     signal_reload_frame = Signal()
     signal_is_saved = Signal(str)
     signal_replace_list_refreshed = Signal(dict)
+
     signal_load_curves = Signal(dict)
     signal_curves_library_modified = Signal(dict)
     signal_shot_per_curves_modified = Signal(list)
@@ -80,7 +78,7 @@ class Model_video_editor(Model_common):
     def set_view(self, view):
         self.view = view
 
-        self.view.widget_selection.signal_ep_or_part_selection_changed[dict].connect(self.ep_or_part_selection_changed)
+        self.view.widget_selection.signal_selection_changed[dict].connect(self.selection_changed)
         self.view.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
 
         self.view.widget_geometry.signal_save.connect(self.event_save_geometry_requested)
@@ -106,7 +104,7 @@ class Model_video_editor(Model_common):
 
         p = self.preferences.get_preferences()
         k_ep = 'ep%02d' % (p['selection']['episode']) if p['selection']['episode'] != '' else ''
-        self.ep_or_part_selection_changed({
+        self.selection_changed({
             'k_ep': k_ep,
             'k_part': p['selection']['part'],
             'k_step': p['selection']['step'],
@@ -114,11 +112,11 @@ class Model_video_editor(Model_common):
 
 
 
-    def ep_or_part_selection_changed(self, values:dict):
+    def selection_changed(self, values:dict):
         """ Directory or step has been changed, update the database, list all images,
             list all shots
         """
-        # print("----------------------- ep_or_part_selection_changed -------------------------")
+        # print("----------------------- selection_changed -------------------------")
         # pprint(values)
         k_ep_selected = values['k_ep']
         k_part_selected = values['k_part']
@@ -275,7 +273,7 @@ class Model_video_editor(Model_common):
         }
 
         # Update selection with the part geometry
-        # print("ep_or_part_selection_changed: update geometry: %s" % (k_part_selected))
+        # print("selection_changed: update geometry: %s" % (k_part_selected))
         if k_part_selected in ['g_debut', 'g_fin']:
             # Use the k_ed:k_ep defined as the source for this geometry
             self.current_selection.update({

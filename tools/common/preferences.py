@@ -73,6 +73,13 @@ class Preferences(QObject):
             if self.settings.value('selection/step') != '':
                 self.preferences['selection']['step'] = self.settings.value('selection/step')
 
+        try:
+            self.preferences['selection']['edition'] = ''
+            if self.settings.contains('selection/edition'):
+                self.preferences['selection']['edition'] = self.settings.value('selection/edition')
+        except:
+            self.preferences['selection']['edition'] = ''
+
 
         # Default widget position
         try: self.preferences['controls']['geometry'] = [100, screen_height-150, 0, 0]
@@ -120,6 +127,10 @@ class Preferences(QObject):
         self.settings.setValue('selection/episode', preferences['selection']['episode'])
         self.settings.setValue('selection/part', preferences['selection']['part'])
         self.settings.setValue('selection/step', preferences['selection']['step'])
+        try:
+            self.settings.setValue('selection/edition', preferences['selection']['edition'])
+        except:
+            pass
 
         # Other widgets (editors)
         for editor in self.editors:

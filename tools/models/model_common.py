@@ -101,7 +101,6 @@ class Model_common(QObject):
                             episode_and_parts[k_ep].append(k_part)
 
                     # g_asuivre, g_reportage
-                    # Force for debug purpose
                     episode_and_parts[k_ep].append('g_asuivre')
                     episode_and_parts[k_ep].append('g_reportage')
 
@@ -110,8 +109,6 @@ class Model_common(QObject):
                 if os.path.exists(os.path.join(path_cache, k_part_g)):
                     episode_and_parts[' '].append(k_part_g)
 
-        # pprint(episode_and_parts)
-        # sys.exit()
         return episode_and_parts
 
 

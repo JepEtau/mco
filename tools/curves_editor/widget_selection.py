@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
+
 import sys
 sys.path.append('../scripts')
-
 from pprint import pprint
 from logger import log
 
@@ -13,6 +13,7 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import (
+    QBrush,
     QColor,
     QCursor,
 )
@@ -27,7 +28,7 @@ from common.sylesheet import (
 )
 
 from utils.common import K_GENERIQUES, K_PARTS, K_ALL_PARTS
-from filters_editor.ui.widget_selection_ui import Ui_widget_selection
+from curves_editor.ui.widget_selection_ui import Ui_widget_selection
 
 
 class Widget_selection(QWidget, Ui_widget_selection):
@@ -41,6 +42,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.setupUi(self)
         self.model = model
         self.ui = ui
+        self.setObjectName('selection')
 
         # Setup and patch ui
         self.setAutoFillBackground(True)
@@ -50,7 +52,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         # Internal variables
-        self.episodes_and_parts = dict()
+        self.editions_episodes_and_parts = dict()
         self.comboBox_episode.clear()
         self.comboBox_part.clear()
         self.previous_position = None
@@ -61,7 +63,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_episode.setFocusPolicy(Qt.NoFocus)
         self.comboBox_part.setFocusPolicy(Qt.NoFocus)
         self.comboBox_step.setFocusPolicy(Qt.NoFocus)
-        self.tableWidget_shots.setFocusPolicy(Qt.NoFocus)
+        # self.tableWidget_shots.setFocusPolicy(Qt.NoFocus)
 
 
         step_labels = self.model.get_step_labels()
@@ -74,32 +76,33 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_step.currentIndexChanged['int'].connect(self.event_step_changed)
 
 
-        self.tableWidget_shots.clearContents()
-        self.tableWidget_shots.setRowCount(0)
+        # self.tableWidget_shots.clearContents()
+        # self.tableWidget_shots.setRowCount(0)
 
-        self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
-                            Qt.AlignCenter | Qt.AlignVCenter,
-                            Qt.AlignRight | Qt.AlignVCenter,
-                            Qt.AlignCenter | Qt.AlignVCenter,
-                            Qt.AlignLeft | Qt.AlignVCenter]
-        headers = ["shot", "src", "start", "count", "filters ID"]
-        default_col_width = [50, 60, 65, 60, 60]
-        for col_no, header_str, col_width in zip(range(len(headers)),
-                                                    headers,
-                                                    default_col_width):
-            self.tableWidget_shots.horizontalHeaderItem(col_no).setText(header_str)
-            # self.tableWidget_shots.horizontalHeaderItem(col_no).setTextAlignment(align)
-            self.tableWidget_shots.setColumnWidth(col_no, col_width)
+        # self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
+        #                     Qt.AlignCenter | Qt.AlignVCenter,
+        #                     Qt.AlignRight | Qt.AlignVCenter,
+        #                     Qt.AlignCenter | Qt.AlignVCenter,
+        #                     Qt.AlignLeft | Qt.AlignVCenter,
+        #                     Qt.AlignLeft | Qt.AlignVCenter]
+        # headers = ["shot", "src", "start", "count", "curves", "new curves"]
+        # default_col_width = [50, 60, 65, 60, 60, 40]
+        # for col_no, header_str, col_width in zip(range(len(headers)),
+        #                                             headers,
+        #                                             default_col_width):
+        #     self.tableWidget_shots.horizontalHeaderItem(col_no).setText(header_str)
+        #     # self.tableWidget_shots.horizontalHeaderItem(col_no).setTextAlignment(align)
+        #     self.tableWidget_shots.setColumnWidth(col_no, col_width)
 
-        self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
+        # self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
 
-        # Connect signals and filter events
-        self.tableWidget_shots.selectionModel().selectionChanged.connect(self.event_selection_changed)
-        self.tableWidget_shots.installEventFilter(self)
+        # # Connect signals and filter events
+        # self.tableWidget_shots.selectionModel().selectionChanged.connect(self.event_ep_or_part_selection_changed)
+        # self.tableWidget_shots.installEventFilter(self)
 
-        self.model.signal_shotlist_modified[dict].connect(self.event_refresh_shotlist)
-        self.model.signal_is_modified[dict].connect(self.refresh_modification_status)
-        self.model.signal_current_shot_modified[dict].connect(self.event_current_shot_modified)
+        # self.model.signal_shotlist_modified[dict].connect(self.event_refresh_shotlist)
+        # self.model.signal_is_modified[dict].connect(self.refresh_modification_status)
+        # self.model.signal_current_shot_modified[dict].connect(self.event_current_shot_modified)
 
         self.set_enabled(False)
         set_stylesheet(self)
@@ -121,6 +124,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             'episode': k_ep,
             'part': self.comboBox_part.currentText(),
             'step': self.comboBox_step.currentText(),
+            'edition': self.comboBox_edition.currentText(),
         }
         return preferences
 
@@ -154,6 +158,17 @@ class Widget_selection(QWidget, Ui_widget_selection):
             self.comboBox_part.setCurrentIndex(index)
         # self.comboBox_part.blockSignals(False)
 
+        # Edition
+        self.refresh_combobox_edition()
+        self.comboBox_edition.blockSignals(True)
+        saved_ed_no = s['edition']
+        if saved_ed_no == 0:
+            # print("none selected")
+            self.comboBox_edition.setCurrentText("")
+        else:
+            index = self.comboBox_edition.findText(str(saved_ed_no))
+            self.comboBox_edition.setCurrentIndex(index)
+
         # Step
         self.comboBox_part.blockSignals(True)
         index = self.comboBox_part.findText(s['step'])
@@ -161,11 +176,11 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_part.setCurrentIndex(index)
         self.comboBox_part.blockSignals(False)
 
-        # Shots
-        self.tableWidget_shots.blockSignals(True)
-        self.tableWidget_shots.clearContents()
-        self.tableWidget_shots.setRowCount(0)
-        # self.tableWidget_shots.blockSignals(False)
+        # # Shots
+        # self.tableWidget_shots.blockSignals(True)
+        # self.tableWidget_shots.clearContents()
+        # self.tableWidget_shots.setRowCount(0)
+        # # self.tableWidget_shots.blockSignals(False)
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
@@ -188,22 +203,31 @@ class Widget_selection(QWidget, Ui_widget_selection):
             self.set_enabled(True)
             self.widget_app_controls.set_save_discard_enabled(False)
 
-        if 'geometry' in modifications.keys():
-            self.set_crop_coordinates(modifications['geometry'])
-
         if modifications['shot_no'] is not None:
             log.info("shot no. %d has been modified" % (modifications['shot_no']))
 
 
-    def refresh_browsing_folder(self, episodes_and_parts:dict):
-        log.info("refresh combobox_episode")
+    def refresh_browsing_folder(self, edition_episodes_and_parts:dict):
+        log.info("refresh refresh_browsing_folder")
         # print("%s:refresh_browsing_folder: " % (__name__), episodes_and_parts)
-        self.episodes_and_parts = episodes_and_parts
+        self.editions_episodes_and_parts = edition_episodes_and_parts
 
+
+    def refresh_combobox_edition(self):
+        editions = sorted(list(self.editions_episodes_and_parts.keys()))
+        self.comboBox_edition.blockSignals(True)
+        self.comboBox_edition.clear()
+        for k_ed in editions:
+            if k_ed == ' ' or k_ed == '':
+                self.comboBox_edition.addItem(' ')
+            else:
+                self.comboBox_edition.addItem(k_ed)
+        self.comboBox_edition.setEnabled(True)
+        self.comboBox_edition.blockSignals(False)
 
 
     def refresh_combobox_episode(self):
-        episodes = sorted(list(self.episodes_and_parts.keys()))
+        episodes = sorted(list(self.editions_episodes_and_parts.keys()))
         self.comboBox_episode.blockSignals(True)
         self.comboBox_episode.clear()
         for k_ep in episodes:
@@ -230,13 +254,13 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         if selected_ep_str == ' ' or selected_ep_str == '':
             for k_p in K_GENERIQUES:
-                if k_p in self.episodes_and_parts[' ']:
+                if k_p in self.editions_episodes_and_parts[' ']:
                     self.comboBox_part.addItem(k_p)
                     # print("\t[%s]" % (k_p))
         elif selected_ep_str != '':
             k_ep = 'ep%02d' % (int(selected_ep_str))
             for k_p in K_PARTS:
-                if k_p in self.episodes_and_parts[k_ep]:
+                if k_p in self.editions_episodes_and_parts[k_ep]:
                     self.comboBox_part.addItem(k_p)
                     # print("\t[%s]" % (k_p))
 
@@ -253,11 +277,38 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_episode.blockSignals(False)
 
 
-    def event_current_shot_modified(self, modifications:dict):
-        self.tableWidget_shots.blockSignals(True)
-        row_no = self.tableWidget_shots.currentRow()
+    # def event_current_shot_modified(self, modifications:dict):
+    #     self.tableWidget_shots.blockSignals(True)
+    #     row_no = self.tableWidget_shots.currentRow()
 
-        self.tableWidget_shots.blockSignals(False)
+    #     # Curves
+    #     k_initial_curves = modifications['curves']['initial']
+    #     k_new_curves = modifications['curves']['new']
+
+    #     # Initial curves
+    #     try:
+    #         self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(k_initial_curves.replace('~', '')))
+    #         f = self.tableWidget_shots.item(row_no, 4).font()
+    #         if (k_initial_curves.startswith('~')
+    #         or k_new_curves is not None):
+    #             f.setStrikeOut(True)
+    #         else:
+    #             f.setStrikeOut(False)
+    #         self.tableWidget_shots.item(row_no, 4).setFont(f)
+    #     except:
+    #         self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(''))
+
+    #     # New curves
+    #     try: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(k_new_curves))
+    #     except: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(''))
+
+
+    #     for i in [4, 5]:
+    #         self.tableWidget_shots.item(row_no, i).setTextAlignment(self.alignment[i])
+    #         self.tableWidget_shots.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+
+    #     self.tableWidget_shots.blockSignals(False)
 
 
 
@@ -298,57 +349,83 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_step.blockSignals(False)
 
         # Shots
-        shots = values['shots']
-        self.tableWidget_shots.clearContents()
-        self.tableWidget_shots.setRowCount(0)
-        row_no = 0
-        for k_shot, shot in shots.items():
-            self.tableWidget_shots.insertRow(row_no)
-            self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem('%05d' % (k_shot)))
-            src_txt = ""
-            if 'src' in shot.keys():
-                src_txt = "%s:%s" % (shot['src']['k_ed'], shot['src']['k_ep'])
-            self.tableWidget_shots.setItem(row_no, 1, QTableWidgetItem(src_txt))
+        # shots = values['shots']
+        # self.tableWidget_shots.clearContents()
+        # self.tableWidget_shots.setRowCount(0)
+        # row_no = 0
+        # for k_shot, shot in shots.items():
+        #     self.tableWidget_shots.insertRow(row_no)
+        #     self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem('%05d' % (k_shot)))
+        #     src_txt = ""
+        #     if 'src' in shot.keys():
+        #         src_txt = "%s:%s" % (shot['src']['k_ed'], shot['src']['k_ep'])
+        #     self.tableWidget_shots.setItem(row_no, 1, QTableWidgetItem(src_txt))
 
-            self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem(str(shot['start'])))
-            self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(str(shot['count'])))
+        #     self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem(str(shot['src']['start'])))
+        #     self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(str(shot['src']['count'])))
 
-            self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(''))
+        #     # Curves
+        #     k_initial_curves = shot['modifications']['curves']['initial']
+        #     k_new_curves = shot['modifications']['curves']['new']
 
-            for i in range(len(self.alignment)):
-                self.tableWidget_shots.item(row_no, i).setTextAlignment(self.alignment[i])
-                self.tableWidget_shots.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+        #     # Initial curves
+        #     try:
+        #         self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(k_initial_curves.replace('~', '')))
+        #         f = self.tableWidget_shots.item(row_no, 4).font()
+        #         if (k_initial_curves.startswith('~')
+        #         or k_new_curves is not None):
+        #             f.setStrikeOut(True)
+        #         else:
+        #             f.setStrikeOut(False)
+        #         self.tableWidget_shots.item(row_no, 4).setFont(f)
+        #     except:
+        #         self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(''))
 
-            if not shot['is_valid']:
-                # If true, it means that all pictures are present in the folder
-                # Bug: this does not work
-                self.tableWidget_shots.item(row_no, 0).setData(Qt.FontRole, QColor(Qt.red))
-            row_no += 1
+        #     # New curves
+        #     try: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(k_new_curves))
+        #     except: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(''))
 
-        self.tableWidget_shots.selectionModel().clearSelection()
-        self.tableWidget_shots.blockSignals(False)
 
-        self.tableWidget_shots.setEnabled(True)
+        #     for i in range(len(self.alignment)):
+        #         self.tableWidget_shots.item(row_no, i).setTextAlignment(self.alignment[i])
+        #         self.tableWidget_shots.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+        #     if not shot['is_valid']:
+        #         # If true, it means that all pictures are present in the folder
+        #         # Bug: this does not work
+        #         self.tableWidget_shots.item(row_no, 0).setData(Qt.FontRole, QColor(Qt.red))
+        #     row_no += 1
+
+        # self.tableWidget_shots.selectionModel().clearSelection()
+        # self.tableWidget_shots.blockSignals(False)
+
+        # self.tableWidget_shots.setEnabled(True)
         self.set_enabled(True)
 
-        if len(shots) > 0:
-            log.info("select shot no. 0")
-            self.tableWidget_shots.selectRow(0)
+        # if len(shots) > 0:
+        #     log.info("select shot no. 0")
+        #     self.tableWidget_shots.selectRow(0)
 
 
     def event_episode_changed(self, index=0):
-        log.info("select ep: %s, part: %s" % (self.comboBox_episode.currentText(), self.comboBox_part.currentText()))
+        log.info("event_episode_changed: %s:%s:%s" % (self.comboBox_edition.currentText(), self.comboBox_episode.currentText(), self.comboBox_part.currentText()))
         self.refresh_combobox_part(-1)
         # Generate a signal to inform that the following shall be updated:
         #   - editions
         #   - filter ids
         #   - list of frames
+        k_ed = ''
+        selected_ed_str = self.comboBox_edition.currentText()
+        if selected_ed_str not in ['', ' ']:
+            k_ed = self.comboBox_edition.currentText()
+
         k_ep = ''
         selected_ep_str = self.comboBox_episode.currentText()
         if selected_ep_str not in ['', ' ']:
             k_ep = 'ep%02d' % (int(self.comboBox_episode.currentText()))
 
         values = {
+            'k_ed': k_ed,
             'k_ep': k_ep,
             'k_part': self.comboBox_part.itemText(0),
             'k_step': self.comboBox_step.currentText()
@@ -363,12 +440,18 @@ class Widget_selection(QWidget, Ui_widget_selection):
     def event_part_changed(self, index):
         log.info("select ep: %s, part: %s" % (self.comboBox_episode.currentText(), self.comboBox_part.currentText()))
 
+        k_ed = ''
+        selected_ed_str = self.comboBox_edition.currentText()
+        if selected_ed_str not in ['', ' ']:
+            k_ed = self.comboBox_edition.currentText()
+
         k_ep = ''
         selected_ep_str = self.comboBox_episode.currentText()
         if selected_ep_str not in ['', ' ']:
             k_ep = 'ep%02d' % (int(self.comboBox_episode.currentText()))
 
         values = {
+            'k_ed': k_ed,
             'k_ep': k_ep,
             'k_part': self.comboBox_part.currentText(),
             'k_step': self.comboBox_step.currentText()
@@ -384,8 +467,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.event_part_changed(index)
 
 
-    def event_selection_changed(self, selected):
-        # print("event_selection_changed")
+    def event_ep_or_part_selection_changed(self, selected):
+        # print("event_ep_or_part_selection_changed")
         selected_indexes = self.tableWidget_shots.selectedIndexes()
         selected_row_no = sorted(list(set([i.row() for i in selected_indexes])))
         if len(selected_row_no) == 0:
@@ -400,12 +483,12 @@ class Widget_selection(QWidget, Ui_widget_selection):
             return
         self.previous_selection = selected_indexes
 
-        log.info("event_selection_changed: %s" % (', '.join(map(lambda x: "%s" % (x), selected_row_no))))
+        log.info("event_ep_or_part_selection_changed: %s" % (', '.join(map(lambda x: "%s" % (x), selected_row_no))))
 
-        selected_shots_no = list()
+        selected_shot_nos = list()
         for row_no in selected_row_no:
             shot_no_str = self.tableWidget_shots.item(row_no, 0).text()
-            selected_shots_no.append(int(shot_no_str))
+            selected_shot_nos.append(int(shot_no_str))
 
         k_ep = ''
         if self.comboBox_episode.currentText() not in ['', ' ']:
@@ -414,7 +497,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             'k_ep': k_ep,
             'k_part': self.comboBox_part.currentText(),
             'k_step': self.comboBox_step.currentText(),
-            'shotlist': selected_shots_no
+            'shotlist': selected_shot_nos
         }
         self.signal_selected_shots_changed.emit(selected_shots)
 
@@ -424,6 +507,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             # do not allow selection until all modifications are saved or discarded
             return
 
+        self.comboBox_edition.setEnabled(enabled)
         self.comboBox_episode.setEnabled(enabled)
         self.comboBox_part.setEnabled(enabled)
         self.comboBox_step.setEnabled(enabled)
@@ -437,33 +521,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
     def get_preview_options(self):
         return None
 
-
-
-    def select_next_shot(self):
-        if len(self.tableWidget_shots.selectionModel().selectedRows()) > 1:
-            return
-        try:
-            row_no = self.tableWidget_shots.currentRow() + 1
-            if row_no >= self.tableWidget_shots.rowCount():
-                row_no = 0
-            self.tableWidget_shots.clearSelection()
-            self.tableWidget_shots.selectRow(row_no)
-        except:
-            pass
-
-    def select_previous_shot(self):
-        if len(self.tableWidget_shots.selectionModel().selectedRows()) > 1:
-            return
-        try:
-            row_no = self.tableWidget_shots.currentRow()
-            if row_no == 0:
-                row_no = self.tableWidget_shots.rowCount() - 1
-            else:
-                row_no -= 1
-            self.tableWidget_shots.clearSelection()
-            self.tableWidget_shots.selectRow(row_no)
-        except:
-            pass
 
 
     def mousePressEvent(self, event):
@@ -489,10 +546,10 @@ class Widget_selection(QWidget, Ui_widget_selection):
     def event_key_pressed(self, event):
         key = event.key()
         modifiers = event.modifiers()
-        if modifiers & Qt.ControlModifier and key == Qt.Key_A:
-            self.tableWidget_shots.selectAll()
-            event.accept()
-            return True
+        # if modifiers & Qt.ControlModifier and key == Qt.Key_A:
+        #     self.tableWidget_shots.selectAll()
+        #     event.accept()
+        #     return True
         return False
 
     def keyReleaseEvent(self, event):
@@ -543,3 +600,18 @@ class Widget_selection(QWidget, Ui_widget_selection):
         # super().changeEvent(event)
 
 
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        # print("  * eventFilter: widget_%s: " % (self.objectName()), event.type())
+        if event.type() == QEvent.Enter:
+            # print("         QEvent.Enter")
+            self.is_entered = True
+            return True
+        elif event.type() == QEvent.Leave:
+            # print("         QEvent.Leave")
+            self.is_entered = False
+            return True
+        return super().eventFilter(watched, event)
+
+    def enter(self):
+        self.is_entered = True

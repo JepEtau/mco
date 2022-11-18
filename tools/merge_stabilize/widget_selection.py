@@ -33,7 +33,7 @@ from merge_stabilize.ui.widget_selection_ui import Ui_widget_selection
 
 
 class Widget_selection(QWidget, Ui_widget_selection):
-    signal_ep_or_part_selection_changed = Signal(dict)
+    signal_selection_changed = Signal(dict)
     signal_selected_shots_changed = Signal(dict)
     signal_close = Signal()
 
@@ -87,7 +87,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
 
         # Connect signals and filter events
-        self.tableWidget_shots.selectionModel().selectionChanged.connect(self.event_ep_or_part_selection_changed)
+        self.tableWidget_shots.selectionModel().selectionChanged.connect(self.event_selection_changed)
         self.tableWidget_shots.installEventFilter(self)
 
         self.model.signal_shotlist_modified[dict].connect(self.event_refresh_shotlist)
@@ -352,7 +352,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         }
 
         # if values['k_part'] != '':
-        self.signal_ep_or_part_selection_changed.emit(values)
+        self.signal_selection_changed.emit(values)
         return True
 
 
@@ -374,7 +374,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         }
 
         # if values['k_part'] != '':
-        self.signal_ep_or_part_selection_changed.emit(values)
+        self.signal_selection_changed.emit(values)
         return True
 
 
@@ -383,11 +383,11 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.event_part_changed(index)
 
 
-    def event_ep_or_part_selection_changed(self, selected):
-        # print("event_ep_or_part_selection_changed")
+    def event_selection_changed(self, selected):
+        # print("event_selection_changed")
         selected_indexes = self.tableWidget_shots.selectedIndexes()
         selected_row_no = list(set([i.row() for i in selected_indexes]))
-        log.info("event_ep_or_part_selection_changed: %s" % (', '.join(map(lambda x: "%s" % (x), selected_row_no))))
+        log.info("event_selection_changed: %s" % (', '.join(map(lambda x: "%s" % (x), selected_row_no))))
 
         selected_shots_no = list()
         for row_no in selected_row_no:

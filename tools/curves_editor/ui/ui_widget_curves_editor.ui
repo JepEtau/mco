@@ -710,7 +710,7 @@
   <customwidget>
    <class>Widget_app_controls</class>
    <extends>QWidget</extends>
-   <header>curves_editor.widget_app_controls</header>
+   <header>common.widget_app_controls</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -12,13 +12,9 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (
-    QApplication
-)
 
 from common.sylesheet import set_curves_radiobutton_stylesheet, set_stylesheet
 
-from video_editor.model_video_editor import Model_video_editor
 from video_editor.ui.widget_curves_ui import Ui_widget_curves
 from common.widget_common import Widget_common
 
@@ -32,7 +28,7 @@ GRAPH_WIDTH = 512
 class Widget_curves(Widget_common, Ui_widget_curves):
     signal_save_curves_as = Signal(dict)
 
-    def __init__(self, ui, model:Model_video_editor):
+    def __init__(self, ui, model):
         super(Widget_curves, self).__init__(ui)
         self.model = model
         self.ui = ui
