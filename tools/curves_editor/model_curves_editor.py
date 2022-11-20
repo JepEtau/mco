@@ -24,7 +24,7 @@ from models.model_database import Model_database
 from models.model_common import (
     Model_common,
 )
-from curves_editor.model_framelist import Model_framelist
+from models.model_framelist import Model_framelist
 from curves_editor.model_curves import Model_curves
 
 from parsers.parser_generiques import parse_get_dependencies_for_generique
@@ -45,6 +45,8 @@ class Model_curves_editor(Model_common):
     signal_load_curves = Signal(dict)
     signal_curves_library_modified = Signal(dict)
     signal_shot_per_curves_modified = Signal(list)
+
+    signal_framelist_modified = Signal(dict)
 
     # previous
     signal_selected_directory_changed = Signal(dict)
@@ -85,11 +87,23 @@ class Model_curves_editor(Model_common):
         for step in ['bgd', 'stitching']:
             self.step_labels.remove(step)
 
+        self.current_selection = {
+            'k_ed': '',
+            'k_ep': '',
+            'k_part': '',
+            'k_step': '',
+            'filter_ids': list(),
+            'shot_nos': list(),
+        }
+
+
         # Variables: previous
         self.framelist = Model_framelist(self.model_database)
         self.model_curves = Model_curves(self.model_database)
         self.model_curves.browse_curves_folder()
         self.shotlist_no = list()
+
+
 
 
     def set_view(self, view):
@@ -123,19 +137,24 @@ class Model_curves_editor(Model_common):
         self.view.event_preview_options_changed('model')
 
         p = self.preferences.get_preferences()
+        pprint(p)
+
         k_ep = 'ep%02d' % (p['selection']['episode']) if p['selection']['episode'] != '' else ''
         self.selection_changed({
-            'k_ep': k_ep,
-            'k_part': p['selection']['part'],
-            'k_step': p['selection']['step'],
-        })
+                'k_ed': p['selection']['edition'],
+                'k_ep': k_ep,
+                'k_part': p['selection']['part'],
+                'k_step': p['selection']['step'],
+                'filter_ids': list(),
+                'shot_nos': list(),
+            })
 
 
 
     def get_available_episode_and_parts(self) -> dict:
         # Override the function
         episode_and_parts = dict()
-        path_images = self.framelist.get_images_path()
+        path_images = self.model_database.get_images_path()
         if os.path.exists(path_images):
             log.info("get available episode and parts")
             # Rather than walking through, try every possibilities
@@ -156,14 +175,69 @@ class Model_curves_editor(Model_common):
                 if os.path.exists(os.path.join(path_images, k_part_g)):
                     episode_and_parts[' '].append(k_part_g)
 
+        print("get_available_episode_and_parts")
+        pprint(episode_and_parts)
+
         return episode_and_parts
 
 
-    def selection_changed(self, values:dict):
-        """ Directory or step has been changed, update the database, list all images,
+    def selection_changed(self, selection:dict):
+        """ Selection has been changed, update the database, list all images,
             list all shots
         """
         print("selection_changed")
+        print("from")
+        pprint(self.current_selection)
+        print("----------------------- selection_changed -------------------------")
+        pprint(selection)
+
+        k_ed =  selection['k_ed']
+        k_ep =  selection['k_ep']
+        k_part =  selection['k_part']
+
+        if (k_ed != self.current_selection['k_ed']
+            or k_ep != self.current_selection['k_ep']
+            or k_part != self.current_selection['k_part']):
+            # The new selected ep/part is different, parse the folder
+            # and create a new list of frames
+
+            images_path = self.model_database.get_images_path()
+            if k_part in K_GENERIQUES:
+                images_path = os.path.join(images_path, k_part)
+            else:
+                images_path = os.path.join(images_path, k_ep, k_part)
+            print("image path: %s" % (images_path))
+
+            self.framelist.clear()
+            # try:
+            for filename in os.listdir(images_path):
+                if filename.endswith(".png"):
+                    self.framelist.append(filename, k_ep, k_part)
+            # except:
+            #     print("error: the folder does not exist anymore")
+
+        # Consolidate the list of frames
+        self.framelist.consolidate()
+
+        pprint(self.framelist.get_frames())
+
+        # Get frames which corresponds to the 'filter_by' structure
+        self.frames = self.framelist.get_selected_frames(selection)
+        print("selected frames:")
+        pprint(self.frames)
+
+        self.current_selection = deepcopy(selection)
+        self.signal_framelist_modified.emit(self.frames)
+
+        # self.model_database.initialize_shots_per_curves(self.shots)
+        # self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+        # self.signal_shotlist_modified.emit(self.current_selection)
+
+
+
+
+
+
 
 
     def event_directory_changed(self, values:dict):
@@ -173,7 +247,8 @@ class Model_curves_editor(Model_common):
         k_ep = values['k_ep']
         k_part = values['k_part']
         log.info("directory_changed: %s:%s" % (k_ep, k_part))
-        # pprint(values)
+        pprint("directory_changed: %s:%s" % (k_ep, k_part))
+        pprint(values)
         if k_ep == '' and k_part == '':
             return
 
@@ -185,7 +260,7 @@ class Model_curves_editor(Model_common):
 
         shotlist = dict()
         for k_ep_tmp in k_eps:
-            # print(">>>>>>>>>>>>>>>>>>>>>>>> %s:%s <<<<<<<<<<<<<<<<<<<<" % (k_ep_tmp, k_part))
+            print(">>>>>>>>>>>>>>>>>>>>>>>> %s:%s <<<<<<<<<<<<<<<<<<<<" % (k_ep_tmp, k_part))
             self.model_database.consolidate_database(k_ep=k_ep_tmp, k_part=k_part,
                 do_parse_curves=True,
                 do_parse_replace=False,
@@ -195,7 +270,7 @@ class Model_curves_editor(Model_common):
             # List of shots and curves in shotlist
             shotlist_tmp = self.get_curves_names(self.model_database.database(), k_ep=k_ep_tmp, k_part=k_part)
             recursive_update(out_dict=shotlist, in_dict=shotlist_tmp)
-        # print("---------------------------------------------------------")
+        print("---------------------------------------------------------")
         # pprint(shotlist)
         # sys.exit()
 
@@ -214,14 +289,14 @@ class Model_curves_editor(Model_common):
                 if os.path.exists(path):
                     for f in os.listdir(path):
                         if f.endswith(".png"):
-                            self.framelist.append(k_ep, k_part, f)
+                            self.frames.append(f)
             else:
                 if os.path.exists(os.path.join(path_images, k_ep)):
                     path = os.path.join(path_images, k_ep, k_part)
                     if os.path.exists(path):
                         for f in os.listdir(path):
                             if f.endswith(".png"):
-                                self.framelist.append(k_ep, k_part, f)
+                                self.frames.append(f)
                 # else:
                 #   cannot parse this folder, refresh and set all to default values ?
             # else:
@@ -257,9 +332,9 @@ class Model_curves_editor(Model_common):
         self.signal_shotlist_modified.emit(self.current_selection)
 
 
-    def event_reload_folders(self):
-        episode_and_parts = self.get_available_episode_and_parts()
-        self.signal_folders_parsed.emit(episode_and_parts)
+    # def event_reload_folders(self):
+    #     episode_and_parts = self.get_available_episode_and_parts()
+    #     self.signal_folders_parsed.emit(episode_and_parts)
 
 
 

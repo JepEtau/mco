@@ -19,6 +19,7 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import (
     QTableWidgetItem,
+    QListWidgetItem,
     QWidget,
 )
 
@@ -76,38 +77,48 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_step.currentIndexChanged['int'].connect(self.event_step_changed)
 
 
-        # self.tableWidget_shots.clearContents()
-        # self.tableWidget_shots.setRowCount(0)
+        self.list_images.setMinimumHeight(500)
+        self.list_images.setAutoScroll(True)
+        self.list_images.clear()
 
-        # self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
-        #                     Qt.AlignCenter | Qt.AlignVCenter,
-        #                     Qt.AlignRight | Qt.AlignVCenter,
-        #                     Qt.AlignCenter | Qt.AlignVCenter,
-        #                     Qt.AlignLeft | Qt.AlignVCenter,
-        #                     Qt.AlignLeft | Qt.AlignVCenter]
-        # headers = ["shot", "src", "start", "count", "curves", "new curves"]
-        # default_col_width = [50, 60, 65, 60, 60, 40]
-        # for col_no, header_str, col_width in zip(range(len(headers)),
-        #                                             headers,
-        #                                             default_col_width):
-        #     self.tableWidget_shots.horizontalHeaderItem(col_no).setText(header_str)
-        #     # self.tableWidget_shots.horizontalHeaderItem(col_no).setTextAlignment(align)
-        #     self.tableWidget_shots.setColumnWidth(col_no, col_width)
+        self.tableWidget_shots.clearContents()
+        self.tableWidget_shots.setRowCount(0)
+        self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
+                            Qt.AlignRight | Qt.AlignVCenter,
+                            Qt.AlignLeft | Qt.AlignVCenter,
+                            Qt.AlignLeft | Qt.AlignVCenter]
+        headers = ["shot", "start", "curves", "new curves"]
+        default_col_width = [50, 65, 60, 40]
+        for col_no, header_str, col_width in zip(range(len(headers)),
+                                                    headers,
+                                                    default_col_width):
+            self.tableWidget_shots.horizontalHeaderItem(col_no).setText(header_str)
+            # self.tableWidget_shots.horizontalHeaderItem(col_no).setTextAlignment(align)
+            self.tableWidget_shots.setColumnWidth(col_no, col_width)
+        self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
 
-        # self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
+        # Connect signals and filter events
 
-        # # Connect signals and filter events
+        # self.list_images.itemSelectionChanged.connect(self.event_select_image)
+        # self.checkBox_fit_image_to_window.stateChanged['int'].connect(self.event_fit_image_to_window_changed)
+
         # self.tableWidget_shots.selectionModel().selectionChanged.connect(self.event_ep_or_part_selection_changed)
         # self.tableWidget_shots.installEventFilter(self)
 
         # self.model.signal_shotlist_modified[dict].connect(self.event_refresh_shotlist)
         # self.model.signal_is_modified[dict].connect(self.refresh_modification_status)
-        # self.model.signal_current_shot_modified[dict].connect(self.event_current_shot_modified)
+        self.model.signal_framelist_modified[dict].connect(self.event_framelist_modified)
+        self.model.signal_current_shot_modified[dict].connect(self.event_current_shot_modified)
+
+        self.installEventFilter(self)
+        self.list_images.installEventFilter(self)
+        self.list_images.verticalScrollBar().installEventFilter(self)
 
         self.set_enabled(False)
         set_stylesheet(self)
         self.set_selected(False)
         self.adjustSize()
+
 
 
     def closeEvent(self, event):
@@ -125,6 +136,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             'part': self.comboBox_part.currentText(),
             'step': self.comboBox_step.currentText(),
             'edition': self.comboBox_edition.currentText(),
+            # 'filter_id': int(self.comboBox_filter_id.currentText()),
         }
         return preferences
 
@@ -176,11 +188,11 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_part.setCurrentIndex(index)
         self.comboBox_part.blockSignals(False)
 
-        # # Shots
-        # self.tableWidget_shots.blockSignals(True)
-        # self.tableWidget_shots.clearContents()
-        # self.tableWidget_shots.setRowCount(0)
-        # # self.tableWidget_shots.blockSignals(False)
+        # Shots
+        self.tableWidget_shots.blockSignals(True)
+        self.tableWidget_shots.clearContents()
+        self.tableWidget_shots.setRowCount(0)
+        self.tableWidget_shots.blockSignals(False)
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
@@ -209,7 +221,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def refresh_browsing_folder(self, edition_episodes_and_parts:dict):
         log.info("refresh refresh_browsing_folder")
-        # print("%s:refresh_browsing_folder: " % (__name__), episodes_and_parts)
+        print("%s:refresh_browsing_folder: " % (__name__), edition_episodes_and_parts)
         self.editions_episodes_and_parts = edition_episodes_and_parts
 
 
@@ -277,48 +289,90 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_episode.blockSignals(False)
 
 
-    # def event_current_shot_modified(self, modifications:dict):
-    #     self.tableWidget_shots.blockSignals(True)
-    #     row_no = self.tableWidget_shots.currentRow()
+    def event_current_shot_modified(self, modifications:dict):
+        self.tableWidget_shots.blockSignals(True)
+        row_no = self.tableWidget_shots.currentRow()
 
-    #     # Curves
-    #     k_initial_curves = modifications['curves']['initial']
-    #     k_new_curves = modifications['curves']['new']
+        # Curves
+        k_initial_curves = modifications['curves']['initial']
+        k_new_curves = modifications['curves']['new']
 
-    #     # Initial curves
-    #     try:
-    #         self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(k_initial_curves.replace('~', '')))
-    #         f = self.tableWidget_shots.item(row_no, 4).font()
-    #         if (k_initial_curves.startswith('~')
-    #         or k_new_curves is not None):
-    #             f.setStrikeOut(True)
-    #         else:
-    #             f.setStrikeOut(False)
-    #         self.tableWidget_shots.item(row_no, 4).setFont(f)
-    #     except:
-    #         self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(''))
+        # Initial curves
+        try:
+            self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(k_initial_curves.replace('~', '')))
+            f = self.tableWidget_shots.item(row_no, 4).font()
+            if (k_initial_curves.startswith('~')
+            or k_new_curves is not None):
+                f.setStrikeOut(True)
+            else:
+                f.setStrikeOut(False)
+            self.tableWidget_shots.item(row_no, 4).setFont(f)
+        except:
+            self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(''))
 
-    #     # New curves
-    #     try: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(k_new_curves))
-    #     except: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(''))
-
-
-    #     for i in [4, 5]:
-    #         self.tableWidget_shots.item(row_no, i).setTextAlignment(self.alignment[i])
-    #         self.tableWidget_shots.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+        # New curves
+        try: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(k_new_curves))
+        except: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(''))
 
 
-    #     self.tableWidget_shots.blockSignals(False)
+        for i in [4, 5]:
+            self.tableWidget_shots.item(row_no, i).setTextAlignment(self.alignment[i])
+            self.tableWidget_shots.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+
+        self.tableWidget_shots.blockSignals(False)
+
+
+
+    def event_framelist_modified(self, frames) -> dict:
+        log.info("directory has been parsed, refresh shot list")
+        print("%s:event_refresh:" % (__name__))
+        # pprint(frames.keys())
+        # print("---")
+
+        # Save current selected image
+        if self.list_images.count() > 0 and len(frames.keys()) > 0:
+            saved_image_name = self.list_images.currentItem().text()
+            log.info("current frame: %s" % (saved_image_name))
+        else:
+            log.info("no frames")
+            saved_image_name = ''
+
+        self.list_images.blockSignals(True)
+
+        # Remove all names
+        self.list_images.clear()
+
+        # Update list of images
+        no = -1
+        frame_names = sorted(list(frames.keys()))
+        for name, i in zip(frame_names, range(len(frame_names))):
+            self.list_images.addItem(QListWidgetItem(name))
+            if name == saved_image_name:
+                no = i
+
+        # Select previous image
+        image_name = ''
+        if self.list_images.count() > 0:
+            if no == -1:
+                no = 0
+            log.info("set current frame, no=%d, nb of frames=%d" % (no, self.list_images.count()))
+            self.list_images.setCurrentRow(no)
+            self.list_images.item(no).setSelected(True)
+            image_name = self.list_images.currentItem().text()
+
+        self.list_images.blockSignals(False)
+        # self.signal_select_image.emit(image_name)
 
 
 
 
     def event_refresh_shotlist(self, values:dict):
         log.info("directory has been parsed, refresh shot list")
-        # print("%s:event_refresh:" % (__name__))
-        # pprint(values)
-        # print("---")
-        # sys.exit()
+        print("%s:event_refresh:" % (__name__))
+        pprint(values)
+        print("---")
+        sys.exit()
         self.set_enabled(False)
         self.tableWidget_shots.blockSignals(True)
 
