@@ -84,9 +84,11 @@ class Window_main(Window_common):
         self.widget_selection.signal_selection_changed[dict].connect(self.event_selection_changed)
         self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
         self.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
+        self.widget_selection.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'selection'))
         # Update the UI and only after, try to select the preferred selection
         self.widget_selection.event_folders_parsed(self.model.get_available_selection())
         self.widget_selection.set_initial_options(p)
+        self.widget_selection.signal_image_selected[str].connect(self.event_image_selected)
 
 
         # Model
@@ -116,7 +118,6 @@ class Window_main(Window_common):
             self.model.signal_display_frame[dict].connect(self.display_frame)
 
         self.model.signal_folders_parsed[dict].connect(self.widget_selection.event_folders_parsed)
-        self.model.signal_shotlist_modified[dict].connect(self.widget_selection.event_shotlist_modified)
 
 
     def flush_image(self):
@@ -129,6 +130,18 @@ class Window_main(Window_common):
         if self.is_repainting:
             log.error("error: flush while repainting")
         self.is_repainting = False
+
+
+    def event_reload_frame(self):
+        f = self.model.get_frame_from_name('reload')
+        self.display_frame(f)
+
+
+    def event_image_selected(self, image_name):
+        # self.model.get_frame(name)
+        log.info("get image [%s]" % (image_name))
+        f = self.model.get_frame_from_name(image_name)
+        self.display_frame(f)
 
 
 
@@ -151,7 +164,6 @@ class Window_main(Window_common):
             self.image = {
                 'cache_fgd': frame['cache_fgd'],
                 'cache': frame['cache'],
-                'geometry': frame['geometry'],
                 'curves': {
                     'lut': None
                 },
@@ -172,7 +184,7 @@ class Window_main(Window_common):
         if self.image is None:
             # No frame loaded
             return
-        print("get_rgb_value")
+        # print("get_rgb_value")
 
         # Previous: to enabled
         # if self.widget_curves_editor.is_fit_to_image_enabled():
@@ -197,6 +209,7 @@ class Window_main(Window_common):
         # else:
         #     self.widget_curves_editor.widget_rgb_curves.update_rgb_value(None, None, None)
         #     self.setCursor(Qt.ArrowCursor)
+        pass
 
 
     def mousePressEvent(self, event):
@@ -347,6 +360,10 @@ class Window_main(Window_common):
         self.widget_selection.event_folders_parsed(available_selection)
 
 
+    def event_shotlist_modified(self, shotlist):
+        self.widget_selection.event_shotlist_modified(shotlist=shotlist)
+
+
     # def event_editor_action(self, event):
     #     # print("event_editor_action")
     #     # log.info("event=%s" % (event))
@@ -411,71 +428,39 @@ class Window_main(Window_common):
             log.info("no image loaded")
             return
 
+        img = self.image['cache']
+        if img is None:
+            return
+
         if self.is_repainting:
             log.error("error: self.is_repainting is True!!")
             return
         self.is_repainting = True
+        delta_y = self.display_position_y
 
-        if self.widget_curves_editor.is_fit_to_image_enabled():
-            h = min(self.height(), 1080)
-            w = int((self.image['w'] * h) / float(self.image['h']))
-            image_resized = cv2.resize(self.image['img'], (w, h))
-            qImage_resized = QImage(image_resized.data, w, h, w * 3, QImage.Format_BGR888)
-        else:
-            image_resized = self.image['img']
-            h = self.image['h']
-            w = self.image['w']
-            qImage_resized = self.image['qImage']
+        options = self.image['preview_options']
+        h_i, w_i, c = self.image['cache_fgd'].shape
+        # print("paintEvent: initial image = %dx%d" % (h_i, w_i))
+        h, w, c = img.shape
+        q_image = QImage(img.data, w, h, w * 3, QImage.Format_BGR888)
+        w_final, h_final = (1440, 1080)
 
-
-        if self.do_display_preview_image or self.do_display_split_preview_image:
-            b, g, r = cv2.split(image_resized)
-            matrix_r = self.widget_curves_editor.widget_rgb_curves.widget_rgb_graph.channel_lut('r')
-            matrix_g = self.widget_curves_editor.widget_rgb_curves.widget_rgb_graph.channel_lut('g')
-            matrix_b = self.widget_curves_editor.widget_rgb_curves.widget_rgb_graph.channel_lut('b')
-
-            rrp = matrix_r[r.flat].reshape(r.shape)
-            ggp = matrix_g[g.flat].reshape(g.shape)
-            bbp = matrix_b[b.flat].reshape(b.shape)
-
-            image_preview = cv2.merge((bbp, ggp, rrp))
-            del self.image['qImage_preview']
-            self.image['qImage_preview'] = QImage(image_preview.data, w, h, w * 3, QImage.Format_BGR888)
-        else:
-            log.info("display original image")
-
-
-        if self.image['qImage_preview'] is None:
-            log.error("flush image previewImage is None")
-            return
-
-        # w = min(self.image['w'], self.width())
-        # h = min(self.image['h'], self.height())
-        # log.info ("(w, h) = (%d; %d)" % (w, h))
+        self.image['origin'] = [PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y]
         if self.painter.begin(self):
-            if self.do_display_split_preview_image:
-                # log.info("do_display_split_preview_image")
-                self.painter.drawImage(
-                    QPoint(self.split_x, 0),
-                    qImage_resized,
-                    QRect(self.split_x, 0, w - self.split_x, h))
-                self.painter.drawImage(
-                    QPoint(0, 0),
-                    self.image['qImage_preview'],
-                    QRect(0, 0, self.split_x, h))
 
-                pen = QPen(QColor(0, 0, 0))
+
+            self.painter.drawImage(
+                QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
+
+
+            if options['curves']['split']:
+                pen = QPen(QColor(255,255,255))
                 pen.setStyle(Qt.DashLine)
                 self.painter.setPen(pen)
-                self.painter.drawLine(self.split_x, 0, self.split_x, (h-1))
-                # log.info("ImageWidget::line [(%d,%d);(%d,%d)]" % (self.split_x, 0, self.split_x, (h-1)))
+                self.painter.drawLine(
+                    options['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP,
+                    options['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP + max(h, h_final))
 
-            elif self.do_display_preview_image:
-                # log.info("do_display_preview_image")
-                self.painter.drawImage(QPoint(0, 0), self.image['qImage_preview'])
-            else:
-                # log.info("original image")
-                self.painter.drawImage(QPoint(0, 0), qImage_resized)
 
             self.painter.end()
             # ??? to verify:

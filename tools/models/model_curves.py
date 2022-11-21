@@ -21,7 +21,9 @@ from utils.common import (
     nested_dict_set,
 )
 from parsers.parser_curves import (
+    get_curves_selection,
     parse_curves_file,
+    parse_curves_folder,
     write_curves_file,
 )
 
@@ -36,6 +38,28 @@ class Model_curves():
         self.is_curves_db_modified = False
         self.is_curves_selection_db_modified = False
 
+
+    def initialize_db_for_curves(self, k_ep, k_part):
+        self.initialize_curves_library(db=self.global_database, k_ep=k_ep, k_part=k_part)
+        if k_ep.startswith('ep'):
+            if k_part in ['g_asuivre', 'g_reportage']:
+                k_ep_ref = self.global_database[k_part]['target']['video']['src']['k_ep']
+                self.db_curves_selection_initial = get_curves_selection(self.global_database,
+                    k_ep=k_ep_ref, k_part=k_part)
+            else:
+                self.db_curves_selection_initial = get_curves_selection(self.global_database,
+                    k_ep=k_ep, k_part=k_part)
+        else:
+            self.db_curves_selection_initial = get_curves_selection(self.global_database, k_ep=k_ep, k_part=k_part)
+        self.db_curves_selection = dict()
+
+
+    def initialize_curves_library(self, db, k_ep, k_part):
+        if k_part in K_GENERIQUES:
+            self.db_curves_library_initial = parse_curves_folder(db=db, k_ep_or_g=k_part)
+        else:
+            self.db_curves_library_initial = parse_curves_folder(db=db, k_ep_or_g=k_ep)
+        self.db_curves_library = dict()
 
 
     # RGB curves

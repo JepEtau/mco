@@ -291,23 +291,7 @@ class Model_database(Model_stitching_curves,
                 self.db_st_geometry = dict()
 
                 if do_parse_curves:
-                    if k_part in ['g_asuivre', 'g_reportage']:
-                        self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_part)
-                        k_ep_ref = self.global_database[k_part]['target']['video']['src']['k_ep']
-                        self.db_curves_selection_initial = get_curves_selection(self.global_database,
-                            k_ep=k_ep_ref, k_part=k_part)
-                        # print("db_curves_selection_initial: %s:%s" % (k_ep_ref, k_part))
-                        # pprint(self.db_curves_selection_initial)
-                        # print()
-                    else:
-                        self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_ep)
-                        self.db_curves_selection_initial = get_curves_selection(self.global_database,
-                            k_ep=k_ep, k_part=k_part)
-
-                    self.db_curves_library = dict()
-                    self.db_curves_selection = dict()
-
-
+                    self.initialize_db_for_curves(k_ep=k_ep, k_part=k_part)
 
         else:
             # Parse the episode used for this generique
@@ -372,10 +356,7 @@ class Model_database(Model_stitching_curves,
 
             # Curves
             if do_parse_curves:
-                self.db_curves_selection_initial = get_curves_selection(self.global_database, k_ep=k_ep, k_part=k_part)
-                self.db_curves_selection = dict()
-                self.db_curves_library_initial = parse_curves_folder(db=self.global_database, k_ep_or_g=k_part)
-                self.db_curves_library = dict()
+                self.initialize_db_for_curves(k_ep=k_ep, k_part=k_part)
 
             if do_parse_geometry:
                 self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep='', k_part=k_part)

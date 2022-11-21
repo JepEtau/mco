@@ -21,6 +21,7 @@ from PySide6.QtGui import (
     QCursor,
 )
 from PySide6.QtWidgets import (
+    QApplication,
     QTableWidgetItem,
     QListWidgetItem,
     QWidget,
@@ -38,7 +39,9 @@ from curves_editor.ui.widget_selection_ui import Ui_widget_selection
 class Widget_selection(QWidget, Ui_widget_selection):
     signal_selection_changed = Signal(dict)
     signal_selected_shots_changed = Signal(dict)
+    signal_preview_options_changed = Signal()
     signal_close = Signal()
+    signal_image_selected = Signal(str)
 
 
     def __init__(self, ui, model):
@@ -86,7 +89,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
                             Qt.AlignLeft | Qt.AlignVCenter,
                             Qt.AlignLeft | Qt.AlignVCenter]
         headers = ["shot", "start", "curves", "new curves"]
-        default_col_width = [50, 65, 60, 40]
+        default_col_width = [50, 55, 60, 60]
         for col_no, header_str, col_width in zip(range(len(headers)),
                                                     headers,
                                                     default_col_width):
@@ -96,9 +99,10 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
 
         # Connect signals and filter events
+        self.list_images.itemSelectionChanged.connect(self.event_image_selected)
 
-        # self.list_images.itemSelectionChanged.connect(self.event_select_image)
-        # self.checkBox_fit_image_to_window.stateChanged['int'].connect(self.event_fit_image_to_window_changed)
+
+        self.checkBox_fit_image_to_window.stateChanged['int'].connect(self.event_fit_image_to_window_changed)
 
         # self.tableWidget_shots.selectionModel().selectionChanged.connect(self.event_ep_or_part_selection_changed)
         # self.tableWidget_shots.installEventFilter(self)
@@ -157,10 +161,11 @@ class Widget_selection(QWidget, Ui_widget_selection):
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
         s = preferences['selection']
-        # print("%s:set_initial_options: " % (__name__), s)
+        print("%s:set_initial_options: " % (__name__))
+        pprint(s)
+        pprint(self.k_eps_parts)
 
         self.block_signals(True)
-
 
         # Edition
         saved_ed_no = s['edition']
@@ -202,6 +207,10 @@ class Widget_selection(QWidget, Ui_widget_selection):
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
+
+        selection = self.get_selection('k_ep', -1)
+        self.signal_selection_changed.emit(selection)
+
 
 
     def refresh_combobox_episode(self):
@@ -258,7 +267,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def event_folders_parsed(self, available_selection):
         # Update these combobox after having parsed the 'frames' directory
-        log.info("event_folders_parsed: refresh_selection")
+        log.info("event_folders_parsed: save ep and parts for later use")
+        print("event_folders_parsed: save ep and parts for later use")
         # pprint(available_selection)
         self.block_signals(True)
         try:
@@ -296,7 +306,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             saved_image_name = self.list_images.currentItem().text()
             log.info("current frame: %s" % (saved_image_name))
         else:
-            log.info("no frames")
+            log.info("no frames currently selected")
             saved_image_name = ''
 
         self.list_images.blockSignals(True)
@@ -323,16 +333,16 @@ class Widget_selection(QWidget, Ui_widget_selection):
             image_name = self.list_images.currentItem().text()
 
         self.list_images.blockSignals(False)
-        # self.signal_select_image.emit(image_name)
+        self.signal_image_selected.emit(image_name)
 
 
     def event_shotlist_modified(self, shotlist):
+        print("widget_selection: event_shotlist_modified")
         self.tableWidget_shots.blockSignals(True)
         self.tableWidget_shots.setRowCount(0)
 
         row_no = 0
-        for shot in shotlist:
-            pprint(shot)
+        for no, shot in shotlist.items():
             self.tableWidget_shots.insertRow(row_no)
             self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem('%05d' % (shot['no'])))
             self.tableWidget_shots.setItem(row_no, 1, QTableWidgetItem(str(shot['start'])))
@@ -343,7 +353,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             else:
                 self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem(''))
 
-            self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(''))
+            self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(shot['k_ed']))
             # k_initial_curves = shot['modifications']['curves']['initial']
             # k_new_curves = shot['modifications']['curves']['new']
 
@@ -421,9 +431,9 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
 
-
     def get_selection(self, widget, index) -> dict:
         log.info("get new selection")
+        print("get_selection")
 
         k_ep = self.comboBox_episode.currentText().replace(' ', '')
         k_ep = 'ep%02d' % (int(k_ep)) if k_ep != '' else ''
@@ -445,6 +455,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             'filter_ids': list(),
             'shot_nos': list(),
         }
+        pprint(selection)
         return selection
 
 
@@ -475,6 +486,62 @@ class Widget_selection(QWidget, Ui_widget_selection):
         selection = self.get_selection(widget, index)
         self.signal_selection_changed.emit(selection)
 
+
+
+    def event_image_selected(self):
+        image_name = self.list_images.currentItem().text()
+        current_item = self.list_images.currentItem()
+        # print("event_image_selected: is selected?", current_item.isSelected())
+        # log.info("select [%s]" % (image_name))
+        self.signal_image_selected.emit(image_name)
+        return True
+
+    def select_next_image(self):
+        if self.list_images.count() == 0:
+            return True
+        self.list_images.item(self.list_images.currentRow()).setSelected(False)
+        no = self.list_images.currentRow() + 1
+        if no >= self.list_images.count():
+            no = 0
+        # log.info("select row no. %d" % (no))
+        self.list_images.setCurrentRow(no)
+        self.list_images.item(no).setSelected(True)
+
+
+    def select_previous_image(self):
+        if self.list_images.count() == 0:
+            return True
+        self.list_images.item(self.list_images.currentRow()).setSelected(False)
+        no = self.list_images.currentRow()
+        if no == 0:
+            no = self.list_images.count() - 1
+        else:
+            no = no - 1
+        # log.info("select row no. %d" % (no))
+        self.list_images.setCurrentRow(no)
+        self.list_images.item(no).setSelected(True)
+
+
+
+    def select_first_image(self):
+        if self.list_images.count() > 0:
+            self.list_images.setCurrentRow(0)
+            self.list_images.item(0).setSelected(True)
+        return True
+
+
+    def select_last_image(self):
+        if self.list_images.count() > 0:
+            row_no = self.list_images.count() - 1
+            self.list_images.setCurrentRow(row_no)
+            self.list_images.item(row_no).setSelected(True)
+        return True
+
+    def event_page_up(self, event):
+        return self.list_images.keyPressEvent(event)
+
+    def event_page_down(self, event):
+        return self.list_images.keyPressEvent(event)
 
 
 
@@ -624,6 +691,9 @@ class Widget_selection(QWidget, Ui_widget_selection):
             log.info("shot no. %d has been modified" % (modifications['shot_no']))
 
 
+    def event_fit_image_to_window_changed(self, state):
+        self.signal_preview_options_changed.emit()
+
 
     def get_preview_options(self):
         preview_options = {
@@ -680,25 +750,28 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        # return super().eventFilter(watched, event)
-        # # Filter press/release events
-        if event.type() == QEvent.KeyPress:
-            event.accept()
-            return self.ui.keyPressEvent(event)
-        elif event.type() == QEvent.KeyRelease:
-            event.accept()
-            return self.ui.keyReleaseEvent(event)
+        # Filter press/release events
+        if QApplication.focusObject() is self.list_images:
+            if event.type() == QEvent.KeyPress:
+                if event.key() == Qt.Key_F:
+                    self.ui.setFocus()
+                    self.ui.keyPressEvent(event)
+                    return True
+
+                self.list_images.keyPressEvent(event)
 
         if event.type() == QEvent.Wheel:
+            # log.info("%s:eventFilter: wheel event" % (__name__))
             if event.angleDelta().y() > 0:
-                self.select_previous_shot()
+                # log.info("wheelEvent:Previous")
+                self.select_previous_image()
             else:
-                self.select_next_shot()
+                # log.info("wheelEvent:Next")
+                self.select_next_image()
             event.accept()
             return True
 
-        return super().eventFilter(watched, event)
-        # return True
+        return self.ui.eventFilter(watched, event)
 
 
 

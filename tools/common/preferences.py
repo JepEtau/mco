@@ -37,6 +37,7 @@ class Preferences(QObject):
 
         # Default geometry
         screens = QApplication.screens()
+        screens_count = len(screens)
         screen_width = screens[0].size().width()
         screen_height = screens[0].size().height()
 
@@ -58,6 +59,8 @@ class Preferences(QObject):
         if self.settings.contains('selection/geometry'):
             self.preferences['selection']['geometry'] = list(map(lambda x: int(x),
                 self.settings.value("selection/geometry").split(':')))
+            if self.preferences['selection']['geometry'][0] > screen_width and screens_count < 2:
+                self.preferences['selection']['geometry'][0] -= screen_width
         try:
             self.preferences['selection']['edition'] = ''
             if self.settings.contains('selection/edition'):
@@ -104,6 +107,8 @@ class Preferences(QObject):
             try:
                 self.preferences[editor]['geometry'] = list(map(lambda x: int(x),
                     self.settings.value('%s/geometry' % (editor)).split(':')))
+                if self.preferences[editor]['geometry'][0] > screen_width and screens_count < 2:
+                    self.preferences[editor]['geometry'][0] -= screen_width
                 self.preferences[editor]['widget'] =  self.settings.value('%s/widget' % (editor))
             except:
                 print("preferences for widget [%s]cannot be loaded" % (editor))
