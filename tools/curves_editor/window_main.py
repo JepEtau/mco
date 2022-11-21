@@ -35,7 +35,7 @@ from common.window_common import (
     PAINTER_MARGIN_TOP,
 )
 from curves_editor.model_curves_editor import Model_curves_editor
-from curves_editor.widget_curves_editor import Widget_curves_editor
+# from curves_editor.widget_curves_editor import Widget_curves_editor
 from curves_editor.widget_selection import Widget_selection
 
 from video_editor.widget_curves import Widget_curves
@@ -81,12 +81,12 @@ class Window_main(Window_common):
         # Selection of episode/part/shot
         self.widget_selection = Widget_selection(self, self.model)
         self.widgets['selection'] = self.widget_selection
-        self.widget_selection.refresh_browsing_folder(self.model.get_available_episode_and_parts())
         self.widget_selection.signal_selection_changed[dict].connect(self.event_selection_changed)
-        self.widget_selection.set_initial_options(p)
         self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
         self.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
-
+        # Update the UI and only after, try to select the preferred selection
+        self.widget_selection.event_folders_parsed(self.model.get_available_selection())
+        self.widget_selection.set_initial_options(p)
 
 
         # Model
@@ -109,11 +109,14 @@ class Window_main(Window_common):
         self.is_grabbing_split_line = False
         self.split_x = int(self.width() / 2)
 
+
         if False:
             # previously
             # Signals/events
             self.model.signal_display_frame[dict].connect(self.display_frame)
-            self.model.signal_folders_parsed[dict].connect(self.event_folders_parsed)
+
+        self.model.signal_folders_parsed[dict].connect(self.widget_selection.event_folders_parsed)
+        self.model.signal_shotlist_modified[dict].connect(self.widget_selection.event_shotlist_modified)
 
 
     def flush_image(self):
@@ -338,11 +341,10 @@ class Window_main(Window_common):
     #     self.widget_curves_editor.showNormal()
 
 
-    # def event_folders_parsed(self, episodes_and_parts):
-    #     log.info("folders have been parsed to update combobox")
-    #     print("folders have been parsed to update combobox")
-    #     pprint(episodes_and_parts)
-    #     self.widget_curves_editor.refresh_browsing_folder(episodes_and_parts)
+    def event_folders_parsed(self, available_selection):
+        log.info("folders have been parsed to update combobox")
+        print("folders have been parsed to update combobox")
+        self.widget_selection.event_folders_parsed(available_selection)
 
 
     # def event_editor_action(self, event):

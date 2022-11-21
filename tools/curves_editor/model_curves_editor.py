@@ -47,6 +47,7 @@ class Model_curves_editor(Model_common):
     signal_shot_per_curves_modified = Signal(list)
 
     signal_framelist_modified = Signal(dict)
+    signal_shotlist_modified = Signal(dict)
 
     # previous
     signal_selected_directory_changed = Signal(dict)
@@ -59,7 +60,6 @@ class Model_curves_editor(Model_common):
     signal_refresh_curves_shot_list = Signal(list)
     signal_load_curves = Signal(dict)
     signal_folders_parsed = Signal(dict)
-    signal_shotlist_modified = Signal(dict)
 
 
     WIDGET_LIST = [
@@ -96,6 +96,8 @@ class Model_curves_editor(Model_common):
             'shot_nos': list(),
         }
 
+        # Parse the frames directory to update the selection ui
+        self.parse_frames_directory()
 
         # Variables: previous
         self.framelist = Model_framelist(self.model_database)
@@ -126,12 +128,15 @@ class Model_curves_editor(Model_common):
         # self.view.widget_curves_editor.signal_save_database[dict].connect(self.event_save_database)
 
         # New:
+
+
         self.view.widget_selection.signal_selection_changed[dict].connect(self.selection_changed)
         # self.view.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
 
 
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
         self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
+
 
         # Force refresh of preview options
         self.view.event_preview_options_changed('model')
@@ -152,49 +157,61 @@ class Model_curves_editor(Model_common):
 
 
     def get_available_episode_and_parts(self) -> dict:
+        log.info("get_available_episode_and_parts: removed")
+        pass
+
+
+    def parse_frames_directory(self):
         # Override the function
-        episode_and_parts = dict()
+        k_eps_parts = dict()
         path_images = self.model_database.get_images_path()
         if os.path.exists(path_images):
             log.info("get available episode and parts")
             # Rather than walking through, try every possibilities
             # another option would be to select a folder, then the combobox
             # will be disabled
-
             for ep_no in range(1, 39):
                 k_ep = 'ep%02d' % (ep_no)
                 if os.path.exists(os.path.join(path_images, k_ep)):
-                    episode_and_parts[k_ep] = list()
-
+                    k_eps_parts[k_ep] = list()
                     for k_part in K_ALL_PARTS:
                         if os.path.exists(os.path.join(path_images, k_ep, k_part)):
-                            episode_and_parts[k_ep].append(k_part)
+                            k_eps_parts[k_ep].append(k_part)
 
-            episode_and_parts[' '] = list()
+            k_eps_parts[' '] = list()
             for k_part_g in K_GENERIQUES:
                 if os.path.exists(os.path.join(path_images, k_part_g)):
-                    episode_and_parts[' '].append(k_part_g)
+                    k_eps_parts[' '].append(k_part_g)
 
-        print("get_available_episode_and_parts")
-        pprint(episode_and_parts)
+        # Create a dict to update combobox of the selectio widget
+        db = self.model_database.database()
+        self.available_selection = {
+            'k_eds': sorted(db['editions']['available']),
+            'k_eps_parts': k_eps_parts,
+            'steps': list(k for k, v in sorted(FILTER_BASE_NO.items(), key=lambda item: item[1]))
+        }
 
-        return episode_and_parts
+    def get_available_selection(self):
+        return self.available_selection
 
 
     def selection_changed(self, selection:dict):
         """ Selection has been changed, update the database, list all images,
             list all shots
         """
-        print("selection_changed")
-        print("from")
-        pprint(self.current_selection)
-        print("----------------------- selection_changed -------------------------")
-        pprint(selection)
+        # print("----------------------- selection_changed -------------------------")
+        # pprint(selection)
 
         k_ed =  selection['k_ed']
         k_ep =  selection['k_ep']
         k_part =  selection['k_part']
+        log.info("selection changed to %s:%s:%s" % (k_ed, k_ep, k_part))
+        print("selection changed to %s:%s:%s" % (k_ed, k_ep, k_part))
+        if k_ep == '' and k_part == '':
+            return
 
+        k_eps = list()
+        k_parts = list()
         if (k_ed != self.current_selection['k_ed']
             or k_ep != self.current_selection['k_ep']
             or k_part != self.current_selection['k_part']):
@@ -218,16 +235,19 @@ class Model_curves_editor(Model_common):
 
         # Consolidate the list of frames
         self.framelist.consolidate()
-
-        pprint(self.framelist.get_frames())
+        # pprint(self.framelist.get_frames())
 
         # Get frames which corresponds to the 'filter_by' structure
         self.frames = self.framelist.get_selected_frames(selection)
-        print("selected frames:")
-        pprint(self.frames)
+        # print("selected frames:")
+        # pprint(self.frames)
 
         self.current_selection = deepcopy(selection)
         self.signal_framelist_modified.emit(self.frames)
+
+
+        shotlist = self.framelist.get_shotlist()
+        self.signal_shotlist_modified.emit(shotlist)
 
         # self.model_database.initialize_shots_per_curves(self.shots)
         # self.signal_curves_library_modified.emit(self.model_database.get_library_curves())

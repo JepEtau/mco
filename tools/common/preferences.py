@@ -58,6 +58,12 @@ class Preferences(QObject):
         if self.settings.contains('selection/geometry'):
             self.preferences['selection']['geometry'] = list(map(lambda x: int(x),
                 self.settings.value("selection/geometry").split(':')))
+        try:
+            self.preferences['selection']['edition'] = ''
+            if self.settings.contains('selection/edition'):
+                self.preferences['selection']['edition'] = self.settings.value('selection/edition')
+        except:
+            self.preferences['selection']['edition'] = ''
 
         self.preferences['selection']['episode'] = ''
         if self.settings.contains('selection/episode'):
@@ -73,12 +79,6 @@ class Preferences(QObject):
             if self.settings.value('selection/step') != '':
                 self.preferences['selection']['step'] = self.settings.value('selection/step')
 
-        try:
-            self.preferences['selection']['edition'] = ''
-            if self.settings.contains('selection/edition'):
-                self.preferences['selection']['edition'] = self.settings.value('selection/edition')
-        except:
-            self.preferences['selection']['edition'] = ''
 
 
         # Default widget position

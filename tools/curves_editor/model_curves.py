@@ -1,7 +1,11 @@
 # -*- coding: utf-8 -*-
+import sys
+sys.path.append('../scripts')
 
-from PySide6.QtCore import Signal
-from PySide6.QtCore import QObject
+from PySide6.QtCore import (
+    Signal,
+    QObject,
+)
 
 from copy import deepcopy
 import gc
@@ -10,17 +14,16 @@ import os.path
 
 from pprint import pprint
 import configparser
-from pathlib import Path
-from pathlib import PosixPath
-import sys
+from pathlib import (
+    Path,
+    PosixPath,
+)
 import re
 import collections
 from logger import log
+
 from models.model_database import Model_database
 
-# from curves_editor.curves_history import Curves_history
-
-sys.path.append('../scripts')
 from utils.common import K_GENERIQUES, get_shot_from_frame_no_new
 from parsers.parser_curves import parse_curves_file
 from parsers.parser_curves import write_curves_file

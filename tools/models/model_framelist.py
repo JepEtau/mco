@@ -51,6 +51,10 @@ class Model_framelist():
         self.model_database = model_database
 
         self.frames = dict()
+        self.k_eds = list()
+        self.k_eps = list()
+        self.k_parts = list()
+        self.shotlist = dict()
 
         self.filter_by = {
             'k_ed': '',
@@ -64,6 +68,9 @@ class Model_framelist():
 
 
     def clear(self):
+        self.k_eds.clear()
+        self.k_eps.clear()
+        self.k_parts.clear()
         self.frames.clear()
 
 
@@ -84,6 +91,15 @@ class Model_framelist():
             'shot_no': -1,
         }
 
+
+    def get_editions(self) -> list:
+        return self.k_eds
+
+    def get_episodes(self) -> list:
+        return self.k_eps
+
+    def get_parts(self) -> list:
+        return self.k_parts
 
 
     def get_frames(self):
@@ -127,8 +143,8 @@ class Model_framelist():
 
 
     def consolidate(self):
-        print("consolidate")
         parsed_ed_ep = dict()
+        self.shotlist.clear()
         for frame in self.frames.values():
             # Do not parse episode if already done
             if (frame['k_ed'] not in parsed_ed_ep.keys()
@@ -139,12 +155,28 @@ class Model_framelist():
                 try: parsed_ed_ep[frame['k_ed']].append(frame['k_ep'])
                 except: parsed_ed_ep[frame['k_ed']] = [frame['k_ep']]
 
-            shot = get_shot_from_frame_no_new(
-                self.model_database.database(),
-                frame['frame_no'], frame['k_ed'], frame['k_ep'], frame['k_part'])
-            frame['shot_no'] = shot['no']
+            try:
+                shot = get_shot_from_frame_no_new(
+                    self.model_database.database(),
+                    frame['frame_no'], frame['k_ed'], frame['k_ep'], frame['k_part'])
+                frame['shot_no'] = shot['no']
+
+                nested_dict_set(self.shotlist, shot, shot['no'], frame['k_ed'])
+            except:
+                frame['shot_no'] = -1
+
+            self.k_eds.append(frame['k_ed'])
+            self.k_eps.append(frame['k_ep'])
+            self.k_parts.append(frame['k_part'])
+
+        self.k_eds = sorted(list(set(self.k_eds)))
+        self.k_eps = sorted(list(set(self.k_eps)))
+        self.k_parts = sorted(list(set(self.k_parts)))
 
 
+    def get_shotlist(self):
+        pprint(self.shotlist)
+        return self.shotlist
 
 
     def shot_list(self):
@@ -181,40 +213,6 @@ class Model_framelist():
         names.sort()
         return names
 
-
-    def get_selected_struct(self):
-        # print("%s:get_selected_struct:" % (__name__))
-        # pprint(self.filter_by)
-        # Update the filter_by by removing
-        # unused values
-        new_filter_by = {
-            'k_ed': '',
-            'step': self.filter_by['step'],
-            'filter_id': '',
-            'shots': list()
-        }
-        # edition
-        if self.filter_by['k_ed'] in self.editions():
-            new_filter_by['k_ed'] = self.filter_by['k_ed']
-
-        # filter_id
-        if self.filter_by['filter_id'] in self.filter_ids():
-            new_filter_by['filter_id'] = self.filter_by['filter_id']
-
-        # current_filter_ids = self.filter_ids()
-        # for f in self.filter_by['filter_ids']:
-        #     if f in current_filter_ids:
-        #         new_filter_by['filter_ids'].append(f)
-
-        # shots
-        current_shots = self.shot_names()
-        for f in self.filter_by['shots']:
-            if f in current_shots:
-                new_filter_by['shots'].append(f)
-        # print("->")
-        # pprint(new_filter_by)
-        # sys.exit()
-        return new_filter_by
 
 
 
