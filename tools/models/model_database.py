@@ -291,7 +291,7 @@ class Model_database(Model_stitching_curves,
                 self.db_st_geometry = dict()
 
                 if do_parse_curves:
-                    self.initialize_db_for_curves(k_ep=k_ep, k_part=k_part)
+                    self.initialize_db_for_curves(db=self.global_database, k_ep=k_ep, k_part=k_part)
 
         else:
             # Parse the episode used for this generique
@@ -356,7 +356,7 @@ class Model_database(Model_stitching_curves,
 
             # Curves
             if do_parse_curves:
-                self.initialize_db_for_curves(k_ep=k_ep, k_part=k_part)
+                self.initialize_db_for_curves(db=self.global_database, k_ep=k_ep, k_part=k_part)
 
             if do_parse_geometry:
                 self.db_part_geometry_initial = get_part_geometry_list(self.global_database, k_ep='', k_part=k_part)

@@ -116,6 +116,10 @@ class Model_framelist():
 
     def get_selected_frames(self, filters:dict) -> dict:
         # The list of frames shall be consolidated for some filtering
+        # print("get_selected_frames")
+        # pprint(filters)
+        # print("IN:")
+        # pprint(self.frames)
         selected_frames = dict()
         for k, f in self.frames.items():
             if filters['k_ed'] != '' and f['k_ed'] != filters['k_ed']:
@@ -170,11 +174,17 @@ class Model_framelist():
                     self.model_database.database(),
                     frame['frame_no'], frame['k_ed'], frame['k_ep'], frame['k_part'])
 
-                # Add  k_ed, k_ep, k_part
+                # Consolidate this shot
                 shot.update({
                     'k_ed': frame['k_ed'],
                     'k_ep': frame['k_ep'],
                     'k_part': frame['k_part'],
+                    'modifications': {
+                        'curves': {
+                            'initial': None if shot['curves'] is None else shot['curves']['k_curves'],
+                            'new': None,
+                        },
+                    },
                 })
                 frame['shot_no'] = shot['no']
 

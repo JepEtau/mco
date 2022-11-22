@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+
 from common.sylesheet import (
     set_stylesheet,
     update_selected_widget_stylesheet,
@@ -46,6 +47,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def __init__(self, ui, model):
         super(Widget_selection, self).__init__()
+
+
         self.setupUi(self)
         self.model = model
         self.ui = ui
@@ -84,12 +87,14 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         self.tableWidget_shots.clearContents()
         self.tableWidget_shots.setRowCount(0)
-        self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
+        self.alignment = [Qt.AlignCenter| Qt.AlignVCenter,
+                            Qt.AlignCenter | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter,
-                            Qt.AlignLeft | Qt.AlignVCenter,
-                            Qt.AlignLeft | Qt.AlignVCenter]
-        headers = ["shot", "start", "curves", "new curves"]
-        default_col_width = [50, 55, 60, 60]
+                            Qt.AlignRight | Qt.AlignVCenter,
+                            Qt.AlignRight | Qt.AlignVCenter,
+                            Qt.AlignRight | Qt.AlignVCenter]
+        headers = ["ed", "ep", "shot", "start", "curves", "new curves"]
+        default_col_width = [25, 25, 45, 55, 60, 60]
         for col_no, header_str, col_width in zip(range(len(headers)),
                                                     headers,
                                                     default_col_width):
@@ -120,6 +125,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         set_stylesheet(self)
         self.set_selected(False)
         self.adjustSize()
+
 
 
     def set_selected(self, is_selected):
@@ -297,7 +303,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def event_framelist_modified(self, frames) -> dict:
         log.info("directory has been parsed, refresh list of images")
-        # print("%s:event_refresh:" % (__name__))
+        print("directory has been parsed, refresh list of images")
+        # print("-> %s:event_refresh:" % (__name__))
         # pprint(frames.keys())
         # print("---")
 
@@ -315,21 +322,22 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.list_images.clear()
 
         # Update list of images
-        no = -1
+        row_no = -1
         frame_names = sorted(list(frames.keys()))
         for name, i in zip(frame_names, range(len(frame_names))):
             self.list_images.addItem(QListWidgetItem(name))
             if name == saved_image_name:
-                no = i
+                row_no = i
 
         # Select previous image
         image_name = ''
+        log.info('%d' % (self.list_images.count()))
         if self.list_images.count() > 0:
-            if no == -1:
-                no = 0
-            log.info("set current frame, no=%d, nb of frames=%d" % (no, self.list_images.count()))
-            self.list_images.setCurrentRow(no)
-            self.list_images.item(no).setSelected(True)
+            if row_no == -1:
+                row_no = 0
+            log.info("set current frame, no=%d, nb of frames=%d" % (row_no, self.list_images.count()))
+            self.list_images.setCurrentRow(row_no)
+            self.list_images.item(row_no).setSelected(True)
             image_name = self.list_images.currentItem().text()
 
         self.list_images.blockSignals(False)
@@ -344,35 +352,40 @@ class Widget_selection(QWidget, Ui_widget_selection):
         row_no = 0
         for no, shot in shotlist.items():
             self.tableWidget_shots.insertRow(row_no)
-            self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem('%05d' % (shot['no'])))
-            self.tableWidget_shots.setItem(row_no, 1, QTableWidgetItem(str(shot['start'])))
+            self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem(shot['k_ed']))
+            self.tableWidget_shots.setItem(row_no, 1, QTableWidgetItem(str(int(shot['k_ep'][2:]))))
+            self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem('%03d' % (shot['no'])))
+            self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(str(shot['start'])))
 
-            # Curves
-            if shot['curves'] is not None:
-                self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem(shot['curves']['k_curves']))
-            else:
-                self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem(''))
-
-            self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(shot['k_ed']))
-            # k_initial_curves = shot['modifications']['curves']['initial']
-            # k_new_curves = shot['modifications']['curves']['new']
-
-            # # Initial curves
-            # try:
-            #     self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(k_initial_curves.replace('~', '')))
-            #     f = self.tableWidget_shots.item(row_no, 4).font()
-            #     if (k_initial_curves.startswith('~')
-            #     or k_new_curves is not None):
-            #         f.setStrikeOut(True)
-            #     else:
-            #         f.setStrikeOut(False)
-            #     self.tableWidget_shots.item(row_no, 4).setFont(f)
-            # except:
+            # # Curves
+            # if shot['curves'] is not None:
+            #     self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(shot['curves']['k_curves']))
+            # else:
             #     self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(''))
 
-            # # New curves
-            # try: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(k_new_curves))
-            # except: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(''))
+            self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(''))
+            k_initial_curves = shot['modifications']['curves']['initial']
+            k_new_curves = shot['modifications']['curves']['new']
+
+            # Initial curves
+            try:
+                self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(k_initial_curves.replace('~', '')))
+                f = self.tableWidget_shots.item(row_no, 4).font()
+                if (k_initial_curves.startswith('~')
+                or k_new_curves is not None):
+                    f.setStrikeOut(True)
+                else:
+                    f.setStrikeOut(False)
+                self.tableWidget_shots.item(row_no, 4).setFont(f)
+            except:
+                self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(''))
+
+            # New curves
+            try: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(k_new_curves))
+            except: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(''))
+
+            user_role = "%s.%s.%s" % (shot['k_ed'], shot['k_ep'], shot['no'])
+            self.tableWidget_shots.item(row_no, 0).setData(Qt.UserRole, user_role)
 
 
             for i in range(len(self.alignment)):
@@ -384,16 +397,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.tableWidget_shots.blockSignals(False)
 
 
-        # if len(values['selected']['shots']) != 0:
-        #     # select partial
-        #     for no in values['selected']['shots']:
-        #         i = self.list_shots.findText('%05d' % (no))
-        #         if i != -1:
-        #             _font = self.list_shots.item(i).font()
-        #             _font.setBold(True)
-        #             self.list_shots.item(i).setFont(_font)
-        # self.list_shots.blockSignals(False)
-        # self.tableWidget_shots.blockSignals(False)
 
 
     def event_current_shot_modified(self, modifications:dict):
@@ -703,7 +706,24 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
     def refresh_values(self, frame:dict):
+        print("%s: todo: refresh values" % (self.objectName()))
+        # pprint(frame)
         log.info("todo: refresh values")
+
+        frame_user_role = "%s.%s.%s" % (frame['k_ed'], frame['k_ep'], frame['shot_no'])
+
+        # Refresh the list of shots: select current shot
+        for row_no in range(self.tableWidget_shots.rowCount()):
+            font = self.tableWidget_shots.item(row_no, 0).font()
+            user_role = self.tableWidget_shots.item(row_no, 0).data(Qt.UserRole)
+            if user_role == frame_user_role:
+                font.setBold(True)
+            else:
+                font.setBold(False)
+            for col_no in range(len(self.alignment)):
+                self.tableWidget_shots.item(row_no, col_no).setFont(font)
+            row_no += 1
+
 
 
     def mousePressEvent(self, event):
@@ -750,6 +770,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        # print("  * eventFilter: widget_%s: " % (self.objectName()), event.type())
         # Filter press/release events
         if QApplication.focusObject() is self.list_images:
             if event.type() == QEvent.KeyPress:
@@ -771,6 +792,16 @@ class Widget_selection(QWidget, Ui_widget_selection):
             event.accept()
             return True
 
+        elif event.type() == QEvent.Enter:
+            # print("         QEvent.Enter")
+            self.is_entered = True
+            return True
+        elif event.type() == QEvent.Leave:
+            # print("         QEvent.Leave")
+            self.is_entered = False
+            return True
+        # return super().eventFilter(watched, event)
+
         return self.ui.eventFilter(watched, event)
 
 
@@ -787,17 +818,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
 
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        # print("  * eventFilter: widget_%s: " % (self.objectName()), event.type())
-        if event.type() == QEvent.Enter:
-            # print("         QEvent.Enter")
-            self.is_entered = True
-            return True
-        elif event.type() == QEvent.Leave:
-            # print("         QEvent.Leave")
-            self.is_entered = False
-            return True
-        return super().eventFilter(watched, event)
 
     def enter(self):
         self.is_entered = True

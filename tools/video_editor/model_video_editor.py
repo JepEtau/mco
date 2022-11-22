@@ -450,7 +450,8 @@ class Model_video_editor(Model_common):
         # Save the curves selected for this shot
         shot_no = self.current_frame['shot_no']
         # print("event_save_curves_selection_requested %s:%s:%s:%d" % (k_ed, k_ep, k_part, shot_no))
-        self.model_database.save_shot_curves_selection(self.shots[shot_no])
+        self.model_database.save_shot_curves_selection(db=self.model_database.database(),
+            shot=self.shots[shot_no])
 
         # Update the modifications structure to update the selection widget
         k_new_curves = self.shots[shot_no]['modifications']['curves']['new']

@@ -39,19 +39,38 @@ class Model_curves():
         self.is_curves_selection_db_modified = False
 
 
-    def initialize_db_for_curves(self, k_ep, k_part):
-        self.initialize_curves_library(db=self.global_database, k_ep=k_ep, k_part=k_part)
+    def initialize_db_for_curves(self, db, k_ep, k_part):
+        # This function is used by the video editor
+        # which uses the consolidated shots
+        self.initialize_curves_library(db=db, k_ep=k_ep, k_part=k_part)
         if k_ep.startswith('ep'):
             if k_part in ['g_asuivre', 'g_reportage']:
-                k_ep_ref = self.global_database[k_part]['target']['video']['src']['k_ep']
-                self.db_curves_selection_initial = get_curves_selection(self.global_database,
-                    k_ep=k_ep_ref, k_part=k_part)
+                k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+                self.db_curves_selection_initial = get_curves_selection(db, k_ep=k_ep_ref, k_part=k_part)
             else:
-                self.db_curves_selection_initial = get_curves_selection(self.global_database,
-                    k_ep=k_ep, k_part=k_part)
+                self.db_curves_selection_initial = get_curves_selection(db, k_ep=k_ep, k_part=k_part)
         else:
-            self.db_curves_selection_initial = get_curves_selection(self.global_database, k_ep=k_ep, k_part=k_part)
+            self.db_curves_selection_initial = get_curves_selection(db, k_ep=k_ep, k_part=k_part)
         self.db_curves_selection = dict()
+
+
+
+    def initialize_curves_selection(self, shotlist):
+        # This function is used by the curves editor
+        # which does not use the consolidate and target shots (only src)
+        log.info("initialize curves selection for each shot")
+        # shotlist = self.framelist.get_shotlist()
+        k_part = self.current_selection['k_part']
+
+        self.db_curves_selection_initial = dict()
+        for k_ed in shotlist.keys():
+                for k_ep in shotlist[k_ed].keys():
+                    for shot_no in shotlist[k_ed][k_ep].keys():
+                        shot = shotlist[k_ed][k_ep][shot_no]
+                        if shot['curves'] is not None:
+                            nested_dict_set(self.db_curves_selection_initial, shot['curves'], k_ed, k_ep, k_part, shot['start'])
+        self.db_curves_selection = dict()
+
 
 
     def initialize_curves_library(self, db, k_ep, k_part):
@@ -226,7 +245,7 @@ class Model_curves():
 
 
 
-    def get_curves(self, k_ep_or_g:str, k_curves:str):
+    def get_curves(self, db, k_ep_or_g:str, k_curves:str):
         # Search these curves in the libraries
         try: curves = self.db_curves_library[k_curves]
         except:
@@ -236,7 +255,7 @@ class Model_curves():
         # If not found, add these curves to the library as it may be not in the same k_ep
         if curves is None:
             # Create a curve structure
-            library_path = self.global_database['common']['directories']['curves']
+            library_path = db['common']['directories']['curves']
             self.db_curves_library_initial[k_curves] = {
                     'k_curves': k_curves,
                     'filepath': os.path.join(library_path, k_ep_or_g, "%s.crv" % (k_curves)),
@@ -250,7 +269,7 @@ class Model_curves():
         if curves['channels'] is None:
             # print("parse %s.crv file" % (k_curves))
             curves['channels'] = parse_curves_file(
-                db=self.global_database,
+                db=db,
                 k_ep_or_g=k_ep_or_g,
                 k_curves=k_curves)
 
@@ -334,11 +353,10 @@ class Model_curves():
 
 
 
-    def save_shot_curves_selection(self, shot):
+    def save_shot_curves_selection(self, db, shot):
         if not self.is_curves_selection_db_modified:
             return True
 
-        db = self.global_database
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']

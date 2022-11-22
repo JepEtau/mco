@@ -281,7 +281,7 @@ class Window_main(Window_common):
 
 
     def wheelEvent(self, event):
-        if self.widget_controls.wheel_event(event):
+        if self.widget_selection.list_images.wheelEvent(event):
             event.accept()
             return True
 
