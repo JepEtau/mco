@@ -23,7 +23,7 @@ from video_editor.ui.widget_curves_selection_ui import Ui_widget_curves_selectio
 class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
     signal_curves_selection_changed = Signal(str)
     signal_save_rgb_curves_requested = Signal(dict)
-    signal_save_curves_selection_requested = Signal(dict)
+    signal_save_curves_selection_requested = Signal()
     signal_discard_curves = Signal(str)
     signal_delete_curves = Signal(str)
 
@@ -252,22 +252,19 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
             self.pushButton_save_rgb_curves.setEnabled(True)
 
 
+
+
     def event_save_selection(self):
         # Discard new name
         self.lineEdit_save.blockSignals(True)
         self.lineEdit_save.clearFocus()
         self.lineEdit_save.blockSignals(False)
 
-        # Get the current selected k_curves
+        # Get the current selected k_curves for debug only
         try: k_curves = self.list_curves.currentItem().text()
         except: k_curves = ''
-
-        log.info("save selected curves [%s] as new selected" % (k_curves))
-        self.signal_save_curves_selection_requested.emit({
-            'current': '',
-            'new': k_curves.replace('*', ''),
-        })
-
+        log.info("save selected curves (for debug: %s)" % (k_curves))
+        self.signal_save_curves_selection_requested.emit()
 
 
     def event_save_rgb_curves_as(self):

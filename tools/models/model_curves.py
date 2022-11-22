@@ -196,7 +196,7 @@ class Model_curves():
         try:
             k_curves_current = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
         except:
-            # print("Error: %s:%s:%s:%s: current curves are not found in the db_curves_selection (modified db)" % (k_ed, k_ep, k_part, shot_start))
+            print("Error: %s:%s:%s:%s: current curves are not found in the db_curves_selection (modified db)" % (k_ed, k_ep, k_part, shot_start))
             # pprint(self.db_curves_selection)
             # raise Exception()
             pass
@@ -323,9 +323,9 @@ class Model_curves():
 
 
 
-    def save_rgb_curves_as(self, k_ep_or_g, curves):
+    def save_rgb_curves_as(self, db, k_ep_or_g, curves):
         k_curves_current = curves['k_curves_current']
-        log.info("Try to remove [%s] from modified db" % (k_curves_current))
+        log.info("Try removing [%s] from modified db" % (k_curves_current))
         try:
             # Remove from modified db
             del self.db_curves_library[k_curves_current]
@@ -335,8 +335,9 @@ class Model_curves():
 
         # Append these curves in the initial db
         k_curves_new = k_curves_current if curves['k_curves_new'] is None else curves['k_curves_new']
+        log.info("Append %s to the db" % (k_curves_new))
         filepath = os.path.join(
-            self.global_database['common']['directories']['curves'],
+            db['common']['directories']['curves'],
             k_ep_or_g,
             "%s.crv" % (k_curves_new))
         log.info("write curves file as [%s]" % (filepath))
@@ -364,7 +365,7 @@ class Model_curves():
         shot_start = shot['start']
 
         log.info("save shot curves selection: %s:%s:%s" % (k_ed, k_ep, k_part))
-        # print("save shot curves selection: %s:%s:%s shot no. %d, start=%d" % (k_ed, k_ep, k_part, shot['no'], shot_start))
+        print("save shot curves selection: %s:%s:%s shot no. %d, start=%d" % (k_ed, k_ep, k_part, shot['no'], shot_start))
 
         # Open configuration file
         if k_part in K_GENERIQUES:

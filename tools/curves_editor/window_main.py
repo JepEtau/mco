@@ -58,17 +58,6 @@ class Window_main(Window_common):
         p = self.model.get_preferences()
 
 
-        # # Widget: curves editor
-        # self.widget_curves_editor = Widget_curves_editor(self, self.model)
-        # # self.widget_curves_editor.refresh_browsing_folder(self.model.get_available_episode_and_parts())
-        # self.widget_curves_editor.set_preview_options('preview')
-        # self.widget_curves_editor.signal_action[str].connect(self.event_editor_action)
-        # self.widget_curves_editor.widget_rgb_curves.widget_rgb_graph.signal_graph_modified.connect(self.event_curves_modified)
-        # self.widget_curves_editor.widget_app_controls.signal_action[str].connect(self.event_editor_action)
-        # self.widget_curves_editor.set_initial_options(p)
-        # self.widget_curves_editor.show()
-
-
         # RGB Curves
         if 'curves' in self.widgets.keys():
             self.widget_curves = Widget_curves(self, self.model)
@@ -106,9 +95,6 @@ class Window_main(Window_common):
         self.event_show_fullscreen()
 
         # Initial display mode
-        self.do_display_preview_image = True
-        self.do_display_split_preview_image = False
-        self.is_grabbing_split_line = False
         self.split_x = int(self.width() / 2)
 
 
@@ -126,7 +112,6 @@ class Window_main(Window_common):
         self.image = None
         gc.collect()
 
-        self.is_grabbing_split_line = False
         if self.is_repainting:
             log.error("error: flush while repainting")
         self.is_repainting = False
@@ -362,62 +347,6 @@ class Window_main(Window_common):
 
     def event_shotlist_modified(self, shotlist):
         self.widget_selection.event_shotlist_modified(shotlist=shotlist)
-
-
-    # def event_editor_action(self, event):
-    #     # print("event_editor_action")
-    #     # log.info("event=%s" % (event))
-    #     if event == 'exit':
-    #         if not self.is_closing:
-    #             # print("\t skip, already closing")
-    #             self.event_close()
-    #     elif event == 'minimize':
-    #         self.widget_curves_editor.showMinimized()
-    #         self.showMinimized()
-    #     elif event == 'repaint':
-    #         self.repaint()
-
-
-    # def event_curves_modified(self, modification):
-    #     # if not self.model.isCurveModified():
-    #         # self.model.setModification('curve', enabled=True)
-    #     # self.refreshCurvesInfo()
-    #     self.repaint()
-
-
-    # def switch_to_original_image(self):
-    #     if self.do_display_preview_image:
-    #         # Switch back to original image
-    #         log.info("preview: switch back to original image")
-    #         self.widget_curves_editor.set_preview_options('original')
-    #         self.do_display_preview_image = False
-    #         self.do_display_split_preview_image = False
-    #     else:
-    #         log.info("preview: display preview image")
-    #         self.widget_curves_editor.set_preview_options('preview')
-    #         self.do_display_split_preview_image = False
-    #         self.do_display_preview_image = True
-    #     self.repaint()
-
-
-    # def switch_to_splitted_image(self):
-    #     if self.do_display_split_preview_image:
-    #         log.info("split: switch to preview")
-    #         self.widget_curves_editor.set_preview_options('preview')
-    #         self.do_display_split_preview_image = False
-    #         self.do_display_preview_image = True
-    #     else:
-    #         log.info("split: display splitted image")
-    #         self.widget_curves_editor.set_preview_options('splitted')
-    #         self.do_display_split_preview_image = True
-    #     self.repaint()
-
-
-    # def get_rgb_value(self, xr, yr):
-    #     if self.image is None:
-    #         # No frame loaded
-    #         return
-
 
 
 

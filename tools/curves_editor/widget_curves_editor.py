@@ -431,62 +431,6 @@ class Widget_curves_editor(QWidget, Ui_widget_curves_editor):
 
 
 
-    def event_episode_changed(self, index=0):
-        log.info("select ep: %s, part: %s" % (self.combobox_episode.currentText(), self.combobox_part.currentText()))
-        self.refresh_combobox_part(-1)
-
-        # Generate a signal to inform that the following shall be updated:
-        #   - editions
-        #   - filter ids
-        #   - list of frames
-        k_ep = ''
-        selected_ep_str = self.combobox_episode.currentText()
-        if selected_ep_str not in ['', ' ']:
-            k_ep = 'ep%02d' % (int(self.combobox_episode.currentText()))
-
-        values = {
-            'k_ep': k_ep,
-            'k_part': self.combobox_part.itemText(0),
-        }
-
-        self.signal_directory_changed.emit(values)
-        return True
-
-
-
-    def event_part_changed(self, index=0):
-        log.info("select ep: %s, part: %s" % (self.combobox_episode.currentText(), self.combobox_part.currentText()))
-
-        k_ep = ''
-        selected_ep_str = self.combobox_episode.currentText()
-        if selected_ep_str not in ['', ' ']:
-            k_ep = 'ep%02d' % (int(self.combobox_episode.currentText()))
-
-        values = {
-            'k_ep': k_ep,
-            'k_part': self.combobox_part.currentText(),
-        }
-
-        self.signal_directory_changed.emit(values)
-        return True
-
-
-
-    def event_edition_changed(self, index=0):
-        log.info("changed edition")
-        filters = self.filter_by()
-        self.signal_filter_by_changed.emit(filters)
-
-
-
-    def event_step_changed(self, index):
-        log.info("changed step")
-        self.comboBox_filter_id.setCurrentText('')
-        filters = self.filter_by()
-        self.signal_filter_by_changed.emit(filters)
-
-
-
     def event_filter_id_changed(self, index):
         log.info("changed filter_id")
         filters = self.filter_by()
@@ -610,59 +554,6 @@ class Widget_curves_editor(QWidget, Ui_widget_curves_editor):
 
 
 
-    def refresh_image_list(self, imagelist):
-        # Update filter_ids
-        filter_ids = self.model.get_available_filter_ids()
-        self.comboBox_filter_id.blockSignals(True)
-        saved_filter_id = self.comboBox_filter_id.currentText()
-        self.comboBox_filter_id.clear()
-        self.comboBox_filter_id.addItem('')
-        for filter_id in filter_ids:
-            self.comboBox_filter_id.addItem("%03d" % (filter_id))
-        i = self.comboBox_filter_id.findText(saved_filter_id)
-        new_index = i if i != -1 else 0
-        self.comboBox_filter_id.setCurrentIndex(new_index)
-        self.comboBox_filter_id.blockSignals(False)
-
-
-        # Save current selected image
-        if self.list_images.count() > 0 and len(imagelist) > 0:
-            saved_image_name = self.list_images.currentItem().text()
-            log.info("current frame: %s" % (saved_image_name))
-        else:
-            log.info("no frames")
-            saved_image_name = ""
-
-
-        self.list_images.blockSignals(True)
-
-        # Remove all names
-        self.list_images.clear()
-
-        # Update list of images
-        no = -1
-        for name, i in zip(imagelist, range(len(imagelist))):
-            self.list_images.addItem(QListWidgetItem(name))
-            if name == saved_image_name:
-                no = i
-
-        # Select previous image
-        image_name = ''
-        if self.list_images.count() > 0:
-            if no == -1:
-                no = 0
-            log.info("set current frame, no=%d, nb of frames=%d" % (no, self.list_images.count()))
-            self.list_images.setCurrentRow(no)
-            self.list_images.item(no).setSelected(True)
-            image_name = self.list_images.currentItem().text()
-            self.set_enabled(True)
-        else:
-            self.set_enabled(False)
-
-        self.list_images.blockSignals(False)
-        self.signal_select_image.emit(image_name)
-
-
 
     def refresh_frame_properties(self, frame):
         shot_no_str = '' if frame is None else '%05d' % (frame['shot_no'])
@@ -706,53 +597,6 @@ class Widget_curves_editor(QWidget, Ui_widget_curves_editor):
 
 
 
-
-
-
-    def is_fit_to_image_enabled(self):
-        return self.checkBox_fit_image_to_window.isChecked()
-
-
-    def event_fit_image_to_window_changed(self):
-        log.info("fit image changed")
-        self.signal_action.emit('repaint')
-
-
-
-    def event_select_image(self):
-        image_name = self.list_images.currentItem().text()
-        # print("event_select_image: is selected?", current_item.isSelected())
-        # log.info("select [%s]" % (image_name))
-        self.signal_select_image.emit(image_name)
-        return True
-
-
-
-    def select_next_image(self):
-        if self.list_images.count() == 0:
-            return True
-        self.list_images.item(self.list_images.currentRow()).setSelected(False)
-        no = self.list_images.currentRow() + 1
-        if no >= self.list_images.count():
-            no = 0
-        # log.info("select row no. %d" % (no))
-        self.list_images.setCurrentRow(no)
-        self.list_images.item(no).setSelected(True)
-
-
-
-    def select_previous_image(self):
-        if self.list_images.count() == 0:
-            return True
-        self.list_images.item(self.list_images.currentRow()).setSelected(False)
-        no = self.list_images.currentRow()
-        if no == 0:
-            no = self.list_images.count() - 1
-        else:
-            no = no - 1
-        # log.info("select row no. %d" % (no))
-        self.list_images.setCurrentRow(no)
-        self.list_images.item(no).setSelected(True)
 
 
 

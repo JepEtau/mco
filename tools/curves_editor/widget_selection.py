@@ -12,6 +12,7 @@ from PySide6.QtCore import (
     QEvent,
     QObject,
     QPoint,
+    QSize,
     Qt,
     Signal,
 )
@@ -21,7 +22,10 @@ from PySide6.QtGui import (
     QCursor,
 )
 from PySide6.QtWidgets import (
+    QAbstractScrollArea,
+    QAbstractItemView,
     QApplication,
+    QFrame,
     QTableWidgetItem,
     QListWidgetItem,
     QWidget,
@@ -68,12 +72,15 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.previous_position = None
         self.is_modified = False
         self.previous_selection = [0]
+        self.current_shot_row_no = 0
+
 
         # Initialize widgets
         self.comboBox_episode.setFocusPolicy(Qt.NoFocus)
         self.comboBox_part.setFocusPolicy(Qt.NoFocus)
+        self.comboBox_edition.setFocusPolicy(Qt.NoFocus)
         self.comboBox_step.setFocusPolicy(Qt.NoFocus)
-        # self.tableWidget_shots.setFocusPolicy(Qt.NoFocus)
+        self.tableWidget_shots.setFocusPolicy(Qt.NoFocus)
 
 
         self.comboBox_edition.currentIndexChanged['int'].connect(partial(self.event_selection_changed, 'k_ed'))
@@ -85,8 +92,44 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.list_images.setAutoScroll(True)
         self.list_images.clear()
 
+        self.column_count = 6
+
         self.tableWidget_shots.clearContents()
+
+        self.tableWidget_shots.setMinimumSize(QSize(0, 600))
+        self.tableWidget_shots.setProperty("showDropIndicator", False)
+        self.tableWidget_shots.setDragDropOverwriteMode(False)
+        self.tableWidget_shots.setSelectionMode(QAbstractItemView.ContiguousSelection)
+        self.tableWidget_shots.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.tableWidget_shots.setShowGrid(True)
+        self.tableWidget_shots.setWordWrap(False)
+        self.tableWidget_shots.setCornerButtonEnabled(False)
         self.tableWidget_shots.setRowCount(0)
+        self.tableWidget_shots.setColumnCount(self.column_count)
+
+        for col_no in range(self.column_count):
+            self.tableWidget_shots.setHorizontalHeaderItem(col_no, QTableWidgetItem())
+
+
+        self.tableWidget_shots.horizontalHeader().setVisible(True)
+        self.tableWidget_shots.horizontalHeader().setMinimumSectionSize(28)
+        self.tableWidget_shots.horizontalHeader().setDefaultSectionSize(40)
+        self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
+
+        self.tableWidget_shots.setFrameShape(QFrame.StyledPanel)
+        self.tableWidget_shots.setFrameShadow(QFrame.Sunken)
+        self.tableWidget_shots.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self.tableWidget_shots.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContentsOnFirstShow)
+        self.tableWidget_shots.setEditTriggers(QAbstractItemView.SelectedClicked)
+
+
+        self.tableWidget_shots.verticalHeader().setDefaultSectionSize(25)
+        self.tableWidget_shots.verticalHeader().setSortIndicatorShown(False)
+        self.tableWidget_shots.verticalHeader().setStretchLastSection(False)
+        self.tableWidget_shots.verticalHeader().setHighlightSections(True)
+        self.tableWidget_shots.verticalHeader().setProperty("showSortIndicator", False)
+
+
         self.alignment = [Qt.AlignCenter| Qt.AlignVCenter,
                             Qt.AlignCenter | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter,
@@ -95,11 +138,10 @@ class Widget_selection(QWidget, Ui_widget_selection):
                             Qt.AlignRight | Qt.AlignVCenter]
         headers = ["ed", "ep", "shot", "start", "curves", "new curves"]
         default_col_width = [25, 25, 45, 55, 60, 60]
-        for col_no, header_str, col_width in zip(range(len(headers)),
+        for col_no, header_str, col_width in zip(range(self.column_count),
                                                     headers,
                                                     default_col_width):
             self.tableWidget_shots.horizontalHeaderItem(col_no).setText(header_str)
-            # self.tableWidget_shots.horizontalHeaderItem(col_no).setTextAlignment(align)
             self.tableWidget_shots.setColumnWidth(col_no, col_width)
         self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
 
@@ -308,13 +350,27 @@ class Widget_selection(QWidget, Ui_widget_selection):
         # pprint(frames.keys())
         # print("---")
 
+        # # Update filter_ids
+        # filter_ids = self.model.get_available_filter_ids()
+        # self.comboBox_filter_id.blockSignals(True)
+        # saved_filter_id = self.comboBox_filter_id.currentText()
+        # self.comboBox_filter_id.clear()
+        # self.comboBox_filter_id.addItem('')
+        # for filter_id in filter_ids:
+        #     self.comboBox_filter_id.addItem("%03d" % (filter_id))
+        # i = self.comboBox_filter_id.findText(saved_filter_id)
+        # new_index = i if i != -1 else 0
+        # self.comboBox_filter_id.setCurrentIndex(new_index)
+        # self.comboBox_filter_id.blockSignals(False)
+
+
         # Save current selected image
         if self.list_images.count() > 0 and len(frames.keys()) > 0:
-            saved_image_name = self.list_images.currentItem().text()
-            log.info("current frame: %s" % (saved_image_name))
+            current_image_name = self.list_images.currentItem().text()
+            log.info("current frame: %s" % (current_image_name))
         else:
             log.info("no frames currently selected")
-            saved_image_name = ''
+            current_image_name = ''
 
         self.list_images.blockSignals(True)
 
@@ -326,12 +382,11 @@ class Widget_selection(QWidget, Ui_widget_selection):
         frame_names = sorted(list(frames.keys()))
         for name, i in zip(frame_names, range(len(frame_names))):
             self.list_images.addItem(QListWidgetItem(name))
-            if name == saved_image_name:
+            if name == current_image_name:
                 row_no = i
 
         # Select previous image
         image_name = ''
-        log.info('%d' % (self.list_images.count()))
         if self.list_images.count() > 0:
             if row_no == -1:
                 row_no = 0
@@ -340,12 +395,14 @@ class Widget_selection(QWidget, Ui_widget_selection):
             self.list_images.item(row_no).setSelected(True)
             image_name = self.list_images.currentItem().text()
 
+        self.current_shot_row_no = -1
         self.list_images.blockSignals(False)
         self.signal_image_selected.emit(image_name)
 
 
     def event_shotlist_modified(self, shotlist):
         print("widget_selection: event_shotlist_modified")
+        log.info("update the shotlist table")
         self.tableWidget_shots.blockSignals(True)
         self.tableWidget_shots.setRowCount(0)
 
@@ -388,9 +445,9 @@ class Widget_selection(QWidget, Ui_widget_selection):
             self.tableWidget_shots.item(row_no, 0).setData(Qt.UserRole, user_role)
 
 
-            for i in range(len(self.alignment)):
-                self.tableWidget_shots.item(row_no, i).setTextAlignment(self.alignment[i])
-                self.tableWidget_shots.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+            for col_no in range(self.column_count):
+                self.tableWidget_shots.item(row_no, col_no).setTextAlignment(self.alignment[col_no])
+                self.tableWidget_shots.item(row_no, col_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
             row_no += 1
 
         self.tableWidget_shots.selectionModel().clearSelection()
@@ -398,12 +455,16 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
 
+    def event_current_shot_modified(self, shot:dict):
+        row_no = self.current_shot_row_no
+        log.info("event_current_shot_modified: current row=%d" % (row_no))
+        # print("event_current_shot_modified: current row=%d" % (row_no))
+        # pprint(shot)
 
-    def event_current_shot_modified(self, modifications:dict):
         self.tableWidget_shots.blockSignals(True)
-        row_no = self.tableWidget_shots.currentRow()
 
         # Curves
+        modifications = shot['modifications']
         k_initial_curves = modifications['curves']['initial']
         k_new_curves = modifications['curves']['new']
 
@@ -488,63 +549,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         selection = self.get_selection(widget, index)
         self.signal_selection_changed.emit(selection)
-
-
-
-    def event_image_selected(self):
-        image_name = self.list_images.currentItem().text()
-        current_item = self.list_images.currentItem()
-        # print("event_image_selected: is selected?", current_item.isSelected())
-        # log.info("select [%s]" % (image_name))
-        self.signal_image_selected.emit(image_name)
-        return True
-
-    def select_next_image(self):
-        if self.list_images.count() == 0:
-            return True
-        self.list_images.item(self.list_images.currentRow()).setSelected(False)
-        no = self.list_images.currentRow() + 1
-        if no >= self.list_images.count():
-            no = 0
-        # log.info("select row no. %d" % (no))
-        self.list_images.setCurrentRow(no)
-        self.list_images.item(no).setSelected(True)
-
-
-    def select_previous_image(self):
-        if self.list_images.count() == 0:
-            return True
-        self.list_images.item(self.list_images.currentRow()).setSelected(False)
-        no = self.list_images.currentRow()
-        if no == 0:
-            no = self.list_images.count() - 1
-        else:
-            no = no - 1
-        # log.info("select row no. %d" % (no))
-        self.list_images.setCurrentRow(no)
-        self.list_images.item(no).setSelected(True)
-
-
-
-    def select_first_image(self):
-        if self.list_images.count() > 0:
-            self.list_images.setCurrentRow(0)
-            self.list_images.item(0).setSelected(True)
-        return True
-
-
-    def select_last_image(self):
-        if self.list_images.count() > 0:
-            row_no = self.list_images.count() - 1
-            self.list_images.setCurrentRow(row_no)
-            self.list_images.item(row_no).setSelected(True)
-        return True
-
-    def event_page_up(self, event):
-        return self.list_images.keyPressEvent(event)
-
-    def event_page_down(self, event):
-        return self.list_images.keyPressEvent(event)
 
 
 
@@ -642,8 +646,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
         #     self.tableWidget_shots.selectRow(0)
 
 
-
-
     def event_ep_or_part_selection_changed(self, selected):
         # print("event_ep_or_part_selection_changed")
         selected_indexes = self.tableWidget_shots.selectedIndexes()
@@ -680,6 +682,28 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
 
+
+    def refresh_values(self, frame:dict):
+        # Called when a frame has been selected and is to be displayed
+        log.info("%s: refresh values: selected shot" % (self.objectName()))
+
+        frame_user_role = "%s.%s.%s" % (frame['k_ed'], frame['k_ep'], frame['shot_no'])
+
+        # Refresh the list of shots: select current shot
+        for row_no in range(self.tableWidget_shots.rowCount()):
+            font = self.tableWidget_shots.item(row_no, 0).font()
+            user_role = self.tableWidget_shots.item(row_no, 0).data(Qt.UserRole)
+            if user_role == frame_user_role:
+                font.setBold(True)
+                self.current_shot_row_no = row_no
+            else:
+                font.setBold(False)
+            for col_no in range(len(self.alignment) - 2):
+                self.tableWidget_shots.item(row_no, col_no).setFont(font)
+            row_no += 1
+
+
+
     def refresh_modification_status(self, modifications:dict):
         # Something has been modified, disable selection until saving or discard
         self.is_modified = modifications['status']
@@ -705,25 +729,65 @@ class Widget_selection(QWidget, Ui_widget_selection):
         return preview_options
 
 
-    def refresh_values(self, frame:dict):
-        print("%s: todo: refresh values" % (self.objectName()))
-        # pprint(frame)
-        log.info("todo: refresh values")
 
-        frame_user_role = "%s.%s.%s" % (frame['k_ed'], frame['k_ep'], frame['shot_no'])
 
-        # Refresh the list of shots: select current shot
-        for row_no in range(self.tableWidget_shots.rowCount()):
-            font = self.tableWidget_shots.item(row_no, 0).font()
-            user_role = self.tableWidget_shots.item(row_no, 0).data(Qt.UserRole)
-            if user_role == frame_user_role:
-                font.setBold(True)
-            else:
-                font.setBold(False)
-            for col_no in range(len(self.alignment)):
-                self.tableWidget_shots.item(row_no, col_no).setFont(font)
-            row_no += 1
 
+    def event_image_selected(self):
+        image_name = self.list_images.currentItem().text()
+        current_item = self.list_images.currentItem()
+        # print("event_image_selected: is selected?", current_item.isSelected())
+        # log.info("select [%s]" % (image_name))
+        self.signal_image_selected.emit(image_name)
+        return True
+
+
+    def select_next_image(self):
+        if self.list_images.count() == 0:
+            return True
+        self.list_images.item(self.list_images.currentRow()).setSelected(False)
+        no = self.list_images.currentRow() + 1
+        if no >= self.list_images.count():
+            no = 0
+        # log.info("select row no. %d" % (no))
+        self.list_images.setCurrentRow(no)
+        self.list_images.item(no).setSelected(True)
+
+
+    def select_previous_image(self):
+        if self.list_images.count() == 0:
+            return True
+        self.list_images.item(self.list_images.currentRow()).setSelected(False)
+        no = self.list_images.currentRow()
+        if no == 0:
+            no = self.list_images.count() - 1
+        else:
+            no = no - 1
+        # log.info("select row no. %d" % (no))
+        self.list_images.setCurrentRow(no)
+        self.list_images.item(no).setSelected(True)
+
+
+    def select_first_image(self):
+        if self.list_images.count() > 0:
+            self.list_images.setCurrentRow(0)
+            self.list_images.item(0).setSelected(True)
+        return True
+
+
+    def select_last_image(self):
+        if self.list_images.count() > 0:
+            row_no = self.list_images.count() - 1
+            self.list_images.setCurrentRow(row_no)
+            self.list_images.item(row_no).setSelected(True)
+        return True
+
+
+    def event_page_up(self, event):
+        return self.list_images.keyPressEvent(event)
+
+
+    def event_page_down(self, event):
+        return self.list_images.keyPressEvent(event)
 
 
     def mousePressEvent(self, event):

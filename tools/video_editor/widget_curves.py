@@ -26,7 +26,7 @@ GRAPH_WIDTH = 512
 
 
 class Widget_curves(Widget_common, Ui_widget_curves):
-    signal_save_curves_as = Signal(dict)
+    signal_save_rgb_curves_as = Signal(dict)
 
     def __init__(self, ui, model):
         super(Widget_curves, self).__init__(ui)
@@ -83,8 +83,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
 
         self.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
-        self.widget_curves_selection.signal_save_rgb_curves_requested[dict].connect(self.event_save_curves_as)
-        self.widget_curves_selection.signal_save_curves_selection_requested[dict].connect(self.event_save_curves_as)
+        self.widget_curves_selection.signal_save_rgb_curves_requested[dict].connect(self.event_save_rgb_curves_as)
 
         self.model.signal_is_saved[str].connect(self.event_is_saved)
 
@@ -220,15 +219,16 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.widget_curves_selection.mark_current_as_modified(True)
 
 
-    def event_save_curves_as(self, names):
+    def event_save_rgb_curves_as(self, names):
+        log.info("curves widget: save curves as: [%s] -> [%s]" % (names['current'], names['new']))
         # Get RGB curves
         # associate it to the provided name (by the curves selection)
         curves = {
-            'k_curves_new': names['new'],
             'k_curves_current': names['current'],
+            'k_curves_new': names['new'],
             'channels': self.widget_rgb_graph.get_curves_channels(),
         }
-        self.signal_save_curves_as.emit(curves)
+        self.signal_save_rgb_curves_as.emit(curves)
 
 
     def get_preview_options(self):

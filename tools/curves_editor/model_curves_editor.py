@@ -131,9 +131,7 @@ class Model_curves_editor(Model_common):
         # self.view.widget_curves_editor.signal_reset_shot_curves[str].connect(self.event_reset_curves)
         # self.view.widget_curves_editor.signal_reset_curves[str].connect(self.event_reload_curves)
 
-        # self.view.widget_curves_editor.signal_backup_curves[dict].connect(self.event_backup_curves)
         # self.view.widget_curves_editor.signal_save_curves[dict].connect(self.event_save_curves_as)
-        # self.view.widget_curves_editor.signal_mark_shot_as_modified[str].connect(self.event_mark_shot_as_modified)
         # self.view.widget_curves_editor.signal_save_database[dict].connect(self.event_save_database)
 
         # New:
@@ -142,10 +140,9 @@ class Model_curves_editor(Model_common):
 
         self.view.widget_curves.widget_rgb_graph.signal_graph_modified[dict].connect(self.event_rgb_graph_modified)
         self.view.widget_curves.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
-        self.view.widget_curves.signal_save_curves_as[dict].connect(self.event_save_curves_as)
+        self.view.widget_curves.signal_save_rgb_curves_as[dict].connect(self.event_save_rgb_curves_as)
         self.view.widget_curves.widget_curves_selection.signal_save_curves_selection_requested.connect(self.event_save_curves_selection_requested)
         self.view.widget_curves.widget_curves_selection.signal_discard_curves[str].connect(self.event_discard_rgb_curves_modifications)
-
 
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
         self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
@@ -332,18 +329,16 @@ class Model_curves_editor(Model_common):
         curves = self.model_curves.get_curves_selection(db=self.model_database.database(),
             shot=shot)
 
-        pprint(shot)
-
         # Update the modifications structure to update the selection widget
         if k_curves != shot['modifications']['curves']['initial']:
-            log.info("selection has changed to %s" % (k_curves))
+            log.info("selected curves changed from %s to %s" % (shot['modifications']['curves']['initial'], k_curves))
             shot['modifications']['curves']['new'] = k_curves
-            pprint(shot)
             # Modify the selected curves in the db
             self.model_curves.set_curves_selection(db=self.model_database.database(),
                 shot=shot, k_curves=k_curves)
         else:
             # Discard the current selected curves
+            log.info("discard_curves_selection %s" % (shot['modifications']['curves']['new']))
             shot['modifications']['curves']['new'] = None
             self.model_curves.discard_curves_selection(db=self.model_database.database(),
                 shot=shot)
@@ -353,10 +348,10 @@ class Model_curves_editor(Model_common):
             shot=shot)
 
         # Refresh the list of shot for these curves
-        # shot_list = self.get_shots_per_curves(k_curves)
-        # self.signal_shot_per_curves_modified.emit(shot_list)
+        shot_list = self.model_curves.get_shots_per_curves(k_curves)
+        self.signal_shot_per_curves_modified.emit(shot_list)
 
-        self.signal_current_shot_modified.emit(shot['modifications'])
+        self.signal_current_shot_modified.emit(shot)
         self.signal_load_curves.emit(curves)
         self.signal_reload_frame.emit()
 
@@ -539,50 +534,45 @@ class Model_curves_editor(Model_common):
 
 
 
-    # Imported from video_editor!
-    #-----------------------------------------------------
     def event_rgb_graph_modified(self, rgb_channels):
-        shot_no = self.current_frame['shot_no']
-        self.model_database.set_shot_rgb_channels(
-            shot=self.shots[shot_no],
-            rgb_channels=rgb_channels)
+        shot = self.framelist.get_shot_from_frame(self.current_frame)
+        self.model_curves.set_shot_rgb_channels(shot=shot, rgb_channels=rgb_channels)
         self.signal_reload_frame.emit()
 
 
-
-
-
     def event_discard_rgb_curves_modifications(self, k_curves:str):
-        self.model_database.discard_rgb_curves_modifications(k_curves)
+        self.model_curves.discard_rgb_curves_modifications(k_curves)
         k_part = self.current_selection['k_part']
         k_ep = self.current_selection['k_ep']
 
         # Get the initial curves
-        curves = self.model_database.get_curves(
+        curves = self.model_curves.get_curves(
             k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep,
             k_curves=k_curves)
 
         # Send the list of curves
-        self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+        self.signal_curves_library_modified.emit(self.model_curves.get_library_curves())
 
         # Reload curves
         self.signal_load_curves.emit(curves)
         self.signal_reload_frame.emit()
 
 
-    def event_save_curves_as(self, curves):
+    def event_save_rgb_curves_as(self, curves):
         # Save the curves in the curves library
-        log.info("save the curves: %s -> %s" % (curves['k_curves_current'], curves['k_curves_new']))
+        log.info("save the rgb curves: %s -> %s" % (curves['k_curves_current'], curves['k_curves_new']))
+        print("\nsave the rgb curves: %s -> %s" % (curves['k_curves_current'], curves['k_curves_new']))
         # if curves['k_curves_new'] == '':
         #     log.error("No name defined in the curves struct")
         #     return
 
         k_part = self.current_frame['k_part']
         k_ep = self.current_frame['k_ep']
-        self.model_database.save_rgb_curves_as(
+        self.model_curves.save_rgb_curves_as(
+            db=self.model_database.database(),
             k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep,
             curves=curves)
-        self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+        self.signal_curves_library_modified.emit(self.model_curves.get_library_curves())
 
         # Modify the current selection
         if curves['k_curves_new'] is not None:
@@ -591,21 +581,25 @@ class Model_curves_editor(Model_common):
 
 
     def event_save_curves_selection_requested(self):
+        log.info("save curves selection")
         # Save the curves selected for this shot
-        shot_no = self.current_frame['shot_no']
+        shot = self.framelist.get_shot_from_frame(self.current_frame)
+
+        if shot['modifications']['curves']['new'] is None:
+            return
+
         # print("event_save_curves_selection_requested %s:%s:%s:%d" % (k_ed, k_ep, k_part, shot_no))
-        self.model_database.save_shot_curves_selection(db=self.model_database.database(),
-            shot=self.shots[shot_no])
+        self.model_curves.save_shot_curves_selection(db=self.model_database.database(),
+            shot=shot)
 
         # Update the modifications structure to update the selection widget
-        k_new_curves = self.shots[shot_no]['modifications']['curves']['new']
-        self.shots[shot_no]['modifications']['curves'] = {
+        k_new_curves = shot['modifications']['curves']['new']
+        shot['modifications']['curves'] = {
             'initial': k_new_curves,
             'new': None,
         }
-        self.signal_current_shot_modified.emit(self.shots[shot_no]['modifications'])
+        self.signal_current_shot_modified.emit(shot)
         self.signal_is_saved.emit('curves_selection')
-
 
 
 
@@ -613,35 +607,22 @@ class Model_curves_editor(Model_common):
         k_ep = self.current_selection['k_ep']
         k_part = self.current_selection['k_part']
 
-        self.event_save_replace_requested()
-
-        self.model_database.save_curves_selection_database(
+        self.model_curves.save_curves_selection_database(
             self.shots,
             k_ed='',
             k_ep='',
             k_part=k_part,
             shot_no=-1)
 
-        self.event_save_geometry_requested()
-        self.model_database.save_all_curves(k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
+        self.model_curves.save_all_curves(k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
         self.signal_close.emit()
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
     def get_frame_from_name(self, image_name=''):
+        # log.info("image_name=%s" % (image_name))
         if image_name == 'reload':
             try:
                 image_name = self.current_frame['filename']
@@ -665,7 +646,6 @@ class Model_curves_editor(Model_common):
         # Update curves and load it into the graph
         frame['curves'] = self.model_curves.get_curves_selection(db=self.model_database.database(),
             shot=shot)
-        pprint(frame['curves'])
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
             try:
                 self.signal_load_curves.emit(frame['curves'])
@@ -691,42 +671,7 @@ class Model_curves_editor(Model_common):
             index, img = generate_single_image(self.current_frame, preview_options=options)
             self.set_current_frame_cache(img=img)
 
-
-
-
-        if False:
-            # previous
-            frame_k_ed = frame['k_ed']
-            frame_k_ep = frame['k_ep']
-
-            # log.info("select frame: %s (shot:%d)" % (image_name, frame['shot_no']))
-            if not self.model_curves.is_shot_modified(frame['shot_no'], k_ed=frame_k_ed, k_ep=frame_k_ep):
-                curves = self.model_curves.get_curves_from_shot_no(frame['shot_no'], k_ed=frame_k_ed, k_ep=frame_k_ep)
-
-            # Get new list of shots that are using the same k_curve
-            frame['k_curves'] = self.model_curves.get_k_curves_from_shot_no(frame['shot_no'], k_ed=frame_k_ed, k_ep=frame_k_ep)
-            frame['k_curves_initial'] = self.model_curves.get_initial_k_curves_from_shot_no(frame['shot_no'], k_ed=frame_k_ed, k_ep=frame_k_ep)
-            shot_list_for_k_curve = self.model_curves.get_shots_from_k_curves(frame['k_curves'])
-
-            # Load rgb curves, refresh shot list for this k_curve and display the selected image
-            if not self.model_curves.is_shot_modified(frame['shot_no'], k_ed=frame_k_ed, k_ep=frame_k_ep):
-                self.signal_load_curves.emit(curves)
-            self.signal_refresh_curves_shot_list.emit(shot_list_for_k_curve)
-            self.signal_display_frame.emit(frame)
-
-
         return self.current_frame
-
-
-
-
-
-
-
-
-
-
-
 
 
 

@@ -439,6 +439,7 @@ class Model_video_editor(Model_common):
         k_part = self.current_frame['k_part']
         k_ep = self.current_frame['k_ep']
         self.model_database.save_rgb_curves_as(
+            db=self.model_database.database(),
             k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep,
             curves=curves)
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
