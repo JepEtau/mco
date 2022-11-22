@@ -48,6 +48,10 @@ class Widget_selection(QWidget, Ui_widget_selection):
     signal_close = Signal()
     signal_image_selected = Signal(str)
 
+    signal_save_curves_selection_requested = Signal()
+    signal_discard_curves_selection_requested = Signal()
+    signal_remove_curves_selection_requested = Signal()
+
 
     def __init__(self, ui, model):
         super(Widget_selection, self).__init__()
@@ -80,7 +84,17 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_part.setFocusPolicy(Qt.NoFocus)
         self.comboBox_edition.setFocusPolicy(Qt.NoFocus)
         self.comboBox_step.setFocusPolicy(Qt.NoFocus)
-        self.tableWidget_shots.setFocusPolicy(Qt.NoFocus)
+        self.comboBox_filter_id.setFocusPolicy(Qt.NoFocus)
+        # self.tableWidget_shots.setFocusPolicy(Qt.NoFocus)
+
+        self.pushButton_discard_shot_curves_selection.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_remove_shot_curves_selection.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_save_shot_curves_selection.setFocusPolicy(Qt.NoFocus)
+        self.checkBox_fit_image_to_window.setFocusPolicy(Qt.NoFocus)
+
+        self.pushButton_discard_shot_curves_selection.setEnabled(False)
+        self.pushButton_remove_shot_curves_selection.setEnabled(False)
+        self.pushButton_save_shot_curves_selection.setEnabled(False)
 
 
         self.comboBox_edition.currentIndexChanged['int'].connect(partial(self.event_selection_changed, 'k_ed'))
@@ -92,14 +106,14 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.list_images.setAutoScroll(True)
         self.list_images.clear()
 
+        # Table of shots
         self.column_count = 6
-
         self.tableWidget_shots.clearContents()
 
         self.tableWidget_shots.setMinimumSize(QSize(0, 600))
         self.tableWidget_shots.setProperty("showDropIndicator", False)
         self.tableWidget_shots.setDragDropOverwriteMode(False)
-        self.tableWidget_shots.setSelectionMode(QAbstractItemView.ContiguousSelection)
+        self.tableWidget_shots.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableWidget_shots.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableWidget_shots.setShowGrid(True)
         self.tableWidget_shots.setWordWrap(False)
@@ -145,14 +159,15 @@ class Widget_selection(QWidget, Ui_widget_selection):
             self.tableWidget_shots.setColumnWidth(col_no, col_width)
         self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
 
+
         # Connect signals and filter events
         self.list_images.itemSelectionChanged.connect(self.event_image_selected)
-
-
         self.checkBox_fit_image_to_window.stateChanged['int'].connect(self.event_fit_image_to_window_changed)
+        self.tableWidget_shots.selectionModel().selectionChanged.connect(self.event_shots_selected)
+        self.pushButton_save_shot_curves_selection.clicked.connect(self.event_save_curves_selection)
+        self.pushButton_discard_shot_curves_selection.clicked.connect(self.event_discard_curves_selection)
+        self.pushButton_remove_shot_curves_selection.clicked.connect(self.event_remove_curves_selection)
 
-        # self.tableWidget_shots.selectionModel().selectionChanged.connect(self.event_ep_or_part_selection_changed)
-        # self.tableWidget_shots.installEventFilter(self)
 
         # self.model.signal_shotlist_modified[dict].connect(self.event_refresh_shotlist)
         # self.model.signal_is_modified[dict].connect(self.refresh_modification_status)
@@ -163,6 +178,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.installEventFilter(self)
         self.list_images.installEventFilter(self)
         self.list_images.verticalScrollBar().installEventFilter(self)
+        self.tableWidget_shots.installEventFilter(self)
+
 
         set_stylesheet(self)
         self.set_selected(False)
@@ -203,15 +220,12 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_episode.blockSignals(enabled)
         self.comboBox_part.blockSignals(enabled)
         self.comboBox_step.blockSignals(enabled)
-        self.tableWidget_shots.setEnabled(enabled)
+        self.tableWidget_shots.blockSignals(enabled)
 
 
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
         s = preferences['selection']
-        print("%s:set_initial_options: " % (__name__))
-        pprint(s)
-        pprint(self.k_eps_parts)
 
         self.block_signals(True)
 
@@ -316,7 +330,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
     def event_folders_parsed(self, available_selection):
         # Update these combobox after having parsed the 'frames' directory
         log.info("event_folders_parsed: save ep and parts for later use")
-        print("event_folders_parsed: save ep and parts for later use")
         # pprint(available_selection)
         self.block_signals(True)
         try:
@@ -344,8 +357,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
     def event_framelist_modified(self, frames) -> dict:
-        log.info("directory has been parsed, refresh list of images")
-        print("directory has been parsed, refresh list of images")
+        # log.info("directory has been parsed, refresh list of images")
+        # print("directory has been parsed, refresh list of images")
         # print("-> %s:event_refresh:" % (__name__))
         # pprint(frames.keys())
         # print("---")
@@ -401,7 +414,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
     def event_shotlist_modified(self, shotlist):
-        print("widget_selection: event_shotlist_modified")
         log.info("update the shotlist table")
         self.tableWidget_shots.blockSignals(True)
         self.tableWidget_shots.setRowCount(0)
@@ -475,8 +487,12 @@ class Widget_selection(QWidget, Ui_widget_selection):
             if (k_initial_curves.startswith('~')
             or k_new_curves is not None):
                 f.setStrikeOut(True)
+                self.pushButton_save_shot_curves_selection.setEnabled(True)
+                self.pushButton_discard_shot_curves_selection.setEnabled(True)
             else:
                 f.setStrikeOut(False)
+                self.pushButton_save_shot_curves_selection.setEnabled(False)
+                self.pushButton_discard_shot_curves_selection.setEnabled(False)
             self.tableWidget_shots.item(row_no, 4).setFont(f)
         except:
             self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(''))
@@ -497,7 +513,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def get_selection(self, widget, index) -> dict:
         log.info("get new selection")
-        print("get_selection")
 
         k_ep = self.comboBox_episode.currentText().replace(' ', '')
         k_ep = 'ep%02d' % (int(k_ep)) if k_ep != '' else ''
@@ -517,9 +532,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
             'k_part': self.comboBox_part.currentText().replace(' ', ''),
             'k_step': self.comboBox_step.currentText().replace(' ', ''),
             'filter_ids': list(),
-            'shot_nos': list(),
+            'shots': list(),
         }
-        pprint(selection)
         return selection
 
 
@@ -549,101 +563,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         selection = self.get_selection(widget, index)
         self.signal_selection_changed.emit(selection)
-
-
-
-    def event_refresh_shotlist(self, values:dict):
-        log.info("directory has been parsed, refresh shot list")
-        print("%s:event_refresh:" % (__name__))
-        pprint(values)
-        print("---")
-        sys.exit()
-        self.set_enabled(False)
-        self.tableWidget_shots.blockSignals(True)
-
-
-        # Episode
-        k_ep = values['k_ep']
-        ep_no_str = str(int(k_ep[2:])) if (k_ep != '' and  k_ep != ' ') else ''
-        if self.comboBox_episode.currentText() != ep_no_str:
-            i = self.comboBox_episode.findText(ep_no_str)
-            self.comboBox_episode.blockSignals(True)
-            new_index = i if i != -1 else 0
-            self.comboBox_episode.setCurrentIndex(new_index)
-            self.comboBox_episode.blockSignals(False)
-
-        # Part
-        if self.comboBox_part.currentText() != values['k_part']:
-            i = self.comboBox_part.findText(values['k_part'])
-            self.comboBox_part.blockSignals(True)
-            new_index = i if i != -1 else 0
-            self.comboBox_part.setCurrentIndex(new_index)
-            self.comboBox_part.blockSignals(False)
-
-        # Steps
-        i = self.comboBox_step.findText(values['k_step'])
-        self.comboBox_step.blockSignals(True)
-        new_index = i if i != -1 else 0
-        self.comboBox_step.setCurrentIndex(i)
-        self.comboBox_step.blockSignals(False)
-
-        # Shots
-        # shots = values['shots']
-        # self.tableWidget_shots.clearContents()
-        # self.tableWidget_shots.setRowCount(0)
-        # row_no = 0
-        # for k_shot, shot in shots.items():
-        #     self.tableWidget_shots.insertRow(row_no)
-        #     self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem('%05d' % (k_shot)))
-        #     src_txt = ""
-        #     if 'src' in shot.keys():
-        #         src_txt = "%s:%s" % (shot['src']['k_ed'], shot['src']['k_ep'])
-        #     self.tableWidget_shots.setItem(row_no, 1, QTableWidgetItem(src_txt))
-
-        #     self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem(str(shot['src']['start'])))
-        #     self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(str(shot['src']['count'])))
-
-        #     # Curves
-        #     k_initial_curves = shot['modifications']['curves']['initial']
-        #     k_new_curves = shot['modifications']['curves']['new']
-
-        #     # Initial curves
-        #     try:
-        #         self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(k_initial_curves.replace('~', '')))
-        #         f = self.tableWidget_shots.item(row_no, 4).font()
-        #         if (k_initial_curves.startswith('~')
-        #         or k_new_curves is not None):
-        #             f.setStrikeOut(True)
-        #         else:
-        #             f.setStrikeOut(False)
-        #         self.tableWidget_shots.item(row_no, 4).setFont(f)
-        #     except:
-        #         self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(''))
-
-        #     # New curves
-        #     try: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(k_new_curves))
-        #     except: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(''))
-
-
-        #     for i in range(len(self.alignment)):
-        #         self.tableWidget_shots.item(row_no, i).setTextAlignment(self.alignment[i])
-        #         self.tableWidget_shots.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-
-        #     if not shot['is_valid']:
-        #         # If true, it means that all pictures are present in the folder
-        #         # Bug: this does not work
-        #         self.tableWidget_shots.item(row_no, 0).setData(Qt.FontRole, QColor(Qt.red))
-        #     row_no += 1
-
-        # self.tableWidget_shots.selectionModel().clearSelection()
-        # self.tableWidget_shots.blockSignals(False)
-
-        # self.tableWidget_shots.setEnabled(True)
-        self.set_enabled(True)
-
-        # if len(shots) > 0:
-        #     log.info("select shot no. 0")
-        #     self.tableWidget_shots.selectRow(0)
 
 
     def event_ep_or_part_selection_changed(self, selected):
@@ -682,11 +601,46 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
 
+    def event_shots_selected(self):
+        log.info("select shot(s)")
+        selected_indexes = self.tableWidget_shots.selectedIndexes()
+        selected_row_no = sorted(list(set([i.row() for i in selected_indexes])))
+
+        if len(selected_row_no) == 0:
+            # Deselect shots, update list of frames
+            selection = self.get_selection('shots', -1)
+            self.signal_selection_changed.emit(selection)
+
+        if len(selected_row_no) > 1:
+            self.pushButton_save_shot_curves_selection.setEnabled(False)
+            self.pushButton_discard_shot_curves_selection.setEnabled(False)
+
+
+        log.info("event_selection_changed: %s" % (', '.join(map(lambda x: "%s" % (x), selected_row_no))))
+        selected_shots = list()
+        for row_no in selected_row_no:
+            user_role = self.tableWidget_shots.item(row_no, 0).data(Qt.UserRole)
+            selected_shots.append(user_role)
+
+
+        # for i in range(self.list_shots.count()):
+        #     item = self.list_shots.item(i)
+        #     _font = item.font()
+        #     if item in self.list_shots.selectedItems():
+        #         _font.setBold(True)
+        #     else:
+        #         _font.setBold(False)
+        #     item.setFont(_font)
+
+        selection = self.get_selection('shots', -1)
+        selection['shots'] = selected_shots
+        self.signal_selection_changed.emit(selection)
+
+
 
     def refresh_values(self, frame:dict):
         # Called when a frame has been selected and is to be displayed
         log.info("%s: refresh values: selected shot" % (self.objectName()))
-
         frame_user_role = "%s.%s.%s" % (frame['k_ed'], frame['k_ep'], frame['shot_no'])
 
         # Refresh the list of shots: select current shot
@@ -698,10 +652,23 @@ class Widget_selection(QWidget, Ui_widget_selection):
                 self.current_shot_row_no = row_no
             else:
                 font.setBold(False)
-            for col_no in range(len(self.alignment) - 2):
+            for col_no in range(self.column_count - 2):
                 self.tableWidget_shots.item(row_no, col_no).setFont(font)
             row_no += 1
 
+        # Enable/Disable save and discard buttons
+        if self.tableWidget_shots.item(self.current_shot_row_no, self.column_count - 1).text() != '':
+            self.pushButton_save_shot_curves_selection.setEnabled(True)
+            self.pushButton_discard_shot_curves_selection.setEnabled(True)
+        else:
+            self.pushButton_save_shot_curves_selection.setEnabled(False)
+            self.pushButton_discard_shot_curves_selection.setEnabled(False)
+
+        # To enable "remove curves selection", but does not yet works
+        # if self.tableWidget_shots.item(self.current_shot_row_no, self.column_count - 2).text() != '':
+        #     self.pushButton_remove_shot_curves_selection.setEnabled(True)
+        # else:
+        #     self.pushButton_remove_shot_curves_selection.setEnabled(False)
 
 
     def refresh_modification_status(self, modifications:dict):
@@ -729,7 +696,14 @@ class Widget_selection(QWidget, Ui_widget_selection):
         return preview_options
 
 
+    def event_save_curves_selection(self):
+        self.signal_save_curves_selection_requested.emit()
 
+    def event_discard_curves_selection(self):
+        self.signal_discard_curves_selection_requested.emit()
+
+    def event_remove_curves_selection(self):
+        self.signal_remove_curves_selection_requested.emit()
 
 
     def event_image_selected(self):
@@ -803,7 +777,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
     def keyPressEvent(self, event):
-        # print("event_key_pressed")
         if self.event_key_pressed(event):
             event.accept()
             return True
@@ -835,6 +808,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         # print("  * eventFilter: widget_%s: " % (self.objectName()), event.type())
+        # print("focusObject:", QApplication.focusObject())
         # Filter press/release events
         if QApplication.focusObject() is self.list_images:
             if event.type() == QEvent.KeyPress:
@@ -842,8 +816,14 @@ class Widget_selection(QWidget, Ui_widget_selection):
                     self.ui.setFocus()
                     self.ui.keyPressEvent(event)
                     return True
-
                 self.list_images.keyPressEvent(event)
+
+        elif QApplication.focusObject() is self.tableWidget_shots:
+            if event.type() == QEvent.KeyPress:
+                if event.key() == Qt.Key_Escape:
+                    self.tableWidget_shots.selectionModel().clearSelection()
+                    self.tableWidget_shots.setCurrentCell(-1,-1)
+                    return True
 
         if event.type() == QEvent.Wheel:
             # log.info("%s:eventFilter: wheel event" % (__name__))
@@ -865,6 +845,9 @@ class Widget_selection(QWidget, Ui_widget_selection):
             self.is_entered = False
             return True
         # return super().eventFilter(watched, event)
+
+        if event.type() == QEvent.KeyPress:
+            return self.keyPressEvent(event)
 
         return self.ui.eventFilter(watched, event)
 

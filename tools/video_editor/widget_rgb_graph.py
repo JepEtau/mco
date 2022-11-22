@@ -186,7 +186,7 @@ class Widget_rgb_graph(QWidget):
 
     def reset_channel(self, channel:str=''):
         # Reset the graph for a specified/all/current channel
-        log.info("reset channel: %s" % (channel))
+        log.info("reset channel: %s (current: %s)" % (channel, self.k_selected))
         if channel == 'all':
             for c in ['r', 'g', 'b', 'm']:
                 self.channels[c]['curve'].reset()

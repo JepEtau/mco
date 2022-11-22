@@ -142,9 +142,17 @@ class Model_framelist():
                 # print("filter_id is different")
                 continue
 
-            if len(filters['shot_nos']) > 0 and f['shot_no'] not in filters['shot_nos']:
-                # print("shot_no")
-                continue
+            if len(filters['shots']) > 0:
+                do_append = False
+                for shot_str in filters['shots']:
+                    k_ed, k_ep, shot_no = shot_str.split('.')
+                    if (f['shot_no'] == int(shot_no)
+                        and f['k_ed'] == k_ed
+                        and f['k_ep'] == k_ep):
+                        do_append = True
+                        break
+                if not do_append:
+                    continue
 
             selected_frames[k] = f
 
@@ -160,7 +168,7 @@ class Model_framelist():
             if (frame['k_ed'] not in parsed_ed_ep.keys()
                 or frame['k_ep'] not in parsed_ed_ep[frame['k_ed']]):
                 # Parse episode
-                print("parse episode: %s:%s" % (frame['k_ed'], frame['k_ep']))
+                # print("parse episode: %s:%s" % (frame['k_ed'], frame['k_ep']))
                 parse_episode(self.model_database.database(), k_ed=frame['k_ed'], k_ep=frame['k_ep'])
                 if frame['k_part'] in K_GENERIQUES:
                     parse_curve_configurations(self.model_database.database(), k_ep_or_g=frame['k_part'])

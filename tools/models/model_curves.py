@@ -202,13 +202,42 @@ class Model_curves():
             pass
         del self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
         curves = self.get_curves_selection(db=db, shot=shot)
-        k_curves_initial = curves['k_curves']
+        try:
+            k_curves_initial = curves['k_curves']
+            try: self.shots_per_curves[k_curves_initial].append(shot_no)
+            except: self.shots_per_curves[k_curves_initial] = [shot_no]
+        except:
+            # No initial curves
+            pass
 
         # Refresh the list of shots for each curves
         try: self.shots_per_curves[k_curves_current].remove(shot_no)
         except: pass
-        try: self.shots_per_curves[k_curves_initial].append(shot_no)
-        except: self.shots_per_curves[k_curves_initial] = [shot_no]
+
+
+
+    def remove_curves_selection(self, db, shot:dict):
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        shot_start = shot['start']
+        shot_no = shot['no']
+
+        # Get the curves from the library
+        k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
+
+        # Set the modified shot curves
+        nested_dict_set(self.db_curves_selection, {'k_curves': ''}, k_ed, k_ep, k_part, shot_start)
+
+        # Refresh the list of shots for each curves
+        for shotlist in self.shots_per_curves.values():
+            try:
+                shotlist.remove(shot_no)
+                break
+            except: pass
+
+        self.is_curves_selection_db_modified = True
+
 
 
 

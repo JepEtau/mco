@@ -164,40 +164,11 @@ class Ui_widget_selection(object):
 
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.verticalLayout_3.setContentsMargins(-1, 40, -1, -1)
         self.label_edition_5 = QLabel(self.frame)
         self.label_edition_5.setObjectName(u"label_edition_5")
 
         self.verticalLayout_3.addWidget(self.label_edition_5)
-
-        self.horizontalLayout_4 = QHBoxLayout()
-        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.horizontalLayout_4.setContentsMargins(-1, -1, -1, 0)
-        self.pushButton_reset_filter_by_shot = QPushButton(self.frame)
-        self.pushButton_reset_filter_by_shot.setObjectName(u"pushButton_reset_filter_by_shot")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.pushButton_reset_filter_by_shot.sizePolicy().hasHeightForWidth())
-        self.pushButton_reset_filter_by_shot.setSizePolicy(sizePolicy3)
-        self.pushButton_reset_filter_by_shot.setMaximumSize(QSize(45, 16777215))
-        self.pushButton_reset_filter_by_shot.setCheckable(True)
-
-        self.horizontalLayout_4.addWidget(self.pushButton_reset_filter_by_shot)
-
-        self.pushButton_filter_by_shot_todo = QPushButton(self.frame)
-        self.pushButton_filter_by_shot_todo.setObjectName(u"pushButton_filter_by_shot_todo")
-        sizePolicy3.setHeightForWidth(self.pushButton_filter_by_shot_todo.sizePolicy().hasHeightForWidth())
-        self.pushButton_filter_by_shot_todo.setSizePolicy(sizePolicy3)
-        self.pushButton_filter_by_shot_todo.setMaximumSize(QSize(45, 16777215))
-
-        self.horizontalLayout_4.addWidget(self.pushButton_filter_by_shot_todo)
-
-        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
-
-        self.horizontalLayout_4.addItem(self.horizontalSpacer_3)
-
-
-        self.verticalLayout_3.addLayout(self.horizontalLayout_4)
 
         self.tableWidget_shots = QTableWidget(self.frame)
         if (self.tableWidget_shots.columnCount() < 6):
@@ -230,11 +201,11 @@ class Ui_widget_selection(object):
         __qtablewidgetitem11 = QTableWidgetItem()
         self.tableWidget_shots.setItem(1, 3, __qtablewidgetitem11)
         self.tableWidget_shots.setObjectName(u"tableWidget_shots")
-        sizePolicy4 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
-        sizePolicy4.setHorizontalStretch(0)
-        sizePolicy4.setVerticalStretch(0)
-        sizePolicy4.setHeightForWidth(self.tableWidget_shots.sizePolicy().hasHeightForWidth())
-        self.tableWidget_shots.setSizePolicy(sizePolicy4)
+        sizePolicy3 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.tableWidget_shots.sizePolicy().hasHeightForWidth())
+        self.tableWidget_shots.setSizePolicy(sizePolicy3)
         self.tableWidget_shots.setMinimumSize(QSize(0, 600))
         self.tableWidget_shots.setFrameShape(QFrame.StyledPanel)
         self.tableWidget_shots.setFrameShadow(QFrame.Sunken)
@@ -243,7 +214,7 @@ class Ui_widget_selection(object):
         self.tableWidget_shots.setEditTriggers(QAbstractItemView.SelectedClicked)
         self.tableWidget_shots.setProperty("showDropIndicator", False)
         self.tableWidget_shots.setDragDropOverwriteMode(False)
-        self.tableWidget_shots.setSelectionMode(QAbstractItemView.ContiguousSelection)
+        self.tableWidget_shots.setSelectionMode(QAbstractItemView.ExtendedSelection)
         self.tableWidget_shots.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableWidget_shots.setShowGrid(True)
         self.tableWidget_shots.setWordWrap(False)
@@ -349,8 +320,6 @@ class Ui_widget_selection(object):
 
         self.checkBox_fit_image_to_window.setText(QCoreApplication.translate("widget_selection", u"Fit to window", None))
         self.label_edition_5.setText(QCoreApplication.translate("widget_selection", u"Shots", None))
-        self.pushButton_reset_filter_by_shot.setText(QCoreApplication.translate("widget_selection", u"all", None))
-        self.pushButton_filter_by_shot_todo.setText(QCoreApplication.translate("widget_selection", u"todo", None))
         ___qtablewidgetitem = self.tableWidget_shots.horizontalHeaderItem(0)
         ___qtablewidgetitem.setText(QCoreApplication.translate("widget_selection", u"ed", None));
         ___qtablewidgetitem1 = self.tableWidget_shots.horizontalHeaderItem(1)
