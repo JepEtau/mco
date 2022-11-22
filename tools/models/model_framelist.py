@@ -170,9 +170,7 @@ class Model_framelist():
                 except: parsed_ed_ep[frame['k_ed']] = [frame['k_ep']]
 
             try:
-                shot = get_shot_from_frame_no_new(
-                    self.model_database.database(),
-                    frame['frame_no'], frame['k_ed'], frame['k_ep'], frame['k_part'])
+                shot = self.__get_shot_from_frame(self.model_database.database(), frame)
 
                 # Consolidate this shot
                 shot.update({
@@ -232,3 +230,39 @@ class Model_framelist():
         #         filter_ids.append(f_id)
         # return filter_ids
 
+
+
+    def __get_shot_from_frame(self, db, frame) -> dict:
+        frame_no = frame['frame_no']
+        k_ed = frame['k_ed']
+        k_ep = frame['k_ep']
+        k_part = frame['k_part']
+
+
+        if k_part in K_GENERIQUES:
+            # TODO: replace this but the edition set as reference once the shots
+            # are defined in g_fin, g_asuivre for edition k
+            k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
+            k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+            # print("%s: use %s:%s as reference to calculate new frame no." % (k_part, k_ed_ref, k_ep_ref))
+        else:
+            k_ed_ref = db['editions']['k_ed_ref']
+            k_ep_ref = k_ep
+        # print("__get_shot_from_frame: %s:%s:%s" % (k_ed_ref, k_ep_ref, k_part))
+
+        try:
+            # Use the target shots
+            shots = db[k_ep_ref][k_ed_ref][k_part]['video']['shots']
+        except:
+            shots = db[k_ep][k_ed][k_part]['video']['shots']
+
+
+        for shot in shots:
+            # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
+            if shot['start'] <= frame_no < (shot['start'] + shot['count']):
+                return shot
+        print("\nWarning: %s:__get_shot_from_frame: not found, frame no. %d in %s:%s:%s continue" % (__name__, frame_no, k_ed, k_ep, k_part))
+        # pprint_video(db[k_ep_ref][k_ed_ref][k_part]['video'], ignore='')
+        # print("-----------------------------------------------")
+        # pprint(db[k_ep_ref][k_ed][k_part]['video']['shots'])
+        sys.exit()

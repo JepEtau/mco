@@ -184,7 +184,7 @@ class Model_video_editor(Model_common):
 
 
             # Get curves for this shot
-            curves = self.model_database.get_curves_selection(shot=shot)
+            curves = self.model_database.get_curves_selection(db=db, shot=shot)
             try: k_curves = curves['k_curves']
             except: k_curves =''
             if curves is None and shot['curves'] is not None:
@@ -381,7 +381,8 @@ class Model_video_editor(Model_common):
         log.info("select the new curves for this shot [%s]" % (k_curves))
         shot_no = self.current_frame['shot_no']
         shot = self.shots[shot_no]
-        curves = self.model_database.get_curves_selection(shot=shot)
+        curves = self.model_database.get_curves_selection(
+            db=self.model_database.database(), shot=shot)
 
         # Update the modifications structure to update the selection widget
         if k_curves != self.shots[shot_no]['modifications']['curves']['initial']:
@@ -394,10 +395,12 @@ class Model_video_editor(Model_common):
         else:
             # Discard the current selected curves
             self.shots[shot_no]['modifications']['curves']['new'] = None
-            self.model_database.discard_curves_selection(shot=shot)
+            self.model_database.discard_curves_selection(db=self.model_database.database(),
+                shot=shot)
 
         # Get the new selected curves
-        curves = self.model_database.get_curves_selection(shot=shot)
+        curves = self.model_database.get_curves_selection(db=self.model_database.database(),
+            shot=shot)
 
         # Refresh the list of shot for these curves
         shot_list = self.model_database.get_shots_per_curves(k_curves)
@@ -682,7 +685,8 @@ class Model_video_editor(Model_common):
         shot = self.shots[frame['shot_no']]
 
         # Update curves and load it into the graph
-        frame['curves'] = self.model_database.get_curves_selection(shot=shot)
+        frame['curves'] = self.model_database.get_curves_selection(
+            db=self.model_database.database(), shot=shot)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
             try:
                 self.signal_load_curves.emit(frame['curves'])

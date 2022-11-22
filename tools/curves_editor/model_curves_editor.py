@@ -27,7 +27,7 @@ from models.model_common import (
     Model_common,
 )
 from models.model_framelist import Model_framelist
-from curves_editor.model_curves import Model_curves
+from models.model_curves import Model_curves
 
 from parsers.parser_generiques import parse_get_dependencies_for_generique
 from utils.common import (
@@ -112,12 +112,7 @@ class Model_curves_editor(Model_common):
 
         # Variables: previous
         self.framelist = Model_framelist(self.model_database)
-
-        # Model used for the curves selection and edition
-        self.model_curves = Model_curves(self.model_database)
-        self.model_curves.browse_curves_folder()
-
-        self.shotlist_no = list()
+        self.model_curves = Model_curves()
 
 
 
@@ -272,17 +267,19 @@ class Model_curves_editor(Model_common):
             #     print("error: the folder does not exist anymore")
 
             # Initialize db dor curves
-            self.initialize_curves_library(db=self.model_database.database(), k_ep=k_ep, k_part=k_part)
+            self.model_curves.initialize_curves_library(db=self.model_database.database(),
+                k_ep=k_ep, k_part=k_part)
 
             # Consolidate the list of frames
             self.framelist.consolidate()
             # pprint(self.framelist.get_frames())
 
-            # Initialize the curves selection
-            self.initialize_curves_selection()
-
             # List of shots
             shotlist = self.framelist.get_shotlist()
+
+            # Initialize the curves selection
+            self.model_curves.initialize_curves_selection(shotlist=shotlist, k_part=k_part)
+
 
             # Reorganize shot list
             shotlist_tmp = dict()
@@ -305,9 +302,7 @@ class Model_curves_editor(Model_common):
                     shotlist_ordered[no] = shot
                     no += 1
 
-
-            # self.model_database.initialize_shots_per_curves(self.shots)
-            self.signal_curves_library_modified.emit(self.get_library_curves())
+            self.signal_curves_library_modified.emit(self.model_curves.get_library_curves())
 
             # pprint(shotlist_ordered)
             self.signal_shotlist_modified.emit(shotlist_ordered)
@@ -316,7 +311,7 @@ class Model_curves_editor(Model_common):
             self.current_selection = deepcopy(selection)
 
 
-        # Get frames which corresponds to the 'filter_by' structure
+        # Get frames after applied the 'filter_by' structure
         self.frames = self.framelist.get_selected_frames(self.current_selection)
         # print("selected frames:")
         # pprint(self.frames)
@@ -329,130 +324,33 @@ class Model_curves_editor(Model_common):
 
 
 
-    # RGB curves selection
-    #---------------------------------------------------------------------------
-
-    def initialize_curves_selection(self):
-        log.info("initialize curves selection for each shot")
-        shotlist = self.framelist.get_shotlist()
-        k_part = self.current_selection['k_part']
-
-        self.db_curves_selection_initial = dict()
-        for k_ed in shotlist.keys():
-                for k_ep in shotlist[k_ed].keys():
-                    for shot_no in shotlist[k_ed][k_ep].keys():
-                        shot = shotlist[k_ed][k_ep][shot_no]
-                        if shot['curves'] is not None:
-                            nested_dict_set(self.db_curves_selection_initial, shot['curves'], k_ed, k_ep, k_part, shot['start'])
-        self.db_curves_selection = dict()
-        # pprint(self.db_curves_selection_initial)
-        # sys.exit()
-
-
-
-    def get_curves_selection(self, shot) -> dict:
-        # Get the curves associated to this shot
-        k_ed = shot['k_ed']
-        k_ep = shot['k_ep']
-        k_part = shot['k_part']
-        shot_start = shot['start']
-        print("model: get_curves_selection %s:%s:%s:%s" % (k_ed, k_ep, k_part, shot_start))
-        pprint(self.db_curves_selection_initial)
-        try: shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
-        except:
-            try: shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_start]
-            except: return None
-
-        if 'k_curves' not in shot_curves.keys() or shot_curves['k_curves'] == '':
-            # This shot uses new RGB curves which are not yet been saved in the library
-            return shot_curves
-
-        # Get the curves from the library
-        k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
-        curves = self.get_curves(k_ep_or_g, shot_curves['k_curves'])
-        return curves
-
-
-
-    def set_curves_selection(self, shot:dict, k_curves:str):
-        k_ed = shot['k_ed']
-        k_ep = shot['k_ep']
-        k_part = shot['k_part']
-        shot_start = shot['start']
-        shot_no = shot['no']
-
-        # Get the curves from the library
-        k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
-        curves = self.get_curves(k_ep_or_g, k_curves)
-
-        # Set the modified shot curves
-        nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_start)
-
-        # Refresh the list of shots for each curves
-        # for shotlist in self.shots_per_curves.values():
-        #     try:
-        #         shotlist.remove(shot_no)
-        #         break
-        #     except: pass
-        # try: self.shots_per_curves[k_curves].append(shot_no)
-        # except: self.shots_per_curves[k_curves] = [shot_no]
-
-        self.is_curves_selection_db_modified = True
-
-
-
-    def discard_curves_selection(self, shot:dict):
-        k_ed = shot['k_ed']
-        k_ep = shot['k_ep']
-        k_part = shot['k_part']
-        shot_start = shot['start']
-        shot_no = shot['no']
-        log.info("discard_curves_selection %s:%s:%s:%s" % (k_ed, k_ep, k_part, shot_start))
-
-        # Access directly to the modified, because the get_curves_selection function
-        # may return the curves from the initial db
-        # If there is a problem, this will have to be corrected
-        try:
-            k_curves_current = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
-        except:
-            # print("Error: %s:%s:%s:%s: current curves are not found in the db_curves_selection (modified db)" % (k_ed, k_ep, k_part, shot_start))
-            # pprint(self.db_curves_selection)
-            # raise Exception()
-            pass
-        del self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
-        curves = self.get_curves_selection(shot)
-        k_curves_initial = curves['k_curves']
-
-        # Refresh the list of shots for each curves
-        try: self.shots_per_curves[k_curves_current].remove(shot_no)
-        except: pass
-        try: self.shots_per_curves[k_curves_initial].append(shot_no)
-        except: self.shots_per_curves[k_curves_initial] = [shot_no]
-
-
-
 
     def event_curves_selection_changed(self, k_curves:str):
         log.info("select the new curves for this shot [%s]" % (k_curves))
         # current shot
         shot = self.framelist.get_shot_from_frame(self.current_frame)
-        curves = self.get_curves_selection(shot=shot)
+        curves = self.model_curves.get_curves_selection(db=self.model_database.database(),
+            shot=shot)
+
+        pprint(shot)
 
         # Update the modifications structure to update the selection widget
         if k_curves != shot['modifications']['curves']['initial']:
-            log.info("selection has changed")
+            log.info("selection has changed to %s" % (k_curves))
             shot['modifications']['curves']['new'] = k_curves
+            pprint(shot)
             # Modify the selected curves in the db
-            self.set_curves_selection(
-                shot=shot,
-                k_curves=k_curves)
+            self.model_curves.set_curves_selection(db=self.model_database.database(),
+                shot=shot, k_curves=k_curves)
         else:
             # Discard the current selected curves
             shot['modifications']['curves']['new'] = None
-            self.discard_curves_selection(shot=shot)
+            self.model_curves.discard_curves_selection(db=self.model_database.database(),
+                shot=shot)
 
         # Get the new selected curves
-        curves = self.get_curves_selection(shot=shot)
+        curves = self.model_curves.get_curves_selection(db=self.model_database.database(),
+            shot=shot)
 
         # Refresh the list of shot for these curves
         # shot_list = self.get_shots_per_curves(k_curves)
@@ -461,107 +359,6 @@ class Model_curves_editor(Model_common):
         self.signal_current_shot_modified.emit(shot['modifications'])
         self.signal_load_curves.emit(curves)
         self.signal_reload_frame.emit()
-
-
-
-
-
-
-    # RGB curves library
-    #---------------------------------------------------------------------------
-
-    def initialize_curves_library(self, db, k_ep, k_part):
-        log.info("initialize curves library: %s:%s" % (k_ep, k_part))
-        if k_part in K_GENERIQUES:
-            self.db_curves_library_initial = parse_curves_folder(db=db, k_ep_or_g=k_part)
-        else:
-            self.db_curves_library_initial = parse_curves_folder(db=db, k_ep_or_g=k_ep)
-        self.db_curves_library = dict()
-        # pprint(self.db_curves_library_initial)
-
-
-    def get_library_curves(self):
-        curves_library = dict()
-        for k in self.db_curves_library_initial.keys():
-            if k in self.db_curves_library.keys():
-                # These curves are modified or deleted
-                if not 'deleted' in self.db_curves_library[k].keys():
-                    # These curves are modified
-                    curves_library[k] = True
-            else:
-                curves_library[k] = False
-        return curves_library
-
-
-
-
-    def get_curves(self, k_ep_or_g:str, k_curves:str):
-        # Search these curves in the libraries
-        try: curves = self.db_curves_library[k_curves]
-        except:
-            try: curves = self.db_curves_library_initial[k_curves]
-            except: curves = None
-
-        db = self.model_database.database()
-
-        # If not found, add these curves to the library as it may be not in the same k_ep
-        if curves is None:
-            # Create a curve structure
-            library_path = db['common']['directories']['curves']
-            self.db_curves_library_initial[k_curves] = {
-                    'k_curves': k_curves,
-                    'filepath': os.path.join(library_path, k_ep_or_g, "%s.crv" % (k_curves)),
-                    'channels': None,
-                    'lut': None,
-                    'shots': []
-            }
-            curves = self.db_curves_library_initial[k_curves]
-
-        # Parse the file if not already done
-        if curves['channels'] is None:
-            # print("parse %s.crv file" % (k_curves))
-            curves['channels'] = parse_curves_file(
-                db=db,
-                k_ep_or_g=k_ep_or_g,
-                k_curves=k_curves)
-
-        if curves['channels'] is None:
-            # The curves file has not been found
-            log.warning("The curves have not been found")
-            curves = None
-        else:
-            if curves['lut'] is None:
-                curves['lut'] = calculate_channel_lut(curves['channels'])
-        return curves
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -866,13 +663,14 @@ class Model_curves_editor(Model_common):
         shot = self.framelist.get_shot_from_frame(frame)
 
         # Update curves and load it into the graph
-        frame['curves'] = self.get_curves_selection(shot=shot)
+        frame['curves'] = self.model_curves.get_curves_selection(db=self.model_database.database(),
+            shot=shot)
         pprint(frame['curves'])
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
             try:
                 self.signal_load_curves.emit(frame['curves'])
-                # shot_list = self.get_shots_per_curves(frame['curves']['k_curves'])
-                # self.signal_shot_per_curves_modified.emit(shot_list)
+                shot_list = self.model_curves.get_shots_per_curves(frame['curves']['k_curves'])
+                self.signal_shot_per_curves_modified.emit(shot_list)
             except:
                 self.signal_load_curves.emit(None)
                 self.signal_shot_per_curves_modified.emit(None)

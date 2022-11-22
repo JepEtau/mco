@@ -55,12 +55,13 @@ class Model_curves():
 
 
 
-    def initialize_curves_selection(self, shotlist):
+    def initialize_curves_selection(self, shotlist, k_part=''):
         # This function is used by the curves editor
         # which does not use the consolidate and target shots (only src)
         log.info("initialize curves selection for each shot")
         # shotlist = self.framelist.get_shotlist()
-        k_part = self.current_selection['k_part']
+        if k_part == '':
+            k_part = self.current_selection['k_part']
 
         self.db_curves_selection_initial = dict()
         for k_ed in shotlist.keys():
@@ -82,7 +83,7 @@ class Model_curves():
 
 
     # RGB curves
-    def get_curves_selection(self, shot) -> dict:
+    def get_curves_selection(self, db, shot) -> dict:
         # Get the curves associated to this shot
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
@@ -100,7 +101,7 @@ class Model_curves():
 
         # Get the curves from the library
         k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
-        curves = self.get_curves(k_ep_or_g, shot_curves['k_curves'])
+        curves = self.get_curves(db, k_ep_or_g, shot_curves['k_curves'])
         return curves
 
 
@@ -154,7 +155,7 @@ class Model_curves():
 
 
 
-    def set_curves_selection(self, shot:dict, k_curves:str):
+    def set_curves_selection(self, db, shot:dict, k_curves:str):
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
@@ -163,7 +164,7 @@ class Model_curves():
 
         # Get the curves from the library
         k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
-        curves = self.get_curves(k_ep_or_g, k_curves)
+        curves = self.get_curves(db, k_ep_or_g, k_curves)
 
         # Set the modified shot curves
         nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_start)
@@ -181,7 +182,7 @@ class Model_curves():
 
 
 
-    def discard_curves_selection(self, shot:dict):
+    def discard_curves_selection(self, db, shot:dict):
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
@@ -200,7 +201,7 @@ class Model_curves():
             # raise Exception()
             pass
         del self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
-        curves = self.get_curves_selection(shot)
+        curves = self.get_curves_selection(db=db, shot=shot)
         k_curves_initial = curves['k_curves']
 
         # Refresh the list of shots for each curves

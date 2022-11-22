@@ -548,7 +548,8 @@ class Model_merge_stabilize(Model_common):
 
 
         # Update curves
-        frame['curves'] = self.model_database.get_curves_selection(self.shots[frame['shot_no']])
+        frame['curves'] = self.model_database.get_curves_selection(
+            db=self.model_database.database(), shot=self.shots[frame['shot_no']])
 
 
         # Purge image from the previous frame
