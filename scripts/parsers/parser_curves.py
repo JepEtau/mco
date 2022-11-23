@@ -61,7 +61,73 @@ def parse_curve_configurations(db, k_ep_or_g:str):
                 continue
 
             # Get shot from frame no.
-            shot = get_shot_from_frame_no_new(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+            print("parse_curve_configurations, find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
+            # shot = get_shot_from_frame_no_new(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+            # replaced by:
+
+            is_found = False
+            if 'shots' in db[k_ep][k_ed][k_part]['video']:
+                shots = db[k_ep][k_ed][k_part]['video']['shots']
+                for shot in shots:
+                    if shot is None:
+                        continue
+                    # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
+                    if shot['start'] <= frame_no < (shot['start'] + shot['count']):
+                        # print("\t-> %d found in k_ed:k_ep %s:%s" % (frame_no, k_ed, k_ep))
+                        is_found = True
+                        break
+            #     if not is_found:
+            #         print("Error: shot no found but SHOULD BE")
+            # else:
+            #     print("Warning: no shot defined in %s:%s:%s" % (k_ed, k_ep, k_part))
+
+            if not is_found:
+                # This part has no shot (because not defined in the config file)
+
+                # Get the k_ed:k_ep src
+                if k_part in K_GENERIQUES:
+                    k_ed_src = db[k_part]['target']['video']['src']['k_ed']
+                    k_ep_src = db[k_part]['target']['video']['src']['k_ep']
+                else:
+                    k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
+                    k_ep_src = db[k_ep]['target']['video']['src']['k_ep']
+
+
+                # Get the shot from SRC
+                is_found = False
+                shots = db[k_ep_src][k_ed_src][k_part]['video']['shots']
+                for shot in shots:
+                    # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
+                    if shot['start'] <= frame_no < (shot['start'] + shot['count']):
+                        # print("\t-> %d found in k_ed_src:k_ep_src %s:%s at shot no. %d" % (frame_no, k_ed_src, k_ep_src, shot['no']))
+                        is_found = True
+                        break
+                if not is_found:
+                    print("Error: shot no found in SRC but SHOULD BE: %d in %s:%s:%s" % (frame_no, k_ed_src, k_ep_src, k_part))
+                    pprint(db[k_ep_src][k_ed_src][k_part]['video'])
+                    sys.exit()
+
+                # Create a list of shots
+                db_video = db[k_ep][k_ed][k_part]['video']
+                if 'shots' not in db_video.keys() or len(db_video['shots']) == 0:
+                    # print("create the list of shots")
+                    shot_count = len(shots)
+                    db_video['shots'] =  [None] * shot_count
+
+                # Create a shot (~copy) with the minimal of data
+                # print("\t-> create shot no. %d in %s:%s:%s video" % (shot['no'],k_ep, k_ed, k_part))
+                db_video['shots'][shot['no']] = {
+                    'start': shot['start'],
+                    'count': shot['count'],
+                    'no': shot['no'],
+                }
+                shot = db_video['shots'][shot['no']]
+                if not is_found:
+                    sys.exit(" NOT FOUND AT ALL: cannot continue")
+
+                # print("\ndb[%s][%s][%s][video])" % (k_ep, k_ed, k_part))
+                # pprint(db[k_ep][k_ed][k_part]['video'])
+                # print("\n")
 
             # Append curves struct to the shot
             shot['curves'] = {
@@ -69,6 +135,11 @@ def parse_curve_configurations(db, k_ep_or_g:str):
                 'lut':None,
             }
             # print("%s:%s:%s: shot no. %s -> %s" % (k_ed, k_ep, k_part, shot['no'], shot['curves']['k_curves']))
+
+    # print("\ndb[ep01][s][g_asuivre][video])")
+    # pprint(db['ep01']['s']['g_asuivre']['video'])
+    # print("\n")
+    # sys.exit()
 
 
 def parse_curves_file(db, k_ep_or_g, k_curves:str) -> dict:

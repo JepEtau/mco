@@ -3,7 +3,7 @@ import sys
 from pprint import pprint
 from copy import deepcopy
 
-from utils.common import pprint_video
+from utils.common import K_GENERIQUES, pprint_video
 from utils.time_conversions import ms_to_frames
 
 
@@ -190,22 +190,37 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
 
     # Create a single shot if no shot defined by the configuration file
     if 'shots' not in db_video.keys():
-        # print("todo: %s:consolidate_shots_after_parse: verify generation of %s:%s:%s" % (__name__, k_ep, k_ed, k_part))
-        # pprint(db_video)
-        if 'count' not in db_video.keys() or db_video['count'] == 0:
-            return
-        db_video['shots'] = [{
-            'no': 0,
-            'start': db_video['start'],
-            'filters': 'default',
-            'count': db_video['count'],
-            'curves': None,
-            'replace': dict(),
-            'dst':{
-                'k_ep': k_ep,
-                'k_part': k_part,
-            }
-        }]
+        # Create shot only if it the src (i.e. used for the target)
+        if k_part in K_GENERIQUES:
+            k_ed_src = db[k_part]['target']['video']['src']['k_ed']
+            k_ep_src = db[k_part]['target']['video']['src']['k_ep']
+        else:
+            # pprint(db[k_ep]['target'])
+            k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
+            k_ep_src = k_ep
+
+        # print("SRC for %s:%s:%s is %s:%s:%s" % (k_ed, k_ep, k_part, k_ed_src, k_ep_src, k_part))
+        if k_ed == k_ed_src and k_ep == k_ep_src:
+            # print("\tDO create a shot for %s:%s:%s" % (k_ed, k_ep, k_part))
+
+            # print("todo: %s:consolidate_shots_after_parse: verify generation of %s:%s:%s" % (__name__, k_ep, k_ed, k_part))
+            # pprint(db_video)
+            if 'count' not in db_video.keys() or db_video['count'] == 0:
+                return
+            db_video['shots'] = [{
+                'no': 0,
+                'start': db_video['start'],
+                'filters': 'default',
+                'count': db_video['count'],
+                'curves': None,
+                'replace': dict(),
+                'dst':{
+                    'k_ep': k_ep,
+                    'k_part': k_part,
+                }
+            }]
+        # else:
+        #     print("\tdo not create a shot for %s:%s:%s" % (k_ed, k_ep, k_part))
         # print("consolidate_shots_after_parse: -->")
         # pprint(db_video['shots'])
         # print("")

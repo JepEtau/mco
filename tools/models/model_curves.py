@@ -72,6 +72,8 @@ class Model_curves():
                             nested_dict_set(self.db_curves_selection_initial, shot['curves'], k_ed, k_ep, k_part, shot['start'])
         self.db_curves_selection = dict()
 
+        print("initialize curves selection for each shot")
+        pprint(self.db_curves_selection_initial)
 
 
     def initialize_curves_library(self, db, k_ep, k_part):

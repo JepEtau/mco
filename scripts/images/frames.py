@@ -85,7 +85,7 @@ def create_framelist_from_shot(db:dict, shot) -> list:
             'geometry': None if 'geometry' not in shot.keys() else shot['geometry'],
             'curves': None if 'curves' not in shot.keys() else shot['curves'],
         }
-        f['filepath'] = get_output_frame_filepaths(db, shot=shot, frame_no=f['ref'])
+        f['filepath'] = get_output_frame_filepaths(db, shot=shot, frame_no=f['no'])
         framelist.append(f)
 
     return framelist
@@ -241,12 +241,13 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         # Get frame no from frame ref
         if k_ed_src != k_ed_ref or k_ep_src != k_ep_ref:
             # print("convert frame_ref into frame_no, ref = %s:%s" % (k_ed_ref, k_ep_ref))
+            start = db[k_ep_ref][k_ed_ref][k_part]['video']['start']
             if 'offsets' in db[k_ep_src][k_ed_src][k_part]['video']:
                 offsets = db[k_ep_src][k_ed_src][k_part]['video']['offsets']
                 # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
                 for offset in offsets:
-                    if offset['start'] <= frame['no'] <= offset['end']:
-                        frame['ref'] = frame['no'] + offset['offset']
+                    if offset['start'] <= (frame['no'] - start)<= offset['end']:
+                        frame['ref'] += offset['offset']
                         break
             else:
                 # print("No offset:")

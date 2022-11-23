@@ -250,7 +250,7 @@ class Model_curves_editor(Model_common):
                 k_ep=k_ep, k_part=k_part)
 
             # Consolidate the list of frames
-            self.framelist.consolidate()
+            self.framelist.consolidate(k_ep, k_part)
             # pprint(self.framelist.get_frames())
 
             # List of shots
@@ -537,18 +537,22 @@ class Model_curves_editor(Model_common):
         shot = self.framelist.get_shot_from_frame(frame)
 
         # Update curves and load it into the graph
+        pprint(shot)
         frame['curves'] = self.model_curves.get_curves_selection(db=self.model_database.database(),
             shot=shot)
-        if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
-            try:
-                self.signal_load_curves.emit(frame['curves'])
-                shot_list = self.model_curves.get_shots_per_curves(frame['curves']['k_curves'])
-                self.signal_shot_per_curves_modified.emit(shot_list)
-            except:
-                self.signal_load_curves.emit(None)
-                self.signal_shot_per_curves_modified.emit(None)
-        elif self.current_frame is None:
+
+        # if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
+        try:
+            print("self.signal_load_curves.emit(frame[curves])")
+            self.signal_load_curves.emit(frame['curves'])
+            shot_list = self.model_curves.get_shots_per_curves(frame['curves']['k_curves'])
+            self.signal_shot_per_curves_modified.emit(shot_list)
+        except:
+            print("self.signal_load_curves.emit(None)")
             self.signal_load_curves.emit(None)
+            self.signal_shot_per_curves_modified.emit(None)
+        # elif self.current_frame is None:
+        #     self.signal_load_curves.emit(None)
 
 
         # Purge image from the previous frame
