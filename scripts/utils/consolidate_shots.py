@@ -200,8 +200,8 @@ def consolidate_shot(db, shot) -> None:
                         break
             except:
                 print("offsets are not defined in %s:%s for part %s" % (k_ed, k_ep, k_part))
-        else:
-            print("\t\t\tdisable offset for %s" % (k_part))
+        # else:
+        #     print("\t\t\tdisable offset for %s" % (k_part))
 
 
         # Remove unused tasks

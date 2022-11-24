@@ -240,14 +240,14 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
 
         # Get frame no from frame ref
         if k_ed_src != k_ed_ref or k_ep_src != k_ep_ref:
-            # print("convert frame_ref into frame_no, ref = %s:%s" % (k_ed_ref, k_ep_ref))
+            print("\tconvert frame_no into frame_ref, ref = %s:%s" % (k_ed_ref, k_ep_ref))
             start = db[k_ep_ref][k_ed_ref][k_part]['video']['start']
             if 'offsets' in db[k_ep_src][k_ed_src][k_part]['video']:
                 offsets = db[k_ep_src][k_ed_src][k_part]['video']['offsets']
                 # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
                 for offset in offsets:
                     if offset['start'] <= (frame['no'] - start)<= offset['end']:
-                        frame['ref'] += offset['offset']
+                        frame['ref'] = frame['no'] + offset['offset']
                         break
             else:
                 # print("No offset:")
@@ -273,12 +273,18 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         if not is_found:
             print("Error: shot not found for %s in %s:%s:%s" % (frame_no, k_ed_f, k_ep_f, k_part))
 
-        print("=> extract from %s:%s:%s" % (k_ed_f, k_ep_f, k_part))
+        print("\t=> extract from %s:%s:%s" % (k_ed_f, k_ep_f, k_part))
+        pprint(shot)
 
         # Update the frames with the data found in this shot
         if 'filters' not in frame.keys() or frame['filters'] == 'default':
             # Use the filters defined in shot
-            frame['filters'] = shot['filters']
+            try:
+                frame['filters'] = shot['filters']
+            except:
+                print("\t no filters defined, use default")
+                frame['filters'] = 'default'
+
         # else:
             # This frame is specifying others filters
 
@@ -301,6 +307,8 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
 
         # Consolidate filters
         frame['filters'] = get_filters_from_shot(db, frame)
+        print("=> filters:")
+        pprint(frame['filters'])
 
         # Consolidate curves
         if frame['curves'] is not None:
