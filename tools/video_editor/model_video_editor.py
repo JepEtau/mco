@@ -352,12 +352,13 @@ class Model_video_editor(Model_common):
 
         self.event_save_replace_requested()
 
-        self.model_database.save_curves_selection_database(
-            self.shots,
-            k_ed='',
-            k_ep='',
-            k_part=k_part,
-            shot_no=-1)
+        print("TODO: Save the shot curves selection")
+        # self.model_database.save_shot_curves_selection(
+        #     self.shots,
+        #     k_ed='',
+        #     k_ep='',
+        #     k_part=k_part,
+        #     shot_no=-1)
 
         self.event_save_geometry_requested()
         self.model_database.save_all_curves(k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)

@@ -232,6 +232,9 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
     frames_count = 0
     for i in range(0, len(shots)):
         # print(shots[i])
+        if shots[i] is None:
+            continue
+
         if shots[i]['count'] == 0:
             if i + 1 >= len(shots):
                 # Last shot: use the count field of the part

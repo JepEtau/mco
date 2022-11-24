@@ -204,7 +204,11 @@ class Model_framelist():
         for frame in self.frames.values():
             # try:
             shot = self.__get_shot_from_frame(db, frame)
+
             # Consolidate this shot
+            if 'curves' not in shot.keys():
+                shot['curves'] = None
+
             shot.update({
                 'k_ed': frame['k_ed'],
                 'k_ep': frame['k_ep'],
