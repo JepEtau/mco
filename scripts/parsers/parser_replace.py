@@ -11,6 +11,7 @@ from pathlib import (
 from pprint import pprint
 
 from utils.common import (
+    K_GENERIQUES,
     get_k_part_from_frame_no,
     get_or_create_src_shot,
     get_shot_from_frame_no_new,
@@ -51,7 +52,7 @@ def parse_replace_configurations(db, k_ep_or_g:str):
             new_frame_no = int(config.get(k_section, frame_no_str).strip())
 
             # Get shot from frame no.
-            print("parse_replace_configurations, find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
+            # print("parse_replace_configurations, find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
             # shot = get_shot_from_frame_no_new(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
             # replaced bya function which creates the src shot if not defined in the config file
             shot = get_or_create_src_shot(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
@@ -69,34 +70,28 @@ def parse_replace_configurations(db, k_ep_or_g:str):
 def get_replaced_frames(db, k_ep, k_part) -> dict:
     """ Returns a dict of frames to replace
     """
+    # print("%s.get_replaced_frames:  :%s:%s" % (__name__, k_ep, k_part))
     replace = dict()
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in ['g_debut', 'g_fin']:
         db_video = db[k_part]['target']['video']
     else:
-        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
-        k_ep_src = k_ep
-        db_video = db[k_ep_src][k_ed_src][k_part]['video']
-        # print("%s.get_replaced_frames: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
+        db_video = db[k_ep]['target']['video'][k_part]
 
+    # Walk through the target:
+    # It has been consolidated, so all data is in this structure
     for shot in db_video['shots']:
-        if 'src' in shot.keys() and 'use' in shot['src'] and shot['src']['use']:
-            # Use the src shot because this one is replaced
-            if 'k_ed' in shot['src'].keys():
-                k_ed_src = shot['src']['k_ed']
-            k_ep_src = shot['src']['k_ep']
-            k_part_src = get_k_part_from_frame_no(db, k_ed_src, k_ep_src, shot['src']['start'])
-            shot_src = get_shot_from_frame_no_new(db, frame_no=shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src)
-        else:
-            shot_src = shot
+        # So this shot contains the src data
+        shot_src = shot
+        k_ed_src = shot['k_ed']
+        k_ep_src = shot['k_ep']
 
-        if len(shot_src['replace'].keys()) > 0:
+        if 'replace' in shot_src.keys() and len(shot_src['replace'].keys()) > 0:
             try:
                 replace[k_ed_src][k_ep_src][k_part].update(shot_src['replace'])
             except:
                 nested_dict_set(replace, shot_src['replace'], k_ed_src, k_ep_src, k_part)
-
 
     # print("get_replaced_frames: %s:%s" % (k_ep, k_part))
     # pprint(replace)

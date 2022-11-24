@@ -308,7 +308,7 @@ class Model_curves_editor(Model_common):
         log.info("select the new curves for this shot [%s]" % (k_curves))
         # current shot
         shot = self.framelist.get_shot_from_frame(self.current_frame)
-        curves = self.model_curves.get_curves_selection(db=self.model_database.database(),
+        curves = self.model_curves.get_shot_curves_selection(db=self.model_database.database(),
             shot=shot)
 
         # Update the modifications structure to update the selection widget
@@ -326,7 +326,7 @@ class Model_curves_editor(Model_common):
                 shot=shot)
 
         # Get the new selected curves
-        curves = self.model_curves.get_curves_selection(db=self.model_database.database(),
+        curves = self.model_curves.get_shot_curves_selection(db=self.model_database.database(),
             shot=shot)
 
         # Refresh the list of shot for these curves
@@ -349,7 +349,7 @@ class Model_curves_editor(Model_common):
             shot=shot)
 
         # Get the new selected curves
-        curves = self.model_curves.get_curves_selection(db=self.model_database.database(),
+        curves = self.model_curves.get_shot_curves_selection(db=self.model_database.database(),
             shot=shot)
 
         self.signal_current_shot_modified.emit(shot)
@@ -537,22 +537,19 @@ class Model_curves_editor(Model_common):
         shot = self.framelist.get_shot_from_frame(frame)
 
         # Update curves and load it into the graph
-        pprint(shot)
-        frame['curves'] = self.model_curves.get_curves_selection(db=self.model_database.database(),
+        frame['curves'] = self.model_curves.get_shot_curves_selection(db=self.model_database.database(),
             shot=shot)
 
-        # if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
+        # Load curves, force for each frame even if previous was using the same
         try:
-            print("self.signal_load_curves.emit(frame[curves])")
+            log.info("load_curves frame curves")
             self.signal_load_curves.emit(frame['curves'])
             shot_list = self.model_curves.get_shots_per_curves(frame['curves']['k_curves'])
             self.signal_shot_per_curves_modified.emit(shot_list)
         except:
-            print("self.signal_load_curves.emit(None)")
+            log.info("no curves to load")
             self.signal_load_curves.emit(None)
             self.signal_shot_per_curves_modified.emit(None)
-        # elif self.current_frame is None:
-        #     self.signal_load_curves.emit(None)
 
 
         # Purge image from the previous frame

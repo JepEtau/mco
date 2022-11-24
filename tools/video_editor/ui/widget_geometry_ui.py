@@ -90,6 +90,15 @@ class Ui_widget_geometry(object):
 
         self.horizontalLayout.addWidget(self.pushButton_discard)
 
+        self.horizontalSpacer_2 = QSpacerItem(22, 10, QSizePolicy.Fixed, QSizePolicy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_2)
+
+        self.label_message = QLabel(self.frame)
+        self.label_message.setObjectName(u"label_message")
+
+        self.horizontalLayout.addWidget(self.label_message)
+
         self.horizontalSpacer = QSpacerItem(5, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
@@ -401,6 +410,7 @@ class Ui_widget_geometry(object):
         self.pushButton_set_preview.setText("")
         self.pushButton_save.setText("")
         self.pushButton_discard.setText("")
+        self.label_message.setText(QCoreApplication.translate("widget_geometry", u"disabled", None))
         self.pushButton_close.setText("")
         self.groupBox_part_geometry.setTitle(QCoreApplication.translate("widget_geometry", u"Part: crop and resize", None))
         self.label_15.setText(QCoreApplication.translate("widget_geometry", u"w", None))

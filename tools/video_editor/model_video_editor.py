@@ -184,7 +184,7 @@ class Model_video_editor(Model_common):
 
 
             # Get curves for this shot
-            curves = self.model_database.get_curves_selection(db=db, shot=shot)
+            curves = self.model_database.get_shot_curves_selection(db=db, shot=shot)
             try: k_curves = curves['k_curves']
             except: k_curves =''
             if curves is None and shot['curves'] is not None:
@@ -381,7 +381,7 @@ class Model_video_editor(Model_common):
         log.info("select the new curves for this shot [%s]" % (k_curves))
         shot_no = self.current_frame['shot_no']
         shot = self.shots[shot_no]
-        curves = self.model_database.get_curves_selection(db=self.model_database.database(),
+        curves = self.model_database.get_shot_curves_selection(db=self.model_database.database(),
             shot=shot)
 
         # Update the modifications structure to update the selection widget
@@ -399,7 +399,7 @@ class Model_video_editor(Model_common):
                 shot=shot)
 
         # Get the new selected curves
-        curves = self.model_database.get_curves_selection(db=self.model_database.database(),
+        curves = self.model_database.get_shot_curves_selection(db=self.model_database.database(),
             shot=shot)
 
         # Refresh the list of shot for these curves
@@ -524,9 +524,14 @@ class Model_video_editor(Model_common):
     def event_frame_replaced(self, replace:dict):
         action = replace['action']
         frame_no = replace['dst']
-        shot_no = self.get_shot_no_from_frame_no(frame_no)
+        log.info("replace %d" % (frame_no))
+        print("shot no= %d" % (self.current_frame['shot_no']))
+        # pprint(self.playlist_frames)
+        shot_no = self.current_frame['shot_no']
         shot_src = self.shots[shot_no]
         index = frame_no - self.frames[shot_no][0]['frame_no']
+
+
 
         if action == 'replace':
             log.info("replace: shot_no=%d, frame_no=%d (index=%d) by %d" % (shot_no, frame_no, index, replace['src']))
@@ -664,9 +669,12 @@ class Model_video_editor(Model_common):
         """
         # log.info("%s.get_frame: get_frame no. %d" % (__name__, frame_no))
         if not self.preview_options['replace']['is_enabled']:
-            frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
+            try:
+                frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
+            except:
+                return None
             # print("\tinitial")
-            try: del frame['replaces']
+            try: del frame['replace']
             except: pass
         else:
             shot_no = self.get_shot_no_from_frame_no(frame_no)
@@ -675,12 +683,12 @@ class Model_video_editor(Model_common):
                 frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
                 # print("\tnew_frame_no=-1")
                 # print("\t%s" % (frame['filepath']))
-                try: del frame['replaces']
+                try: del frame['replace']
                 except: pass
             else:
                 index = new_frame_no - self.playlist_properties['start']
                 frame = self.playlist_frames[index]
-                frame['replaces'] = frame_no
+                frame['replace'] = frame_no
 
         # Shot has changed: update UI with parameters for this shot (curves, crop, resize)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
@@ -692,7 +700,7 @@ class Model_video_editor(Model_common):
         shot = self.shots[frame['shot_no']]
 
         # Update curves and load it into the graph
-        frame['curves'] = self.model_database.get_curves_selection(
+        frame['curves'] = self.model_database.get_shot_curves_selection(
             db=self.model_database.database(), shot=shot)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
             try:

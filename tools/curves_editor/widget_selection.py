@@ -311,7 +311,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             k_ep = 'ep%02d' % (int(k_ep_current))
             for k_part in self.k_eps_parts[k_ep]:
                 if k_part in K_PARTS:
-                    self.comboBox_part.addItem(k_p)
+                    self.comboBox_part.addItem(k_part)
 
         # Restore the previous selected part if exists
         i = self.comboBox_part.findText(k_part_current)

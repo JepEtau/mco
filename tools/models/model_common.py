@@ -157,10 +157,6 @@ class Model_common(QObject):
             print("")
 
         self.preview_options = preview_options
-
-        # Regenerate image
-        # index, img = generate_single_image(self.current_frame, preview_options=self.preview_options)
-        # self.set_current_frame_cache(img=img)
         self.signal_reload_frame.emit()
 
 

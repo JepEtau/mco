@@ -112,21 +112,21 @@ class Model_framelist_common(object):
         if db is not None:
             if k_part in K_GENERIQUES:
                 # Use the ed:ep defined as reference
-                k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
-                k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+                k_ed_src = db[k_part]['target']['video']['src']['k_ed']
+                k_ep_src = db[k_part]['target']['video']['src']['k_ep']
             else:
-                k_ed_ref = frame_k_ed
-                k_ep_ref = frame_k_ep
+                k_ed_src = frame_k_ed
+                k_ep_src = frame_k_ep
 
-            if 'shots' not in db[k_ep_ref][k_ed_ref][k_part]['video'].keys():
+            if 'shots' not in db[k_ep_src][k_ed_src][k_part]['video'].keys():
                 # Parse and consolidate db if not alreday done
                 self.model_database.consolidate_database(frame_k_ep, k_part,
                     do_parse_curves=False,
                     do_parse_replace=False,
                     do_parse_geometry=False)
-            if 'shots' not in db[k_ep_ref][k_ed_ref][k_part]['video'].keys():
+            if 'shots' not in db[k_ep_src][k_ed_src][k_part]['video'].keys():
                 # pprint(db[frame_k_ep][frame_k_ed][k_part])
-                print("Error: shots for %s:%s:%s were not consolidated" % (k_ep_ref, k_ed_ref, k_part))
+                print("Error: shots for %s:%s:%s were not consolidated" % (k_ep_src, k_ed_src, k_part))
             # print("\tGet shot: %d in %s:%s:%s" % (frame_no, frame_k_ed, frame_k_ep, k_part))
 
             # Apply offset

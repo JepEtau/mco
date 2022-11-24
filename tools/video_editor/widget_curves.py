@@ -13,7 +13,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QColor
 
-from common.sylesheet import set_curves_radiobutton_stylesheet, set_stylesheet
+from common.sylesheet import set_curves_radiobutton_stylesheet, set_stylesheet, set_widget_stylesheet
 
 from video_editor.ui.widget_curves_ui import Ui_widget_curves
 from common.widget_common import Widget_common
@@ -59,6 +59,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.lineEdit_coordinates.clear()
         self.lineEdit_rgb_values.clear()
         self.refresh_current_coordinates([-1,0])
+        self.label_message.clear()
 
 
         self.widget_rgb_graph.set_widget_width(GRAPH_WIDTH)
@@ -93,6 +94,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.radioButton_select_m_channel.setChecked(True)
 
         set_stylesheet(self)
+        set_widget_stylesheet(self.label_message, 'message')
         for c, w in zip(['r', 'g', 'b', 'm'], [
                     self.radioButton_select_r_channel,
                     self.radioButton_select_g_channel,
@@ -128,7 +130,29 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
 
     def refresh_values(self, frame:dict):
-        pass
+        # print("%s: refresh_values" % (self.objectName()))
+        if frame['k_ep'] != frame['dst']['k_ep']:
+            # Disable curves edition
+            self.widget_rgb_graph.setEnabled(False)
+            self.widget_curves_selection.setEnabled(False)
+            self.radioButton_select_b_channel.setEnabled(False)
+            self.radioButton_select_g_channel.setEnabled(False)
+            self.radioButton_select_r_channel.setEnabled(False)
+            self.radioButton_select_m_channel.setEnabled(False)
+            self.pushButton_reset_current_channel.setEnabled(False)
+            self.pushButton_reset_all_channels.setEnabled(False)
+            self.label_message.setText("(read-only)")
+        else:
+            self.widget_rgb_graph.setEnabled(True)
+            self.widget_curves_selection.setEnabled(True)
+            self.radioButton_select_b_channel.setEnabled(True)
+            self.radioButton_select_g_channel.setEnabled(True)
+            self.radioButton_select_r_channel.setEnabled(True)
+            self.radioButton_select_m_channel.setEnabled(True)
+            self.pushButton_reset_current_channel.setEnabled(True)
+            self.pushButton_reset_all_channels.setEnabled(True)
+            self.label_message.clear()
+
 
 
     def event_reset_channel(self, channel):

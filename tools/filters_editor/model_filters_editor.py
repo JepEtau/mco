@@ -216,7 +216,7 @@ class Model_filters_editor(Model_common):
                 current_shot['count'] += current_shot['effects'][2]
 
             # Get curves for this shot
-            curves = self.model_database.get_curves_selection(db=self.model_database.database(),
+            curves = self.model_database.get_shot_curves_selection(db=self.model_database.database(),
                 shot=current_shot)
             try: k_curves = curves['k_curves']
             except: k_curves =''

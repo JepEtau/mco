@@ -44,11 +44,11 @@ class Model_curves():
         # which uses the consolidated shots
         self.initialize_curves_library(db=db, k_ep=k_ep, k_part=k_part)
         if k_ep.startswith('ep'):
-            if k_part in ['g_asuivre', 'g_reportage']:
-                k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
-                self.db_curves_selection_initial = get_curves_selection(db, k_ep=k_ep_ref, k_part=k_part)
-            else:
-                self.db_curves_selection_initial = get_curves_selection(db, k_ep=k_ep, k_part=k_part)
+            # if k_part in ['g_asuivre', 'g_reportage']:
+            #     k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+            #     self.db_curves_selection_initial = get_curves_selection(db, k_ep=k_ep_ref, k_part=k_part)
+            # else:
+            self.db_curves_selection_initial = get_curves_selection(db, k_ep=k_ep, k_part=k_part)
         else:
             self.db_curves_selection_initial = get_curves_selection(db, k_ep=k_ep, k_part=k_part)
         self.db_curves_selection = dict()
@@ -72,9 +72,6 @@ class Model_curves():
                             nested_dict_set(self.db_curves_selection_initial, shot['curves'], k_ed, k_ep, k_part, shot['start'])
         self.db_curves_selection = dict()
 
-        print("initialize curves selection for each shot")
-        pprint(self.db_curves_selection_initial)
-
 
     def initialize_curves_library(self, db, k_ep, k_part):
         if k_part in K_GENERIQUES:
@@ -85,13 +82,13 @@ class Model_curves():
 
 
     # RGB curves
-    def get_curves_selection(self, db, shot) -> dict:
+    def get_shot_curves_selection(self, db, shot) -> dict:
         # Get the curves associated to this shot
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
         shot_start = shot['start']
-        # print("model: get_curves_selection %s:%s:%s:%s" % (k_ed, k_ep, k_part, shot_start))
+        # print("model: self.db_curves_selection_initial %s:%s:%s:%s" % (k_ed, k_ep, k_part, shot_start))
         try: shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
         except:
             try: shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_start]
@@ -203,7 +200,7 @@ class Model_curves():
             # raise Exception()
             pass
         del self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
-        curves = self.get_curves_selection(db=db, shot=shot)
+        curves = self.get_shot_curves_selection(db=db, shot=shot)
         try:
             k_curves_initial = curves['k_curves']
             try: self.shots_per_curves[k_curves_initial].append(shot_no)

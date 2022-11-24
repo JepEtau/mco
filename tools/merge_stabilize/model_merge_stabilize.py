@@ -519,7 +519,7 @@ class Model_merge_stabilize(Model_common):
         if not self.preview_options['replace']['is_enabled']:
             frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
             # print("\tinitial")
-            try: del frame['replaces']
+            try: del frame['replace']
             except: pass
         else:
             shot_no = self.get_shot_no_from_frame_no(frame_no)
@@ -528,12 +528,12 @@ class Model_merge_stabilize(Model_common):
                 frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
                 # print("\tnew_frame_no=-1")
                 # print("\t%s" % (frame['filepath']))
-                try: del frame['replaces']
+                try: del frame['replace']
                 except: pass
             else:
                 index = new_frame_no - self.playlist_properties['start']
                 frame = self.playlist_frames[index]
-                frame['replaces'] = frame_no
+                frame['replace'] = frame_no
 
         # Shot has changed: update UI with parameters for this shot (curves, crop, resize)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
@@ -548,7 +548,7 @@ class Model_merge_stabilize(Model_common):
 
 
         # Update curves
-        frame['curves'] = self.model_database.get_curves_selection(
+        frame['curves'] = self.model_database.get_shot_curves_selection(
             db=self.model_database.database(), shot=self.shots[frame['shot_no']])
 
 

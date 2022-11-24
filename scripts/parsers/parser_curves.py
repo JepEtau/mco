@@ -14,6 +14,7 @@ import re
 
 from images.curve import Curve
 from utils.common import (
+    K_GENERIQUES,
     get_or_create_src_shot,
     nested_dict_set,
 )
@@ -58,9 +59,9 @@ def parse_curve_configurations(db, k_ep_or_g:str):
                 continue
 
             # Get shot from frame no.
-            print("parse_curve_configurations, find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
+            # print("parse_curve_configurations, find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
             # shot = get_shot_from_frame_no_new(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
-            # replaced by a function which creates the src shot if not defined in the config file
+            #   replaced by a function which creates the src shot if not defined in the config file
             shot = get_or_create_src_shot(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
 
             # Append curves struct to the shot
@@ -68,7 +69,7 @@ def parse_curve_configurations(db, k_ep_or_g:str):
                 'k_curves': k_curve,
                 'lut':None,
             }
-            print("\t=> %s:%s:%s: shot no. %s -> %s" % (k_ed, k_ep, k_part, shot['no'], shot['curves']['k_curves']))
+            # print("\t=> %s:%s:%s: shot no. %s -> %s" % (k_ed, k_ep, k_part, shot['no'], shot['curves']['k_curves']))
 
 
 
@@ -138,28 +139,21 @@ def get_curves_selection(db, k_ep, k_part) -> dict:
     # Create a dictionary of curves selection for each shot
     # It uses the shot_src so that this will work when replacing shots
     # from another episode/part
-
-    # print("%s.get_curves_selection: src=?:%s:%s" % (__name__, k_ep, k_part))
+    # print("%s.get_curves_selection: src=%s:%s" % (__name__, k_ep, k_part))
     shot_curves = dict()
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in ['g_debut', 'g_fin']:
         db_video = db[k_part]['target']['video']
-    elif k_part in ['g_asuivre', 'g_reportage']:
-        k_ed_src = db[k_part]['target']['video']['src']['k_ed']
-        k_ep_src = db[k_part]['target']['video']['src']['k_ep']
-        db_video = db[k_ep_src][k_ed_src][k_part]['video']
     else:
         db_video = db[k_ep]['target']['video'][k_part]
 
     for shot in db_video['shots']:
-        try:
-            k_ed = shot['k_ed']
-            k_ep = shot['k_ep']
-            k_part = shot['k_part']
-        except:
-            k_ed = k_ed_src
-            k_ep = k_ep_src
+        # So this shot contains the src data
+        shot_src = shot
+        k_ed_src = shot['k_ed']
+        k_ep_src = shot['k_ep']
+        k_part_src = shot['k_part']
         shot_start = shot['start']
 
         # Append to the dict if stitching curves are defined
@@ -167,9 +161,12 @@ def get_curves_selection(db, k_ep, k_part) -> dict:
             continue
 
         if shot['curves'] is not None:
-            nested_dict_set(shot_curves, shot['curves'], k_ed, k_ep, k_part, shot_start)
+            nested_dict_set(shot_curves, shot_src['curves'], k_ed_src, k_ep_src, k_part_src, shot_start)
 
+    # print("get_curves_selection")
+    # pprint(shot_curves)
     return shot_curves
+
 
 
 

@@ -174,6 +174,7 @@ class Model_framelist():
                     print("parse_episode: k_ed=%s, k_ep=%s" % (k_ed_tmp, k_ep_tmp))
                     parse_episode(db, k_ed=k_ed_tmp, k_ep=k_ep_tmp)
         else:
+            print("parse dependencies for k_ep=%s" % (k_ep))
             dependencies = parse_get_dependencies_for_episodes(db, k_ep)
             for k_ed_tmp, k_eps in dependencies.items():
                 for k_ep_tmp in k_eps:
@@ -193,9 +194,7 @@ class Model_framelist():
                 # Add to parsed dict
                 try: parsed_ed_ep[frame['k_ed']].append(frame['k_ep'])
                 except: parsed_ed_ep[frame['k_ed']] = [frame['k_ep']]
-        pprint(parsed_ed_ep)
-
-        print("%s:%s -> " % (frame['k_ep'], frame['k_ed']))
+        # print("%s:%s -> " % (frame['k_ep'], frame['k_ed']))
 
 
         # Parse the config files used get the selected curves for each shot
@@ -228,15 +227,15 @@ class Model_framelist():
             #     frame['shot_no'] = -1
             # print("\n SHOT used for curves editor ->")
             # pprint(shot)
-            print("------------------------------------------------------------\n")
+            # print("------------------------------------------------------------\n")
 
 
             self.k_eds.append(frame['k_ed'])
             self.k_eps.append(frame['k_ep'])
             self.k_parts.append(frame['k_part'])
 
-        print("------------------ SHOTLIST ----------------------")
-        pprint(self.shotlist)
+        # print("------------------ SHOTLIST ----------------------")
+        # pprint(self.shotlist)
         # sys.exit()
 
         self.k_eds = sorted(list(set(self.k_eds)))
@@ -281,39 +280,6 @@ class Model_framelist():
         print("find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
 
 
-        if k_part in K_GENERIQUES:
-            # TODO: replace this but the edition set as reference once the shots
-            # are defined in g_fin, g_asuivre for edition k
-            k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
-            k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
-            print("\tuse %s:%s as src" % (k_ed_ref, k_ep_ref))
-
-            # print("%s: use %s:%s as reference to calculate new frame no." % (k_part, k_ed_ref, k_ep_ref))
-            # print("src: >")
-            # pprint(db[k_ep_ref][k_ed_ref][k_part]['video'])
-            # print("> ")
-            # pprint(db[k_ep][k_ed][k_part]['video'])
-
-            # Get frame no from frame ref
-            # if k_ed != k_ed_ref or k_ep != k_ep_ref:
-            #     start = db[k_ep_ref][k_ed_ref][k_part]['video']['start']
-            #     frame_ref = frame_no
-            #     # print("convert frame_ref into frame_no, ref = %s:%s, start=%d" % (k_ed_ref, k_ep_ref, start))
-            #     if 'offsets' in db[k_ep][k_ed][k_part]['video']:
-            #         offsets = db[k_ep][k_ed][k_part]['video']['offsets']
-            #         # print("%s:%s:%s, offsets=" % (k_ed, k_ep, k_part), offsets)
-            #         for offset in offsets:
-            #             if offset['start'] <= (frame_no - start) <= offset['end']:
-            #                 frame_no += offset['offset']
-            #                 break
-            #     print("frame no. %d -> %d" % (frame['frame_no'], frame_no))
-        else:
-            k_ed_ref = db['editions']['k_ed_ref']
-            k_ep_ref = k_ep
-
-        # print("__get_shot_from_frame: %s:%s:%s" % (k_ed_ref, k_ep_ref, k_part))
-
-        pprint(db[k_ep][k_ed][k_part]['video'])
         if 'shots' in db[k_ep][k_ed][k_part]['video'].keys():
             shots = db[k_ep][k_ed][k_part]['video']['shots']
             for shot in shots:
@@ -321,37 +287,58 @@ class Model_framelist():
                     continue
                 # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
                 if shot['start'] <= frame_no < (shot['start'] + shot['count']):
-                    print("found in k_ed:k_ep, shot no. %d" % (shot['no']))
+                    # print("\t-> %d found in k_ed:k_ep %s:%s, shot no. %d" % (frame_no, k_ed, k_ep, shot['no']))
                     return shot
 
 
-        shots = db[k_ep_ref][k_ed_ref][k_part]['video']['shots']
+        # This part has no shot (because none defined in the config file)
+
+        # Get the k_ed_src:k_ep src defined in TARGET
+        if k_part in K_GENERIQUES:
+            # TODO: replace this but the edition set as reference once the shots
+            # are defined in g_fin, g_asuivre for edition k
+            k_ed_src = db[k_part]['target']['video']['src']['k_ed']
+            k_ep_src = db[k_part]['target']['video']['src']['k_ep']
+            # print("\tuse %s:%s as src" % (k_ed_src, k_ep_src))
+        else:
+            try: k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
+            except: k_ed_src = db['editions']['k_ed_ref']
+
+            # This is differnt from 'get_or_create_src_shot':
+            # do not use the 'global' src
+            k_ep_src = k_ep
+
+
+        # Get the SRC shot defined in TARGET
+        is_found = False
+        shots = db[k_ep_src][k_ed_src][k_part]['video']['shots']
         for shot in shots:
             # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
             if shot['start'] <= frame_no < (shot['start'] + shot['count']):
-                print("found in k_ed_ref:k_ep_ref shot no. %d" % (shot['no']))
+                print("\t-> %d found in k_ed_src:k_ep_src %s:%s at shot no. %d" % (frame_no, k_ed_src, k_ep_src, shot['no']))
+                is_found = True
+                break
+        if not is_found:
+            print("Error: shot no found in SRC but SHOULD BE: %d in %s:%s:%s" % (frame_no, k_ed_src, k_ep_src, k_part))
+            pprint(db[k_ep_src][k_ed_src][k_part]['video'])
+            sys.exit()
 
-                # Create a list of shots if not exists
-                db_video = db[k_ep][k_ed][k_part]['video']
-                if ('shots' not in db_video.keys()
-                    or len(db_video['shots']) == 0):
-                    # print("create the list of shots")
-                    shot_count = len(shots)
-                    db_video['shots'] =  [None] * shot_count
+        # Create a list of shots
+        db_video = db[k_ep][k_ed][k_part]['video']
+        if 'shots' not in db_video.keys() or len(db_video['shots']) == 0:
+            # print("create the list of shots")
+            shot_count = len(shots)
+            db_video['shots'] =  [None] * shot_count
 
-
-                # Create a shot with the minimal of data
-                print("-> create a shot in %s:%s:%s video at shot no. %d" % (k_ep, k_ed, k_part, shot['no']))
-                db_video['shots'][shot['no']] = {
-                    'start': shot['start'],
-                    'count': shot['count'],
-                    'no': shot['no'],
-                    'curves': None,
-                }
-                # shot = db[k_ep][k_ed][k_part]['video']['shots'][shot['no']]
-                pprint(db_video['shots'])
-                print("return shot no. %d +++++++++++++++++++++++\n" % (shot['no']))
-                return db_video['shots'][shot['no']]
+        # Create a shot (~copy) with the minimal of data
+        print("\t-> create shot no. %d in %s:%s:%s video" % (shot['no'],k_ep, k_ed, k_part))
+        db_video['shots'][shot['no']] = {
+            'start': shot['start'],
+            'count': shot['count'],
+            'no': shot['no'],
+        }
+        shot = db_video['shots'][shot['no']]
+        return shot
 
 
 

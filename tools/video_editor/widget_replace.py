@@ -161,8 +161,8 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
     def refresh_values(self, frame:dict):
         if 'replaces' in frame.keys():
-            # print("this frame (%d) replaces %d" % (frame['frame_no'], frame['replaces']))
-            self.lineEdit_frame_no.setText(str(frame['replaces']))
+            # print("this frame (%d) replaces %d" % (frame['frame_no'], frame['replace']))
+            self.lineEdit_frame_no.setText(str(frame['replace']))
             self.lineEdit_replaced_by.setText(str(frame['frame_no']))
             self.pushButton_remove.setEnabled(True)
         else:
