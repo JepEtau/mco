@@ -115,6 +115,10 @@ def simplify_tasks(db, frames):
                 try: f['tasks'].remove('deinterlace')
                 except: pass
 
+            elif 'deinterlace_rgb' in f['tasks'] and os.path.exists(f['filepath']['deinterlace_rgb']):
+                try: f['tasks'].remove('deinterlace_rgb')
+                except: pass
+
             i += 1
 
 
