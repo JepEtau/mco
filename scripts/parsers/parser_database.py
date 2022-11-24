@@ -198,9 +198,7 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
     else:
         pprint_g_debut_fin(database)
 
-
     # pprint_video(database[k_ep]['common']['video'])
-
 
 
 def pprint_g_debut_fin(db):

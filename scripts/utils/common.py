@@ -512,6 +512,23 @@ def get_shot_from_frame_no(db_ep_or_g, frame_no:int, k_part='') -> dict:
     return None
 
 
+def get_src_shot_from_frame_no(db, frame_no:int, k_ed, k_ep, k_part) -> dict:
+    shots = db[k_ep][k_ed][k_part]['video']['shots']
+    for shot in shots:
+        if shot is None:
+            continue
+        # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
+        if shot['start'] <= frame_no < (shot['start'] + shot['count']):
+            return shot
+
+    print("\nWarning: %s:get_shot_from_frame_no_new_2: not found, frame no. %d in %s:%s:%s continue" % (__name__, frame_no, k_ed, k_ep, k_part))
+    pprint_video(db[k_ep][k_ed][k_part]['video'], ignore='')
+    print("-----------------------------------------------")
+    # pprint(db[k_ep_ref][k_ed][k_part]['video']['shots'])
+    sys.exit()
+
+    return None
+
 
 def get_shot_from_frame_no_new(db, frame_no:int, k_ed, k_ep, k_part) -> dict:
     """This function returns the shot structure from a frame no.
@@ -555,6 +572,73 @@ def get_shot_from_frame_no_new(db, frame_no:int, k_ed, k_ep, k_part) -> dict:
     return None
 
 
+
+def get_or_create_src_shot(db, frame_no:int, k_ed, k_ep, k_part)-> dict:
+    # This function create a shot in the src database if it does not exist
+    # It uses the shot defined in the target structure
+
+    is_found = False
+    if 'shots' in db[k_ep][k_ed][k_part]['video']:
+        shots = db[k_ep][k_ed][k_part]['video']['shots']
+        for shot in shots:
+            if shot is None:
+                continue
+            # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
+            if shot['start'] <= frame_no < (shot['start'] + shot['count']):
+                # print("\t-> %d found in k_ed:k_ep %s:%s" % (frame_no, k_ed, k_ep))
+                return shot
+        print("Error: shot no found but SHOULD BE")
+    else:
+        print("Warning: no shot defined in %s:%s:%s" % (k_ed, k_ep, k_part))
+        print("\t", db[k_ep][k_ed][k_part]['video'])
+
+
+    # This part has no shot (because none defined in the config file)
+
+    # Get the k_ed_src:k_ep src defined in TARGET
+    if k_part in K_GENERIQUES:
+        k_ed_src = db[k_part]['target']['video']['src']['k_ed']
+        k_ep_src = db[k_part]['target']['video']['src']['k_ep']
+    else:
+        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
+        k_ep_src = db[k_ep]['target']['video']['src']['k_ep']
+
+
+    # Get the SRC shot defined in TARGET
+    is_found = False
+    shots = db[k_ep_src][k_ed_src][k_part]['video']['shots']
+    for shot in shots:
+        # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
+        if shot['start'] <= frame_no < (shot['start'] + shot['count']):
+            print("\t-> %d found in k_ed_src:k_ep_src %s:%s at shot no. %d" % (frame_no, k_ed_src, k_ep_src, shot['no']))
+            is_found = True
+            break
+    if not is_found:
+        print("Error: shot no found in SRC but SHOULD BE: %d in %s:%s:%s" % (frame_no, k_ed_src, k_ep_src, k_part))
+        pprint(db[k_ep_src][k_ed_src][k_part]['video'])
+        sys.exit()
+
+
+    # Create a list of shots
+    db_video = db[k_ep][k_ed][k_part]['video']
+    if 'shots' not in db_video.keys() or len(db_video['shots']) == 0:
+        # print("create the list of shots")
+        shot_count = len(shots)
+        db_video['shots'] =  [None] * shot_count
+
+
+    # Create a shot (~copy) with the minimal of data
+    print("\t-> create shot no. %d in %s:%s:%s video" % (shot['no'],k_ep, k_ed, k_part))
+    db_video['shots'][shot['no']] = {
+        'start': shot['start'],
+        'count': shot['count'],
+        'no': shot['no'],
+    }
+    shot = db_video['shots'][shot['no']]
+    if not is_found:
+        sys.exit(" NOT FOUND AT ALL: cannot continue")
+
+    return shot
 
 
 def create_pipe_in(command, process_cfg, mode=''):

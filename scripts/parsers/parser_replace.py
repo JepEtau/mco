@@ -12,6 +12,7 @@ from pprint import pprint
 
 from utils.common import (
     get_k_part_from_frame_no,
+    get_or_create_src_shot,
     get_shot_from_frame_no_new,
     nested_dict_set,
 )
@@ -49,14 +50,20 @@ def parse_replace_configurations(db, k_ep_or_g:str):
             frame_no = int(frame_no_str)
             new_frame_no = int(config.get(k_section, frame_no_str).strip())
 
-            # print("\t%s:%s:%s frame no. %d replaced by %d" % (k_ed, k_ep, k_part, frame_no, new_frame_no))
-            shot = get_shot_from_frame_no_new(db, frame_no=frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+            # Get shot from frame no.
+            print("parse_replace_configurations, find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
+            # shot = get_shot_from_frame_no_new(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+            # replaced bya function which creates the src shot if not defined in the config file
+            shot = get_or_create_src_shot(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+
             if shot is None:
                 sys.exit("parse_replace_configurations: error, shot not found for frame no. %d in %s:%s:%s" % (
                     frame_no, k_ed, k_ep, k_part))
-            shot['replace'][frame_no] = new_frame_no
-            # print("->")
-            # pprint(shot)
+            try:
+                shot['replace'][frame_no] = new_frame_no
+            except:
+                shot['replace'] = {frame_no: new_frame_no}
+
 
 
 def get_replaced_frames(db, k_ep, k_part) -> dict:

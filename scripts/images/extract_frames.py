@@ -46,14 +46,14 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     if 'deinterlace' in tasks:
         # FFMPEG: Deinterlace only
         if 'upscale' not in tasks:
-            print("\tFFMPEG: Deinterlace only")
+            print("\t\t\tFFMPEG: Deinterlace only")
             img_ffmpeg = ffmpeg_deinterlace_single_frame(db_common, frame)
             cv2.imwrite(frame['filepath']['deinterlace'], img_ffmpeg)
             tasks.remove('deinterlace')
 
         # Deinterlace and pre-upscale:
         elif ('pre_upscale' in tasks and frame['filters']['ffmpeg']['upscale'] is None):
-            print("\tFFMPEG: Deinterlace and pre-upscale, upscale done by opencv")
+            print("\t\t\tFFMPEG: Deinterlace and pre-upscale, upscale done by opencv")
             img_ffmpeg = ffmpeg_deinterlace_and_pre_upscale_single_frame(db_common, frame)
             tasks.remove('deinterlace')
             tasks.remove('pre_upscale')
@@ -63,7 +63,7 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
 
         # Deinterlace and upscale
         elif 'upscale' in tasks and frame['filters']['ffmpeg']['upscale'] is not None:
-            print("\tFFMPEG: Deinterlace, pre_upscale and upscale")
+            print("\t\t\tFFMPEG: Deinterlace, pre_upscale and upscale")
             img_ffmpeg = ffmpeg_deinterlace_and_upscale_single_frame(db_common, shot)
             cv2.imwrite(frame['filepath']['upscale'], img_ffmpeg)
             tasks.remove('deinterlace')
@@ -73,7 +73,7 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
 
         # Other cases: deinterlace only
         else:
-            # print("\tFFMPEG: Deinterlace only")
+            # print("\t\t\tFFMPEG: Deinterlace only")
             img_ffmpeg = ffmpeg_deinterlace_single_frame(db_common, frame)
             cv2.imwrite(frame['filepath']['deinterlace'], img_ffmpeg)
             tasks.remove('deinterlace')

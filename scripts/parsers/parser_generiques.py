@@ -283,6 +283,10 @@ def parse_generiques(database, k_ed, verbose=False):
             label="[%s:%s]" % (k_ed, k_part_g),
             verbose=False)
 
+        # if k_part_g =='g_debut':
+        #     print("\nparse_generiques, %s, result:" % (k_part_g))
+        #     pprint(database[k_part_g]['target'])
+
 
 
 

@@ -7,13 +7,7 @@ from utils.common import (
     K_ALL_PARTS_ORDERED,
     K_GENERIQUES,
     get_k_part_from_frame_no,
-    get_shot_from_frame_no_new,
-)
-
-from utils.common import (
-    K_ALL_PARTS_ORDERED,
-    get_k_part_from_frame_no,
-    get_shot_from_frame_no_new,
+    get_src_shot_from_frame_no,
 )
 from utils.get_filters import get_filters_from_shot
 from utils.get_curves import get_lut_from_curves
@@ -67,12 +61,14 @@ def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
                     k_ep=k_ep_src,
                     frame_no=shot['src']['start'])
 
-                # Get the shot
-                shot_src = get_shot_from_frame_no_new(db,
+                # Get the src shot: it must have been defined previously, if not, use the create function?
+                shot_src = get_src_shot_from_frame_no(db,
                     shot['src']['start'],
                     k_ed=k_ed_src,
                     k_ep=k_ep_src,
                     k_part=k_part_src)
+                if shot_src is None:
+                    sys.exit("TODO: replace by get_or_create_src_shot")
 
                 if verbose:
                     print("++++++++++++++++++++++++++  shot_src : %s:%s:%s ++++++++++++++++++++++++++" % (k_ed_src, k_ep_src, k_part_src))
@@ -169,11 +165,8 @@ def consolidate_shot(db, shot) -> None:
     # pprint(shot)
     # print("")
 
-
     if 'layer' not in shot.keys() or shot['layer'] == 'fgd':
-
         db_video = db[k_ep][k_ed][k_part]['video']
-        shot_no = shot['no']
 
         # Input and dimensions
         shot.update({
@@ -181,18 +174,23 @@ def consolidate_shot(db, shot) -> None:
             'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
         })
 
-        # Frame no. used for deinterlace
+        # Frame ref is used for deinterlace, calculate it: use the offset array
         shot['ref'] = shot['start']
-        # Modify the ref which is the start of the shot in the k_ed:k_ep
-        # It will be used only for deinterlace, but files will use the 'start' value
-        # It uses the offsets defined in the config files
         if k_part in K_GENERIQUES:
-            k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
-            k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
+            k_ep_target = db[k_part]['target']['video']['src']['k_ep']
+            k_ed_target = db[k_part]['target']['video']['src']['k_ed']
         else:
-            k_ep_ref = db[k_ep]['target']['video']['src']['k_ep']
-            k_ed_ref = db[k_ep]['target']['video']['src']['k_ed']
-        if k_ed != k_ed_ref or k_ep != k_ep_ref:
+            # pprint(db[k_ep]['target']['video'])
+            # pprint(shot)
+            k_ed_target = db[k_ep]['target']['video']['src']['k_ed']
+            # if shot['k_ep'] != shot['dst']['k_ep']:
+            k_ep_target = shot['dst']['k_ep']
+
+        if ((k_ed != k_ed_target or k_ep != k_ep_target)
+            and k_part == shot['dst']['k_part']):
+            # Apply offset only if part is different:
+            # when replacing episode<->asuivre or episode<->precedemment or asuivre <-> precedemment
+            print("\t\t\tapply offset for %s" % (k_part))
             try:
                 offsets = db[k_ep][k_ed][k_part]['video']['offsets']
                 # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
@@ -202,6 +200,8 @@ def consolidate_shot(db, shot) -> None:
                         break
             except:
                 print("offsets are not defined in %s:%s for part %s" % (k_ed, k_ep, k_part))
+        else:
+            print("\t\t\tdisable offset for %s" % (k_part))
 
 
         # Remove unused tasks

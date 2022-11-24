@@ -50,13 +50,13 @@ def extract_frames_from_shot(db_common:dict, k_layer:str, shot:dict) -> None:
 
     # Deinterlace only
     if 'upscale' not in tasks:
-        print("\tFFMPEG: Deinterlace only")
+        print("\t\t\tFFMPEG: Deinterlace only")
         extracted_images_count = ffmpeg_deinterlace_shot(db_common, shot)
         tasks.remove('deinterlace')
 
     # Deinterlace and pre-upscale:
     elif ('pre_upscale' in tasks and shot['filters']['ffmpeg']['upscale'] is None):
-        print("\tFFMPEG: Deinterlace and pre-upscale, upscale done by opencv")
+        print("\t\t\tFFMPEG: Deinterlace and pre-upscale, upscale done by opencv")
         extracted_images_count = ffmpeg_deinterlace_and_pre_upscale_shot(db_common, shot)
         tasks.remove('deinterlace')
         tasks.remove('pre_upscale')
@@ -65,7 +65,7 @@ def extract_frames_from_shot(db_common:dict, k_layer:str, shot:dict) -> None:
 
     # Deinterlace and upscale
     elif 'upscale' in tasks and shot['filters']['ffmpeg']['upscale'] is not None:
-        print("\tFFMPEG: Deinterlace, pre_upscale and upscale")
+        print("\t\t\tFFMPEG: Deinterlace, pre_upscale and upscale")
         extracted_images_count = ffmpeg_deinterlace_and_upscale_shot(db_common, shot)
         tasks.remove('deinterlace')
         try: tasks.remove('pre_upscale')
@@ -74,7 +74,7 @@ def extract_frames_from_shot(db_common:dict, k_layer:str, shot:dict) -> None:
 
     # Other cases: deinterlace only
     else:
-        # print("\tFFMPEG: Deinterlace only")
+        # print("\t\t\tFFMPEG: Deinterlace only")
         extracted_images_count = ffmpeg_deinterlace_shot(db_common, shot)
         tasks.remove('deinterlace')
 
@@ -364,6 +364,11 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
             pprint(layers['bgd']['shot'])
         print("------------------------------------------")
         sys.exit()
+    else:
+        if layers['fgd']['shot']['curves'] is None:
+            print("\t\t\tcurves: none")
+        else:
+            print("\t\t\tcurves: %s" % (layers['fgd']['shot']['curves']['k_curves']))
 
 
     # 2) Create list(s) of frames
