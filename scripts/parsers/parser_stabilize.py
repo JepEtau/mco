@@ -9,7 +9,6 @@ from pathlib import (
     PosixPath,
 )
 import re
-
 from pprint import pprint
 
 from utils.common import (

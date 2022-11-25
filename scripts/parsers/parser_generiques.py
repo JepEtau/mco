@@ -2,7 +2,6 @@
 import sys
 
 import configparser
-from copy import deepcopy
 import os
 import os.path
 from pathlib import (

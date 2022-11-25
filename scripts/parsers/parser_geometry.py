@@ -7,7 +7,6 @@ from pathlib import (
     Path,
     PosixPath,
 )
-import re
 
 from pprint import pprint
 

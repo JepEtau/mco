@@ -17,7 +17,6 @@ from utils.common import (
     K_ALL_PARTS,
     K_GENERIQUES,
     get_database_size,
-    delete_items,
 )
 from utils.consolidate_shots import consolidate_target_shots
 from utils.tasks import get_tasklist
@@ -235,6 +234,11 @@ def main():
         sys.exit("Error: a part shall be one of the following: %s" % (", ".join(K_ALL_PARTS)))
 
     # Parse database
+    print("k_episode=%s" % (k_episode), arguments.frames)
+    if k_episode == 'ep00' and arguments.frames:
+        # for frame study
+        k_episode = 'ep01'
+
     parse_database(g_database, k_ed=k_ed, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
     gc.collect()
     print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
@@ -285,7 +289,6 @@ def main():
         nnedi_file = "./nnedi3_weights.bin"
         if not os.path.exists(nnedi_file):
             sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
-
 
     # Consolidate each shot for the target
     consolidate_target_shots(

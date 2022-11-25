@@ -4,7 +4,6 @@ from pprint import pprint
 
 from utils.common import (
     K_GENERIQUES,
-    get_k_part_from_frame_no,
 )
 from utils.get_filters import (
     FILTER_BASE_NO,

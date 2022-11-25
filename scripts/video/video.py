@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import sys
-from copy import deepcopy
 import os
 
 import concurrent.futures

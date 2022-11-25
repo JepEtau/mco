@@ -29,7 +29,7 @@ def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
             db_video = db[k_p]['target']['video']
             k_ep_src_main = db[k_p]['target']['video']['src']['k_ep']
         elif k_ep == 'ep00':
-            sys.exit("Erreur: le numéro de l'épisode est manquant")
+            sys.exit("Erreur: consolidate_target_shots: le numéro de l'épisode est manquant")
         else:
             db_video = db[k_ep]['target']['video'][k_p]
             k_ep_src_main = k_ep

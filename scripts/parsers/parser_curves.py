@@ -14,7 +14,6 @@ import re
 
 from images.curve import Curve
 from utils.common import (
-    K_GENERIQUES,
     get_or_create_src_shot,
     nested_dict_set,
 )

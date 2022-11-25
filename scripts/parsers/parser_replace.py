@@ -11,10 +11,7 @@ from pathlib import (
 from pprint import pprint
 
 from utils.common import (
-    K_GENERIQUES,
-    get_k_part_from_frame_no,
     get_or_create_src_shot,
-    get_shot_from_frame_no_new,
     nested_dict_set,
 )
 

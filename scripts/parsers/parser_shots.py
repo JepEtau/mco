@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 import sys
-from pprint import pprint
 from copy import deepcopy
+from pprint import pprint
 
-from utils.common import K_GENERIQUES, pprint_video
+from utils.common import (
+    K_GENERIQUES,
+    pprint_video,
+)
 from utils.time_conversions import ms_to_frames
 
 

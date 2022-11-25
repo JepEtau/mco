@@ -87,8 +87,8 @@ def parser_filters_consolidate(cfg_filters_common,
 
 
     for k_part, part in cfg_filters_episode.items():
-        # if verbose:
-        #     print("cfg_filters_episode[%s]" % (k_part))
+        if verbose:
+            print("cfg_filters_episode[%s]" % (k_part))
 
         #     if part == 'default':
         #         print("This part is default, use the default from edition")

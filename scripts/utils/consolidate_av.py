@@ -6,7 +6,6 @@ from pprint import pprint
 from utils.common import (
     FPS,
     pprint_audio,
-    pprint_dict,
     pprint_video
 )
 from utils.time_conversions import frames_to_ms, ms_to_frames

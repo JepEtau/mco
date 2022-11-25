@@ -3,7 +3,6 @@ import sys
 
 import re
 from pprint import pprint
-from copy import deepcopy
 
 from utils.common import (
     FPS,

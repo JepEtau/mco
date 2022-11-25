@@ -72,6 +72,7 @@ def get_filters_generiques(db, frame, k_part):
 
 
 def get_filters(database, frame, k_part=''):
+    # UNUSED
     filters = None
 
     if k_part in K_GENERIQUES:
