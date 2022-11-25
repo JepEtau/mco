@@ -14,7 +14,7 @@ from utils.ffmpeg import (
 )
 from utils.get_framelist import (
     get_framelist,
-    get_framelist_2,
+    get_single_framelist,
 )
 from utils.path import create_folder_for_concatenation
 from utils.time_conversions import (
@@ -32,7 +32,7 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
                     'asuivre',
                     'g_reportage',
                     'g_fin']:
-        return create_concatenation_file_2(db,
+        return create_single_concatenation_file(db,
                     k_ep=k_ep, k_part=k_part, shot=shot,
                     previous_concatenation_filepath=previous_concatenation_filepath)
 
@@ -70,18 +70,21 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
 
 
 
-def create_concatenation_file_2(db, k_ep, k_part, shot, previous_concatenation_filepath=''):
+def create_single_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_filepath=''):
+    """This function is used for the following parts:
+        - g_debut
+        - precedemment
+        - g_asuivre
+        - asuivre
+        - g_reportage
+        - g_fin
+    """
     # print("%s._create_concatenation_file" % (__name__))
     # pprint(shot)
-    # This function is used for the following parts:
-    #   - precedemment
-    #   - asuivre
-    #   - g_asuivre
-    #   - g_reportage
     k_ep_or_g = k_ep if k_part not in ['g_debut', 'g_fin'] else k_part
 
     # Get the list of images
-    images_filepath = get_framelist_2(db, k_ep=k_ep, k_part=k_part, shot=shot)
+    images_filepath = get_single_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot)
 
     # Open concatenation file
     create_folder_for_concatenation(db, k_ep_or_g)
@@ -230,6 +233,7 @@ def combine_images_into_video(db_settings, k_part, input_filename, force=False, 
                     os.remove(shot_filepath)
                 sys.exit("error: cannot create %s" % (shot_filepath))
     return None
+
 
 
 def merge_audio_and_video_tracks(db, k_ep, force=False):

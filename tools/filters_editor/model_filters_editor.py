@@ -29,7 +29,7 @@ from utils.common import (
     get_shot_from_frame_no_new,
 )
 from utils.get_filters import FILTER_BASE_NO
-from utils.get_framelist import get_framelist, get_framelist_2
+from utils.get_framelist import get_framelist, get_single_framelist
 from utils.consolidate_av import consolidate_shot
 
 class Model_filters_editor(Model_common):
@@ -193,7 +193,7 @@ class Model_filters_editor(Model_common):
             if k_part in ['episode', 'reportage']:
                 filepath_tmp = get_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
             else:
-                filepath_tmp = get_framelist_2(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
+                filepath_tmp = get_single_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
             self.filepath.append(filepath_tmp)
 
             # Restore shot values

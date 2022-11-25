@@ -55,11 +55,11 @@ def get_ffmpeg_filter(frame, step):
 
 
 
-
 def ffmeg_clean_filter_complex(a_string):
     for c in ['\"', '\r', '\n']:
         a_string = a_string.replace(c, '')
     return a_string
+
 
 
 def ffmpeg_execute_command(command=None, filename='', mode='', print_msg=False):
@@ -212,7 +212,6 @@ def get_duration(db, filename='', integrity=True):
 
 
 
-
 def ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale'):
     command_ffmpeg = [database['common']['settings']['ffmpeg_exe']]
     command_ffmpeg.extend(database['common']['settings']['verbose'].split(' '))
@@ -254,7 +253,6 @@ def ffmpeg_extract_shot(database, shot, filter_str, width, height, task='upscale
         no += 1
 
     return no
-
 
 
 
@@ -344,9 +342,6 @@ def ffmpeg_deinterlace_and_upscale_shot(database, shot):
 
 
 
-
-
-
 def ffmpeg_extract_single_frame(db, frame, filter_str, width, height, task='upscale'):
     command_ffmpeg = [db['common']['settings']['ffmpeg_exe']]
     command_ffmpeg.extend(db['common']['settings']['verbose'].split(' '))
@@ -402,6 +397,7 @@ def ffmpeg_deinterlace_single_frame(database, frame):
 def ffmpeg_deinterlace_and_pre_upscale_single_frame(database, frame):
     filter_str, width, height = get_ffmpeg_filter(frame, 'pre_upscale')
     return ffmpeg_extract_single_frame(database, frame, filter_str, width, height, task='pre_upscale')
+
 
 
 def ffmpeg_deinterlace_and_upscale_single_frame(database, frame):

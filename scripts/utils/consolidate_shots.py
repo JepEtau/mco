@@ -140,8 +140,6 @@ def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
 
 
 
-
-
 def consolidate_shot(db, shot) -> None:
     """This procedure is used to simplify a single shot and add
     properties to process it: removes unecessary property, add

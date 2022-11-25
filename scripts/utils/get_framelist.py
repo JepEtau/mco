@@ -175,7 +175,7 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
 
 
 
-def get_framelist_2(db, k_ep, k_part, shot) -> list:
+def get_single_framelist(db, k_ep, k_part, shot) -> list:
     """This function returns a list of images which is used
     to create concatenation files or by tools for video editing
     It is used for the following parts:
@@ -193,7 +193,7 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
 
     extension = db['common']['settings']['frame_format']
 
-    # print("%s:get_framelist_2: use %s for %s:%s" % (__name__, k_ep_src, k_ep, k_part))
+    # print("%s:get_single_framelist: use %s for %s:%s" % (__name__, k_ep_src, k_ep, k_part))
     k_part_src = shot['k_part']
     if 'start' in shot['dst']:
         # print("use the dst start and count for the concatenation file")
@@ -220,7 +220,7 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
             db_video = db[k_ep]['target']['video'][k_part]
 
         if db_video['avsync'] != 0 and k_part != 'precedemment':
-            sys.exit("get_framelist_2: avsync not supported for %d:%d" % (k_ep, k_part))
+            sys.exit("get_single_framelist: avsync not supported for %d:%d" % (k_ep, k_part))
 
         black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.%s' % (extension))
         if db_video['avsync'] > 0:
@@ -294,8 +294,8 @@ def get_framelist_2(db, k_ep, k_part, shot) -> list:
                 # print("\t\t\t+ fadeout: %s" % (p))
 
         elif shot['effects'][0] == 'fadeout':
-            print("\n%s.get_framelist_2 (%s:%s)" % (__name__, k_ep, k_part))
-            raise Exception("TODO: get_framelist_2: correct fadeout")
+            print("\n%s.get_single_framelist (%s:%s)" % (__name__, k_ep, k_part))
+            raise Exception("TODO: get_single_framelist: correct fadeout")
             # pprint(shot)
             frame_no = shot['effects'][1]
             fadeout_start = end

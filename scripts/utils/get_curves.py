@@ -6,41 +6,6 @@ from pprint import pprint
 from parsers.parser_curves import parse_curves_file
 
 
-# def get_curves(db, frame:dict, k_part:str):
-#     k_ed = frame['k_ed']
-#     k_ep = frame['k_ep']
-#     frame_no = frame['no']
-#     # print("%s:get_curves, part=%s, frame no. %d" % (__name__, k_part, frame_no))
-
-#     # Get shot from frame_no.
-#     # TODO: replace  get_shot_from_frame_no by get_shot_from_frame_no_new
-#     if k_part in K_GENERIQUES:
-#         shot = get_shot_from_frame_no(db[k_part]['common'], frame_no, k_part)
-#         k_ep_or_g = k_part
-#     else:
-#         shot = get_shot_from_frame_no(db[k_ep][k_ed], frame_no, k_part)
-#         k_ep_or_g = k_ep
-
-#     if shot is None or shot['curves'] is None:
-#         # No defined curves
-#         return {
-#                 'k_curves': '',
-#                 'lut': None,
-#             }
-
-#     if shot['curves']['lut'] is not None:
-#         # Curve is defined and luts already calculated
-#         return shot['curves']
-
-#     # Read curves file and calculate luts if not already done
-#     shot['curves']['lut'] = get_lut_from_curves(db, k_ep_or_g, shot['curves']['k_curves'])
-
-#     # print("\n%d ->" % (frame_no))
-#     # pprint(shot)
-
-#     return shot['curves']
-
-
 
 def get_lut_from_curves(db, k_ep_or_g, k_curves:str):
     """ This function reads a curve file and

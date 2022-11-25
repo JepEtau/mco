@@ -17,8 +17,6 @@ from utils.path import (
 )
 
 
-
-
 def frame_no_to_timestamp(frame_no:int, fps=25.0):
     # Returns th frame no. converted to a timestamp (e.g. 1452.12s)
     timestamp_float = float(frame_no)/fps
@@ -31,9 +29,11 @@ def frame_no_to_timestamp(frame_no:int, fps=25.0):
     return timestampStr
 
 
+
 def frame_no_to_sexagesimal(frame_no:int, fps=25.0):
     timestamp_float = float(frame_no) / fps
     return timestamp_to_sexagesimal(timestamp_float)
+
 
 
 def timestamp_to_sexagesimal(timestamp:float):
@@ -57,7 +57,6 @@ def is_combination_possible(frames, db_combine):
             return False
     print("Info: combination is possible")
     return True
-
 
 
 
@@ -145,9 +144,6 @@ def patch_frames_for_stitching(frames, db_combine, do_combine=False):
                 if t in f_fgd['tasks']:
                     f_fgd['tasks'].remove(t)
             f_fgd['filepath']['stitching'] = f_fgd['filepath']['denoise']
-
-
-
 
 
 

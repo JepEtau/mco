@@ -29,7 +29,7 @@ from utils.common import (
     get_frame_no_from_filepath,
     get_dimensions_from_crop_values,
 )
-from utils.get_framelist import get_framelist, get_framelist_2
+from utils.get_framelist import get_framelist, get_single_framelist
 from utils.consolidate_shots import consolidate_shot
 from images.filtering import filter_rgb
 
@@ -175,7 +175,7 @@ class Model_video_editor(Model_common):
             if k_part_selected in ['episode', 'reportage']:
                 filepath_tmp = get_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
             else:
-                filepath_tmp = get_framelist_2(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
+                filepath_tmp = get_single_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
             self.filepath.append(filepath_tmp)
 
 

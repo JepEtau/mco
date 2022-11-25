@@ -252,9 +252,6 @@ def process_frames(database, frames, cpu_count):
 
 
 
-
-
-
 def extract_frames_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False, shot_min:int=0, shot_max:int=999999):
     print("%s.extract_frames_for_study: %s:%s:%s, tasks=%s" % (__name__, k_ed, k_ep, k_part, ', '.join(tasks)))
 

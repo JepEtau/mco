@@ -4,6 +4,10 @@ from pprint import pprint
 import subprocess
 import re
 
+
+FPS = 25.0
+
+
 K_GENERIQUES = [
     'g_debut',
     'g_fin',
@@ -40,7 +44,6 @@ K_NON_GENERIQUE_PARTS = [
 
 K_AUDIO_PARTS = K_PARTS
 
-
 # order for processing: generique, then from shortest to longest
 K_ALL_PARTS_ORDERED = [
     'g_debut',
@@ -52,10 +55,6 @@ K_ALL_PARTS_ORDERED = [
     'reportage',
     'episode',
 ]
-
-
-FPS = 25.0
-
 
 
 
@@ -70,6 +69,7 @@ def nested_dict_set(d:dict, o:object, *keys):
     nested_d[k] = o
 
 
+
 def nested_dict_get(d:dict, *keys):
     # Return the value
     nested_d = d
@@ -81,12 +81,16 @@ def nested_dict_get(d:dict, *keys):
     try: return nested_d[k]
     except: return None
 
+
+
 def nested_dict_clean(d:dict):
     for k in d.keys():
         if isinstance(d[k], dict):
             nested_dict_clean(d[k])
         else:
             del d[k]
+
+
 
 def recursive_update(out_dict:dict, in_dict:dict):
     for k in in_dict.keys():
@@ -96,14 +100,6 @@ def recursive_update(out_dict:dict, in_dict:dict):
             recursive_update(out_dict=out_dict[k], in_dict=in_dict[k])
         else:
             out_dict[k] = in_dict[k]
-
-
-def delete_items(d:dict, key):
-    if key in d.keys():
-        del d[key]
-    for k, v in d.items():
-        if isinstance(v, dict):
-            item = delete_items(v, key)
 
 
 
@@ -160,6 +156,7 @@ def pprint_dict(db_video, first_indent:int=0, ignore=list()):
         else:
             print(item_0)
     print("%s}" % (first_indent_str))
+
 
 
 def pprint_video(db_video, first_indent:int=0, ignore=list()):
@@ -257,6 +254,7 @@ def pprint_video(db_video, first_indent:int=0, ignore=list()):
     print("%s}" % (first_indent_str))
 
 
+
 def pprint_audio(db_audio, first_indent:int=0, ignore=list()):
     if isinstance(ignore, list):
         ignore_list = ignore
@@ -312,10 +310,6 @@ def pprint_audio(db_audio, first_indent:int=0, ignore=list()):
 
 
 
-
-
-
-
 def get_database_size(obj, seen=None):
     """Recursively finds size of objects"""
     size = sys.getsizeof(obj)
@@ -337,6 +331,7 @@ def get_database_size(obj, seen=None):
     return size
 
 
+
 def get_dimensions_from_crop_values(width, height, crop) -> list:
     c_t, c_b, c_l, c_r = crop
     c_w = width - (c_l + c_r)
@@ -344,24 +339,6 @@ def get_dimensions_from_crop_values(width, height, crop) -> list:
     return [c_t, c_b, c_l, c_r, c_w, c_h]
 
 
-def set_edition_layer(database, edition:str, layer='fgd'):
-    # Set the edition that will be used as a background or foreground
-    if 'editions' not in database.keys():
-        database['editions'] = dict()
-    database['editions'][layer] = edition
-
-def get_edition_layer(database, edition:str):
-    # Returns the layer for this edition
-    for layer in ['bgd', 'fgd']:
-        if database['editions'][layer] == edition:
-            return layer
-    return ''
-
-def get_layer_edition(database, layer:str):
-    # Returns the edition used by the specified layer
-    if layer in database['editions'].keys():
-        return database['editions'][layer]
-    return ''
 
 
 def get_frame_no_from_filepath(filepath):
@@ -369,7 +346,7 @@ def get_frame_no_from_filepath(filepath):
     if result:
         return int(result.group(1))
     return 0
-    # sys.exit("get_frame_no_from_filepath: cannot find frame no. from [%s]" % (filepath))
+
 
 
 def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int):
@@ -387,6 +364,7 @@ def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int):
             return k_p
     # sys.exit("error: %s.get_k_part_from_frame_no: part not found for frame %d in %s:%s" % (__name__, frame_no, k_ed, k_ep))
     return ''
+
 
 
 def get_shot_from_frame(db, edition:str, frame:dict, k_part:str=''):
@@ -462,53 +440,6 @@ def get_shot_no_from_frame_no(db_video, frame_no:int, k_part='') -> int:
                 return None
     print("Error: %s.get_shot_no_from_frame_no: not found for frame %d" % (__name__, frame_no))
     # pprint(db_video)
-    return None
-
-
-
-def get_shot_from_frame_no(db_ep_or_g, frame_no:int, k_part='') -> dict:
-    """This function returns the shot structure from a frame no.
-
-    Args:
-        db_ep_or_g: database for this ep or generique
-        k_part: key of the part to find the frame no. or k_edition when used for a generique
-        frame_no: the frame no. to find
-
-    Returns:
-        the shot structure. Returns None if not found
-
-    """
-    # print("get_shot_from_frame_no: %d, k_part=[%s]" % (frame_no, k_part))
-    if k_part == '':
-        # Get part from frame_no
-        is_part_found = False
-        for k_p in K_PARTS:
-            db_video = db_ep_or_g[k_p]['video']
-            print('%s' % (k_p))
-            print("%d->%d" % (db_video['start'], (db_video['start']+db_video['count'])))
-            if frame_no >= db_video['start'] and frame_no < (db_video['start']+db_video['count']):
-                is_part_found = True
-                break
-
-        if not is_part_found:
-            sys.exit("get_shot_from_frame_no: part is not found for frame no. %d" % (frame_no))
-        k_part = k_p
-
-    if k_part in K_GENERIQUES:
-        shots = db_ep_or_g['video']['shots']
-    else:
-        shots = db_ep_or_g[k_part]['video']['shots']
-    # pprint(shots)
-    for shot in shots:
-        if frame_no >= shot['start'] and frame_no < (shot['start'] + shot['count']):
-            # print("%d in [%d; %d]" % (frame_no, shot['start'], shot['start'] + shot['count']))
-            if shots[shot['no']]['no'] == shot['no']:
-                # Verify that the shot no. defined in the structure is equal to the index in the array
-                return shot
-            else:
-                print("Error: get_shot_from_frame_no, shotsNo!=no")
-                return None
-    print("Warning: %s:get_shot_from_frame_no: not found, frame no. %d, continue" % (__name__, frame_no))
     return None
 
 
@@ -673,81 +604,3 @@ def create_pipe_in(command, process_cfg, mode=''):
 
 
 
-
-
-
-
-
-
-
-
-
-
-# def get_shot_from_frame_no_new(db, frame_no:int, k_ed, k_ep, k_part) -> dict:
-#     """This function returns the shot structure from a frame no.
-
-#     Args:
-#         db: global database
-#         frame_no: the frame no. to find
-#         k_ed: edition
-#         k_ep_or_g: episode or generique
-#         k_part: key of the part to find the frame no. or k_edition when used for a generique
-
-#     Returns:
-#         the shot structure. Returns None if not found
-
-#     """
-#     # Use the ed:ep defined as reference to calculate offsets
-
-#     if k_part in K_GENERIQUES:
-#         # TODO: replace this but the edition set as reference once the shots
-#         # are defined in g_fin, g_asuivre for edition k
-#         k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
-#         k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
-#         # print("%s: use %s:%s as reference to calculate new frame no." % (k_part, k_ed_ref, k_ep_ref))
-
-#         # print("%s: use %s:%s as reference to calculate new frame no." % (k_part, k_ed_ref, k_ep_ref))
-#         # # Get frame no from frame ref
-#         # if k_ed != k_ed_ref or k_ep != k_ep_ref:
-#         #     start = db[k_ep_ref][k_ed_ref][k_part]['video']['start']
-#         #     frame_ref = frame_no
-#         #     print("convert frame_ref into frame_no, ref = %s:%s, start=%d" % (k_ed_ref, k_ep_ref, start))
-#         #     if 'offsets' in db[k_ep][k_ed][k_part]['video']:
-#         #         offsets = db[k_ep][k_ed][k_part]['video']['offsets']
-#         #         print("%s:%s:%s, offsets=" % (k_ed, k_ep, k_part), offsets)
-#         #         for offset in offsets:
-#         #             if offset['start'] <= (frame_no - start) <= offset['end']:
-#         #                 frame_no += offset['offset']
-#         #                 break
-#         #     print("frame no. %d -> %d" % (frame_ref, frame_no))
-
-
-#     else:
-#         k_ed_ref = db['editions']['k_ed_ref']
-#         k_ep_ref = k_ep
-#     # print("get_shot_from_frame_no_new: %s:%s:%s" % (k_ed_ref, k_ep_ref, k_part))
-
-#     shots = db[k_ep_ref][k_ed_ref][k_part]['video']['shots']
-#     for shot in shots:
-#         # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
-#         if shot['start'] <= frame_no < (shot['start'] + shot['count']):
-#             print("\t-> found in k_ed_ref:k_ep_ref %s:%s" % (k_ed_ref, k_ep_ref))
-#             return shot
-
-#     shots = db[k_ep][k_ed][k_part]['video']['shots']
-#     for shot in shots:
-#         # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
-#         if shot['start'] <= frame_no < (shot['start'] + shot['count']):
-#             print("\t-> found in k_ed:k_ep %s:%s" % (k_ed, k_ep))
-#             return shot
-
-
-#     print("\nError: %s:get_shot_from_frame_no_new: not found, frame no. %d in %s:%s:%s, cannot continue" %
-#         (__name__, frame_no, k_ed, k_ep, k_part))
-#     # pprint_video(db[k_ep_ref][k_ed_ref][k_part]['video'], ignore='')
-#     pprint(db[k_ep_ref][k_ed_ref][k_part]['video']['shots'])
-#     print("-----------------------------------------------")
-#     pprint(db[k_ep][k_ed][k_part]['video']['shots'])
-#     sys.exit()
-
-#     return None

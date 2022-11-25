@@ -45,7 +45,7 @@ from parsers.parser_stabilize import STABILIZATION_SHOT_PARAMETERS_KEYS
 from utils.common import K_NON_GENERIQUE_PARTS, get_database_size, get_frame_no_from_filepath, get_k_part_from_frame_no, get_shot_from_frame_no_new, get_shot_no_from_frame_no
 from utils.common import K_GENERIQUES
 from utils.get_filters import FILTER_BASE_NO
-from utils.get_framelist import get_framelist, get_framelist_2
+from utils.get_framelist import get_framelist, get_single_framelist
 from utils.consolidate_av import consolidate_shot
 from utils.get_filters import get_filter_id
 
@@ -272,7 +272,7 @@ class Model_merge_stabilize(Model_common):
                 if k_part in ['episode', 'reportage']:
                     filepath_tmp = get_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
                 else:
-                    filepath_tmp = get_framelist_2(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
+                    filepath_tmp = get_single_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
 
                 # print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 

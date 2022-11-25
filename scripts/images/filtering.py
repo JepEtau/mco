@@ -231,6 +231,7 @@ def filter_richardson_lucy(img, psf=None, num_iter=30):
     img_out = img_as_ubyte(tmp)
     return img_out
 
+
 def filter_nlmeans(img):
     # psf = np.ones((5, 5)) / 25
     # tmp = restoration.wiener(img,psf,1100)
@@ -246,6 +247,7 @@ def filter_nlmeans(img):
         sigma=sigma)
     img_out = img_as_ubyte(tmp)
     return img_out
+
 
 def filters_bilateral(img, sigma_color, sigma_spatial):
     # graySrc = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
