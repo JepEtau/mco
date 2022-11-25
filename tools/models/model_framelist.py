@@ -199,7 +199,6 @@ class Model_framelist():
 
         # Parse the config files used get the selected curves for each shot
         parse_curve_configurations(db, k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
-        print("#########################################################")
 
         for frame in self.frames.values():
             # try:
@@ -281,8 +280,7 @@ class Model_framelist():
         k_ed = frame['k_ed']
         k_ep = frame['k_ep']
         k_part = frame['k_part']
-        print("find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
-
+        # print("find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
 
         if 'shots' in db[k_ep][k_ed][k_part]['video'].keys():
             shots = db[k_ep][k_ed][k_part]['video']['shots']
@@ -319,7 +317,7 @@ class Model_framelist():
         for shot in shots:
             # print("%d in [%d; %d] ?" % (frame_no, shot['start'], shot['start'] + shot['count']))
             if shot['start'] <= frame_no < (shot['start'] + shot['count']):
-                print("\t-> %d found in k_ed_src:k_ep_src %s:%s at shot no. %d" % (frame_no, k_ed_src, k_ep_src, shot['no']))
+                # print("\t-> %d found in k_ed_src:k_ep_src %s:%s at shot no. %d" % (frame_no, k_ed_src, k_ep_src, shot['no']))
                 is_found = True
                 break
         if not is_found:

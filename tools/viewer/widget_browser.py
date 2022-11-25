@@ -20,6 +20,9 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
     QSpacerItem,
     QWidget,
+    QSizeGrip,
+    QSizePolicy,
+    QListView,
 )
 
 from utils.common import K_GENERIQUES, K_PARTS, K_ALL_PARTS
@@ -43,13 +46,18 @@ class Widget_browser(QWidget, Ui_widget_browser):
         # Set and patch ui
         self.setupUi(self)
         self.setAutoFillBackground(True)
+
+        # self.sizegrip = QSizeGrip(self)
+        # self.sizegrip.resize(16,16)
+        # self.verticalLayout.addWidget(self.sizegrip, alignment=Qt.AlignBottom | Qt.AlignRight)
+
         self.setWindowFlags(Qt.Tool)
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
         self.setWindowModality(Qt.NonModal)
 
-        self.display_frame_properties(None)
+        # self.display_frame_properties(None)
 
-        self.list_images.setMinimumHeight(500)
+        # self.list_images.setMinimumHeight(300)
         self.list_images.setAutoScroll(True)
 
         # Variables

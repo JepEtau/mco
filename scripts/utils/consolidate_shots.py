@@ -7,6 +7,7 @@ from utils.common import (
     K_ALL_PARTS_ORDERED,
     K_GENERIQUES,
     get_k_part_from_frame_no,
+    get_or_create_src_shot,
     get_src_shot_from_frame_no,
 )
 from utils.get_filters import get_filters_from_shot
@@ -62,13 +63,23 @@ def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
                     frame_no=shot['src']['start'])
 
                 # Get the src shot: it must have been defined previously, if not, use the create function?
-                shot_src = get_src_shot_from_frame_no(db,
-                    shot['src']['start'],
-                    k_ed=k_ed_src,
-                    k_ep=k_ep_src,
-                    k_part=k_part_src)
-                if shot_src is None:
-                    sys.exit("TODO: replace by get_or_create_src_shot")
+                try:
+                    shot_src = get_src_shot_from_frame_no(db,
+                        shot['src']['start'],
+                        k_ed=k_ed_src,
+                        k_ep=k_ep_src,
+                        k_part=k_part_src)
+                    if shot_src is None:
+                        sys.exit("TODO: replace by get_or_create_src_shot")
+                except:
+                    print("Warning: consolidate_target_shots: create a src shot because not defined in config file %s:%s:%s" % (k_ed_src, k_ep_src, k_part_src))
+                    shot_src = get_or_create_src_shot(db,
+                        shot['src']['start'],
+                        k_ed=k_ed_src,
+                        k_ep=k_ep_src,
+                        k_part=k_part_src)
+                    if shot_src is None:
+                        sys.exit("TODO: replace by get_or_create_src_shot")
 
                 if verbose:
                     print("++++++++++++++++++++++++++  shot_src : %s:%s:%s ++++++++++++++++++++++++++" % (k_ed_src, k_ep_src, k_part_src))

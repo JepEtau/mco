@@ -149,7 +149,7 @@ class Window_main(Window_common):
             frame.update({
                 'dimensions': {'w':self.image.width(), 'h': self.image.height()}
             })
-        self.widget_browser.display_frame_properties(frame)
+        # self.widget_browser.display_frame_properties(frame)
         self.repaint()
 
 

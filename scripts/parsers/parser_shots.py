@@ -459,6 +459,7 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
     elif k_part_g == 'g_asuivre':
         # Create the g_sauivre structure:
         #   this part was not yet defined because it depends on audio start/duration
+        print("create_target_shots_g;: %s:%s:%s" % ('', k_ep, k_part_g))
         db_audio = db[k_ep]['target']['audio'][k_part_g]
         db_audio['avsync'] = 0
         db[k_ep]['target']['video'][k_part_g] = {
