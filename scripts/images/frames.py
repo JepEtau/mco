@@ -324,8 +324,8 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
                 (frame['k_ed'], frame['k_ep'], frame['k_part']))
             pprint(frame)
             sys.exit(" cannot continue")
-        # print("=> filters:")
-        # pprint(frame['filters'])
+        print("=> filters:")
+        pprint(frame['filters'])
 
         # Consolidate curves
         if frame['curves'] is not None:
