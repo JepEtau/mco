@@ -309,10 +309,10 @@ def extract_frames_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False, sh
 
 
     print("Number of cpu: %d" % (multiprocessing.cpu_count()))
-    cpu_count = int(multiprocessing.cpu_count() / 2)
+    cpu_count = int(3 * multiprocessing.cpu_count() / 4)
 
     startTime = time.time()
-    with ThreadPoolExecutor(max_workers=cpu_count) as executor:
+    with ThreadPoolExecutor(max_workers=min(100, len(frames))) as executor:
         work_result = {executor.submit(process_single_frame, db_common, work[0], work[1]): None
                         for work in worklist}
 

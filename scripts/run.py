@@ -317,7 +317,8 @@ def main():
             shot_min=shot_min, shot_max=shot_max)
         return
 
-    elif video_filter in ['deinterlace', 'upscale', 'geometry']:
+    # elif video_filter in ['deinterlace', 'upscale', 'geometry']:
+    else:
         # Generate the video
 
         # Force the edition to default
@@ -335,6 +336,12 @@ def main():
 
         if shot_min != 0 or shot_max != 999999:
             do_av_merge = False
+
+    if (not arguments.frames
+        and video_filter in ['deinterlace', 'upscale', 'geometry', 'sharpen']):
+        do_av_merge = True
+    else:
+        do_av_merge = True
 
 
     # Merge A/V streams

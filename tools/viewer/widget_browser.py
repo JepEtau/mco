@@ -57,7 +57,7 @@ class Widget_browser(QWidget, Ui_widget_browser):
 
         # self.display_frame_properties(None)
 
-        # self.list_images.setMinimumHeight(300)
+        self.list_images.setMinimumHeight(600)
         self.list_images.setAutoScroll(True)
 
         # Variables
@@ -318,7 +318,7 @@ class Widget_browser(QWidget, Ui_widget_browser):
         elif len(values['editions']) == 0 or len(values['hide']['editions']) == 0:
             self.checkBox_editions_all_none.setChecked(True)
         else:
-            self.checkBox_editions_all_none.setChecked(Qt.PartiallyChecked)
+            self.checkBox_editions_all_none.setCheckState(Qt.PartiallyChecked)
         #   append checkbox widgets
         for e in values['editions']:
             self.checkbox_editions.append([e, QCheckBox(e)])
