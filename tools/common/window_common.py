@@ -93,6 +93,26 @@ class Window_common(QMainWindow):
 
 
 
+    def set_initial_options(self, preferences:dict):
+        s = preferences['viewer']
+        if False:
+            self.setGeometry(s['geometry'][0],
+                s['geometry'][1],
+                s['geometry'][2],
+                s['geometry'][3])
+        else:
+            # For debug purpose
+            self.setGeometry(s['geometry'][0],
+                s['geometry'][1],
+                1800,
+                s['geometry'][3])
+        try:
+            log.info("set current editor: %s" % (s['current_editor']))
+            self.set_current_editor(s['current_editor'])
+        except:
+            pass
+
+
     def event_show_fullscreen(self):
         self.blockSignals(True)
         # print("window_main: event_show_fullscreen (required for w11)")
@@ -209,24 +229,6 @@ class Window_common(QMainWindow):
             self.showMinimized()
         else:
             raise Exception("Error: action [%s] is deprecated, discard action")
-
-
-
-    def set_initial_options(self, preferences:dict):
-        s = preferences['viewer']
-        if False:
-            self.setGeometry(s['geometry'][0],
-                s['geometry'][1],
-                s['geometry'][2],
-                s['geometry'][3])
-        else:
-            # For debug purpose
-            self.setGeometry(s['geometry'][0],
-                s['geometry'][1],
-                1600,
-                s['geometry'][3])
-        log.info("set current editor: %s" % (s['current_editor']))
-        self.set_current_editor(s['current_editor'])
 
 
 

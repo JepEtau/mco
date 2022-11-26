@@ -38,7 +38,7 @@ def main():
     # from scripts.frames_extract import frames_extract
     verbose = False
     # editions = ['k', 'a', 's', 's0']
-    editions = ['k', 'a', 's']
+    editions = ['k', 'a', 's', 'f']
 
 
     # Arguments
@@ -338,7 +338,7 @@ def main():
             do_av_merge = False
 
     if (not arguments.frames
-        and video_filter in ['deinterlace', 'upscale', 'geometry', 'sharpen']):
+        and video_filter in ['deinterlace', 'denoise', 'upscale', 'geometry', 'sharpen']):
         do_av_merge = True
     else:
         do_av_merge = True

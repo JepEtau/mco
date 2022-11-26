@@ -249,7 +249,7 @@ def filter_nlmeans(img):
     return img_out
 
 
-def filters_bilateral(img, sigma_color, sigma_spatial):
+def filters_bilateral_sk(img, sigma_color, sigma_spatial):
     # graySrc = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # tmp = img_as_float(img)
     tmp = denoise_bilateral(img,
@@ -390,8 +390,8 @@ def filters_opencv(images, filters, multi=True):
                 sigmaColor=float(args[1]),
                 sigmaSpace=float(args[2]))
 
-        elif function == 'bilateral':
-            image = filters_bilateral(image,
+        elif function == 'bilateral_sk':
+            image = filters_bilateral_sk(image,
                 sigma_color=float(args[0]),
                 sigma_spatial=float(args[1]))
 

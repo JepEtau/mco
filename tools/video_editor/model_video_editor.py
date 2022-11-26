@@ -418,7 +418,7 @@ class Model_video_editor(Model_common):
         k_ep = self.current_selection['k_ep']
 
         # Get the initial curves
-        curves = self.model_database.get_curves(
+        curves = self.model_database.get_curves(self.model_database.database(),
             k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep,
             k_curves=k_curves)
 
