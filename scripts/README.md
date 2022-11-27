@@ -43,6 +43,7 @@ $ python run.py --episode 1 --vfilter deinterlace
     └── 576p
           ├── k : répertoire contenant les vidéo de l'edition 'k'
           ├── s : répertoire contenant les vidéo de l'edition 's'
+          ├── f : répertoire contenant les vidéo de l'edition 'f'
           └── a : répertoire contenant les vidéo de l'edition 'a'
 ```
 
