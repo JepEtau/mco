@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>171</width>
-    <height>344</height>
+    <height>452</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -125,7 +125,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>Shots</string>
+            <string>Used by</string>
            </property>
           </widget>
          </item>
@@ -143,7 +143,7 @@
            <property name="minimumSize">
             <size>
              <width>0</width>
-             <height>0</height>
+             <height>300</height>
             </size>
            </property>
            <property name="maximumSize">

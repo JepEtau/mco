@@ -93,6 +93,26 @@ class Window_common(QMainWindow):
 
 
 
+    def set_initial_options(self, preferences:dict):
+        s = preferences['viewer']
+        if False:
+            self.setGeometry(s['geometry'][0],
+                s['geometry'][1],
+                s['geometry'][2],
+                s['geometry'][3])
+        else:
+            # For debug purpose
+            self.setGeometry(s['geometry'][0],
+                s['geometry'][1],
+                1800,
+                s['geometry'][3])
+        try:
+            log.info("set current editor: %s" % (s['current_editor']))
+            self.set_current_editor(s['current_editor'])
+        except:
+            pass
+
+
     def event_show_fullscreen(self):
         self.blockSignals(True)
         # print("window_main: event_show_fullscreen (required for w11)")
@@ -122,13 +142,22 @@ class Window_common(QMainWindow):
 
 
     def event_selection_changed(self, selection):
+        log.info("event: selection changed, update preview options")
         # Disable crop/resize edition if image is not >= HD
+        self.current_frame_index = 0
+        self.playing_frame_start_no = 0
+
+        # if 'controls' in self.model.get_widget_list():
+        #     log.info("selection changed, reset slider position")
+        #     self.widget_controls.set_slider_value(0)
+
+
         if 'geometry' in self.model.get_widget_list():
             if selection['k_step'] in ['', 'deinterlace', 'pre_upscale', 'geometry']:
                 self.widget_geometry.set_geometry_edition_enabled(False)
             else:
                 self.widget_geometry.set_geometry_edition_enabled(True)
-        self.event_preview_options_changed('model')
+        # self.event_preview_options_changed('model')
 
 
     def event_editor_action(self, event='exit'):
@@ -200,24 +229,6 @@ class Window_common(QMainWindow):
             self.showMinimized()
         else:
             raise Exception("Error: action [%s] is deprecated, discard action")
-
-
-
-    def set_initial_options(self, preferences:dict):
-        s = preferences['viewer']
-        if False:
-            self.setGeometry(s['geometry'][0],
-                s['geometry'][1],
-                s['geometry'][2],
-                s['geometry'][3])
-        else:
-            # For debug purpose
-            self.setGeometry(s['geometry'][0],
-                s['geometry'][1],
-                1600,
-                s['geometry'][3])
-        log.info("set current editor: %s" % (s['current_editor']))
-        self.set_current_editor(s['current_editor'])
 
 
 

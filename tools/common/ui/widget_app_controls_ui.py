@@ -39,7 +39,6 @@ class Ui_widget_app_controls(object):
         icon.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_save_modifications.setIcon(icon)
         self.pushButton_save_modifications.setCheckable(False)
-        self.pushButton_save_modifications.setAutoDefault(False)
         self.pushButton_save_modifications.setFlat(True)
 
         self.horizontalLayout.addWidget(self.pushButton_save_modifications)
@@ -53,7 +52,6 @@ class Ui_widget_app_controls(object):
         icon1.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_discard_modifications.setIcon(icon1)
         self.pushButton_discard_modifications.setCheckable(False)
-        self.pushButton_discard_modifications.setAutoDefault(False)
         self.pushButton_discard_modifications.setFlat(True)
 
         self.horizontalLayout.addWidget(self.pushButton_discard_modifications)
@@ -69,7 +67,6 @@ class Ui_widget_app_controls(object):
         icon2.addFile(u"icons/purple/minus-square.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_minimize.setIcon(icon2)
         self.pushButton_minimize.setCheckable(False)
-        self.pushButton_minimize.setAutoDefault(False)
         self.pushButton_minimize.setFlat(True)
 
         self.horizontalLayout.addWidget(self.pushButton_minimize)
@@ -83,7 +80,6 @@ class Ui_widget_app_controls(object):
         icon3.addFile(u"icons/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_exit.setIcon(icon3)
         self.pushButton_exit.setCheckable(False)
-        self.pushButton_exit.setAutoDefault(False)
         self.pushButton_exit.setFlat(True)
 
         self.horizontalLayout.addWidget(self.pushButton_exit)

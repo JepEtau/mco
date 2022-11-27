@@ -79,9 +79,9 @@ class Model_geometry():
         if k_part in ['g_debut', 'g_fin']:
             # Use the part geometry for this to simplify
             return self.get_part_geometry(k_ed=k_ed, k_ep=k_ep, k_part=k_part)
-        else:
-            print("TODO: %s:get_custom_geometry for %s:%s:%s (%d)" % (
-                __name__, k_ed, k_ep, k_part, shot['no']))
+        # else:
+        #     print("TODO: %s:get_custom_geometry for %s:%s:%s (%d)" % (
+        #         __name__, k_ed, k_ep, k_part, shot['no']))
             # TODO: return the geometry for this shot
         return None
 

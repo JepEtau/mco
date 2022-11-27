@@ -86,7 +86,7 @@ class Window_main(Window_common):
         self.widget_selection = Widget_selection(self, self.model)
         self.widgets['selection'] = self.widget_selection
         self.widget_selection.refresh_browsing_folder(self.model.get_available_episode_and_parts())
-        self.widget_selection.signal_ep_or_part_selection_changed[dict].connect(self.event_selection_changed)
+        self.widget_selection.signal_selection_changed[dict].connect(self.event_selection_changed)
         self.widget_selection.set_initial_options(p)
         self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
 

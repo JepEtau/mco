@@ -4,15 +4,17 @@ from datetime import timedelta
 import copy
 from pprint import pprint
 
-from utils.common import K_GENERIQUES
-from utils.consolidate_shots import consolidate_shot
+from parsers.parser_episodes import parse_episode
+from utils.common import (
+    K_GENERIQUES,
+    get_or_create_src_shot,
+)
 from utils.get_curves import get_lut_from_curves
 from utils.get_filters import get_filters_from_shot
-from utils.path import get_output_frame_filepaths, get_output_frame_filepaths_for_study
-
-
-
-
+from utils.path import (
+    get_output_frame_filepaths,
+    get_output_frame_filepaths_for_study,
+)
 
 
 def frame_no_to_timestamp(frame_no:int, fps=25.0):
@@ -27,9 +29,11 @@ def frame_no_to_timestamp(frame_no:int, fps=25.0):
     return timestampStr
 
 
+
 def frame_no_to_sexagesimal(frame_no:int, fps=25.0):
     timestamp_float = float(frame_no) / fps
     return timestamp_to_sexagesimal(timestamp_float)
+
 
 
 def timestamp_to_sexagesimal(timestamp:float):
@@ -53,7 +57,6 @@ def is_combination_possible(frames, db_combine):
             return False
     print("Info: combination is possible")
     return True
-
 
 
 
@@ -85,7 +88,7 @@ def create_framelist_from_shot(db:dict, shot) -> list:
             'geometry': None if 'geometry' not in shot.keys() else shot['geometry'],
             'curves': None if 'curves' not in shot.keys() else shot['curves'],
         }
-        f['filepath'] = get_output_frame_filepaths(db, shot=shot, frame_no=f['ref'])
+        f['filepath'] = get_output_frame_filepaths(db, shot=shot, frame_no=f['no'])
         framelist.append(f)
 
     return framelist
@@ -144,13 +147,12 @@ def patch_frames_for_stitching(frames, db_combine, do_combine=False):
 
 
 
-
-
-
 def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False) -> list:
     # This is an awfull function which should be reworked but no time to spend for this
     print("%s.create_framelist_for_study: %s:%s:%s" % (__name__, k_ed, k_ep, k_part))
 
+    # Create a dict to not parse another time an already ed/ep
+    parsed_ed_ep = dict()
 
     # Returns a list of frames for an edition (calculated with offset)
     if k_part in ['g_debut', 'g_fin']:
@@ -158,6 +160,12 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         except: return
         k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
         k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
+
+        print("consolidate_frame_list_for_study: parse_episode: %s:%s" % (k_ed_ref, k_ep_ref))
+        parse_episode(db, k_ed=k_ed_ref, k_ep=k_ep_ref)
+        parsed_ed_ep[k_ed_ref] = [k_ep_ref]
+        pprint(parsed_ed_ep)
+
     elif k_part in ['g_asuivre', 'g_reportage']:
         try: frame_list = db[k_part]['common']['frames']
         except: return
@@ -224,11 +232,19 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         frame['k_ed'] = k_ed_src
 
         # Determine k_ep
-        print("\tdetermine k_ep (note: k_ep=%s)" % (k_ep))
+        # print("\tdetermine k_ep (note: k_ep=%s)" % (k_ep))
         if 'k_ep' in frame.keys():
             # Use the episode specified by the target
-            print("use the k_ep [%s] specified in the common.ini" % (frame['k_ep']))
+            print("%d: use the k_ep [%s] specified in the common.ini" % (frame['no'], frame['k_ep']))
             k_ep_src = frame['k_ep']
+
+            if k_ed_src not in parsed_ed_ep.keys() or k_ep_src not in parsed_ed_ep[k_ed_src]:
+                print("\t-> consolidate_frame_list_for_study: parse_episode: %s:%s" % (k_ed_src, k_ep_src))
+                parse_episode(db, k_ed=k_ed_src, k_ep=k_ep_src)
+                try: parsed_ed_ep[k_ed_src].append(k_ep_src)
+                except: parsed_ed_ep[k_ed_src] = [k_ep_src]
+
+
         elif k_ep != 'ep00':
             k_ep_src = k_ep
         elif k_ep_src == 'ep00':
@@ -240,12 +256,13 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
 
         # Get frame no from frame ref
         if k_ed_src != k_ed_ref or k_ep_src != k_ep_ref:
-            # print("convert frame_ref into frame_no, ref = %s:%s" % (k_ed_ref, k_ep_ref))
+            print("\tconvert frame_no into frame_ref, ref = %s:%s" % (k_ed_ref, k_ep_ref))
+            start = db[k_ep_ref][k_ed_ref][k_part]['video']['start']
             if 'offsets' in db[k_ep_src][k_ed_src][k_part]['video']:
                 offsets = db[k_ep_src][k_ed_src][k_part]['video']['offsets']
                 # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
                 for offset in offsets:
-                    if offset['start'] <= frame['no'] <= offset['end']:
+                    if offset['start'] <= (frame['no'] - start)<= offset['end']:
                         frame['ref'] = frame['no'] + offset['offset']
                         break
             else:
@@ -259,27 +276,28 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         frame['k_part'] = k_part
         frame['k_ep'] = k_ep_src
 
-        # Get shot of this frame
+        # Get shot of this frame (or create it if not defined)
         k_ed_f = frame['k_ed']
         k_ep_f = frame['k_ep']
         frame_no = frame['no']
-        shots = db[k_ep_f][k_ed_f][k_part]['video']['shots']
-        is_found = False
-        for shot in shots:
-            if shot['start'] <= frame_no < (shot['start'] + shot['count']):
-                is_found = True
-                break
-        if not is_found:
-            print("Error: shot not found for %s in %s:%s:%s" % (frame_no, k_ed_f, k_ep_f, k_part))
+        print("\t%s:%s:%s %d" % (frame['k_ed'], frame['k_ep'], k_part, frame['no']))
 
-        print("=> extract from %s:%s:%s" % (k_ed_f, k_ep_f, k_part))
+        shot = get_or_create_src_shot(db, frame_no, k_ed_f, k_ep_f, k_part)
+        shot.update({
+            'filters': 'default',
+            'curves': None,
+        })
+
 
         # Update the frames with the data found in this shot
         if 'filters' not in frame.keys() or frame['filters'] == 'default':
             # Use the filters defined in shot
-            frame['filters'] = shot['filters']
-        # else:
-            # This frame is specifying others filters
+            try:
+                frame['filters'] = shot['filters']
+            except:
+                print("\t no filters defined, use default")
+                frame['filters'] = 'default'
+
 
         frame.update({
             'curves': shot['curves'],
@@ -299,7 +317,15 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         })
 
         # Consolidate filters
-        frame['filters'] = get_filters_from_shot(db, frame)
+        try:
+            frame['filters'] = get_filters_from_shot(db, frame)
+        except:
+            print("\nError: filters not defined or erroneous (%s:%s:%s), frame:" %
+                (frame['k_ed'], frame['k_ep'], frame['k_part']))
+            pprint(frame)
+            sys.exit(" cannot continue")
+        print("=> filters:")
+        pprint(frame['filters'])
 
         # Consolidate curves
         if frame['curves'] is not None:

@@ -29,7 +29,7 @@ from utils.common import (
     get_shot_from_frame_no_new,
 )
 from utils.get_filters import FILTER_BASE_NO
-from utils.get_framelist import get_framelist, get_framelist_2
+from utils.get_framelist import get_framelist, get_single_framelist
 from utils.consolidate_av import consolidate_shot
 
 class Model_filters_editor(Model_common):
@@ -75,7 +75,7 @@ class Model_filters_editor(Model_common):
     def set_view(self, view):
         self.view = view
 
-        self.view.widget_selection.signal_ep_or_part_selection_changed[dict].connect(self.ep_or_part_selection_changed)
+        self.view.widget_selection.signal_selection_changed[dict].connect(self.selection_changed)
         self.view.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
 
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
@@ -86,7 +86,7 @@ class Model_filters_editor(Model_common):
 
         p = self.preferences.get_preferences()
         k_ep = 'ep%02d' % (p['selection']['episode']) if p['selection']['episode'] != '' else ''
-        self.ep_or_part_selection_changed({
+        self.selection_changed({
             'k_ep': k_ep,
             'k_part': p['selection']['part'],
             'k_step': p['selection']['step'],
@@ -94,11 +94,11 @@ class Model_filters_editor(Model_common):
 
 
 
-    def ep_or_part_selection_changed(self, values:dict):
+    def selection_changed(self, values:dict):
         """ Directory or step has been changed, update the database, list all images,
             list all shots
         """
-        # print("----------------------- ep_or_part_selection_changed -------------------------")
+        # print("----------------------- selection_changed -------------------------")
         # pprint(values)
         k_ep = values['k_ep']
         k_part = values['k_part']
@@ -148,7 +148,7 @@ class Model_filters_editor(Model_common):
                 if 'count' not in shot['src'].keys():
                     shot['src']['count'] = shot_src['count']
                 if shot_src is None:
-                    sys.exit("error: ep_or_part_selection_changed: shot src is None")
+                    sys.exit("error: selection_changed: shot src is None")
             else:
                 k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
                 k_ep_src = k_ep
@@ -193,7 +193,7 @@ class Model_filters_editor(Model_common):
             if k_part in ['episode', 'reportage']:
                 filepath_tmp = get_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
             else:
-                filepath_tmp = get_framelist_2(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
+                filepath_tmp = get_single_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
             self.filepath.append(filepath_tmp)
 
             # Restore shot values
@@ -216,7 +216,8 @@ class Model_filters_editor(Model_common):
                 current_shot['count'] += current_shot['effects'][2]
 
             # Get curves for this shot
-            curves = self.model_database.get_curves_selection(shot=current_shot)
+            curves = self.model_database.get_shot_curves_selection(db=self.model_database.database(),
+                shot=current_shot)
             try: k_curves = curves['k_curves']
             except: k_curves =''
             if curves is None and current_shot['curves'] is not None:

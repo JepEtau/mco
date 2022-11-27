@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QCheckBox, QComb
     QPushButton, QSizePolicy, QSpacerItem, QVBoxLayout,
     QWidget)
 
-from curves_editor.widget_app_controls import Widget_app_controls
+from common.widget_app_controls import Widget_app_controls
 
 class Ui_widget_curves_editor(object):
     def setupUi(self, widget_curves_editor):

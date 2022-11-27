@@ -24,7 +24,7 @@ class Ui_widget_curves_selection(object):
     def setupUi(self, widget_curves_selection):
         if not widget_curves_selection.objectName():
             widget_curves_selection.setObjectName(u"widget_curves_selection")
-        widget_curves_selection.resize(171, 344)
+        widget_curves_selection.resize(171, 452)
         self.verticalLayout_3 = QVBoxLayout(widget_curves_selection)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
@@ -102,7 +102,7 @@ class Ui_widget_curves_selection(object):
         sizePolicy4.setVerticalStretch(0)
         sizePolicy4.setHeightForWidth(self.list_shots.sizePolicy().hasHeightForWidth())
         self.list_shots.setSizePolicy(sizePolicy4)
-        self.list_shots.setMinimumSize(QSize(0, 0))
+        self.list_shots.setMinimumSize(QSize(0, 300))
         self.list_shots.setMaximumSize(QSize(40, 16777215))
         self.list_shots.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.list_shots.setProperty("showDropIndicator", False)
@@ -167,7 +167,7 @@ class Ui_widget_curves_selection(object):
         widget_curves_selection.setWindowTitle(QCoreApplication.translate("widget_curves_selection", u"Form", None))
         self.pushButton_discard.setText("")
         self.pushButton_delete.setText("")
-        self.label_edition_6.setText(QCoreApplication.translate("widget_curves_selection", u"Shots", None))
+        self.label_edition_6.setText(QCoreApplication.translate("widget_curves_selection", u"Used by", None))
 
         __sortingEnabled = self.list_shots.isSortingEnabled()
         self.list_shots.setSortingEnabled(False)

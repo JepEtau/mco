@@ -27,8 +27,7 @@ from PySide6.QtWidgets import (
 
 from images.curve import Curve
 from images.curve import Curve_point
-from common.sylesheet import set_stylesheet
-from video_editor.model_video_editor import Model_video_editor
+
 
 class Widget_rgb_graph(QWidget):
     signal_point_selected = Signal(list)
@@ -78,7 +77,7 @@ class Widget_rgb_graph(QWidget):
         self.is_enabled = True
 
 
-    def set_model(self, model:Model_video_editor):
+    def set_model(self, model):
         self.model = model
 
         # Connect signals
@@ -123,7 +122,7 @@ class Widget_rgb_graph(QWidget):
 
     def event_curves_loaded(self, curves:dict):
         if curves is not None:
-            log.info("load curves in RGB graph")
+            # log.info("load curves in RGB graph")
             # print("%s.event_load_curves: load curves in RGB graph" % (__name__))
             for k in self.channels.keys():
                 if self.channels[k]['curve'] is not None:
@@ -187,7 +186,7 @@ class Widget_rgb_graph(QWidget):
 
     def reset_channel(self, channel:str=''):
         # Reset the graph for a specified/all/current channel
-        log.info("reset channel: %s" % (channel))
+        log.info("reset channel: %s (current: %s)" % (channel, self.k_selected))
         if channel == 'all':
             for c in ['r', 'g', 'b', 'm']:
                 self.channels[c]['curve'].reset()

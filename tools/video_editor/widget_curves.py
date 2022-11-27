@@ -12,13 +12,9 @@ from PySide6.QtCore import (
     Signal,
 )
 from PySide6.QtGui import QColor
-from PySide6.QtWidgets import (
-    QApplication
-)
 
-from common.sylesheet import set_curves_radiobutton_stylesheet, set_stylesheet
+from common.sylesheet import set_curves_radiobutton_stylesheet, set_stylesheet, set_widget_stylesheet
 
-from video_editor.model_video_editor import Model_video_editor
 from video_editor.ui.widget_curves_ui import Ui_widget_curves
 from common.widget_common import Widget_common
 
@@ -30,9 +26,9 @@ GRAPH_WIDTH = 512
 
 
 class Widget_curves(Widget_common, Ui_widget_curves):
-    signal_save_curves_as = Signal(dict)
+    signal_save_rgb_curves_as = Signal(dict)
 
-    def __init__(self, ui, model:Model_video_editor):
+    def __init__(self, ui, model):
         super(Widget_curves, self).__init__(ui)
         self.model = model
         self.ui = ui
@@ -63,6 +59,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.lineEdit_coordinates.clear()
         self.lineEdit_rgb_values.clear()
         self.refresh_current_coordinates([-1,0])
+        self.label_message.clear()
 
 
         self.widget_rgb_graph.set_widget_width(GRAPH_WIDTH)
@@ -87,8 +84,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
 
         self.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
-        self.widget_curves_selection.signal_save_rgb_curves_requested[dict].connect(self.event_save_curves_as)
-        self.widget_curves_selection.signal_save_curves_selection_requested[dict].connect(self.event_save_curves_as)
+        self.widget_curves_selection.signal_save_rgb_curves_requested[dict].connect(self.event_save_rgb_curves_as)
 
         self.model.signal_is_saved[str].connect(self.event_is_saved)
 
@@ -98,6 +94,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.radioButton_select_m_channel.setChecked(True)
 
         set_stylesheet(self)
+        set_widget_stylesheet(self.label_message, 'message')
         for c, w in zip(['r', 'g', 'b', 'm'], [
                     self.radioButton_select_r_channel,
                     self.radioButton_select_g_channel,
@@ -133,7 +130,31 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
 
     def refresh_values(self, frame:dict):
-        pass
+        # print("%s: refresh_values" % (self.objectName()))
+        if ('dst' in frame.keys()
+            and frame['k_part'] not in ['g_debut', 'g_fin']
+            and frame['k_ep'] != frame['dst']['k_ep']):
+            # Disable curves edition
+            self.widget_rgb_graph.setEnabled(False)
+            self.widget_curves_selection.setEnabled(False)
+            self.radioButton_select_b_channel.setEnabled(False)
+            self.radioButton_select_g_channel.setEnabled(False)
+            self.radioButton_select_r_channel.setEnabled(False)
+            self.radioButton_select_m_channel.setEnabled(False)
+            self.pushButton_reset_current_channel.setEnabled(False)
+            self.pushButton_reset_all_channels.setEnabled(False)
+            self.label_message.setText("(read-only)")
+        else:
+            self.widget_rgb_graph.setEnabled(True)
+            self.widget_curves_selection.setEnabled(True)
+            self.radioButton_select_b_channel.setEnabled(True)
+            self.radioButton_select_g_channel.setEnabled(True)
+            self.radioButton_select_r_channel.setEnabled(True)
+            self.radioButton_select_m_channel.setEnabled(True)
+            self.pushButton_reset_current_channel.setEnabled(True)
+            self.pushButton_reset_all_channels.setEnabled(True)
+            self.label_message.clear()
+
 
 
     def event_reset_channel(self, channel):
@@ -224,15 +245,16 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.widget_curves_selection.mark_current_as_modified(True)
 
 
-    def event_save_curves_as(self, names):
+    def event_save_rgb_curves_as(self, names):
+        log.info("curves widget: save curves as: [%s] -> [%s]" % (names['current'], names['new']))
         # Get RGB curves
         # associate it to the provided name (by the curves selection)
         curves = {
-            'k_curves_new': names['new'],
             'k_curves_current': names['current'],
+            'k_curves_new': names['new'],
             'channels': self.widget_rgb_graph.get_curves_channels(),
         }
-        self.signal_save_curves_as.emit(curves)
+        self.signal_save_rgb_curves_as.emit(curves)
 
 
     def get_preview_options(self):

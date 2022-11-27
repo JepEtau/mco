@@ -3,7 +3,7 @@
 from copy import deepcopy
 from pprint import pprint
 
-from models.model_framelist_common import Model_framelist_common
+from viewer.model_framelist_common import Model_framelist_common
 from models.model_database import Model_database
 
 class Model_framelist(Model_framelist_common):

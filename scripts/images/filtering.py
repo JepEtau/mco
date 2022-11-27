@@ -231,6 +231,7 @@ def filter_richardson_lucy(img, psf=None, num_iter=30):
     img_out = img_as_ubyte(tmp)
     return img_out
 
+
 def filter_nlmeans(img):
     # psf = np.ones((5, 5)) / 25
     # tmp = restoration.wiener(img,psf,1100)
@@ -247,7 +248,8 @@ def filter_nlmeans(img):
     img_out = img_as_ubyte(tmp)
     return img_out
 
-def filters_bilateral(img, sigma_color, sigma_spatial):
+
+def filters_bilateral_sk(img, sigma_color, sigma_spatial):
     # graySrc = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     # tmp = img_as_float(img)
     tmp = denoise_bilateral(img,
@@ -372,8 +374,8 @@ def filters_opencv(images, filters, multi=True):
                 templateWindowSize=int(args[2]),
                 searchWindowSize=int(args[3]))
 
-        elif function == 'GaussianBlur':
-            image = filters_GaussianBlur(image,
+        elif function == 'gaussianBlur':
+            image = filters_gaussianBlur(image,
                 radius=int(args[0]),
                 sigma=float(args[1]))
 
@@ -388,8 +390,8 @@ def filters_opencv(images, filters, multi=True):
                 sigmaColor=float(args[1]),
                 sigmaSpace=float(args[2]))
 
-        elif function == 'bilateral':
-            image = filters_bilateral(image,
+        elif function == 'bilateral_sk':
+            image = filters_bilateral_sk(image,
                 sigma_color=float(args[0]),
                 sigma_spatial=float(args[1]))
 
@@ -556,7 +558,7 @@ def  filters_morphologyEx(image, type, radius, iterations):
 def filters_bilateralFilter(img, diameter, sigmaColor, sigmaSpace):
     return cv2.bilateralFilter(img, diameter, sigmaColor, sigmaSpace)
 
-def filters_GaussianBlur(image, radius, sigma):
+def filters_gaussianBlur(image, radius, sigma):
     return cv2.GaussianBlur(image, (radius, radius), sigma)
 
 def filters_dilate(image, radius):

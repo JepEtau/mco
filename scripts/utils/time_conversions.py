@@ -16,6 +16,7 @@ TIMESTAMP_S = "^(\d*).(\d*)$"
 def frames_to_ms(count:int) -> int:
     return int((float(count) * 1000) / FPS)
 
+
 def ms_to_frames(ms:int) -> int:
     return int((float(ms) * FPS) / 1000)
 
@@ -26,6 +27,7 @@ def print_current_datetime():
     print(msg, end="", flush=True)
     startTime = time()
     return startTime
+
 
 def current_datetime_str() -> str:
     datetime_now = datetime.now()
@@ -69,11 +71,9 @@ if __name__ == "__main__":
         else:
             continue
 
-
         timestamp_ms_int = float(int(float(timestamp_ms) * FPS / 1000))
         # print(timestamp_ms_int)
         # print(timestamp_ms * FPS/1000)
-
 
         if timestamp_ms * FPS/1000 == timestamp_ms_int:
             print("multiple")

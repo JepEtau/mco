@@ -16,16 +16,16 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QApplication, QCheckBox,
-    QComboBox, QFrame, QHBoxLayout, QLabel,
-    QLayout, QListView, QListWidget, QListWidgetItem,
-    QPushButton, QScrollArea, QSizePolicy, QSpacerItem,
-    QVBoxLayout, QWidget)
+    QComboBox, QFrame, QHBoxLayout, QLayout,
+    QListView, QListWidget, QListWidgetItem, QPushButton,
+    QScrollArea, QSizePolicy, QSpacerItem, QVBoxLayout,
+    QWidget)
 
 class Ui_widget_browser(object):
     def setupUi(self, widget_browser):
         if not widget_browser.objectName():
             widget_browser.setObjectName(u"widget_browser")
-        widget_browser.resize(348, 657)
+        widget_browser.resize(320, 567)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -79,10 +79,10 @@ class Ui_widget_browser(object):
         self.layout_tools = QVBoxLayout()
         self.layout_tools.setSpacing(6)
         self.layout_tools.setObjectName(u"layout_tools")
-        self.layout_tools.setSizeConstraint(QLayout.SetMaximumSize)
+        self.layout_tools.setSizeConstraint(QLayout.SetDefaultConstraint)
         self.layout_episode_part = QHBoxLayout()
         self.layout_episode_part.setObjectName(u"layout_episode_part")
-        self.layout_episode_part.setSizeConstraint(QLayout.SetNoConstraint)
+        self.layout_episode_part.setSizeConstraint(QLayout.SetDefaultConstraint)
         self.combobox_episode = QComboBox(widget_browser)
         self.combobox_episode.addItem("")
         self.combobox_episode.addItem("")
@@ -336,7 +336,6 @@ class Ui_widget_browser(object):
         sizePolicy6.setVerticalStretch(0)
         sizePolicy6.setHeightForWidth(self.list_images.sizePolicy().hasHeightForWidth())
         self.list_images.setSizePolicy(sizePolicy6)
-        self.list_images.setMinimumSize(QSize(0, 0))
         self.list_images.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.list_images.setProperty("showDropIndicator", False)
         self.list_images.setSelectionMode(QAbstractItemView.SingleSelection)
@@ -350,48 +349,6 @@ class Ui_widget_browser(object):
         self.checkBox_fit_image_to_window.setSizePolicy(sizePolicy2)
 
         self.layout_tools.addWidget(self.checkBox_fit_image_to_window)
-
-        self.layout_properties = QVBoxLayout()
-        self.layout_properties.setSpacing(0)
-        self.layout_properties.setObjectName(u"layout_properties")
-        self.layout_properties.setSizeConstraint(QLayout.SetNoConstraint)
-        self.label_edition = QLabel(widget_browser)
-        self.label_edition.setObjectName(u"label_edition")
-        sizePolicy3.setHeightForWidth(self.label_edition.sizePolicy().hasHeightForWidth())
-        self.label_edition.setSizePolicy(sizePolicy3)
-
-        self.layout_properties.addWidget(self.label_edition)
-
-        self.label_frame_no = QLabel(widget_browser)
-        self.label_frame_no.setObjectName(u"label_frame_no")
-        sizePolicy3.setHeightForWidth(self.label_frame_no.sizePolicy().hasHeightForWidth())
-        self.label_frame_no.setSizePolicy(sizePolicy3)
-
-        self.layout_properties.addWidget(self.label_frame_no)
-
-        self.label_shot = QLabel(widget_browser)
-        self.label_shot.setObjectName(u"label_shot")
-        sizePolicy3.setHeightForWidth(self.label_shot.sizePolicy().hasHeightForWidth())
-        self.label_shot.setSizePolicy(sizePolicy3)
-
-        self.layout_properties.addWidget(self.label_shot)
-
-        self.label_step = QLabel(widget_browser)
-        self.label_step.setObjectName(u"label_step")
-        sizePolicy3.setHeightForWidth(self.label_step.sizePolicy().hasHeightForWidth())
-        self.label_step.setSizePolicy(sizePolicy3)
-
-        self.layout_properties.addWidget(self.label_step)
-
-        self.label_dimension = QLabel(widget_browser)
-        self.label_dimension.setObjectName(u"label_dimension")
-        sizePolicy3.setHeightForWidth(self.label_dimension.sizePolicy().hasHeightForWidth())
-        self.label_dimension.setSizePolicy(sizePolicy3)
-
-        self.layout_properties.addWidget(self.label_dimension)
-
-
-        self.layout_tools.addLayout(self.layout_properties)
 
 
         self.verticalLayout.addLayout(self.layout_tools)
@@ -436,11 +393,6 @@ class Ui_widget_browser(object):
         self.checkBox_10.setText(QCoreApplication.translate("widget_browser", u"006", None))
         self.checkBox_9.setText(QCoreApplication.translate("widget_browser", u"007", None))
         self.checkBox_fit_image_to_window.setText(QCoreApplication.translate("widget_browser", u"Fit image to window", None))
-        self.label_edition.setText(QCoreApplication.translate("widget_browser", u"k, episode no. 3, episode", None))
-        self.label_frame_no.setText(QCoreApplication.translate("widget_browser", u"frame no.", None))
-        self.label_shot.setText(QCoreApplication.translate("widget_browser", u"shot no. (start=0)", None))
-        self.label_step.setText(QCoreApplication.translate("widget_browser", u"deinterlace", None))
-        self.label_dimension.setText(QCoreApplication.translate("widget_browser", u"1440 x 1080", None))
         pass
     # retranslateUi
 

@@ -22,7 +22,7 @@ from PySide6.QtWidgets import (
 from utils.common import K_GENERIQUES
 
 from common.widget_common import Widget_common
-from common.sylesheet import set_stylesheet
+from common.sylesheet import set_stylesheet, set_widget_stylesheet
 
 from video_editor.model_video_editor import Model_video_editor
 from video_editor.ui.widget_geometry_ui import Ui_widget_geometry
@@ -78,7 +78,10 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.pushButton_custom_resize_edition.toggled[bool].connect(partial(self.event_resize_edition_changed, 'custom'))
         self.checkBox_custom_keep_ratio.toggled[bool].connect(partial(self.event_keep_ratio_changed, 'custom'))
 
+        self.label_message.clear()
+
         set_stylesheet(self)
+        set_widget_stylesheet(self.label_message, 'message')
         self.adjustSize()
 
 
@@ -298,7 +301,13 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
     def set_geometry_edition_enabled(self, enabled):
         log.info("enable edition: %s" % ('true' if enabled else 'false'))
-        print("TODO: %s: enable edition: %s" % (self.objectName(), 'true' if enabled else 'false'))
+        # print("TODO: %s: enable edition: %s" % (self.objectName(), 'true' if enabled else 'false'))
+        if enabled:
+            self.label_message.clear()
+        else:
+            # Disable
+            self.label_message.setText("(do not modify these values)")
+
 
 
 

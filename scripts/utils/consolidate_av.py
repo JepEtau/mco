@@ -6,13 +6,9 @@ from pprint import pprint
 from utils.common import (
     FPS,
     pprint_audio,
-    pprint_dict,
     pprint_video
 )
 from utils.time_conversions import frames_to_ms, ms_to_frames
-
-
-
 
 
 
@@ -111,7 +107,6 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
         })
         db_audio['count'] = db_video['count']
         # print("info: %s:align_audio_video_durations_g_debut_fin: video(%d) > audio (%d)" % (__name__, video_count, audio_count))
-
 
 
 def calculate_av_sync(db, k_ep):

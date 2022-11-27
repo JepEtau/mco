@@ -64,6 +64,11 @@ def simplify_tasks(db, frames):
                 try: frames['bgd'][i]['tasks'].clear()
                 except: pass
 
+
+            if 'deinterlace_rgb' in f['tasks'] and os.path.exists(f['filepath']['deinterlace_rgb']):
+                f['tasks'].remove('deinterlace_rgb')
+
+
             if 'rgb' in f['tasks'] and os.path.exists(f['filepath']['rgb']):
                 # print("remove RGB curves from tasks")
                 for t in ['deinterlace', 'pre_upscale', 'upscale', 'denoise', 'bgd', 'stitching', 'sharpen']:

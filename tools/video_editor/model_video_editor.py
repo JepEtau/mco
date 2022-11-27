@@ -3,10 +3,11 @@
 import sys
 sys.path.append('../scripts')
 
-import time
-import os
 import gc
+import os
 import os.path
+import time
+
 from pprint import pprint
 from logger import log
 from copy import deepcopy
@@ -14,7 +15,6 @@ import cv2
 import numpy as np
 
 from PySide6.QtCore import (
-    QObject,
     Signal,
 )
 
@@ -23,19 +23,16 @@ from models.model_database import Model_database
 from models.model_common import (
     Model_common,
 )
-from images.filtering import filter_rgb
 
 from utils.common import (
     K_GENERIQUES,
-    K_NON_GENERIQUE_PARTS,
     get_frame_no_from_filepath,
-    get_k_part_from_frame_no,
-    get_shot_from_frame_no_new,
     get_dimensions_from_crop_values,
 )
-from utils.get_filters import FILTER_BASE_NO
-from utils.get_framelist import get_framelist, get_framelist_2
+from utils.get_framelist import get_framelist, get_single_framelist
 from utils.consolidate_shots import consolidate_shot
+from images.filtering import filter_rgb
+
 
 class Model_video_editor(Model_common):
     signal_current_shot_modified = Signal(dict)
@@ -44,6 +41,7 @@ class Model_video_editor(Model_common):
     signal_reload_frame = Signal()
     signal_is_saved = Signal(str)
     signal_replace_list_refreshed = Signal(dict)
+
     signal_load_curves = Signal(dict)
     signal_curves_library_modified = Signal(dict)
     signal_shot_per_curves_modified = Signal(list)
@@ -80,7 +78,7 @@ class Model_video_editor(Model_common):
     def set_view(self, view):
         self.view = view
 
-        self.view.widget_selection.signal_ep_or_part_selection_changed[dict].connect(self.ep_or_part_selection_changed)
+        self.view.widget_selection.signal_selection_changed[dict].connect(self.selection_changed)
         self.view.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
 
         self.view.widget_geometry.signal_save.connect(self.event_save_geometry_requested)
@@ -93,7 +91,7 @@ class Model_video_editor(Model_common):
 
         self.view.widget_curves.widget_rgb_graph.signal_graph_modified[dict].connect(self.event_rgb_graph_modified)
         self.view.widget_curves.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
-        self.view.widget_curves.signal_save_curves_as[dict].connect(self.event_save_curves_as)
+        self.view.widget_curves.signal_save_rgb_curves_as[dict].connect(self.event_save_rgb_curves_as)
         self.view.widget_curves.widget_curves_selection.signal_save_curves_selection_requested.connect(self.event_save_curves_selection_requested)
         self.view.widget_curves.widget_curves_selection.signal_discard_curves[str].connect(self.event_discard_rgb_curves_modifications)
 
@@ -106,7 +104,7 @@ class Model_video_editor(Model_common):
 
         p = self.preferences.get_preferences()
         k_ep = 'ep%02d' % (p['selection']['episode']) if p['selection']['episode'] != '' else ''
-        self.ep_or_part_selection_changed({
+        self.selection_changed({
             'k_ep': k_ep,
             'k_part': p['selection']['part'],
             'k_step': p['selection']['step'],
@@ -114,11 +112,11 @@ class Model_video_editor(Model_common):
 
 
 
-    def ep_or_part_selection_changed(self, values:dict):
+    def selection_changed(self, values:dict):
         """ Directory or step has been changed, update the database, list all images,
             list all shots
         """
-        # print("----------------------- ep_or_part_selection_changed -------------------------")
+        # print("----------------------- selection_changed -------------------------")
         # pprint(values)
         k_ep_selected = values['k_ep']
         k_part_selected = values['k_part']
@@ -177,7 +175,7 @@ class Model_video_editor(Model_common):
             if k_part_selected in ['episode', 'reportage']:
                 filepath_tmp = get_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
             else:
-                filepath_tmp = get_framelist_2(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
+                filepath_tmp = get_single_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
             self.filepath.append(filepath_tmp)
 
 
@@ -186,7 +184,7 @@ class Model_video_editor(Model_common):
 
 
             # Get curves for this shot
-            curves = self.model_database.get_curves_selection(shot=shot)
+            curves = self.model_database.get_shot_curves_selection(db=db, shot=shot)
             try: k_curves = curves['k_curves']
             except: k_curves =''
             if curves is None and shot['curves'] is not None:
@@ -275,7 +273,7 @@ class Model_video_editor(Model_common):
         }
 
         # Update selection with the part geometry
-        # print("ep_or_part_selection_changed: update geometry: %s" % (k_part_selected))
+        # print("selection_changed: update geometry: %s" % (k_part_selected))
         if k_part_selected in ['g_debut', 'g_fin']:
             # Use the k_ed:k_ep defined as the source for this geometry
             self.current_selection.update({
@@ -354,12 +352,13 @@ class Model_video_editor(Model_common):
 
         self.event_save_replace_requested()
 
-        self.model_database.save_curves_selection_database(
-            self.shots,
-            k_ed='',
-            k_ep='',
-            k_part=k_part,
-            shot_no=-1)
+        print("TODO: Save the shot curves selection")
+        # self.model_database.save_shot_curves_selection(
+        #     self.shots,
+        #     k_ed='',
+        #     k_ep='',
+        #     k_part=k_part,
+        #     shot_no=-1)
 
         self.event_save_geometry_requested()
         self.model_database.save_all_curves(k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
@@ -383,23 +382,26 @@ class Model_video_editor(Model_common):
         log.info("select the new curves for this shot [%s]" % (k_curves))
         shot_no = self.current_frame['shot_no']
         shot = self.shots[shot_no]
-        curves = self.model_database.get_curves_selection(shot=shot)
+        curves = self.model_database.get_shot_curves_selection(db=self.model_database.database(),
+            shot=shot)
 
         # Update the modifications structure to update the selection widget
         if k_curves != self.shots[shot_no]['modifications']['curves']['initial']:
             log.info("selection has changed")
             self.shots[shot_no]['modifications']['curves']['new'] = k_curves
             # Modify the selected curves in the db
-            self.model_database.set_curves_selection(
+            self.model_database.set_curves_selection(db=self.model_database.database(),
                 shot=shot,
                 k_curves=k_curves)
         else:
             # Discard the current selected curves
             self.shots[shot_no]['modifications']['curves']['new'] = None
-            self.model_database.discard_curves_selection(shot=shot)
+            self.model_database.discard_curves_selection(db=self.model_database.database(),
+                shot=shot)
 
         # Get the new selected curves
-        curves = self.model_database.get_curves_selection(shot=shot)
+        curves = self.model_database.get_shot_curves_selection(db=self.model_database.database(),
+            shot=shot)
 
         # Refresh the list of shot for these curves
         shot_list = self.model_database.get_shots_per_curves(k_curves)
@@ -416,7 +418,7 @@ class Model_video_editor(Model_common):
         k_ep = self.current_selection['k_ep']
 
         # Get the initial curves
-        curves = self.model_database.get_curves(
+        curves = self.model_database.get_curves(self.model_database.database(),
             k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep,
             k_curves=k_curves)
 
@@ -428,7 +430,7 @@ class Model_video_editor(Model_common):
         self.signal_reload_frame.emit()
 
 
-    def event_save_curves_as(self, curves):
+    def event_save_rgb_curves_as(self, curves):
         # Save the curves in the curves library
         log.info("save the curves: %s -> %s" % (curves['k_curves_current'], curves['k_curves_new']))
         # if curves['k_curves_new'] == '':
@@ -438,6 +440,7 @@ class Model_video_editor(Model_common):
         k_part = self.current_frame['k_part']
         k_ep = self.current_frame['k_ep']
         self.model_database.save_rgb_curves_as(
+            db=self.model_database.database(),
             k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep,
             curves=curves)
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
@@ -449,18 +452,25 @@ class Model_video_editor(Model_common):
 
 
     def event_save_curves_selection_requested(self):
+        log.info("save curves selection")
         # Save the curves selected for this shot
         shot_no = self.current_frame['shot_no']
+        shot = self.shots[shot_no]
+
+        if shot['modifications']['curves']['new'] is None:
+            return
+
         # print("event_save_curves_selection_requested %s:%s:%s:%d" % (k_ed, k_ep, k_part, shot_no))
-        self.model_database.save_shot_curves_selection(self.shots[shot_no])
+        self.model_database.save_shot_curves_selection(db=self.model_database.database(),
+            shot=shot)
 
         # Update the modifications structure to update the selection widget
-        k_new_curves = self.shots[shot_no]['modifications']['curves']['new']
-        self.shots[shot_no]['modifications']['curves'] = {
+        k_new_curves = shot['modifications']['curves']['new']
+        shot['modifications']['curves'] = {
             'initial': k_new_curves,
             'new': None,
         }
-        self.signal_current_shot_modified.emit(self.shots[shot_no]['modifications'])
+        self.signal_current_shot_modified.emit(shot['modifications'])
         self.signal_is_saved.emit('curves_selection')
 
 
@@ -515,9 +525,14 @@ class Model_video_editor(Model_common):
     def event_frame_replaced(self, replace:dict):
         action = replace['action']
         frame_no = replace['dst']
-        shot_no = self.get_shot_no_from_frame_no(frame_no)
+        log.info("replace %d" % (frame_no))
+        print("shot no= %d" % (self.current_frame['shot_no']))
+        # pprint(self.playlist_frames)
+        shot_no = self.current_frame['shot_no']
         shot_src = self.shots[shot_no]
         index = frame_no - self.frames[shot_no][0]['frame_no']
+
+
 
         if action == 'replace':
             log.info("replace: shot_no=%d, frame_no=%d (index=%d) by %d" % (shot_no, frame_no, index, replace['src']))
@@ -655,9 +670,12 @@ class Model_video_editor(Model_common):
         """
         # log.info("%s.get_frame: get_frame no. %d" % (__name__, frame_no))
         if not self.preview_options['replace']['is_enabled']:
-            frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
+            try:
+                frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
+            except:
+                return None
             # print("\tinitial")
-            try: del frame['replaces']
+            try: del frame['replace']
             except: pass
         else:
             shot_no = self.get_shot_no_from_frame_no(frame_no)
@@ -666,12 +684,12 @@ class Model_video_editor(Model_common):
                 frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
                 # print("\tnew_frame_no=-1")
                 # print("\t%s" % (frame['filepath']))
-                try: del frame['replaces']
+                try: del frame['replace']
                 except: pass
             else:
                 index = new_frame_no - self.playlist_properties['start']
                 frame = self.playlist_frames[index]
-                frame['replaces'] = frame_no
+                frame['replace'] = frame_no
 
         # Shot has changed: update UI with parameters for this shot (curves, crop, resize)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
@@ -683,7 +701,8 @@ class Model_video_editor(Model_common):
         shot = self.shots[frame['shot_no']]
 
         # Update curves and load it into the graph
-        frame['curves'] = self.model_database.get_curves_selection(shot=shot)
+        frame['curves'] = self.model_database.get_shot_curves_selection(
+            db=self.model_database.database(), shot=shot)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
             try:
                 self.signal_load_curves.emit(frame['curves'])
@@ -889,5 +908,9 @@ def generate_single_image(frame:dict, preview_options:dict):
         return (frame['index'], img_resized)
     else:
         # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
-        return (frame['index'], img_resized_final)
+        if img_resized_final.shape[0] == 576:
+            img_resized_final_2 = cv2.resize(img_cropped, (img_resized_final.shape[1] * 2, img_resized_final.shape[0]*2), interpolation=cv2.INTER_LANCZOS4)
+        else:
+            img_resized_final_2 = img_resized_final
+        return (frame['index'], img_resized_final_2)
 

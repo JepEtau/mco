@@ -34,7 +34,7 @@ def update_selected_widget_stylesheet(widget, is_selected):
         """)
 
 
-def set_widget_stylesheet(widget):
+def set_widget_stylesheet(widget, widget_type=''):
     if type(widget) is QCheckBox:
         widget.setStyleSheet("""
             QCheckBox {
@@ -82,14 +82,24 @@ def set_widget_stylesheet(widget):
         """)
 
     elif type(widget) is QLabel:
-        # Customized Label with border
-        widget.setStyleSheet("""
-            QLabel {
-                background-color: rgb(35, 35, 35);
-                border: 1px solid rgb(60, 60, 60);
-                color: rgb(220, 220, 220);
-            }
-        """)
+        if widget_type == 'message':
+            # Customized label for message
+            widget.setStyleSheet("""
+                QLabel {
+                    /* color: rgb(220, 220, 220);*/
+                    color: rgb(51, 102, 204);
+                    /* font-weight:bold;*/
+                }
+            """)
+        else:
+            # Customized label with border
+            widget.setStyleSheet("""
+                QLabel {
+                    background-color: rgb(35, 35, 35);
+                    border: 1px solid rgb(60, 60, 60);
+                    color: rgb(220, 220, 220);
+                }
+            """)
 
 
 

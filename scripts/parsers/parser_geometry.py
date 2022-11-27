@@ -7,7 +7,6 @@ from pathlib import (
     Path,
     PosixPath,
 )
-import re
 
 from pprint import pprint
 
@@ -136,14 +135,14 @@ def get_shots_st_geometry(db, k_ep, k_part) -> dict:
     st_geometry = dict()
 
     # Get the list of editions and episode that are used by this ep/part
-    if k_part in ['g_debut', 'g_fin']:
+    if k_part in K_GENERIQUES:
         db_video = db[k_part]['target']['video']
     else:
-        print("%s.get_shots_st_geometry: %s:%s" % (__name__, k_ep, k_part))
+        # print("%s.get_shots_st_geometry: %s:%s" % (__name__, k_ep, k_part))
         k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
-        print("%s.get_shots_st_geometry: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
+        # print("%s.get_shots_st_geometry: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
 
     for shot in db_video['shots']:
         # print(shot)

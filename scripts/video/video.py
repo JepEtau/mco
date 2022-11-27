@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import sys
-from copy import deepcopy
 import os
 
 import concurrent.futures
@@ -66,7 +65,7 @@ def generate_video(db, k_ed, k_ep:str, tasks:list, cpu_count=0, k_part:str='', f
 
         previous_concatenation_filepath = ''
 
-        # Walk through shots
+        # Walk through target shots
         shots = db_video['shots']
         for shot in shots:
             if not (shot_min <= shot['no'] < shot_max):

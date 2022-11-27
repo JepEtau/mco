@@ -50,13 +50,13 @@ def extract_frames_from_shot(db_common:dict, k_layer:str, shot:dict) -> None:
 
     # Deinterlace only
     if 'upscale' not in tasks:
-        print("\tFFMPEG: Deinterlace only")
+        print("\t\t\tFFMPEG: deinterlace only")
         extracted_images_count = ffmpeg_deinterlace_shot(db_common, shot)
         tasks.remove('deinterlace')
 
     # Deinterlace and pre-upscale:
     elif ('pre_upscale' in tasks and shot['filters']['ffmpeg']['upscale'] is None):
-        print("\tFFMPEG: Deinterlace and pre-upscale, upscale done by opencv")
+        print("\t\t\tFFMPEG: deinterlace and pre-upscale, upscale done by opencv")
         extracted_images_count = ffmpeg_deinterlace_and_pre_upscale_shot(db_common, shot)
         tasks.remove('deinterlace')
         tasks.remove('pre_upscale')
@@ -65,7 +65,7 @@ def extract_frames_from_shot(db_common:dict, k_layer:str, shot:dict) -> None:
 
     # Deinterlace and upscale
     elif 'upscale' in tasks and shot['filters']['ffmpeg']['upscale'] is not None:
-        print("\tFFMPEG: Deinterlace, pre_upscale and upscale")
+        print("\t\t\tFFMPEG: deinterlace, pre_upscale and upscale")
         extracted_images_count = ffmpeg_deinterlace_and_upscale_shot(db_common, shot)
         tasks.remove('deinterlace')
         try: tasks.remove('pre_upscale')
@@ -74,7 +74,7 @@ def extract_frames_from_shot(db_common:dict, k_layer:str, shot:dict) -> None:
 
     # Other cases: deinterlace only
     else:
-        # print("\tFFMPEG: Deinterlace only")
+        print("\t\t\tFFMPEG: else, deinterlace")
         extracted_images_count = ffmpeg_deinterlace_shot(db_common, shot)
         tasks.remove('deinterlace')
 
@@ -96,6 +96,8 @@ def process_single_frame(work_no:int, frame:dict) -> None:
         print("%d: " % (frame['no']), tasks,flush=True)
         pprint(frame)
         print("---------------------------------------------------------------------------",flush=True)
+
+    print("%d: " % (frame['no']), tasks,flush=True)
 
     # For debug and verificattions: deinterlace->RGB
     if 'deinterlace_rgb' in tasks:
@@ -364,6 +366,11 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
             pprint(layers['bgd']['shot'])
         print("------------------------------------------")
         sys.exit()
+    else:
+        if layers['fgd']['shot']['curves'] is None:
+            print("\t\t\tcurves: none")
+        else:
+            print("\t\t\tcurves: %s" % (layers['fgd']['shot']['curves']['k_curves']))
 
 
     # 2) Create list(s) of frames
@@ -454,8 +461,8 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
                     no += 1
 
     # print("Number of cpu : %d" % (multiprocessing.cpu_count()))
-    cpu_count = int(multiprocessing.cpu_count() * 2 /3)
-    with ThreadPoolExecutor(max_workers=cpu_count) as executor:
+    cpu_count = int((multiprocessing.cpu_count() * 3)/4)
+    with ThreadPoolExecutor(max_workers=min(100,len(frames['fgd']))) as executor:
         work_result = {executor.submit(process_single_frame, work[0], work[1]): None
                         for work in worklist}
 

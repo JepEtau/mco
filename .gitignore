@@ -143,3 +143,4 @@ kdenlive/
 scripts/archive.sh
 scripts/archive.bat
 tools/log
+tools/_log

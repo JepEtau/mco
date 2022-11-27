@@ -365,7 +365,8 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
     dependencies = dict()
 
     # Edition used as the default one
-    k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
+    try: k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
+    except: k_ed_src = db['editions']['k_ed_ref']
 
     # Common part
     for k_part in K_PARTS:

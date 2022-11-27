@@ -77,7 +77,16 @@ class Ui_widget_curves(object):
 
         self.horizontalLayout.addWidget(self.pushButton_discard)
 
-        self.horizontalSpacer = QSpacerItem(5, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.horizontalSpacer_2 = QSpacerItem(22, 10, QSizePolicy.Fixed, QSizePolicy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_2)
+
+        self.label_message = QLabel(self.frame)
+        self.label_message.setObjectName(u"label_message")
+
+        self.horizontalLayout.addWidget(self.label_message)
+
+        self.horizontalSpacer = QSpacerItem(5, 10, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
 
@@ -251,6 +260,7 @@ class Ui_widget_curves(object):
         self.pushButton_set_preview.setText("")
         self.pushButton_save.setText("")
         self.pushButton_discard.setText("")
+        self.label_message.setText(QCoreApplication.translate("widget_curves", u"disabled", None))
         self.pushButton_close.setText("")
         self.radioButton_select_m_channel.setText(QCoreApplication.translate("widget_curves", u"M", None))
         self.radioButton_select_r_channel.setText(QCoreApplication.translate("widget_curves", u"R", None))

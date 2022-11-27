@@ -96,13 +96,12 @@ class Model_replace():
 
                     # Open configuration file
                     if k_part in K_GENERIQUES:
-                        if k_part in K_GENERIQUES:
-                            # Write into a single file in the generique directory
-                            filepath = os.path.join(db['common']['directories']['config'], k_part, "%s_replace.ini" % (k_part))
-                        else:
-                            filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_replace.ini" % (k_ep))
-                        if filepath.startswith("~/"):
-                            filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+                        # Write into a single file in the generique directory
+                        filepath = os.path.join(db['common']['directories']['config'], k_part, "%s_replace.ini" % (k_part))
+                    else:
+                        filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_replace.ini" % (k_ep))
+                    if filepath.startswith("~/"):
+                        filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
 
                     # Parse the file
                     if os.path.exists(filepath):

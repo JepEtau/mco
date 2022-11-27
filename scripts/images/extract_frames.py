@@ -46,26 +46,30 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     if 'deinterlace' in tasks:
         # FFMPEG: Deinterlace only
         if 'upscale' not in tasks:
-            print("\tFFMPEG: Deinterlace only")
+            print("\t\t\tFFMPEG: Deinterlace only")
             img_ffmpeg = ffmpeg_deinterlace_single_frame(db_common, frame)
-            cv2.imwrite(frame['filepath']['deinterlace'], img_ffmpeg)
+            if tasks[-1] == 'deinterlace':
+                print("\t\tsave as %s" % (frame['filepath']['deinterlace']))
+                cv2.imwrite(frame['filepath']['deinterlace'], img_ffmpeg)
             tasks.remove('deinterlace')
 
         # Deinterlace and pre-upscale:
         elif ('pre_upscale' in tasks and frame['filters']['ffmpeg']['upscale'] is None):
-            print("\tFFMPEG: Deinterlace and pre-upscale, upscale done by opencv")
+            print("\t\t\tFFMPEG: Deinterlace and pre-upscale, upscale done by opencv")
             img_ffmpeg = ffmpeg_deinterlace_and_pre_upscale_single_frame(db_common, frame)
             tasks.remove('deinterlace')
             tasks.remove('pre_upscale')
-            cv2.imwrite(frame['filepath']['pre_upscale'], img_ffmpeg)
+            if tasks[-1] == 'pre_upscale':
+                cv2.imwrite(frame['filepath']['pre_upscale'], img_ffmpeg)
             if frame['filters']['opencv']['upscale'] is None:
                 sys.exit("Missing upscale filter for %s:%s:%s" % (frame['k_ed'], frame['k_ep'], frame['k_part']))
 
         # Deinterlace and upscale
         elif 'upscale' in tasks and frame['filters']['ffmpeg']['upscale'] is not None:
-            print("\tFFMPEG: Deinterlace, pre_upscale and upscale")
-            img_ffmpeg = ffmpeg_deinterlace_and_upscale_single_frame(db_common, shot)
-            cv2.imwrite(frame['filepath']['upscale'], img_ffmpeg)
+            print("\t\t\tFFMPEG: Deinterlace, pre_upscale and upscale")
+            img_ffmpeg = ffmpeg_deinterlace_and_upscale_single_frame(db_common, frame)
+            if tasks[-1] == 'upscale':
+                cv2.imwrite(frame['filepath']['upscale'], img_ffmpeg)
             tasks.remove('deinterlace')
             try: tasks.remove('pre_upscale')
             except: pass
@@ -73,9 +77,10 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
 
         # Other cases: deinterlace only
         else:
-            # print("\tFFMPEG: Deinterlace only")
+            # print("\t\t\tFFMPEG: Deinterlace only")
             img_ffmpeg = ffmpeg_deinterlace_single_frame(db_common, frame)
-            cv2.imwrite(frame['filepath']['deinterlace'], img_ffmpeg)
+            if tasks[-1] == 'deinterlace':
+                cv2.imwrite(frame['filepath']['deinterlace'], img_ffmpeg)
             tasks.remove('deinterlace')
 
 
@@ -87,6 +92,7 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
 
             # Get the input image: deinterlaced or pre_upscaled
             if img_ffmpeg is None:
+                sys.exit("error: deinterlace frace does not exist")
                 if os.path.exists(frame['filepath']['pre_upscale']):
                     # Upscale the pre-upscaled image
                     img_ffmpeg = cv2.imread(frame['filepath']['pre_upscale'], cv2.IMREAD_COLOR)
@@ -101,7 +107,7 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
             if img_upscaled is None:
                 # There is no defined filter, or an error occured
                 sys.exit("Error: upscaling frame no. %d has failed" % (frame['no']))
-            else:
+            elif tasks[-1] == 'upscale':
                 cv2.imwrite(frame['filepath']['upscale'], img_upscaled)
         tasks.remove('upscale')
 
@@ -109,32 +115,30 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     # Denoise image
     img_denoised = None
     if 'denoise' in tasks:
-        if not os.path.exists(frame['filepath']['denoise']) or force:
-            if img_upscaled is None:
-                print("upscaled image: %s " % (frame['filepath']['upscale']))
-                img_upscaled = cv2.imread(frame['filepath']['upscale'], cv2.IMREAD_COLOR)
+        if img_upscaled is None:
+            print("upscaled image: %s " % (frame['filepath']['upscale']))
+            img_upscaled = cv2.imread(frame['filepath']['upscale'], cv2.IMREAD_COLOR)
 
-            # print("denoise image: %d" % (frame['no']))
-            img_denoised = filter_denoise(frame, img_upscaled)
-            if img_denoised is None:
-                # There is no defined filter, use the input image
-                print("no denoise filters")
-                img_denoised = img_upscaled
-            else:
-                cv2.imwrite(frame['filepath']['denoise'], img_denoised)
-            tasks.remove('denoise')
+        # print("denoise image: %d" % (frame['no']))
+        img_denoised = filter_denoise(frame, img_upscaled)
+        if img_denoised is None:
+            # There is no defined filter, use the input image
+            print("no denoise filters")
+            img_denoised = img_upscaled
+        elif tasks[-1] == 'denoise':
+            cv2.imwrite(frame['filepath']['denoise'], img_denoised)
+        tasks.remove('denoise')
 
     # Stitching tasks: ...
 
     # Sharpen image
     img_sharpened = None
     if 'sharpen' in tasks:
-        if not os.path.exists(frame['filepath']['sharpen']) or force:
-            if img_denoised is None:
-                img_denoised = cv2.imread(frame['filepath']['denoise'], cv2.IMREAD_COLOR)
+        if img_denoised is None:
+            img_denoised = cv2.imread(frame['filepath']['denoise'], cv2.IMREAD_COLOR)
 
-            img_sharpened = filter_sharpen(frame, img_denoised)
-            cv2.imwrite(frame['filepath']['sharpen'], img_sharpened)
+        img_sharpened = filter_sharpen(frame, img_denoised)
+        cv2.imwrite(frame['filepath']['sharpen'], img_sharpened)
         tasks.remove('sharpen')
 
 
@@ -252,9 +256,6 @@ def process_frames(database, frames, cpu_count):
 
 
 
-
-
-
 def extract_frames_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False, shot_min:int=0, shot_max:int=999999):
     print("%s.extract_frames_for_study: %s:%s:%s, tasks=%s" % (__name__, k_ed, k_ep, k_part, ', '.join(tasks)))
 
@@ -312,10 +313,10 @@ def extract_frames_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False, sh
 
 
     print("Number of cpu: %d" % (multiprocessing.cpu_count()))
-    cpu_count = int(multiprocessing.cpu_count() / 2)
+    cpu_count = int(3 * multiprocessing.cpu_count() / 4)
 
     startTime = time.time()
-    with ThreadPoolExecutor(max_workers=cpu_count) as executor:
+    with ThreadPoolExecutor(max_workers=min(100, len(frames))) as executor:
         work_result = {executor.submit(process_single_frame, db_common, work[0], work[1]): None
                         for work in worklist}
 

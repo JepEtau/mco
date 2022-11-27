@@ -100,20 +100,6 @@ class Window_main(Window_common):
         sys.exit()
 
 
-    def set_initial_options(self, preferences:dict):
-        s = preferences['viewer']
-        if False:
-            self.setGeometry(s['geometry'][0],
-                s['geometry'][1],
-                s['geometry'][2],
-                s['geometry'][3])
-        else:
-            # For debug purpose
-            self.setGeometry(s['geometry'][0],
-                s['geometry'][1],
-                1600,
-                s['geometry'][3])
-
 
     def get_preferences(self) -> dict:
         # print("%s:get_preferences" % (__name__))
@@ -149,7 +135,7 @@ class Window_main(Window_common):
             frame.update({
                 'dimensions': {'w':self.image.width(), 'h': self.image.height()}
             })
-        self.widget_browser.display_frame_properties(frame)
+        # self.widget_browser.display_frame_properties(frame)
         self.repaint()
 
 

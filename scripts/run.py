@@ -17,7 +17,6 @@ from utils.common import (
     K_ALL_PARTS,
     K_GENERIQUES,
     get_database_size,
-    delete_items,
 )
 from utils.consolidate_shots import consolidate_target_shots
 from utils.tasks import get_tasklist
@@ -39,7 +38,7 @@ def main():
     # from scripts.frames_extract import frames_extract
     verbose = False
     # editions = ['k', 'a', 's', 's0']
-    editions = ['k', 'a', 's']
+    editions = ['k', 'a', 's', 'f']
 
 
     # Arguments
@@ -235,6 +234,11 @@ def main():
         sys.exit("Error: a part shall be one of the following: %s" % (", ".join(K_ALL_PARTS)))
 
     # Parse database
+    print("k_episode=%s" % (k_episode), arguments.frames)
+    if k_episode == 'ep00' and arguments.frames:
+        # for frame study
+        k_episode = 'ep01'
+
     parse_database(g_database, k_ed=k_ed, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
     gc.collect()
     print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
@@ -286,7 +290,6 @@ def main():
         if not os.path.exists(nnedi_file):
             sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
 
-
     # Consolidate each shot for the target
     consolidate_target_shots(
         db=g_database,
@@ -314,7 +317,8 @@ def main():
             shot_min=shot_min, shot_max=shot_max)
         return
 
-    elif video_filter in ['deinterlace', 'upscale', 'geometry']:
+    # elif video_filter in ['deinterlace', 'upscale', 'geometry']:
+    else:
         # Generate the video
 
         # Force the edition to default
@@ -332,6 +336,12 @@ def main():
 
         if shot_min != 0 or shot_max != 999999:
             do_av_merge = False
+
+    if (not arguments.frames
+        and video_filter in ['deinterlace', 'denoise', 'upscale', 'geometry', 'sharpen']):
+        do_av_merge = True
+    else:
+        do_av_merge = True
 
 
     # Merge A/V streams

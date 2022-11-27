@@ -117,7 +117,7 @@ class Model_viewer(QObject):
         path_images = self.framelist.get_images_path()
 
         if not (k_part == '' and k_ep != ''):
-            self.framelist.consolidate_database(k_ep, k_part)
+            # self.framelist.consolidate_database(k_ep, k_part)
             if os.path.exists(path_images):
                 if k_part in K_GENERIQUES:
                     path = os.path.join(path_images, k_part)

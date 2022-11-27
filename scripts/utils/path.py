@@ -4,7 +4,6 @@ from pprint import pprint
 
 from utils.common import (
     K_GENERIQUES,
-    get_k_part_from_frame_no,
 )
 from utils.get_filters import (
     FILTER_BASE_NO,
@@ -86,14 +85,13 @@ def get_output_path_from_shot(db, shot, task):
     return output_path
 
 
+
 def get_input_filepath(database, frame):
     k_ed = frame['k_ed']
     if frame['k_ep'] != 0:
         return database['editions'][k_ed]['inputs'][frame['k_ep']]
     else:
         return database['editions'][k_ed]['inputs'][frame['k_ep']]
-
-
 
 
 
@@ -123,7 +121,6 @@ def get_deinterlaced_filepath_list(db, shot:dict, task):
         filepath_list.append(os.path.join(deinterlace_output_path, filename))
 
     return filepath_list
-
 
 
 

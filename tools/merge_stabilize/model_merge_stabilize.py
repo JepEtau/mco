@@ -45,7 +45,7 @@ from parsers.parser_stabilize import STABILIZATION_SHOT_PARAMETERS_KEYS
 from utils.common import K_NON_GENERIQUE_PARTS, get_database_size, get_frame_no_from_filepath, get_k_part_from_frame_no, get_shot_from_frame_no_new, get_shot_no_from_frame_no
 from utils.common import K_GENERIQUES
 from utils.get_filters import FILTER_BASE_NO
-from utils.get_framelist import get_framelist, get_framelist_2
+from utils.get_framelist import get_framelist, get_single_framelist
 from utils.consolidate_av import consolidate_shot
 from utils.get_filters import get_filter_id
 
@@ -114,7 +114,7 @@ class Model_merge_stabilize(Model_common):
     def set_view(self, view):
         self.view = view
 
-        self.view.widget_selection.signal_ep_or_part_selection_changed[dict].connect(self.ep_or_part_selection_changed)
+        self.view.widget_selection.signal_selection_changed[dict].connect(self.selection_changed)
         self.view.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
 
         self.view.signal_generate_cache[list].connect(self.event_prepare_frames_for_preview)
@@ -142,7 +142,7 @@ class Model_merge_stabilize(Model_common):
 
         p = self.preferences.get_preferences()
         k_ep = 'ep%02d' % (p['selection']['episode']) if p['selection']['episode'] != '' else ''
-        self.ep_or_part_selection_changed({
+        self.selection_changed({
             'k_ep': k_ep,
             'k_part': p['selection']['part'],
             'k_step': p['selection']['step'],
@@ -152,11 +152,11 @@ class Model_merge_stabilize(Model_common):
 
 
 
-    def ep_or_part_selection_changed(self, values:dict):
+    def selection_changed(self, values:dict):
         """ Directory or step has been changed, update the database, list all images,
             list all shots
         """
-        print("----------------------- ep_or_part_selection_changed -------------------------")
+        print("----------------------- selection_changed -------------------------")
         pprint(values)
         k_ep = values['k_ep']
         k_part = values['k_part']
@@ -216,7 +216,7 @@ class Model_merge_stabilize(Model_common):
                     if 'count' not in shot['src'].keys():
                         shot['src']['count'] = shot_src['count']
                     if shot_src is None:
-                        sys.exit("error: ep_or_part_selection_changed: shot src is None")
+                        sys.exit("error: selection_changed: shot src is None")
                 else:
                     k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
                     k_ep_src = k_ep
@@ -272,7 +272,7 @@ class Model_merge_stabilize(Model_common):
                 if k_part in ['episode', 'reportage']:
                     filepath_tmp = get_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
                 else:
-                    filepath_tmp = get_framelist_2(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
+                    filepath_tmp = get_single_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
 
                 # print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 
@@ -519,7 +519,7 @@ class Model_merge_stabilize(Model_common):
         if not self.preview_options['replace']['is_enabled']:
             frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
             # print("\tinitial")
-            try: del frame['replaces']
+            try: del frame['replace']
             except: pass
         else:
             shot_no = self.get_shot_no_from_frame_no(frame_no)
@@ -528,12 +528,12 @@ class Model_merge_stabilize(Model_common):
                 frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
                 # print("\tnew_frame_no=-1")
                 # print("\t%s" % (frame['filepath']))
-                try: del frame['replaces']
+                try: del frame['replace']
                 except: pass
             else:
                 index = new_frame_no - self.playlist_properties['start']
                 frame = self.playlist_frames[index]
-                frame['replaces'] = frame_no
+                frame['replace'] = frame_no
 
         # Shot has changed: update UI with parameters for this shot (curves, crop, resize)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
@@ -548,7 +548,8 @@ class Model_merge_stabilize(Model_common):
 
 
         # Update curves
-        frame['curves'] = self.model_database.get_curves_selection(self.shots[frame['shot_no']])
+        frame['curves'] = self.model_database.get_shot_curves_selection(
+            db=self.model_database.database(), shot=self.shots[frame['shot_no']])
 
 
         # Purge image from the previous frame
