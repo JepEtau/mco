@@ -908,5 +908,9 @@ def generate_single_image(frame:dict, preview_options:dict):
         return (frame['index'], img_resized)
     else:
         # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
-        return (frame['index'], img_resized_final)
+        if img_resized_final.shape[0] == 576:
+            img_resized_final_2 = cv2.resize(img_cropped, (img_resized_final.shape[1] * 2, img_resized_final.shape[0]*2), interpolation=cv2.INTER_LANCZOS4)
+        else:
+            img_resized_final_2 = img_resized_final
+        return (frame['index'], img_resized_final_2)
 

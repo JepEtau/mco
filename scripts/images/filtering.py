@@ -374,8 +374,8 @@ def filters_opencv(images, filters, multi=True):
                 templateWindowSize=int(args[2]),
                 searchWindowSize=int(args[3]))
 
-        elif function == 'GaussianBlur':
-            image = filters_GaussianBlur(image,
+        elif function == 'gaussianBlur':
+            image = filters_gaussianBlur(image,
                 radius=int(args[0]),
                 sigma=float(args[1]))
 
@@ -558,7 +558,7 @@ def  filters_morphologyEx(image, type, radius, iterations):
 def filters_bilateralFilter(img, diameter, sigmaColor, sigmaSpace):
     return cv2.bilateralFilter(img, diameter, sigmaColor, sigmaSpace)
 
-def filters_GaussianBlur(image, radius, sigma):
+def filters_gaussianBlur(image, radius, sigma):
     return cv2.GaussianBlur(image, (radius, radius), sigma)
 
 def filters_dilate(image, radius):
