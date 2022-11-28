@@ -6,7 +6,6 @@ import os
 import os.path
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 import signal
 import sys
 import time
@@ -19,7 +18,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
     input_filepath = "../../frames/g_asuivre/ep00_33659_ep12__s__640.png"
-    output_filepath = "../../frames/g_asuivre/ep00_33659_ep12__s__690.png"
+    output_filepath = "../../frames/g_asuivre/ep00_33659_ep12__s__630.png"
 
     img_input_rgb = cv2.imread(input_filepath, cv2.IMREAD_COLOR)
 
