@@ -585,12 +585,13 @@ def generate_single_image(frame:dict, preview_options:dict):
     now = time.time()
     img = None
 
-    try:
-        if frame['cache_fgd'] is None:
-            # The original has not yet been loaded
-            frame['cache_fgd'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
-    except:
-        frame['cache_fgd'] = None
+    frame['cache_fgd'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
+    # try:
+    #     if frame['cache_fgd'] is None:
+    #         # The original has not yet been loaded
+    #         frame['cache_fgd'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
+    # except:
+    #     frame['cache_fgd'] = None
 
     img_original = frame['cache_fgd']
     h, w, c = img_original.shape
