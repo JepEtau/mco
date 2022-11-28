@@ -50,6 +50,7 @@ PEN_CROP_SIZE = 1
 
 class Window_main(Window_common):
     signal_preview_options_changed = Signal(dict)
+    signal_reload_directories_and_frames = Signal()
     signal_save_and_close = Signal()
 
     def __init__(self, model:Model_curves_editor):
@@ -97,11 +98,6 @@ class Window_main(Window_common):
         # Initial display mode
         self.split_x = int(self.width() / 2)
 
-
-        if False:
-            # previously
-            # Signals/events
-            self.model.signal_display_frame[dict].connect(self.display_frame)
 
         self.model.signal_folders_parsed[dict].connect(self.widget_selection.event_folders_parsed)
 
@@ -301,7 +297,7 @@ class Window_main(Window_common):
         else:
             if key == Qt.Key_F5:
                 log.info("Reload")
-                self.widget_selection.event_episode_changed()
+                self.signal_reload_directories_and_frames.emit()
                 event.accept()
                 return True
 

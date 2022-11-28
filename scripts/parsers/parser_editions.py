@@ -142,8 +142,14 @@ def parse_editions(database, k_ed_fgd='k', k_ed_ref='k', cfg_foldername="../data
 
 
     # Consolidate editions
+    db_editions['available']  = list()
     for k_ed in available_editions:
         edition = db_editions[k_ed]
+
+        if len(edition['inputs']) == 0:
+            del db_editions[k_ed]
+            continue
+
         # Create filters structure if not exist
         if 'filters' not in edition.keys():
            edition['filters'] = dict()
@@ -163,8 +169,8 @@ def parse_editions(database, k_ed_fgd='k', k_ed_ref='k', cfg_foldername="../data
             # Create a simple link (do not copy)
             edition['dimensions'] = db_common['dimensions']
 
-    # Available editions
-    db_editions['available'] = available_editions
+        db_editions['available'] .append(k_ed)
+
 
     # Set the target (i.e. the edition used as foreground)
     db_editions['fgd'] = k_ed_fgd

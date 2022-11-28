@@ -173,7 +173,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         # self.model.signal_is_modified[dict].connect(self.refresh_modification_status)
         self.model.signal_framelist_modified[dict].connect(self.event_framelist_modified)
         self.model.signal_current_shot_modified[dict].connect(self.event_current_shot_modified)
-
+        self.model.signal_folders_parsed[dict].connect(self.event_folders_parsed)
 
         self.installEventFilter(self)
         self.list_images.installEventFilter(self)
@@ -640,7 +640,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def refresh_values(self, frame:dict):
         # Called when a frame has been selected and is to be displayed
-        log.info("%s: refresh values: selected shot" % (self.objectName()))
+        # log.info("%s: refresh values: selected shot" % (self.objectName()))
         frame_user_role = "%s.%s.%s" % (frame['k_ed'], frame['k_ep'], frame['shot_no'])
 
         # Refresh the list of shots: select current shot

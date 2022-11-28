@@ -128,27 +128,24 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
         elif tasks[-1] == 'denoise':
             cv2.imwrite(frame['filepath']['denoise'], img_denoised)
         tasks.remove('denoise')
+    else:
+        img_denoised = img_upscaled
 
     # Stitching tasks: ...
 
     # Sharpen image
     img_sharpened = None
     if 'sharpen' in tasks:
-        if img_denoised is None:
-            img_denoised = cv2.imread(frame['filepath']['denoise'], cv2.IMREAD_COLOR)
-
         img_sharpened = filter_sharpen(frame, img_denoised)
         cv2.imwrite(frame['filepath']['sharpen'], img_sharpened)
         tasks.remove('sharpen')
-
+    else:
+        img_sharpened = img_denoised
 
     is_rgb_valid = False
     if 'rgb' in tasks:
         # print("apply RGB curves: %d" % (frame['no']))
         is_rgb_valid = False
-        if img_sharpened is None:
-            # Open the saved sharpened image
-            img_sharpened = cv2.imread(frame['filepath']['sharpen'], cv2.IMREAD_COLOR)
         try:
             img_rgb = filter_rgb(frame, img_sharpened)
             if tasks[-1] == 'rgb':
