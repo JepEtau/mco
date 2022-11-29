@@ -12,7 +12,13 @@ import time
 import math
 from skimage.util import img_as_ubyte
 from skimage.util import img_as_float
-
+from skimage.restoration import (
+    calibrate_denoiser,
+    denoise_wavelet,
+    denoise_tv_chambolle,
+    denoise_nl_means,
+    denoise_bilateral,
+)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
@@ -21,6 +27,7 @@ if __name__ == "__main__":
     input_filepath = "../../frames/g_asuivre/ep00_33659_ep12__s__640.png"
     output_filepath = "../../frames/g_asuivre/ep00_33659_ep12__s__687.png"
 
+    img_input_denoised = cv2.imread(denoised_filepath, cv2.IMREAD_COLOR)
     img_input_bgr = cv2.imread(input_filepath, cv2.IMREAD_COLOR)
     img_input_gray = cv2.cvtColor(img_input_bgr, cv2.COLOR_BGR2GRAY)
 

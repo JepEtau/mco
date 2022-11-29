@@ -301,6 +301,27 @@ class Window_main(Window_common):
                 event.accept()
                 return True
 
+            elif key == Qt.Key_Up:
+                # log.info("previous")
+                self.widget_selection.select_previous_image()
+
+            elif key == Qt.Key_Down:
+                # log.info("next")
+                self.widget_selection.select_next_image()
+
+            elif key == Qt.Key_Home:
+                return self.widget_selection.select_first_image()
+
+            elif key == Qt.Key_End:
+                return self.widget_selection.select_last_image()
+
+            elif key == Qt.Key_PageUp:
+                return self.widget_selection.event_page_up(event)
+
+            elif key == Qt.Key_PageDown:
+                return self.widget_selection.event_page_down(event)
+
+
         for e, w in self.widgets.items():
             if self.current_editor == e:
                 is_accepted = w.event_key_pressed(event)

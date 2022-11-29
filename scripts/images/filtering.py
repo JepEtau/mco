@@ -250,12 +250,12 @@ def filter_nlmeans(img):
 
 
 def filters_bilateral_sk(img, sigma_color, sigma_spatial):
-    # graySrc = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # tmp = img_as_float(img)
-    tmp = denoise_bilateral(img,
+    # Too long compared to opencv
+    img_float = img_as_float(img)
+    tmp = denoise_bilateral(img_float,
         sigma_color=sigma_color,
         sigma_spatial=sigma_spatial,
-        channel_axis=-1)
+        channel_axis=2)
     img_out = img_as_ubyte(tmp)
     return img_out
 
@@ -347,6 +347,7 @@ def filters_opencv(images, filters, multi=True):
             image = images[0]
         else:
             image = images
+    initial_image = deepcopy(images)
 
     for f in filters:
         if f == '':
@@ -445,8 +446,81 @@ def filters_opencv(images, filters, multi=True):
                 height=int(args[1]),
                 interpolation=args[2])
 
+        elif function =='edge_sharpen_sobel':
+            image = filters_edge_sharpen_sobel(image,
+                denoised_image=initial_image,
+                k_size=int(args[0]),
+                blend_factor=float(args[1]))
+
     return image
 
+
+
+def filters_edge_sharpen_sobel(image, denoised_image, k_size=3, blend_factor=0.15):
+    scale = 1
+    delta = 0
+    ddepth = cv2.CV_16S
+
+    image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    if True:
+        grad_x = cv2.Sobel(image_gray, ddepth, 1, 0, ksize=k_size, scale=scale, delta=delta, borderType=cv2.BORDER_DEFAULT)
+        grad_y = cv2.Sobel(image_gray, ddepth, 0, 1, ksize=k_size, scale=scale, delta=delta, borderType=cv2.BORDER_DEFAULT)
+    else:
+        grad_x = cv2.Scharr(image_gray, ddepth, 1, 0, scale=scale, delta=delta, borderType=cv2.BORDER_DEFAULT)
+        grad_y = cv2.Scharr(image_gray, ddepth, 0, 1, scale=scale, delta=delta, borderType=cv2.BORDER_DEFAULT)
+
+
+    abs_grad_x = cv2.convertScaleAbs(grad_x)
+    abs_grad_y = cv2.convertScaleAbs(grad_y)
+    abs_grad_xy = cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
+
+    d_b, d_g, d_r = cv2.split(image)
+
+    mask_float = abs_grad_xy.astype(np.float32)  / 255.0
+    layer_b = np.clip(cv2.multiply(d_b.astype(np.float32), mask_float), 0, 255).astype(np.uint8)
+    layer_g = np.clip(cv2.multiply(d_g.astype(np.float32), mask_float), 0, 255).astype(np.uint8)
+    layer_r = np.clip(cv2.multiply(d_r.astype(np.float32), mask_float), 0, 255).astype(np.uint8)
+
+    img_mult_bgr = cv2.merge((
+        layer_b.reshape(d_b.shape),
+        layer_g.reshape(d_g.shape),
+        layer_r.reshape(d_r.shape)))
+
+    # img_mult_bgr = (blend_factor * img_mult_bgr.astype(np.float32)).astype(np.uint8)
+    # img_output = np.clip(cv2.subtract(image.astype(np.float32), img_mult_bgr), 0, 255)
+    img_output = np.clip(cv2.addWeighted(image, 1, img_mult_bgr.astype(np.uint8), blend_factor, 0), 0, 255)
+    return img_output
+
+
+
+# def filters_edge_sharpen_sobel(image, denoised_image, k_size=3, blend_factor=0.15):
+#     scale = 1
+#     delta = 0
+#     ddepth = cv2.CV_16S
+
+#     image_gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+
+#     grad_x = cv2.Sobel(image_gray, ddepth, 1, 0, ksize=k_size, scale=scale, delta=delta, borderType=cv2.BORDER_DEFAULT)
+#     grad_y = cv2.Sobel(image_gray, ddepth, 0, 1, ksize=k_size, scale=scale, delta=delta, borderType=cv2.BORDER_DEFAULT)
+#     abs_grad_x = cv2.convertScaleAbs(grad_x)
+#     abs_grad_y = cv2.convertScaleAbs(grad_y)
+#     abs_grad_xy = 255 - cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
+
+#     d_b, d_g, d_r = cv2.split(denoised_image)
+
+#     grad_float = abs_grad_xy.astype(np.float32)  / 255.0
+#     layer_b = np.clip(cv2.multiply(d_b.astype(np.float32), grad_float), 0, 255).astype(np.uint8)
+#     layer_g = np.clip(cv2.multiply(d_g.astype(np.float32), grad_float), 0, 255).astype(np.uint8)
+#     layer_r = np.clip(cv2.multiply(d_r.astype(np.float32), grad_float), 0, 255).astype(np.uint8)
+
+#     img_mult_bgr = cv2.merge((
+#         layer_b.reshape(d_b.shape),
+#         layer_g.reshape(d_g.shape),
+#         layer_r.reshape(d_r.shape)))
+
+#     img_mult_bgr = (blend_factor * img_mult_bgr.astype(np.float32)).astype(np.uint8)
+#     img_output = cv2.addWeighted(image, 1, img_mult_bgr, 1, 0)
+#     return img_output
 
 # def filters_bm3d(image, sigma):
 #     tmp = img_as_float(image)
@@ -516,26 +590,13 @@ def filters_fastNlMeansDenoisingColored(image, h, hColor, templateWindowSize, se
 
 
 def filters_unsharp_mask(image, radius, amount):
-    if False:
-        tmp = img_as_float(cv2.cvtColor(image, cv2.COLOR_BGR2HSV))
-        h = tmp[:, :, 0]
-        s = tmp[:, :, 1]
-        v = tmp[:, :, 2]
-        v1 = unsharp_mask(v,
-            radius,
-            amount,
-            preserve_range=False,
-            channel_axis=3)
-        zipped = np.dstack((h, s, v1))
-        return cv2.cvtColor(img_as_ubyte(zipped), cv2.COLOR_HSV2BGR)
-    else:
-        tmp = img_as_float(image)
-        tmp = unsharp_mask(tmp,
-            radius,
-            amount,
-            preserve_range=False,
-            channel_axis=2)
-        return img_as_ubyte(tmp)
+    tmp = img_as_float(image)
+    tmp = unsharp_mask(tmp,
+        radius,
+        amount,
+        preserve_range=False,
+        channel_axis=2)
+    return img_as_ubyte(tmp)
 
 
 def  filters_morphologyEx(image, type, radius, iterations):
