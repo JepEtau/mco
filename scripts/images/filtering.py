@@ -289,6 +289,8 @@ def filters_scale_opencv(image, width, height, interpolation):
     # print("upscale image to %dx%d, inter=%s" % (width, height, interpolation))
     if interpolation == 'bicubic':
         cv2_interpolation = cv2.INTER_CUBIC
+    elif interpolation in ['lanczos', 'lanczos4']:
+        cv2_interpolation = cv2.INTER_LANCZOS4
     else:
         cv2_interpolation = cv2.INTER_LANCZOS4
     return cv2.resize(image, (width, height), interpolation=cv2_interpolation)
