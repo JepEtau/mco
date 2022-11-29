@@ -116,7 +116,7 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     img_denoised = None
     if 'denoise' in tasks:
         if img_upscaled is None:
-            print("upscaled image: %s " % (frame['filepath']['upscale']))
+            print("warning: using upscaled image: %s " % (frame['filepath']['upscale']))
             img_upscaled = cv2.imread(frame['filepath']['upscale'], cv2.IMREAD_COLOR)
 
         # print("denoise image: %d" % (frame['no']))
