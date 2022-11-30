@@ -3,8 +3,9 @@ import sys
 from copy import deepcopy
 import cv2
 import numpy as np
+import os.path
+import time
 
-from skimage import data
 from skimage.filters import unsharp_mask
 from skimage.util import img_as_ubyte
 from skimage.util import img_as_float
@@ -24,6 +25,62 @@ from skimage import restoration
 
 from parsers.parser_stitching import STICTHING_FGD_PAD
 from utils.common import get_dimensions_from_crop_values
+
+
+
+
+
+
+# Testing: superRes
+# pas meilleur que lanczos pour un temps de processing trop long
+from cv2 import dnn_superres
+def filters_scale_superres(image, width, height):
+    sr = dnn_superres.DnnSuperResImpl_create()
+    method = 'edsr'
+    method = 'espcn'
+    method = 'fsrcnn'
+
+    if method == 'edsr':
+        edsr_2x_filepath = "EDSR_x2.pb"
+        # if not os.path.exists(edsr_2x_filepath):
+        #     print("error: %s does not exists" % (edsr_2x_filepath))
+        # else:
+        #     print("info: %s found" % (edsr_2x_filepath))
+
+        sr.readModel(edsr_2x_filepath)
+        sr.setModel("edsr", 2)
+        result = sr.upsample(image)
+
+    elif method == 'espcn':
+        espcn_2x_filepath = "ESPCN_x2.pb"
+        # if not os.path.exists(espcn_2x_filepath):
+        #     print("error: %s does not exists" % (espcn_2x_filepath))
+        # else:
+        #     print("info: %s found" % (espcn_2x_filepath))
+
+        sr.readModel(espcn_2x_filepath)
+        sr.setModel("espcn", 2)
+        # 0.4s
+        result = sr.upsample(image)
+
+    elif method == 'fsrcnn':
+        fsrcnn_2x_filepath = "FSRCNN_x2.pb"
+
+        # if not os.path.exists(fsrcnn_2x_filepath):
+        #     print("error: %s does not exists" % (fsrcnn_2x_filepath))
+        # else:
+        #     print("info: %s found" % (fsrcnn_2x_filepath))
+
+        sr.readModel(fsrcnn_2x_filepath)
+        sr.setModel("fsrcnn", 2)
+        # 0.8s
+        result = sr.upsample(image)
+    return result
+
+
+
+
+
 
 
 def filter_denoise(frame, img):
@@ -287,13 +344,23 @@ def filter_brightness_contrast(input_img, brightness = 255, contrast = 127):
 
 def filters_scale_opencv(image, width, height, interpolation):
     # print("upscale image to %dx%d, inter=%s" % (width, height, interpolation))
+    # startTime = time.time()
     if interpolation == 'bicubic':
         cv2_interpolation = cv2.INTER_CUBIC
     elif interpolation in ['lanczos', 'lanczos4']:
         cv2_interpolation = cv2.INTER_LANCZOS4
+    elif interpolation == 'superres':
+        upscaled_image = filters_scale_superres(image, width, height)
+        # print(">> %.04fs" % (time.time() - startTime), flush=True)
+        return upscaled_image
     else:
         cv2_interpolation = cv2.INTER_LANCZOS4
-    return cv2.resize(image, (width, height), interpolation=cv2_interpolation)
+
+    # 0.015s
+    upscaled_image = cv2.resize(image, (width, height), interpolation=cv2_interpolation)
+
+    # print(">> %.04fs" % (time.time() - startTime), flush=True)
+    return upscaled_image
 
 
 
