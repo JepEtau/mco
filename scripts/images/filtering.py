@@ -31,51 +31,51 @@ from utils.common import get_dimensions_from_crop_values
 
 
 
-# Testing: superRes
-# pas meilleur que lanczos pour un temps de processing trop long
-from cv2 import dnn_superres
-def filters_scale_superres(image, width, height):
-    sr = dnn_superres.DnnSuperResImpl_create()
-    method = 'edsr'
-    method = 'espcn'
-    method = 'fsrcnn'
+# # Testing: superRes
+# # pas meilleur que lanczos pour un temps de processing trop long
+# from cv2 import dnn_superres
+# def filters_scale_superres(image, width, height):
+#     sr = dnn_superres.DnnSuperResImpl_create()
+#     method = 'edsr'
+#     method = 'espcn'
+#     method = 'fsrcnn'
 
-    if method == 'edsr':
-        edsr_2x_filepath = "EDSR_x2.pb"
-        # if not os.path.exists(edsr_2x_filepath):
-        #     print("error: %s does not exists" % (edsr_2x_filepath))
-        # else:
-        #     print("info: %s found" % (edsr_2x_filepath))
+#     if method == 'edsr':
+#         edsr_2x_filepath = "EDSR_x2.pb"
+#         # if not os.path.exists(edsr_2x_filepath):
+#         #     print("error: %s does not exists" % (edsr_2x_filepath))
+#         # else:
+#         #     print("info: %s found" % (edsr_2x_filepath))
 
-        sr.readModel(edsr_2x_filepath)
-        sr.setModel("edsr", 2)
-        result = sr.upsample(image)
+#         sr.readModel(edsr_2x_filepath)
+#         sr.setModel("edsr", 2)
+#         result = sr.upsample(image)
 
-    elif method == 'espcn':
-        espcn_2x_filepath = "ESPCN_x2.pb"
-        # if not os.path.exists(espcn_2x_filepath):
-        #     print("error: %s does not exists" % (espcn_2x_filepath))
-        # else:
-        #     print("info: %s found" % (espcn_2x_filepath))
+#     elif method == 'espcn':
+#         espcn_2x_filepath = "ESPCN_x2.pb"
+#         # if not os.path.exists(espcn_2x_filepath):
+#         #     print("error: %s does not exists" % (espcn_2x_filepath))
+#         # else:
+#         #     print("info: %s found" % (espcn_2x_filepath))
 
-        sr.readModel(espcn_2x_filepath)
-        sr.setModel("espcn", 2)
-        # 0.4s
-        result = sr.upsample(image)
+#         sr.readModel(espcn_2x_filepath)
+#         sr.setModel("espcn", 2)
+#         # 0.4s
+#         result = sr.upsample(image)
 
-    elif method == 'fsrcnn':
-        fsrcnn_2x_filepath = "FSRCNN_x2.pb"
+#     elif method == 'fsrcnn':
+#         fsrcnn_2x_filepath = "FSRCNN_x2.pb"
 
-        # if not os.path.exists(fsrcnn_2x_filepath):
-        #     print("error: %s does not exists" % (fsrcnn_2x_filepath))
-        # else:
-        #     print("info: %s found" % (fsrcnn_2x_filepath))
+#         # if not os.path.exists(fsrcnn_2x_filepath):
+#         #     print("error: %s does not exists" % (fsrcnn_2x_filepath))
+#         # else:
+#         #     print("info: %s found" % (fsrcnn_2x_filepath))
 
-        sr.readModel(fsrcnn_2x_filepath)
-        sr.setModel("fsrcnn", 2)
-        # 0.8s
-        result = sr.upsample(image)
-    return result
+#         sr.readModel(fsrcnn_2x_filepath)
+#         sr.setModel("fsrcnn", 2)
+#         # 0.8s
+#         result = sr.upsample(image)
+#     return result
 
 
 
