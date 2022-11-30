@@ -276,6 +276,7 @@ def extract_frames_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False, sh
         tasks,
         force=force)
     # pprint(frames)
+    # sys.exit()
     if frames is None:
         sys.exit("Error: no frame to extract")
 
