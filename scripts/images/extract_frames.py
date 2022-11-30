@@ -110,7 +110,8 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
             elif tasks[-1] == 'upscale':
                 cv2.imwrite(frame['filepath']['upscale'], img_upscaled)
         tasks.remove('upscale')
-
+    else:
+        img_upscaled = img_ffmpeg
 
     # Denoise image
     img_denoised = None
