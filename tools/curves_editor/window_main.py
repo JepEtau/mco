@@ -50,6 +50,7 @@ PEN_CROP_SIZE = 1
 
 class Window_main(Window_common):
     signal_preview_options_changed = Signal(dict)
+    signal_reload_directories_and_frames = Signal()
     signal_save_and_close = Signal()
 
     def __init__(self, model:Model_curves_editor):
@@ -97,11 +98,6 @@ class Window_main(Window_common):
         # Initial display mode
         self.split_x = int(self.width() / 2)
 
-
-        if False:
-            # previously
-            # Signals/events
-            self.model.signal_display_frame[dict].connect(self.display_frame)
 
         self.model.signal_folders_parsed[dict].connect(self.widget_selection.event_folders_parsed)
 
@@ -169,32 +165,26 @@ class Window_main(Window_common):
         if self.image is None:
             # No frame loaded
             return
-        # print("get_rgb_value")
 
-        # Previous: to enabled
-        # if self.widget_curves_editor.is_fit_to_image_enabled():
-        #     h = self.height()
-        #     w = int((self.image['w'] * h) / float(self.image['h']))
-        #     yr = int(yr * (self.image['h'] / h))
-        #     xr = int(xr * (self.image['w'] / w))
-        # else:
-        #     h = self.image['h']
-        #     w = self.image['w']
+        # print("get_color from (%d, %d)" % (xr, yr))
+        h, w, c = self.image['cache'].shape
+        if (PAINTER_MARGIN_LEFT <= xr < self.width()+PAINTER_MARGIN_LEFT
+            and PAINTER_MARGIN_TOP <= yr < self.height()+PAINTER_MARGIN_TOP
+            and xr < w+PAINTER_MARGIN_LEFT and yr < h+PAINTER_MARGIN_TOP):
 
+            # TODO: correct this!
+            bgr = self.image['cache_fgd'][yr-self.image['origin'][1], xr-self.image['origin'][0]]
+            # print("\t(%d, %d) -> (%d, %d, %d)" % (
+            #     xr-self.image['origin'][0],
+            #     yr-self.image['origin'][1],
+            #     bgr[2], bgr[1], bgr[0]))
 
-        # if (xr >= 0 and yr >= 0
-        #         and xr < self.width() and yr < self.height()
-        #         and xr < w and yr < h):
+            self.widget_curves.set_color_values(bgr)
+            self.setCursor(Qt.CrossCursor)
+        else:
+            self.widget_curves.set_color_values(None)
+            self.setCursor(Qt.ArrowCursor)
 
-        #     c = self.image['qImage'].pixelColor(xr, yr)
-        #     # print("(%d, %d) -> (%d, %d, %d)" % (xr, yr, c.red(), c.green(), c.blue()))
-        #     self.widget_curves_editor.widget_rgb_curves.update_rgb_value(c.red(), c.green(), c.blue())
-        #     # self.widget_rgb_curves.displayCurrenPosition(c.red(), c.green(), c.blue())
-        #     self.setCursor(Qt.CrossCursor)
-        # else:
-        #     self.widget_curves_editor.widget_rgb_curves.update_rgb_value(None, None, None)
-        #     self.setCursor(Qt.ArrowCursor)
-        pass
 
 
     def mousePressEvent(self, event):
@@ -206,7 +196,7 @@ class Window_main(Window_common):
             if self.widget_curves.grab_split_line(x):
                 self.setCursor(Qt.SplitHCursor)
             else:
-                print("\t-> cache_fgd: ", self.image['cache_fgd'].shape)
+                print("\t-> pick rgb value cache_fgd: ", self.image['cache_fgd'].shape)
                 self.get_rgb_value(x, y)
             event.accept()
             return True
@@ -301,9 +291,30 @@ class Window_main(Window_common):
         else:
             if key == Qt.Key_F5:
                 log.info("Reload")
-                self.widget_selection.event_episode_changed()
+                self.signal_reload_directories_and_frames.emit()
                 event.accept()
                 return True
+
+            elif key == Qt.Key_Up:
+                # log.info("previous")
+                self.widget_selection.select_previous_image()
+
+            elif key == Qt.Key_Down:
+                # log.info("next")
+                self.widget_selection.select_next_image()
+
+            elif key == Qt.Key_Home:
+                return self.widget_selection.select_first_image()
+
+            elif key == Qt.Key_End:
+                return self.widget_selection.select_last_image()
+
+            elif key == Qt.Key_PageUp:
+                return self.widget_selection.event_page_up(event)
+
+            elif key == Qt.Key_PageDown:
+                return self.widget_selection.event_page_down(event)
+
 
         for e, w in self.widgets.items():
             if self.current_editor == e:
@@ -372,6 +383,7 @@ class Window_main(Window_common):
         # print("paintEvent: initial image = %dx%d" % (h_i, w_i))
         h, w, c = img.shape
         q_image = QImage(img.data, w, h, w * 3, QImage.Format_BGR888)
+        self
         w_final, h_final = (1440, 1080)
 
         self.image['origin'] = [PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y]

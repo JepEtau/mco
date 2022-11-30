@@ -179,23 +179,23 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         k_ed_ref = db[k_ep]['target']['video']['src']['k_ed']
 
     # k_ed
-    if k_ed == '':
-        k_ed_src = k_ed_ref
-    else:
-        # Use the one defined in command line
-        k_ed_src = k_ed
+    # if k_ed == '':
+    #     k_ed_src = k_ed_ref
+    # else:
+    #     # Use the one defined in command line
+    #     k_ed_src = k_ed
 
     for frame in frame_list:
-        # print(frame)
+        print(frame)
 
         do_append_geometry = False
         if k_ed != '':
             # k_ed force by command line
-            # print("k_ed forced to [%s]" % (k_ed))
+            print("k_ed forced to [%s]" % (k_ed))
             k_ed_src = k_ed
         elif 'k_ed' in frame.keys():
             # k_ed specified in the frame (i.e. in the config file)
-            # print("k_ed in config file")
+            print("k_ed in config file")
             k_ed_src = frame['k_ed']
         else:
             # k_ed not provided, so use the one specified in the shots (target)

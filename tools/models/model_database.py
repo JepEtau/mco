@@ -151,8 +151,7 @@ class Model_database(Model_stitching_curves,
                                 do_parse_curves:bool=True,
                                 do_parse_replace:bool=True,
                                 do_parse_geometry:bool=True,
-                                do_parse_stitching:bool=False,
-                                apply_patch_for_study:bool=False):
+                                do_parse_stitching:bool=False):
         # print("%s:consolidate_database %s:%s" % (__name__, k_ep, k_part))
         if k_ep == '' and k_part == '':
             return
@@ -296,14 +295,6 @@ class Model_database(Model_stitching_curves,
         else:
             # Parse the episode used for this generique
             dependencies = parse_get_dependencies_for_generique(self.global_database, k_part_g=k_part)
-
-            if apply_patch_for_study:
-                # Special case for studies: parse 's:ep01' and 's:ep02' for k_part=g_debut
-                if k_part == 'g_debut':
-                    dependencies.update({
-                        'k': ['ep01'],
-                        's': ['ep01', 'ep02'],
-                    })
 
             for k_ed_tmp, k_eps in dependencies.items():
                 for k_ep_tmp in k_eps:

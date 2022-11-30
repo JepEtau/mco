@@ -225,7 +225,8 @@ class Window_common(QMainWindow):
                 self.event_close()
         elif event == 'minimize':
             self.widget_selection.showMinimized()
-            self.widget_controls.showMinimized()
+            try: self.widget_controls.showMinimized()
+            except: pass
             self.showMinimized()
         else:
             raise Exception("Error: action [%s] is deprecated, discard action")

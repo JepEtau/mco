@@ -462,7 +462,7 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
 
     # print("Number of cpu : %d" % (multiprocessing.cpu_count()))
     cpu_count = int((multiprocessing.cpu_count() * 3)/4)
-    with ThreadPoolExecutor(max_workers=min(100,len(frames['fgd']))) as executor:
+    with ThreadPoolExecutor(max_workers=min(10,len(frames['fgd']))) as executor:
         work_result = {executor.submit(process_single_frame, work[0], work[1]): None
                         for work in worklist}
 

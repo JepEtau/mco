@@ -50,6 +50,7 @@ from parsers.parser_curves import (
 
 
 class Model_curves_editor(Model_common):
+    signal_folders_parsed = Signal([dict])
     signal_current_shot_modified = Signal(dict)
     signal_reload_frame = Signal()
     signal_is_saved = Signal(str)
@@ -123,7 +124,6 @@ class Model_curves_editor(Model_common):
         self.view.widget_selection.signal_discard_curves_selection_requested.connect(self.event_discard_curves_selection_requested)
         self.view.widget_selection.signal_remove_curves_selection_requested.connect(self.event_remove_curves_selection_requested)
 
-
         self.view.widget_curves.widget_rgb_graph.signal_graph_modified[dict].connect(self.event_rgb_graph_modified)
         self.view.widget_curves.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
         self.view.widget_curves.signal_save_rgb_curves_as[dict].connect(self.event_save_rgb_curves_as)
@@ -131,6 +131,7 @@ class Model_curves_editor(Model_common):
         self.view.widget_curves.widget_curves_selection.signal_discard_curves[str].connect(self.event_discard_rgb_curves_modifications)
 
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
+        self.view.signal_reload_directories_and_frames.connect(self.event_reload_directories_and_frames)
         self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
 
         # Force refresh of preview options
@@ -197,7 +198,7 @@ class Model_curves_editor(Model_common):
         return self.framelist.get_available_filter_ids()
 
 
-    def selection_changed(self, selection:dict):
+    def selection_changed(self, selection:dict, force=False):
         """ Selection has been changed, update the database, list all images,
             list all shots
         """
@@ -225,7 +226,8 @@ class Model_curves_editor(Model_common):
         k_parts = list()
         if (k_ed != self.current_selection['k_ed']
             or k_ep != self.current_selection['k_ep']
-            or k_part != self.current_selection['k_part']):
+            or k_part != self.current_selection['k_part']
+            or force):
             # The new selected ep/part is different, parse the folder
             # and create a new list of frames
             log.info("changed directory")
@@ -238,12 +240,12 @@ class Model_curves_editor(Model_common):
                 images_path = os.path.join(images_path, k_ep, k_part)
 
             self.framelist.clear()
-            # try:
-            for filename in os.listdir(images_path):
-                if filename.endswith(".png"):
-                    self.framelist.append(images_path, filename, k_ep, k_part)
-            # except:
-            #     print("error: the folder does not exist anymore")
+            try:
+                for filename in os.listdir(images_path):
+                    if filename.endswith(".png"):
+                        self.framelist.append(images_path, filename, k_ep, k_part)
+            except:
+                print("error: the folder does not exist anymore")
 
             # Initialize db dor curves
             self.model_curves.initialize_curves_library(db=self.model_database.database(),
@@ -300,7 +302,10 @@ class Model_curves_editor(Model_common):
 
 
 
-
+    def event_reload_directories_and_frames(self):
+        self.parse_frames_directory()
+        self.signal_folders_parsed.emit(self.get_available_selection())
+        self.selection_changed(self.current_selection, force=True)
 
 
 
@@ -542,12 +547,12 @@ class Model_curves_editor(Model_common):
 
         # Load curves, force for each frame even if previous was using the same
         try:
-            log.info("load_curves frame curves")
+            # log.info("load_curves frame curves")
             self.signal_load_curves.emit(frame['curves'])
             shot_list = self.model_curves.get_shots_per_curves(frame['curves']['k_curves'])
             self.signal_shot_per_curves_modified.emit(shot_list)
         except:
-            log.info("no curves to load")
+            # log.info("no curves to load")
             self.signal_load_curves.emit(None)
             self.signal_shot_per_curves_modified.emit(None)
 
@@ -580,12 +585,13 @@ def generate_single_image(frame:dict, preview_options:dict):
     now = time.time()
     img = None
 
-    try:
-        if frame['cache_fgd'] is None:
-            # The original has not yet been loaded
-            frame['cache_fgd'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
-    except:
-        frame['cache_fgd'] = None
+    frame['cache_fgd'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
+    # try:
+    #     if frame['cache_fgd'] is None:
+    #         # The original has not yet been loaded
+    #         frame['cache_fgd'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
+    # except:
+    #     frame['cache_fgd'] = None
 
     img_original = frame['cache_fgd']
     h, w, c = img_original.shape

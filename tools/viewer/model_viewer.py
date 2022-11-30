@@ -82,6 +82,7 @@ class Model_viewer(QObject):
     def get_available_episode_and_parts(self):
         episode_and_parts = dict()
         path_images = self.framelist.get_images_path()
+        log.info("Parse the images folder: %s" % (path_images))
         if os.path.exists(path_images):
             # Rather than walking through, try every possibilities
             # another option would be to select a folder, then the combobox
