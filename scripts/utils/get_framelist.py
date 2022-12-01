@@ -196,6 +196,7 @@ def get_single_framelist(db, k_ep, k_part, shot) -> list:
     extension = db['common']['settings']['frame_format']
 
     # print("%s:get_single_framelist: use %s for %s:%s" % (__name__, k_ep_src, k_ep, k_part))
+    # pprint(shot)
     k_part_src = shot['k_part']
     if 'start' in shot['dst']:
         # print("use the dst start and count for the concatenation file")
@@ -330,6 +331,10 @@ def get_single_framelist(db, k_ep, k_part, shot) -> list:
         images += get_frame_file_paths_until_effects(db,
             k_part=k_part, shot=shot, suffix=suffix)
 
+        if shot['dst']['count'] < shot['count']:
+            remove_count = shot['count'] - shot['dst']['count']
+            print("Warning: %s:%s: removed %s frames because dst count < count !" % (shot['dst']['k_ep'], shot['dst']['k_part'], remove_count))
+            del images[-remove_count:]
 
 
     # Append silence to this part
