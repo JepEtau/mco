@@ -10,7 +10,8 @@
     * [x] filters
     * [ ] geometry
     * [ ] RGB curves
-    * [ ] frame replacement
+    * [ ] frame replacement:
+        - start/end of shots only: 0->100
 - **A suivre**
     * [ ] shot replacement
     * [ ] filters

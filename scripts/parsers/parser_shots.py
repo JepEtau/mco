@@ -521,12 +521,13 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
             })
             frame_count += shot_src['count']
 
-        if frame_count > db_video_dst['count']:
+        if 0 < db_video_dst['count'] < frame_count:
             # The source contains too many frames,
             # path the src structure
             db_video_dst['shots'][-1]['src']['count'] -=  frame_count - db_video_dst['count']
             if k_part_g != 'g_reportage':
                 print("TODO, correct this: 2022-12-01: patched for g_reportage. %s:%s:%s" % (k_ed_src, k_ep, k_part_g))
+                print("frame_count=%d, db_video_dst count=%d" % (frame_count, db_video_dst['count']))
                 raise()
         else:
             db_video_dst['count'] = frame_count
