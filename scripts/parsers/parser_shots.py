@@ -497,6 +497,7 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
 
     if ('shots' not in db_video_dst.keys()
         or len(db_video_dst['shots']) == 0):
+        # No shot defined in target, use the src for this.
         frame_count = 0
         db_video_dst['shots'] = list()
         # if k_part_g == 'g_asuivre':
@@ -519,8 +520,19 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
                 },
             })
             frame_count += shot_src['count']
-        db_video_dst['count'] = frame_count
+
+        if frame_count > db_video_dst['count']:
+            # The source contains too many frames,
+            # path the src structure
+            db_video_dst['shots'][-1]['src']['count'] -=  frame_count - db_video_dst['count']
+            if k_part_g != 'g_reportage':
+                print("TODO, correct this: 2022-12-01: patched for g_reportage. %s:%s:%s" % (k_ed_src, k_ep, k_part_g))
+                raise()
+        else:
+            db_video_dst['count'] = frame_count
+
         # print("<<<<<<<<<<<<<<<< VIDEO %s:%s >>>>>>>>>>>>>>>>" % (k_ep, k_part_g))
+        # pprint(db_video_dst)
         # pprint_video(db_video_dst, first_indent=4)
         return
 
