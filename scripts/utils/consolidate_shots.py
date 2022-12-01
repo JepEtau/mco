@@ -72,7 +72,7 @@ def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
                     if shot_src is None:
                         sys.exit("TODO: replace by get_or_create_src_shot")
                 except:
-                    print("Warning: consolidate_target_shots: create a src shot because not defined in config file %s:%s:%s" % (k_ed_src, k_ep_src, k_part_src))
+                    print("Warning: consolidate_target_shots: create a src shot because not defined in config file %s:%s:%s, k_p=%s" % (k_ed_src, k_ep_src, k_part_src, k_p))
                     shot_src = get_or_create_src_shot(db,
                         shot['src']['start'],
                         k_ed=k_ed_src,
@@ -92,6 +92,7 @@ def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
                     print("Error: cannot generate shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
                     print("target:")
                     pprint(shot)
+                    sys.exit()
 
                 # Let's update the dst structure of the target shot
                 # TODO: remove this after full validation
@@ -265,6 +266,7 @@ def consolidate_shot(db, shot) -> None:
 
     # Get filters used by this shot
     shot['filters'] = get_filters_from_shot(db, shot)
+    # pprint(shot)
 
     # Geometry
     # print("consolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
