@@ -188,7 +188,7 @@ def main():
         else:
             print("\t\t- all: ", end='')
         print()
-        pprint(g_database)
+        # pprint(g_database)
         sys.exit()
 
     if arguments.afilter != '':
