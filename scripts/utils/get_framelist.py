@@ -85,6 +85,7 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
         black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.%s' % (extension))
         if db_video['avsync'] > 0:
             # Add black images to the first shot for A/V sync
+            # print("avsync: add frames for k_part=%s, avsync=%d" % (k_part, db_video['avsync']))
             for i in range(db_video['avsync']):
                 images.append(black_image_filepath)
 
@@ -227,6 +228,7 @@ def get_single_framelist(db, k_ep, k_part, shot) -> list:
 
         black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.%s' % (extension))
         if db_video['avsync'] > 0:
+            # print("avsync: add frames for k_part=%s, avsync=%d" % (k_part, db_video['avsync']))
             # Add black images to the first shot for A/V sync
             for i in range(abs(db_video['avsync'])):
                 images.append(black_image_filepath)
@@ -331,10 +333,10 @@ def get_single_framelist(db, k_ep, k_part, shot) -> list:
         images += get_frame_file_paths_until_effects(db,
             k_part=k_part, shot=shot, suffix=suffix)
 
-        if shot['dst']['count'] < shot['count']:
-            remove_count = shot['count'] - shot['dst']['count']
-            print("Warning: %s:%s: removed %s frames because dst count < count !" % (shot['dst']['k_ep'], shot['dst']['k_part'], remove_count))
-            del images[-remove_count:]
+        # if shot['dst']['count'] < shot['count']:
+        #     remove_count = shot['count'] - shot['dst']['count']
+        #     print("Warning: %s:%s: removed %s frames because dst count < count !" % (shot['dst']['k_ep'], shot['dst']['k_part'], remove_count))
+        #     del images[-remove_count:]
 
 
     # Append silence to this part

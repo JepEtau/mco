@@ -110,62 +110,6 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
 
 
 
-def parse_shotlist_precedemment_asuivre(db_shots, k_ep, k_part, shotlist_str) -> None:
-    """This procedure parse a string wich contains the list of shots
-        and update the structure of the database.
-        Used for 'précédemment' and 'à suivre'
-
-    Args:
-        db_shots: the structure where to store the shots
-        shotlist_str: the string to parse
-
-    Returns:
-        None
-
-    """
-    shot_list = shotlist_str.split()
-
-    for shot_no, shot in zip(range(len(shot_list)), shot_list):
-        shot_properties = shot.split(',')
-        db_shots.append({
-            'no': shot_no,
-            'start': int(shot_properties[0]),
-            'count': 0,
-            'dst': {
-                'k_ep': k_ep,
-                'k_part': k_part,
-            },
-            'filters': 'default',
-            'curves': None,
-            'replace': dict(),
-        })
-        if len(shot_properties) > 1:
-            for p in shot_properties:
-                d = p.split('=')
-                if d[0] == 'src':
-                    # The frames used in previous/next episode (i.e. source)
-                    src_array = d[1].split(':')
-                    db_shots[shot_no]['src'] = {
-                        'k_ep': 'ep%02d' % (int(src_array[0])),
-                        'start': int(src_array[1]),
-                        'count': int(src_array[2]),
-                    }
-
-                elif d[0] == 'replace':
-                    # Replace this shot by the source
-                    db_shots[shot_no]['replace'] = True if d[1]=='y' else False
-
-                elif d[0] == 'effects':
-                    # maybe used when replace is not used
-                    db_shots[shot_no]['effects'] = d[1].split(',')
-
-    print("%s.parse_shotlist_precedemment_asuivre" % (__name__))
-    pprint(db_shots)
-    sys.exit()
-
-
-
-
 
 def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
     """This procedure is used to consolidate the parsed shots
@@ -181,13 +125,13 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
     """
     K_PART_DEBUG = ''
     K_EP_DEBUG = ''
-    SHOT_NO = 0
+    SHOT_NO = 1
 
     if k_ed=='k' and k_ep==K_EP_DEBUG and k_part==K_PART_DEBUG:
         print("%s:consolidate_shots_after_parse: %s:%s:%s" % (__name__, k_ed, k_ep, k_part))
         pprint(db[k_ep][k_ed][k_part]['video']['shots'][SHOT_NO])
         print("")
-        sys.exit()
+        # sys.exit()
 
     db_video = db[k_ep][k_ed][k_part]['video']
 
@@ -246,7 +190,11 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
                 shots[i]['count'] = shots[i+1]['start'] - shots[i]['start']
 
             # Update count in the src structure
-            if 'src' in shots[i].keys():
+            if ('src' in shots[i].keys()
+                and shots[i]['dst']['k_part'] not in ['precedemment', 'asuivre']):
+                # 2022-12-02: do not modify the frame count if the dst is replaced
+                #   which is the case of these parts
+                # TODO: verify when replacing episode by 'precedemment' or 'asuivre'
                 shots[i]['src']['count'] = shots[i]['count']
 
         if 'effects' in shots[i]:
@@ -267,7 +215,7 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
         print("----->")
         pprint(db[k_ep][k_ed][k_part]['video']['shots'][SHOT_NO])
         print("")
-        # sys.exit()
+        sys.exit()
 
 
 
@@ -525,10 +473,14 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
             # The source contains too many frames,
             # path the src structure
             db_video_dst['shots'][-1]['src']['count'] -=  frame_count - db_video_dst['count']
+            db_video_dst['shots'][-1]['dst']['count'] = db_video_dst['shots'][-1]['src']['count']
+            db_video_dst['shots'][-1]['count'] = db_video_dst['shots'][-1]['src']['count']
+            # print("frame_count=%d, db_video_dst count=%d" % (frame_count, db_video_dst['count']))
             if k_part_g != 'g_reportage':
                 print("TODO, correct this: 2022-12-01: patched for g_reportage. %s:%s:%s" % (k_ed_src, k_ep, k_part_g))
                 print("frame_count=%d, db_video_dst count=%d" % (frame_count, db_video_dst['count']))
                 raise()
+            # pprint(db_video_dst)
         else:
             db_video_dst['count'] = frame_count
 
