@@ -187,6 +187,9 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
         print("\tinfo: loop (%d) is > fadeout (%d)" % (loop_count, fadeout_count))
         input_img_filepath = os.path.join(output_filepath, filename)
 
+    # 2022-02-03:
+    print("2022-12-03: validate this!")
+    input_img_filepath = os.path.join(output_filepath, filename)
     for count in range(0, fadeout_count):
         # Input file
         if count < fadeout_count - loop_count:
