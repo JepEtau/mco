@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 import os
+import time
 
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
@@ -28,6 +29,7 @@ from video.shots import process_shot
 
 
 def generate_video(db, k_ed, k_ep:str, tasks:list, cpu_count=0, k_part:str='', force:bool=False, simulation:bool=False, shot_min:int=0, shot_max:int=999999):
+    start_time = time.time()
 
     # Create the video directory
     create_video_directory(db, k_ep)
@@ -68,6 +70,7 @@ def generate_video(db, k_ed, k_ep:str, tasks:list, cpu_count=0, k_part:str='', f
         # Walk through target shots
         shots = db_video['shots']
         for shot in shots:
+            start_shot_time = time.time()
             if not (shot_min <= shot['no'] < shot_max):
                 continue
 
@@ -106,6 +109,14 @@ def generate_video(db, k_ed, k_ep:str, tasks:list, cpu_count=0, k_part:str='', f
                 # Add the filepath to the the concatenation video file
                 video_files[k_p].append(tmp)
             previous_concatenation_filepath = tmp
+
+            if k_p == 'episode':
+                minutes, seconds = divmod(time.time() - start_shot_time, 60)
+                print("\t\t\t=> processed shot in %d:%02d" % (minutes, seconds), flush=True)
+
+
+    minutes, seconds = divmod(time.time() - start_shot_time,60)
+    print("=> processed shots in %d:%02d" % (minutes, seconds), flush=True)
 
     # Combine images to mkv
     for k_p, files in video_files.items():
@@ -166,6 +177,7 @@ def generate_video(db, k_ed, k_ep:str, tasks:list, cpu_count=0, k_part:str='', f
             std = ffmpeg_execute_command(command_ffmpeg, filename=episode_video_filepath)
             if len(std) > 0:
                 print(std)
+
 
 
 

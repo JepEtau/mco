@@ -95,7 +95,7 @@ class Window_common(QMainWindow):
 
     def set_initial_options(self, preferences:dict):
         s = preferences['viewer']
-        if False:
+        if True:
             self.setGeometry(s['geometry'][0],
                 s['geometry'][1],
                 s['geometry'][2],
