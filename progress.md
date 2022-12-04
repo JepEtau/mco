@@ -162,8 +162,8 @@
 * [x] shots ()
 * [x] offsets ed. k
 * [x] filters
-* [ ] geometry
-* [ ] RGB curves
+* [x] geometry
+* [x] RGB curves
 <br/><br/>
 
 

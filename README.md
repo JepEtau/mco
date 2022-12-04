@@ -1,7 +1,8 @@
 # MCO
 
-## Modifications
-Voir le fichier de [modifications](./modifications.md)
+## Modifications et progressions
+[Fiche l'avancement](./progress.md)
+[Fiche de modifications](./modifications.md) (pas forcément toujours à jour)
 
 ## Exigences et installations
 (Se référer au dépôt [mco_manuel](https://github.com/JepEtau/mco_manuels) pour quelques informations supplémentaires concernant l'installation)

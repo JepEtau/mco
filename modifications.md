@@ -1,5 +1,14 @@
 # Modifications
 
+**2022-12-04**
+- Génériques de début, fin, reportage, à suivre
+```sh
+python run.py --part g_debut
+python run.py --part g_fin
+python run.py --part g_reportage
+python run.py --part g_asuivre
+```
+
 **2022-11-27**
 - Le générique de fin (1ere version)
 ```sh
