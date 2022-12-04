@@ -138,7 +138,9 @@
 * [x] A/V sync
 * [x] filters
 * [x] geometry
-* [-] RGB curves
+* [-] RGB curves. A améliorer si possible:
+    - shot no. 0 (légèrement trop bleu, mais nuages trop verts)
+    - shot no. 6 (trop rouge / trop vert)
 * [x] frame replacement
 <br/><br/>
 
@@ -150,9 +152,9 @@
 * [x] video
 * [x] A/V sync
 * [x] filters
-* [ ] geometry
-* [-] RGB curves
-* [-] frame replacement
+* [x] geometry
+* [x] RGB curves
+* [x] frame replacement
 <br/><br/>
 
 
@@ -168,6 +170,6 @@
 # Générique reportage
 * [x] shots
 * [x] filters
-* [ ] geometry
-* [ ] RGB curves
+* [x] geometry
+* [x] RGB curves
 <br/><br/>

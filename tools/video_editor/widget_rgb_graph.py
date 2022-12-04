@@ -380,15 +380,6 @@ class Widget_rgb_graph(QWidget):
             self.signal_graph_modified.emit(self.get_curves_channels())
             return True
 
-
-        elif key == Qt.Key_C:
-            curve = self.channels[self.k_selected]['curve']
-            curve.reset()
-            self.flush_polypoints()
-            self.update()
-            self.signal_graph_modified.emit(self.get_curves_channels())
-            return True
-
         return False
 
 
