@@ -72,7 +72,7 @@ def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
                     if shot_src is None:
                         sys.exit("TODO: replace by get_or_create_src_shot")
                 except:
-                    print("Warning: consolidate_target_shots: create a src shot because not defined in config file %s:%s:%s" % (k_ed_src, k_ep_src, k_part_src))
+                    print("Warning: consolidate_target_shots: create a src shot because not defined in config file %s:%s:%s, k_p=%s" % (k_ed_src, k_ep_src, k_part_src, k_p))
                     shot_src = get_or_create_src_shot(db,
                         shot['src']['start'],
                         k_ed=k_ed_src,
@@ -89,9 +89,16 @@ def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
                 # Verify that this shot can be replaced
                 if ((shot['src']['start'] + shot['src']['count']) > (shot_src['start'] + shot_src['count'])
                     and 'effects' not in shot.keys()):
-                    print("Error: cannot generate shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
-                    print("target:")
-                    pprint(shot)
+
+                    if shot['dst']['k_part'] == 'episode':
+                        # Do not verify for precedemment/asuivre as what is important is the total nb of frames,
+                        # so only episode
+                        print("Error: cannot generate shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
+                        print("target:")
+                        pprint(shot)
+                        print("source:")
+                        pprint(shot_src)
+                        sys.exit()
 
                 # Let's update the dst structure of the target shot
                 # TODO: remove this after full validation
@@ -100,10 +107,15 @@ def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
                 #     pprint(shot)
                 #     sys.exit("differences between src and shot")
 
-                shot['dst'].update({
-                    'start': shot['start'],
-                    'count': shot['count'],
-                })
+                # shot['dst'].update({
+                #     'start': shot['start'],
+                #     'count': shot['count'],
+                # })
+
+                if 'count' not in shot['dst'].keys():
+                    shot['dst']['count'] = shot['count']
+                if 'start' not in shot['dst'].keys():
+                    shot['dst']['start'] = shot['start']
 
                 # Replace all values in target shot except:
                 # src, dst, (geometry), effects
@@ -265,6 +277,7 @@ def consolidate_shot(db, shot) -> None:
 
     # Get filters used by this shot
     shot['filters'] = get_filters_from_shot(db, shot)
+    # pprint(shot)
 
     # Geometry
     # print("consolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
@@ -286,16 +299,21 @@ def consolidate_shot(db, shot) -> None:
     elif k_part in ['g_asuivre', 'g_reportage']:
         print("TODO: consolidate_shot: verify geometry for :%s" % (k_part))
         # pprint(shot)
-        # k_ed_ref = db[k_part]['common']['video']['reference']['k_ed']
         k_ep_dst = shot['dst']['k_ep']
         k_ep_src = shot['k_ep']
         k_ed_src = shot['k_ed']
-        # print("get geometry from part %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
-        shot['geometry'] = {
-            'part':  db[k_ep_dst][k_ed][k_part[2:]]['video']['geometry'],
-            'custom': db[k_ep][k_ed_src][k_part]['video']['geometry'],
-        }
 
+        if 'video' in db[k_part]['common'].keys():
+            k_ed_dst = db[k_part]['common']['video']['reference']['k_ed']
+            # print("get geometry from part %s:%s:%s for %s:%s:%s" % (
+            #     k_ed, k_ep, k_part[2:], k_ed_src, k_ep_dst, k_part))
+            # pprint(db[k_ep_dst])
+            shot['geometry'] = {
+                'part':  db[k_ep_dst][k_ed][k_part[2:]]['video']['geometry'],
+                'custom': db[k_ep][k_ed_dst][k_part]['video']['geometry'],
+            }
+        else:
+            print("warning: no geometry/video defined in %s for %s:%s:%s" % (k_part, k_ed_src, k_ep_dst, k_part))
     else:
         # print("TODO: consolidate_shot: update when replacing the shots in episode")
         k_ep_dst = shot['dst']['k_ep']

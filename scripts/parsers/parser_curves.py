@@ -61,7 +61,12 @@ def parse_curve_configurations(db, k_ep_or_g:str):
             # print("parse_curve_configurations, find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
             # shot = get_shot_from_frame_no_new(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
             #   replaced by a function which creates the src shot if not defined in the config file
-            shot = get_or_create_src_shot(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+            try:
+                shot = get_or_create_src_shot(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+                if shot is None:
+                    continue
+            except:
+                continue
 
             # Append curves struct to the shot
             shot['curves'] = {

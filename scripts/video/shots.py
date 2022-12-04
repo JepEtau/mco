@@ -97,7 +97,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
         pprint(frame)
         print("---------------------------------------------------------------------------",flush=True)
 
-    print("%d: " % (frame['no']), tasks,flush=True)
+    # print("%d: " % (frame['no']), tasks,flush=True)
 
     # For debug and verificattions: deinterlace->RGB
     if 'deinterlace_rgb' in tasks:
@@ -462,7 +462,12 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
 
     # print("Number of cpu : %d" % (multiprocessing.cpu_count()))
     cpu_count = int((multiprocessing.cpu_count() * 3)/4)
-    with ThreadPoolExecutor(max_workers=min(10,len(frames['fgd']))) as executor:
+    min_workers = 12
+    # if cpu_count >= 12:
+    #     min_workers = 70
+    # else:
+    #     min_workers = 10
+    with ThreadPoolExecutor(max_workers=min(min_workers,len(frames['fgd']))) as executor:
         work_result = {executor.submit(process_single_frame, work[0], work[1]): None
                         for work in worklist}
 

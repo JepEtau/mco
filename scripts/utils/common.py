@@ -545,9 +545,9 @@ def get_or_create_src_shot(db, frame_no:int, k_ed, k_ep, k_part)-> dict:
             is_found = True
             break
     if not is_found:
-        print("Error: shot no found in SRC but SHOULD BE: %d in %s:%s:%s" % (frame_no, k_ed_src, k_ep_src, k_part))
-        pprint(db[k_ep_src][k_ed_src][k_part]['video'])
-        sys.exit()
+        # print("Error: shot no found in SRC but SHOULD BE: %d in %s:%s:%s" % (frame_no, k_ed_src, k_ep_src, k_part))
+        # pprint(db[k_ep_src][k_ed_src][k_part]['video'])
+        return None
 
 
     # Create a list of shots

@@ -826,7 +826,7 @@ def generate_single_image(frame:dict, preview_options:dict):
 
     else:
         if options['resize_preview']:
-            sys.exit("generate_single_image: resize not possible because no crop")
+            sys.exit("Error: generate_single_image: resize not possible because no crop")
         # Use original image
         # print("\t-> Use the original image")
         img_cropped = img_rgb

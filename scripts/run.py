@@ -188,7 +188,7 @@ def main():
         else:
             print("\t\t- all: ", end='')
         print()
-        pprint(g_database)
+        # pprint(g_database)
         sys.exit()
 
     if arguments.afilter != '':
@@ -234,7 +234,6 @@ def main():
         sys.exit("Error: a part shall be one of the following: %s" % (", ".join(K_ALL_PARTS)))
 
     # Parse database
-    print("k_episode=%s" % (k_episode), arguments.frames)
     if k_episode == 'ep00' and arguments.frames:
         # for frame study
         k_episode = 'ep01'
@@ -284,88 +283,89 @@ def main():
     # Get the list of tasks
     tasks = get_tasklist(db=g_database, final_task=video_filter)
 
-    # Check if nnedi3_weights.bin exists
-    if 'deinterlace' in tasks:
-        nnedi_file = "./nnedi3_weights.bin"
-        if not os.path.exists(nnedi_file):
-            sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
+    if len(tasks) > 0:
+        # Check if nnedi3_weights.bin exists
+        if 'deinterlace' in tasks:
+            nnedi_file = "./nnedi3_weights.bin"
+            if not os.path.exists(nnedi_file):
+                sys.exit("Error: file \"%s\" is missing, cannot continue" % (nnedi_file))
 
-    # Consolidate each shot for the target
-    consolidate_target_shots(
-        db=g_database,
-        k_ed=k_ed,
-        k_ep=k_episode,
-        k_part=arguments.part,
-    )
-
-    # Specified shot min. and max
-    shot_min = arguments.shot_min
-    shot_max = arguments.shot_max
-    if arguments.shot != -1:
-        shot_min = arguments.shot
-        shot_max = arguments.shot + 1
-
-    if arguments.frames:
-        # Extract frames
-        extract_frames_for_study(
-            db=g_database,
-            k_ed=arguments.edition,
-            k_ep=k_episode,
-            k_part=arguments.part,
-            tasks=tasks,
-            force=arguments.force,
-            shot_min=shot_min, shot_max=shot_max)
-        return
-
-    # elif video_filter in ['deinterlace', 'upscale', 'geometry']:
-    else:
-        # Generate the video
-
-        # Force the edition to default
-        k_ed = 'k'
-
-        generate_video(
+        # Consolidate each shot for the target
+        consolidate_target_shots(
             db=g_database,
             k_ed=k_ed,
             k_ep=k_episode,
             k_part=arguments.part,
-            tasks=tasks,
-            force=arguments.force,
-            simulation=arguments.simulate,
-            shot_min=shot_min, shot_max=shot_max)
+        )
 
-        if shot_min != 0 or shot_max != 999999:
-            do_av_merge = False
+        # Specified shot min. and max
+        shot_min = arguments.shot_min
+        shot_max = arguments.shot_max
+        if arguments.shot != -1:
+            shot_min = arguments.shot
+            shot_max = arguments.shot + 1
 
-    if (not arguments.frames
-        and video_filter in ['deinterlace', 'denoise', 'upscale', 'geometry', 'sharpen']):
-        do_av_merge = True
-    else:
-        do_av_merge = True
+        if arguments.frames:
+            # Extract frames
+            extract_frames_for_study(
+                db=g_database,
+                k_ed=arguments.edition,
+                k_ep=k_episode,
+                k_part=arguments.part,
+                tasks=tasks,
+                force=arguments.force,
+                shot_min=shot_min, shot_max=shot_max)
+            return
+
+        # elif video_filter in ['deinterlace', 'upscale', 'geometry']:
+        else:
+            # Generate the video
+
+            # Force the edition to default
+            k_ed = 'k'
+
+            generate_video(
+                db=g_database,
+                k_ed=k_ed,
+                k_ep=k_episode,
+                k_part=arguments.part,
+                tasks=tasks,
+                force=arguments.force,
+                simulation=arguments.simulate,
+                shot_min=shot_min, shot_max=shot_max)
+
+            if shot_min != 0 or shot_max != 999999:
+                do_av_merge = False
+
+        if (not arguments.frames
+            and video_filter in ['deinterlace', 'denoise', 'upscale', 'geometry', 'sharpen']):
+            do_av_merge = True
+        else:
+            do_av_merge = True
 
 
-    # Merge A/V streams
-    #-------------------------------------------------
-    if do_av_merge and not arguments.simulate:
-        if arguments.part in ['g_debut', 'g_fin']:
-            # I we process specified parts, merge video and audio tracks
-            # is only possible for these generiques
-            merge_audio_and_video_tracks(g_database, arguments.part, force=arguments.force)
-        elif arguments.part == '':
+        # Merge A/V streams
+        #-------------------------------------------------
+        if do_av_merge and not arguments.simulate:
+            if arguments.part in ['g_debut', 'g_fin']:
+                # I we process specified parts, merge video and audio tracks
+                # is only possible for these generiques
+                merge_audio_and_video_tracks(g_database, arguments.part, force=arguments.force)
+            elif arguments.part == '':
 
-            # Merge all video and audio tracks
-            for k in ['g_debut', 'g_fin']:
-                merge_audio_and_video_tracks(g_database, k_ep=k, force=arguments.force)
+                # Merge all video and audio tracks
+                for k in ['g_debut', 'g_fin']:
+                    merge_audio_and_video_tracks(g_database, k_ep=k, force=arguments.force)
 
-            # Merge video and audio stream from all parts (except g_debut and g_fin)
-            merge_audio_and_video_tracks(g_database, k_ep=k_episode, force=arguments.force)
+                # Merge video and audio stream from all parts (except g_debut and g_fin)
+                merge_audio_and_video_tracks(g_database, k_ep=k_episode, force=arguments.force)
 
-            # Concatenate all parts
-            concatenate_all_clips(g_database, k_episode, force=arguments.force)
+                # Concatenate all parts
+                concatenate_all_clips(g_database, k_episode, force=arguments.force)
 
-            # Add chapters to the video file
-            if k_episode != 'ep00':
-                add_chapters(g_database, k_episode)
+                # Add chapters to the video file
+                if k_episode != 'ep00':
+                    add_chapters(g_database, k_episode)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+import sys
 import os
 import os.path
 import shutil
@@ -116,7 +116,13 @@ def effect_comb(db, shot, frame, last_task):
         x += delta_x
 
 
+
 def effect_loop_and_fadeout(db, shot, frames, last_task):
+    # verified:
+    #   - ep01: episode
+    #   - ep01: asuivre
+
+
     # loop on frame_no
     loop_start = shot['effects'][1]
     loop_count = shot['effects'][2]
@@ -172,21 +178,23 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
         input_img_filepath = os.path.join(input_filepath, filename)
         output_img_filepath = os.path.join(output_filepath, filename)
         if output_img_filepath != input_img_filepath:
+            # keep print for debug until end of validation
+            print("\tno geometry: effect: effect_loop_and_fadeout: copy %s -> %s" % (input_img_filepath, output_img_filepath))
             shutil.copy(input_img_filepath, output_img_filepath)
 
     if loop_count > fadeout_count:
-        # print("INFO: loop (%d) is > fadeout (%d)" % (loop_count, fadeout_count))
+        # keep print for debug until end of validation
+        print("\tinfo: loop (%d) is > fadeout (%d)" % (loop_count, fadeout_count))
         input_img_filepath = os.path.join(output_filepath, filename)
 
+    # 2022-02-03:
+    print("2022-12-03: validate this!")
+    input_img_filepath = os.path.join(output_filepath, filename)
     for count in range(0, fadeout_count):
         # Input file
         if count < fadeout_count - loop_count:
-            # Warning: not verified
-            print("TODO: urgent: verify this")
-            input_img_filepath = frames[-1 * (fadeout_count - loop_count - count)]['filepath'][last_task]
-            raise Exception("effect_loop_and_fadeout")
-        elif count == fadeout_count - loop_count:
-            input_img_filepath = os.path.join(output_filepath, filename)
+            offset = shot['src']['start'] - shot['start'] + shot['src']['count'] - (fadeout_count - loop_count) + count
+            input_img_filepath = frames[offset]['filepath'][last_task]
 
         # Output file
         filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
@@ -195,7 +203,8 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
         # Calculate coefficient: last frame is not completely black because there is always
         # a silence after this (i.e. black frames)
         coef = float(count) / fadeout_count
-        # print("\t% 2d: %s -> %s, coef=%f" % (count, input_img_filepath, output_img_filepath, coef))
+        # keep print for debug until end of validation
+        print("\t% 2d: %s -> %s, coef=%f" % (count, input_img_filepath, output_img_filepath, coef))
 
         # Mix images
         img_src = cv2.imread(input_img_filepath, cv2.IMREAD_COLOR)
@@ -207,16 +216,16 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
 
 
 def effect_fadeout(db, shot, frames, last_task):
+    # verified:
+    #   - ep01: reportage
     fadeout_count = shot['effects'][2]
 
     # fadeout_start = shot['effects'][1]
-    # print("\n%s.effect_fade_out: start=%d, count=%d" % (__name__, fadeout_start, fadeout_count))
+    # print("\n%s.effect_fadeout: start=%d, count=%d" % (__name__, fadeout_start, fadeout_count))
     # pprint(shot)
-    # sys.exit()
 
     # Input directory: use the latest task even if it is not
     input_filepath = get_output_path_from_shot(db=db, shot=shot, task='rgb')
-    # print("\tinput filepath=%s" % (input_filepath))
 
     # Output directory
     k_part = shot['k_part']
@@ -251,29 +260,43 @@ def effect_fadeout(db, shot, frames, last_task):
     # Create a  black image for fadeout
     img_black = np.zeros([dimensions['h'], dimensions['w'], 3], dtype=np.uint8)
 
-    # Copy to dst because it is only done if last task is geometry
+    # # Copy to dst because it is only done if last task is geometry
     if 'geometry' not in last_task:
-        filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'], suffix)
-        input_img_filepath = os.path.join(input_filepath, filename)
-        output_img_filepath = os.path.join(output_filepath, filename)
-        if output_img_filepath != input_img_filepath:
-            print("effect: fadeout: copy %s -> %s" % (input_img_filepath, output_img_filepath))
-            shutil.copy(input_img_filepath, output_img_filepath)
-            raise Exception("urgent: verify this!")
+        for count in range(0, fadeout_count):
+            index = shot['src']['start'] + shot['src']['count'] + count
+            filename = "%s_%05d%s" % (shot['k_ep'], index, suffix)
+            input_img_filepath = os.path.join(input_filepath, filename)
+            output_img_filepath = os.path.join(output_filepath, filename)
+            if output_img_filepath != input_img_filepath:
+                # keep print for debug until end of validation
+                print("\tno geometry: effect: fadeout: copy %s -> %s" % (input_img_filepath, output_img_filepath))
+                shutil.copy(input_img_filepath, output_img_filepath)
 
     for count in range(0, fadeout_count):
-        # Input file
-        # TODO: Warning; this may not work if the dst shot is < src shot
-        input_img_filepath = frames[-1 * (fadeout_count - count)]['filepath'][last_task]
 
-        # Output file
-        filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
-        output_img_filepath = os.path.join(input_filepath, filename)
+        if shot['src']['start'] + shot['src']['count'] < shot['start'] + shot['count']:
+            # Input file
+            offset = shot['src']['start'] - shot['start'] + shot['src']['count'] + count
+            input_img_filepath = frames[offset]['filepath'][last_task]
+
+            # Output file
+            filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
+            output_img_filepath = os.path.join(output_filepath, filename)
+        else:
+            # Input file
+            offset = -1 * (fadeout_count - count)
+            input_img_filepath = frames[offset]['filepath'][last_task]
+
+            # Output file
+            filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
+            output_img_filepath = os.path.join(input_filepath, filename)
+
 
         # Calculate coefficient: last frame is not completely black because there is always
         # a silence after this (i.e. black frames)
         coef = float(count) / fadeout_count
-        # print("\t% 2d: %s -> %s, coef=%f" % (count, input_img_filepath, output_img_filepath, coef))
+        # keep print for debug until end of validation
+        print("\t% 2d: %s -> %s, coef=%f" % (count, input_img_filepath, output_img_filepath, coef))
 
         # Mix images
         img_src = cv2.imread(input_img_filepath, cv2.IMREAD_COLOR)
