@@ -1,7 +1,5 @@
 # Episode 1
 * [ ] shots
-* [ ] offsets ed. a
-* [ ] offsets ed. s
 * [x] audio
 * [x] video
 * [x] A/V sync
@@ -29,8 +27,6 @@
 
 # Episode 2
 * [ ] shots
-* [ ] offsets ed. a
-* [ ] offsets ed. s
 * [x] audio
 * [x] video
 * [x] A/V sync
@@ -62,8 +58,6 @@
 
 # Episode 3
 * [ ] shots
-* [ ] offsets ed. a
-* [ ] offsets ed. s
 * [ ] audio
 * [ ] video
 * [ ] A/V sync
@@ -96,8 +90,6 @@
 
 # Episode 4
 * [ ] shots
-* [ ] offsets ed. a
-* [ ] offsets ed. s
 * [x] audio
 * [x] video
 * [x] A/V sync
@@ -130,8 +122,6 @@
 
 # Episode
 * [ ] shots
-* [ ] offsets ed. a
-* [ ] offsets ed. s
 * [ ] audio
 * [ ] video
 * [ ] A/V sync

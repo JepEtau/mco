@@ -122,6 +122,7 @@ def parse_audio(db_audio, config, verbose=False):
 
         if k_option == 'source':
             nested_dict_set(db_audio, value_str, 'src', 'k_ed')
+            # print("detected source: %s" % (value_str))
             continue
 
         # Parse only supported sections
@@ -140,7 +141,7 @@ def parse_audio(db_audio, config, verbose=False):
         duration = 0
         segment_array = value_str.split()
         for segment_str in segment_array:
-            properties = segment_str.split(',')
+            properties = segment_str.replace(' ', '').split(',')
             # print(properties)
 
             # Start and end
@@ -185,6 +186,15 @@ def parse_audio(db_audio, config, verbose=False):
                         # frames_count += part_silence
                         continue
 
+                    search_k_ep_src = re.search(re.compile("src=([0-9]{1,2})"), properties[i])
+                    if search_k_ep_src is not None:
+                        k_ep_src = int(search_k_ep_src.group(1))
+                        db_audio[k_part]['segments'][-1]['k_ep'] = 'ep%02d' % (k_ep_src)
+                        continue
+            else:
+                k_ep_src = -1
+
+
         db_audio[k_part].update({
             'fadein': part_fadein,
             'fadeout': part_fadeout,
@@ -195,6 +205,9 @@ def parse_audio(db_audio, config, verbose=False):
             'end': db_audio[k_part]['segments'][0]['start'] + d,
             'avsync': 0
         })
+
+    # if db_audio['src']['k_ed'] == 's':
+    #     print("detected another source")
 
 
 

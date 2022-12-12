@@ -23,6 +23,7 @@ from audio.utils import (
 
 
 def extract_audio(db, k_ep_or_g:str, k_ed='', force=False, verbose=False) -> None:
+    verbose = True
     print("%s.extract_audio: %s:%s" % (__name__, k_ed, k_ep_or_g))
     if k_ep_or_g in ['g_debut', 'g_fin']:
         k_ep = db[k_ep_or_g]['target']['audio']['src']['k_ep']
@@ -33,7 +34,8 @@ def extract_audio(db, k_ep_or_g:str, k_ed='', force=False, verbose=False) -> Non
         use_default = True
         k_ed = db[k_ep_or_g]['target']['audio']['src']['k_ed']
     else:
-        use_default = True
+        use_default = False
+        k_ed = db[k_ep_or_g]['target']['audio']['src']['k_ed']
 
 
     if verbose:
@@ -43,6 +45,10 @@ def extract_audio(db, k_ep_or_g:str, k_ed='', force=False, verbose=False) -> Non
     input_filepath = db[k_ep][k_ed]['path']['input_audio']
     if not os.path.exists(input_filepath):
         sys.exit("Erreur: le fichier d'entrée est manquant pour l'édition %s" % (k_ed))
+
+    if verbose:
+        print("extract audio stream from %s" % (input_filepath))
+
 
     # Output audio file
     output_directory = os.path.join(db[k_ep]['target']['path']['cache'], "audio")
@@ -142,8 +148,30 @@ def generate_audio(db, k_ep:str, force=False, verbose=False):
 
         # Concatenate segments
         for s in db_audio[k]['segments']:
+            if 'k_ep' in s.keys():
+                # Import this segment from another episode
+                print("info: generate_audio: import from other episode")
+                k_ep_src = s['k_ep']
+                input_directory = os.path.join(db[k_ep_src]['target']['path']['cache'], "audio")
+                tmp_filename = "%s_audio_extract.%s" % (k_ep_src, db['common']['settings']['audio_format'])
+                tmp_filepath = os.path.join(input_directory, tmp_filename)
+                if not os.path.exists(tmp_filepath):
+                    extract_audio(db, k_ep_src, k_ed, force=force, verbose=verbose)
+                sample_rate_src, in_track_src, duration = read_single_track_audio_file(tmp_filepath)
+                in_track_dtype_src = in_track_src.dtype
+                sample_rate_src = int(sample_rate_src / 1000)
+                start = int(s['start'] * sample_rate_src)
+                end = int(s['end'] * sample_rate_src)
+                if verbose:
+                    print("\t\t[%d ... %d] (%d) ([(%.1ff) ... (%.1ff)] (%.1ff))" % (start, end, end-start,
+                        ms_to_frames(start/sample_rate_src), ms_to_frames(end/sample_rate_src), ms_to_frames((end-start)/sample_rate_src)))
+                out_track = np.append(out_track, in_track_src[start:end])
+                continue
+
             if 'silence' in s.keys():
                 samples_count = frames_to_ms(ms_to_frames(int(s['silence'])) * sample_rate)
+                if verbose:
+                    print("\t\tsilence: %d ms" % (samples_count / sample_rate))
                 out_track = np.append(out_track, np.full(samples_count, 0, dtype=in_track_dtype))
             else:
                 start = int(s['start'] * sample_rate)
