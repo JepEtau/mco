@@ -11,7 +11,7 @@
     * [ ] frame replacement:
         - start/end of shots only: 0->100
 - **A suivre**
-    * [ ] shot replacement
+    * [x] shot replacement
     * [ ] filters
     * [ ] geometry
     * [ ] générique: geometry
@@ -31,7 +31,7 @@
 * [x] video
 * [x] A/V sync
 - **Précedemment**
-    * [ ] shot replacement
+    * [x] shot replacement
     * [ ] filters
     * [ ] geometry
     * [ ] RGB curves
@@ -43,7 +43,7 @@
     * [ ] RGB curves
     * [ ] frame replacement
 - **A suivre**
-    * [ ] shot replacement
+    * [x] shot replacement
     * [ ] filters
     * [ ] geometry
     * [ ] générique: geometry
@@ -55,6 +55,7 @@
     * [ ] RGB curves
     * [ ] frame replacement
 <br/><br/>
+
 
 # Episode 3
 * [ ] shots
@@ -90,9 +91,9 @@
 
 # Episode 4
 * [ ] shots
-* [x] audio
-* [x] video
-* [x] A/V sync
+* [ ] audio
+* [ ] video
+* [ ] A/V sync
 - **Précedemment**
     * [ ] shot replacement
     * [ ] filters

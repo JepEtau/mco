@@ -30,12 +30,12 @@ def extract_audio(db, k_ep_or_g:str, k_ed='', force=False, verbose=False) -> Non
     else:
         k_ep = k_ep_or_g
 
-    if k_ed == '':
-        use_default = True
-        k_ed = db[k_ep_or_g]['target']['audio']['src']['k_ed']
-    else:
-        use_default = False
-        k_ed = db[k_ep_or_g]['target']['audio']['src']['k_ed']
+    # if k_ed == '':
+    #     use_default = True
+    #     k_ed = db[k_ep_or_g]['target']['audio']['src']['k_ed']
+    # else:
+    #     use_default = False
+    k_ed = db[k_ep_or_g]['target']['audio']['src']['k_ed']
 
 
     if verbose:
@@ -55,10 +55,10 @@ def extract_audio(db, k_ep_or_g:str, k_ed='', force=False, verbose=False) -> Non
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
 
-    if use_default:
-        output_filename = "%s_audio_extract.%s" % (k_ep, db['common']['settings']['audio_format'])
-    else:
-        output_filename = "%s_%s_audio_extract.%s" % (k_ep, k_ed, db['common']['settings']['audio_format'])
+    # if use_default:
+    #     output_filename = "%s_audio_extract.%s" % (k_ep, db['common']['settings']['audio_format'])
+    # else:
+    output_filename = "%s_%s_audio_extract.%s" % (k_ep, k_ed, db['common']['settings']['audio_format'])
     output_filepath = os.path.join(output_directory, output_filename)
 
     # Create complex filter
@@ -122,7 +122,7 @@ def generate_audio(db, k_ep:str, force=False, verbose=False):
     print("%s generate audio: %s" % (current_datetime_str(), k_ep))
 
     input_directory = os.path.join(db[k_ep]['target']['path']['cache'], "audio")
-    tmp_filename = "%s_audio_extract.%s" % (k_ep, db['common']['settings']['audio_format'])
+    tmp_filename = "%s_%s_audio_extract.%s" % (k_ep, k_ed, db['common']['settings']['audio_format'])
     tmp_filepath = os.path.join(input_directory, tmp_filename)
     if not os.path.exists(tmp_filepath):
         extract_audio(db, k_ep, k_ed, force=force, verbose=verbose)
@@ -153,7 +153,7 @@ def generate_audio(db, k_ep:str, force=False, verbose=False):
                 print("info: generate_audio: import from other episode")
                 k_ep_src = s['k_ep']
                 input_directory = os.path.join(db[k_ep_src]['target']['path']['cache'], "audio")
-                tmp_filename = "%s_audio_extract.%s" % (k_ep_src, db['common']['settings']['audio_format'])
+                tmp_filename = "%s_%s_audio_extract.%s" % (k_ep_src, k_ed, db['common']['settings']['audio_format'])
                 tmp_filepath = os.path.join(input_directory, tmp_filename)
                 if not os.path.exists(tmp_filepath):
                     extract_audio(db, k_ep_src, k_ed, force=force, verbose=verbose)

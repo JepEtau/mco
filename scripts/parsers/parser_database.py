@@ -133,6 +133,9 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
             dependencies[k] = list()
         dependencies[k] = list(set(dependencies[k] + v))
 
+    print("dependencies:")
+    pprint(dependencies)
+
     # Parse episodes which are required (dependencies)
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in v:

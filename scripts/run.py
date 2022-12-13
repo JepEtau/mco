@@ -130,6 +130,11 @@ def main():
         required=False,
         help="debug: parse only the database")
 
+    parser.add_argument("--regenerate",
+        action="store_true",
+        required=False,
+        help="regenerate video")
+
     arguments = parser.parse_args()
 
     # Edition: force the edition to default
@@ -253,14 +258,14 @@ def main():
             if arguments.afilter == 'extract':
                 extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=k_ed, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
-                generate_audio(g_database, k_part_g, verbose=True, force=arguments.force)
+                generate_audio(g_database, k_part_g, verbose=True, force=arguments.force|arguments.regenerate)
 
         elif arguments.part != '':
             # precedemment, episode, g_asuivre, asuivre, g_reportage, reportage
             if arguments.afilter == 'extract':
                 extract_audio(g_database, k_ep_or_g=k_episode, k_ed=k_ed, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
-                generate_audio(g_database, k_ep=k_episode, verbose=True, force=arguments.force)
+                generate_audio(g_database, k_ep=k_episode, verbose=True, force=arguments.force|arguments.regenerate)
 
         else:
             # All
@@ -273,7 +278,7 @@ def main():
                 for k_part_g in ['g_debut', 'g_fin']:
                     generate_audio(g_database, k_part_g, force=arguments.force)
                 v = True if arguments.force else False
-                generate_audio(g_database, k_ep=k_episode, verbose=v, force=arguments.force)
+                generate_audio(g_database, k_ep=k_episode, verbose=v, force=arguments.force|arguments.regenerate)
 
 
 
@@ -332,7 +337,8 @@ def main():
                 tasks=tasks,
                 force=arguments.force,
                 simulation=arguments.simulate,
-                shot_min=shot_min, shot_max=shot_max)
+                shot_min=shot_min, shot_max=shot_max,
+                do_regenerate=arguments.regenerate)
 
             if shot_min != 0 or shot_max != 999999:
                 do_av_merge = False
@@ -355,13 +361,13 @@ def main():
 
                 # Merge all video and audio tracks
                 for k in ['g_debut', 'g_fin']:
-                    merge_audio_and_video_tracks(g_database, k_ep=k, force=arguments.force)
+                    merge_audio_and_video_tracks(g_database, k_ep=k, force=arguments.force|arguments.regenerate)
 
                 # Merge video and audio stream from all parts (except g_debut and g_fin)
-                merge_audio_and_video_tracks(g_database, k_ep=k_episode, force=arguments.force)
+                merge_audio_and_video_tracks(g_database, k_ep=k_episode, force=arguments.force|arguments.regenerate)
 
                 # Concatenate all parts
-                concatenate_all_clips(g_database, k_episode, force=arguments.force)
+                concatenate_all_clips(g_database, k_episode, force=arguments.force|arguments.regenerate)
 
                 # Add chapters to the video file
                 if k_episode != 'ep00':
