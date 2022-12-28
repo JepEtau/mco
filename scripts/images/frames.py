@@ -100,8 +100,8 @@ def patch_frames_for_stitching(frames, db_combine, do_combine=False):
 
     if do_combine:
         for f_fgd, f_bgd in zip(frames['fgd'], frames['bgd']):
-            if f_fgd['no'] != f_bgd['ref']:
-                sys.exit("error: frame no. differs between bgd and fgd")
+            # if f_fgd['start'] != f_bgd['ref']:
+            #     sys.exit("error: frame no. differs between bgd and fgd")
 
             # Patch filepath/layer for foreground/background
             f_fgd['filepath']['bgd'] = f_bgd['filepath']['bgd']

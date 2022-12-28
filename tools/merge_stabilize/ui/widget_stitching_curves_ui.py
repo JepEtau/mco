@@ -282,9 +282,7 @@ class Ui_widget_stitching_curves(object):
         self.pushButton_save_curves_modifications.setObjectName(u"pushButton_save_curves_modifications")
         sizePolicy3.setHeightForWidth(self.pushButton_save_curves_modifications.sizePolicy().hasHeightForWidth())
         self.pushButton_save_curves_modifications.setSizePolicy(sizePolicy3)
-        icon6 = QIcon()
-        icon6.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_save_curves_modifications.setIcon(icon6)
+        self.pushButton_save_curves_modifications.setIcon(icon1)
         self.pushButton_save_curves_modifications.setFlat(True)
 
         self.verticalLayout_3.addWidget(self.pushButton_save_curves_modifications)
@@ -321,7 +319,7 @@ class Ui_widget_stitching_curves(object):
         self.pushButton_save_curves_as.setObjectName(u"pushButton_save_curves_as")
         sizePolicy3.setHeightForWidth(self.pushButton_save_curves_as.sizePolicy().hasHeightForWidth())
         self.pushButton_save_curves_as.setSizePolicy(sizePolicy3)
-        self.pushButton_save_curves_as.setIcon(icon6)
+        self.pushButton_save_curves_as.setIcon(icon1)
         self.pushButton_save_curves_as.setFlat(True)
 
         self.horizontalLayout_4.addWidget(self.pushButton_save_curves_as)

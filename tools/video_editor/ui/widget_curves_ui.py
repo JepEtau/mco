@@ -210,7 +210,7 @@ class Ui_widget_curves(object):
         self.layout_in_out.setSizeConstraint(QLayout.SetDefaultConstraint)
         self.spacer_in_out = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
-        self.layout_in_out.addItem(self.spacer_in_out, 0, 2, 1, 1)
+        self.layout_in_out.addItem(self.spacer_in_out, 0, 4, 1, 1)
 
         self.lineEdit_rgb_values = QLineEdit(self.frame)
         self.lineEdit_rgb_values.setObjectName(u"lineEdit_rgb_values")
@@ -225,6 +225,16 @@ class Ui_widget_curves(object):
 
         self.layout_in_out.addWidget(self.lineEdit_rgb_values, 0, 1, 1, 1)
 
+        self.lineEdit_rgb_values_new = QLineEdit(self.frame)
+        self.lineEdit_rgb_values_new.setObjectName(u"lineEdit_rgb_values_new")
+        sizePolicy3.setHeightForWidth(self.lineEdit_rgb_values_new.sizePolicy().hasHeightForWidth())
+        self.lineEdit_rgb_values_new.setSizePolicy(sizePolicy3)
+        self.lineEdit_rgb_values_new.setFrame(False)
+        self.lineEdit_rgb_values_new.setAlignment(Qt.AlignCenter)
+        self.lineEdit_rgb_values_new.setReadOnly(True)
+
+        self.layout_in_out.addWidget(self.lineEdit_rgb_values_new, 0, 3, 1, 1)
+
         self.label_in = QLabel(self.frame)
         self.label_in.setObjectName(u"label_in")
         sizePolicy1.setHeightForWidth(self.label_in.sizePolicy().hasHeightForWidth())
@@ -232,6 +242,11 @@ class Ui_widget_curves(object):
         self.label_in.setAlignment(Qt.AlignCenter)
 
         self.layout_in_out.addWidget(self.label_in, 0, 0, 1, 1)
+
+        self.label = QLabel(self.frame)
+        self.label.setObjectName(u"label")
+
+        self.layout_in_out.addWidget(self.label, 0, 2, 1, 1)
 
 
         self.verticalLayout.addLayout(self.layout_in_out)
@@ -271,7 +286,9 @@ class Ui_widget_curves(object):
         self.pushButton_reset_current_channel.setText(QCoreApplication.translate("widget_curves", u"channel", None))
         self.pushButton_reset_all_channels.setText(QCoreApplication.translate("widget_curves", u"all", None))
         self.lineEdit_rgb_values.setText(QCoreApplication.translate("widget_curves", u"(255, 255, 255)", None))
+        self.lineEdit_rgb_values_new.setText(QCoreApplication.translate("widget_curves", u"(255, 255, 255)", None))
         self.label_in.setText(QCoreApplication.translate("widget_curves", u"(R, G, B):", None))
+        self.label.setText(QCoreApplication.translate("widget_curves", u" --> ", None))
         pass
     # retranslateUi
 

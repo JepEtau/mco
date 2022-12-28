@@ -5,6 +5,7 @@ sys.path.append('../scripts')
 import cv2
 import gc
 import numpy as np
+import os
 import time
 
 from pprint import pprint
@@ -23,7 +24,12 @@ from PySide6.QtGui import (
 
 from utils.common import FPS
 
-from common.window_common import Window_common
+from common.window_common import (
+    Window_common,
+    PAINTER_MARGIN_LEFT,
+    PAINTER_MARGIN_TOP,
+)
+
 from common.widget_controls import Widget_controls
 
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
@@ -125,20 +131,6 @@ class Window_main(Window_common):
         self.event_show_fullscreen()
 
 
-
-    def event_refresh_image(self):
-        self.repaint()
-
-
-    def event_stitching_curves_channel_selected(self):
-        # todo: flush current cache image
-        print("event_stitching_curves_channel_selected")
-        self.repaint()
-
-
-
-
-
     def flush_image(self):
         log.info("flush image")
         del self.image
@@ -155,6 +147,16 @@ class Window_main(Window_common):
             log.error("error: flush while repainting")
         self.is_repainting = False
 
+
+
+    def event_refresh_image(self):
+        self.repaint()
+
+
+    def event_stitching_curves_channel_selected(self):
+        # todo: flush current cache image
+        print("event_stitching_curves_channel_selected")
+        self.repaint()
 
 
     def event_cache_is_ready(self):
@@ -189,8 +191,8 @@ class Window_main(Window_common):
 
         # TODO: add pushbuttons for curves/replace
         preview_options.update({
-            'replace': {'is_enabled': False},
-            'curves': {'is_enabled': False},
+            # 'replace': {'is_enabled': False},
+            # 'curves': {'is_enabled': False},
         })
         pprint(preview_options)
         self.signal_preview_options_changed.emit(preview_options)
@@ -198,33 +200,68 @@ class Window_main(Window_common):
 
 
 
-    def event_preview_options_changed(self):
-        log.info("change preview: editor: %s" % (self.current_editor))
-        print("\nchange preview: editor: %s" % (self.current_editor))
-        preview_options = {
-            'stitching': self.widget_stitching.get_preview_options(),
-            'stitching_curves': self.widget_stitching_curves.get_preview_options(),
-            'stabilize': self.widget_stabilize.get_preview_options(),
-            'geometry': self.widget_geometry.get_preview_options(),
-        }
-
-        self.signal_preview_options_changed.emit(preview_options)
+    def display_frame(self, frame: dict):
+        if frame is None or not os.path.exists(frame['filepath']):
+            self.flush_image()
+        else:
+            if self.image is not None:
+                del self.image
+                self.image = None
 
 
-    def event_crop_enabled(self, side:str):
-        self.show_side = side
-        if not self.timer.isActive() and self.current_frame_index!= -1:
-            self.event_refresh_frame()
-        # if side == 'top':
-            # change view to see the upper part of the image when the screen size is < image size
-        # elif side == 'bottom':
-            # change view to see the lower part of the image when the screen size is < image size
+            # Get preview options
+            options = self.model.get_preview_options()
+            if options is None:
+                sys.exit("preview options are not set!")
+
+
+            # Set an internal image object
+            self.image = {
+                'cache_fgd': frame['cache_fgd'],
+                'cache_bgd': frame['cache_bgd'],
+                'cache': frame['cache'],
+
+                'stabilize': frame['stabilize'],
+                # 'stitching': frame['stitching'],
+                # 'shot_stitching': frame['shot_stitching'],
+
+                'geometry': frame['geometry'],
+                'curves': {
+                    'lut': None
+                },
+                'preview_options': options,
+            }
+
+
+            # Update info in the other widgets
+            for e, w in self.widgets.items():
+                w.refresh_values(frame)
+
+            if frame['reload_parameters']:
+                # TODO: replace by values provided in frame
+                parameters = self.model.get_current_shot_parameters(['stitching', 'stabilize'])
+                if parameters is not None:
+                    self.widget_stitching_curves.load_curves(parameters['stitching']['curves'])
+                    self.widget_stabilize.set_parameters(parameters['stabilize'])
+                    self.widget_stitching.set_parameters(parameters['stitching']['parameters'])
+                    self.widget_stitching.set_crop(parameters['stitching']['fgd_crop'])
+
+        self.repaint()
 
 
 
     def wheelEvent(self, event):
-        # print("window_main: wheel event, forward to widget_control")
-        self.widget_controls.wheelEvent(event)
+        # if self.current_editor == 'geometry':
+        #     is_accepted = self.widget_geometry.wheelEvent(event)
+        #     if is_accepted:
+        #         event.accept()
+        #         return True
+
+        if self.widget_controls.wheel_event(event):
+            event.accept()
+            return True
+
+        return super().wheelEvent(event)
 
 
 
@@ -270,92 +307,8 @@ class Window_main(Window_common):
 
 
 
-
-
-
-    def display_frame(self, frame: dict):
-        if frame is None or not os.path.exists(frame['filepath']):
-            self.flush_image()
-        else:
-            if self.image is not None:
-                del self.image
-                self.image = None
-
-
-            # Get preview options
-            options = self.model.get_preview_options()
-            if options is None:
-                sys.exit("preview options are not set!")
-
-
-            # Foreground image
-            if self.image is not None:
-                del self.image
-                self.image = None
-
-            self.image = {
-                # position and dimension
-                'x': 0,
-                'y': 0,
-                'w': 0,
-                'h': 0,
-                # geometry: crop and resize
-                'geometry': frame['geometry'],
-                'curves': {
-                    'lut': None
-                },
-                # 'stitching': frame['stitching'],
-                # 'shot_stitching': frame['shot_stitching'],
-                'stabilize': frame['stabilize'],
-            }
-
-            if frame['curves'] is not None and self.do_display_rgb_image:
-                self.image['curves']['lut'] = frame['curves']['lut']
-
-
-            # Background image
-            if self.image_bgd is not None:
-                del self.image_bgd
-                self.image_bgd = None
-            self.image_bgd = {
-                # position and dimension
-                'x': 0,
-                'y': 0,
-                'w': 0,
-                'h': 0,
-                'curves': {
-                    'lut': None
-                },
-            }
-
-            # self.image['img'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
-            self.image['cache_fgd'] = frame['cache_fgd']
-            if frame['cache'] is not None:
-                self.image['cache'] = frame['cache']
-            else:
-                # self.image_bgd['img_bgd'] = cv2.imread(frame['filepath_bgd'], cv2.IMREAD_COLOR)
-                self.image['cache'] = None
-
-            # Update info in the other widgets
-            # for e, w in self.widgets.items():
-            #     w.refresh_values(frame)
-
-            if frame['reload_parameters']:
-                # TODO: replace by values provided in frame
-                parameters = self.model.get_current_shot_parameters(['stitching', 'stabilize'])
-                if parameters is not None:
-                    self.widget_stitching_curves.load_curves(parameters['stitching']['curves'])
-                    self.widget_stabilize.set_parameters(parameters['stabilize'])
-                    self.widget_stitching.set_parameters(parameters['stitching']['parameters'])
-                    self.widget_stitching.set_crop(parameters['stitching']['fgd_crop'])
-
-            self.is_repainting = False
-        self.repaint()
-
-
-
     def paintEvent(self, event):
-        print("paint")
+        print("paintEvent")
         # log.info("repainting")
         if self.image is None:
             log.info("no image loaded")

@@ -531,9 +531,17 @@ def get_or_create_src_shot(db, frame_no:int, k_ed, k_ep, k_part)-> dict:
         k_ed_src = db[k_part]['target']['video']['src']['k_ed']
         k_ep_src = db[k_part]['target']['video']['src']['k_ep']
     else:
-        try: k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
-        except: k_ed_src = db['editions']['k_ed_ref']
-        k_ep_src = db[k_ep]['target']['video']['src']['k_ep']
+        try:
+            k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
+        except:
+            # Use the ref edition when not defined
+            k_ed_src = db['editions']['k_ed_ref']
+        print("get_or_create_src_shot k_ed:k_ep:k_part = %s:%s:%s" % (k_ed, k_ep, k_part))
+        try:
+            k_ep_src = db[k_ep]['target']['video']['src']['k_ep']
+        except:
+            k_ep_src = k_ep
+        print("get_or_create_src_shot k_ed_src:k_ep_src=%s:%s" % (k_ed_src, k_ep_src))
 
 
     # Get the SRC shot defined in TARGET

@@ -135,6 +135,11 @@ def main():
         required=False,
         help="regenerate video")
 
+    parser.add_argument("--bgd",
+        action="store_true",
+        required=False,
+        help="process bgd")
+
     arguments = parser.parse_args()
 
     # Edition: force the edition to default
@@ -338,7 +343,8 @@ def main():
                 force=arguments.force,
                 simulation=arguments.simulate,
                 shot_min=shot_min, shot_max=shot_max,
-                do_regenerate=arguments.regenerate)
+                do_regenerate=arguments.regenerate,
+                bgd=arguments.bgd)
 
             if shot_min != 0 or shot_max != 999999:
                 do_av_merge = False

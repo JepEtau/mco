@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 import signal
 import sys
-# import pyopencl as cl
 import cv2
 
 from PySide6.QtWidgets import QApplication
@@ -25,9 +24,9 @@ def main():
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    print(cv2.ocl.haveOpenCL() )
-    cv2.ocl.setUseOpenCL(True)
-    print(cv2.ocl.haveOpenCL() )
+    # print(cv2.ocl.haveOpenCL() )
+    # cv2.ocl.setUseOpenCL(True)
+    # print(cv2.ocl.haveOpenCL() )
 
     # Get platforms, both CPU and GPU
     # plat = cl.get_platforms()

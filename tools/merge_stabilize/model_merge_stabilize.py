@@ -1265,372 +1265,373 @@ class Model_merge_stabilize(Model_common):
 
 def generate_single_image(frame:dict, preview_options:dict):
     print("generate_single_image")
-    now = time.time()
-    img = None
-    print_time = False
+    return 0, None
+#     now = time.time()
+#     img = None
+#     print_time = False
 
-    if print_time:
-        now = time.time()
-        print("process_single_frame")
+#     if print_time:
+#         now = time.time()
+#         print("process_single_frame")
 
 
-    # Foreground image (shall be denoised)
-    image_fgd = frame['cache_fgd']
-    if image_fgd is None:
-        # return (frame['index'], cv2.imread(frame['filepath'], cv2.IMREAD_COLOR))
-        sys.exit("cache is not ready")
+#     # Foreground image (shall be denoised)
+#     image_fgd = frame['cache_fgd']
+#     if image_fgd is None:
+#         # return (frame['index'], cv2.imread(frame['filepath'], cv2.IMREAD_COLOR))
+#         sys.exit("cache is not ready")
 
 
-    if preview_options['stitching']['roi_edition']:
-        # ROI for stitching: use the original foreground image
-        return (frame['index'], image_fgd)
+#     if preview_options['stitching']['roi_edition']:
+#         # ROI for stitching: use the original foreground image
+#         return (frame['index'], image_fgd)
 
 
-    if preview_options['stitching']['is_enabled']:
-        if frame['cache_bgd'] is not None:
-            img_bgd = frame['cache_bgd']
-        else:
-            filepath_bgd = frame['filepath_bgd']
-            img_bgd = cv2.imread(filepath_bgd, cv2.IMREAD_COLOR)
+#     if preview_options['stitching']['is_enabled']:
+#         if frame['cache_bgd'] is not None:
+#             img_bgd = frame['cache_bgd']
+#         else:
+#             filepath_bgd = frame['filepath_bgd']
+#             img_bgd = cv2.imread(filepath_bgd, cv2.IMREAD_COLOR)
 
-        # fgd dimensions
-        height_fgd, width_fgd, c = image_fgd.shape
+#         # fgd dimensions
+#         height_fgd, width_fgd, c = image_fgd.shape
 
-        if preview_options['stitching_curves']['is_enabled']:
-            # Apply RGB curves to get a similar histogram between bgd and fgd
-            lut = frame['stitching']['curves']['lut']
-            b, g, r = cv2.split(img_bgd_modified)
+#         if preview_options['stitching_curves']['is_enabled']:
+#             # Apply RGB curves to get a similar histogram between bgd and fgd
+#             lut = frame['stitching']['curves']['lut']
+#             b, g, r = cv2.split(img_bgd_modified)
 
-            shape = r.shape
-            img_bgd_r = lut['r'][r.flatten()].reshape(shape).astype(np.uint8)
+#             shape = r.shape
+#             img_bgd_r = lut['r'][r.flatten()].reshape(shape).astype(np.uint8)
 
-            shape = g.shape
-            img_bgd_g = lut['g'][g.flatten()].reshape(shape).astype(np.uint8)
+#             shape = g.shape
+#             img_bgd_g = lut['g'][g.flatten()].reshape(shape).astype(np.uint8)
 
-            shape = b.shape
-            img_bgd_b = lut['b'][b.flatten()].reshape(shape).astype(np.uint8)
+#             shape = b.shape
+#             img_bgd_b = lut['b'][b.flatten()].reshape(shape).astype(np.uint8)
+
+#             img_bgd_bgr = cv2.merge((img_bgd_b, img_bgd_g, img_bgd_r))
+#         else:
+#             # Do not apply stitching curves
+#             img_bgd_bgr = image_fgd
+
+
+
+#         if frame['stitching']['m'] is not None:
+#             # Use the matrix to modify the background image
+#             img_bgd_modified = cv2.warpPerspective(
+#                 img_bgd,
+#                 frame['stitching']['m'],
+#                 (width_fgd+STICTHING_FGD_PAD[2]+STICTHING_FGD_PAD[3], height_fgd+STICTHING_FGD_PAD[0]+STICTHING_FGD_PAD[1]),
+#                 cv2.INTER_LANCZOS4,
+#                 borderMode=cv2.BORDER_CONSTANT, borderValue=(128,128,128))
+#         else:
+#             # Cannot modify the background
+#             img_bgd_modified = cv2.copyMakeBorder(img_bgd,
+#                 top=STICTHING_FGD_PAD[0], bottom=STICTHING_FGD_PAD[1],
+#                 left=STICTHING_FGD_PAD[2], right=STICTHING_FGD_PAD[3],
+#                 borderType=cv2.BORDER_CONSTANT, value=(0,0,0))
+
+
+
+
+#         if preview_options['stitching']['crop_edition']:
+#             # Crop the foreground image
+#             image_fgd_cropped = image_fgd[y0:y1, x0:x1]
+#             image_fgd_with_borders = cv2.copyMakeBorder(image_fgd_cropped,
+#                 top=pad_h_t, bottom=STICTHING_FGD_PAD[1],
+#                 left=pad_w_l, right=STICTHING_FGD_PAD[3],
+#                 borderType=cv2.BORDER_CONSTANT, value=(255,128,128))
+
 
-            img_bgd_bgr = cv2.merge((img_bgd_b, img_bgd_g, img_bgd_r))
-        else:
-            # Do not apply stitching curves
-            img_bgd_bgr = image_fgd
-
-
-
-        if frame['stitching']['m'] is not None:
-            # Use the matrix to modify the background image
-            img_bgd_modified = cv2.warpPerspective(
-                img_bgd,
-                frame['stitching']['m'],
-                (width_fgd+STICTHING_FGD_PAD[2]+STICTHING_FGD_PAD[3], height_fgd+STICTHING_FGD_PAD[0]+STICTHING_FGD_PAD[1]),
-                cv2.INTER_LANCZOS4,
-                borderMode=cv2.BORDER_CONSTANT, borderValue=(128,128,128))
-        else:
-            # Cannot modify the background
-            img_bgd_modified = cv2.copyMakeBorder(img_bgd,
-                top=STICTHING_FGD_PAD[0], bottom=STICTHING_FGD_PAD[1],
-                left=STICTHING_FGD_PAD[2], right=STICTHING_FGD_PAD[3],
-                borderType=cv2.BORDER_CONSTANT, value=(0,0,0))
-
-
-
-
-        if preview_options['stitching']['crop_edition']:
-            # Crop the foreground image
-            image_fgd_cropped = image_fgd[y0:y1, x0:x1]
-            image_fgd_with_borders = cv2.copyMakeBorder(image_fgd_cropped,
-                top=pad_h_t, bottom=STICTHING_FGD_PAD[1],
-                left=pad_w_l, right=STICTHING_FGD_PAD[3],
-                borderType=cv2.BORDER_CONSTANT, value=(255,128,128))
-
 
 
+#             # crop used for stitching
+#             crop_top, crop_bottom, crop_left, crop_right = frame['stitching']['geometry']['fgd']
+#             y0 = crop_top
+#             y1 = height_fgd - crop_bottom
+#             x0 = crop_left
+#             x1 = width_fgd - crop_right
+#             pad_h_t = STICTHING_FGD_PAD[0]
+#             pad_w_l = STICTHING_FGD_PAD[2]
 
-            # crop used for stitching
-            crop_top, crop_bottom, crop_left, crop_right = frame['stitching']['geometry']['fgd']
-            y0 = crop_top
-            y1 = height_fgd - crop_bottom
-            x0 = crop_left
-            x1 = width_fgd - crop_right
-            pad_h_t = STICTHING_FGD_PAD[0]
-            pad_w_l = STICTHING_FGD_PAD[2]
 
 
 
+#             return (frame['index'], image_fgd_with_borders, None)
 
-            return (frame['index'], image_fgd_with_borders, None)
 
 
+#     # Apply stabilization if enabled before other modifications
 
-    # Apply stabilization if enabled before other modifications
-
-    #   1.1. Add padding to the initial image, even if no stabilization
-    width_stabilized = width_fgd + pad_w_l + pad_w_r
-    height_stabilized = height_fgd + pad_h_t + pad_h_b
-    image_fgd_with_borders = cv2.copyMakeBorder(image_fgd,
-        pad_h_t, pad_h_b,
-        pad_w_l, pad_w_r,
-        cv2.BORDER_CONSTANT,
-        value=[0, 0, 0])
-
-    if preview_options['stabilize']['is_enabled']:
-        height_fgd, width_fgd, c = image_fgd.shape
-
-        # 1. Generate the translated image, add padding
-        pad_w_l = 40
-        pad_w_r = 20
-        pad_h_t = 80
-        pad_h_b = 40
-
-
-        if frame['stabilize']['dx_dy'] is not None:
-            #   1.2. Generate a stabilized image
-            if False:
-                # Slower and interpolate pixels
-                transformation_matrix = np.float32([
-                    [1, 0, 0],
-                    [0, 1, frame['stabilize']['dx_dy'][1]]
-                ])
-                img_stabilized = cv2.warpAffine(
-                    image_fgd_with_borders,
-                    transformation_matrix,
-                    (width_stabilized, height_stabilized),
-                    flags=cv2.INTER_LANCZOS4,
-                    borderMode=cv2.BORDER_CONSTANT,
-                    borderValue=(0,0,0))
-            else:
-                # Faster and do not interpolate pixels
-                if frame['stabilize']['dx_dy'][1] >= 1:
-                    # Add padding
-                    dy = abs(int(frame['stabilize']['dx_dy'][1]))
-                    img_fgd_cropped = image_fgd_with_borders[
-                        0:height_stabilized - dy,
-                        0:width_stabilized
-                    ]
-                    img_stabilized = cv2.copyMakeBorder(img_fgd_cropped,
-                        top=dy, bottom=0,
-                        left=0, right=0,
-                        borderType=cv2.BORDER_CONSTANT,
-                        value=[0, 0, 0])
-
-                elif frame['stabilize']['dx_dy'][1] <= -1:
-                    dy = abs(int(frame['stabilize']['dx_dy'][1]))
-                    # Remove
-                    img_fgd_cropped = image_fgd_with_borders[
-                        dy:height_stabilized,
-                        0:width_stabilized
-                    ]
-                    img_stabilized = cv2.copyMakeBorder(img_fgd_cropped,
-                        top = 0, bottom=dy,
-                        left=0, right=0,
-                        borderType=cv2.BORDER_CONSTANT,
-                        value=[0, 0, 0])
-                else:
-                    img_stabilized = image_fgd_with_borders
-
-
-        if preview_options['curves']['is_enabled']:
-            sys.exit("TODO: generate_single_image: apply curves!!!")
-
-
-
-
-
-        if preview_options['geometry']['is_enabled']:
-            # TODO: gloups
-            # 'crop_edition'
-            # 'crop_preview'
-            # 'resize_edition'
-            # 'resize_preview'
-
-
-
-    if preview_options == 'stitching':
-
-        # print("process_single_frame: stitching")
-
-
-
-
-        # Apply stitching
-        do_stitching = True
-        if do_stitching:
-            img_bgd_modified = cv2.warpPerspective(
-                img_bgd,
-                frame['stitching']['m'],
-                (width_fgd+STICTHING_FGD_PAD[2]+STICTHING_FGD_PAD[3], height_fgd+STICTHING_FGD_PAD[0]+STICTHING_FGD_PAD[1]),
-                cv2.INTER_LANCZOS4,
-                borderMode=cv2.BORDER_CONSTANT, borderValue=(128,128,128))
-        else:
-            # no stitching
-            img_bgd_modified = cv2.copyMakeBorder(img_bgd,
-                top=STICTHING_FGD_PAD[0], bottom=STICTHING_FGD_PAD[1],
-                left=STICTHING_FGD_PAD[2], right=STICTHING_FGD_PAD[3],
-                borderType=cv2.BORDER_CONSTANT, value=(0,0,0))
-        if print_time:
-            print("\tstitching: %.1f" % (1000* (time.time() - now)))
-            now = time.time()
-
-
-            img_bgd_bgr = img_bgd_modified
-        if print_time:
-            print("\tRGB curves on fgd: %.1f" % (1000* (time.time() - now)))
-            now = time.time()
-
-        # extract ROI for stitching
-        img_fgd_roi = image_fgd[y0:y1, x0:x1]
-        img_bgd_roi = img_bgd_bgr[y0+pad_h_t:y1+pad_h_t, x0+pad_w_l:x1+pad_w_l]
-
-
-        # Calculate histogram for the current channel only (optimization)
-        histogram = None
-        do_calculate_histograms = True
-        if do_calculate_histograms:
-            if current_channel == 'r':
-                hist_roi_target = cv2.calcHist([img_fgd_roi], [2], None, [256], ranges=[0, 256])
-                hist_roi_modified = cv2.calcHist([img_bgd_roi], [2], None, [256], ranges=[0, 256])
-            elif current_channel == 'g':
-                hist_roi_target = cv2.calcHist([img_fgd_roi], [1], None, [256], ranges=[0, 256])
-                hist_roi_modified = cv2.calcHist([img_bgd_roi], [1], None, [256], ranges=[0, 256])
-            elif current_channel == 'b':
-                hist_roi_target = cv2.calcHist([img_fgd_roi], [0], None, [256], ranges=[0, 256])
-                hist_roi_modified = cv2.calcHist([img_bgd_roi], [0], None, [256], ranges=[0, 256])
-
-            if current_channel is not None:
-                histogram = {
-                    current_channel: {
-                        'target': hist_roi_target,
-                        'modified': hist_roi_modified,
-                    }
-                }
-        if print_time:
-            print("\tcalculate hist: %.1f" % (1000* (time.time() - now)))
-            now = time.time()
-
-        # Merge images
-        do_blend = True
-        if do_blend:
-            # Blend a common part
-            img_blended = cv2.addWeighted(src1=img_bgd_roi, alpha=0.5, src2=img_fgd_roi, beta=0.5, gamma=0)
-            img_bgd_bgr[y0+pad_h_t:y1+pad_h_t, x0+pad_w_l:x1+pad_w_l] = img_blended
-            blend_width = 2
-            img_bgd_bgr[y0+pad_h_t+blend_width:y1+pad_h_t-blend_width, x0+pad_w_l+blend_width:x1+pad_w_l-blend_width] = image_fgd[y0+blend_width:y1-blend_width, x0+blend_width:x1-blend_width]
-            img_bgd_new = img_bgd_bgr
-        else:
-            # Replace sub-part
-            img_bgd_bgr[y0+pad_h_t:y1+pad_h_t, x0+pad_w_l:x1+pad_w_l] = img_fgd_roi
-            img_bgd_new = img_bgd_bgr
-        if print_time:
-            print("\tmerge images: %.1f" % (1000* (time.time() - now)))
-            now = time.time()
-
-        # Stabilize
-        img_bgd_stabilized = stabilize_image(frame, img_bgd_new)
-        if print_time:
-            print("\tstabilize: %.1f" % (1000* (time.time() - now)))
-            now = time.time()
-
-        # Crop the image
-        # !!! Warning: this is not the final crop wich is define in the shot
-        frame['stitching']['geometry']['shot'] = [30,5,10,10]
-        crop_top, crop_bottom, crop_left, crop_right = frame['stitching']['geometry']['shot']
-        img_bgd_stabilized_cropped = np.ascontiguousarray(img_bgd_stabilized[
-            crop_top : img_bgd_stabilized.shape[0] - crop_bottom,
-            crop_left: img_bgd_stabilized.shape[1] - crop_right
-        ])
-
-        if print_time:
-            print("\tcrop: %.1f" % (1000* (time.time() - now)))
-            now = time.time()
-
-        return (frame['index'], img_bgd_stabilized_cropped, histogram)
-
-
-
-    if preview_options in ['stabilize', 'fgd_cropped']:
-
-
-        if do_stabilize:
-
-        else:
-            img_stabilized = image_fgd_with_borders
-
-        # cv2.imwrite("test.png", img_stabilized)
-        if preview_options == 'stabilize':
-            if print_time:
-                print("process_single_frame: stabilized: %.2f" % (1000*(time.time() - now)))
-            return (frame['index'], img_stabilized, None)
-
-    if preview_options == 'fgd_cropped':
-        # fgd_crop_list = frame['shot_stitching']['fgd_crop']
-        # fgd_crop_x0 = fgd_crop_list[0]
-        # fgd_crop_y0 = fgd_crop_list[1]
-        # fgd_crop_w = width_fgd - (fgd_crop_list[2] + fgd_crop_x0)
-        # fgd_crop_h = height_fgd - (fgd_crop_list[3] + fgd_crop_y0)
-
-        # depends on each shot (defined by user -> use UI for this)
-        crop_left = 25
-        crop_right = 20
-        crop_top = 15
-        crop_bottom = 10
-
-        dy_max = frame['stabilize']['parameters']['delta_interval'][3]
-
-        # Position and dimension for foreground ROI and cropped
-        # with dx stabilization:
-        # x0 = pad_w_l + dx_max + crop_left
-        # x1 = width_fgd + pad_w_l + dx_max - crop_right
-
-        # w/out dx stabilization:
-        x0 = pad_w_l + crop_left
-        x1 = width_fgd + pad_w_l - crop_right
-
-        dy = 0
-        if frame['stabilize']['dx_dy'] is not None:
-            dy = frame['stabilize']['dx_dy'][1]
-            if abs(dy) < dy_max:
-                dy = int(dy_max)
-            #     print("use dy rather than dy_min")
-            #     y0 = pad_h_t + int(dy) + crop_top
-            #     y1 = height_fgd + pad_h_t + int(dy) - crop_bottom
-            # else:
-            #     y0 = pad_h_t + int(dy_max) + crop_top
-            #     y1 = height_fgd + pad_h_t + int(dy_max) - crop_bottom
-
-        # else:
-            # print("no stabilization for %d" % (frame_no))
-        y0 = pad_h_t + int(dy) + crop_top
-        y1 = pad_h_t + height_fgd + int(dy) - crop_top - crop_bottom
-
-        # print("dimensions: (x0, x1)(y0, y1) = (%d;%d)(%d;%d)" % (x0, x1, y0, y1))
-
-        img_fgd_cropped = img_stabilized[
-            y0:y1,
-            x0:x1
-        ]
-
-        #   2.2. Add padding to the stabilized, cropped image
-        img_fgd_4_combine = cv2.copyMakeBorder(img_fgd_cropped,
-            top=y0, bottom=height_stabilized - y1,
-            left=x0, right=width_stabilized - x1,
-            borderType=cv2.BORDER_CONSTANT,
-            value=[0, 0, 0])
-
-        # cv2.imwrite("test2.png", img_fgd_4_combine)
-        # img_fgd_4_combine = np.ascontiguousarray(img_fgd_4_combine, dtype=np.uint8)
-        # print(img_fgd_4_combine.flags['C_CONTIGUOUS'])
-
-        # print(1000*(time.time() - now))
-        return (frame['index'], img_fgd_4_combine, hist)
-
-
-    # elif preview_options == 'stitching':
-    #     image_bgd = cv2.imread(frame['filepath_bgd'], cv2.IMREAD_COLOR)
-
-    if preview_options == 'stabilize':
-        img = img_stabilized
-
-    return (frame['index'], img)
+#     #   1.1. Add padding to the initial image, even if no stabilization
+#     width_stabilized = width_fgd + pad_w_l + pad_w_r
+#     height_stabilized = height_fgd + pad_h_t + pad_h_b
+#     image_fgd_with_borders = cv2.copyMakeBorder(image_fgd,
+#         pad_h_t, pad_h_b,
+#         pad_w_l, pad_w_r,
+#         cv2.BORDER_CONSTANT,
+#         value=[0, 0, 0])
+
+#     if preview_options['stabilize']['is_enabled']:
+#         height_fgd, width_fgd, c = image_fgd.shape
+
+#         # 1. Generate the translated image, add padding
+#         pad_w_l = 40
+#         pad_w_r = 20
+#         pad_h_t = 80
+#         pad_h_b = 40
+
+
+#         if frame['stabilize']['dx_dy'] is not None:
+#             #   1.2. Generate a stabilized image
+#             if False:
+#                 # Slower and interpolate pixels
+#                 transformation_matrix = np.float32([
+#                     [1, 0, 0],
+#                     [0, 1, frame['stabilize']['dx_dy'][1]]
+#                 ])
+#                 img_stabilized = cv2.warpAffine(
+#                     image_fgd_with_borders,
+#                     transformation_matrix,
+#                     (width_stabilized, height_stabilized),
+#                     flags=cv2.INTER_LANCZOS4,
+#                     borderMode=cv2.BORDER_CONSTANT,
+#                     borderValue=(0,0,0))
+#             else:
+#                 # Faster and do not interpolate pixels
+#                 if frame['stabilize']['dx_dy'][1] >= 1:
+#                     # Add padding
+#                     dy = abs(int(frame['stabilize']['dx_dy'][1]))
+#                     img_fgd_cropped = image_fgd_with_borders[
+#                         0:height_stabilized - dy,
+#                         0:width_stabilized
+#                     ]
+#                     img_stabilized = cv2.copyMakeBorder(img_fgd_cropped,
+#                         top=dy, bottom=0,
+#                         left=0, right=0,
+#                         borderType=cv2.BORDER_CONSTANT,
+#                         value=[0, 0, 0])
+
+#                 elif frame['stabilize']['dx_dy'][1] <= -1:
+#                     dy = abs(int(frame['stabilize']['dx_dy'][1]))
+#                     # Remove
+#                     img_fgd_cropped = image_fgd_with_borders[
+#                         dy:height_stabilized,
+#                         0:width_stabilized
+#                     ]
+#                     img_stabilized = cv2.copyMakeBorder(img_fgd_cropped,
+#                         top = 0, bottom=dy,
+#                         left=0, right=0,
+#                         borderType=cv2.BORDER_CONSTANT,
+#                         value=[0, 0, 0])
+#                 else:
+#                     img_stabilized = image_fgd_with_borders
+
+
+#         if preview_options['curves']['is_enabled']:
+#             sys.exit("TODO: generate_single_image: apply curves!!!")
+
+
+
+
+
+#         # if preview_options['geometry']['is_enabled']:
+#             # TODO: gloups
+#             # 'crop_edition'
+#             # 'crop_preview'
+#             # 'resize_edition'
+#             # 'resize_preview'
+
+
+
+#     if preview_options == 'stitching':
+
+#         # print("process_single_frame: stitching")
+
+
+
+
+#         # Apply stitching
+#         do_stitching = True
+#         if do_stitching:
+#             img_bgd_modified = cv2.warpPerspective(
+#                 img_bgd,
+#                 frame['stitching']['m'],
+#                 (width_fgd+STICTHING_FGD_PAD[2]+STICTHING_FGD_PAD[3], height_fgd+STICTHING_FGD_PAD[0]+STICTHING_FGD_PAD[1]),
+#                 cv2.INTER_LANCZOS4,
+#                 borderMode=cv2.BORDER_CONSTANT, borderValue=(128,128,128))
+#         else:
+#             # no stitching
+#             img_bgd_modified = cv2.copyMakeBorder(img_bgd,
+#                 top=STICTHING_FGD_PAD[0], bottom=STICTHING_FGD_PAD[1],
+#                 left=STICTHING_FGD_PAD[2], right=STICTHING_FGD_PAD[3],
+#                 borderType=cv2.BORDER_CONSTANT, value=(0,0,0))
+#         if print_time:
+#             print("\tstitching: %.1f" % (1000* (time.time() - now)))
+#             now = time.time()
+
+
+#             img_bgd_bgr = img_bgd_modified
+#         if print_time:
+#             print("\tRGB curves on fgd: %.1f" % (1000* (time.time() - now)))
+#             now = time.time()
+
+#         # extract ROI for stitching
+#         img_fgd_roi = image_fgd[y0:y1, x0:x1]
+#         img_bgd_roi = img_bgd_bgr[y0+pad_h_t:y1+pad_h_t, x0+pad_w_l:x1+pad_w_l]
+
+
+#         # Calculate histogram for the current channel only (optimization)
+#         histogram = None
+#         do_calculate_histograms = True
+#         if do_calculate_histograms:
+#             if current_channel == 'r':
+#                 hist_roi_target = cv2.calcHist([img_fgd_roi], [2], None, [256], ranges=[0, 256])
+#                 hist_roi_modified = cv2.calcHist([img_bgd_roi], [2], None, [256], ranges=[0, 256])
+#             elif current_channel == 'g':
+#                 hist_roi_target = cv2.calcHist([img_fgd_roi], [1], None, [256], ranges=[0, 256])
+#                 hist_roi_modified = cv2.calcHist([img_bgd_roi], [1], None, [256], ranges=[0, 256])
+#             elif current_channel == 'b':
+#                 hist_roi_target = cv2.calcHist([img_fgd_roi], [0], None, [256], ranges=[0, 256])
+#                 hist_roi_modified = cv2.calcHist([img_bgd_roi], [0], None, [256], ranges=[0, 256])
+
+#             if current_channel is not None:
+#                 histogram = {
+#                     current_channel: {
+#                         'target': hist_roi_target,
+#                         'modified': hist_roi_modified,
+#                     }
+#                 }
+#         if print_time:
+#             print("\tcalculate hist: %.1f" % (1000* (time.time() - now)))
+#             now = time.time()
+
+#         # Merge images
+#         do_blend = True
+#         if do_blend:
+#             # Blend a common part
+#             img_blended = cv2.addWeighted(src1=img_bgd_roi, alpha=0.5, src2=img_fgd_roi, beta=0.5, gamma=0)
+#             img_bgd_bgr[y0+pad_h_t:y1+pad_h_t, x0+pad_w_l:x1+pad_w_l] = img_blended
+#             blend_width = 2
+#             img_bgd_bgr[y0+pad_h_t+blend_width:y1+pad_h_t-blend_width, x0+pad_w_l+blend_width:x1+pad_w_l-blend_width] = image_fgd[y0+blend_width:y1-blend_width, x0+blend_width:x1-blend_width]
+#             img_bgd_new = img_bgd_bgr
+#         else:
+#             # Replace sub-part
+#             img_bgd_bgr[y0+pad_h_t:y1+pad_h_t, x0+pad_w_l:x1+pad_w_l] = img_fgd_roi
+#             img_bgd_new = img_bgd_bgr
+#         if print_time:
+#             print("\tmerge images: %.1f" % (1000* (time.time() - now)))
+#             now = time.time()
+
+#         # Stabilize
+#         img_bgd_stabilized = stabilize_image(frame, img_bgd_new)
+#         if print_time:
+#             print("\tstabilize: %.1f" % (1000* (time.time() - now)))
+#             now = time.time()
+
+#         # Crop the image
+#         # !!! Warning: this is not the final crop wich is define in the shot
+#         frame['stitching']['geometry']['shot'] = [30,5,10,10]
+#         crop_top, crop_bottom, crop_left, crop_right = frame['stitching']['geometry']['shot']
+#         img_bgd_stabilized_cropped = np.ascontiguousarray(img_bgd_stabilized[
+#             crop_top : img_bgd_stabilized.shape[0] - crop_bottom,
+#             crop_left: img_bgd_stabilized.shape[1] - crop_right
+#         ])
+
+#         if print_time:
+#             print("\tcrop: %.1f" % (1000* (time.time() - now)))
+#             now = time.time()
+
+#         return (frame['index'], img_bgd_stabilized_cropped, histogram)
+
+
+
+#     if preview_options in ['stabilize', 'fgd_cropped']:
+
+
+#         if do_stabilize:
+
+#         else:
+#             img_stabilized = image_fgd_with_borders
+
+#         # cv2.imwrite("test.png", img_stabilized)
+#         if preview_options == 'stabilize':
+#             if print_time:
+#                 print("process_single_frame: stabilized: %.2f" % (1000*(time.time() - now)))
+#             return (frame['index'], img_stabilized, None)
+
+#     if preview_options == 'fgd_cropped':
+#         # fgd_crop_list = frame['shot_stitching']['fgd_crop']
+#         # fgd_crop_x0 = fgd_crop_list[0]
+#         # fgd_crop_y0 = fgd_crop_list[1]
+#         # fgd_crop_w = width_fgd - (fgd_crop_list[2] + fgd_crop_x0)
+#         # fgd_crop_h = height_fgd - (fgd_crop_list[3] + fgd_crop_y0)
+
+#         # depends on each shot (defined by user -> use UI for this)
+#         crop_left = 25
+#         crop_right = 20
+#         crop_top = 15
+#         crop_bottom = 10
+
+#         dy_max = frame['stabilize']['parameters']['delta_interval'][3]
+
+#         # Position and dimension for foreground ROI and cropped
+#         # with dx stabilization:
+#         # x0 = pad_w_l + dx_max + crop_left
+#         # x1 = width_fgd + pad_w_l + dx_max - crop_right
+
+#         # w/out dx stabilization:
+#         x0 = pad_w_l + crop_left
+#         x1 = width_fgd + pad_w_l - crop_right
+
+#         dy = 0
+#         if frame['stabilize']['dx_dy'] is not None:
+#             dy = frame['stabilize']['dx_dy'][1]
+#             if abs(dy) < dy_max:
+#                 dy = int(dy_max)
+#             #     print("use dy rather than dy_min")
+#             #     y0 = pad_h_t + int(dy) + crop_top
+#             #     y1 = height_fgd + pad_h_t + int(dy) - crop_bottom
+#             # else:
+#             #     y0 = pad_h_t + int(dy_max) + crop_top
+#             #     y1 = height_fgd + pad_h_t + int(dy_max) - crop_bottom
+
+#         # else:
+#             # print("no stabilization for %d" % (frame_no))
+#         y0 = pad_h_t + int(dy) + crop_top
+#         y1 = pad_h_t + height_fgd + int(dy) - crop_top - crop_bottom
+
+#         # print("dimensions: (x0, x1)(y0, y1) = (%d;%d)(%d;%d)" % (x0, x1, y0, y1))
+
+#         img_fgd_cropped = img_stabilized[
+#             y0:y1,
+#             x0:x1
+#         ]
+
+#         #   2.2. Add padding to the stabilized, cropped image
+#         img_fgd_4_combine = cv2.copyMakeBorder(img_fgd_cropped,
+#             top=y0, bottom=height_stabilized - y1,
+#             left=x0, right=width_stabilized - x1,
+#             borderType=cv2.BORDER_CONSTANT,
+#             value=[0, 0, 0])
+
+#         # cv2.imwrite("test2.png", img_fgd_4_combine)
+#         # img_fgd_4_combine = np.ascontiguousarray(img_fgd_4_combine, dtype=np.uint8)
+#         # print(img_fgd_4_combine.flags['C_CONTIGUOUS'])
+
+#         # print(1000*(time.time() - now))
+#         return (frame['index'], img_fgd_4_combine, hist)
+
+
+#     # elif preview_options == 'stitching':
+#     #     image_bgd = cv2.imread(frame['filepath_bgd'], cv2.IMREAD_COLOR)
+
+#     if preview_options == 'stabilize':
+#         img = img_stabilized
+
+#     return (frame['index'], img)
 
 
 
