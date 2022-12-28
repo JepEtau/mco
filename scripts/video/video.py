@@ -96,6 +96,7 @@ def generate_video(db, k_ed, k_ep:str, tasks:list, cpu_count=0, k_part:str='', f
                     cpu_count=cpu_count)
             else:
                 consolidate_shot(db, shot=shot)
+                pprint(shot)
 
             # print("+++++++++++++++++++++ shot for concatenation +++++++++++++++++++++")
             # pprint(shot)
