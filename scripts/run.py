@@ -189,7 +189,7 @@ def main():
 
         elif arguments.part != '':
             print("\t\t- precedemment, episode, g_asuivre, asuivre, g_reportage, reportage: ")
-            pprint(g_database[k_episode])
+            pprint(g_database[k_episode]['k'][arguments.part])
         else:
             print("\t\t- all: ", end='')
         print()
