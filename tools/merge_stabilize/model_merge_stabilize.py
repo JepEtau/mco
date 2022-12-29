@@ -37,17 +37,25 @@ from common.preferences import Preferences
 from models.model_database import Model_database
 from models.model_common import Model_common
 
-from parsers.parser_stitching import STICTHING_FGD_PAD, STITCHING_SHOT_PARAMETERS_DEFAULT, save_shot_stitching_curves, write_stitching_curves_to_database
-from images.filtering import stabilize_image
+from parsers.parser_stitching import (
+    STITCHING_SHOT_PARAMETERS_DEFAULT,
+    save_shot_stitching_curves,
+    write_stitching_curves_to_database
+)
 
 from parsers.parser_stabilize import STABILIZATION_SHOT_PARAMETERS_KEYS
 
-from utils.common import K_NON_GENERIQUE_PARTS, get_database_size, get_frame_no_from_filepath, get_k_part_from_frame_no, get_shot_from_frame_no_new, get_shot_no_from_frame_no
-from utils.common import K_GENERIQUES
+from utils.common import (
+    get_database_size,
+    get_frame_no_from_filepath,
+    get_k_part_from_frame_no,
+    get_shot_from_frame_no_new,
+    get_shot_no_from_frame_no,
+    K_GENERIQUES,
+)
 from utils.get_filters import FILTER_BASE_NO
 from utils.get_framelist import get_framelist, get_single_framelist
-from utils.consolidate_av import consolidate_shot
-from utils.get_filters import get_filter_id
+from utils.consolidate_shots import consolidate_shot
 
 
 SHOT_MIN = 25
@@ -104,6 +112,9 @@ class Model_merge_stabilize(Model_common):
         # Variables
         self.model_database = Model_database()
 
+        self.shots_fgd = dict()
+        self.frames_fgd = dict()
+
         self.filepath_fgd = list()
         self.filepath_bgd = list()
 
@@ -158,25 +169,25 @@ class Model_merge_stabilize(Model_common):
         """
         print("----------------------- selection_changed -------------------------")
         pprint(values)
-        k_ep = values['k_ep']
-        k_part = values['k_part']
+        k_ep_selected = values['k_ep']
+        k_part_selected = values['k_part']
         k_step = 'deinterlace' if values['k_step'] == '' else values['k_step']
+        if ((k_ep_selected == '' and k_part_selected in K_GENERIQUES)
+            or (k_ep_selected != '' and k_part_selected != 'episode')):
+            return
+        log.info("directory_changed: %s:%s" % (k_ep_selected, k_part_selected))
+
         shot_min = 0 if 'shot_min' not in values.keys() else values['shot_min']
         shot_max = 999999 if 'shot_max' not in values.keys() else values['shot_max']
-
-        shot_min = SHOT_MIN
-        shot_max = SHOT_MAX
-
-        if (k_ep == '' and k_part == '') or (k_ep != '' and k_part == ''):
-            return
-        log.info("directory_changed: %s:%s" % (k_ep, k_part))
+        # shot_min = SHOT_MIN
+        # shot_max = SHOT_MAX
 
         self.model_database.consolidate_database(
-            k_ep=k_ep,
-            k_part=k_part,
+            k_ep=k_ep_selected,
+            k_part=k_part_selected,
             do_parse_curves=True,
-            do_parse_replace=True,
-            do_parse_geometry=True,
+            do_parse_replace=False,
+            do_parse_geometry=False,
             do_parse_stitching=True)
 
         # self.shots is a pointer to the shots for this episode/part
@@ -185,141 +196,83 @@ class Model_merge_stabilize(Model_common):
         p_missing_frame = os.path.join('icons', 'missing.png')
 
         # Remove all frames
-        self.frames.clear()
-
-        if k_part in ['g_debut', 'g_fin']:
-            db_video = db[k_part]['common']['video']
-        else:
-            db_video = db[k_ep]['common']['video'][k_part]
+        self.frames_fgd.clear()
 
         # will contains all shots for this part
-        self.shots.clear()
+        self.shots_fgd.clear()
 
         # Contains all path of frames for this part
         self.filepath_fgd.clear()
         self.filepath_bgd.clear()
 
+        # Get video db
+        db_video = db[k_ep_selected]['target']['video'][k_part_selected]
+
+        # Walk through shots
         shots = db_video['shots']
-        for shot in shots:
-            if not (shot_min <= shot['no'] <= shot_max):
+        for shot_fgd in shots:
+            if not (shot_min <= shot_fgd['no'] <= shot_max):
+                print("discard shot no. %d" % (shot_fgd['no']))
                 continue
 
-            for layer in ['fgd', 'bgd']:
-                # Select the shot used for the generation
-                if 'src' in shot.keys() and shot['src']['use']:
-                    k_ed_src = shot['src']['k_ed']
-                    k_ep_src = shot['src']['k_ep']
-                    k_part_src = get_k_part_from_frame_no(db, k_ed=k_ed_src, k_ep=k_ep_src, frame_no=shot['src']['start'])
-                    shot_src = deepcopy(get_shot_from_frame_no_new(db,
-                        shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src))
+            # For debug only
+            print("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
+                "{:3d}".format(shot_fgd['no']),
+                "{:5d}".format(shot_fgd['start']),
+                shot_fgd['dst']['count'],
+                shot_fgd['k_ed'],
+                shot_fgd['k_ep'],
+                shot_fgd['k_part'],
+                shot_fgd['start'],
+                shot_fgd['count']),
+                flush=True)
 
-                    if 'count' not in shot['src'].keys():
-                        shot['src']['count'] = shot_src['count']
-                    if shot_src is None:
-                        sys.exit("error: selection_changed: shot src is None")
-                else:
-                    k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
-                    k_ep_src = k_ep
-                    k_part_src = k_part
-                    shot_src = deepcopy(shot)
+            # Copy shot
+            shot_bgd = deepcopy(shot_fgd)
+            shot_bgd['layer'] = 'bgd'
 
-                if 'layers' in db[k_ep_src]['common']['video'][k_part_src].keys():
-                    # print("Layer specified", db[k_ep_src]['common']['video'][k_part_src]['layers'])
-                    shot_src.update({
-                        'layers': db[k_ep_src]['common']['video'][k_part_src]['layers'],
-                        'layer': layer
-                    })
-
-                print("\t\t%s: %s\t(%d)\t<- %s:%s:%s %d (%d)" % (
-                    "{:3d}".format(shot['no']),
-                    "{:5d}".format(shot['start']),
-                    shot['count'],
-                    k_ed_src if layer=='fgd' else shot_src['layers']['bgd'],
-                    k_ep_src,
-                    k_part_src,
-                    shot_src['start'],
-                    shot_src['count']))
-
-                shot_src.update({
-                    'k_ed': k_ed_src,
-                    'k_ep': k_ep_src,
-                    'k_part': k_part_src,
-                    'tasks': [values['k_step']],
-                })
-                if 'effects' in shot.keys():
-                    shot_src.update({'effects': shot['effects']})
-                if 'dst' in shot.keys():
-                    shot_src['dst'] = shot['dst']
-                if shot == shots[-1]:
-                    shot_src['last'] = True
+            # Consolidate shot
+            shot_fgd['tasks'] = [values['k_step']]
+            consolidate_shot(db, shot=shot_fgd)
+            shot_bgd['tasks'] = [values['k_step']]
+            consolidate_shot(db, shot=shot_bgd)
 
 
-                # Consolidation used fot the generation of frames for this shot
-                consolidate_shot(db, shot=shot_src)
-
-                # Patch the shot to create the concatenation file
-                if 'src' in shot.keys() and shot['src']['use']:
-                    shot_properties_saved = ({'start': shot_src['start'], 'count': shot_src['count']})
-                    shot_src.update({
-                        'start': shot['src']['start'],
-                        'count': shot['src']['count']
-                    })
-                shot_src['count'] = shot['count']
-
-                # print("+++++++++++++++++ %s +++++++++++++++++++++++++" % (layer))
-                # pprint(shot_src)
-
-                if k_part in ['episode', 'reportage']:
-                    filepath_tmp = get_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
-                else:
-                    filepath_tmp = get_single_framelist(db, k_ep=k_ep, k_part=k_part, shot=shot_src)
-
-                # print("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
-
-                # Restore shot values
-                if 'src' in shot.keys() and shot['src']['use']:
-                    shot_src.update(shot_properties_saved)
+            # Get a list of path for each frame  for this shot: episode only!
+            if k_part_selected == 'episode':
+                filepath_fgd_tmp = get_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot_fgd)
+                filepath_bgd_tmp = get_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot_bgd)
+            else:
+                print("error: cannot select %s:%s" % (k_ep_selected, k_part_selected))
+                return
+            self.filepath_fgd += filepath_fgd_tmp
+            self.filepath_bgd += filepath_bgd_tmp
 
 
-                # if 'src' in shot.keys() and shot['src']['use']:
-                #     # restore src shot
-                #     shot_src.update(shot_properties_saved)
-
-                if layer == 'fgd':
-                    self.filepath_fgd = deepcopy(filepath_tmp)
-
-                    # Append this hot to the shotlist only for fgd
-                    shot_no = shot['no']
-                    self.shots[shot_no] = shot_src
-                    current_shot = self.shots[shot_no]
-                    if 'src' in shot.keys():
-                        current_shot['src'] = shot['src']
-
-                    # patch count to include loop
-                    if ('effects' in current_shot.keys()
-                        and 'loop' in current_shot['effects'][0]):
-                        current_shot['count'] += current_shot['effects'][2]
-
-                    # create a list of frames for this shot
-                    current_shot.update({
-                        'is_valid': True,
-                        'frame_nos': list()
-                    })
-                    self.frames[shot_no] = list()
-
-                else:
-                    self.filepath_bgd = deepcopy(filepath_tmp)
-                    try:
-                        del shot_src['stitching']
-                    except:
-                        print("no stitching structure in shot_src no. %d" % (shot['no']))
-
+            shot_no = shot_fgd['no']
+            self.shots_fgd[shot_no] = shot_fgd
 
             # print("---------------------")
             # pprint(self.filepath_fgd)
             # print("---------------------")
             # pprint(self.filepath_bgd)
             # print("---------------------")
+            # sys.exit()
+
+            shot_fgd.update({
+                'is_valid': True,
+
+                # Frame no. ... for what?
+                'frame_nos': list(),
+
+                # Structure to display the modifications in the selection widget
+                'modifications': {
+                    # 'curves' : {
+                    #     'initial': k_curves,
+                    #     'new': None,
+                    # },
+                },
+            })
 
             # if 'stitching' in shot_src.keys():
             #     k_curves = shot_src['stitching']['curves']['k_curves']
@@ -328,13 +281,20 @@ class Model_merge_stabilize(Model_common):
             #     del shot_src['stitching']['frames']
             #     shot_src['stitching']['geometry'] = self.model_database.get_shot_stitching_fgd_crop(shot_no)
 
-            stitching_fgd_crop = self.model_database.get_shot_stitching_fgd_crop(shot_no)
-            st_geometry = self.model_database.get_shot_st_geometry(shot_no)
-            part_geometry = self.model_database.get_part_geometry(k_ed_src, k_part)
-            stitching_curves = self.model_database.get_shot_stitching_curves(shot_no)
+            # Get values for this shot
+            # stitching_fgd_crop = self.model_database.get_shot_stitching_fgd_crop(shot_no)
+            # st_geometry = self.model_database.get_shot_st_geometry(shot_no)
+            # part_geometry = self.model_database.get_part_geometry(k_ed_src, k_part)
+            # stitching_curves = self.model_database.get_shot_stitching_curves(shot_no)
+            stitching_fgd_crop = None
+            st_geometry = None
+            shot_geometry = None
+            stitching_curves = None
 
+            self.frames_fgd[shot_no] = list()
             for p_fgd, p_bgd in zip(self.filepath_fgd, self.filepath_bgd):
                 frame_no = get_frame_no_from_filepath(p_fgd)
+                # print("process frame: %d" % (frame_no), flush=True)
 
                 # image_bgd_filepath = p.replace(
                 #     "__%s__" % (shot_src['layers']['fgd']),
@@ -347,34 +307,32 @@ class Model_merge_stabilize(Model_common):
 
                 if not os.path.exists(p_fgd):
                     fgd_image_filepath = p_missing_frame
-                    current_shot['is_valid'] = False
+                    shot_fgd['is_valid'] = False
                 else:
                     fgd_image_filepath = p_fgd
 
                 if not os.path.exists(p_bgd):
                     bgd_image_filepath = p_missing_frame
-                    current_shot['is_valid'] = False
+                    shot_bgd['is_valid'] = False
                 else:
                     bgd_image_filepath = p_bgd
 
-
-                # pprint(current_shot)
-                current_shot['frame_nos'].append(frame_no)
-
-                # Creat a frame dict which contains all data
-                # to edit effects and to display it
-                self.frames[shot_no].append({
-                    'k_ed': k_ed_src,
-                    'k_ep': k_ep_src,
-                    'k_part': k_part_src,
+                shot_fgd['frame_nos'].append(frame_no)
+                self.frames_fgd[shot_no].append({
+                    'dst': shot_fgd['dst'],
+                    'src': shot_fgd['src'],
+                    'k_ed': shot_fgd['k_ed'],
+                    'k_ep': shot_fgd['k_ep'],
+                    'k_part': shot_fgd['k_part'],
                     'shot_no': shot_no,
                     'frame_no': frame_no,
 
                     'filepath': fgd_image_filepath,
                     'filepath_bgd': bgd_image_filepath,
-                    # 'replaced_by': self.model_database.get_replace_frame_no(shot=current_shot, frame_no=frame_no),
-                    'curves': shot_src['curves'],
-                    'geometry': part_geometry,
+                    # 'dimensions': shot['dimensions'],
+                    # 'replaced_by': self.model_database.get_replace_frame_no(shot=shot_fgd, frame_no=frame_no),
+                    # 'curves': shot_fgd['curves'],
+                    'geometry': shot_geometry,
                     'stitching': {
                         'parameters': self.model_database.get_frame_stitching_parameters(shot_no, frame_no),
                         'm': self.model_database.get_frame_stitching_transformation(shot_no, frame_no),
@@ -393,38 +351,40 @@ class Model_merge_stabilize(Model_common):
 
 
         # Create a dict to update the "browser" part of the editor widget
-        if k_part in K_GENERIQUES:
-            k_ed = db[k_part]['common']['video']['reference']['k_ed']
+        if k_part_selected in K_GENERIQUES:
+            k_ed_selected = db[k_part_selected]['target']['video']['src']['k_ed']
+            print("Error: cannot select %s:%s:%s" % (k_ed_selected, k_ep_selected, k_part_selected))
+            return
         else:
-            k_ed = db[k_ep]['common']['video']['reference']['k_ed']
-        if k_part in K_GENERIQUES:
-            k_ed = db[k_part]['common']['video']['reference']['k_ed']
-        else:
-            k_ed = db[k_ep]['common']['video']['reference']['k_ed']
+            k_ed_selected = db[k_ep_selected]['target']['video']['src']['k_ed']
         self.current_selection = {
-            'k_ep': k_ep,
-            'k_part': k_part,
+            'k_ed': k_ed_selected,
+            'k_ep': k_ep_selected,
+            'k_part': k_part_selected,
             'k_step': k_step,
             'shots': self.shots,
-            'reference': {
-                'k_ed': k_ed,
-                'k_ep': k_ep,
-            },
-            'geometry': self.model_database.get_part_geometry(k_ed, k_part),
+            'geometry': None,
         }
 
-        print("shots: %0.1fkB" % (get_database_size(self.shots)/1000.0))
-        print("current_selection: %0.1fkB" % (get_database_size(self.current_selection)/1000.0))
+        # Use the selected ed:ep:part
+        # self.current_selection.update({
+        #     'geometry': self.model_database.get_part_geometry(
+        #         k_ed=k_ed_selected,
+        #         k_ep=k_ep_selected,
+        #         k_part=k_part_selected),
+        # })
 
 
-        if k_part not in K_GENERIQUES:
-            self.signal_stitching_curves_list_modified.emit(self.model_database.get_stitching_curves_names())
-
+        # self.model_database.initialize_shots_per_curves(self.shots)
+        # self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+        # reenable this
+        # self.signal_stitching_curves_list_modified.emit(self.model_database.get_stitching_curves_names())
         self.signal_shotlist_modified.emit(self.current_selection)
 
 
 
     def event_selected_shots_changed(self, selected_shots):
+        print("event_selected_shots_changed")
         if len(selected_shots['shotlist']) == 0:
             return
 

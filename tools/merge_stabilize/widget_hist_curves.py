@@ -11,7 +11,6 @@ from PySide6.QtCore import (
     Qt,
     Signal,
 )
-from PySide6.QtWidgets import QWidget
 from PySide6.QtGui import (
     QBrush,
     QColor,
@@ -19,14 +18,19 @@ from PySide6.QtGui import (
     QPen,
     QPolygon,
 )
-from common.sylesheet import set_stylesheet
+from PySide6.QtWidgets import (
+    QSizePolicy,
+    QWidget,
+)
 
 from images.curve import (
     Curve,
-    Curve_point,
-    calculate_lut_for_bgd,
+    Curve_point
 )
 
+from utils.get_curves import (
+    calculate_channel_lut_for_stitching,
+)
 
 class Widget_hist_curves(QWidget):
     signal_point_selected = Signal(list)
@@ -48,37 +52,70 @@ class Widget_hist_curves(QWidget):
         self.ui = ui
         self.setObjectName('hist_curves')
 
+        self.setAttribute(Qt.WA_DeleteOnClose)
+
         # default width and sample count
         self.set_widget_width(self.GRAPH_WIDTH)
         self.setMinimumHeight(255)
 
-        self.curves = {
-            'k_curves': ''
+
+        # Initialize R, G, B, master channels
+        self.channels = {
+            'r': {'color': QColor('red')},
+            'g': {'color': QColor('green')},
+            'b': {'color': QColor('blue')}
         }
-        for c in ['red', 'green', 'blue']:
-            self.curves.update({
-                c[0]: {
-                    'color': QColor(c),
-                    'curve': Curve(is_default_constant=True),
-                    'polypoints': np.array([]).astype('int'),
-                    'lut': np.array([]).astype('int'),
-                }
-            })
 
-        self.k_selected_channel = 'r'
-        self.k_curves = ''
+        # Initialize default curves
+        for k in self.channels.keys():
+            self.channels[k]['curve'] = Curve(is_default_constant=True),
+            self.channels[k]['lut'] = np.array([]).astype('int')
+            self.channels[k]['polypoints'] = np.array([]).astype('int')
+            self.channels[k]['is_selected'] = False
+
+
+        # self.curves = {
+        #     'k_curves': ''
+        # }
+        # for c in ['red', 'green', 'blue']:
+        #     self.curves.update({
+        #         c[0]: {
+        #             'color': QColor(c),
+        #             'curve': Curve(is_default_constant=True),
+        #             'polypoints': np.array([]).astype('int'),
+        #             'lut': np.array([]).astype('int'),
+        #         }
+        #     })
+
+        # Current channel is red
+        self.k_selected = 'r'
+        self.channels[self.k_selected]['is_selected'] = True
+
         self.set_enabled(False)
-        self.is_modified = False
-        self.is_moving_point = False
 
-        self.update_lookup_tables()
-        set_stylesheet(self)
-        self.adjustSize()
+        # self.is_modified = False
+        # self.is_moving_point = False
+
+        # self.update_lookup_tables()
+        # set_stylesheet(self)
+        # self.adjustSize()
+
+
+    def set_model(self, model):
+        self.model = model
+
+        # Connect signals
+        self.model.signal_load_curves[dict].connect(self.event_curves_loaded)
+
+
+    def set_ui(self, ui):
+        self.ui = ui
 
 
     def set_style(self, grid_color:QColor=None, grid_axis_color:QColor=None, pen_width:int=None,
                     selected_point_color:QColor=None, unselected_point_color:QColor=None,
                     margin:int=None):
+        log.info("set style")
         if grid_color is not None:
             self.GRID_COLOR = grid_color
         if grid_axis_color is not None:
@@ -90,10 +127,18 @@ class Widget_hist_curves(QWidget):
         if unselected_point_color is not None:
             self.UNSELECTED_POINT_COLOR = unselected_point_color
 
+
     def set_widget_width(self, width):
         self.setMinimumWidth(width)
         self.sample_count = width
-        # self.adjustSize()
+
+        size_policy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.MinimumExpanding)
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        size_policy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.setSizePolicy(size_policy)
+        self.setMinimumHeight(width)
+        self.adjustSize()
 
 
     def set_enabled(self, enabled:bool):
@@ -101,7 +146,7 @@ class Widget_hist_curves(QWidget):
 
 
     def select_channel(self, k_channel):
-        self.k_selected_channel = k_channel
+        self.k_selected = k_channel
         self.update()
 
 
@@ -136,7 +181,7 @@ class Widget_hist_curves(QWidget):
                 self.curves[c]['is_selected'] = False
             self.curves['k_curves'] = ''
 
-        self.curves[self.k_selected_channel]['is_selected'] = True
+        self.curves[self.k_selected]['is_selected'] = True
         self.is_modified = False
 
         # Calculate LUTs
@@ -146,7 +191,7 @@ class Widget_hist_curves(QWidget):
 
 
     def remove_selected_point(self):
-        self.curves[self.k_selected_channel]['curve'].remove_selected_point(min_points_count=1)
+        self.curves[self.k_selected]['curve'].remove_selected_point(min_points_count=1)
         self.flush_polypoints()
         self.update_lookup_tables()
         self.update()
@@ -197,7 +242,7 @@ class Widget_hist_curves(QWidget):
                 self.curves[c]['curve'].reset(is_default_constant=True)
         else:
             # Reset current channel only
-            self.curves[self.k_selected_channel]['curve'].reset(is_default_constant=True)
+            self.curves[self.k_selected]['curve'].reset(is_default_constant=True)
         self.flush_polypoints()
         self.update_lookup_tables()
         self.update()
@@ -213,7 +258,7 @@ class Widget_hist_curves(QWidget):
         # print("paintEvent: hist_curve: dimensions = (%d; %d), x_max=%d" % (w, h, x_max))
 
         # Current channel
-        k_channel = self.k_selected_channel
+        k_channel = self.k_selected
 
         # Curves
         curve = self.curves[k_channel]
@@ -285,13 +330,13 @@ class Widget_hist_curves(QWidget):
 
     def select_channel(self, k_channel):
         # Select a channel (and unselect previous)
-        self.k_selected_channel = k_channel
+        self.k_selected = k_channel
         self.update()
 
 
     def flush_polypoints(self):
         for k in ['r', 'g', 'b']:
-            if self.k_selected_channel == k:
+            if self.k_selected == k:
                 del self.curves[k]['polypoints']
                 self.curves[k]['polypoints'] = np.array([]).astype('int')
 
@@ -299,7 +344,7 @@ class Widget_hist_curves(QWidget):
     def update_lookup_tables(self, verbose=False):
         depth = 256.0
         for k in ['r', 'g', 'b']:
-            self.curves[k]['lut'] = calculate_lut_for_bgd(self.curves[k]['curve'])
+            self.curves[k]['lut'] = calculate_channel_lut_for_stitching(self.curves[k]['curve'])
 
         if verbose:
             for k in ['r', 'g', 'b']:
@@ -335,7 +380,7 @@ class Widget_hist_curves(QWidget):
         xf = np.float32(x) / x_max
         yf = (1 + np.float32(y) / y_max)/2
 
-        curve = self.curves[self.k_selected_channel]['curve']
+        curve = self.curves[self.k_selected]['curve']
         if event.button() == Qt.LeftButton:
             # print("mousePressEvent: (%d; %d) in (%d;%d) -> (%f; %f)" % (x, y, x_max, y_max, xf, yf))
             is_selected = curve.select_point(xf, yf)
@@ -420,7 +465,7 @@ class Widget_hist_curves(QWidget):
         yf = (1 + np.float32(y) / y_max)/2
 
         self.show_position = False
-        curve = self.curves[self.k_selected_channel]['curve']
+        curve = self.curves[self.k_selected]['curve']
         selected_point = curve.selected_point()
         if selected_point is not None:
 

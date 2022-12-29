@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
     QListWidgetItem,
 )
 from common.widget_common import Widget_common
-from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
+from common.sylesheet import set_curves_radiobutton_stylesheet, set_stylesheet, update_selected_widget_stylesheet
 
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
 from merge_stabilize.ui.widget_stitching_curves_ui import Ui_widget_stitching_curves
@@ -65,12 +65,13 @@ class Widget_stitching_curves(Widget_common, Ui_widget_stitching_curves):
         self.pushButton_discard_curves_modifications.setFocusPolicy(Qt.NoFocus)
         self.pushButton_save_curves_as.setFocusPolicy(Qt.NoFocus)
 
+        # Curves edition: select default channel
         self.refresh_current_coordinates([-1,0])
-
-        # Curves edition: select default channel and connect signals
         self.radioButton_select_r_channel.setChecked(True)
         self.select_channel()
 
+
+        # Connect signals
         for w in [self.radioButton_select_r_channel,
                 self.radioButton_select_g_channel,
                 self.radioButton_select_b_channel,
@@ -129,6 +130,11 @@ class Widget_stitching_curves(Widget_common, Ui_widget_stitching_curves):
 
         self.set_enabled(True)
         set_stylesheet(self)
+        for c, w in zip(['r', 'g', 'b', 'm'], [
+                    self.radioButton_select_r_channel,
+                    self.radioButton_select_g_channel,
+                    self.radioButton_select_b_channel]):
+            set_curves_radiobutton_stylesheet(c, w)
         self.adjustSize()
 
 

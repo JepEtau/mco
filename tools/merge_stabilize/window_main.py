@@ -33,7 +33,6 @@ from common.window_common import (
 from common.widget_controls import Widget_controls
 
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
-from merge_stabilize.model_merge_stabilize import process_single_frame
 
 from merge_stabilize.widget_selection import Widget_selection
 from merge_stabilize.widget_stitching_curves import Widget_stitching_curves
@@ -314,254 +313,242 @@ class Window_main(Window_common):
             log.info("no image loaded")
             return
 
+        img = self.image['cache']
+        if img is None:
+            return
+
         if self.is_repainting:
             log.error("error: self.is_repainting is True!!")
             return
         self.is_repainting = True
+        delta_y = self.display_position_y
 
-        # display: x0, y0
-        display_x0 = 10
-        display_y0 = 10
-
-        preview_options = self.model.get_preview_options()
-
-        self.do_display_stitching_roi = False
-        self.do_display_crop_for_stitching = False
-        self.do_display_crop_rect_for_stitching = False
-        self.do_display_stabilized = False
-        self.do_display_initial = False
-        self.do_display_fgd_cropped = False
-
-        if (self.image['cache'] is not None
-            and not self.do_display_initial
-            and not self.do_display_crop_rect_for_stitching
-            and not self.do_display_crop_for_stitching
-            and preview_options != 'fgd_crop_edition'):
-            # print("paintEvent: use cached img")
-            image_fgd = self.image['cache']
-            is_cached = True
-        else:
-            image_fgd = self.image['cache_fgd']
-            is_cached = False
-        height_fgd, width_fgd, channels_count = image_fgd.shape
-        if self.show_side == 'top':
-            delta_y = 0
-        elif self.show_side == 'bottom':
-            delta_y = display_y0 + height_fgd - 1080 + 50
+        options = self.image['preview_options']
+        h_i, w_i, c = self.image['cache'].shape
+        # print("paintEvent: initial image = %dx%d" % (h_i, w_i))
+        h, w, c = img.shape
+        q_image = QImage(img.data, w, h, w * 3, QImage.Format_BGR888)
+        # w_final, h_final = (1440, 1080)
 
 
-        hist = None
-
+        self.image['origin'] = [PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y]
         if self.painter.begin(self):
 
-            if preview_options == 'initial' or is_cached:
-                # print("paintEvent: display cached image")
-                qImage_fgd = QImage(image_fgd.data, image_fgd.shape[1], image_fgd.shape[0], image_fgd.shape[1] * 3, QImage.Format_BGR888)
-                self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
+            self.painter.drawImage(
+                QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
 
-            elif self.model.get_preview_options() == 'fgd_crop_edition':
-                f = self.model.get_current_frame()
-                # pprint(f)
-                crop_fgd_top, crop_fgd_bottom, crop_fgd_left, crop_fgd_right = f['stitching']['geometry']['fgd']
-                roi_width = width_fgd - (crop_fgd_right + crop_fgd_left)
-                roi_height = height_fgd - (crop_fgd_bottom + crop_fgd_top)
-
-                if True:
-                    # Do display a rect
-                    qImage_fgd = QImage(image_fgd.data, image_fgd.shape[1], image_fgd.shape[0], image_fgd.shape[1] * 3, QImage.Format_BGR888)
-                    self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
-
-                    pen = QPen(COLOR_STITCHING_FGD_CROP_RECT)
-                    pen.setWidth(PEN_CROP_SIZE)
-                    pen.setStyle(Qt.SolidLine)
-                    self.painter.setPen(pen)
-                    self.painter.drawRect(
-                        display_x0 + crop_fgd_left, display_y0 + crop_fgd_top - delta_y,
-                        roi_width, roi_height)
-                else:
-                    # Do display a cropped image whish is the roi for stiching
-                    image_cropped = np.ascontiguousarray(image_fgd[
-                        roi_top:roi_top+crop_height,
-                        roi_left:roi_left+roi_width], dtype=np.uint8)
-
-                    qImage_fgd = QImage(image_cropped.data, image_cropped.shape[1], image_cropped.shape[0], image_cropped.shape[1] * 3, QImage.Format_BGR888)
-                    self.painter.drawImage(QPoint(display_x0 + roi_left, display_y0 + roi_top - delta_y), qImage_fgd)
-
-
-            elif self.model.get_preview_options() == 'stitching':
-                print_time = False
-                if print_time:
-                    initial_time = time.time()
-
-                f = self.model.get_current_frame()
-                if f is not None:
-                    (no, image_fgd, hist) = process_single_frame(f,
-                        preview_options='stitching',
-                        bgd_curve_luts=self.widget_stitching_curves.get_curve_luts(),
-                        current_channel=self.widget_stitching_curves.get_current_channel())
-                    # self.model.set_current_frame_cache(image_fgd)
-
-                    qImage_fgd = QImage(image_fgd.data, image_fgd.shape[1], image_fgd.shape[0], image_fgd.shape[1] * 3, QImage.Format_BGR888)
-                    self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
-
-                if print_time:
-                    print("\t->: %.1f" % (1000* (time.time() - initial_time)))
-
-
-            elif preview_options == 'stabilized':
-                f = self.model.get_current_frame()
-                if f is not None:
-                    (no, image_fgd, hist) = process_single_frame(f, preview_options=preview_options)
-                    # self.model.set_current_frame_cache(image_fgd)
-
-                    qImage_fgd = QImage(image_fgd.data, image_fgd.shape[1], image_fgd.shape[0], image_fgd.shape[1] * 3, QImage.Format_BGR888)
-                    self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
-
-
-            elif self.model.get_preview_options() == 'fgd_cropped':
-                f = self.model.get_current_frame()
-                if f is not None:
-                    (no, image_fgd_cropped, hist) = process_single_frame(f, preview_options='fgd_cropped')
-                    self.model.set_current_frame_cache(image_fgd_cropped)
-
-                    if self.show_side == 'top':
-                        delta_y = 0
-                    elif self.show_side == 'bottom':
-                        delta_y = display_y0 + image_fgd_cropped.shape[0] - 1080 + 50
-
-                    qImage_fgd_cropped = QImage(image_fgd_cropped.data, image_fgd_cropped.shape[1], image_fgd_cropped.shape[0], image_fgd_cropped.shape[1] * 3, QImage.Format_BGR888)
-                    self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd_cropped)
-
-
-
-
-            # elif self.model.get_preview_options() in ['fgd_cropped', 'fgd_roi_edition']:
-            #     f = self.model.get_current_frame()
-            #     if f is not None:
-            #         (no, image_fgd_cropped, hist) = process_single_frame(-1, f, preview_options='fgd_cropped')
-            #         self.model.set_current_frame_cache(image_fgd_cropped)
-
-            #         qImage_fgd_cropped = QImage(image_fgd_cropped.data, image_fgd_cropped.shape[1], image_fgd_cropped.shape[0], image_fgd_cropped.shape[1] * 3, QImage.Format_BGR888)
-            #         self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd_cropped)
-
-
-
-            if self.do_display_rect_for_stitching:
-                # Draw a rect used for detection points stitching
-                stitching_area_fgd_left = 30
-                stitching_area_fgd_right = 25
-                stitching_area_fgd_top = 15
-                stitching_area_fgd_down = 10
-                stitching_area_fgd_width = width_fgd - stitching_area_fgd_left - stitching_area_fgd_right
-                stitching_area_fgd_height = height_fgd - stitching_area_fgd_top - stitching_area_fgd_down
-
-
-                # Draw the rect
-                pen = QPen(COLOR_STITCHING_AREA_RECT)
-                pen.setWidth(PEN_CROP_SIZE)
-                pen.setStyle(Qt.SolidLine)
-                self.painter.setPen(pen)
-                self.painter.drawRect(
-                    display_x0 + stitching_area_fgd_left, display_y0 + stitching_area_fgd_top - delta_y,
-                    stitching_area_fgd_width, stitching_area_fgd_height)
-
-            elif self.do_display_crop_for_stitching:
-                # Draw a rect/cropped image used for detection points stitching
-
-                # print(self.image['stitching'])
-                # print(self.image['shot_stitching'])
-                if not is_cached:
-                    fgd_crop_list = self.image['shot_stitching']['fgd_crop']
-                    fgd_crop_x0 = fgd_crop_list[0]
-                    fgd_crop_y0 = fgd_crop_list[1]
-                    fgd_crop_w = width_fgd - (fgd_crop_list[2] + fgd_crop_x0)
-                    fgd_crop_h = height_fgd - (fgd_crop_list[3] + fgd_crop_y0)
-
-
-                    # 1. Generate the translated image
-                    pad_w_l = 40
-                    pad_w_r = 20
-                    pad_h = 80
-                    pad_h_b = 20
-
-                    #   1.1. Add padding to the initial image
-                    width = width_fgd + 30 + pad_w_l + pad_w_r
-                    height = height_fgd + 40+ pad_h + pad_h_b
-                    image_fgd_with_borders = cv2.copyMakeBorder(image_fgd,
-                        pad_h, pad_h_b,
-                        pad_w_l, pad_w_r,
-                        cv2.BORDER_CONSTANT,
-                        value=[0, 0, 0])
-
-                    # cv2.imwrite("test.png", image_fgd_with_borders)
-
-
-                    # print("image_fgd_with_borders: %dx%d" % (image_fgd_with_borders.shape[1], image_fgd_with_borders.shape[0]))
-
-                    #   1.2. Generate a stabilized image
-                    transformation_matrix = np.float32([
-                        [1, 0, self.image['stitching']['T']['dx']],
-                        [0, 1, self.image['stitching']['T']['dy']]
-                    ])
-                    # transformation_matrix = np.float32([
-                    #     [1, 0, 0],
-                    #     [0, 1, 0]
-                    # ])
-
-                    img_fgd_stabilized = cv2.warpAffine(
-                        image_fgd_with_borders,
-                        transformation_matrix,
-                        (width, height),
-                        flags=cv2.INTER_LANCZOS4,
-                        borderMode=cv2.BORDER_CONSTANT,
-                        borderValue=(0,0,0))
-
-                # 2. Draw rect/cropped foreground image
-                if self.do_display_crop_rect_for_stitching:
-                    # Draw a rect used for detection points stitching
-                    # print("display rect")
-
-                    if is_cached:
-                        # Draw the original fgd image only
-                        # print("qImage_fgd: (%d x %d), delta_y=%d" % (width_fgd, height_fgd, delta_y))
-                        qImage_fgd = QImage(image_fgd.data, width_fgd, height_fgd, width_fgd * 3, QImage.Format_BGR888)
-                        self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
-                    elif False:
-                        # Draw the original fgd image only
-                        # print("qImage_fgd: (%d x %d), delta_y=%d" % (width_fgd, height_fgd, delta_y))
-                        qImage_fgd = QImage(image_fgd.data, width_fgd, height_fgd, width_fgd * 3, QImage.Format_BGR888)
-                        self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
-                    elif False:
-                        qImage_fgd_with_borders = QImage(image_fgd_with_borders.data,
-                            image_fgd_with_borders.shape[1],
-                            image_fgd_with_borders.shape[0],
-                            image_fgd_with_borders.shape[1] * 3, QImage.Format_BGR888)
-                        self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd_with_borders)
-                    else:
-                        qImage_fgd_stabilized = QImage(img_fgd_stabilized.data,
-                            img_fgd_stabilized.shape[1],
-                            img_fgd_stabilized.shape[0],
-                            img_fgd_stabilized.shape[1] * 3, QImage.Format_BGR888)
-                        self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd_stabilized)
-
-                    # Draw the rect
-                    # pen = QPen(COLOR_STITCHING_FGD_CROP_RECT)
-                    # pen.setWidth(PEN_CROP_SIZE)
-                    # pen.setStyle(Qt.SolidLine)
-                    # self.painter.setPen(pen)
-                    # self.painter.drawRect(
-                    #     display_x0 + fgd_crop_x0, display_y0 + fgd_crop_y0 - delta_y,
-                    #     fgd_crop_w, fgd_crop_h)
-                else:
-                    # Display the cropped image for detection points stitching
-                    print("display cropped")
-
-            # else:
-            #     print("nothing to paint")
 
             self.painter.end()
             self.setFocus()
         self.is_repainting = False
 
-        self.widget_stitching_curves.display(hist)
+
+        # hist = None
+
+        # if self.painter.begin(self):
+
+        #     if preview_options == 'initial' or is_cached:
+        #         # print("paintEvent: display cached image")
+        #         qImage_fgd = QImage(image_fgd.data, image_fgd.shape[1], image_fgd.shape[0], image_fgd.shape[1] * 3, QImage.Format_BGR888)
+        #         self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
+
+        #     elif self.model.get_preview_options() == 'fgd_crop_edition':
+        #         f = self.model.get_current_frame()
+        #         # pprint(f)
+        #         crop_fgd_top, crop_fgd_bottom, crop_fgd_left, crop_fgd_right = f['stitching']['geometry']['fgd']
+        #         roi_width = width_fgd - (crop_fgd_right + crop_fgd_left)
+        #         roi_height = height_fgd - (crop_fgd_bottom + crop_fgd_top)
+
+        #         if True:
+        #             # Do display a rect
+        #             qImage_fgd = QImage(image_fgd.data, image_fgd.shape[1], image_fgd.shape[0], image_fgd.shape[1] * 3, QImage.Format_BGR888)
+        #             self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
+
+        #             pen = QPen(COLOR_STITCHING_FGD_CROP_RECT)
+        #             pen.setWidth(PEN_CROP_SIZE)
+        #             pen.setStyle(Qt.SolidLine)
+        #             self.painter.setPen(pen)
+        #             self.painter.drawRect(
+        #                 display_x0 + crop_fgd_left, display_y0 + crop_fgd_top - delta_y,
+        #                 roi_width, roi_height)
+        #         else:
+        #             # Do display a cropped image whish is the roi for stiching
+        #             image_cropped = np.ascontiguousarray(image_fgd[
+        #                 roi_top:roi_top+crop_height,
+        #                 roi_left:roi_left+roi_width], dtype=np.uint8)
+
+        #             qImage_fgd = QImage(image_cropped.data, image_cropped.shape[1], image_cropped.shape[0], image_cropped.shape[1] * 3, QImage.Format_BGR888)
+        #             self.painter.drawImage(QPoint(display_x0 + roi_left, display_y0 + roi_top - delta_y), qImage_fgd)
+
+
+        #     elif self.model.get_preview_options() == 'stitching':
+        #         print_time = False
+        #         if print_time:
+        #             initial_time = time.time()
+
+        #         f = self.model.get_current_frame()
+        #         if f is not None:
+        #             (no, image_fgd, hist) = process_single_frame(f,
+        #                 preview_options='stitching',
+        #                 bgd_curve_luts=self.widget_stitching_curves.get_curve_luts(),
+        #                 current_channel=self.widget_stitching_curves.get_current_channel())
+        #             # self.model.set_current_frame_cache(image_fgd)
+
+        #             qImage_fgd = QImage(image_fgd.data, image_fgd.shape[1], image_fgd.shape[0], image_fgd.shape[1] * 3, QImage.Format_BGR888)
+        #             self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
+
+        #         if print_time:
+        #             print("\t->: %.1f" % (1000* (time.time() - initial_time)))
+
+
+        #     elif preview_options == 'stabilized':
+        #         f = self.model.get_current_frame()
+        #         if f is not None:
+        #             (no, image_fgd, hist) = process_single_frame(f, preview_options=preview_options)
+        #             # self.model.set_current_frame_cache(image_fgd)
+
+        #             qImage_fgd = QImage(image_fgd.data, image_fgd.shape[1], image_fgd.shape[0], image_fgd.shape[1] * 3, QImage.Format_BGR888)
+        #             self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
+
+
+        #     elif self.model.get_preview_options() == 'fgd_cropped':
+        #         f = self.model.get_current_frame()
+        #         if f is not None:
+        #             (no, image_fgd_cropped, hist) = process_single_frame(f, preview_options='fgd_cropped')
+        #             self.model.set_current_frame_cache(image_fgd_cropped)
+
+        #             if self.show_side == 'top':
+        #                 delta_y = 0
+        #             elif self.show_side == 'bottom':
+        #                 delta_y = display_y0 + image_fgd_cropped.shape[0] - 1080 + 50
+
+        #             qImage_fgd_cropped = QImage(image_fgd_cropped.data, image_fgd_cropped.shape[1], image_fgd_cropped.shape[0], image_fgd_cropped.shape[1] * 3, QImage.Format_BGR888)
+        #             self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd_cropped)
+
+
+
+
+        #     # elif self.model.get_preview_options() in ['fgd_cropped', 'fgd_roi_edition']:
+        #     #     f = self.model.get_current_frame()
+        #     #     if f is not None:
+        #     #         (no, image_fgd_cropped, hist) = process_single_frame(-1, f, preview_options='fgd_cropped')
+        #     #         self.model.set_current_frame_cache(image_fgd_cropped)
+
+        #     #         qImage_fgd_cropped = QImage(image_fgd_cropped.data, image_fgd_cropped.shape[1], image_fgd_cropped.shape[0], image_fgd_cropped.shape[1] * 3, QImage.Format_BGR888)
+        #     #         self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd_cropped)
+
+
+
+        #     if self.do_display_rect_for_stitching:
+        #         # Draw a rect used for detection points stitching
+        #         stitching_area_fgd_left = 30
+        #         stitching_area_fgd_right = 25
+        #         stitching_area_fgd_top = 15
+        #         stitching_area_fgd_down = 10
+        #         stitching_area_fgd_width = width_fgd - stitching_area_fgd_left - stitching_area_fgd_right
+        #         stitching_area_fgd_height = height_fgd - stitching_area_fgd_top - stitching_area_fgd_down
+
+
+        #         # Draw the rect
+        #         pen = QPen(COLOR_STITCHING_AREA_RECT)
+        #         pen.setWidth(PEN_CROP_SIZE)
+        #         pen.setStyle(Qt.SolidLine)
+        #         self.painter.setPen(pen)
+        #         self.painter.drawRect(
+        #             display_x0 + stitching_area_fgd_left, display_y0 + stitching_area_fgd_top - delta_y,
+        #             stitching_area_fgd_width, stitching_area_fgd_height)
+
+        #     elif self.do_display_crop_for_stitching:
+        #         # Draw a rect/cropped image used for detection points stitching
+
+        #         # print(self.image['stitching'])
+        #         # print(self.image['shot_stitching'])
+        #         if not is_cached:
+        #             fgd_crop_list = self.image['shot_stitching']['fgd_crop']
+        #             fgd_crop_x0 = fgd_crop_list[0]
+        #             fgd_crop_y0 = fgd_crop_list[1]
+        #             fgd_crop_w = width_fgd - (fgd_crop_list[2] + fgd_crop_x0)
+        #             fgd_crop_h = height_fgd - (fgd_crop_list[3] + fgd_crop_y0)
+
+
+        #             # 1. Generate the translated image
+        #             pad_w_l = 40
+        #             pad_w_r = 20
+        #             pad_h = 80
+        #             pad_h_b = 20
+
+        #             #   1.1. Add padding to the initial image
+        #             width = width_fgd + 30 + pad_w_l + pad_w_r
+        #             height = height_fgd + 40+ pad_h + pad_h_b
+        #             image_fgd_with_borders = cv2.copyMakeBorder(image_fgd,
+        #                 pad_h, pad_h_b,
+        #                 pad_w_l, pad_w_r,
+        #                 cv2.BORDER_CONSTANT,
+        #                 value=[0, 0, 0])
+
+        #             # cv2.imwrite("test.png", image_fgd_with_borders)
+
+
+        #             # print("image_fgd_with_borders: %dx%d" % (image_fgd_with_borders.shape[1], image_fgd_with_borders.shape[0]))
+
+        #             #   1.2. Generate a stabilized image
+        #             transformation_matrix = np.float32([
+        #                 [1, 0, self.image['stitching']['T']['dx']],
+        #                 [0, 1, self.image['stitching']['T']['dy']]
+        #             ])
+        #             # transformation_matrix = np.float32([
+        #             #     [1, 0, 0],
+        #             #     [0, 1, 0]
+        #             # ])
+
+        #             img_fgd_stabilized = cv2.warpAffine(
+        #                 image_fgd_with_borders,
+        #                 transformation_matrix,
+        #                 (width, height),
+        #                 flags=cv2.INTER_LANCZOS4,
+        #                 borderMode=cv2.BORDER_CONSTANT,
+        #                 borderValue=(0,0,0))
+
+        #         # 2. Draw rect/cropped foreground image
+        #         if self.do_display_crop_rect_for_stitching:
+        #             # Draw a rect used for detection points stitching
+        #             # print("display rect")
+
+        #             if is_cached:
+        #                 # Draw the original fgd image only
+        #                 # print("qImage_fgd: (%d x %d), delta_y=%d" % (width_fgd, height_fgd, delta_y))
+        #                 qImage_fgd = QImage(image_fgd.data, width_fgd, height_fgd, width_fgd * 3, QImage.Format_BGR888)
+        #                 self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
+        #             elif False:
+        #                 # Draw the original fgd image only
+        #                 # print("qImage_fgd: (%d x %d), delta_y=%d" % (width_fgd, height_fgd, delta_y))
+        #                 qImage_fgd = QImage(image_fgd.data, width_fgd, height_fgd, width_fgd * 3, QImage.Format_BGR888)
+        #                 self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd)
+        #             elif False:
+        #                 qImage_fgd_with_borders = QImage(image_fgd_with_borders.data,
+        #                     image_fgd_with_borders.shape[1],
+        #                     image_fgd_with_borders.shape[0],
+        #                     image_fgd_with_borders.shape[1] * 3, QImage.Format_BGR888)
+        #                 self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd_with_borders)
+        #             else:
+        #                 qImage_fgd_stabilized = QImage(img_fgd_stabilized.data,
+        #                     img_fgd_stabilized.shape[1],
+        #                     img_fgd_stabilized.shape[0],
+        #                     img_fgd_stabilized.shape[1] * 3, QImage.Format_BGR888)
+        #                 self.painter.drawImage(QPoint(display_x0, display_y0 - delta_y), qImage_fgd_stabilized)
+
+        #             # Draw the rect
+        #             # pen = QPen(COLOR_STITCHING_FGD_CROP_RECT)
+        #             # pen.setWidth(PEN_CROP_SIZE)
+        #             # pen.setStyle(Qt.SolidLine)
+        #             # self.painter.setPen(pen)
+        #             # self.painter.drawRect(
+        #             #     display_x0 + fgd_crop_x0, display_y0 + fgd_crop_y0 - delta_y,
+        #             #     fgd_crop_w, fgd_crop_h)
+        #         else:
+        #             # Display the cropped image for detection points stitching
+        #             print("display cropped")
+
+        #     # else:
+        #     #     print("nothing to paint")
 

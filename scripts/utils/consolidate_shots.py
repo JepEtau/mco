@@ -321,10 +321,12 @@ def consolidate_shot(db, shot) -> None:
                 shot['tasks'].remove(t)
 
         # for testing purpose:
-        del shot['stitching']
-
-        pprint(shot)
-        print("")
+        try:
+            del shot['stitching']
+        except:
+            pass
+        # pprint(shot)
+        # print("")
 
     else:
         sys.exit("Did not detected FGD/BGD in shot structure")

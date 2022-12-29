@@ -201,10 +201,11 @@ def get_shots_stitching_parameters(db, k_ep, k_part) -> dict:
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in ['g_debut', 'g_fin']:
-        db_video = db[k_part]['common']['video']
+        db_video = db[k_part]['target']['video']
     else:
         print("%s.get_shots_stitching_parameters: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
+        # pprint(db[k_ep]['target']['video'])
+        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
         print("%s.get_shots_stitching_parameters: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
@@ -245,7 +246,7 @@ def get_frames_stitching_parameters(db, k_ep, k_part) -> dict:
         db_video = db[k_part]['common']['video']
     else:
         print("%s.get_frames_stitching_parameters: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
+        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
         print("%s.get_frames_stitching_parameters: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
@@ -303,7 +304,7 @@ def get_shots_stitching_fgd_crop(db, k_ep, k_part) -> dict:
         db_video = db[k_part]['common']['video']
     else:
         print("%s.get_shots_stitching_fgd_crop: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
+        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
         print("%s.get_shots_stitching_fgd_crop: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
@@ -345,7 +346,7 @@ def get_frames_stitching_transformation(db, k_ep, k_part) -> dict:
         db_video = db[k_part]['common']['video']
     else:
         print("%s.get_frames_stitching_transformation: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
+        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
         print("%s.get_frames_stitching_transformation: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
@@ -387,7 +388,7 @@ def get_shot_stitching_curves(db, k_ep, k_part) -> dict:
         db_video = db[k_part]['common']['video']
     else:
         print("%s.get_shot_stitching_curves: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
+        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
         print("%s.get_shot_stitching_curves: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
@@ -530,11 +531,10 @@ def parse_stitching_curves_database(db, k_ep:str):
         }
         for k_channel in ['r', 'g', 'b']:
             points_str = config.get(k_curves, k_channel).replace(' ', '').strip()
-            match = re.match("([r|g|b)=(.*)", points_str)
-            groups = match.group(2).split(',')
+            points = points_str.split(',')
             db_stitching_curves[k_curves]['channels'][k_channel].remove_all_points()
-            for group in groups:
-                xy = group.split(':')
+            for point in points:
+                xy = point.split(':')
                 db_stitching_curves[k_curves]['channels'][k_channel].add_point(
                     np.float32(xy[0]),np.float32(xy[1]))
 
@@ -554,7 +554,6 @@ def parse_stitching_curves_database(db, k_ep:str):
         #     points = db_stitching_curves[k_curves]['points'][c]
         #     for p in points:
         #         print("\t ", p)
-
 
     return db_stitching_curves
 

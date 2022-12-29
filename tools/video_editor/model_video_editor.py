@@ -146,6 +146,7 @@ class Model_video_editor(Model_common):
         # Contains all path of frames for this part
         self.filepath.clear()
 
+        # Get video db
         if k_part_selected in ['g_debut', 'g_fin']:
             db_video = db[k_part_selected]['target']['video']
         else:
