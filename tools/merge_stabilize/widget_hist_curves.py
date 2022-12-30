@@ -81,7 +81,6 @@ class Widget_hist_curves(QWidget):
         # self.is_modified = False
         # self.is_moving_point = False
 
-        # self.update_lookup_tables()
         # set_stylesheet(self)
         # self.adjustSize()
 
@@ -175,7 +174,6 @@ class Widget_hist_curves(QWidget):
     def remove_selected_point(self):
         self.channels[self.k_selected]['curve'].remove_selected_point(min_points_count=1)
         self.flush_polypoints()
-        self.update_lookup_tables()
         self.update()
         self.is_modified = True
         self.signal_curves_modified.emit('modified')

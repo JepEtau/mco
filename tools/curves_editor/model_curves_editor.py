@@ -40,12 +40,12 @@ from utils.get_filters import FILTER_BASE_NO
 from images.filtering import filter_rgb
 
 from utils.get_curves import calculate_channel_lut
-from parsers.parser_curves import (
-    get_curves_selection,
-    parse_curves_file,
-    parse_curves_folder,
-    write_curves_file,
-)
+# from parsers.parser_curves import (
+#     get_curves_selection,
+#     parse_curves_file,
+#     parse_curves_folder,
+#     write_curves_file,
+# )
 
 
 

@@ -59,8 +59,8 @@ class Model_curves():
         # which does not use the consolidate and target shots (only src)
         log.info("initialize curves selection for each shot")
         # shotlist = self.framelist.get_shotlist()
-        if k_part == '':
-            k_part = self.current_selection['k_part']
+        # if k_part == '':
+        #     k_part = self.current_selection['k_part']
 
         self.db_curves_selection_initial = dict()
         for k_ed in shotlist.keys():

@@ -488,6 +488,8 @@ def get_shot_from_frame_no_new(db, frame_no:int, k_ed, k_ep, k_part) -> dict:
 
 
 def get_src_shot_from_frame_no(db, frame_no:int, k_ed, k_ep, k_part) -> dict:
+    print("get_src_shot_from_frame_no: %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
+
     shots = db[k_ep][k_ed][k_part]['video']['shots']
     for shot in shots:
         if shot is None:

@@ -304,6 +304,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             k_ep_current = self.comboBox_episode.currentText().replace(' ', '')
 
         if k_ep_current == '':
+            pprint(self.k_eps_parts)
             for k_part in self.k_eps_parts[' ']:
                 if k_part in K_GENERIQUES:
                     self.comboBox_part.addItem(k_part)

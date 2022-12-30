@@ -176,7 +176,10 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         try: frame_list = db[k_ep]['common']['frames'][k_part]
         except: return
         k_ep_ref = k_ep
-        k_ed_ref = db[k_ep]['target']['video']['src']['k_ed']
+        # k_ed_ref = db[k_ep]['target']['video']['src']['k_ed']
+        k_ed_ref = db['common']['reference']['edition']
+        # pprint(db)
+        # sys.exit()
 
     # k_ed
     # if k_ed == '':
@@ -255,6 +258,7 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
             k_ep_src = k_ep
 
         # Get frame no from frame ref
+        print("!!!!!!!!!!!!! %s:%s vs %s:%s" % (k_ed_src, k_ep_src, k_ed_ref, k_ep_ref))
         if k_ed_src != k_ed_ref or k_ep_src != k_ep_ref:
             print("\tconvert frame_no into frame_ref, ref = %s:%s" % (k_ed_ref, k_ep_ref))
             start = db[k_ep_ref][k_ed_ref][k_part]['video']['start']
@@ -324,8 +328,8 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
                 (frame['k_ed'], frame['k_ep'], frame['k_part']))
             pprint(frame)
             sys.exit(" cannot continue")
-        print("=> filters:")
-        pprint(frame['filters'])
+        # print("=> filters:")
+        # pprint(frame['filters'])
 
         # Consolidate curves
         if frame['curves'] is not None:
