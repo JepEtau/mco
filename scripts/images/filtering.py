@@ -132,6 +132,20 @@ def filter_upscale(frame, img):
     return None
 
 
+def filter_bgd_curves(frame, img):
+    # print("rgb: %s -> %s" % (frame['filepath']['sharpen'], frame['filepath']['rgb']))
+    b, g, r = cv2.split(img)
+
+    matrix_r = frame['stitching']['curves']['lut']['r']
+    matrix_g = frame['stitching']['curves']['lut']['g']
+    matrix_b = frame['stitching']['curves']['lut']['b']
+
+    rrp = matrix_r[r.flat].reshape(r.shape)
+    ggp = matrix_g[g.flat].reshape(g.shape)
+    bbp = matrix_b[b.flat].reshape(b.shape)
+
+    bgd_img_rgb = cv2.merge((bbp, ggp, rrp))
+    return bgd_img_rgb
 
 
 def filter_rgb(frame, img):

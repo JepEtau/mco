@@ -34,39 +34,35 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
         self.setObjectName('curves_selection')
         self.setAttribute(Qt.WA_DeleteOnClose)
 
-
         # Internal variables
         self.is_widget_active = False
 
-        # Disable focus
-        self.lineEdit_save.setFocusPolicy(Qt.ClickFocus)
         self.list_curves.setFocusPolicy(Qt.NoFocus)
-        self.list_shots.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_save_rgb_curves.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_delete.setFocusPolicy(Qt.NoFocus)
-
-        # Reset widgets
-        self.lineEdit_save.clear()
-        self.pushButton_save_rgb_curves.setEnabled(False)
         self.list_curves.clear()
-        self.list_shots.clear()
-        self.pushButton_discard.setEnabled(False)
-
-        # Connect signals and filter events
-        self.lineEdit_save.returnPressed.connect(self.event_save_rgb_curves_as)
-        self.lineEdit_save.textChanged.connect(self.event_save_filename_entered)
-        self.pushButton_save_rgb_curves.clicked.connect(self.event_save_rgb_curves_as)
-        self.pushButton_discard.clicked.connect(self.event_discard)
-        self.pushButton_delete.clicked.connect(self.event_delete)
-
-
         self.list_curves.itemSelectionChanged.connect(self.event_curves_selection_changed)
-
         self.list_curves.installEventFilter(self)
         self.list_curves.verticalScrollBar().installEventFilter(self)
-
-        self.lineEdit_save.clearFocus()
         self.set_list_stylesheet()
+
+        self.lineEdit_save.setFocusPolicy(Qt.ClickFocus)
+        self.lineEdit_save.clear()
+        self.lineEdit_save.clearFocus()
+        self.lineEdit_save.returnPressed.connect(self.event_save_rgb_curves_as)
+        self.lineEdit_save.textChanged.connect(self.event_save_filename_entered)
+
+        self.list_shots.setFocusPolicy(Qt.NoFocus)
+        self.list_shots.clear()
+
+        self.pushButton_save_rgb_curves.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_save_rgb_curves.setEnabled(False)
+        self.pushButton_save_rgb_curves.clicked.connect(self.event_save_rgb_curves_as)
+
+        self.pushButton_delete.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_delete.clicked.connect(self.event_delete)
+
+        self.pushButton_discard.setEnabled(False)
+        self.pushButton_discard.clicked.connect(self.event_discard)
+
         self.adjustSize()
 
 
@@ -97,7 +93,6 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
 
     def set_model(self, model):
         self.model = model
-
         # Connect signals
         self.model.signal_curves_library_modified[dict].connect(self.event_curves_library_modified)
         self.model.signal_load_curves[dict].connect(self.event_curves_selected)

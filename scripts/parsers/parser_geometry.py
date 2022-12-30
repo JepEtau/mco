@@ -84,10 +84,10 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
 
 
 
-def get_part_geometry_list(db, k_ep, k_part) -> dict:
+def get_initial_part_geometry(db, k_ep, k_part) -> dict:
     """ Returns a list of crops/resize per part for each edition
     """
-    # print("get_part_geometry_list for %s:%s" % (k_ep, k_part))
+    # print("get_initial_part_geometry for %s:%s" % (k_ep, k_part))
     part_geometry = dict()
 
     if k_part in ['g_debut', 'g_fin']:

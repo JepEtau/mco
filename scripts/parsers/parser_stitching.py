@@ -20,6 +20,8 @@ from utils.common import (
     K_GENERIQUES,
     get_k_part_from_frame_no,
     get_shot_from_frame_no_new,
+    get_or_create_src_shot,
+    nested_dict_set,
 )
 
 STITCHING_EXTRACTORS = [
@@ -63,7 +65,7 @@ STICTHING_FGD_PAD = [60, 60, 80, 60]
 
 
 
-STITCHING_CURVES_DEFAULT = {
+BGD_CURVES_DEFAULT = {
     'k_curves': '',
     'points': dict(),
     'lut': None,
@@ -83,7 +85,7 @@ def parse_stitching_configurations(db, k_ep_or_g:str, parse_parameters=False):
     # Parse the file
     config = configparser.ConfigParser()
     config.read(filepath)
-    # print("%s.parse_stitching_configurations: %s" % (__name__, k_ep_or_g))
+    print("%s.parse_stitching_configurations: %s" % (__name__, k_ep_or_g))
     for k_section in config.sections():
         if '.' not in k_section:
             sys.exit("parse_stitching_configurations: error, no edition,ep,part specified")
@@ -172,7 +174,7 @@ def parse_stitching_configurations(db, k_ep_or_g:str, parse_parameters=False):
                         # Overwrite default parameters by the one specified here
                         shot['stitching']['frames'][frame_no]['parameters'][p[0]] = p[1]
                         shot['stitching']['frames'][frame_no]['parameters']['is_default'] = False
-
+            # pprint(shot)
 
 def _parameter_to_property(p):
     if p[0] == 'roi':
@@ -294,33 +296,24 @@ def get_frames_stitching_parameters(db, k_ep, k_part) -> dict:
 
 
 
-def get_shots_stitching_fgd_crop(db, k_ep, k_part) -> dict:
+def get_initial_fgd_crop(db, k_ep, k_part) -> dict:
     """ Returns a dict of fgd crop for each shot of this k_ep:k_part
     """
     fgd_crop = dict()
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in ['g_debut', 'g_fin']:
-        db_video = db[k_part]['common']['video']
+        db_video = db[k_part]['target']['video']
     else:
-        print("%s.get_shots_stitching_fgd_crop: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
-        k_ep_src = k_ep
-        db_video = db[k_ep_src][k_ed_src][k_part]['video']
-        print("%s.get_shots_stitching_fgd_crop: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
+        db_video = db[k_ep]['target']['video'][k_part]
 
     for shot in db_video['shots']:
-        # print(shot)
-        if ('src' not in shot.keys()
-            or ('use' in shot['src'].keys()
-            and not shot['src']['use'])):
-            shot_src = shot
-        else:
-            if 'k_ed' in shot['src'].keys():
-                k_ed_src = shot['src']['k_ed']
-            k_ep_src = shot['src']['k_ep']
-            k_part_src = get_k_part_from_frame_no(db, k_ed_src, k_ep_src, shot['src']['start'])
-            shot_src = get_shot_from_frame_no_new(db, frame_no=shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src)
+        # This shot contains the src data
+        shot_src = shot
+        k_ed_src = shot['k_ed']
+        k_ep_src = shot['k_ep']
+        k_part_src = shot['k_part']
+        shot_start = shot['start']
 
         # Append to the dict if fgd_crop is defined
         if ('stitching' not in shot_src.keys()
@@ -328,12 +321,45 @@ def get_shots_stitching_fgd_crop(db, k_ep, k_part) -> dict:
             continue
 
         if shot_src['stitching']['fgd_crop'] is not None:
-            fgd_crop[shot['no']] = shot_src['stitching']['fgd_crop']
+            nested_dict_set(fgd_crop, shot_src['stitching']['fgd_crop'],
+                k_ed_src, k_ep_src, k_part_src, shot_start)
 
     return fgd_crop
 
 
 
+def get_initial_matrix(db, k_ep, k_part) -> dict:
+    matrix = dict()
+    print("get_initial_matrix: %s:%s" % (k_ep, k_part))
+
+    # Get the list of editions and episode that are used by this ep/part
+    if k_part in ['g_debut', 'g_fin']:
+        db_video = db[k_part]['target']['video']
+    else:
+        db_video = db[k_ep]['target']['video'][k_part]
+
+    for shot in db_video['shots']:
+        # This shot contains the src data
+        shot_src = shot
+        k_ed_src = shot['k_ed']
+        k_ep_src = shot['k_ep']
+        k_part_src = shot['k_part']
+        shot_start = shot['start']
+        print("shot: %s:%s:%s:%d" % (k_ed_src, k_ep_src, k_part_src, shot_start))
+        # pprint(shot_src)
+
+        # Append to the dict if fgd_crop is defined
+        if 'stitching' not in shot_src.keys():
+            continue
+
+        nested_dict_set(matrix, dict(), k_ed_src, k_ep_src, k_part_src, shot_start)
+        for frame_no in shot_src['stitching']['frames']:
+            # if shot_src['stitching']['frames'] is not None:
+            matrix[k_ed_src][k_ep_src][k_part_src][shot_start][frame_no] = shot_src['stitching']['frames'][frame_no]['m']
+
+    # pprint(matrix)
+    # sys.exit("get_initial_matrix")
+    return matrix
 
 
 def get_frames_stitching_transformation(db, k_ep, k_part) -> dict:
@@ -380,53 +406,63 @@ def get_frames_stitching_transformation(db, k_ep, k_part) -> dict:
 
 
 
-def get_shot_stitching_curves(db, k_ep, k_part) -> dict:
-    shot_stitching_curves = dict()
+def get_bgd_curves_selection(db, k_ep, k_part) -> dict:
+    shot_bgd_curves = dict()
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in ['g_debut', 'g_fin']:
         db_video = db[k_part]['common']['video']
     else:
-        print("%s.get_shot_stitching_curves: %s:%s" % (__name__, k_ep, k_part))
+        print("%s.get_bgd_curves_selection: %s:%s" % (__name__, k_ep, k_part))
         k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
-        print("%s.get_shot_stitching_curves: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
+        print("%s.get_bgd_curves_selection: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
 
     for shot in db_video['shots']:
-        # print(shot)
-        if ('src' not in shot.keys()
-            or ('use' in shot['src'].keys()
-            and not shot['src']['use'])):
-            shot_src = shot
-        else:
-            if 'k_ed' in shot['src'].keys():
-                k_ed_src = shot['src']['k_ed']
-            k_ep_src = shot['src']['k_ep']
-            k_part_src = get_k_part_from_frame_no(db,
-                k_ed_src,
-                k_ep_src,
-                shot['src']['start'])
-            shot_src = get_shot_from_frame_no_new(db,
-                frame_no=shot['src']['start'],
-                k_ed=k_ed_src,
-                k_ep=k_ep_src,
-                k_part=k_part_src)
+        # pprint(shot)
+        shot_src = shot
+        # k_ed_src = shot['k_ed']
+        # k_ep_src = shot['k_ep']
+        k_part_src = k_part
 
-        # Append to the dict if stitching curves are defined
-        if ('stitching' not in shot_src.keys()
-            or 'curves' not in shot_src['stitching'].keys()):
+        shot_start = shot['start']
+
+        # if ('src' not in shot.keys()
+        #     or ('use' in shot['src'].keys()
+        #     and not shot['src']['use'])):
+        #     shot_src = shot
+        # else:
+        #     if 'k_ed' in shot['src'].keys():
+        #         k_ed_src = shot['src']['k_ed']
+        #     k_ep_src = shot['src']['k_ep']
+        #     k_part_src = get_k_part_from_frame_no(db,
+        #         k_ed_src,
+        #         k_ep_src,
+        #         shot['src']['start'])
+        #     shot_src = get_shot_from_frame_no_new(db,
+        #         frame_no=shot['src']['start'],
+        #         k_ed=k_ed_src,
+        #         k_ep=k_ep_src,
+        #         k_part=k_part_src)
+
+        # Append to the dict if bgd curves are defined
+        if ('stitching' not in shot.keys()
+            or 'curves' not in shot['stitching'].keys()):
             continue
 
-        if shot_src['stitching']['curves'] is not None:
-            shot_stitching_curves[shot['no']] = shot_src['stitching']['curves']
+        if shot['stitching']['curves'] is not None:
+            nested_dict_set(shot_bgd_curves, shot_src['stitching']['curves'],
+                k_ed_src, k_ep_src, k_part_src, shot_start)
 
-    return shot_stitching_curves
+    # pprint(shot_bgd_curves)
+
+    return shot_bgd_curves
 
 
 
-def save_shot_stitching_curves(db, k_ep, k_part, shots:dict, stitching_curves) -> dict:
-    print("save_shot_stitching_curves: %s:%s" % (k_ep, k_part))
+def save_shot_bgd_curves(db, k_ep, k_part, shots:dict, bgd_curves) -> dict:
+    print("save_shot_bgd_curves: %s:%s" % (k_ep, k_part))
 
     for shot_no, shot in shots.items():
         print("\t- shot no. %d" % (shot_no))
@@ -443,7 +479,7 @@ def save_shot_stitching_curves(db, k_ep, k_part, shots:dict, stitching_curves) -
             if 'count' not in shot['src'].keys():
                 shot['src']['count'] = shot_src['count']
             if shot_src is None:
-                sys.exit()
+                sys.exit("Error: save_shot_bgd_curves: shot_src is None")
         else:
             k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
             k_ep_src = k_ep
@@ -482,8 +518,8 @@ def save_shot_stitching_curves(db, k_ep, k_part, shots:dict, stitching_curves) -
 
 
         # add bgd curves used for stitching
-        if shot_no in stitching_curves.keys():
-            curves = stitching_curves[shot_no]
+        if shot_no in bgd_curves.keys():
+            curves = bgd_curves[shot_no]
             key_str = "%d_curves" % (shot['start'])
             if curves is None or curves['k_curves'] == '':
                 # Remove the curves for this shot
@@ -505,26 +541,26 @@ def save_shot_stitching_curves(db, k_ep, k_part, shots:dict, stitching_curves) -
 
 
 
-def parse_stitching_curves_database(db, k_ep:str):
+def parse_bgd_curves_database(db, k_ep:str):
 
     # Open configuration file
     filepath = os.path.join(db['common']['directories']['curves'], "stitching", "%s_stitching_curves.ini" % (k_ep))
     if filepath.startswith("~/"):
         filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
     if not os.path.exists(filepath):
-        print("warning: %s:parse_stitching_curves: %s, %s is missing" % (__name__, k_ep, filepath))
+        print("warning: %s:parse_bgd_curves: %s, %s is missing" % (__name__, k_ep, filepath))
         return
 
     # Initialize local database
-    db_stitching_curves = dict()
+    db_bgd_curves = dict()
 
     # Parse the file
     config = configparser.ConfigParser()
     config.read(filepath)
     for k_curves in config.sections():
-        db_stitching_curves[k_curves] = deepcopy(STITCHING_CURVES_DEFAULT)
-        db_stitching_curves[k_curves]['k_curves'] = k_curves
-        db_stitching_curves[k_curves]['channels'] = {
+        db_bgd_curves[k_curves] = deepcopy(BGD_CURVES_DEFAULT)
+        db_bgd_curves[k_curves]['k_curves'] = k_curves
+        db_bgd_curves[k_curves]['channels'] = {
             'r': Curve(),
             'g': Curve(),
             'b': Curve(),
@@ -532,16 +568,16 @@ def parse_stitching_curves_database(db, k_ep:str):
         for k_channel in ['r', 'g', 'b']:
             points_str = config.get(k_curves, k_channel).replace(' ', '').strip()
             points = points_str.split(',')
-            db_stitching_curves[k_curves]['channels'][k_channel].remove_all_points()
+            db_bgd_curves[k_curves]['channels'][k_channel].remove_all_points()
             for point in points:
                 xy = point.split(':')
-                db_stitching_curves[k_curves]['channels'][k_channel].add_point(
+                db_bgd_curves[k_curves]['channels'][k_channel].add_point(
                     np.float32(xy[0]),np.float32(xy[1]))
 
-            # db_stitching_curves[k_curves]['points'][k_channel] = list()
+            # db_bgd_curves[k_curves]['points'][k_channel] = list()
             # for point_str in points_str.split(','):
             #     xy = np.fromstring(point_str, dtype=np.float32, count=2, sep=':')
-            #     db_stitching_curves[k_curves]['points'][k_channel].append([xy[0], xy[1]])
+            #     db_bgd_curves[k_curves]['points'][k_channel].append([xy[0], xy[1]])
 
             # curve = Curve()
             # curve.remove_all_points()
@@ -551,25 +587,25 @@ def parse_stitching_curves_database(db, k_ep:str):
         # print("curve name: %s" % (k_curves))
         # for c in ['r', 'g', 'b']:
         #     print("\t%s" % (c))
-        #     points = db_stitching_curves[k_curves]['points'][c]
+        #     points = db_bgd_curves[k_curves]['points'][c]
         #     for p in points:
         #         print("\t ", p)
 
-    return db_stitching_curves
+    return db_bgd_curves
 
 
 
-def write_stitching_curves_to_database(db, k_ep:str, curves:dict):
+def write_bgd_curves_to_database(db, k_ep:str, curves:dict):
     # Open configuration file
-    filepath = os.path.join(db['common']['directories']['curves'], "stitching", "%s_stitching_curves.ini" % (k_ep))
+    filepath = os.path.join(db['common']['directories']['curves'], "stitching", "%s_bgd_curves.ini" % (k_ep))
     if filepath.startswith("~/"):
         filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
 
     if os.path.exists(filepath):
-        config_stitching_curves_db = configparser.ConfigParser(dict_type=OrderedDict)
-        config_stitching_curves_db.read(filepath)
+        config_bgd_curves_db = configparser.ConfigParser(dict_type=OrderedDict)
+        config_bgd_curves_db.read(filepath)
     else:
-        config_stitching_curves_db = configparser.ConfigParser({}, OrderedDict)
+        config_bgd_curves_db = configparser.ConfigParser({}, OrderedDict)
 
     k_curves = curves['k_curves']
 
@@ -577,8 +613,8 @@ def write_stitching_curves_to_database(db, k_ep:str, curves:dict):
     k_section = k_curves
 
     # Create a section if it does not exist
-    if not config_stitching_curves_db.has_section(k_section):
-        config_stitching_curves_db[k_section] = dict()
+    if not config_bgd_curves_db.has_section(k_section):
+        config_bgd_curves_db[k_section] = dict()
 
     # Modify/Add the points to this section
     for c in ['r', 'g', 'b']:
@@ -589,14 +625,14 @@ def write_stitching_curves_to_database(db, k_ep:str, curves:dict):
                 matrix_str += "%s:%s, " % (
                     np.format_float_positional(p_xy.x()),
                     np.format_float_positional(p_xy.y()))
-            config_stitching_curves_db.set(k_curves, c, matrix_str[:-2])
+            config_bgd_curves_db.set(k_curves, c, matrix_str[:-2])
 
     # Sort the section
-    config_stitching_curves_db[k_section] = OrderedDict(sorted(config_stitching_curves_db[k_section].items(), key=lambda x: x[0]))
+    config_bgd_curves_db[k_section] = OrderedDict(sorted(config_bgd_curves_db[k_section].items(), key=lambda x: x[0]))
 
     # Write to the database
     with open(filepath, 'w') as config_file:
-        config_stitching_curves_db.write(config_file)
+        config_bgd_curves_db.write(config_file)
 
     return True
 

@@ -32,6 +32,7 @@ from PySide6.QtWidgets import QApplication
 
 PATH_CACHE = "../cache"
 
+from images.filtering import filter_bgd_curves
 
 from common.preferences import Preferences
 from models.model_database import Model_database
@@ -39,8 +40,8 @@ from models.model_common import Model_common
 
 from parsers.parser_stitching import (
     STITCHING_SHOT_PARAMETERS_DEFAULT,
-    save_shot_stitching_curves,
-    write_stitching_curves_to_database
+    STICTHING_FGD_PAD,
+    write_bgd_curves_to_database,
 )
 
 from parsers.parser_stabilize import STABILIZATION_SHOT_PARAMETERS_KEYS
@@ -67,26 +68,24 @@ PAD_stabilize_REF = [80, 40, 20, 20]
 
 
 class Model_merge_stabilize(Model_common):
+    signal_current_shot_modified = Signal(dict)
     signal_ready_to_play = Signal(dict)
     signal_reload_frame = Signal()
     signal_is_modified = Signal(dict)
     signal_cache_is_ready = Signal()
-    signal_histogram_modified = Signal(dict)
     signal_refresh_image = Signal()
 
-
-    signal_stitching_curves_list_modified = Signal(dict)
-    signal_stitching_curves_selected = Signal(dict)
+    signal_load_bgd_curves = Signal(dict)
+    signal_bgd_curves_library_modified = Signal(dict)
 
     signal_stitching_calculated = Signal()
-
     signal_stabilize_calculated = Signal()
 
-    signal_is_saved = Signal(list)
+    signal_is_saved = Signal(str)
 
     WIDGET_LIST = [
         'controls',
-        'stitching_curves',
+        'bgd_curves',
         'stitching',
         'stabilize',
         'geometry',
@@ -94,7 +93,7 @@ class Model_merge_stabilize(Model_common):
     ]
 
     SELECTABLE_WIDGET_LIST = [
-        'stitching_curves',
+        'bgd_curves',
         'stitching',
         'stabilize',
         'geometry'
@@ -132,14 +131,16 @@ class Model_merge_stabilize(Model_common):
 
         self.view.widget_stitching.signal_calculation_requested[dict].connect(self.event_stitching_do_calculate)
 
-        self.view.widget_stitching_curves.signal_curves_modified[dict].connect(self.event_stitching_curves_modified)
-        self.view.widget_stitching_curves.signal_save_curves_as[dict].connect(self.event_save_stitching_curves_as)
-        self.view.widget_stitching_curves.signal_discard.connect(self.event_discard_stitching_curves_modifications)
+        self.view.widget_bgd_curves.widget_hist_curves.signal_curves_modified[dict].connect(self.event_bgd_curves_modified)
 
-        self.view.widget_stitching_curves.signal_remove_selection.connect(self.event_remove_stitching_curves_selection)
-        self.view.widget_stitching_curves.signal_selection_changed[str].connect(self.event_stitching_curves_selected)
-        self.view.widget_stitching_curves.signal_reset_selection.connect(self.event_reset_stitching_curves_selection)
-        self.view.widget_stitching_curves.signal_save_selection.connect(partial(self.event_save_modifications, 'stitching_curves'))
+        # self.view.widget_bgd_curves.signal_curves_modified[dict].connect(self.event_bgd_curves_modified)
+        self.view.widget_bgd_curves.signal_save_curves_as[dict].connect(self.event_save_bgd_curves_as)
+        self.view.widget_bgd_curves.signal_discard.connect(self.event_discard_bgd_curves_modifications)
+
+        self.view.widget_bgd_curves.signal_remove_selection.connect(self.event_remove_bgd_curves_selection)
+        self.view.widget_bgd_curves.signal_selection_changed[str].connect(self.event_bgd_curves_selected)
+        self.view.widget_bgd_curves.signal_reset_selection.connect(self.event_reset_bgd_curves_selection)
+        self.view.widget_bgd_curves.signal_save_selection.connect(partial(self.event_save_modifications, 'bgd_curves'))
 
         self.view.widget_stabilize.signal_calculation_requested[dict].connect(self.event_stabilize_do_calculate)
         self.view.widget_stabilize.signal_enabled_modified[bool].connect(self.event_stabilize_set_enabled)
@@ -148,8 +149,8 @@ class Model_merge_stabilize(Model_common):
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
         self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
 
-        # Force refresh of previe options
-        self.view.event_preview_options_changed()
+        # Force refresh of preview options
+        self.view.event_preview_options_changed('model')
 
         p = self.preferences.get_preferences()
         k_ep = 'ep%02d' % (p['selection']['episode']) if p['selection']['episode'] != '' else ''
@@ -193,10 +194,8 @@ class Model_merge_stabilize(Model_common):
         # self.shots is a pointer to the shots for this episode/part
         db = self.model_database.database()
 
-        p_missing_frame = os.path.join('icons', 'missing.png')
-
         # Remove all frames
-        self.frames_fgd.clear()
+        self.frames.clear()
 
         # will contains all shots for this part
         self.shots_fgd.clear()
@@ -227,27 +226,9 @@ class Model_merge_stabilize(Model_common):
                 shot_fgd['count']),
                 flush=True)
 
-            # Copy shot
-            shot_bgd = deepcopy(shot_fgd)
-            shot_bgd['layer'] = 'bgd'
-
             # Consolidate shot
             shot_fgd['tasks'] = [values['k_step']]
             consolidate_shot(db, shot=shot_fgd)
-            shot_bgd['tasks'] = [values['k_step']]
-            consolidate_shot(db, shot=shot_bgd)
-
-
-            # Get a list of path for each frame  for this shot: episode only!
-            if k_part_selected == 'episode':
-                filepath_fgd_tmp = get_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot_fgd)
-                filepath_bgd_tmp = get_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot_bgd)
-            else:
-                print("error: cannot select %s:%s" % (k_ep_selected, k_part_selected))
-                return
-            self.filepath_fgd += filepath_fgd_tmp
-            self.filepath_bgd += filepath_bgd_tmp
-
 
             shot_no = shot_fgd['no']
             self.shots_fgd[shot_no] = shot_fgd
@@ -274,22 +255,110 @@ class Model_merge_stabilize(Model_common):
                 },
             })
 
+        # Create a dict to update the "browser" part of the editor widget
+        if k_part_selected in K_GENERIQUES:
+            k_ed_selected = db[k_part_selected]['target']['video']['src']['k_ed']
+            print("Error: cannot select %s:%s:%s" % (k_ed_selected, k_ep_selected, k_part_selected))
+            return
+        else:
+            k_ed_selected = db[k_ep_selected]['target']['video']['src']['k_ed']
+        self.current_selection = {
+            'k_ed': k_ed_selected,
+            'k_ep': k_ep_selected,
+            'k_part': k_part_selected,
+            'k_step': k_step,
+            'shots': self.shots_fgd,
+            'geometry': None,
+        }
+
+        # Use the selected ed:ep:part
+        # self.current_selection.update({
+        #     'geometry': self.model_database.get_part_geometry(
+        #         k_ed=k_ed_selected,
+        #         k_ep=k_ep_selected,
+        #         k_part=k_part_selected),
+        # })
+
+
+        # self.model_database.initialize_shots_per_curves(self.shots)
+        # self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+        # reenable this
+        # self.signal_bgd_curves_library_modified.emit(self.model_database.get_bgd_curves_names())
+        self.signal_shotlist_modified.emit(self.current_selection)
+
+
+
+    def event_selected_shots_changed(self, selected_shots):
+        print("event_selected_shots_changed")
+        if len(selected_shots['shotlist']) == 0:
+            return
+
+        k_ep_selected = self.current_selection['k_ep']
+        k_part_selected = self.current_selection['k_part']
+        p_missing_frame = os.path.join('icons', 'missing.png')
+
+        # for shot_no in self.shots_fgd.keys():
+        #     if shot_no not in selected_shots['shotlist']:
+        #         del self.shots_fgd
+        db = self.model_database.database()
+
+        for shot_no in selected_shots['shotlist']:
+            # self.shots_fgd[shot_no] = shot_fgd
+            shot_fgd = self.shots_fgd[shot_no]
+
+            # For debug only
+            print("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
+                "{:3d}".format(shot_fgd['no']),
+                "{:5d}".format(shot_fgd['start']),
+                shot_fgd['dst']['count'],
+                shot_fgd['k_ed'],
+                shot_fgd['k_ep'],
+                shot_fgd['k_part'],
+                shot_fgd['start'],
+                shot_fgd['count']),
+                flush=True)
+
+            # Copy shot and consolidate it
+            shot_bgd = dict()
+            for k, v in shot_fgd.items():
+                if k not in ['stabilization', 'filters']:
+                    shot_bgd.update({k: v})
+                else:
+                    shot_bgd.update({k: None})
+            shot_bgd.update({
+                'filters': 'default',
+                'layer': 'bgd',
+                'tasks': [self.current_selection['k_step']],
+            })
+            consolidate_shot(db, shot=shot_bgd)
+            # pprint(shot_bgd)
+            # print("")
+            # sys.exit("event_selected_shots_changed")
+
+            # Get a list of path for each frame  for this shot: episode only!
+            if k_part_selected == 'episode':
+                filepath_fgd_tmp = get_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot_fgd)
+                filepath_bgd_tmp = get_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot_bgd)
+            else:
+                print("error: cannot select %s:%s" % (k_ep_selected, k_part_selected))
+                return
+            self.filepath_fgd += filepath_fgd_tmp
+            self.filepath_bgd += filepath_bgd_tmp
+
             # if 'stitching' in shot_src.keys():
             #     k_curves = shot_src['stitching']['curves']['k_curves']
             #     # if k_curves != ''
-            #     shot_src['stitching']['curves'] = self.model_database.get_shot_stitching_curves(shot_no)
+            #     shot_src['stitching']['curves'] = self.model_database.get_shot_bgd_curves(shot_no)
             #     del shot_src['stitching']['frames']
             #     shot_src['stitching']['geometry'] = self.model_database.get_shot_stitching_fgd_crop(shot_no)
 
             # Get values for this shot
-            # stitching_fgd_crop = self.model_database.get_shot_stitching_fgd_crop(shot_no)
+            bgd_curves = self.model_database.get_shot_bgd_curves_selection(db=db, shot=shot_bgd)
+            stitching_fgd_crop = self.model_database.get_fgd_crop(shot=shot_fgd)
             # st_geometry = self.model_database.get_shot_st_geometry(shot_no)
             # part_geometry = self.model_database.get_part_geometry(k_ed_src, k_part)
-            # stitching_curves = self.model_database.get_shot_stitching_curves(shot_no)
-            stitching_fgd_crop = None
             st_geometry = None
             shot_geometry = None
-            stitching_curves = None
 
             self.frames_fgd[shot_no] = list()
             for p_fgd, p_bgd in zip(self.filepath_fgd, self.filepath_bgd):
@@ -312,6 +381,7 @@ class Model_merge_stabilize(Model_common):
                     fgd_image_filepath = p_fgd
 
                 if not os.path.exists(p_bgd):
+                    print("missing file: %s" % (p_bgd))
                     bgd_image_filepath = p_missing_frame
                     shot_bgd['is_valid'] = False
                 else:
@@ -335,9 +405,9 @@ class Model_merge_stabilize(Model_common):
                     'geometry': shot_geometry,
                     'stitching': {
                         'parameters': self.model_database.get_frame_stitching_parameters(shot_no, frame_no),
-                        'm': self.model_database.get_frame_stitching_transformation(shot_no, frame_no),
+                        'm': self.model_database.get_image_stitching_matrix(shot_fgd, frame_no),
                         'fgd_crop': stitching_fgd_crop,
-                        'curves': stitching_curves,
+                        'curves': bgd_curves,
                     },
                     'stabilize': {
                         'delta_interval': self.model_database.get_shot_stabilize_parameters(shot_no, frame_no)['delta_interval'],
@@ -347,46 +417,10 @@ class Model_merge_stabilize(Model_common):
                     'cache': None,
                     'cache_fgd': None,
                     'cache_bgd': None,
+                    'cache_bgd_tmp': None,
                 })
-
-
-        # Create a dict to update the "browser" part of the editor widget
-        if k_part_selected in K_GENERIQUES:
-            k_ed_selected = db[k_part_selected]['target']['video']['src']['k_ed']
-            print("Error: cannot select %s:%s:%s" % (k_ed_selected, k_ep_selected, k_part_selected))
-            return
-        else:
-            k_ed_selected = db[k_ep_selected]['target']['video']['src']['k_ed']
-        self.current_selection = {
-            'k_ed': k_ed_selected,
-            'k_ep': k_ep_selected,
-            'k_part': k_part_selected,
-            'k_step': k_step,
-            'shots': self.shots,
-            'geometry': None,
-        }
-
-        # Use the selected ed:ep:part
-        # self.current_selection.update({
-        #     'geometry': self.model_database.get_part_geometry(
-        #         k_ed=k_ed_selected,
-        #         k_ep=k_ep_selected,
-        #         k_part=k_part_selected),
-        # })
-
-
-        # self.model_database.initialize_shots_per_curves(self.shots)
-        # self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
-        # reenable this
-        # self.signal_stitching_curves_list_modified.emit(self.model_database.get_stitching_curves_names())
-        self.signal_shotlist_modified.emit(self.current_selection)
-
-
-
-    def event_selected_shots_changed(self, selected_shots):
-        print("event_selected_shots_changed")
-        if len(selected_shots['shotlist']) == 0:
-            return
+                # pprint(self.frames_fgd[shot_no])
+                # sys.exit("event_selected_shots_changed")
 
         now = time.time()
         frame_nos = list()
@@ -395,17 +429,17 @@ class Model_merge_stabilize(Model_common):
         self.playlist_frames.clear()
         index = 0
         for shot_no in selected_shots['shotlist']:
-            shot = self.frames[shot_no]
+            shot = self.frames_fgd[shot_no]
             for frame in shot:
                 frame['index'] = index
                 index += 1
                 self.playlist_frames.append(frame)
                 frame_nos.append(frame['frame_no'])
-            ticklist.append(ticklist[-1] + len(self.frames[shot_no]))
+            ticklist.append(ticklist[-1] + len(self.frames_fgd[shot_no]))
 
         # Opend fgd images
         with ThreadPoolExecutor(max_workers=8) as executor:
-            future_load_image = {executor.submit(load_image, frame): frame for frame in self.playlist_frames}
+            future_load_image = {executor.submit(load_image, frame, False): frame for frame in self.playlist_frames}
             for future in concurrent.futures.as_completed(future_load_image):
                 # frame_no, img = future_load_image[future]
                 index, img = future.result()
@@ -447,7 +481,7 @@ class Model_merge_stabilize(Model_common):
                 print("calculate_stitching_values: %.3f" % (time.time() - now))
 
         self.playlist_properties.update({
-            'start': self.shots[selected_shots['shotlist'][0]]['start'],
+            'start': self.shots_fgd[selected_shots['shotlist'][0]]['start'],
             'frame_nos': frame_nos,
             'count': len(self.playlist_frames),
             'ticks': ticklist,
@@ -458,6 +492,9 @@ class Model_merge_stabilize(Model_common):
 
         self.signal_ready_to_play.emit(self.playlist_properties)
 
+
+    def get_modified_db(self):
+        return self.model_database.get_modified_db()
 
 
     def event_save_and_close_requested(self):
@@ -483,7 +520,7 @@ class Model_merge_stabilize(Model_common):
             except: pass
         else:
             shot_no = self.get_shot_no_from_frame_no(frame_no)
-            new_frame_no = self.model_database.get_replace_frame_no(self.shots[shot_no], frame_no)
+            new_frame_no = self.model_database.get_replace_frame_no(self.shots_fgd[shot_no], frame_no)
             if new_frame_no == -1:
                 frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
                 # print("\tnew_frame_no=-1")
@@ -501,15 +538,37 @@ class Model_merge_stabilize(Model_common):
         else:
             frame['reload_parameters'] = False
 
+        # current shot
+        shot = self.shots_fgd[frame['shot_no']]
+
         # Stitching
-        frame['curves'] = self.model_database.get_shot_stitching_curves(self.shots[frame['shot_no']])
+
+        # bgd curves
+        frame['stitching']['curves'] = self.model_database.get_shot_bgd_curves_selection(
+            db=self.model_database.database(), shot=shot)
+        if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
+            try:
+                self.signal_load_bgd_curves.emit(frame['curves'])
+            except:
+                self.signal_load_bgd_curves.emit(None)
+        elif self.current_frame is None:
+            self.signal_load_bgd_curves.emit(None)
+
+
+        # Purge image from the previous frame
+        # this is necessary to limit the memory consumption
+        # TODO: create a cache structure which manage the cache
+        # and another thread to generate the next frames in background (when playing as a video)
+        self.purge_current_frame_cache()
+
+        # Set current frame
+        self.current_frame = frame
 
         # Stabilization
 
-
         # Update curves
-        frame['curves'] = self.model_database.get_shot_curves_selection(
-            db=self.model_database.database(), shot=self.shots[frame['shot_no']])
+        # frame['curves'] = self.model_database.get_shot_curves_selection(
+        #     db=self.model_database.database(), shot=shot)
 
 
         # Purge image from the previous frame
@@ -517,14 +576,20 @@ class Model_merge_stabilize(Model_common):
 
 
         # Update geometry
-        k_ed = self.current_selection['reference']['k_ed']
-        k_part = self.current_selection['k_part']
-
-        # TODO: update this for merge and stabilize
-        # frame['geometry'] = self.model_database.get_part_geometry(k_ed=k_ed, k_part=k_part)
-
-        # Set current frame
-        self.current_frame = frame
+        if False:
+            # TODO: reenable this or use the video editor?
+            if frame['k_part'] in ['g_debut', 'g_fin']:
+                frame['geometry'] = self.model_database.get_shot_geometry(
+                    k_ed=frame['k_ed'],
+                    k_ep=frame['k_ep'],
+                    k_part=frame['k_part'],
+                    shot=shot)
+            else:
+                frame['geometry'] = self.model_database.get_shot_geometry(
+                    k_ed=self.current_frame['k_ed'],
+                    k_ep=self.current_frame['k_ep'],
+                    k_part=self.current_frame['k_part'],
+                    shot=shot)
 
         # Generate the image for this frame
         options = self.preview_options
@@ -556,12 +621,12 @@ class Model_merge_stabilize(Model_common):
                 }
             })
 
-            stitching_curves = self.model_database.get_shot_stitching_curves(shot_no=shot_no)
-            if stitching_curves is not None:
+            bgd_curves = self.model_database.get_shot_bgd_curves(shot_no=shot_no)
+            if bgd_curves is not None:
                 shot_dict['stitching'].update({
                     'curves': {
-                        'k_curves': stitching_curves['k_curves'],
-                        'points': stitching_curves['points'],
+                        'k_curves': bgd_curves['k_curves'],
+                        'points': bgd_curves['points'],
                     },
                 })
 
@@ -569,8 +634,8 @@ class Model_merge_stabilize(Model_common):
             shot_dict.update({
                 'stabilize': {
                     'parameters': self.model_database.get_shot_stabilize_parameters(shot_no=shot_no),
-                    'shot_start': self.shots[shot_no]['start'],
-                    'shot_count': self.shots[shot_no]['count'],
+                    'shot_start': self.shots_fgd[shot_no]['start'],
+                    'shot_count': self.shots_fgd[shot_no]['count'],
                 }
             })
 
@@ -623,7 +688,7 @@ class Model_merge_stabilize(Model_common):
 
         # Update frames
         for k_shot_no in self.frames.keys():
-            for f in self.frames[k_shot_no]:
+            for f in self.frames_fgd[k_shot_no]:
                 f['geometry'] = coordinates
 
         self.signal_is_modified.emit({'status': True, 'shot_no': None, 'crop': coordinates})
@@ -658,18 +723,18 @@ class Model_merge_stabilize(Model_common):
             if is_saved:
                 self.signal_is_saved.emit([k_settings])
 
-        elif k_settings == 'stitching_curves':
+        elif k_settings == 'bgd_curves':
             log.info("save stitching curves changes")
             shot_no = self.current_frame['shot_no']
             shot = self.get_shot(shot_no=shot_no)
 
             # Save the selected curves selection
-            save_shot_stitching_curves(db=self.model_database.database(), k_ep=k_ep, k_part=k_part,
+            save_shot_bgd_curves(db=self.model_database.database(), k_ep=k_ep, k_part=k_part,
                 shots={shot_no: shot},
-                stitching_curves=self.model_database.get_modified_shot_stitching_curves())
+                bgd_curves=self.model_database.get_modified_shot_bgd_curves())
 
             # Set as initial and remove from modified: to avoid parsing the stitching file
-            self.model_database.set_shot_stitching_curves_as_initial(shot_no)
+            self.model_database.set_shot_bgd_curves_as_initial(shot_no)
 
             self.signal_is_saved.emit([k_settings])
 
@@ -677,206 +742,120 @@ class Model_merge_stabilize(Model_common):
             log.info("TODO: save all?")
 
 
-
-
-    def __event_preview_options_changed(self, preview_options_dict):
-        # TODO: remove this
-        print("\nchanged preview mode:" % (preview_options_dict))
-        print("---------------------------------------")
-        pprint(preview_options_dict)
-        print("")
-
-        is_stitching_edition = False
-        use_initial = True
-        if preview_options_dict['stitching']['roi_edition']:
-            # ROI edition is only in initial image
-            print("\t-> initial - add roi rect, stopped")
-            is_stitching_edition = True
-            image_str = 'initial fgd'
-            return
-
-        if preview_options_dict['stitching']['is_enabled']:
-            # Merge images
-            # But just before, apply stitching curves
-            if preview_options_dict['stitching_curves']['is_enabled']:
-                print("\t-> bgd curves on bgd image")
-
-            print("\t-> apply homography on bgd image")
-            use_initial = False
-        else:
-            # Use the initial image
-            print("\t-> initial fgd")
-
-        # Stabilization
-        if preview_options_dict['stabilize']['is_enabled']:
-            print("\t-> stabilize")
-
-        # Crop fgd image when stitching
-        if preview_options_dict['stitching']['is_enabled']:
-            if preview_options_dict['stitching']['crop_edition']:
-                print("\t-> crop initial fgd (edit)")
-            else:
-                print("\t-> crop initial fgd")
-            print("\t-> merge fgd and bgd")
-
-
-
-        # Apply global curves
-
-
-        # Crop and resize
-        if preview_options_dict['geometry']['is_enabled']:
-            if preview_options_dict['geometry']['st']['is_enabled']:
-                # Stitching/stabilization
-                if preview_options_dict['geometry']['st']['crop_edition']:
-                    if preview_options_dict['geometry']['st']['crop_preview']:
-                        # Crop
-                        print("\t-> Crop the image")
-
-                    elif (not preview_options_dict['geometry']['st']['resize_edition']
-                        and not preview_options_dict['geometry']['st']['resize_preview']):
-                        # Adding a rect is allowed because resize is disabled
-                        print("\t-> Add a crop rect on the original image")
-
-
-                if preview_options_dict['geometry']['st']['resize_edition']:
-                    if preview_options_dict['geometry']['st']['resize_preview']:
-                        # Force crop_preview
-                        print("\t-> Crop the image")
-                        # Resize
-                        print("\t-> Resize the image")
-                        # Add borders
-                        print("\t-> Add the borders")
-
-                    else:
-                        # Add the final rect (coming from final) and borders
-                        print("\t-> Crop the image")
-                        print("\t-> Add the final rect")
-                        print("\t-> Resize the image to ")
-
-            elif preview_options_dict['geometry']['part']['is_enabled']:
-                # Final
-                if preview_options_dict['geometry']['part']['crop_edition']:
-                    if preview_options_dict['geometry']['part']['crop_preview']:
-                        # Crop
-                        print("\t-> Crop the image")
-
-                    elif (not preview_options_dict['geometry']['part']['resize_edition']
-                        and not preview_options_dict['geometry']['part']['resize_preview']):
-                        # Adding a rect is allowed because resize is disabled
-                        print("\t-> Add a crop rect on the original image")
-
-
-                if preview_options_dict['geometry']['resize_edition']:
-                    if preview_options_dict['geometry']['resize_preview']:
-                        # Force crop_preview
-                        print("\t-> Crop the image")
-                        # Resize
-                        print("\t-> Resize the image")
-                        # Add borders
-                        print("\t-> Add the borders")
-
-                    else:
-                        # Add the final rect (coming from final) and borders
-                        print("\t-> Crop the image")
-                        print("\t-> Add the final rect")
-                        print("\t-> Resize the image to ")
-
-
-
+    def event_bgd_curves_modified(self, rgb_channels):
+        shot_no = self.current_frame['shot_no']
+        print("-> event_bgd_curves_modified, shot no. %d" % (shot_no))
+        self.model_database.set_shot_bgd_channels(
+            shot=self.shots_fgd[shot_no],
+            rgb_channels=rgb_channels)
         self.signal_reload_frame.emit()
 
 
+    def event_bgd_curves_selection_changed(self, k_curves:str):
+        print("event_curves_selection_changed: todo")
 
-    def event_save_shot_stitching_curves(self):
-        print("todo: event_save_shot_stitching_curves")
+
+    def event_save_shot_bgd_curves(self):
+        print("todo: event_save_shot_bgd_curves")
 
 
-    def event_stitching_curves_selected(self, k_curves):
+    def event_bgd_curves_selected(self, k_curves):
         log.info("select k_curves: %s" % (k_curves))
         shot_no = self.current_frame['shot_no']
 
-        # for f in self.frames[shot_no]:
+        # for f in self.frames_fgd[shot_no]:
         #     print(f['stitching'])
 
-        self.model_database.select_shot_stitching_curves(shot_no=shot_no, k_curves=k_curves)
+        self.model_database.select_shot_bgd_curves(shot_no=shot_no, k_curves=k_curves)
 
         # Update each frames of the shot
-        shot_curves = self.model_database.get_shot_stitching_curves(shot_no)
-        for f in self.frames[shot_no]:
+        shot_curves = self.model_database.get_shot_bgd_curves(shot_no)
+        for f in self.frames_fgd[shot_no]:
             if ('cache' in f.keys()
                 and f['cache'] is not None):
                 del f['cache']
                 f['cache'] = None
             f['stitching']['curves'] = shot_curves
 
-        # for f in self.frames[shot_no]:
+        # for f in self.frames_fgd[shot_no]:
         #     print(f['stitching']['curves']['k_curves'])
 
-        self.signal_stitching_curves_selected.emit(shot_curves)
+        self.signal_load_bgd_curves.emit(shot_curves)
         self.signal_refresh_image.emit()
 
 
-    def event_discard_stitching_curves_modifications(self, k_curves=''):
+    def event_discard_bgd_curves_modifications(self, k_curves=''):
+        self.model_database.discard_bgd_curves_modifications(k_curves)
+        k_part = self.current_selection['k_part']
+        k_ep = self.current_selection['k_ep']
+
+        # Get the initial curves
+        curves = self.model_database.get_bgd_curves(self.model_database.database(),
+            k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep,
+            k_curves=k_curves)
+
+        # Send the list of curves
+        self.signal_bgd_curves_library_modified.emit(self.model_database.get_bgd_library_curves())
+
+        # Reload curves
+        self.signal_load_bgd_curves.emit(curves)
+        self.signal_reload_frame.emit()
+
+
         # Remove modifications of the selected curves
         log.info("discard modifications %s" % (k_curves))
 
-        self.model_database.discard_stitching_curves_modifications(k_curves)
+        self.model_database.discard_bgd_curves_modifications(k_curves)
 
         # Update the curves list
-        self.signal_stitching_curves_list_modified.emit(
-            self.model_database.get_stitching_curves_names())
+        self.signal_bgd_curves_library_modified.emit(
+            self.model_database.get_bgd_curves_names())
 
         # Get shot_curves for this shot
         shot_no = self.current_frame['shot_no']
-        shot_curves = self.model_database.get_shot_stitching_curves(shot_no)
-        self.signal_stitching_curves_selected.emit(shot_curves)
+        shot_curves = self.model_database.get_shot_bgd_curves(shot_no)
+        self.signal_load_bgd_curves.emit(shot_curves)
 
         self.signal_refresh_image.emit()
 
 
-    def event_remove_stitching_curves_selection(self):
+    def event_remove_bgd_curves_selection(self):
         log.info("remove cruves for this shot")
         shot_no = self.current_frame['shot_no']
-        self.model_database.remove_shot_stitching_curves(shot_no=shot_no)
+        self.model_database.remove_shot_bgd_curves(shot_no=shot_no)
 
         # Update each frames of the shot
-        for f in self.frames[shot_no]:
+        for f in self.frames_fgd[shot_no]:
             if ('cache' in f.keys()
                 and f['cache'] is not None):
                 del f['cache']
                 f['cache'] = None
             f['stitching']['curves'] = None
 
-        self.signal_stitching_curves_selected.emit(None)
+        self.signal_load_bgd_curves.emit(None)
         self.signal_refresh_image.emit()
 
 
-    def event_stitching_curves_modified(self, curves:dict):
-        log.info("modify stitching curves database")
-        self.model_database.modify_stitching_curves(curves=curves)
-        self.signal_refresh_image.emit()
 
-
-    def reset_to_initial_stitching_curves(self):
+    def reset_to_initial_bgd_curves(self):
         print("TODO: reset to initial stitching curves")
         # 2 cases:
 
 
-    def event_reset_stitching_curves_selection(self):
+    def event_reset_bgd_curves_selection(self):
         log.info("reset selection to initial")
         shot_no = self.current_frame['shot_no']
-        self.model_database.reset_shot_stitching_curves_selection(shot_no=shot_no)
+        self.model_database.reset_shot_bgd_curves_selection(shot_no=shot_no)
 
         # Get shot_curves for this shot
-        shot_curves = self.model_database.get_shot_stitching_curves(shot_no)
+        shot_curves = self.model_database.get_shot_bgd_curves(shot_no)
 
         # Reset this curve if modified
-        self.model_database.discard_stitching_curves_modifications(k_curves=shot_curves['k_curves'])
-        shot_curves = self.model_database.get_shot_stitching_curves(shot_no)
+        self.model_database.discard_bgd_curves_modifications(k_curves=shot_curves['k_curves'])
+        shot_curves = self.model_database.get_shot_bgd_curves(shot_no)
 
         # Update each frames of the shot
-        for f in self.frames[shot_no]:
+        for f in self.frames_fgd[shot_no]:
             if ('cache' in f.keys()
                 and f['cache'] is not None):
                 del f['cache']
@@ -884,35 +863,34 @@ class Model_merge_stabilize(Model_common):
             f['stitching']['curves'] = shot_curves
 
         # Update the curves list
-        self.signal_stitching_curves_list_modified.emit(
-            self.model_database.get_stitching_curves_names())
-        self.signal_stitching_curves_selected.emit(shot_curves)
+        self.signal_bgd_curves_library_modified.emit(
+            self.model_database.get_bgd_curves_names())
+        self.signal_load_bgd_curves.emit(shot_curves)
         self.signal_refresh_image.emit()
 
 
-    def event_save_stitching_curves_as(self, curves:dict):
+    def event_save_bgd_curves_as(self, curves:dict):
         log.info("save stitching curves as %s" % (curves['k_curves']))
         k_ep = self.current_selection['k_ep']
         shot_no = self.current_frame['shot_no']
 
         # Write the new curves to the file
-        write_stitching_curves_to_database(db=self.model_database.database(),
-            k_ep=k_ep, curves=curves)
+        write_bgd_curves_to_database(db=self.model_database.database(), k_ep=k_ep, curves=curves)
 
         # Discard the current modified curves and reparse the database
-        current_curves = self.model_database.get_shot_stitching_curves(shot_no=shot_no)
-        self.model_database.discard_stitching_curves_modifications(current_curves['k_curves'])
-        self.model_database.reload_stitching_curves_databse(k_ep=k_ep)
+        current_curves = self.model_database.get_shot_bgd_curves(shot_no=shot_no)
+        self.model_database.discard_bgd_curves_modifications(current_curves['k_curves'])
+        self.model_database.reload_bgd_curves_databse(k_ep=k_ep)
 
         # Update the curves list
-        self.signal_stitching_curves_list_modified.emit(
-            self.model_database.get_stitching_curves_names())
+        self.signal_bgd_curves_library_modified.emit(
+            self.model_database.get_bgd_curves_names())
 
         # Set the new curves as selected
-        self.model_database.select_shot_stitching_curves(shot_no=shot_no, k_curves=curves['k_curves'])
-        shot_curves = self.model_database.get_shot_stitching_curves(shot_no)
+        self.model_database.select_shot_bgd_curves(shot_no=shot_no, k_curves=curves['k_curves'])
+        shot_curves = self.model_database.get_shot_bgd_curves(shot_no)
 
-        self.signal_stitching_curves_selected.emit(shot_curves)
+        self.signal_load_bgd_curves.emit(shot_curves)
         self.signal_refresh_image.emit()
 
 
@@ -959,7 +937,7 @@ class Model_merge_stabilize(Model_common):
 
         # Flush cache
         parameters = self.model_database.get_shot_stabilize_parameters(shot_no=shot_no)
-        for f in self.frames[shot_no]:
+        for f in self.frames_fgd[shot_no]:
             frame_no = f['frame_no']
             # print("flush cache: %d: %d" % (f['shot_no'], f['frame_no']))
             if ('cache' in f.keys()
@@ -986,7 +964,7 @@ class Model_merge_stabilize(Model_common):
         self.model_database.set_shot_stabilize_parameters(shot_no=shot_no, shot_parameters=parameters)
 
         # Flush cache
-        for f in self.frames[shot_no]:
+        for f in self.frames_fgd[shot_no]:
             # print("flush cache: %d: %d" % (f['shot_no'], f['frame_no']))
             if ('cache' in f.keys()
                 and f['cache'] is not None):
@@ -1038,7 +1016,7 @@ class Model_merge_stabilize(Model_common):
         print("calculate_stabilize_values: shot_no=%d" % (shot_no))
 
         shot = self.get_shot(shot_no)
-        framelist = self.frames[shot_no]
+        framelist = self.frames_fgd[shot_no]
 
         # Reset all stabilization value
         print("reset from %d to %d" % (shot['start'], shot['start']+shot['count'] - 1))
@@ -1198,7 +1176,7 @@ class Model_merge_stabilize(Model_common):
 
 
         if False:
-            curves = self.view.widget_stitching_curves.get_curve_luts()
+            curves = self.view.widget_bgd_curves.get_curve_luts()
             now = time.time()
             with ThreadPoolExecutor(max_workers=8) as executor:
                 future_load_image = {executor.submit(process_single_frame, frame, self.get_preview_options(), curves): frame for frame in playlist}
@@ -1224,8 +1202,129 @@ class Model_merge_stabilize(Model_common):
 
 
 def generate_single_image(frame:dict, preview_options:dict):
-    print("generate_single_image")
-    return 0, None
+    print("generate_single_image", flush=True)
+    # pprint(frame)
+
+    # pprint(preview_options)
+
+    # Foreground image
+    img_fgd = frame['cache_fgd']
+    height_fgd, width_fgd, c = img_fgd.shape
+    print("\timg_fgd: %dx%d" % (width_fgd, height_fgd), flush=True)
+
+    # Modify the bgd image (stitching)
+    if preview_options['stitching']['is_enabled']:
+        print("\tapply stitching on background image", flush=True)
+        if frame['cache_bgd_tmp'] is None:
+            # Apply the stitching parameters if preview is enabled
+            img_bgd = frame['cache_bgd']
+
+            if frame['stitching']['m'] is not None:
+                # Use the matrix to modify the background image
+                frame['cache_bgd_tmp'] = cv2.warpPerspective(
+                    img_bgd,
+                    frame['stitching']['m'],
+                    (width_fgd+STICTHING_FGD_PAD[2]+STICTHING_FGD_PAD[3], height_fgd+STICTHING_FGD_PAD[0]+STICTHING_FGD_PAD[1]),
+                    cv2.INTER_LANCZOS4,
+                    borderMode=cv2.BORDER_CONSTANT, borderValue=(128,128,128))
+                img_bgd_tmp = frame['cache_bgd_tmp']
+            else:
+                # Cannot modify the background
+                img_bgd_tmp = cv2.copyMakeBorder(img_bgd,
+                    top=STICTHING_FGD_PAD[0], bottom=STICTHING_FGD_PAD[1],
+                    left=STICTHING_FGD_PAD[2], right=STICTHING_FGD_PAD[3],
+                    borderType=cv2.BORDER_CONSTANT, value=(0,0,0))
+        else:
+            # Already modified
+            img_bgd_tmp = frame['cache_bgd_tmp']
+    else:
+        img_bgd_tmp = frame['cache_bgd']
+
+
+
+    if preview_options['bgd_curves']['is_enabled']:
+        print("\tapply rgb curves on bgd image", flush=True)
+        # Apply curves on background image
+        if img_bgd_tmp is not None:
+            # Apply RGB curves to get a similar histogram between bgd and fgd
+            try:
+                img_bgd = filter_bgd_curves(frame, img_bgd_tmp)
+                # return (frame['index'], img_bgd)
+            except:
+                print("\tCannot apply RGB curves on background image")
+                img_bgd = img_bgd_tmp
+        else:
+            print("\tbgd tmp image is None")
+            img_bgd = img_bgd_tmp
+    else:
+        # Do not apply bgd curves
+        img_bgd = img_bgd_tmp
+    # print("EROOOOOOR")
+
+    # Crop used for stitching
+    # pprint(frame['stitching'])
+    crop_top, crop_bottom, crop_left, crop_right = frame['stitching']['fgd_crop']
+    y0 = crop_top
+    y1 = height_fgd - crop_bottom
+    x0 = crop_left
+    x1 = width_fgd - crop_right
+    pad_h_t = STICTHING_FGD_PAD[0]
+    pad_w_l = STICTHING_FGD_PAD[2]
+
+
+    # extract ROI used for stitching
+    print("\tfgd ROI: x:%d->%d, y:%d->%d" % (x0, x1, y0, y1), flush=True)
+    print("\tbgd ROI: x:%d->%d, y:%d->%d" % (x0 + pad_w_l, x1 + pad_w_l, y0 + pad_h_t, y1 + pad_h_t), flush=True)
+    img_fgd_roi = np.ascontiguousarray(img_fgd[y0:y1, x0:x1], dtype=np.uint8)
+    img_bgd_roi = np.ascontiguousarray(img_bgd[
+        y0 + pad_h_t : y1 + pad_h_t,
+        x0 + pad_w_l : x1 + pad_w_l], dtype=np.uint8)
+
+    histogram = None
+    if preview_options['bgd_curves']['is_enabled']:
+        # Calculate histogram for the current channel only (optimization)
+        print("\tcalculate histogram", flush=True)
+        selected_channel = preview_options['bgd_curves']['selected_channel']
+        do_calculate_histograms = True
+        if do_calculate_histograms:
+            if selected_channel == 'r':
+                hist_roi_target = cv2.calcHist([img_fgd_roi], [2], None, [256], ranges=[0, 256])
+                hist_roi_modified = cv2.calcHist([img_bgd_roi], [2], None, [256], ranges=[0, 256])
+            elif selected_channel == 'g':
+                hist_roi_target = cv2.calcHist([img_fgd_roi], [1], None, [256], ranges=[0, 256])
+                hist_roi_modified = cv2.calcHist([img_bgd_roi], [1], None, [256], ranges=[0, 256])
+            elif selected_channel == 'b':
+                hist_roi_target = cv2.calcHist([img_fgd_roi], [0], None, [256], ranges=[0, 256])
+                hist_roi_modified = cv2.calcHist([img_bgd_roi], [0], None, [256], ranges=[0, 256])
+
+            if selected_channel is not None:
+                histogram = {
+                    selected_channel: {
+                        'target': hist_roi_target,
+                        'modified': hist_roi_modified,
+                    }
+                }
+    frame['histogram'] = histogram
+
+    if preview_options['stitching']['is_enabled']:
+        # Merge images
+        do_blend = True
+        if do_blend:
+            # Blend a common part
+            img_blended = cv2.addWeighted(src1=img_bgd_roi, alpha=0.5, src2=img_fgd_roi, beta=0.5, gamma=0)
+            img_bgd[y0+pad_h_t:y1+pad_h_t, x0+pad_w_l:x1+pad_w_l] = img_blended
+
+            blend_width = 2
+            img_bgd[y0+pad_h_t+blend_width:y1+pad_h_t-blend_width, x0+pad_w_l+blend_width:x1+pad_w_l-blend_width] = img_fgd[y0+blend_width:y1-blend_width, x0+blend_width:x1-blend_width]
+        else:
+            # Replace sub-part
+            img_bgd[y0+pad_h_t:y1+pad_h_t, x0+pad_w_l:x1+pad_w_l] = img_fgd_roi
+
+    frame['cache'] = img_bgd
+
+
+    return (frame['index'], img_bgd)
+
 #     now = time.time()
 #     img = None
 #     print_time = False
@@ -1257,7 +1356,7 @@ def generate_single_image(frame:dict, preview_options:dict):
 #         # fgd dimensions
 #         height_fgd, width_fgd, c = image_fgd.shape
 
-#         if preview_options['stitching_curves']['is_enabled']:
+#         if preview_options['bgd_curves']['is_enabled']:
 #             # Apply RGB curves to get a similar histogram between bgd and fgd
 #             lut = frame['stitching']['curves']['lut']
 #             b, g, r = cv2.split(img_bgd_modified)
@@ -1392,17 +1491,6 @@ def generate_single_image(frame:dict, preview_options:dict):
 
 #         if preview_options['curves']['is_enabled']:
 #             sys.exit("TODO: generate_single_image: apply curves!!!")
-
-
-
-
-
-#         # if preview_options['geometry']['is_enabled']:
-#             # TODO: gloups
-#             # 'crop_edition'
-#             # 'crop_preview'
-#             # 'resize_edition'
-#             # 'resize_preview'
 
 
 
@@ -1593,12 +1681,6 @@ def generate_single_image(frame:dict, preview_options:dict):
 
 #     return (frame['index'], img)
 
-
-
-
-def open_fgd_image(index, frame):
-    img = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
-    return (index, img)
 
 def load_image(frame, is_bgd=False):
     if is_bgd:

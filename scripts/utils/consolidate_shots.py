@@ -239,8 +239,6 @@ def consolidate_shot(db, shot) -> None:
     elif 'layer' in shot.keys() and shot['layer'] == 'bgd':
         # TODO: correct and implement thsi for stitching
 
-        print("%s.consolidate_shot: %s:%s:%s" % (__name__, k_ed, shot['dst']['k_ep'], shot['dst']['k_part']))
-
 
 
         # Remove unused values
@@ -255,7 +253,10 @@ def consolidate_shot(db, shot) -> None:
         shot['k_ed'] = db[k_ep]['common']['video']['stitching']['bgd']
         k_ed = shot['k_ed']
 
+        print("%s.consolidate_shot: BGD: %s:%s:%s" % (__name__, k_ed, shot['dst']['k_ep'], shot['dst']['k_part']))
+
         db_video = db[k_ep][k_ed][k_part]['video']
+        # pprint(db_video)
 
         # Input and dimensions
         shot.update({
@@ -292,6 +293,9 @@ def consolidate_shot(db, shot) -> None:
             except:
                 print("offsets are not defined in %s:%s for part %s" % (k_ed, k_ep, k_part))
 
+        # TODO: get filters in db_video['shots']
+
+        # pprint(db[k_ep][k_ed])
 
 
         # db_video = db[k_ep][k_ed][k_part]['video']
@@ -325,11 +329,13 @@ def consolidate_shot(db, shot) -> None:
             del shot['stitching']
         except:
             pass
+
         # pprint(shot)
         # print("")
+        # sys.exit("consolidate_shot")
 
     else:
-        sys.exit("Did not detected FGD/BGD in shot structure")
+        sys.exit("Did not detect FGD/BGD in shot structure")
 
 
     # Get filters used by this shot

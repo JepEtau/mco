@@ -128,11 +128,11 @@ class Model_common(QObject):
             self.current_frame['cache'] = None
         except:
             pass
-        # try:
-        #     del self.current_frame['cache_fgd']
-        #     self.current_frame['cache_fgd'] = None
-        # except:
-        #     pass
+        try:
+            del self.current_frame['cache_bgd_tmp']
+            self.current_frame['cache_bgd_tmp'] = None
+        except:
+            pass
 
 
     def get_shot(self, shot_no:int):

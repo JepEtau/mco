@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'ui_widget_stitching_curves.ui'
+## Form generated from reading UI file 'ui_widget_bgd_curves.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.4.0
 ##
@@ -23,21 +23,21 @@ from PySide6.QtWidgets import (QAbstractItemView, QApplication, QFrame, QHBoxLay
 from merge_stabilize.widget_hist_curves import Widget_hist_curves
 from merge_stabilize.widget_hist_graph import Widget_hist_graph
 
-class Ui_widget_stitching_curves(object):
-    def setupUi(self, widget_stitching_curves):
-        if not widget_stitching_curves.objectName():
-            widget_stitching_curves.setObjectName(u"widget_stitching_curves")
-        widget_stitching_curves.resize(614, 318)
+class Ui_widget_bgd_curves(object):
+    def setupUi(self, widget_bgd_curves):
+        if not widget_bgd_curves.objectName():
+            widget_bgd_curves.setObjectName(u"widget_bgd_curves")
+        widget_bgd_curves.resize(614, 318)
         sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(widget_stitching_curves.sizePolicy().hasHeightForWidth())
-        widget_stitching_curves.setSizePolicy(sizePolicy)
-        self.verticalLayout_5 = QVBoxLayout(widget_stitching_curves)
+        sizePolicy.setHeightForWidth(widget_bgd_curves.sizePolicy().hasHeightForWidth())
+        widget_bgd_curves.setSizePolicy(sizePolicy)
+        self.verticalLayout_5 = QVBoxLayout(widget_bgd_curves)
         self.verticalLayout_5.setSpacing(0)
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
         self.verticalLayout_5.setContentsMargins(0, 0, 0, 0)
-        self.frame = QFrame(widget_stitching_curves)
+        self.frame = QFrame(widget_bgd_curves)
         self.frame.setObjectName(u"frame")
         self.frame.setFrameShape(QFrame.Panel)
         self.frame.setFrameShadow(QFrame.Plain)
@@ -263,29 +263,29 @@ class Ui_widget_stitching_curves(object):
         self.horizontalLayout_5 = QHBoxLayout()
         self.horizontalLayout_5.setSpacing(3)
         self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-        self.list_curves_names = QListWidget(self.frame)
-        self.list_curves_names.setObjectName(u"list_curves_names")
-        self.list_curves_names.setMinimumSize(QSize(1, 100))
-        self.list_curves_names.setMaximumSize(QSize(80, 16777215))
-        self.list_curves_names.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        self.list_curves_names.setProperty("showDropIndicator", False)
-        self.list_curves_names.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.list_curves_names.setViewMode(QListView.ListMode)
+        self.list_curves = QListWidget(self.frame)
+        self.list_curves.setObjectName(u"list_curves")
+        self.list_curves.setMinimumSize(QSize(1, 100))
+        self.list_curves.setMaximumSize(QSize(80, 16777215))
+        self.list_curves.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.list_curves.setProperty("showDropIndicator", False)
+        self.list_curves.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.list_curves.setViewMode(QListView.ListMode)
 
-        self.horizontalLayout_5.addWidget(self.list_curves_names)
+        self.horizontalLayout_5.addWidget(self.list_curves)
 
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setSpacing(20)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.verticalLayout_3.setContentsMargins(-1, -1, -1, 10)
-        self.pushButton_save_curves_modifications = QPushButton(self.frame)
-        self.pushButton_save_curves_modifications.setObjectName(u"pushButton_save_curves_modifications")
-        sizePolicy3.setHeightForWidth(self.pushButton_save_curves_modifications.sizePolicy().hasHeightForWidth())
-        self.pushButton_save_curves_modifications.setSizePolicy(sizePolicy3)
-        self.pushButton_save_curves_modifications.setIcon(icon1)
-        self.pushButton_save_curves_modifications.setFlat(True)
+        self.pushButton_save_curves = QPushButton(self.frame)
+        self.pushButton_save_curves.setObjectName(u"pushButton_save_curves")
+        sizePolicy3.setHeightForWidth(self.pushButton_save_curves.sizePolicy().hasHeightForWidth())
+        self.pushButton_save_curves.setSizePolicy(sizePolicy3)
+        self.pushButton_save_curves.setIcon(icon1)
+        self.pushButton_save_curves.setFlat(True)
 
-        self.verticalLayout_3.addWidget(self.pushButton_save_curves_modifications)
+        self.verticalLayout_3.addWidget(self.pushButton_save_curves)
 
         self.pushButton_discard_curves_modifications = QPushButton(self.frame)
         self.pushButton_discard_curves_modifications.setObjectName(u"pushButton_discard_curves_modifications")
@@ -309,11 +309,11 @@ class Ui_widget_stitching_curves(object):
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setSpacing(3)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.lineEdit_save_name = QLineEdit(self.frame)
-        self.lineEdit_save_name.setObjectName(u"lineEdit_save_name")
-        self.lineEdit_save_name.setMaximumSize(QSize(70, 16777215))
+        self.lineEdit_save = QLineEdit(self.frame)
+        self.lineEdit_save.setObjectName(u"lineEdit_save")
+        self.lineEdit_save.setMaximumSize(QSize(70, 16777215))
 
-        self.horizontalLayout_4.addWidget(self.lineEdit_save_name)
+        self.horizontalLayout_4.addWidget(self.lineEdit_save)
 
         self.pushButton_save_curves_as = QPushButton(self.frame)
         self.pushButton_save_curves_as.setObjectName(u"pushButton_save_curves_as")
@@ -341,30 +341,30 @@ class Ui_widget_stitching_curves(object):
         self.verticalLayout_5.addWidget(self.frame)
 
 
-        self.retranslateUi(widget_stitching_curves)
+        self.retranslateUi(widget_bgd_curves)
 
-        QMetaObject.connectSlotsByName(widget_stitching_curves)
+        QMetaObject.connectSlotsByName(widget_bgd_curves)
     # setupUi
 
-    def retranslateUi(self, widget_stitching_curves):
-        widget_stitching_curves.setWindowTitle(QCoreApplication.translate("widget_stitching_curves", u"Form", None))
+    def retranslateUi(self, widget_bgd_curves):
+        widget_bgd_curves.setWindowTitle(QCoreApplication.translate("widget_bgd_curves", u"Form", None))
         self.pushButton_set_preview.setText("")
-        self.label.setText(QCoreApplication.translate("widget_stitching_curves", u"Curves before stitching:", None))
+        self.label.setText(QCoreApplication.translate("widget_bgd_curves", u"Curves before stitching:", None))
         self.pushButton_save.setText("")
         self.pushButton_discard.setText("")
         self.pushButton_remove_selection.setText("")
         self.pushButton_undo.setText("")
         self.pushButton_close.setText("")
-        self.radioButton_select_r_channel.setText(QCoreApplication.translate("widget_stitching_curves", u"R", None))
-        self.radioButton_select_g_channel.setText(QCoreApplication.translate("widget_stitching_curves", u"G", None))
-        self.radioButton_select_b_channel.setText(QCoreApplication.translate("widget_stitching_curves", u"B", None))
-        self.lineEdit_coordinates.setText(QCoreApplication.translate("widget_stitching_curves", u"x=255: +16", None))
-        self.label_out_4.setText(QCoreApplication.translate("widget_stitching_curves", u"reset:", None))
-        self.pushButton_reset_current_channel.setText(QCoreApplication.translate("widget_stitching_curves", u"channel", None))
-        self.pushButton_reset_all_channels.setText(QCoreApplication.translate("widget_stitching_curves", u"all", None))
-        self.pushButton_save_curves_modifications.setText("")
+        self.radioButton_select_r_channel.setText(QCoreApplication.translate("widget_bgd_curves", u"R", None))
+        self.radioButton_select_g_channel.setText(QCoreApplication.translate("widget_bgd_curves", u"G", None))
+        self.radioButton_select_b_channel.setText(QCoreApplication.translate("widget_bgd_curves", u"B", None))
+        self.lineEdit_coordinates.setText(QCoreApplication.translate("widget_bgd_curves", u"x=255: +16", None))
+        self.label_out_4.setText(QCoreApplication.translate("widget_bgd_curves", u"reset:", None))
+        self.pushButton_reset_current_channel.setText(QCoreApplication.translate("widget_bgd_curves", u"channel", None))
+        self.pushButton_reset_all_channels.setText(QCoreApplication.translate("widget_bgd_curves", u"all", None))
+        self.pushButton_save_curves.setText("")
         self.pushButton_discard_curves_modifications.setText("")
-        self.lineEdit_save_name.setText(QCoreApplication.translate("widget_stitching_curves", u"025_001", None))
+        self.lineEdit_save.setText(QCoreApplication.translate("widget_bgd_curves", u"025_001", None))
         self.pushButton_save_curves_as.setText("")
     # retranslateUi
 

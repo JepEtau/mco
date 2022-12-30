@@ -2,6 +2,8 @@
 
 import sys
 sys.path.append('../scripts')
+
+from copy import deepcopy
 import numpy as np
 from pprint import pprint
 from logger import log
@@ -28,16 +30,11 @@ from images.curve import (
     Curve_point
 )
 
-from utils.get_curves import (
-    calculate_channel_lut_for_stitching,
-)
 
 class Widget_hist_curves(QWidget):
     signal_point_selected = Signal(list)
     # Current curves have been modified, the model shall be updated
-    signal_curves_modified = Signal(str)
-    # Current is being edited, update image but not the model to optimize time processing
-    signal_curves_editing = Signal()
+    signal_curves_modified = Signal(dict)
 
     GRID_COLOR = QColor(255, 255, 255)
     GRID_AXIS_COLOR = QColor(255, 255, 255)
@@ -68,24 +65,12 @@ class Widget_hist_curves(QWidget):
 
         # Initialize default curves
         for k in self.channels.keys():
-            self.channels[k]['curve'] = Curve(is_default_constant=True),
-            self.channels[k]['lut'] = np.array([]).astype('int')
-            self.channels[k]['polypoints'] = np.array([]).astype('int')
-            self.channels[k]['is_selected'] = False
-
-
-        # self.curves = {
-        #     'k_curves': ''
-        # }
-        # for c in ['red', 'green', 'blue']:
-        #     self.curves.update({
-        #         c[0]: {
-        #             'color': QColor(c),
-        #             'curve': Curve(is_default_constant=True),
-        #             'polypoints': np.array([]).astype('int'),
-        #             'lut': np.array([]).astype('int'),
-        #         }
-        #     })
+            self.channels[k].update({
+                'curve': Curve(is_default_constant=True),
+                'lut': np.array([]).astype('int'),
+                'polypoints': np.array([]).astype('int'),
+                'is_selected': False,
+            })
 
         # Current channel is red
         self.k_selected = 'r'
@@ -132,12 +117,12 @@ class Widget_hist_curves(QWidget):
         self.setMinimumWidth(width)
         self.sample_count = width
 
-        size_policy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.MinimumExpanding)
-        size_policy.setHorizontalStretch(0)
-        size_policy.setVerticalStretch(0)
-        size_policy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
-        self.setSizePolicy(size_policy)
-        self.setMinimumHeight(width)
+        # size_policy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.MinimumExpanding)
+        # size_policy.setHorizontalStretch(0)
+        # size_policy.setVerticalStretch(0)
+        # size_policy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        # self.setSizePolicy(size_policy)
+        # self.setMinimumHeight(width)
         self.adjustSize()
 
 
@@ -145,53 +130,50 @@ class Widget_hist_curves(QWidget):
         self.is_enabled = enabled
 
 
-    def select_channel(self, k_channel):
-        self.k_selected = k_channel
-        self.update()
-
-
-    def load_curves(self, curves:dict):
+    def event_curves_loaded(self, curves:dict):
+        print("load bgd curves: %s" % (curves['k_curves']))
         if curves is not None:
-            log.info("load stitching curves: %s" % (curves['k_curves']))
+            log.info("load bgd curves: %s" % (curves['k_curves']))
             print("%s.event_load_curves: load curves [%s] in RGB graph" % (__name__, curves['k_curves']))
-            points = curves['points']
-            for c in ['r', 'g', 'b']:
-                curve = self.curves[c]['curve']
-                if curve is not None:
-                    curve.remove_all_points()
-                else:
-                    self.curves[c]['curve'] = Curve(is_default_constant=True)
-                    curve = self.curves[c]['curve']
-                for p in points[c]:
-                    if type(p) is Curve_point:
-                        curve.add_point(p.x(), p.y())
-                    else:
-                        curve.add_point(p[0], p[1])
-                self.curves[c]['lut'] = np.array([]).astype('int')
-                self.curves[c]['polypoints'] = np.array([]).astype('int')
-                self.curves[c]['is_selected'] = False
-            self.curves['k_curves'] = curves['k_curves']
+            for k in self.channels.keys():
+                if self.channels[k]['curve'] is not None:
+                    del self.channels[k]['curve']
+                self.channels[k]['curve'] = deepcopy(curves['channels'][k])
+                self.channels[k]['lut'] = np.array([]).astype('int')
+                self.channels[k]['polypoints'] = np.array([]).astype('int')
+                self.channels[k]['is_selected'] = False
+
+            # Previously
+            # points = curves['points']
+            # for c in ['r', 'g', 'b']:
+            #     curve = self.channels[c]['curve']
+            #     if curve is not None:
+            #         curve.remove_all_points()
+            #     else:
+            #         self.channels[c]['curve'] = Curve(is_default_constant=True)
+            #         curve = self.channels[c]['curve']
+            #     for p in points[c]:
+            #         if type(p) is Curve_point:
+            #             curve.add_point(p.x(), p.y())
+            #         else:
+            #             curve.add_point(p[0], p[1])
+            #     self.channels[c]['lut'] = np.array([]).astype('int')
+            #     self.channels[c]['polypoints'] = np.array([]).astype('int')
+            #     self.channels[c]['is_selected'] = False
+            # self.channels['k_curves'] = curves['k_curves']
         else:
-            log.info("use empty stitching curves")
-            self.k_curves = ''
-            for c in ['r', 'g', 'b']:
-                self.curves[c]['curve'] = Curve(is_default_constant=True)
-                self.curves[c]['lut'] = np.array([]).astype('int')
-                self.curves[c]['polypoints'] = np.array([]).astype('int')
-                self.curves[c]['is_selected'] = False
-            self.curves['k_curves'] = ''
+            log.info("use empty bgd curves")
+            for k in self.channels.keys():
+                self.channels[k]['curve'] = Curve(is_default_constant=True)
+                self.channels[k]['lut'] = np.array([]).astype('int')
+                self.channels[k]['polypoints'] = np.array([]).astype('int')
+                self.channels[k]['is_selected'] = False
 
-        self.curves[self.k_selected]['is_selected'] = True
-        self.is_modified = False
-
-        # Calculate LUTs
-        self.update_lookup_tables()
-
-        self.repaint()
+        self.update()
 
 
     def remove_selected_point(self):
-        self.curves[self.k_selected]['curve'].remove_selected_point(min_points_count=1)
+        self.channels[self.k_selected]['curve'].remove_selected_point(min_points_count=1)
         self.flush_polypoints()
         self.update_lookup_tables()
         self.update()
@@ -199,56 +181,226 @@ class Widget_hist_curves(QWidget):
         self.signal_curves_modified.emit('modified')
 
 
-    def get_curves(self):
-        # if not self.is_modified:
-        #     # log.info("curves have not been modified")
-        #     print("\n!!!error: curves have not been modified!")
-        #     return None
-
-        curves = {
-            'k_curves': self.curves['k_curves'],
-            'points': {
-                'r': self.curves['r']['curve'].points(),
-                'g': self.curves['g']['curve'].points(),
-                'b': self.curves['b']['curve'].points(),
-            },
-            'lut': {
-                'r': self.curves['r']['lut'],
-                'g': self.curves['g']['lut'],
-                'b': self.curves['b']['lut'],
+    def get_curves_channels(self):
+        # Returns a dict of curves
+        try:
+            print("get_curves_channels: !!!curves modified")
+            rgb_curves = {
+                'r': self.channels['r']['curve'],
+                'g': self.channels['g']['curve'],
+                'b': self.channels['b']['curve'],
+                'selected': self.k_selected,
             }
-        }
-        return curves
+            return rgb_curves
+        except:
+            log.info("curves have not been modified or channels are None")
+            # print("get_curves_channels: curves have not been modified")
+            return None
 
 
-    def get_curve_luts(self):
-        return {
-                'r': self.curves['r']['lut'],
-                'g': self.curves['g']['lut'],
-                'b': self.curves['b']['lut'],
-        }
-
-    # def channel_lut(self, k_channel):
-    #     # Return the lut of a channel
-    #     return self.curves[k_channel]['lut']
+    def flush_polypoints(self):
+        for k in ['r', 'g', 'b']:
+            if self.k_selected == k:
+                del self.channels[k]['polypoints']
+                self.channels[k]['polypoints'] = np.array([]).astype('int')
 
 
-
-    def reset_channel(self, channel:str=None):
+    def reset_channel(self, channel:str=''):
         # Reset the graph for a specified/all/current channel
-        log.info("reset channel: %s" % (channel))
+        log.info("reset channel: %s (current: %s)" % (channel, self.k_selected))
         if channel == 'all':
             for c in ['r', 'g', 'b']:
-                self.curves[c]['curve'].reset(is_default_constant=True)
-        else:
-            # Reset current channel only
-            self.curves[self.k_selected]['curve'].reset(is_default_constant=True)
-        self.flush_polypoints()
-        self.update_lookup_tables()
+                self.channels[c]['curve'].reset(is_default_constant=True)
+                del self.channels[c]['polypoints']
+                self.channels[c]['polypoints'] = np.array([]).astype('int')
+
+        elif channel == 'current':
+            self.channels[self.k_selected]['curve'].reset(is_default_constant=True)
+            self.flush_polypoints()
+
         self.update()
-        self.is_modified = True
-        self.signal_curves_modified.emit('modified')
+
+        self.signal_curves_modified.emit(self.get_curves_channels())
         self.signal_point_selected.emit([-1, 0])
+
+
+    def select_channel(self, channel:str='r'):
+        log.info("select channel [%s]" % (channel))
+        # Deselect current channel
+        self.channels[self.k_selected]['is_selected'] = False
+
+        # Select the specified channel
+        self.k_selected = channel
+        self.channels[self.k_selected]['is_selected'] = True
+
+        self.update()
+
+
+
+    def selected_channel(self):
+        return self.k_selected
+
+
+    def point_to_coordinates(self, p:Curve_point):
+        depth = 256.0
+        x = int(p.x() * (depth-1))
+        delta = ((p.y() * (depth-1)) - (depth-1)/2) / 10
+        return [x, delta]
+
+
+    def mousePressEvent(self, event):
+        if not self.is_enabled:
+            return
+
+        w = float(self.width())
+        h = float(self.height())
+        x_max = w - 1
+        y_max = (h/2) - 1
+        x = float(event.pos().x())
+        y = h/2 - event.pos().y()
+
+        # x(px) -> xf [0;1.0]
+        # y(px) -> yf [0;1.0]
+        xf = np.float32(x) / x_max
+        yf = (1 + np.float32(y) / y_max)/2
+
+        curve = self.channels[self.k_selected]['curve']
+        if event.button() == Qt.LeftButton:
+            # print("mousePressEvent: (%d; %d) in (%d;%d) -> (%f; %f)" % (x, y, x_max, y_max, xf, yf))
+            is_selected = curve.select_point(xf, yf)
+            if is_selected:
+                self.update()
+                selected_point = curve.selected_point()
+                self.m_grab_offset_x_f = selected_point.x() - xf
+                self.m_grab_offset_y_f = selected_point.y() - yf
+
+                self.signal_point_selected.emit(self.point_to_coordinates(selected_point))
+
+                # print("\tgrab point@(%.1f;%.1f)" % (self.m_grab_offset_x_f, self.m_grab_offset_y_f))
+            else:
+                # Add a new point and select it
+                # print("\tno point selected, create a new point")
+                x = float(event.pos().x() + (3))
+                y = h/2 - event.pos().y() - (3 + 2)
+
+                # x(px) -> xf [0;1.0]
+                # y(px) -> yf [0;1.0]
+                xf = np.float32(x) / x_max
+                yf = (1 + np.float32(y) / y_max)/2
+
+                if curve.add_point(xf, yf):
+                    if curve.select_point(xf, yf):
+                        selected_point = curve.selected_point()
+                        self.m_grab_offset_x_f = selected_point.x() - xf
+                        self.m_grab_offset_y_f = selected_point.y() - yf
+
+                        self.flush_polypoints()
+                        self.update()
+                        self.signal_point_selected.emit(self.point_to_coordinates(selected_point))
+                        self.signal_curves_modified.emit(self.get_curves_channels())
+                    else:
+                        print("\terror: cannot select new added point @(%f, %f)" % (xf, yf))
+                else:
+                    print("\terror: creation failed @(%f, %f)" % (xf, yf))
+
+        elif event.button() == Qt.RightButton:
+            is_selected = curve.select_point(xf, yf)
+            if is_selected:
+                selected_point = curve.selected_point()
+                if selected_point.x() != 0.0 and selected_point.x() != 1.0:
+                    is_removed = curve.remove_selected_point(min_points_count=1)
+                    if is_removed:
+                        self.flush_polypoints()
+                        self.update()
+                        self.signal_point_selected.emit([-1, 0])
+                self.signal_curves_modified.emit(self.get_curves_channels())
+
+
+    def mouseMoveEvent(self, event):
+        verbose = False
+        if not self.is_enabled:
+            return
+        w = np.float32(self.width())
+        h = np.float32(self.height())
+        x_max = w - 1
+        y_max = (h/2) - 1
+        x = np.float32(event.pos().x())
+        y = h/2 - event.pos().y()
+
+        # x(px) -> xf [0;1.0]
+        # y(px) -> yf [0;1.0]
+        xf = np.float32(x) / x_max
+        yf = (1 + np.float32(y) / y_max)/2
+
+        self.show_position = False
+        curve = self.channels[self.k_selected]['curve']
+        selected_point = curve.selected_point()
+        if selected_point is not None:
+
+            if verbose:
+                print("mouseMoveEvent: offsets = [%.1f; %.1f]" % (self.m_grab_offset_x_f, self.m_grab_offset_y_f))
+            xf += self.m_grab_offset_x_f
+            yf -= self.m_grab_offset_y_f
+
+            xLow = curve.grab_range()[0] + 1/(256.0 * x_max)
+            xHigh = curve.grab_range()[1] - 1/(256.0 * x_max)
+
+            if verbose:
+                print("\t[xLow, xHigh] = [%.03f; %.03f]" % (xLow, xHigh))
+            isOutside = False
+            gap = 40
+            if (xf < xLow - gap/w or xf > xHigh + gap/w
+                or yf > 1.0 + gap/h or yf < -1*gap/h):
+                isOutside = True
+                if verbose:
+                    print("\tisOutside, pointsCount=%d" % (curve.point_count()))
+
+            xf = np.clip(xf, xLow, xHigh)
+            yf = np.clip(yf, 0.0, 1.0)
+
+            if not isOutside:
+                if verbose:
+                    print("\t-> move: (%.03f; %.03f) -> (%.03f; %.03f)" % (selected_point.x(), selected_point.y(), xf, yf))
+                curve.move_selected_point(xf, yf)
+            else:
+                if verbose:
+                    print("\t-> remove point")
+                curve.remove_selected_point(min_points_count=1)
+
+
+            self.flush_polypoints()
+            self.update()
+
+            current_selected_point = curve.selected_point()
+            if current_selected_point is not None:
+                self.signal_point_selected.emit(self.point_to_coordinates(selected_point))
+            else:
+                self.signal_point_selected.emit([-1, 0])
+            self.signal_curves_modified.emit(self.get_curves_channels())
+
+
+    def keyPressEvent(self, event):
+        if self.event_key_pressed(event):
+            event.accept()
+            return True
+        return self.ui.keyPressEvent(event)
+
+
+    def event_key_pressed(self, event):
+        key = event.key()
+
+        if key == Qt.Key_Delete or key == Qt.Key_Backspace:
+            curve = self.channels[self.k_selected]['curve']
+            if not curve.selected_point():
+                # do nothing
+                return True
+            curve.remove_selected_point()
+            self.flush_polypoints()
+            self.update()
+            self.signal_curves_modified.emit(self.get_curves_channels())
+            return True
+        return False
+
 
 
     def paintEvent(self, e):
@@ -258,10 +410,7 @@ class Widget_hist_curves(QWidget):
         # print("paintEvent: hist_curve: dimensions = (%d; %d), x_max=%d" % (w, h, x_max))
 
         # Current channel
-        k_channel = self.k_selected
-
-        # Curves
-        curve = self.curves[k_channel]
+        curve = self.channels[self.k_selected]
 
         painter = QPainter()
         if painter.begin(self):
@@ -326,187 +475,4 @@ class Widget_hist_curves(QWidget):
                 painter.setBrush(Qt.NoBrush)
 
             painter.end()
-
-
-    def select_channel(self, k_channel):
-        # Select a channel (and unselect previous)
-        self.k_selected = k_channel
-        self.update()
-
-
-    def flush_polypoints(self):
-        for k in ['r', 'g', 'b']:
-            if self.k_selected == k:
-                del self.curves[k]['polypoints']
-                self.curves[k]['polypoints'] = np.array([]).astype('int')
-
-
-    def update_lookup_tables(self, verbose=False):
-        depth = 256.0
-        for k in ['r', 'g', 'b']:
-            self.curves[k]['lut'] = calculate_channel_lut_for_stitching(self.curves[k]['curve'])
-
-        if verbose:
-            for k in ['r', 'g', 'b']:
-                print("--------------- update_lookup_tables: %s (%d) -------------------" % (k, len(self.curves[k]['lut'])))
-                points = self.curves[k]['curve'].points()
-                pprint(points)
-                for p in points:
-                    print("%d->%d" % (int(255 * p.x()), ((p.y()*depth) - depth/2) / 8))
-                # pprint(self.curves[k]['lut'])
-
-
-
-    def point_to_coordinates(self, p):
-        depth = 256.0
-        x = int(p.x() * (depth-1))
-        delta = ((p.y() * (depth-1)) - (depth-1)/2) / 10
-        return [x, delta]
-
-
-    def mousePressEvent(self, event):
-        if not self.is_enabled:
-            return
-
-        w = float(self.width())
-        h = float(self.height())
-        x_max = w - 1
-        y_max = (h/2) - 1
-        x = float(event.pos().x())
-        y = h/2 - event.pos().y()
-
-        # x(px) -> xf [0;1.0]
-        # y(px) -> yf [0;1.0]
-        xf = np.float32(x) / x_max
-        yf = (1 + np.float32(y) / y_max)/2
-
-        curve = self.curves[self.k_selected]['curve']
-        if event.button() == Qt.LeftButton:
-            # print("mousePressEvent: (%d; %d) in (%d;%d) -> (%f; %f)" % (x, y, x_max, y_max, xf, yf))
-            is_selected = curve.select_point(xf, yf)
-            if is_selected:
-                self.update()
-                selected_point = curve.selected_point()
-                self.m_grab_offset_x_f = selected_point.x() - xf
-                self.m_grab_offset_y_f = selected_point.y() - yf
-
-                self.signal_point_selected.emit(self.point_to_coordinates(selected_point))
-
-                # print("\tgrab point@(%.1f;%.1f)" % (self.m_grab_offset_x_f, self.m_grab_offset_y_f))
-            else:
-                # Add a new point and select it
-                # print("\tno point selected, create a new point")
-                x = float(event.pos().x() + (3))
-                y = h/2 - event.pos().y() - (3 + 2)
-
-                # x(px) -> xf [0;1.0]
-                # y(px) -> yf [0;1.0]
-                xf = np.float32(x) / x_max
-                yf = (1 + np.float32(y) / y_max)/2
-
-                if curve.add_point(xf, yf):
-                    if curve.select_point(xf, yf):
-                        selected_point = curve.selected_point()
-                        self.m_grab_offset_x_f = selected_point.x() - xf
-                        self.m_grab_offset_y_f = selected_point.y() - yf
-
-                        self.flush_polypoints()
-                        self.update_lookup_tables()
-                        self.update()
-                        self.is_modified = True
-                        self.signal_point_selected.emit(self.point_to_coordinates(selected_point))
-                        # self.signal_curves_modified.emit('modified')
-                        self.is_moving_point = True
-
-
-                    else:
-                        print("\terror: cannot select new added point @(%f, %f)" % (xf, yf))
-                else:
-                    print("\terror: creation failed @(%f, %f)" % (xf, yf))
-
-
-        elif event.button() == Qt.RightButton:
-            is_selected = curve.select_point(xf, yf)
-            if is_selected:
-                selected_point = curve.selected_point()
-                if selected_point.x() != 0.0 and selected_point.x() != 1.0:
-                    is_removed = curve.remove_selected_point(min_points_count=1)
-                    if is_removed:
-                        self.flush_polypoints()
-                        self.update_lookup_tables()
-                        self.update()
-                        self.is_modified = True
-                        self.signal_point_selected.emit([-1, 0])
-                        self.signal_curves_modified.emit('modified')
-                        self.is_moving_point = False
-                # else:
-                #     print("\tdo not remove the initial point")
-
-
-    def mouseReleaseEvent(self, event):
-        if self.is_moving_point:
-            self.is_moving_point = False
-            self.signal_curves_modified.emit('modified')
-
-
-    def mouseMoveEvent(self, event):
-        if not self.is_enabled:
-            return
-        w = np.float32(self.width())
-        h = np.float32(self.height())
-        x_max = w - 1
-        y_max = (h/2) - 1
-        x = np.float32(event.pos().x())
-        y = h/2 - event.pos().y()
-
-        # x(px) -> xf [0;1.0]
-        # y(px) -> yf [0;1.0]
-        xf = np.float32(x) / x_max
-        yf = (1 + np.float32(y) / y_max)/2
-
-        self.show_position = False
-        curve = self.curves[self.k_selected]['curve']
-        selected_point = curve.selected_point()
-        if selected_point is not None:
-
-            # print("mouseMoveEvent: offsets = [%.1f; %.1f]" % (self.m_grab_offset_x_f, self.m_grab_offset_y_f))
-            xf += self.m_grab_offset_x_f
-            yf -= self.m_grab_offset_y_f
-
-            xLow = curve.grab_range()[0] + 1/(256.0 * x_max)
-            xHigh = curve.grab_range()[1] - 1/(256.0 * x_max)
-
-            # print("\t[xLow, xHigh] = [%.03f; %.03f]" % (xLow, xHigh))
-            isOutside = False
-            gap = 40
-            if (xf < xLow - gap/w or xf > xHigh + gap/w
-                or yf > 1.0 + gap/h or yf < -1*gap/h):
-                isOutside = True
-                # print("\tisOutside, pointsCount=%d" % (curve.point_count()))
-
-            xf = np.clip(xf, xLow, xHigh)
-            yf = np.clip(yf, 0.0, 1.0)
-
-            if not isOutside:
-                # print("\t-> move: (%.03f; %.03f) -> (%.03f; %.03f)" % (selected_point.x(), selected_point.y(), xf, yf))
-                curve.move_selected_point(xf, yf)
-            else:
-                # print("\t-> remove point")
-                curve.remove_selected_point(min_points_count=1)
-
-
-            self.flush_polypoints()
-            self.update_lookup_tables()
-            self.update()
-            self.is_modified = True
-            self.is_moving_point = True
-
-            current_selected_point = curve.selected_point()
-            if current_selected_point is not None:
-                self.signal_point_selected.emit(self.point_to_coordinates(selected_point))
-            else:
-                self.signal_point_selected.emit([-1, 0])
-            self
-            self.signal_curves_editing.emit()
-
 

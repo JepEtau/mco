@@ -725,7 +725,6 @@ class Model_video_editor(Model_common):
         self.current_frame = frame
 
         # Update geometry
-        db = self.model_database.database()
         # print("\nget_frame -> (%s:%s:%s:%d)" % (frame['k_ed'], frame['k_ep'], frame['k_part'], frame['frame_no']))
         if frame['k_part'] in ['g_debut', 'g_fin']:
             frame['geometry'] = self.model_database.get_shot_geometry(

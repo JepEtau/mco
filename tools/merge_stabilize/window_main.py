@@ -2,7 +2,8 @@
 
 import sys
 sys.path.append('../scripts')
-import cv2
+
+from functools import partial
 import gc
 import numpy as np
 import os
@@ -35,7 +36,7 @@ from common.widget_controls import Widget_controls
 from merge_stabilize.model_merge_stabilize import Model_merge_stabilize
 
 from merge_stabilize.widget_selection import Widget_selection
-from merge_stabilize.widget_stitching_curves import Widget_stitching_curves
+from merge_stabilize.widget_bgd_curves import Widget_bgd_curves
 from merge_stabilize.widget_stitching import Widget_stitching
 from merge_stabilize.widget_stabilize import Widget_stabilize
 from merge_stabilize.widget_geometry import Widget_geometry
@@ -72,31 +73,30 @@ class Window_main(Window_common):
             self.widget_controls.set_initial_options(p)
             self.widget_controls.signal_button_pushed[str].connect(self.event_control_button_pressed)
             self.widget_controls.signal_slider_moved[int].connect(self.event_move_to_frame_no)
-            self.widget_controls.signal_preview_options_changed.connect(self.event_preview_options_changed)
+            self.widget_controls.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'controls'))
 
         # Stitching
         if 'stitching' in self.widgets.keys():
             self.widget_stitching = Widget_stitching(self, self.model)
             self.widgets['stitching'] = self.widget_stitching
             self.widget_stitching.set_initial_options(p)
-            self.widget_stitching.signal_preview_options_changed.connect(self.event_preview_options_changed)
+            self.widget_stitching.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'stitching'))
             self.widget_stitching.signal_enabled_modified[bool].connect(self.event_st_enabled_changed)
 
         # Stitching curves: histogram, curves edition and selection
-        if 'stitching_curves' in self.widgets.keys():
-            self.widget_stitching_curves = Widget_stitching_curves(self, self.model)
-            self.widgets['stitching_curves'] = self.widget_stitching_curves
-            self.widget_stitching_curves.set_initial_options(p)
-            self.widget_stitching_curves.signal_channel_selected.connect(self.event_stitching_curves_channel_selected)
-            self.widget_stitching_curves.signal_preview_options_changed.connect(self.event_preview_options_changed)
-            self.widget_stitching_curves.widget_hist_curves.signal_curves_editing.connect(self.event_refresh_image)
+        if 'bgd_curves' in self.widgets.keys():
+            self.widget_bgd_curves = Widget_bgd_curves(self, self.model)
+            self.widgets['bgd_curves'] = self.widget_bgd_curves
+            self.widget_bgd_curves.set_initial_options(p)
+            self.widget_bgd_curves.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'bgd_curves'))
+            # self.widget_bgd_curves.signal_channel_selected.connect(self.event_bgd_curves_channel_selected)
 
         # Stabilization
         if 'stabilize' in self.widgets.keys():
             self.widget_stabilize = Widget_stabilize(self, self.model)
             self.widgets['stabilize'] = self.widget_stabilize
             self.widget_stabilize.set_initial_options(p)
-            self.widget_stabilize.signal_preview_options_changed.connect(self.event_preview_options_changed)
+            self.widget_stabilize.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'stabilize'))
             self.widget_stabilize.signal_enabled_modified[bool].connect(self.event_st_enabled_changed)
 
         # Crop and resize
@@ -104,7 +104,7 @@ class Window_main(Window_common):
             self.widget_geometry = Widget_geometry(self, self.model)
             self.widgets['geometry'] = self.widget_geometry
             self.widget_geometry.set_initial_options(p)
-            self.widget_geometry.signal_preview_options_changed.connect(self.event_preview_options_changed)
+            self.widget_geometry.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'geometry'))
 
         # Selection
         self.widget_selection = Widget_selection(self, self.model)
@@ -152,9 +152,9 @@ class Window_main(Window_common):
         self.repaint()
 
 
-    def event_stitching_curves_channel_selected(self):
+    def event_bgd_curves_channel_selected(self):
         # todo: flush current cache image
-        print("event_stitching_curves_channel_selected")
+        print("event_bgd_curves_channel_selected")
         self.repaint()
 
 
@@ -181,19 +181,19 @@ class Window_main(Window_common):
 
 
 
-    def event_preview_options_changed(self):
-        log.info("change preview: editor: %s" % (self.current_editor))
-        print("\nchange preview: editor: %s" % (self.current_editor))
+    def event_preview_options_changed(self, widget):
+        log.info("change preview: editor: %s" % (widget))
+        print("\nchange preview: editor: %s" % (widget))
         preview_options = dict()
         for e, w in self.widgets.items():
             preview_options.update({e: w.get_preview_options()})
 
         # TODO: add pushbuttons for curves/replace
         preview_options.update({
-            # 'replace': {'is_enabled': False},
-            # 'curves': {'is_enabled': False},
+            'replace': {'is_enabled': False},
+            'curves': {'is_enabled': False},
         })
-        pprint(preview_options)
+        # pprint(preview_options)
         self.signal_preview_options_changed.emit(preview_options)
 
 
@@ -236,14 +236,14 @@ class Window_main(Window_common):
             for e, w in self.widgets.items():
                 w.refresh_values(frame)
 
-            if frame['reload_parameters']:
-                # TODO: replace by values provided in frame
-                parameters = self.model.get_current_shot_parameters(['stitching', 'stabilize'])
-                if parameters is not None:
-                    self.widget_stitching_curves.load_curves(parameters['stitching']['curves'])
-                    self.widget_stabilize.set_parameters(parameters['stabilize'])
-                    self.widget_stitching.set_parameters(parameters['stitching']['parameters'])
-                    self.widget_stitching.set_crop(parameters['stitching']['fgd_crop'])
+            # if frame['reload_parameters']:
+            #     # TODO: replace by values provided in frame
+            #     parameters = self.model.get_current_shot_parameters(['stitching', 'stabilize'])
+            #     if parameters is not None:
+            #         self.widget_bgd_curves.load_curves(parameters['stitching']['curves'])
+            #         self.widget_stabilize.set_parameters(parameters['stabilize'])
+            #         self.widget_stitching.set_parameters(parameters['stitching']['parameters'])
+            #         self.widget_stitching.set_crop(parameters['stitching']['fgd_crop'])
 
         self.repaint()
 
@@ -390,8 +390,8 @@ class Window_main(Window_common):
         #         if f is not None:
         #             (no, image_fgd, hist) = process_single_frame(f,
         #                 preview_options='stitching',
-        #                 bgd_curve_luts=self.widget_stitching_curves.get_curve_luts(),
-        #                 current_channel=self.widget_stitching_curves.get_current_channel())
+        #                 bgd_curve_luts=self.widget_bgd_curves.get_curve_luts(),
+        #                 current_channel=self.widget_bgd_curves.get_current_channel())
         #             # self.model.set_current_frame_cache(image_fgd)
 
         #             qImage_fgd = QImage(image_fgd.data, image_fgd.shape[1], image_fgd.shape[0], image_fgd.shape[1] * 3, QImage.Format_BGR888)
