@@ -134,6 +134,8 @@ cache/
 frames/
 .vscode/
 *.mkv
+*.mp4
+*.mov
 nnedi3_weights.bin
 
 # Folders and files used for dev

@@ -203,28 +203,33 @@ def filter_geometry(frame, img):
     # print("------------------")
     # pprint(frame['geometry'])
     # print(img.shape)
-    if (frame['geometry'] is None
-    or (frame['geometry']['part'] is None and frame['geometry']['custom'] is None)):
-        print("Error: no geometry defined, cannot modify the image")
-        return None
+    # if (frame['geometry'] is None
+    # or (frame['geometry']['part'] is None and frame['geometry']['custom'] is None)):
+    #     print("Error: no geometry defined, cannot modify the image")
+    #     return None
 
 
     # Crop
-    if frame['geometry'] is not None:
-        c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
-        if ('custom' in frame['geometry'].keys()
-            and frame['geometry']['custom'] is not None):
-            # Use the customized geometry
-            # print("use the customized geometry")
-            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['custom']['crop'])
-        else:
-            # Use the part geometry
-            # print:("use the part geometry")
-            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
-            # print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
+    try:
+        if 'geometry' in frame.keys() and frame['geometry'] is not None:
+            c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
+            if ('custom' in frame['geometry'].keys()
+                and frame['geometry']['custom'] is not None):
+                # Use the customized geometry
+                # print("use the customized geometry")
+                c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['custom']['crop'])
+            else:
+                # Use the part geometry
+                # print:("use the part geometry")
+                c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
+                # print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
 
-        # Crop the image
-        img = np.ascontiguousarray(img[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
+            # Crop the image
+            img = np.ascontiguousarray(img[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
+    except:
+        c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, [0,0,0,0])
+        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, [0,0,0,0])
+
 
     # Final width and height
     w_final = frame['dimensions']['final']['w']
