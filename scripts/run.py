@@ -38,7 +38,7 @@ def main():
     # from scripts.frames_extract import frames_extract
     verbose = False
     # editions = ['k', 'a', 's', 's0']
-    editions = ['k', 'a', 's', 'f']
+    editions = ['s0', 's', 'k', 'a', 'f']
 
 
     # Arguments
@@ -332,7 +332,10 @@ def main():
             # Generate the video
 
             # Force the edition to default
-            k_ed = 'k'
+            if arguments.edition == '':
+                k_ed = 'k'
+            else:
+                k_ed = arguments.edition
 
             generate_video(
                 db=g_database,

@@ -119,8 +119,9 @@ class Model_database(Model_bgd_curves,
         self.initial_database['common']['options']['discard_tasks'].append('replace')
 
         k_ed_ref = self.initial_database['common']['reference']['edition']
+
         self.initial_database['editions'] = parse_editions(self.initial_database,
-            k_ed_fgd='k', k_ed_ref=k_ed_ref)
+            k_ed_fgd='s', k_ed_ref=k_ed_ref)
         parse_episodes_common(self.initial_database)
 
         self.k_editions = self.initial_database['editions']['available']
@@ -200,7 +201,9 @@ class Model_database(Model_bgd_curves,
 
             # Parse other config files for each dependency
             for k_ed_tmp, v in dependencies.items():
+                print(k_ed_tmp)
                 for k_ep_tmp in dependencies[k_ed_tmp]:
+                    print(k_ep_tmp)
                     if do_parse_stitching:
                         parse_stitching_configurations(self.global_database, k_ep_or_g=k_ep_tmp, parse_parameters=True)
                     parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep_tmp, parse_parameters=True)
@@ -209,7 +212,7 @@ class Model_database(Model_bgd_curves,
                         parse_curve_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
 
                     if do_parse_replace:
-                        parse_replace_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
+                        parse_replace_configurations(self.global_database, k_ep_or_g=k_ep_tmp, k_ed_only=k_ed_tmp)
                     if do_parse_geometry:
                         parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
 
