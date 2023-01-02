@@ -12,6 +12,7 @@
     * numpy
     * opencv-python
     * scikit-image
+    * pysoundfile
 
     ```sh
     cd scripts
@@ -26,12 +27,10 @@ Il est possible de modifier l'emplacement de certains répertoires en éditant l
 
 ## Fichiers video d'entrée
 A stocker dans les répertoires suivants:
-- Edition 'k': [mkv/576p/k](./mkv/576p/k/README.md)
-- Edition 's': [mkv/576p/s](./mkv/576p/s/README.md) (ep 1, 2, 11, 12)
-- Optionnel: édition 'a': [mkv/576p/a](./mkv/576p/a/README.md) qui sera utilisée ultérieurement
-<br/><br/>
-- Etudes: édition 'f': [mkv/576p/d](./mkv/576p/d/README.md) qui sert juste pour des comparaisons
-<br/><br/>
+- Edition 'k': [input/k](./input/k/README.md)
+- Edition 's': [input/s](./input/s/README.md) (ep 11, 12)
+- Edition 'b': [input/b](./input/b/README.md) (ep 01 audio)
+
 
 ## Commandes
 Exécuter les commandes suivantes dans le répertoire `scripts` pour générer l'ensemble de la vidéo en version finale:
@@ -40,10 +39,6 @@ python run.py --episode 1
 ```
 
 Notes:
-- 2022-11-27: Le générique de fin (1ere version)
-```sh
-python run.py --part g_debut
-```
 - 2022-11-07: Les paramètres de la base de donnée sont des paramètres non optimisés et ne comportent pas de nombreuses corrections: ils sont utilisés à des fins de tests. Il est donc recommandé d'exécuter la commande `python run.py --episode 1 --vfilter deinterlace` pour vérifier la correcte installation des outils.
 
 [Plus de commandes...](./scripts/README.md)

@@ -21,9 +21,7 @@ options:
                         Applique les filtres video jusqu'à celui spécifié ici (note: final=geometry
   --afilter {extract,final}
                         Applique les filtres audio jusqu'à celui spécifié ici
-  --study               Utilisé pour les études des trames, des filtres, etc.
   --frames              Utilisé pour les études des trames, des filtres, etc.
-  --compare             debug: utilisé pour comparer les éditions (non fonctionnel)
   --force               debug: force
   --simulate            debug: do not générate a/v files, generate concatenation files only
   --parse_only          debug: parse only the database
@@ -39,12 +37,10 @@ $ python run.py --episode 1 --vfilter deinterlace
 ## Emplacement des fichiers
 - Fichiers d'entrée
 ```
-└── mkv
-    └── 576p
-          ├── k : répertoire contenant les vidéo de l'edition 'k'
-          ├── s : répertoire contenant les vidéo de l'edition 's'
-          ├── f : répertoire contenant les vidéo de l'edition 'f'
-          └── a : répertoire contenant les vidéo de l'edition 'a'
+└── input
+    ├── k : répertoire contenant les vidéos de l'edition 'k'
+    ├── s : répertoire contenant les vidéos de l'edition 's'
+    └── b : répertoire contenant l'audio de l'edition 'b'
 ```
 
 - Fichiers générés

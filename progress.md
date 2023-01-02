@@ -8,6 +8,7 @@
     * [x] filters
     * [ ] geometry
     * [ ] RGB curves
+        - 0->200
     * [ ] frame replacement:
         - start/end of shots only: 0->100
 - **A suivre**
@@ -20,7 +21,7 @@
 - **Reportage**
     * [x] filters
     * [ ] geometry
-    * [ ] RGB curves
+    * [x] RGB curves
     * [ ] frame replacement
 <br/><br/>
 
