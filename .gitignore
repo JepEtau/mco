@@ -134,6 +134,7 @@ cache/
 frames/
 .vscode/
 *.mkv
+*.wav
 *.mp4
 *.mov
 nnedi3_weights.bin
