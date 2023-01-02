@@ -50,7 +50,8 @@ def db_init_episodes(database, k_ed, ep_min:int=1, ep_max:int=39):
         k_ep = 'ep%02d' % i
 
         # Do not create section if input file does not exist
-        if k_ep not in database['editions'][k_ed]['inputs'].keys():
+        if (k_ep not in database['editions'][k_ed]['input']['video'].keys()
+            and k_ep not in database['editions'][k_ed]['input']['audio'].keys()):
             # print("warning: input file for episode no. %d does not exist" % (i))
             continue
 
@@ -75,8 +76,8 @@ def db_init_episodes(database, k_ed, ep_min:int=1, ep_max:int=39):
 
         # Default input file
         db_episode['path'] = {
-            'input_audio': database['editions'][k_ed]['inputs'][k_ep],
-            'input_video': database['editions'][k_ed]['inputs'][k_ep]
+            'input_audio': database['editions'][k_ed]['input']['audio'][k_ep],
+            'input_video': database['editions'][k_ed]['input']['video'][k_ep]
         }
 
         # Frames
@@ -179,6 +180,8 @@ def parse_episodes_common(db, ep_min=1, ep_max:int=39, study_mode=False):
 #===========================================================================
 def parse_episode(database, k_ed, k_ep, verbose=False):
 
+    pprint(database['common']['directories']['config'])
+
     # Open configuration file
     filepath = os.path.join(database['common']['directories']['config'], k_ep, "%s_%s.ini" % (k_ep, k_ed))
     if filepath.startswith("~/"):
@@ -189,7 +192,7 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
 
     # If the input video file has not been found, do not parse the config file
     if k_ed not in database[k_ep].keys():
-        print("Erreur: fichier manquant, édition '%s', épisode %d" % (k_ed, int(k_ep[-2:])))
+        print("Erreur: parse_episode: fichier manquant, édition '%s', épisode %d" % (k_ed, int(k_ep[-2:])))
         return
 
     # Get config from edition

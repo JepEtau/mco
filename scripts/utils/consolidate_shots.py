@@ -20,7 +20,7 @@ def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
     # It is used to replace the 'src' structure by the input shot
     # and merge it into this target shot
 
-    verbose = True
+    verbose = False
 
     # Process part(s)
     k_parts = K_ALL_PARTS_ORDERED if k_part == '' else [k_part]
@@ -191,7 +191,7 @@ def consolidate_shot(db, shot) -> None:
 
         # Input and dimensions
         shot.update({
-            'input': db['editions'][k_ed]['inputs'][k_ep],
+            'input': db['editions'][k_ed]['input']['video'][k_ep],
             'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
         })
 
@@ -260,7 +260,7 @@ def consolidate_shot(db, shot) -> None:
 
         # Input and dimensions
         shot.update({
-            'input': db['editions'][k_ed]['inputs'][k_ep],
+            'input': db['editions'][k_ed]['input']['video'][k_ep],
             'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
         })
 

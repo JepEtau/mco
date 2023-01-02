@@ -91,8 +91,8 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
         # Frames shall be added: use the loop effect for this
         last_shot = shots[-1]
         frame_no = last_shot['start'] + last_shot['count'] - 1
-        # print("info: %s:align_audio_video_durations_g_debut_fin: add video frames, video(%d) < audio (%d)" % (__name__, video_count, audio_count))
-        loop_count = audio_count - video_count
+        print("info: %s:align_audio_video_durations_g_debut_fin: add video frames, video(%d) < audio (%d)" % (__name__, video_count, audio_count))
+        loop_count = int(audio_count - video_count)
         last_shot.update({'effects': ['loop_and_fadeout', frame_no, loop_count, min(loop_count, 25)]})
         db_video['count'] = db_audio['count']
 
@@ -106,7 +106,7 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
             'silence': video_duration - audio_duration,
         })
         db_audio['count'] = db_video['count']
-        # print("info: %s:align_audio_video_durations_g_debut_fin: video(%d) > audio (%d)" % (__name__, video_count, audio_count))
+        print("info: %s:align_audio_video_durations_g_debut_fin: video(%d) > audio (%d)" % (__name__, video_count, audio_count))
 
 
 def calculate_av_sync(db, k_ep):

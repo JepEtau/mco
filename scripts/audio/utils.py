@@ -2,36 +2,39 @@
 import sys
 
 import numpy as np
-import wave
+import soundfile as sf
+from scipy.io import wavfile
 
 from pprint import pprint
 
 
-def read_single_track_audio_file(filepath, verbose=False):
-    audio_track = wave.open(filepath, mode='rb')
-    (nchannels, sampwidth, sample_rate, nframes, comptype, compname) = audio_track.getparams()
-    audio_buffer = audio_track.readframes(nframes)
-    audio_track.close()
+def read_audio_file(filepath, verbose=False):
+    # print("read_audio_file: %s" % (filepath))
+    sample_rate, audio_buffer = wavfile.read(filepath)
+    if len(audio_buffer.shape) == 1:
+        # Mono, nb of bytes per samples shoulf be checked,
+        # but it is always 16bit
+        channels_count = 1
+        audio_buffer_32b = np.array(audio_buffer, dtype=np.int32)
+    else:
+        # Stéréo, 24 bits
+        channels_count = audio_buffer.shape[1]
+        audio_buffer_32b = audio_buffer
+    duration = audio_buffer_32b.shape[0] / sample_rate
 
     if verbose:
-        print("\tnb of channels: %d" % (nchannels))
-        print("\tduration: %.2fs" % (nframes/sample_rate))
+        print("\tnb of channels: %d" % (channels_count))
+        print("\tduration: %.2fs" % (duration))
         print("\tsample rate: %dHz" % (sample_rate))
-        print("\tsample width: %dbit" % (sampwidth * 8))
 
-    if sampwidth != 2 or nchannels != 1:
-        sys.exit("error: wav format not supported")
-    in_track = np.frombuffer(audio_buffer, dtype=np.int16)
-
-    return sample_rate, in_track, float(nframes)/sample_rate
+    return channels_count, sample_rate, audio_buffer_32b, duration
 
 
-def write_single_track_audio_file(filepath, out, sample_rate=48000) -> None:
-    out_file = wave.open(filepath, mode='wb')
-    out_file.setnchannels(1)
-    out_file.setsampwidth(2)
-    out_file.setframerate(sample_rate)
-    out_file.writeframes(out)
-    out_file.close()
-
+def write_track_to_audio_file(filepath, stereo_channels, sample_rate=48000) -> None:
+    # print("write_track_to_audio_file: %sHz" % (sample_rate))
+    sf.write(
+        file=filepath,
+        data=stereo_channels,
+        samplerate=sample_rate,
+        subtype='PCM_24')
 

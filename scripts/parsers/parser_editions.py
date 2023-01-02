@@ -72,32 +72,55 @@ def parse_editions(database, k_ed_fgd='k', k_ed_ref='k', cfg_foldername="../data
             # Edition found
             if verbose:
                 print("found folder(edition)=%s" % (folder))
-            db_editions[folder] = {'inputs': {}}
+            db_editions[folder] = {
+                'input': {
+                    'video': dict(),
+                    'audio': dict(),
+                }
+            }
 
-            inputs = db_editions[folder]['inputs']
+            inputs = db_editions[folder]['input']
 
             # List episodes and their input files for each edition
             for filename in os.listdir(f_edition):
                 if verbose:
                     print("filename= %s" % (filename))
                 filepath = os.path.join(db_common['directories']['input'], folder, filename)
-                if os.path.isfile(filepath) and filename.endswith(".mkv"):
-                    if verbose: print("search ep no. from %s" % (filename))
+                if os.path.isfile(filepath):
+                    if verbose:
+                        print("search ep no. from %s" % (filename))
                     tmp = None
                     tmp = re.search(re.compile("^([a-z_a-z0-9]+)_ep([0-9]{2})(?:-([0-9]{2}))?"), filename)
                     if tmp is not None:
                         if tmp.group(1) == folder:
                             # single episode or first episode in this file
-                            epNo = int(tmp.group(2))
-                            inputs['ep%02d' % (epNo)] = filepath
-                            if tmp.group(3) is not None:
-                                # multiple episode in this file
-                                for i in range(epNo+1, int(tmp.group(3))+1):
-                                    inputs['ep%02d' % (i)] = filepath
+                            ep_no = int(tmp.group(2))
+                            k_ep = 'ep%02d' % (ep_no)
+                            if filename.endswith(".mkv"):
+                                # Video with or w/out audio
+                                inputs['video'][k_ep] = filepath
+                                if k_ep not in inputs['audio'].keys():
+                                    # use this file by default as the audio src
+                                    inputs['audio'][k_ep] = filepath
+
+                                if tmp.group(3) is not None:
+                                    # multiple episode in this file
+                                    for i in range(ep_no+1, int(tmp.group(3))+1):
+                                        k_ep = 'ep%02d' % (i)
+                                        inputs['video'][k_ep] = filepath
+                                        if k_ep not in inputs['audio'].keys():
+                                            # use this file by default as the audio src
+                                            inputs['audio'][k_ep] = filepath
+
+                            elif filename.endswith(".wav"):
+                                # Audio
+                                inputs['audio']['ep%02d' % (ep_no)] = filepath
+                                if tmp.group(3) is not None:
+                                    # multiple episode in this file
+                                    for i in range(ep_no+1, int(tmp.group(3))+1):
+                                        inputs['audio']['ep%02d' % (i)] = filepath
                         else:
                             print("Error: prefix differs from edition %s vs %s" % (tmp.group(1), folder))
-                    else:
-                        sys.exit("Error: %s is not a valid filename" % (filename))
 
             # Add to the list of available editions
             available_editions.append(folder)
@@ -146,7 +169,7 @@ def parse_editions(database, k_ed_fgd='k', k_ed_ref='k', cfg_foldername="../data
     for k_ed in available_editions:
         edition = db_editions[k_ed]
 
-        if len(edition['inputs']) == 0:
+        if len(edition['input']['video']) == 0 and len(edition['input']['audio']) == 0:
             del db_editions[k_ed]
             continue
 
