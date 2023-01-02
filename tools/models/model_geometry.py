@@ -19,7 +19,7 @@ from utils.common import (
 )
 
 from parsers.parser_geometry import parse_geometry_configurations
-from parsers.parser_geometry import get_part_geometry_list
+from parsers.parser_geometry import get_initial_part_geometry
 from parsers.parser_geometry import get_shots_st_geometry
 
 

@@ -82,6 +82,10 @@ class Preferences(QObject):
             if self.settings.value('selection/step') != '':
                 self.preferences['selection']['step'] = self.settings.value('selection/step')
 
+        self.preferences['selection']['shot_no'] = 0
+        if self.settings.contains('selection/shot_no'):
+            if self.settings.value('selection/shot_no') != '':
+                self.preferences['selection']['shot_no'] = int(self.settings.value('selection/shot_no'))
 
 
         # Default widget position
@@ -91,13 +95,11 @@ class Preferences(QObject):
         except: pass
         try: self.preferences['replace']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
         except: pass
-        try: self.preferences['stitching_curves']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
+        try: self.preferences['bgd_curves']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
         except: pass
         try: self.preferences['stitching']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
         except: pass
         try: self.preferences['stabilize']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
-        except: pass
-        try: self.preferences['stitching_curves']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
         except: pass
         try: self.preferences['geometry']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
         except: pass
@@ -132,6 +134,10 @@ class Preferences(QObject):
         self.settings.setValue('selection/episode', preferences['selection']['episode'])
         self.settings.setValue('selection/part', preferences['selection']['part'])
         self.settings.setValue('selection/step', preferences['selection']['step'])
+        try:
+            self.settings.setValue('selection/shot_no', preferences['selection']['shot_no'])
+        except:
+            pass
         try:
             self.settings.setValue('selection/edition', preferences['selection']['edition'])
         except:

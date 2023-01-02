@@ -385,7 +385,7 @@
             <property name="sizeConstraint">
              <enum>QLayout::SetDefaultConstraint</enum>
             </property>
-            <item row="0" column="2">
+            <item row="0" column="4">
              <spacer name="spacer_in_out">
               <property name="orientation">
                <enum>Qt::Horizontal</enum>
@@ -420,6 +420,28 @@
               </property>
              </widget>
             </item>
+            <item row="0" column="3">
+             <widget class="QLineEdit" name="lineEdit_rgb_values_new">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>(255, 255, 255)</string>
+              </property>
+              <property name="frame">
+               <bool>false</bool>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignCenter</set>
+              </property>
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
             <item row="0" column="0">
              <widget class="QLabel" name="label_in">
               <property name="sizePolicy">
@@ -433,6 +455,13 @@
               </property>
               <property name="alignment">
                <set>Qt::AlignCenter</set>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="2">
+             <widget class="QLabel" name="label">
+              <property name="text">
+               <string> --&gt; </string>
               </property>
              </widget>
             </item>

@@ -82,15 +82,14 @@ class Widget_hist_graph(QWidget):
         self.histograms['selected_channel'] = k_channel
 
 
-    def display(self, histogram):
-        if not self.is_enabled:
-            return
-
+    def refresh_values(self, frame:dict):
+        histogram = frame['histogram']
         if histogram is not None:
             for k_channel in histogram.keys():
                 self.histograms[k_channel]['target']['curve'] = histogram[k_channel]['target']
                 self.histograms[k_channel]['modified']['curve'] = histogram[k_channel]['modified']
         self.repaint()
+
 
 
     def paintEvent(self, e):

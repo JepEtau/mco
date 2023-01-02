@@ -61,7 +61,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
         self.set_edition_mode('st')
-        # self.model.signal_is_saved[list].connect(self.event_is_saved)
+        # self.model.signal_is_saved[str].connect(self.event_is_saved)
 
         set_stylesheet(self)
         self.adjustSize()
@@ -75,6 +75,10 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
+
+
+    def refresh_values(self, frame:dict):
+        print("%s: refresh_values" % (self.objectName()))
 
 
     def set_edition_and_preview_enabled(self, enabled):

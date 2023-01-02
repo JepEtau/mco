@@ -146,6 +146,7 @@ class Model_video_editor(Model_common):
         # Contains all path of frames for this part
         self.filepath.clear()
 
+        # Get video db
         if k_part_selected in ['g_debut', 'g_fin']:
             db_video = db[k_part_selected]['target']['video']
         else:
@@ -724,7 +725,6 @@ class Model_video_editor(Model_common):
         self.current_frame = frame
 
         # Update geometry
-        db = self.model_database.database()
         # print("\nget_frame -> (%s:%s:%s:%d)" % (frame['k_ed'], frame['k_ep'], frame['k_part'], frame['frame_no']))
         if frame['k_part'] in ['g_debut', 'g_fin']:
             frame['geometry'] = self.model_database.get_shot_geometry(

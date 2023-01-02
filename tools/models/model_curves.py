@@ -17,14 +17,13 @@ from logger import log
 from utils.get_curves import calculate_channel_lut
 from utils.common import (
     K_GENERIQUES,
-    nested_dict_get,
     nested_dict_set,
 )
 from parsers.parser_curves import (
-    get_curves_selection,
     parse_curves_file,
     parse_curves_folder,
     write_curves_file,
+    get_initial_curves_selection,
 )
 
 
@@ -46,11 +45,11 @@ class Model_curves():
         if k_ep.startswith('ep'):
             # if k_part in ['g_asuivre', 'g_reportage']:
             #     k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
-            #     self.db_curves_selection_initial = get_curves_selection(db, k_ep=k_ep_ref, k_part=k_part)
+            #     self.db_curves_selection_initial = get_initial_curves_selection(db, k_ep=k_ep_ref, k_part=k_part)
             # else:
-            self.db_curves_selection_initial = get_curves_selection(db, k_ep=k_ep, k_part=k_part)
+            self.db_curves_selection_initial = get_initial_curves_selection(db, k_ep=k_ep, k_part=k_part)
         else:
-            self.db_curves_selection_initial = get_curves_selection(db, k_ep=k_ep, k_part=k_part)
+            self.db_curves_selection_initial = get_initial_curves_selection(db, k_ep=k_ep, k_part=k_part)
         self.db_curves_selection = dict()
 
 
@@ -60,8 +59,8 @@ class Model_curves():
         # which does not use the consolidate and target shots (only src)
         log.info("initialize curves selection for each shot")
         # shotlist = self.framelist.get_shotlist()
-        if k_part == '':
-            k_part = self.current_selection['k_part']
+        # if k_part == '':
+        #     k_part = self.current_selection['k_part']
 
         self.db_curves_selection_initial = dict()
         for k_ed in shotlist.keys():
@@ -275,7 +274,7 @@ class Model_curves():
 
 
     def get_curves(self, db, k_ep_or_g:str, k_curves:str):
-        # Search these curves in the libraries
+        # Find these curves in the libraries
         try: curves = self.db_curves_library[k_curves]
         except:
             try: curves = self.db_curves_library_initial[k_curves]

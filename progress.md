@@ -1,7 +1,5 @@
 # Episode 1
 * [ ] shots
-* [ ] offsets ed. a
-* [ ] offsets ed. s
 * [x] audio
 * [x] video
 * [x] A/V sync
@@ -13,7 +11,7 @@
     * [ ] frame replacement:
         - start/end of shots only: 0->100
 - **A suivre**
-    * [ ] shot replacement
+    * [x] shot replacement
     * [ ] filters
     * [ ] geometry
     * [ ] générique: geometry
@@ -29,13 +27,11 @@
 
 # Episode 2
 * [ ] shots
-* [ ] offsets ed. a
-* [ ] offsets ed. s
 * [x] audio
 * [x] video
 * [x] A/V sync
 - **Précedemment**
-    * [ ] shot replacement
+    * [x] shot replacement
     * [ ] filters
     * [ ] geometry
     * [ ] RGB curves
@@ -47,7 +43,7 @@
     * [ ] RGB curves
     * [ ] frame replacement
 - **A suivre**
-    * [ ] shot replacement
+    * [x] shot replacement
     * [ ] filters
     * [ ] geometry
     * [ ] générique: geometry
@@ -60,10 +56,9 @@
     * [ ] frame replacement
 <br/><br/>
 
+
 # Episode 3
 * [ ] shots
-* [ ] offsets ed. a
-* [ ] offsets ed. s
 * [ ] audio
 * [ ] video
 * [ ] A/V sync
@@ -94,10 +89,40 @@
 <br/><br/>
 
 
-# Episode 0
+# Episode 4
 * [ ] shots
-* [ ] offsets ed. a
-* [ ] offsets ed. s
+* [ ] audio
+* [ ] video
+* [ ] A/V sync
+- **Précedemment**
+    * [ ] shot replacement
+    * [ ] filters
+    * [ ] geometry
+    * [ ] RGB curves
+    * [ ] frame replacement
+- **Episode**
+    * [ ] shot replacement
+    * [ ] filters
+    * [ ] geometry
+    * [ ] RGB curves
+    * [ ] frame replacement
+- **A suivre**
+    * [ ] shot replacement
+    * [ ] filters
+    * [ ] geometry
+    * [ ] générique: geometry
+    * [ ] RGB curves
+    * [ ] frame replacement
+- **Reportage**
+    * [ ] filters
+    * [ ] geometry
+    * [ ] RGB curves
+    * [ ] frame replacement
+<br/><br/>
+
+
+# Episode
+* [ ] shots
 * [ ] audio
 * [ ] video
 * [ ] A/V sync

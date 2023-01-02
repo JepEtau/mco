@@ -56,6 +56,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_part.clear()
         self.previous_position = None
         self.is_modified = False
+        self.initial_shot_no = None
 
         # Initialize widgets
         step_labels = self.model.get_step_labels()
@@ -92,6 +93,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         self.model.signal_shotlist_modified[dict].connect(self.event_refresh_shotlist)
         self.model.signal_is_modified[dict].connect(self.refresh_modification_status)
+        self.model.signal_current_shot_modified[dict].connect(self.event_current_shot_modified)
 
         self.set_enabled(False)
         set_stylesheet(self)
@@ -108,9 +110,15 @@ class Widget_selection(QWidget, Ui_widget_selection):
         if (self.comboBox_episode.currentText() != ' '
         and self.comboBox_episode.currentText() != ''):
             k_ep = int(self.comboBox_episode.currentText())
+
+        # First selected row no
+        selected_indexes = self.tableWidget_shots.selectedIndexes()
+        row_no = list(set([i.row() for i in selected_indexes]))[0]
+
         preferences = {
             'geometry': self.geometry().getRect(),
             'episode': k_ep,
+            'shot_no': int(self.tableWidget_shots.item(row_no, 0).text()),
             'part': self.comboBox_part.currentText(),
             'step': self.comboBox_step.currentText(),
         }
@@ -162,6 +170,12 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.tableWidget_shots.clearContents()
         self.tableWidget_shots.setRowCount(0)
         # self.tableWidget_shots.blockSignals(False)
+
+        # Current shot no
+        try:
+            self.initial_shot_no = s['shot_no']
+        except:
+            self.initial_shot_no = None
 
         self.adjustSize()
 
@@ -248,9 +262,17 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_episode.blockSignals(False)
 
 
+    def event_current_shot_modified(self, modifications:dict):
+        self.tableWidget_shots.blockSignals(True)
+        row_no = self.tableWidget_shots.currentRow()
+        log.info("todo: refresh modification flag in shotlist")
+        self.tableWidget_shots.blockSignals(False)
+
+
+
     def event_refresh_shotlist(self, values:dict):
         log.info("directory has been parsed, refresh shot list")
-        # print("%s:event_refresh:" % (__name__))
+        print("%s:event_refresh:" % (__name__))
         # pprint(values)
         # print("---")
         # sys.exit()
@@ -326,7 +348,11 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         if len(shots) > 0:
             log.info("select shot no. 0")
-            self.tableWidget_shots.selectRow(0)
+            if self.initial_shot_no is not None:
+                self.tableWidget_shots.selectRow(self.initial_shot_no)
+                self.initial_shot_no = None
+            else:
+                self.tableWidget_shots.selectRow(0)
         # print("end refresh")
 
 

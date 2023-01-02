@@ -25,8 +25,10 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from images.curve import Curve
-from images.curve import Curve_point
+from images.curve import (
+    Curve,
+    Curve_point,
+)
 
 
 class Widget_rgb_graph(QWidget):
@@ -58,10 +60,12 @@ class Widget_rgb_graph(QWidget):
 
         # Initialize default curves
         for k in self.channels.keys():
-            self.channels[k]['curve'] = Curve()
-            self.channels[k]['lut'] = np.array([]).astype('int')
-            self.channels[k]['polypoints'] = np.array([]).astype('int')
-            self.channels[k]['is_selected'] = False
+            self.channels[k].update({
+                'curve': Curve(),
+                'lut': np.array([]).astype('int'),
+                'polypoints': np.array([]).astype('int'),
+                'is_selected': False,
+            })
 
         # Update LUT for each channel
 
@@ -275,11 +279,8 @@ class Widget_rgb_graph(QWidget):
 
                         self.flush_polypoints()
                         self.update()
-                        # self.ui.set_curves_modification(True)
-
                         self.signal_point_selected.emit(self.point_to_coordinates(selected_point))
                         self.signal_graph_modified.emit(self.get_curves_channels())
-
                     else:
                         print("\terror: cannot select new added point @(%f, %f)" % (xf, yf))
                 else:
@@ -379,7 +380,6 @@ class Widget_rgb_graph(QWidget):
             self.update()
             self.signal_graph_modified.emit(self.get_curves_channels())
             return True
-
         return False
 
 

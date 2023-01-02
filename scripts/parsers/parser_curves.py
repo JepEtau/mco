@@ -139,7 +139,7 @@ def write_curves_file(filepath, channels):
 
 
 
-def get_curves_selection(db, k_ep, k_part) -> dict:
+def get_initial_curves_selection(db, k_ep, k_part) -> dict:
     # Create a dictionary of curves selection for each shot
     # It uses the shot_src so that this will work when replacing shots
     # from another episode/part
@@ -153,19 +153,20 @@ def get_curves_selection(db, k_ep, k_part) -> dict:
         db_video = db[k_ep]['target']['video'][k_part]
 
     for shot in db_video['shots']:
-        # So this shot contains the src data
+        # This shot contains the src data
         shot_src = shot
         k_ed_src = shot['k_ed']
         k_ep_src = shot['k_ep']
         k_part_src = shot['k_part']
         shot_start = shot['start']
 
-        # Append to the dict if stitching curves are defined
+        # Append to the dict if RGB curves are defined
         if 'curves' not in shot.keys():
             continue
 
         if shot['curves'] is not None:
-            nested_dict_set(shot_curves, shot_src['curves'], k_ed_src, k_ep_src, k_part_src, shot_start)
+            nested_dict_set(shot_curves, shot_src['curves'],
+                k_ed_src, k_ep_src, k_part_src, shot_start)
 
     # print("get_curves_selection")
     # pprint(shot_curves)

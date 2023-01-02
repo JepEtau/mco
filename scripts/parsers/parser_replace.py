@@ -21,7 +21,7 @@ from utils.common import (
 # et plus rapide encore lorsque la partie est spécifiée; lors de l'écriture automatique
 # par l'éditeur, le no. de trame correspond à la 1ere trame du plan
 
-def parse_replace_configurations(db, k_ep_or_g:str):
+def parse_replace_configurations(db, k_ep_or_g:str, k_ed_only=None):
     """ Parse configuration file
     It will returns the replaced frame for each frame. This is mainly edited in video
     editor
@@ -37,12 +37,14 @@ def parse_replace_configurations(db, k_ep_or_g:str):
     # Parse the file
     config = configparser.ConfigParser()
     config.read(filepath)
-    # print("\n%s.parse_replace_configurations" % (__name__))
+    print("\n%s.parse_replace_configurations" % (__name__))
     for k_section in config.sections():
         # print("\tk_section:%s" % (k_section))
         if '.' not in k_section:
             sys.exit("parse_replace_configurations: error, no edition,ep,part specified")
         k_ed, k_ep, k_part = k_section.split('.')
+        if k_ed_only is not None and k_ed != k_ed_only:
+            continue
 
         for frame_no_str in config.options(k_section):
             frame_no = int(frame_no_str)

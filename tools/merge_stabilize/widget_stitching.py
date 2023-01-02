@@ -79,7 +79,7 @@ class Widget_stitching(Widget_common, Ui_widget_stitching):
 
         self.pushButton_calculate.clicked.connect(self.event_calculate)
         self.model.signal_stitching_calculated.connect(self.event_calculation_ended)
-        # self.model.signal_is_saved[list].connect(self.event_is_saved)
+        # self.model.signal_is_saved[str].connect(self.event_is_saved)
 
 
         self.pushButton_crop_edition.setFocusPolicy(Qt.NoFocus)
@@ -107,13 +107,37 @@ class Widget_stitching(Widget_common, Ui_widget_stitching):
 
 
     def set_initial_options(self, preferences:dict):
-        log.info("set_initial_options")
-        s = preferences['stitching']
+        log.info("%s: set_initial_options" % (self.objectName()))
+        s = preferences[self.objectName()]
+
+        try:
+            w = preferences[self.objectName()]['widget']
+            self.pushButton_set_preview.blockSignals(True)
+            self.pushButton_set_preview.setChecked(w['is_enabled'])
+            self.pushButton_set_preview.blockSignals(False)
+        except:
+            log.warning("cannot set initial options")
+            pass
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
 
+
+
+    def refresh_values(self, frame:dict):
+        print("%s: refresh_values" % (self.objectName()))
+
+
+    def get_preview_options(self):
+        preview_options = {
+            'is_enabled': self.pushButton_set_preview.isChecked(),
+            'roi_edition': self.pushButton_roi_edition.isChecked(),
+            'crop_edition': self.pushButton_crop_edition.isChecked(),
+            # Blend or replace
+            'blend_images': True,
+        }
+        return preview_options
 
 
     def backup_loaded_parameters(self, parameters):
@@ -190,6 +214,7 @@ class Widget_stitching(Widget_common, Ui_widget_stitching):
         self.set_crop_edition_enabled(False)
 
         self.block_signals(False)
+
 
 
     def is_enabled(self):
@@ -393,15 +418,6 @@ class Widget_stitching(Widget_common, Ui_widget_stitching):
         self.signal_preview_options_changed.emit()
 
 
-    def get_preview_options(self):
-        preview_options = {
-            'is_enabled': self.pushButton_set_preview.isChecked(),
-            'roi_edition': self.pushButton_roi_edition.isChecked(),
-            'crop_edition': self.pushButton_crop_edition.isChecked(),
-            # Blend or replace
-            'blend_images': True,
-        }
-        return preview_options
 
 
     def event_global_preview_changed(self, state:bool=False):

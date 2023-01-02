@@ -99,6 +99,12 @@ def parse_common_configuration(config_path, verbose=False):
             d = os.path.normpath(os.path.join(os.getcwd(), d))
         db_common['directories'][key] = d
 
+    if not os.path.exists(db_common['directories']['cache']):
+        db_common['directories']['cache'] = db_common['directories']['cache_default']
+
+    if not os.path.exists(db_common['directories']['cache']):
+        db_common['directories']['cache'] = db_common['directories']['cache_default']
+
 
     # Executables
     #=============================================================================

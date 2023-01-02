@@ -284,7 +284,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
 
 
 
-def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
+def process_shot(db, shot, bgd, db_combine:dict={}, cpu_count=0):
     # db: global database
     # db_combine: contains coordinates and curves to combine foreground and background
     # shot: this dictionary contains info of the "foreground" shot
@@ -332,8 +332,8 @@ def process_shot(db, shot, db_combine:dict={}, cpu_count=0):
     # If the edition is specified, it means that combine is disabled,
     # else, create the background layer
     # print("process_shot:")
-    if ('stitching' in shot.keys()
-    and 'stitching' not in db['common']['options']['discard_tasks']):
+    if (('stitching' in shot.keys() and 'stitching' not in db['common']['options']['discard_tasks'])
+        or bgd):
 
         do_stitching = True
         layers.update({

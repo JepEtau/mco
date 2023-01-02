@@ -53,11 +53,13 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.radioButton_select_m_channel.setFocusPolicy(Qt.NoFocus)
         self.lineEdit_coordinates.setFocusPolicy(Qt.NoFocus)
         self.lineEdit_rgb_values.setFocusPolicy(Qt.NoFocus)
+        self.lineEdit_rgb_values_new.setFocusPolicy(Qt.NoFocus)
         self.pushButton_reset_current_channel.setFocusPolicy(Qt.NoFocus)
         self.pushButton_reset_all_channels.setFocusPolicy(Qt.NoFocus)
 
         self.lineEdit_coordinates.clear()
         self.lineEdit_rgb_values.clear()
+        self.lineEdit_rgb_values_new.clear()
         self.refresh_current_coordinates([-1,0])
         self.label_message.clear()
 
@@ -156,6 +158,14 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             self.label_message.clear()
 
 
+    def get_preview_options(self):
+        preview_options = {
+            'is_enabled': self.pushButton_set_preview.isChecked(),
+            'split': self.show_split_line,
+            'split_x': self.split_x - self.main_window_margin,
+        }
+        return preview_options
+
 
     def event_reset_channel(self, channel):
         self.widget_rgb_graph.reset_channel(channel=channel)
@@ -180,11 +190,16 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             self.lineEdit_coordinates.setText("x:%d y:%d" % (coordinates[0], coordinates[1]))
 
 
-    def set_color_values(self, bgr):
+    def set_color_values(self, bgr, bgr_new=[]):
         try:
             self.lineEdit_rgb_values.setText("(%d, %d, %d)" % (bgr[2], bgr[1], bgr[0]))
         except:
             self.lineEdit_rgb_values.clear()
+
+        try:
+            self.lineEdit_rgb_values_new.setText("(%d, %d, %d)" % (bgr_new[2], bgr_new[1], bgr_new[0]))
+        except:
+            self.lineEdit_rgb_values_new.clear()
         self.widget_rgb_graph.refresh_rgb_value(bgr)
 
 
@@ -257,14 +272,6 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.signal_save_rgb_curves_as.emit(curves)
 
 
-    def get_preview_options(self):
-        preview_options = {
-            'is_enabled': self.pushButton_set_preview.isChecked(),
-            'split': self.show_split_line,
-            'split_x': self.split_x - self.main_window_margin,
-        }
-        return preview_options
-
 
     def event_is_saved(self, editor):
         log.info("%s: event is saved" % (self.objectName()))
@@ -335,8 +342,6 @@ class Widget_curves(Widget_common, Ui_widget_curves):
                 return True
 
         return self.widget_rgb_graph.event_key_pressed(event)
-
-
 
 
     def event_key_released(self, event):

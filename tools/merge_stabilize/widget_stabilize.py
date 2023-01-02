@@ -67,7 +67,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.is_save_action_allowed = False
 
         self.model.signal_stabilize_calculated.connect(self.event_calculation_ended)
-        self.model.signal_is_saved[list].connect(self.event_is_saved)
+        self.model.signal_is_saved[str].connect(self.event_is_saved)
 
 
         set_stylesheet(self)
@@ -91,6 +91,10 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
+
+
+    def refresh_values(self, frame:dict):
+        print("%s: refresh_values" % (self.objectName()))
 
 
     def set_limits(self, frame_min, frame_max):
