@@ -49,12 +49,12 @@ def db_init_generiques(database, k_ed, verbose=False):
 
         # Default input file
         k_ep_ref = db_generique['k_ep']
-        if k_ep_ref not in database['editions'][k_ed]['inputs'].keys():
-            sys.exit("Erreur: fichier manquant pour le générique %s: édition '%s', épisode %d" % (k_part_g, k_ed, int(k_ep_ref[-2:])))
+        if k_ep_ref not in database['editions'][k_ed]['input']['video'].keys():
+            sys.exit("Erreur: db_init_generiques: fichier manquant pour le générique %s: édition '%s', épisode %d" % (k_part_g, k_ed, int(k_ep_ref[-2:])))
 
         db_generique['path'] = {
-            'input_audio': database['editions'][k_ed]['inputs'][k_ep_ref],
-            'input_video': database['editions'][k_ed]['inputs'][k_ep_ref],
+            'input_audio': database['editions'][k_ed]['input']['audio'][k_ep_ref],
+            'input_video': database['editions'][k_ed]['input']['video'][k_ep_ref],
 
             # Cache
             'cache': os.path.join(db_common['directories']['cache'], "%s" % (k_part_g)),
@@ -236,7 +236,7 @@ def parse_generiques(database, k_ed, verbose=False):
                     if k_option == 'episode':
                         k_episode = 'ep%02d' % (int(value_str))
                         db_generique['video']['ep'] = k_episode
-                        db_generique['path']['input_video'] = database['editions'][k_ed]['inputs'][k_episode]
+                        db_generique['path']['input_video'] = database['editions'][k_ed]['input'][k_episode]
 
 
             # Audio

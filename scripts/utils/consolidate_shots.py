@@ -191,7 +191,7 @@ def consolidate_shot(db, shot) -> None:
 
         # Input and dimensions
         shot.update({
-            'input': db['editions'][k_ed]['inputs'][k_ep],
+            'input': db['editions'][k_ed]['input']['video'][k_ep],
             'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
         })
 
@@ -260,7 +260,7 @@ def consolidate_shot(db, shot) -> None:
 
         # Input and dimensions
         shot.update({
-            'input': db['editions'][k_ed]['inputs'][k_ep],
+            'input': db['editions'][k_ed]['input']['video'][k_ep],
             'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
         })
 

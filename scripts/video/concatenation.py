@@ -3,7 +3,7 @@ import sys
 import os
 from pprint import pprint
 
-from audio.utils import read_single_track_audio_file
+from audio.utils import read_audio_file
 from utils.common import (
     FPS,
     K_PARTS,
@@ -252,7 +252,7 @@ def merge_audio_and_video_tracks(db, k_ep, force=False):
 
     # Get equivalent nb of frames from audio stream
     audio_filepath = os.path.join(db[k_ep]['target']['path']['cache'], "audio", "%s_audio.%s" % (k_ep, db['common']['settings']['audio_format']))
-    sample_rate, in_track, duration = read_single_track_audio_file(audio_filepath)
+    channels_count, sample_rate, in_track, duration = read_audio_file(audio_filepath)
     audio_frames_count = int(duration*FPS)
 
     print("%s %s: merge audio and video: %s" % (current_datetime_str(), k_ep, audio_video_filepath))

@@ -126,7 +126,6 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
         # Get dependencies for this episode
         dependencies_tmp = parse_get_dependencies_for_episodes(database, k_ep)
 
-
     # Merge dependencies
     for k, v in dependencies_tmp.items():
         if k not in dependencies.keys():
@@ -148,7 +147,7 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in dependencies[k_ed_tmp]:
             # Parse config file used to stabilize/stitch
-            parse_stitching_configurations(database, k_ep_or_g=k_ep_tmp)
+            # parse_stitching_configurations(database, k_ep_or_g=k_ep_tmp)
 
             parse_curve_configurations(database, k_ep_or_g=k_ep_tmp)
             parse_replace_configurations(database, k_ep_or_g=k_ep_tmp)
