@@ -186,156 +186,42 @@ def consolidate_shot(db, shot) -> None:
     # pprint(shot)
     # print("------------------------------------------------------------------------------------------------------")
 
-    if 'layer' not in shot.keys() or shot['layer'] == 'fgd':
-        db_video = db[k_ep][k_ed][k_part]['video']
+    db_video = db[k_ep][k_ed][k_part]['video']
 
-        # Input and dimensions
-        shot.update({
-            'input': db['editions'][k_ed]['input']['video'][k_ep],
-            'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
-        })
+    # Input and dimensions
+    shot.update({
+        'input': db['editions'][k_ed]['input']['video'][k_ep],
+        'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
+    })
 
-        # Frame ref is used for deinterlace, calculate it: use the offset array
-        shot['ref'] = shot['start']
-        if k_part in K_GENERIQUES:
-            k_ep_target = db[k_part]['target']['video']['src']['k_ep']
-            k_ed_target = db[k_part]['target']['video']['src']['k_ed']
-        else:
-            # pprint(db[k_ep]['target']['video'])
-            # pprint(shot)
-            k_ed_target = db[k_ep]['target']['video']['src']['k_ed']
-            # if shot['k_ep'] != shot['dst']['k_ep']:
-            k_ep_target = shot['dst']['k_ep']
-
-        if ((k_ed != k_ed_target or k_ep != k_ep_target)
-            and k_part == shot['dst']['k_part']):
-            # Apply offset only if part is different:
-            # when replacing episode<->asuivre or episode<->precedemment or asuivre <-> precedemment
-            print("\t\t\tapply offset for %s" % (k_part))
-            try:
-                offsets = db[k_ep][k_ed][k_part]['video']['offsets']
-                # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
-                for offset in offsets:
-                    if offset['start'] <= shot['start'] <= offset['end']:
-                        shot['ref'] = shot['start'] + offset['offset']
-                        break
-            except:
-                print("offsets are not defined in %s:%s for part %s" % (k_ed, k_ep, k_part))
-        # else:
-        #     print("\t\t\tdisable offset for %s" % (k_part))
-
-
-        # Remove unused tasks
-        if 'bgd' in shot['tasks']:
-            shot['tasks'].remove('bgd')
-
-        # Remove stitching
-        for t in ['stitching', 'stabilize']:
-            if t not in shot.keys():
-                try: shot['tasks'].remove(t)
-                except: pass
-
-
-    elif 'layer' in shot.keys() and shot['layer'] == 'bgd':
-        # TODO: correct and implement thsi for stitching
-
-
-
-        # Remove unused values
-        del shot['replace']
-        # shot['k_ed']: 'k',
-        # : 'ep01',
-        # shot['k_part']: 'episode',
-
-        # pprint(db[k_ep]['common']['video']['stitching']['bgd'])
-        # sys.exit()
-
-        shot['k_ed'] = db[k_ep]['common']['video']['stitching']['bgd']
-        k_ed = shot['k_ed']
-
-        print("%s.consolidate_shot: BGD: %s:%s:%s" % (__name__, k_ed, shot['dst']['k_ep'], shot['dst']['k_part']))
-
-        db_video = db[k_ep][k_ed][k_part]['video']
-        # pprint(db_video)
-
-        # Input and dimensions
-        shot.update({
-            'input': db['editions'][k_ed]['input']['video'][k_ep],
-            'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
-        })
-
-
-
-        # Frame ref is used for deinterlace, calculate it: use the offset array
-        shot['ref'] = shot['start']
-        if k_part in K_GENERIQUES:
-            k_ep_target = db[k_part]['target']['video']['src']['k_ep']
-            k_ed_target = db[k_part]['target']['video']['src']['k_ed']
-        else:
-            # pprint(db[k_ep]['target']['video'])
-            # pprint(shot)
-            k_ed_target = db[k_ep]['target']['video']['src']['k_ed']
-            # if shot['k_ep'] != shot['dst']['k_ep']:
-            k_ep_target = shot['dst']['k_ep']
-
-        if ((k_ed != k_ed_target or k_ep != k_ep_target)
-            and k_part == shot['dst']['k_part']):
-            # Apply offset only if part is different:
-            # when replacing episode<->asuivre or episode<->precedemment or asuivre <-> precedemment
-            print("\t\t\tapply offset for %s" % (k_part))
-            try:
-                offsets = db[k_ep][k_ed][k_part]['video']['offsets']
-                # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
-                for offset in offsets:
-                    if offset['start'] <= shot['start'] <= offset['end']:
-                        shot['ref'] = shot['start'] + offset['offset']
-                        break
-            except:
-                print("offsets are not defined in %s:%s for part %s" % (k_ed, k_ep, k_part))
-
-        # TODO: get filters in db_video['shots']
-
-        # pprint(db[k_ep][k_ed])
-
-
-        # db_video = db[k_ep][k_ed][k_part]['video']
-
-        # shot['ref'] = shot['start']
-        # shot['k_ed'] = k_ed
-        # if True:
-        #     # Patch start with offset
-        #     offsets = db_video['offsets']
-        #     for i in range(len(offsets)):
-        #         if offsets[i]['start'] <= shot['start'] <= offsets[i]['end']:
-        #             shot['start'] = shot['start'] + offsets[i]['offset']
-        #             break
-
-        # # pprint(db[k_ep][k_ed_bgd][k_part]['video'])
-        # # pprint(shot)
-        # # sys.exit()
-
-        # # Background, use foreground shot details to
-        # # update the properties
-        # # shot.update(deepcopy(db[k_ep][db['editions']['fgd']][k_part]['video']['shots'][shot_no]))
-        # shot['offsets'] = db_video['offsets']
-
-        # Remove unused tasks
-        for t in ['stitching', 'sharpen', 'rgb']:
-            if t in shot['tasks']:
-                shot['tasks'].remove(t)
-
-        # for testing purpose:
-        try:
-            del shot['stitching']
-        except:
-            pass
-
-        # pprint(shot)
-        # print("")
-        # sys.exit("consolidate_shot")
-
+    # Frame ref is used for deinterlace, calculate it: use the offset array
+    shot['ref'] = shot['start']
+    if k_part in K_GENERIQUES:
+        k_ep_target = db[k_part]['target']['video']['src']['k_ep']
+        k_ed_target = db[k_part]['target']['video']['src']['k_ed']
     else:
-        sys.exit("Did not detect FGD/BGD in shot structure")
+        # pprint(db[k_ep]['target']['video'])
+        # pprint(shot)
+        k_ed_target = db[k_ep]['target']['video']['src']['k_ed']
+        # if shot['k_ep'] != shot['dst']['k_ep']:
+        k_ep_target = shot['dst']['k_ep']
+
+    if ((k_ed != k_ed_target or k_ep != k_ep_target)
+        and k_part == shot['dst']['k_part']):
+        # Apply offset only if part is different:
+        # when replacing episode<->asuivre or episode<->precedemment or asuivre <-> precedemment
+        print("\t\t\tapply offset for %s" % (k_part))
+        try:
+            offsets = db[k_ep][k_ed][k_part]['video']['offsets']
+            # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
+            for offset in offsets:
+                if offset['start'] <= shot['start'] <= offset['end']:
+                    shot['ref'] = shot['start'] + offset['offset']
+                    break
+        except:
+            print("offsets are not defined in %s:%s for part %s" % (k_ed, k_ep, k_part))
+    # else:
+    #     print("\t\t\tdisable offset for %s" % (k_part))
 
 
     # Get filters used by this shot

@@ -71,8 +71,6 @@ class Model_video_editor(Model_common):
         # Variables
         self.model_database = Model_database()
         self.filepath = list()
-        for step in ['bgd', 'stitching']:
-            self.step_labels.remove(step)
 
 
     def set_view(self, view):
@@ -215,8 +213,8 @@ class Model_video_editor(Model_common):
 
             # Geometry for this shot:
             #   - part geometry
-            #   - custom geometry: if g_asuivre/g_reportage, staabilize or stitched images
-            if k_part_selected in ['g_debut', 'g_fin']:
+            #   - custom geometry: if g_asuivre/g_reportage/stabilized/custom images
+            if k_part_selected in ['g_debut', 'g_fin', 'g_reportage']:
                 shot_geometry = self.model_database.get_shot_geometry(
                     k_ed='-',
                     k_ep=shot['k_ep'],
@@ -255,7 +253,7 @@ class Model_video_editor(Model_common):
                     'replaced_by': self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no),
                     'curves': curves,
                     'geometry': shot_geometry,
-                    'cache_fgd': None,
+                    'cache_initial': None,
                     'cache': None,
                 })
 
@@ -762,15 +760,15 @@ def generate_single_image(frame:dict, preview_options:dict):
     img = None
 
     try:
-        if frame['cache_fgd'] is None:
+        if frame['cache_initial'] is None:
             # The original has not yet been loaded
-            frame['cache_fgd'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
+            frame['cache_initial'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
     except:
-        frame['cache_fgd'] = None
+        frame['cache_initial'] = None
 
-    img_original = frame['cache_fgd']
+    img_original = frame['cache_initial']
     h, w, c = img_original.shape
-    # print("\t-> initial: ", frame['cache_fgd'].shape)
+    # print("\t-> initial: ", frame['cache_initial'].shape)
 
     # Calculate dimensions to crop the image
     c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])

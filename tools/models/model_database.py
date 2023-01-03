@@ -25,8 +25,6 @@ from utils.common import (
     recursive_update,
 )
 
-from models.model_stitching import Model_stitching
-from models.model_bgd_curves import Model_bgd_curves
 from models.model_geometry import Model_geometry
 from models.model_curves import Model_curves
 from models.model_replace import Model_replace
@@ -66,14 +64,6 @@ from parsers.parser_stabilize import (
 )
 
 
-from parsers.parser_stitching import (
-    STITCHING_SHOT_PARAMETERS_DEFAULT,
-    get_frames_stitching_parameters,
-    get_frames_stitching_transformation,
-    parse_stitching_configurations,
-    get_shots_stitching_parameters,
-)
-
 from parsers.parser_curves import (
     parse_curve_configurations,
 )
@@ -88,17 +78,13 @@ from parsers.parser_geometry import get_shots_st_geometry
 
 
 
-class Model_database(Model_bgd_curves,
-                    Model_geometry,
+class Model_database(Model_geometry,
                     Model_curves,
                     Model_replace,
-                    Model_stitching,
                     object):
 
     def __init__(self):
         super(Model_database, self).__init__()
-        Model_bgd_curves.__init__(self)
-        Model_stitching.__init__(self)
         Model_geometry.__init__(self)
         Model_curves.__init__(self)
         Model_replace.__init__(self)
@@ -119,12 +105,13 @@ class Model_database(Model_bgd_curves,
         self.initial_database['common']['options']['discard_tasks'].append('replace')
 
         k_ed_ref = self.initial_database['common']['reference']['edition']
-
-        self.initial_database['editions'] = parse_editions(self.initial_database,
-            k_ed_fgd='k', k_ed_ref=k_ed_ref)
-        parse_episodes_common(self.initial_database)
+        print("Model_database: todo, edition is set to the first one, correct this ASAP")
+        k_ed=self.k_editions[0]
 
         self.k_editions = self.initial_database['editions']['available']
+        self.initial_database['editions'] = parse_editions(self.initial_database, k_ed=k_ed, k_ed_ref=k_ed_ref)
+        parse_episodes_common(self.initial_database)
+
         for k_ed in self.k_editions:
             db_init_episodes(self.initial_database, k_ed=k_ed)
 
@@ -156,8 +143,7 @@ class Model_database(Model_bgd_curves,
     def consolidate_database(self, k_ep, k_part,
                                 do_parse_curves:bool=True,
                                 do_parse_replace:bool=True,
-                                do_parse_geometry:bool=True,
-                                do_parse_stitching:bool=False):
+                                do_parse_geometry:bool=True):
         # print("%s:consolidate_database %s:%s" % (__name__, k_ep, k_part))
         if k_ep == '' and k_part == '':
             return
@@ -204,8 +190,6 @@ class Model_database(Model_bgd_curves,
                 print(k_ed_tmp)
                 for k_ep_tmp in dependencies[k_ed_tmp]:
                     print(k_ep_tmp)
-                    if do_parse_stitching:
-                        parse_stitching_configurations(self.global_database, k_ep_or_g=k_ep_tmp, parse_parameters=True)
                     parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep_tmp, parse_parameters=True)
 
                     if do_parse_curves:
@@ -216,8 +200,6 @@ class Model_database(Model_bgd_curves,
                     if do_parse_geometry:
                         parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
 
-            if do_parse_stitching:
-                parse_stitching_configurations(self.global_database, k_ep_or_g=k_ep, parse_parameters=True)
             parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep, parse_parameters=True)
             if do_parse_curves:
                 parse_curve_configurations(self.global_database, k_ep_or_g=k_ep)
@@ -269,25 +251,6 @@ class Model_database(Model_bgd_curves,
                         self.db_part_geometry_initial = get_initial_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_part_geometry = dict()
 
-                # Image stitching
-                if do_parse_stitching:
-                    # Parameters
-                    self.db_stitching_shots_parameters_initial = get_shots_stitching_parameters(self.global_database, k_ep=k_ep, k_part=k_part)
-                    self.db_stitching_shots_parameters = dict()
-                    self.db_stitching_frames_parameters_initial = get_frames_stitching_parameters(self.global_database, k_ep=k_ep, k_part=k_part)
-                    self.db_stitching_frames_parameters = dict()
-
-                    # Values: transformation matrix
-                    self.initialize_db_for_transformation(db=self.global_database, k_ep=k_ep, k_part=k_part)
-
-                    # !!!!! TODO: this won't work when replacing shots from another episode:
-                    # use a duplicated curves file parameters?
-                    # concatenate libraries for up to 3 episodes?
-                    # better solution would be to parse dynamicaly the folders. i.e. load and save the curves
-                    # from the other directory if the src episode is not the same.
-                    self.initialize_db_for_bgd_curves(db=self.global_database, k_ep=k_ep, k_part=k_part)
-                    self.initialize_db_for_fgd_crop(db=self.global_database, k_ep=k_ep, k_part=k_part)
-
                 # Stabilization
                 self.db_stabilize_shots_parameters_initial = get_shots_stabilize_parameters(self.global_database, k_ep=k_ep, k_part=k_part)
                 self.db_stabilize_shots_parameters = dict()
@@ -295,6 +258,7 @@ class Model_database(Model_bgd_curves,
                 self.db_stabilize_frames_initial = get_frames_stabilize(self.global_database, k_ep=k_ep, k_part=k_part)
                 self.db_stabilize_frames = dict()
 
+                # Custom geometry after stabilization
                 self.db_st_geometry_initial = get_shots_st_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
                 self.db_st_geometry = dict()
 
@@ -314,9 +278,6 @@ class Model_database(Model_bgd_curves,
             for k_ed_tmp, k_eps in dependencies.items():
                 for k_ep_tmp in dependencies[k_ed_tmp]:
                     # Parse other config files for each dependency
-                    # print("\tparse_***_configurations: k_ed=%s, k_ep=%s" % (k_ed_tmp, k_ep_tmp))
-                    # if do_parse_stitching:
-                    #     parse_stitching_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
                     if do_parse_curves:
                         parse_curve_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
                     if do_parse_replace:
@@ -324,10 +285,6 @@ class Model_database(Model_bgd_curves,
                     # if do_parse_geometry:
                     #     parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
                 break
-
-            # # Stabilization and stitching
-            # if do_parse_stitching:
-            #     parse_stitching_configurations(self.global_database, k_ep_or_g=k_part)
 
             # Curves: this parser update the shots for each episode/part
             if do_parse_curves:
@@ -375,132 +332,6 @@ class Model_database(Model_bgd_curves,
         if self.global_database is None:
             return self.initial_database
         return self.global_database
-
-
-
-
-    # TODO: no, this is is for final geometry, rework this!!!
-    # Use this geometry values to replace the final one, used after stitching/stabilization
-    def get_shot_stitching_crop(self, shot_no):
-        if shot_no in self.db_stitching_shots_parameters.keys():
-            if 'crop' in self.db_stitching_shots_parameters[shot_no].keys():
-                return self.db_stitching_shots_parameters[shot_no]['geometry']
-        # print("returned default for shot no. %d" % (shot_no))
-        return [0, 0, 0, 0]
-
-
-
-    # Parameters for shot stitching
-    def get_shot_stitching_parameters(self, shot_no):
-        """Returns the parameters for this shot
-        """
-        for db_parameters in [self.db_stitching_shots_parameters,
-                                self.db_stitching_shots_parameters_initial]:
-            if shot_no in db_parameters.keys():
-                if db_parameters[shot_no]['is_enabled']:
-                    return db_parameters[shot_no]
-        return deepcopy(STITCHING_SHOT_PARAMETERS_DEFAULT)
-
-
-    def set_shot_stitching_parameters(self, shot_no, parameters):
-        """Set new parameters for this shot
-        """
-        if shot_no not in self.db_stitching_shots_parameters.keys():
-            self.db_stitching_shots_parameters[shot_no] = deepcopy(STITCHING_SHOT_PARAMETERS_DEFAULT)
-        self.db_stitching_shots_parameters[shot_no].update(parameters)
-        self.is_stitching_db_modified = True
-
-
-    def remove_shot_stitching_parameters(self, shot_no):
-        """Remove the parameters for this shot
-        """
-        if shot_no not in self.db_stitching_shots_parameters_initial.keys():
-            # Set a flag to remove this parameters (use is_enabled flag)
-            if shot_no not in self.db_stitching_shots_parameters.keys():
-                self.db_stitching_shots_parameters[shot_no] = deepcopy(self.db_stitching_shots_parameters_initial[shot_no])
-            self.db_stitching_shots_parameters[shot_no]['is_enabled'] = False
-        else:
-            # Not defined in initial db, remove from modified
-            if shot_no in self.db_stitching_shots_parameters.keys():
-                del self.db_stitching_shots_parameters[shot_no]
-
-        # Remove all customized parameters for each frame in this shot
-        self.remove_all_frames_stitching_parameters()
-        self.is_stitching_db_modified = True
-
-
-    def remove_single_frame_stitching_parameters(self, shot_no, frame_no):
-        if (shot_no in self.db_stitching_shots_parameters_initial.keys()
-            and frame_no in self.db_stitching_shots_parameters_initial[shot_no].keys()):
-            # Set a flag to remove this parameters (use is_enabled flag)
-            if shot_no not in self.db_stitching_frames_parameters.keys():
-                self.db_stitching_frames_parameters[shot_no] = dict()
-            if frame_no not in self.db_stitching_frames_parameters[shot_no].keys():
-                self.db_stitching_frames_parameters[shot_no][frame_no] = deepcopy(self.db_stitching_shots_parameters_initial[shot_no][frame_no])
-            self.db_stitching_shots_parameters[shot_no][frame_no]['is_enabled'] = False
-        else:
-            # Not in initial, remove from modified
-            if (shot_no in self.db_stitching_frames_parameters.keys()
-                and frame_no in self.db_stitching_frames_parameters[shot_no].keys()):
-                del self.db_stitching_frames_parameters[shot_no][frame_no]
-        self.is_stitching_db_modified = True
-
-
-    def remove_all_frames_stitching_parameters(self, shot_no):
-        """Remove the parameters for all frames
-        """
-        if shot_no not in self.db_stitching_frames_parameters_initial.keys():
-            # Set a flag to remove this parameters (use is_enabled flag)
-            if shot_no not in self.db_stitching_frames_parameters.keys():
-                self.db_stitching_frames_parameters[shot_no] = dict()
-
-            for f_no, f_values in self.db_stitching_frames_parameters_initial.items():
-                if f_no not in self.db_stitching_frames_parameters[shot_no].keys():
-                    self.db_stitching_frames_parameters[shot_no][f_no] = deepcopy(f_values)
-                self.db_stitching_frames_parameters[shot_no][f_no]['is_enabled'] = False
-        else:
-            # Not defined in initial db, remove from modified
-            if shot_no in self.db_stitching_frames_parameters.keys():
-                del self.db_stitching_frames_parameters[shot_no]
-        self.is_stitching_db_modified = True
-
-
-    # Stitching parameters used for each frame (overwrite the one from shot)
-    def get_frame_stitching_parameters(self, shot_no, frame_no):
-        """ Return the parameters used for the stitching: the parameters
-        might be different for each frame, thus get parameters from frame is defined
-        otherwise, returns the parameters for the shot
-        """
-        if shot_no in self.db_stitching_frames_parameters.keys():
-            if frame_no in self.db_stitching_frames_parameters[shot_no].keys():
-                return self.db_stitching_frames_parameters[shot_no][frame_no]
-
-        if shot_no in self.db_stitching_frames_parameters_initial.keys():
-            if frame_no in self.db_stitching_frames_parameters_initial[shot_no].keys():
-                return self.db_stitching_frames_parameters_initial[shot_no][frame_no]
-
-        return self.get_shot_stitching_parameters(shot_no=shot_no)
-
-
-    def set_frame_stitching_parameters(self, shot_no, frame_no, parameters):
-        """Set new parameters for this shot
-        """
-        if shot_no not in self.db_stitching_frames_parameters.keys():
-            self.db_stitching_frames_parameters[shot_no] = dict()
-        self.db_stitching_frames_parameters[shot_no][frame_no] = deepcopy(STITCHING_SHOT_PARAMETERS_DEFAULT)
-        self.db_stitching_frames_parameters[shot_no][frame_no].update(parameters)
-        self.is_stitching_db_modified = True
-
-
-    def set_stitching_parameters(self, shot_no, frame_no, parameters):
-        if parameters['is_shot']:
-            # These parameters are the new ones for the shot
-            self.set_shot_stitching_parameters(shot_no=shot_no, parameters=parameters)
-        else:
-            self.set_frame_stitching_parameters(shot_no=shot_no, frame_no=frame_no, parameters=parameters)
-        self.is_stitching_db_modified = True
-
-
 
 
     # Stabilization parameters
@@ -571,9 +402,7 @@ class Model_database(Model_bgd_curves,
             del db_modified[shot_no]
 
 
-
-
-    # Crop to apply after stabilization/image stitching
+    # Crop to apply after stabilization
     def get_shot_st_geometry(self, shot_no):
         for db_tmp in [self.db_st_geometry,
                         self.db_st_geometry_initial]:
@@ -603,25 +432,22 @@ class Model_database(Model_bgd_curves,
             return self.is_replace_db_modified
         elif type == 'geometry':
             return self.is_geometry_db_modified
-        elif type == 'stitching':
-            return self.is_stabilize_db_modified
         elif type == 'stabilization':
-            return self.is_stitching_db_modified
-        elif type == 'bgd_curves':
-            return self.is_bgd_curves_db_modified
+            return self.is_stabilize_db_modified
 
 
         return (self.is_curves_db_modified
             or self.is_curves_selection_db_modified
             or self.is_replace_db_modified
             or self.is_geometry_db_modified
-            or self.is_stabilize_db_modified
-            or self.is_stitching_db_modified
-            or self.is_bgd_curves_db_modified)
+            or self.is_stabilize_db_modified)
 
 
     def get_modified_db(self) -> list:
         modified_db = list()
+
+        if self.is_stabilize_db_modified:
+            modified_db.append('stabilization values')
 
         if self.is_curves_db_modified:
             modified_db.append('curves')
@@ -634,15 +460,6 @@ class Model_database(Model_bgd_curves,
 
         if self.is_geometry_db_modified:
             modified_db.append('part or shot geometry')
-
-        if self.is_stabilize_db_modified:
-            modified_db.append('stabilization values')
-
-        if self.is_stitching_db_modified:
-            modified_db.append('stitching values')
-
-        if self.is_bgd_curves_db_modified:
-            modified_db.append('curves before stitching')
 
         return modified_db
 
@@ -783,28 +600,3 @@ class Model_database(Model_bgd_curves,
         return True
 
 
-
-
-
-
-
-    def event_save_database(self, curves:dict):
-        log.info("global mode: save bgd curve as %s for image %s" % (curves['k_curves'], curves['image_name']))
-
-        k_curves = curves['k_curves']
-        # Save curves
-        if curves['points'] is not None and k_curves != '':
-            self.model_curves.save_bgd_curves(k_curves, curves['points'])
-
-        # Modify shot: use the frame to find the shot no.
-        frame = self.framelist.get_frame(curves['image_name'])
-
-        # Save the database, use the frame struct to save the
-        # correspondant edition/episode/part
-        self.model_curves.save_curves_database(k_ep=frame['k_ep'], k_part=frame['k_part'])
-        frame['k_curves_initial'] = k_curves
-
-        # Send a list of modified shots
-        self.signal_refresh_modified_shots.emit(self.model_curves.get_modified_shots())
-
-        self.signal_refresh_frame_properties.emit(frame)

@@ -23,7 +23,6 @@ from pprint import pprint
 from skimage import color
 from skimage import restoration
 
-from parsers.parser_stitching import STICTHING_FGD_PAD
 from utils.common import get_dimensions_from_crop_values
 
 
@@ -100,14 +99,9 @@ def filter_denoise(frame, img):
     return None
 
 
-def filter_bgd(frame, img):
-    # if 'bgd' in frame['filepath']:
-    print("filter_bgd: apply RGB curve %s -> %s" % (frame['filepath']['denoise'], frame['filepath']['bgd']))
-    return img
-
 
 def filter_sharpen(frame, img):
-    # print("sharpen: %s -> %s" % (frame['filepath']['stitching'], frame['filepath']['sharpen']))
+    # print("sharpen: %s -> %s" % (frame['filepath']['denoise'], frame['filepath']['sharpen']))
     if frame['filters']['opencv']['sharpen'] is not None:
         imgTmp = filters_opencv(img, frame['filters']['opencv']['sharpen'], multi=False)
         return imgTmp
@@ -130,22 +124,6 @@ def filter_upscale(frame, img):
     else:
         raise Exception("error: opencv: no upscale filter defined to generate %s" % (frame['filepath']['upscale']))
     return None
-
-
-def filter_bgd_curves(frame, img):
-    # print("rgb: %s -> %s" % (frame['filepath']['sharpen'], frame['filepath']['rgb']))
-    b, g, r = cv2.split(img)
-
-    matrix_r = frame['stitching']['curves']['lut']['r']
-    matrix_g = frame['stitching']['curves']['lut']['g']
-    matrix_b = frame['stitching']['curves']['lut']['b']
-
-    rrp = matrix_r[r.flat].reshape(r.shape)
-    ggp = matrix_g[g.flat].reshape(g.shape)
-    bbp = matrix_b[b.flat].reshape(b.shape)
-
-    bgd_img_rgb = cv2.merge((bbp, ggp, rrp))
-    return bgd_img_rgb
 
 
 def filter_rgb(frame, img):
@@ -777,95 +755,6 @@ def strokeEdges(src, dst, blurKsize = 7, edgeKsize = 5):
        channel[:] = channel * normalizedInverseAlpha
    cv2.merge(channels, dst)
 
-
-
-
-
-
-def calculate_stitching_values(frame:dict):
-    """ Calculate homography values for stitching.
-    """
-    print("calculate_stitching_values %d" % (frame['index']), flush=True)
-    # now = time.time()
-
-    filepath_bgd = frame['filepath_bgd']
-    img_bgd = cv2.imread(filepath_bgd, cv2.IMREAD_COLOR)
-
-    stitching_parameters = frame['stitching']['parameters']
-
-    # ROI used for stitching
-    roi_top, roi_bottom, roi_left, roi_right = stitching_parameters['roi']
-    height_fgd, width_fgd, channels_fgd = frame['cache_fgd'].shape
-    y0 = roi_top
-    y1 = height_fgd - roi_bottom
-    x0 = roi_left
-    x1 = width_fgd - roi_right
-
-    if True:
-        # Sharpen images
-        radius = stitching_parameters['sharpen'][0]
-        amount = stitching_parameters['sharpen'][1]
-
-        tmp1 = img_as_float(cv2.cvtColor(frame['cache_fgd'], cv2.COLOR_RGB2GRAY))
-        tmp2 = unsharp_mask(tmp1,
-            radius=radius,
-            amount=amount,
-            preserve_range=False)
-        img_fgd_gray = img_as_ubyte(tmp2)
-
-
-        tmp3 = img_as_float(cv2.cvtColor(img_bgd, cv2.COLOR_RGB2GRAY))
-        tmp4 = unsharp_mask(tmp3,
-            radius=radius,
-            amount=amount,
-            preserve_range=False)
-        img_bgd_gray = img_as_ubyte(tmp4)
-    else:
-        img_fgd_gray = cv2.cvtColor(frame['cache_fgd'], cv2.COLOR_RGB2GRAY)
-        img_bgd_gray = cv2.cvtColor(img_bgd, cv2.COLOR_RGB2GRAY)
-
-
-    if (roi_top != 0 or roi_bottom != 0
-    or roi_left != 0 or roi_right != 0):
-        print("use cropped roi")
-        img_fgd_gray_cropped = img_fgd_gray[y0:y1, x0:x1]
-    else:
-        img_fgd_gray_cropped = img_fgd_gray
-
-    img_fgd_borders_gray = cv2.copyMakeBorder(img_fgd_gray_cropped,
-        top=STICTHING_FGD_PAD[0] + roi_top,
-        bottom=STICTHING_FGD_PAD[1] + roi_bottom,
-        left=STICTHING_FGD_PAD[2] + roi_left,
-        right=STICTHING_FGD_PAD[3] + roi_right,
-        borderType=cv2.BORDER_CONSTANT,
-        value=[0, 0, 0])
-
-    # parameters from file
-    feature_extractor = stitching_parameters['extractor']
-    feature_matching = stitching_parameters['matching']
-
-    # detect and describe points
-    kps_fgd, features_fgd = detectAndDescribe(img_fgd_borders_gray, method=feature_extractor)
-    kps_bgd, features_bgd = detectAndDescribe(img_bgd_gray, method=feature_extractor)
-
-    # find matching points between fgd and bgd
-    if feature_matching == 'bf':
-        matches = matchKeyPointsBF(features_bgd, features_fgd, method=feature_extractor)
-    elif feature_matching == 'knn':
-        matches = matchKeyPointsKNN(features_bgd, features_fgd, ratio=stitching_parameters['knn_ratio'], method=feature_extractor)
-
-    # Calculate homography matrix
-    result = getHomography(
-        kps_bgd, kps_fgd,
-        features_bgd, features_fgd,
-        matches,
-        method_str=stitching_parameters['method'],
-        ransacReprojThresh=stitching_parameters['reproj_threshold'])
-    if result is None:
-        print("Error!")
-    (matches, M, status) = result
-
-    return (frame['index'], M)
 
 
 

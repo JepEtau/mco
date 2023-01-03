@@ -145,7 +145,7 @@ class Window_main(Window_common):
 
             # Set an internal image object
             self.image = {
-                'cache_fgd': frame['cache_fgd'],
+                'cache_initial': frame['cache_initial'],
                 'cache': frame['cache'],
                 'geometry': frame['geometry'],
                 'curves': {
@@ -179,7 +179,7 @@ class Window_main(Window_common):
                     and xr < w+PAINTER_MARGIN_LEFT and yr < h+PAINTER_MARGIN_TOP):
 
                     # TODO: correct this!
-                    bgr = self.image['cache_fgd'][yr-self.image['origin'][1], xr-self.image['origin'][0]]
+                    bgr = self.image['cache_initial'][yr-self.image['origin'][1], xr-self.image['origin'][0]]
                     # print("\t(%d, %d) -> (%d, %d, %d)" % (
                     #     xr-self.image['origin'][0],
                     #     yr-self.image['origin'][1],
@@ -220,11 +220,11 @@ class Window_main(Window_common):
         y = event.y()
 
         if (self.image is not None
-        and self.image['cache_fgd'] is not None):
+        and self.image['cache_initial'] is not None):
             if self.widget_curves.grab_split_line(x):
                 self.setCursor(Qt.SplitHCursor)
             else:
-                print("\t-> cache_fgd: ", self.image['cache_fgd'].shape)
+                print("\t-> cache_initial: ", self.image['cache_initial'].shape)
                 self.get_rgb_value(x, y)
             event.accept()
             return True
@@ -362,7 +362,7 @@ class Window_main(Window_common):
         delta_y = self.display_position_y
 
         options = self.image['preview_options']
-        h_i, w_i, c = self.image['cache_fgd'].shape
+        h_i, w_i, c = self.image['cache_initial'].shape
         # print("paintEvent: initial image = %dx%d" % (h_i, w_i))
         h, w, c = img.shape
         q_image = QImage(img.data, w, h, w * 3, QImage.Format_BGR888)

@@ -37,7 +37,6 @@ def main():
 
     # from scripts.frames_extract import frames_extract
     verbose = False
-    # editions = ['k', 'a', 's', 's0']
     editions = ['s0', 's', 'k', 'a', 'f']
 
 
@@ -89,8 +88,6 @@ def main():
             'pre_upscale',
             'upscale',
             'denoise',
-            'bgd',
-            'stitching',
             'sharpen',
             'rgb',
             'geometry',
@@ -135,10 +132,6 @@ def main():
         required=False,
         help="regenerate video")
 
-    parser.add_argument("--bgd",
-        action="store_true",
-        required=False,
-        help="process bgd")
 
     arguments = parser.parse_args()
 
@@ -333,7 +326,7 @@ def main():
 
             # Force the edition to default
             if arguments.edition == '':
-                k_ed = 'k'
+                k_ed = editions[0]
             else:
                 k_ed = arguments.edition
 
@@ -346,8 +339,7 @@ def main():
                 force=arguments.force,
                 simulation=arguments.simulate,
                 shot_min=shot_min, shot_max=shot_max,
-                do_regenerate=arguments.regenerate,
-                bgd=arguments.bgd)
+                do_regenerate=arguments.regenerate)
 
             if shot_min != 0 or shot_max != 999999:
                 do_av_merge = False

@@ -153,9 +153,7 @@ def get_output_frame_filepaths(db, shot:dict, frame_no:int):
 
     filepaths = dict()
     for task in FILTER_BASE_NO:
-        if task == 'stitching':
-            suffix = "__%s__%03d" % (k_ed, get_filter_id(db, shot, 'sharpen'))
-        elif task == 'upscale_rgb_geometry':
+        if task == 'upscale_rgb_geometry':
             suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO_DEBUG['upscale_rgb_geometry'])
         else:
             suffix = "__%s__%03d" % (k_ed, get_filter_id(db, shot, task))
@@ -206,9 +204,7 @@ def get_output_frame_filepaths_for_study(db, frame:dict):
 
     filepaths = dict()
     for task in FILTER_BASE_NO:
-        if task == 'stitching':
-            suffix = "__%s__%03d" % (k_ed, get_filter_id(db, frame, 'sharpen'))
-        elif task == 'upscale_rgb_geometry':
+        if task == 'upscale_rgb_geometry':
             suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO_DEBUG['upscale_rgb_geometry'])
         else:
             suffix = "__%s__%03d" % (k_ed, get_filter_id(db, frame, task))

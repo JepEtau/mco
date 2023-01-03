@@ -15,7 +15,6 @@ from PySide6.QtCore import (
 
 from utils.common import (
     K_GENERIQUES,
-    K_NON_GENERIQUE_PARTS,
     K_PARTS,
 )
 from utils.get_filters import FILTER_BASE_NO
@@ -128,11 +127,7 @@ class Model_common(QObject):
             self.current_frame['cache'] = None
         except:
             pass
-        try:
-            del self.current_frame['cache_bgd_tmp']
-            self.current_frame['cache_bgd_tmp'] = None
-        except:
-            pass
+
 
 
     def get_shot(self, shot_no:int):

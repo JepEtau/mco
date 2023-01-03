@@ -382,8 +382,8 @@ def get_shot_from_frame(db, edition:str, frame:dict, k_part:str=''):
 
     db_video = db[k_episode][edition][k_part]['video']
     if 'shots' not in db_video.keys():
-        # print("USE REFERENCE")
-        db_video = db[k_episode][db['editions']['fgd']][k_part]['video']
+        print("USE REFERENCE, correct this")
+        db_video = db[k_episode][][k_part]['video']
         frame_no = frame['ref']
     else:
         frame_no = frame['no']

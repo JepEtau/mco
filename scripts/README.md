@@ -3,7 +3,7 @@
 ```
 $  python run.py --help
 usage: run.py [-h] [--episode EPISODE] [--edition {k,a,s}] [--part {g_debut,precedemment,episode,g_asuivre,asuivre,g_reportage,reportage,g_fin}] [--shot_min SHOT_MIN]
-              [--shot_max SHOT_MAX] [--shot SHOT] [--vfilter {deinterlace,pre_upscale,upscale,denoise,bgd,stitching,sharpen,rgb,geometry,final}] [--afilter {extract,final}] [--study]
+              [--shot_max SHOT_MAX] [--shot SHOT] [--vfilter {deinterlace,pre_upscale,upscale,denoise,sharpen,rgb,geometry,final}] [--afilter {extract,final}] [--study]
               [--frames] [--compare] [--force] [--simulate] [--parse_only]
 
 Main tool
@@ -17,7 +17,7 @@ options:
   --shot_min SHOT_MIN   plans à processer: début. NON VERIFIE
   --shot_max SHOT_MAX   plans à processer: fin. NON VERIFIE
   --shot SHOT           numéro du plan à processer
-  --vfilter {deinterlace,pre_upscale,upscale,denoise,bgd,stitching,sharpen,rgb,geometry,final}
+  --vfilter {deinterlace,pre_upscale,upscale,denoise,sharpen,rgb,geometry,final}
                         Applique les filtres video jusqu'à celui spécifié ici (note: final=geometry
   --afilter {extract,final}
                         Applique les filtres audio jusqu'à celui spécifié ici

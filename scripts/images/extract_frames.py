@@ -22,13 +22,10 @@ from images.frames import consolidate_frame_list_for_study
 from images.filtering import (
     filter_upscale,
     filter_denoise,
-    filter_bgd,
     filter_sharpen,
     filter_geometry,
     filter_rgb,
 )
-from images.combine import combine_images
-
 study_mode = True
 
 
@@ -132,8 +129,6 @@ def process_single_frame(db_common:dict, work_no:int, frame:dict) -> None:
     else:
         img_denoised = img_upscaled
 
-    # Stitching tasks: ...
-
     # Sharpen image
     img_sharpened = None
     if 'sharpen' in tasks:
@@ -200,57 +195,10 @@ def process_frames(database, frames, cpu_count):
             work_no, tasklist = future.result()
             f = worklist[work_no][1]
             f['tasks'] = tasklist.copy()
-            img_combine_count = 0
-
-        frames_2 = list()
-        for f in frames:
-            if f['tasks']:
-                frames_2.append(f)
-
-        for f in frames_2:
-            print("%s, %d -> %d: " % (f['k_ed'], f['ref'], f['no']), end='')
-            print(f['tasks'])
-
-        for f in frames_2:
-            if f['tasks'][0] == 'stitching':
-                img_combine_count +=1
-
 
     # Clean useless variables
     del worklist
     gc.collect()
-
-
-    if len(frames_2)>0 and img_combine_count==len(frames_2):
-        print("remaining images to combine %d/%d" % (img_combine_count, len(frames_2)))
-        # Only combine images, retry one time again
-        worklist = list([i, frames_2[i]] for i in range(len(frames_2)))
-
-        with ThreadPoolExecutor(max_workers=cpu_count) as executor:
-            work_result = {executor.submit(process_single_frame, db_common, work[0], work[1]): None
-                            for work in worklist}
-
-            for future in concurrent.futures.as_completed(work_result):
-                work_no, tasklist = future.result()
-                f = worklist[work_no][1]
-                f['tasks'] = tasklist.copy()
-                img_combine_count = 0
-
-        img_combine_count = 0
-        for f in frames:
-            if not f['tasks']:
-                frames_2.remove(f)
-        for f in frames_2:
-            if f['tasks'][0] == 'stitching':
-                img_combine_count +=1
-        print("remaining images to combine %d/%d" % (img_combine_count, len(frames_2)))
-        if img_combine_count == len(frames_2):
-            # Do not continue if it is not possible to combine images
-            print("Warning: cannot combine images, end of processing")
-        else:
-            print("Error: todo, correct this: img_combine_count [%d]!= len(frames_2) [%d]!" %
-                (img_combine_count, len(frames_2)))
-
 
 
 
@@ -267,8 +215,7 @@ def extract_frames_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False, sh
             if k_ep == 'ep00':
                 k_ep_src = db[k_part]['target']['video']['src']['k_ep']
         else:
-            # Use the target ed
-            k_ed_src = db['editions']['fgd']
+            sys.exit("extract_frames_for_study: no specified edition")
 
     # Get the list of frames for studies
     frames = consolidate_frame_list_for_study(db,

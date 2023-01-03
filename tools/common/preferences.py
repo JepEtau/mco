@@ -95,10 +95,6 @@ class Preferences(QObject):
         except: pass
         try: self.preferences['replace']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
         except: pass
-        try: self.preferences['bgd_curves']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
-        except: pass
-        try: self.preferences['stitching']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
-        except: pass
         try: self.preferences['stabilize']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
         except: pass
         try: self.preferences['geometry']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]

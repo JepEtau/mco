@@ -29,8 +29,7 @@ class Model_framelist(Model_framelist_common):
             k_ep, k_part,
             do_parse_curves=False,
             do_parse_replace=False,
-            do_parse_geometry=False,
-            do_parse_stitching=False)
+            do_parse_geometry=False)
 
 
     def get_hide_struct(self):

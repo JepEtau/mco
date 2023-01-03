@@ -10,7 +10,6 @@ from pprint import pprint
 
 from utils.get_filters import get_filter_id
 from utils.path import (
-    get_output_frame_filepaths,
     get_output_path_from_shot,
 )
 
@@ -35,85 +34,6 @@ def create_black_frame(db, last_task):
 
     black_image = np.zeros([dimensions['h'], dimensions['w'], 3], dtype=np.uint8)
     cv2.imwrite(black_image_filepath, black_image)
-
-
-
-def effect_comb(db, shot, frame, last_task):
-    # Apply 'comb' effect on the frame passed as argument
-    # use 'last_task' to get the frame filepath
-
-    k_ep_dst = shot['effects'][2]
-    frames_count = shot['effects'][1]
-    frame_start_no = shot['start'] - frames_count - 1
-
-    # Divide the nb of frames per 3
-    frames_per_band = int(frames_count / 3)
-
-    # 3 static frames between frames
-    frames_per_band = frames_per_band - 3
-
-    # Get dimensions from last task
-    if 'deinterlace' in last_task:
-        # deinterlace (or deinterlace_rgb for debug)
-        dimensions = db['common']['dimensions']['initial']
-    elif 'geometry' in last_task:
-        # geometry (or upscale_rgb_geometry for debug)
-        dimensions = db['common']['dimensions']['final']
-    else:
-        dimensions = db['common']['dimensions']['upscale']
-
-    # Calculate delta
-    delta_y = int(dimensions['h'] / (frames_per_band+2))
-    delta_x = int(dimensions['w'] / 3)
-
-    # Read image:
-    # print(frame['filepath'][last_task])
-    img_src = cv2.imread(frame['filepath'][last_task], cv2.IMREAD_COLOR)
-
-    # Create the destination image
-    img_dst = np.zeros([dimensions['h'], dimensions['w'], 3], dtype=np.uint8)
-
-    # Create the images and save them
-    count = 0
-    x = 0
-    for i in range(0, 3):
-        # nb of bands: 3
-
-        y = 0
-        for ii in range(frames_per_band+1):
-            count += 1
-            if i == 0 or i ==2:
-                # bottom to top
-                y += delta_y
-                img_dst[0:y, x:x+delta_x] = img_src[0:y, x:x+delta_x]
-            else:
-                # top to bottom
-                y += delta_y
-                img_dst[dimensions['h']-y:dimensions['h'], x:x+delta_x] = img_src[dimensions['h']-y:dimensions['h'], x:x+delta_x]
-
-            output_filepath = get_output_frame_filepaths(db, shot, frame_start_no + count)[last_task]
-            # print("\t(x, y) = (%d, %d) -> %s" % (x, y, output_filepath))
-            cv2.imwrite(output_filepath, img_dst)
-
-        if i == 0:
-            # bottom to top
-            y -= delta_y
-        else:
-            # top to bottom
-            y += delta_y
-
-        y = dimensions['h']
-        for ii in range(3):
-            # loop on 3 frames
-            count += 1
-            img_dst[dimensions['h']-y:dimensions['h'], x:x+delta_x] = img_src[dimensions['h']-y:dimensions['h'], x:x+delta_x]
-            output_filepath = get_output_frame_filepaths(db, shot, frame_start_no + count)[last_task]
-            # print("\t(x, y) = (%d, %d) -> %s" % (x, y, output_filepath))
-            cv2.imwrite(output_filepath, img_dst)
-            if count >= frames_count:
-                break
-
-        x += delta_x
 
 
 

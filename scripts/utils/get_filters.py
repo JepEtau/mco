@@ -14,8 +14,6 @@ FILTER_BASE_NO = {
     'pre_upscale': 100,
     'upscale': 200,
     'denoise': 300,
-    'bgd': 400,
-    'stitching': 500,
     'sharpen': 600,
     'rgb': 700,
     'geometry': 900,

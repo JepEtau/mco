@@ -49,16 +49,6 @@ def timestamp_to_sexagesimal(timestamp:float):
 
 
 
-def is_combination_possible(frames, db_combine):
-    # For each frame no, verify whether combine could be done
-    for f in frames['fgd']:
-        if f['no'] not in db_combine.keys():
-            print("Info: combination is not possible")
-            return False
-    print("Info: combination is possible")
-    return True
-
-
 
 def create_framelist_from_shot(db:dict, shot) -> list:
     """This function returns a list of all frames that shall be
@@ -93,57 +83,6 @@ def create_framelist_from_shot(db:dict, shot) -> list:
 
     return framelist
 
-
-
-def patch_frames_for_stitching(frames, db_combine, do_combine=False):
-    # print_combine_database(db_combine, k_ep=layers['bgd']['shot']['k_ep'])
-
-    if do_combine:
-        for f_fgd, f_bgd in zip(frames['fgd'], frames['bgd']):
-            # if f_fgd['start'] != f_bgd['ref']:
-            #     sys.exit("error: frame no. differs between bgd and fgd")
-
-            # Patch filepath/layer for foreground/background
-            f_fgd['filepath']['bgd'] = f_bgd['filepath']['bgd']
-
-            # Remove 'bgd' from tasks
-            if 'bgd' in f_fgd['tasks']:
-                f_fgd['tasks'].remove('bgd')
-
-            # Remove tasks which should not be done for bacground image
-            for t in ['stitching', 'sharpen', 'rgb', 'geometry']:
-                if t in f_bgd['tasks']:
-                    f_bgd['tasks'].remove(t)
-
-            if f_bgd['layer'] == 'bgd':
-                f_ref = f_bgd['ref']
-
-                if f_ref in db_combine.keys():
-                    # print("+++ %d :" % (f_ref), db_combine[f_ref])
-                    # Add combine values to the fgd layer
-                    f_fgd['stitching'] = {'geometry': db_combine[f_ref]['geometry'].copy()}
-
-                    if 'bgd' in f_bgd['tasks']:
-                        # Add rgb correction ('bgd') for background image if in tasks
-                        bgd_curve = db_combine[f_ref]['curve']
-                        if bgd_curve is not None:
-                            f_bgd['stitching'] = {'curve': db_combine[f_ref]['curve']}
-                    else:
-                        # No curve defined: remove 'bgd' task
-                        f_fgd['filepath']['bgd'] = f_bgd['filepath']['denoise']
-
-                else:
-                    # No combine/curve defined: remove 'bgd' task from bgd and combine from fgd
-                    # print("no combine?")
-                    for t in ['bgd', 'stitching']:
-                        if t in f_bgd['tasks']:
-                            f_bgd['tasks'].remove(t)
-    else:
-        for f_fgd in frames['fgd']:
-            for t in ['bgd', 'stitching']:
-                if t in f_fgd['tasks']:
-                    f_fgd['tasks'].remove(t)
-            f_fgd['filepath']['stitching'] = f_fgd['filepath']['denoise']
 
 
 
@@ -312,9 +251,6 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
             # Re-generate all
             'force': force,
 
-            # Stitching is not yet supported
-            'layer': 'bgd',
-
             # geometry: consolidated below only if k_ep:k_ed
             # are the ones defined in the target shot
             'geometry': None,
@@ -342,15 +278,6 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         frame['start'] = frame['no']
         frame['filepath'] = get_output_frame_filepaths_for_study(db, frame=frame)
 
-        # Remove unused tasks
-        if 'bgd' in frame['tasks']:
-            frame['tasks'].remove('bgd')
-
-        # Remove stitching
-        for t in ['stitching', 'stabilize']:
-            if t not in frame.keys():
-                try: frame['tasks'].remove(t)
-                except: pass
 
         # Geometry: try
         if not do_append_geometry:

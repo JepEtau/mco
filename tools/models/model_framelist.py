@@ -95,7 +95,8 @@ class Model_framelist():
             # shot no. will be found after consolidation
             'shot_no': -1,
 
-            'cache_fgd': None,
+            'cache': None,
+            'cache_initial': None,
         }
 
 

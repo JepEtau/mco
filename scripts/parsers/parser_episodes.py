@@ -165,13 +165,6 @@ def parse_episodes_common(db, ep_min=1, ep_max:int=39, study_mode=False):
                 parse_and_update_filters(db_ep_common, config, k_section, verbose=False)
 
 
-            # Edition used for stitching
-            #----------------------------------------------------
-            elif k_section == 'stitching':
-                value_str = config.get(k_section, 'bgd')
-                value_str = value_str.replace(' ','')
-                nested_dict_set(db_ep_common, value_str, 'video', 'stitching', 'bgd')
-
 
 #===========================================================================
 #
@@ -308,9 +301,9 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
     # Set the default source edition if not defined in the config file
     k_ed_src = nested_dict_get(database, k_ep, 'target', 'video', 'src', 'k_ed')
     if k_ed_src is None:
-        k_ed_src = database['editions']['fgd']
+        k_ed_src = k_ed
         nested_dict_set(database, k_ed_src, k_ep, 'target', 'video', 'src', 'k_ed')
-        # sys.exit("Warning: use the edition used as the source not defined for %s, use the fgd edition: %s" % (k_ep, k_ed_src))
+        sys.exit("Warning: use the edition used as the source not defined for %s, use the edition %s" % (k_ep, k_ed_src))
 
 
 

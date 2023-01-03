@@ -32,8 +32,7 @@ def generate_video(db, k_ed, k_ep:str,
                     tasks:list, cpu_count=0, k_part:str='',
                     force:bool=False, simulation:bool=False,
                     shot_min:int=0, shot_max:int=999999,
-                    do_regenerate=False,
-                    bgd=False):
+                    do_regenerate=False):
     start_time = time.time()
 
     # Create the video directory
@@ -97,8 +96,6 @@ def generate_video(db, k_ed, k_ep:str,
             if not simulation:
                 process_shot(db,
                     shot=shot,
-                    bgd=bgd,
-                    db_combine={},
                     cpu_count=cpu_count)
             else:
                 consolidate_shot(db, shot=shot)

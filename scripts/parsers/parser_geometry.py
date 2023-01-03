@@ -157,7 +157,6 @@ def get_shots_st_geometry(db, k_ep, k_part) -> dict:
             k_part_src = get_k_part_from_frame_no(db, k_ed_src, k_ep_src, shot['src']['start'])
             shot_src = get_shot_from_frame_no_new(db, frame_no=shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src)
 
-        # Append to the dict if fgd_geometry is defined
         if 'st_geometry' not in shot_src.keys():
             continue
 

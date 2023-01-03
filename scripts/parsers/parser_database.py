@@ -24,7 +24,6 @@ from parsers.parser_shots import (
 from parsers.parser_curves import parse_curve_configurations
 from parsers.parser_geometry import parse_geometry_configurations
 from parsers.parser_replace import parse_replace_configurations
-from parsers.parser_stitching import parse_stitching_configurations
 from utils.common import (
     K_GENERIQUES,
     K_NON_GENERIQUE_PARTS,
@@ -55,7 +54,7 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
 
     # Parse editions: folders, files and additional settings: dimension
     k_ed_ref = database['common']['reference']['edition']
-    database['editions'] = parse_editions(database, k_ed_fgd=k_ed, k_ed_ref=k_ed_ref, verbose=verbose)
+    database['editions'] = parse_editions(database, k_ed=k_ed, k_ed_ref=k_ed_ref, verbose=verbose)
     if False:
         print("parse_editions")
         print("------------------------------------")
@@ -146,9 +145,6 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
     # Parse other config files for each dependency
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in dependencies[k_ed_tmp]:
-            # Parse config file used to stabilize/stitch
-            # parse_stitching_configurations(database, k_ep_or_g=k_ep_tmp)
-
             parse_curve_configurations(database, k_ep_or_g=k_ep_tmp)
             parse_replace_configurations(database, k_ep_or_g=k_ep_tmp)
         break
@@ -162,10 +158,6 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
     for k_part_g in ['g_debut', 'g_fin']:
         # Curves: this parser update the shots for each episode/part
         parse_curve_configurations(database, k_ep_or_g=k_part_g)
-
-        # TODO: reenable this ?
-        # # Parse config file used to stabilize/stitch
-        # parse_stitching_configurations(database, k_ep_or_g=k_part_g)
 
         # Replaced frames
         parse_replace_configurations(database, k_ep_or_g=k_part_g)

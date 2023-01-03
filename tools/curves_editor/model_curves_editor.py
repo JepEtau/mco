@@ -96,8 +96,6 @@ class Model_curves_editor(Model_common):
         # Variables
         self.model_database = Model_database()
         self.filepath = list()
-        for step in ['bgd', 'stitching']:
-            self.step_labels.remove(step)
 
         self.current_selection = {
             'k_ed': '',
@@ -585,17 +583,17 @@ def generate_single_image(frame:dict, preview_options:dict):
     now = time.time()
     img = None
 
-    frame['cache_fgd'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
+    frame['cache_initial'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
     # try:
-    #     if frame['cache_fgd'] is None:
+    #     if frame['cache_initial'] is None:
     #         # The original has not yet been loaded
-    #         frame['cache_fgd'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
+    #         frame['cache_initial'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
     # except:
-    #     frame['cache_fgd'] = None
+    #     frame['cache_initial'] = None
 
-    img_original = frame['cache_fgd']
+    img_original = frame['cache_initial']
     h, w, c = img_original.shape
-    # print("\t-> initial: ", frame['cache_fgd'].shape)
+    # print("\t-> initial: ", frame['cache_initial'].shape)
 
     # Upscale images to fit images to screen
     do_resize_image_to_screen = preview_options['selection']['is_fit_image_to_screen']
