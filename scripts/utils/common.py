@@ -367,7 +367,7 @@ def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int):
 
 
 
-def get_shot_from_frame(db, edition:str, frame:dict, k_part:str=''):
+def get_shot_from_frame(db, k_ed:str, frame:dict, k_part:str=''):
     # Returns the shot from a frame
     # the section [parts] must be defined in each ep##.ini file if the
     # argument 'part' is not passed
@@ -376,17 +376,20 @@ def get_shot_from_frame(db, edition:str, frame:dict, k_part:str=''):
     k_episode = frame['k_ep']
     if k_part == '':
         # Argument 'part' is not passed
-        k_part = get_k_part_from_frame_no(db, edition, k_episode, frame['no'])
+        k_part = get_k_part_from_frame_no(db, k_ed, k_episode, frame['no'])
         if k_part == '':
             sys.exit("part is not found from frame no. %d" % frame['no'])
 
-    db_video = db[k_episode][edition][k_part]['video']
-    if 'shots' not in db_video.keys():
-        print("USE REFERENCE, correct this")
-        db_video = db[k_episode][][k_part]['video']
-        frame_no = frame['ref']
-    else:
-        frame_no = frame['no']
+    db_video = db[k_episode][k_ed][k_part]['video']
+    # if 'shots' not in db_video.keys():
+    #     print("USE REFERENCE, correct this")
+    #     db_video = db[k_episode][][k_part]['video']
+    #     frame_no = frame['ref']
+    # else:
+    #     frame_no = frame['no']
+
+    print("USE REFERENCE, correct this")
+    frame_no = frame['ref']
 
     if k_part in ['precedemment', 'asuivre']:
         # 'precedemment' and 'asuivre' may use another episode, sot use this

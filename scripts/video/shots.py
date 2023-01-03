@@ -32,7 +32,6 @@ from utils.ffmpeg import (
 )
 from utils.tasks import simplify_tasks
 from video.effects import (
-    effect_comb,
     effect_loop_and_fadeout,
     effect_fadeout,
 )

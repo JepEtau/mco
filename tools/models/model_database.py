@@ -43,7 +43,7 @@ from parsers.parser_generiques import (
 from parsers.parser_episodes import (
     db_init_episodes,
     parse_get_dependencies_for_episodes,
-    parse_episodes_common,
+    parse_episodes_target,
     parse_episode,
 )
 
@@ -110,7 +110,7 @@ class Model_database(Model_geometry,
 
         self.k_editions = self.initial_database['editions']['available']
         self.initial_database['editions'] = parse_editions(self.initial_database, k_ed=k_ed, k_ed_ref=k_ed_ref)
-        parse_episodes_common(self.initial_database)
+        parse_episodes_target(self.initial_database)
 
         for k_ed in self.k_editions:
             db_init_episodes(self.initial_database, k_ed=k_ed)

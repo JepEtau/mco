@@ -89,9 +89,9 @@ def get_output_path_from_shot(db, shot, task):
 def get_input_filepath(database, frame):
     k_ed = frame['k_ed']
     if frame['k_ep'] != 0:
-        return database['editions'][k_ed]['input']['video'][frame['k_ep']]
+        return database['editions'][k_ed]['inputs']['video'][frame['k_ep']]
     else:
-        return database['editions'][k_ed]['input']['video'][frame['k_ep']]
+        return database['editions'][k_ed]['inputs']['video'][frame['k_ep']]
 
 
 

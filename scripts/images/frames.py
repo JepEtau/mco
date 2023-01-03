@@ -245,7 +245,7 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         frame.update({
             'curves': shot['curves'],
             'tasks': tasks.copy(),
-            'input': db['editions'][k_ed_f]['input']['video'][k_ep_f],
+            'input': db['editions'][k_ed_f]['inputs']['video'][k_ep_f],
             'dimensions': db['editions'][k_ed_f]['dimensions'],
 
             # Re-generate all

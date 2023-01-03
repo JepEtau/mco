@@ -50,8 +50,8 @@ def db_init_episodes(database, k_ed, ep_min:int=1, ep_max:int=39):
         k_ep = 'ep%02d' % i
 
         # Do not create section if input file does not exist
-        if (k_ep not in database['editions'][k_ed]['input']['video'].keys()
-            and k_ep not in database['editions'][k_ed]['input']['audio'].keys()):
+        if (k_ep not in database['editions'][k_ed]['inputs']['video'].keys()
+            and k_ep not in database['editions'][k_ed]['inputs']['audio'].keys()):
             # print("warning: input file for episode no. %d does not exist" % (i))
             continue
 
@@ -70,18 +70,15 @@ def db_init_episodes(database, k_ed, ep_min:int=1, ep_max:int=39):
                 'video': {
                     'geometry': None,
                     'replace': dict(),
+                    'input': database['editions'][k_ed]['inputs']['video'][k_ep],
                 },
-                'audio': dict(),
+                'audio': {
+                    'input': database['editions'][k_ed]['inputs']['audio'][k_ep],
+                },
             }
 
-        # Default input file
-        db_episode['path'] = {
-            'input_audio': database['editions'][k_ed]['input']['audio'][k_ep],
-            'input_video': database['editions'][k_ed]['input']['video'][k_ep]
-        }
-
         # Frames
-        db_episode['path']['frames'] = db_common['directories']['frames']
+        nested_dict_set(db_episode, db_common['directories']['frames'], 'path', 'frames')
 
         # Change relative path to absolute
         for key in db_episode['path'].keys():
@@ -99,7 +96,7 @@ def db_init_episodes(database, k_ed, ep_min:int=1, ep_max:int=39):
 #   Parse the common episode file for all editions
 #
 #===========================================================================
-def parse_episodes_common(db, ep_min=1, ep_max:int=39, study_mode=False):
+def parse_episodes_target(db, ep_min=1, ep_max:int=39, study_mode=False):
     # ep_maxCount is the maximum nb of episodes: used for debug
 
     for i in range(ep_min, min(40, ep_max+1)):
@@ -116,7 +113,7 @@ def parse_episodes_common(db, ep_min=1, ep_max:int=39, study_mode=False):
         }
 
         # Open configuration file
-        filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_common.ini" % (k_ep))
+        filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_target.ini" % (k_ep))
         if filepath.startswith("~/"):
             filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
         if not os.path.exists(filepath):
@@ -128,7 +125,7 @@ def parse_episodes_common(db, ep_min=1, ep_max:int=39, study_mode=False):
             continue
 
         # Parse configuration
-        # print("parse_episodes_common: filepath=%s" % (filepath))
+        # print("parse_episodes_target: filepath=%s" % (filepath))
         config = configparser.ConfigParser()
         config.read(filepath)
         for k_section in config.sections():
@@ -144,7 +141,7 @@ def parse_episodes_common(db, ep_min=1, ep_max:int=39, study_mode=False):
             #----------------------------------------------------
             elif k_section == 'video':
                 nested_dict_set(db_ep_target, dict(), 'video')
-                parse_video(db_ep_target['video'], config, verbose=False)
+                parse_video(db_ep_target['video'], config, k_ep, verbose=False)
 
 
             # Frames (used for studies)
@@ -303,7 +300,7 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
     if k_ed_src is None:
         k_ed_src = k_ed
         nested_dict_set(database, k_ed_src, k_ep, 'target', 'video', 'src', 'k_ed')
-        sys.exit("Warning: use the edition used as the source not defined for %s, use the edition %s" % (k_ep, k_ed_src))
+        print("Warning: edition used as the source not defined for %s:%s, use the edition %s" % (k_ed, k_ep, k_ed_src))
 
 
 

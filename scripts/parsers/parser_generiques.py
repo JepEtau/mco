@@ -49,19 +49,25 @@ def db_init_generiques(database, k_ed, verbose=False):
 
         # Default input file
         k_ep_ref = db_generique['k_ep']
-        if k_ep_ref not in database['editions'][k_ed]['input']['video'].keys():
+        if k_ep_ref not in database['editions'][k_ed]['inputs']['video'].keys():
             sys.exit("Erreur: db_init_generiques: fichier manquant pour le générique %s: édition '%s', épisode %d" % (k_part_g, k_ed, int(k_ep_ref[-2:])))
 
-        db_generique['path'] = {
-            'input_audio': database['editions'][k_ed]['input']['audio'][k_ep_ref],
-            'input_video': database['editions'][k_ed]['input']['video'][k_ep_ref],
+        db_generique.update({
+            'video': {
+                'input': database['editions'][k_ed]['inputs']['video'][k_ep_ref]
+            },
+            'audio': {
+                'input': database['editions'][k_ed]['inputs']['audio'][k_ep_ref]
+            },
+            'path': {
+                # Cache
+                'cache': os.path.join(db_common['directories']['cache'], "%s" % (k_part_g)),
 
-            # Cache
-            'cache': os.path.join(db_common['directories']['cache'], "%s" % (k_part_g)),
+                # Frames for study
+                'frames': db_common['directories']['frames'],
+            },
+        })
 
-            # Frames for study
-            'frames': db_common['directories']['frames'],
-        }
 
 
 
@@ -95,7 +101,7 @@ def parse_generiques_common(database, study_mode=False, verbose=False):
 
 
         # Open configuration file
-        filepath = os.path.join(database['common']['directories']['config'], k_part_g, "%s_common.ini" % (k_part_g))
+        filepath = os.path.join(database['common']['directories']['config'], k_part_g, "%s_target.ini" % (k_part_g))
         if filepath.startswith("~/"):
             filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
         if not os.path.exists(filepath):
@@ -234,9 +240,10 @@ def parse_generiques(database, k_ed, verbose=False):
 
                     # Episode used as reference
                     if k_option == 'episode':
+                        sys.exit("parse_generiques: to remove?")
                         k_episode = 'ep%02d' % (int(value_str))
                         db_generique['video']['ep'] = k_episode
-                        db_generique['path']['input_video'] = database['editions'][k_ed]['input'][k_episode]
+                        db_generique['video']['input'] = database['editions'][k_ed]['inputs'][k_episode]
 
 
             # Audio

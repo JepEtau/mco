@@ -6,7 +6,7 @@ from pprint import pprint
 from parsers.parser_common import parse_common_configuration
 from parsers.parser_editions import parse_editions
 from parsers.parser_episodes import (
-    parse_episodes_common,
+    parse_episodes_target,
     parse_get_dependencies_for_episodes,
     db_init_episodes,
     parse_episode,
@@ -53,8 +53,7 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
 
 
     # Parse editions: folders, files and additional settings: dimension
-    k_ed_ref = database['common']['reference']['edition']
-    database['editions'] = parse_editions(database, k_ed=k_ed, k_ed_ref=k_ed_ref, verbose=verbose)
+    database['editions'] = parse_editions(database, verbose=verbose)
     if False:
         print("parse_editions")
         print("------------------------------------")
@@ -64,9 +63,9 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
 
 
     # Parse database file which contains common settings for all episodes
-    parse_episodes_common(database, study_mode=study_mode)
-    if False:
-        print("parse_episodes_common")
+    parse_episodes_target(database, study_mode=study_mode)
+    if True:
+        print("parse_episodes_target")
         print("------------------------------------")
         pprint(database)
         print("------------------------------------")

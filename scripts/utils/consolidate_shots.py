@@ -189,8 +189,9 @@ def consolidate_shot(db, shot) -> None:
     db_video = db[k_ep][k_ed][k_part]['video']
 
     # Input and dimensions
+    print("consolidate_shot: clean this, use the src structure")
     shot.update({
-        'input': db['editions'][k_ed]['input']['video'][k_ep],
+        'input': db['editions'][k_ed]['inputs']['video'][k_ep],
         'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
     })
 

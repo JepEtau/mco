@@ -135,11 +135,8 @@ def main():
 
     arguments = parser.parse_args()
 
-    # Edition: force the edition to default
-    if arguments.edition == '':
-        k_ed = 'k'
-    else:
-        k_ed = arguments.edition
+    # Edition
+    k_ed = arguments.edition
 
     # Episode no.
     episode_no = arguments.episode
@@ -149,7 +146,7 @@ def main():
         sys.exit("Error: épisode ou partie non spécifiée")
 
     # Consolidate tasks: what will be done
-    print("Edition: %s" % (arguments.edition))
+    print("Edition: %s" % (k_ed))
     print("Episode: %d" % (episode_no))
     if arguments.part != '':
         print("Part: %s" % (arguments.part))
@@ -312,7 +309,7 @@ def main():
             # Extract frames
             extract_frames_for_study(
                 db=g_database,
-                k_ed=arguments.edition,
+                k_ed=k_ed,
                 k_ep=k_episode,
                 k_part=arguments.part,
                 tasks=tasks,
@@ -323,13 +320,6 @@ def main():
         # elif video_filter in ['deinterlace', 'upscale', 'geometry']:
         else:
             # Generate the video
-
-            # Force the edition to default
-            if arguments.edition == '':
-                k_ed = editions[0]
-            else:
-                k_ed = arguments.edition
-
             generate_video(
                 db=g_database,
                 k_ed=k_ed,

@@ -48,10 +48,10 @@ def parser_edition_common(db_common, filename, verbose=False):
 #   Get editions from folder
 #
 #===========================================================================
-def parse_editions(database, k_ed, k_ed_ref, cfg_foldername="../database", verbose=False):
+def parse_editions(database, cfg_foldername="../database", verbose=False):
     db_common = database['common']
 
-    mkv_foldername = db_common['directories']['input']
+    mkv_foldername = db_common['directories']['inputs']
     db_editions = dict()
     available_editions = list()
 
@@ -73,19 +73,19 @@ def parse_editions(database, k_ed, k_ed_ref, cfg_foldername="../database", verbo
             if verbose:
                 print("found folder(edition)=%s" % (folder))
             db_editions[folder] = {
-                'input': {
+                'inputs': {
                     'video': dict(),
                     'audio': dict(),
                 }
             }
 
-            inputs = db_editions[folder]['input']
+            inputs = db_editions[folder]['inputs']
 
             # List episodes and their input files for each edition
             for filename in os.listdir(f_edition):
                 if verbose:
                     print("filename= %s" % (filename))
-                filepath = os.path.join(db_common['directories']['input'], folder, filename)
+                filepath = os.path.join(db_common['directories']['inputs'], folder, filename)
                 if os.path.isfile(filepath):
                     if verbose:
                         print("search ep no. from %s" % (filename))
@@ -169,7 +169,7 @@ def parse_editions(database, k_ed, k_ed_ref, cfg_foldername="../database", verbo
     for k_ed in available_editions:
         edition = db_editions[k_ed]
 
-        if len(edition['input']['video']) == 0 and len(edition['input']['audio']) == 0:
+        if len(edition['inputs']['video']) == 0 and len(edition['inputs']['audio']) == 0:
             del db_editions[k_ed]
             continue
 
@@ -196,7 +196,8 @@ def parse_editions(database, k_ed, k_ed_ref, cfg_foldername="../database", verbo
 
 
     # Set the edition used as the ereference for the calculation of the frame no.
-    db_editions['k_ed_ref'] = k_ed_ref
+    db_editions['k_ed_ref'] = database['common']['reference']['edition']
+
 
     return db_editions
 

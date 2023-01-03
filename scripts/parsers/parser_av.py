@@ -6,6 +6,7 @@ from pprint import pprint
 
 from utils.common import (
     FPS,
+    K_NON_GENERIQUE_PARTS,
     K_PARTS,
     pprint_audio,
     pprint_video,
@@ -211,16 +212,16 @@ def parse_audio(db_audio, config, verbose=False):
 
 
 
-def parse_video(db_video, config, verbose=False):
+def parse_video(db_video, config, k_ep, verbose=False):
     k_section = 'video'
 
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option)
         value_str = value_str.replace(' ','')
-        # print("%s, %s, %s => [%s]" % (k_section, part, k, value_str))
+        print("%s, %s => [%s]" % (k_section, k_option, value_str))
 
         if k_option == 'source':
-            nested_dict_set(db_video, value_str, 'src', 'k_ed')
+            k_ed_src = value_str
             continue
 
         # Parse only supported sections
@@ -250,6 +251,7 @@ def parse_video(db_video, config, verbose=False):
         # If other properties
         part_fadein = 0
         part_fadeout = 0
+        k_part_ed_src = None
         if len(properties) > 1:
             # print("****part=%s, properties," %(k), properties)
             for i in range(1, len(properties)):
@@ -264,6 +266,12 @@ def parse_video(db_video, config, verbose=False):
                     part_fadeout = int(float(search_fadeout.group(1)) * FPS)
                     continue
 
+                search_k_ed_src = re.search(re.compile("ed=([a-z]+[0-9]*)"), properties[i])
+                if search_k_ed_src is not None:
+                    k_part_ed_src = search_k_ed_src.group(1)
+                    sys.exit("found %s for %s:%s" % (k_part_ed_src, k_ep, k_part))
+                    continue
+
         db_video[k_part] = {
             'effects': {
                 'fadein': part_fadein,
@@ -272,7 +280,19 @@ def parse_video(db_video, config, verbose=False):
             'start': start,
             'end': end,
             'count': (end - start) if end > 0 else -1,
+            'k_ed_src': k_part_ed_src,
         }
+
+    for k_part in K_NON_GENERIQUE_PARTS:
+        try:
+            if db_video[k_part]['k_ed_src'] is None:
+                db_video[k_part]['k_ed_src'] = k_ed_src
+        except:
+            pass
+
+    for k_part in K_NON_GENERIQUE_PARTS:
+        if db_video[k_part]['k_ed_src'] is None:
+            sys.exit("Errror: parse_video: edition shall be defined for %s:%s" % (k_ep, k_part))
 
 
 
