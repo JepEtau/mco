@@ -56,7 +56,7 @@ def create_folder_for_concatenation(db, k_ep):
         Returns
             Path of the created folder
     """
-    concatenation_directory = os.path.join(db[k_ep]['target']['path']['cache'], "concatenation")
+    concatenation_directory = os.path.join(db[k_ep]['target']['path_cache'], "concatenation")
     if not os.path.exists(concatenation_directory):
         os.makedirs(concatenation_directory)
 

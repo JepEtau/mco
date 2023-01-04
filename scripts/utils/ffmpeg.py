@@ -326,6 +326,7 @@ def ffmpeg_extract_shot_tests(db, shot, filter_str, width, height, task='upscale
 
 def ffmpeg_deinterlace_shot(database, shot):
     filter_str, width, height = get_ffmpeg_filter(shot, 'deinterlace')
+    print(filter_str)
     return ffmpeg_extract_shot(database, shot, filter_str, width, height, task='deinterlace')
 
 

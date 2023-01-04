@@ -247,6 +247,15 @@ def create_target_shots(database, k_ep, k_part):
     db_video_src = database[k_ep][k_ed_src][k_part]['video']
     db_video_target = database[k_ep]['target']['video'][k_part]
 
+    if 'start' not in db_video_target.keys():
+        # This was not specified in the target file, so use the one from the source
+        db_video_target.update({
+            'start': db_video_src['start'],
+            'end': db_video_src['end'],
+            'count': db_video_src['count'],
+        })
+
+
     if k_ed_src=='k' and k_part == K_PART_DEBUG:
         print("\n%s.create_target_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
         print(" start")
@@ -350,7 +359,7 @@ def create_target_shots(database, k_ep, k_part):
                     'use': True,
                 })
         frames_count += shot['count']
-    db_video_dst['count'] = frames_count
+    db_video_target['count'] = frames_count
 
 
     if k_ed_src=='k' and k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
@@ -365,13 +374,13 @@ def create_target_shots(database, k_ep, k_part):
         print("\n")
 
         print("-------------------- after ----------------------------\n")
-        print("After consolidation, db_video_dst:")
-        if 'shots' in db_video_dst.keys():
+        print("After consolidation, db_video_target:")
+        if 'shots' in db_video_target.keys():
             print("   db_video_dst[shots]")
-            for s in db_video_dst['shots']:
+            for s in db_video_target['shots']:
                 print("\t", s)
-        print("   start: %d" % (db_video_dst['start']))
-        print("   count: %d" % (db_video_dst['count']))
+        print("   start: %d" % (db_video_target['start']))
+        print("   count: %d" % (db_video_target['count']))
         print("\n")
 
 
