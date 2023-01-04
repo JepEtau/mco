@@ -29,8 +29,6 @@ from utils.common import K_GENERIQUES, nested_dict_set
 #
 #===========================================================================
 def db_init_generiques(database, k_ed, verbose=False):
-    db_common = database['common']
-
     for k_part_g in K_GENERIQUES:
         # Create structure for this generique
         # set the default episode no. to 1, it will be modified once
@@ -59,13 +57,7 @@ def db_init_generiques(database, k_ed, verbose=False):
             'audio': {
                 'input': database['editions'][k_ed]['inputs']['audio'][k_ep_ref]
             },
-            'path': {
-                # Cache
-                'cache': os.path.join(db_common['directories']['cache'], "%s" % (k_part_g)),
-
-                # Frames for study
-                'frames': db_common['directories']['frames'],
-            },
+            'path_cache': os.path.join(database['common']['directories']['cache'], "%s" % (k_part_g)),
         })
 
 
@@ -76,7 +68,7 @@ def db_init_generiques(database, k_ed, verbose=False):
 #   Parse the common episode file for all editions
 #
 #===========================================================================
-def parse_generiques_common(database, study_mode=False, verbose=False):
+def parse_generiques_target(database, study_mode=False, verbose=False):
 
     for k_part_g in K_GENERIQUES:
         database[k_part_g].update({
@@ -106,13 +98,11 @@ def parse_generiques_common(database, study_mode=False, verbose=False):
             filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
         if not os.path.exists(filepath):
             if verbose:
-                print("Warning: %s.parse_generiques_common: missing file: %s, continue" % (__name__, filepath))
+                print("Warning: %s.parse_generiques_target: missing file: %s, continue" % (__name__, filepath))
             continue
 
         # Cache
-        db_g_target['path'] = {
-            'cache': os.path.join(database['common']['directories']['cache'], k_part_g)
-        }
+        db_g_target['path_cache'] = os.path.join(database['common']['directories']['cache'], k_part_g)
 
         # Parse configuration
         config = configparser.ConfigParser()
@@ -123,6 +113,11 @@ def parse_generiques_common(database, study_mode=False, verbose=False):
             # Frames (used for studies)
             #----------------------------------------------------
             if k_section == 'frames'  and study_mode:
+                db_g_common.update({
+                    'frames': {
+                        'path_output': os.path.join(database['common']['directories']['frames'], "%s" % (k_part_g)),
+                    },
+                })
                 for k_option in config.options(k_section):
                     value_str = config.get(k_section, k_option)
                     value_str = value_str.replace(' ','')
@@ -130,8 +125,8 @@ def parse_generiques_common(database, study_mode=False, verbose=False):
 
                     # Frames
                     if k_option == 'frames':
-                        db_g_common['frames'] = list()
-                        parse_framelist(db_g_common['frames'], value_str)
+                        db_g_common['frames'][k_part_g] = list()
+                        parse_framelist(db_g_common['frames'][k_part_g] , value_str)
 
             # Video
             #----------------------------------------------------
@@ -170,7 +165,7 @@ def parse_generiques_common(database, study_mode=False, verbose=False):
             # Filters
             #----------------------------------------------------
             elif k_section.startswith("filters"):
-                print("warning: parse_generiques_common: (%s) parse_and_update_filters_generique is deprecated, ignored" % (k_part_g))
+                print("warning: parse_generiques_target: (%s) parse_and_update_filters_generique is deprecated, ignored" % (k_part_g))
                 # parse_and_update_filters_generique(db_g_common, config, k_section)
 
 

@@ -12,8 +12,8 @@ from utils.common import (
 from utils.get_curves import get_lut_from_curves
 from utils.get_filters import get_filters_from_shot
 from utils.path import (
-    get_output_frame_filepaths,
-    get_output_frame_filepaths_for_study,
+    get_frames_output_filepaths,
+    get_frames_output_paths_for_study,
 )
 
 
@@ -78,7 +78,7 @@ def create_framelist_from_shot(db:dict, shot) -> list:
             'geometry': None if 'geometry' not in shot.keys() else shot['geometry'],
             'curves': None if 'curves' not in shot.keys() else shot['curves'],
         }
-        f['filepath'] = get_output_frame_filepaths(db, shot=shot, frame_no=f['no'])
+        f['filepath'] = get_frames_output_filepaths(db, shot=shot, frame_no=f['no'])
         framelist.append(f)
 
     return framelist
@@ -94,23 +94,18 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
     parsed_ed_ep = dict()
 
     # Returns a list of frames for an edition (calculated with offset)
-    if k_part in ['g_debut', 'g_fin']:
-        try: frame_list = db[k_part]['common']['frames']
+    if k_part in K_GENERIQUES:
+        try: frame_list = db[k_part]['common']['frames'][k_part]
         except: return
         k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
         k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
 
         print("consolidate_frame_list_for_study: parse_episode: %s:%s" % (k_ed_ref, k_ep_ref))
+        print("\tUse %s:%s as reference" % (k_ed_ref, k_ep_ref))
         parse_episode(db, k_ed=k_ed_ref, k_ep=k_ep_ref)
         parsed_ed_ep[k_ed_ref] = [k_ep_ref]
         pprint(parsed_ed_ep)
 
-    elif k_part in ['g_asuivre', 'g_reportage']:
-        try: frame_list = db[k_part]['common']['frames']
-        except: return
-        k_ed_ref = db[k_part]['target']['video']['src']['k_ed']
-        k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
-        print("\tUse %s:%s as reference" % (k_ed_ref, k_ep_ref))
     else:
         try: frame_list = db[k_ep]['common']['frames'][k_part]
         except: return
@@ -241,11 +236,10 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
                 print("\t no filters defined, use default")
                 frame['filters'] = 'default'
 
-
         frame.update({
             'curves': shot['curves'],
             'tasks': tasks.copy(),
-            'input': db['editions'][k_ed_f]['inputs']['video'][k_ep_f],
+            'input': db[k_ep_f][k_ed_f][k_part]['video']['input'],
             'dimensions': db['editions'][k_ed_f]['dimensions'],
 
             # Re-generate all
@@ -276,7 +270,7 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
 
         # Output file paths, patch this frame to use the function
         frame['start'] = frame['no']
-        frame['filepath'] = get_output_frame_filepaths_for_study(db, frame=frame)
+        frame['filepath'] = get_frames_output_paths_for_study(db, frame=frame)
 
 
         # Geometry: try
@@ -306,6 +300,7 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         # else:
             # TODO once the shot geometry will be implemented or use the part
             # refer to consolidate_shot function
+
 
     return frame_list
 

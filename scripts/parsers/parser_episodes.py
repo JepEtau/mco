@@ -77,18 +77,18 @@ def db_init_episodes(database, k_ed, ep_min:int=1, ep_max:int=39):
                 },
             }
 
-        # Frames
-        nested_dict_set(db_episode, db_common['directories']['frames'], 'path', 'frames')
+        # # Frames
+        # nested_dict_set(db_episode, db_common['directories']['frames'], 'path', 'frames')
 
-        # Change relative path to absolute
-        for key in db_episode['path'].keys():
-            d = db_episode['path'][key]
-            d = d.replace('\"', '')
-            if d.startswith("~/"):
-                d = os.path.join(PosixPath(Path.home()), d[2:])
-            else:
-                d = os.path.normpath(os.path.join(os.getcwd(), d)).strip('\n')
-            db_episode['path'][key] = d
+        # # Change relative path to absolute
+        # for key in db_episode['path'].keys():
+        #     d = db_episode['path'][key]
+        #     d = d.replace('\"', '')
+        #     if d.startswith("~/"):
+        #         d = os.path.join(PosixPath(Path.home()), d[2:])
+        #     else:
+        #         d = os.path.normpath(os.path.join(os.getcwd(), d)).strip('\n')
+        #     db_episode['path'][key] = d
 
 
 #===========================================================================
@@ -107,10 +107,6 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39, study_mode=False):
         nested_dict_set(db, dict(), k_ep, 'target')
         db_ep_target = db[k_ep]['target']
 
-        # Cache
-        db_ep_target['path'] = {
-            'cache': os.path.join(db['common']['directories']['cache'], "%s" % (k_ep))
-        }
 
         # Open configuration file
         filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_target.ini" % (k_ep))
@@ -119,9 +115,11 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39, study_mode=False):
         if not os.path.exists(filepath):
             # print("Info: fichier de configuration non défini: %s" % (filepath))
             # define a default filter
-            db_ep_common['filters'] = {
-                'default': parse_filters_initialize(type='default'),
-            }
+            db_ep_common.update({
+                'filters': {
+                    'default': parse_filters_initialize(type='default'),
+                },
+            })
             continue
 
         # Parse configuration
@@ -148,7 +146,12 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39, study_mode=False):
             #----------------------------------------------------
             elif k_section == 'frames' and study_mode:
                 # Parse this section only when in study mode (--frames)
-                db_ep_common['frames'] = dict()
+                db_ep_common.update({
+                    'frames': {
+                        'path_output': os.path.join(db['common']['directories']['frames'], "%s" % (k_ep)),
+                    },
+                })
+
                 for k_part in config.options(k_section):
                     value_str = config.get(k_section, k_part)
                     value_str = value_str.replace(' ','')
@@ -162,6 +165,12 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39, study_mode=False):
                 parse_and_update_filters(db_ep_common, config, k_section, verbose=False)
 
 
+        # Add path cache to the target structure
+        db_ep_target.update({
+            'path_cache': os.path.join(db['common']['directories']['cache'], "%s" % (k_ep)),
+        })
+
+
 
 #===========================================================================
 #
@@ -170,7 +179,7 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39, study_mode=False):
 #===========================================================================
 def parse_episode(database, k_ed, k_ep, verbose=False):
 
-    pprint(database['common']['directories']['config'])
+    # pprint(database['common']['directories']['config'])
 
     # Open configuration file
     filepath = os.path.join(database['common']['directories']['config'], k_ep, "%s_%s.ini" % (k_ep, k_ed))
@@ -182,8 +191,8 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
 
     # If the input video file has not been found, do not parse the config file
     if k_ed not in database[k_ep].keys():
-        print("Erreur: parse_episode: fichier manquant, édition '%s', épisode %d" % (k_ed, int(k_ep[-2:])))
-        return
+        print("Erreur: parse_episode: fichier %s ou fichier video manquant pour %s:%s" % (filepath, k_ed, k_ep))
+        sys.exit()
 
     # Get config from edition
     db_episode = database[k_ep][k_ed]
@@ -300,7 +309,7 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
     if k_ed_src is None:
         k_ed_src = k_ed
         nested_dict_set(database, k_ed_src, k_ep, 'target', 'video', 'src', 'k_ed')
-        print("Warning: edition used as the source not defined for %s:%s, use the edition %s" % (k_ed, k_ep, k_ed_src))
+        print("Warning: parse_episode: edition used as the source not defined for %s:%s, use the edition %s" % (k_ed, k_ep, k_ed_src))
 
 
 

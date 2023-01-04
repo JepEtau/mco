@@ -145,7 +145,7 @@ def get_deinterlaced_path_and_filename(db, shot:dict, task):
 
 
 
-def get_output_frame_filepaths(db, shot:dict, frame_no:int):
+def get_frames_output_filepaths(db, shot:dict, frame_no:int):
     k_ep = shot['k_ep']
     k_ed = shot['k_ed']
 
@@ -180,28 +180,23 @@ def get_output_frame_filepaths(db, shot:dict, frame_no:int):
 
 
 
-def get_output_path_from_frame(db, frame):
-    if frame['k_part'] in K_GENERIQUES:
-        # Put all images in a single folder for 'génériques'
-        return os.path.join(db['common']['directories']['frames'],
-                frame['k_part'])
-
-    # Otherwise, use the src directory as these images are shared by
-    # multiple episode
-    output_path = os.path.join(db['common']['directories']['frames'],
-        frame['k_ep'],
-        frame['k_part'])
-    return output_path
-
-
-
-def get_output_frame_filepaths_for_study(db, frame:dict):
+def get_frames_output_paths_for_study(db, frame:dict):
     k_ep = frame['k_ep']
     k_ed = frame['k_ed']
+    k_part = frame['k_part']
     frame_no = frame['no']
 
     extension = db['common']['settings']['frame_format']
 
+    # Output directory for frames
+    if k_part in K_GENERIQUES:
+        output_directory = db[k_part]['common']['frames']['path_output']
+    else:
+        output_directory = os.path.join(db[k_ep]['common']['frames']['path_output'], k_part)
+    if not os.path.exists(output_directory):
+        os.makedirs(output_directory)
+
+    # Structure used to store the filepath for each task
     filepaths = dict()
     for task in FILTER_BASE_NO:
         if task == 'upscale_rgb_geometry':
@@ -213,10 +208,6 @@ def get_output_frame_filepaths_for_study(db, frame:dict):
             outputFilename = "ep00_%05d_%s%s.%s" % (frame_no, k_ep, suffix, extension)
         else:
             outputFilename = "%s_%05d%s.%s" % (k_ep, frame_no, suffix, extension)
-
-        output_directory = get_output_path_from_frame(db=db, frame=frame)
-        if not os.path.exists(output_directory):
-            os.makedirs(output_directory)
 
         filepaths[task] = os.path.join(output_directory, outputFilename).strip('\n')
 

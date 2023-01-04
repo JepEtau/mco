@@ -13,7 +13,7 @@ from parsers.parser_episodes import (
 )
 from parsers.parser_generiques import (
     db_init_generiques,
-    parse_generiques_common,
+    parse_generiques_target,
     parse_generiques,
     parse_get_dependencies_for_generique,
 )
@@ -64,7 +64,7 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
 
     # Parse database file which contains common settings for all episodes
     parse_episodes_target(database, study_mode=study_mode)
-    if True:
+    if False:
         print("parse_episodes_target")
         print("------------------------------------")
         pprint(database)
@@ -95,7 +95,7 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
         sys.exit()
 
     # Parse database file which contains common settings for generiques
-    parse_generiques_common(database, study_mode=study_mode, verbose=verbose)
+    parse_generiques_target(database, study_mode=study_mode, verbose=verbose)
     for k_ed_tmp in database['editions']['available']:
         parse_generiques(database, k_ed=k_ed_tmp, verbose=verbose)
     if False:
@@ -111,7 +111,7 @@ def parse_database(database, k_ed, k_ep, verbose=False, study_mode=False):
     dependencies = dict()
     for k_part_g in K_GENERIQUES:
         dependencies_tmp = parse_get_dependencies_for_generique(database, k_part_g=k_part_g)
-        for k,v in dependencies_tmp.items():
+        for k, v in dependencies_tmp.items():
             if k not in dependencies.keys():
                 dependencies[k] = list()
             dependencies[k] = list(set(dependencies[k] + v))

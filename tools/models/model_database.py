@@ -36,7 +36,7 @@ from parsers.parser_editions import parse_editions
 
 from parsers.parser_generiques import (
     db_init_generiques,
-    parse_generiques_common, parse_generiques,
+    parse_generiques_target, parse_generiques,
     parse_get_dependencies_for_generique,
 )
 
@@ -119,7 +119,7 @@ class Model_database(Model_geometry,
             db_init_generiques(self.initial_database, k_ed=k_ed)
 
         # Parse database file which contains common settings for generiques
-        parse_generiques_common(self.initial_database)
+        parse_generiques_target(self.initial_database)
         # For each edition, parse the generique database
         for k_ed in self.k_editions:
             parse_generiques(self.initial_database, k_ed=k_ed)
