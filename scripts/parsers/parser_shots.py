@@ -142,8 +142,7 @@ def consolidate_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
             k_ed_src = db[k_part]['target']['video']['src']['k_ed']
             k_ep_src = db[k_part]['target']['video']['src']['k_ep']
         else:
-            # pprint(db[k_ep]['target'])
-            k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
+            k_ed_src = db[k_ep]['target']['video'][k_part]['k_ed_src']
             k_ep_src = k_ep
 
         # print("SRC for %s:%s:%s is %s:%s:%s" % (k_ed, k_ep, k_part, k_ed_src, k_ep_src, k_part))
@@ -239,20 +238,20 @@ def create_target_shots(database, k_ep, k_part):
         None
 
     """
-    K_EP_DEBUG = ''
-    K_PART_DEBUG = ''
+    K_EP_DEBUG = 'ep01'
+    K_PART_DEBUG = 'episode'
 
-    k_ed_src = database[k_ep]['target']['video']['src']['k_ed']
+    k_ed_src = database[k_ep]['target']['video'][k_part]['k_ed_src']
     # print("create_target_shots: %s:%s:%s" % (k_ed_src, k_ep, k_part))
     # pprint(database[k_ep])
     db_video_src = database[k_ep][k_ed_src][k_part]['video']
-    db_video_dst = database[k_ep]['target']['video'][k_part]
+    db_video_target = database[k_ep]['target']['video'][k_part]
 
     if k_ed_src=='k' and k_part == K_PART_DEBUG:
         print("\n%s.create_target_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
         print(" start")
         print("\tvideo (src): %d\t(%d)" % (db_video_src['start'], db_video_src['count']))
-        print("\tvideo (dst): %d\t(%d)" % (db_video_dst['start'], db_video_dst['count']))
+        print("\tvideo (target): %d\t(%d)" % (db_video_target['start'], db_video_target['count']))
     if k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
         print("\n%s.create_target_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
         print("------------------- before -----------------------------")
@@ -266,27 +265,27 @@ def create_target_shots(database, k_ep, k_part):
         print("\n")
 
         print("-------------------- before ----------------------------")
-        print("db_video_dst:")
-        print("   start: %d" % (db_video_dst['start']))
-        print("   count: %d" % (db_video_dst['count']))
-        if 'shots' in db_video_dst.keys():
+        print("db_video_target:")
+        print("   start: %d" % (db_video_target['start']))
+        print("   count: %d" % (db_video_target['count']))
+        if 'shots' in db_video_target.keys():
             print("   db_video_dst[shots]")
-            for s in db_video_dst['shots']:
+            for s in db_video_target['shots']:
                 print("\t", s)
         print("\n")
 
 
-    if ('shots' not in db_video_dst.keys()
+    if ('shots' not in db_video_target.keys()
         and 'shots' not in db_video_src.keys()):
         # Cannot consolidate because no shots are defined
         # print("\t\tinfo: %s.create_target_shots: no shots in src/dst %s:%s" % (__name__, k_ep, k_part))
         return
 
-    if 'shots' not in db_video_dst.keys():
+    if 'shots' not in db_video_target.keys():
         # print("\n%s.create_target_shots: consolidate %s:%s, create DST shot" % (__name__, k_ep, k_part))
         # print("------------------------------------------------")
-        db_video_dst['shots'] = deepcopy(db_video_src['shots'])
-        for shot in  db_video_dst['shots']:
+        db_video_target['shots'] = deepcopy(db_video_src['shots'])
+        for shot in  db_video_target['shots']:
             # Remove uneccessary properties
             for p in ['filters',
                         'curves',
@@ -302,23 +301,23 @@ def create_target_shots(database, k_ep, k_part):
                     'use': True,
                 }
 
-    shots = db_video_dst['shots']
+    shots = db_video_target['shots']
 
     # TODO: verify this
-    database[k_ep]['target']['video']['src']['k_ep'] = k_ep
+    # database[k_ep]['target']['video']['src']['k_ep'] = k_ep
 
     # Calculate frames count
-    if db_video_dst['start'] != db_video_src['start']:
+    if db_video_target['start'] != db_video_src['start']:
         # The 1st shot is shorter in dst
-        delta_frames_count = db_video_dst['start'] - db_video_src['start']
+        delta_frames_count = db_video_target['start'] - db_video_src['start']
 
         # Patch the first src shot
         db_video_src['shots'][0]['start'] += delta_frames_count
         db_video_src['shots'][0]['count'] -= delta_frames_count
 
         # Patch the first dst shot
-        db_video_dst['shots'][0]['start'] += delta_frames_count
-        db_video_dst['shots'][0]['count'] -= delta_frames_count
+        db_video_target['shots'][0]['start'] += delta_frames_count
+        db_video_target['shots'][0]['count'] -= delta_frames_count
 
         # Create a src structure for this shot if not already specified
         if 'src' not in shots[0].keys():
@@ -329,7 +328,7 @@ def create_target_shots(database, k_ep, k_part):
             }
         # Update the first shot (note: avsync is already calculated before)
         shots[0]['src'].update({
-            'start': db_video_dst['start'],
+            'start': db_video_target['start'],
             'count': db_video_src['shots'][0]['count'],
         })
 

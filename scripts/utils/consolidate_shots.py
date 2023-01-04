@@ -20,7 +20,7 @@ def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
     # It is used to replace the 'src' structure by the input shot
     # and merge it into this target shot
 
-    verbose = False
+    verbose = True
 
     # Process part(s)
     k_parts = K_ALL_PARTS_ORDERED if k_part == '' else [k_part]
@@ -203,11 +203,12 @@ def consolidate_shot(db, shot) -> None:
     else:
         # pprint(db[k_ep]['target']['video'])
         # pprint(shot)
-        k_ed_target = db[k_ep]['target']['video']['src']['k_ed']
+        # k_ed_target = db[k_ep]['target']['video']['src']['k_ed']
+        k_ed_ref = db[k_ep]['target']['video']['k_ed_ref']
         # if shot['k_ep'] != shot['dst']['k_ep']:
         k_ep_target = shot['dst']['k_ep']
 
-    if ((k_ed != k_ed_target or k_ep != k_ep_target)
+    if ((k_ed != k_ed_ref or k_ep != k_ep_target)
         and k_part == shot['dst']['k_part']):
         # Apply offset only if part is different:
         # when replacing episode<->asuivre or episode<->precedemment or asuivre <-> precedemment

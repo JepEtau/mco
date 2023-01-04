@@ -14,8 +14,8 @@ import re
 from pprint import pprint
 
 from parsers.parser_av import (
-    parse_audio,
-    parse_video,
+    parse_audio_section,
+    parse_video_section,
 )
 from parsers.parser_filters import (
     parse_and_update_filters,
@@ -133,14 +133,14 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39, study_mode=False):
             #----------------------------------------------------
             if k_section == 'audio':
                 nested_dict_set(db_ep_target, dict(), 'audio')
-                parse_audio(db_ep_target['audio'], config, verbose=False)
+                parse_audio_section(db_ep_target['audio'], config, verbose=False)
 
             # Video
             #----------------------------------------------------
             elif k_section == 'video':
                 nested_dict_set(db_ep_target, dict(), 'video')
-                parse_video(db_ep_target['video'], config, k_ep, verbose=False)
-
+                db_ep_target['video']['k_ed_ref'] = db['common']['reference']['edition']
+                parse_video_section(db_ep_target['video'], config, k_ep, verbose=False)
 
             # Frames (used for studies)
             #----------------------------------------------------
@@ -169,6 +169,8 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39, study_mode=False):
         db_ep_target.update({
             'path_cache': os.path.join(db['common']['directories']['cache'], "%s" % (k_ep)),
         })
+
+
 
 
 
@@ -257,35 +259,34 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
 
         # Frames
         #----------------------------------------------------
+        if k_section == 'offsets':
+
+            for k_part in config.options(k_section):
+                if verbose:
+                    print("\t\t%s" % (k_part))
+
+                # Parse list of offsets
+                value_str = config.get(k_section, k_part)
+                offsets = []
+                for offset in value_str.split('\n'):
+                    diffStr = offset.replace(' ','')
+                    tmp = None
+                    tmp = re.match(re.compile("^(\d+):(-?\d+)$"), diffStr)
+                    if tmp is not None:
+                        frameStart = int(tmp.group(1))
+                        offset = int(tmp.group(2)) - frameStart
+                        if offsets:
+                            offsets[len(offsets)-1]['end'] = frameStart - 1
+                        offsets.append({'start': frameStart, 'offset': offset, 'end': 99999999})
+                        # print("\t\t\tframeStart=%d, offset=%d" % (frameStart, offset))
+
+                db_episode[k_part]['video']['offsets'] = offsets
+                # print("offsets, ep %d, part %s: " % (episode_no, k_part), offsets)
+                # pprint(offsets)
+                # print("TODO: reorder offsets")
+
         if k_section == 'frames':
-
-            for k in config.options(k_section):
-                tmp = None
-                tmp = re.match("^offsets_(\w+)", k)
-                if tmp is not None:
-                    k_part = tmp.group(1)
-                    if verbose: print("\t\t%s" % (k_part))
-
-                    # Parse list of offsets
-                    value_str = config.get(k_section, k)
-                    offsets = []
-                    for offset in value_str.split('\n'):
-                        diffStr = offset.replace(' ','')
-                        tmp = None
-                        tmp = re.match(re.compile("^(\d+):(-?\d+)$"), diffStr)
-                        if tmp is not None:
-                            frameStart = int(tmp.group(1))
-                            offset = int(tmp.group(2)) - frameStart
-                            if offsets:
-                                offsets[len(offsets)-1]['end'] = frameStart - 1
-                            offsets.append({'start': frameStart, 'offset': offset, 'end': 99999999})
-                            # print("\t\t\tframeStart=%d, offset=%d" % (frameStart, offset))
-
-                    db_episode[k_part]['video']['offsets'] = offsets
-                    # print("offsets, ep %d, part %s: " % (episode_no, k_part), offsets)
-                    # pprint(offsets)
-                    # print("TODO: reorder offsets")
-
+            print("TODO: replace frames by offset in %s" % (filepath))
 
 
     # Copy frames dict from common if not specified in configuration file
@@ -302,15 +303,6 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
                     cfg_ep[k]['frames'] = deepcopy(cfg_ep_common[k]['frames'])
                     for frame in cfg_ep[k]['frames']:
                         frame['no'] = frame['ref']
-
-
-    # Set the default source edition if not defined in the config file
-    k_ed_src = nested_dict_get(database, k_ep, 'target', 'video', 'src', 'k_ed')
-    if k_ed_src is None:
-        k_ed_src = k_ed
-        nested_dict_set(database, k_ed_src, k_ep, 'target', 'video', 'src', 'k_ed')
-        print("Warning: parse_episode: edition used as the source not defined for %s:%s, use the edition %s" % (k_ed, k_ep, k_ed_src))
-
 
 
     # Set dimensions:
@@ -340,7 +332,7 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
             db_episode[k_part]['video']['filters'] = 'default'
 
     # Create a default filter for this episode if not specified
-    if 'filters' not in  database[k_ep]['common'].keys():
+    if 'filters' not in database[k_ep]['common'].keys():
         database[k_ep]['common']['filters'] = dict()
 
     # Merge filters to create consistent filters for each episode/part

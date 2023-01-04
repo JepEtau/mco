@@ -6,6 +6,7 @@ from pprint import pprint
 
 from utils.common import (
     FPS,
+    K_ALL_PARTS,
     K_NON_GENERIQUE_PARTS,
     K_PARTS,
     pprint_audio,
@@ -18,7 +19,7 @@ from utils.time_conversions import (
 )
 
 
-def parse_audio_generique(db_audio, config, verbose=False):
+def parse_audio_section_generique(db_audio, config, verbose=False):
     k_section = 'audio'
 
     for k_option in config.options(k_section):
@@ -112,7 +113,7 @@ def parse_audio_generique(db_audio, config, verbose=False):
         sys.exit("Error: missing source option in audio section for a generique")
 
 
-def parse_audio(db_audio, config, verbose=False):
+def parse_audio_section(db_audio, config, verbose=False):
     k_section = 'audio'
 
 
@@ -212,9 +213,11 @@ def parse_audio(db_audio, config, verbose=False):
 
 
 
-def parse_video(db_video, config, k_ep, verbose=False):
+def parse_video_section(db_video, config, k_ep, verbose=False):
     k_section = 'video'
 
+    k_ed_ref = None
+    k_ed_src = None
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option)
         value_str = value_str.replace(' ','')
@@ -222,6 +225,10 @@ def parse_video(db_video, config, k_ep, verbose=False):
 
         if k_option == 'source':
             k_ed_src = value_str
+            continue
+
+        if k_option == 'ed_ref':
+            k_ed_ref = value_str
             continue
 
         # Parse only supported sections
@@ -263,7 +270,7 @@ def parse_video(db_video, config, k_ep, verbose=False):
                 continue
 
         if start is None:
-            sys.exit("Error: parse_video: start and end values are required for %s:%s in target file" % (k_ep, k_part))
+            sys.exit("Error: parse_video_section: start and end values are required for %s:%s in target file" % (k_ep, k_part))
 
         db_video[k_part] = {
             'effects': {
@@ -276,6 +283,9 @@ def parse_video(db_video, config, k_ep, verbose=False):
             'k_ed_src': k_part_ed_src,
         }
 
+    if k_ed_src is None:
+        sys.exit("error: parse_video_section: missing key \'source\' in target file %s_target.ini" % (k_ep))
+
     for k_part in K_NON_GENERIQUE_PARTS:
         try:
             if db_video[k_part]['k_ed_src'] is None:
@@ -283,9 +293,22 @@ def parse_video(db_video, config, k_ep, verbose=False):
         except:
             pass
 
+
+    for k_part in K_ALL_PARTS:
+        if k_part not in db_video.keys():
+            # The target will use the part defined in the src edition
+            db_video[k_part] = {
+                'k_ed_src': k_ed_src,
+            }
+
+
     for k_part in K_NON_GENERIQUE_PARTS:
         if db_video[k_part]['k_ed_src'] is None:
-            sys.exit("Errror: parse_video: edition shall be defined for %s:%s" % (k_ep, k_part))
+            sys.exit("Errror: parse_video_section: edition shall be defined for %s:%s" % (k_ep, k_part))
+
+    # Set the edition used as the reference for the frames no.
+    db_video['k_ed_ref'] = k_ed_ref
+
 
 
 

@@ -12,7 +12,7 @@ import re
 
 from pprint import pprint
 
-from parsers.parser_av import parse_audio_generique
+from parsers.parser_av import parse_audio_section_generique
 from parsers.parser_filters import (
     parse_filters_initialize,
     parser_filters_consolidate,
@@ -160,7 +160,7 @@ def parse_generiques_target(database, study_mode=False, verbose=False):
             # Audio
             #----------------------------------------------------
             elif k_section == 'audio':
-                parse_audio_generique(db_g_target['audio'], config)
+                parse_audio_section_generique(db_g_target['audio'], config)
 
             # Filters
             #----------------------------------------------------
