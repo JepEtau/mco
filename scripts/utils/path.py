@@ -26,7 +26,7 @@ def create_video_directory(db, k_ep):
     if k_ep in ['ep00', 'ep40']:
         return
 
-    video_directory = os.path.join(db[k_ep]['target']['path']['cache'], "video")
+    video_directory = os.path.join(db[k_ep]['target']['path_cache'], 'video')
     if not os.path.exists(video_directory):
         os.makedirs(video_directory)
     return video_directory

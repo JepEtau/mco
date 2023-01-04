@@ -73,7 +73,6 @@ def create_framelist_from_shot(db:dict, shot) -> list:
             'ref': shot['ref'] + i,
             'filters': shot['filters'],
             'tasks': shot['tasks'].copy(),
-            'layer': shot['layer'],
             'dimensions': shot['dimensions'].copy(),
             'geometry': None if 'geometry' not in shot.keys() else shot['geometry'],
             'curves': None if 'curves' not in shot.keys() else shot['curves'],

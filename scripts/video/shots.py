@@ -277,48 +277,33 @@ def process_shot(db, shot, cpu_count=0):
         sys.exit()
 
 
-    # 5) Extract: deinterlace/upscale
+    # 5) Extract: ffmpeg deinterlace/upscale
     # ==========================================================================
     # For each layer, determine if 'upscale' is in tasks. If at least
     # one frame has to be extracted, then extract all shot
     worklist = list()
     for f in frames:
-        do_append = False
+        do_extract = False
         if 'deinterlace' in f['tasks'] or 'pre_upscale' in f['tasks']:
-            do_append = True
+            do_extract = True
         elif 'upscale' in f['tasks']:
             if f['filters']['ffmpeg']['upscale'] is not None:
                 # upscale is done by FFMPEG
                 do_append = True
             # else:
                 # upscale is done by opencv
-        if do_append:
-            worklist.append([db_common, layer, shot])
+        if do_extract:
             break
 
-
-    # Create a pool of processes to extract all frames from shot
-    if cpu_count == 0:
-        # print("Number of cpu : %d" % (multiprocessing.cpu_count()))
-        cpu_count = int(multiprocessing.cpu_count() / 2)
-
-
-    with ThreadPoolExecutor(max_workers=cpu_count) as executor:
-        work_result = {executor.submit(extract_frames_from_shot, db_common, work[1], work[2]): None
-                        for work in worklist}
-
-        for future in concurrent.futures.as_completed(work_result):
-            tasks, extracted_images_count = future.result()
-            if extracted_images_count != shot['count']:
-                sys.exit("error: nb. of extracted images differs from specified (%d vs %d" % (extracted_images_count, shot['count']))
-            for f in frames:
-                f['tasks'] = tasks.copy()
+    tasks, extracted_images_count = extract_frames_from_shot(db_common, shot)
+    for f in frames:
+        f['tasks'] = tasks.copy()
 
     # Clean
     gc.collect()
 
 
-    # 6) Denoise
+    # 6) All other tasks
     # ==========================================================================
     worklist = list()
     for no, frame in zip(range(len(frames)), frames):
@@ -340,9 +325,9 @@ def process_shot(db, shot, cpu_count=0):
             f = worklist[work_no][1]
             f['tasks'] = tasks.copy()
 
-        # Clean useless variables
-        del worklist
-        gc.collect()
+    # Clean useless variables
+    del worklist
+    gc.collect()
 
 
     # 7) Effects
