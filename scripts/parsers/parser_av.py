@@ -269,8 +269,8 @@ def parse_video_section(db_video, config, k_ep, verbose=False):
                 # sys.exit("found %s for %s:%s" % (k_part_ed_src, k_ep, k_part))
                 continue
 
-        if start is None:
-            sys.exit("Error: parse_video_section: start and end values are required for %s:%s in target file" % (k_ep, k_part))
+        # if start is None:
+        #     sys.exit("Error: parse_video_section: start and end values are required for %s:%s in target file" % (k_ep, k_part))
 
         db_video[k_part] = {
             'effects': {

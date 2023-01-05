@@ -174,7 +174,7 @@ def main():
     if arguments.parse_only:
         # Parse database only
         # Parse database
-        parse_database(g_database, k_ed=k_ed, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
+        parse_database(g_database, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
         gc.collect()
         print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
 
@@ -238,7 +238,7 @@ def main():
         # for frame study
         k_episode = 'ep01'
 
-    parse_database(g_database, k_ed=k_ed, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
+    parse_database(g_database, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
     gc.collect()
     print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
     print("processing, please wait...", flush=True)
@@ -293,7 +293,6 @@ def main():
         # Consolidate each shot for the target
         consolidate_target_shots(
             db=g_database,
-            k_ed=k_ed,
             k_ep=k_episode,
             k_part=arguments.part,
         )
@@ -322,7 +321,6 @@ def main():
             # Generate the video
             generate_video(
                 db=g_database,
-                k_ed=k_ed,
                 k_ep=k_episode,
                 k_part=arguments.part,
                 tasks=tasks,

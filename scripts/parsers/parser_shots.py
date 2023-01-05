@@ -238,8 +238,8 @@ def create_target_shots(database, k_ep, k_part):
         None
 
     """
-    K_EP_DEBUG = 'ep01'
-    K_PART_DEBUG = 'episode'
+    K_EP_DEBUG = ''
+    K_PART_DEBUG = ''
 
     k_ed_src = database[k_ep]['target']['video'][k_part]['k_ed_src']
     # print("create_target_shots: %s:%s:%s" % (k_ed_src, k_ep, k_part))
@@ -247,16 +247,18 @@ def create_target_shots(database, k_ep, k_part):
     db_video_src = database[k_ep][k_ed_src][k_part]['video']
     db_video_target = database[k_ep]['target']['video'][k_part]
 
-    if 'start' not in db_video_target.keys():
+    if 'start' not in db_video_target.keys() or db_video_target['start'] is None:
         # This was not specified in the target file, so use the one from the source
+        print("part is not declared in target, use the src")
         db_video_target.update({
             'start': db_video_src['start'],
             'end': db_video_src['end'],
             'count': db_video_src['count'],
+            'effects': db_video_src['effects'],
         })
 
 
-    if k_ed_src=='k' and k_part == K_PART_DEBUG:
+    if k_ep==K_EP_DEBUG and k_part == K_PART_DEBUG:
         print("\n%s.create_target_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
         print(" start")
         print("\tvideo (src): %d\t(%d)" % (db_video_src['start'], db_video_src['count']))
@@ -278,16 +280,17 @@ def create_target_shots(database, k_ep, k_part):
         print("   start: %d" % (db_video_target['start']))
         print("   count: %d" % (db_video_target['count']))
         if 'shots' in db_video_target.keys():
-            print("   db_video_dst[shots]")
+            print("   db_video_target[shots]")
             for s in db_video_target['shots']:
                 print("\t", s)
         print("\n")
 
 
+
     if ('shots' not in db_video_target.keys()
         and 'shots' not in db_video_src.keys()):
         # Cannot consolidate because no shots are defined
-        # print("\t\tinfo: %s.create_target_shots: no shots in src/dst %s:%s" % (__name__, k_ep, k_part))
+        print("warning: %s.create_target_shots: no shots in src/dst %s:%s" % (__name__, k_ep, k_part))
         return
 
     if 'shots' not in db_video_target.keys():
@@ -310,12 +313,11 @@ def create_target_shots(database, k_ep, k_part):
                     'use': True,
                 }
 
-    shots = db_video_target['shots']
-
-    # TODO: verify this
-    # database[k_ep]['target']['video']['src']['k_ep'] = k_ep
 
     # Calculate frames count
+    shots = db_video_target['shots']
+    print(db_video_target['start'])
+    print(db_video_src['start'])
     if db_video_target['start'] != db_video_src['start']:
         # The 1st shot is shorter in dst
         delta_frames_count = db_video_target['start'] - db_video_src['start']
@@ -362,7 +364,7 @@ def create_target_shots(database, k_ep, k_part):
     db_video_target['count'] = frames_count
 
 
-    if k_ed_src=='k' and k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
+    if k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
         print("-------------------- after ----------------------------\n")
         print("After consolidation, db_video_src:")
         if 'shots' in db_video_src.keys():
@@ -376,7 +378,7 @@ def create_target_shots(database, k_ep, k_part):
         print("-------------------- after ----------------------------\n")
         print("After consolidation, db_video_target:")
         if 'shots' in db_video_target.keys():
-            print("   db_video_dst[shots]")
+            print("   db_video_target[shots]")
             for s in db_video_target['shots']:
                 print("\t", s)
         print("   start: %d" % (db_video_target['start']))
@@ -403,12 +405,13 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
     """
 
     # Get the default source: edition:episode
+    pprint(db[k_part_g]['target'])
     k_ed_src = db[k_part_g]['target']['video']['src']['k_ed']
     k_ep_src = db[k_part_g]['target']['video']['src']['k_ep']
 
     if k_part_g in ['g_debut', 'g_fin']:
-        db_video_dst = db[k_part_g]['target']['video']
-        db_video_dst.update({
+        db_video_target = db[k_part_g]['target']['video']
+        db_video_target.update({
             'avsync': 0,
         })
 
@@ -428,7 +431,7 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
                 'k_part': k_part_g,
             },
         }
-        db_video_dst = db[k_ep]['target']['video'][k_part_g]
+        db_video_target = db[k_ep]['target']['video'][k_part_g]
 
     elif k_part_g == 'g_reportage':
         # Create the g_reportage structure:
@@ -448,25 +451,30 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
                 'k_part': k_part_g,
             },
         }
-        db_video_dst = db[k_ep]['target']['video'][k_part_g]
+        db_video_target = db[k_ep]['target']['video'][k_part_g]
 
 
-    if ('shots' not in db_video_dst.keys()
-        or len(db_video_dst['shots']) == 0):
+    if ('shots' not in db_video_target.keys()
+        or len(db_video_target['shots']) == 0):
         # No shot defined in target, use the src for this.
+        # print("\n%s.create_target_shots: consolidate %s:%s, create DST shot" % (__name__, k_ep, k_part))
+        # print("------------------------------------------------")
+        print("%s: src: %s:%s" % (k_part_g, k_ep_src, k_ed_src))
+        pprint(db[k_ep_src][k_ed_src])
+
         frame_count = 0
-        db_video_dst['shots'] = list()
+        db_video_target['shots'] = list()
         # if k_part_g == 'g_asuivre':
         #     print("create_target_shots_g for %s:%s:%s" % (k_ed_src, k_ep, k_part_g))
         #     print("\tfrom %s:%s:%s" % (k_ep_src, k_ed_src, k_part_g))
         #     pprint(db[k_ep_src][k_ed_src][k_part_g]['video'])
         for shot_src in db[k_ep_src][k_ed_src][k_part_g]['video']['shots']:
             # Create a dst shot from src shot
-            db_video_dst['shots'].append({
+            db_video_target['shots'].append({
                 'no': shot_src['no'],
                 'start': shot_src['start'],
                 'count': shot_src['count'],
-                'dst': db[k_ep]['target']['video'][k_part_g]['dst'],
+                'dst': shot_src['dst'],
                 'src': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep_src,
@@ -476,29 +484,30 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
                 },
             })
             frame_count += shot_src['count']
+        db_video_target['count'] = frame_count
 
-        if 0 < db_video_dst['count'] < frame_count:
+        if 0 < db_video_target['count'] < frame_count:
             # The source contains too many frames,
             # path the src structure
-            db_video_dst['shots'][-1]['src']['count'] -=  frame_count - db_video_dst['count']
-            db_video_dst['shots'][-1]['dst']['count'] = db_video_dst['shots'][-1]['src']['count']
-            db_video_dst['shots'][-1]['count'] = db_video_dst['shots'][-1]['src']['count']
-            # print("frame_count=%d, db_video_dst count=%d" % (frame_count, db_video_dst['count']))
+            db_video_target['shots'][-1]['src']['count'] -=  frame_count - db_video_target['count']
+            db_video_target['shots'][-1]['dst']['count'] = db_video_target['shots'][-1]['src']['count']
+            db_video_target['shots'][-1]['count'] = db_video_target['shots'][-1]['src']['count']
+            # print("frame_count=%d, db_video_target count=%d" % (frame_count, db_video_target['count']))
             if k_part_g != 'g_reportage':
                 print("TODO, correct this: 2022-12-01: patched for g_reportage. %s:%s:%s" % (k_ed_src, k_ep, k_part_g))
-                print("frame_count=%d, db_video_dst count=%d" % (frame_count, db_video_dst['count']))
+                print("frame_count=%d, db_video_target count=%d" % (frame_count, db_video_target['count']))
                 raise()
-            # pprint(db_video_dst)
+            # pprint(db_video_target)
         else:
-            db_video_dst['count'] = frame_count
+            db_video_target['count'] = frame_count
 
         # print("<<<<<<<<<<<<<<<< VIDEO %s:%s >>>>>>>>>>>>>>>>" % (k_ep, k_part_g))
-        # pprint(db_video_dst)
-        # pprint_video(db_video_dst, first_indent=4)
+        # pprint(db_video_target)
+        # pprint_video(db_video_target, first_indent=4)
         return
 
     # Recalculate nb of frames for this part
-    shots = db_video_dst['shots']
+    shots = db_video_target['shots']
     frames_count = 0
     for i in range(0, len(shots)):
         if shots[i]['count'] == -1:
@@ -510,8 +519,8 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
                 frames_count += shots[i]['effects'][2]
                 sys.exit("%s: add loop duration" % (__name__))
         frames_count += shots[i]['count']
-    db_video_dst['count'] = frames_count
+    db_video_target['count'] = frames_count
 
-    if 'start' not in db_video_dst.keys():
-        db_video_dst['start'] = db_video_dst['shots'][0]['start']
+    if 'start' not in db_video_target.keys():
+        db_video_target['start'] = db_video_target['shots'][0]['start']
 

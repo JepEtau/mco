@@ -333,7 +333,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         row_no = 0
         for k_shot, shot in shots.items():
             self.tableWidget_shots.insertRow(row_no)
-            self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem('%05d' % (k_shot)))
+            self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem('%06d' % (k_shot)))
             src_txt = ""
             if 'src' in shot.keys():
                 src_txt = "%s:%s" % (shot['src']['k_ed'], shot['src']['k_ep'])

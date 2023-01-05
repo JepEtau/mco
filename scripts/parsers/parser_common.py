@@ -170,6 +170,10 @@ def parse_common_configuration(config_path, verbose=False):
             'w': int(db_common['dimensions']['width_initial']),
             'h': int(db_common['dimensions']['height_initial'])
         },
+        'deinterlace': {
+            'w': int(db_common['dimensions']['width_deinterlace']),
+            'h': int(db_common['dimensions']['height_deinterlace'])
+        },
         'upscale': {
             'w': int(db_common['dimensions']['width_upscale']),
             'h': int(db_common['dimensions']['height_upscale'])

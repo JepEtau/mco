@@ -7,6 +7,7 @@ from pprint import pprint
 
 from utils.common import (
     K_AUDIO_PARTS,
+    K_GENERIQUES,
     pprint_audio,
 )
 from utils.ffmpeg import ffmpeg_execute_command
@@ -44,7 +45,12 @@ def extract_audio(db, k_ep_or_g:str, k_ed, force=False, verbose=False) -> str:
         print("%s extract audio stream: %s:%s" % (current_datetime_str(), k_ed, k_ep))
 
     # Input audio file
-    input_filepath = db[k_ep][k_ed]['path']['input_audio']
+    pprint(db[k_ep]['target'])
+    if k_ep_or_g in K_GENERIQUES:
+        input_filepath = db[k_ep][k_ed][k_ep_or_g]['path']['input_audio']
+    else:
+        # use default, let's use part='episode'
+        input_filepath = db[k_ep][k_ed]['episode']['audio']['input']
     if force or verbose:
         print("%s extract audio stream: %s:%s: %s" % (current_datetime_str(), k_ed, k_ep, input_filepath))
 
@@ -52,7 +58,7 @@ def extract_audio(db, k_ep_or_g:str, k_ed, force=False, verbose=False) -> str:
         sys.exit("Erreur: le fichier d'entrée est manquant pour l'édition %s" % (k_ed))
 
     # Output audio file
-    output_directory = os.path.join(db[k_ep]['target']['path']['cache'], "audio")
+    output_directory = os.path.join(db[k_ep]['target']['path_cache'], "audio")
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
 
@@ -115,7 +121,7 @@ def generate_audio(db, k_ep:str, force=False, verbose=False):
     create_audio_directory(db, k_ep)
 
     # Output audio file
-    output_directory = os.path.join(db[k_ep]['target']['path']['cache'], "audio")
+    output_directory = os.path.join(db[k_ep]['target']['path_cache'], "audio")
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     output_filename = "%s_audio.%s" % (k_ep, db['common']['settings']['audio_format'])
@@ -126,7 +132,7 @@ def generate_audio(db, k_ep:str, force=False, verbose=False):
 
     print("%s generate audio: %s" % (current_datetime_str(), k_ep))
 
-    input_directory = os.path.join(db[k_ep]['target']['path']['cache'], "audio")
+    input_directory = os.path.join(db[k_ep]['target']['path_cache'], "audio")
     tmp_filename = "%s_%s_audio_extract.%s" % (k_ep, k_ed, db['common']['settings']['audio_format'])
     tmp_filepath = os.path.join(input_directory, tmp_filename)
     if not os.path.exists(tmp_filepath):
@@ -164,7 +170,7 @@ def generate_audio(db, k_ep:str, force=False, verbose=False):
                 # Import this segment from another episode
                 print("info: generate_audio: import from other episode")
                 k_ep_src = s['k_ep']
-                input_directory = os.path.join(db[k_ep_src]['target']['path']['cache'], "audio")
+                input_directory = os.path.join(db[k_ep_src]['target']['path_cache'], "audio")
                 tmp_filename = "%s_%s_audio_extract.%s" % (k_ep_src, k_ed, db['common']['settings']['audio_format'])
                 tmp_filepath = os.path.join(input_directory, tmp_filename)
                 if not os.path.exists(tmp_filepath):
@@ -262,7 +268,7 @@ def _generate_audio_generique(db, k_part_g, force=False, verbose=False):
     k_ep = db[k_part_g]['target']['audio']['src']['k_ep']
 
     # Output audio file
-    output_directory = os.path.join(db[k_part_g]['target']['path']['cache'], "audio")
+    output_directory = os.path.join(db[k_part_g]['target']['path_cache'], "audio")
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
     output_filename = "%s_audio.%s" % (k_part_g, db['common']['settings']['audio_format'])
@@ -275,7 +281,7 @@ def _generate_audio_generique(db, k_part_g, force=False, verbose=False):
 
     # Extract audio file if needed
     tmp_filename = "%s_%s_audio_extract.%s" % (k_ep, k_ed, db['common']['settings']['audio_format'])
-    tmp_filepath = os.path.join(db[k_ep]['target']['path']['cache'], "audio", tmp_filename)
+    tmp_filepath = os.path.join(db[k_ep]['target']['path_cache'], "audio", tmp_filename)
     if not os.path.exists(tmp_filepath) or force:
         tmp_filepath = extract_audio(db, k_ep, k_ed, force=force, verbose=verbose)
 

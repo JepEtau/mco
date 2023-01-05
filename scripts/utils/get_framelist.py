@@ -26,8 +26,8 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
     # Input folder
     if k_part in ['g_debut', 'g_fin']:
         input_folder = os.path.join(
-            db[k_part]['target']['path']['cache'],
-            '%05d' % (shot_start))
+            db[k_part]['target']['path_cache'],
+            '%06d' % (shot_start))
     else:
         input_folder = get_output_path_from_shot(db=db, shot=shot, task=shot['tasks'][-1])
         # pprint("last task: [%s]" % (shot['tasks'][-1]))
@@ -47,9 +47,9 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
 
     for f_no in range(start, end):
         if f_no in frames_to_replace:
-            filename = "%s_%05d%s" % (k_ep, frames_to_replace[f_no], suffix)
+            filename = "%s_%06d%s" % (k_ep, frames_to_replace[f_no], suffix)
         else:
-            filename = "%s_%05d%s" % (k_ep, f_no, suffix)
+            filename = "%s_%06d%s" % (k_ep, f_no, suffix)
         p = os.path.join(input_folder, filename)
         images.append(p)
 
@@ -113,7 +113,7 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
                 del images[loop_count - fadeout_count:]
             elif loop_count > fadeout_count:
                 input_folder = get_output_path_from_shot(db=db, shot=shot, task='geometry')
-                filename = "%s_%05d%s" % (shot['k_ep'], loop_start, suffix)
+                filename = "%s_%06d%s" % (shot['k_ep'], loop_start, suffix)
                 p = os.path.join(input_folder, filename)
                 for i in range(loop_count - fadeout_count):
                     # print("\t\t\t+ loop: %s" % (p))
@@ -123,17 +123,17 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
             k_ep_dst = shot['dst']['k_ep']
             k_part_dst = shot['dst']['k_part']
             if k_part_dst in ['g_debut', 'g_fin']:
-                output_folder = os.path.join(db[k_part_dst]['target']['path']['cache'])
+                output_folder = os.path.join(db[k_part_dst]['target']['path_cache'])
             else:
-                output_folder = os.path.join(db[k_ep_dst]['target']['path']['cache'], k_part_dst)
-            output_folder = os.path.join(output_folder, '%05d' % (shot['start']))
+                output_folder = os.path.join(db[k_ep_dst]['target']['path_cache'], k_part_dst)
+            output_folder = os.path.join(output_folder, '%06d' % (shot['start']))
 
             # Append images to the list
             shot_src_start = shot['start']
             shot_src_count = shot['count']
             for f_no in range(shot_src_start + shot_src_count,
                                 shot_src_start + shot_src_count + fadeout_count):
-                filename = "%s_%05d%s" % (shot['k_ep'], f_no, suffix)
+                filename = "%s_%06d%s" % (shot['k_ep'], f_no, suffix)
                 p = os.path.join(output_folder, filename)
                 images.append(p)
                 # print("\t\t\t+ fadeout: %s" % (p))
@@ -154,17 +154,17 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
             k_ep_dst = shot['dst']['k_ep']
             k_part_dst = shot['dst']['k_part']
             if k_part_dst in ['g_debut', 'g_fin']:
-                output_folder = os.path.join(db[k_part_dst]['target']['path']['cache'])
+                output_folder = os.path.join(db[k_part_dst]['target']['path_cache'])
             else:
-                output_folder = os.path.join(db[k_ep_dst]['target']['path']['cache'], k_part_dst)
-            output_folder = os.path.join(output_folder, '%05d' % (shot['start']))
+                output_folder = os.path.join(db[k_ep_dst]['target']['path_cache'], k_part_dst)
+            output_folder = os.path.join(output_folder, '%06d' % (shot['start']))
 
             # Append images to the list
             shot_src_start = shot['start']
             shot_src_count = shot['count']
             for f_no in range(shot_src_start + shot_src_count,
                                 shot_src_start + shot_src_count + fadeout_count):
-                filename = "%s_%05d%s" % (shot['k_ep'], f_no, suffix)
+                filename = "%s_%06d%s" % (shot['k_ep'], f_no, suffix)
                 p = os.path.join(output_folder, filename)
                 images.append(p)
 
@@ -246,13 +246,13 @@ def get_single_framelist(db, k_ep, k_part, shot) -> list:
 
             # Add the frames before the loop
             for f_no in range(start, end):
-                filename = "%s_%05d%s" % (k_ep_src, f_no, suffix)
+                filename = "%s_%06d%s" % (k_ep_src, f_no, suffix)
                 p = os.path.join(input_folder, filename)
                 images.append(p)
 
             # Add the loop
             prefix = "%s_" % (k_ep_src)
-            filename = "%s%05d%s" % (prefix, frame_no, suffix)
+            filename = "%s%06d%s" % (prefix, frame_no, suffix)
             for i in range(loop_count):
                 p = os.path.join(input_folder, filename)
                 images.append(p)
@@ -274,7 +274,7 @@ def get_single_framelist(db, k_ep, k_part, shot) -> list:
                 del images[loop_count - fadeout_count:]
             elif loop_count > fadeout_count:
                 input_folder = get_output_path_from_shot(db=db, shot=shot, task='geometry')
-                filename = "%s_%05d%s" % (shot['k_ep'], loop_start, suffix)
+                filename = "%s_%06d%s" % (shot['k_ep'], loop_start, suffix)
                 p = os.path.join(input_folder, filename)
                 for i in range(loop_count - fadeout_count):
                     # print("\t\t\t+ loop: %s" % (p))
@@ -284,17 +284,17 @@ def get_single_framelist(db, k_ep, k_part, shot) -> list:
             k_ep_dst = shot['dst']['k_ep']
             k_part_dst = shot['dst']['k_part']
             if k_part_dst in ['g_debut', 'g_fin']:
-                output_folder = os.path.join(db[k_part_dst]['target']['path']['cache'])
+                output_folder = os.path.join(db[k_part_dst]['target']['path_cache'])
             else:
-                output_folder = os.path.join(db[k_ep_dst]['target']['path']['cache'], k_part_dst)
-            output_folder = os.path.join(output_folder, '%05d' % (shot['start']))
+                output_folder = os.path.join(db[k_ep_dst]['target']['path_cache'], k_part_dst)
+            output_folder = os.path.join(output_folder, '%06d' % (shot['start']))
 
             # Append images to the list
             shot_src_start = shot['start']
             shot_src_count = shot['count']
             for f_no in range(shot_src_start + shot_src_count,
                                 shot_src_start + shot_src_count + fadeout_count):
-                filename = "%s_%05d%s" % (shot['k_ep'], f_no, suffix)
+                filename = "%s_%06d%s" % (shot['k_ep'], f_no, suffix)
                 p = os.path.join(output_folder, filename)
                 images.append(p)
                 # print("\t\t\t+ fadeout: %s" % (p))
@@ -315,17 +315,17 @@ def get_single_framelist(db, k_ep, k_part, shot) -> list:
             k_ep_dst = shot['dst']['k_ep']
             k_part_dst = shot['dst']['k_part']
             if k_part_dst in ['g_debut', 'g_fin']:
-                output_folder = os.path.join(db[k_part_dst]['target']['path']['cache'])
+                output_folder = os.path.join(db[k_part_dst]['target']['path_cache'])
             else:
-                output_folder = os.path.join(db[k_ep_dst]['target']['path']['cache'], k_part_dst)
-            output_folder = os.path.join(output_folder, '%05d' % (shot['start']))
+                output_folder = os.path.join(db[k_ep_dst]['target']['path_cache'], k_part_dst)
+            output_folder = os.path.join(output_folder, '%06d' % (shot['start']))
 
             # Append images to the list
             shot_src_start = shot['start']
             shot_src_count = shot['count']
             for f_no in range(shot_src_start + shot_src_count,
                                 shot_src_start + shot_src_count + fadeout_count):
-                filename = "%s_%05d%s" % (shot['k_ep'], f_no, suffix)
+                filename = "%s_%06d%s" % (shot['k_ep'], f_no, suffix)
                 p = os.path.join(output_folder, filename)
                 images.append(p)
 

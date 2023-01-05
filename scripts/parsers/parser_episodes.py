@@ -23,6 +23,7 @@ from parsers.parser_filters import (
     parser_filters_consolidate,
 )
 from parsers.parser_frames import parse_framelist
+from parsers.parser_parts import parse_parts_section
 from parsers.parser_shots import (
     consolidate_shots_after_parse,
     parse_shotlist,
@@ -213,19 +214,7 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
         # Parts: frame start and (end+1)
         #----------------------------------------------------
         elif k_section == 'parts':
-            for k_part in config.options(k_section):
-                valuesStr = config.get(k_section, k_part)
-                valuesStr = valuesStr.replace(' ','')
-                # print("[%s] -> %s, %s => [%s]" % (k_section, section, valuesStr))
-                values = re.search(re.compile("^(\d+):(\d+)$"), valuesStr)
-
-                if k_part in K_ALL_PARTS:
-                    frames_count = int(values.group(2)) - int(values.group(1))
-                    db_episode[k_part]['video'].update({
-                        'start': int(values.group(1)),
-                        'end': int(values.group(2)),
-                        'count': frames_count,
-                    })
+            parse_parts_section(db_episode, config, k_ep, verbose=False)
 
         # Parts: shots and other properties
         #----------------------------------------------------

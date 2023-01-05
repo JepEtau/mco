@@ -62,8 +62,8 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
     k_part = shot['k_part']
     if k_part in ['g_debut', 'g_fin']:
         output_filepath = os.path.join(
-            db[k_part]['target']['path']['cache'],
-            '%05d' % (shot['start']))
+            db[k_part]['target']['path_cache'],
+            '%06d' % (shot['start']))
     else:
         # Because it is the latest task was geometry to use the dst k_ep:k_part:shot_no
         output_filepath = get_output_path_from_shot(db=db, shot=shot, task='geometry')
@@ -91,7 +91,7 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
     img_black = np.zeros([dimensions['h'], dimensions['w'], 3], dtype=np.uint8)
 
     # Default filename if loop == fadeout
-    filename = "%s_%05d%s" % (shot['k_ep'], loop_start, suffix)
+    filename = "%s_%06d%s" % (shot['k_ep'], loop_start, suffix)
 
     # Copy to dst because it is only done if last task is geometry
     if 'geometry' not in last_task:
@@ -117,7 +117,7 @@ def effect_loop_and_fadeout(db, shot, frames, last_task):
             input_img_filepath = frames[offset]['filepath'][last_task]
 
         # Output file
-        filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
+        filename = "%s_%06d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
         output_img_filepath = os.path.join(output_filepath, filename)
 
         # Calculate coefficient: last frame is not completely black because there is always
@@ -184,7 +184,7 @@ def effect_fadeout(db, shot, frames, last_task):
     if 'geometry' not in last_task:
         for count in range(0, fadeout_count):
             index = shot['src']['start'] + shot['src']['count'] + count
-            filename = "%s_%05d%s" % (shot['k_ep'], index, suffix)
+            filename = "%s_%06d%s" % (shot['k_ep'], index, suffix)
             input_img_filepath = os.path.join(input_filepath, filename)
             output_img_filepath = os.path.join(output_filepath, filename)
             if output_img_filepath != input_img_filepath:
@@ -200,7 +200,7 @@ def effect_fadeout(db, shot, frames, last_task):
             input_img_filepath = frames[offset]['filepath'][last_task]
 
             # Output file
-            filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
+            filename = "%s_%06d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
             output_img_filepath = os.path.join(output_filepath, filename)
         else:
             # Input file
@@ -208,7 +208,7 @@ def effect_fadeout(db, shot, frames, last_task):
             input_img_filepath = frames[offset]['filepath'][last_task]
 
             # Output file
-            filename = "%s_%05d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
+            filename = "%s_%06d%s" % (shot['k_ep'], shot['start'] + shot['count'] + count, suffix)
             output_img_filepath = os.path.join(input_filepath, filename)
 
 

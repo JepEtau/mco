@@ -662,7 +662,7 @@ class Widget_browser(QWidget, Ui_widget_browser):
                 frame['k_ep'],
                 frame['k_part']))
             self.label_frame_no.setText("\tframe no. %d" % (frame['no']))
-            self.label_shot.setText("\tshot no. %d (start: %05d)" % (frame['shot_no'], frame['start']))
+            self.label_shot.setText("\tshot no. %d (start: %06d)" % (frame['shot_no'], frame['start']))
             self.label_step.setText("\t%s (%03d)" % (frame['step'], frame['filter_id']))
             self.label_dimension.setText("\t%dx%d" % (frame['dimensions']['w'], frame['dimensions']['h']))
 

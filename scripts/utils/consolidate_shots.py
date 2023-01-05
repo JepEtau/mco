@@ -14,7 +14,7 @@ from utils.get_filters import get_filters_from_shot
 from utils.get_curves import get_lut_from_curves
 
 
-def consolidate_target_shots(db, k_ed, k_ep, k_part:str=''):
+def consolidate_target_shots(db, k_ep, k_part:str=''):
     # This function is used to consolidate target shots so that
     # the process function can take these shots for the generation
     # It is used to replace the 'src' structure by the input shot
@@ -200,6 +200,7 @@ def consolidate_shot(db, shot) -> None:
     if k_part in K_GENERIQUES:
         k_ep_target = db[k_part]['target']['video']['src']['k_ep']
         k_ed_target = db[k_part]['target']['video']['src']['k_ed']
+        k_ed_ref = db[k_ep]['target']['video']['k_ed_ref']
     else:
         # pprint(db[k_ep]['target']['video'])
         # pprint(shot)
@@ -212,13 +213,17 @@ def consolidate_shot(db, shot) -> None:
         and k_part == shot['dst']['k_part']):
         # Apply offset only if part is different:
         # when replacing episode<->asuivre or episode<->precedemment or asuivre <-> precedemment
-        print("\t\t\tapply offset for %s" % (k_part))
+        print("\t\t\tapply offset for %s: target:%s:%s:%s ref:%s:%s:%s" % (
+            k_part,
+            k_ed, k_ep_target, shot['dst']['k_part'],
+            k_ed_ref, k_ep, k_part))
         try:
             offsets = db[k_ep][k_ed][k_part]['video']['offsets']
             # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
             for offset in offsets:
                 if offset['start'] <= shot['start'] <= offset['end']:
-                    shot['ref'] = shot['start'] + offset['offset']
+                    # shot['ref'] = shot['start'] + offset['offset']
+                    shot['start'] = shot['start'] - offset['offset']
                     break
         except:
             print("offsets are not defined in %s:%s for part %s" % (k_ed, k_ep, k_part))

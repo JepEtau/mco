@@ -28,7 +28,7 @@ from video.effects import create_black_frame
 from video.shots import process_shot
 
 
-def generate_video(db, k_ed, k_ep:str,
+def generate_video(db, k_ep:str,
                     tasks:list, cpu_count=0, k_part:str='',
                     force:bool=False, simulation:bool=False,
                     shot_min:int=0, shot_max:int=999999,
@@ -145,13 +145,13 @@ def generate_video(db, k_ed, k_ep:str,
     # Concatenate shots in a single clip
     for k_p, filepaths in video_files.items():
         if len(filepaths) > 1 and not simulation:
-            concatenate_shots(db, k_ed=k_ed, k_ep=k_ep, k_part=k_p, video_files=video_files, force=force)
+            concatenate_shots(db, k_ep=k_ep, k_part=k_p, video_files=video_files, force=force)
 
 
     # Create concatenation files and video files for silences
     if k_part == '' and not simulation:
         # Only if a full generation is asked
-        video_files_tmp = create_concatenation_file_silence(db, k_ed=k_ed, k_ep=k_ep)
+        video_files_tmp = create_concatenation_file_silence(db, k_ep=k_ep)
         for k_p, filepaths in video_files_tmp.items():
             video_files[k_p] += filepaths
             for f in filepaths:
@@ -162,10 +162,10 @@ def generate_video(db, k_ed, k_ep:str,
     # Concatenate video clips from all parts
     if k_part == '' and not simulation:
         # Generate a concatenation file that contains all video files except g_debut and g_fin
-        concatenation_filepath = create_concatenation_file_video(db, k_ed=k_ed, k_ep=k_ep, video_files=video_files)
+        concatenation_filepath = create_concatenation_file_video(db, k_ep=k_ep, video_files=video_files)
 
         # Concatenate video clips
-        episode_video_filepath = os.path.join(db[k_ep]['target']['path']['cache'],
+        episode_video_filepath = os.path.join(db[k_ep]['target']['path_cache'],
             "video", "%s_video.mkv" % (k_ep))
         if not os.path.exists(episode_video_filepath) or force or do_regenerate:
             print("%s concatenate video clips to %s" % (current_datetime_str(), episode_video_filepath))
