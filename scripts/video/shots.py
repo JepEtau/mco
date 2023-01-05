@@ -297,9 +297,10 @@ def process_shot(db, shot, cpu_count=0):
         if do_extract:
             break
 
-    tasks, extracted_images_count = extract_frames_from_shot(db_common, shot)
-    for f in frames:
-        f['tasks'] = tasks.copy()
+    if do_extract:
+        tasks, extracted_images_count = extract_frames_from_shot(db_common, shot)
+        for f in frames:
+            f['tasks'] = tasks.copy()
 
     # Clean
     gc.collect()

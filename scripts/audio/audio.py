@@ -77,15 +77,23 @@ def extract_audio(db, k_ep_or_g:str, k_ed, force=False, verbose=False) -> str:
         filter_complex_str = filter_complex_str + "[outa]"
         # print("filter_complex_str = %s" % (filter_complex_str))
 
+
         # FFmpeg command
         command_ffmpeg = [db['common']['settings']['ffmpeg_exe']]
         command_ffmpeg.extend(db['common']['settings']['verbose'].split(' '))
         command_ffmpeg.extend(["-i", input_filepath,
                         # "-filter_complex", filter_complex_str,
                         # "-map", "[outa]",
-                        "-sn", "-vn",
-                        "-y", output_filepath
-        ])
+                        "-sn", "-vn"])
+
+
+        # AWFULL but necessary to keep 24bit audio for the edition 'b'
+        # TODO: do a ffprobe before
+        if "b_ep" in input_filepath:
+            command_ffmpeg.extend(["-c:a", "copy"])
+
+        command_ffmpeg.extend(["-y", output_filepath])
+
         std = ffmpeg_execute_command(command_ffmpeg, output_filepath, mode='', print_msg=False)
         return output_filepath
 

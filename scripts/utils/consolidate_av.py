@@ -160,14 +160,17 @@ def calculate_av_sync(db, k_ep):
 
         # episode
         k_part = 'episode'
-        avsync_ms = db_audio[k_part]['start'] - frames_to_ms(db_video[k_part]['start'])
+
+        # Get the start frame no. from the src ed.
+        video_start = db[k_ep][db_audio['src']['k_ed']][k_part]['video']['start']
+
+        avsync_ms = db_audio[k_part]['start'] - frames_to_ms(video_start)
         db_video[k_part].update({
             'avsync': ms_to_frames(avsync_ms) if avsync_ms < 0 else 0
         })
         db_audio[k_part].update({
             'avsync': avsync_ms if avsync_ms > 0 else 0,
         })
-
 
     k_part = 'asuivre'
     if k_part in db_audio.keys() and db_audio[k_part]['duration'] != 0:
