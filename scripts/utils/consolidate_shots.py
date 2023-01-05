@@ -272,6 +272,8 @@ def consolidate_shot(db, shot) -> None:
         # print("TODO: consolidate_shot: update when replacing the shots in episode")
         k_ep_dst = shot['dst']['k_ep']
         k_part_dst = shot['dst']['k_part']
+        k_ed_src = shot['src']['k_ed']
+        k_ep_src = shot['src']['k_ep']
         try:
             shot['geometry'] = {
                 'part':  db[k_ep_dst][k_ed][k_part_dst]['video']['geometry'],
