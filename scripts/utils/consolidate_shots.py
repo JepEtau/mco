@@ -247,7 +247,7 @@ def consolidate_shot(db, shot) -> None:
         # Add a different geometry because it is not the same k_ed:k_ep
         if k_ed != k_ed_src or k_ep != k_ep_src:
             shot['geometry'].update({
-                'custom': db[k_ep][k_ed][k_part]['video']['geometry'],
+                'shot': db[k_ep][k_ed][k_part]['video']['geometry'],
             })
 
     elif k_part in ['g_asuivre', 'g_reportage']:
@@ -264,7 +264,7 @@ def consolidate_shot(db, shot) -> None:
             # pprint(db[k_ep_dst])
             shot['geometry'] = {
                 'part':  db[k_ep_dst][k_ed][k_part[2:]]['video']['geometry'],
-                'custom': db[k_ep][k_ed_dst][k_part]['video']['geometry'],
+                'shot': db[k_ep][k_ed_dst][k_part]['video']['geometry'],
             }
         else:
             print("warning: no geometry/video defined in %s for %s:%s:%s" % (k_part, k_ed_src, k_ep_dst, k_part))
@@ -280,13 +280,14 @@ def consolidate_shot(db, shot) -> None:
             print("info: no geometry defined for %s:%s:%s" % (k_ed, k_ep_dst, k_part_dst))
         if k_ep != k_ep_dst or k_part != k_part_dst:
             shot['geometry'].update({
-                'custom': db[k_ep][k_ed][k_part]['video']['geometry'],
+                'shot': db[k_ep][k_ed][k_part]['video']['geometry'],
             })
 
 
     # RGB correction: calculate the lut from the curves
     if shot['curves'] is not None:
-        k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
         shot['curves']['lut'] = get_lut_from_curves(db,
-                                    k_ep_or_g,
-                                    shot['curves']['k_curves'])
+            k_ed_src,
+            k_ep_src,
+            k_part,
+            shot['curves']['k_curves'])

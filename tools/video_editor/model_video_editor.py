@@ -597,7 +597,7 @@ class Model_video_editor(Model_common):
             geometry = deepcopy(self.model_database.get_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part))
 
         else:
-            type = 'custom'
+            type = 'shot'
             geometry = deepcopy(self.model_database.get_custom_geometry(shot=self.shots[shot_no]))
 
 
@@ -772,11 +772,11 @@ def generate_single_image(frame:dict, preview_options:dict):
 
     # Calculate dimensions to crop the image
     c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
-    if ('custom' in frame['geometry'].keys()
-        and frame['geometry']['custom'] is not None):
+    if ('shot' in frame['geometry'].keys()
+        and frame['geometry']['shot'] is not None):
         # Use the customized geometry
-        type = 'custom'
-        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['custom']['crop'])
+        type = 'shot'
+        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['shot']['crop'])
     else:
         # Use the part geometry
         type = 'part'

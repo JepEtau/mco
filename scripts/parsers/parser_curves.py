@@ -14,6 +14,7 @@ import re
 
 from images.curve import Curve
 from utils.common import (
+    K_GENERIQUES,
     get_or_create_src_shot,
     nested_dict_set,
 )
@@ -74,6 +75,45 @@ def parse_curve_configurations(db, k_ep_or_g:str):
                 'lut':None,
             }
             # print("\t=> %s:%s:%s: shot no. %s -> %s" % (k_ed, k_ep, k_part, shot['no'], shot['curves']['k_curves']))
+
+
+def get_curves_channels_from_db(db, k_ed, k_ep, k_part, k_curves:str) -> dict:
+    k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
+
+    # Open configuration file
+    filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_curves_db.ini" % (k_ep_or_g))
+    if filepath.startswith("~/"):
+        filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+    if not os.path.exists(filepath):
+        # print("warning: %s:parse_curves_database: %s, %s is missing" % (__name__, k_ep_or_g, filepath))
+        return None
+
+    config = configparser.ConfigParser()
+    config.read(filepath)
+
+    if k_part in K_GENERIQUES:
+        k_section = "%s.%s.%s" % (k_ed, k_ep, k_curves)
+    else:
+        k_section = "%s.%s" % (k_ed, k_curves)
+
+    try:
+        rgb_channels = {
+            'r': Curve(),
+            'g': Curve(),
+            'b': Curve(),
+            'm': Curve(),
+        }
+        for k_channel in ['r', 'g', 'b', 'm']:
+            points_str = config.get(k_section, k_channel).replace(' ', '').strip()
+            points = points_str.split(',')
+            rgb_channels[k_channel].remove_all_points()
+            for point in points:
+                xy = point.split(':')
+                rgb_channels[k_channel].add_point(np.float32(xy[0]),np.float32(xy[1]))
+    except:
+        print("Warning: %s:%s:%s: [%s] is not found in curves db: %s" % (k_ed, k_ep, k_part, k_section, filepath))
+        return None
+    return rgb_channels
 
 
 
@@ -200,4 +240,53 @@ def parse_curves_folder(db, k_ep_or_g):
                     'shots': []
                 }
 
+    return db_curves
+
+
+
+
+def parse_curves_database(db, k_ed, k_ep_or_g:str):
+    db_curves = dict()
+
+    # Open configuration file
+    filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_curves_db.ini" % (k_ep_or_g))
+    if filepath.startswith("~/"):
+        filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+    if not os.path.exists(filepath):
+        # print("warning: %s:parse_curves_database: %s, %s is missing" % (__name__, k_ep_or_g, filepath))
+        return db_curves
+
+    # Parse the file
+    config = configparser.ConfigParser()
+    config.read(filepath)
+    for k_ed_curves in config.sections():
+        k_ed_db, k_curves = k_ed_curves.split('.')
+        if k_ed_db != k_ed:
+            continue
+
+        nested_dict_set(db_curves, {
+            'k_curves': k_curves,
+            'channels': {
+                'r': Curve(),
+                'g': Curve(),
+                'b': Curve(),
+                'm': Curve(),
+            },
+            'lut': None,
+            'shots': list()
+        }, k_ed, k_ep_or_g, k_curves)
+
+        curves = db_curves[k_ed][k_ep_or_g][k_curves]
+        for k_channel in ['r', 'g', 'b', 'm']:
+            points_str = config.get(k_curves, k_channel).replace(' ', '').strip()
+            points = points_str.split(',')
+            curves['channels'][k_channel].remove_all_points()
+            for point in points:
+                xy = point.split(':')
+                curves['channels'][k_channel].add_point(
+                    np.float32(xy[0]),np.float32(xy[1]))
+
+    print("parse_curves_database")
+    pprint(db_curves)
+    sys.exit()
     return db_curves

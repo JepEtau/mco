@@ -348,10 +348,6 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
     """
     dependencies = dict()
 
-    # Edition used as the default one
-    try: k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
-    except: k_ed_src = db['editions']['k_ed_ref']
-
     # Common part
     for k_part in K_PARTS:
         if k_part not in db[k_ep]['target']['video'].keys():
@@ -366,14 +362,16 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
                     if 'k_ed' in shot['src']:
                         k_ed_dep = shot['src']['k_ed']
                     else:
-                        k_ed_dep = k_ed_src
+                        k_ed_dep = db_video['k_ed_src']
 
                     if k_ed_dep not in dependencies.keys():
                         dependencies[k_ed_dep] = list()
                     dependencies[k_ed_dep].append(shot['src']['k_ep'])
 
+
     # Edition used as the default source
     for k_part in K_PARTS:
+        k_ed_src = db[k_ep]['target']['video'][k_part]['k_ed_src']
         if k_part not in db[k_ep][k_ed_src].keys():
             continue
 

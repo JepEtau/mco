@@ -283,7 +283,7 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
             # Add a different geometry because it is not the same k_ed:k_ep
             if k_ed_f != k_ed_src or k_ep_f != k_ep_src:
                 frame['geometry'].update({
-                    'custom': db[k_ep_f][k_ed_f][k_part]['video']['geometry'],
+                    'shot': db[k_ep_f][k_ed_f][k_part]['video']['geometry'],
                 })
         elif k_part in ['g_asuivre', 'g_reportage']:
             print("create_framelist_for_study: verify geometry for %s" % (k_part))
@@ -292,7 +292,7 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
             print("get geometry from part %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
             frame['geometry'] = {
                 'part':  db[k_ep][k_ed_f][k_part[2:]]['video']['geometry'],
-                'custom': db[k_ep][k_ed_f][k_part]['video']['geometry'],
+                'shot': db[k_ep][k_ed_f][k_part]['video']['geometry'],
             }
         # else:
             # TODO once the shot geometry will be implemented or use the part

@@ -3,17 +3,19 @@ import sys
 import numpy as np
 from pprint import pprint
 
-from parsers.parser_curves import parse_curves_file
+from parsers.parser_curves import (
+    get_curves_channels_from_db
+)
 
 
 
-def get_lut_from_curves(db, k_ep_or_g, k_curves:str):
+def get_lut_from_curves(db, k_ed, k_ep, k_part, k_curves:str):
     """ This function reads a curve file and
         returns the luts for each RGB channel. Returns None
         if there is a problem with the curve
     """
-    # print("%s:get_lut_from_curves %s, %s" % (__name__, k_ep_or_g, k_curves))
-    rgb_channels = parse_curves_file(db, k_ep_or_g, k_curves)
+    print("%s:get_lut_from_curves %s:%s:%s, %s" % (__name__, k_ed, k_ep, k_part, k_curves))
+    rgb_channels = get_curves_channels_from_db(db, k_ed, k_ep, k_part, k_curves)
     if rgb_channels is None:
         return None
 

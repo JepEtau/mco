@@ -282,13 +282,11 @@ def merge_audio_and_video_tracks(db, k_ep, force=False):
 def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict, force:bool=False):
     cache_directory = db[k_ep]['target']['path_cache']
 
-    k_ed = db[k_ep]['target'][k_part]['k_ed_src']
-
     # Concatenation file
     create_folder_for_concatenation(db, k_ep)
     concatenation_filepath = os.path.join(cache_directory,
         "concatenation",
-        "%s_%s__%s.txt" % (k_ep, k_part, k_ed))
+        "%s_%s.txt" % (k_ep, k_part))
 
     # Output video file
     output_filepath = concatenation_filepath.replace('concatenation', 'video')

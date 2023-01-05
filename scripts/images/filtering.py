@@ -182,7 +182,7 @@ def filter_geometry(frame, img):
     # pprint(frame['geometry'])
     # print(img.shape)
     # if (frame['geometry'] is None
-    # or (frame['geometry']['part'] is None and frame['geometry']['custom'] is None)):
+    # or (frame['geometry']['part'] is None and frame['geometry']['shot'] is None)):
     #     print("Error: no geometry defined, cannot modify the image")
     #     return None
 
@@ -191,11 +191,11 @@ def filter_geometry(frame, img):
     try:
         if 'geometry' in frame.keys() and frame['geometry'] is not None:
             c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
-            if ('custom' in frame['geometry'].keys()
-                and frame['geometry']['custom'] is not None):
+            if ('shot' in frame['geometry'].keys()
+                and frame['geometry']['shot'] is not None):
                 # Use the customized geometry
                 # print("use the customized geometry")
-                c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['custom']['crop'])
+                c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['shot']['crop'])
             else:
                 # Use the part geometry
                 # print:("use the part geometry")

@@ -111,7 +111,7 @@ class Model_geometry():
                             k_ed=k_ed,
                             k_ep=k_ep,
                             k_part=k_part[2:]),
-                'custom': self.get_part_geometry(
+                'shot': self.get_part_geometry(
                             k_ed=db[k_part]['target']['video']['src']['k_ed'],
                             k_ep=db[k_part]['target']['video']['src']['k_ep'],
                             k_part=k_part),
@@ -125,20 +125,20 @@ class Model_geometry():
             shot_geometry = {
                 'part': self.get_part_geometry(
                             k_ed=k_ed_target, k_ep=k_ep_target, k_part=k_part),
-                'custom': None
+                'shot': None
             }
             if shot['k_ed'] != k_ed_target or shot['k_ep'] != k_ep_target:
                 # Use the geometry for this part and use it as a custom
                 # print("\t   shot k_ed:k_ep is <> ref k_ed:k_ep, use %s:%s:%s" % (
                 #     shot['k_ed'], shot['k_ep'], shot['k_part']))
                 shot_geometry.update({
-                    'custom': self.get_part_geometry(
+                    'shot': self.get_part_geometry(
                                 k_ed=shot['k_ed'], k_ep=shot['k_ep'], k_part=shot['k_part']),
                 })
         else:
             shot_geometry = {
                 'part': self.get_part_geometry(k_ed=k_ed, k_ep=k_ep, k_part=k_part),
-                'custom': self.get_custom_geometry(shot=shot),
+                'shot': self.get_custom_geometry(shot=shot),
             }
 
         # print("\tshot_geometry:", shot_geometry)

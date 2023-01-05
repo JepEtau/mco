@@ -72,11 +72,11 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         self.lineEdit_custom_crop_rectangle.clear()
 
-        self.pushButton_custom_crop_edition.toggled[bool].connect(partial(self.event_crop_edition_changed, 'custom'))
-        self.pushButton_custom_crop_preview.toggled[bool].connect(partial(self.event_crop_preview_changed, 'custom'))
-        self.pushButton_custom_resize_preview.toggled[bool].connect(partial(self.event_resize_preview_changed, 'custom'))
-        self.pushButton_custom_resize_edition.toggled[bool].connect(partial(self.event_resize_edition_changed, 'custom'))
-        self.checkBox_custom_keep_ratio.toggled[bool].connect(partial(self.event_keep_ratio_changed, 'custom'))
+        self.pushButton_custom_crop_edition.toggled[bool].connect(partial(self.event_crop_edition_changed, 'shot'))
+        self.pushButton_custom_crop_preview.toggled[bool].connect(partial(self.event_crop_preview_changed, 'shot'))
+        self.pushButton_custom_resize_preview.toggled[bool].connect(partial(self.event_resize_preview_changed, 'shot'))
+        self.pushButton_custom_resize_edition.toggled[bool].connect(partial(self.event_resize_edition_changed, 'shot'))
+        self.checkBox_custom_keep_ratio.toggled[bool].connect(partial(self.event_keep_ratio_changed, 'shot'))
 
         self.label_message.clear()
 
@@ -106,10 +106,10 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.pushButton_part_resize_edition.setChecked(w['part']['resize_edition'])
             self.pushButton_part_resize_preview.setChecked(w['part']['resize_preview'])
 
-            self.pushButton_custom_crop_edition.setChecked(w['custom']['crop_edition'])
-            self.pushButton_custom_crop_preview.setChecked(w['custom']['crop_preview'])
-            self.pushButton_custom_resize_edition.setChecked(w['custom']['resize_edition'])
-            self.pushButton_custom_resize_preview.setChecked(w['custom']['resize_preview'])
+            self.pushButton_custom_crop_edition.setChecked(w['shot']['crop_edition'])
+            self.pushButton_custom_crop_preview.setChecked(w['shot']['crop_preview'])
+            self.pushButton_custom_resize_edition.setChecked(w['shot']['resize_edition'])
+            self.pushButton_custom_resize_preview.setChecked(w['shot']['resize_preview'])
             self.block_signals(False)
 
         except:
@@ -135,7 +135,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         except:
             self.lineEdit_part_crop_rectangle.clear()
 
-        custom_geometry = frame['geometry']['custom']
+        custom_geometry = frame['geometry']['shot']
         try:
             c_t, c_b, c_l, c_r = custom_geometry['crop']
             crop_str = "t: %d, b: %d,  l: %d, r: %d" % (c_t, c_b, c_l, c_r)
@@ -145,18 +145,18 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         # print("\nwidget_%s: refresh_values" % (self.objectName()))
         # pprint(frame)
-        if (frame['geometry']['custom'] is not None
+        if (frame['geometry']['shot'] is not None
             or frame['k_ed'] != frame['src']['k_ed']
             or frame['k_ed'] != frame['src']['k_ed']):
             # custom is enabled
             # or in generique and src are different
-            if self.current_type != 'custom':
+            if self.current_type != 'shot':
                 do_refresh_preview = True
             else:
                 do_refresh_preview = False
 
             # Customized
-            self.current_type = 'custom'
+            self.current_type = 'shot'
             self.groupBox_custom_geometry.show()
             self.setMaximumHeight(100)
             self.adjustSize()
@@ -340,8 +340,8 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                 'resize_edition': self.pushButton_part_resize_edition.isChecked(),
                 'resize_preview': self.pushButton_part_resize_preview.isChecked(),
             },
-            'custom': {
-                'is_enabled': True if self.current_type == 'custom' else False,
+            'shot': {
+                'is_enabled': True if self.current_type == 'shot' else False,
                 'crop_edition': self.pushButton_custom_crop_edition.isChecked(),
                 'crop_preview': self.pushButton_custom_crop_preview.isChecked(),
                 'resize_edition': self.pushButton_custom_resize_edition.isChecked(),
@@ -405,7 +405,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                 self.pushButton_part_resize_preview.blockSignals(True)
                 self.pushButton_part_resize_preview.setChecked(False)
                 self.pushButton_part_resize_preview.blockSignals(False)
-        elif type == 'custom':
+        elif type == 'shot':
             if not self.pushButton_custom_crop_preview.isChecked():
                 self.pushButton_custom_resize_preview.blockSignals(True)
                 self.pushButton_custom_resize_preview.setChecked(False)
@@ -428,7 +428,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                     self.pushButton_part_resize_preview.blockSignals(True)
                     self.pushButton_part_resize_preview.setChecked(False)
                     self.pushButton_part_resize_preview.blockSignals(False)
-            elif type == 'custom':
+            elif type == 'shot':
                 if (self.pushButton_custom_resize_preview.isChecked()
                 and not self.pushButton_custom_crop_edition.isChecked()):
                     self.pushButton_custom_resize_preview.blockSignals(True)
@@ -445,7 +445,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                 self.pushButton_part_crop_preview.blockSignals(True)
                 self.pushButton_part_crop_preview.setChecked(True)
                 self.pushButton_part_crop_preview.blockSignals(False)
-            elif type == 'custom':
+            elif type == 'shot':
                 self.pushButton_custom_crop_preview.blockSignals(True)
                 self.pushButton_custom_crop_preview.setChecked(True)
                 self.pushButton_custom_crop_preview.blockSignals(False)
@@ -465,7 +465,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                 self.pushButton_part_crop_preview.blockSignals(True)
                 self.pushButton_part_crop_preview.setChecked(True)
                 self.pushButton_part_crop_preview.blockSignals(False)
-        elif type == 'custom':
+        elif type == 'shot':
             if (not self.pushButton_custom_crop_preview.isChecked()
             and not self.pushButton_custom_crop_edition.isChecked()):
                 self.pushButton_custom_crop_preview.blockSignals(True)

@@ -376,7 +376,7 @@ class Window_main(Window_common):
                 self.painter.drawImage(
                     QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
             else:
-                type = 'custom' if self.image['geometry']['custom'] is not None else 'part'
+                type = 'shot' if self.image['geometry']['shot'] is not None else 'part'
                 # print("paintEvent: type = %s" % (type))
                 geometry_options = options['geometry'][type]
 
@@ -494,7 +494,7 @@ class Window_main(Window_common):
 
 
 
-                if type == 'custom' and options['geometry']['part']['crop_edition']:
+                if type == 'shot' and options['geometry']['part']['crop_edition']:
                     if geometry_options['resize_preview']:
                         # Image is resized, add the recalculated crop
                         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w_i, h_i,
