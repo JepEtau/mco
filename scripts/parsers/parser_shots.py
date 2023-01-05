@@ -249,7 +249,7 @@ def create_target_shots(database, k_ep, k_part):
 
     if 'start' not in db_video_target.keys() or db_video_target['start'] is None:
         # This was not specified in the target file, so use the one from the source
-        print("part is not declared in target, use the src")
+        print("info: create_target_shots: %s:%s is not declared in target, use the src %s" % (k_ep, k_part, k_ed_src))
         db_video_target.update({
             'start': db_video_src['start'],
             'end': db_video_src['end'],
@@ -316,8 +316,6 @@ def create_target_shots(database, k_ep, k_part):
 
     # Calculate frames count
     shots = db_video_target['shots']
-    print(db_video_target['start'])
-    print(db_video_src['start'])
     if db_video_target['start'] != db_video_src['start']:
         # The 1st shot is shorter in dst
         delta_frames_count = db_video_target['start'] - db_video_src['start']
@@ -405,7 +403,6 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
     """
 
     # Get the default source: edition:episode
-    pprint(db[k_part_g]['target'])
     k_ed_src = db[k_part_g]['target']['video']['src']['k_ed']
     k_ep_src = db[k_part_g]['target']['video']['src']['k_ep']
 
@@ -459,8 +456,8 @@ def create_target_shots_g(db, k_ep, k_part_g) -> None:
         # No shot defined in target, use the src for this.
         # print("\n%s.create_target_shots: consolidate %s:%s, create DST shot" % (__name__, k_ep, k_part))
         # print("------------------------------------------------")
-        print("%s: src: %s:%s" % (k_part_g, k_ep_src, k_ed_src))
-        pprint(db[k_ep_src][k_ed_src])
+        # print("%s: src: %s:%s" % (k_part_g, k_ep_src, k_ed_src))
+        # pprint(db[k_ep_src][k_ed_src])
 
         frame_count = 0
         db_video_target['shots'] = list()

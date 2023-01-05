@@ -12,15 +12,10 @@ from utils.common import (
 def parse_parts_section(db_episode, config, k_ep, verbose=False):
     k_section = 'parts'
 
-    for k_option in config.options(k_section):
-        value_str = config.get(k_section, k_option)
+    for k_part in config.options(k_section):
+        value_str = config.get(k_section, k_part)
         value_str = value_str.replace(' ','')
-        # print("%s, %s => [%s]" % (k_section, k_option, value_str))
-
-        # Parse only supported sections
-        if k_option not in K_PARTS:
-            continue
-        k_part = k_option
+        # print("%s, %s => [%s]" % (k_section, k_part, value_str))
 
         part_fadein = 0
         part_fadeout = 0
@@ -51,17 +46,13 @@ def parse_parts_section(db_episode, config, k_ep, verbose=False):
         if start is None:
             sys.exit("Error: parse_parts_section: start and end values are required for %s:%s in episode file" % (k_ep, k_part))
 
-        db_episode.update({
-            k_part: {
-                'video': {
-                    'effects': {
-                        'fadein': part_fadein,
-                        'fadeout': part_fadeout,
-                    },
-                    'start': start,
-                    'end': end,
-                    'count': (end - start) if end > 0 else -1,
-                }
-            }
+        db_episode[k_part]['video'].update({
+            'effects': {
+                'fadein': part_fadein,
+                'fadeout': part_fadeout,
+            },
+            'start': start,
+            'end': end,
+            'count': (end - start) if end > 0 else -1,
         })
 

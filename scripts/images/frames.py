@@ -103,8 +103,6 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         print("\tUse %s:%s as reference" % (k_ed_ref, k_ep_ref))
         parse_episode(db, k_ed=k_ed_ref, k_ep=k_ep_ref)
         parsed_ed_ep[k_ed_ref] = [k_ep_ref]
-        pprint(parsed_ed_ep)
-
     else:
         try: frame_list = db[k_ep]['common']['frames'][k_part]
         except: return

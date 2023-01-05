@@ -356,13 +356,13 @@ def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int):
         # print("%s.get_k_part_from_frame_no: %d in %s:%s:%s ?" % (__name__, frame_no, k_ed, k_ep, k_p))
         # pprint(db_ep[k_p]['video'])
         if 'start' not in db_ep[k_p]['video'].keys():
-            # print("warning: todo: missing part in database: %s:%s:%s" % (k_ed, k_ep, k_p))
+            print("warning: todo: missing part in database: %s:%s:%s" % (k_ed, k_ep, k_p))
             continue
         start = db_ep[k_p]['video']['start']
         count = db_ep[k_p]['video']['count']
         if start <= frame_no < (start + count):
             return k_p
-    # sys.exit("error: %s.get_k_part_from_frame_no: part not found for frame %d in %s:%s" % (__name__, frame_no, k_ed, k_ep))
+    sys.exit("error: %s.get_k_part_from_frame_no: part not found for frame %d in %s:%s" % (__name__, frame_no, k_ed, k_ep))
     return ''
 
 

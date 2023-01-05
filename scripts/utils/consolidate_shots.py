@@ -29,6 +29,8 @@ def consolidate_target_shots(db, k_ep, k_part:str=''):
         if k_p in ['g_debut', 'g_fin']:
             db_video = db[k_p]['target']['video']
             k_ep_src_main = db[k_p]['target']['video']['src']['k_ep']
+            # pprint(db_video)
+            # print("k_ep_src_main: %s" % (k_ep_src_main))
         elif k_ep == 'ep00':
             sys.exit("Erreur: consolidate_target_shots: le numéro de l'épisode est manquant")
         else:
@@ -186,20 +188,16 @@ def consolidate_shot(db, shot) -> None:
     # pprint(shot)
     # print("------------------------------------------------------------------------------------------------------")
 
-    db_video = db[k_ep][k_ed][k_part]['video']
-
     # Input and dimensions
-    print("consolidate_shot: clean this, use the src structure")
     shot.update({
-        'input': db['editions'][k_ed]['inputs']['video'][k_ep],
-        'dimensions': deepcopy(db['editions'][k_ed]['dimensions']),
+        'input': db[k_ep][k_ed][k_part]['video']['input'],
+        'dimensions': db['editions'][k_ed]['dimensions'],
     })
 
     # Frame ref is used for deinterlace, calculate it: use the offset array
     shot['ref'] = shot['start']
     if k_part in K_GENERIQUES:
         k_ep_target = db[k_part]['target']['video']['src']['k_ep']
-        k_ed_target = db[k_part]['target']['video']['src']['k_ed']
         k_ed_ref = db[k_ep]['target']['video']['k_ed_ref']
     else:
         # pprint(db[k_ep]['target']['video'])
@@ -274,9 +272,12 @@ def consolidate_shot(db, shot) -> None:
         # print("TODO: consolidate_shot: update when replacing the shots in episode")
         k_ep_dst = shot['dst']['k_ep']
         k_part_dst = shot['dst']['k_part']
-        shot['geometry'] = {
-            'part':  db[k_ep_dst][k_ed][k_part_dst]['video']['geometry'],
-        }
+        try:
+            shot['geometry'] = {
+                'part':  db[k_ep_dst][k_ed][k_part_dst]['video']['geometry'],
+            }
+        except:
+            print("info: no geometry defined for %s:%s:%s" % (k_ed, k_ep_dst, k_part_dst))
         if k_ep != k_ep_dst or k_part != k_part_dst:
             shot['geometry'].update({
                 'custom': db[k_ep][k_ed][k_part]['video']['geometry'],

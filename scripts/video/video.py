@@ -119,8 +119,8 @@ def generate_video(db, k_ep:str,
                 print("\t\t\t=> processed shot in %d:%02d" % (minutes, seconds), flush=True)
 
 
-    minutes, seconds = divmod(time.time() - start_shot_time,60)
-    print("=> processed shots in %d:%02d" % (minutes, seconds), flush=True)
+    # minutes, seconds = divmod(time.time() - start_shot_time,60)
+    # print("=> processed shots in %d:%02d" % (minutes, seconds), flush=True)
 
     # Combine images to mkv
     for k_p, files in video_files.items():

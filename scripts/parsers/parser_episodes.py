@@ -200,6 +200,7 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
     # Get config from edition
     db_episode = database[k_ep][k_ed]
 
+
     # Parse configuration
     config = configparser.ConfigParser()
     config.read(filepath)
@@ -233,20 +234,20 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
                                     'g_asuivre',
                                     'g_reportage']:
                         # if 'shots' not in db_episode[k_part]['video'].keys():
-                        db_episode[k_part]['video']['shots'] = list()
+                        db_episode[k_part]['video'].update({'shots': list()})
                         parse_shotlist(db_episode[k_part]['video']['shots'], k_ep, k_part, value_str)
 
                     elif k_section in ['precedemment', 'asuivre']:
                         # Precedemment and asuivre are different as some shots
                         # may be replaced
                         # if 'shots' not in db_episode[k_part]['video'].keys():
-                        db_episode[k_part]['video']['shots'] = list()
+                        db_episode[k_part]['video'].update({'shots': list()})
                         parse_shotlist(db_episode[k_part]['video']['shots'], k_ep, k_part, value_str)
                         # if k_ep == 'ep01' and k_part == 'asuivre':
                         #     pprint(db_episode[k_part]['video']['shots'])
                         #     sys.exit()
 
-        # Frames
+        # Offsets
         #----------------------------------------------------
         if k_section == 'offsets':
 
@@ -269,29 +270,27 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
                         offsets.append({'start': frameStart, 'offset': offset, 'end': 99999999})
                         # print("\t\t\tframeStart=%d, offset=%d" % (frameStart, offset))
 
-                db_episode[k_part]['video']['offsets'] = offsets
-                # print("offsets, ep %d, part %s: " % (episode_no, k_part), offsets)
+                db_episode[k_part]['video'].update({
+                    'offsets': offsets,
+                })
+                # print("offsets, %s, part %s: " % (k_ep, k_part), offsets)
                 # pprint(offsets)
                 # print("TODO: reorder offsets")
 
-        if k_section == 'frames':
-            print("TODO: replace frames by offset in %s" % (filepath))
-
-
     # Copy frames dict from common if not specified in configuration file
-    for k in database[k_ep]['common'].keys():
-        # todo: improve this if other sections are listed in common episode file
-        if k == 'filters':
-            continue
+    # for k in database[k_ep]['common'].keys():
+    #     # todo: improve this if other sections are listed in common episode file
+    #     if k == 'filters':
+    #         continue
 
-        if k not in db_episode.keys():
-            db_episode[k] = {}
-            # Deactivate this to simplify the structure
-            if False:
-                if 'frames' not in cfg_ep[k].keys():
-                    cfg_ep[k]['frames'] = deepcopy(cfg_ep_common[k]['frames'])
-                    for frame in cfg_ep[k]['frames']:
-                        frame['no'] = frame['ref']
+    #     if k not in db_episode.keys():
+    #         db_episode[k] = {}
+    #         # Deactivate this to simplify the structure
+    #         if False:
+    #             if 'frames' not in cfg_ep[k].keys():
+    #                 cfg_ep[k]['frames'] = deepcopy(cfg_ep_common[k]['frames'])
+    #                 for frame in cfg_ep[k]['frames']:
+    #                     frame['no'] = frame['ref']
 
 
     # Set dimensions:
@@ -318,7 +317,7 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
             database[k_ep][k_ed]['filters'][k_part] = parse_filters_initialize(type='default')
 
         if 'filters' not in db_episode[k_part]['video'].keys():
-            db_episode[k_part]['video']['filters'] = 'default'
+            nested_dict_set(db_episode, 'default', k_part, 'video', 'filters')
 
     # Create a default filter for this episode if not specified
     if 'filters' not in database[k_ep]['common'].keys():
@@ -333,9 +332,11 @@ def parse_episode(database, k_ed, k_ep, verbose=False):
         label="[%s:%s]" % (k_ed, k_ep),
         verbose=verbose)
 
+
     # Calculate durations for each parts based on shots duration
     for k_p in K_ALL_PARTS:
         consolidate_shots_after_parse(db=database, k_ep=k_ep, k_part=k_p, k_ed=k_ed)
+
 
     return True
 

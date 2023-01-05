@@ -45,7 +45,6 @@ def extract_audio(db, k_ep_or_g:str, k_ed, force=False, verbose=False) -> str:
         print("%s extract audio stream: %s:%s" % (current_datetime_str(), k_ed, k_ep))
 
     # Input audio file
-    pprint(db[k_ep]['target'])
     if k_ep_or_g in K_GENERIQUES:
         input_filepath = db[k_ep][k_ed][k_ep_or_g]['path']['input_audio']
     else:
@@ -72,13 +71,11 @@ def extract_audio(db, k_ep_or_g:str, k_ed, force=False, verbose=False) -> str:
         print("\tuse file: %s" % (input_filepath))
         return input_filepath
     else:
-        print("\tconvert file: %s -> %s" % (input_filepath, output_filepath))
+        print("\textract audio stream: %s -> %s" % (input_filepath, output_filepath))
         # Create complex filter
         filter_complex_str = ""
         filter_complex_str = filter_complex_str + "[outa]"
         # print("filter_complex_str = %s" % (filter_complex_str))
-
-        print(input_filepath)
 
         # FFmpeg command
         command_ffmpeg = [db['common']['settings']['ffmpeg_exe']]

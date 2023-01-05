@@ -66,8 +66,8 @@ def parse_database(database, k_ep, verbose=False, study_mode=False):
     parse_episodes_target(database, study_mode=study_mode)
     if False:
         print("parse_episodes_target")
-        print("------------------------------------")
-        pprint(database)
+        print("-------------- %s ------------------" % (k_ep))
+        pprint(database[k_ep])
         print("------------------------------------")
         sys.exit()
 
@@ -119,10 +119,18 @@ def parse_database(database, k_ep, verbose=False, study_mode=False):
     if k_ep != 'ep00':
         # Parse episode at first (required to generate dependencies)
         for k_ed_tmp in database['editions']['available']:
+            print("* parse_episode: %s:%s" % (k_ed_tmp, k_ep))
             parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep)
 
         # Get dependencies for this episode
         dependencies_tmp = parse_get_dependencies_for_episodes(database, k_ep)
+
+    if False:
+        print("parse_episode")
+        print("------------------------------------")
+        pprint(database[k_ep])
+        print("------------------------------------")
+        sys.exit()
 
     # Merge dependencies
     for k, v in dependencies_tmp.items():
@@ -139,6 +147,7 @@ def parse_database(database, k_ep, verbose=False, study_mode=False):
             if k_ep_tmp == k_ep:
                 # Do not parse this episode another time
                 continue
+            print("* parse_episode: %s:%s" % (k_ed_tmp, k_ep_tmp))
             parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep_tmp, verbose=verbose)
 
     # Parse other config files for each dependency
@@ -169,6 +178,7 @@ def parse_database(database, k_ep, verbose=False, study_mode=False):
 
         # Consolidate by aligning the A/V tracks of generiques
         align_audio_video_durations_g_debut_fin(database, k_ep='', k_part_g=k_part_g)
+
 
 
 
@@ -262,7 +272,7 @@ def pprint_g_debut_fin(db):
         print("%s" % (tmp_str.rjust(8)), end='')
 
         # video
-        start_str = "%d" % db_video['start']
+        start_str = "%d" % db_video['start'] if "start" in db_video.keys() else "None"
         count_str = "(%d)" % db_video['count']
         print("%s%s" % (start_str.rjust(12), count_str.rjust(8)), end='')
 
