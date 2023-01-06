@@ -248,7 +248,7 @@ def process_shot(db, shot, cpu_count=0):
     # Consolidate shot
     consolidate_shot(db, shot)
 
-    if True:
+    if False:
         # For debug
         # print("---------------- db_common ---------------")
         # pprint(db_common)

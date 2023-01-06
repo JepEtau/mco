@@ -31,7 +31,7 @@ def parse_replace_configurations(db, k_ep_or_g:str, k_ed_only=None):
     if filepath.startswith("~/"):
         filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
     if not os.path.exists(filepath):
-        # print("warning: %s does not exists" % (filepath))
+        # print("warning: %s does not exist" % (filepath))
         return
 
     # Parse the file

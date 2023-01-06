@@ -117,68 +117,6 @@ def get_curves_channels_from_db(db, k_ed, k_ep, k_part, k_curves:str) -> dict:
 
 
 
-def parse_curves_file(db, k_ep_or_g, k_curves:str) -> dict:
-    """ This function reads a curve file and
-        returns a curve object for each channel
-        returns None if there is a problem with the curve file
-    """
-    # print("%s.parse_curves_file: %s, %s" % (__name__, k_ep_or_g, k_curves))
-    library_path = db['common']['directories']['curves']
-    filepath = os.path.join(library_path, k_ep_or_g, "%s.crv" % (k_curves))
-    try:
-        curves_file = open(filepath, 'r')
-    except:
-        print("Error: %s.parse_curves_file: %s, fichier manquant ou erroné: %s" % (__name__, k_ep_or_g, filepath))
-        raise Exception
-    try:
-        rgb_channels = {
-            'r': Curve(),
-            'g': Curve(),
-            'b': Curve(),
-            'm': Curve()
-        }
-        for line in curves_file.readlines():
-            match = re.match("([r|g|b|m])=(.*)", line)
-            k_channel = match.group(1)
-            groups = match.group(2).split(';')
-            rgb_channels[k_channel].remove_all_points()
-            for group in groups:
-                xy = group.split(':')
-                rgb_channels[k_channel].add_point(np.float64(xy[0]),np.float64(xy[1]))
-        curves_file.close()
-    except:
-        sys.exit("Error: cannot load curve file: %s" % (filepath))
-        return None
-
-    return rgb_channels
-
-
-
-def write_curves_file(filepath, channels):
-    """ This function writes a curve file
-    """
-    # filepath = os.path.join(path, k_ep_or_g, "%s.crv" % (curve_name))
-    # if filepath.startswith("~/"):
-    #     filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
-
-    # Write file
-    try:
-        curve_file = open(filepath, 'w')
-    except:
-        os.makedirs(os.path.dirname(filepath))
-        curve_file = open(filepath, 'w')
-
-    # pprint.pprint(curves)
-    for k in ['m', 'r', 'g', 'b']:
-        valueStr = "%s=" % (k)
-        for p in channels[k].points():
-            valueStr += "%.06f:%.06f;" % (p.x(), p.y())
-        valueStr = valueStr[:-1]
-        curve_file.write(valueStr + '\n')
-    curve_file.close()
-
-
-
 def get_initial_curves_selection(db, k_ep, k_part) -> dict:
     # Create a dictionary of curves selection for each shot
     # It uses the shot_src so that this will work when replacing shots
@@ -187,26 +125,28 @@ def get_initial_curves_selection(db, k_ep, k_part) -> dict:
     shot_curves = dict()
 
     # Get the list of editions and episode that are used by this ep/part
-    if k_part in ['g_debut', 'g_fin']:
+    if k_part in K_GENERIQUES:
         db_video = db[k_part]['target']['video']
     else:
         db_video = db[k_ep]['target']['video'][k_part]
 
-    for shot in db_video['shots']:
-        # This shot contains the src data
-        shot_src = shot
-        k_ed_src = shot['k_ed']
-        k_ep_src = shot['k_ep']
-        k_part_src = shot['k_part']
-        shot_start = shot['start']
-
-        # Append to the dict if RGB curves are defined
-        if 'curves' not in shot.keys():
+    for k_ed_src in db['editions']['available']:
+        print("get_initial_curves_selection: get db_video for %s:%s:%s" % (k_ed_src, k_ep, k_part))
+        db_video = db[k_ep][k_ed_src][k_part]['video']
+        if 'shots' not in db_video.keys():
             continue
 
-        if shot['curves'] is not None:
-            nested_dict_set(shot_curves, shot_src['curves'],
-                k_ed_src, k_ep_src, k_part_src, shot_start)
+        for shot in db_video['shots']:
+            shot_src = shot
+            shot_start = shot['start']
+
+            # Append to the dict if RGB curves are defined
+            if 'curves' not in shot.keys():
+                continue
+
+            if shot['curves'] is not None:
+                nested_dict_set(shot_curves, shot_src['curves'],
+                    k_ed_src, k_ep, k_part, shot_start)
 
     # print("get_curves_selection")
     # pprint(shot_curves)
@@ -214,38 +154,7 @@ def get_initial_curves_selection(db, k_ep, k_part) -> dict:
 
 
 
-
-def parse_curves_folder(db, k_ep_or_g):
-    # Curves contained in the curves directory:
-    #  filename, key but do not parse files (will be done dynamically)
-    db_curves = dict()
-
-    path = os.path.join(db['common']['directories']['curves'])
-    if not os.path.exists(path):
-        print("%s does not exist" % (path))
-        return db_curves
-
-    # Walk through this dictory
-    # print("parse_curves_folder: walk through %s" % (os.path.join(path, k_ep_or_g)))
-    if os.path.exists(os.path.join(path, k_ep_or_g)):
-        for f in os.listdir(os.path.join(path, k_ep_or_g)):
-            if f.endswith(".crv"):
-                # Create an element for each curve
-                k_curves = os.path.splitext(f)[0]
-                db_curves[k_curves] = {
-                    'k_curves': k_curves,
-                    'filepath': os.path.join(k_ep_or_g, f),
-                    'channels': None,
-                    'lut': None,
-                    'shots': []
-                }
-
-    return db_curves
-
-
-
-
-def parse_curves_database(db, k_ed, k_ep_or_g:str):
+def parse_curves_database(db, k_ep_or_g:str, k_ed:str=''):
     db_curves = dict()
 
     # Open configuration file
@@ -259,9 +168,14 @@ def parse_curves_database(db, k_ed, k_ep_or_g:str):
     # Parse the file
     config = configparser.ConfigParser()
     config.read(filepath)
-    for k_ed_curves in config.sections():
-        k_ed_db, k_curves = k_ed_curves.split('.')
-        if k_ed_db != k_ed:
+    for k_section in config.sections():
+        if k_ep_or_g in K_GENERIQUES:
+            k_ed_db, k_ep_db, k_curves = k_section.split('.')
+        else:
+            k_ed_db, k_curves = k_section.split('.')
+            k_ep_db = k_ep_or_g
+
+        if k_ed != '' and k_ed_db != k_ed:
             continue
 
         nested_dict_set(db_curves, {
@@ -274,11 +188,11 @@ def parse_curves_database(db, k_ed, k_ep_or_g:str):
             },
             'lut': None,
             'shots': list()
-        }, k_ed, k_ep_or_g, k_curves)
+        }, k_ed_db, k_ep_db, k_curves)
 
-        curves = db_curves[k_ed][k_ep_or_g][k_curves]
+        curves = db_curves[k_ed_db][k_ep_db][k_curves]
         for k_channel in ['r', 'g', 'b', 'm']:
-            points_str = config.get(k_curves, k_channel).replace(' ', '').strip()
+            points_str = config.get(k_section, k_channel).replace(' ', '').strip()
             points = points_str.split(',')
             curves['channels'][k_channel].remove_all_points()
             for point in points:
@@ -286,7 +200,21 @@ def parse_curves_database(db, k_ed, k_ep_or_g:str):
                 curves['channels'][k_channel].add_point(
                     np.float32(xy[0]),np.float32(xy[1]))
 
-    print("parse_curves_database")
-    pprint(db_curves)
-    sys.exit()
+    # print("parse_curves_database")
+    # pprint(db_curves)
+    # sys.exit()
     return db_curves
+
+
+
+def save_curves_database(db, k_ep_or_g:str, k_ed:str=''):
+    print("TODO: save_curves_database")
+
+    # for k in ['m', 'r', 'g', 'b']:
+    #     valueStr = "%s=" % (k)
+    #     for p in channels[k].points():
+    #         valueStr += "%.06f:%.06f;" % (p.x(), p.y())
+    #     valueStr = valueStr[:-1]
+    #     curve_file.write(valueStr + '\n')
+    # curve_file.close()
+

@@ -295,7 +295,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
             else:
                 log.info("current RGB curves are not modified [%s]" % (k_curves))
         else:
-            log.info("missing filename")
+            log.info("missing curves name")
         self.lineEdit_save.clearFocus()
         self.lineEdit_save.blockSignals(False)
 

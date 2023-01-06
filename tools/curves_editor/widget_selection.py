@@ -658,13 +658,16 @@ class Widget_selection(QWidget, Ui_widget_selection):
             row_no += 1
 
         # Enable/Disable save and discard buttons
-        if self.tableWidget_shots.item(self.current_shot_row_no, self.column_count - 1).text() != '':
-            self.pushButton_save_shot_curves_selection.setEnabled(True)
-            self.pushButton_discard_shot_curves_selection.setEnabled(True)
-        else:
-            self.pushButton_save_shot_curves_selection.setEnabled(False)
-            self.pushButton_discard_shot_curves_selection.setEnabled(False)
-
+        try:
+            if self.tableWidget_shots.item(self.current_shot_row_no, self.column_count - 1).text() != '':
+                self.pushButton_save_shot_curves_selection.setEnabled(True)
+                self.pushButton_discard_shot_curves_selection.setEnabled(True)
+            else:
+                self.pushButton_save_shot_curves_selection.setEnabled(False)
+                self.pushButton_discard_shot_curves_selection.setEnabled(False)
+        except:
+                self.pushButton_save_shot_curves_selection.setEnabled(False)
+                self.pushButton_discard_shot_curves_selection.setEnabled(False)
         # To enable "remove curves selection", but does not yet works
         # if self.tableWidget_shots.item(self.current_shot_row_no, self.column_count - 2).text() != '':
         #     self.pushButton_remove_shot_curves_selection.setEnabled(True)

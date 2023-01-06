@@ -20,9 +20,9 @@ DATABASE_PATH = "../database"
 #   Parse common configuration file
 #
 #===========================================================================
-def parse_common_configuration(config_path, verbose=False):
-
-    db_common = dict()
+def parse_common_configuration(db, config_path, verbose=False):
+    db['common'] = dict()
+    db_common = db['common']
 
     # Get directories configuration file
     #=============================================================================
@@ -209,7 +209,5 @@ def parse_common_configuration(config_path, verbose=False):
     # #===========================================================================
     # for k in db_common['dimensions'].keys():
     #     db_common['dimensions'][k] = int(db_common['dimensions'][k])
-
-    return db_common
 
 

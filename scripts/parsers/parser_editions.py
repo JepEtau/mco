@@ -52,7 +52,8 @@ def parse_editions(database, cfg_foldername="../database", verbose=False):
     db_common = database['common']
 
     mkv_foldername = db_common['directories']['inputs']
-    db_editions = dict()
+    database['editions'] = dict()
+    db_editions = database['editions']
     available_editions = list()
 
     # Get directory path
@@ -197,7 +198,4 @@ def parse_editions(database, cfg_foldername="../database", verbose=False):
 
     # Set the edition used as the ereference for the calculation of the frame no.
     db_editions['k_ed_ref'] = database['common']['reference']['edition']
-
-
-    return db_editions
 

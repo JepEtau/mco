@@ -20,9 +20,7 @@ from utils.common import (
     nested_dict_set,
 )
 from parsers.parser_curves import (
-    parse_curves_file,
-    parse_curves_folder,
-    write_curves_file,
+    parse_curves_database,
     get_initial_curves_selection,
 )
 
@@ -39,17 +37,11 @@ class Model_curves():
 
 
     def initialize_db_for_curves(self, db, k_ep, k_part):
+        print("Model_curves:initialize_db_for_curves")
         # This function is used by the video editor
         # which uses the consolidated shots
         self.initialize_curves_library(db=db, k_ep=k_ep, k_part=k_part)
-        if k_ep.startswith('ep'):
-            # if k_part in ['g_asuivre', 'g_reportage']:
-            #     k_ep_ref = db[k_part]['target']['video']['src']['k_ep']
-            #     self.db_curves_selection_initial = get_initial_curves_selection(db, k_ep=k_ep_ref, k_part=k_part)
-            # else:
-            self.db_curves_selection_initial = get_initial_curves_selection(db, k_ep=k_ep, k_part=k_part)
-        else:
-            self.db_curves_selection_initial = get_initial_curves_selection(db, k_ep=k_ep, k_part=k_part)
+        self.db_curves_selection_initial = get_initial_curves_selection(db, k_ep=k_ep, k_part=k_part)
         self.db_curves_selection = dict()
 
 
@@ -74,9 +66,9 @@ class Model_curves():
 
     def initialize_curves_library(self, db, k_ep, k_part):
         if k_part in K_GENERIQUES:
-            self.db_curves_library_initial = parse_curves_folder(db=db, k_ep_or_g=k_part)
+            self.db_curves_library_initial = parse_curves_database(db=db, k_ep_or_g=k_part)
         else:
-            self.db_curves_library_initial = parse_curves_folder(db=db, k_ep_or_g=k_ep)
+            self.db_curves_library_initial = parse_curves_database(db=db, k_ep_or_g=k_ep)
         self.db_curves_library = dict()
 
 
@@ -88,22 +80,25 @@ class Model_curves():
         k_part = shot['k_part']
         shot_start = shot['start']
         # print("model: self.db_curves_selection_initial %s:%s:%s:%s" % (k_ed, k_ep, k_part, shot_start))
-        try: shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
+        try:
+            shot_curves = self.db_curves_selection[k_ed][k_ep][k_part][shot_start]
         except:
-            try: shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_start]
-            except: return None
+            try:
+                shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_start]
+            except:
+                return None
 
         if 'k_curves' not in shot_curves.keys() or shot_curves['k_curves'] == '':
             # This shot uses new RGB curves which are not yet been saved in the library
             return shot_curves
 
         # Get the curves from the library
-        k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
-        curves = self.get_curves(db, k_ep_or_g, shot_curves['k_curves'])
+        curves = self.get_curves(db, k_ed, k_ep, shot_curves['k_curves'])
         return curves
 
 
     def set_shot_rgb_channels(self, shot, rgb_channels):
+        # pprint(shot)
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
@@ -161,8 +156,7 @@ class Model_curves():
         shot_no = shot['no']
 
         # Get the curves from the library
-        k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
-        curves = self.get_curves(db, k_ep_or_g, k_curves)
+        curves = self.get_curves(db, k_ed, k_ep, k_curves)
 
         # Set the modified shot curves
         nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_start)
@@ -173,8 +167,10 @@ class Model_curves():
                 shotlist.remove(shot_no)
                 break
             except: pass
-        try: self.shots_per_curves[k_curves].append(shot_no)
-        except: self.shots_per_curves[k_curves] = [shot_no]
+        try:
+            self.shots_per_curves[k_curves].append(shot_no)
+        except:
+            self.shots_per_curves[k_curves] = [shot_no]
 
         self.is_curves_selection_db_modified = True
 
@@ -259,55 +255,53 @@ class Model_curves():
 
 
     # RGB curves library
-    def get_library_curves(self):
+    def get_library_curves(self, k_ed, k_ep) -> list:
         curves_library = dict()
-        for k in self.db_curves_library_initial.keys():
-            if k in self.db_curves_library.keys():
-                # These curves are modified or deleted
-                if not 'deleted' in self.db_curves_library[k].keys():
+        # Get k_curves from initial db
+        try:
+            k_curves_list = list(self.db_curves_library_initial[k_ed][k_ep].keys())
+            curves_library = {k_curves:False for k_curves in k_curves_list}
+        except:
+            pass
+
+        # Get k_curves from modified db
+        try:
+            for k_curves, curves in self.db_curves_library[k_ed][k_ep].items():
+                if not 'deleted' in curves:
                     # These curves are modified
-                    curves_library[k] = True
-            else:
-                curves_library[k] = False
+                    curves_library[k_curves] = True
+        except:
+            pass
+
         return curves_library
 
 
 
-    def get_curves(self, db, k_ep_or_g:str, k_curves:str):
-        # Find these curves in the libraries
-        try: curves = self.db_curves_library[k_curves]
+    def get_curves(self, db, k_ed:str, k_ep:str, k_curves:str):
+        # Find these curves in the curves library
+        try:
+            curves = self.db_curves_library[k_ed][k_ep][k_curves]
         except:
-            try: curves = self.db_curves_library_initial[k_curves]
-            except: curves = None
+            try:
+                curves = self.db_curves_library_initial[k_ed][k_ep][k_curves]
+            except:
+                curves = None
 
-        # If not found, add these curves to the library as it may be not in the same k_ep
+        # If not found, add these curves to the library
         if curves is None:
             # Create a curve structure
             library_path = db['common']['directories']['curves']
-            self.db_curves_library_initial[k_curves] = {
-                    'k_curves': k_curves,
-                    'filepath': os.path.join(library_path, k_ep_or_g, "%s.crv" % (k_curves)),
-                    'channels': None,
-                    'lut': None,
-                    'shots': []
-            }
-            curves = self.db_curves_library_initial[k_curves]
+            nested_dict_set(self.db_curves_library_initial, {
+                'k_curves': k_curves,
+                'channels': None,
+                'lut': None,
+                'shots': []
+            }, k_ed, k_ep, k_curves)
+            curves = self.db_curves_library_initial[k_ed][k_ep][k_curves]
 
-        # Parse the file if not already done
-        if curves['channels'] is None:
-            # print("parse %s.crv file" % (k_curves))
-            curves['channels'] = parse_curves_file(
-                db=db,
-                k_ep_or_g=k_ep_or_g,
-                k_curves=k_curves)
+        if curves['lut'] is None:
+            curves['lut'] = calculate_channel_lut(curves['channels'])
 
-        if curves['channels'] is None:
-            # The curves file has not been found
-            log.warning("The curves have not been found")
-            curves = None
-        else:
-            if curves['lut'] is None:
-                curves['lut'] = calculate_channel_lut(curves['channels'])
         return curves
 
 

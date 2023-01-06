@@ -42,7 +42,7 @@ from utils.common import get_dimensions_from_crop_values
 #     if method == 'edsr':
 #         edsr_2x_filepath = "EDSR_x2.pb"
 #         # if not os.path.exists(edsr_2x_filepath):
-#         #     print("error: %s does not exists" % (edsr_2x_filepath))
+#         #     print("error: %s does not exist" % (edsr_2x_filepath))
 #         # else:
 #         #     print("info: %s found" % (edsr_2x_filepath))
 
@@ -53,7 +53,7 @@ from utils.common import get_dimensions_from_crop_values
 #     elif method == 'espcn':
 #         espcn_2x_filepath = "ESPCN_x2.pb"
 #         # if not os.path.exists(espcn_2x_filepath):
-#         #     print("error: %s does not exists" % (espcn_2x_filepath))
+#         #     print("error: %s does not exist" % (espcn_2x_filepath))
 #         # else:
 #         #     print("info: %s found" % (espcn_2x_filepath))
 
@@ -66,7 +66,7 @@ from utils.common import get_dimensions_from_crop_values
 #         fsrcnn_2x_filepath = "FSRCNN_x2.pb"
 
 #         # if not os.path.exists(fsrcnn_2x_filepath):
-#         #     print("error: %s does not exists" % (fsrcnn_2x_filepath))
+#         #     print("error: %s does not exist" % (fsrcnn_2x_filepath))
 #         # else:
 #         #     print("info: %s found" % (fsrcnn_2x_filepath))
 

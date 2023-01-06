@@ -43,7 +43,7 @@ from utils.time_conversions import ms_to_frames
 def parse_database(database, k_ep, verbose=False, study_mode=False):
 
     # Parse and merge dictionaries -> common configuration
-    database['common'] = parse_common_configuration(PATH_DATABASE, verbose=verbose)
+    parse_common_configuration(PATH_DATABASE, verbose=verbose)
     if False:
         print("parse_common_configuration")
         print("------------------------------------")
@@ -53,7 +53,7 @@ def parse_database(database, k_ep, verbose=False, study_mode=False):
 
 
     # Parse editions: folders, files and additional settings: dimension
-    database['editions'] = parse_editions(database, verbose=verbose)
+    parse_editions(database, verbose=verbose)
     if False:
         print("parse_editions")
         print("------------------------------------")

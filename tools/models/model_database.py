@@ -99,17 +99,13 @@ class Model_database(Model_geometry,
         self.db_stabilize_shots_parameters = dict()
         self.is_stabilize_db_modified = False
 
-        self.initial_database['common'] = parse_common_configuration(PATH_DATABASE)
+        parse_common_configuration(self.initial_database, PATH_DATABASE)
 
         # Discard replace to have the initial list of frames
         self.initial_database['common']['options']['discard_tasks'].append('replace')
-
-        k_ed_ref = self.initial_database['common']['reference']['edition']
-        print("Model_database: todo, edition is set to the first one, correct this ASAP")
-        k_ed=self.k_editions[0]
+        parse_editions(self.initial_database)
 
         self.k_editions = self.initial_database['editions']['available']
-        self.initial_database['editions'] = parse_editions(self.initial_database, k_ed=k_ed, k_ed_ref=k_ed_ref)
         parse_episodes_target(self.initial_database)
 
         for k_ed in self.k_editions:
@@ -144,7 +140,7 @@ class Model_database(Model_geometry,
                                 do_parse_curves:bool=True,
                                 do_parse_replace:bool=True,
                                 do_parse_geometry:bool=True):
-        # print("%s:consolidate_database %s:%s" % (__name__, k_ep, k_part))
+        print("%s:consolidate_database %s:%s" % (__name__, k_ep, k_part))
         if k_ep == '' and k_part == '':
             return
 

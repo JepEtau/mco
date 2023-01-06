@@ -48,7 +48,7 @@ def parse_stabilize_configurations(db, k_ep_or_g:str, parse_parameters=False):
     if filepath.startswith("~/"):
         filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
     if not os.path.exists(filepath):
-        # print("warning: %s does not exists" % (filepath))
+        # print("warning: %s does not exist" % (filepath))
         return
 
     # Parse the file

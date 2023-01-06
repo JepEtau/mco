@@ -120,7 +120,7 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
     #     k_ed_src = k_ed
 
     for frame in frame_list:
-        print(frame)
+        # print(frame)
 
         do_append_geometry = False
         if k_ed != '':
@@ -145,7 +145,7 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
                     is_found = True
                     break
             if not is_found:
-                print("shot not found for frame %d in reference: %s:%s:%s" % (frame_no, k_ed_ref, k_ep, k_part))
+                print("consolidate_frame_list_for_study: shot not found for frame %d in reference: %s:%s:%s" % (frame_no, k_ed_ref, k_ep, k_part))
                 continue
 
             # Get the shot no.

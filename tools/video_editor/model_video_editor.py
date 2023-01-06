@@ -299,7 +299,7 @@ class Model_video_editor(Model_common):
             })
 
         self.model_database.initialize_shots_per_curves(self.shots)
-        self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+        self.signal_curves_library_modified.emit(self.model_database.get_library_curves(k_ed_selected, k_ep_selected))
         self.signal_shotlist_modified.emit(self.current_selection)
 
 
@@ -413,16 +413,15 @@ class Model_video_editor(Model_common):
 
     def event_discard_rgb_curves_modifications(self, k_curves:str):
         self.model_database.discard_rgb_curves_modifications(k_curves)
-        k_part = self.current_selection['k_part']
-        k_ep = self.current_selection['k_ep']
+        k_ed = self.current_frame['k_ed']
+        k_ep = self.current_frame['k_ep']
 
         # Get the initial curves
         curves = self.model_database.get_curves(self.model_database.database(),
-            k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep,
-            k_curves=k_curves)
+            k_ed=k_ed, k_ep=k_ep, k_curves=k_curves)
 
         # Send the list of curves
-        self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+        self.signal_curves_library_modified.emit(self.model_database.get_library_curves(k_ed, k_ep))
 
         # Reload curves
         self.signal_load_curves.emit(curves)
@@ -437,12 +436,13 @@ class Model_video_editor(Model_common):
         #     return
 
         k_part = self.current_frame['k_part']
+        k_ed = self.current_frame['k_ed']
         k_ep = self.current_frame['k_ep']
         self.model_database.save_rgb_curves_as(
             db=self.model_database.database(),
             k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep,
             curves=curves)
-        self.signal_curves_library_modified.emit(self.model_database.get_library_curves())
+        self.signal_curves_library_modified.emit(self.model_database.get_library_curves(k_ed, k_ep))
 
         # Modify the current selection
         if curves['k_curves_new'] is not None:
