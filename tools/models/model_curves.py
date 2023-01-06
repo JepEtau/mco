@@ -86,12 +86,10 @@ class Model_curves():
             try:
                 shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_start]
             except:
-                print("shot not found")
                 return None
 
         if 'k_curves' not in shot_curves.keys() or shot_curves['k_curves'] == '':
             # This shot uses new RGB curves which are not yet been saved in the library
-            print("no rgb curves or not saved")
             return shot_curves
 
         # Get the curves from the library
@@ -112,7 +110,6 @@ class Model_curves():
             try:
                 shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_start]
             except:
-                print("these curves does not exist: create an empty one in the db_shot")
                 curves = ({
                     'k_curves': '',
                     'channels': deepcopy(rgb_channels),
@@ -125,7 +122,6 @@ class Model_curves():
 
         if shot_curves['k_curves'] == '':
             # Curves is not yet saved in library
-            print("set_shot_rgb_channels: create new curves")
             self.db_curves_selection[k_ed][k_ep][k_part][shot_start].update({
                 'channels': deepcopy(rgb_channels),
                 'lut': calculate_channel_lut(rgb_channels),

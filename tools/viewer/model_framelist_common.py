@@ -71,7 +71,6 @@ class Model_framelist_common(object):
 
 
     def get_frame(self, image_name=''):
-        log.info("Model_framelist_common:get_frame")
         if image_name == '':
             return None
         if image_name not in self.frames.keys():

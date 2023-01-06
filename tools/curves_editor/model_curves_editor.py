@@ -561,7 +561,7 @@ class Model_curves_editor(Model_common):
             shot_list = self.model_curves.get_shots_per_curves(frame['curves']['k_curves'])
             self.signal_shot_per_curves_modified.emit(shot_list)
         except:
-            log.info("no curves to load")
+            # log.info("no curves to load")
             self.signal_load_curves.emit(None)
             self.signal_shot_per_curves_modified.emit(None)
 
