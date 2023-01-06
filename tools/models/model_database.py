@@ -139,7 +139,8 @@ class Model_database(Model_geometry,
     def consolidate_database(self, k_ep, k_part,
                                 do_parse_curves:bool=True,
                                 do_parse_replace:bool=True,
-                                do_parse_geometry:bool=True):
+                                do_parse_geometry:bool=True,
+                                do_parse_stabilization:bool=False):
         print("%s:consolidate_database %s:%s" % (__name__, k_ep, k_part))
         if k_ep == '' and k_part == '':
             return
@@ -185,8 +186,8 @@ class Model_database(Model_geometry,
             for k_ed_tmp, v in dependencies.items():
                 print(k_ed_tmp)
                 for k_ep_tmp in dependencies[k_ed_tmp]:
-                    print(k_ep_tmp)
-                    parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep_tmp, parse_parameters=True)
+                    if do_parse_stabilization:
+                        parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep_tmp, parse_parameters=True)
 
                     if do_parse_curves:
                         parse_curve_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
@@ -196,7 +197,8 @@ class Model_database(Model_geometry,
                     if do_parse_geometry:
                         parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
 
-            parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep, parse_parameters=True)
+            if do_parse_stabilization:
+                parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep, parse_parameters=True)
             if do_parse_curves:
                 parse_curve_configurations(self.global_database, k_ep_or_g=k_ep)
             if do_parse_replace:
@@ -224,12 +226,7 @@ class Model_database(Model_geometry,
             align_audio_video_durations(self.global_database, k_ep=k_ep)
 
             # Consolidate each shot for the target
-            consolidate_target_shots(
-                db=self.global_database,
-                k_ed='',
-                k_ep=k_ep,
-                k_part=k_part,
-            )
+            consolidate_target_shots(db=self.global_database, k_ep=k_ep, k_part=k_part)
 
 
             if k_part != '':
@@ -247,12 +244,13 @@ class Model_database(Model_geometry,
                         self.db_part_geometry_initial = get_initial_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
                     self.db_part_geometry = dict()
 
-                # Stabilization
-                self.db_stabilize_shots_parameters_initial = get_shots_stabilize_parameters(self.global_database, k_ep=k_ep, k_part=k_part)
-                self.db_stabilize_shots_parameters = dict()
+                if do_parse_stabilization:
+                    # Stabilization
+                    self.db_stabilize_shots_parameters_initial = get_shots_stabilize_parameters(self.global_database, k_ep=k_ep, k_part=k_part)
+                    self.db_stabilize_shots_parameters = dict()
 
-                self.db_stabilize_frames_initial = get_frames_stabilize(self.global_database, k_ep=k_ep, k_part=k_part)
-                self.db_stabilize_frames = dict()
+                    self.db_stabilize_frames_initial = get_frames_stabilize(self.global_database, k_ep=k_ep, k_part=k_part)
+                    self.db_stabilize_frames = dict()
 
                 # Custom geometry after stabilization
                 self.db_st_geometry_initial = get_shots_st_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
