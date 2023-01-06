@@ -109,6 +109,11 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
     def is_active(self):
         return self.is_widget_active
 
+
+    def refresh_values(self, frame:dict):
+        pass
+
+
     def event_curves_library_modified(self, curves_library:dict):
         # curves_library is a simplified library which indicates if the curves are modified
         log.info("refresh the list of available curves")
@@ -117,10 +122,10 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
 
         # Save previous curve name
         saved_k_curves = ''
-        if len(self.list_curves.selectedIndexes()) != 0:
-            if self.list_curves.currentItem() is not None:
-                saved_k_curves = self.list_curves.currentItem().text().replace('*', '')
-                log.info("  save current k_curves [%s]" % (saved_k_curves))
+        # if len(self.list_curves.selectedIndexes()) != 0:
+        if self.list_curves.currentItem() is not None:
+            saved_k_curves = self.list_curves.currentItem().text().replace('*', '')
+            log.info("  save current k_curves [%s]" % (saved_k_curves))
 
         # Refresh the list of curves
         self.list_curves.clear()
@@ -172,6 +177,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
 
 
     def event_curves_selected(self, curves):
+        # log.info("selected k_curves [%s]" % (curves['k_curves']))
         # deselect current curves before selecting a new one
         self.deselect_current_k_curves()
         if curves is None:
@@ -187,7 +193,8 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
                 if len(items) != 0:
                     items[0].setSelected(True)
                     self.list_curves.setCurrentItem(items[0])
-
+                else:
+                    log.error("%s is not found" % (k_curves))
                 self.previous_selected_k_curves = k_curves
         except:
             # No curves loaded
@@ -199,6 +206,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
 
 
     def event_curves_selection_changed(self):
+        log.info("select new curves for this shot")
         if len(self.list_curves.selectedIndexes()) == 0:
             self.list_curves.blockSignals(True)
             self.list_curves.currentItem().setSelected(True)
@@ -231,8 +239,10 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
             k_curves = self.list_curves.currentItem().text()
             if is_modified and not k_curves.startswith('*'):
                 self.list_curves.currentItem().setText("*%s" % (k_curves))
+                self.list_curves.currentItem().setSelected(True)
             elif not is_modified:
                 self.list_curves.currentItem().setText(k_curves.replace('*', ''))
+                self.list_curves.currentItem().setSelected(True)
             self.list_curves.blockSignals(False)
         except:
             # Empty curves
@@ -267,8 +277,10 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
         self.lineEdit_save.blockSignals(True)
 
         # Get the current selected k_curves
-        try: k_curves = self.list_curves.currentItem().text()
-        except: k_curves = ''
+        try:
+            k_curves = self.list_curves.currentItem().text()
+        except:
+            k_curves = ''
 
         k_curves_new = self.lineEdit_save.text()
         if len(k_curves_new) > 0:

@@ -157,6 +157,7 @@ class Window_main(Window_common):
 
             # Update info in the other widgets
             for e, w in self.widgets.items():
+                print("%s" % (w.objectName()))
                 w.refresh_values(frame)
 
         self.repaint()

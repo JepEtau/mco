@@ -111,8 +111,8 @@ class Model_curves_editor(Model_common):
         self.view.widget_selection.signal_remove_curves_selection_requested.connect(self.event_remove_curves_selection_requested)
 
         self.view.widget_curves.widget_rgb_graph.signal_graph_modified[dict].connect(self.event_rgb_graph_modified)
-        self.view.widget_curves.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
         self.view.widget_curves.signal_save_rgb_curves_as[dict].connect(self.event_save_rgb_curves_as)
+        self.view.widget_curves.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
         self.view.widget_curves.widget_curves_selection.signal_save_curves_selection_requested.connect(self.event_save_curves_selection_requested)
         self.view.widget_curves.widget_curves_selection.signal_discard_curves[str].connect(self.event_discard_rgb_curves_modifications)
 
@@ -425,6 +425,7 @@ class Model_curves_editor(Model_common):
 
 
     def event_rgb_graph_modified(self, rgb_channels):
+        # log.info("RGB graph modified")
         shot = self.framelist.get_shot_from_frame(self.current_frame)
         self.model_curves.set_shot_rgb_channels(shot=shot, rgb_channels=rgb_channels)
         self.signal_reload_frame.emit()
@@ -443,7 +444,7 @@ class Model_curves_editor(Model_common):
             k_ed=k_ed, k_ep=k_ep, k_curves=k_curves)
 
         # Send the list of curves
-        self.signal_curves_library_modified.emit(self.model_curves.get_library_curves())
+        self.signal_curves_library_modified.emit(self.model_curves.get_library_curves(k_ed, k_ep))
 
         # Reload curves
         self.signal_load_curves.emit(curves)
@@ -458,13 +459,12 @@ class Model_curves_editor(Model_common):
         #     log.error("No name defined in the curves struct")
         #     return
 
-        k_part = self.current_frame['k_part']
+        k_ed = self.current_frame['k_ed']
         k_ep = self.current_frame['k_ep']
-        self.model_curves.save_rgb_curves_as(
-            db=self.model_database.database(),
-            k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep,
-            curves=curves)
-        self.signal_curves_library_modified.emit(self.model_curves.get_library_curves())
+        k_part = self.current_frame['k_part']
+        self.model_curves.append_curves_to_database(db=self.model_database.database(),
+            k_ed=k_ed, k_ep=k_ep, k_part=k_part, curves=curves)
+        self.signal_curves_library_modified.emit(self.model_curves.get_library_curves(k_ed, k_ep))
 
         # Modify the current selection
         if curves['k_curves_new'] is not None:
@@ -476,9 +476,11 @@ class Model_curves_editor(Model_common):
     def event_save_curves_selection_requested(self):
         log.info("save curves selection")
         # Save the curves selected for this shot
+        print("event_save_curves_selection_requested")
         shot = self.framelist.get_shot_from_frame(self.current_frame)
 
         if shot['modifications']['curves']['new'] is None:
+            print("\tnot modified")
             return
 
         # print("event_save_curves_selection_requested %s:%s:%s:%d" % (k_ed, k_ep, k_part, shot_no))
@@ -515,7 +517,7 @@ class Model_curves_editor(Model_common):
 
 
     def get_frame_from_name(self, image_name=''):
-        log.info("image_name=%s" % (image_name))
+        # log.info("image_name=%s" % (image_name))
         if image_name == 'reload':
             try:
                 image_name = self.current_frame['filename']
@@ -538,17 +540,23 @@ class Model_curves_editor(Model_common):
 
         # Curves library
         if self.current_frame is None or frame['k_ed'] != self.current_frame['k_ed']:
-            print("edition changed, reload curves library")
+            if self.current_frame is None:
+                print("edition changed, reload curves library None->%s" % (frame['k_ed']))
+                log.info("edition changed, reload curves library None->%s" % (frame['k_ed']))
+            else:
+                print("edition changed, reload curves library %s->%s" % (self.current_frame['k_ed'], frame['k_ed']))
+                log.info("edition changed, reload curves library %s->%s" % (self.current_frame['k_ed'], frame['k_ed']))
             curves_library = self.model_curves.get_library_curves(frame['k_ed'], frame['k_ep'])
             self.signal_curves_library_modified.emit(curves_library)
 
         # Update curves and load it into the graph
         frame['curves'] = self.model_curves.get_shot_curves_selection(db=self.model_database.database(),
             shot=shot)
+        # pprint(frame)
 
         # Load curves, force for each frame even if previous was using the same
         try:
-            log.info("load_curves frame curves")
+            # log.info("load_curves frame curves")
             self.signal_load_curves.emit(frame['curves'])
             shot_list = self.model_curves.get_shots_per_curves(frame['curves']['k_curves'])
             self.signal_shot_per_curves_modified.emit(shot_list)

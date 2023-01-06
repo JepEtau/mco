@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
+import collections
 import configparser
 import os
 import os.path
@@ -10,7 +11,6 @@ from pathlib import (
     PosixPath,
 )
 from pprint import pprint
-import re
 
 from images.curve import Curve
 from utils.common import (
@@ -166,9 +166,9 @@ def parse_curves_database(db, k_ep_or_g:str, k_ed:str=''):
         return db_curves
 
     # Parse the file
-    config = configparser.ConfigParser()
-    config.read(filepath)
-    for k_section in config.sections():
+    config_curves_db = configparser.ConfigParser()
+    config_curves_db.read(filepath)
+    for k_section in config_curves_db.sections():
         if k_ep_or_g in K_GENERIQUES:
             k_ed_db, k_ep_db, k_curves = k_section.split('.')
         else:
@@ -192,7 +192,7 @@ def parse_curves_database(db, k_ep_or_g:str, k_ed:str=''):
 
         curves = db_curves[k_ed_db][k_ep_db][k_curves]
         for k_channel in ['r', 'g', 'b', 'm']:
-            points_str = config.get(k_section, k_channel).replace(' ', '').strip()
+            points_str = config_curves_db.get(k_section, k_channel).replace(' ', '').strip()
             points = points_str.split(',')
             curves['channels'][k_channel].remove_all_points()
             for point in points:
@@ -207,14 +207,18 @@ def parse_curves_database(db, k_ep_or_g:str, k_ed:str=''):
 
 
 
+
+
+
+
 def save_curves_database(db, k_ep_or_g:str, k_ed:str=''):
     print("TODO: save_curves_database")
 
     # for k in ['m', 'r', 'g', 'b']:
-    #     valueStr = "%s=" % (k)
+    #     value_str = "%s=" % (k)
     #     for p in channels[k].points():
-    #         valueStr += "%.06f:%.06f;" % (p.x(), p.y())
-    #     valueStr = valueStr[:-1]
-    #     curve_file.write(valueStr + '\n')
+    #         value_str += "%.06f:%.06f;" % (p.x(), p.y())
+    #     value_str = value_str[:-1]
+    #     curve_file.write(value_str + '\n')
     # curve_file.close()
 

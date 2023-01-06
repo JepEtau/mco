@@ -86,10 +86,12 @@ class Model_curves():
             try:
                 shot_curves = self.db_curves_selection_initial[k_ed][k_ep][k_part][shot_start]
             except:
+                print("shot not found")
                 return None
 
         if 'k_curves' not in shot_curves.keys() or shot_curves['k_curves'] == '':
             # This shot uses new RGB curves which are not yet been saved in the library
+            print("no rgb curves or not saved")
             return shot_curves
 
         # Get the curves from the library
@@ -98,7 +100,6 @@ class Model_curves():
 
 
     def set_shot_rgb_channels(self, shot, rgb_channels):
-        # pprint(shot)
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
@@ -124,6 +125,7 @@ class Model_curves():
 
         if shot_curves['k_curves'] == '':
             # Curves is not yet saved in library
+            print("set_shot_rgb_channels: create new curves")
             self.db_curves_selection[k_ed][k_ep][k_part][shot_start].update({
                 'channels': deepcopy(rgb_channels),
                 'lut': calculate_channel_lut(rgb_channels),
@@ -133,7 +135,7 @@ class Model_curves():
             return
 
         # Modify the curves in the library
-        is_modified = self.set_curves(k_curves=shot_curves['k_curves'], rgb_channels=rgb_channels)
+        is_modified = self.set_curves(k_ed, k_ep, k_curves=shot_curves['k_curves'], rgb_channels=rgb_channels)
         if not is_modified:
             # No curves found for this k_curves, create a new one in the shot
             curves = ({
@@ -289,8 +291,8 @@ class Model_curves():
 
         # If not found, add these curves to the library
         if curves is None:
+            print("get_curves: add to the library")
             # Create a curve structure
-            library_path = db['common']['directories']['curves']
             nested_dict_set(self.db_curves_library_initial, {
                 'k_curves': k_curves,
                 'channels': None,
@@ -306,14 +308,15 @@ class Model_curves():
 
 
 
-    def set_curves(self, k_curves:str, rgb_channels):
+    def set_curves(self, k_ed, k_ep, k_curves:str, rgb_channels):
         try:
-            curves = self.db_curves_library[k_curves]
+            curves = self.db_curves_library[k_ed][k_ep][k_curves]
         except:
             try:
-                # print("set_curves: copy from initial to modified")
-                self.db_curves_library[k_curves] = deepcopy(self.db_curves_library_initial[k_curves])
-                curves = self.db_curves_library[k_curves]
+                nested_dict_set(self.db_curves_library,
+                    deepcopy(self.db_curves_library_initial[k_ed][k_ep][k_curves]),
+                    k_ed, k_ep, k_curves)
+                curves = self.db_curves_library[k_ed][k_ep][k_curves]
             except:
                 # print("[%s] does not exists neither in library not in initial library" % (k_curves))
                 return False
@@ -338,41 +341,72 @@ class Model_curves():
 
 
 
-    def save_all_curves(self, k_ep_or_g):
-        for curves in self.db_curves_library.values():
-            self.save_curves_as(k_ep_or_g=k_ep_or_g, curves=curves)
+    # def save_all_curves(self, k_ep_or_g):
+    #     for curves in self.db_curves_library.values():
+    #         self.save_curves_as(k_ep_or_g=k_ep_or_g, curves=curves)
 
 
 
-    def save_rgb_curves_as(self, db, k_ep_or_g, curves):
+    def append_curves_to_database(self, db, k_ed, k_ep, k_part, curves):
         k_curves_current = curves['k_curves_current']
         log.info("Try removing [%s] from modified db" % (k_curves_current))
         try:
             # Remove from modified db
-            del self.db_curves_library[k_curves_current]
+            del self.db_curves_library[k_ed][k_ep][k_curves_current]
         except:
             # These curves were not modified
             pass
 
         # Append these curves in the initial db
-        k_curves_new = k_curves_current if curves['k_curves_new'] is None else curves['k_curves_new']
-        log.info("Append %s to the db" % (k_curves_new))
-        filepath = os.path.join(
-            db['common']['directories']['curves'],
-            k_ep_or_g,
-            "%s.crv" % (k_curves_new))
-        log.info("write curves file as [%s]" % (filepath))
-        write_curves_file(filepath=filepath, channels=curves['channels'])
+        k_curves = k_curves_current if curves['k_curves_new'] is None else curves['k_curves_new']
+        log.info("Append %s to the db" % (k_curves))
+
+        # Open configuration file
+        if k_part in K_GENERIQUES:
+            filepath = os.path.join(db['common']['directories']['config'], k_part, "%s_curves_db.ini" % (k_part))
+        else:
+            filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_curves_db.ini" % (k_ep))
+
+        if filepath.startswith("~/"):
+            filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+
+        # Parse the file
+        if os.path.exists(filepath):
+            config_curves_db = configparser.ConfigParser()
+            config_curves_db.read(filepath)
+        else:
+            config_curves_db = configparser.ConfigParser({}, collections.OrderedDict)
+
+        # Section name
+        if k_part in K_GENERIQUES:
+            k_section = '%s.%s.%s' % (k_ed, k_ep, k_curves)
+        else:
+            k_section = '%s.%s' % (k_ed, k_curves)
+
+        # Write RGBM points
+        for k_channel in ['m', 'r', 'g', 'b']:
+            value_str = ""
+            for p in curves['channels'][k_channel].points():
+                value_str += "%.06f:%.06f," % (p.x(), p.y())
+            value_str = value_str[:-1]
+            try:
+                config_curves_db.set(k_section, k_channel, value_str)
+            except:
+                config_curves_db[k_section] = dict()
+                config_curves_db.set(k_section, k_channel, value_str)
+
+        # Write to the database
+        with open(filepath, 'w') as config_file:
+            config_curves_db.write(config_file)
+
 
         # Add it to the initial library
-        self.db_curves_library_initial[k_curves_new] = {
-            'k_curves': k_curves_new,
-            'filepath': filepath,
+        nested_dict_set(self.db_curves_library_initial, {
+            'k_curves': k_curves,
             'channels': deepcopy(curves['channels']),
             'lut': None,
             'shots': []
-        }
-
+        }, k_ed, k_ep, k_curves)
 
 
 

@@ -132,7 +132,6 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
 
     def refresh_values(self, frame:dict):
-        # print("%s: refresh_values" % (self.objectName()))
         if ('dst' in frame.keys()
             and frame['k_part'] not in ['g_debut', 'g_fin']
             and frame['k_ep'] != frame['dst']['k_ep']):
@@ -156,7 +155,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             self.pushButton_reset_current_channel.setEnabled(True)
             self.pushButton_reset_all_channels.setEnabled(True)
             self.label_message.clear()
-
+        self.widget_curves_selection.refresh_values(frame)
 
     def get_preview_options(self):
         preview_options = {
