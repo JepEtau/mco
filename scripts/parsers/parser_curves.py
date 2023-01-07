@@ -131,7 +131,10 @@ def get_initial_curves_selection(db, k_ep, k_part) -> dict:
         db_video = db[k_ep]['target']['video'][k_part]
 
     for k_ed_src in db['editions']['available']:
+        if k_ep == '':
+            continue
         print("get_initial_curves_selection: get db_video for %s:%s:%s" % (k_ed_src, k_ep, k_part))
+
         db_video = db[k_ep][k_ed_src][k_part]['video']
         if 'shots' not in db_video.keys():
             continue

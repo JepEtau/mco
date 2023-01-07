@@ -212,6 +212,7 @@ class Model_curves_editor(Model_common):
             log.info("No folders, cannot select anything")
         if k_ep == '' and k_part == '':
             log.info("Patch k_part or k_ep as none selected")
+            print("Patch k_part or k_ep as none selected")
             try:
                 k_part = self.available_selection['k_eps_parts'][' '][0]
             except:
@@ -220,6 +221,8 @@ class Model_curves_editor(Model_common):
                         k_ep = k
                         break
             log.info("patched to %s:%s:%s" % (k_ed, k_ep, k_part))
+            print("patched to %s:%s:%s" % (k_ed, k_ep, k_part))
+
 
         # Changed directory
         if (k_ep != self.current_selection['k_ep']

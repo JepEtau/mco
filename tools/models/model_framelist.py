@@ -180,7 +180,7 @@ class Model_framelist():
             dependencies = parse_get_dependencies_for_generique(db, k_part_g=k_part)
             for k_ed_tmp, k_eps in dependencies.items():
                 for k_ep_tmp in k_eps:
-                    print("parse_episode: k_ed=%s, k_ep=%s" % (k_ed_tmp, k_ep_tmp))
+                    print("parse_episode for generiques: k_ed=%s, k_ep=%s" % (k_ed_tmp, k_ep_tmp))
                     parse_episode(db, k_ed=k_ed_tmp, k_ep=k_ep_tmp)
         else:
             print("parse dependencies for k_ep=%s" % (k_ep))
@@ -192,46 +192,49 @@ class Model_framelist():
 
         # For each frame, parse the episode if not already done
         for frame in self.frames.values():
-            if (frame['k_ed'] not in parsed_ed_ep.keys()
-                or frame['k_ep'] not in parsed_ed_ep[frame['k_ed']]
-                or frame['k_ed'] not in dependencies.keys()
-                or frame['k_ep'] not in dependencies[frame['k_ed']]):
+            # print("%s:%s" % (frame['k_ed'], frame['k_ep']))
+            k_ed_tmp = frame['k_ed']
+            k_ep_tmp = frame['k_ep']
+            if k_ed_tmp in parsed_ed_ep.keys() and k_ep_tmp in parsed_ed_ep[k_ed_tmp]:
+                continue
+            if k_ed_tmp in dependencies.keys() and k_ep_tmp in dependencies[k_ed_tmp]:
+                continue
 
-                # Parse episode
-                # print("parse episode: %s:%s" % (frame['k_ed'], frame['k_ep']))
-                parse_episode(db, k_ed=frame['k_ed'], k_ep=frame['k_ep'])
+            # Parse episode
+            print("parse episode: %s:%s" % (k_ed_tmp, k_ep_tmp))
+            parse_episode(db, k_ed=k_ed_tmp, k_ep=k_ep_tmp)
 
-                # Add to parsed dict
-                try:
-                    parsed_ed_ep[frame['k_ed']].append(frame['k_ep'])
-                except:
-                    parsed_ed_ep[frame['k_ed']] = [frame['k_ep']]
+            # Add to parsed dict
+            try:
+                parsed_ed_ep[k_ed_tmp].append(k_ep_tmp)
+            except:
+                parsed_ed_ep[k_ed_tmp] = [k_ep_tmp]
+
         # print("%s:%s -> " % (frame['k_ep'], frame['k_ed']))
-
 
         # Parse the config files used get the selected curves for each shot
         parse_curve_configurations(db, k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
-
 
         for frame in self.frames.values():
             if frame['k_ed'] not in db['editions']['available']:
                 # print("info: consolidate: discard frame %s as the edition %s is not available" % (frame['filename'], frame['k_ed']))
                 continue
 
+            # print("get video src for %s:%s" % (frame['k_ed'], frame['k_ep']))
             db_video_src = db[frame['k_ep']][frame['k_ed']][k_part]['video']
-
 
             # Apply offset to the frame no if needed
             frame_no = frame['frame_no']
-            if frame['k_ed'] != db['editions']['k_ed_ref']:
-                # print("apply offset for %s" % (frame['filename']))
-                # Apply offset
-                offsets = db_video_src['offsets']
-                for offset in offsets:
-                    if offset['start'] <= frame_no <= offset['end']:
-                        frame_no += offset['offset']
-                        break
-                # print("\tnew frame_no: %d" % (frame_no))
+            if 'offsets' in db_video_src.keys():
+                if frame['k_ed'] != db['editions']['k_ed_ref']:
+                    # print("apply offset for %s" % (frame['filename']))
+                    # Apply offset
+                    offsets = db_video_src['offsets']
+                    for offset in offsets:
+                        if offset['start'] <= frame_no <= offset['end']:
+                            frame_no += offset['offset']
+                            break
+                    # print("\tnew frame_no: %d" % (frame_no))
 
 
             # Find shot no in k_ed_src:k_ep_src
