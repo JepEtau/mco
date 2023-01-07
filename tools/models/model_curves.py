@@ -37,7 +37,7 @@ class Model_curves():
 
 
     def initialize_db_for_curves(self, db, k_ep, k_part):
-        print("Model_curves:initialize_db_for_curves")
+        print("Model_curves:initialize_db_for_curves: get initial curves selection")
         # This function is used by the video editor
         # which uses the consolidated shots
         self.initialize_curves_library(db=db, k_ep=k_ep, k_part=k_part)
@@ -46,10 +46,11 @@ class Model_curves():
 
 
 
+    # TODO: remove this function
     def initialize_curves_selection(self, shotlist, k_part=''):
         # This function is used by the curves editor
         # which does not use the consolidate and target shots (only src)
-        log.info("initialize curves selection for each shot")
+        log.info("initialize curves selection for each shot: k_part:%s" % (k_part))
         # shotlist = self.framelist.get_shotlist()
         # if k_part == '':
         #     k_part = self.current_selection['k_part']
@@ -62,6 +63,9 @@ class Model_curves():
                         if shot['curves'] is not None:
                             nested_dict_set(self.db_curves_selection_initial, shot['curves'], k_ed, k_ep, k_part, shot['start'])
         self.db_curves_selection = dict()
+        print("47568756875687568756875687568756875687568756875687568756875687568756875687568")
+        pprint(self.db_curves_selection_initial)
+        sys.exit()
 
 
     def initialize_curves_library(self, db, k_ep, k_part):

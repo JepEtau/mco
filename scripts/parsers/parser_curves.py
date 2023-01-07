@@ -19,6 +19,10 @@ from utils.common import (
     nested_dict_set,
 )
 
+from parsers.parser_generiques import (
+    parse_get_dependencies_for_generique,
+)
+
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages
 # le no. de plan est retrouvable par les parsers depuis le no. de trame
@@ -127,29 +131,52 @@ def get_initial_curves_selection(db, k_ep, k_part) -> dict:
     # Get the list of editions and episode that are used by this ep/part
     if k_part in K_GENERIQUES:
         db_video = db[k_part]['target']['video']
+        dependencies = parse_get_dependencies_for_generique(db, k_part_g=k_part)
+        for k_ed_src in dependencies.keys():
+            for k_ep_src in dependencies[k_ed_src]:
+
+                print("get_initial_curves_selection: get db_video for %s:%s:%s" % (k_ed_src, k_ep_src, k_part))
+                if k_ep_src == '':
+                    continue
+
+                db_video = db[k_ep_src][k_ed_src][k_part]['video']
+                if 'shots' not in db_video.keys():
+                    continue
+
+                for shot in db_video['shots']:
+                    shot_src = shot
+                    shot_start = shot['start']
+
+                    # Append to the dict if RGB curves are defined
+                    if 'curves' not in shot.keys():
+                        continue
+
+                    if shot['curves'] is not None:
+                        nested_dict_set(shot_curves, shot_src['curves'],
+                            k_ed_src, k_ep_src, k_part, shot_start)
+
+
     else:
-        db_video = db[k_ep]['target']['video'][k_part]
-
-    for k_ed_src in db['editions']['available']:
-        if k_ep == '':
-            continue
-        print("get_initial_curves_selection: get db_video for %s:%s:%s" % (k_ed_src, k_ep, k_part))
-
-        db_video = db[k_ep][k_ed_src][k_part]['video']
-        if 'shots' not in db_video.keys():
-            continue
-
-        for shot in db_video['shots']:
-            shot_src = shot
-            shot_start = shot['start']
-
-            # Append to the dict if RGB curves are defined
-            if 'curves' not in shot.keys():
+        for k_ed_src in db['editions']['available']:
+            print("get_initial_curves_selection: get db_video for %s:%s:%s" % (k_ed_src, k_ep, k_part))
+            if k_ep == '':
                 continue
 
-            if shot['curves'] is not None:
-                nested_dict_set(shot_curves, shot_src['curves'],
-                    k_ed_src, k_ep, k_part, shot_start)
+            db_video = db[k_ep][k_ed_src][k_part]['video']
+            if 'shots' not in db_video.keys():
+                continue
+
+            for shot in db_video['shots']:
+                shot_src = shot
+                shot_start = shot['start']
+
+                # Append to the dict if RGB curves are defined
+                if 'curves' not in shot.keys():
+                    continue
+
+                if shot['curves'] is not None:
+                    nested_dict_set(shot_curves, shot_src['curves'],
+                        k_ed_src, k_ep, k_part, shot_start)
 
     # print("get_curves_selection")
     # pprint(shot_curves)

@@ -177,19 +177,21 @@ class Model_video_editor(Model_common):
                 filepath_tmp = get_single_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
             self.filepath.append(filepath_tmp)
 
-
             shot_no = shot['no']
             self.shots[shot_no] = shot
 
-
             # Get curves for this shot
             curves = self.model_database.get_shot_curves_selection(db=db, shot=shot)
-            try: k_curves = curves['k_curves']
-            except: k_curves =''
+            try:
+                k_curves = curves['k_curves']
+            except:
+                k_curves =''
             if curves is None and shot['curves'] is not None:
-                print("Error: curves [%s] is not found in directory %s, correct this!" % (
-                    shot['curves']['k_curves'],
-                    self.model_database.get_curves_library_path()))
+                print("Error: curves [%s] is not found in curves library, correct this!" % (shot['curves']['k_curves']))
+                pprint(curves)
+                print("-----")
+                pprint(shot)
+                sys.exit()
                 shot['curves']['k_curves'] = '~' + shot['curves']['k_curves']
 
 
@@ -214,15 +216,16 @@ class Model_video_editor(Model_common):
             # Geometry for this shot:
             #   - part geometry
             #   - custom geometry: if g_asuivre/g_reportage/stabilized/custom images
-            if k_part_selected in ['g_debut', 'g_fin', 'g_reportage']:
+            if k_part_selected in ['g_debut', 'g_fin', 'g_reportage', 'g_asuivre']:
                 shot_geometry = self.model_database.get_shot_geometry(
                     k_ed='-',
                     k_ep=shot['k_ep'],
                     k_part=k_part_selected,
                     shot=shot)
             else:
+                # print("get shot geometry: %s:%s:%s")
                 shot_geometry = self.model_database.get_shot_geometry(
-                    k_ed=db[k_ep_selected]['target']['video']['src']['k_ed'],
+                    k_ed=db[k_ep_selected]['target']['video'][k_part_selected]['k_ed_src'],
                     k_ep=k_ep_selected,
                     k_part=k_part_selected,
                     shot=shot)
@@ -259,9 +262,9 @@ class Model_video_editor(Model_common):
 
         # Create a dict to update the "browser" part of the editor widget
         if k_part_selected in K_GENERIQUES:
-            k_ed_selected = db[k_part_selected]['target']['video']['src']['k_ed']
+            k_ed_selected = ''
         else:
-            k_ed_selected = db[k_ep_selected]['target']['video']['src']['k_ed']
+            k_ed_selected = db[k_ep_selected]['target']['video'][k_part_selected]['k_ed_src']
         self.current_selection = {
             'k_ed': k_ed_selected,
             'k_ep': k_ep_selected,
@@ -285,7 +288,7 @@ class Model_video_editor(Model_common):
             # Use the following part to get the geometry for this part
             self.current_selection.update({
                 'geometry': self.model_database.get_part_geometry(
-                    k_ed=db[k_ep_selected]['target']['video']['src']['k_ed'],
+                    k_ed=db[k_ep_selected]['target']['video'][k_part_selected[2:]]['k_ed_src'],
                     k_ep=k_ep_selected,
                     k_part=k_part_selected[2:]),
             })

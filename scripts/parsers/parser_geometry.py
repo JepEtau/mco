@@ -116,9 +116,13 @@ def get_initial_part_geometry(db, k_ep, k_part) -> dict:
     else:
         # Get All geometry for all editions ofr this ep/part
         for k_ed in db['editions']['available']:
+            if k_ed not in db[k_ep].keys():
+                continue
             db_video = db[k_ep][k_ed][k_part]['video']
-            try: geometry = db_video['geometry'].copy()
-            except: geometry = {'crop': [0, 0, 0, 0]}
+            try:
+                geometry = db_video['geometry'].copy()
+            except:
+                geometry = {'crop': [0, 0, 0, 0]}
             nested_dict_set(part_geometry, geometry, k_ed, k_ep, k_part)
 
     # pprint(part_geometry)
@@ -138,8 +142,8 @@ def get_shots_st_geometry(db, k_ep, k_part) -> dict:
     if k_part in K_GENERIQUES:
         db_video = db[k_part]['target']['video']
     else:
-        # print("%s.get_shots_st_geometry: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
+        print("%s.get_shots_st_geometry: %s:%s" % (__name__, k_ep, k_part))
+        k_ed_src = db[k_ep]['target']['video'][k_part]['k_ed_src']
         k_ep_src = k_ep
         db_video = db[k_ep_src][k_ed_src][k_part]['video']
         # print("%s.get_shots_st_geometry: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))

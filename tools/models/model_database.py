@@ -132,9 +132,6 @@ class Model_database(Model_geometry,
         return self.initial_database['common']['directories']['cache']
 
 
-    def get_curves_library_path(self):
-        return self.initial_database['common']['directories']['curves']
-
 
     def consolidate_database(self, k_ep, k_part,
                                 do_parse_curves:bool=True,
@@ -283,6 +280,7 @@ class Model_database(Model_geometry,
             # Curves: this parser update the shots for each episode/part
             if do_parse_curves:
                 parse_curve_configurations(self.global_database, k_ep_or_g=k_part)
+                self.initialize_db_for_curves(db=self.global_database, k_ep='', k_part=k_part)
 
             # Replaced frames
             if do_parse_replace:
@@ -299,16 +297,8 @@ class Model_database(Model_geometry,
             align_audio_video_durations_g_debut_fin(self.global_database, k_ep='', k_part_g=k_part)
 
             # Consolidate each shot for the target
-            consolidate_target_shots(
-                db=self.global_database,
-                k_ed='',
-                k_ep=k_ep,
-                k_part=k_part,
-            )
+            consolidate_target_shots(db=self.global_database, k_ep=k_ep, k_part=k_part)
 
-            # Curves
-            if do_parse_curves:
-                self.initialize_db_for_curves(db=self.global_database, k_ep=k_ep, k_part=k_part)
 
             if do_parse_geometry:
                 self.db_part_geometry_initial = get_initial_part_geometry(self.global_database, k_ep='', k_part=k_part)
