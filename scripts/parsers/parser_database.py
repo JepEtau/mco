@@ -43,7 +43,7 @@ from utils.time_conversions import ms_to_frames
 def parse_database(database, k_ep, verbose=False, study_mode=False):
 
     # Parse and merge dictionaries -> common configuration
-    parse_common_configuration(PATH_DATABASE, verbose=verbose)
+    parse_common_configuration(database, PATH_DATABASE, verbose=verbose)
     if False:
         print("parse_common_configuration")
         print("------------------------------------")

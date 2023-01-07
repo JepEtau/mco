@@ -19,8 +19,8 @@ def create_black_frame(db, last_task):
     extension = db['common']['settings']['frame_format']
     black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.%s' % (extension))
 
-    if last_task == 'deinterlace':
-        dimensions = db['common']['dimensions']['initial']
+    if 'deinterlace' in last_task:
+        dimensions = db['common']['dimensions']['deinterlace']
     elif last_task == 'geometry':
         dimensions = db['common']['dimensions']['final']
     else:
