@@ -192,7 +192,7 @@ def get_initial_shot_geometry(db, k_ep, k_part) -> dict:
                         shot['geometry'].copy(),
                         k_ed, k_ep_tmp, k_part, shot['start'])
                 except:
-                    geometry = {'crop': [0, 0, 0, 0]}
+                    pass
 
 
     return shot_geometry

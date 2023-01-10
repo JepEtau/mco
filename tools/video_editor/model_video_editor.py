@@ -150,6 +150,11 @@ class Model_video_editor(Model_common):
         else:
             db_video = db[k_ep_selected]['target']['video'][k_part_selected]
 
+        if k_part_selected in K_GENERIQUES:
+            k_ed_selected = ''
+        else:
+            k_ed_selected = db[k_ep_selected]['target']['video'][k_part_selected]['k_ed_src']
+
 
         # Get the part geometry
         # print("selection_changed: update geometry: %s" % (k_part_selected))
@@ -171,7 +176,6 @@ class Model_video_editor(Model_common):
                     k_ed=k_ed_selected,
                     k_ep=k_ep_selected,
                     k_part=k_part_selected)
-
 
 
         # Walk through shots
@@ -272,10 +276,7 @@ class Model_video_editor(Model_common):
                 })
 
         # Create a dict to update the "browser" part of the editor widget
-        if k_part_selected in K_GENERIQUES:
-            k_ed_selected = ''
-        else:
-            k_ed_selected = db[k_ep_selected]['target']['video'][k_part_selected]['k_ed_src']
+
         self.current_selection = {
             'k_ed': k_ed_selected,
             'k_ep': k_ep_selected,
@@ -283,6 +284,10 @@ class Model_video_editor(Model_common):
             'k_step': k_step,
             'shots': self.shots,
         }
+
+        for f in self.frames[shot_no]:
+            print("%s" % f['filepath'])
+
 
         self.model_database.initialize_shots_per_curves(self.shots)
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves(k_ed_selected, k_ep_selected))
@@ -584,7 +589,7 @@ class Model_video_editor(Model_common):
 
         else:
             type = 'shot'
-            geometry = deepcopy(self.model_database.get_custom_geometry(shot=shot))
+            geometry = deepcopy(self.model_database.get_shot_geometry(shot=shot))
 
 
         # Modify parameter
@@ -611,7 +616,7 @@ class Model_video_editor(Model_common):
         if type == 'part':
             self.model_database.set_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part, geometry=geometry)
         elif type == 'shot':
-            self.model_database.set_shot_geometry(shot=self.shots[shot_no], geometry=geometry)
+            self.model_database.set_shot_geometry(shot=shot, geometry=geometry)
 
         self.signal_reload_frame.emit()
 
@@ -747,7 +752,7 @@ def generate_single_image(frame:dict, preview_options:dict):
     img_original = frame['cache_initial']
     h, w, c = img_original.shape
     # print("\t-> initial: ", frame['cache_initial'].shape)
-
+    # pprint(frame['geometry'])
     # Calculate dimensions to crop the image
     c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
     if frame['geometry']['shot'] is not None:

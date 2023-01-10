@@ -134,9 +134,15 @@ class Model_common(QObject):
         print("%s.get_shot: shot no. %d:" % (__name__, shot_no))
         return self.shots[shot_no]
 
+
     def get_shot_no_from_frame_no(self, frame_no:int):
         index = frame_no - self.playlist_properties['start']
-        return self.playlist_frames[index]['shot_no']
+        try:
+            shot_no = self.playlist_frames[index]['shot_no']
+        except:
+            print("get_shot_no_from_frame_no: IndexError: list index out of range: frame_no. %d" % (frame_no))
+            sys.exit()
+        return shot_no
 
 
 

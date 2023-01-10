@@ -64,7 +64,7 @@ class Model_geometry():
                 pass
         # print("get_part_geometry: %s:%s:%s" % (k_ed, k_ep, k_part))
         # print("-> not found")
-        return {'crop': [0, 0, 0, 0]}
+        return None
 
 
     def set_part_geometry(self, k_ed, k_ep, k_part, geometry):
@@ -100,14 +100,14 @@ class Model_geometry():
                 return self.db_shot_geometry_initial[k_ed][k_ep][k_part][shot_start]
             except:
                 pass
-        return {'crop': [0, 0, 0, 0]}
+        return None
 
     def set_shot_geometry(self, shot, geometry):
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
         shot_start = shot['start']
-        nested_dict_set(self.db_part_geometry, geometry, k_ed, k_ep, k_part, shot_start)
+        nested_dict_set(self.db_shot_geometry, geometry, k_ed, k_ep, k_part, shot_start)
         self.is_geometry_db_modified = True
 
 
@@ -261,21 +261,21 @@ class Model_geometry():
                             try:
                                 geometry_crop = shot_values['crop']
                                 value_array.append("crop=%s" % (':'.join(map(lambda x: "%d" % (x), geometry_crop))))
-                                nested_dict_set(self.db_part_geometry_initial, deepcopy(geometry_crop),
+                                nested_dict_set(self.db_shot_geometry_initial, deepcopy(geometry_crop),
                                     k_ed_src, k_ep_src, k_part_src, shot_start, 'crop')
                             except: pass
 
                             try:
                                 geometry_resize = shot_values['resize']
                                 value_array.append("resize=%s" % (':'.join(map(lambda x: "%d" % (x), geometry_resize))))
-                                nested_dict_set(self.db_part_geometry_initial, deepcopy(geometry_resize),
+                                nested_dict_set(self.db_shot_geometry_initial, deepcopy(geometry_resize),
                                     k_ed_src, k_ep_src, k_part_src, shot_start, 'resize')
                             except: pass
 
                             try:
                                 geometry_ratio = shot_values['ratio']
                                 value_array.append("keep_ratio=%s" % ('true' if geometry_ratio else 'false'))
-                                nested_dict_set(self.db_part_geometry_initial, deepcopy(geometry_ratio),
+                                nested_dict_set(self.db_shot_geometry_initial, deepcopy(geometry_ratio),
                                     k_ed_src, k_ep_src, k_part_src, shot_start, 'ratio')
                             except: pass
 
