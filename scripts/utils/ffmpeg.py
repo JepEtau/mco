@@ -40,6 +40,11 @@ def get_ffmpeg_filter(frame, step):
 
     ffmpeg_filter_str = "[0:v]%s[outv]" % (filter_str)
 
+    w = frame['dimensions']['deinterlace']['w']
+    h = frame['dimensions']['deinterlace']['h']
+    ffmpeg_filter_str = ffmpeg_filter_str.replace("width_deinterlace", "%d" % (w))
+    ffmpeg_filter_str = ffmpeg_filter_str.replace("height_deinterlace", "%d" % (h))
+
     if step in ['deinterlace', 'pre_upscale']:
         width = frame['dimensions']['deinterlace']['w']
         height = frame['dimensions']['deinterlace']['h']

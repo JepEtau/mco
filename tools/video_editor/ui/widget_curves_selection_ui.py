@@ -132,13 +132,6 @@ class Ui_widget_curves_selection(object):
 
         self.horizontalLayout_2.addWidget(self.lineEdit_save)
 
-        self.label = QLabel(widget_curves_selection)
-        self.label.setObjectName(u"label")
-        sizePolicy3.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
-        self.label.setSizePolicy(sizePolicy3)
-
-        self.horizontalLayout_2.addWidget(self.label)
-
         self.pushButton_save_rgb_curves = QPushButton(widget_curves_selection)
         self.pushButton_save_rgb_curves.setObjectName(u"pushButton_save_rgb_curves")
         sizePolicy1.setHeightForWidth(self.pushButton_save_rgb_curves.sizePolicy().hasHeightForWidth())
@@ -177,7 +170,6 @@ class Ui_widget_curves_selection(object):
         ___qlistwidgetitem1.setText(QCoreApplication.translate("widget_curves_selection", u"004", None));
         self.list_shots.setSortingEnabled(__sortingEnabled)
 
-        self.label.setText(QCoreApplication.translate("widget_curves_selection", u".crv", None))
         self.pushButton_save_rgb_curves.setText("")
     # retranslateUi
 

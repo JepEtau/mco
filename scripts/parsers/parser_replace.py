@@ -12,6 +12,7 @@ from pprint import pprint
 
 from utils.common import (
     get_or_create_src_shot,
+    get_src_shot_from_frame_no,
     nested_dict_set,
 )
 
@@ -26,6 +27,8 @@ def parse_replace_configurations(db, k_ep_or_g:str, k_ed_only=None):
     It will returns the replaced frame for each frame. This is mainly edited in video
     editor
     """
+    print_warning = False
+
     # Open configuration file
     filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_replace.ini" % (k_ep_or_g))
     if filepath.startswith("~/"):
@@ -37,7 +40,7 @@ def parse_replace_configurations(db, k_ep_or_g:str, k_ed_only=None):
     # Parse the file
     config = configparser.ConfigParser()
     config.read(filepath)
-    print("\n%s.parse_replace_configurations" % (__name__))
+    # print("\n%s.parse_replace_configurations" % (__name__))
     for k_section in config.sections():
         # print("\tk_section:%s" % (k_section))
         if '.' not in k_section:
@@ -54,10 +57,15 @@ def parse_replace_configurations(db, k_ep_or_g:str, k_ed_only=None):
             # print("parse_replace_configurations, find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
             # shot = get_shot_from_frame_no_new(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
             # replaced bya function which creates the src shot if not defined in the config file
-            shot = get_or_create_src_shot(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
-
+            try:
+                shot = get_src_shot_from_frame_no(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+            except:
+                if not print_warning:
+                    print("warning: parse_replace_configurations: shot not found for frame no. %d in %s:%s:%s" % (
+                        frame_no, k_ed, k_ep, k_part))
+                print_warning = True
             if shot is None:
-                sys.exit("parse_replace_configurations: error, shot not found for frame no. %d in %s:%s:%s" % (
+                sys.exit("error: parse_replace_configurations: shot not found for frame no. %d in %s:%s:%s" % (
                     frame_no, k_ed, k_ep, k_part))
             try:
                 shot['replace'][frame_no] = new_frame_no
@@ -69,7 +77,7 @@ def parse_replace_configurations(db, k_ep_or_g:str, k_ed_only=None):
 def get_replaced_frames(db, k_ep, k_part) -> dict:
     """ Returns a dict of frames to replace
     """
-    # print("%s.get_replaced_frames:  :%s:%s" % (__name__, k_ep, k_part))
+    print("%s.get_replaced_frames:  :%s:%s" % (__name__, k_ep, k_part))
     replace = dict()
 
     # Get the list of editions and episode that are used by this ep/part

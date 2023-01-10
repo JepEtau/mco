@@ -282,14 +282,6 @@ class Model_database(Model_geometry,
                 parse_curve_configurations(self.global_database, k_ep_or_g=k_part)
                 self.initialize_db_for_curves(db=self.global_database, k_ep='', k_part=k_part)
 
-            # Replaced frames
-            if do_parse_replace:
-                parse_replace_configurations(self.global_database, k_ep_or_g=k_part)
-
-            # Crop
-            if do_parse_geometry:
-                parse_geometry_configurations(self.global_database, k_ep_or_g=k_part)
-
             # Create shots used for the generation
             create_target_shots_g(self.global_database, k_ep='', k_part_g=k_part)
 
@@ -300,14 +292,16 @@ class Model_database(Model_geometry,
             consolidate_target_shots(db=self.global_database, k_ep=k_ep, k_part=k_part)
 
 
-            if do_parse_geometry:
-                self.db_part_geometry_initial = get_initial_part_geometry(self.global_database, k_ep='', k_part=k_part)
-                self.db_part_geometry = dict()
-
+            # Replaced frames
             if do_parse_replace:
+                parse_replace_configurations(self.global_database, k_ep_or_g=k_part)
                 self.db_replaced_frames_initial = get_replaced_frames(self.global_database, k_ep='', k_part=k_part)
                 self.db_replaced_frames = dict()
 
+            # geometry: crop and resize
+            if do_parse_geometry:
+                parse_geometry_configurations(self.global_database, k_ep_or_g=k_part)
+                self.initialize_db_for_geometry(db=self.global_database, k_ep='', k_part=k_part)
 
         gc.collect()
 

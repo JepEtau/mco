@@ -376,7 +376,11 @@ class Window_main(Window_common):
                 self.painter.drawImage(
                     QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
             else:
-                type = 'shot' if self.image['geometry']['shot'] is not None else 'part'
+                if 'shot' in self.image['geometry'].keys() and self.image['geometry']['shot'] is not None:
+                    type = 'shot'
+                else:
+                    type = 'part'
+
                 # print("paintEvent: type = %s" % (type))
                 geometry_options = options['geometry'][type]
 

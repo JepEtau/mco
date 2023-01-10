@@ -218,7 +218,7 @@
          </sizepolicy>
         </property>
         <property name="title">
-         <string>Part: crop and resize</string>
+         <string>Part</string>
         </property>
         <property name="checkable">
          <bool>false</bool>
@@ -491,7 +491,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="groupBox_custom_geometry">
+       <widget class="QGroupBox" name="groupBox_shot_geometry">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
           <horstretch>0</horstretch>
@@ -499,7 +499,7 @@
          </sizepolicy>
         </property>
         <property name="title">
-         <string>Custom</string>
+         <string>Shot</string>
         </property>
         <property name="checkable">
          <bool>false</bool>
@@ -533,7 +533,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QSpinBox" name="spinBox_custom_width">
+            <widget class="QSpinBox" name="spinBox_shot_width">
              <property name="enabled">
               <bool>false</bool>
              </property>
@@ -571,7 +571,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QSpinBox" name="spinBox_custom_height">
+            <widget class="QSpinBox" name="spinBox_shot_height">
              <property name="enabled">
               <bool>false</bool>
              </property>
@@ -601,7 +601,7 @@
           </layout>
          </item>
          <item row="0" column="1">
-          <widget class="QPushButton" name="pushButton_custom_crop_edition">
+          <widget class="QPushButton" name="pushButton_shot_crop_edition">
            <property name="text">
             <string/>
            </property>
@@ -632,7 +632,7 @@
           </widget>
          </item>
          <item row="1" column="2">
-          <widget class="QPushButton" name="pushButton_custom_resize_preview">
+          <widget class="QPushButton" name="pushButton_shot_resize_preview">
            <property name="text">
             <string/>
            </property>
@@ -650,7 +650,7 @@
           </widget>
          </item>
          <item row="0" column="4">
-          <widget class="QPushButton" name="pushButton_custom_discard">
+          <widget class="QPushButton" name="pushButton_shot_discard">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -671,7 +671,7 @@
           </widget>
          </item>
          <item row="1" column="3">
-          <widget class="QCheckBox" name="checkBox_custom_keep_ratio">
+          <widget class="QCheckBox" name="checkBox_shot_keep_ratio">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -684,7 +684,7 @@
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QPushButton" name="pushButton_custom_resize_edition">
+          <widget class="QPushButton" name="pushButton_shot_resize_edition">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -707,7 +707,7 @@
           </widget>
          </item>
          <item row="0" column="2">
-          <widget class="QPushButton" name="pushButton_custom_crop_preview">
+          <widget class="QPushButton" name="pushButton_shot_crop_preview">
            <property name="text">
             <string/>
            </property>
@@ -735,7 +735,7 @@
           </widget>
          </item>
          <item row="0" column="3">
-          <widget class="QLineEdit" name="lineEdit_custom_crop_rectangle">
+          <widget class="QLineEdit" name="lineEdit_shot_crop_rectangle">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>

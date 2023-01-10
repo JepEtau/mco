@@ -109,7 +109,7 @@ def process_single_frame(work_no:int, frame:dict) -> None:
 
     # Upscale image
     if 'upscale' in tasks:
-        # print("upscale image: %d" % (frame['no']))
+        # print("\t\tupscale image: %d" % (frame['no']))
         if not os.path.exists(frame['filepath']['upscale']):
             # Get the input image: deinterlaced or pre_upscaled
             if img_input is None:
@@ -291,7 +291,7 @@ def process_shot(db, shot, cpu_count=0):
         elif 'upscale' in f['tasks']:
             if f['filters']['ffmpeg']['upscale'] is not None:
                 # upscale is done by FFMPEG
-                do_append = True
+                do_extract = True
             # else:
                 # upscale is done by opencv
         if do_extract:

@@ -150,10 +150,33 @@ class Model_video_editor(Model_common):
         else:
             db_video = db[k_ep_selected]['target']['video'][k_part_selected]
 
+
+        # Get the part geometry
+        # print("selection_changed: update geometry: %s" % (k_part_selected))
+        if k_part_selected in ['g_debut', 'g_fin']:
+            # Use the k_ed:k_ep defined as the source for this geometry
+            part_geometry = self.model_database.get_part_geometry(
+                    k_ed=db[k_part_selected]['target']['video']['src']['k_ed'],
+                    k_ep=db[k_part_selected]['target']['video']['src']['k_ep'],
+                    k_part=k_part_selected)
+        elif k_part_selected in ['g_asuivre', 'g_reportage']:
+            # Use the following part to get the geometry for this part
+            part_geometry = self.model_database.get_part_geometry(
+                    k_ed=db[k_ep_selected]['target']['video'][k_part_selected[2:]]['k_ed_src'],
+                    k_ep=k_ep_selected,
+                    k_part=k_part_selected[2:])
+        else:
+            # Use the selected ed:ep:part
+            part_geometry = self.model_database.get_part_geometry(
+                    k_ed=k_ed_selected,
+                    k_ep=k_ep_selected,
+                    k_part=k_part_selected)
+
+
+
         # Walk through shots
         shots = db_video['shots']
         for shot in shots:
-
             # For debug only
             print("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
                 "{:3d}".format(shot['no']),
@@ -212,23 +235,8 @@ class Model_video_editor(Model_common):
                 },
             })
 
-
-            # Geometry for this shot:
-            #   - part geometry
-            #   - custom geometry: if g_asuivre/g_reportage/stabilized/custom images
-            if k_part_selected in ['g_debut', 'g_fin', 'g_reportage', 'g_asuivre']:
-                shot_geometry = self.model_database.get_shot_geometry(
-                    k_ed='-',
-                    k_ep=shot['k_ep'],
-                    k_part=k_part_selected,
-                    shot=shot)
-            else:
-                # print("get shot geometry: %s:%s:%s")
-                shot_geometry = self.model_database.get_shot_geometry(
-                    k_ed=db[k_ep_selected]['target']['video'][k_part_selected]['k_ed_src'],
-                    k_ep=k_ep_selected,
-                    k_part=k_part_selected,
-                    shot=shot)
+            # Geometry for this shot
+            shot_geometry = self.model_database.get_shot_geometry(shot=shot)
 
             # Create a list of frames for this shot
             self.frames[shot_no] = list()
@@ -255,7 +263,10 @@ class Model_video_editor(Model_common):
                     'dimensions': shot['dimensions'],
                     'replaced_by': self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no),
                     'curves': curves,
-                    'geometry': shot_geometry,
+                    'geometry': {
+                        'part': part_geometry,
+                        'shot': shot_geometry,
+                    },
                     'cache_initial': None,
                     'cache': None,
                 })
@@ -271,35 +282,7 @@ class Model_video_editor(Model_common):
             'k_part': k_part_selected,
             'k_step': k_step,
             'shots': self.shots,
-            'geometry': None,
         }
-
-        # Update selection with the part geometry
-        # print("selection_changed: update geometry: %s" % (k_part_selected))
-        if k_part_selected in ['g_debut', 'g_fin']:
-            # Use the k_ed:k_ep defined as the source for this geometry
-            self.current_selection.update({
-                'geometry': self.model_database.get_part_geometry(
-                    k_ed=db[k_part_selected]['target']['video']['src']['k_ed'],
-                    k_ep=db[k_part_selected]['target']['video']['src']['k_ep'],
-                    k_part=k_part_selected),
-            })
-        elif k_part_selected in ['g_asuivre', 'g_reportage']:
-            # Use the following part to get the geometry for this part
-            self.current_selection.update({
-                'geometry': self.model_database.get_part_geometry(
-                    k_ed=db[k_ep_selected]['target']['video'][k_part_selected[2:]]['k_ed_src'],
-                    k_ep=k_ep_selected,
-                    k_part=k_part_selected[2:]),
-            })
-        else:
-            # Use the selected ed:ep:part
-            self.current_selection.update({
-                'geometry': self.model_database.get_part_geometry(
-                    k_ed=k_ed_selected,
-                    k_ep=k_ep_selected,
-                    k_part=k_part_selected),
-            })
 
         self.model_database.initialize_shots_per_curves(self.shots)
         self.signal_curves_library_modified.emit(self.model_database.get_library_curves(k_ed_selected, k_ep_selected))
@@ -601,7 +584,7 @@ class Model_video_editor(Model_common):
 
         else:
             type = 'shot'
-            geometry = deepcopy(self.model_database.get_custom_geometry(shot=self.shots[shot_no]))
+            geometry = deepcopy(self.model_database.get_custom_geometry(shot=shot))
 
 
         # Modify parameter
@@ -627,11 +610,8 @@ class Model_video_editor(Model_common):
 
         if type == 'part':
             self.model_database.set_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part, geometry=geometry)
-        else:
-            # TODO: enable modification of a single shot
-            self.model_database.set_custom_geometry(shot=self.shots[shot_no], geometry=geometry)
-
-        # No need to flush cache as generation of a new image will be done (fast enough)
+        elif type == 'shot':
+            self.model_database.set_shot_geometry(shot=self.shots[shot_no], geometry=geometry)
 
         self.signal_reload_frame.emit()
 
@@ -716,6 +696,13 @@ class Model_video_editor(Model_common):
         elif self.current_frame is None:
             self.signal_load_curves.emit(None)
 
+        # Load current geometry
+        frame['geometry'].update({
+            'part': self.model_database.get_part_geometry(k_ed=shot['k_ed'], k_ep=shot['k_ep'], k_part=shot['k_part']),
+            'shot': self.model_database.get_shot_geometry(shot=shot),
+        })
+
+
         # Purge image from the previous frame
         # this is necessary to limit the memory consumption
         # TODO: create a cache structure which manage the cache
@@ -725,27 +712,15 @@ class Model_video_editor(Model_common):
         # Set current frame
         self.current_frame = frame
 
-        # Update geometry
-        # print("\nget_frame -> (%s:%s:%s:%d)" % (frame['k_ed'], frame['k_ep'], frame['k_part'], frame['frame_no']))
-        if frame['k_part'] in ['g_debut', 'g_fin']:
-            frame['geometry'] = self.model_database.get_shot_geometry(
-                k_ed=frame['k_ed'],
-                k_ep=frame['k_ep'],
-                k_part=frame['k_part'],
-                shot=shot)
-        else:
-            frame['geometry'] = self.model_database.get_shot_geometry(
-                k_ed=self.current_frame['k_ed'],
-                k_ep=self.current_frame['k_ep'],
-                k_part=self.current_frame['k_part'],
-                shot=shot)
 
 
         # Generate the image for this frame
+        now = time.time()
         options = self.preview_options
         if options is not None:
             index, img = generate_single_image(self.current_frame, preview_options=options)
             self.set_current_frame_cache(img=img)
+        print("\t%dms" % (int(1000 * (time.time() - now))))
         # else:
             # Cannot generate the image because no preview option is defined
             # The preview options will be updated by the window UI
@@ -759,7 +734,7 @@ def generate_single_image(frame:dict, preview_options:dict):
     # log.info("generate single image")
     # print("\ngenerate_single_image:")
     # pprint(preview_options)
-    now = time.time()
+
     img = None
 
     try:
@@ -775,8 +750,7 @@ def generate_single_image(frame:dict, preview_options:dict):
 
     # Calculate dimensions to crop the image
     c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
-    if ('shot' in frame['geometry'].keys()
-        and frame['geometry']['shot'] is not None):
+    if frame['geometry']['shot'] is not None:
         # Use the customized geometry
         type = 'shot'
         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['shot']['crop'])

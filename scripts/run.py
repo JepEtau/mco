@@ -181,6 +181,8 @@ def main():
         if arguments.part in K_GENERIQUES:
             print("\t\t- %s: " % (arguments.part))
             pprint(g_database[arguments.part])
+            print("-----------------------------")
+            pprint(g_database['ep01']['k']['g_debut'])
 
         elif arguments.part != '':
             print("\t\t- precedemment, episode, g_asuivre, asuivre, g_reportage, reportage: ")
