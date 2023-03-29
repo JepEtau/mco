@@ -62,7 +62,7 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
         if k_part in ['g_debut', 'g_fin']:
             concatenation_filepath = os.path.join(
                 db[k_part]['cache_path'], "concatenation",
-                "%s_%03d__%s_.txt" % (k_part, shot['no'], k_ed))
+                "%s_%03d__%s_%s_.txt" % (k_part, shot['no'], k_ed, k_ep))
         else:
             concatenation_filepath = os.path.join(
                 db[k_ep]['cache_path'], "concatenation",
