@@ -127,3 +127,17 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Specific to this poject
+cache/
+frames/
+.vscode/
+*.mkv
+*.wav
+*.mp4
+*.mov
+*.ffindex
+*.bak
+scripts/archive.sh
+scripts/archive.bat
+tools/log
