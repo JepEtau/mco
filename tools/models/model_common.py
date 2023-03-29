@@ -78,7 +78,7 @@ class Model_common(QObject):
 
 
     def save_preferences(self, preferences:dict):
-        preferences = self.ui.get_preferences()
+        preferences = self.view.get_preferences()
         self.preferences.save(preferences)
 
 

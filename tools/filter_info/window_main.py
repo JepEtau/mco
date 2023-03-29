@@ -25,6 +25,7 @@ from filter_info.ui.window_main_ui import Ui_MainWindow
 from utils.pretty_print import *
 
 
+
 class Window_main(QMainWindow, Ui_MainWindow):
 
     def __init__(self, model:Model_filter_info):
@@ -45,7 +46,6 @@ class Window_main(QMainWindow, Ui_MainWindow):
         self.setWindowFlags(Qt.Window)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
-        self.move(20, 20)
 
         # Internal variables
         self.model = model
@@ -66,6 +66,10 @@ class Window_main(QMainWindow, Ui_MainWindow):
         self.setAcceptDrops(True)
         # self.lineEdit_filename.setAcceptDrops(True)
 
+        # Get preferences from model
+        p = self.model.get_preferences()
+        self.set_initial_options(p)
+
         # Events
         self.action_exit = QAction(u"Exit")
         self.action_exit.setEnabled(True)
@@ -75,17 +79,31 @@ class Window_main(QMainWindow, Ui_MainWindow):
         self.model.signal_refresh_filters[dict].connect(self.event_refresh_filters)
 
 
+    def set_initial_options(self, preferences:dict):
+        s = preferences['main_window']
+        self.move(s['geometry'][0],s['geometry'][1])
+
+    def get_preferences(self) -> dict:
+        preferences = {
+            'main_window': {
+                'screen': 0,
+                'geometry': self.geometry().getRect()
+            },
+        }
+        return preferences
+
+
     def init_filter_table(self):
         self.tableWidget_filters.clearContents()
         self.tableWidget_filters.setRowCount(0)
         self.tableWidget_filters_columns = [
-            {'name': 'hash', 'width': 90, 'alignment': Qt.AlignCenter | Qt.AlignVCenter},
+            {'name': 'Hash', 'width': 90, 'alignment': Qt.AlignCenter | Qt.AlignTop},
             {'name': 'Filter', 'width': 200, 'alignment': Qt.AlignLeft | Qt.AlignTop },
         ]
         column_count = len(self.tableWidget_filters_columns)
 
         self.tableWidget_filters.setColumnCount(column_count)
-        self.tableWidget_filters.horizontalHeader().setCascadingSectionResizes(False)
+        # self.tableWidget_filters.horizontalHeader().setCascadingSectionResizes(False)
         self.tableWidget_filters.horizontalHeader().setDefaultSectionSize(25)
         self.tableWidget_filters.horizontalHeader().setHighlightSections(False)
         self.tableWidget_filters.horizontalHeader().setSortIndicatorShown(False)
@@ -115,14 +133,10 @@ class Window_main(QMainWindow, Ui_MainWindow):
 
     def event_refresh_filters(self, properties):
         pprint(properties)
+        self.clear_widgets()
         self.lineEdit_filename.setText(properties['filename'])
         self.label_folder.setText(properties['folder'])
         if properties['hash'] is None:
-            self.tableWidget_filters.clear()
-            self.tableWidget_filters.clearContents()
-            self.tableWidget_filters.setRowCount(0)
-            self.tableWidget_filters.setColumnCount(0)
-            self.tableWidget_filters.setEnabled(False)
             return
 
         ed_ep_part = "%s:%s:%s" % (properties['k_ed'], properties['k_ep'], properties['k_part'])
@@ -130,11 +144,30 @@ class Window_main(QMainWindow, Ui_MainWindow):
         self.label_shot_no.setText("shot no. %d" % properties['shot_no'])
 
         self.init_filter_table()
-
+        filters = properties['filters']
         if properties['filters'] is not None:
+            # Content
+            for row_no, filter in zip(range(len(filters)), filters):
+                self.tableWidget_filters.insertRow(row_no)
+                self.tableWidget_filters.setItem(row_no, 0, QTableWidgetItem(filter['hash']))
+                self.tableWidget_filters.setItem(row_no, 1, QTableWidgetItem(filter['filter_str']))
+
+            # Alignment
+            column_count = len(self.tableWidget_filters_columns)
+            for row_no in range(len(filters)):
+                for column_no in range(column_count):
+                    self.tableWidget_filters.item(row_no, column_no).setTextAlignment(
+                        self.tableWidget_filters_columns[column_no]['alignment'])
+
             self.tableWidget_filters.setEnabled(True)
+
         else:
             self.tableWidget_filters.setEnabled(False)
+
+        self.tableWidget_filters.resizeColumnsToContents()
+        self.tableWidget_filters.resizeRowsToContents()
+        self.adjustSize()
+
 
     def dropEvent(self, event):
         urls = event.mimeData().urls()

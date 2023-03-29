@@ -15,7 +15,7 @@ import cv2
 
 
 def apply_avisynth_filters(shot, image_list,
-    step_no, filters_str, input_hash, output, db_common, get_hash:bool=False, do_force:bool=False):
+    step_no, filters_str, input_hash, output_folder, db_common, get_hash:bool=False, do_force:bool=False):
 
     # Deinterlace only
     if not get_hash:
@@ -26,8 +26,8 @@ def apply_avisynth_filters(shot, image_list,
         sys.exit(print_red("\terror: filter not yet supported, ignoring"))
 
     # Create folder to store the script
-    if not os.path.exists(output):
-        os.makedirs(output)
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
     # Use a script name: easier for debug.
     # Later, generate it from a template
@@ -35,7 +35,7 @@ def apply_avisynth_filters(shot, image_list,
         db_common['directories']['config'],
         shot['k_ep'],
         "%s_%s.avs" % (shot['k_ep'], filters_str)))
-    cache_path = output
+    cache_path = output_folder
 
     # Open original script
     with open(script_filepath, mode='r+') as script_file:
@@ -96,11 +96,11 @@ def apply_avisynth_filters(shot, image_list,
     ffmpeg_command_common.extend(ffmpeg_verbose.split(' '))
 
 
-    filename_template = os.path.abspath(os.path.join(output,
+    filename_template = os.path.abspath(os.path.join(output_folder,
         FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, '_' + hash)))
     output_image_list = get_image_list(
         shot=shot,
-        folder=output,
+        folder=output_folder,
         step_no=step_no,
         hash=hash)
 

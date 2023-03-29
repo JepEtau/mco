@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
+import argparse
 import signal
 import sys
 
@@ -11,7 +12,7 @@ if os.name == 'nt':
     myappid = 'mycompany.myproduct.subproduct.version' # arbitrary string
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
-def main():
+def main(arguments):
     application = QApplication(sys.argv)
 
     from filter_info.window_main import Window_main
@@ -22,9 +23,14 @@ def main():
 
     main_model.set_view(main_window)
     main_window.show()
+    main_model.load_file(arguments.input)
     sys.exit(application.exec())
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Filter info")
+    parser.add_argument("input", nargs='?', default=None)
+    arguments = parser.parse_args()
+
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-    main()
+    main(arguments)

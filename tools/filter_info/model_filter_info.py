@@ -14,6 +14,7 @@ from PySide6.QtCore import (
     Signal,
 )
 
+from filter_info.preferences import Preferences
 from utils.pretty_print import *
 
 TEMPLATE_SHOT_EPISODE = "^(ep\d{2})_([a-z_]+)_(\d{3})__([a-z0]*)__([a-z0-9]{7})$"
@@ -29,13 +30,35 @@ class Model_filter_info(QObject):
         super(Model_filter_info, self).__init__()
         self.view = None
 
+        # Load saved preferences
+        self.preferences = Preferences()
+
         # Variables
 
+    def load_file(self, filepath):
+        if filepath is not None:
+            self.event_new_file(filepath=filepath)
 
 
     def exit(self):
         # print("%s:exit" % (__name__))
         pass
+
+    def exit(self):
+        # print("%s:exit" % (__name__))
+        p = self.view.get_preferences()
+        self.preferences.save(p)
+        # print("model: exit")
+
+
+    def get_preferences(self):
+        p = self.preferences.get_preferences()
+        return p
+
+
+    def save_preferences(self, preferences:dict):
+        preferences = self.view.get_preferences()
+        self.preferences.save(preferences)
 
 
     def set_view(self, view):
@@ -148,22 +171,46 @@ class Model_filter_info(QObject):
             value_str = config_hashes.get('md5', hash)
             print("key=%s, value_str=[%s]" % (hash, value_str))
 
+            is_found = False
             properties = re.match(re.compile("^\"([a-z0-9]{7}),([^\"]+)\"$"), value_str)
             if properties is not None:
                 hash = properties.group(1)
                 filter_str = properties.group(2)
-            else:
+                is_found = True
+
+            if not is_found:
+                properties = re.match(re.compile("^\"([a-z0-9]{7})_[^,]+,([^\"]+)\"$"), value_str)
+                if properties is not None:
+                    hash = properties.group(1)
+                    filter_str = properties.group(2)
+                    is_found = True
+
+            if not is_found:
                 properties = re.match(re.compile("^\"([^\"]+)\"$"), value_str)
                 if properties is not None:
                     filter_str = properties.group(1)
                     do_break = True
-                else:
-                    print_yellow("error: [%s]" % (value_str))
+                    is_found = True
+
+            if not is_found:
+                print_yellow("error: [%s]" % (value_str))
 
             filters.insert(0, {
                 'filter_str': filter_str,
                 'hash': hash
             })
+
+
+        # Avisynth
+        filter_str = filters[0]['filter_str']
+        filter_str = filter_str.replace(';', ';\n')
+        filters[0]['filter_str'] = filter_str
+
+        # Other filters
+        for no in range(1, len(filters)):
+            filter_str = filters[no]['filter_str']
+            filter_str = filter_str.replace(',', ',\n')
+            filters[no]['filter_str'] = filter_str
 
         return filters
 
