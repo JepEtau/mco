@@ -4,22 +4,24 @@
 * [ ] video
 * [ ] A/V sync
 - **Episode**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **A suivre**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] générique: geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] générique: géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **Reportage**
-    * [ ] filters
-    * [ ] geometry
-    * [-] RGB curves
+    * [ ] filtres
+    * [ ] géométrie
+    * [-] courbes RVB
     * [ ] frame replacement
 <br/><br/>
 
@@ -30,28 +32,31 @@
 * [ ] video
 * [ ] A/V sync
 - **Précedemment**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **Episode**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **A suivre**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] générique: geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] générique: géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **Reportage**
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 <br/><br/>
 
@@ -62,28 +67,31 @@
 * [ ] video
 * [ ] A/V sync
 - **Précedemment**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **Episode**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **A suivre**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] générique: geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] générique: géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **Reportage**
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 <br/><br/>
 
@@ -94,28 +102,31 @@
 * [ ] video
 * [ ] A/V sync
 - **Précedemment**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **Episode**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **A suivre**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] générique: geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] générique: géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **Reportage**
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 <br/><br/>
 
@@ -126,28 +137,31 @@
 * [ ] video
 * [ ] A/V sync
 - **Précedemment**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **Episode**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **A suivre**
-    * [ ] shot replacement
-    * [ ] filters
-    * [ ] geometry
-    * [ ] générique: geometry
-    * [ ] RGB curves
+    * [ ] remplacements: shots
+    * [ ] remplacements: images
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] générique: géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 - **Reportage**
-    * [ ] filters
-    * [ ] geometry
-    * [ ] RGB curves
+    * [ ] filtres
+    * [ ] géométrie
+    * [ ] courbes RVB
     * [ ] frame replacement
 <br/><br/>
 
@@ -155,47 +169,45 @@
 
 
 # Générique début
-* [ ] choosen:
+* [ ] édition, épisode: multiples
 * [ ] shots
-* [ ] offsets ed. s
-* [ ] audio
+* [x] audio
 * [ ] video
 * [ ] A/V sync
-* [ ] filters
-* [ ] geometry
-* [ ] RGB curves
+* [ ] filtres
+* [ ] géométrie
+* [ ] courbes RVB
 * [ ] frame replacement
 <br/><br/>
 
 
 # Générique fin
-* [x] choosen: s:ep11
-* [x] shots
-* [x] offsets ed. s
+* [x] édition, épisode: s:ep11
+* [ ] shots
 * [x] audio
-* [x] video
+* [ ] video
 * [x] A/V sync
-* [ ] filters
-* [ ] geometry
-* [ ] RGB curves
+* [ ] filtres
+* [ ] géométrie
+* [ ] courbes RVB
 * [-] frame replacement
 <br/><br/>
 
 
 # Générique asuivre
-* [x] choosen: s:ep12
+* [x] édition, épisode: s:ep12
 * [x] shots
 * [x] offsets
-* [x] filters: AI super resolution
-* [ ] geometry
-* [ ] RGB curves
+* [x] filtres
+* [ ] géométrie
+* [ ] courbes RVB
 <br/><br/>
 
 
 # Générique reportage
-* [x] choosen: k:ep17
+* [x] édition, épisode: k:ep17
 * [x] shots
-* [ ] filters
-* [ ] geometry
-* [ ] RGB curves
+* [ ] filtres
+* [ ] géométrie
+* [ ] courbes RVB
 <br/><br/>

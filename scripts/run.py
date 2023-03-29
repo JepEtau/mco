@@ -58,7 +58,7 @@ def main():
         type=int,
         default=-1,
         required=False,
-        help="debug: numéro du plan à processer")
+        help="debug: numéro du plan à générer")
 
     parser.add_argument("--shot_min",
         type=int,
@@ -70,13 +70,13 @@ def main():
         type=int,
         default=999999,
         required=False,
-        help="debug: plans à processer: fin. NON VERIFIE")
+        help="debug: plans à générer: fin. NON VERIFIE")
 
     parser.add_argument("--vfilter",
         default=FILTER_TAGS[-1],
         required=False,
         choices=FILTER_TAGS,
-        help="debug: applique les filtres video jusqu\'à celui spécifié ici (note: final=geometry")
+        help="debug: applique les filtres video jusqu\'à celui spécifié ici (note: final=geometry)")
 
     parser.add_argument("--afilter",
         default='',
