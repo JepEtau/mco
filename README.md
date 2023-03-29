@@ -1,9 +1,6 @@
 # MCO
 
-
 ## Exigences et installations
-[mco_manuel](https://github.com/JepEtau/mco_manuels)
-
 - Python **3.10** (< 3.11)
 - Modules Python
 - mkvmerge: [MKVToolNix](https://mkvtoolnix.download)
@@ -11,9 +8,9 @@
 - [AviSynth](https://avisynth.nl)
 - Filtres et plugin AviSynth
 - [FFmpeg](https://ffmpeg.org)
-- [Real-CUGAN] (https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
-- [Real-ESRGAN] (https://github.com/xinntao/Real-ESRGAN)
-- [ESRGAN] (https://github.com/JoeyBallentine/ESRGAN)
+- [Real-CUGAN](https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
+- [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)
+- [ESRGAN](https://github.com/JoeyBallentine/ESRGAN)
 - Modèles pour Real-ESRGAN, ESRGAN
 - (optionnel: [nnedi3_weights.bin](https://github.com/dubhater/vapoursynth-nnedi3/blob/master/src/))
 <br/><br/>
@@ -35,7 +32,6 @@ python run.py --episode 1
 
 [Plus de commandes...](./scripts/README.md)
 <br/><br/>
-
 
 # Clause de non responsabilité
 Se référer au paragraphe 11 et 12 de la licence attachée au projet (GPL v2). Une traduction non officielle est disponible sur le site de l'[APRIL](https://www.april.org/gnu/gpl_french.html) à titre d'information.
