@@ -9,8 +9,6 @@ from utils.hash import (
     FILENAME_TEMPLATE,
     get_image_list,
     STEP_INC,
-    is_hash_for_replace_valid,
-    store_hash_for_replace,
 )
 from utils.path import get_output_path_from_shot
 from utils.pretty_print import *
@@ -25,14 +23,6 @@ from filters.effects import (
 
 
 def simplify_shot_process(db, shot) -> int:
-
-    # First step is deinterlace
-    # calculate new hash with replace struct
-    # Reactivate this
-    if not is_hash_for_replace_valid(shot):
-        # Restart from deinterlace
-        print_orange("\trestart from deinterlace: (reason: replace is not stored)")
-        return 0
 
     # Get the step_no for this task
     for step_no_max, filter in zip(range(len(shot['filters'])), shot['filters']):

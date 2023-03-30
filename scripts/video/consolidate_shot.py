@@ -4,6 +4,13 @@ import os
 from copy import deepcopy
 from pprint import pprint
 from filters.apply_filters import apply_filters
+from filters.consolidate import consolidate_filters
+from filters.utils import (
+    get_filters_from_shot,
+    get_hash_from_last_task,
+    get_step_no_from_last_task,
+)
+
 from utils.common import (
     K_ALL_PARTS_ORDERED,
     K_GENERIQUES,
@@ -11,12 +18,6 @@ from utils.common import (
     get_or_create_src_shot,
     get_src_shot_from_frame_no,
     nested_dict_set,
-)
-from filters.utils import (
-    get_filters_from_shot,
-    consolidate_filters,
-    get_hash_from_last_task,
-    get_step_no_from_last_task,
 )
 from utils.get_curves import get_lut_from_curves
 from utils.hash import create_log
@@ -362,3 +363,19 @@ def consolidate_shot(db, shot) -> None:
         'hash': get_hash_from_last_task(shot),
         'step_no': get_step_no_from_last_task(shot),
     }
+
+    # Find replace filter
+    for step_no, filter in zip(range(len(shot['filters'])), shot['filters']):
+        if filter['task'] == 'replace':
+            shot['last_step']['step_no_replace'] = step_no
+            break
+
+    # print_cyan("Filters: %s:%s:%s, shot no. %d" % (shot['k_ed'], shot['k_ep'], shot['k_part'], shot['no']))
+    # for f in shot['filters']:
+    #     print("\t", end='')
+    #     print_green(f['task'], end='\t\t')
+    #     if f['task'] == '':
+    #         print('\t', end='')
+    #     print_green(f['str'])
+    # print_green(shot['last_step'])
+    # sys.exit()

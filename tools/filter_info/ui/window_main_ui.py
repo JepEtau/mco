@@ -24,13 +24,19 @@ class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(262, 227)
+        MainWindow.resize(262, 230)
         self.centralwidget = QWidget(MainWindow)
         self.centralwidget.setObjectName(u"centralwidget")
         self.verticalLayout = QVBoxLayout(self.centralwidget)
         self.verticalLayout.setSpacing(9)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(6, 6, 6, 6)
+        self.label_folder = QLabel(self.centralwidget)
+        self.label_folder.setObjectName(u"label_folder")
+        self.label_folder.setFrameShape(QFrame.NoFrame)
+
+        self.verticalLayout.addWidget(self.label_folder)
+
         self.lineEdit_filename = QLineEdit(self.centralwidget)
         self.lineEdit_filename.setObjectName(u"lineEdit_filename")
         sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
@@ -47,12 +53,6 @@ class Ui_MainWindow(object):
         self.verticalLayout_2 = QVBoxLayout()
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.verticalLayout_2.setContentsMargins(9, 0, -1, -1)
-        self.label_folder = QLabel(self.centralwidget)
-        self.label_folder.setObjectName(u"label_folder")
-        self.label_folder.setFrameShape(QFrame.NoFrame)
-
-        self.verticalLayout_2.addWidget(self.label_folder)
-
         self.label_ed_ep_part = QLabel(self.centralwidget)
         self.label_ed_ep_part.setObjectName(u"label_ed_ep_part")
         self.label_ed_ep_part.setFrameShape(QFrame.NoFrame)
@@ -100,7 +100,7 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"Filter Info", None))
         self.label_folder.setText(QCoreApplication.translate("MainWindow", u"folder", None))
         self.label_ed_ep_part.setText(QCoreApplication.translate("MainWindow", u"edition:\u00e9pisode:part", None))
         self.label_shot_no.setText(QCoreApplication.translate("MainWindow", u"shot: shot_no", None))

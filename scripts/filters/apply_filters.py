@@ -7,7 +7,6 @@ import torch
 from filters.avisynth import apply_avisynth_filters
 from filters.ffmpeg_deinterlace import ffmpeg_deinterlace
 from filters.ffmpeg_filter import ffmpeg_filter
-
 from filters.python import apply_python_filters
 from filters.utils import MAX_FRAMES_COUNT
 from filters.x_gan import (
@@ -16,10 +15,10 @@ from filters.x_gan import (
     upscale_real_esrgan,
 )
 from utils.hash import (
+    calculate_hash_for_replace,
     get_image_list,
     STEP_INC,
-    STEP_REPLACE,
-    store_hash_for_replace,
+    get_new_image_list
 )
 from utils.pretty_print import *
 
@@ -80,11 +79,6 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                 print_lightgrey("\tLoading %d images in memory, from %s" % (shot['count'], image_list[0]))
                 images = [cv2.imread(f_input, cv2.IMREAD_COLOR) for f_input in image_list]
                 shot['last_step']['shape'] = images[0].shape
-
-
-            # Replace: use a file to stor hash
-            if step_no == STEP_REPLACE:
-                store_hash_for_replace(shot)
 
         else:
             # Get hash, use an empty list
@@ -180,29 +174,46 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
         # Python: opencv2/scikit
         #-----------------------------------------------------------------------
         elif filter['type'] == 'python':
-            saved_hash = hash
-            hash, images = apply_python_filters(
-                shot,
-                images=images,
-                step_no=step_no,
-                filters_str=filter['str'],
-                input_hash=hash,
-                do_save=filter['save'],
-                output_folder=output_folder,
-                image_list=image_list,
-                get_hash=get_hashes,
-                do_force=do_force)
+            if filter['str'] == 'replace':
+                if not get_hashes:
+                    print_green("(python)\tstep no. %d, filter=%s, input_hash= %s" % (step_no, filter['str'], hash))
+                hash = calculate_hash_for_replace(shot)
+                pprint(image_list)
+                image_list = get_new_image_list(shot=shot, step_no=step_no, hash=hash)
 
-            if not get_hashes:
-                print_lightgrey("\t\t\tpython: returned %d images" % (len(images)))
+                if not get_hashes:
+                    images.clear()
 
-            if hash == '':
-                # There was an error: missing paramaters, filter, etc.
-                hash = saved_hash
-                hashes.append([step_no, '', ''])
+                hashes.append([step_no, hash, filter['task']])
                 step_no += STEP_INC
-                print_red("Error: python filter: something went wrong")
+                if not get_hashes and filter['task'] == shot['last_task']:
+                    break
                 continue
+
+            else:
+                saved_hash = hash
+                hash, images = apply_python_filters(
+                    shot,
+                    images=images,
+                    step_no=step_no,
+                    filters_str=filter['str'],
+                    input_hash=hash,
+                    do_save=filter['save'],
+                    output_folder=output_folder,
+                    image_list=image_list,
+                    get_hash=get_hashes,
+                    do_force=do_force)
+
+                if not get_hashes:
+                    print_lightgrey("\t\t\tpython: returned %d images" % (len(images)))
+
+                if hash == '':
+                    # There was an error: missing paramaters, filter, etc.
+                    hash = saved_hash
+                    hashes.append([step_no, '', ''])
+                    step_no += STEP_INC
+                    print_red("Error: python filter: something went wrong")
+                    continue
 
         # FFmpeg
         #-----------------------------------------------------------------------
@@ -314,30 +325,13 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
 
 
         # Get the list of images which will be used as input for the next step
-        if filter['task'] == 'deinterlace':
-            # Special case: deinterlace
-            if step_no != 0:
-                sys.exit(print_red("Error: deinterlaced with step != 0"))
+        image_list = get_image_list(shot=shot,
+            folder=output_folder,
+            step_no=step_no,
+            hash=hash)
 
-            step_no = STEP_INC
-            image_list = get_image_list(shot=shot,
-                folder=os.path.join(shot['cache'], "%02d" %  (0)),
-                step_no=step_no,
-                hash=hash)
-
-            # Remove all images (before replacement)
-            try: images.clear()
-            except: pass
-
-        else:
-            # Generate a list of files which may be used as input for the next step
-            image_list = get_image_list(shot=shot,
-                folder=output_folder,
-                step_no=step_no,
-                hash=hash)
-
-            # Increment step
-            step_no += STEP_INC
+        # Increment step
+        step_no += STEP_INC
 
 
         # if not get_hashes:
