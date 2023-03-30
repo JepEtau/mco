@@ -4,9 +4,10 @@ import os
 from pprint import pprint
 
 from utils.hash import (
-    get_image_list,
     FILENAME_TEMPLATE,
     STEP_INC,
+    get_new_image_list,
+    get_image_list,
 )
 from utils.path import get_output_path_from_shot
 from utils.pretty_print import *
@@ -54,11 +55,15 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
                 step_no=STEP_REPLACE,
                 hash=hash)
     else:
-        # Normal filter
-        image_list = get_image_list(shot=shot,
-            folder=current_output_folder,
-            step_no=step_no,
-            hash=hash)
+        if step_no == shot['last_step']['step_no_replace']:
+            image_list = get_new_image_list(shot=shot,
+                step_no=step_no,
+                hash=shot['filters'][step_no - STEP_INC]['hash'])
+        else:
+            image_list = get_image_list(shot=shot,
+                folder=current_output_folder,
+                step_no=step_no,
+                hash=hash)
 
     return image_list[index_start:index_end]
 

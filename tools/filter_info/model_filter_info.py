@@ -19,6 +19,7 @@ from utils.pretty_print import *
 
 TEMPLATE_SHOT_EPISODE = "^(ep\d{2})_([a-z_]+)_(\d{3})__([a-z0]*)__([a-z0-9]{7})$"
 TEMPLATE_SHOT_G_DEBUT_FIN = "^(g_[a-z]+)_(\d{3})__([a-z0]*)_(ep\d{2})__([a-z0-9]{7})$"
+TEMPLATE_SHOT_G = "^(ep\d{2})_(g_[a-z]+)_(\d{3})__([a-z0]*)_(ep\d{2})__([a-z0-9]{7})$"
 TEMPLATE_IMG = "^(ep\d{2})_(\d{5})__([a-z0]*)__(\d{2})_([a-z0-9]{7})$"
 
 
@@ -108,6 +109,17 @@ class Model_filter_info(QObject):
                     }
 
             if file_properties['hash'] is None:
+                properties = re.match(re.compile(TEMPLATE_SHOT_G), filename)
+                if properties is not None:
+                    file_properties = {
+                        'k_ed': properties.group(5),
+                        'k_ep': properties.group(5),
+                        'k_part': properties.group(2),
+                        'shot_no': int(properties.group(3)),
+                        'hash': properties.group(6),
+                    }
+
+            if file_properties['hash'] is None:
                 print_orange("Cannot extract properties from [%s]" % (filename))
 
 
@@ -170,6 +182,7 @@ class Model_filter_info(QObject):
             # Max 99 filters
             value_str = config_hashes.get('md5', hash)
             print("key=%s, value_str=[%s]" % (hash, value_str))
+            output_hash = hash
 
             is_found = False
             properties = re.match(re.compile("^\"([a-z0-9]{7}),([^\"]+)\"$"), value_str)
@@ -197,7 +210,7 @@ class Model_filter_info(QObject):
 
             filters.insert(0, {
                 'filter_str': filter_str,
-                'hash': hash
+                'hash': output_hash
             })
 
 

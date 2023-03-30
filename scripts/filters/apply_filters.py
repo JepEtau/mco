@@ -18,7 +18,8 @@ from utils.hash import (
     calculate_hash_for_replace,
     get_image_list,
     STEP_INC,
-    get_new_image_list
+    get_new_image_list,
+    log_filter
 )
 from utils.pretty_print import *
 
@@ -174,24 +175,25 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
         # Python: opencv2/scikit
         #-----------------------------------------------------------------------
         elif filter['type'] == 'python':
+            previous_hash = hash
+
             if filter['str'] == 'replace':
                 if not get_hashes:
                     print_green("(python)\tstep no. %d, filter=%s, input_hash= %s" % (step_no, filter['str'], hash))
+
+                # Calculate hash
                 hash = calculate_hash_for_replace(shot)
-                pprint(image_list)
-                image_list = get_new_image_list(shot=shot, step_no=step_no, hash=hash)
+                hash = log_filter("%s,replace=%s" % (previous_hash, hash), shot['hash_log_file'])
 
                 if not get_hashes:
+                    print_yellow("BEFORE replace")
+                    pprint(image_list)
+                    image_list = get_new_image_list(shot=shot, step_no=step_no, hash=previous_hash)
+                    print_yellow("AFTER replace")
+                    pprint(image_list)
                     images.clear()
 
-                hashes.append([step_no, hash, filter['task']])
-                step_no += STEP_INC
-                if not get_hashes and filter['task'] == shot['last_task']:
-                    break
-                continue
-
             else:
-                saved_hash = hash
                 hash, images = apply_python_filters(
                     shot,
                     images=images,
@@ -209,10 +211,10 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
 
                 if hash == '':
                     # There was an error: missing paramaters, filter, etc.
-                    hash = saved_hash
+                    hash = previous_hash
                     hashes.append([step_no, '', ''])
                     step_no += STEP_INC
-                    print_red("Error: python filter: something went wrong")
+                    print_red("Error: python filter: something went wrong: %s" % (filter['str']))
                     continue
 
         # FFmpeg
@@ -325,10 +327,11 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
 
 
         # Get the list of images which will be used as input for the next step
-        image_list = get_image_list(shot=shot,
-            folder=output_folder,
-            step_no=step_no,
-            hash=hash)
+        if filter['str'] != 'replace':
+            image_list = get_image_list(shot=shot,
+                folder=output_folder,
+                step_no=step_no,
+                hash=hash)
 
         # Increment step
         step_no += STEP_INC
@@ -340,6 +343,8 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
         # Exit if last task
         if not get_hashes and filter['task'] == shot['last_task']:
             break
-
-
+    try:
+        print_purple(shot['last_step'])
+    except:
+        pass
     return hashes

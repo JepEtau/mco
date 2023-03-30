@@ -331,7 +331,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
         sys.exit(print_red("error: apply_python_filters: worklist is empty"))
 
     # Execute the pool of works
-    if len(worklist) < 1000 and cpu_count > 1:
+    if cpu_count > 1:
         no = 0
         with ThreadPoolExecutor(max_workers=min(cpu_count, len(worklist))) as executor:
             work_result = {executor.submit(work_python_filters, work[0], work[1], filter_list): list
@@ -343,7 +343,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
                 if do_save:
                     cv2.imwrite(output_image_list[frame_no], img)
                 no += 1
-                print_yellow("\t\tfiltering: %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
+                print_yellow("\t\tfiltering (multi-processing): %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
     else:
         no = 0
         for work in worklist:
@@ -353,7 +353,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
             if do_save:
                 cv2.imwrite(output_image_list[frame_no], img)
             no += 1
-            print_yellow("\t\tfiltering: %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
+            print_yellow("\t\tfiltering (single process): %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
     print("\t\t                           ", end='\r')
 
     return hash, output_images

@@ -11,6 +11,7 @@ else:
 
 FILTER_TAGS = [
     'deinterlace',
+    'replace',
     'pre_upscale',
     'upscale',
     'sharpen',

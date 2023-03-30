@@ -118,10 +118,9 @@ def create_single_concatenation_file(db, k_ep, k_part, shot, previous_concatenat
             concatenation_filepath = os.path.join(
                 db[k_ep_or_g]['cache_path'], "concatenation",
                 "%s_video.txt" % (k_ep_or_g))
-
         else:
             concatenation_filepath = os.path.join(db[k_ep_or_g]['cache_path'],
-                "concatenation", "%s_%s_%03d__%s_.txt" % (k_ep, k_part, 0, k_ed))
+                "concatenation", "%s_%s_%03d__%s_%s_.txt" % (k_ep, k_part, 0, k_ed, shot['src']['k_ep']))
         previous_concatenation_filepath = concatenation_filepath
         concatenation_file = open(concatenation_filepath, "w")
 
@@ -279,7 +278,10 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
         success = execute_simple_ffmpeg_command(ffmpeg_command=ffmpeg_command)
         if not success:
             print_red("error: failed to generate %s" % (shot_filepath))
-            os.remove(shot_filepath)
+            try:
+                os.remove(shot_filepath)
+            except:
+                pass
 
     return None
 

@@ -85,14 +85,14 @@ def get_new_image_list(shot, step_no, hash=''):
 
     # Template to name the files
     suffix = "_%s" % (hash) if hash != '' else ''
-    filename_template = FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, suffix)
+    filename_template = FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no-STEP_INC, suffix)
     folder = os.path.join(shot['cache'], "%02d" %  (step_no-STEP_INC))
 
     # Start frame no.
     # Generate the list
     replace = shot['replace']
     image_list = list()
-    if step_no == 0:
+    if (step_no - STEP_INC) == 0:
         # Deinterlace: use frame no to facilitate the debug
         for no in range(shot['start'], shot['start'] + shot['count']):
             try:
@@ -122,7 +122,10 @@ def get_new_image_list(shot, step_no, hash=''):
 def get_image_list(shot, folder, step_no, hash=''):
     try:
         if step_no == shot['last_step']['step_no_replace']:
-            return get_new_image_list(shot=shot, step_no=step_no, hash=hash)
+            print_red("error: get_image_list, current step is step_no")
+    # try:
+    #     if step_no == shot['last_step']['step_no_replace']:
+    #         return get_new_image_list(shot=shot, step_no=step_no, hash=hash)
     except:
         print_orange("get_image_list: continue, step=%d" % (step_no))
 

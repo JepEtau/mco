@@ -5,4 +5,5 @@
 - (?) g_fin : fadeout is not done
 - stabilize: modify tools
 - tools: filters have been modified->modify combobox
-- replace does not work
+- replace: when in memory mode, do not flush images but replace images (copy)
+

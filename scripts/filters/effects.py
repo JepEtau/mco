@@ -11,7 +11,8 @@ from utils.hash import (
     FILENAME_TEMPLATE,
     STEP_INC,
     get_first_image_filepath,
-    get_image_list
+    get_image_list,
+    get_new_image_list
 )
 from utils.path import (
     get_input_path_from_shot,
@@ -88,10 +89,15 @@ def effect_loop_and_fadeout(db, shot):
 
 
     # Input image list before the loop
-    image_list = get_image_list(shot=shot,
-        folder=input_filepath,
-        step_no=step_no,
-        hash=hash)
+    if shot['last_step']['step_no'] == shot['last_step']['step_no_replace']:
+        image_list = get_new_image_list(shot=shot,
+            step_no=step_no,
+            hash=shot['filters'][step_no - STEP_INC]['hash'])
+    else:
+        image_list = get_image_list(shot=shot,
+            folder=input_filepath,
+            step_no=step_no,
+            hash=hash)
     # Duplicate the last one
     loop_start -= shot['start']
     last_image_filepath = image_list[loop_start]
@@ -176,10 +182,15 @@ def effect_fadeout(db, shot):
     print_lightgreen("\toutput_filepath: %s" % (output_filepath))
 
     # Input image list
-    image_list = get_image_list(shot=shot,
-        folder=input_filepath,
-        step_no=step_no,
-        hash=hash)
+    if shot['last_step']['step_no'] == shot['last_step']['step_no_replace']:
+        image_list = get_new_image_list(shot=shot,
+            step_no=step_no,
+            hash=shot['filters'][step_no - STEP_INC]['hash'])
+    else:
+        image_list = get_image_list(shot=shot,
+            folder=input_filepath,
+            step_no=step_no,
+            hash=hash)
     # pprint(image_list)
     index_start = fadeout_start - shot['start']
     index_end = index_start + fadeout_count
