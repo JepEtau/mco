@@ -132,7 +132,6 @@ class Window_main(QMainWindow, Ui_MainWindow):
 
 
     def event_refresh_filters(self, properties):
-        pprint(properties)
         self.clear_widgets()
         self.lineEdit_filename.setText(properties['filename'])
         self.label_folder.setText(properties['folder'])

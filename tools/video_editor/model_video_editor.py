@@ -31,7 +31,7 @@ from utils.common import (
     nested_dict_get,
     nested_dict_set,
 )
-from utils.get_framelist import get_framelist, get_framelist_single
+from utils.get_frame_list import get_frame_list, get_frame_list_single
 from video.consolidate_shot import consolidate_shot
 from filters.filters import filter_rgb
 
@@ -205,9 +205,9 @@ class Model_video_editor(Model_common):
 
             # Get a list of path for each frame  for this shot
             if k_part_selected in ['episode', 'reportage']:
-                filepath_tmp = get_framelist(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
+                filepath_tmp = get_frame_list(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
             else:
-                filepath_tmp = get_framelist_single(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
+                filepath_tmp = get_frame_list_single(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
             self.filepath.append(filepath_tmp)
 
             shot_no = shot['no']

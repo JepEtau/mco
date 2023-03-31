@@ -3,6 +3,8 @@ import sys
 from pprint import pprint
 from utils.pretty_print import *
 
+STEP_INC = 1
+
 # Maximum nb of frames which can be loaded in memory
 if sys.platform == 'win32':
     MAX_FRAMES_COUNT = 800
@@ -21,19 +23,6 @@ FILTER_TAGS = [
 ]
 
 
-def get_hash_from_task(shot, task):
-    __task = 'geometry' if task == 'final' else task
-    for f in shot['filters']:
-        if __task == f['task']:
-            return f['hash']
-
-    pprint(shot['filters'])
-    sys.exit(print_red("Error: get_hash_from_step: [%s] not found" % (task)))
-    return None
-
-
-def get_hash_from_last_task(shot):
-    return get_hash_from_task(shot, shot['last_task'])
 
 
 def get_step_no_from_task(shot, task):

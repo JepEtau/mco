@@ -14,11 +14,13 @@ from filters.x_gan import (
     upscale_real_cugan,
     upscale_real_esrgan,
 )
+from utils.get_image_list import (
+    get_image_list,
+    get_new_image_list,
+    STEP_INC,
+)
 from utils.hash import (
     calculate_hash_for_replace,
-    get_image_list,
-    STEP_INC,
-    get_new_image_list,
     log_filter
 )
 from utils.pretty_print import *
@@ -77,7 +79,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                 shot['count'], len(images), len(image_list)))
 
             if step_no > 0 and shot['count'] < MAX_FRAMES_COUNT and len(images) != shot['count']:
-                print_lightgrey("\tLoading %d images in memory, from %s" % (shot['count'], image_list[0]))
+                print_lightgrey("\t\t\tLoading %d images in memory, from %s" % (shot['count'], image_list[0]))
                 images = [cv2.imread(f_input, cv2.IMREAD_COLOR) for f_input in image_list]
                 shot['last_step']['shape'] = images[0].shape
 
@@ -179,18 +181,18 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
 
             if filter['str'] == 'replace':
                 if not get_hashes:
-                    print_green("(python)\tstep no. %d, filter=%s, input_hash= %s" % (step_no, filter['str'], hash))
+                    print_cyan("(python)\tstep no. %d, filter=%s, input_hash= %s" % (step_no, filter['str'], hash))
 
                 # Calculate hash
                 hash = calculate_hash_for_replace(shot)
                 hash = log_filter("%s,replace=%s" % (previous_hash, hash), shot['hash_log_file'])
 
                 if not get_hashes:
-                    print_yellow("BEFORE replace")
-                    pprint(image_list)
+                    # print_yellow("BEFORE replace")
+                    # pprint(image_list)
                     image_list = get_new_image_list(shot=shot, step_no=step_no, hash=previous_hash)
-                    print_yellow("AFTER replace")
-                    pprint(image_list)
+                    # print_yellow("AFTER replace")
+                    # pprint(image_list)
                     images.clear()
 
             else:
@@ -283,7 +285,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
         #-----------------------------------------------------------------------
         elif filter['type'] == 'null':
             if not get_hashes:
-                print_green("(null)\tstep no. %d, filter=null, input_hash= %s" % (step_no, hash))
+                print_cyan("(null)\tstep no. %d, filter=null, input_hash= %s" % (step_no, hash))
 
             if not get_hashes:
                 if step_no == STEP_INC:

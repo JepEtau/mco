@@ -9,9 +9,11 @@ from filters.ffmpeg_utils import clean_ffmpeg_filter
 from filters.utils import MAX_FRAMES_COUNT
 from utils.common import FPS
 from utils.pretty_print import *
-from utils.hash import (
+from utils.get_image_list import (
     FILENAME_TEMPLATE,
     get_image_list,
+)
+from utils.hash import (
     log_filter
 )
 from utils.process import (
@@ -31,7 +33,7 @@ def ffmpeg_filter(shot, images:list, image_list:list,
     hash = log_filter("%s,%s" % (input_hash, filter_str), shot['hash_log_file'])
     if get_hash:
         return hash, None
-    print_green("(FFmpeg)\tstep no. %d, filter=[%s], input_hash= %s, output hash= %s" % (step_no, filter_str, input_hash, hash))
+    print_cyan("(FFmpeg)\tstep no. %d, filter=[%s], input_hash= %s, output hash= %s" % (step_no, filter_str, input_hash, hash))
 
     # Output images in memory
     use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
@@ -80,9 +82,9 @@ def ffmpeg_filter(shot, images:list, image_list:list,
         bytes_arr = bytearray()
         for img in images:
             bytes_arr.extend(img.tobytes())
+        # print_yellow("bufsize= %d" % (bufsize))
+        # print_yellow("stdin size = %d" % (len(bytes_arr)))
 
-        print_yellow("bufsize= %d" % (bufsize))
-        print_yellow("stdin size = %d" % (len(bytes_arr)))
         process = create_process(ffmpeg_command, db_common['process'], bufsize=bufsize)
         stdout, stderr = process.communicate(input=bytes(bytes_arr))
         for i, index in zip(range(frame_count), range(0, frame_count*img_size, img_size)):

@@ -4,9 +4,11 @@ import sys
 import re
 import signal
 from utils.process import create_process
-from utils.hash import (
+from utils.get_image_list import (
     FILENAME_TEMPLATE,
     get_image_list,
+)
+from utils.hash import (
     log_filter,
 )
 from utils.pretty_print import *
@@ -19,7 +21,7 @@ def apply_avisynth_filters(shot, image_list,
 
     # Deinterlace only
     if not get_hash:
-        print_green("(AviSynth)", end='')
+        print_cyan("(AviSynth)", end='')
         print_lightcyan("\tfilters=%s" % (filters_str))
 
     if 'deinterlace' not in filters_str:

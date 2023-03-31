@@ -3,176 +3,25 @@ import sys
 import os
 from copy import deepcopy
 from pprint import pprint
+
 from filters.apply_filters import apply_filters
 from filters.consolidate import consolidate_filters
 from filters.utils import (
     get_filters_from_shot,
-    get_hash_from_last_task,
     get_step_no_from_last_task,
 )
-
+from utils.hash import (
+    create_hash_file,
+    get_hash_from_last_task,
+)
 from utils.common import (
-    K_ALL_PARTS_ORDERED,
     K_GENERIQUES,
-    get_k_part_from_frame_no,
-    get_or_create_src_shot,
-    get_src_shot_from_frame_no,
     nested_dict_set,
 )
 from utils.get_curves import get_lut_from_curves
-from utils.hash import create_log
 from utils.path import get_cache_path, get_output_path_from_shot
 from utils.pretty_print import *
 
-
-def __consolidate_target_shots(db, k_ep, k_part:str=''):
-    # This function is used to consolidate target shots so that
-    # the process function can take these shots for the generation
-    # It is used to replace the 'src' structure by the input shot
-    # and merge it into this target shot
-
-    verbose = True
-
-    # Process part(s)
-    k_parts = K_ALL_PARTS_ORDERED if k_part == '' else [k_part]
-    for k_p in k_parts:
-
-        if k_p in ['g_debut', 'g_fin']:
-            db_video = db[k_p]['video']
-            k_ep_src_main = db[k_p]['video']['src']['k_ep']
-            # pprint(db_video)
-            # print("k_ep_src_main: %s" % (k_ep_src_main))
-        elif k_ep == 'ep00':
-            sys.exit("Erreur: consolidate_target_shots: le numéro de l'épisode est manquant")
-        else:
-            db_video = db[k_ep]['video']['target'][k_p]
-            k_ep_src_main = k_ep
-
-
-        if db_video['count'] == 0:
-            # Empty part
-            continue
-
-        # Walk through shots
-        shots = db_video['shots']
-        for shot in shots:
-
-            # Select the shot used for the generation
-            if verbose:
-                print("\n++++++++++++++++++++++++++ target ++++++++++++++++++++++++++")
-                pprint(shot)
-                print("")
-                # sys.exit()
-
-            if 'src' in shot.keys() and shot['src']['use']:
-                # This shot has to de modified with the shot specified in the 'src'
-                k_ed_src = shot['src']['k_ed']
-                k_ep_src = shot['src']['k_ep']
-
-                # Find the part of this src
-                k_part_src = get_k_part_from_frame_no(db,
-                    k_ed=k_ed_src,
-                    k_ep=k_ep_src,
-                    frame_no=shot['src']['start'])
-
-                # Get the src shot: it must have been defined previously, if not, use the create function?
-                try:
-                    shot_src = get_src_shot_from_frame_no(db,
-                        shot['src']['start'],
-                        k_ed=k_ed_src,
-                        k_ep=k_ep_src,
-                        k_part=k_part_src)
-                    if shot_src is None:
-                        sys.exit("TODO: replace by get_or_create_src_shot")
-                except:
-                    print("Warning: consolidate_target_shots: create a src shot because not defined in config file %s:%s:%s, k_p=%s" % (k_ed_src, k_ep_src, k_part_src, k_p))
-                    shot_src = get_or_create_src_shot(db,
-                        shot['src']['start'],
-                        k_ed=k_ed_src,
-                        k_ep=k_ep_src,
-                        k_part=k_part_src)
-                    if shot_src is None:
-                        sys.exit("TODO: replace by get_or_create_src_shot")
-
-                if verbose:
-                    print("++++++++++++++++++++++++++  shot_src : %s:%s:%s ++++++++++++++++++++++++++" % (k_ed_src, k_ep_src, k_part_src))
-                    pprint(shot_src)
-                    print("")
-
-                # Verify that this shot can be replaced
-                if ((shot['src']['start'] + shot['src']['count']) > (shot_src['start'] + shot_src['count'])
-                    and 'effects' not in shot.keys()):
-
-                    if shot['dst']['k_part'] == 'episode':
-                        # Do not verify for precedemment/asuivre as what is important is the total nb of frames,
-                        # so only episode
-                        print("Error: cannot generate shot as the source has not enough frames src: start=%d" % (shot['src']['start']))
-                        print("target:")
-                        pprint(shot)
-                        print("source:")
-                        pprint(shot_src)
-                        sys.exit()
-
-                # Let's update the dst structure of the target shot
-                # TODO: remove this after full validation
-                # if (shot['start'] != shot['src']['start']
-                # or shot['count'] != shot['src']['count']):
-                #     pprint(shot)
-                #     sys.exit("differences between src and shot")
-
-                # shot['dst'].update({
-                #     'start': shot['start'],
-                #     'count': shot['count'],
-                # })
-
-                if 'count' not in shot['dst'].keys():
-                    shot['dst']['count'] = shot['count']
-                if 'start' not in shot['dst'].keys():
-                    shot['dst']['start'] = shot['start']
-
-                # Replace all values in target shot except:
-                # src, dst, (geometry), effects
-                for k in shot_src.keys():
-                    if k in ['src', 'dst', 'no', 'geometry', 'effects']:
-                        continue
-                    shot[k] = shot_src[k]
-
-                shot.update({
-                    'k_ed': k_ed_src,
-                    'k_ep': k_ep_src,
-                    'k_part': k_part_src,
-                })
-
-            else:
-                shot.update({
-                    'k_ed': k_ed,
-                    'k_ep': k_ep_src_main,
-                    'k_part': k_p,
-                })
-
-            # Add a flag which is used by concatenation functions
-            if shot == shots[-1]:
-                shot['last'] = True
-
-            if verbose:
-                print("+++++++++++++++++++++ consolidated target shot ++++++++++++++++++++++++")
-                pprint(shot)
-                print("")
-                print("=================================================================================")
-                # sys.exit()
-
-
-            if verbose:
-                print("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
-                    "{:3d}".format(shot['no']),
-                    "{:5d}".format(shot['start']),
-                    shot['dst']['count'],
-                    shot['k_ed'],
-                    shot['k_ep'],
-                    shot['k_part'],
-                    shot['start'],
-                    shot['count']),
-                    flush=True)
 
 
 
@@ -352,7 +201,7 @@ def consolidate_shot(db, shot) -> None:
     consolidate_filters(shot)
 
     # Update filters: add hash for each filter
-    hash_log_file = create_log(db, shot['k_ep'])
+    hash_log_file = create_hash_file(db, shot['k_ep'])
     shot['hash_log_file'] = hash_log_file
 
     hashes = apply_filters(db=db, shot=shot, get_hashes=True)

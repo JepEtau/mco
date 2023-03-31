@@ -15,11 +15,11 @@ from filters.ffmpeg_utils import (
     get_duration,
     execute_ffmpeg_command,
 )
-from utils.get_framelist import (
-    get_framelist,
-    get_framelist_single,
+from utils.get_frame_list import (
+    get_frame_list,
+    get_frame_list_single,
 )
-from utils.hash import get_image_list
+from utils.get_image_list import get_image_list
 from utils.path import create_folder_for_concatenation
 from utils.pretty_print import *
 from utils.time_conversions import (
@@ -46,7 +46,7 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
     #   - reportage
 
     # Get the list of images
-    images_filepath = get_framelist(db=db,
+    images_filepath = get_frame_list(db=db,
         k_ep=k_ep, k_part=k_part, shot=shot)
 
     # Folder for concatenation file
@@ -101,7 +101,7 @@ def create_single_concatenation_file(db, k_ep, k_part, shot, previous_concatenat
     k_ep_or_g = k_ep if k_part not in ['g_debut', 'g_fin'] else k_part
 
     # Get the list of images
-    images_filepath = get_framelist_single(db,
+    images_filepath = get_frame_list_single(db,
         k_ep=k_ep, k_part=k_part, shot=shot)
 
     # Folder for concatenation file

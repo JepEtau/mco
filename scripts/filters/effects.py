@@ -2,14 +2,13 @@
 import sys
 import os
 import os.path
-import shutil
-
 import numpy as np
 import cv2
 from pprint import pprint
-from utils.hash import (
+
+from filters.utils import STEP_INC
+from utils.get_image_list import (
     FILENAME_TEMPLATE,
-    STEP_INC,
     get_first_image_filepath,
     get_image_list,
     get_new_image_list

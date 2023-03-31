@@ -167,7 +167,7 @@ def generate_video(db, k_ed:str, k_ep:str,
     # minutes, seconds = divmod(time.time() - start_shot_time,60)
     # print("=> processed shots in %d:%02d" % (minutes, seconds), flush=True)
 
-    pprint(video_files)
+    # pprint(video_files)
     # Combine images to mkv
     for k_p, video_shots in video_files.items():
         if k_part != '' and k_p != k_part or simulation:

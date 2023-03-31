@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
 import sys
 from pprint import pprint
-from utils.hash import STEP_INC
 from utils.pretty_print import *
-from filters.utils import MAX_FRAMES_COUNT
+from filters.utils import (
+    MAX_FRAMES_COUNT,
+    STEP_INC
+)
 
 
 

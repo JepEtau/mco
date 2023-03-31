@@ -15,8 +15,10 @@ from filters.deshake import deshake
 from filters.utils import MAX_FRAMES_COUNT
 from utils.pretty_print import *
 from utils.hash import (
-    get_image_list,
     log_filter,
+)
+from utils.get_image_list import (
+    get_image_list,
 )
 
 from filters.filters import (
@@ -44,7 +46,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
     filters_str = clean_ffmpeg_filter(filters_str)
 
     if not get_hash:
-        print_green("(cv2, skimage)\tstep no. %d, filter=[%s], input_hash= %s" % (step_no, filters_str, input_hash))
+        print_cyan("(cv2, skimage)\tstep no. %d, filter=[%s], input_hash= %s" % (step_no, filters_str, input_hash))
 
     # Get filter names and arguments
     filter_list = list()
@@ -304,6 +306,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
     # Filter frame by frame: create a list of works for multiprocessing
     count = shot['count']
     worklist = list()
+    output_images = list()
     if use_memory:
         if do_save and not do_force:
             for frame_no, f_output in zip(range(count), output_image_list):
@@ -324,7 +327,6 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
         else:
             for frame_no in range(count):
                 worklist.append([frame_no, image_list[frame_no]])
-        output_images = list()
 
 
     if len(worklist) == 0:

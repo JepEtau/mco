@@ -10,8 +10,10 @@ from pprint import pprint
 from filters.utils import MAX_FRAMES_COUNT
 
 from utils.hash import (
-    get_image_list,
     log_filter,
+)
+from utils.get_image_list import (
+    get_image_list,
 )
 from utils.pretty_print import *
 
@@ -46,7 +48,7 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
     if get_hash:
         return hash, scale, None
 
-    print_green("(REAL_CUGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
+    print_cyan("(REAL_CUGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
         step_no, model_name, input_hash, hash, suffix))
 
 
@@ -163,7 +165,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     if get_hash:
         return hash, netscale, None
 
-    print_green("(REAL_ESRGAN)\tstep no. %d, upscaling with model %s, input hash= %s, output hash= %s, suffix= %s" % (
+    print_cyan("(REAL_ESRGAN)\tstep no. %d, upscaling with model %s, input hash= %s, output hash= %s, suffix= %s" % (
         step_no, model_name, input_hash, hash, suffix))
 
     # Default values for upscaler
@@ -337,7 +339,7 @@ def upscale_esrgan(shot, images:list, image_list:list,
     if get_hash:
         return hash, scale, None
 
-    print_green("(ESRGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
+    print_cyan("(ESRGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
         step_no, model_name, input_hash, hash, suffix))
 
 

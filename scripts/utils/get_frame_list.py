@@ -3,7 +3,7 @@ import sys
 import os
 from pprint import pprint
 
-from utils.hash import (
+from utils.get_image_list import (
     FILENAME_TEMPLATE,
     STEP_INC,
     get_new_image_list,
@@ -69,7 +69,7 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
 
 
 
-def get_framelist(db, k_ep, k_part, shot) -> list:
+def get_frame_list(db, k_ep, k_part, shot) -> list:
     """This function returns a list of images which is used
     to create concatenation files or by tools for video editing
     It is used for the following parts:
@@ -122,7 +122,7 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
     # Add files for effects
     if 'effects' in shot.keys():
         effect = shot['effects'][0]
-        print_lightgreen("get_framelist_single: effect=%s" % (effect))
+        print_lightgreen("get_frame_list_single: effect=%s" % (effect))
 
         if effect == 'loop_and_fadeout':
             # Initialize values for loop/fadeout
@@ -179,7 +179,7 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
 
 
         elif effect == 'fadeout':
-            # print("\n%s.get_framelist (%s:%s)" % (__name__, k_ep, k_part))
+            # print("\n%s.get_frame_list (%s:%s)" % (__name__, k_ep, k_part))
             # pprint(shot)
             # fadeout_start = shot['effects'][1]
             fadeout_count = shot['effects'][2]
@@ -236,7 +236,7 @@ def get_framelist(db, k_ep, k_part, shot) -> list:
 
 
 
-def get_framelist_single(db, k_ep, k_part, shot) -> list:
+def get_frame_list_single(db, k_ep, k_part, shot) -> list:
     """This function returns a list of images which is used
     to create concatenation files or by tools for video editing
     It is used for the following parts:
@@ -254,7 +254,7 @@ def get_framelist_single(db, k_ep, k_part, shot) -> list:
     else:
         db_video = db[k_ep]['video']['target'][k_part]
 
-    # print("%s:get_framelist_single: use %s for %s:%s" % (__name__, k_ep_src, k_ep, k_part))
+    # print("%s:get_frame_list_single: use %s for %s:%s" % (__name__, k_ep_src, k_ep, k_part))
     # pprint(shot)
     k_part_src = shot['k_part']
     if 'start' in shot['dst']:
@@ -278,7 +278,7 @@ def get_framelist_single(db, k_ep, k_part, shot) -> list:
     try:
         if shot['no'] == 0:
             if db_video['avsync'] != 0 and k_part != 'precedemment':
-                sys.exit(print_red("get_framelist_single: avsync not supported for %s:%s" % (k_ep, k_part)))
+                sys.exit(print_red("get_frame_list_single: avsync not supported for %s:%s" % (k_ep, k_part)))
 
             black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
             if db_video['avsync'] > 0:
@@ -293,7 +293,7 @@ def get_framelist_single(db, k_ep, k_part, shot) -> list:
     # Add files for effects
     if 'effects' in shot.keys():
         effect = shot['effects'][0]
-        print_lightgreen("get_framelist_single: effect=%s" % (effect))
+        print_lightgreen("get_frame_list_single: effect=%s" % (effect))
 
         if effect == 'loop':
             frame_no = shot['effects'][1]
@@ -379,8 +379,8 @@ def get_framelist_single(db, k_ep, k_part, shot) -> list:
 
 
         elif effect == 'fadeout':
-            sys.exit(print_red("error: get_framelist_single: effect=%s has to be verified" % (effect)))
-            # print("\n%s.get_framelist (%s:%s)" % (__name__, k_ep, k_part))
+            sys.exit(print_red("error: get_frame_list_single: effect=%s has to be verified" % (effect)))
+            # print("\n%s.get_frame_list (%s:%s)" % (__name__, k_ep, k_part))
             # pprint(shot)
             fadeout_start = shot['effects'][1]
             fadeout_count = shot['effects'][2]
