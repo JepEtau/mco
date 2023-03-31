@@ -8,6 +8,7 @@ import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
 from pprint import pprint
+from filters.dnn_superres import upscale_cv2_dnn_superres
 from filters.ffmpeg_utils import clean_ffmpeg_filter
 
 from filters.homography import Homography
@@ -73,6 +74,8 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
 
     # Process all images
     filter_name = filter_list[0][0]
+
+
     if filter_name == 'deshake':
         add_border = False if 'no_border' in filter_list[0][1] else True
 
@@ -163,52 +166,16 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
 
 
     elif filter_name == 'rgb':
-        try:
-            filters_str += "=%s" % (shot['curves']['k_curves'])
-        except:
-            print_yellow("\t\t\tNo RGB curves")
-            return '', None
-
-        hash = log_filter("%s,%s" % (input_hash, filters_str), shot['hash_log_file'])
-        if get_hash:
-            return hash, None
-        # Output image list
-        if do_save:
-            output_image_list = get_image_list(
-                shot=shot,
-                folder=output_folder,
-                step_no=step_no,
-                hash=hash)
-
-        # RGB correction frame by frame: create a list of works for multiprocessing
-        count = shot['count']
-        worklist = list()
-        output_images = [None] * shot['count']
-        if do_save:
-            for frame_no, f_output in zip(range(count), output_image_list):
-                if not os.path.exists(f_output):
-                    worklist.append([frame_no, images[frame_no]])
-                else:
-                    output_images[frame_no] = cv2.imread(f_output, cv2.IMREAD_COLOR)
-        else:
-            for frame_no in range(count):
-                worklist.append([frame_no, images[frame_no]])
-
-        # Execute the pool of works
-        no = 0
-        with ThreadPoolExecutor(max_workers=min(cpu_count, len(worklist))) as executor:
-            work_result = {executor.submit(work_cv2_rgb_filter, work[0], work[1], shot['curves']['lut']): list
-                            for work in worklist}
-            for future in concurrent.futures.as_completed(work_result):
-                frame_no, img = future.result()
-                output_images[frame_no] = img
-                if do_save:
-                    cv2.imwrite(output_image_list[frame_no], img)
-                no += 1
-                print_yellow("\t\t\tapplying RGB curves: %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
-        print("\t\t\t                           ", end='\r')
-
-        return hash, output_images
+        return apply_python_filter_rgb(
+            shot=shot,
+            images=images,
+            image_list=image_list,
+            step_no=step_no,
+            filters_str=filters_str,
+            input_hash=input_hash,
+            get_hash=get_hash,
+            do_save=do_save,
+            output_folder=output_folder)
 
 
     elif filter_name == 'geometry':
@@ -288,6 +255,19 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
         return hash, output_images
 
 
+    elif filter_name.startswith('dnn_superres'):
+        return upscale_cv2_dnn_superres(
+            shot=shot,
+            images=images,
+            image_list=image_list,
+            step_no=step_no,
+            filters_str=filters_str,
+            input_hash=input_hash,
+            get_hash=get_hash,
+            do_save=do_save,
+            output_folder=output_folder)
+
+
     # Other filters
     hash = log_filter("%s,%s" % (input_hash, filters_str), shot['hash_log_file'])
     if get_hash:
@@ -359,6 +339,70 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
     print("\t\t                           ", end='\r')
 
     return hash, output_images
+
+
+
+
+def apply_python_filter_rgb(shot, images:list, image_list:list,
+        step_no, filters_str:str, input_hash:str,
+        do_save:bool, output_folder:str,
+        get_hash:bool=False):
+
+        try:
+            filters_str += "=%s" % (shot['curves']['k_curves'])
+        except:
+            print_yellow("\t\t\tNo RGB curves")
+            return '', None
+
+        hash = log_filter("%s,%s" % (input_hash, filters_str), shot['hash_log_file'])
+        if get_hash:
+            return hash, None
+
+        # Output images in memory
+        use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
+
+        # Output image list
+        if do_save:
+            output_image_list = get_image_list(
+                shot=shot,
+                folder=output_folder,
+                step_no=step_no,
+                hash=hash)
+
+        # RGB correction frame by frame: create a list of works for multiprocessing
+        count = shot['count']
+        worklist = list()
+        output_images = [None] * shot['count']
+        if do_save:
+            for frame_no, f_output in zip(range(count), output_image_list):
+                if not os.path.exists(f_output):
+                    worklist.append([frame_no, images[frame_no]])
+                elif use_memory:
+                    output_images[frame_no] = cv2.imread(f_output, cv2.IMREAD_COLOR)
+        else:
+            for frame_no in range(count):
+                worklist.append([frame_no, images[frame_no]])
+
+        # Execute the pool of works
+        no = 0
+        with ThreadPoolExecutor(max_workers=min(cpu_count, len(worklist))) as executor:
+            work_result = {executor.submit(work_cv2_rgb_filter, work[0], work[1], shot['curves']['lut']): list
+                            for work in worklist}
+            for future in concurrent.futures.as_completed(work_result):
+                frame_no, img = future.result()
+                if use_memory:
+                    output_images[frame_no] = img
+                if do_save:
+                    cv2.imwrite(output_image_list[frame_no], img)
+                no += 1
+                print_yellow("\t\t\tapplying RGB curves: %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
+        print("\t\t\t                           ", end='\r')
+
+        return hash, output_images
+
+
+
+
 
 
 

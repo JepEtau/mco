@@ -192,67 +192,6 @@ def filter_remove_contours(in_img, thresh, maxval):
     return out_img
 
 
-# openCV: superRes
-# pip install opencv-contrib-python
-from cv2 import dnn_superres
-def filter_scale_superres(filter, image, out_img_filepath=None):
-    # sys.exit("superres is not supported")
-    print("\tfilter=%s" % (filter))
-    method = filter[len('superres='):]
-    print("\tmethod=%s" % (method))
-    print("\toutput file: %s" % (out_img_filepath))
-
-    sr = dnn_superres.DnnSuperResImpl_create()
-    # method = 'edsr'
-    # method = 'espcn'
-    # method = 'fsrcnn'
-
-    # input_image = image[0:int(image.shape[1]/2),
-    #                 0:int(image.shape[0]/2)]
-    input_image = image
-    # cv2.imshow("image",input_image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-    if method == 'edsr':
-        # slow and bad quality for g_reportage
-        edsr_2x_filepath = "EDSR_x2.pb"
-        sr.readModel(edsr_2x_filepath)
-        print("\tmodel read")
-        sr.setModel("edsr", 2)
-        scale = sr.getScale()
-        print("\tmodel set: scale=%d" % (scale))
-        result = sr.upsample(input_image)
-        print("\tdone")
-
-    elif method == 'espcn':
-        espcn_2x_filepath = "ESPCN_x2.pb"
-        sr.readModel(espcn_2x_filepath)
-        sr.setModel("espcn", 2)
-        result = sr.upsample(input_image)
-        print("done")
-
-    elif method == 'fsrcnn':
-        fsrcnn_2x_filepath = "FSRCNN_x2.pb"
-        sr.readModel(fsrcnn_2x_filepath)
-        sr.setModel("fsrcnn", 2)
-        result = sr.upsample(input_image)
-
-    elif method == 'lapsrn':
-        lapsrn_2x_filepath = "LapSRN_x2.pb"
-        sr.readModel(lapsrn_2x_filepath)
-        sr.setModel("lapsrn", 2)
-        result = sr.upsample(input_image)
-    else:
-        print("filters_scale_superres: option is not recognized: %s" % (method))
-        sys.exit("filters_scale_superres: option is not recognized: %s" % (method))
-
-
-    print("wite file to %s" % (out_img_filepath))
-    cv2.imwrite(out_img_filepath, result)
-    return result
-
-
 
 
 def filter_pre_upscale(frame, img):

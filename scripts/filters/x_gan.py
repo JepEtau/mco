@@ -5,7 +5,6 @@ import sys
 import time
 import torch
 import numpy as np
-# from pathlib import Path
 from pprint import pprint
 from filters.utils import MAX_FRAMES_COUNT
 
