@@ -142,7 +142,7 @@ def execute_simple_ffmpeg_command(ffmpeg_command):
     stdout = result.stdout.decode('utf-8')
     stderr = result.stderr.decode('utf-8')
     elapsed_time = time.time() - start_time
-    print("\texecuted in %.02fs" % (elapsed_time))
+    print("\t\t\tsimple FFmpeg command executed in %.02fs" % (elapsed_time))
     if len(stdout) > 0:
         print(stdout)
     if len(stderr) > 0:

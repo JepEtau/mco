@@ -612,11 +612,14 @@ def consolidate_target_shots_g(db, k_ep, k_part_g) -> None:
     db_video_src = db[k_ep_src]['video'][k_ed_src][k_part_g]
 
     if k_part_g in ['g_debut', 'g_fin']:
-        print("############# consolidate_target_shots_g: avsync shall not be reset to 0")
         db_video_target = db[k_part_g]['video']
-        db_video_target.update({
-            'avsync': 0,
-        })
+        if 'avsync' in db_video_target.keys():
+            print("############# consolidate_target_shots_g: avsync shall not be reset to 0: %d" % (db_video_target['avsync']))
+            db_video_target.update({
+                'avsync': 0,
+            })
+        else:
+            db_video_target['avsync'] = 0
 
     elif k_part_g == 'g_asuivre':
         # Create the g_sauivre structure:

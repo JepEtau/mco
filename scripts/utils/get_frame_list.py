@@ -20,7 +20,7 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
 
     # Input folder
     current_output_folder = get_output_path_from_shot(db=db, shot=shot, task=shot['last_task'])
-    print_yellow("get_frame_file_paths_until_effects: output folder: %s" % (current_output_folder))
+    # print_yellow("get_frame_file_paths_until_effects: output folder: %s" % (current_output_folder))
         # pprint("last task: [%s]" % (shot['tasks'][-1]))
         # print("get_frame_file_paths_until_effects: input_folder=%s" % (input_folder))
 
@@ -116,7 +116,7 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
                 for i in range(db_video['avsync']):
                     image_list.append(black_image_filepath)
     except:
-        sys.exit(print_red("\t\t\tinfo: discard a/v, target does not exist"))
+        print_orange("\t\t\tinfo: discard a/v, target does not exist")
 
 
     # Add files for effects

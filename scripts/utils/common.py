@@ -361,9 +361,9 @@ def get_dimensions_from_crop_values(width, height, crop) -> list:
 
 
 def get_frame_no_from_filepath(filepath):
-    result = re.search(re.compile(".*_(\d{5,6})__([\w_\d]+)__(\d{3})\.(\w{3})"), filepath)
+    result = re.search(re.compile("(ep\d{2})_(\d{5})__([\w\d]{1,2})__(\d{2})_([\w_\d]{7})[^.]*.png"), filepath)
     if result:
-        return int(result.group(1))
+        return int(result.group(2))
     return 0
 
 
@@ -428,42 +428,6 @@ def get_shot_from_frame(db, k_ed:str, frame:dict, k_part:str=''):
 
     return None
 
-
-
-def get_shot_no_from_frame_no(db_video, frame_no:int, k_part='') -> int:
-    """This function returns the shot no. from a frame no.
-
-    Args:
-        db_video: structure that contains shots
-        k_part: tkey of the part to find the frame no.
-        frame_no: the frame no. to find
-
-    Returns:
-        the shot no. Returns None if not found
-
-    """
-    # print("++++ %s.get_shot_no_from_frame_no" % (__name__))
-    # print(k_part)
-    # pprint(db_video)
-
-    if 'shots' not in db_video.keys():
-        # This db_video has no shots: usefull when there is
-        # no shot in a part, i.e. this is a part (e.g. 'reportage')
-        return 0
-
-    shots = db_video['shots']
-    # pprint(shots)
-    for shot in shots:
-        if frame_no >= shot['start'] and frame_no < (shot['start'] + shot['count']):
-            # print("%d in [%d; %d]" % (frame_no, shot['start'], shot['start'] + shot['count']))
-            if shots[shot['no']]['no'] == shot['no']:
-                return shot['no']
-            else:
-                print("Error: get_shot_from_frame_no, shotsNo!=no")
-                return None
-    print("Error: %s.get_shot_no_from_frame_no: not found for frame %d" % (__name__, frame_no))
-    # pprint(db_video)
-    return None
 
 
 

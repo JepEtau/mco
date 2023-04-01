@@ -108,7 +108,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                 if xgan['name'] == 'real_cugan':
                     if 'n' not in xgan.keys():
                         sys.exit(print_red("\n(Real-CUGAN): denoise value is required"))
-                    print("\n\t\t\t(Real-CUGAN) scale: %d, denoise: %d" % (int(xgan['s']), int(xgan['n'])))
+                    # print("\n\t\t\t(Real-CUGAN) scale: %d, denoise: %d" % (int(xgan['s']), int(xgan['n'])))
                     hash, scale, images = upscale_real_cugan(
                         shot=shot,
                         images=images,
@@ -121,7 +121,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                         output_folder=output_folder,
                         get_hash=get_hashes,
                         do_force=do_force)
-                    print("\t\t\tupscale: returned %s" % (hash))
+                    # print("\t\t\tupscale: returned %s" % (hash))
 
                 elif xgan['name'] == 'real_esrgan':
                     if xgan['model'] == '':
@@ -138,7 +138,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                         output_folder=output_folder,
                         get_hash=get_hashes,
                         do_force=do_force)
-                    print("\t\t\tupscale: returned %s" % (hash))
+                    # print("\t\t\tupscale: returned %s" % (hash))
 
                 elif xgan['name'] == 'esrgan':
                     if xgan['model'] == '':
@@ -185,16 +185,19 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
 
                 # Calculate hash
                 hash = calculate_hash_for_replace(shot)
-                hash = log_filter("%s,replace=%s" % (previous_hash, hash), shot['hash_log_file'])
-
-                if not get_hashes:
-                    # print_yellow("BEFORE replace")
-                    # pprint(image_list)
-                    image_list = get_new_image_list(shot=shot, step_no=step_no, hash=previous_hash)
-                    # print_yellow("AFTER replace")
-                    # pprint(image_list)
-                    images.clear()
-
+                if hash != '':
+                    hash = log_filter("%s,replace=%s" % (previous_hash, hash), shot['hash_log_file'])
+                    if not get_hashes:
+                        # print_yellow("BEFORE replace")
+                        # pprint(image_list)
+                        image_list = get_new_image_list(shot=shot, step_no=step_no, hash=previous_hash)
+                        # print_yellow("AFTER replace")
+                        # pprint(image_list)
+                        images.clear()
+                else:
+                    # No images were replaced
+                    print_yellow("\t\t\tNo imges were replaced")
+                    hash = previous_hash
             else:
                 hash, images = apply_python_filters(
                     shot,
@@ -286,22 +289,6 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
         elif filter['type'] == 'null':
             if not get_hashes:
                 print_cyan("(null)\tstep no. %d, filter=null, input_hash= %s" % (step_no, hash))
-
-            if not get_hashes:
-                if step_no == STEP_INC:
-                    # Deinterlaced, get new list based on "replace"
-                    image_list = get_image_list(
-                        shot=shot,
-                        folder=os.path.join(shot['cache'], "%02d" %  (0)),
-                        step_no=step_no,
-                        hash=hash)
-                    images.clear()
-
-                # Exit if last task
-                if filter['task'] == shot['last_task']:
-                    img = cv2.imread(image_list[0], cv2.IMREAD_COLOR)
-                    shot['last_step']['shape'] = img.shape
-                    break
 
             # No filtering, used when we want to compare images from
             # different editions

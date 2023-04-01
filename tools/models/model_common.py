@@ -2,6 +2,7 @@
 import sys
 sys.path.append('../scripts')
 
+
 import os
 
 from pprint import pprint
@@ -13,11 +14,11 @@ from PySide6.QtCore import (
 )
 
 
+from filters.utils import FILTER_TAGS
 from utils.common import (
     K_GENERIQUES,
     K_PARTS,
 )
-from filters.utils import FILTER_BASE_NO
 
 
 
@@ -33,7 +34,7 @@ class Model_common(QObject):
         self.view = None
 
         # Internal variables
-        self.step_labels = [k for k, v in sorted(FILTER_BASE_NO.items(), key=lambda item: item[1])]
+        self.step_labels = FILTER_TAGS
 
         self.shots = dict()
         self.frames = dict()
@@ -135,15 +136,8 @@ class Model_common(QObject):
         return self.shots[shot_no]
 
 
-    def get_shot_no_from_frame_no(self, frame_no:int):
-        index = frame_no - self.playlist_properties['start']
-        try:
-            shot_no = self.playlist_frames[index]['shot_no']
-        except:
-            print("get_shot_no_from_frame_no: IndexError: list index out of range: frame_no. %d" % (frame_no))
-            sys.exit()
-        return shot_no
-
+    def get_shot_no_from_index(self, index:int):
+        return self.playlist_frames[index]['shot_no']
 
 
     def get_preview_options(self):

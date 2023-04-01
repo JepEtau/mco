@@ -16,7 +16,11 @@ from utils.common import (
     K_GENERIQUES,
     nested_dict_set,
 )
-
+from utils.pretty_print import *
+from parsers.parser_replace import (
+    parse_replace_configurations,
+    get_replaced_frames,
+)
 
 class Model_replace():
 
@@ -28,6 +32,14 @@ class Model_replace():
         self.is_replace_db_modified = False
 
 
+    def initialize_db_for_replace(self, db, k_ep, k_part):
+        # print("Model_geometry:initialize_db_for_geometry: get initial geometry: %s:%s" % (k_ep, k_part))
+        # This function is used by the video editor
+        # which uses the consolidated shots
+        self.db_replaced_frames_initial = get_replaced_frames(db, k_ep=k_ep, k_part=k_part)
+        self.db_replaced_frames = dict()
+
+
     # Replaced frames
     def get_replace_frame_no(self, shot:dict, frame_no:int):
         """ Return the new frame no. if replaced. Returns -1 otherwise
@@ -35,7 +47,7 @@ class Model_replace():
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
-        # print("get_replace_frame_no %s:%s:%s:%d" % (k_ed, k_ep, k_part, frame_no))
+        # print_lightgreen("get_replace_frame_no %s:%s:%s:%d" % (k_ed, k_ep, k_part, frame_no))
         try:
             return self.db_replaced_frames[k_ed][k_ep][k_part][frame_no]
         except:

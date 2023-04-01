@@ -56,6 +56,9 @@ def upscale_cv2_dnn_superres(shot, images:list, image_list:list,
     if method == 'edsr' and scale == 2:
         model_filepath = "EDSR_x2.pb"
 
+    elif method == 'edsr' and scale == 4:
+        model_filepath = "EDSR_x4.pb"
+
     elif method == 'espcn' and scale == 2:
         model_filepath = "ESPCN_x2.pb"
 
@@ -65,7 +68,7 @@ def upscale_cv2_dnn_superres(shot, images:list, image_list:list,
     elif method == 'lapsrn' and scale == 2:
         model_filepath = "LapSRN_x2.pb"
     else:
-        sys.exit(print_red("error: dnn_superres: method=%d, scale=%d" % (method, scale)))
+        sys.exit(print_red("error: dnn_superres: method=%s, scale=%d" % (method, scale)))
 
     model_filepath = os.path.abspath(os.path.join("../..",
         "mco_3rd_party",
@@ -108,6 +111,10 @@ def upscale_cv2_dnn_superres(shot, images:list, image_list:list,
 
             # Upscale
             output_img = sr.upsample(img=img)
+            if scale == 4:
+                output_img = cv2.resize(output_img,
+                    (int(output_img.shape[1]/2), int(output_img.shape[0]/2)),
+                    interpolation=cv2.INTER_LANCZOS4)
 
             if use_memory:
                 output_images.append(output_img)

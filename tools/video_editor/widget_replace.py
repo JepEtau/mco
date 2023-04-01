@@ -36,6 +36,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         # Internal variables
         self.copied_frame_no = -1
         self.previous_position = None
+        self.current_edition_and_preview_enabled = True
 
         # Disable focus
         self.lineEdit_frame_no.setFocusPolicy(Qt.NoFocus)
@@ -101,6 +102,33 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
+
+
+    def set_edition_and_preview_enabled(self, enabled):
+        # Disable all action button because it cannot be applied for this
+        # Save current state to reenable it
+        if (not self.current_edition_and_preview_enabled
+        and not enabled):
+            log.info("already disabled")
+            # already disabled, do not save another time
+            return
+
+        if (self.current_edition_and_preview_enabled
+        and enabled):
+            log.info("already enabled")
+            # already disabled, do not save another time
+            return
+
+        self.current_edition_and_preview_enabled = enabled
+        if not enabled:
+            log.info("disable edition")
+            self
+
+
+
+        self.pushButton_set_preview.blockSignals(True)
+        self.pushButton_set_preview.setChecked(enabled)
+        self.pushButton_set_preview.blockSignals(False)
 
 
 

@@ -308,10 +308,10 @@ class Model_curves():
 
 
 
-    def discard_rgb_curves_modifications(self, k_curves):
+    def discard_rgb_curves_modifications(self, k_curves, k_ed, k_ep):
         print("WARNING: discard RGB curves modification")
         try:
-            del self.db_curves_library[k_curves]
+            del self.db_curves_library[k_ed][k_ep][k_curves]
         except:
             print("Error: discard_curves_modifications: failed")
             pass

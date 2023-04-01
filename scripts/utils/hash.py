@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import sys
 from hashlib import md5
 import collections
 import configparser
 import os
 from pprint import pprint
+from utils.pretty_print import *
 
 
 
@@ -47,6 +49,10 @@ def log_filter(filter_str, hash_log_file):
 
 
 def calculate_hash_for_replace(shot):
+    if len(shot['replace']) == 0:
+        # No replacement
+        return ''
+
     replace_str = ""
     for k, v in shot['replace'].items():
         replace_str += "%s:%s," % (k, v)

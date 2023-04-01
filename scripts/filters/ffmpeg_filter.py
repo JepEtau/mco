@@ -60,6 +60,10 @@ def ffmpeg_filter(shot, images:list, image_list:list,
         "-hide_banner",
         "-loglevel", "error"]
 
+    # Force to use concatenate file because process bufsize is limited
+    if frame_count > (2000000000 / img_size):
+        use_memory = False
+
     if use_memory:
         # All images are in memory
         ffmpeg_command.extend([
@@ -82,8 +86,8 @@ def ffmpeg_filter(shot, images:list, image_list:list,
         bytes_arr = bytearray()
         for img in images:
             bytes_arr.extend(img.tobytes())
-        # print_yellow("bufsize= %d" % (bufsize))
-        # print_yellow("stdin size = %d" % (len(bytes_arr)))
+        print_yellow("bufsize=\t%d" % (bufsize))
+        print_yellow("stdin size=\t%d" % (len(bytes_arr)))
 
         process = create_process(ffmpeg_command, db_common['process'], bufsize=bufsize)
         stdout, stderr = process.communicate(input=bytes(bytes_arr))
@@ -122,7 +126,7 @@ def ffmpeg_filter(shot, images:list, image_list:list,
 
         # Save images
         for frame_no, img_filepath in zip(range(frame_count), output_image_list):
-            print("FFmpeg filter: %d%%" % (int((100.0 * frame_no)/frame_count)), end='\r')
+            print("\t\t\tFFmpeg filter: %d%%" % (int((100.0 * frame_no)/frame_count)), end='\r')
             raw_frame = process.stdout.read(img_size)
             img = np.frombuffer(raw_frame, dtype=np.uint8).reshape((height, width, channels))
             cv2.imwrite(filename=img_filepath, img=img)

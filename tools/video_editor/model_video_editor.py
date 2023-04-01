@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import sys
 sys.path.append('../scripts')
 
@@ -34,6 +33,7 @@ from utils.common import (
 from utils.get_frame_list import get_frame_list, get_frame_list_single
 from video.consolidate_shot import consolidate_shot
 from filters.filters import filter_rgb
+from utils.pretty_print import *
 
 
 class Model_video_editor(Model_common):
@@ -124,7 +124,7 @@ class Model_video_editor(Model_common):
         # pprint(values)
         k_ep_selected = values['k_ep']
         k_part_selected = values['k_part']
-        k_step = 'deinterlace' if values['k_step'] == '' else values['k_step']
+        task = 'deinterlace' if values['k_step'] == '' else values['k_step']
         if ((k_ep_selected == '' and k_part_selected == '')
             or (k_ep_selected != '' and k_part_selected == '')):
             return
@@ -135,6 +135,7 @@ class Model_video_editor(Model_common):
             k_part=k_part_selected,
             do_parse_replace=True,
             do_parse_geometry=True)
+        # NOTE replace: model contains the list of frames to replace
 
         # self.shots is a pointer to the shots for this episode/part
         db = self.model_database.database()
@@ -200,14 +201,16 @@ class Model_video_editor(Model_common):
                 flush=True)
 
             # Consolidate shot
-            shot['tasks'] = [values['k_step']]
+            shot['last_task'] = task
             consolidate_shot(db, shot=shot)
+            # NOTE replace: if last task is 'pre_replace', the hashes
+            # are different from the final generation
 
             # Get a list of path for each frame  for this shot
-            if k_part_selected in ['episode', 'reportage']:
-                filepath_tmp = get_frame_list(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
-            else:
+            if k_part_selected in ['g_asuivre', 'g_reportage']:
                 filepath_tmp = get_frame_list_single(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
+            else:
+                filepath_tmp = get_frame_list(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
             self.filepath.append(filepath_tmp)
 
             shot_no = shot['no']
@@ -245,6 +248,12 @@ class Model_video_editor(Model_common):
                 },
             })
 
+            if True:
+                print_lightcyan("================================== SHOT =======================================")
+                pprint(shot)
+                print_lightcyan("===============================================================================")
+
+
             # Geometry for this shot
             if k_part_selected in ['g_asuivre', 'g_reportage']:
                 # Use the 'part' for these special cases
@@ -259,8 +268,14 @@ class Model_video_editor(Model_common):
 
             # Create a list of frames for this shot
             self.frames[shot_no] = list()
-            for p in filepath_tmp:
-                frame_no = get_frame_no_from_filepath(p)
+            for p, i in zip(filepath_tmp, range(len(filepath_tmp))):
+
+                if task in ['deinterlace', 'pre_upscale']:
+                    # Use the frame no. from video to simplify frame replacement
+                    frame_no = shot['src']['start'] + i
+                else:
+                    frame_no = i
+                    # frame_no = get_frame_no_from_filepath(p)
 
                 if not os.path.exists(p):
                     image_filepath = p_missing_frame
@@ -279,16 +294,19 @@ class Model_video_editor(Model_common):
                     'frame_no': frame_no,
 
                     'filepath': image_filepath,
-                    'dimensions': shot['dimensions'],
                     'replaced_by': self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no),
                     'curves': curves,
                     'geometry': {
                         'part': part_geometry,
                         'shot': shot_geometry,
+                        'dimensions': shot['geometry']['dimensions'],
                     },
                     'cache_initial': None,
                     'cache': None,
                 })
+            # for f in self.frames[shot_no]:
+            #     print(f['frame_no'])
+            # sys.exit()
 
         # Create a dict to update the "browser" part of the editor widget
 
@@ -296,7 +314,7 @@ class Model_video_editor(Model_common):
             'k_ed': k_ed_selected,
             'k_ep': k_ep_selected,
             'k_part': k_part_selected,
-            'k_step': k_step,
+            'k_step': task,
             'shots': self.shots,
         }
 
@@ -340,7 +358,7 @@ class Model_video_editor(Model_common):
 
 
         self.playlist_properties.update({
-            'start': self.shots[selected_shots['shotlist'][0]]['start'],
+            # 'start': self.shots[selected_shots['shotlist'][0]]['start'],
             'frame_nos': frame_nos,
             'count': len(self.playlist_frames),
             'ticks': ticklist,
@@ -424,9 +442,9 @@ class Model_video_editor(Model_common):
 
 
     def event_discard_rgb_curves_modifications(self, k_curves:str):
-        self.model_database.discard_rgb_curves_modifications(k_curves)
         k_ed = self.current_frame['k_ed']
         k_ep = self.current_frame['k_ep']
+        self.model_database.discard_rgb_curves_modifications(k_curves, k_ed, k_ep)
 
         # Get the initial curves
         curves = self.model_database.get_curves(self.model_database.database(),
@@ -519,19 +537,22 @@ class Model_video_editor(Model_common):
     def get_next_replaced_frame_index(self, index):
         # TODO: replace this: use the list_replace
         # print("find following replaced frame")
-        frame_no = self.playlist_properties['start'] + index
+
         # print("\tsearch in %d -> %d" % (frame_no + 1, self.playlist_properties['start'] + self.playlist_properties['count']))
-        for f_no in range(frame_no + 1, self.playlist_properties['start'] + self.playlist_properties['count']):
-            shot_no = self.get_shot_no_from_frame_no(f_no)
-            if self.model_database.get_replace_frame_no(shot_no, f_no) != -1:
-                return f_no - self.playlist_properties['start']
+        for i in range(index + 1, self.playlist_properties['count']):
+            shot_no = self.get_shot_no_from_index(i)
+            shot = self.shots[shot_no]
+            frame_no = shot['start'] + i
+            if self.model_database.get_replace_frame_no(shot, frame_no) != -1:
+                return i
 
         # print("\tsearch in %d -> %d" % (self.playlist_properties['start'], frame_no-1))
-        for f_no in range(self.playlist_properties['start'], frame_no-1):
-            shot_no = self.get_shot_no_from_frame_no(f_no)
-            if self.model_database.get_replace_frame_no(shot_no, f_no) != -1:
-                return f_no - self.playlist_properties['start']
-
+        for i in range(0, index-1):
+            shot_no = self.get_shot_no_from_index(i)
+            shot = self.shots[shot_no]
+            frame_no = shot['start'] + i
+            if self.model_database.get_replace_frame_no(shot_no, frame_no) != -1:
+                return i
         return -1
 
 
@@ -700,32 +721,34 @@ class Model_video_editor(Model_common):
 
 
 
-    def get_frame(self, frame_no):
+    def get_frame_from_index(self, index):
         """ returns the replace frame unless there is no replacemed frame or
         the initial flag is set to True
         framelist contains all path for each frame of this playlist
         """
-        # log.info("%s.get_frame: get_frame no. %d" % (__name__, frame_no))
+        log.info("get_frame: get_frame from index. %d" % (index))
+        # print_lightgreen("playlist: nb of frames: %d" % (len(self.playlist_frames)))
+        if len(self.playlist_frames) == 0:
+            return None
+
+        frame = self.playlist_frames[index]
         if not self.preview_options['replace']['is_enabled']:
-            try:
-                frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
-            except:
-                return None
-            # print("\tinitial")
+
             try: del frame['replace']
             except: pass
         else:
-            shot_no = self.get_shot_no_from_frame_no(frame_no)
+            print_green("get replace frame: index=%d" % (index))
+            frame_no = frame['frame_no']
+            shot_no = frame['shot_no']
+            shot = self.shots[shot_no]
+            print_green("\tshot no. %d, frame no. %d" % (shot_no, frame_no))
             new_frame_no = self.model_database.get_replace_frame_no(self.shots[shot_no], frame_no)
             if new_frame_no == -1:
-                frame = self.playlist_frames[frame_no - self.playlist_properties['start']]
-                # print("\tnew_frame_no=-1")
-                # print("\t%s" % (frame['filepath']))
+                frame = self.playlist_frames[index]
                 try: del frame['replace']
                 except: pass
             else:
-                index = new_frame_no - self.playlist_properties['start']
-                frame = self.playlist_frames[index]
+                frame = self.playlist_frames[index + (new_frame_no - frame_no)]
                 frame['replace'] = frame_no
 
         # Shot has changed: update UI with parameters for this shot (curves, crop, resize)
@@ -842,8 +865,8 @@ def generate_single_image(frame:dict, preview_options:dict):
         print("\t-> use the %s geometry %d:%d:%d:%d  %dx%d" % (type, c_t, c_b, c_l, c_r, c_w, c_h))
 
     # Final width and height
-    w_final = frame['dimensions']['final']['w']
-    h_final = frame['dimensions']['final']['h']
+    w_final = frame['geometry']['dimensions']['final']['w']
+    h_final = frame['geometry']['dimensions']['final']['h']
 
     # Preview options
     options = preview_options['geometry'][type]

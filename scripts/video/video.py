@@ -2,6 +2,12 @@
 import sys
 import os
 import time
+# from datetime import (
+#     date,
+#     datetime,
+#     time,
+#     timedelta
+# )
 
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
@@ -34,7 +40,6 @@ def generate_video(db, k_ed:str, k_ep:str,
                     force:bool=False, simulation:bool=False,
                     shot_min:int=0, shot_max:int=999999,
                     do_regenerate=False):
-    start_time = time.time()
 
     # Create the video directory
     create_folder_for_video(db, k_ep)
@@ -116,7 +121,7 @@ def generate_video(db, k_ed:str, k_ep:str,
                 shot['count']),
                 flush=True)
 
-            # Add list of task for this shot
+            # Set the last task
             shot['last_task'] = last_task
 
             # Generate frames for this shot
@@ -144,6 +149,7 @@ def generate_video(db, k_ed:str, k_ep:str,
             # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
             # Create concatenation file
+            do_generate_shot_video = False
             tmp = create_concatenation_file(db,
                 k_ep=k_ep_src_main, k_part=k_p, shot=shot,
                 previous_concatenation_filepath=previous_concatenation_filepath)
@@ -153,12 +159,33 @@ def generate_video(db, k_ed:str, k_ep:str,
                     'path': tmp,
                     'hash': shot_hash
                 })
+                do_generate_shot_video = True
             previous_concatenation_filepath = tmp
 
-            if k_p == 'episode':
-                minutes, seconds = divmod(time.time() - start_shot_time, 60)
-                if minutes != 0 and seconds != 0:
-                    print("\t\t\t%d:%02d" % (minutes, seconds), flush=True)
+
+            if do_generate_shot_video:
+                # print_purple("\tcombine images to video (shot): k_p=%s, shot no. %d" % (k_p, shot['no']))
+                combine_images_into_video(db['common'],
+                    k_p,
+                    video_shot= video_files[k_p]['shotlist'][-1],
+                    force=force,
+                    simulation=simulation)
+
+
+            elapsed_time = time.time() - start_shot_time
+            minutes = int(elapsed_time/60)
+            seconds = int(elapsed_time - (minutes * 60))
+            milliseconds = 1000 * (elapsed_time - (60 * minutes + seconds))
+            print_lightgreen("Shot no. %d generated in %02d:%02d.%d (%.02fs/f)" % (
+                shot['no'],
+                minutes, seconds, int(1 + milliseconds/100),
+                elapsed_time/shot['count']))
+            # print_purple(str(elapsed_time))
+            # minutes, seconds = divmod(elapsed_time, 60.0)
+            # print_purple("\n\tshot generated in %d:%02d" % (minutes, seconds), flush=True)
+            # if minutes != 0 and seconds != 0:
+            #     print_purple("\t\t\t\nshot generated in %d:%02d" % (minutes, seconds), flush=True)
+
 
         hashes_str = hashes_str[:-1]
         db_video['hash'] = calculate_hash(hashes_str)

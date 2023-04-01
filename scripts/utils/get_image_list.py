@@ -74,7 +74,8 @@ def get_image_list(shot, folder, step_no, hash=''):
     #     if step_no == shot['last_step']['step_no_replace']:
     #         return get_new_image_list(shot=shot, step_no=step_no, hash=hash)
     except:
-        print_orange("get_image_list: continue, step=%d" % (step_no))
+        # print_orange("get_image_list: continue, step=%d" % (step_no))
+        pass
 
     # Template to name the files
     suffix = "_%s" % (hash) if hash != '' else ''

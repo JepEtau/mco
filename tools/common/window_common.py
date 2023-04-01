@@ -252,17 +252,26 @@ class Window_common(QMainWindow):
     def event_shotlist_modified(self, shotlist):
         # episode/part has been changed
         enabled = True if len(shotlist['shots']) > 0 else False
-        for w_str in self.model.get_widget_list():
-            log.info("%s: set enabled: %s" % (self.widgets[w_str].objectName(), 'true' if enabled else 'false'))
+        for widget_name in self.model.get_widget_list():
+            log.info("%s: set enabled: %s" % (self.widgets[widget_name].objectName(), 'true' if enabled else 'false'))
 
-            if w_str == 'geometry':
+            if widget_name == 'geometry':
                 if shotlist['k_step'] in ['deinterlace', 'pre_upscale']:
-                    self.widgets[w_str].set_edition_and_preview_enabled(False)
+                    self.widgets[widget_name].set_edition_and_preview_enabled(False)
                 else:
-                    self.widgets[w_str].set_edition_and_preview_enabled(enabled)
+                    self.widgets[widget_name].set_edition_and_preview_enabled(enabled)
 
-            try: self.widgets[w_str].set_widget_enabled(enabled)
-            except: pass
+            if widget_name == 'replace':
+                if shotlist['k_step'] in ['deinterlace', 'pre_replace']:
+                    self.widgets[widget_name].set_edition_and_preview_enabled(enabled)
+                else:
+                    self.widgets[widget_name].set_edition_and_preview_enabled(False)
+
+            if widget_name not in ['geometry', 'replace']:
+                try:
+                    self.widgets[widget_name].set_widget_enabled(enabled)
+                except:
+                    pass
 
 
     def switch_display_side(self):
@@ -348,15 +357,14 @@ class Window_common(QMainWindow):
         log.info("ready to play")
         self.current_frame_index = 0
         self.playing_frame_count = playlist_properties['count']
-        self.playing_frame_start_no = playlist_properties['start']
-        f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no)
+        f = self.model.get_frame_from_index(self.current_frame_index)
         self.display_frame(f)
 
 
     def event_move_to_frame_no(self, frame_index):
         # log.info("move to frame %d" % (frame_index))
         self.current_frame_index = frame_index
-        f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no)
+        f = self.model.get_frame_from_index(self.current_frame_index)
         self.display_frame(f)
 
 
@@ -364,14 +372,14 @@ class Window_common(QMainWindow):
         frame_no = item['frame_no']
         log.info("move to frame %d" % (frame_no))
         index = (frame_no - self.playing_frame_start_no)
-        self.widget_controls.update_slider_value(index)
+        log.warning("TODO: move to selected frame")
+        # self.widget_controls.update_slider_value(index)
 
 
     def event_reload_frame(self):
         if self.current_frame_index == -1:
             return
-        # log.info("refresh frame %d" % (self.current_frame_index + self.playing_frame_start_no))
-        f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no)
+        f = self.model.get_frame_from_index(self.current_frame_index)
         self.display_frame(f)
 
 
@@ -408,7 +416,7 @@ class Window_common(QMainWindow):
             self.widget_controls.event_stop()
         else:
             self.widget_controls.set_playing_frame_properties(self.current_frame_index)
-            f = self.model.get_frame(self.current_frame_index + self.playing_frame_start_no)
+            f = self.model.get_frame_from_index(self.current_frame_index)
             self.display_frame(f)
 
 

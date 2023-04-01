@@ -25,6 +25,7 @@ def consolidate_filters(shot):
         if ('hqdn3d' in filter_str
         or 'deshake' in filter_str
         or 'stabilize' in filter_str):
+            # Insert before temporal filter
             shot['filters'].insert(step_no, replace_filter)
             print_green("replace filter: inserted at position %d" % (step_no))
             is_inserted = True
@@ -35,9 +36,10 @@ def consolidate_filters(shot):
         print_green("replace filter: append")
 
 
-    # Force saving: deinterlace and last step
+    # Force saving: deinterlace
     shot['filters'][0]['save'] = True
     shot['filters'][-1]['save'] = True
+
 
     # Associate task to filter
     for i in range(len(shot['filters'])):
@@ -81,6 +83,10 @@ def consolidate_filters(shot):
     # Set task for last filter if not set
     previous_filter = shot['filters'][-1]
     if previous_filter['task'] == '':
+        # Remove all sharpen tasks
+        for filter in shot['filters']:
+            if filter['task'] == 'sharpen':
+                filter['task'] = ''
         previous_filter['task'] = 'sharpen'
 
     # Append RGB curves
@@ -101,10 +107,12 @@ def consolidate_filters(shot):
 
 
     # Force saving last task
-    for filter in shot['filters']:
-        if filter['task'] == shot['last_task']:
-           filter['save'] = True
-           break
+    if 'last_task' in filter.keys():
+        # Not using video editor
+        for filter in shot['filters']:
+            if filter['task'] == shot['last_task']:
+                filter['save'] = True
+            break
 
 
     # If last task does not have a tag, this means that it is

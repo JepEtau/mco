@@ -433,10 +433,10 @@ class Model_curves_editor(Model_common):
 
 
     def event_discard_rgb_curves_modifications(self, k_curves:str):
-        self.model_curves.discard_rgb_curves_modifications(k_curves)
         k_ed = self.current_frame['k_ed']
         k_ep = self.current_frame['k_ep']
         k_part = self.current_frame['k_part']
+        self.model_curves.discard_rgb_curves_modifications(k_curves, k_ed=k_ed, k_ep=k_ep)
 
         # Get the initial curves
         curves = self.model_curves.get_curves(
@@ -527,7 +527,7 @@ class Model_curves_editor(Model_common):
             return None
 
 
-        frame = self.framelist.get_frame(image_name)
+        frame = self.framelist.get_frame_from_index(image_name)
 
         # Shot has changed: update UI with parameters for this shot (curves, crop, resize)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:

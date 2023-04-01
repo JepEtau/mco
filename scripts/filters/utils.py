@@ -2,6 +2,7 @@
 import sys
 from pprint import pprint
 from utils.pretty_print import *
+from copy import deepcopy
 
 STEP_INC = 1
 
@@ -17,6 +18,7 @@ FILTER_TAGS = [
     'pre_upscale',
     'upscale',
     'sharpen',
+    'pre_replace',
     'rgb',
     'geometry',
     'final'
@@ -63,6 +65,6 @@ def get_filters_from_shot(db, shot):
         filters = db[k_ep]['video'][k_ed][k_part]['filters']['default']
         sys.exit()
 
-    return filters
+    return deepcopy(filters)
 
 

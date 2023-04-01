@@ -15,6 +15,7 @@ from utils.common import (
     get_src_shot_from_frame_no,
     nested_dict_set,
 )
+from utils.pretty_print import *
 
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages
@@ -28,6 +29,8 @@ def parse_replace_configurations(db, k_ep_or_g:str, k_ed_only=None):
     editor
     """
     print_warning = False
+
+    print_lightgreen("parse_replace_configurations: %s:%s" % (k_ed_only, k_ep_or_g))
 
     # Open configuration file
     filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_replace.ini" % (k_ep_or_g))
@@ -54,9 +57,7 @@ def parse_replace_configurations(db, k_ep_or_g:str, k_ed_only=None):
             new_frame_no = int(config.get(k_section, frame_no_str).strip())
 
             # Get shot from frame no.
-            # print("parse_replace_configurations, find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
-            # shot = get_shot_from_frame_no_new(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
-            # replaced bya function which creates the src shot if not defined in the config file
+            # print_green("\tsearch %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
             try:
                 shot = get_src_shot_from_frame_no(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
             except:
@@ -75,10 +76,13 @@ def parse_replace_configurations(db, k_ep_or_g:str, k_ed_only=None):
                 # sys.exit("error: parse_replace_configurations: shot not found for frame no. %d in %s:%s:%s" % (
                 #     frame_no, k_ed, k_ep, k_part))
 
+            # if k_ed=='s' and k_ep=='ep11' and k_part=='g_fin':
+            #     pprint(shot['replace'])
+
 def get_replaced_frames(db, k_ep, k_part) -> dict:
     """ Returns a dict of frames to replace
     """
-    print("%s.get_replaced_frames:  :%s:%s" % (__name__, k_ep, k_part))
+    # print_lightgreen("%s.get_replaced_frames:  :%s:%s" % (__name__, k_ep, k_part))
     replace = dict()
 
     # Get the list of editions and episode that are used by this ep/part
@@ -87,13 +91,13 @@ def get_replaced_frames(db, k_ep, k_part) -> dict:
     else:
         db_video = db[k_ep]['video']['target'][k_part]
 
-    # Walk through the target:
-    # It has been consolidated, so all data is in this structure
+    # For each shot in the target, get the src shot
     for shot in db_video['shots']:
-        # So this shot contains the src data
-        shot_src = shot
-        k_ed_src = shot['k_ed']
-        k_ep_src = shot['k_ep']
+        k_ed_src = shot['src']['k_ed']
+        k_ep_src = shot['src']['k_ep']
+        k_part_src = shot['src']['k_part']
+        shot_no_src = shot['src']['no']
+        shot_src = db[k_ep_src]['video'][k_ed_src][k_part_src]['shots'][shot_no_src]
 
         if 'replace' in shot_src.keys() and len(shot_src['replace'].keys()) > 0:
             try:

@@ -119,7 +119,7 @@ class Window_main(Window_common):
 
 
     def event_image_selected(self, image_name):
-        # self.model.get_frame(name)
+        # self.model.get_frame_from_index(name)
         # log.info("get image [%s]" % (image_name))
         f = self.model.get_frame_from_name(image_name)
         self.display_frame(f)
