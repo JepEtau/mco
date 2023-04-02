@@ -10,9 +10,19 @@ from filters.utils import (
 
 
 def consolidate_filters(shot):
+    # Deshake & stabilization: do not add pad if more than 1 time
+    deshake_stab_count = 0
+    for filter in shot['filters']:
+        if (filter['str'].startswith('deshake')
+            or filter['str'].startswith('stabilize')
+            or filter['str'].startswith('homography')):
 
-    # Insert replace at the right place
-    # for step_no in range(len(shot['filters']), -1, -1):
+            deshake_stab_count += 1
+            if deshake_stab_count > 1:
+                filter['str'] += "=no_border"
+
+
+    # Insert 'replace' at the right place
     is_inserted = False
     replace_filter = {
         'type': 'python',
@@ -38,8 +48,6 @@ def consolidate_filters(shot):
 
     # Force saving: deinterlace
     shot['filters'][0]['save'] = True
-    shot['filters'][-1]['save'] = True
-
 
     # Associate task to filter
     for i in range(len(shot['filters'])):
@@ -80,6 +88,7 @@ def consolidate_filters(shot):
         if shot['count'] >= MAX_FRAMES_COUNT:
             filter['save'] = True
 
+
     # Set task for last filter if not set
     previous_filter = shot['filters'][-1]
     if previous_filter['task'] == '':
@@ -89,6 +98,7 @@ def consolidate_filters(shot):
                 filter['task'] = ''
         previous_filter['task'] = 'sharpen'
 
+
     # Append RGB curves
     shot['filters'].append({
         'type': 'python',
@@ -96,6 +106,7 @@ def consolidate_filters(shot):
         'str': 'rgb',
         'task': 'rgb'
     })
+
 
     # Append geometry
     shot['filters'].append({
@@ -105,23 +116,32 @@ def consolidate_filters(shot):
         'task': 'geometry'
     })
 
-    # If last task does not have a tag, this means that it is
-    # the end of sharpening
-    if shot['filters'][-1]['task'] == '':
-        shot['filters'][-1]['task'] = 'sharpen'
 
 
-    # Deshake & stabilization: do not add pad if more than 1 time
-    deshake_stab_count = 0
-    for filter in shot['filters']:
-        if (filter['str'].startswith('deshake')
-            or filter['str'].startswith('stabilize')
-            or filter['str'].startswith('homography')):
+    # Patch the list for 'pre_replace' task
+    if shot['last_task'] == 'pre_replace':
+        # Change the task 'replace' into 'null'
+        for filter in shot['filters']:
+            if filter['task'] == 'replace':
+                filter['type'] = 'null'
+                filter['task'] = ''
+                filter['str'] = ''
 
-            deshake_stab_count += 1
-            if deshake_stab_count > 1:
-                filter['str'] += "=no_border"
-
+        # Now insert a 'pre_replace' task just before 'rgb' filter
+        replace_filter = {
+            'type': 'python',
+            'save': True,
+            'str': 'pre_replace',
+            'task': 'pre_replace',
+        }
+        for step_no in range(len(shot['filters'])):
+            filter = shot['filters'][step_no]
+            if filter['task'] == 'rgb':
+                # Do not save the previous filter because the 'pre_replace' filter will do it
+                shot['filters'][step_no-1]['save'] = False
+                # Insert the pre_upsacle filter
+                shot['filters'].insert(step_no, replace_filter)
+                break
 
 
     # Force saving last task
@@ -132,3 +152,6 @@ def consolidate_filters(shot):
                 filter['save'] = True
                 break
 
+
+    # pprint(shot['filters'])
+    # sys.exit()

@@ -8,6 +8,10 @@ from filters.avisynth import apply_avisynth_filters
 from filters.ffmpeg_deinterlace import ffmpeg_deinterlace
 from filters.ffmpeg_filter import ffmpeg_filter
 from filters.python import apply_python_filters
+from filters.python_replace import (
+    python_replace,
+    python_pre_replace,
+)
 from filters.utils import MAX_FRAMES_COUNT
 from filters.x_gan import (
     upscale_esrgan,
@@ -16,19 +20,16 @@ from filters.x_gan import (
 )
 from utils.get_image_list import (
     get_image_list,
-    get_new_image_list,
     STEP_INC,
 )
-from utils.hash import (
-    calculate_hash_for_replace,
-    log_filter
-)
+
 from utils.pretty_print import *
 
 
 
 
 def apply_filters(db, shot, step_no_start=0, get_hashes=False):
+
     image_list = list()
     images = list()
     hashes = list()
@@ -180,24 +181,25 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
             previous_hash = hash
 
             if filter['str'] == 'replace':
-                if not get_hashes:
-                    print_cyan("(python)\tstep no. %d, filter=%s, input_hash= %s" % (step_no, filter['str'], hash))
+                hash, image_list, images = python_replace(
+                    shot,
+                    images=images,
+                    image_list=image_list,
+                    step_no=step_no,
+                    filters_str=filter['str'],
+                    input_hash=hash,
+                    get_hash=get_hashes)
 
-                # Calculate hash
-                hash = calculate_hash_for_replace(shot)
-                if hash != '':
-                    hash = log_filter("%s,replace=%s" % (previous_hash, hash), shot['hash_log_file'])
-                    if not get_hashes:
-                        # print_yellow("BEFORE replace")
-                        # pprint(image_list)
-                        image_list = get_new_image_list(shot=shot, step_no=step_no, hash=previous_hash)
-                        # print_yellow("AFTER replace")
-                        # pprint(image_list)
-                        images.clear()
-                else:
-                    # No images were replaced
-                    print_yellow("\t\t\tNo imges were replaced")
-                    hash = previous_hash
+            elif filter['str'] == 'pre_replace':
+                hash, image_list, images = python_pre_replace(
+                    shot,
+                    images=images,
+                    image_list=image_list,
+                    step_no=step_no,
+                    filters_str=filter['str'],
+                    input_hash=hash,
+                    output_folder=output_folder,
+                    get_hash=get_hashes)
             else:
                 hash, images = apply_python_filters(
                     shot,

@@ -215,7 +215,7 @@ def consolidate_shot(db, shot) -> None:
 
     # Find replace filter
     for step_no, filter in zip(range(len(shot['filters'])), shot['filters']):
-        if filter['task'] == 'replace':
+        if filter['task'] in ['replace', 'pre_replace']:
             shot['last_step']['step_no_replace'] = step_no
             break
 
