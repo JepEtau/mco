@@ -36,7 +36,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         # Internal variables
         self.copied_frame_no = -1
         self.previous_position = None
-        self.current_edition_and_preview_enabled = True
+        self.current_edition_enabled = True
 
         # Disable focus
         self.lineEdit_frame_no.setFocusPolicy(Qt.NoFocus)
@@ -78,6 +78,8 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.model.signal_replace_list_refreshed[dict].connect(self.event_replace_list_refreshed)
         self.model.signal_is_saved[str].connect(self.event_is_saved)
 
+        self.model.signal_shot_changed.connect(self.event_shot_changed)
+
         self.installEventFilter(self)
 
         set_stylesheet(self)
@@ -104,30 +106,32 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.adjustSize()
 
 
-    def set_edition_and_preview_enabled(self, enabled):
-        # Disable all action button because it cannot be applied for this
-        # Save current state to reenable it
-        if (not self.current_edition_and_preview_enabled
-        and not enabled):
-            log.info("already disabled")
-            # already disabled, do not save another time
-            return
+    def event_shot_changed(self):
+        enabled = self.model.is_replace_allowed()
+        if enabled:
+            if self.current_edition_enabled:
+                log.info("already enabled")
+                # already disabled, do not save another time
+                return
 
-        if (self.current_edition_and_preview_enabled
-        and enabled):
-            log.info("already enabled")
-            # already disabled, do not save another time
-            return
-
-        self.current_edition_and_preview_enabled = enabled
-        if not enabled:
-            log.info("disable edition")
-            self
+        else:
+            if not self.current_edition_enabled:
+                log.info("already disabled")
+                # already disabled, do not save another time
+                return
+            self.lineEdit_frame_no.clear()
+            self.lineEdit_replaced_by.clear()
 
 
+        self.lineEdit_frame_no.setEnabled(enabled)
+        self.lineEdit_replaced_by.setEnabled(enabled)
+        self.pushButton_copy.setEnabled(enabled)
+        self.pushButton_paste.setEnabled(enabled)
+        self.pushButton_remove.setEnabled(enabled)
+        self.tableWidget_replace.setEnabled(enabled)
 
         self.pushButton_set_preview.blockSignals(True)
-        self.pushButton_set_preview.setChecked(enabled)
+        self.pushButton_set_preview.setEnabled(enabled)
         self.pushButton_set_preview.blockSignals(False)
 
 
@@ -153,11 +157,15 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_replace_selected(self):
+        if not self.current_edition_enabled:
+            return
         log.info("event_replace_selected")
         self.tableWidget_replace.setFocus()
 
 
     def event_replace_frame_selected(self, item:QTableWidgetItem):
+        if not self.current_edition_enabled:
+            return
         # double-click
         row_no = item.row()
         log.info("selected frame at row=%d" % (row_no))
@@ -170,6 +178,8 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_selection_removed(self):
+        if not self.current_edition_enabled:
+            return
         print("event_selection_removed")
         selected_indexes = self.tableWidget_replace.selectedIndexes()
         selected_row_nos = list(set([i.row() for i in selected_indexes]))
@@ -204,12 +214,18 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_frame_no_copied(self):
+        if not self.current_edition_enabled:
+            return
+
         self.copied_frame_no = int(self.lineEdit_frame_no.text())
         log.info("event: copy %d" % (self.copied_frame_no))
         self.pushButton_paste.setEnabled(True)
 
 
     def event_frame_no_paste(self):
+        if not self.current_edition_enabled:
+            return
+
         log.info("event: paste")
         frame_no = int(self.lineEdit_frame_no.text())
         if (self.copied_frame_no != -1
@@ -225,6 +241,8 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_undo_replace(self):
+        if not self.current_edition_enabled:
+            return
         log.info("event: undo for frame_no: %d")
         self.signal_replace_modified.emit({
             'action': 'undo',
@@ -233,6 +251,8 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_removed(self):
+        if not self.current_edition_enabled:
+            return
         log.info("event: remove")
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
@@ -256,6 +276,9 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_key_pressed(self, event):
+        if not self.current_edition_enabled:
+            return False
+
         key = event.key()
         modifiers = event.modifiers()
         # print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)

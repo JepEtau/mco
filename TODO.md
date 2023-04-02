@@ -14,4 +14,6 @@
 - combine images at the end of each shot
 - use file hash for rgb step
 - create a new step 'pre_replace' for frame replacement
-- video editor: disable frame replacement widget if step is not 'pre_replace'
+- video editor: disable frame replacement widget if 'pre_replace' not in filters
+- curves: find shot from frame no and do not verify if it is the 1st frame. when saving, use middle of shot?
+- use ffv1 for FFmpeg filter except if images already exists.

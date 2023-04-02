@@ -261,13 +261,7 @@ class Window_common(QMainWindow):
                 else:
                     self.widgets[widget_name].set_edition_and_preview_enabled(enabled)
 
-            if widget_name == 'replace':
-                if shotlist['k_step'] in ['deinterlace', 'pre_replace']:
-                    self.widgets[widget_name].set_edition_and_preview_enabled(enabled)
-                else:
-                    self.widgets[widget_name].set_edition_and_preview_enabled(False)
-
-            if widget_name not in ['geometry', 'replace']:
+            if widget_name not in ['geometry']:
                 try:
                     self.widgets[widget_name].set_widget_enabled(enabled)
                 except:

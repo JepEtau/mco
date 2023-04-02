@@ -50,6 +50,9 @@ class Model_video_editor(Model_common):
 
     signal_stabilize_parameters_loaded = Signal(dict)
 
+    # Send a signal to inform that the shot changed
+    signal_shot_changed = Signal()
+
     WIDGET_LIST = [
         'controls',
         'replace',
@@ -505,6 +508,12 @@ class Model_video_editor(Model_common):
         self.signal_is_saved.emit('curves_selection')
 
 
+    def is_replace_allowed(self):
+        shot = self.get_current_shot()
+        if shot is None:
+            return False
+        return self.model_database.is_replace_allowed(shot=shot)
+
 
     def refresh_replace_list(self):
         # List of frames to replace
@@ -719,7 +728,8 @@ class Model_video_editor(Model_common):
         self.model_database.save_geometry_database(k_ed=k_ed, k_ep=k_ep, k_part=k_part, shot=shot)
         self.signal_is_saved.emit('geometry')
 
-
+    def get_current_shot(self):
+        self.shots[self.current_frame['shot_no']]
 
     def get_frame_from_index(self, index):
         """ returns the replace frame unless there is no replacemed frame or
@@ -757,13 +767,18 @@ class Model_video_editor(Model_common):
         else:
             frame['reload_parameters'] = False
 
-        # current shot
+        # Current shot
+        is_shot_changed = False
         shot = self.shots[frame['shot_no']]
+
+        # if shot is different
+        if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
+            is_shot_changed = True
 
         # Update curves and load it into the graph
         frame['curves'] = self.model_database.get_shot_curves_selection(
             db=self.model_database.database(), shot=shot)
-        if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
+        if is_shot_changed:
             try:
                 self.signal_load_curves.emit(frame['curves'])
                 shot_list = self.model_database.get_shots_per_curves(frame['curves']['k_curves'])
@@ -802,6 +817,8 @@ class Model_video_editor(Model_common):
         # and another thread to generate the next frames in background (when playing as a video)
         self.purge_current_frame_cache()
 
+
+
         # Set current frame
         self.current_frame = frame
 
@@ -817,6 +834,8 @@ class Model_video_editor(Model_common):
         # else:
             # Cannot generate the image because no preview option is defined
             # The preview options will be updated by the window UI
+        if is_shot_changed:
+            self.signal_shot_changed.emit()
 
         return self.current_frame
 

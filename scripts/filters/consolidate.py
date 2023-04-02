@@ -27,13 +27,13 @@ def consolidate_filters(shot):
         or 'stabilize' in filter_str):
             # Insert before temporal filter
             shot['filters'].insert(step_no, replace_filter)
-            print_green("replace filter: inserted at position %d" % (step_no))
+            # print_green("replace filter: inserted at position %d" % (step_no))
             is_inserted = True
             break
     if not is_inserted:
         shot['filters'][-1]['task'] = 'sharpen'
         shot['filters'].append(replace_filter)
-        print_green("replace filter: append")
+        # print_green("replace filter: append")
 
 
     # Force saving: deinterlace
@@ -92,7 +92,7 @@ def consolidate_filters(shot):
     # Append RGB curves
     shot['filters'].append({
         'type': 'python',
-        'save': True,
+        'save': False,
         'str': 'rgb',
         'task': 'rgb'
     })
@@ -104,16 +104,6 @@ def consolidate_filters(shot):
         'str': 'geometry',
         'task': 'geometry'
     })
-
-
-    # Force saving last task
-    if 'last_task' in filter.keys():
-        # Not using video editor
-        for filter in shot['filters']:
-            if filter['task'] == shot['last_task']:
-                filter['save'] = True
-            break
-
 
     # If last task does not have a tag, this means that it is
     # the end of sharpening
@@ -134,4 +124,11 @@ def consolidate_filters(shot):
 
 
 
+    # Force saving last task
+    if 'last_task' in shot.keys():
+        # when not in video edition
+        for filter in shot['filters']:
+            if filter['task'] == shot['last_task']:
+                filter['save'] = True
+                break
 

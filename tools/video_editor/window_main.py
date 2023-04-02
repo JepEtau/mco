@@ -111,7 +111,6 @@ class Window_main(Window_common):
         self.model.signal_reload_frame.connect(self.event_reload_frame)
         self.model.signal_close.connect(self.event_close_without_saving)
 
-
         # Show window/widgets and connect signals
         for w in self.widgets.values():
             w.signal_close.connect(self.event_editor_action)

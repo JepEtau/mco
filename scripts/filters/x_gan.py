@@ -154,6 +154,9 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     elif model_name == '2x_Futsuu_Anime_Compact_130k_net_g':
         suffix = model_name
         netscale = 2
+    elif model_name == 'sudo_RealESRGAN2x_Dropout_3.799.042_G':
+        suffix = 'sudo_3.799.042_G'
+        netscale = 2
     else:
         suffix = model_name
         netscale = 2
@@ -217,6 +220,8 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     elif model_name == 'RealESRGAN_x2plus':
         # x2 RRDBNet model
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
+    else:
+        sys.exit(print_red("error: model %s is not initialized" % (model_name)))
 
     # Load model
     upscaler = RealESRGANer(
@@ -329,6 +334,9 @@ def upscale_esrgan(shot, images:list, image_list:list,
     elif model_name == '1x_ReFocus_V3_140000_G':
         suffix = '1x_ReFocus_V3_140000_G'
         scale = 1
+    elif model_name == 'sudo_RealESRGAN2x_Dropout_3.799.042_G':
+        suffix = "sudo_3.799.042_G"
+        scale = 2
     else:
         suffix = model_name
 

@@ -176,7 +176,7 @@ def generate_video(db, k_ed:str, k_ep:str,
             minutes = int(elapsed_time/60)
             seconds = int(elapsed_time - (minutes * 60))
             milliseconds = 1000 * (elapsed_time - (60 * minutes + seconds))
-            print_lightgreen("Shot no. %d generated in %02d:%02d.%d (%.02fs/f)" % (
+            print_purple("Shot no. %d generated in %02d:%02d.%d (%.02fs/f)" % (
                 shot['no'],
                 minutes, seconds, int(1 + milliseconds/100),
                 elapsed_time/shot['count']))
