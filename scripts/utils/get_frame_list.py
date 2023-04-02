@@ -6,6 +6,7 @@ from pprint import pprint
 from utils.get_image_list import (
     FILENAME_TEMPLATE,
     STEP_INC,
+    get_image_list_pre_replace,
     get_new_image_list,
     get_image_list,
 )
@@ -41,6 +42,7 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
     if hash == '':
         # Last filter is null, use previous one
         # step_no -= STEP_INC
+        sys.exit(print_red("Error:last filter has a null hash value!"))
         previous_filter = shot['filters'][step_no-STEP_INC]
         hash = previous_filter['hash']
         if previous_filter['task'] == 'deinterlace':
@@ -55,7 +57,12 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
                 step_no=STEP_REPLACE,
                 hash=hash)
     else:
-        if step_no == shot['last_step']['step_no_replace']:
+        if shot['last_task'] == 'pre_replace':
+            image_list = get_image_list_pre_replace(shot=shot,
+                folder=current_output_folder,
+                step_no=step_no,
+                hash=hash)
+        elif step_no == shot['last_step']['step_no_replace']:
             image_list = get_new_image_list(shot=shot,
                 step_no=step_no,
                 hash=shot['filters'][step_no - STEP_INC]['hash'])
@@ -206,10 +213,10 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
                 '%02d' % (step_no))
 
             # Append images to the list
-            shot_src_start = shot['start']
-            shot_src_count = shot['count']
+            shot_src_start = shot['src']['start']
+            shot_src_count = shot['src']['count']
             filename_template = FILENAME_TEMPLATE % (k_ep_src, k_ed, step_no, suffix)
-            if shot['last_task'] != 'deinterlace':
+            if shot['last_task'] not in ['deinterlace', 'pre_replace']:
                 shot_src_start = 0
 
             for f_no in range(shot_src_start + shot_src_count,
@@ -365,10 +372,10 @@ def get_frame_list_single(db, k_ep, k_part, shot) -> list:
                 '%02d' % (step_no))
 
             # Append images to the list
-            shot_src_start = shot['start']
-            shot_src_count = shot['count']
+            shot_src_start = shot['src']['start']
+            shot_src_count = shot['src']['count']
             filename_template = FILENAME_TEMPLATE % (k_ep_src, k_ed, step_no, suffix)
-            if shot['last_task'] != 'deinterlace':
+            if shot['last_task'] not in ['deinterlace', 'pre_replace']:
                 shot_src_start = 0
 
             for f_no in range(shot_src_start + shot_src_count,

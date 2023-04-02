@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>411</width>
-    <height>314</height>
+    <width>289</width>
+    <height>378</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -48,7 +48,7 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout_2">
       <property name="spacing">
-       <number>4</number>
+       <number>6</number>
       </property>
       <property name="leftMargin">
        <number>6</number>
@@ -224,31 +224,14 @@
         <item>
          <widget class="QRadioButton" name="radioButton_shot">
           <property name="text">
-           <string>shot</string>
+           <string>shot:</string>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_remove_shot_geometry">
-          <property name="enabled">
-           <bool>false</bool>
-          </property>
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="icon">
-           <iconset>
-            <normaloff>icons/purple/x-square.svg</normaloff>
-            <normalon>icons/purple/x-square.svg</normalon>icons/purple/x-square.svg</iconset>
-          </property>
-          <property name="checkable">
-           <bool>false</bool>
-          </property>
-          <property name="flat">
-           <bool>true</bool>
+         <widget class="QCheckBox" name="checkBox_shot_custom">
+          <property name="text">
+           <string>custom</string>
           </property>
          </widget>
         </item>
@@ -270,13 +253,13 @@
       <item>
        <widget class="QGroupBox" name="groupBox_part_geometry">
         <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+         <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
         <property name="title">
-         <string>Part</string>
+         <string>Part (target)</string>
         </property>
         <property name="checkable">
          <bool>false</bool>
@@ -297,132 +280,47 @@
          <property name="bottomMargin">
           <number>3</number>
          </property>
-         <item row="2" column="3">
-          <layout class="QHBoxLayout" name="horizontalLayout_5">
-           <item>
-            <widget class="QLabel" name="label_15">
-             <property name="text">
-              <string>w</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QSpinBox" name="spinBox_part_width">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-             </property>
-             <property name="minimum">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <number>1920</number>
-             </property>
-             <property name="singleStep">
-              <number>1</number>
-             </property>
-             <property name="value">
-              <number>0</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_16">
-             <property name="text">
-              <string>h</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QSpinBox" name="spinBox_part_height">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-             </property>
-             <property name="minimum">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <number>1152</number>
-             </property>
-             <property name="singleStep">
-              <number>1</number>
-             </property>
-             <property name="value">
-              <number>0</number>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="pushButton_part_crop_edition">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/grey/crop.svg</normaloff>
-             <normalon>icons/blue/crop.svg</normalon>icons/grey/crop.svg</iconset>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_14">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_9">
            <property name="lineWidth">
             <number>0</number>
            </property>
            <property name="text">
-            <string>resize</string>
+            <string>width</string>
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
-          <widget class="QPushButton" name="pushButton_part_resize_preview">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/grey/eye.svg</normaloff>
-             <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
-           </property>
-           <property name="checkable">
+         <item row="0" column="3">
+          <widget class="QSpinBox" name="spinBox_target_width">
+           <property name="enabled">
             <bool>true</bool>
            </property>
-           <property name="flat">
-            <bool>true</bool>
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>60</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="minimum">
+            <number>1000</number>
+           </property>
+           <property name="maximum">
+            <number>1440</number>
+           </property>
+           <property name="singleStep">
+            <number>1</number>
+           </property>
+           <property name="value">
+            <number>1440</number>
            </property>
           </widget>
          </item>
@@ -447,21 +345,142 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="3">
-          <widget class="QCheckBox" name="checkBox_part_keep_ratio">
-           <property name="enabled">
+         <item row="0" column="1">
+          <widget class="QPushButton" name="pushButton_target_width_edition">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/grey/crop.svg</normaloff>
+             <normalon>icons/blue/crop.svg</normalon>icons/grey/crop.svg</iconset>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="autoDefault">
             <bool>false</bool>
            </property>
-           <property name="text">
-            <string>keep ratio</string>
+           <property name="flat">
+            <bool>true</bool>
            </property>
-           <property name="checked">
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="pushButton_target_resize_preview">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/grey/eye.svg</normaloff>
+             <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox_shot_default_geometry_2">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Shots</string>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_4">
+         <property name="leftMargin">
+          <number>3</number>
+         </property>
+         <property name="topMargin">
+          <number>5</number>
+         </property>
+         <property name="rightMargin">
+          <number>3</number>
+         </property>
+         <property name="bottomMargin">
+          <number>3</number>
+         </property>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_21">
+           <property name="lineWidth">
+            <number>0</number>
+           </property>
+           <property name="text">
+            <string>resize</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_12">
+           <property name="lineWidth">
+            <number>0</number>
+           </property>
+           <property name="text">
+            <string>crop</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="pushButton_shot_crop_edition">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/grey/crop.svg</normaloff>
+             <normalon>icons/blue/crop.svg</normalon>icons/grey/crop.svg</iconset>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="pushButton_shot_crop_preview">
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/grey/eye.svg</normaloff>
+             <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="flat">
             <bool>true</bool>
            </property>
           </widget>
          </item>
          <item row="1" column="1">
-          <widget class="QPushButton" name="pushButton_part_resize_edition">
+          <widget class="QPushButton" name="pushButton_shot_resize_edition">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -483,8 +502,8 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="2">
-          <widget class="QPushButton" name="pushButton_part_crop_preview">
+         <item row="1" column="2">
+          <widget class="QPushButton" name="pushButton_shot_resize_preview">
            <property name="text">
             <string/>
            </property>
@@ -501,18 +520,81 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_9">
+        </layout>
+       </widget>
+      </item>
+      <item>
+       <widget class="QGroupBox" name="groupBox_shot_default_geometry">
+        <property name="enabled">
+         <bool>true</bool>
+        </property>
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="title">
+         <string>Shot (default)</string>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+        <layout class="QGridLayout" name="gridLayout_3">
+         <property name="leftMargin">
+          <number>3</number>
+         </property>
+         <property name="topMargin">
+          <number>5</number>
+         </property>
+         <property name="rightMargin">
+          <number>3</number>
+         </property>
+         <property name="bottomMargin">
+          <number>3</number>
+         </property>
+         <item row="1" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QCheckBox" name="checkBox_shot_default_keep_ratio">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>keep ratio</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_shot_default_fit_to_part">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>auto</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_20">
            <property name="lineWidth">
             <number>0</number>
            </property>
            <property name="text">
-            <string>crop</string>
+            <string>resize</string>
            </property>
           </widget>
          </item>
-         <item row="0" column="3">
-          <widget class="QLineEdit" name="lineEdit_part_crop_rectangle">
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="lineEdit_shot_default_crop_rectangle">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -545,6 +627,37 @@
            </property>
           </widget>
          </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="pushButton_shot_default_discard">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string extracomment="Undo (Ctrl-Z)"/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/grey/undo.svg</normaloff>
+             <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_11">
+           <property name="lineWidth">
+            <number>0</number>
+           </property>
+           <property name="text">
+            <string>crop</string>
+           </property>
+          </widget>
+         </item>
         </layout>
        </widget>
       </item>
@@ -557,7 +670,7 @@
          </sizepolicy>
         </property>
         <property name="title">
-         <string>Shot</string>
+         <string>Shot (custom)</string>
         </property>
         <property name="checkable">
          <bool>false</bool>
@@ -578,106 +691,32 @@
          <property name="bottomMargin">
           <number>3</number>
          </property>
-         <item row="2" column="3">
-          <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <item row="1" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
            <item>
-            <widget class="QLabel" name="label_17">
-             <property name="text">
-              <string>w</string>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QSpinBox" name="spinBox_shot_width">
+            <widget class="QCheckBox" name="checkBox_shot_keep_ratio">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-             </property>
-             <property name="minimum">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <number>1920</number>
-             </property>
-             <property name="singleStep">
-              <number>1</number>
-             </property>
-             <property name="value">
-              <number>0</number>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="label_18">
              <property name="text">
-              <string>h</string>
+              <string>keep ratio</string>
              </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             <property name="checked">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
            <item>
-            <widget class="QSpinBox" name="spinBox_shot_height">
+            <widget class="QCheckBox" name="checkBox_shot_fit_to_part">
              <property name="enabled">
-              <bool>false</bool>
+              <bool>true</bool>
              </property>
-             <property name="sizePolicy">
-              <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-               <horstretch>0</horstretch>
-               <verstretch>0</verstretch>
-              </sizepolicy>
-             </property>
-             <property name="alignment">
-              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-             </property>
-             <property name="minimum">
-              <number>0</number>
-             </property>
-             <property name="maximum">
-              <number>1152</number>
-             </property>
-             <property name="singleStep">
-              <number>1</number>
-             </property>
-             <property name="value">
-              <number>0</number>
+             <property name="text">
+              <string>auto</string>
              </property>
             </widget>
            </item>
           </layout>
-         </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="pushButton_shot_crop_edition">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/grey/crop.svg</normaloff>
-             <normalon>icons/blue/crop.svg</normalon>icons/grey/crop.svg</iconset>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
          </item>
          <item row="1" column="0">
           <widget class="QLabel" name="label_19">
@@ -689,97 +728,7 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="2">
-          <widget class="QPushButton" name="pushButton_shot_resize_preview">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/grey/eye.svg</normaloff>
-             <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="4">
-          <widget class="QPushButton" name="pushButton_shot_discard">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string extracomment="Undo (Ctrl-Z)"/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/grey/undo.svg</normaloff>
-             <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QPushButton" name="pushButton_shot_resize_edition">
-           <property name="enabled">
-            <bool>false</bool>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/blue/scaling.svg</normaloff>icons/blue/scaling.svg</iconset>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="2">
-          <widget class="QPushButton" name="pushButton_shot_crop_preview">
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/grey/eye.svg</normaloff>
-             <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_10">
-           <property name="lineWidth">
-            <number>0</number>
-           </property>
-           <property name="text">
-            <string>crop</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="3">
+         <item row="0" column="1">
           <widget class="QLineEdit" name="lineEdit_shot_crop_rectangle">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -813,32 +762,36 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="3">
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
-           <item>
-            <widget class="QCheckBox" name="checkBox_shot_keep_ratio">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>keep ratio</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="checkBox_fit_to_part">
-             <property name="enabled">
-              <bool>false</bool>
-             </property>
-             <property name="text">
-              <string>auto</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_10">
+           <property name="lineWidth">
+            <number>0</number>
+           </property>
+           <property name="text">
+            <string>crop</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="pushButton_shot_discard">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string extracomment="Undo (Ctrl-Z)"/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/grey/undo.svg</normaloff>
+             <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>

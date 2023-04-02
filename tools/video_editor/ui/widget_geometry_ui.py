@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_geometry.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -24,7 +24,7 @@ class Ui_widget_geometry(object):
     def setupUi(self, widget_geometry):
         if not widget_geometry.objectName():
             widget_geometry.setObjectName(u"widget_geometry")
-        widget_geometry.resize(411, 314)
+        widget_geometry.resize(289, 378)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -44,7 +44,7 @@ class Ui_widget_geometry(object):
         self.frame.setFrameShape(QFrame.Panel)
         self.frame.setFrameShadow(QFrame.Plain)
         self.verticalLayout_2 = QVBoxLayout(self.frame)
-        self.verticalLayout_2.setSpacing(4)
+        self.verticalLayout_2.setSpacing(6)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.verticalLayout_2.setContentsMargins(6, 6, 6, 6)
         self.horizontalLayout = QHBoxLayout()
@@ -133,16 +133,10 @@ class Ui_widget_geometry(object):
 
         self.horizontalLayout_2.addWidget(self.radioButton_shot)
 
-        self.pushButton_remove_shot_geometry = QPushButton(self.frame)
-        self.pushButton_remove_shot_geometry.setObjectName(u"pushButton_remove_shot_geometry")
-        self.pushButton_remove_shot_geometry.setEnabled(False)
-        sizePolicy1.setHeightForWidth(self.pushButton_remove_shot_geometry.sizePolicy().hasHeightForWidth())
-        self.pushButton_remove_shot_geometry.setSizePolicy(sizePolicy1)
-        self.pushButton_remove_shot_geometry.setIcon(icon3)
-        self.pushButton_remove_shot_geometry.setCheckable(False)
-        self.pushButton_remove_shot_geometry.setFlat(True)
+        self.checkBox_shot_custom = QCheckBox(self.frame)
+        self.checkBox_shot_custom.setObjectName(u"checkBox_shot_custom")
 
-        self.horizontalLayout_2.addWidget(self.pushButton_remove_shot_geometry)
+        self.horizontalLayout_2.addWidget(self.checkBox_shot_custom)
 
         self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
@@ -153,258 +147,235 @@ class Ui_widget_geometry(object):
 
         self.groupBox_part_geometry = QGroupBox(self.frame)
         self.groupBox_part_geometry.setObjectName(u"groupBox_part_geometry")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.groupBox_part_geometry.sizePolicy().hasHeightForWidth())
-        self.groupBox_part_geometry.setSizePolicy(sizePolicy2)
+        sizePolicy1.setHeightForWidth(self.groupBox_part_geometry.sizePolicy().hasHeightForWidth())
+        self.groupBox_part_geometry.setSizePolicy(sizePolicy1)
         self.groupBox_part_geometry.setCheckable(False)
         self.groupBox_part_geometry.setChecked(False)
         self.gridLayout = QGridLayout(self.groupBox_part_geometry)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(3, 5, 3, 3)
-        self.horizontalLayout_5 = QHBoxLayout()
-        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
-        self.label_15 = QLabel(self.groupBox_part_geometry)
-        self.label_15.setObjectName(u"label_15")
-        self.label_15.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-
-        self.horizontalLayout_5.addWidget(self.label_15)
-
-        self.spinBox_part_width = QSpinBox(self.groupBox_part_geometry)
-        self.spinBox_part_width.setObjectName(u"spinBox_part_width")
-        self.spinBox_part_width.setEnabled(False)
-        sizePolicy3 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.spinBox_part_width.sizePolicy().hasHeightForWidth())
-        self.spinBox_part_width.setSizePolicy(sizePolicy3)
-        self.spinBox_part_width.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-        self.spinBox_part_width.setMinimum(0)
-        self.spinBox_part_width.setMaximum(1920)
-        self.spinBox_part_width.setSingleStep(1)
-        self.spinBox_part_width.setValue(0)
-
-        self.horizontalLayout_5.addWidget(self.spinBox_part_width)
-
-        self.label_16 = QLabel(self.groupBox_part_geometry)
-        self.label_16.setObjectName(u"label_16")
-        self.label_16.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-
-        self.horizontalLayout_5.addWidget(self.label_16)
-
-        self.spinBox_part_height = QSpinBox(self.groupBox_part_geometry)
-        self.spinBox_part_height.setObjectName(u"spinBox_part_height")
-        self.spinBox_part_height.setEnabled(False)
-        sizePolicy3.setHeightForWidth(self.spinBox_part_height.sizePolicy().hasHeightForWidth())
-        self.spinBox_part_height.setSizePolicy(sizePolicy3)
-        self.spinBox_part_height.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-        self.spinBox_part_height.setMinimum(0)
-        self.spinBox_part_height.setMaximum(1152)
-        self.spinBox_part_height.setSingleStep(1)
-        self.spinBox_part_height.setValue(0)
-
-        self.horizontalLayout_5.addWidget(self.spinBox_part_height)
-
-
-        self.gridLayout.addLayout(self.horizontalLayout_5, 2, 3, 1, 1)
-
-        self.pushButton_part_crop_edition = QPushButton(self.groupBox_part_geometry)
-        self.pushButton_part_crop_edition.setObjectName(u"pushButton_part_crop_edition")
-        icon4 = QIcon()
-        icon4.addFile(u"icons/grey/crop.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon4.addFile(u"icons/blue/crop.svg", QSize(), QIcon.Normal, QIcon.On)
-        self.pushButton_part_crop_edition.setIcon(icon4)
-        self.pushButton_part_crop_edition.setCheckable(True)
-        self.pushButton_part_crop_edition.setAutoDefault(False)
-        self.pushButton_part_crop_edition.setFlat(True)
-
-        self.gridLayout.addWidget(self.pushButton_part_crop_edition, 0, 1, 1, 1)
-
-        self.label_14 = QLabel(self.groupBox_part_geometry)
-        self.label_14.setObjectName(u"label_14")
-        self.label_14.setLineWidth(0)
-
-        self.gridLayout.addWidget(self.label_14, 1, 0, 1, 1)
-
-        self.pushButton_part_resize_preview = QPushButton(self.groupBox_part_geometry)
-        self.pushButton_part_resize_preview.setObjectName(u"pushButton_part_resize_preview")
-        self.pushButton_part_resize_preview.setIcon(icon)
-        self.pushButton_part_resize_preview.setCheckable(True)
-        self.pushButton_part_resize_preview.setFlat(True)
-
-        self.gridLayout.addWidget(self.pushButton_part_resize_preview, 1, 2, 1, 1)
-
-        self.pushButton_undo = QPushButton(self.groupBox_part_geometry)
-        self.pushButton_undo.setObjectName(u"pushButton_undo")
-        sizePolicy4 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        sizePolicy4.setHorizontalStretch(0)
-        sizePolicy4.setVerticalStretch(0)
-        sizePolicy4.setHeightForWidth(self.pushButton_undo.sizePolicy().hasHeightForWidth())
-        self.pushButton_undo.setSizePolicy(sizePolicy4)
-        self.pushButton_undo.setIcon(icon2)
-        self.pushButton_undo.setFlat(True)
-
-        self.gridLayout.addWidget(self.pushButton_undo, 0, 4, 1, 1)
-
-        self.checkBox_part_keep_ratio = QCheckBox(self.groupBox_part_geometry)
-        self.checkBox_part_keep_ratio.setObjectName(u"checkBox_part_keep_ratio")
-        self.checkBox_part_keep_ratio.setEnabled(False)
-        self.checkBox_part_keep_ratio.setChecked(True)
-
-        self.gridLayout.addWidget(self.checkBox_part_keep_ratio, 1, 3, 1, 1)
-
-        self.pushButton_part_resize_edition = QPushButton(self.groupBox_part_geometry)
-        self.pushButton_part_resize_edition.setObjectName(u"pushButton_part_resize_edition")
-        self.pushButton_part_resize_edition.setEnabled(False)
-        icon5 = QIcon()
-        icon5.addFile(u"icons/blue/scaling.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_part_resize_edition.setIcon(icon5)
-        self.pushButton_part_resize_edition.setCheckable(True)
-        self.pushButton_part_resize_edition.setAutoDefault(False)
-        self.pushButton_part_resize_edition.setFlat(True)
-
-        self.gridLayout.addWidget(self.pushButton_part_resize_edition, 1, 1, 1, 1)
-
-        self.pushButton_part_crop_preview = QPushButton(self.groupBox_part_geometry)
-        self.pushButton_part_crop_preview.setObjectName(u"pushButton_part_crop_preview")
-        self.pushButton_part_crop_preview.setIcon(icon)
-        self.pushButton_part_crop_preview.setCheckable(True)
-        self.pushButton_part_crop_preview.setFlat(True)
-
-        self.gridLayout.addWidget(self.pushButton_part_crop_preview, 0, 2, 1, 1)
-
         self.label_9 = QLabel(self.groupBox_part_geometry)
         self.label_9.setObjectName(u"label_9")
         self.label_9.setLineWidth(0)
 
         self.gridLayout.addWidget(self.label_9, 0, 0, 1, 1)
 
-        self.lineEdit_part_crop_rectangle = QLineEdit(self.groupBox_part_geometry)
-        self.lineEdit_part_crop_rectangle.setObjectName(u"lineEdit_part_crop_rectangle")
-        sizePolicy5 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
-        sizePolicy5.setHorizontalStretch(0)
-        sizePolicy5.setVerticalStretch(0)
-        sizePolicy5.setHeightForWidth(self.lineEdit_part_crop_rectangle.sizePolicy().hasHeightForWidth())
-        self.lineEdit_part_crop_rectangle.setSizePolicy(sizePolicy5)
-        self.lineEdit_part_crop_rectangle.setMinimumSize(QSize(190, 0))
-        self.lineEdit_part_crop_rectangle.setMaximumSize(QSize(190, 16777215))
-        self.lineEdit_part_crop_rectangle.setFrame(False)
-        self.lineEdit_part_crop_rectangle.setAlignment(Qt.AlignCenter)
-        self.lineEdit_part_crop_rectangle.setReadOnly(True)
+        self.spinBox_target_width = QSpinBox(self.groupBox_part_geometry)
+        self.spinBox_target_width.setObjectName(u"spinBox_target_width")
+        self.spinBox_target_width.setEnabled(True)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.spinBox_target_width.sizePolicy().hasHeightForWidth())
+        self.spinBox_target_width.setSizePolicy(sizePolicy2)
+        self.spinBox_target_width.setMinimumSize(QSize(60, 0))
+        self.spinBox_target_width.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+        self.spinBox_target_width.setMinimum(1000)
+        self.spinBox_target_width.setMaximum(1440)
+        self.spinBox_target_width.setSingleStep(1)
+        self.spinBox_target_width.setValue(1440)
 
-        self.gridLayout.addWidget(self.lineEdit_part_crop_rectangle, 0, 3, 1, 1)
+        self.gridLayout.addWidget(self.spinBox_target_width, 0, 3, 1, 1)
+
+        self.pushButton_undo = QPushButton(self.groupBox_part_geometry)
+        self.pushButton_undo.setObjectName(u"pushButton_undo")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.pushButton_undo.sizePolicy().hasHeightForWidth())
+        self.pushButton_undo.setSizePolicy(sizePolicy3)
+        self.pushButton_undo.setIcon(icon2)
+        self.pushButton_undo.setFlat(True)
+
+        self.gridLayout.addWidget(self.pushButton_undo, 0, 4, 1, 1)
+
+        self.pushButton_target_width_edition = QPushButton(self.groupBox_part_geometry)
+        self.pushButton_target_width_edition.setObjectName(u"pushButton_target_width_edition")
+        icon4 = QIcon()
+        icon4.addFile(u"icons/grey/crop.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(u"icons/blue/crop.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_target_width_edition.setIcon(icon4)
+        self.pushButton_target_width_edition.setCheckable(True)
+        self.pushButton_target_width_edition.setAutoDefault(False)
+        self.pushButton_target_width_edition.setFlat(True)
+
+        self.gridLayout.addWidget(self.pushButton_target_width_edition, 0, 1, 1, 1)
+
+        self.pushButton_target_resize_preview = QPushButton(self.groupBox_part_geometry)
+        self.pushButton_target_resize_preview.setObjectName(u"pushButton_target_resize_preview")
+        self.pushButton_target_resize_preview.setIcon(icon)
+        self.pushButton_target_resize_preview.setCheckable(True)
+        self.pushButton_target_resize_preview.setFlat(True)
+
+        self.gridLayout.addWidget(self.pushButton_target_resize_preview, 0, 2, 1, 1)
 
 
         self.verticalLayout_2.addWidget(self.groupBox_part_geometry)
 
-        self.groupBox_shot_geometry = QGroupBox(self.frame)
-        self.groupBox_shot_geometry.setObjectName(u"groupBox_shot_geometry")
-        sizePolicy2.setHeightForWidth(self.groupBox_shot_geometry.sizePolicy().hasHeightForWidth())
-        self.groupBox_shot_geometry.setSizePolicy(sizePolicy2)
-        self.groupBox_shot_geometry.setCheckable(False)
-        self.groupBox_shot_geometry.setChecked(False)
-        self.gridLayout_2 = QGridLayout(self.groupBox_shot_geometry)
-        self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.gridLayout_2.setContentsMargins(3, 5, 3, 3)
-        self.horizontalLayout_6 = QHBoxLayout()
-        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
-        self.label_17 = QLabel(self.groupBox_shot_geometry)
-        self.label_17.setObjectName(u"label_17")
-        self.label_17.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+        self.groupBox_shot_default_geometry_2 = QGroupBox(self.frame)
+        self.groupBox_shot_default_geometry_2.setObjectName(u"groupBox_shot_default_geometry_2")
+        self.groupBox_shot_default_geometry_2.setEnabled(True)
+        sizePolicy4 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
+        sizePolicy4.setHorizontalStretch(0)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(self.groupBox_shot_default_geometry_2.sizePolicy().hasHeightForWidth())
+        self.groupBox_shot_default_geometry_2.setSizePolicy(sizePolicy4)
+        self.groupBox_shot_default_geometry_2.setCheckable(False)
+        self.groupBox_shot_default_geometry_2.setChecked(False)
+        self.gridLayout_4 = QGridLayout(self.groupBox_shot_default_geometry_2)
+        self.gridLayout_4.setObjectName(u"gridLayout_4")
+        self.gridLayout_4.setContentsMargins(3, 5, 3, 3)
+        self.label_21 = QLabel(self.groupBox_shot_default_geometry_2)
+        self.label_21.setObjectName(u"label_21")
+        self.label_21.setLineWidth(0)
 
-        self.horizontalLayout_6.addWidget(self.label_17)
+        self.gridLayout_4.addWidget(self.label_21, 1, 0, 1, 1)
 
-        self.spinBox_shot_width = QSpinBox(self.groupBox_shot_geometry)
-        self.spinBox_shot_width.setObjectName(u"spinBox_shot_width")
-        self.spinBox_shot_width.setEnabled(False)
-        sizePolicy3.setHeightForWidth(self.spinBox_shot_width.sizePolicy().hasHeightForWidth())
-        self.spinBox_shot_width.setSizePolicy(sizePolicy3)
-        self.spinBox_shot_width.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-        self.spinBox_shot_width.setMinimum(0)
-        self.spinBox_shot_width.setMaximum(1920)
-        self.spinBox_shot_width.setSingleStep(1)
-        self.spinBox_shot_width.setValue(0)
+        self.label_12 = QLabel(self.groupBox_shot_default_geometry_2)
+        self.label_12.setObjectName(u"label_12")
+        self.label_12.setLineWidth(0)
 
-        self.horizontalLayout_6.addWidget(self.spinBox_shot_width)
+        self.gridLayout_4.addWidget(self.label_12, 0, 0, 1, 1)
 
-        self.label_18 = QLabel(self.groupBox_shot_geometry)
-        self.label_18.setObjectName(u"label_18")
-        self.label_18.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-
-        self.horizontalLayout_6.addWidget(self.label_18)
-
-        self.spinBox_shot_height = QSpinBox(self.groupBox_shot_geometry)
-        self.spinBox_shot_height.setObjectName(u"spinBox_shot_height")
-        self.spinBox_shot_height.setEnabled(False)
-        sizePolicy3.setHeightForWidth(self.spinBox_shot_height.sizePolicy().hasHeightForWidth())
-        self.spinBox_shot_height.setSizePolicy(sizePolicy3)
-        self.spinBox_shot_height.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
-        self.spinBox_shot_height.setMinimum(0)
-        self.spinBox_shot_height.setMaximum(1152)
-        self.spinBox_shot_height.setSingleStep(1)
-        self.spinBox_shot_height.setValue(0)
-
-        self.horizontalLayout_6.addWidget(self.spinBox_shot_height)
-
-
-        self.gridLayout_2.addLayout(self.horizontalLayout_6, 2, 3, 1, 1)
-
-        self.pushButton_shot_crop_edition = QPushButton(self.groupBox_shot_geometry)
+        self.pushButton_shot_crop_edition = QPushButton(self.groupBox_shot_default_geometry_2)
         self.pushButton_shot_crop_edition.setObjectName(u"pushButton_shot_crop_edition")
         self.pushButton_shot_crop_edition.setIcon(icon4)
         self.pushButton_shot_crop_edition.setCheckable(True)
         self.pushButton_shot_crop_edition.setAutoDefault(False)
         self.pushButton_shot_crop_edition.setFlat(True)
 
-        self.gridLayout_2.addWidget(self.pushButton_shot_crop_edition, 0, 1, 1, 1)
+        self.gridLayout_4.addWidget(self.pushButton_shot_crop_edition, 0, 1, 1, 1)
+
+        self.pushButton_shot_crop_preview = QPushButton(self.groupBox_shot_default_geometry_2)
+        self.pushButton_shot_crop_preview.setObjectName(u"pushButton_shot_crop_preview")
+        self.pushButton_shot_crop_preview.setIcon(icon)
+        self.pushButton_shot_crop_preview.setCheckable(True)
+        self.pushButton_shot_crop_preview.setFlat(True)
+
+        self.gridLayout_4.addWidget(self.pushButton_shot_crop_preview, 0, 2, 1, 1)
+
+        self.pushButton_shot_resize_edition = QPushButton(self.groupBox_shot_default_geometry_2)
+        self.pushButton_shot_resize_edition.setObjectName(u"pushButton_shot_resize_edition")
+        self.pushButton_shot_resize_edition.setEnabled(False)
+        icon5 = QIcon()
+        icon5.addFile(u"icons/blue/scaling.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.pushButton_shot_resize_edition.setIcon(icon5)
+        self.pushButton_shot_resize_edition.setCheckable(True)
+        self.pushButton_shot_resize_edition.setAutoDefault(False)
+        self.pushButton_shot_resize_edition.setFlat(True)
+
+        self.gridLayout_4.addWidget(self.pushButton_shot_resize_edition, 1, 1, 1, 1)
+
+        self.pushButton_shot_resize_preview = QPushButton(self.groupBox_shot_default_geometry_2)
+        self.pushButton_shot_resize_preview.setObjectName(u"pushButton_shot_resize_preview")
+        self.pushButton_shot_resize_preview.setIcon(icon)
+        self.pushButton_shot_resize_preview.setCheckable(True)
+        self.pushButton_shot_resize_preview.setFlat(True)
+
+        self.gridLayout_4.addWidget(self.pushButton_shot_resize_preview, 1, 2, 1, 1)
+
+
+        self.verticalLayout_2.addWidget(self.groupBox_shot_default_geometry_2)
+
+        self.groupBox_shot_default_geometry = QGroupBox(self.frame)
+        self.groupBox_shot_default_geometry.setObjectName(u"groupBox_shot_default_geometry")
+        self.groupBox_shot_default_geometry.setEnabled(True)
+        sizePolicy4.setHeightForWidth(self.groupBox_shot_default_geometry.sizePolicy().hasHeightForWidth())
+        self.groupBox_shot_default_geometry.setSizePolicy(sizePolicy4)
+        self.groupBox_shot_default_geometry.setCheckable(False)
+        self.groupBox_shot_default_geometry.setChecked(False)
+        self.gridLayout_3 = QGridLayout(self.groupBox_shot_default_geometry)
+        self.gridLayout_3.setObjectName(u"gridLayout_3")
+        self.gridLayout_3.setContentsMargins(3, 5, 3, 3)
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.checkBox_shot_default_keep_ratio = QCheckBox(self.groupBox_shot_default_geometry)
+        self.checkBox_shot_default_keep_ratio.setObjectName(u"checkBox_shot_default_keep_ratio")
+        self.checkBox_shot_default_keep_ratio.setEnabled(True)
+        self.checkBox_shot_default_keep_ratio.setChecked(True)
+
+        self.horizontalLayout_4.addWidget(self.checkBox_shot_default_keep_ratio)
+
+        self.checkBox_shot_default_fit_to_part = QCheckBox(self.groupBox_shot_default_geometry)
+        self.checkBox_shot_default_fit_to_part.setObjectName(u"checkBox_shot_default_fit_to_part")
+        self.checkBox_shot_default_fit_to_part.setEnabled(True)
+
+        self.horizontalLayout_4.addWidget(self.checkBox_shot_default_fit_to_part)
+
+
+        self.gridLayout_3.addLayout(self.horizontalLayout_4, 1, 1, 1, 1)
+
+        self.label_20 = QLabel(self.groupBox_shot_default_geometry)
+        self.label_20.setObjectName(u"label_20")
+        self.label_20.setLineWidth(0)
+
+        self.gridLayout_3.addWidget(self.label_20, 1, 0, 1, 1)
+
+        self.lineEdit_shot_default_crop_rectangle = QLineEdit(self.groupBox_shot_default_geometry)
+        self.lineEdit_shot_default_crop_rectangle.setObjectName(u"lineEdit_shot_default_crop_rectangle")
+        sizePolicy5 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
+        sizePolicy5.setHorizontalStretch(0)
+        sizePolicy5.setVerticalStretch(0)
+        sizePolicy5.setHeightForWidth(self.lineEdit_shot_default_crop_rectangle.sizePolicy().hasHeightForWidth())
+        self.lineEdit_shot_default_crop_rectangle.setSizePolicy(sizePolicy5)
+        self.lineEdit_shot_default_crop_rectangle.setMinimumSize(QSize(190, 0))
+        self.lineEdit_shot_default_crop_rectangle.setMaximumSize(QSize(190, 16777215))
+        self.lineEdit_shot_default_crop_rectangle.setFrame(False)
+        self.lineEdit_shot_default_crop_rectangle.setAlignment(Qt.AlignCenter)
+        self.lineEdit_shot_default_crop_rectangle.setReadOnly(True)
+
+        self.gridLayout_3.addWidget(self.lineEdit_shot_default_crop_rectangle, 0, 1, 1, 1)
+
+        self.pushButton_shot_default_discard = QPushButton(self.groupBox_shot_default_geometry)
+        self.pushButton_shot_default_discard.setObjectName(u"pushButton_shot_default_discard")
+        sizePolicy3.setHeightForWidth(self.pushButton_shot_default_discard.sizePolicy().hasHeightForWidth())
+        self.pushButton_shot_default_discard.setSizePolicy(sizePolicy3)
+        self.pushButton_shot_default_discard.setIcon(icon2)
+        self.pushButton_shot_default_discard.setFlat(True)
+
+        self.gridLayout_3.addWidget(self.pushButton_shot_default_discard, 0, 2, 1, 1)
+
+        self.label_11 = QLabel(self.groupBox_shot_default_geometry)
+        self.label_11.setObjectName(u"label_11")
+        self.label_11.setLineWidth(0)
+
+        self.gridLayout_3.addWidget(self.label_11, 0, 0, 1, 1)
+
+
+        self.verticalLayout_2.addWidget(self.groupBox_shot_default_geometry)
+
+        self.groupBox_shot_geometry = QGroupBox(self.frame)
+        self.groupBox_shot_geometry.setObjectName(u"groupBox_shot_geometry")
+        sizePolicy4.setHeightForWidth(self.groupBox_shot_geometry.sizePolicy().hasHeightForWidth())
+        self.groupBox_shot_geometry.setSizePolicy(sizePolicy4)
+        self.groupBox_shot_geometry.setCheckable(False)
+        self.groupBox_shot_geometry.setChecked(False)
+        self.gridLayout_2 = QGridLayout(self.groupBox_shot_geometry)
+        self.gridLayout_2.setObjectName(u"gridLayout_2")
+        self.gridLayout_2.setContentsMargins(3, 5, 3, 3)
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.checkBox_shot_keep_ratio = QCheckBox(self.groupBox_shot_geometry)
+        self.checkBox_shot_keep_ratio.setObjectName(u"checkBox_shot_keep_ratio")
+        self.checkBox_shot_keep_ratio.setEnabled(True)
+        self.checkBox_shot_keep_ratio.setChecked(True)
+
+        self.horizontalLayout_3.addWidget(self.checkBox_shot_keep_ratio)
+
+        self.checkBox_shot_fit_to_part = QCheckBox(self.groupBox_shot_geometry)
+        self.checkBox_shot_fit_to_part.setObjectName(u"checkBox_shot_fit_to_part")
+        self.checkBox_shot_fit_to_part.setEnabled(True)
+
+        self.horizontalLayout_3.addWidget(self.checkBox_shot_fit_to_part)
+
+
+        self.gridLayout_2.addLayout(self.horizontalLayout_3, 1, 1, 1, 1)
 
         self.label_19 = QLabel(self.groupBox_shot_geometry)
         self.label_19.setObjectName(u"label_19")
         self.label_19.setLineWidth(0)
 
         self.gridLayout_2.addWidget(self.label_19, 1, 0, 1, 1)
-
-        self.pushButton_shot_resize_preview = QPushButton(self.groupBox_shot_geometry)
-        self.pushButton_shot_resize_preview.setObjectName(u"pushButton_shot_resize_preview")
-        self.pushButton_shot_resize_preview.setIcon(icon)
-        self.pushButton_shot_resize_preview.setCheckable(True)
-        self.pushButton_shot_resize_preview.setFlat(True)
-
-        self.gridLayout_2.addWidget(self.pushButton_shot_resize_preview, 1, 2, 1, 1)
-
-        self.pushButton_shot_discard = QPushButton(self.groupBox_shot_geometry)
-        self.pushButton_shot_discard.setObjectName(u"pushButton_shot_discard")
-        sizePolicy4.setHeightForWidth(self.pushButton_shot_discard.sizePolicy().hasHeightForWidth())
-        self.pushButton_shot_discard.setSizePolicy(sizePolicy4)
-        self.pushButton_shot_discard.setIcon(icon2)
-        self.pushButton_shot_discard.setFlat(True)
-
-        self.gridLayout_2.addWidget(self.pushButton_shot_discard, 0, 4, 1, 1)
-
-        self.pushButton_shot_resize_edition = QPushButton(self.groupBox_shot_geometry)
-        self.pushButton_shot_resize_edition.setObjectName(u"pushButton_shot_resize_edition")
-        self.pushButton_shot_resize_edition.setEnabled(False)
-        self.pushButton_shot_resize_edition.setIcon(icon5)
-        self.pushButton_shot_resize_edition.setCheckable(True)
-        self.pushButton_shot_resize_edition.setAutoDefault(False)
-        self.pushButton_shot_resize_edition.setFlat(True)
-
-        self.gridLayout_2.addWidget(self.pushButton_shot_resize_edition, 1, 1, 1, 1)
-
-        self.pushButton_shot_crop_preview = QPushButton(self.groupBox_shot_geometry)
-        self.pushButton_shot_crop_preview.setObjectName(u"pushButton_shot_crop_preview")
-        self.pushButton_shot_crop_preview.setIcon(icon)
-        self.pushButton_shot_crop_preview.setCheckable(True)
-        self.pushButton_shot_crop_preview.setFlat(True)
-
-        self.gridLayout_2.addWidget(self.pushButton_shot_crop_preview, 0, 2, 1, 1)
-
-        self.label_10 = QLabel(self.groupBox_shot_geometry)
-        self.label_10.setObjectName(u"label_10")
-        self.label_10.setLineWidth(0)
-
-        self.gridLayout_2.addWidget(self.label_10, 0, 0, 1, 1)
 
         self.lineEdit_shot_crop_rectangle = QLineEdit(self.groupBox_shot_geometry)
         self.lineEdit_shot_crop_rectangle.setObjectName(u"lineEdit_shot_crop_rectangle")
@@ -416,25 +387,22 @@ class Ui_widget_geometry(object):
         self.lineEdit_shot_crop_rectangle.setAlignment(Qt.AlignCenter)
         self.lineEdit_shot_crop_rectangle.setReadOnly(True)
 
-        self.gridLayout_2.addWidget(self.lineEdit_shot_crop_rectangle, 0, 3, 1, 1)
+        self.gridLayout_2.addWidget(self.lineEdit_shot_crop_rectangle, 0, 1, 1, 1)
 
-        self.horizontalLayout_3 = QHBoxLayout()
-        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.checkBox_shot_keep_ratio = QCheckBox(self.groupBox_shot_geometry)
-        self.checkBox_shot_keep_ratio.setObjectName(u"checkBox_shot_keep_ratio")
-        self.checkBox_shot_keep_ratio.setEnabled(False)
-        self.checkBox_shot_keep_ratio.setChecked(True)
+        self.label_10 = QLabel(self.groupBox_shot_geometry)
+        self.label_10.setObjectName(u"label_10")
+        self.label_10.setLineWidth(0)
 
-        self.horizontalLayout_3.addWidget(self.checkBox_shot_keep_ratio)
+        self.gridLayout_2.addWidget(self.label_10, 0, 0, 1, 1)
 
-        self.checkBox_fit_to_part = QCheckBox(self.groupBox_shot_geometry)
-        self.checkBox_fit_to_part.setObjectName(u"checkBox_fit_to_part")
-        self.checkBox_fit_to_part.setEnabled(False)
+        self.pushButton_shot_discard = QPushButton(self.groupBox_shot_geometry)
+        self.pushButton_shot_discard.setObjectName(u"pushButton_shot_discard")
+        sizePolicy3.setHeightForWidth(self.pushButton_shot_discard.sizePolicy().hasHeightForWidth())
+        self.pushButton_shot_discard.setSizePolicy(sizePolicy3)
+        self.pushButton_shot_discard.setIcon(icon2)
+        self.pushButton_shot_discard.setFlat(True)
 
-        self.horizontalLayout_3.addWidget(self.checkBox_fit_to_part)
-
-
-        self.gridLayout_2.addLayout(self.horizontalLayout_3, 1, 3, 1, 1)
+        self.gridLayout_2.addWidget(self.pushButton_shot_discard, 0, 2, 1, 1)
 
 
         self.verticalLayout_2.addWidget(self.groupBox_shot_geometry)
@@ -455,32 +423,34 @@ class Ui_widget_geometry(object):
         self.label_message.setText(QCoreApplication.translate("widget_geometry", u"disabled", None))
         self.pushButton_close.setText("")
         self.radioButton_part.setText(QCoreApplication.translate("widget_geometry", u"part", None))
-        self.radioButton_shot.setText(QCoreApplication.translate("widget_geometry", u"shot", None))
-        self.groupBox_part_geometry.setTitle(QCoreApplication.translate("widget_geometry", u"Part", None))
-        self.label_15.setText(QCoreApplication.translate("widget_geometry", u"w", None))
-        self.label_16.setText(QCoreApplication.translate("widget_geometry", u"h", None))
-        self.pushButton_part_crop_edition.setText("")
-        self.label_14.setText(QCoreApplication.translate("widget_geometry", u"resize", None))
-        self.pushButton_part_resize_preview.setText("")
+        self.radioButton_shot.setText(QCoreApplication.translate("widget_geometry", u"shot:", None))
+        self.checkBox_shot_custom.setText(QCoreApplication.translate("widget_geometry", u"custom", None))
+        self.groupBox_part_geometry.setTitle(QCoreApplication.translate("widget_geometry", u"Part (target)", None))
+        self.label_9.setText(QCoreApplication.translate("widget_geometry", u"width", None))
         self.pushButton_undo.setText("")
-        self.checkBox_part_keep_ratio.setText(QCoreApplication.translate("widget_geometry", u"keep ratio", None))
-        self.pushButton_part_resize_edition.setText("")
-        self.pushButton_part_crop_preview.setText("")
-        self.label_9.setText(QCoreApplication.translate("widget_geometry", u"crop", None))
-        self.lineEdit_part_crop_rectangle.setText(QCoreApplication.translate("widget_geometry", u"x:10, y:10, w:5000, h:5000", None))
-        self.groupBox_shot_geometry.setTitle(QCoreApplication.translate("widget_geometry", u"Shot", None))
-        self.label_17.setText(QCoreApplication.translate("widget_geometry", u"w", None))
-        self.label_18.setText(QCoreApplication.translate("widget_geometry", u"h", None))
+        self.pushButton_target_width_edition.setText("")
+        self.pushButton_target_resize_preview.setText("")
+        self.groupBox_shot_default_geometry_2.setTitle(QCoreApplication.translate("widget_geometry", u"Shots", None))
+        self.label_21.setText(QCoreApplication.translate("widget_geometry", u"resize", None))
+        self.label_12.setText(QCoreApplication.translate("widget_geometry", u"crop", None))
         self.pushButton_shot_crop_edition.setText("")
-        self.label_19.setText(QCoreApplication.translate("widget_geometry", u"resize", None))
-        self.pushButton_shot_resize_preview.setText("")
-        self.pushButton_shot_discard.setText("")
-        self.pushButton_shot_resize_edition.setText("")
         self.pushButton_shot_crop_preview.setText("")
-        self.label_10.setText(QCoreApplication.translate("widget_geometry", u"crop", None))
-        self.lineEdit_shot_crop_rectangle.setText(QCoreApplication.translate("widget_geometry", u"x:10, y:10, w:5000, h:5000", None))
+        self.pushButton_shot_resize_edition.setText("")
+        self.pushButton_shot_resize_preview.setText("")
+        self.groupBox_shot_default_geometry.setTitle(QCoreApplication.translate("widget_geometry", u"Shot (default)", None))
+        self.checkBox_shot_default_keep_ratio.setText(QCoreApplication.translate("widget_geometry", u"keep ratio", None))
+        self.checkBox_shot_default_fit_to_part.setText(QCoreApplication.translate("widget_geometry", u"auto", None))
+        self.label_20.setText(QCoreApplication.translate("widget_geometry", u"resize", None))
+        self.lineEdit_shot_default_crop_rectangle.setText(QCoreApplication.translate("widget_geometry", u"x:10, y:10, w:5000, h:5000", None))
+        self.pushButton_shot_default_discard.setText("")
+        self.label_11.setText(QCoreApplication.translate("widget_geometry", u"crop", None))
+        self.groupBox_shot_geometry.setTitle(QCoreApplication.translate("widget_geometry", u"Shot (custom)", None))
         self.checkBox_shot_keep_ratio.setText(QCoreApplication.translate("widget_geometry", u"keep ratio", None))
-        self.checkBox_fit_to_part.setText(QCoreApplication.translate("widget_geometry", u"auto", None))
+        self.checkBox_shot_fit_to_part.setText(QCoreApplication.translate("widget_geometry", u"auto", None))
+        self.label_19.setText(QCoreApplication.translate("widget_geometry", u"resize", None))
+        self.lineEdit_shot_crop_rectangle.setText(QCoreApplication.translate("widget_geometry", u"x:10, y:10, w:5000, h:5000", None))
+        self.label_10.setText(QCoreApplication.translate("widget_geometry", u"crop", None))
+        self.pushButton_shot_discard.setText("")
         pass
     # retranslateUi
 

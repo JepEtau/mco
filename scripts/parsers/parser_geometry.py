@@ -30,9 +30,9 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
     TODO: it uses the first frame of a shot to identify the shot rather the index, so that
     a modification of shots will not break anything
     """
-    K_ED_DEBUG = 'f'
+    K_ED_DEBUG = ''
     K_EP_DEBUG = ''
-    K_PART_DEBUG = 'episode'
+    K_PART_DEBUG = ''
     print_green("\nparse_geometry_configurations: %s" % (k_ep_or_g))
     # Open configuration file
     filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_geometry.ini" % (k_ep_or_g))
@@ -46,92 +46,97 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
     config.read(filepath)
     for k_section in config.sections():
         print_lightcyan("\tparse_geometry_configurations: section:%s" % (k_section))
-        if '.' not in k_section:
-            sys.exit("__parse_curve_configurations: error, no edition,ep,part specified")
-        k_ed, k_ep, k_part = k_section.split('.')
-
-        print("\t%s:%s:%s" % (k_ed, k_ep, k_part))
-        for k_str in config.options(k_section):
-            print("\tk_str=%s" % (k_str))
-
-            if k_str == 'part':
-                # Global settings for this part
-                # if k_ep_or_g in ['g_debut', 'g_fin']:
-                #     if k_ep_or_g != k_part:
-                #         raise Exception("error: %s <> %s" % (k_ep_or_g, k_part))
-                #     db[k_ep]['video'][k_ed][k_ep_or_g]['geometry'] = {
-                #         'crop': [0, 0, 0, 0]
-                #     }
-                #     part_geometry = db[k_ep]['video'][k_ed][k_ep_or_g]['geometry']
-                # else:
-                #     # TODO: clean because same as generique... ???
-                #     db[k_ep]['video'][k_ed][k_part]['geometry'] = {
-                #         'crop': [0, 0, 0, 0]
-                #     }
-
+        if k_section == k_ep_or_g:
+            # This section define the geometry of the target: i.e. width
+            if k_ep_or_g in ['g_debut', 'g_fin']:
+                nested_dict_set(db, dict(), k_ep_or_g, 'target', 'video', 'geometry')
+                part_geometry = db[k_ep_or_g]['target']['video']['geometry']
+            else:
                 nested_dict_set(db, dict(), k_ep, 'video', k_ed, k_part, 'geometry')
-                part_geometry = db[k_ep]['video'][k_ed][k_part]['geometry']
-                properties = config.get(k_section, k_str).strip().replace(' ', '').split(',')
-                for property in properties:
-                    property_array_str = property.split('=')
-                    property_name = property_array_str[0]
+                part_geometry = db[k_ep]['video']['target'][k_part]['geometry']
 
-                    if property_name == 'keep_ratio':
-                        part_geometry[property_name] = True if property_array_str[1] == 'true' else False
-
-                    elif property_name == 'fit_to_part':
-                        print("part: found fit_to_part in %s:%s:%s:\t" % (k_ed, k_ep, k_part))
-                        nested_dict_set(part_geometry,
-                            True if property_array_str[1] == 'true' else False,
-                            'resize',
-                            property_name)
-
-                    elif property_name in ['resize', 'crop']:
-                        # crop: x0, y0, x1, y1
-                        # resize: w,h
-                        values = property_array_str[1].split(':')
-                        part_geometry[property_name] = list(map(lambda x: int(x), values))
-                continue
-
-            # if the key is the start of a shot
-            try: shot_start = int(k_str)
-            except: continue
-
-            # Get shot from shot
-            try:
-                shot = get_src_shot_from_frame_no(db, shot_start, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
-            except:
-                # Shots not defined or unused
-                print_orange("\tShot not defined: shot_start %d, %s:%s:%s" % (shot_start, k_ed, k_ep, k_part))
-                continue
-
-            if shot_start != shot['start']:
-                print_red("key [%d] is not the start of the shot no. %d" % (shot_start, shot['no']))
-                continue
-
-            properties = config.get(k_section, k_str).strip().replace(' ', '').split(',')
+            properties = config.get(k_section, 'part').strip().replace(' ', '').split(',')
             for property in properties:
                 property_array_str = property.split('=')
                 property_name = property_array_str[0]
 
-                if property_name == 'keep_ratio':
-                    value = True if property_array_str[1] == 'true' else False
-                    nested_dict_set(shot, value, 'geometry', 'shot', property_name)
+                if property_name == 'width':
+                    part_geometry['w'] = int(property_array_str[1])
 
-                elif property_name == 'fit_to_part':
-                    print("shot: found fit_to_part in %s:%s:%s:\t" % (k_ed, k_ep, k_part))
-                    value = True if property_array_str[1] == 'true' else False,
-                    nested_dict_set(shot, value, 'geometry', 'shot', 'resize', property_name)
+            continue
 
-                elif property_name in ['resize', 'crop']:
-                    # crop: x0, y0, x1, y1
-                    # resize: w,h
-                    values = list(map(lambda x: int(x), property_array_str[1].split(':')))
-                    nested_dict_set(shot,  values, 'geometry', 'shot', property_name)
+
+        # if '.' not in k_section:
+        #     sys.exit("__parse_curve_configurations: error, no edition,ep,part specified")
+        k_ed, k_ep, k_part = k_section.split('.')
+        print("\t%s:%s:%s" % (k_ed, k_ep, k_part))
+        for k_str in config.options(k_section):
+            # print("\tk_str=%s" % (k_str))
+
+            if k_str == 'default':
+                # Default values for shots of this part
+                properties = config.get(k_section, k_str)
+                nested_dict_set(db[k_ep]['video'],
+                    get_geometry_from_properties(properties),
+                    k_ed, k_part, 'geometry')
+
+            else:
+                # Custom values for a shot
+
+                # if the key is the start/middle of a shot
+                try: shot_start = int(k_str)
+                except: continue
+
+                # Get shot from shot
+                try:
+                    shot = get_src_shot_from_frame_no(db, shot_start, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+                except:
+                    # Shots not defined or unused
+                    print_orange("Warning: Shot isnot defined: shot_start %d, %s:%s:%s" % (shot_start, k_ed, k_ep, k_part))
+                    continue
+
+                if shot_start != shot['start']:
+                    print_red("key [%d] is not the start of the shot no. %d" % (shot_start, shot['no']))
+                    sys.exit()
+
+                properties = config.get(k_section, k_str)
+                nested_dict_set(shot,
+                    get_geometry_from_properties(properties),
+                    'geometry', 'shot')
+
 
         if k_ed==K_ED_DEBUG and k_ep==K_EP_DEBUG and k_part==K_PART_DEBUG:
             pprint(db[k_ep]['video'][k_ed][k_part])
             sys.exit()
+    # if k_part==K_PART_DEBUG:
+    #     pprint(db[k_ep_or_g]['target']['video'])
+    #     sys.exit()
+
+
+def get_geometry_from_properties(properties_str):
+    geometry_dict = {
+        'keep_ratio': True,
+        'fit_to_part': False,
+        'crop': [0] * 4
+    }
+    properties = properties_str.strip().replace(' ', '').split(',')
+    for property in properties:
+        property_array_str = property.split('=')
+        property_name = property_array_str[0]
+
+        if property_name == 'keep_ratio':
+            geometry_dict[property_name] = True if property_array_str[1] == 'true' else False
+
+        elif property_name == 'fit_to_part':
+            geometry_dict['fit_to_part'] = True if property_array_str[1] == 'true' else False
+
+        elif property_name == 'crop':
+            # crop: x0, y0, x1, y1
+            values = property_array_str[1].split(':')
+            geometry_dict[property_name] = list(map(lambda x: int(x), values))
+
+    return geometry_dict
+
 
 def get_initial_part_geometry(db, k_ep, k_part) -> dict:
     """ Returns a list of crops/resize per part for each edition

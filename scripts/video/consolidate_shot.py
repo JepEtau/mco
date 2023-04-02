@@ -104,82 +104,67 @@ def consolidate_shot(db, shot) -> None:
     # Geometry
     #---------------------------------------------------------------------------
     print("consolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
-    if k_part in ['g_debut', 'g_fin']:
-        # Get the geometry for the part wich is the target
-        # print("----------- target -------------")
-        # pprint(db[k_part]['target']['video'])
-        try:
-            k_ep_src = db[k_part]['video']['src']['k_ep']
-            k_ed_src = db[k_part]['video']['src']['k_ed']
-            shot['geometry'] = {
-                'part': db[k_ep_src]['video'][k_ed_src][k_part]['geometry'],
-            }
-            # Add a different geometry because it is not the same k_ed:k_ep
-            if k_ed != k_ed_src or k_ep != k_ep_src:
-                shot['geometry'].update({
+    if k_part in ['g_asuivre', 'g_reportage']:
+            # pprint(shot)
+            # print("-------------------------")
+            # pprint(db[k_ep]['video'][k_ed][k_part])
+            # print("-------------------------")
+            # pprint(db[k_part]['video'])
+            k_ep_dst = shot['dst']['k_ep']
+            k_ep_src = shot['k_ep']
+            k_ed_src = shot['k_ed']
+
+            # if 'video' in db[k_part]['video']['common'].keys():
+            #     k_ed_dst = db[k_part]['video']['common']['reference']['k_ed']
+                # print("get geometry from part %s:%s:%s for %s:%s:%s" % (
+                #     k_ed, k_ep, k_part[2:], k_ed_src, k_ep_dst, k_part))
+                # pprint(db[k_ep_dst])
+            try:
+                shot['geometry'] = {
+                    'part': db[k_ep_dst]['video'][k_ed][k_part[2:]]['geometry'],
                     'shot': db[k_ep]['video'][k_ed][k_part]['geometry'],
-                })
-        except:
-            print_yellow("undefined geometry: %s" % (k_part))
-
-    elif k_part in ['g_asuivre', 'g_reportage']:
-        # pprint(shot)
-        # print("-------------------------")
-        # pprint(db[k_ep]['video'][k_ed][k_part])
-        # print("-------------------------")
-        # pprint(db[k_part]['video'])
-        k_ep_dst = shot['dst']['k_ep']
-        k_ep_src = shot['k_ep']
-        k_ed_src = shot['k_ed']
-
-        # if 'video' in db[k_part]['video']['common'].keys():
-        #     k_ed_dst = db[k_part]['video']['common']['reference']['k_ed']
-            # print("get geometry from part %s:%s:%s for %s:%s:%s" % (
-            #     k_ed, k_ep, k_part[2:], k_ed_src, k_ep_dst, k_part))
-            # pprint(db[k_ep_dst])
-        try:
-            shot['geometry'] = {
-                'part': db[k_ep_dst]['video'][k_ed][k_part[2:]]['geometry'],
-                'shot': db[k_ep]['video'][k_ed][k_part]['geometry'],
-            }
-        except:
-            print_yellow("undefined geometry: %s" % (k_part))
-        # else:
-        #     print("warning: no geometry/video defined in %s for %s:%s:%s" % (k_part, k_ed_src, k_ep_dst, k_part))
+                }
+            except:
+                print_yellow("undefined geometry: %s" % (k_part))
+            # else:
+            #     print("warning: no geometry/video defined in %s for %s:%s:%s" % (k_part, k_ed_src, k_ep_dst, k_part))
 
     else:
-
-        # print("TODO: consolidate_shot: update when replacing the shots in episode")
-        k_ep_dst = shot['dst']['k_ep']
-        k_part_dst = shot['dst']['k_part']
         k_ed_src = shot['src']['k_ed']
         k_ep_src = shot['src']['k_ep']
         k_part_src = shot['src']['k_part']
-
-        # Use the part src because the shot may use another edition as source
-        k_target_ed_src = db[k_ep]['video']['target'][k_part]['k_ed_src']
+        shot_no_src = shot['src']['no']
 
         try:
-            nested_dict_set(shot,
-                db[k_ep]['video'][k_target_ed_src][k_part_dst]['geometry'],
-                'geometry', 'part')
+            if k_part in ['g_debut', 'g_fin']:
+                target_geometry = db[k_part]['target']['video']['geometry']
+            else:
+                target_geometry = db[k_ep]['video']['target']['geometry']
         except:
-            print_yellow("geometry not found: %s:%s:%s" % (k_ed, k_ep_dst, k_part_dst))
+            target_geometry = None
+        nested_dict_set(shot, target_geometry, 'geometry', 'part')
 
-        finally:
-            if k_ep != k_ep_dst or k_part != k_part_dst:
-                # TODO: document why!
-                nested_dict_set(shot,
-                    db[k_ep]['video'][k_ed][k_part]['geometry'],
-                    'geometry', 'shot')
+        try:
+            default_shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['geometry']
+        except:
+            default_shot_src_geometry = None
+
+        try:
+            shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['shots'][shot_no_src]['geometry']
+        except:
+            shot_src_geometry = None
+
+        if shot_src_geometry is not None:
+            nested_dict_set(shot, shot_src_geometry, 'geometry', 'shot')
+        else:
+            nested_dict_set(shot, default_shot_src_geometry, 'geometry', 'shot')
+
 
     nested_dict_set(shot,
         db['common']['dimensions']['final'],
         'geometry', 'dimensions', 'final')
 
-    # print("\t\t%s:%s <- %s:%s:%s" % (k_ep_dst, k_part_dst, k_target_ed_src, k_ep_src, k_part_src))
-    # pprint(db[k_ep]['video'][k_target_ed_src][k_part_dst])
-    # sys.exit()
+
 
     # RGB correction: calculate the lut from the curves
     #---------------------------------------------------------------------------

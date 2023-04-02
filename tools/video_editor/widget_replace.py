@@ -108,17 +108,18 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
     def event_shot_changed(self):
         enabled = self.model.is_replace_allowed()
-        if enabled:
-            if self.current_edition_enabled:
-                log.info("already enabled")
-                # already disabled, do not save another time
-                return
+        # if enabled:
+        #     if self.current_edition_enabled:
+        #         log.info("already enabled")
+        #         # already disabled, do not save another time
+        #         return
 
-        else:
-            if not self.current_edition_enabled:
-                log.info("already disabled")
-                # already disabled, do not save another time
-                return
+        # else:
+        #     if not self.current_edition_enabled:
+        #         log.info("already disabled")
+        #         # already disabled, do not save another time
+        #         return
+        if not enabled:
             self.lineEdit_frame_no.clear()
             self.lineEdit_replaced_by.clear()
 
@@ -137,23 +138,26 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_replace_list_refreshed(self, values:dict):
-        self.tableWidget_replace.blockSignals(True)
+        if self.model.is_replace_allowed():
+            self.tableWidget_replace.blockSignals(True)
 
-        self.tableWidget_replace.clearContents()
-        self.tableWidget_replace.setRowCount(0)
-        for row_no, v in zip(range(len(values)), values):
-            self.tableWidget_replace.insertRow(row_no)
-            self.tableWidget_replace.setItem(row_no, 0, QTableWidgetItem(str(v['shot_no'])))
-            self.tableWidget_replace.setItem(row_no, 1, QTableWidgetItem(str(v['dst'])))
-            self.tableWidget_replace.setItem(row_no, 2, QTableWidgetItem(str(v['src'])))
+            self.tableWidget_replace.clearContents()
+            self.tableWidget_replace.setRowCount(0)
+            for row_no, v in zip(range(len(values)), values):
+                self.tableWidget_replace.insertRow(row_no)
+                self.tableWidget_replace.setItem(row_no, 0, QTableWidgetItem(str(v['shot_no'])))
+                self.tableWidget_replace.setItem(row_no, 1, QTableWidgetItem(str(v['dst'])))
+                self.tableWidget_replace.setItem(row_no, 2, QTableWidgetItem(str(v['src'])))
 
-            for i in range(len(self.alignment)):
-                self.tableWidget_replace.item(row_no, i).setTextAlignment(self.alignment[i])
-                self.tableWidget_replace.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+                for i in range(len(self.alignment)):
+                    self.tableWidget_replace.item(row_no, i).setTextAlignment(self.alignment[i])
+                    self.tableWidget_replace.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
-        self.tableWidget_replace.selectionModel().clearSelection()
-        self.tableWidget_replace.blockSignals(False)
-        self.tableWidget_replace.setEnabled(True)
+            self.tableWidget_replace.selectionModel().clearSelection()
+            self.tableWidget_replace.blockSignals(False)
+            self.tableWidget_replace.setEnabled(True)
+
+        self.event_shot_changed()
 
 
     def event_replace_selected(self):

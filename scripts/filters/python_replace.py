@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from pprint import pprint
 import cv2
+import sys
 
 from utils.pretty_print import *
 from utils.hash import (
@@ -8,8 +9,9 @@ from utils.hash import (
     log_filter,
 )
 from utils.get_image_list import (
+    FILENAME_TEMPLATE,
     get_new_image_list,
-    get_image_list
+    get_image_list_pre_replace
 )
 
 
@@ -55,8 +57,7 @@ def python_pre_replace(shot:dict,
     hash = input_hash
     if not get_hash:
         print_cyan("(python)\tstep no. %d, task=%s, input_hash= %s" % (step_no, filters_str, input_hash))
-
-        output_image_list = get_image_list(shot=shot,
+        output_image_list = get_image_list_pre_replace(shot=shot,
             folder=output_folder,
             step_no=step_no,
             hash=input_hash)

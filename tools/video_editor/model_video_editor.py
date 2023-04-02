@@ -25,14 +25,11 @@ from models.model_common import (
 
 from utils.common import (
     K_GENERIQUES,
-    get_frame_no_from_filepath,
     get_dimensions_from_crop_values,
-    nested_dict_get,
-    nested_dict_set,
 )
 from utils.get_frame_list import get_frame_list, get_frame_list_single
 from video.consolidate_shot import consolidate_shot
-from filters.filters import filter_rgb
+from filters.filters import calculate_geometry_parameters, filter_rgb
 from utils.pretty_print import *
 
 
@@ -268,12 +265,11 @@ class Model_video_editor(Model_common):
             else:
                 shot_geometry = self.model_database.get_shot_geometry(shot=shot)
 
-
             # Create a list of frames for this shot
             self.frames[shot_no] = list()
             for p, i in zip(filepath_tmp, range(len(filepath_tmp))):
 
-                if task in ['deinterlace', 'pre_upscale']:
+                if task in ['deinterlace', 'pre_replace']:
                     # Use the frame no. from video to simplify frame replacement
                     frame_no = shot['src']['start'] + i
                 else:
@@ -678,6 +674,12 @@ class Model_video_editor(Model_common):
             else:
                 self.model_database.set_shot_geometry(shot=shot, geometry=geometry)
 
+        elif modification['parameter'] == 'ratio':
+            try:
+                geometry['ratio'] =  value
+            except:
+                geometry.update({'ratio': value})
+
 
         elif modification['parameter'] == 'remove':
             # remove the shot geometry, use the part geometry
@@ -729,14 +731,16 @@ class Model_video_editor(Model_common):
         self.signal_is_saved.emit('geometry')
 
     def get_current_shot(self):
-        self.shots[self.current_frame['shot_no']]
+        try: return self.shots[self.current_frame['shot_no']]
+        except: pass
+        return None
 
     def get_frame_from_index(self, index):
         """ returns the replace frame unless there is no replacemed frame or
         the initial flag is set to True
         framelist contains all path for each frame of this playlist
         """
-        log.info("get_frame: get_frame from index. %d" % (index))
+        # log.info("get_frame: get_frame from index. %d" % (index))
         # print_lightgreen("playlist: nb of frames: %d" % (len(self.playlist_frames)))
         if len(self.playlist_frames) == 0:
             return None
@@ -822,13 +826,23 @@ class Model_video_editor(Model_common):
         # Set current frame
         self.current_frame = frame
 
-
-
         # Generate the image for this frame
         # now = time.time()
         options = self.preview_options
         if options is not None:
-            index, img = generate_single_image(self.current_frame, preview_options=options)
+
+            try:
+                if frame['cache_initial'] is None:
+                    # The original has not yet been loaded
+                    frame['cache_initial'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
+            except:
+                frame['cache_initial'] = None
+                return None
+
+            geometry = calculate_geometry_parameters(shot=shot, img=frame['cache_initial'])
+            pprint(geometry)
+
+            index, img = generate_single_image(self.current_frame, geometry, preview_options=options)
             self.set_current_frame_cache(img=img)
         # print("\t%dms" % (int(1000 * (time.time() - now))))
         # else:
@@ -842,22 +856,14 @@ class Model_video_editor(Model_common):
 
 
 
-def generate_single_image(frame:dict, preview_options:dict):
-    # log.info("generate single image")
+def generate_single_image(frame:dict, geometry, preview_options:dict):
+    log.info("generate single image")
+
     verbose = False
     if verbose:
         print("\ngenerate_single_image:")
         pprint(preview_options)
         print("\t-> %s:%s:%s" % (frame['k_ed'], frame['k_ep'], frame['k_part']))
-
-    img = None
-
-    try:
-        if frame['cache_initial'] is None:
-            # The original has not yet been loaded
-            frame['cache_initial'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
-    except:
-        frame['cache_initial'] = None
 
     img_original = frame['cache_initial']
     h, w, c = img_original.shape
@@ -884,8 +890,8 @@ def generate_single_image(frame:dict, preview_options:dict):
         print("\t-> use the %s geometry %d:%d:%d:%d  %dx%d" % (type, c_t, c_b, c_l, c_r, c_w, c_h))
 
     # Final width and height
-    w_final = frame['geometry']['dimensions']['final']['w']
-    h_final = frame['geometry']['dimensions']['final']['h']
+    w_final = geometry['final']['w']
+    h_final = geometry['final']['h']
 
     # Preview options
     options = preview_options['geometry'][type]
@@ -923,7 +929,10 @@ def generate_single_image(frame:dict, preview_options:dict):
         # Crop and no rect
         if verbose:
             print("\t-> Crop the image, ", end='')
-        img_cropped = np.ascontiguousarray(img_rgb[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
+        c_t, c_b, c_l, c_r = geometry['crop']
+        img_cropped = np.ascontiguousarray(img_rgb[
+            c_t : geometry['initial']['h'] - c_b,
+            c_l : geometry['initial']['w'] - c_r], dtype=np.uint8)
         if verbose:
             print("cropped: ", img_cropped.shape)
 
@@ -959,9 +968,10 @@ def generate_single_image(frame:dict, preview_options:dict):
                 print("\tDO NOT fit to part: w_tmp=%d -> w_p_tmp=%d" % (w_tmp, w_p_tmp))
                 pass
 
-            img_resized = cv2.resize(img_cropped,
-                (w_tmp, h_final),
+            img_resized = cv2.resize(src=img_cropped,
+                dsize=(geometry['resize']['w'], geometry['resize']['h']),
                 interpolation=cv2.INTER_LANCZOS4)
+
             if verbose:
                 print("\t-> resized cropped image: %dx%d, calculated:%dx%d" % (img_resized.shape[1], img_resized.shape[0], w_tmp, h_final ))
         else:

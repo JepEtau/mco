@@ -11,6 +11,7 @@ from utils.get_image_list import (
     FILENAME_TEMPLATE,
     get_first_image_filepath,
     get_image_list,
+    get_image_list_pre_replace,
     get_new_image_list
 )
 from utils.path import (
@@ -88,7 +89,12 @@ def effect_loop_and_fadeout(db, shot):
 
 
     # Input image list before the loop
-    if shot['last_step']['step_no'] == shot['last_step']['step_no_replace']:
+    if shot['last_task'] == 'pre_replace':
+        image_list = get_image_list_pre_replace(shot=shot,
+            folder=input_filepath,
+            step_no=step_no,
+            hash=hash)
+    elif shot['last_step']['step_no'] == shot['last_step']['step_no_replace']:
         image_list = get_new_image_list(shot=shot,
             step_no=step_no,
             hash=shot['filters'][step_no - STEP_INC]['hash'])
@@ -181,7 +187,12 @@ def effect_fadeout(db, shot):
     print_lightgreen("\toutput_filepath: %s" % (output_filepath))
 
     # Input image list
-    if shot['last_step']['step_no'] == shot['last_step']['step_no_replace']:
+    if shot['last_task'] == 'pre_replace':
+            image_list = get_image_list_pre_replace(shot=shot,
+                folder=input_filepath,
+                step_no=step_no,
+                hash=hash)
+    elif shot['last_step']['step_no'] == shot['last_step']['step_no_replace']:
         image_list = get_new_image_list(shot=shot,
             step_no=step_no,
             hash=shot['filters'][step_no - STEP_INC]['hash'])

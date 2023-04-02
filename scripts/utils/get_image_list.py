@@ -11,8 +11,8 @@ def get_first_image_filepath(shot, folder, step_no, hash=''):
     suffix = "_%s" % (hash) if hash != '' else ''
     filename_template = FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, suffix)
 
-    if step_no == 0:
-        # Deinterlace
+    if step_no == 0 or shot['last_task'] == 'pre_replace':
+        # Deinterlace or pre_replace uses the original frame no.
         print("\t\t\tget_first_image_filepath: deinterlaced")
         new_frame_no = shot['start']
     else:
@@ -89,5 +89,21 @@ def get_image_list(shot, folder, step_no, hash=''):
     for no in range(frame_start, frame_start+shot['count']):
         image_list.append(os.path.join(os.path.normpath(folder),
             filename_template % (no)))
+
+    return image_list
+
+
+def get_image_list_pre_replace(shot, folder, step_no, hash=''):
+
+    # Template to name the files
+    suffix = "_%s" % (hash) if hash != '' else ''
+    filename_template = FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, suffix)
+    folder = os.path.join(shot['cache'], "%02d" %  (step_no))
+
+    # Generate the list
+    image_list = list()
+    for frame_no in range(shot['start'], shot['start'] + shot['count']):
+        image_list.append(os.path.join(os.path.normpath(folder),
+            filename_template % (frame_no)))
 
     return image_list
