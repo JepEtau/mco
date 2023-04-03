@@ -35,7 +35,7 @@ def apply_python_rgb_filter(shot, images:list, image_list:list,
         filters_str += "=%s" % (shot['curves']['k_curves'])
     except:
         print_yellow("\t\t\tNo RGB curves")
-        return '', None
+        return '', images
 
     hash = log_filter("%s,%s" % (input_hash, filters_str), shot['hash_log_file'])
     if get_hash:

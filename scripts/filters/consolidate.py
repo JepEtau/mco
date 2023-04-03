@@ -102,7 +102,7 @@ def consolidate_filters(shot):
     # Append RGB curves
     shot['filters'].append({
         'type': 'python',
-        'save': False,
+        'save': True if shot['count'] >= MAX_FRAMES_COUNT else False,
         'str': 'rgb',
         'task': 'rgb'
     })
@@ -115,7 +115,6 @@ def consolidate_filters(shot):
         'str': 'geometry',
         'task': 'geometry'
     })
-
 
 
     # Patch the list for 'pre_replace' task

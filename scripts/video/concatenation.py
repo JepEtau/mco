@@ -271,7 +271,7 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
             ffmpeg_command.extend(db_settings['video_tune'].split(' '))
         ffmpeg_command.extend(["-y", shot_filepath])
 
-        # print_green(ffmpeg_command)
+        print_green(ffmpeg_command)
         if simulation:
             return
 

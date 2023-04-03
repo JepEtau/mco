@@ -190,7 +190,6 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                     filters_str=filter['str'],
                     input_hash=hash,
                     get_hash=get_hashes)
-                pprint(image_list)
 
             elif filter['str'] == 'pre_replace':
                 hash, image_list, images = python_pre_replace(

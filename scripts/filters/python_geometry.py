@@ -63,6 +63,8 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
     # Calculate values to crop/resize/add padding
     if len(images) == 0:
         img = cv2.imread(image_list[0], cv2.IMREAD_COLOR)
+    else:
+        img = images[0]
     geometry = calculate_geometry_parameters(shot=shot, img=img)
 
 
