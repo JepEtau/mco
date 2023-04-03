@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_geometry.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.3
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -24,7 +24,7 @@ class Ui_widget_geometry(object):
     def setupUi(self, widget_geometry):
         if not widget_geometry.objectName():
             widget_geometry.setObjectName(u"widget_geometry")
-        widget_geometry.resize(289, 378)
+        widget_geometry.resize(329, 408)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -154,12 +154,6 @@ class Ui_widget_geometry(object):
         self.gridLayout = QGridLayout(self.groupBox_part_geometry)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(3, 5, 3, 3)
-        self.label_9 = QLabel(self.groupBox_part_geometry)
-        self.label_9.setObjectName(u"label_9")
-        self.label_9.setLineWidth(0)
-
-        self.gridLayout.addWidget(self.label_9, 0, 0, 1, 1)
-
         self.spinBox_target_width = QSpinBox(self.groupBox_part_geometry)
         self.spinBox_target_width.setObjectName(u"spinBox_target_width")
         self.spinBox_target_width.setEnabled(True)
@@ -175,19 +169,7 @@ class Ui_widget_geometry(object):
         self.spinBox_target_width.setSingleStep(1)
         self.spinBox_target_width.setValue(1440)
 
-        self.gridLayout.addWidget(self.spinBox_target_width, 0, 3, 1, 1)
-
-        self.pushButton_undo = QPushButton(self.groupBox_part_geometry)
-        self.pushButton_undo.setObjectName(u"pushButton_undo")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.pushButton_undo.sizePolicy().hasHeightForWidth())
-        self.pushButton_undo.setSizePolicy(sizePolicy3)
-        self.pushButton_undo.setIcon(icon2)
-        self.pushButton_undo.setFlat(True)
-
-        self.gridLayout.addWidget(self.pushButton_undo, 0, 4, 1, 1)
+        self.gridLayout.addWidget(self.spinBox_target_width, 0, 4, 1, 1)
 
         self.pushButton_target_width_edition = QPushButton(self.groupBox_part_geometry)
         self.pushButton_target_width_edition.setObjectName(u"pushButton_target_width_edition")
@@ -208,6 +190,33 @@ class Ui_widget_geometry(object):
         self.pushButton_target_resize_preview.setFlat(True)
 
         self.gridLayout.addWidget(self.pushButton_target_resize_preview, 0, 2, 1, 1)
+
+        self.pushButton_undo = QPushButton(self.groupBox_part_geometry)
+        self.pushButton_undo.setObjectName(u"pushButton_undo")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.pushButton_undo.sizePolicy().hasHeightForWidth())
+        self.pushButton_undo.setSizePolicy(sizePolicy3)
+        self.pushButton_undo.setIcon(icon2)
+        self.pushButton_undo.setFlat(True)
+
+        self.gridLayout.addWidget(self.pushButton_undo, 0, 6, 1, 1)
+
+        self.label_9 = QLabel(self.groupBox_part_geometry)
+        self.label_9.setObjectName(u"label_9")
+        self.label_9.setLineWidth(0)
+
+        self.gridLayout.addWidget(self.label_9, 0, 0, 1, 1)
+
+        self.pushButton_target_width_calculate = QPushButton(self.groupBox_part_geometry)
+        self.pushButton_target_width_calculate.setObjectName(u"pushButton_target_width_calculate")
+        sizePolicy3.setHeightForWidth(self.pushButton_target_width_calculate.sizePolicy().hasHeightForWidth())
+        self.pushButton_target_width_calculate.setSizePolicy(sizePolicy3)
+        self.pushButton_target_width_calculate.setIcon(icon2)
+        self.pushButton_target_width_calculate.setFlat(True)
+
+        self.gridLayout.addWidget(self.pushButton_target_width_calculate, 0, 5, 1, 1)
 
 
         self.verticalLayout_2.addWidget(self.groupBox_part_geometry)
@@ -426,10 +435,11 @@ class Ui_widget_geometry(object):
         self.radioButton_shot.setText(QCoreApplication.translate("widget_geometry", u"shot:", None))
         self.checkBox_shot_custom.setText(QCoreApplication.translate("widget_geometry", u"custom", None))
         self.groupBox_part_geometry.setTitle(QCoreApplication.translate("widget_geometry", u"Part (target)", None))
-        self.label_9.setText(QCoreApplication.translate("widget_geometry", u"width", None))
-        self.pushButton_undo.setText("")
         self.pushButton_target_width_edition.setText("")
         self.pushButton_target_resize_preview.setText("")
+        self.pushButton_undo.setText("")
+        self.label_9.setText(QCoreApplication.translate("widget_geometry", u"width", None))
+        self.pushButton_target_width_calculate.setText("")
         self.groupBox_shot_default_geometry_2.setTitle(QCoreApplication.translate("widget_geometry", u"Shots", None))
         self.label_21.setText(QCoreApplication.translate("widget_geometry", u"resize", None))
         self.label_12.setText(QCoreApplication.translate("widget_geometry", u"crop", None))

@@ -80,10 +80,11 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                 shot['count'], len(images), len(image_list)))
 
             if step_no > 0 and shot['count'] < MAX_FRAMES_COUNT and len(images) != shot['count']:
-                print_lightgrey("\t\t\tLoading %d images in memory, from %s" % (shot['count'], image_list[0]))
+                print_lightgrey("\t\t\tLoading %d images in memory, from %s" % (shot['count'], image_list[0]), flush=True)
                 images = [cv2.imread(f_input, cv2.IMREAD_COLOR) for f_input in image_list]
                 shot['last_step']['shape'] = images[0].shape
-
+            else:
+                print_lightgrey("\t\t\tNo need to load images in memory, from %s" % (image_list[0]), flush=True)
         else:
             # Get hash, use an empty list
             images = [None] * shot['count']
@@ -189,6 +190,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                     filters_str=filter['str'],
                     input_hash=hash,
                     get_hash=get_hashes)
+                pprint(image_list)
 
             elif filter['str'] == 'pre_replace':
                 hash, image_list, images = python_pre_replace(
@@ -212,6 +214,9 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                     image_list=image_list,
                     get_hash=get_hashes,
                     do_force=do_force)
+
+                if images is None:
+                    images = list()
 
                 if not get_hashes:
                     print_lightgrey("\t\t\tpython: returned %d images" % (len(images)))
@@ -319,6 +324,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
 
         # Get the list of images which will be used as input for the next step
         if filter['str'] != 'replace':
+            # note: pre_replace is not tested because it it the last task
             image_list = get_image_list(shot=shot,
                 folder=output_folder,
                 step_no=step_no,

@@ -136,6 +136,7 @@ def consolidate_filters(shot):
         }
         for step_no in range(len(shot['filters'])):
             filter = shot['filters'][step_no]
+
             if filter['task'] == 'rgb':
                 # Do not save the previous filter because the 'pre_replace' filter will do it
                 shot['filters'][step_no-1]['save'] = False

@@ -1,8 +1,8 @@
 # TODO
 (1)
-- geometry is not working: rework this ASAP
+- geometry is not working: rework on going
 - rework consolidate shot: geometry for g_asuivre/g_reportage
-- rgb/geometry: error when processing shot
+- rgb: debug
 - Add step_no in mkv filename if vfilter is specified
 - use file hash for rgb step
 - (?) g_fin : fadeout is not done
@@ -18,7 +18,7 @@
     * use ffv1 for FFmpeg filter except if images already exists.
 
 (3)
-- effects: verify when replacing shots (asuivre)
+- effects: verify when replacing shots (asuivre/precedemment)
 - (?) custom filter depending on shot
 - (?) process single frame does not work anymore: repair and re-enable ?
 - replace "get_or_create_src_shot" function by "get_src_shot" and generate a warning

@@ -13,6 +13,7 @@ from filters.ffmpeg_utils import clean_ffmpeg_filter
 
 from filters.homography import Homography
 from filters.deshake import deshake
+from filters.python_geometry import apply_python_geometry_filter
 from filters.utils import MAX_FRAMES_COUNT
 from utils.pretty_print import *
 from utils.hash import (
@@ -179,78 +180,22 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
     elif filter_name == 'geometry':
         if 'geometry' not in shot.keys():
             # Geometry not defined
-            print("\t\t\twarning: no geometry defined for shot no. %d" % (shot['no']))
+            sys.exit(print_red("\t\t\twarning: no geometry defined for shot no. %d" % (shot['no'])))
             hash = ''
             return hash, None
 
-        # Define hash
-        filters_str += "="
-        for k in ['shot', 'part']:
-            filters_str += "%s=" % (k)
-            try:
-                crop_str = ':'.join(list(["%d" % (x) for x in shot['geometry'][k]['crop']]))
-                filters_str += "crop=%s" % (crop_str)
-            except:
-                continue
-            try:
-                resize_str = ':'.join(list(["%d" % (x) for x in shot['geometry'][k]['resize']]))
-                filters_str += ",resize=%s" % (resize_str)
-            except:
-                pass
+        return apply_python_geometry_filter(
+            shot=shot,
+            images=images,
+            image_list=image_list,
+            step_no=step_no,
+            filters_str=filters_str,
+            input_hash=input_hash,
+            get_hash=get_hash,
+            do_save=do_save,
+            output_folder=output_folder)
 
-            try: filters_str += ",fit_to_part" if shot['geometry'][k]['resize']['fit_to_part'] else ''
-            except: pass
 
-            try: filters_str += ",keep_ratio" if shot['geometry'][k]['keep_ratio'] else ''
-            except: pass
-
-            filters_str += ","
-        filters_str = filters_str[:-1]
-
-        hash = log_filter("%s,%s" % (input_hash, filters_str), shot['hash_log_file'])
-        if get_hash:
-            return hash, None
-
-        # Output image list
-        if do_save:
-            output_image_list = get_image_list(
-                shot=shot,
-                folder=output_folder,
-                step_no=step_no,
-                hash=hash)
-
-        # Calculate values to crop/resize/add padding
-        geometry = calculate_geometry_parameters(shot=shot, img=images[0])
-        pprint(geometry)
-
-        # RGB correction frame by frame: create a list of works for multiprocessing
-        count = shot['count']
-        worklist = list()
-        output_images = [None] * shot['count']
-        if do_save:
-            for frame_no, f_output in zip(range(count), output_image_list):
-                if not os.path.exists(f_output):
-                    worklist.append([frame_no, images[frame_no]])
-                else:
-                    output_images[frame_no] = cv2.imread(f_output, cv2.IMREAD_COLOR)
-        else:
-            for frame_no in range(count):
-                worklist.append([frame_no, images[frame_no]])
-
-        # Execute the pool of works
-        no = 0
-        with ThreadPoolExecutor(max_workers=min(cpu_count, len(worklist))) as executor:
-            work_result = {executor.submit(work_cv2_geometry_filter, work[0], work[1], geometry): list
-                            for work in worklist}
-            for future in concurrent.futures.as_completed(work_result):
-                frame_no, img = future.result()
-                output_images[frame_no] = img
-                if do_save:
-                    cv2.imwrite(output_image_list[frame_no], img)
-                no += 1
-                print_yellow("\t\t\tgeometry: %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
-        print("\t\t\t                           ", end='\r')
-        return hash, output_images
 
 
     elif filter_name.startswith('dnn_superres'):
@@ -343,7 +288,11 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
 
 
 
-def work_cv2_geometry_filter(frame_no, img, geometry) -> list:
+def work_cv2_geometry_filter(frame_no, input_img, geometry) -> list:
+    if type(input_img) is str:
+        img = cv2.imread(input_img, cv2.IMREAD_COLOR)
+    else:
+        img = input_img
     output_img = cv2_geometry_filter(img, geometry)
     return (frame_no, output_img)
 

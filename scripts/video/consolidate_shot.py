@@ -145,12 +145,12 @@ def consolidate_shot(db, shot) -> None:
         nested_dict_set(shot, target_geometry, 'geometry', 'part')
 
         try:
-            default_shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['geometry']
+            default_shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['geometry']['shot']
         except:
             default_shot_src_geometry = None
 
         try:
-            shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['shots'][shot_no_src]['geometry']
+            shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['shots'][shot_no_src]['geometry']['shot']
         except:
             shot_src_geometry = None
 
