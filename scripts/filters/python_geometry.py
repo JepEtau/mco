@@ -32,6 +32,13 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
     do_save:bool, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
+    pprint(shot['geometry'])
+    if shot['geometry']['shot'] is None:
+        # Neither part nor shot section in database
+        sys.exit(print_red("Error: no geometry defined for %s:%s:%s, shot no. %d, cannot continue" % (
+            shot['k_ed'], shot['k_ep'], shot['k_part'], shot['no'])))
+        return '', None
+
     # Set filters_str to calculate hash
     filters_str = "geometry=w=%d,crop=%s,keep_ratio=%s,fit_to_part=%s" % (
         shot['geometry']['part']['w'],

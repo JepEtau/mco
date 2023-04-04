@@ -83,7 +83,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                 print_lightgrey("\t\t\tLoading %d images in memory, from %s" % (shot['count'], image_list[0]), flush=True)
                 images = [cv2.imread(f_input, cv2.IMREAD_COLOR) for f_input in image_list]
                 shot['last_step']['shape'] = images[0].shape
-            else:
+            elif step_no > 0:
                 print_lightgrey("\t\t\tNo need to load images in memory, from %s" % (image_list[0]), flush=True)
         else:
             # Get hash, use an empty list

@@ -1,18 +1,13 @@
 # TODO
 (1)
-- geometry is not working: rework on going
 - rework consolidate shot: geometry for g_asuivre/g_reportage
-- rgb: debug
-- Add step_no in mkv filename if vfilter is specified
-- use file hash for rgb step
 - (?) g_fin : fadeout is not done
+- when in memory mode, do not flush images but replace images (copy)
 
 
 (2)
 - replace:
-    * when in memory mode, do not flush images but replace images (copy)
     * Circular dependency is not verified
-- Do not save pre_upscaled images if not specified in filters
 - FFmpeg filter:
     * (?) use concatenate for all cases -> save images before
     * use ffv1 for FFmpeg filter except if images already exists.
@@ -26,6 +21,8 @@
 
 
 (video editor)
-- geometry does not work
+- geometry widget/model to rework
 - curves: find shot from frame no and do not verify if it is the 1st frame. when saving, use middle of shot?
-- stabilize: modify widget
+- stabilize: rework
+- curves selection: library edition
+

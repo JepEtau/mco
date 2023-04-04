@@ -37,6 +37,11 @@ def apply_python_rgb_filter(shot, images:list, image_list:list,
         print_yellow("\t\t\tNo RGB curves")
         return '', images
 
+    if shot['curves']['lut'] is None:
+        sys.exit(print_red("error: apply_python_rgb_filter: no LUT for %s" % (shot['curves']['k_curves'])))
+
+    # Get hash
+    filters_str += "=%s" % (shot['curves']['hash'])
     hash = log_filter("%s,%s" % (input_hash, filters_str), shot['hash_log_file'])
     if get_hash:
         return hash, None

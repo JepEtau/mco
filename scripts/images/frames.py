@@ -231,9 +231,8 @@ def consolidate_frame_list_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=F
         # Consolidate curves
         if frame['curves'] is not None:
             k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
-            shot['curves']['lut'] = get_lut_from_curves(db,
-                                        k_ep_or_g,
-                                        frame['curves']['k_curves'])
+            shot['curves']['lut'], curves_points_str = get_lut_from_curves(db,
+                k_ep_or_g, frame['curves']['k_curves'])
 
         # Output file paths, patch this frame to use the function
         frame['start'] = frame['no']

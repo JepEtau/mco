@@ -11,6 +11,7 @@ from filters.utils import (
     get_step_no_from_last_task,
 )
 from utils.hash import (
+    calculate_hash,
     create_hash_file,
     get_hash_from_last_task,
 )
@@ -19,7 +20,7 @@ from utils.common import (
     nested_dict_set,
 )
 from utils.get_curves import get_lut_from_curves
-from utils.path import get_cache_path, get_output_path_from_shot
+from utils.path import get_cache_path
 from utils.pretty_print import *
 
 
@@ -145,9 +146,14 @@ def consolidate_shot(db, shot) -> None:
         nested_dict_set(shot, target_geometry, 'geometry', 'part')
 
         try:
-            default_shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['geometry']['shot']
+            default_shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['geometry']
         except:
-            default_shot_src_geometry = None
+            default_shot_src_geometry = {
+                'keep_ratio': True,
+                'fit_to_part': False,
+                'crop': [0] * 4,
+                'is_default': True,
+            }
 
         try:
             shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['shots'][shot_no_src]['geometry']['shot']
@@ -156,9 +162,11 @@ def consolidate_shot(db, shot) -> None:
 
         if shot_src_geometry is not None:
             nested_dict_set(shot, shot_src_geometry, 'geometry', 'shot')
+            shot['geometry']['shot']['is_default'] = False
         else:
             nested_dict_set(shot, default_shot_src_geometry, 'geometry', 'shot')
-
+            try: shot['geometry']['shot']['is_default'] = True
+            except: pass
 
     nested_dict_set(shot,
         db['common']['dimensions']['final'],
@@ -169,12 +177,12 @@ def consolidate_shot(db, shot) -> None:
     # RGB correction: calculate the lut from the curves
     #---------------------------------------------------------------------------
     if shot['curves'] is not None:
-        shot['curves']['lut'] = get_lut_from_curves(db,
-            k_ed_src,
-            k_ep_src,
+        shot['curves']['lut'], curves_points_str = get_lut_from_curves(db,
+            k_ed,
+            k_ep,
             k_part,
             shot['curves']['k_curves'])
-
+        shot['curves']['hash'] = calculate_hash(curves_points_str)
 
     # Filters
     #---------------------------------------------------------------------------

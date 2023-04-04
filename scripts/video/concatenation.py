@@ -181,7 +181,7 @@ def create_concatenation_file_video(db, k_ep, k_part, video_files:dict):
                     filepath = shot['path']
                     hash = shot['hash']
 
-                    p = filepath.replace('.txt', '_%s.mkv' % (hash))
+                    p = filepath.replace('.txt', '_%s_%s.mkv' % (hash, shot['last_task']))
                     p = p.replace('concatenation', 'video')
                     concatenation_file.write("file \'%s\' \n" % (p))
         else:
@@ -245,7 +245,10 @@ def create_concatenation_file_silence(db, k_ep):
 def combine_images_into_video(db_common, k_part, video_shot, force=False, simulation:bool=False):
     input_filename = video_shot['path']
     shot_filepath = input_filename.replace("concatenation", "video")
-    shot_filepath = shot_filepath.replace('.txt', '_%s.mkv' % (video_shot['hash']))
+    suffix = "_%s" % (video_shot['hash'])
+    if video_shot['last_task'] != '':
+        suffix += "_%s" % (video_shot['last_task'])
+    shot_filepath = shot_filepath.replace('.txt', '%s.mkv' % (suffix))
 
     print("%s.combine_images_into_video: %s: %s -> %s" % (__name__, k_part, input_filename, shot_filepath))
 

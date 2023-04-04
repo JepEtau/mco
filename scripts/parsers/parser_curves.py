@@ -82,6 +82,8 @@ def parse_curve_configurations(db, k_ep_or_g:str):
 
 
 def get_curves_channels_from_db(db, k_ed, k_ep, k_part, k_curves:str) -> dict:
+    # Return also the curves as a single line
+    curves_points_str = ""
     k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
 
     # Open configuration file
@@ -109,6 +111,7 @@ def get_curves_channels_from_db(db, k_ed, k_ep, k_part, k_curves:str) -> dict:
         }
         for k_channel in ['r', 'g', 'b', 'm']:
             points_str = config.get(k_section, k_channel).replace(' ', '').strip()
+            curves_points_str += "%s=%s;" % (k_channel, points_str)
             points = points_str.split(',')
             rgb_channels[k_channel].remove_all_points()
             for point in points:
@@ -117,7 +120,7 @@ def get_curves_channels_from_db(db, k_ed, k_ep, k_part, k_curves:str) -> dict:
     except:
         print("Warning: %s:%s:%s: [%s] is not found in curves db: %s" % (k_ed, k_ep, k_part, k_section, filepath))
         return None
-    return rgb_channels
+    return rgb_channels, curves_points_str[:-1]
 
 
 

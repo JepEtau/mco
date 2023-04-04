@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>171</width>
-    <height>452</height>
+    <width>165</width>
+    <height>482</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -73,27 +73,7 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>icons/blue/undo.svg</normaloff>icons/blue/undo.svg</iconset>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QPushButton" name="pushButton_delete">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/purple/x-square.svg</normaloff>icons/purple/x-square.svg</iconset>
+             <normaloff>../../../../.designer/backup/icons/blue/undo.svg</normaloff>../../../../.designer/backup/icons/blue/undo.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -183,6 +163,45 @@
           </widget>
          </item>
          <item>
+          <widget class="QPushButton" name="pushButton">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>50</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Lib.</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_delete">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../../../.designer/backup/icons/purple/x-square.svg</normaloff>../../../../.designer/backup/icons/purple/x-square.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
           <spacer name="verticalSpacer">
            <property name="orientation">
             <enum>Qt::Vertical</enum>
@@ -230,8 +249,8 @@
          </property>
          <property name="icon">
           <iconset>
-           <normaloff>icons/grey/save.svg</normaloff>
-           <normalon>icons/purple/save.svg</normalon>icons/grey/save.svg</iconset>
+           <normaloff>../../../../.designer/backup/icons/grey/save.svg</normaloff>
+           <normalon>../../../../.designer/backup/icons/purple/save.svg</normalon>../../../../.designer/backup/icons/grey/save.svg</iconset>
          </property>
          <property name="flat">
           <bool>true</bool>

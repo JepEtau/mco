@@ -15,11 +15,11 @@ def get_lut_from_curves(db, k_ed, k_ep, k_part, k_curves:str):
         if there is a problem with the curve
     """
     # print("%s:get_lut_from_curves %s:%s:%s, %s" % (__name__, k_ed, k_ep, k_part, k_curves))
-    rgb_channels = get_curves_channels_from_db(db, k_ed, k_ep, k_part, k_curves)
+    rgb_channels, curves_points_str = get_curves_channels_from_db(db, k_ed, k_ep, k_part, k_curves)
     if rgb_channels is None:
         return None
 
-    return calculate_channel_lut(rgb_channels)
+    return calculate_channel_lut(rgb_channels), curves_points_str
 
 
 

@@ -157,7 +157,8 @@ def generate_video(db, k_ed:str, k_ep:str,
                 # Add the filepath to the the concatenation video file
                 video_files[k_p]['shotlist'].append({
                     'path': tmp,
-                    'hash': shot_hash
+                    'hash': shot_hash,
+                    'last_task': shot['last_task'] if shot['last_task'] != 'final' else ''
                 })
                 do_generate_shot_video = True
             previous_concatenation_filepath = tmp
@@ -195,27 +196,29 @@ def generate_video(db, k_ed:str, k_ep:str,
     # print("=> processed shots in %d:%02d" % (minutes, seconds), flush=True)
 
     # pprint(video_files)
-    # Combine images to mkv
-    for k_p, video_shots in video_files.items():
-        if k_part != '' and k_p != k_part or simulation:
-            # Do not combine when a single part has to be processed
-            # print_yellow("Do not combine when a single part has to be processed: k_p=%s" % (k_p))
-            continue
+    if False:
+        # TODO already done shot per shot, remove this after verification
+        # Combine images to mkv
+        for k_p, video_shots in video_files.items():
+            if k_part != '' and k_p != k_part or simulation:
+                # Do not combine when a single part has to be processed
+                # print_yellow("Do not combine when a single part has to be processed: k_p=%s" % (k_p))
+                continue
 
-        print_purple("\tcombine images to video (shot): k_p=%s" % (k_p))
+            print_purple("\tcombine images to video (shot): k_p=%s" % (k_p))
 
-        if False:
-            # Multi processing
-            cpu_count = int(multiprocessing.cpu_count() / 2)
-            with ThreadPoolExecutor(max_workers=cpu_count) as executor:
-                work_result = {executor.submit(combine_images_into_video,
-                                db['common'], k_p, work, force=force, simulation=simulation): None
-                                for work in video_shots['shotlist']}
-                for future in concurrent.futures.as_completed(work_result):
-                    pass
-        else:
-            for video_shot in video_shots['shotlist']:
-                combine_images_into_video(db['common'], k_p, video_shot, force=force, simulation=simulation)
+            if False:
+                # Multi processing
+                cpu_count = int(multiprocessing.cpu_count() / 2)
+                with ThreadPoolExecutor(max_workers=cpu_count) as executor:
+                    work_result = {executor.submit(combine_images_into_video,
+                                    db['common'], k_p, work, force=force, simulation=simulation): None
+                                    for work in video_shots['shotlist']}
+                    for future in concurrent.futures.as_completed(work_result):
+                        pass
+            else:
+                for video_shot in video_shots['shotlist']:
+                    combine_images_into_video(db['common'], k_p, video_shot, force=force, simulation=simulation)
 
 
     # For each part, concatenate shots in a single clip
