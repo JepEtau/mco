@@ -536,7 +536,7 @@ def calculate_geometry_parameters(shot, img):
 
             # (3a) Do add padding (height)
 
-        else:
+        elif resized_height > h_final:
             # 2nd crop: crop height
             print_lightgrey("\t-> 2nd crop: height (%d -> %d)" % (resized_height, h_final))
             crop_2_top = int((resized_height - h_final) / 2 + 0.5)
@@ -569,7 +569,7 @@ def calculate_geometry_parameters(shot, img):
 
             # (3a) Do add padding (width)
 
-        else:
+        elif resized_width > part_width:
             # 2nd crop: crop width
             print_lightgrey("\t-> 2nd crop: width (%d -> %d)" % (resized_width, part_width))
             crop_2_left = int((resized_width - part_width) / 2 + 0.5)

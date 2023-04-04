@@ -61,9 +61,17 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
 
     # Output image list
     if do_save:
+        if shot['dst']['k_part'].startswith('g_'):
+            output_folder_dst = output_folder.replace(shot['k_ep'],shot['dst']['k_ep'])
+        else:
+            output_folder_dst = output_folder
+        if not os.path.exists(output_folder_dst):
+            os.makedirs(output_folder_dst)
+
+        print_pink("output_folder_dst: %s" % (output_folder_dst))
         output_image_list = get_image_list(
             shot=shot,
-            folder=output_folder,
+            folder=output_folder_dst,
             step_no=step_no,
             hash=hash)
 
@@ -129,7 +137,7 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
                 cv2.imwrite(output_image_list[frame_no], img)
             no += 1
             print_yellow("\t\tgeometry (single process): %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
-    print("\t\t                           ", end='\r')
+    print("\t\t                                                  ", end='\r')
 
     return hash, output_images
 

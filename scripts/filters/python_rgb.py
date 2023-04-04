@@ -117,7 +117,7 @@ def apply_python_rgb_filter(shot, images:list, image_list:list,
                 cv2.imwrite(output_image_list[frame_no], img)
             no += 1
             print_yellow("\t\tapplying RGB curves (single process): %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
-    print("\t\t                           ", end='\r')
+    print("\t\t                                                  ", end='\r')
 
 
 
@@ -133,7 +133,7 @@ def apply_python_rgb_filter(shot, images:list, image_list:list,
                 cv2.imwrite(output_image_list[frame_no], img)
             no += 1
             print_yellow("\t\t\tapplying RGB curves: %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
-    print("\t\t\t                           ", end='\r')
+    print("\t\t                                                  ", end='\r')
 
     return hash, output_images
 

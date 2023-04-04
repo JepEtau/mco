@@ -99,7 +99,7 @@ def ffmpeg_deinterlace(shot, step_no,
             output_images.append(img)
         no += 1
         print_yellow("\t\t\textracting: %d%%" % (int((100.0 * no)/frame_count)), flush=True, end='\r')
-    print("\t\t\t                           ", end='\r')
+    print("\t\t                                                  ", end='\r')
 
     return hash, output_images
 

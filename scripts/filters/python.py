@@ -279,7 +279,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
                 cv2.imwrite(output_image_list[frame_no], img)
             no += 1
             print_yellow("\t\tfiltering (single process): %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
-    print("\t\t                           ", end='\r')
+    print("\t\t                                                  ", end='\r')
 
     return hash, output_images
 

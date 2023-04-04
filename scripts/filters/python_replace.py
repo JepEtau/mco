@@ -2,6 +2,7 @@
 from pprint import pprint
 import cv2
 import sys
+from filters.utils import STEP_INC
 
 from utils.pretty_print import *
 from utils.hash import (
@@ -37,12 +38,21 @@ def python_replace(shot:dict,
             output_image_list = get_new_image_list(shot=shot, step_no=step_no, hash=input_hash)
             # print_yellow("AFTER replace")
             # pprint(image_list)
+
+            # Consolidate output images
+            replace = shot['replace']
+            for frame_no in replace:
+                index_no_dst = frame_no - shot['start']
+                index_no_src = replace[frame_no] - shot['start']
+                print_purple("\t(%d <- %d) %d <- %d" % (frame_no, replace[frame_no], index_no_dst, index_no_src))
+                images[index_no_dst] = images[index_no_src].copy()
+
     else:
         # No images were replaced
         print_yellow("\t\t\tNo images were replaced")
         return input_hash, image_list, images
 
-    return hash, output_image_list, output_images
+    return hash, output_image_list, images
 
 
 def python_pre_replace(shot:dict,

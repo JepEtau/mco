@@ -104,38 +104,36 @@ def consolidate_shot(db, shot) -> None:
 
     # Geometry
     #---------------------------------------------------------------------------
-    print("consolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
     if k_part in ['g_asuivre', 'g_reportage']:
-            # pprint(shot)
-            # print("-------------------------")
-            # pprint(db[k_ep]['video'][k_ed][k_part])
-            # print("-------------------------")
-            # pprint(db[k_part]['video'])
-            k_ep_dst = shot['dst']['k_ep']
-            k_ep_src = shot['k_ep']
-            k_ed_src = shot['k_ed']
+        print_yellow("consolidate_shot: get geometry from %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
+        k_ep_dst = shot['dst']['k_ep']
 
-            # if 'video' in db[k_part]['video']['common'].keys():
-            #     k_ed_dst = db[k_part]['video']['common']['reference']['k_ed']
-                # print("get geometry from part %s:%s:%s for %s:%s:%s" % (
-                #     k_ed, k_ep, k_part[2:], k_ed_src, k_ep_dst, k_part))
-                # pprint(db[k_ep_dst])
-            try:
-                shot['geometry'] = {
-                    'part': db[k_ep_dst]['video'][k_ed][k_part[2:]]['geometry'],
-                    'shot': db[k_ep]['video'][k_ed][k_part]['geometry'],
-                }
-            except:
-                print_yellow("undefined geometry: %s" % (k_part))
-            # else:
-            #     print("warning: no geometry/video defined in %s for %s:%s:%s" % (k_part, k_ed_src, k_ep_dst, k_part))
+        try:
+            target_geometry = db[k_ep_dst]['video']['target'][k_part[2:]]['geometry']
+        except:
+            target_geometry = None
+        nested_dict_set(shot, target_geometry, 'geometry', 'part')
+
+        try:
+            shot_geometry = db[k_ep]['video'][k_ed][k_part]['geometry']
+            shot_geometry['is_default'] = False
+        except:
+            shot_geometry = {
+                'keep_ratio': True,
+                'fit_to_part': False,
+                'crop': [0] * 4,
+                'is_default': False,
+            }
+        nested_dict_set(shot, shot_geometry, 'geometry', 'shot')
 
     else:
+        print("consolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
         k_ed_src = shot['src']['k_ed']
         k_ep_src = shot['src']['k_ep']
         k_part_src = shot['src']['k_part']
         shot_no_src = shot['src']['no']
 
+        # Target geometry: width defined
         try:
             if k_part in ['g_debut', 'g_fin']:
                 target_geometry = db[k_part]['target']['video']['geometry']
@@ -147,16 +145,18 @@ def consolidate_shot(db, shot) -> None:
 
         try:
             default_shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['geometry']
+            default_shot_src_geometry['is_default'] = True
         except:
             default_shot_src_geometry = {
                 'keep_ratio': True,
                 'fit_to_part': False,
                 'crop': [0] * 4,
-                'is_default': True,
+                'is_default': True
             }
 
         try:
             shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['shots'][shot_no_src]['geometry']['shot']
+            shot_src_geometry['is_default'] = False
         except:
             shot_src_geometry = None
 

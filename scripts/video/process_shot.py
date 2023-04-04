@@ -97,8 +97,12 @@ def simplify_shot_process(db, shot) -> int:
                 step_no=step_no,
                 hash=hash)
         else:
+            if shot['dst']['k_part'].startswith('g_'):
+                output_folder_dst = output_folder.replace(shot['k_ep'],shot['dst']['k_ep'])
+            else:
+                output_folder_dst = output_folder
             image_list = get_image_list(shot,
-                folder=output_folder,
+                folder=output_folder_dst,
                 step_no=step_no,
                 hash=hash)
 

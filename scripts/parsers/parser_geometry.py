@@ -13,6 +13,7 @@ from pprint import pprint
 
 from parsers.parser_generiques import get_dependencies_for_generique
 from utils.common import (
+    K_ALL_PARTS,
     K_GENERIQUES,
     get_src_shot_from_frame_no,
     nested_dict_set,
@@ -46,14 +47,14 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
     config.read(filepath)
     for k_section in config.sections():
         print_lightcyan("\tparse_geometry_configurations: section:%s" % (k_section))
-        if k_section == k_ep_or_g:
+        if k_section in K_ALL_PARTS:
             # This section define the geometry of the target: i.e. width
             if k_ep_or_g in ['g_debut', 'g_fin']:
                 nested_dict_set(db, dict(), k_ep_or_g, 'target', 'video', 'geometry')
                 part_geometry = db[k_ep_or_g]['target']['video']['geometry']
             else:
-                nested_dict_set(db, dict(), k_ep, 'video', k_ed, k_part, 'geometry')
-                part_geometry = db[k_ep]['video']['target'][k_part]['geometry']
+                nested_dict_set(db, dict(), k_ep_or_g, 'video', 'target', k_section, 'geometry')
+                part_geometry = db[k_ep_or_g]['video']['target'][k_section]['geometry']
 
             properties = config.get(k_section, 'part').strip().replace(' ', '').split(',')
             for property in properties:
@@ -63,13 +64,17 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                 if property_name == 'width':
                     part_geometry['w'] = int(property_array_str[1])
 
+            if k_section == 'asuivre':
+                print("%s:%s" % (k_ep_or_g, k_section))
+                pprint(db[k_ep_or_g]['video']['target'][k_section])
+                # sys.exit()
             continue
 
 
         # if '.' not in k_section:
         #     sys.exit("__parse_curve_configurations: error, no edition,ep,part specified")
         k_ed, k_ep, k_part = k_section.split('.')
-        print("\t%s:%s:%s" % (k_ed, k_ep, k_part))
+        print_orange("\tk_ep_or_g=%s;\t%s:%s:%s" % (k_ep_or_g, k_ed, k_ep, k_part))
         for k_str in config.options(k_section):
             # print("\tk_str=%s" % (k_str))
 
@@ -92,7 +97,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                     shot = get_src_shot_from_frame_no(db, shot_start, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
                 except:
                     # Shots not defined or unused
-                    print_orange("Warning: Shot isnot defined: shot_start %d, %s:%s:%s" % (shot_start, k_ed, k_ep, k_part))
+                    print_orange("Warning: Shot is not defined: shot_start %d, %s:%s:%s" % (shot_start, k_ed, k_ep, k_part))
                     continue
 
                 if shot_start != shot['start']:
@@ -104,6 +109,11 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                     get_geometry_from_properties(properties),
                     'geometry', 'shot')
 
+        # if k_section == 's.ep12.g_asuivre':
+        #     pprint(db['g_asuivre'])
+        #     pprint(db[k_ep]['video'][k_ed][k_part])
+        #     print_cyan(db['ep01']['video']['target']['g_asuivre'])
+        #     sys.exit()
 
         if k_ed==K_ED_DEBUG and k_ep==K_EP_DEBUG and k_part==K_PART_DEBUG:
             pprint(db[k_ep]['video'][k_ed][k_part])
