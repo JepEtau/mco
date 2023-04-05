@@ -84,6 +84,8 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                 images = [cv2.imread(f_input, cv2.IMREAD_COLOR) for f_input in image_list]
                 shot['last_step']['shape'] = images[0].shape
             elif step_no > 0:
+                if shot['count'] >= MAX_FRAMES_COUNT:
+                    print("Error: cannot load %d images in memory, max: %d" % (shot['count'], MAX_FRAMES_COUNT), flush=True)
                 print_lightgrey("\t\t\tNo need to load images in memory, from %s" % (image_list[0]), flush=True)
         else:
             # Get hash, use an empty list

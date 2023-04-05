@@ -120,7 +120,7 @@ def consolidate_shot(db, shot) -> None:
         except:
             shot_geometry = {
                 'keep_ratio': True,
-                'fit_to_part': False,
+                'fit_to_width': False,
                 'crop': [0] * 4,
                 'is_default': False,
             }
@@ -149,7 +149,7 @@ def consolidate_shot(db, shot) -> None:
         except:
             default_shot_src_geometry = {
                 'keep_ratio': True,
-                'fit_to_part': False,
+                'fit_to_width': False,
                 'crop': [0] * 4,
                 'is_default': True
             }

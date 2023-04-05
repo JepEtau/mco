@@ -13,7 +13,6 @@ import subprocess
 from parsers.parser_filters import parse_filters
 from utils.process import get_process_cfg
 
-DATABASE_PATH = "../database"
 
 #===========================================================================
 #

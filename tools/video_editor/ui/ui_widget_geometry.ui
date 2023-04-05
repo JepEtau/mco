@@ -559,10 +559,10 @@
          <string>Shot (default)</string>
         </property>
         <property name="checkable">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="checked">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout_3">
          <property name="leftMargin">
@@ -593,12 +593,12 @@
             </widget>
            </item>
            <item>
-            <widget class="QCheckBox" name="checkBox_shot_default_fit_to_part">
+            <widget class="QCheckBox" name="checkBox_shot_default_fit_to_width">
              <property name="enabled">
               <bool>true</bool>
              </property>
              <property name="text">
-              <string>auto</string>
+              <string>fit to width</string>
              </property>
             </widget>
            </item>
@@ -694,7 +694,7 @@
          <string>Shot (custom)</string>
         </property>
         <property name="checkable">
-         <bool>false</bool>
+         <bool>true</bool>
         </property>
         <property name="checked">
          <bool>false</bool>
@@ -717,7 +717,7 @@
            <item>
             <widget class="QCheckBox" name="checkBox_shot_keep_ratio">
              <property name="enabled">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
              <property name="text">
               <string>keep ratio</string>
@@ -728,12 +728,12 @@
             </widget>
            </item>
            <item>
-            <widget class="QCheckBox" name="checkBox_shot_fit_to_part">
+            <widget class="QCheckBox" name="checkBox_shot_fit_to_width">
              <property name="enabled">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
              <property name="text">
-              <string>auto</string>
+              <string>fit_to_width</string>
              </property>
             </widget>
            </item>

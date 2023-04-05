@@ -126,7 +126,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
 def get_geometry_from_properties(properties_str):
     geometry_dict = {
         'keep_ratio': True,
-        'fit_to_part': False,
+        'fit_to_width': False,
         'crop': [0] * 4
     }
     properties = properties_str.strip().replace(' ', '').split(',')
@@ -137,8 +137,8 @@ def get_geometry_from_properties(properties_str):
         if property_name == 'keep_ratio':
             geometry_dict[property_name] = True if property_array_str[1] == 'true' else False
 
-        elif property_name == 'fit_to_part':
-            geometry_dict['fit_to_part'] = True if property_array_str[1] == 'true' else False
+        elif property_name == 'fit_to_width':
+            geometry_dict['fit_to_width'] = True if property_array_str[1] == 'true' else False
 
         elif property_name == 'crop':
             # crop: x0, y0, x1, y1

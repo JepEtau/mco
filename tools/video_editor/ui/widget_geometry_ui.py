@@ -291,8 +291,8 @@ class Ui_widget_geometry(object):
         self.groupBox_shot_default_geometry.setEnabled(True)
         sizePolicy4.setHeightForWidth(self.groupBox_shot_default_geometry.sizePolicy().hasHeightForWidth())
         self.groupBox_shot_default_geometry.setSizePolicy(sizePolicy4)
-        self.groupBox_shot_default_geometry.setCheckable(False)
-        self.groupBox_shot_default_geometry.setChecked(False)
+        self.groupBox_shot_default_geometry.setCheckable(True)
+        self.groupBox_shot_default_geometry.setChecked(True)
         self.gridLayout_3 = QGridLayout(self.groupBox_shot_default_geometry)
         self.gridLayout_3.setObjectName(u"gridLayout_3")
         self.gridLayout_3.setContentsMargins(3, 5, 3, 3)
@@ -305,11 +305,11 @@ class Ui_widget_geometry(object):
 
         self.horizontalLayout_4.addWidget(self.checkBox_shot_default_keep_ratio)
 
-        self.checkBox_shot_default_fit_to_part = QCheckBox(self.groupBox_shot_default_geometry)
-        self.checkBox_shot_default_fit_to_part.setObjectName(u"checkBox_shot_default_fit_to_part")
-        self.checkBox_shot_default_fit_to_part.setEnabled(True)
+        self.checkBox_shot_default_fit_to_width = QCheckBox(self.groupBox_shot_default_geometry)
+        self.checkBox_shot_default_fit_to_width.setObjectName(u"checkBox_shot_default_fit_to_width")
+        self.checkBox_shot_default_fit_to_width.setEnabled(True)
 
-        self.horizontalLayout_4.addWidget(self.checkBox_shot_default_fit_to_part)
+        self.horizontalLayout_4.addWidget(self.checkBox_shot_default_fit_to_width)
 
 
         self.gridLayout_3.addLayout(self.horizontalLayout_4, 1, 1, 1, 1)
@@ -357,7 +357,7 @@ class Ui_widget_geometry(object):
         self.groupBox_shot_geometry.setObjectName(u"groupBox_shot_geometry")
         sizePolicy4.setHeightForWidth(self.groupBox_shot_geometry.sizePolicy().hasHeightForWidth())
         self.groupBox_shot_geometry.setSizePolicy(sizePolicy4)
-        self.groupBox_shot_geometry.setCheckable(False)
+        self.groupBox_shot_geometry.setCheckable(True)
         self.groupBox_shot_geometry.setChecked(False)
         self.gridLayout_2 = QGridLayout(self.groupBox_shot_geometry)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
@@ -366,16 +366,16 @@ class Ui_widget_geometry(object):
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.checkBox_shot_keep_ratio = QCheckBox(self.groupBox_shot_geometry)
         self.checkBox_shot_keep_ratio.setObjectName(u"checkBox_shot_keep_ratio")
-        self.checkBox_shot_keep_ratio.setEnabled(True)
+        self.checkBox_shot_keep_ratio.setEnabled(False)
         self.checkBox_shot_keep_ratio.setChecked(True)
 
         self.horizontalLayout_3.addWidget(self.checkBox_shot_keep_ratio)
 
-        self.checkBox_shot_fit_to_part = QCheckBox(self.groupBox_shot_geometry)
-        self.checkBox_shot_fit_to_part.setObjectName(u"checkBox_shot_fit_to_part")
-        self.checkBox_shot_fit_to_part.setEnabled(True)
+        self.checkBox_shot_fit_to_width = QCheckBox(self.groupBox_shot_geometry)
+        self.checkBox_shot_fit_to_width.setObjectName(u"checkBox_shot_fit_to_width")
+        self.checkBox_shot_fit_to_width.setEnabled(False)
 
-        self.horizontalLayout_3.addWidget(self.checkBox_shot_fit_to_part)
+        self.horizontalLayout_3.addWidget(self.checkBox_shot_fit_to_width)
 
 
         self.gridLayout_2.addLayout(self.horizontalLayout_3, 1, 1, 1, 1)
@@ -449,14 +449,14 @@ class Ui_widget_geometry(object):
         self.pushButton_shot_resize_preview.setText("")
         self.groupBox_shot_default_geometry.setTitle(QCoreApplication.translate("widget_geometry", u"Shot (default)", None))
         self.checkBox_shot_default_keep_ratio.setText(QCoreApplication.translate("widget_geometry", u"keep ratio", None))
-        self.checkBox_shot_default_fit_to_part.setText(QCoreApplication.translate("widget_geometry", u"auto", None))
+        self.checkBox_shot_default_fit_to_width.setText(QCoreApplication.translate("widget_geometry", u"fit to width", None))
         self.label_20.setText(QCoreApplication.translate("widget_geometry", u"resize", None))
         self.lineEdit_shot_default_crop_rectangle.setText(QCoreApplication.translate("widget_geometry", u"x:10, y:10, w:5000, h:5000", None))
         self.pushButton_shot_default_discard.setText("")
         self.label_11.setText(QCoreApplication.translate("widget_geometry", u"crop", None))
         self.groupBox_shot_geometry.setTitle(QCoreApplication.translate("widget_geometry", u"Shot (custom)", None))
         self.checkBox_shot_keep_ratio.setText(QCoreApplication.translate("widget_geometry", u"keep ratio", None))
-        self.checkBox_shot_fit_to_part.setText(QCoreApplication.translate("widget_geometry", u"auto", None))
+        self.checkBox_shot_fit_to_width.setText(QCoreApplication.translate("widget_geometry", u"fit_to_width", None))
         self.label_19.setText(QCoreApplication.translate("widget_geometry", u"resize", None))
         self.lineEdit_shot_crop_rectangle.setText(QCoreApplication.translate("widget_geometry", u"x:10, y:10, w:5000, h:5000", None))
         self.label_10.setText(QCoreApplication.translate("widget_geometry", u"crop", None))

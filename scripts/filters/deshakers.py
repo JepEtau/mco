@@ -190,7 +190,7 @@ class CV2_deshaker:
         return img_stabilized
 
 
-    def stabilize(self, shot, images, ref,
+    def stabilize(self, shot, images, image_list, ref,
         step_no, input_hash, directions='both', get_hash:bool=False, do_force=False, do_log=False):
 
         """Stabilize images without smoothing the trajectory
@@ -349,8 +349,9 @@ class Skimage_deshaker:
 
 
 
-    def stabilize(self, shot, images, ref,
-        step_no, input_hash, directions='both', get_hash:bool=False, do_force=False, do_log=False):
+    def stabilize(self, shot, images, image_list, ref,
+        step_no, input_hash, directions='both',
+        get_hash:bool=False, do_force=False, do_log=False):
         """Stabilize images without smoothing the trajectory
         """
         use_static_ref = False

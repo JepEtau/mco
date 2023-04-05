@@ -82,6 +82,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
         hash, output_images = deshake(
             shot=shot,
             images=images,
+            image_list=image_list,
             add_border=add_border,
             step_no=step_no,
             input_hash=input_hash,
@@ -231,6 +232,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
     worklist = list()
     output_images = list()
     if use_memory:
+        output_images = [None] * shot['count']
         if do_save and not do_force:
             for frame_no, f_output in zip(range(count), output_image_list):
                 if not os.path.exists(f_output):
@@ -240,7 +242,6 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
         else:
             for frame_no in range(count):
                 worklist.append([frame_no, images[frame_no]])
-        output_images = [None] * shot['count']
     else:
         # Do not load images in memeory
         if not do_force:

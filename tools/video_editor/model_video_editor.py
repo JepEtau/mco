@@ -108,7 +108,7 @@ class Model_video_editor(Model_common):
         k_ep = 'ep%02d' % (p['selection']['episode']) if p['selection']['episode'] != '' else ''
         self.selection_changed({
             'k_ep': k_ep,
-            'k_part': p['selection']['k_part'],
+            'k_part': p['selection']['part'],
             'k_step': p['selection']['step'],
         })
 
@@ -661,11 +661,11 @@ class Model_video_editor(Model_common):
             elif modification['parameter'] == 'crop_right':
                 geometry['crop'][3] = max(0, min(c_r + value, 400))
 
-        elif modification['parameter'] == 'fit_to_part':
+        elif modification['parameter'] == 'fit_to_width':
             try:
-                geometry['resize']['fit_to_part'] =  value
+                geometry['resize']['fit_to_width'] =  value
             except:
-                geometry.update({'resize': {'fit_to_part': value}})
+                geometry.update({'resize': {'fit_to_width': value}})
 
             if k_part in ['g_asuivre', 'g_reportage']:
                 self.model_database.set_part_geometry(k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part, geometry=geometry)
@@ -957,8 +957,8 @@ def generate_single_image(frame:dict, geometry, preview_options:dict):
         if options['crop_preview']:
             # Resize the cropped image
             try:
-                do_fit_to_part = frame['geometry']['shot']['resize']['fit_to_part']
-                if do_fit_to_part is not None and do_fit_to_part:
+                do_fit_to_width = frame['geometry']['shot']['resize']['fit_to_width']
+                if do_fit_to_width is not None and do_fit_to_width:
                     if verbose:
                         print("\tfit to part: w_tmp=%d -> w_p_tmp=%d" % (w_tmp, w_p_tmp))
                     w_tmp = w_p_tmp
@@ -1010,18 +1010,18 @@ def generate_single_image(frame:dict, geometry, preview_options:dict):
                     if verbose:
                         print("\terror: shot_width is < part_width: w_tmp=%d,  w_p_tmp=%d" % (w_tmp, w_p_tmp))
                     try:
-                        do_fit_to_part = frame['geometry']['shot']['resize']['fit_to_part']
-                        if do_fit_to_part is not None and do_fit_to_part:
+                        do_fit_to_width = frame['geometry']['shot']['resize']['fit_to_width']
+                        if do_fit_to_width is not None and do_fit_to_width:
                             if verbose:
                                 print("\tfit to part: w_tmp=%d -> w_p_tmp=%d" % (w_tmp, w_p_tmp))
                             img_resized_final = cv2.resize(img_cropped, (w_p_tmp, h_tmp), interpolation=cv2.INTER_LANCZOS4)
                         else:
-                            do_fit_to_part = False
+                            do_fit_to_width = False
                     except:
-                        do_fit_to_part = False
+                        do_fit_to_width = False
                         pass
 
-                    if not do_fit_to_part:
+                    if not do_fit_to_width:
                         frame['geometry']['error'] = True
                         pad_left = int((w_p_tmp - w_tmp)/2)
                         pad_right = w_p_tmp - w_tmp - pad_left

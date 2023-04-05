@@ -44,11 +44,11 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
         return '', None
 
     # Set filters_str to calculate hash
-    filters_str = "geometry=w=%d,crop=%s,keep_ratio=%s,fit_to_part=%s" % (
+    filters_str = "geometry=w=%d,crop=%s,keep_ratio=%s,fit_to_width=%s" % (
         shot['geometry']['target']['w'],
         ':'.join(list(["%d" % (x) for x in shot['geometry']['shot']['crop']])),
         'y' if shot['geometry']['shot']['keep_ratio'] else 'n',
-        'y' if shot['geometry']['shot']['fit_to_part'] else 'n')
+        'y' if shot['geometry']['shot']['fit_to_width'] else 'n')
 
     hash = log_filter("%s,%s" % (input_hash, filters_str), shot['hash_log_file'])
     if get_hash:

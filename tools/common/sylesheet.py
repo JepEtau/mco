@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 
-def update_selected_widget_stylesheet(widget, is_selected):
+def update_selected_widget_stylesheet(widget, is_selected:bool):
     if is_selected:
         widget.setStyleSheet("""
             QFrame#frame {

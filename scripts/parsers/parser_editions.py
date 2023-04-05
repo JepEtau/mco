@@ -49,7 +49,7 @@ def parser_edition_common(db_common, filename, verbose=False):
 #   Get editions from folder
 #
 #===========================================================================
-def parse_editions(database, cfg_foldername="../database", verbose=False):
+def parse_editions(database, cfg_foldername, verbose=False):
     db_common = database['common']
     # verbose = True
 

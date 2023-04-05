@@ -1,20 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 from pprint import pprint
-from filters.utils import get_step_no_from_last_task, get_step_no_from_task
-
+from filters.utils import get_step_no_from_task
 from utils.common import (
     K_GENERIQUES,
 )
-# from filters.utils import (
-#     FILTER_BASE_NO,
-#     FILTER_BASE_NO_DEBUG,
-#     get_filter_id,
-#     get_filter_id_generique,
-# )
 
-
-PATH_DATABASE = "../database"
+PATH_DATABASE = "./database"
 
 
 def create_folder_for_video(db, k_ep):

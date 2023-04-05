@@ -160,9 +160,9 @@ class Widget_selection(QWidget, Ui_widget_selection):
         # Part
         self.refresh_combobox_part()
         self.comboBox_part.blockSignals(True)
-        self.comboBox_part.setCurrentText(s['k_part'])
-        if s['k_part'] in K_ALL_PARTS:
-            index = self.comboBox_part.findText(s['k_part'])
+        self.comboBox_part.setCurrentText(s['part'])
+        if s['part'] in K_ALL_PARTS:
+            index = self.comboBox_part.findText(s['part'])
             self.comboBox_part.setCurrentIndex(index)
         # self.comboBox_part.blockSignals(False)
 

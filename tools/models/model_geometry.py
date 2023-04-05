@@ -248,8 +248,8 @@ class Model_geometry():
                         # except: pass
 
                         try:
-                            geometry_fit_to_part = part_values['resize']['fit_to_part']
-                            value_array.append("fit_to_part=%s" % ('true' if geometry_fit_to_part else 'false'))
+                            geometry_fit_to_width = part_values['resize']['fit_to_width']
+                            value_array.append("fit_to_width=%s" % ('true' if geometry_fit_to_width else 'false'))
                             nested_dict_set(self.db_part_geometry_initial, deepcopy(part_values['resize']),
                                 k_ed_src, k_ep_src, k_part_src, 'resize')
                         except: pass

@@ -71,7 +71,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
 
 
     # Parse editions: folders, files and additional settings: dimension
-    parse_editions(database, verbose=verbose)
+    parse_editions(database, cfg_foldername=PATH_DATABASE, verbose=verbose)
     if False:
         print("parse_editions")
         print("------------------------------------")

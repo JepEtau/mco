@@ -70,10 +70,15 @@ class Model_database(Model_geometry,
         # Variables
         self.global_database = None
         self.initial_database = dict()
+        database_path = os.path.join("..", PATH_DATABASE)
 
-        parse_common_configuration(self.initial_database, PATH_DATABASE)
+        parse_common_configuration(self.initial_database, database_path)
 
-        parse_editions(self.initial_database)
+        # Patch all path
+        for k, v in self.initial_database['common']['directories'].items():
+            self.initial_database['common']['directories'][k] = v.replace('/tools', '')
+
+        parse_editions(self.initial_database, database_path)
 
         self.k_editions = self.initial_database['editions']['available']
         for k_ed in self.k_editions:

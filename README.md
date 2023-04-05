@@ -1,5 +1,14 @@
 # MCO
 
+## Commandes
+Une fois les installations et les fichiers d'entrée ajoutés à ce projet, exécuter la commande suivante pour générer la version finale de l'épisode 1:
+```sh
+python run.py --episode 1
+```
+
+[Plus de commandes...](./usage.md)
+<br/><br/>
+
 ## Exigences et installations
 - Python **3.10** (< 3.11)
 - Modules Python
@@ -17,21 +26,13 @@
 
 ## Fichiers video d'entrée
 A stocker dans les répertoires suivants:
-- Edition 'f': [inputs/k](./inputs/k/README.md)
+- Edition 'f': [inputs/f](./inputs/f/README.md)
 - Edition 'k': [inputs/k](./inputs/k/README.md)
 - Edition 's': [inputs/s](./inputs/s/README.md) (ep 1, 2, 11, 12)
 - Edition 's0': [inputs/s0](./inputs/s0/README.md) (ep 1)
 - Edition 'b': [inputs/b](./inputs/b/README.md) (ep 01 audio)
 <br/><br/>
 
-## Commandes
-Exécuter les commandes suivantes dans le répertoire `scripts` pour générer l'ensemble de la vidéo en version finale:
-```sh
-python run.py --episode 1
-```
-
-[Plus de commandes...](./scripts/README.md)
-<br/><br/>
 
 # Clause de non responsabilité
 Se référer au paragraphe 11 et 12 de la licence attachée au projet (GPL v2). Une traduction non officielle est disponible sur le site de l'[APRIL](https://www.april.org/gnu/gpl_french.html) à titre d'information.

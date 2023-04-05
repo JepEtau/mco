@@ -509,14 +509,14 @@ def calculate_geometry_parameters(shot, img):
 
     # Resize image: calculate new dimensions
     part_width = shot['geometry']['target']['w']
-    fit_to_part = shot['geometry']['shot']['fit_to_part']
+    fit_to_width = shot['geometry']['shot']['fit_to_width']
     keep_ratio = shot['geometry']['shot']['keep_ratio']
     crop_2 = None
     pad_error = None
     resized_height_debug = None
     resized_width_debug = None
 
-    if keep_ratio and fit_to_part:
+    if keep_ratio and fit_to_width:
         # Use the width to calculate new height, then crop to final height
         print_green("Keep ratio, fit to part width (%d)" % (part_width))
         resized_width = part_width
@@ -548,7 +548,7 @@ def calculate_geometry_parameters(shot, img):
 
             # (3b) Do crop (height)
 
-    elif keep_ratio and not fit_to_part :
+    elif keep_ratio and not fit_to_width :
         # Use the height to calculate new width, then crop to final width
         print_green("keep ratio, fit to final height (%d)" % (h_final))
 
@@ -581,7 +581,7 @@ def calculate_geometry_parameters(shot, img):
 
             # (3b) Do crop (width)
 
-    elif not keep_ratio and fit_to_part:
+    elif not keep_ratio and fit_to_width:
         # Adjust the image to the part width and final height
         print_green("Do not keep ratio, fit to part width and final height (%d, %d)" % (part_width, h_final))
         resized_width = part_width
@@ -590,10 +590,10 @@ def calculate_geometry_parameters(shot, img):
 
         # (2) Do resize
 
-    elif not keep_ratio and not fit_to_part:
+    elif not keep_ratio and not fit_to_width:
         # Not possible
         pprint(shot['geometry'])
-        sys.exit(print_red("Error: no valid values for keep_ratio/fit_to_part"))
+        sys.exit(print_red("Error: no valid values for keep_ratio/fit_to_width"))
 
 
     # Add padding to the cropped & resized image

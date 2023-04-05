@@ -46,14 +46,15 @@ def apply_python_rgb_filter(shot, images:list, image_list:list,
     if get_hash:
         return hash, None
 
+    # Output images in memory
+    use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
+
     # multiprocessing
     if sys.platform == 'win32':
         cpu_count = int(multiprocessing.cpu_count() * (3/4))
     else:
-        cpu_count = int(multiprocessing.cpu_count() * (1/2))
+        cpu_count = 2
 
-    # Output images in memory
-    use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
 
     # Output image list
     if do_save:
@@ -119,21 +120,6 @@ def apply_python_rgb_filter(shot, images:list, image_list:list,
             print_yellow("\t\tapplying RGB curves (single process): %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
     print("\t\t                                                  ", end='\r')
 
-
-
-    no = 0
-    with ThreadPoolExecutor(max_workers=min(cpu_count, len(worklist))) as executor:
-        work_result = {executor.submit(work_cv2_rgb_filter, work[0], work[1], shot['curves']['lut']): list
-                        for work in worklist}
-        for future in concurrent.futures.as_completed(work_result):
-            frame_no, img = future.result()
-            if use_memory:
-                output_images[frame_no] = img
-            if do_save:
-                cv2.imwrite(output_image_list[frame_no], img)
-            no += 1
-            print_yellow("\t\t\tapplying RGB curves: %d%%" % (int((100.0 * no)/len(worklist))), flush=True, end='\r')
-    print("\t\t                                                  ", end='\r')
 
     return hash, output_images
 
