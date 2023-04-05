@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-
 import sys
 sys.path.append('../scripts')
+
+from utils.pretty_print import *
 
 
 from functools import partial
@@ -43,57 +44,32 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.saved_preview_options = None
         self.saved_states = dict()
         self.current_edition_and_preview_enabled = True
-
-        self.edition_type = 'part'
-        self.is_shot_edition_default = True
-
-
-        # Common
-        self.radioButton_part.setFocusPolicy(Qt.NoFocus)
-        self.radioButton_part.clicked.connect(self.event_part_edition_selected)
-
-        self.radioButton_shot.setFocusPolicy(Qt.NoFocus)
-        self.radioButton_shot.clicked.connect(self.event_shot_edition_selected)
-
-        self.checkBox_shot_custom.setFocusPolicy(Qt.NoFocus)
-        self.checkBox_shot_custom.clicked.connect(self.event_shot_custom_edition_selected)
+        self.is_edition_enabled = True
 
 
         # Target
-        self.pushButton_target_resize_preview.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_target_width_edition.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_undo.setFocusPolicy(Qt.NoFocus)
-        self.spinBox_target_width.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_target_resize_preview.clicked.connect(partial(self.event_target, 'preview'))
+        self.pushButton_target_show_width_edition.clicked.connect(partial(self.event_target, 'show_edition'))
+        self.pushButton_target_width_copy_from_shot.clicked.connect(partial(self.event_target, 'copy_from_shot'))
+        self.pushButton_target_discard.clicked.connect(partial(self.event_target, 'discard'))
+        self.spinBox_target_width.valueChanged[int].connect(self.event_target_width_changed)
 
         # Shot
-        self.pushButton_shot_crop_edition.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_shot_crop_preview.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_shot_resize_edition.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_shot_resize_preview.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_shot_crop_edition.toggled[bool].connect(self.event_crop_edition_changed)
-        self.pushButton_shot_crop_preview.toggled[bool].connect(self.event_crop_preview_changed)
-        self.pushButton_shot_resize_preview.toggled[bool].connect(self.event_resize_preview_changed)
-        self.pushButton_shot_resize_edition.toggled[bool].connect(self.event_resize_edition_changed)
+        self.pushButton_shot_crop_edition.toggled[bool].connect(partial(self.event_shot_preview_changed, 'crop_edition'))
+        self.pushButton_shot_crop_preview.toggled[bool].connect(partial(self.event_shot_preview_changed, 'crop_preview'))
+        self.pushButton_shot_resize_preview.toggled[bool].connect(partial(self.event_shot_preview_changed, 'resize_preview'))
 
         # Shot (default)
-        self.groupBox_shot_default_geometry.clicked.connect(partial(self.event_shot_selected, 'default'))
-        self.lineEdit_shot_default_crop_rectangle.setFocusPolicy(Qt.NoFocus)
-        self.checkBox_shot_default_keep_ratio.setFocusPolicy(Qt.NoFocus)
-        self.checkBox_shot_default_fit_to_width.setFocusPolicy(Qt.NoFocus)
-        self.lineEdit_shot_default_crop_rectangle.clear()
-        self.checkBox_shot_default_keep_ratio.toggled[bool].connect(partial(self.event_keep_ratio_changed, 'default'))
-        self.checkBox_shot_default_fit_to_width.toggled[bool].connect(partial(self.event_fit_to_width_changed, 'default'))
-        self.checkBox_shot_default_fit_to_width.setEnabled(False)
+        self.groupBox_default_shot_geometry.clicked.connect(partial(self.event_shot_selected, 'default'))
+        self.lineEdit_default_shot_crop_rectangle.clear()
+        self.checkBox_default_shot_keep_ratio.toggled[bool].connect(partial(self.event_keep_ratio_changed, 'default'))
+        self.checkBox_default_shot_fit_to_width.toggled[bool].connect(partial(self.event_fit_to_width_changed, 'default'))
 
         # Shot (custom)
-        self.groupBox_shot_geometry.clicked.connect(partial(self.event_shot_selected, 'custom'))
-        self.lineEdit_shot_crop_rectangle.setFocusPolicy(Qt.NoFocus)
-        self.checkBox_shot_keep_ratio.setFocusPolicy(Qt.NoFocus)
-        self.checkBox_shot_fit_to_width.setFocusPolicy(Qt.NoFocus)
+        self.groupBox_shot_geometry.clicked.connect(partial(self.event_shot_selected, 'shot'))
         self.lineEdit_shot_crop_rectangle.clear()
         self.checkBox_shot_keep_ratio.toggled[bool].connect(partial(self.event_keep_ratio_changed, 'shot'))
         self.checkBox_shot_fit_to_width.toggled[bool].connect(partial(self.event_fit_to_width_changed, 'shot'))
-        self.checkBox_shot_fit_to_width.setEnabled(False)
 
         # Message
         self.label_message.clear()
@@ -101,6 +77,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         # Set stylesheet
         set_stylesheet(self)
         set_widget_stylesheet(self.label_message, 'message')
+        self.event_shot_selected(selected='default')
         self.adjustSize()
 
         # Signals from model
@@ -111,7 +88,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         log.info("%s: set_initial_options" % (self.objectName()))
         s = preferences[self.objectName()]
 
-        self.lineEdit_shot_default_crop_rectangle.clear()
+        self.lineEdit_default_shot_crop_rectangle.clear()
 
         try:
             w = preferences[self.objectName()]['widget']
@@ -120,15 +97,14 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.pushButton_set_preview.setChecked(w['final_preview'])
             self.pushButton_set_preview.blockSignals(False)
 
-            self.block_signals(True)
-            self.pushButton_target_width_edition.setChecked(w['target']['width_edition'])
+            self.block_all_signals(True)
             self.pushButton_target_resize_preview.setChecked(w['target']['width_preview'])
 
             self.pushButton_shot_crop_edition.setChecked(w['shot']['crop_edition'])
             self.pushButton_shot_crop_preview.setChecked(w['shot']['crop_preview'])
-            self.pushButton_shot_resize_edition.setChecked(w['shot']['resize_edition'])
+            # self.pushButton_shot_resize_edition.setChecked(w['shot']['resize_edition'])
             self.pushButton_shot_resize_preview.setChecked(w['shot']['resize_preview'])
-            self.block_signals(False)
+            self.block_all_signals(False)
 
         except:
             log.warning("cannot set initial options")
@@ -148,7 +124,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         if values['k_part'] in ['g_asuivre', 'g_reportage']:
             self.radioButton_shot.setEnabled(True)
         else:
-            self.checkBox_shot_custom.setEnabled(True)
+            self.groupBox_shot_geometry.setEnabled(True)
             if len(values['shots']) > 1:
                 # Enable custom only if more than 1 shot
                 self.radioButton_shot.setEnabled(True)
@@ -157,14 +133,14 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                 self.radioButton_shot.setEnabled(False)
 
         # Enable/disable controls for generiques
-        if values['k_part'] in ['g_reportage', 'g_asuivre']:
-            self.radioButton_part.setEnabled(False)
-            self.radioButton_shot.setEnabled(False)
-            self.checkBox_shot_custom.setEnabled(False)
-        else:
-            self.radioButton_part.setEnabled(True)
-            self.radioButton_shot.setEnabled(True)
-            self.checkBox_shot_custom.setEnabled(True)
+        # if values['k_part'] in ['g_reportage', 'g_asuivre']:
+        #     self.radioButton_part.setEnabled(False)
+        #     self.radioButton_shot.setEnabled(False)
+        #     self.groupBox_shot_geometry.setEnabled(False)
+        # else:
+        #     self.radioButton_part.setEnabled(True)
+        #     self.radioButton_shot.setEnabled(True)
+        #     self.groupBox_shot_geometry.setEnabled(True)
 
 
     def refresh_values(self, frame:dict):
@@ -186,21 +162,21 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         try:
             c_t, c_b, c_l, c_r = frame['geometry']['default']['crop']
             crop_str = "t: %d, b: %d,  l: %d, r: %d" % (c_t, c_b, c_l, c_r)
-            self.lineEdit_shot_default_crop_rectangle.setText(crop_str)
+            self.lineEdit_default_shot_crop_rectangle.setText(crop_str)
         except:
-            self.lineEdit_shot_default_crop_rectangle.clear()
+            self.lineEdit_default_shot_crop_rectangle.clear()
 
-        self.checkBox_shot_default_keep_ratio.blockSignals(True)
-        self.checkBox_shot_default_fit_to_width.blockSignals(True)
-        try:
-            if frame['geometry']['default']['resize']['fit_to_width']:
-                self.checkBox_shot_default_keep_ratio.setChecked(False)
-                self.checkBox_shot_default_fit_to_width.setChecked(True)
-        except:
-                self.checkBox_shot_default_keep_ratio.setChecked(True)
-                self.checkBox_shot_default_fit_to_width.setChecked(False)
-        self.checkBox_shot_default_keep_ratio.blockSignals(False)
-        self.checkBox_shot_default_fit_to_width.blockSignals(False)
+        # self.checkBox_default_shot_keep_ratio.blockSignals(True)
+        # self.checkBox_default_shot_fit_to_width.blockSignals(True)
+        # try:
+        #     if frame['geometry']['default']['resize']['fit_to_width']:
+        #         self.checkBox_default_shot_keep_ratio.setChecked(False)
+        #         self.checkBox_default_shot_fit_to_width.setChecked(True)
+        # except:
+        #         self.checkBox_default_shot_keep_ratio.setChecked(True)
+        #         self.checkBox_default_shot_fit_to_width.setChecked(False)
+        # self.checkBox_default_shot_keep_ratio.blockSignals(False)
+        # self.checkBox_default_shot_fit_to_width.blockSignals(False)
 
         # Custom shot geometry
         try:
@@ -210,17 +186,17 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         except:
             self.lineEdit_shot_crop_rectangle.clear()
 
-        self.checkBox_shot_keep_ratio.blockSignals(True)
-        self.checkBox_shot_fit_to_width.blockSignals(True)
-        try:
-            if frame['geometry']['shot']['resize']['fit_to_width']:
-                self.checkBox_shot_keep_ratio.setChecked(False)
-                self.checkBox_shot_fit_to_width.setChecked(True)
-        except:
-                self.checkBox_shot_keep_ratio.setChecked(True)
-                self.checkBox_shot_fit_to_width.setChecked(False)
-        self.checkBox_shot_keep_ratio.blockSignals(False)
-        self.checkBox_shot_fit_to_width.blockSignals(False)
+        # self.checkBox_shot_keep_ratio.blockSignals(True)
+        # self.checkBox_shot_fit_to_width.blockSignals(True)
+        # try:
+        #     if frame['geometry']['shot']['resize']['fit_to_width']:
+        #         self.checkBox_shot_keep_ratio.setChecked(False)
+        #         self.checkBox_shot_fit_to_width.setChecked(True)
+        # except:
+        #         self.checkBox_shot_keep_ratio.setChecked(True)
+        #         self.checkBox_shot_fit_to_width.setChecked(False)
+        # self.checkBox_shot_keep_ratio.blockSignals(False)
+        # self.checkBox_shot_fit_to_width.blockSignals(False)
 
 
         # Geometry: shot or part
@@ -230,15 +206,15 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             is_custom_enabled = False
 
         # Enable/disable widgets
-        self.block_signals(True)
+        self.block_all_signals(True)
 
-        self.checkBox_shot_custom.setChecked(is_custom_enabled)
+        # self.groupBox_shot_geometry.setChecked(is_custom_enabled)
         self.pushButton_shot_crop_edition.setEnabled(True)
         self.pushButton_shot_crop_preview.setEnabled(True)
         self.pushButton_shot_crop_preview.setChecked(True)
 
-        self.pushButton_shot_resize_edition.setEnabled(False)
-        self.pushButton_shot_resize_edition.setChecked(True)
+        # self.pushButton_shot_resize_edition.setEnabled(False)
+        # self.pushButton_shot_resize_edition.setChecked(True)
         self.pushButton_shot_resize_preview.setEnabled(True)
 
         # Global preview enabled
@@ -246,18 +222,57 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.pushButton_shot_crop_preview.setChecked(True)
             self.pushButton_shot_resize_preview.setChecked(True)
 
-        # Default
-        self.checkBox_shot_default_keep_ratio.setEnabled(not is_custom_enabled)
-        self.checkBox_shot_default_fit_to_width.setEnabled(not is_custom_enabled)
+        # # Default
+        # self.checkBox_default_shot_keep_ratio.setEnabled(not is_custom_enabled)
+        # self.checkBox_default_shot_fit_to_width.setEnabled(not is_custom_enabled)
 
-        # Custom
-        self.checkBox_shot_keep_ratio.setEnabled(is_custom_enabled)
-        self.checkBox_shot_fit_to_width.setEnabled(is_custom_enabled)
+        # # Custom
+        # self.checkBox_shot_keep_ratio.setEnabled(is_custom_enabled)
+        # self.checkBox_shot_fit_to_width.setEnabled(is_custom_enabled)
 
-        self.block_signals(False)
+        self.block_all_signals(False)
 
         if is_preview_mode_changed:
             self.signal_preview_options_changed.emit()
+
+
+
+    def event_is_modified(self, element, event_type, parameter, value):
+        # log.info("parameter has been modified: %s: %s, %d" % (type, parameter, value))
+        self.pushButton_discard.setEnabled(True)
+        self.pushButton_save.setEnabled(True)
+        if element == 'default_shot':
+            self.pushButton_default_shot_discard.setEnabled(True)
+        elif element == 'shot':
+            self.pushButton_shot_discard.setEnabled(True)
+        elif element == 'target':
+            self.pushButton_target_discard.setEnabled(True)
+
+        self.signal_geometry_modified.emit({
+            # element in 'default_shot', 'shot', 'target'
+            'element': element,
+            # type in 'select', 'remove', 'set', 'discard'
+            'event': event_type,
+            # parameter in 'crop_top', 'crop_right', 'crop_left', 'crop_down', 'width'
+            'parameter': parameter,
+            'value': value
+        })
+
+
+    def event_target(self, action):
+        log.info("action=%s" % (action))
+        if action == 'preview':
+            self.signal_preview_options_changed.emit()
+        elif action == 'show_edition':
+            self.signal_preview_options_changed.emit()
+        elif action == 'copy_from_shot':
+            self.event_is_modified(element='target', event_type='set', parameter='width', value=-1)
+        elif action == 'discard':
+            self.event_is_modified(element='target', event_type='discard', parameter='width', value=-1)
+
+
+    def event_target_width_changed(self, value):
+        print_lightgreen("width=%d" % (value))
 
 
 
@@ -349,48 +364,24 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
 
-
-
     def set_geometry_edition_enabled(self, enabled):
         log.info("enable edition: %s" % ('true' if enabled else 'false'))
         # print("TODO: %s: enable edition: %s" % (self.objectName(), 'true' if enabled else 'false'))
 
-
-    def event_undo(self):
-        # Replace by historical implementation in model
-        pass
-
-
-
-    def event_is_modified(self, event_type, parameter, value):
-        # log.info("parameter has been modified: %s: %s, %d" % (type, parameter, value))
-        self.pushButton_discard.setEnabled(True)
-        self.pushButton_save.setEnabled(True)
-        self.pushButton_undo.setEnabled(True)
-
-        self.signal_geometry_modified.emit({
-            # type in 'select', 'remove', 'modify
-            'type': event_type,
-            # parameter in 'crop_top', 'crop_right', 'crop_left', 'crop_down', 'width'
-            'parameter': parameter,
-            'value': value
-        })
 
 
     def get_preview_options(self):
         preview_options = {
             'final_preview': self.pushButton_set_preview.isChecked(),
             'target': {
-                'is_enabled': self.radioButton_part.isChecked(),
-                'width_edition': self.pushButton_target_resize_preview.isChecked(),
-                'width_preview': self.pushButton_target_width_edition.isChecked(),
+                'width_show_edition': self.pushButton_target_show_width_edition.isChecked(),
+                'width_preview': self.pushButton_target_resize_preview.isChecked(),
             },
             'shot': {
-                'is_enabled': self.radioButton_shot.isChecked(),
-                'is_default': not self.checkBox_shot_custom.isChecked(),
+                'is_default_shot': self.groupBox_default_shot_geometry.isChecked(),
                 'crop_edition': self.pushButton_shot_crop_edition.isChecked(),
                 'crop_preview': self.pushButton_shot_crop_preview.isChecked(),
-                'resize_edition': self.pushButton_shot_resize_edition.isChecked(),
+                # 'resize_edition': self.pushButton_shot_resize_edition.isChecked(),
                 'resize_preview': self.pushButton_shot_resize_preview.isChecked(),
             },
 
@@ -398,281 +389,159 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         return preview_options
 
 
-    def block_signals(self, enabled):
-        self.radioButton_part.blockSignals(enabled)
-        self.radioButton_shot.blockSignals(enabled)
-        self.checkBox_shot_custom.blockSignals(enabled)
+
+
+    def block_all_signals(self, enabled):
 
         # Target
         self.pushButton_target_resize_preview.blockSignals(enabled)
-        self.pushButton_target_width_edition.blockSignals(enabled)
-        self.pushButton_undo.blockSignals(enabled)
+        self.pushButton_target_show_width_edition.blockSignals(enabled)
+        self.pushButton_target_width_copy_from_shot.blockSignals(enabled)
+        self.pushButton_target_discard.blockSignals(enabled)
         self.spinBox_target_width.blockSignals(enabled)
 
         # Shot
         self.pushButton_shot_crop_edition.blockSignals(enabled)
         self.pushButton_shot_crop_preview.blockSignals(enabled)
-        self.pushButton_shot_resize_edition.blockSignals(enabled)
+        # self.pushButton_shot_resize_edition.blockSignals(enabled)
         self.pushButton_shot_resize_preview.blockSignals(enabled)
 
         # Shot: default
-        self.lineEdit_shot_default_crop_rectangle.blockSignals(enabled)
-        self.checkBox_shot_default_keep_ratio.blockSignals(enabled)
-        self.checkBox_shot_default_fit_to_width.blockSignals(enabled)
+        self.lineEdit_default_shot_crop_rectangle.blockSignals(enabled)
+        self.checkBox_default_shot_keep_ratio.blockSignals(enabled)
+        self.checkBox_default_shot_fit_to_width.blockSignals(enabled)
+        self.pushButton_default_shot_discard.blockSignals(enabled)
 
         # Shot: custom
         self.lineEdit_shot_crop_rectangle.blockSignals(enabled)
         self.checkBox_shot_keep_ratio.blockSignals(enabled)
         self.checkBox_shot_fit_to_width.blockSignals(enabled)
+        self.pushButton_shot_discard.blockSignals(enabled)
 
 
 
     def event_preview_changed(self, is_checked:bool=False):
         log.info("widget preview changed to %s" % ('true' if is_checked else 'false'))
-        self.block_signals(True)
+        self.block_all_signals(True)
         if is_checked:
             # save current preview options
             self.saved_preview_options = {
-                'part_crop_preview': self.pushButton_shot_default_crop_preview.isChecked(),
-                'part_resize_preview': self.pushButton_shot_default_resize_preview.isChecked(),
+                'part_crop_preview': self.pushButton_default_shot_crop_preview.isChecked(),
+                'part_resize_preview': self.pushButton_default_shot_resize_preview.isChecked(),
                 'shot_crop_preview': self.pushButton_shot_crop_preview.isChecked(),
                 'shot_resize_preview': self.pushButton_shot_resize_preview.isChecked(),
             }
-            self.pushButton_shot_default_crop_preview.setChecked(is_checked)
-            self.pushButton_shot_default_resize_preview.setChecked(is_checked)
+            self.pushButton_default_shot_crop_preview.setChecked(is_checked)
+            self.pushButton_default_shot_resize_preview.setChecked(is_checked)
             self.pushButton_shot_crop_preview.setChecked(is_checked)
             self.pushButton_shot_resize_preview.setChecked(is_checked)
         else:
             if self.saved_preview_options is not None:
-                self.pushButton_shot_default_crop_preview.setChecked(self.saved_preview_options['part_crop_preview'])
-                self.pushButton_shot_default_resize_preview.setChecked(self.saved_preview_options['part_resize_preview'])
+                self.pushButton_default_shot_crop_preview.setChecked(self.saved_preview_options['part_crop_preview'])
+                self.pushButton_default_shot_resize_preview.setChecked(self.saved_preview_options['part_resize_preview'])
                 self.pushButton_shot_crop_preview.setChecked(self.saved_preview_options['shot_crop_preview'])
                 self.pushButton_shot_resize_preview.setChecked(self.saved_preview_options['shot_resize_preview'])
-        self.block_signals(False)
+        self.block_all_signals(False)
         self.signal_preview_options_changed.emit()
 
 
-    def event_part_edition_selected(self):
-        log.info("part geometry clicked")
-
 
     def event_shot_selected(self, selected):
-        self.groupBox_shot_default_geometry.blockSignals(True)
+        # Changed default <-> shot
+        self.groupBox_default_shot_geometry.blockSignals(True)
         self.groupBox_shot_geometry.blockSignals(True)
 
-        # Change states: act as radio buttons
+        # Change states: simulate radio buttons
         if selected == 'default':
             state = self.groupBox_shot_geometry.isChecked()
-            self.groupBox_shot_default_geometry.setChecked(True)
+            self.groupBox_default_shot_geometry.setChecked(True)
             self.groupBox_shot_geometry.setChecked(False)
             if not state:
                 # No changes
-                self.groupBox_shot_default_geometry.blockSignals(False)
+                self.groupBox_default_shot_geometry.blockSignals(False)
                 self.groupBox_shot_geometry.blockSignals(False)
-                print("no changes")
                 return
-        elif selected == 'custom':
-            state = self.groupBox_shot_default_geometry.isChecked()
-            self.groupBox_shot_default_geometry.setChecked(False)
+        elif selected == 'shot':
+            state = self.groupBox_default_shot_geometry.isChecked()
             self.groupBox_shot_geometry.setChecked(True)
+            self.groupBox_default_shot_geometry.setChecked(False)
             if not state:
                 # No changes
-                self.groupBox_shot_default_geometry.blockSignals(False)
+                self.groupBox_default_shot_geometry.blockSignals(False)
                 self.groupBox_shot_geometry.blockSignals(False)
                 return
 
         # Actions
-        self.event_is_modified(event_type='selection', parameter='shot', value=selected)
+        self.event_is_modified(element='shot', event_type='select', parameter='shot', value=selected)
 
-        self.groupBox_shot_default_geometry.blockSignals(False)
+        self.groupBox_default_shot_geometry.blockSignals(False)
         self.groupBox_shot_geometry.blockSignals(False)
 
 
-    def event_shot_custom_edition_selected(self):
-        return
-        if self.checkBox_shot_custom.isChecked():
-            log.info("shot custom geometry enabled")
-            self.groupBox_shot_default_geometry.setEnabled(False)
-            self.groupBox_shot_geometry.setEnabled(True)
-            update_selected_widget_stylesheet(self.groupBox_shot_default_geometry, True)
-            update_selected_widget_stylesheet(self.groupBox_shot_geometry, False)
-        else:
-            log.info("shot custom geometry disabled")
-            self.groupBox_shot_default_geometry.setEnabled(True)
-            self.groupBox_shot_geometry.setEnabled(False)
-            update_selected_widget_stylesheet(self.groupBox_shot_default_geometry, False)
-            update_selected_widget_stylesheet(self.groupBox_shot_geometry, True)
+    def event_shot_preview_changed(self, selected):
+        if selected == 'crop_edition':
+            is_checked = self.pushButton_shot_crop_edition.isChecked()
 
+        elif selected == 'crop_preview':
+            is_checked = self.pushButton_shot_crop_preview.isChecked()
 
-    def event_shot_edition_selected(self):
-        log.info("shot geometry clicked")
-        # self.pushButton_remove_shot_geometry.setEnabled(True)
-        self.event_is_modified(
-            type='shot',
-            parameter='copy',
-            value=None)
+        elif selected == 'resize_preview':
+            is_checked = self.pushButton_shot_resize_preview.isChecked()
 
-
-    def event_remove_shot_geometry(self):
-        log.info("remove shot geometry clicked")
-        # Remove geometry for this shot, so it will use the default one: part
-        self.pushButton_remove_shot_geometry.setEnabled(False)
-        self.block_signals(True)
-        self.radioButton_shot_default.setChecked(True)
-        self.block_signals(False)
-        # self.is_shot_geometry_enabled = False
-        self.event_is_modified(type='shot', parameter='remove', value=None)
-
-
-
-
-    def event_crop_edition_changed(self, is_checked:bool):
-        is_default = not self.checkBox_shot_custom.isChecked()
-        log.info("%s: crop edition changed to %s" % ('default' if is_default else 'custom', 'true' if is_checked else 'false'))
         if is_checked:
             # Disable final preview
             self.pushButton_set_preview.blockSignals(True)
             self.pushButton_set_preview.setChecked(False)
             self.saved_preview_options = None
             self.pushButton_set_preview.blockSignals(False)
-        # elif is_default:
-        #     if not self.pushButton_shot_crop_preview.isChecked():
-        #         self.pushButton_shot_resize_preview.blockSignals(True)
-        #         self.pushButton_shot_resize_preview.setChecked(False)
-        #         self.pushButton_shot_resize_preview.blockSignals(False)
-        # elif type == 'shot':
-        #     if not self.pushButton_shot_crop_preview.isChecked():
-        #         self.pushButton_shot_resize_preview.blockSignals(True)
-        #         self.pushButton_shot_resize_preview.setChecked(False)
-        #         self.pushButton_shot_resize_preview.blockSignals(False)
         self.signal_preview_options_changed.emit()
 
 
-    def event_crop_preview_changed(self, is_checked:bool):
-        is_default = not self.checkBox_shot_custom.isChecked()
-        type = 'default' if is_default else 'custom'
-
-        log.info("%s: crop preview changed to %s" % (type, 'true' if is_checked else 'false'))
-        if not is_checked:
-            # Disable final preview
-            self.pushButton_set_preview.blockSignals(True)
-            self.pushButton_set_preview.setChecked(False)
-            self.saved_preview_options = None
-            self.pushButton_set_preview.blockSignals(False)
-
-            if type == 'shot':
-                if (self.pushButton_shot_resize_preview.isChecked()
-                and not self.pushButton_shot_crop_edition.isChecked()):
-                    self.pushButton_shot_resize_preview.blockSignals(True)
-                    self.pushButton_shot_resize_preview.setChecked(False)
-                    self.pushButton_shot_resize_preview.blockSignals(False)
-        self.signal_preview_options_changed.emit()
 
 
-    def event_resize_edition_changed(self, is_checked:bool):
-        is_default = not self.checkBox_shot_custom.isChecked()
-        type = 'default' if is_default else 'custom'
-
-        log.info("%s: resize edition changed to %s" % (type, 'true' if is_checked else 'false'))
-        if is_checked:
-            # Force crop preview
-            if type == 'part':
-                self.pushButton_target_resize_preview.blockSignals(True)
-                self.pushButton_target_resize_preview.setChecked(True)
-                self.pushButton_target_resize_preview.blockSignals(False)
-            elif type == 'shot':
-                self.pushButton_shot_crop_preview.blockSignals(True)
-                self.pushButton_shot_crop_preview.setChecked(True)
-                self.pushButton_shot_crop_preview.blockSignals(False)
-        self.signal_preview_options_changed.emit()
+    def event_keep_ratio_changed(self, element, is_checked:bool):
+        log.info("%s: keep ratio: %s" % (type, 'true' if is_checked else 'false'))
+        self.event_is_modified(element=element, event_type='set', parameter='keep_ratio', value=is_checked)
 
 
-    def event_resize_preview_changed(self, is_checked:bool):
-        is_default = not self.checkBox_shot_custom.isChecked()
-        type = 'default' if is_default else 'custom'
-
-        log.info("%s: resize preview changed to %s" % (type, 'true' if is_checked else 'false'))
-        if not is_checked:
-            # Disable final preview
-            self.pushButton_set_preview.blockSignals(True)
-            self.pushButton_set_preview.setChecked(False)
-            self.pushButton_set_preview.blockSignals(False)
-        elif type == 'part':
-            if (not self.pushButton_target_resize_preview.isChecked()
-            and not self.pushButton_target_width_edition.isChecked()):
-                self.pushButton_target_resize_preview.blockSignals(True)
-                self.pushButton_target_resize_preview.setChecked(True)
-                self.pushButton_target_resize_preview.blockSignals(False)
-        elif type == 'shot':
-            if (not self.pushButton_shot_crop_preview.isChecked()
-            and not self.pushButton_shot_crop_edition.isChecked()):
-                self.pushButton_shot_crop_preview.blockSignals(True)
-                self.pushButton_shot_crop_preview.setChecked(True)
-                self.pushButton_shot_crop_preview.blockSignals(False)
-        self.signal_preview_options_changed.emit()
-
-
-    def event_keep_ratio_changed(self, type, is_checked:bool):
-        log.info("%s: set final ratio: %s" % (type, 'true' if is_checked else 'false'))
-        self.signal_preview_options_changed.emit()
-
-
-    def event_fit_to_width_changed(self, type, is_checked:bool):
-        log.info("%s: fit to part: %s" % (type, 'true' if is_checked else 'false'))
-        self.checkBox_shot_keep_ratio.blockSignals(True)
-        self.checkBox_shot_keep_ratio.setChecked(not is_checked)
-        self.checkBox_shot_keep_ratio.blockSignals(False)
-
-        self.event_is_modified(
-            type='shot' if self.checkBox_shot_custom.is_checked() else 'default',
-            parameter='fit_to_width',
-            value=is_checked)
-
-        return True
+    def event_fit_to_width_changed(self, element, is_checked:bool):
+        log.info("%s: fit to width: %s" % (type, 'true' if is_checked else 'false'))
+        self.event_is_modified(element=element, event_type='set', parameter='fit_to_width', value=is_checked)
 
 
     def wheelEvent(self, event):
         if self.current_key_pressed is not None:
+            is_default_shot_selected = self.groupBox_default_shot_geometry.isChecked()
+
             if self.current_key_pressed == Qt.Key_Z:
                 parameter = 'crop_top'
+                element = 'default' if is_default_shot_selected else 'shot'
             elif self.current_key_pressed == Qt.Key_S:
                 parameter = 'crop_bottom'
+                element = 'default' if is_default_shot_selected else 'shot'
             elif self.current_key_pressed == Qt.Key_Q:
                 parameter = 'crop_left'
+                element = 'default' if is_default_shot_selected else 'shot'
             elif self.current_key_pressed == Qt.Key_D:
                 parameter = 'crop_right'
+                element = 'default' if is_default_shot_selected else 'shot'
             elif self.current_key_pressed == Qt.Key_W:
                 parameter = 'width'
-            if event.angleDelta().y() > 0:
-                value = -1
+                element = 'target'
             else:
-                value = +1
+                return False
 
-            # Determine the selected widget
-            is_allowed = False
-            if (self.radioButton_part.isChecked()
-                and self.pushButton_target_width_edition.isChecked()):
-                is_allowed = True
-                type = 'part'
-            elif (self.radioButton_shot.isChecked()
-                and self.pushButton_shot_crop_preview.isChecked()
-                and not self.checkBox_shot_custom.isChecked()):
-                is_allowed = True
-                type = 'default'
-            elif (self.radioButton_shot.isChecked()
-                and self.pushButton_shot_crop_preview.isChecked()
-                and self.checkBox_shot_custom.isChecked()):
-                is_allowed = True
-                type = 'shot'
+            value = -1 if event.angleDelta().y() > 0 else +1
 
-            # Do not accept if edition is not allowed
-            if is_allowed:
+            if self.is_edition_enabled:
                 event.accept()
                 self.event_is_modified(
-                    type=type,
+                    element=element,
+                    event_type='set',
                     parameter=parameter,
                     value=value)
                 return True
+
         return False
 
 
@@ -717,6 +586,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                 self.signal_position_changed.emit('bottom')
             self.current_key_pressed = key
             return True
+
         return False
 
 

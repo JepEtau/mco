@@ -21,6 +21,7 @@ from utils.pretty_print import *
 def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:int,
     module_path:str, input_hash, step_no, output_folder:str, get_hash:bool=False, do_force:bool=False):
 
+    print_green(module_path)
     sys.path.append(module_path)
     from upcunet_v3 import RealWaifuUpScaler
 

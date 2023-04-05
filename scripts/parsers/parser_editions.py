@@ -13,6 +13,7 @@ import re
 
 from parsers.parser_filters import parse_filters
 from utils.common import nested_dict_set
+from utils.pretty_print import *
 
 
 
@@ -62,7 +63,7 @@ def parse_editions(database, cfg_foldername, verbose=False):
     if mkv_foldername.startswith("~/"):
         mkv_foldername = os.path.join(PosixPath(Path.home()), mkv_foldername)
     if not os.path.isdir(mkv_foldername):
-        sys.exit("Error: %s is not a valid folder" % (mkv_foldername))
+        sys.exit(print_red("Error: parse_editions: mkv folder %s is not a valid folder" % (mkv_foldername)))
 
 
     # List directories and files
@@ -136,7 +137,7 @@ def parse_editions(database, cfg_foldername, verbose=False):
     if cfg_foldername.startswith("~/"):
         cfg_foldername = os.path.join(PosixPath(Path.home()), cfg_foldername)
     if not os.path.isdir(cfg_foldername):
-        sys.exit("Error: %s is not a valid folder" % (cfg_foldername))
+        sys.exit(print_red("Error: parse_editions: config %s is not a valid folder" % (cfg_foldername)))
 
     # Get common file for each edition
     for k_ed in available_editions.copy():

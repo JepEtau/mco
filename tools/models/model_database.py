@@ -76,7 +76,14 @@ class Model_database(Model_geometry,
 
         # Patch all path
         for k, v in self.initial_database['common']['directories'].items():
-            self.initial_database['common']['directories'][k] = v.replace('/tools', '')
+            v = v.replace('/tools', '')
+            v = v.replace('\\tools', '')
+            v = v.replace('\\mco\\mco_3rd_party', '\\mco_3rd_party')
+            self.initial_database['common']['directories'][k] = v
+
+        for k, v in self.initial_database['common']['tools'].items():
+            v = v.replace('\\mco\\mco_3rd_party', '\\mco_3rd_party')
+            self.initial_database['common']['tools'][k] = v
 
         parse_editions(self.initial_database, database_path)
 

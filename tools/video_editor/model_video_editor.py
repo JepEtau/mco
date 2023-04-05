@@ -605,12 +605,15 @@ class Model_video_editor(Model_common):
 
 
 
-    def event_geometry_modified(self, modification:dict):
-        """modification:
+    def event_geometry_modified(self, event:dict):
+        """event:
+            - element
             - type
             - parameter
             - value
         """
+        pprint(event)
+        return
         k_ed = self.current_frame['k_ed']
         k_ep = self.current_frame['k_ep']
         k_part = self.current_frame['k_part']
