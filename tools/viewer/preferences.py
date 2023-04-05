@@ -52,9 +52,9 @@ class Preferences(QObject):
             ep_no_str = self.settings.value('browser/episode')
             self.preferences['browser']['episode'] = ep_no_str if ep_no_str == '' else int(ep_no_str)
 
-        self.preferences['browser']['part'] = ''
+        self.preferences['browser']['k_part'] = ''
         if self.settings.contains('browser/part'):
-            self.preferences['browser']['part'] = self.settings.value('browser/part')
+            self.preferences['browser']['k_part'] = self.settings.value('browser/part')
 
         self.preferences['browser']['fit_image_to_window'] =  False
         if self.settings.contains('browser/fit_image_to_window'):
@@ -92,7 +92,7 @@ class Preferences(QObject):
         self.settings.setValue('browser/geometry',
             ':'.join(map(lambda x: "%d" % (x), preferences['browser']['geometry'])))
         self.settings.setValue('browser/episode', preferences['browser']['episode'])
-        self.settings.setValue('browser/part', preferences['browser']['part'])
+        self.settings.setValue('browser/part', preferences['browser']['k_part'])
         self.settings.setValue('browser/fit_image_to_window', preferences['browser']['fit_image_to_window'])
 
         # "filters by"

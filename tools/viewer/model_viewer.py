@@ -61,7 +61,7 @@ class Model_viewer(QObject):
         self.framelist.set_new_filter_by(p['hide'])
         self.directory_changed({
             'k_ep': k_ep,
-            'k_part': p['browser']['part']
+            'k_part': p['browser']['k_part']
         })
 
 

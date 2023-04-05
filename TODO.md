@@ -3,13 +3,11 @@
 - FFmpeg filter:
     * (?) use concatenate for all cases -> save images before
     * use ffv1 for FFmpeg filter except if images already exists: because of bufsize limitation and writing/reading ffv1 file is faster than reading images
-- stabilize:
-    * try on g_debut, shot no. 10
+- geometry: change 'part' by 'target', 'fit_to_part' by 'fit_to_width'
 
 (2)
 - replace:
     * Circular dependency is not verified
-- (?) g_fin : fadeout is not done
 
 (3)
 - effects: verify when replacing shots (asuivre/precedemment)
@@ -17,6 +15,8 @@
 - (?) process single frame does not work anymore: repair and re-enable ?
 - replace "get_or_create_src_shot" function by "get_src_shot" and generate a warning
 - clean filters.py
+- deshake: read from/write to ssd
+- parser_consolidate_audio_video is not used anymore: why?
 
 
 # TODO: video editor

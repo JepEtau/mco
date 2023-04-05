@@ -56,7 +56,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                 nested_dict_set(db, dict(), k_ep_or_g, 'video', 'target', k_section, 'geometry')
                 part_geometry = db[k_ep_or_g]['video']['target'][k_section]['geometry']
 
-            properties = config.get(k_section, 'part').strip().replace(' ', '').split(',')
+            properties = config.get(k_section, 'target').strip().replace(' ', '').split(',')
             for property in properties:
                 property_array_str = property.split('=')
                 property_name = property_array_str[0]

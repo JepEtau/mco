@@ -29,10 +29,11 @@ def deshake(shot, images:list, add_border:bool, step_no:int, input_hash:str,
     # Convert to indexes
     for segment in segments:
         segment['count'] = segment['end'] - segment['start']
-        segment['start'] -= shot['start']
+        # segment['start'] -= shot['start']
 
     # Patch segments
     if len(segments) == 2:
+        # TODO update this
         if segments[1]['start'] == segments[0]['start'] + segments[0]['count']:
             # segment 1 is adjacent to 0
             segments[0]['ref'] = 'end'
@@ -61,7 +62,7 @@ def deshake(shot, images:list, add_border:bool, step_no:int, input_hash:str,
             else:
                 # remaining frames before and after!
                 #  cannot select a reference
-                sys.exit("segment 0 shall start at the beginning or a the end")
+                sys.exit("segment 0 shall start at the beginning or a the end of the shot")
 
     elif len(segments) > 2:
         sys.exit("deshake: more than 2 segments is not supported")

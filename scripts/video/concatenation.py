@@ -308,8 +308,9 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, force=False):
         video_filepath = os.path.join(cache_path, "video", "%s_video_%s.mkv" % (
             k_ep_or_g, db[k_ep_or_g]['video']['hash']))
     else:
+        # TODO k_part is missing...
         video_filepath = os.path.join(cache_path, "video", "%s_video_%s.mkv" % (
-            k_ep_or_g, db[k_ep_or_g]['target']['video']['part']['hash']))
+            k_ep_or_g, db[k_ep_or_g]['target']['video'][k_part]['hash']))
 
     video_frames_count = int(get_duration(db, video_filepath, integrity=False) * FPS)
 

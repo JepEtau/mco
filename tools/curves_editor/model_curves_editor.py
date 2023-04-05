@@ -128,7 +128,7 @@ class Model_curves_editor(Model_common):
         self.selection_changed({
                 'k_ed': p['selection']['edition'],
                 'k_ep': k_ep,
-                'k_part': p['selection']['part'],
+                'k_part': p['selection']['k_part'],
                 'k_step': p['selection']['step'],
                 'filter_ids': list(),
                 'shots': list(),

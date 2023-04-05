@@ -73,9 +73,9 @@ class Preferences(QObject):
             ep_no_str = self.settings.value('selection/episode')
             self.preferences['selection']['episode'] = ep_no_str if ep_no_str == '' else int(ep_no_str)
 
-        self.preferences['selection']['part'] = ''
+        self.preferences['selection']['k_part'] = ''
         if self.settings.contains('selection/part'):
-            self.preferences['selection']['part'] = self.settings.value('selection/part')
+            self.preferences['selection']['k_part'] = self.settings.value('selection/part')
 
         self.preferences['selection']['step'] = ''
         if self.settings.contains('selection/step'):
@@ -128,7 +128,7 @@ class Preferences(QObject):
         self.settings.setValue('selection/geometry',
             ':'.join(map(lambda x: "%d" % (x), preferences['selection']['geometry'])))
         self.settings.setValue('selection/episode', preferences['selection']['episode'])
-        self.settings.setValue('selection/part', preferences['selection']['part'])
+        self.settings.setValue('selection/part', preferences['selection']['k_part'])
         self.settings.setValue('selection/step', preferences['selection']['step'])
         try:
             self.settings.setValue('selection/shot_no', preferences['selection']['shot_no'])

@@ -26,8 +26,7 @@ from common.window_common import (
     PAINTER_MARGIN_LEFT,
     PAINTER_MARGIN_TOP,
 )
-from utils.common import get_dimensions_from_crop_values
-
+from filters.utils import get_dimensions_from_crop_values
 from common.widget_controls import Widget_controls
 from video_editor.widget_selection import Widget_selection
 from video_editor.widget_curves import Widget_curves
@@ -462,7 +461,7 @@ class Window_main(Window_common):
                 elif geometry_options['crop_preview']:
                     if geometry_options['resize_preview']:
                         # print("paintEvent: draw cropped image and resized")
-                        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w_i, h_i, self.image['geometry']['part']['crop'])
+                        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w_i, h_i, self.image['geometry']['target']['crop'])
 
                         w_tmp = int((c_w * h_final) / float(c_h))
                         pad_left = int(((w_final - w) / 2) + 0.5)
@@ -490,7 +489,7 @@ class Window_main(Window_common):
                     else:
                         # print("paintEvent: draw cropped image on the original image")
                         # Crop and no rect
-                        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w_i, h_i, self.image['geometry']['part']['crop'])
+                        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w_i, h_i, self.image['geometry']['target']['crop'])
 
                         self.painter.drawImage(
                             QPoint(PAINTER_MARGIN_LEFT + c_l,
@@ -505,11 +504,11 @@ class Window_main(Window_common):
 
 
 
-                if type == 'shot' and options['geometry']['part']['crop_edition']:
+                if type == 'shot' and options['geometry']['target']['crop_edition']:
                     if geometry_options['resize_preview']:
                         # Image is resized, add the recalculated crop
                         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w_i, h_i,
-                            self.image['geometry']['part']['crop'])
+                            self.image['geometry']['target']['crop'])
                         w_tmp = int((c_w * h_final) / float(c_h))
                         pad_left = int(((w_final - w_tmp) / 2) + 0.5)
                         # print("\t-> w=%d, c_w=%d, w_tmp=%d, pad: %d" % (w, c_w, w_tmp, pad_left))

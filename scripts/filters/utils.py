@@ -68,3 +68,13 @@ def get_filters_from_shot(db, shot):
     return deepcopy(filters)
 
 
+
+def get_dimensions_from_crop_values(width, height, crop) -> list:
+    c_t, c_b, c_l, c_r = crop
+    c_w = width - (c_l + c_r)
+    c_h = height - (c_t + c_b)
+    return [c_t, c_b, c_l, c_r, c_w, c_h]
+
+
+
+

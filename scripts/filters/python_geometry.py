@@ -26,13 +26,17 @@ from filters.filters import (
 
 
 
-
 def apply_python_geometry_filter(shot, images:list, image_list:list,
     step_no, filters_str:str, input_hash:str,
     do_save:bool, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
     pprint(shot['geometry'])
+    if shot['geometry']['target'] is None:
+        print_red("Error: no \'target\' geometry defined for %s:%s:%s" % (
+            shot['k_ed'], shot['k_ep'], shot['k_part']))
+        shot['geometry']['target'] = {'w': shot['geometry']['dimensions']['final']['w']}
+
     if shot['geometry']['shot'] is None:
         # Neither part nor shot section in database
         sys.exit(print_red("Error: no geometry defined for %s:%s:%s, shot no. %d, cannot continue" % (
@@ -41,7 +45,7 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
 
     # Set filters_str to calculate hash
     filters_str = "geometry=w=%d,crop=%s,keep_ratio=%s,fit_to_part=%s" % (
-        shot['geometry']['part']['w'],
+        shot['geometry']['target']['w'],
         ':'.join(list(["%d" % (x) for x in shot['geometry']['shot']['crop']])),
         'y' if shot['geometry']['shot']['keep_ratio'] else 'n',
         'y' if shot['geometry']['shot']['fit_to_part'] else 'n')
@@ -156,4 +160,6 @@ def work_cv2_geometry_filter(frame_no, input_img, geometry) -> list:
 
     output_img = cv2_geometry_filter(img, geometry)
     return (frame_no, output_img)
+
+
 

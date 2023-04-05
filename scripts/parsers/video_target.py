@@ -22,6 +22,7 @@ from utils.time_conversions import (
 
 
 def parse_video_section(db_video, config, k_ep, verbose=False):
+
     k_section = 'video'
 
     k_ed_ref = None
@@ -118,6 +119,8 @@ def parse_video_section(db_video, config, k_ep, verbose=False):
     db_video['k_ed_ref'] = k_ed_ref
 
 
-    # if k_part == 'reportage':
-    #     pprint(db_video[k_part])
-    #     sys.exit()
+    if k_part == 'g_fin':
+        pprint(db_video[k_part])
+        sys.exit()
+
+

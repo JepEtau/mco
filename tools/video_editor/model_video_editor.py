@@ -23,10 +23,8 @@ from models.model_common import (
     Model_common,
 )
 
-from utils.common import (
-    K_GENERIQUES,
-    get_dimensions_from_crop_values,
-)
+from utils.common import K_GENERIQUES
+from filters.utils import get_dimensions_from_crop_values
 from utils.get_frame_list import get_frame_list, get_frame_list_single
 from video.consolidate_shot import consolidate_shot
 from filters.filters import calculate_geometry_parameters, filter_rgb
@@ -110,7 +108,7 @@ class Model_video_editor(Model_common):
         k_ep = 'ep%02d' % (p['selection']['episode']) if p['selection']['episode'] != '' else ''
         self.selection_changed({
             'k_ep': k_ep,
-            'k_part': p['selection']['part'],
+            'k_part': p['selection']['k_part'],
             'k_step': p['selection']['step'],
         })
 
@@ -872,7 +870,7 @@ def generate_single_image(frame:dict, geometry, preview_options:dict):
         pprint(frame['geometry'])
     # Calculate dimensions to crop the image
     try:
-        c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
+        c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(w, h, frame['geometry']['target']['crop'])
     except:
         c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = [0, 0, 0, 0, w, h]
     if frame['geometry']['shot'] is not None:
@@ -881,9 +879,9 @@ def generate_single_image(frame:dict, geometry, preview_options:dict):
         c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['shot']['crop'])
     else:
         # Use the part geometry
-        type = 'part'
+        type = 'target'
         try:
-            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['part']['crop'])
+            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(w, h, frame['geometry']['target']['crop'])
         except:
             c_t, c_b, c_l, c_r, c_w, c_h = [0, 0, 0, 0, w, h]
     if verbose:

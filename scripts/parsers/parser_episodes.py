@@ -12,7 +12,7 @@ import sys
 from pprint import pprint
 
 from parsers.parser_audio import parse_audio_section
-from parsers.parser_video import parse_video_section
+from parsers.video_target import parse_video_section
 
 from parsers.parser_filters import (
     parse_filters,

@@ -659,7 +659,7 @@ def consolidate_target_shots_g(db, k_ep, k_part_g) -> None:
     if ('shots' not in db_video_target.keys()
         and 'shots' not in db_video_src.keys()):
         # Cannot consolidate because no shots are defined
-        sys.exit(print_red("error: %s.create_target_shots: no shots in src/dst %s:%s" % (__name__, k_ep, k_part)))
+        sys.exit(print_red("error: %s.create_target_shots: no shots in src/dst %s:%s" % (__name__, k_ep, k_part_g)))
 
 
     # List the shot no which are defined in target
@@ -745,3 +745,16 @@ def consolidate_target_shots_g(db, k_ep, k_part_g) -> None:
         frame_count += shot['count']
 
     db_video_target['count'] = frame_count
+
+
+    # Effects
+    if k_part_g in ['g_debut', 'g_fin']:
+        db_video_target = db[k_part_g]['video']
+        if 'effects' in db_video_target.keys():
+            last_shot = db_video_target['shots'][-1]
+
+            if 'fadeout' in db_video_target['effects'].keys():
+                fadeout_count = db_video_target['effects']['fadeout']
+                frame_no = last_shot['src']['start'] + last_shot['src']['count'] - 1
+                nested_dict_set(last_shot,
+                    ['fadeout', frame_no - fadeout_count + 1, fadeout_count], 'effects')

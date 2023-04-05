@@ -351,14 +351,6 @@ def get_database_size(obj, seen=None):
 
 
 
-def get_dimensions_from_crop_values(width, height, crop) -> list:
-    c_t, c_b, c_l, c_r = crop
-    c_w = width - (c_l + c_r)
-    c_h = height - (c_t + c_b)
-    return [c_t, c_b, c_l, c_r, c_w, c_h]
-
-
-
 
 def get_frame_no_from_filepath(filepath):
     result = re.search(re.compile("(ep\d{2})_(\d{5})__([\w\d]{1,2})__(\d{2})_([\w_\d]{7})[^.]*.png"), filepath)

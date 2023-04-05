@@ -162,9 +162,9 @@ class Widget_browser(QWidget, Ui_widget_browser):
         # Part
         self.refresh_combobox_part()
         self.combobox_part.blockSignals(True)
-        self.combobox_part.setCurrentText(s['part'])
-        if s['part'] in K_ALL_PARTS:
-            index = self.combobox_part.findText(s['part'])
+        self.combobox_part.setCurrentText(s['k_part'])
+        if s['k_part'] in K_ALL_PARTS:
+            index = self.combobox_part.findText(s['k_part'])
             self.combobox_part.setCurrentIndex(index)
         self.combobox_part.blockSignals(False)
 

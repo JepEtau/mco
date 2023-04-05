@@ -66,7 +66,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
     if sys.platform == 'win32':
         cpu_count = int(multiprocessing.cpu_count() * (3/4))
     else:
-        cpu_count = 1
+        cpu_count = int(multiprocessing.cpu_count() * (1/2))
 
     # Output images in memory
     use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False

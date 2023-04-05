@@ -14,7 +14,7 @@ from pprint import pprint
 
 from parsers.parser_audio import parse_audio_section_generique
 from parsers.parser_shots import parse_target_shotlist
-from utils.common import K_GENERIQUES, nested_dict_set
+from utils.common import FPS, K_GENERIQUES, nested_dict_set
 from utils.pretty_print import *
 
 
@@ -61,6 +61,7 @@ def parse_generiques_target(db, study_mode=False, verbose=False):
             # Video
             #----------------------------------------------------
             elif k_section == 'video':
+
                 for k_option in config.options(k_section):
                     value_str = config.get(k_section, k_option)
                     value_str = value_str.replace(' ','')
@@ -75,6 +76,23 @@ def parse_generiques_target(db, study_mode=False, verbose=False):
                                 'k_ep': tmp.group(2),
                             }, 'video', 'src')
                         continue
+
+                    if k_option == 'ed_ref':
+                        # Not supported
+                        continue
+
+                    # Walk through values
+                    properties = value_str.split(',')
+                    # print("\t%s, properties:," % (k_part_g), properties)
+                    part_fadeout = 0
+                    for property in properties:
+                        search_fadeout = re.search(re.compile("fadeout=([0-9.]+)"), property)
+                        if search_fadeout is not None:
+                            part_fadeout = int(float(search_fadeout.group(1)) * FPS)
+
+                            nested_dict_set(db[k_part_g], {
+                                    'fadeout': part_fadeout,
+                                }, 'video', 'effects')
 
             # Shots
             #----------------------------------------------------
