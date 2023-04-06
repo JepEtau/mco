@@ -5,11 +5,9 @@
 (2)
 - replace:
     * Circular dependency is not verified
-- move run.py to root directory
 
 (3)
 - effects: verify when replacing shots (asuivre/precedemment)
-
 - (?) process single frame does not work anymore: repair and re-enable ?
 - replace "get_or_create_src_shot" function by "get_src_shot" and generate a warning
 - clean filters.py
@@ -17,9 +15,10 @@
 - parser_consolidate_audio_video is not used anymore: why?
 - Try SwinIR (g_reportage/reportage)
 
+
 # TODO: video editor
 (1)
-- geometry widget/model to rework
+- geometry widget/model: rework on going
 - display used filters
 
 

@@ -51,10 +51,10 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
             # This section define the geometry of the target: i.e. width
             if k_ep_or_g in ['g_debut', 'g_fin']:
                 nested_dict_set(db, dict(), k_ep_or_g, 'target', 'video', 'geometry')
-                part_geometry = db[k_ep_or_g]['target']['video']['geometry']
+                target_geometry = db[k_ep_or_g]['target']['video']['geometry']
             else:
                 nested_dict_set(db, dict(), k_ep_or_g, 'video', 'target', k_section, 'geometry')
-                part_geometry = db[k_ep_or_g]['video']['target'][k_section]['geometry']
+                target_geometry = db[k_ep_or_g]['video']['target'][k_section]['geometry']
 
             properties = config.get(k_section, 'target').strip().replace(' ', '').split(',')
             for property in properties:
@@ -62,7 +62,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                 property_name = property_array_str[0]
 
                 if property_name == 'width':
-                    part_geometry['w'] = int(property_array_str[1])
+                    target_geometry['w'] = int(property_array_str[1])
 
             if k_section == 'asuivre':
                 print("%s:%s" % (k_ep_or_g, k_section))
@@ -148,11 +148,35 @@ def get_geometry_from_properties(properties_str):
     return geometry_dict
 
 
-def get_initial_part_geometry(db, k_ep, k_part) -> dict:
+
+def get_initial_target_geometry(db, k_ep, k_part) -> dict:
+    # print("get_initial_target_geometry for %s:%s" % (k_ep, k_part))
+    target_geometry = dict()
+
+    if k_part in ['g_debut', 'g_fin']:
+        db_video = db[k_part]['target']['video']
+        k_ep_target = 'ep00'
+    elif k_part in ['g_asuivre', 'g_reportage']:
+        db_video = db[k_ep]['video']['target'][k_part[2:]]
+        k_ep_target = k_ep
+    else:
+        db_video = db[k_ep]['video']['target'][k_part]
+        k_ep_target = k_ep
+
+    try:
+        nested_dict_set(target_geometry, db_video['geometry'].copy(), k_ep_target, k_part)
+    except:
+        pass
+
+    return target_geometry
+
+
+
+def get_initial_default_shot_geometry(db, k_ep, k_part) -> dict:
     """ Returns a list of crops/resize per part for each edition
     """
-    # print("get_initial_part_geometry for %s:%s" % (k_ep, k_part))
-    part_geometry = dict()
+    # print("get_initial_default_shot_geometry for %s:%s" % (k_ep, k_part))
+    default_shot_geometry = dict()
 
     if k_part in K_GENERIQUES:
         # Get the list of editions and episode that are used by this generique
@@ -162,10 +186,10 @@ def get_initial_part_geometry(db, k_ep, k_part) -> dict:
         for k_ed in dependencies.keys():
             for k_ep_tmp in dependencies[k_ed]:
                 db_video = db[k_ep_tmp]['video'][k_ed][k_part]
-                # print("get_part_geometry: %s:%s:%s" % (k_ed,k_ep_src,k_part))
+                # print("get_initial_default_shot_geometry: %s:%s:%s" % (k_ed,k_ep_src,k_part))
                 # pprint(db[k_ep_src][k_ed][k_part])
                 try:
-                    nested_dict_set(part_geometry,
+                    nested_dict_set(default_shot_geometry,
                         db_video['geometry'].copy(),
                         k_ed, k_ep_tmp, k_part)
                 except:
@@ -177,14 +201,13 @@ def get_initial_part_geometry(db, k_ep, k_part) -> dict:
                 continue
             db_video = db[k_ep]['video'][k_ed][k_part]
             try:
-                nested_dict_set(part_geometry,
+                nested_dict_set(default_shot_geometry,
                     db_video['geometry'].copy(),
                     k_ed, k_ep, k_part)
             except:
                 pass
 
-    return part_geometry
-
+    return default_shot_geometry
 
 
 
@@ -202,11 +225,11 @@ def get_initial_shot_geometry(db, k_ep, k_part) -> dict:
                     continue
 
                 for shot in db_video['shots']:
-                    # print("get_part_geometry: %s:%s:%s" % (k_ed,k_ep_src,k_part))
+                    # print("get_initial_shot_geometry: %s:%s:%s" % (k_ed,k_ep_src,k_part))
                     # pprint(db[k_ep_src][k_ed][k_part])
                     try:
                         nested_dict_set(shot_geometry,
-                            shot['geometry'].copy(),
+                            shot['geometry']['shot'].copy(),
                             k_ed, k_ep_tmp, k_part, shot['start'])
                     except:
                         pass
@@ -223,7 +246,7 @@ def get_initial_shot_geometry(db, k_ep, k_part) -> dict:
             for shot in db_video['shots']:
                 try:
                     nested_dict_set(shot_geometry,
-                        shot['geometry'].copy(),
+                        shot['geometry']['shot'].copy(),
                         k_ed, k_ep_tmp, k_part, shot['start'])
                 except:
                     pass

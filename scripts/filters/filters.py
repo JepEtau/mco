@@ -29,7 +29,7 @@ from skimage import color
 from skimage import restoration
 from filters.ffmpeg_utils import clean_ffmpeg_filter
 
-from filters.utils import get_dimensions_from_crop_values
+from filters.utils import FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
 from utils.pretty_print import *
 
 
@@ -377,122 +377,13 @@ def cv2_geometry_filter(img, geometry):
 
 
 
-def __calculate_geometry_parameters(shot, img):
+
+
+def calculate_geometry_parameters(shot, img, verbose:bool=True):
     # Returns the values which will be used when resizing/cropping/padding an image
-
-    # print("crop and resize: %s -> %s" % (frame['filepath']['sharpen'], frame['filepath']['geometry']))
-    h, w, c = img.shape
-
-    # print("------------------")
-    # pprint(frame['geometry'])
-    # print(img.shape)
-    # if (frame['geometry'] is None
-    # or (frame['geometry']['target'] is None and frame['geometry']['shot'] is None)):
-    #     print("Error: no geometry defined, cannot modify the image")
-    #     return None
-
-
-    # Crop
-    try:
-        c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(
-            width=w, height=h, crop=shot['geometry']['target']['crop'])
-        try:
-            # Use the customized geometry
-            # print("use the customized geometry")
-            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(
-                width=w, height=h, crop=shot['geometry']['shot']['crop'])
-        except:
-            # Use the part geometry
-            # print:("use the part geometry")
-            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(
-                width=w, height=h, crop=shot['geometry']['target']['crop'])
-            # print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
-
-        # Crop the image
-        # img = np.ascontiguousarray(img[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
-    except:
-        c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(
-            width=w, height=h, crop=[0,0,0,0])
-        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(
-            width=w, height=h, crop=[0,0,0,0])
-
-
-    # Final width and height
-    w_final = shot['geometry']['dimensions']['final']['w']
-    h_final = shot['geometry']['dimensions']['final']['h']
-
-    # Calculate resized width for both part and (part or custom)
-    w_p_tmp = int((c_w_p * h_final) / float(c_h_p))
-    w_tmp = int((c_w * h_final) / float(c_h))
-    # print("cropped image: ", img.shape)
-    # pprint("w_p_tmp=%d, w_tmp=%d" % (w_p_tmp, w_tmp))
-    # pprint("h_final=%d" % (h_final))
-
-    # Resize
-    # img_resized = cv2.resize(img,
-    #     (w_tmp, h_final),
-    #     interpolation=cv2.INTER_LANCZOS4)
-    # print("img_resized before adjustments: ", img_resized.shape)
-
-    # Verify custom vs part cropped and resized image
-    x0 = x1 = None
-    if w_tmp != w_p_tmp:
-        # This is a custom geometry, width shall be the same as the part's one
-        # It is done AFTER resizing because the resize may be different:
-        #   i.e. when keep_ratio is disabled (custom width)
-        if w_tmp > w_p_tmp:
-            # Crop the image
-            # Calculate the position of the left crop of the part after resizing
-            c_l_p_resized = int(((c_l_p) * h_final) / float(c_h_p))
-            c_l_resized = int(((c_l) * h_final) / float(c_h))
-            x0 = c_l_resized - c_l_p_resized
-            x1 = w_p_tmp + x0
-            # print("crop the image: x0=%d, x1=%d, (w_tmp + x0)=%d" % (x0, x1, w_tmp+x0))
-            if x1 > w_tmp:
-                # Crop is too big on the left
-                # print("crop is too big")
-                x0 = w_tmp - w_p_tmp
-                x1 = w_tmp
-            # print("crop the image: c_l_p_resized=%d, c_l_resized=%d, x0=%d, x1=%d -> new resized width=%d" % (
-                # c_l_p_resized, c_l_resized, x0, x1, x1 - x0))
-            # img_resized_final = np.ascontiguousarray(img_resized[0:h_final,  x0:x1,])
-        elif w_p_tmp > w_tmp:
-            # Add RED padding, for debug
-            # sys.exit(print_red("Error: incorrect shot geometry"))
-            print_orange(print_red("Error: incorrect shot geometry"))
-
-
-
-    # print("img_resized after adjustments: ", img_resized_final.shape)
-    # print("   w_resized should be: %s" % (w_p_tmp))
-
-    # Add padding to the cropped & resized image
-    pad_left = int(((w_final - w_p_tmp) / 2) + 0.5)
-    pad_right = w_final - (w_p_tmp + pad_left)
-    # img_finalized = cv2.copyMakeBorder(img_resized_final, 0, 0, pad_left, pad_right,
-    #     cv2.BORDER_CONSTANT, value=[0, 0, 0])
-
-    # print("img_finalized: ", img_finalized.shape)
-    # sys.exit()
-
-    geometry = {
-        'initial': {'h': h, 'w': w},
-        'crop': [c_t, c_b, c_l, c_r],
-        'resize': {'h': h_final, 'w': w_tmp},
-        'crop_2': {'x0': x0, 'x1': x1},
-        'pad': {'left': pad_left, 'right': pad_right},
-        'final': {'h': h_final, 'w': w_final},
-    }
-
-    return geometry
-
-
-
-def calculate_geometry_parameters(shot, img):
-    # Returns the values which will be used when resizing/cropping/padding an image
-
-    print_cyan("calculate_geometry_parameters:")
-    pprint(shot['geometry'])
+    if verbose:
+        print_cyan("\ncalculate_geometry_parameters\n------------------------------")
+        pprint(shot['geometry'])
 
     img_height, img_width, c = img.shape
 
@@ -500,17 +391,29 @@ def calculate_geometry_parameters(shot, img):
     w_final = shot['geometry']['dimensions']['final']['w']
     h_final = shot['geometry']['dimensions']['final']['h']
 
+    # Shot geometry
+    shot_geometry = shot['geometry']['shot']
+    if shot_geometry is None and 'default' in shot['geometry'].keys():
+        # Shot geometry may contains the default geometry when using video editor
+        shot_geometry = shot['geometry']['default']
+
     # Crop the image
     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-        width=img_width, height=img_height, crop=shot['geometry']['shot']['crop'])
-    print_lightgrey("\t-> cropped size (%d, %d)" % (cropped_width, cropped_height))
+        width=img_width, height=img_height, crop=shot_geometry['crop'])
+    if verbose:
+        print_lightgrey("\t-> cropped size (%d, %d)" % (cropped_width, cropped_height))
 
     # (1) Crop
 
     # Resize image: calculate new dimensions
-    part_width = shot['geometry']['target']['w']
-    fit_to_width = shot['geometry']['shot']['fit_to_width']
-    keep_ratio = shot['geometry']['shot']['keep_ratio']
+    target_width = shot['geometry']['target']['w']
+    if target_width == -1:
+        # Calculate target width
+        fit_to_width = False
+        keep_ratio = True
+    else:
+        fit_to_width = shot_geometry['fit_to_width']
+        keep_ratio = shot_geometry['keep_ratio']
     crop_2 = None
     pad_error = None
     resized_height_debug = None
@@ -518,16 +421,19 @@ def calculate_geometry_parameters(shot, img):
 
     if keep_ratio and fit_to_width:
         # Use the width to calculate new height, then crop to final height
-        print_green("Keep ratio, fit to part width (%d)" % (part_width))
-        resized_width = part_width
-        resized_height = int(((cropped_height * part_width) / float(cropped_width)))
-        print_lightgrey("\t-> resized (%d, %d)" % (resized_width, resized_height))
+        if verbose:
+            print_green("\tKeep ratio, fit to part width (%d)" % (target_width))
+        resized_width = target_width
+        resized_height = int(((cropped_height * target_width) / float(cropped_width)))
+        if verbose:
+            print_lightgrey("\t-> resized (%d, %d)" % (resized_width, resized_height))
 
         # (2) Do resize
 
         if resized_height < h_final:
             # Error: do add white padding
-            print_red("\t-> Error: heigth is < final_height, add white padding")
+            if verbose:
+                print_red("\t-> Error: heigth is < final_height, add white padding")
             pad_error_top = int(((h_final - resized_height) / 2) + 0.5)
             pad_error_bottom = h_final - (resized_height + pad_error_top)
             pad_error = [pad_error_top, pad_error_bottom, 0, 0]
@@ -538,7 +444,8 @@ def calculate_geometry_parameters(shot, img):
 
         elif resized_height > h_final:
             # 2nd crop: crop height
-            print_lightgrey("\t-> 2nd crop: height (%d -> %d)" % (resized_height, h_final))
+            if verbose:
+                print_lightgrey("\t-> 2nd crop: height (%d -> %d)" % (resized_height, h_final))
             crop_2_top = int((resized_height - h_final) / 2 + 0.5)
             crop_2_bottom = (resized_height - h_final) - crop_2_top
             crop_2 = [crop_2_top, crop_2_bottom, 0, 0]
@@ -550,30 +457,34 @@ def calculate_geometry_parameters(shot, img):
 
     elif keep_ratio and not fit_to_width :
         # Use the height to calculate new width, then crop to final width
-        print_green("keep ratio, fit to final height (%d)" % (h_final))
+        if verbose:
+            print_green("\tkeep ratio, fit to final height (%d)" % (h_final))
 
         resized_height = h_final
         resized_width = int(((cropped_width * resized_height) / float(cropped_height))/2) * 2
-        print_lightgrey("\t-> resized (%d, %d)" % (resized_width, resized_height))
+        if verbose:
+            print_lightgrey("\t-> resized (%d, %d)" % (resized_width, resized_height))
 
         # (2) Do resize
 
-        if resized_width < part_width:
+        if resized_width < target_width:
             # Error: do add white padding
-            print_red("\t-> Error: width is < final_width, add white padding")
-            pad_error_left = int(((part_width - resized_width) / 2) + 0.5)
-            pad_error_right = part_width - (resized_width + pad_error_left)
+            if verbose:
+                print_red("\t-> Error: width is < final_width, add white padding")
+            pad_error_left = int(((target_width - resized_width) / 2) + 0.5)
+            pad_error_right = target_width - (resized_width + pad_error_left)
             pad_error = [0, 0, pad_error_left, pad_error_right]
             # Recalculate resized_width (debug)
             resized_width_debug = resized_width + (pad_error[2] + pad_error[3])
 
             # (3a) Do add padding (width)
 
-        elif resized_width > part_width:
+        elif resized_width > target_width:
             # 2nd crop: crop width
-            print_lightgrey("\t-> 2nd crop: width (%d -> %d)" % (resized_width, part_width))
-            crop_2_left = int((resized_width - part_width) / 2 + 0.5)
-            crop_2_right = (resized_width - part_width) - crop_2_left
+            if verbose:
+                print_lightgrey("\t-> 2nd crop: width (%d -> %d)" % (resized_width, target_width))
+            crop_2_left = int((resized_width - target_width) / 2 + 0.5)
+            crop_2_right = (resized_width - target_width) - crop_2_left
             crop_2 = [0, 0, crop_2_left, crop_2_right]
 
             # Recalculate resized_width (debug)
@@ -583,10 +494,12 @@ def calculate_geometry_parameters(shot, img):
 
     elif not keep_ratio and fit_to_width:
         # Adjust the image to the part width and final height
-        print_green("Do not keep ratio, fit to part width and final height (%d, %d)" % (part_width, h_final))
-        resized_width = part_width
+        if verbose:
+            print_green("\tDo not keep ratio, fit to part width and final height (%d, %d)" % (target_width, h_final))
+        resized_width = target_width
         resized_height = h_final
-        print_lightgrey("\t-> resized (%d, %d)" % (resized_width, resized_height))
+        if verbose:
+            print_lightgrey("\t-> resized (%d, %d)" % (resized_width, resized_height))
 
         # (2) Do resize
 
@@ -616,7 +529,7 @@ def calculate_geometry_parameters(shot, img):
             resized_width_debug, resized_height_debug, shot['geometry']['target']['w'], h_final)))
 
 
-    geometry = {
+    geometry_parameters = {
         'initial': {'h': img_height, 'w': img_width},
         'crop': [crop_top, crop_bottom, crop_left, crop_right],
         'resize': {'h': resized_height, 'w': resized_width},
@@ -625,11 +538,13 @@ def calculate_geometry_parameters(shot, img):
         'pad': {'left': pad_left, 'right': pad_right},
         'final': {'h': h_final, 'w': w_final},
     }
-    print_cyan("calculated geometry:")
-    pprint(geometry)
+    if verbose:
+        print_cyan("calculated geometry_parameters:")
+        pprint(geometry_parameters)
+        print_cyan("-----------------------------")
     # sys.exit()
 
-    return geometry
+    return geometry_parameters
 
 
 

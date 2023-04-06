@@ -26,7 +26,7 @@ from common.window_common import (
     PAINTER_MARGIN_LEFT,
     PAINTER_MARGIN_TOP,
 )
-from filters.utils import get_dimensions_from_crop_values
+from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
 from common.widget_controls import Widget_controls
 from video_editor.widget_selection import Widget_selection
 from video_editor.widget_curves import Widget_curves
@@ -372,7 +372,7 @@ class Window_main(Window_common):
         # print("paintEvent: initial image = %dx%d" % (h_i, w_i))
         h, w, c = img.shape
         q_image = QImage(img.data, w, h, w * 3, QImage.Format_BGR888)
-        w_final, h_final = (1440, 1080)
+        w_final, h_final = (FINAL_FRAME_WIDTH, FINAL_FRAME_HEIGHT)
 
         self.image['origin'] = [PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y]
         if self.painter.begin(self):

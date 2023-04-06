@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
+
+from filters.utils import FINAL_FRAME_HEIGHT
 sys.path.append('../scripts')
 
 import time
@@ -269,7 +271,7 @@ class Window_common(QMainWindow):
 
 
     def switch_display_side(self):
-        if self.display_height > 1080:
+        if self.display_height > FINAL_FRAME_HEIGHT:
             return
         self.event_screen_position_changed('switch')
         self.repaint()
@@ -283,7 +285,7 @@ class Window_common(QMainWindow):
             new_side = side
 
         if new_side == 'bottom':
-            self.display_position_y = 1152 - 1080 + 2*PAINTER_MARGIN_TOP
+            self.display_position_y = 1152 - FINAL_FRAME_HEIGHT + 2*PAINTER_MARGIN_TOP
         else:
             self.display_position_y = 0
         self.repaint()

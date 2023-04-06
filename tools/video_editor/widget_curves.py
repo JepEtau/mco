@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import sys
+
+from filters.utils import FINAL_FRAME_WIDTH
 sys.path.append('../scripts')
 from functools import partial
 
@@ -226,7 +228,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             return False
         # log.info("move_split_line: x=%d, split_x=%d" % (x, self.split_x))
         if ( (x + self.split_x_gap) < self.main_window_margin
-        or (x + self.split_x_gap) > self.main_window_margin + 1440):
+        or (x + self.split_x_gap) > self.main_window_margin + FINAL_FRAME_WIDTH):
             return False
         if (self.pushButton_set_preview.isChecked()
             and self.is_moving_split_line):

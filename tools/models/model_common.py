@@ -145,7 +145,7 @@ class Model_common(QObject):
 
     def event_preview_options_changed(self, preview_options):
         log.info("preview has changed")
-        if False:
+        if True:
             print("\nchanged preview mode:" % (preview_options))
             print("---------------------------------------")
             pprint(preview_options)

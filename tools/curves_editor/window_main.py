@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import sys
+
+from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, MAX_FRAME_WIDTH
 sys.path.append('../scripts')
 
 import cv2
@@ -384,7 +386,7 @@ class Window_main(Window_common):
         h, w, c = img.shape
         q_image = QImage(img.data, w, h, w * 3, QImage.Format_BGR888)
         self
-        w_final, h_final = (1440, 1080)
+        w_final, h_final = (FINAL_FRAME_WIDTH, FINAL_FRAME_HEIGHT)
 
         self.image['origin'] = [PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y]
         if self.painter.begin(self):
