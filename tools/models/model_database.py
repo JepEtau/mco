@@ -303,19 +303,19 @@ class Model_database(Model_geometry,
         modified_db = list()
 
         if self.is_stabilize_db_modified:
-            modified_db.append('stabilize values')
+            modified_db.append('stabilize/deshake')
 
         if self.is_curves_db_modified:
-            modified_db.append('curves')
+            modified_db.append('RGB curves')
 
         if self.is_curves_selection_db_modified:
-            modified_db.append('curves selection')
+            modified_db.append('RGB curves selection')
 
         if self.is_replace_db_modified:
             modified_db.append('frames to replace')
 
         if self.is_geometry_db_modified:
-            modified_db.append('part or shot geometry')
+            modified_db.append('geometry')
 
         return modified_db
 

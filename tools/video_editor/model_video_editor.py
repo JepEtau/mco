@@ -27,7 +27,7 @@ from utils.common import K_GENERIQUES, nested_dict_set
 from filters.utils import FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
 from utils.get_frame_list import get_frame_list, get_frame_list_single
 from video.consolidate_shot import consolidate_shot
-from filters.filters import calculate_geometry_parameters, filter_rgb
+from filters.filters import calculate_geometry_parameters, cv2_geometry_filter, filter_rgb
 from utils.pretty_print import *
 
 
@@ -835,8 +835,6 @@ class Model_video_editor(Model_common):
         # and another thread to generate the next frames in background (when playing as a video)
         self.purge_current_frame_cache()
 
-# 576 - 32        688         1434
-# 720 - 58        518 2.0849  1080
 
         # Set current frame
         self.current_frame = frame
@@ -863,21 +861,16 @@ class Model_video_editor(Model_common):
                     k_ep=frame['k_ep'], k_part=frame['k_part'],
                     geometry=target_geometry)
 
-            geometry = calculate_geometry_parameters(shot=frame, img=frame['cache_initial'])
-            print_lightcyan("geometry parameters")
-            pprint(geometry)
+            frame['geometry_values'] = calculate_geometry_parameters(shot=frame, img=frame['cache_initial'])
 
-
-
-            index, img = generate_single_image(self.current_frame, geometry, preview_options=options)
+            index, img = generate_single_image(self.current_frame, preview_options=options)
             self.set_current_frame_cache(img=img)
         # print("\t%dms" % (int(1000 * (time.time() - now))))
         # else:
             # Cannot generate the image because no preview option is defined
             # The preview options will be updated by the window UI
 
-        print_yellow("%s:%s" % (shot['k_ep'], shot['k_part']))
-        pprint(frame['geometry'])
+
 
         if is_shot_changed:
             self.signal_shot_changed.emit()
@@ -887,21 +880,193 @@ class Model_video_editor(Model_common):
 
 
 
-def generate_single_image(frame:dict, geometry, preview_options:dict):
+def generate_single_image(frame:dict, preview_options:dict):
     log.info("generate single image")
 
-    return frame['index'], frame['cache_initial']
+    # geometry_values are the calculated dimensions, crop, pad etc.
+    geometry_values = frame['geometry_values']
 
-    verbose = False
+    verbose = True
     if verbose:
         print("\ngenerate_single_image:")
         pprint(preview_options)
         print("\t-> %s:%s:%s" % (frame['k_ed'], frame['k_ep'], frame['k_part']))
 
+        print_lightcyan("geometry parameters")
+        pprint(geometry_values)
+
+    # Initial image
     img_original = frame['cache_initial']
-    h, w, c = img_original.shape
+    img_height, img_width, c = img_original.shape
+
+
+
+
+    # Final width and height
+    w_final = geometry_values['final']['w']
+    h_final = geometry_values['final']['h']
+
+    # Shot geometry
+    shot_geometry = frame['geometry']['shot']
+    if shot_geometry is None and 'default' in frame['geometry'].keys():
+        # Shot geometry may contains the default geometry when using video editor
+        shot_geometry = frame['geometry']['default']
+
+    if verbose:
+        print_lightgreen("shot_geometry:")
+        pprint(shot_geometry)
+
+    options = preview_options['geometry']['shot']
+
+    # Cropped dimensions
+    crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
+        width=img_width, height=img_height, crop=shot_geometry['crop'])
+
+    # Apply RGB curves
+    #------------------------------------
+    if preview_options['curves']['is_enabled'] and frame['curves'] is not None:
+        try:
+            img_rgb = filter_rgb(frame, img_original)
+        except:
+            print("Cannot apply RGB curves")
+            img_rgb = img_original
+
+        if preview_options['curves']['split']:
+            # Merge 2 images to split the screen
+            x = preview_options['curves']['split_x']
+            if preview_geometry['shot']['resize_preview']:
+                w_tmp = int((cropped_width * h_final) / float(cropped_height))
+                pad_left = int((w_final - w_tmp) / 2)
+                x = max(0, int((x-pad_left) / (h_final / float(cropped_height))) + crop_left)
+            img_rgb[0:img_height, x:img_width,] = img_original[0:img_height,x:img_width,]
+    else:
+        img_rgb = img_original
+
+
+    preview_geometry = preview_options['geometry']
+
+
+    # Final image: function
+    #------------------------------------
+    if preview_geometry['final_preview']:
+        img_finalized = cv2_geometry_filter(img=img_rgb, geometry=frame['geometry_values'])
+        return (frame['index'], img_finalized)
+
+
+    # Crop the image
+    #------------------------------------
+    if not options['crop_preview'] and options['crop_edition']:
+        # Add a rectangle to the original image
+        if verbose:
+            print("\t-> Use the original image")
+        img_cropped = img_rgb
+
+    elif options['crop_preview']:
+        # Crop and NO rectangle
+        if verbose:
+            print("\t-> Crop the image, ", end='')
+        # (1) Crop the image
+        img_cropped = np.ascontiguousarray(img_rgb[
+            crop_top : img_height - crop_bottom,
+            crop_left : img_width - crop_right], dtype=np.uint8)
+        if verbose:
+            print("cropped: ", img_cropped.shape)
+
+    else:
+        # Not options['crop_preview'] and not options['crop_edition']
+        # i.e. Original image
+        img_cropped = img_rgb
+
+        if options['resize_preview']:
+            pprint(frame['geometry'])
+            print("Error: generate_single_image: resize not possible because no crop poreview selected")
+
+    # Resize the image
+    #------------------------------------
+    target_width = frame['geometry']['target']['w']
+    fit_to_width = shot_geometry['fit_to_width']
+    keep_ratio = shot_geometry['keep_ratio']
+    crop_2 = None
+    pad_error = None
+    if options['resize_preview']:
+
+        if options['crop_preview']:
+            # Resize the cropped image
+            if verbose:
+                print("\t-> Resize the cropped image")
+
+            img_resized = cv2.resize(src=img_cropped,
+                dsize=(geometry_values['resize']['w'], geometry_values['resize']['h']),
+                interpolation=cv2.INTER_LANCZOS4)
+        else:
+            # Calculate the new dimensions of the image to add a rect on it
+            if verbose:
+                print("\t-> Resize the original image")
+
+            resized_width = int(0.5 + (img_width * geometry_values['resize']['w']) / float(cropped_width))
+            resized_height = int(0.5 + (img_height * geometry_values['resize']['h']) / float(cropped_height))
+            img_resized = cv2.resize(src=img_rgb,
+                dsize=(resized_width, resized_height),
+                interpolation=cv2.INTER_LANCZOS4)
+
+            if verbose:
+                print("\t-> resized original image: %dx%d, calculated:%dx%d" % (
+                    img_resized.shape[1], img_resized.shape[0], resized_width, resized_height))
+
+        img_resized_cropped = img_resized
+
+    else:
+        img_resized_cropped = img_cropped
+
+
+
+    # Final image
+    if preview_geometry['final_preview']:
+
+        # Error case
+        pad_error = geometry_values['pad_error']
+        if pad_error is not None:
+            print_red("Error: add padding but should not")
+            img_resized_consolidated = cv2.copyMakeBorder(src=img_resized_cropped,
+            top=pad_error[0], bottom=pad_error[1],
+            left=pad_error[2], right=pad_error[3],
+            borderType=cv2.BORDER_CONSTANT, value=[255, 255, 255])
+        else:
+            img_resized_consolidated = img_resized_cropped
+
+        if verbose:
+            print("\t-> Finalize the image (add padding)")
+
+        # Add padding
+        img_finalized = cv2.copyMakeBorder(src=img_resized_consolidated,
+            top=0, bottom=0, left=geometry_values['pad']['left'], right=geometry_values['pad']['right'],
+            borderType=cv2.BORDER_CONSTANT, value=[0, 0, 0])
+    else:
+        img_finalized = img_resized_cropped
+
+    return (frame['index'], img_finalized)
+
+    if img_resized_cropped is not None:
+        # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
+        return (frame['index'], img_resized_cropped)
+    else:
+        # print("generate_single_image: %dms" % (int(1000 * (time.time() - now))))
+        if img_finalized.shape[0] == 576:
+            img_resized_final_2 = cv2.resize(img_cropped, (img_finalized.shape[1] * 2, img_finalized.shape[0]*2), interpolation=cv2.INTER_LANCZOS4)
+        else:
+            img_resized_final_2 = img_finalized
+        return (frame['index'], img_resized_final_2)
+
+
+
+
+def __generate_single_image(frame:dict, geometry, preview_options:dict):
+    verbose = False
+    # return frame['index'], img_original
+
     # print("\t-> initial: ", frame['cache_initial'].shape)
     if verbose:
+        print_yellow("%s:%s" % (frame['k_ep'], frame['k_part']))
         pprint(frame['geometry'])
     # Calculate dimensions to crop the image
     try:

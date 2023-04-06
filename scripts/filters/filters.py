@@ -347,7 +347,7 @@ def cv2_geometry_filter(img, geometry):
         dsize=(geometry['resize']['w'], geometry['resize']['h']),
         interpolation=cv2.INTER_LANCZOS4)
 
-    # Crop the image a second time to fit to the part dimensions
+    # Crop the image a second time to fit to the target dimensions
     crop_2 = geometry['crop_2']
     if crop_2 is not None:
         crop_2_top, crop_2_bottom, crop_2_left, crop_2_right = crop_2
@@ -379,7 +379,7 @@ def cv2_geometry_filter(img, geometry):
 
 
 
-def calculate_geometry_parameters(shot, img, verbose:bool=True):
+def calculate_geometry_parameters(shot, img, verbose:bool=False):
     # Returns the values which will be used when resizing/cropping/padding an image
     if verbose:
         print_cyan("\ncalculate_geometry_parameters\n------------------------------")

@@ -373,7 +373,6 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                 'crop_preview': self.pushButton_shot_crop_preview.isChecked(),
                 'resize_preview': self.pushButton_shot_resize_preview.isChecked(),
             },
-
         }
         return preview_options
 
@@ -504,6 +503,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.event_is_modified(element=element, event_type='set', parameter='keep_ratio', value=is_checked)
 
 
+
     def event_fit_to_width_changed(self, element, is_checked:bool):
         if element == 'default':
             w_self = self.checkBox_default_shot_fit_to_width
@@ -520,6 +520,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         log.info("%s: fit to width: %s" % (type, 'true' if is_checked else 'false'))
         self.event_is_modified(element=element, event_type='set', parameter='fit_to_width', value=is_checked)
+
 
 
     def wheelEvent(self, event):
