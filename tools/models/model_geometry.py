@@ -52,25 +52,23 @@ class Model_geometry():
         # which uses the consolidated shots
 
         # Target geometry
-        self.db_target_geometry_initial = get_initial_target_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
+        if k_part in ['g_asuivre', 'g_reportage']:
+            self.db_target_geometry_initial = get_initial_target_geometry(self.global_database,
+                k_ep=k_ep, k_part=k_part[2:])
+        else:
+            self.db_target_geometry_initial = get_initial_target_geometry(self.global_database,
+                k_ep=k_ep, k_part=k_part)
         self.db_target_geometry = dict()
 
         # Default shot geometry
         self.db_default_shot_geometry_initial = get_initial_default_shot_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
         self.db_default_shot_geometry = dict()
 
-
-        # if k_part in ['g_asuivre', 'g_reportage']:
-        #     db_tmp = get_initial_target_geometry(self.global_database, k_ep=k_ep, k_part=k_part[2:])
-        #     nested_dict_merge(self.db_target_geometry_initial, db_tmp)
-        # else:
-        #     self.db_shot_geometry_initial = get_initial_shot_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
-
         # Shot geometry
         self.db_shot_geometry_initial = get_initial_shot_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
         self.db_shot_geometry = dict()
 
-        if True:
+        if False:
             self.is_geometry_db_modified = False
             print_cyan("db_target_geometry_initial:")
             pprint(self.db_target_geometry_initial)

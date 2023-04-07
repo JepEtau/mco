@@ -1,31 +1,34 @@
 # TODO: script
 (1)
-- custom filter depending on shot: reason: deshake or do not block filtering if no deshake parameters
-- change shot_start to shot no. in config files? or use middle of shot
+- custom filter depending on shot. Reason: deshake or do not block filtering if no deshake parameters
+- avoid logging filter hashes while using video editor
 
 (2)
 - replace:
     * Circular dependency is not verified
+- change shot_start to shot no. in config files? or use middle of shot?
 
 (3)
-- effects: verify when replacing shots (asuivre/precedemment)
-- (?) process single frame does not work anymore: repair and re-enable ?
-- replace "get_or_create_src_shot" function by "get_src_shot" and generate a warning
-- clean filters.py
-- deshake: read from/write to ssd: no, fuck low memory pc, buy a new one!
-- parser_consolidate_audio_video is not used anymore: why?
 - Try SwinIR (g_reportage/reportage)
+- effects: verify when replacing shots (asuivre/precedemment)
+- geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
+- clean filters.py
+- replace "get_or_create_src_shot" function by "get_src_shot" and generate a warning
+- parser_consolidate_audio_video is not used anymore: why?
+- deshake: read from/write to ssd: no, fuck low memory, buy a new pc!
+- (?) process single frame does not work anymore: repair and re-enable ?
 
 
 # TODO: video editor
 (1)
+- geometry: implement discard function
 
 (2)
 - display used filters
 - stabilize widget/model
 - curves: find shot from frame no and do not verify if it is the 1st frame.
-- when saving, use middle of shot or shot_no? reason: avisynth frame no
+- when saving, use middle of shot or shot_no? Reason: avisynth frame no
 
 (3)
-- edit the curves library: remove/inspect curves without changing the curve selection
+- edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db
 

@@ -228,6 +228,9 @@ class Model_video_editor(Model_common):
 
 
             # Get the target geometry
+            target_geometry = None
+            default_shot_geometry = None
+            shot_geometry = None
             if k_part_selected in ['g_debut', 'g_fin']:
                 # Use the k_ed:k_ep defined as the source for this geometry
                 target_geometry = self.model_database.get_target_geometry(
@@ -244,26 +247,29 @@ class Model_video_editor(Model_common):
                         k_ep=k_ep_selected,
                         k_part=k_part_selected)
 
-            # Get the geometry for this shot
-            if k_part_selected in ['g_asuivre', 'g_reportage']:
-                # Use the 'part' for these special cases
-                k_ed_tmp = db[k_part_selected]['video']['src']['k_ed']
-                shot_geometry = self.model_database.get_target_geometry(
-                    k_ep=k_ep_selected,
-                    k_part=k_part_selected)
-            else:
-                default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
-                shot_geometry = self.model_database.get_shot_geometry(shot=shot)
-
+            # Get shot and default geometry
+            default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
+            shot_geometry = self.model_database.get_shot_geometry(shot=shot)
             if shot_geometry is None and default_shot_geometry is None:
-                # Not geometry define, create a new one
-                self.model_database.set_default_shot_geometry(shot=shot, geometry={
-                    'crop': [0] * 4,
-                    'keep_ratio': True,
-                    'fit_to_width': False})
+                if shot['k_part'] in ['g_asuivre', 'g_reportage']:
+                    print_yellow("\t\t\tNo shot geometry defined, create a shot geometry")
+                    # Not geometry define, create a new one
+                    self.model_database.set_shot_geometry(shot=shot, geometry={
+                        'crop': [0] * 4,
+                        'keep_ratio': True,
+                        'fit_to_width': False})
+                    shot_geometry = self.model_database.get_shot_geometry(shot=shot)
+                else:
+                    # Not geometry define, create a new one
+                    print_yellow("\t\t\tNo shot geometry defined, create a default shot geometry")
+                    self.model_database.set_default_shot_geometry(shot=shot, geometry={
+                        'crop': [0] * 4,
+                        'keep_ratio': True,
+                        'fit_to_width': False})
+                    default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
 
-            # if True:
-            if shot['no'] == 23:
+            if False:
+            # if shot['no'] == 0:
                 print_lightcyan("================================== SHOT =======================================")
                 pprint(shot)
                 print_lightcyan("===============================================================================")
@@ -518,7 +524,7 @@ class Model_video_editor(Model_common):
 
 
 
-    # Freme replacement
+    # Replace frames
     #---------------------------------------------------------------------------
     def is_replace_allowed(self):
         shot = self.get_current_shot()
@@ -626,7 +632,6 @@ class Model_video_editor(Model_common):
 
     # Geometry
     #---------------------------------------------------------------------------
-
     def event_geometry_modified(self, event:dict):
         """event:
             - element       'shot', 'target'
@@ -658,6 +663,9 @@ class Model_video_editor(Model_common):
 
         # Modify target width
         if element == 'target' and parameter == 'width':
+            if k_part in ['g_asuivre', 'g_reportage']:
+                sys.exit(print_red("bug: target width shall never be modified when editing %s" % (k_part)))
+
             if event_type == 'set':
                 geometry = self.model_database.get_target_geometry(k_ep=k_ep, k_part=k_part).copy()
                 if value == 'auto':
@@ -811,8 +819,8 @@ class Model_video_editor(Model_common):
             self.signal_load_curves.emit(None)
 
         # Load current geometry
-        # TODO: clean this, this is for debug
-        target_geometry = self.model_database.get_target_geometry(k_ep=shot['k_ep'], k_part=shot['k_part'])
+        k_part_src = shot['dst']['k_part'][2:] if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage'] else shot['dst']['k_part']
+        target_geometry = self.model_database.get_target_geometry(k_ep=shot['dst']['k_ep'], k_part=k_part_src)
         frame['geometry'].update({
             'target': target_geometry,
             'default': self.model_database.get_default_shot_geometry(shot=shot),
@@ -822,26 +830,11 @@ class Model_video_editor(Model_common):
             # is updated by the generate function
             'error': False,
         })
-
-        # if shot['k_part'] in ['g_asuivre', 'g_reportage']:
-        #     frame['geometry'].update({
-        #         # Do not modify the part geometry
-        #         # The shot geometry uses the 'part' stored in the  k_ep config file
-        #         'shot': self.model_database.get_target_geometry(k_ed=shot['k_ed'], k_ep=shot['k_ep'], k_part=shot['k_part']),
-
-        #         # Used when the width of the cropped img  for the shot < width of the cropped img of the part
-        #         # is updated by the generate function
-        #         'error': False,
-        #     })
-        # else:
-        #     frame['geometry'].update({
-        #         'target': self.model_database.get_target_geometry(k_ed=shot['k_ed'], k_ep=shot['k_ep'], k_part=shot['k_part']),
-        #         'shot': self.model_database.get_shot_geometry(shot=shot),
-
-        #         # Used when the width of the cropped img  for the shot < width of the cropped img of the part
-        #         # is updated by the generate function
-        #         'error': False,
-        #     })
+        # print_yellow("db_target_geometry_initial")
+        # pprint(self.model_database.db_target_geometry_initial)
+        # print_yellow("db_target_geometry")
+        # pprint(self.model_database.db_target_geometry)
+        # pprint(frame['geometry'])
 
 
         # Purge image from the previous frame

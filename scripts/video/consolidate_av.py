@@ -371,45 +371,53 @@ def align_audio_video_durations(db, k_ep):
 
     # Add/modify effect of the last shot
     #---------------------------------------------------------------------------
+    verbose = False
     for k_part in ['episode', 'asuivre', 'reportage']:
         db_video_part = db_video[k_part]
         last_shot = db_video_part['shots'][-1]
 
         if 'effects' in db_video_part.keys():
-            print_green("\teffects detected in %s:%s" % (k_ep, k_part))
-            pprint(db_video_part['effects'])
+            if verbose:
+                print_green("\teffects detected in %s:%s" % (k_ep, k_part))
+                print("\t", db_video_part['effects'])
 
             if db_video_part['effects']['fadein'] != 0:
                 sys.exit("%s.align_audio_video_durations: Error: TODO: %s:%s fadein effect in db_video!!!!" % (__name__, k_ep, k_part))
 
             if db_video_part['effects']['fadeout'] != 0:
-                # print("%s.align_audio_video_durations: %s:%s modify fadeout effect in db_video!" % (__name__, k_ep, k_part))
+                if verbose:
+                    print("%s.align_audio_video_durations: %s:%s modify fadeout effect in db_video!" % (__name__, k_ep, k_part))
 
                 fadeout_count = db_video_part['effects']['fadeout']
                 if 'effects' in last_shot.keys():
                     # Patch the fadeout/loop_and_fadeout duration
                     if last_shot['effects'][0] == 'fadeout':
-                        # print("%s.align_audio_video_durations: %s:%s, patch the last shot -> fadeout: modify" % (__name__, k_ep, k_part))
+                        if verbose:
+                            print("%s.align_audio_video_durations: %s:%s, patch the last shot -> fadeout: modify" % (__name__, k_ep, k_part))
                         last_shot['effects'][2] = fadeout_count
 
                     elif last_shot['effects'][0] == 'loop_and_fadeout':
-                        # print("%s.align_audio_video_durations: %s:%s, patch the last shot -> loop_and_fadeout: modify" % (__name__, k_ep, k_part))
-                        # print("\t%d vs %d" % (last_shot['effects'][3], fadeout_count))
-                        # pprint(last_shot)
+                        if verbose:
+                            print("%s.align_audio_video_durations: %s:%s, patch the last shot -> loop_and_fadeout: modify" % (__name__, k_ep, k_part))
+                            print("\t%d vs %d" % (last_shot['effects'][3], fadeout_count))
+                            pprint(last_shot)
+
                         if fadeout_count < last_shot['count']:
                             # Modify it because shot duration > fadeout duration
                             last_shot['effects'][3] = fadeout_count
-                        # last_shot['effects'][2] = fadeout_count - last_shot['effects'][2]
-                        # print("->")
-                        # pprint(last_shot)
+
+                        if verbose:
+                            last_shot['effects'][2] = fadeout_count - last_shot['effects'][2]
+                            print("->")
+                            pprint(last_shot)
 
                 else:
                     # Patch the last shot, add 'fadeout' effect
-                    print("\talign_audio_video_durations: %s:%s, patch the last shot -> fadeout: add effects" % (k_ep, k_part))
-                    pprint(db_video_part)
+                    if verbose:
+                        print("\talign_audio_video_durations: %s:%s, patch the last shot -> fadeout: add effects" % (k_ep, k_part))
+                        pprint(db_video_part)
                     last_shot_src = last_shot['src']
                     frame_no = last_shot_src['start'] + last_shot_src['count'] - 1
-                    # last_shot_src['count'] -= fadeout_count
                     nested_dict_set(last_shot,
                         ['fadeout', frame_no - fadeout_count + 1, fadeout_count], 'effects')
 

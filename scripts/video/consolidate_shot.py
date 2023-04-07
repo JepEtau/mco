@@ -105,11 +105,10 @@ def consolidate_shot(db, shot) -> None:
     # Geometry
     #---------------------------------------------------------------------------
     if k_part in ['g_asuivre', 'g_reportage']:
-        print_yellow("consolidate_shot: get geometry from %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
+        print("\t\t\tconsolidate_shot: get geometry from %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
         k_ep_dst = shot['dst']['k_ep']
-
         try:
-            target_geometry = db[k_ep_dst]['video']['target'][k_part[2:]]['geometry']
+            target_geometry = db[k_ep_dst]['video']['target'][k_part[2:]]['geometry']['target']
         except:
             target_geometry = None
         nested_dict_set(shot, target_geometry, 'geometry', 'target')
@@ -173,11 +172,11 @@ def consolidate_shot(db, shot) -> None:
         'geometry', 'dimensions', 'final')
 
 
-    # if True:
-    #     print_lightcyan("================================== SHOT =======================================")
-    #     pprint(shot)
-    #     print_lightcyan("===============================================================================")
-    #     sys.exit()
+    if False:
+        print_lightcyan("================================== SHOT =======================================")
+        pprint(shot)
+        print_lightcyan("===============================================================================")
+        sys.exit()
 
 
     # RGB correction: calculate the lut from the curves

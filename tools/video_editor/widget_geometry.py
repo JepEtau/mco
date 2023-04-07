@@ -152,10 +152,12 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         if frame['k_part'] in ['g_asuivre', 'g_reportage']:
             self.groupBox_shot_geometry.setEnabled(False)
             self.spinBox_target_width.setEnabled(False)
+            self.pushButton_target_width_copy_from_shot.setEnabled(False)
             self.is_target_disabled = True
         else:
             self.groupBox_shot_geometry.setEnabled(True)
             self.spinBox_target_width.setEnabled(True)
+            self.pushButton_target_width_copy_from_shot.setEnabled(True)
             self.is_target_disabled = False
 
 

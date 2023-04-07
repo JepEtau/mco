@@ -31,7 +31,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
     TODO: it uses the first frame of a shot to identify the shot rather the index, so that
     a modification of shots will not break anything
     """
-    verbose = True
+    verbose = False
     K_ED_DEBUG = ''
     K_EP_DEBUG = ''
     K_PART_DEBUG = ''
