@@ -113,6 +113,8 @@ class Model_video_editor(Model_common):
         })
 
 
+    # Select a new episode/part
+    #---------------------------------------------------------------------------
 
     def selection_changed(self, values:dict):
         """ Directory or step has been changed, update the database, list all images,
@@ -161,30 +163,11 @@ class Model_video_editor(Model_common):
             k_ed_selected = db[k_ep_selected]['video']['target'][k_part_selected]['k_ed_src']
 
 
-        # Get the part geometry
-        # print("selection_changed: update geometry: %s" % (k_part_selected))
-        if k_part_selected in ['g_debut', 'g_fin']:
-            # Use the k_ed:k_ep defined as the source for this geometry
-            target_geometry = self.model_database.get_target_geometry(
-                    k_ep='ep00',
-                    k_part=k_part_selected)
-        elif k_part_selected in ['g_asuivre', 'g_reportage']:
-            # Use the following part to get the geometry for this part
-            target_geometry = self.model_database.get_target_geometry(
-                    k_ep=k_ep_selected,
-                    k_part=k_part_selected[2:])
-        else:
-            # Use the selected ed:ep:part
-            target_geometry = self.model_database.get_target_geometry(
-                    k_ep=k_ep_selected,
-                    k_part=k_part_selected)
-
-
         # Walk through shots
         shots = db_video['shots']
         for shot in shots:
             # For debug only
-            print("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
+            print_lightgreen("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
                 "{:3d}".format(shot['no']),
                 "{:5d}".format(shot['start']),
                 shot['dst']['count'],
@@ -243,13 +226,25 @@ class Model_video_editor(Model_common):
                 },
             })
 
-            if True:
-                print_lightcyan("================================== SHOT =======================================")
-                pprint(shot)
-                print_lightcyan("===============================================================================")
 
+            # Get the target geometry
+            if k_part_selected in ['g_debut', 'g_fin']:
+                # Use the k_ed:k_ep defined as the source for this geometry
+                target_geometry = self.model_database.get_target_geometry(
+                        k_ep='ep00',
+                        k_part=k_part_selected)
+            elif k_part_selected in ['g_asuivre', 'g_reportage']:
+                # Use the following part to get the geometry for this part
+                target_geometry = self.model_database.get_target_geometry(
+                        k_ep=k_ep_selected,
+                        k_part=k_part_selected[2:])
+            else:
+                # Use the selected ed:ep:part
+                target_geometry = self.model_database.get_target_geometry(
+                        k_ep=k_ep_selected,
+                        k_part=k_part_selected)
 
-            # Geometry for this shot
+            # Get the geometry for this shot
             if k_part_selected in ['g_asuivre', 'g_reportage']:
                 # Use the 'part' for these special cases
                 k_ed_tmp = db[k_part_selected]['video']['src']['k_ed']
@@ -259,6 +254,27 @@ class Model_video_editor(Model_common):
             else:
                 default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
                 shot_geometry = self.model_database.get_shot_geometry(shot=shot)
+
+            if shot_geometry is None and default_shot_geometry is None:
+                # Not geometry define, create a new one
+                self.model_database.set_default_shot_geometry(shot=shot, geometry={
+                    'crop': [0] * 4,
+                    'keep_ratio': True,
+                    'fit_to_width': False})
+
+            # if True:
+            if shot['no'] == 23:
+                print_lightcyan("================================== SHOT =======================================")
+                pprint(shot)
+                print_lightcyan("===============================================================================")
+                print_lightcyan("target_geometry:")
+                pprint(target_geometry)
+                print_lightcyan("default_shot_geometry:")
+                pprint(default_shot_geometry)
+                print_lightcyan("shot_geometry:")
+                pprint(shot_geometry)
+                # sys.exit()
+
 
             # Create a list of frames for this shot
             self.frames[shot_no] = list()
@@ -807,7 +823,6 @@ class Model_video_editor(Model_common):
             'error': False,
         })
 
-
         # if shot['k_part'] in ['g_asuivre', 'g_reportage']:
         #     frame['geometry'].update({
         #         # Do not modify the part geometry
@@ -881,7 +896,7 @@ class Model_video_editor(Model_common):
 
 
 def generate_single_image(frame:dict, preview_options:dict):
-    log.info("generate single image")
+    # log.info("generate single image")
 
     # geometry_values are the calculated dimensions, crop, pad etc.
     geometry_values = frame['geometry_values']

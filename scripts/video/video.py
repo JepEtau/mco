@@ -110,7 +110,7 @@ def generate_video(db, k_ed:str, k_ep:str,
                 })
 
 
-            print_lightcyan("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
+            print_lightgreen("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
                 "{:3d}".format(shot['no']),
                 "{:5d}".format(shot['start']),
                 shot['dst']['count'],

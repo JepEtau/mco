@@ -31,10 +31,12 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
     TODO: it uses the first frame of a shot to identify the shot rather the index, so that
     a modification of shots will not break anything
     """
+    verbose = True
     K_ED_DEBUG = ''
     K_EP_DEBUG = ''
     K_PART_DEBUG = ''
-    print_green("\nparse_geometry_configurations: %s" % (k_ep_or_g))
+    if verbose:
+        print_lightgreen("parse_geometry_configurations: %s" % (k_ep_or_g))
     # Open configuration file
     filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_geometry.ini" % (k_ep_or_g))
     if filepath.startswith("~/"):
@@ -46,15 +48,16 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
     config = configparser.ConfigParser()
     config.read(filepath)
     for k_section in config.sections():
-        print_lightcyan("\tparse_geometry_configurations: section:%s" % (k_section))
+        if verbose:
+            print("\tparse_geometry_configurations: section:%s" % (k_section))
         if k_section in K_ALL_PARTS:
             # This section define the geometry of the target: i.e. width
             if k_ep_or_g in ['g_debut', 'g_fin']:
-                nested_dict_set(db, dict(), k_ep_or_g, 'target', 'video', 'geometry')
-                target_geometry = db[k_ep_or_g]['target']['video']['geometry']
+                nested_dict_set(db, {'target':dict()}, k_ep_or_g, 'target', 'video', 'geometry')
+                target_geometry = db[k_ep_or_g]['target']['video']['geometry']['target']
             else:
-                nested_dict_set(db, dict(), k_ep_or_g, 'video', 'target', k_section, 'geometry')
-                target_geometry = db[k_ep_or_g]['video']['target'][k_section]['geometry']
+                nested_dict_set(db, {'target':dict()}, k_ep_or_g, 'video', 'target', k_section, 'geometry')
+                target_geometry = db[k_ep_or_g]['video']['target'][k_section]['geometry']['target']
 
             properties = config.get(k_section, 'target').strip().replace(' ', '').split(',')
             for property in properties:
@@ -64,26 +67,34 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                 if property_name == 'width':
                     target_geometry['w'] = int(property_array_str[1])
 
-            if k_section == 'asuivre':
-                print("%s:%s" % (k_ep_or_g, k_section))
-                pprint(db[k_ep_or_g]['video']['target'][k_section])
-                # sys.exit()
+            # if k_section == 'asuivre':
+            #     print("\t%s:%s" % (k_ep_or_g, k_section))
+            #     pprint(db[k_ep_or_g]['video']['target'][k_section])
+            #     # sys.exit()
             continue
 
 
         # if '.' not in k_section:
         #     sys.exit("__parse_curve_configurations: error, no edition,ep,part specified")
         k_ed, k_ep, k_part = k_section.split('.')
-        print_orange("\tk_ep_or_g=%s;\t%s:%s:%s" % (k_ep_or_g, k_ed, k_ep, k_part))
+        if verbose:
+            print_orange("\tk_ep_or_g=%s;\t%s:%s:%s" % (k_ep_or_g, k_ed, k_ep, k_part))
         for k_str in config.options(k_section):
-            # print("\tk_str=%s" % (k_str))
+            if verbose:
+                print("\t\tk_str=%s" % (k_str))
 
             if k_str == 'default':
                 # Default values for shots of this part
                 properties = config.get(k_section, k_str)
+                if verbose:
+                    print("\t\tproperties:", properties)
                 nested_dict_set(db[k_ep]['video'],
                     get_geometry_from_properties(properties),
                     k_ed, k_part, 'geometry')
+                # if verbose:
+                #     print("\t\tfinally:")
+                #     pprint(db[k_ep]['video'][k_ed][k_part]['geometry'])
+                #     sys.exit()
 
             else:
                 # Custom values for a shot
@@ -97,7 +108,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                     shot = get_src_shot_from_frame_no(db, shot_start, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
                 except:
                     # Shots not defined or unused
-                    print_orange("Warning: Shot is not defined: shot_start %d, %s:%s:%s" % (shot_start, k_ed, k_ep, k_part))
+                    print_orange("\t\t\twarning: shot is not defined: shot_start %d, %s:%s:%s" % (shot_start, k_ed, k_ep, k_part))
                     continue
 
                 if shot_start != shot['start']:
@@ -165,7 +176,7 @@ def get_initial_target_geometry(db, k_ep, k_part) -> dict:
         k_ep_target = k_ep
 
     try:
-        nested_dict_set(target_geometry, db_video['geometry'].copy(), k_ep_target, k_part)
+        nested_dict_set(target_geometry, db_video['geometry']['target'].copy(), k_ep_target, k_part)
     except:
         pass
 
@@ -176,7 +187,9 @@ def get_initial_target_geometry(db, k_ep, k_part) -> dict:
 def get_initial_default_shot_geometry(db, k_ep, k_part) -> dict:
     """ Returns a list of crops/resize per part for each edition
     """
-    # print("get_initial_default_shot_geometry for %s:%s" % (k_ep, k_part))
+    verbose = False
+    if verbose:
+        print_lightgreen("get_initial_default_shot_geometry for %s:%s" % (k_ep, k_part))
     default_shot_geometry = dict()
 
     if k_part in K_GENERIQUES:
@@ -197,8 +210,10 @@ def get_initial_default_shot_geometry(db, k_ep, k_part) -> dict:
                     pass
     else:
         # Get All geometry for all editions ofr this ep/part
+        if verbose:
+            print("\t", db['editions']['available'])
         for k_ed in db['editions']['available']:
-            if k_ed not in db[k_ep].keys():
+            if k_ed not in db[k_ep]['video'].keys():
                 continue
             db_video = db[k_ep]['video'][k_ed][k_part]
             try:
@@ -208,6 +223,9 @@ def get_initial_default_shot_geometry(db, k_ep, k_part) -> dict:
             except:
                 pass
 
+    if verbose:
+        pprint(default_shot_geometry)
+        sys.exit()
     return default_shot_geometry
 
 

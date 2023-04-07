@@ -25,7 +25,7 @@ def deshake(shot, images:list, image_list:list,
             sys.exit(print_red("error: at least one segment shall be defined"))
             return 0, input_hash
     except:
-        print_red("error: undefined deshake parameters in shot")
+        print_red("\t\t\terror: undefined deshake parameters in shot")
         return 0, input_hash
 
     # Convert to indexes

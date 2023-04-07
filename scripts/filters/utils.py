@@ -45,12 +45,15 @@ def get_step_no_from_last_task(shot):
 
 
 def get_filters_from_shot(db, shot):
+    k_ed = shot['k_ed']
     k_ep = shot['k_ep']
     k_part = shot['k_part']
-    k_ed = shot['k_ed']
 
     if shot['filters'] == 'default':
         # This shot uses default filters. Use the one defined in the part
+        if 'filters' not in db[k_ep]['video'][k_ed][k_part].keys():
+            sys.exit(print_red("Error: no default filter defined: %s:%s:%s" %
+                (k_ed, k_ep, k_part)))
         filters = db[k_ep]['video'][k_ed][k_part]['filters']['default']
 
     elif not isinstance(shot['filters'], dict):

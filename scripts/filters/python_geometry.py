@@ -31,10 +31,10 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
     do_save:bool, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
-    pprint(shot['geometry'])
     if shot['geometry']['target'] is None:
-        print_red("Error: no \'target\' geometry defined for %s:%s:%s" % (
+        print_red("\t\t\terror: no target geometry defined for %s:%s:%s" % (
             shot['k_ed'], shot['k_ep'], shot['k_part']))
+        # sys.exit()
         shot['geometry']['target'] = {'w': shot['geometry']['dimensions']['final']['w']}
 
     if shot['geometry']['shot'] is None:

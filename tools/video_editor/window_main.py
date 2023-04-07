@@ -440,7 +440,7 @@ class Window_main(Window_common):
                             FINAL_FRAME_HEIGHT + 1)
 
                     else:
-                        print("paintEvent: draw rect crop on the original image")
+                        # print("paintEvent: draw rect crop on the original image")
                         # Original
                         self.painter.drawImage(
                             QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)

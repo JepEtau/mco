@@ -160,7 +160,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                         get_hash=get_hashes,
                         do_force=do_force)
             else:
-                print_red("Error: cannot upscale with this GPU/CPU")
+                print_red("\t\t\terror: cannot upscale with this GPU/CPU")
                 print_orange("\t\t\tfallback: bad quality upscale (CV2: nearest)")
                 filter_str = "scale=2:nearest"
 
@@ -227,7 +227,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                     hash = previous_hash
                     hashes.append([step_no, '', ''])
                     step_no += STEP_INC
-                    print_red("Error: python filter: something went wrong: %s" % (filter['str']))
+                    print_red("\t\t\terror: python filter: something went wrong: %s" % (filter['str']))
 
                     # Exit if last task
                     if not get_hashes and filter['task'] == shot['last_task']:
@@ -280,7 +280,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                     get_hash=get_hashes,
                     do_force=do_force)
             else:
-                print_red("Error: avisynth is not supported on this platform")
+                print_red("\t\t\terror: avisynth is not supported on this platform")
                 print_orange("\t\t\treplaced by low-quality deinterlace algorithm (yadif)")
 
                 # Deinterlace

@@ -242,12 +242,7 @@ class Model_geometry():
             print_lightgreen("Save target geometry")
         for k_ep_src, ep_values in self.db_target_geometry.items():
             for k_part_src, part_values in ep_values.items():
-
-                if k_ep_src == 'ep00':
-                    # Generique
-                    k_section = '%s' % (k_part_src)
-                else:
-                    k_section = '%s.%s' % (k_ep_src, k_part_src)
+                k_section = '%s' % (k_part_src)
 
                 if not config_geometry.has_section(k_section):
                     config_geometry[k_section] = dict()
