@@ -353,8 +353,6 @@ class Window_main(Window_common):
 
 
     def paintEvent(self, event):
-        # now = time.time()
-        # log.info("repainting")
         if self.image is None:
             log.info("no image loaded")
             return
@@ -560,8 +558,5 @@ class Window_main(Window_common):
                     preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top,
                     preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top + max(img_height, FINAL_FRAME_HEIGHT))
 
-
-            print_lightgreen("end painter")
             self.painter.end()
         self.is_repainting = False
-        # print("\t%f" % int(1000 * (time.time() - now)))

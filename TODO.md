@@ -1,6 +1,7 @@
 # TODO: script
 (1)
 - custom filter depending on shot: reason: deshake or do not block filtering if no deshake parameters
+- change shot_start to shot no. in config files? or use middle of shot
 
 (2)
 - replace:
@@ -18,13 +19,12 @@
 
 # TODO: video editor
 (1)
-- geometry widget/model: rework on going
-- display used filters
-
 
 (2)
+- display used filters
 - stabilize widget/model
-- curves: find shot from frame no and do not verify if it is the 1st frame. when saving, use middle of shot?
+- curves: find shot from frame no and do not verify if it is the 1st frame.
+- when saving, use middle of shot or shot_no? reason: avisynth frame no
 
 (3)
 - edit the curves library: remove/inspect curves without changing the curve selection

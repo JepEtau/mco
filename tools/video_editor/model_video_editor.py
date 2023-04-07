@@ -632,7 +632,7 @@ class Model_video_editor(Model_common):
 
         # Select between shot and default shot
         if element == 'shot' and event_type == 'select' and parameter == 'shot':
-            if value == 'default':
+            if value == 'default_shot':
                 # Remove shot geometry
                 self.model_database.remove_shot_geometry(shot=shot)
             elif value == 'shot':
@@ -886,7 +886,7 @@ def generate_single_image(frame:dict, preview_options:dict):
     # geometry_values are the calculated dimensions, crop, pad etc.
     geometry_values = frame['geometry_values']
 
-    verbose = True
+    verbose = False
     if verbose:
         print("\ngenerate_single_image:")
         pprint(preview_options)
@@ -916,7 +916,9 @@ def generate_single_image(frame:dict, preview_options:dict):
         print_lightgreen("shot_geometry:")
         pprint(shot_geometry)
 
-    options = preview_options['geometry']['shot']
+
+    preview_geometry = preview_options['geometry']
+    preview_shot_geometry = preview_options['geometry']['shot']
 
     # Cropped dimensions
     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
@@ -943,7 +945,6 @@ def generate_single_image(frame:dict, preview_options:dict):
         img_rgb = img_original
 
 
-    preview_geometry = preview_options['geometry']
 
 
     # Final image: function
@@ -955,13 +956,13 @@ def generate_single_image(frame:dict, preview_options:dict):
 
     # Crop the image
     #------------------------------------
-    if not options['crop_preview'] and options['crop_edition']:
+    if not preview_shot_geometry['crop_preview'] and preview_shot_geometry['crop_edition']:
         # Add a rectangle to the original image
         if verbose:
             print("\t-> Use the original image")
         img_cropped = img_rgb
 
-    elif options['crop_preview']:
+    elif preview_shot_geometry['crop_preview']:
         # Crop and NO rectangle
         if verbose:
             print("\t-> Crop the image, ", end='')
@@ -973,11 +974,11 @@ def generate_single_image(frame:dict, preview_options:dict):
             print("cropped: ", img_cropped.shape)
 
     else:
-        # Not options['crop_preview'] and not options['crop_edition']
+        # Not options['crop_preview'] and not preview_shot_geometry['crop_edition']
         # i.e. Original image
         img_cropped = img_rgb
 
-        if options['resize_preview']:
+        if preview_shot_geometry['resize_preview']:
             pprint(frame['geometry'])
             print("Error: generate_single_image: resize not possible because no crop poreview selected")
 
@@ -988,9 +989,9 @@ def generate_single_image(frame:dict, preview_options:dict):
     keep_ratio = shot_geometry['keep_ratio']
     crop_2 = None
     pad_error = None
-    if options['resize_preview']:
+    if preview_shot_geometry['resize_preview']:
 
-        if options['crop_preview']:
+        if preview_shot_geometry['crop_preview']:
             # Resize the cropped image
             if verbose:
                 print("\t-> Resize the cropped image")
