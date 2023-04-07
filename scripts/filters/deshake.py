@@ -8,6 +8,7 @@ from filters.deshakers import (
 )
 
 from utils.hash import (
+    calculate_hash,
     log_filter
 )
 from utils.pretty_print import *
@@ -145,11 +146,15 @@ def deshake(shot, images:list, image_list:list,
 
         filter_str += "%s," % (_filter_str)
 
-    filter_str = filter_str[:-1]
+    filter_str = "%s,%s" % (input_hash, filter_str[:-1])
+
+    # Calculate hash
+    if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
+        return hash, output_images
 
     # Log hash
-    hash = log_filter("%s,%s" % (input_hash, filter_str), shot['hash_log_file'])
-    if not get_hash:
-        print("\t\t\tdeshake, output hash= %s" % (hash))
+    print("\t\t\tdeshake, output hash= %s" % (hash))
+    hash = log_filter(filter_str, shot['hash_log_file'])
 
     return hash, output_images

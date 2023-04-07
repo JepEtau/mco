@@ -988,7 +988,7 @@ def generate_single_image(frame:dict, preview_options:dict):
 
         if preview_shot_geometry['resize_preview']:
             pprint(frame['geometry'])
-            print("Error: generate_single_image: resize not possible because no crop poreview selected")
+            print("Error: generate_single_image: resize not possible because no crop preview selected")
 
     # Resize the image
     #------------------------------------

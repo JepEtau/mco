@@ -13,6 +13,7 @@ from pprint import pprint
 from filters.utils import MAX_FRAMES_COUNT
 from utils.pretty_print import *
 from utils.hash import (
+    calculate_hash,
     log_filter,
 )
 from utils.get_image_list import (
@@ -42,9 +43,11 @@ def apply_python_rgb_filter(shot, images:list, image_list:list,
 
     # Get hash
     filters_str += "=%s" % (shot['curves']['hash'])
-    hash = log_filter("%s,%s" % (input_hash, filters_str), shot['hash_log_file'])
+    filters_str = "%s,%s" % (input_hash, filters_str)
     if get_hash:
+        hash = calculate_hash(filter_str=filters_str)
         return hash, None
+    hash = log_filter(filters_str, shot['hash_log_file'])
 
     # Output images in memory
     use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False

@@ -6,6 +6,7 @@ from filters.utils import STEP_INC
 
 from utils.pretty_print import *
 from utils.hash import (
+    calculate_hash,
     calculate_hash_for_replace,
     log_filter,
 )
@@ -22,6 +23,7 @@ def python_replace(shot:dict,
         filters_str:str,
         input_hash:str,
         get_hash:bool=False):
+    verbose = False
 
     output_images = list()
     output_image_list = list()
@@ -31,21 +33,28 @@ def python_replace(shot:dict,
     # Calculate hash
     hash = calculate_hash_for_replace(shot)
     if hash != '':
-        hash = log_filter("%s,replace=%s" % (input_hash, hash), shot['hash_log_file'])
-        if not get_hash:
-            # print_yellow("BEFORE replace")
-            # pprint(image_list)
-            output_image_list = get_new_image_list(shot=shot, step_no=step_no, hash=input_hash)
-            # print_yellow("AFTER replace")
-            # pprint(image_list)
+        # Hash
+        filter_str = "%s,replace=%s" % (input_hash, hash)
+        if get_hash:
+            hash = calculate_hash(filter_str=filter_str)
+            return hash, output_image_list, images
+        hash = log_filter(filter_str, shot['hash_log_file'])
 
-            # Consolidate output images
-            replace = shot['replace']
-            for frame_no in replace:
-                index_no_dst = frame_no - shot['start']
-                index_no_src = replace[frame_no] - shot['start']
-                print_purple("\t(%d <- %d) %d <- %d" % (frame_no, replace[frame_no], index_no_dst, index_no_src))
-                images[index_no_dst] = images[index_no_src].copy()
+        if verbose:
+            print_yellow("BEFORE replace")
+            pprint(image_list)
+        output_image_list = get_new_image_list(shot=shot, step_no=step_no, hash=input_hash)
+        if verbose:
+            print_yellow("AFTER replace")
+            pprint(image_list)
+
+        # Consolidate output images
+        replace = shot['replace']
+        for frame_no in replace:
+            index_no_dst = frame_no - shot['start']
+            index_no_src = replace[frame_no] - shot['start']
+            print_purple("\t(%d <- %d) %d <- %d" % (frame_no, replace[frame_no], index_no_dst, index_no_src))
+            images[index_no_dst] = images[index_no_src].copy()
 
     else:
         # No images were replaced

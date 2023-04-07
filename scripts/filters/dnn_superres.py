@@ -9,6 +9,7 @@ import time
 from filters.utils import MAX_FRAMES_COUNT
 
 from utils.hash import (
+    calculate_hash,
     log_filter,
 )
 from utils.get_image_list import (
@@ -31,11 +32,15 @@ def upscale_cv2_dnn_superres(shot, images:list, image_list:list,
     scale = 2
 
     suffix = "%s_%s" % (method, input_hash)
-    hash = log_filter("%s,%s" % (input_hash, method), shot['hash_log_file'])
-    # Patch hash
-    hash += "_" + suffix
+
+    # Hash
+    filter_str = "%s,%s" % (input_hash, method)
     if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
+        hash += "_" + suffix
         return hash, None
+    hash = log_filter(filter_str, shot['hash_log_file'])
+    hash += "_" + suffix
 
     print_cyan("(DNN_SUPERRES)\tstep no. %d, method= %s, input hash= %s, output hash= %s, suffix= %s" % (
         step_no, method, input_hash, hash, suffix))

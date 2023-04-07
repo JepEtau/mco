@@ -24,7 +24,7 @@ class Ui_widget_geometry(object):
     def setupUi(self, widget_geometry):
         if not widget_geometry.objectName():
             widget_geometry.setObjectName(u"widget_geometry")
-        widget_geometry.resize(289, 320)
+        widget_geometry.resize(328, 348)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -133,6 +133,18 @@ class Ui_widget_geometry(object):
         self.gridLayout = QGridLayout(self.groupBox_target_geometry)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(3, 5, 3, 3)
+        self.pushButton_target_width_edition = QPushButton(self.groupBox_target_geometry)
+        self.pushButton_target_width_edition.setObjectName(u"pushButton_target_width_edition")
+        self.pushButton_target_width_edition.setFocusPolicy(Qt.NoFocus)
+        icon4 = QIcon()
+        icon4.addFile(u"icons/grey/box-select.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(u"icons/blue/box-select.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_target_width_edition.setIcon(icon4)
+        self.pushButton_target_width_edition.setCheckable(True)
+        self.pushButton_target_width_edition.setFlat(True)
+
+        self.gridLayout.addWidget(self.pushButton_target_width_edition, 0, 1, 1, 1)
+
         self.spinBox_target_width = QSpinBox(self.groupBox_target_geometry)
         self.spinBox_target_width.setObjectName(u"spinBox_target_width")
         self.spinBox_target_width.setEnabled(True)
@@ -149,29 +161,13 @@ class Ui_widget_geometry(object):
         self.spinBox_target_width.setSingleStep(1)
         self.spinBox_target_width.setValue(1440)
 
-        self.gridLayout.addWidget(self.spinBox_target_width, 0, 4, 1, 1)
+        self.gridLayout.addWidget(self.spinBox_target_width, 0, 3, 1, 1)
 
-        self.pushButton_target_show_width_edition = QPushButton(self.groupBox_target_geometry)
-        self.pushButton_target_show_width_edition.setObjectName(u"pushButton_target_show_width_edition")
-        self.pushButton_target_show_width_edition.setFocusPolicy(Qt.NoFocus)
-        icon4 = QIcon()
-        icon4.addFile(u"icons/grey/crop.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon4.addFile(u"icons/blue/crop.svg", QSize(), QIcon.Normal, QIcon.On)
-        self.pushButton_target_show_width_edition.setIcon(icon4)
-        self.pushButton_target_show_width_edition.setCheckable(True)
-        self.pushButton_target_show_width_edition.setAutoDefault(False)
-        self.pushButton_target_show_width_edition.setFlat(True)
+        self.label_9 = QLabel(self.groupBox_target_geometry)
+        self.label_9.setObjectName(u"label_9")
+        self.label_9.setLineWidth(0)
 
-        self.gridLayout.addWidget(self.pushButton_target_show_width_edition, 0, 1, 1, 1)
-
-        self.pushButton_target_resize_preview = QPushButton(self.groupBox_target_geometry)
-        self.pushButton_target_resize_preview.setObjectName(u"pushButton_target_resize_preview")
-        self.pushButton_target_resize_preview.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_target_resize_preview.setIcon(icon)
-        self.pushButton_target_resize_preview.setCheckable(True)
-        self.pushButton_target_resize_preview.setFlat(True)
-
-        self.gridLayout.addWidget(self.pushButton_target_resize_preview, 0, 2, 1, 1)
+        self.gridLayout.addWidget(self.label_9, 0, 0, 1, 1)
 
         self.pushButton_target_discard = QPushButton(self.groupBox_target_geometry)
         self.pushButton_target_discard.setObjectName(u"pushButton_target_discard")
@@ -184,23 +180,20 @@ class Ui_widget_geometry(object):
         self.pushButton_target_discard.setIcon(icon2)
         self.pushButton_target_discard.setFlat(True)
 
-        self.gridLayout.addWidget(self.pushButton_target_discard, 0, 6, 1, 1)
-
-        self.label_9 = QLabel(self.groupBox_target_geometry)
-        self.label_9.setObjectName(u"label_9")
-        self.label_9.setLineWidth(0)
-
-        self.gridLayout.addWidget(self.label_9, 0, 0, 1, 1)
+        self.gridLayout.addWidget(self.pushButton_target_discard, 0, 5, 1, 1)
 
         self.pushButton_target_width_copy_from_shot = QPushButton(self.groupBox_target_geometry)
         self.pushButton_target_width_copy_from_shot.setObjectName(u"pushButton_target_width_copy_from_shot")
         sizePolicy3.setHeightForWidth(self.pushButton_target_width_copy_from_shot.sizePolicy().hasHeightForWidth())
         self.pushButton_target_width_copy_from_shot.setSizePolicy(sizePolicy3)
         self.pushButton_target_width_copy_from_shot.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_target_width_copy_from_shot.setIcon(icon2)
+        icon5 = QIcon()
+        icon5.addFile(u"icons/grey/corner-up-left.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon5.addFile(u"icons/blue/corner-up-left.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_target_width_copy_from_shot.setIcon(icon5)
         self.pushButton_target_width_copy_from_shot.setFlat(True)
 
-        self.gridLayout.addWidget(self.pushButton_target_width_copy_from_shot, 0, 5, 1, 1)
+        self.gridLayout.addWidget(self.pushButton_target_width_copy_from_shot, 0, 4, 1, 1)
 
 
         self.verticalLayout_2.addWidget(self.groupBox_target_geometry)
@@ -255,7 +248,10 @@ class Ui_widget_geometry(object):
         self.pushButton_shot_crop_edition = QPushButton(self.groupBox_shot_default_geometry_2)
         self.pushButton_shot_crop_edition.setObjectName(u"pushButton_shot_crop_edition")
         self.pushButton_shot_crop_edition.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_shot_crop_edition.setIcon(icon4)
+        icon6 = QIcon()
+        icon6.addFile(u"icons/grey/crop.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon6.addFile(u"icons/blue/crop.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_shot_crop_edition.setIcon(icon6)
         self.pushButton_shot_crop_edition.setCheckable(True)
         self.pushButton_shot_crop_edition.setAutoDefault(False)
         self.pushButton_shot_crop_edition.setFlat(True)
@@ -422,10 +418,9 @@ class Ui_widget_geometry(object):
         self.label_message.setText(QCoreApplication.translate("widget_geometry", u"disabled", None))
         self.pushButton_close.setText("")
         self.groupBox_target_geometry.setTitle(QCoreApplication.translate("widget_geometry", u"Target", None))
-        self.pushButton_target_show_width_edition.setText("")
-        self.pushButton_target_resize_preview.setText("")
-        self.pushButton_target_discard.setText("")
+        self.pushButton_target_width_edition.setText("")
         self.label_9.setText(QCoreApplication.translate("widget_geometry", u"width", None))
+        self.pushButton_target_discard.setText("")
         self.pushButton_target_width_copy_from_shot.setText("")
         self.groupBox_shot_default_geometry_2.setTitle(QCoreApplication.translate("widget_geometry", u"Preview", None))
         self.pushButton_shot_crop_preview.setText("")

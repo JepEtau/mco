@@ -17,6 +17,7 @@ from filters.python_geometry import apply_python_geometry_filter
 from filters.utils import MAX_FRAMES_COUNT
 from utils.pretty_print import *
 from utils.hash import (
+    calculate_hash,
     log_filter,
 )
 from utils.get_image_list import (
@@ -213,9 +214,11 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
 
 
     # Other filters
-    hash = log_filter("%s,%s" % (input_hash, filters_str), shot['hash_log_file'])
+    filters = "%s,%s" % (input_hash, filters_str)
     if get_hash:
+        hash = calculate_hash(filter_str=filters)
         return hash, None
+    hash = log_filter(filters, shot['hash_log_file'])
 
     # Output image list
     if do_save:

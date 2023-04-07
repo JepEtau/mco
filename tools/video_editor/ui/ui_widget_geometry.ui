@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>289</width>
-    <height>320</height>
+    <width>328</width>
+    <height>348</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -251,7 +251,28 @@
          <property name="bottomMargin">
           <number>3</number>
          </property>
-         <item row="0" column="4">
+         <item row="0" column="1">
+          <widget class="QPushButton" name="pushButton_target_width_edition">
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/grey/box-select.svg</normaloff>
+             <normalon>icons/blue/box-select.svg</normalon>icons/grey/box-select.svg</iconset>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="3">
           <widget class="QSpinBox" name="spinBox_target_width">
            <property name="enabled">
             <bool>true</bool>
@@ -288,52 +309,17 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="pushButton_target_show_width_edition">
-           <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_9">
+           <property name="lineWidth">
+            <number>0</number>
            </property>
            <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/grey/crop.svg</normaloff>
-             <normalon>icons/blue/crop.svg</normalon>icons/grey/crop.svg</iconset>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
+            <string>width</string>
            </property>
           </widget>
          </item>
-         <item row="0" column="2">
-          <widget class="QPushButton" name="pushButton_target_resize_preview">
-           <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/grey/eye.svg</normaloff>
-             <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="6">
+         <item row="0" column="5">
           <widget class="QPushButton" name="pushButton_target_discard">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -357,17 +343,7 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_9">
-           <property name="lineWidth">
-            <number>0</number>
-           </property>
-           <property name="text">
-            <string>width</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="5">
+         <item row="0" column="4">
           <widget class="QPushButton" name="pushButton_target_width_copy_from_shot">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
@@ -379,12 +355,12 @@
             <enum>Qt::NoFocus</enum>
            </property>
            <property name="text">
-            <string extracomment="Undo (Ctrl-Z)"/>
+            <string extracomment="Copy from shot"/>
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>icons/grey/undo.svg</normaloff>
-             <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
+             <normaloff>icons/grey/corner-up-left.svg</normaloff>
+             <normalon>icons/blue/corner-up-left.svg</normalon>icons/grey/corner-up-left.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>

@@ -18,6 +18,11 @@ from PySide6.QtWidgets import (
     QTableWidget,
 )
 
+# Blue color: rgb(51, 102, 204)
+# icons:
+#   blue: 3366CC
+#   grey: 3C3C3C
+#   purple:
 
 def update_selected_widget_stylesheet(widget, is_selected:bool):
     if is_selected:

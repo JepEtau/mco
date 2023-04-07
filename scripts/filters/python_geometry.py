@@ -13,6 +13,7 @@ from pprint import pprint
 from filters.utils import MAX_FRAMES_COUNT
 from utils.pretty_print import *
 from utils.hash import (
+    calculate_hash,
     log_filter,
 )
 from utils.get_image_list import (
@@ -50,9 +51,11 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
         'y' if shot['geometry']['shot']['keep_ratio'] else 'n',
         'y' if shot['geometry']['shot']['fit_to_width'] else 'n')
 
-    hash = log_filter("%s,%s" % (input_hash, filters_str), shot['hash_log_file'])
+    filter_str = "%s,%s" % (input_hash, filters_str)
     if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
         return hash, None
+    hash = log_filter(filter_str, shot['hash_log_file'])
 
     # multiprocessing
     if sys.platform == 'win32':

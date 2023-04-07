@@ -9,6 +9,7 @@ from utils.get_image_list import (
     get_image_list,
 )
 from utils.hash import (
+    calculate_hash,
     log_filter,
 )
 from utils.pretty_print import *
@@ -80,10 +81,10 @@ def apply_avisynth_filters(shot, image_list,
         filter_str += stripped_line + ';'
 
     # Calculate hash from this script
-    hash = log_filter(filter_str, shot['hash_log_file'])
-
     if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
         return hash, None
+    hash = log_filter(filter_str, shot['hash_log_file'])
 
     # Write it in the cache directory
     consolidated_filepath = os.path.join(cache_path,

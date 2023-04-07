@@ -15,7 +15,7 @@ from filters.utils import MAX_FRAMES_COUNT
 from utils.get_image_list import (
     FILENAME_TEMPLATE
 )
-from utils.hash import log_filter
+from utils.hash import calculate_hash, log_filter
 from utils.pretty_print import *
 from utils.time_conversions import *
 from utils.process import create_process
@@ -27,10 +27,12 @@ def ffmpeg_deinterlace(shot, step_no,
         filter_str, output_folder:str, db_common, get_hash:bool=False):
 
     filter_str=clean_ffmpeg_filter(filter_str)
-    hash = log_filter(filter_str, shot['hash_log_file'])
 
+    # log hash
     if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
         return hash, list()
+    hash = log_filter(filter_str, shot['hash_log_file'])
 
     print_cyan("(FFmpeg)\tstep no. %d, filters=%s, hash= %s" % (step_no, filter_str, hash))
 

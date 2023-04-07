@@ -16,6 +16,7 @@ from utils.get_image_list import (
     get_image_list,
 )
 from utils.hash import (
+    calculate_hash,
     log_filter
 )
 from utils.process import (
@@ -29,12 +30,14 @@ def ffmpeg_filter(shot, images:list, image_list:list,
     step_no, input_hash, filter_str, do_save:bool, output_folder, db_common,
     get_hash:bool=False, do_force:bool=False):
 
-    """Apply FFmpeg to frames and output them as frames
+    """Apply FFmpeg filter to images
     """
-    filter_str = clean_ffmpeg_filter(filter_str)
-    hash = log_filter("%s,%s" % (input_hash, filter_str), shot['hash_log_file'])
+
+    filter_str = "%s,%s" % (input_hash, clean_ffmpeg_filter(filter_str))
     if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
         return hash, None
+    hash = log_filter(filter_str, shot['hash_log_file'])
     print_cyan("(FFmpeg)\tstep no. %d, filter=[%s], input_hash= %s, output hash= %s" % (step_no, filter_str, input_hash, hash))
 
     # Output images in memory

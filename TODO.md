@@ -1,7 +1,6 @@
 # TODO: script
 (1)
 - custom filter depending on shot. Reason: deshake or do not block filtering if no deshake parameters
-- avoid logging filter hashes while using video editor
 
 (2)
 - replace:

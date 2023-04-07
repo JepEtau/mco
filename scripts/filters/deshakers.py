@@ -13,6 +13,7 @@ from skimage.util import img_as_float
 
 from filters.filters import edge_sharpen_sobel_gray
 from utils.hash import (
+    calculate_hash,
     log_filter
 )
 from utils.pretty_print import *
@@ -213,9 +214,11 @@ class CV2_deshaker:
             suffix += "border"
 
         # Generate and log hash
-        hash = log_filter("%s,stab=%s:%s" % (input_hash, suffix, self.filters_str), shot['hash_log_file'])
+        filter_str = "%s,stab=%s:%s" % (input_hash, suffix, self.filters_str)
         if get_hash:
+            hash = calculate_hash(filter_str=filter_str)
             return None, self.filters_str
+        hash = log_filter(filter_str, shot['hash_log_file'])
         print_lightcyan("\t\t\t(cv2) CV2_deshaker, output hash= %s" % (hash))
 
         img_stabilized, img_ref_gray, keypoints_ref = self.__get_initial_image(
@@ -384,10 +387,12 @@ class Skimage_deshaker:
             suffix = "cropped"
 
         # Generate and log hash
-        hash = log_filter("%s,stab=%s:%s" % (input_hash, suffix, self.filters_str), shot['hash_log_file'])
-        print_lightcyan("\t\t\t(skimage) deshaker, output hash= %s" % (step_no, hash))
+        filters_str = "%s,stab=%s:%s" % (input_hash, suffix, self.filters_str)
         if get_hash:
+            hash = calculate_hash(filter_str=filters_str)
             return None, hash
+        hash = log_filter(filters_str, shot['hash_log_file'])
+        print_lightcyan("\t\t\t(skimage) deshaker, output hash= %s" % (step_no, hash))
 
         # img_stabilized, img_ref_gray, keypoints_ref = self.__get_initial_image(
         #     img=images[ref_index],

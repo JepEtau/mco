@@ -7,6 +7,8 @@ from utils.pretty_print import *
 from utils.hash import log_filter
 from matplotlib import pyplot as plt
 
+
+# TODO This class cannot be used anymore: rework this!
 class Homography:
     def __init__(self, extractor=None, matching=None, add_border=True) -> None:
         self.__pad_h = 20
@@ -36,6 +38,8 @@ class Homography:
             self.filters_str += "_%d_%d" % (self.__pad_h, self.__pad_w)
 
         self._height, self._width, self._channels = 0, 0, 0
+
+        sys.exit(print_red("Homography: rework this class"))
 
 
     def __get_initial_image(self, img):

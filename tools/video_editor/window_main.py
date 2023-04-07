@@ -368,6 +368,8 @@ class Window_main(Window_common):
         delta_y = self.display_position_y
 
         preview = self.image['preview_options']
+        # print_lightgreen("paintEvent: preview")
+        # pprint(preview)
         initial_img_height, initial_img_width, c = self.image['cache_initial'].shape
         # print("paintEvent: initial image = %dx%d" % (initial_img_height, initial_img_width))
         img_height, img_width, c = img.shape
@@ -508,7 +510,7 @@ class Window_main(Window_common):
                     self.painter.drawImage(
                         QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
 
-                if (preview['geometry']['target']['width_show_edition']
+                if (preview['geometry']['target']['width_edition']
                     and preview_shot_geometry['crop_edition']
                     and preview_shot_geometry['resize_preview']):
 

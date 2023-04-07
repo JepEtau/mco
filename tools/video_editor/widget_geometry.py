@@ -49,8 +49,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
         # Target
-        self.pushButton_target_resize_preview.toggled[bool].connect(partial(self.event_shot_preview_changed, 'target_preview'))
-        self.pushButton_target_show_width_edition.toggled[bool].connect(partial(self.event_shot_preview_changed, 'target_show_edition'))
+        self.pushButton_target_width_edition.toggled[bool].connect(partial(self.event_shot_preview_changed, 'target_preview'))
         self.pushButton_target_width_copy_from_shot.clicked.connect(partial(self.event_target, 'copy_from_shot'))
         self.pushButton_target_discard.clicked.connect(partial(self.event_target, 'discard'))
         self.spinBox_target_width.valueChanged[int].connect(self.event_target_width_changed)
@@ -91,6 +90,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         self.lineEdit_default_shot_crop_rectangle.clear()
 
+        self.block_all_signals(True)
         try:
             w = preferences[self.objectName()]['widget']
 
@@ -98,18 +98,17 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.pushButton_set_preview.setChecked(w['final_preview'])
             self.pushButton_set_preview.blockSignals(False)
 
-            self.block_all_signals(True)
-            self.pushButton_target_resize_preview.setChecked(w['target']['width_preview'])
+            self.pushButton_target_width_edition.setChecked(w['target']['width_edition'])
 
             self.pushButton_shot_crop_edition.setChecked(w['shot']['crop_edition'])
             self.pushButton_shot_crop_preview.setChecked(w['shot']['crop_preview'])
             # self.pushButton_shot_resize_edition.setChecked(w['shot']['resize_edition'])
             self.pushButton_shot_resize_preview.setChecked(w['shot']['resize_preview'])
-            self.block_all_signals(False)
 
         except:
             log.warning("cannot set initial options")
             pass
+        self.block_all_signals(False)
 
         # Force enabled/disable to save the current states for all widgets
         self.set_edition_and_preview_enabled(False)
@@ -131,7 +130,6 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             # Enable custom only if more than 1 shot and not g_asuivre/g_reportage
             self.groupBox_shot_geometry.setEnabled(True)
             self.spinBox_target_width.setEnabled(True)
-
 
 
     def refresh_values(self, frame:dict):
@@ -364,8 +362,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         preview_options = {
             'final_preview': self.pushButton_set_preview.isChecked(),
             'target': {
-                'width_show_edition': self.pushButton_target_show_width_edition.isChecked(),
-                'width_preview': self.pushButton_target_resize_preview.isChecked(),
+                'width_edition': self.pushButton_target_width_edition.isChecked(),
             },
             'shot': {
                 'is_default': self.groupBox_default_shot_geometry.isChecked(),
@@ -382,8 +379,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
     def block_all_signals(self, enabled):
 
         # Target
-        self.pushButton_target_resize_preview.blockSignals(enabled)
-        self.pushButton_target_show_width_edition.blockSignals(enabled)
+        self.pushButton_target_width_edition.blockSignals(enabled)
         self.pushButton_target_width_copy_from_shot.blockSignals(enabled)
         self.pushButton_target_discard.blockSignals(enabled)
         self.spinBox_target_width.blockSignals(enabled)
@@ -468,7 +464,8 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
     def event_shot_preview_changed(self, selected, value):
         # A button has been clicked
-        log.info("button [%s] clicked" % (selected))
+        # log.info("button [%s] clicked" % (selected))
+        # print_yellow("button [%s] clicked" % (selected))
         # if selected == 'target_preview':
         # elif selected == 'target_show_edition':
         # elif selected == 'crop_edition':

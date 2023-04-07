@@ -9,6 +9,7 @@ from pprint import pprint
 from filters.utils import MAX_FRAMES_COUNT
 
 from utils.hash import (
+    calculate_hash,
     log_filter,
 )
 from utils.get_image_list import (
@@ -42,11 +43,16 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
     #{0,1,2,3,4,auto}; the larger the number, the smaller the memory consumption
     # Tile=4
     suffix = "s%d_n%d" % (scale, denoise)
-    hash = log_filter("%s,%s" % (input_hash, model_name), shot['hash_log_file'])
-    # Patch hash
-    hash += "_" + suffix
+
+    # Hash
+    filter_str = "%s,%s" % (input_hash, model_name)
     if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
+        hash += "_" + suffix
         return hash, scale, None
+    hash = log_filter(filter_str, shot['hash_log_file'])
+    hash += "_" + suffix
+
 
     print_cyan("(REAL_CUGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
         step_no, model_name, input_hash, hash, suffix))
@@ -162,11 +168,15 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
         suffix = model_name
         netscale = 2
 
-    hash = log_filter("%s,%s" % (input_hash, suffix), shot['hash_log_file'])
-    # Patch hash
-    hash += "_" + suffix
+    # Hash
+    filter_str = "%s,%s" % (input_hash, suffix)
     if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
+        hash += "_" + suffix
         return hash, netscale, None
+    hash = log_filter(filter_str, shot['hash_log_file'])
+    hash += "_" + suffix
+
 
     print_cyan("(REAL_ESRGAN)\tstep no. %d, upscaling with model %s, input hash= %s, output hash= %s, suffix= %s" % (
         step_no, model_name, input_hash, hash, suffix))
@@ -341,11 +351,16 @@ def upscale_esrgan(shot, images:list, image_list:list,
     else:
         suffix = model_name
 
-    hash = log_filter("%s,%s" % (input_hash, model_name), shot['hash_log_file'])
-    # Patch hash
-    hash += "_" + suffix
+    # Hash
+    filter_str = "%s,%s" % (input_hash, model_name)
     if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
+        hash += "_" + suffix
         return hash, scale, None
+    hash = log_filter(filter_str, shot['hash_log_file'])
+    hash += "_" + suffix
+
+
 
     print_cyan("(ESRGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
         step_no, model_name, input_hash, hash, suffix))
