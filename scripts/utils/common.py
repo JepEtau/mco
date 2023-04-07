@@ -533,6 +533,7 @@ def get_or_create_src_shot(db, frame_no:int, k_ed, k_ep, k_part)-> dict:
     #     print("\t", db[k_ep][k_ed][k_part]['video'])
 
     # This part has no shot (because none defined in the config file)
+    sys.exit("TODO: get_or_create_src_shot: do not create shots anymore!")
 
     # Get the k_ed_src:k_ep src defined in TARGET
     if k_part in K_GENERIQUES:

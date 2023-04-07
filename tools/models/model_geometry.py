@@ -47,7 +47,6 @@ class Model_geometry():
 
 
     def initialize_db_for_geometry(self, db, k_ep, k_part):
-        print("initialize_db_for_geometry: get initial geometry: %s:%s" % (k_ep, k_part))
         # This function is used by the video editor
         # which uses the consolidated shots
 

@@ -11,7 +11,6 @@ from pathlib import (
 from pprint import pprint
 
 from utils.common import (
-    get_or_create_src_shot,
     get_src_shot_from_frame_no,
     nested_dict_set,
 )

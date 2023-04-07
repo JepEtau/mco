@@ -124,6 +124,8 @@ def get_shots_stabilize_parameters(db, k_ep, k_part) -> dict:
     """ Returns a dict of stabilize parameters for each shot of this k_ep:k_part
     """
     shots_stabilize_parameters = dict()
+    print_red("TODO: rework this")
+    return shots_stabilize_parameters
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in K_GENERIQUES:
@@ -175,6 +177,8 @@ def get_frames_stabilize(db, k_ep, k_part) -> dict:
     """ Returns a dict of transformation parameters for each frame of this k_ep:k_part
     """
     frames_stabilize = dict()
+    print_red("TODO: rework this")
+    return frames_stabilize
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in K_GENERIQUES:

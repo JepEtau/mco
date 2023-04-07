@@ -1,11 +1,11 @@
 # TODO: script
 (1)
-- custom filter depending on shot. Reason: deshake or do not block filtering if no deshake parameters
-
-(2)
 - replace:
     * Circular dependency is not verified
-- change shot_start to shot no. in config files? or use middle of shot?
+
+(2)
+- change shot_start to shot no. in config files? or use middle of shot? Reason:  avisynth
+- custom filter depending on shot. Reason: deshake or do not block filtering if no deshake parameters
 
 (3)
 - Try SwinIR (g_reportage/reportage)

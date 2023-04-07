@@ -42,7 +42,9 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
     if hash == '':
         # Last filter is null, use previous one
         # step_no -= STEP_INC
-        sys.exit(print_red("Error:last filter has a null hash value!"))
+        print_red("Error:last filter has a null hash value!")
+        pprint(shot['filters'])
+        sys.exit()
         previous_filter = shot['filters'][step_no-STEP_INC]
         hash = previous_filter['hash']
         if previous_filter['task'] == 'deinterlace':

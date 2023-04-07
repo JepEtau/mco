@@ -105,7 +105,7 @@ def consolidate_shot(db, shot) -> None:
     # Geometry
     #---------------------------------------------------------------------------
     if k_part in ['g_asuivre', 'g_reportage']:
-        print("\t\t\tconsolidate_shot: get geometry from %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
+        # print("\t\t\tconsolidate_shot: get geometry from %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
         k_ep_dst = shot['dst']['k_ep']
         try:
             target_geometry = db[k_ep_dst]['video']['target'][k_part[2:]]['geometry']['target']
@@ -126,7 +126,7 @@ def consolidate_shot(db, shot) -> None:
         nested_dict_set(shot, shot_geometry, 'geometry', 'shot')
 
     else:
-        print("\t\t\tconsolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
+        # print("\t\t\tconsolidate_shot: get geometry for %s:%s:%s" % (k_ed, k_ep, k_part))
         k_ed_src = shot['src']['k_ed']
         k_ep_src = shot['src']['k_ep']
         k_part_src = shot['src']['k_part']

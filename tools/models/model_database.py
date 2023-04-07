@@ -109,12 +109,8 @@ class Model_database(Model_geometry,
 
 
 
-    def consolidate_database(self, k_ep, k_part,
-                                do_parse_curves:bool=True,
-                                do_parse_replace:bool=True,
-                                do_parse_geometry:bool=True,
-                                do_parse_stabilize:bool=False):
-        print("%s:consolidate_database %s:%s" % (__name__, k_ep, k_part))
+    def consolidate_database(self, k_ep, k_part):
+        print_lightgreen("consolidate_database %s:%s" % (k_ep, k_part))
         if k_ep == '' and k_part == '':
             return
 
@@ -161,23 +157,15 @@ class Model_database(Model_geometry,
             # Parse other config files for each dependency
             for k_ed_tmp, v in dependencies.items():
                 for k_ep_tmp in dependencies[k_ed_tmp]:
-                    if do_parse_replace:
-                        parse_replace_configurations(self.global_database, k_ep_or_g=k_ep_tmp, k_ed_only=k_ed_tmp)
-                    if do_parse_stabilize:
-                        parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep_tmp, parse_parameters=True)
-                    if do_parse_curves:
-                        parse_curve_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
-                    if do_parse_geometry:
-                        parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
+                    parse_replace_configurations(self.global_database, k_ep_or_g=k_ep_tmp, k_ed_only=k_ed_tmp)
+                    parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep_tmp, parse_parameters=True)
+                    parse_curve_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
+                    parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
 
-            if do_parse_stabilize:
-                parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep, parse_parameters=True)
-            if do_parse_curves:
-                parse_curve_configurations(self.global_database, k_ep_or_g=k_ep)
-            if do_parse_replace:
-                parse_replace_configurations(self.global_database, k_ep_or_g=k_ep)
-            if do_parse_geometry:
-                parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep)
+            parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep, parse_parameters=True)
+            parse_curve_configurations(self.global_database, k_ep_or_g=k_ep)
+            parse_replace_configurations(self.global_database, k_ep_or_g=k_ep)
+            parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep)
 
 
             # Consolidate database for the episode
@@ -185,14 +173,10 @@ class Model_database(Model_geometry,
                 consolidate_target_shots(self.global_database, k_ep=k_ep, k_part=k_p)
 
             for k_part_g in ['g_asuivre', 'g_reportage']:
-                if do_parse_curves:
-                    parse_curve_configurations(self.global_database, k_ep_or_g=k_part_g)
-                if do_parse_replace:
-                    parse_replace_configurations(self.global_database, k_ep_or_g=k_part_g)
-                if do_parse_geometry:
-                    parse_geometry_configurations(self.global_database, k_ep_or_g=k_part_g)
-                # if do_parse_stabilize:
-                #     parse_stabilize_configurations(self.global_database, k_ep_or_g=k_part_g)
+                parse_curve_configurations(self.global_database, k_ep_or_g=k_part_g)
+                parse_replace_configurations(self.global_database, k_ep_or_g=k_part_g)
+                parse_geometry_configurations(self.global_database, k_ep_or_g=k_part_g)
+                # parse_stabilize_configurations(self.global_database, k_ep_or_g=k_part_g)
                 consolidate_target_shots_g(self.global_database, k_ep=k_ep, k_part_g=k_part_g)
 
             calculate_av_sync(self.global_database, k_ep=k_ep)
@@ -201,23 +185,12 @@ class Model_database(Model_geometry,
             # Consolidate each shot for the target
             # consolidate_target_shots(db=self.global_database, k_ep=k_ep, k_part=k_part)
 
-
+            # Initialize db for edition
             if k_part != '':
-                # Frames which are replaced
-                if do_parse_replace:
-                    self.initialize_db_for_replace(db=self.global_database, k_ep=k_ep, k_part=k_part_g)
-
-                # Geometry used at the end
-                if do_parse_geometry:
-                    self.initialize_db_for_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
-
-                # Stabilize
-                if do_parse_stabilize:
-                    self.initialize_db_for_stabilize(self.global_database, k_ep=k_ep, k_part=k_part)
-
-                # RGB curves
-                if do_parse_curves:
-                    self.initialize_db_for_curves(db=self.global_database, k_ep=k_ep, k_part=k_part)
+                self.initialize_db_for_replace(db=self.global_database, k_ep=k_ep, k_part=k_part_g)
+                self.initialize_db_for_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
+                self.initialize_db_for_stabilize(self.global_database, k_ep=k_ep, k_part=k_part)
+                self.initialize_db_for_curves(db=self.global_database, k_ep=k_ep, k_part=k_part)
 
         else:
             k_part_g = k_part
@@ -233,20 +206,15 @@ class Model_database(Model_geometry,
             for k_ed_tmp, k_eps in dependencies.items():
                 for k_ep_tmp in dependencies[k_ed_tmp]:
                     # Parse other config files for each dependency
-                    if do_parse_curves:
-                        parse_curve_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
-                    if do_parse_replace:
-                        parse_replace_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
-                    # if do_parse_geometry:
-                    #     parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
-                    # if do_parse_stabilize:
-                    #     parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
+                    parse_curve_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
+                    parse_replace_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
+                    # parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
+                    # parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
                 break
 
             # Curves: this parser update the shots for each episode/part
-            if do_parse_curves:
-                parse_curve_configurations(self.global_database, k_ep_or_g=k_part_g)
-                self.initialize_db_for_curves(db=self.global_database, k_ep='', k_part=k_part_g)
+            parse_curve_configurations(self.global_database, k_ep_or_g=k_part_g)
+            self.initialize_db_for_curves(db=self.global_database, k_ep='', k_part=k_part_g)
 
             # Consolidate each shot for the target
             consolidate_target_shots_g(db=self.global_database, k_ep=k_ep, k_part_g=k_part_g)
@@ -255,19 +223,15 @@ class Model_database(Model_geometry,
             align_audio_video_durations_g_debut_fin(self.global_database, k_ep='', k_part_g=k_part_g)
 
             # Replaced frames
-            if do_parse_replace:
-                parse_replace_configurations(self.global_database, k_ep_or_g=k_part_g)
-                self.initialize_db_for_replace(db=self.global_database, k_ep='', k_part=k_part_g)
-
+            parse_replace_configurations(self.global_database, k_ep_or_g=k_part_g)
+            self.initialize_db_for_replace(db=self.global_database, k_ep='', k_part=k_part_g)
 
             # geometry: crop and resize
-            if do_parse_geometry:
-                parse_geometry_configurations(self.global_database, k_ep_or_g=k_part_g)
-                self.initialize_db_for_geometry(db=self.global_database, k_ep='', k_part=k_part_g)
+            parse_geometry_configurations(self.global_database, k_ep_or_g=k_part_g)
+            self.initialize_db_for_geometry(db=self.global_database, k_ep='', k_part=k_part_g)
 
-            # if do_parse_stabilize:
-            #     parse_stabilize_configurations(self.global_database, k_ep_or_g=k_part)
-            #     self.initialize_db_for_stabilize(db=self.global_database, k_ep='', k_part=k_part)
+            # parse_stabilize_configurations(self.global_database, k_ep_or_g=k_part)
+            # self.initialize_db_for_stabilize(db=self.global_database, k_ep='', k_part=k_part)
 
         gc.collect()
 

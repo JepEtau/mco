@@ -132,9 +132,7 @@ class Model_video_editor(Model_common):
 
         self.model_database.consolidate_database(
             k_ep=k_ep_selected,
-            k_part=k_part_selected,
-            do_parse_replace=True,
-            do_parse_geometry=True)
+            k_part=k_part_selected)
         # NOTE replace: model contains the list of frames to replace
 
         # self.shots is a pointer to the shots for this episode/part

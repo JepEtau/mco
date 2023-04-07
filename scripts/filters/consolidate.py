@@ -63,7 +63,8 @@ def consolidate_filters(shot):
             filter['task'] = 'deinterlace'
 
         # Upscale
-        elif 'scale' in filter['str']:
+        elif ('scale' in filter['str']
+            or 'dnn_superres' in filter['str']):
             filter['task'] = 'upscale'
             if previous_filter['task'] == '':
                 previous_filter['task'] = 'pre_upscale'
