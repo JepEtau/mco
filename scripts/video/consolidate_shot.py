@@ -39,6 +39,7 @@ def consolidate_shot(db, shot) -> None:
         None
 
     """
+
     # k_ed, k_ep and k_part are the source keys for this shot
     # [dst][k_ep] and [dst][k_part] are the destination (i.e. target)
     k_ep = shot['k_ep']
@@ -173,6 +174,7 @@ def consolidate_shot(db, shot) -> None:
 
 
     if False:
+    # if shot['no'] == 11:
         print_lightcyan("================================== SHOT =======================================")
         pprint(shot)
         print_lightcyan("===============================================================================")

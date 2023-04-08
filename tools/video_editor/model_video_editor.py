@@ -387,6 +387,13 @@ class Model_video_editor(Model_common):
         # pprint(self.framelist)
 
         self.refresh_replace_list()
+
+        if True:
+            shot_no = selected_shots['shotlist'][0]
+            shot = self.shots[shot_no]
+            print_lightcyan("================================== SHOT =======================================")
+            pprint(shot)
+            print_lightcyan("===============================================================================")
         self.signal_ready_to_play.emit(self.playlist_properties)
 
 
@@ -721,13 +728,8 @@ class Model_video_editor(Model_common):
     def event_geometry_discard_requested(self):
         log.info("discard modifications requested")
         k_part = self.current_selection['k_part']
-        db = self.model_database.database()
-        if k_part in K_GENERIQUES:
-            k_ed = db[k_part]['target']['video']['src']['k_ed']
-        else:
-            k_ed =self.current_selection['k_ed']
         k_ep = self.current_frame['k_ep']
-        self.model_database.discard_target_geometry_modifications(k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+        self.model_database.discard_target_geometry_modifications(k_ep=k_ep, k_part=k_part)
         self.signal_reload_frame.emit()
 
 

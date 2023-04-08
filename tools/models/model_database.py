@@ -167,7 +167,6 @@ class Model_database(Model_geometry,
             parse_replace_configurations(self.global_database, k_ep_or_g=k_ep)
             parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep)
 
-
             # Consolidate database for the episode
             for k_p in K_NON_GENERIQUE_PARTS:
                 consolidate_target_shots(self.global_database, k_ep=k_ep, k_part=k_p)
@@ -209,18 +208,12 @@ class Model_database(Model_geometry,
                     parse_curve_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
                     parse_replace_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
                     # parse_geometry_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
-                    # parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
+                    parse_stabilize_configurations(self.global_database, k_ep_or_g=k_ep_tmp)
                 break
 
             # Curves: this parser update the shots for each episode/part
             parse_curve_configurations(self.global_database, k_ep_or_g=k_part_g)
             self.initialize_db_for_curves(db=self.global_database, k_ep='', k_part=k_part_g)
-
-            # Consolidate each shot for the target
-            consolidate_target_shots_g(db=self.global_database, k_ep=k_ep, k_part_g=k_part_g)
-
-            # Consolidate by aligning the A/V tracks of generiques
-            align_audio_video_durations_g_debut_fin(self.global_database, k_ep='', k_part_g=k_part_g)
 
             # Replaced frames
             parse_replace_configurations(self.global_database, k_ep_or_g=k_part_g)
@@ -230,8 +223,15 @@ class Model_database(Model_geometry,
             parse_geometry_configurations(self.global_database, k_ep_or_g=k_part_g)
             self.initialize_db_for_geometry(db=self.global_database, k_ep='', k_part=k_part_g)
 
-            # parse_stabilize_configurations(self.global_database, k_ep_or_g=k_part)
-            # self.initialize_db_for_stabilize(db=self.global_database, k_ep='', k_part=k_part)
+            parse_stabilize_configurations(self.global_database, k_ep_or_g=k_part_g)
+            # self.initialize_db_for_stabilize(db=self.global_database, k_ep='', k_part=k_part_g)
+
+            # Consolidate each shot for the target
+            consolidate_target_shots_g(db=self.global_database, k_ep=k_ep, k_part_g=k_part_g)
+
+            # Consolidate by aligning the A/V tracks of generiques
+            align_audio_video_durations_g_debut_fin(self.global_database, k_ep='', k_part_g=k_part_g)
+
 
         gc.collect()
 

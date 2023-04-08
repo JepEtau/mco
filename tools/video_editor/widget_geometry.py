@@ -522,6 +522,8 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
     def wheelEvent(self, event):
         if self.current_key_pressed is not None:
+            print_lightgrey("wheelEvent: key: %d" % (self.current_key_pressed))
+
             is_default_shot_selected = self.groupBox_default_shot_geometry.isChecked()
 
             if self.current_key_pressed == Qt.Key_Z:
@@ -561,7 +563,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
     def event_key_pressed(self, event):
         key = event.key()
         modifiers = event.modifiers()
-        # print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
+        print_green("event_key_pressed: %d, modifiers=" % (key), modifiers)
 
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_S:
@@ -604,8 +606,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
     def event_key_released(self, event):
-        if self.current_key_pressed is not None:
-            self.current_key_pressed = None
-            return True
+        print_yellow("event_key_released: key: %d" % (self.current_key_pressed))
+        self.current_key_pressed = None
         return False
 

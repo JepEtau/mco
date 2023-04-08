@@ -88,8 +88,8 @@ def parse_stabilize_configurations(db, k_ep_or_g:str, parse_parameters=False):
             if segments_str.endswith(';'):
                 segments_str = segments_str[:-1]
             segments = segments_str.split(';')
-            if len(segments) > 2:
-                sys.exit(print_red("stabilizer: more than 2 segments is not not yet supported"))
+            # if len(segments) > 2:
+            #     sys.exit(print_red("stabilizer: more than 2 segments is not not yet supported"))
 
             # For each segment, get parameters
             shot[type_str] = list()
@@ -114,9 +114,9 @@ def parse_stabilize_configurations(db, k_ep_or_g:str, parse_parameters=False):
                 else:
                     stabilize_segments.append(segment_dict)
 
-    #             print("")
-    #         pprint(shot)
-    # sys.exit()
+    # if k_ep_or_g == 'g_fin':
+    #     pprint(db['ep11']['video']['s']['g_fin']['shots'][11])
+    #     sys.exit()
 
 
 

@@ -327,26 +327,12 @@ class Window_main(Window_common):
         key = event.key()
         self.widget_controls.event_key_released(event)
 
+        for w in self.widgets.values():
+            w.event_key_released(event)
 
-        if self.current_editor == 'curves':
-            is_accepted = self.widget_curves.event_key_released(event)
-            if is_accepted:
-                event.accept()
-                return True
-        elif self.current_editor == 'replace':
-            is_accepted = self.widget_replace.event_key_released(event)
-            if is_accepted:
-                event.accept()
-                return True
-        if self.current_editor == 'geometry':
-            is_accepted = self.widget_geometry.event_key_released(event)
-            if is_accepted:
-                event.accept()
-                return True
-
-        if self.widget_controls.event_key_released(event):
-            event.accept()
-            return True
+        self.widget_controls.event_key_released(event)
+        event.accept()
+        return True
         # return self.widget_controls.keyReleaseEvent(event)
 
 

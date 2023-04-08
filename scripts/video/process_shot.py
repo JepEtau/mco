@@ -48,9 +48,13 @@ def process_shot(db, shot, cpu_count=0):
     # Create a black frame used for silences
     create_black_frame(db, shot)
 
-
     # Clean
     gc.collect()
+
+
+    # No effects if last task is pre_replace
+    if shot['last_task'] == 'pre_replace':
+        return
 
     # Effects
     if 'effects' in shot.keys():

@@ -84,4 +84,4 @@ def python_pre_replace(shot:dict,
         for img, img_filepath in zip(images, output_image_list):
             cv2.imwrite(img_filepath, img)
 
-    return hash, image_list, list()
+    return hash, image_list, images

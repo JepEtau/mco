@@ -90,10 +90,11 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
             get_hash=get_hash,
             do_force=do_force)
 
+        print_red("deshake returned hash=%s" % (hash))
         if get_hash:
             return hash, None
 
-        if do_save:
+        if do_save and hash != '':
             # Output image list
             output_image_list = get_image_list(
                 shot=shot,
@@ -110,7 +111,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
                         break
                 if not do_extract:
                     print("\t\t\timages already exist")
-                    return hash, None
+                    return hash, output_images
 
             # Write images
             print("\t\t\tinfo: write images")

@@ -33,22 +33,25 @@ def ffmpeg_filter(shot, images:list, image_list:list,
     """Apply FFmpeg filter to images
     """
 
-    filter_str = "%s,%s" % (input_hash, clean_ffmpeg_filter(filter_str))
+    filter_str_hash = "%s,%s" % (input_hash, clean_ffmpeg_filter(filter_str))
     if get_hash:
-        hash = calculate_hash(filter_str=filter_str)
+        hash = calculate_hash(filter_str=filter_str_hash)
         return hash, None
-    hash = log_filter(filter_str, shot['hash_log_file'])
+    hash = log_filter(filter_str_hash, shot['hash_log_file'])
     print_cyan("(FFmpeg)\tstep no. %d, filter=[%s], input_hash= %s, output hash= %s" % (step_no, filter_str, input_hash, hash))
 
     # Output images in memory
     use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
 
-    if do_save:
-        # Generate a list of output images
-        output_image_list = get_image_list(shot=shot,
-            folder=output_folder,
-            step_no=step_no,
-            hash=hash)
+
+    # Generate a list of output images
+    output_image_list = get_image_list(shot=shot,
+        folder=output_folder,
+        step_no=step_no,
+        hash=hash)
+    if do_save and not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
     output_images = list()
     frame_count = shot['count']
 
@@ -69,13 +72,14 @@ def ffmpeg_filter(shot, images:list, image_list:list,
     if frame_count > (2000000000 / img_size):
         use_memory = False
 
+    do_use_ffv1 = False
     if not sys.platform == 'win32':
         # for fucking linux
         use_memory = False
-        do_not_use_ffv1 = True
+        do_use_ffv1 = True
 
     if use_memory:
-        print_purple("FFmpeg filter: use memory")
+        print("\t\t\tUse memory")
         # All images are in memory
         ffmpeg_command.extend([
             '-f', 'rawvideo',
@@ -97,8 +101,9 @@ def ffmpeg_filter(shot, images:list, image_list:list,
         bytes_arr = bytearray()
         for img in images:
             bytes_arr.extend(img.tobytes())
-        print_yellow("bufsize=\t%d" % (bufsize))
-        print_yellow("stdin size=\t%d" % (len(bytes_arr)))
+        # print_yellow("bufsize=\t%d" % (bufsize))
+        # print_yellow("stdin size=\t%d" % (len(bytes_arr)))
+        # print_yellow(ffmpeg_command)
 
         process = create_process(ffmpeg_command, db_common['process'], bufsize=bufsize)
         stdout, stderr = process.communicate(input=bytes(bytes_arr))
@@ -113,16 +118,16 @@ def ffmpeg_filter(shot, images:list, image_list:list,
         # Images already saved?
         if os.path.exists(image_list[-1]):
             are_already_been_saved = True
-            print_lightgrey("\t\t\tImages have been saved")
+            print_lightgrey("\t\t\tImages have already been saved")
         else:
             are_already_been_saved = False
             print_lightgrey("\t\t\tImages have not been saved")
 
 
-        if are_already_been_saved or do_not_use_ffv1:
+        if are_already_been_saved and not do_use_ffv1:
             print_lightgrey("\t\t\tUse FFmpeg concatenate filter")
 
-            if do_not_use_ffv1:
+            if not do_use_ffv1:
                 input_folder = os.path.dirname(image_list[0])
                 if not os.path.exists(input_folder):
                     os.makedirs(input_folder)
@@ -135,7 +140,7 @@ def ffmpeg_filter(shot, images:list, image_list:list,
 
             # Create a concatenation file
             duration_str = "duration %.02f\n" % (1/float(FPS))
-            concatenation_filepath = os.path.join(output_folder, "concatenation_tmp.txt")
+            concatenation_filepath = os.path.join(input_folder, "concatenation_tmp.txt")
             concatenation_file = open(concatenation_filepath, "w")
             for f in image_list:
                 concatenation_file.write("file \'%s\' \n" % (os.path.abspath(f)))

@@ -1,9 +1,11 @@
 # TODO: script
 (1)
-- replace:
-    * Circular dependency is not verified
+- multiple segments for deshake
+- smooth stabilization
+- deshake: keep parameters and add a new one to enable/disable
 
 (2)
+- replace: circular dependency is not verified
 - change shot_start to shot no. in config files? or use middle of shot? Reason:  avisynth
 - custom filter depending on shot. Reason: deshake or do not block filtering if no deshake parameters
 
@@ -20,7 +22,12 @@
 
 # TODO: video editor
 (1)
+- verify if key is pressed before changing crop values (key event)
 - geometry: implement discard function
+- F5 to refresh current shot only
+- Ctrl+F5 to refresh all shots
+- Select shot rather than default if deshake is in filters with default crop 20
+- Add rulers for deshakers
 
 (2)
 - display used filters
