@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-
 import sys
 sys.path.append('../scripts')
+
+from utils.pretty_print import *
 
 from logger import log
 from pprint import pprint
@@ -62,7 +63,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
                             Qt.AlignRight | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter]
         headers = ["shot no.", "frame no.", "new"]
-        default_col_width = [70, 100, 100]
+        default_col_width = [70, 120, 120]
         for col_no, header_str, col_width in zip(range(len(headers)),
                                                     headers,
                                                     default_col_width):
@@ -138,24 +139,30 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_replace_list_refreshed(self, values:dict):
-        if self.model.is_replace_allowed():
-            self.tableWidget_replace.blockSignals(True)
+        log.info("refresh list of frames to replace")
+        # is_allowed = self.model.is_replace_allowed()
+        # print_lightgreen("event_replace_list_refreshed: ", is_allowed)
+        # if is_allowed:
+        print_lightgreen("\tlet's refresh")
+        self.tableWidget_replace.blockSignals(True)
 
-            self.tableWidget_replace.clearContents()
-            self.tableWidget_replace.setRowCount(0)
-            for row_no, v in zip(range(len(values)), values):
-                self.tableWidget_replace.insertRow(row_no)
-                self.tableWidget_replace.setItem(row_no, 0, QTableWidgetItem(str(v['shot_no'])))
-                self.tableWidget_replace.setItem(row_no, 1, QTableWidgetItem(str(v['dst'])))
-                self.tableWidget_replace.setItem(row_no, 2, QTableWidgetItem(str(v['src'])))
+        self.tableWidget_replace.clearContents()
+        self.tableWidget_replace.setRowCount(0)
+        for row_no, v in zip(range(len(values)), values):
+            self.tableWidget_replace.insertRow(row_no)
+            self.tableWidget_replace.setItem(row_no, 0, QTableWidgetItem(str(v['shot_no'])))
+            self.tableWidget_replace.setItem(row_no, 1, QTableWidgetItem(str(v['dst'])))
+            self.tableWidget_replace.setItem(row_no, 2, QTableWidgetItem(str(v['src'])))
 
-                for i in range(len(self.alignment)):
-                    self.tableWidget_replace.item(row_no, i).setTextAlignment(self.alignment[i])
-                    self.tableWidget_replace.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+            for i in range(len(self.alignment)):
+                self.tableWidget_replace.item(row_no, i).setTextAlignment(self.alignment[i])
+                self.tableWidget_replace.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
-            self.tableWidget_replace.selectionModel().clearSelection()
-            self.tableWidget_replace.blockSignals(False)
-            self.tableWidget_replace.setEnabled(True)
+        self.tableWidget_replace.selectionModel().clearSelection()
+        self.tableWidget_replace.blockSignals(False)
+        self.tableWidget_replace.setEnabled(True)
+        # else:
+        #     print_lightgreen("\trefresh was not allowed")
 
         self.event_shot_changed()
 

@@ -18,7 +18,6 @@ from utils.common import (
 )
 from utils.pretty_print import *
 from parsers.parser_replace import (
-    parse_replace_configurations,
     get_replaced_frames,
 )
 
@@ -44,9 +43,7 @@ class Model_replace():
         # indicates if we can use the replace widget
         for f in shot['filters']:
             if f['task'] == 'pre_replace':
-                log.info("replace is allowed")
                 return True
-        log.info("replace is not possible")
         return False
 
     # Replaced frames

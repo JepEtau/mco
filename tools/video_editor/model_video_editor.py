@@ -538,11 +538,12 @@ class Model_video_editor(Model_common):
 
     # Replace frames
     #---------------------------------------------------------------------------
-    def is_replace_allowed(self):
+    def is_replace_allowed(self) -> bool:
         shot = self.get_current_shot()
         if shot is None:
             return False
-        return self.model_database.is_replace_allowed(shot=shot)
+        is_allowed = self.model_database.is_replace_allowed(shot=shot)
+        return is_allowed
 
 
     def refresh_replace_list(self):
@@ -559,6 +560,8 @@ class Model_video_editor(Model_common):
                     'src': frame_no,
                     'dst': frame['frame_no'],
                 })
+        # print_lightcyan("model video editor: refresh_replace_list")
+        # pprint(list_replace)
         self.signal_replace_list_refreshed.emit(list_replace)
 
 
@@ -778,17 +781,18 @@ class Model_video_editor(Model_common):
             return None
 
         frame = self.playlist_frames[index]
+        frame_no = frame['frame_no']
+        shot_no = frame['shot_no']
+        shot = self.shots[shot_no]
+
         if not self.preview_options['replace']['is_enabled']:
 
             try: del frame['replace']
             except: pass
         else:
-            print_green("get replace frame: index=%d" % (index))
-            frame_no = frame['frame_no']
-            shot_no = frame['shot_no']
-            shot = self.shots[shot_no]
-            print_green("\tshot no. %d, frame no. %d" % (shot_no, frame_no))
-            new_frame_no = self.model_database.get_replace_frame_no(self.shots[shot_no], frame_no)
+
+            # print_green("\tshot no. %d, frame no. %d" % (shot_no, frame_no))
+            new_frame_no = self.model_database.get_replace_frame_no(shot, frame_no)
             if new_frame_no == -1:
                 frame = self.playlist_frames[index]
                 try: del frame['replace']
@@ -797,19 +801,13 @@ class Model_video_editor(Model_common):
                 frame = self.playlist_frames[index + (new_frame_no - frame_no)]
                 frame['replace'] = frame_no
 
-        # Shot has changed: update UI with parameters for this shot (curves, crop, resize)
-        if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
-            frame['reload_parameters'] = True
-        else:
-            frame['reload_parameters'] = False
-
-        # Current shot
-        is_shot_changed = False
-        shot = self.shots[frame['shot_no']]
-
-        # if shot is different
+        # If shot is different
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
             is_shot_changed = True
+            frame['reload_parameters'] = True
+        else:
+            is_shot_changed = False
+            frame['reload_parameters'] = False
 
         # Update curves and load it into the graph
         frame['curves'] = self.model_database.get_shot_curves_selection(
@@ -1042,7 +1040,7 @@ def generate_single_image(frame:dict, preview_options:dict):
         # Error case
         pad_error = geometry_values['pad_error']
         if pad_error is not None:
-            print_red("Error: add padding but should not")
+            # print_red("Error: add padding but should not")
             img_resized_consolidated = cv2.copyMakeBorder(src=img_resized_cropped,
             top=pad_error[0], bottom=pad_error[1],
             left=pad_error[2], right=pad_error[3],

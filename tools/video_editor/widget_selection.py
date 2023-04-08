@@ -561,7 +561,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
         if self.event_key_pressed(event):
             event.accept()
             return True
-        return self.ui.keyPressEvent(event)
+        return False
+    # return self.ui.keyPressEvent(event)
 
 
     def event_key_pressed(self, event):
@@ -578,7 +579,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
         if self.event_key_released(event):
             event.accept()
             return True
-        return self.ui.keyReleaseEvent(event)
+        return False
+        # return self.ui.keyReleaseEvent(event)
 
 
     def event_key_released(self, event):

@@ -324,9 +324,8 @@ class Window_main(Window_common):
 
 
     def keyReleaseEvent(self, event):
-        key = event.key()
-        self.widget_controls.event_key_released(event)
-
+        # key = event.key()
+        # print_yellow("event_key_released: window_main:key: %d" % (key))
         for w in self.widgets.values():
             w.event_key_released(event)
 

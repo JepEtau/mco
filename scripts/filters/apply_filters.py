@@ -219,7 +219,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                 if images is None:
                     images = list()
 
-                if not get_hashes:
+                if not get_hashes and filter['str'] != 'deshake':
                     print_lightgrey("\t\t\tpython: returned %d images" % (len(images)))
 
                 if hash == '':
@@ -227,7 +227,8 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                     hash = previous_hash
                     hashes.append([step_no, '', ''])
                     step_no += STEP_INC
-                    print_red("\t\t\terror: python filter: something went wrong: %s" % (filter['str']))
+                    if filter['str'] != 'deshake':
+                        print_red("\t\t\terror: python filter: something went wrong: %s" % (filter['str']))
 
                     # Exit if last task
                     if not get_hashes and filter['task'] == shot['last_task']:

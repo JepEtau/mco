@@ -20,8 +20,8 @@
 
 # TODO: video editor
 (1)
-- replace not working
 - replace: circular dependency is not verified
+- geometry widget: add error info
 - geometry: implement discard function for width
 - verify if key is pressed before changing crop values (key event)
 - stabilize widget/model
@@ -39,3 +39,5 @@
 - Ctrl+F5 to refresh all shots
 - display filters for the shot
 
+# TODO: other
+- create a script to remove previous images

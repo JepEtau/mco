@@ -75,7 +75,7 @@ class Model_geometry():
             pprint(self.db_default_shot_geometry_initial)
             print_cyan("db_shot_geometry_initial:")
             pprint(self.db_shot_geometry_initial)
-            # sys.exit()
+            sys.exit()
 
 
 

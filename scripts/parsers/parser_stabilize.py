@@ -44,8 +44,9 @@ STABILIZE_SHOT_PARAMETERS_KEYS = [
     'is_enabled',
 ]
 
-def parse_stabilize_configurations(db, k_ep_or_g:str, parse_parameters=False):
-    verbose = True
+def parse_stabilize_configurations(db, k_ep_or_g:str):
+    verbose = False
+
     # Open configuration file
     filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_stabilize.ini" % (k_ep_or_g))
     if filepath.startswith("~/"):

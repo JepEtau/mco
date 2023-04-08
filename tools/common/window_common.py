@@ -403,7 +403,9 @@ class Window_common(QMainWindow):
 
     def timerEvent(self, e=None):
         now = time.time()
-        print(int(1000 * (now - self.now)))
+        elasped_time = 1000 * (now - self.now)
+        if elasped_time > 45:
+            print(int(elasped_time))
         self.now = now
 
         self.current_frame_index += 1

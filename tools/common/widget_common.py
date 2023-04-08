@@ -142,7 +142,8 @@ class Widget_common(QWidget):
         if self.event_key_pressed(event):
             event.accept()
             return True
-        return self.ui.keyPressEvent(event)
+        # return self.ui.keyPressEvent(event)
+        return False
 
 
     def event_key_pressed(self, event):
@@ -153,7 +154,8 @@ class Widget_common(QWidget):
         if self.event_key_released(event):
             event.accept()
             return True
-        return self.ui.keyReleaseEvent(event)
+        # return self.ui.keyReleaseEvent(event)
+        return False
 
 
     def event_key_released(self, event):

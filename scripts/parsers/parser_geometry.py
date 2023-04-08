@@ -53,8 +53,8 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
         if k_section in K_ALL_PARTS:
             # This section define the geometry of the target: i.e. width
             if k_ep_or_g in ['g_debut', 'g_fin']:
-                nested_dict_set(db, {'target':dict()}, k_ep_or_g, 'target', 'video', 'geometry')
-                target_geometry = db[k_ep_or_g]['target']['video']['geometry']['target']
+                nested_dict_set(db, {'target':dict()}, k_ep_or_g, 'video', 'geometry')
+                target_geometry = db[k_ep_or_g]['video']['geometry']['target']
             else:
                 nested_dict_set(db, {'target':dict()}, k_ep_or_g, 'video', 'target', k_section, 'geometry')
                 target_geometry = db[k_ep_or_g]['video']['target'][k_section]['geometry']['target']

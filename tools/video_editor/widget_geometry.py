@@ -11,13 +11,14 @@ from pprint import pprint
 
 from PySide6.QtCore import (
     Qt,
-    Signal,
+    Signal
 )
 from PySide6.QtWidgets import (
     QPushButton,
     QLineEdit,
     QRadioButton,
     QCheckBox,
+    QApplication
 )
 
 from utils.common import K_GENERIQUES, nested_dict_get
@@ -522,7 +523,10 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
     def wheelEvent(self, event):
         if self.current_key_pressed is not None:
+            modifiers = QApplication.keyboardModifiers()
             print_lightgrey("wheelEvent: key: %d" % (self.current_key_pressed))
+            print_lightgrey("wheelEvent: modifiers", modifiers)
+
 
             is_default_shot_selected = self.groupBox_default_shot_geometry.isChecked()
 
@@ -563,7 +567,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
     def event_key_pressed(self, event):
         key = event.key()
         modifiers = event.modifiers()
-        print_green("event_key_pressed: %d, modifiers=" % (key), modifiers)
+        # print_green("event_key_pressed: %d, modifiers=" % (key), modifiers)
 
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_S:
@@ -606,7 +610,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
     def event_key_released(self, event):
-        print_yellow("event_key_released: key: %d" % (self.current_key_pressed))
+        # print_yellow("\tevent_key_released: widget_geometry:key: %d" % (self.current_key_pressed))
         self.current_key_pressed = None
         return False
 

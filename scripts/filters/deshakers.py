@@ -114,7 +114,7 @@ class CV2_deshaker:
             return img, img_gray, keypoints
 
 
-    def __stabilize_image(self, img, img_ref_gray, keypoints_ref, directions='both', verbose=False):
+    def __stabilize_image(self, img, img_ref_gray, keypoints_ref, directions='all', verbose=False):
         img_gray_tmp = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         if self.__add_border:
             img_gray_tmp2 = cv2.copyMakeBorder(img_gray_tmp,
@@ -168,10 +168,14 @@ class CV2_deshaker:
 
         if directions == 'vertical':
             t_x = 0
+            t_theta = 0
         elif directions == 'horizontal':
             t_y = 0
+            t_theta = 0
         elif directions == 'translation':
             t_theta = 0
+        # else
+        #  i.e. directions == 'all':
 
         if verbose:
             print([t_x, t_y, t_theta])

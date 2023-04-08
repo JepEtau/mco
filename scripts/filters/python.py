@@ -90,7 +90,6 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
             get_hash=get_hash,
             do_force=do_force)
 
-        print_red("deshake returned hash=%s" % (hash))
         if get_hash:
             return hash, None
 
@@ -114,7 +113,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
                     return hash, output_images
 
             # Write images
-            print("\t\t\tinfo: write images")
+            print("\t\t\tinfo: saving images")
             for img, f_output in zip(output_images, output_image_list):
                 cv2.imwrite(filename=f_output, img=img)
 

@@ -164,6 +164,9 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     elif model_name == 'sudo_RealESRGAN2x_Dropout_3.799.042_G':
         suffix = 'sudo_3.799.042_G'
         netscale = 2
+    elif model_name.startswith('4x_'):
+        suffix = model_name
+        netscale = 4
     else:
         suffix = model_name
         netscale = 2
