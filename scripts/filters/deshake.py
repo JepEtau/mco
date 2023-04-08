@@ -20,7 +20,17 @@ def deshake(shot, images:list, image_list:list,
     get_hash:bool=False, do_force:bool=False):
 
     try:
-        segments = deepcopy(shot['deshake'])
+        if shot['deshake']['enable'] == True:
+            print_lightgrey("\t\t\tdeshake is enabled")
+        else:
+            print_lightgrey("\t\t\tdeshake is disabled")
+            return '', None
+    except:
+        print_lightgrey("\t\t\tdeshake is disabled")
+        return '', None
+
+    try:
+        segments = deepcopy(shot['deshake']['segments'])
         if len(segments) == 0:
             # Not segment defined
             sys.exit(print_red("error: at least one segment shall be defined"))

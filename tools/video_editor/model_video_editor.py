@@ -24,7 +24,7 @@ from models.model_common import (
 )
 
 from utils.common import K_GENERIQUES, nested_dict_set
-from filters.utils import FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
+from filters.utils import FINAL_FRAME_WIDTH, get_dimensions_from_crop_values, is_stabilize_task_enabled
 from utils.get_frame_list import get_frame_list, get_frame_list_single
 from video.consolidate_shot import consolidate_shot
 from filters.filters import calculate_geometry_parameters, cv2_geometry_filter, filter_rgb
@@ -257,9 +257,16 @@ class Model_video_editor(Model_common):
                         'keep_ratio': True,
                         'fit_to_width': False})
                     shot_geometry = self.model_database.get_shot_geometry(shot=shot)
-                else:
+                elif is_stabilize_task_enabled(shot):
                     # Not geometry define, create a new one
-                    print_yellow("\t\t\tNo shot geometry defined, create a default shot geometry")
+                    print_yellow("\t\t\tNo shot geometry defined, stabilize filter detected, associate a shot geometry")
+                    self.model_database.set_shot_geometry(shot=shot, geometry={
+                        'crop': [20] * 4,
+                        'keep_ratio': True,
+                        'fit_to_width': False})
+                    shot_geometry = self.model_database.get_shot_geometry(shot=shot)
+                else:
+                    print_yellow("\t\t\tNo shot geometry defined, associate a default shot geometry")
                     self.model_database.set_default_shot_geometry(shot=shot, geometry={
                         'crop': [0] * 4,
                         'keep_ratio': True,
@@ -388,7 +395,7 @@ class Model_video_editor(Model_common):
 
         self.refresh_replace_list()
 
-        if True:
+        if False:
             shot_no = selected_shots['shotlist'][0]
             shot = self.shots[shot_no]
             print_lightcyan("================================== SHOT =======================================")

@@ -45,6 +45,7 @@ STABILIZE_SHOT_PARAMETERS_KEYS = [
 ]
 
 def parse_stabilize_configurations(db, k_ep_or_g:str, parse_parameters=False):
+    verbose = True
     # Open configuration file
     filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_stabilize.ini" % (k_ep_or_g))
     if filepath.startswith("~/"):
@@ -56,14 +57,16 @@ def parse_stabilize_configurations(db, k_ep_or_g:str, parse_parameters=False):
     # Parse the file
     config = configparser.ConfigParser()
     config.read(filepath)
-    print("%s.parse_stabilize_configurations: %s" % (__name__, k_ep_or_g))
+    if verbose:
+        print_lightgreen("%s.parse_stabilize_configurations: %s" % (__name__, k_ep_or_g))
     for k_section in config.sections():
         if '.' not in k_section:
             sys.exit("parse_stabilize_configurations: error, no edition,ep,part specified")
         k_ed, k_ep, k_part = k_section.split('.')
 
         for frame_no_str in config.options(k_section):
-            print_lightblue("%s:%s:%s: %s" % (k_ed, k_ep, k_part, frame_no_str))
+            if verbose:
+                print_lightblue("\t%s:%s:%s: %s" % (k_ed, k_ep, k_part, frame_no_str))
 
             # get frame_no and type(deshake or smooth stabilize)
             frame_no_type = re.search(re.compile("(\d+)_(deshake|stabilize)"), frame_no_str)
@@ -77,9 +80,10 @@ def parse_stabilize_configurations(db, k_ep_or_g:str, parse_parameters=False):
             if k_part == '':
                 continue
             shot = get_src_shot_from_frame_no(db, frame_no=frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
-            if shot is None:
-                print_orange("parse_stabilize_configurations: warning, shot not found for frame no. %d in %s:%s:%s" % (
-                    frame_no, k_ed, k_ep, k_part))
+            if verbose:
+                if shot is None:
+                    print_orange("\twarning, shot not found for frame no. %d in %s:%s:%s" % (
+                        frame_no, k_ed, k_ep, k_part))
 
             # Read and split parameters for this shot
             segments_str = config.get(k_section, frame_no_str)
@@ -88,13 +92,37 @@ def parse_stabilize_configurations(db, k_ep_or_g:str, parse_parameters=False):
             if segments_str.endswith(';'):
                 segments_str = segments_str[:-1]
             segments = segments_str.split(';')
+
+            shot[type_str] = dict()
+
+            if verbose:
+                print_lightblue(segments)
+
+            # first arg is enable
+            enabled_args = segments[0].split('=')
+            if verbose:
+                print_lightblue(enabled_args)
+            if enabled_args[0] == 'enable':
+                if enabled_args[1] == 'true':
+                    shot[type_str]['enable'] = True
+                elif enabled_args[1] == 'false':
+                    shot[type_str]['enable'] = False
+                else:
+                    print_red("Error: parse_stabilize_configurations: erroneus enable value: %s" % (enabled_args[1]))
+                    shot[type_str]['enable'] = False
+            else:
+                print_red("Error: parse_stabilize_configurations: enable value is missing")
+
+            if verbose:
+                pprint(shot['deshake'])
             # if len(segments) > 2:
             #     sys.exit(print_red("stabilizer: more than 2 segments is not not yet supported"))
 
             # For each segment, get parameters
-            shot[type_str] = list()
-            stabilize_segments = shot[type_str]
-            for segment in segments:
+            nested_dict_set(shot[type_str], list(), 'segments')
+            shot_segments = shot[type_str]['segments']
+
+            for segment in segments[1:]:
                 parameters = segment.split(':')
                 segment_dict = {'alg': parameters[0]}
                 for parameter in parameters[1:]:
@@ -105,19 +133,19 @@ def parse_stabilize_configurations(db, k_ep_or_g:str, parse_parameters=False):
                     else:
                         nested_dict_set(segment_dict, v, k)
 
-                if len(stabilize_segments) > 0:
+                if len(shot_segments) > 0:
                     # max 2 segments
-                    if segment_dict['start'] < stabilize_segments[0]['start']:
-                        stabilize_segments.insert(0, segment_dict)
+                    if segment_dict['start'] < shot_segments[0]['start']:
+                        shot_segments.insert(0, segment_dict)
                     else:
-                        stabilize_segments.append(segment_dict)
+                        shot_segments.append(segment_dict)
                 else:
-                    stabilize_segments.append(segment_dict)
+                    # default: append
+                    shot_segments.append(segment_dict)
 
-    # if k_ep_or_g == 'g_fin':
-    #     pprint(db['ep11']['video']['s']['g_fin']['shots'][11])
-    #     sys.exit()
-
+            if verbose:
+                pprint(shot['deshake'])
+                # sys.exit()
 
 
 def get_shots_stabilize_parameters(db, k_ep, k_part) -> dict:

@@ -1,40 +1,41 @@
 # TODO: script
 (1)
-- multiple segments for deshake
-- smooth stabilization
-- deshake: keep parameters and add a new one to enable/disable
+- replace: circular dependency is not verified
 
 (2)
-- replace: circular dependency is not verified
 - change shot_start to shot no. in config files? or use middle of shot? Reason:  avisynth
 - custom filter depending on shot. Reason: deshake or do not block filtering if no deshake parameters
 
 (3)
+- smooth stabilization
 - Try SwinIR (g_reportage/reportage)
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
 - clean filters.py
-- replace "get_or_create_src_shot" function by "get_src_shot" and generate a warning
+- replace "get_or_create_src_shot" function by "get_src_shot" and generate a warning: patched it verify before removing it
 - parser_consolidate_audio_video is not used anymore: why?
-- deshake: read from/write to ssd: no, fuck low memory, buy a new pc!
+- deshake: read from/write to ssd: no, buy a new pc if no enough memory!
 - (?) process single frame does not work anymore: repair and re-enable ?
 
 
 # TODO: video editor
 (1)
+- replace not working
+- replace: circular dependency is not verified
+- geometry: implement discard function for width
 - verify if key is pressed before changing crop values (key event)
-- geometry: implement discard function
-- F5 to refresh current shot only
-- Ctrl+F5 to refresh all shots
-- Select shot rather than default if deshake is in filters with default crop 20
-- Add rulers for deshakers
+- stabilize widget/model
+- Add rulers when stabilize widget is selected
+- buttons (save, discard, ...) not working
 
 (2)
-- display used filters
-- stabilize widget/model
+- filter selection: change combobox to radio buttons and disable the unused ones
 - curves: find shot from frame no and do not verify if it is the 1st frame.
 - when saving, use middle of shot or shot_no? Reason: avisynth frame no
+- edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db
 
 (3)
-- edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db
+- F5 to refresh current shot only
+- Ctrl+F5 to refresh all shots
+- display filters for the shot
 

@@ -83,3 +83,16 @@ def get_dimensions_from_crop_values(width, height, crop) -> list:
 
 
 
+def is_stabilize_task_enabled(shot):
+    # Returns true if deshake/stabilize task is enabled, False otherwise
+
+    # No deshake parameters or disabled
+    if shot['deshake'] is None or shot['deshake']['enable'] == False:
+        return False
+
+    # Is deshake/stablize task is in list of filters
+    for f in shot['filters']:
+        if f['task'] in ['deshake', 'stabilize']:
+            return True
+
+    return False
