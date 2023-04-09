@@ -1,6 +1,6 @@
 # TODO: script
 (1)
-- replace: circular dependency is not verified
+- deshake: apply transformation to the following frames and not just apply borders.
 
 (2)
 - change shot_start to shot no. in config files? or use middle of shot? Reason:  avisynth
@@ -8,27 +8,25 @@
 
 (3)
 - smooth stabilization
-- Try SwinIR (g_reportage/reportage)
+- force save before pre_replace ? bug with g_reportage
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
 - clean filters.py
 - replace "get_or_create_src_shot" function by "get_src_shot" and generate a warning: patched it verify before removing it
 - parser_consolidate_audio_video is not used anymore: why?
-- deshake: read from/write to ssd: no, buy a new pc if no enough memory!
 - (?) process single frame does not work anymore: repair and re-enable ?
 
 
 # TODO: video editor
 (1)
-- replace: circular dependency is not verified
 - geometry widget: add error info
-- geometry: implement discard function for width
 - verify if key is pressed before changing crop values (key event)
 - stabilize widget/model
 - Add rulers when stabilize widget is selected
 - buttons (save, discard, ...) not working
 
 (2)
+- geometry: implement discard function for width: detect if modified
 - filter selection: change combobox to radio buttons and disable the unused ones
 - curves: find shot from frame no and do not verify if it is the 1st frame.
 - when saving, use middle of shot or shot_no? Reason: avisynth frame no

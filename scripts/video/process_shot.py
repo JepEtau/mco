@@ -101,8 +101,10 @@ def simplify_shot_process(db, shot) -> int:
                 step_no=step_no,
                 hash=hash)
         else:
-            if shot['dst']['k_part'].startswith('g_'):
+            if shot['dst']['k_part'] in ['g_debut', 'g_fin']:
+                print_yellow("\treplace output folder from %s to " % (output_folder), end='')
                 output_folder_dst = output_folder.replace(shot['k_ep'],shot['dst']['k_ep'])
+                print_yellow("%s" % (output_folder_dst))
             else:
                 output_folder_dst = output_folder
             image_list = get_image_list(shot,

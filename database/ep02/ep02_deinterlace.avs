@@ -8,10 +8,10 @@
 #~ # ImageWriter(file="frames\f_%05da.png", type="png")
 #~ Prefetch(2)
 
-SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
 FFMPEGSource2("A:\mco\inputs\s\s_ep02.mkv", cache=false, overwrite=true)
 trim(0, -1)
 AssumeTFF()
+# QTGMC(preset="Slower")
 QTGMC(preset="Slower")
 SelectEven()
 aWarpSharp2()
@@ -26,5 +26,4 @@ aWarpSharp2()
 
 ConvertToRGB24()
 # ImageWriter(file="frames\f_%05da.png", type="png")
-# Prefetch(2)
 

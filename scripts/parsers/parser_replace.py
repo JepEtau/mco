@@ -68,6 +68,10 @@ def parse_replace_configurations(db, k_ep_or_g:str):
                     shot['replace'] = {frame_no: new_frame_no}
 
                 # TODO verify circular definition
+                replace_list = list(shot['replace'].keys())
+                for v in shot['replace'].values():
+                    if v in replace_list:
+                        sys.exit("error: circular reference: frame no. %d in %s:%s:%s" % (v, k_ed, k_ep, k_part))
 
         if verbose:
             if shot is not None:

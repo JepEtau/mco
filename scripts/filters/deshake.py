@@ -1,11 +1,14 @@
 # -*- coding: utf-8 -*-
+import cv2
 import sys
 from pprint import pprint
 from copy import deepcopy
 from filters.deshakers import (
     CV2_deshaker,
     Skimage_deshaker,
+    apply_cv2_transformation,
 )
+from filters.utils import STABILIZE_BORDER
 
 from utils.hash import (
     calculate_hash,
@@ -24,20 +27,20 @@ def deshake(shot, images:list, image_list:list,
             print_lightgrey("\t\t\tdeshake is enabled")
         else:
             print_lightgrey("\t\t\tdeshake is disabled")
-            return '', None
+            return '', images
     except:
         print_lightgrey("\t\t\tdeshake is disabled")
-        return '', None
+        return '', images
 
     try:
         segments = deepcopy(shot['deshake']['segments'])
         if len(segments) == 0:
             # Not segment defined
             sys.exit(print_red("error: at least one segment shall be defined"))
-            return '', None
+            return '', images
     except:
         print_red("\t\t\terror: undefined deshake parameters in shot")
-        return '', None
+        return '', images
 
     # Convert to indexes
     for segment in segments:
@@ -80,11 +83,30 @@ def deshake(shot, images:list, image_list:list,
         print_orange("warning: deshake: %d segments" % len(segments))
 
 
+
     output_images = list()
     filter_str = ""
     last_transformation = None
+    start = count = 0
     for segment in segments:
-        print(segment)
+
+        if not get_hash:
+            # Append images until start of next segment
+            if start + count < segment['start']:
+                if start == 0:
+                    # No transformation because start of the shot
+                    # i.e. last_transformation=None
+                    for i in range(start + count, segment['start']):
+                        output_images.append(cv2.copyMakeBorder(images[i],
+                            STABILIZE_BORDER, STABILIZE_BORDER,
+                            STABILIZE_BORDER, STABILIZE_BORDER,
+                            cv2.BORDER_CONSTANT, value=[0, 0, 0]))
+                else:
+                    # Between 2 segments, apply the
+                    for i in range(start + count, segment['start']):
+                        output_images.append(apply_cv2_transformation(images[i], last_transformation))
+
+
         # Start, nb of frames
         start = segment['start']
         count = segment['count']
@@ -101,7 +123,7 @@ def deshake(shot, images:list, image_list:list,
         # Deshake
         algorithm = segment['alg']
         if algorithm == 'cv2_deshaker':
-            deshaker = CV2_deshaker(add_border=add_border)
+            deshaker = CV2_deshaker()
             __filter_str, __output_images,last_transformation = deshaker.stabilize(
                 shot=shot,
                 images=images[start:start+count],
@@ -115,7 +137,7 @@ def deshake(shot, images:list, image_list:list,
             del deshaker
             print(last_transformation)
         elif algorithm == 'skimage_deshaker':
-            deshaker = Skimage_deshaker(add_border)
+            deshaker = Skimage_deshaker()
             __output_images, __filter_str = deshaker.stabilize(
                 shot=shot,
                 images=images[start:start+count],
@@ -156,14 +178,23 @@ def deshake(shot, images:list, image_list:list,
             else:
                 output_images.extend(__output_images)
 
+
         filter_str += "%s," % (__filter_str)
 
-    filter_str = "%s,%s" % (input_hash, filter_str[:-1])
 
     # Calculate hash
+    filter_str = "%s,%s" % (input_hash, filter_str[:-1])
     if get_hash:
         hash = calculate_hash(filter_str=filter_str)
         return hash, None
+
+
+    # Append last non-stabilized images
+    last_segment_end = segments[-1]['start'] + segments[-1]['count']
+    if last_segment_end < shot['count']:
+        for i in range(last_segment_end, shot['count']):
+            output_images.append(apply_cv2_transformation(images[i], last_transformation))
+
 
     # Log hash
     hash = log_filter(filter_str, shot['hash_log_file'])

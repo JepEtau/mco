@@ -254,9 +254,12 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         # elif action == 'show_edition':
         #     self.signal_preview_options_changed.emit()
         if action == 'copy_from_shot':
-            self.event_is_modified(element='target', event_type='set', parameter='width', value='auto')
+            self.event_is_modified(element='target',
+                event_type='set', parameter='width', value='auto')
         elif action == 'discard':
-            self.event_is_modified(element='target', event_type='discard', parameter='width', value=-1)
+            self.pushButton_target_discard.setEnabled(True)
+            self.event_is_modified(element='target',
+                event_type='discard', parameter='width', value=-1)
 
 
     def event_target_width_changed(self, value):

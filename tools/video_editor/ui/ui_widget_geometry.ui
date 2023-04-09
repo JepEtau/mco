@@ -335,8 +335,8 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>icons/grey/undo.svg</normaloff>
-             <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
+             <normaloff>icons/purple/undo.svg</normaloff>
+             <normalon>icons/purple/undo.svg</normalon>icons/purple/undo.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -359,8 +359,8 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>icons/grey/corner-up-left.svg</normaloff>
-             <normalon>icons/blue/corner-up-left.svg</normalon>icons/grey/corner-up-left.svg</iconset>
+             <normaloff>icons/blue/corner-up-left.svg</normaloff>
+             <normalon>icons/blue/corner-up-left.svg</normalon>icons/blue/corner-up-left.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>

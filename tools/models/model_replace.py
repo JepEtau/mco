@@ -68,6 +68,17 @@ class Model_replace():
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
+        try:
+            if new_frame_no in self.db_replaced_frames[k_ed][k_ep][k_part].keys():
+                print_red("error: replace: circular reference. TODO: block this")
+                return
+        except: pass
+
+        try:
+            if new_frame_no in self.db_replaced_frames_initial[k_ed][k_ep][k_part].keys():
+                print_red("error: replace: circular reference. TODO: block this")
+                return
+        except: pass
         nested_dict_set(self.db_replaced_frames, new_frame_no, k_ed, k_ep, k_part, frame_no)
         self.is_replace_db_modified = True
 

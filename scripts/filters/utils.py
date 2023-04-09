@@ -4,6 +4,8 @@ from pprint import pprint
 from utils.pretty_print import *
 from copy import deepcopy
 
+STABILIZE_BORDER = 12
+
 FINAL_FRAME_WIDTH = 1440
 FINAL_FRAME_HEIGHT = 1080
 STEP_INC = 1

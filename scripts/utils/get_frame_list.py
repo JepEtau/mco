@@ -260,6 +260,7 @@ def get_frame_list_single(db, k_ep, k_part, shot) -> list:
     k_ep_src = shot['k_ep']
     if k_part in ['g_debut', 'g_fin']:
         db_video = db[k_part]['video']
+        print_yellow("CLEEEEEEEEEEEEEEEEEEEEEEEEEEEEAAAAAAAAAAAAAAAAAAAAAAAAAAANNNNNNNNNNNNNNNNNNNNNNNNNN")
     else:
         db_video = db[k_ep]['video']['target'][k_part]
 
@@ -314,7 +315,7 @@ def get_frame_list_single(db, k_ep, k_part, shot) -> list:
 
             # Append the frames before the loop
             filename_template = FILENAME_TEMPLATE % (k_ep_src, k_ed, step_no, suffix)
-            if shot['last_task'] != 'deinterlace':
+            if shot['last_task'] not in ['deinterlace', 'pre_replace']:
                 end -= start
                 start = 0
             print_orange("start=%d, end=%d" % (start, end))
@@ -324,7 +325,7 @@ def get_frame_list_single(db, k_ep, k_part, shot) -> list:
 
             # Loop
             filename_template = FILENAME_TEMPLATE % (k_ep_src, k_ed, step_no, suffix)
-            if shot['last_task'] == 'deinterlace':
+            if shot['last_task'] in ['deinterlace', 'pre_replace']:
                 filepath = os.path.join(input_folder, filename_template % (frame_no))
             else:
                 filepath = os.path.join(input_folder, filename_template % (frame_no - shot['start']))

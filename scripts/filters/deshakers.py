@@ -12,6 +12,7 @@ from skimage.util import img_as_ubyte
 from skimage.util import img_as_float
 
 from filters.filters import edge_sharpen_sobel_gray
+from filters.utils import STABILIZE_BORDER
 from utils.hash import (
     calculate_hash,
     log_filter
@@ -19,8 +20,26 @@ from utils.hash import (
 from utils.pretty_print import *
 
 
+def apply_cv2_transformation(img, x_y_theta:list):
+    img_to_transform = cv2.copyMakeBorder(img,
+        STABILIZE_BORDER, STABILIZE_BORDER,
+        STABILIZE_BORDER, STABILIZE_BORDER,
+        cv2.BORDER_CONSTANT, value=[0, 0, 0])
+
+    t_x, t_y, t_theta = x_y_theta
+    transformation_matrix = np.array(
+        [[np.cos(t_theta), -np.sin(t_theta), t_x],
+        [np.sin(t_theta), np.cos(t_theta), t_y]],
+        dtype=np.float32)
+
+    output_img = cv2.warpAffine(img_to_transform,
+        transformation_matrix,
+        (img_to_transform.shape[1], img_to_transform.shape[0]))
+    return output_img
+
+
 class CV2_deshaker:
-    def __init__(self, add_border:bool=True) -> None:
+    def __init__(self) -> None:
         self.__max_corners = 1000
         self.__quality_level = 0.01
         self.__min_distance = 10.0
@@ -28,9 +47,8 @@ class CV2_deshaker:
         self.__mask = None
         self.__use_harris_detector = False
         self.__k = 0.04
-        self.__add_border = add_border
-        self.__pad_h = 20
-        self.__pad_w = 20
+        self.__pad_h = STABILIZE_BORDER
+        self.__pad_w = STABILIZE_BORDER
         self.__border_color = [0, 0, 0]
 
         self.__use_roi = False
@@ -40,15 +58,13 @@ class CV2_deshaker:
         # Do not use sobel, only for testing purpose
         self.__sobel = False
 
-        self.filters_str = "%03d:%0.2f:%.1f:%d:%0.2f" % (
+        self.filters_str = "%03d:%0.2f:%.1f:%d:%0.2f:%d" % (
             self.__max_corners,
             self.__quality_level,
             self.__min_distance,
             self.__block_size,
-            self.__k)
-
-        if self.__add_border:
-            self.filters_str = ":%d:%d" % (self.__pad_h, self.__pad_w)
+            self.__k,
+            STABILIZE_BORDER)
 
         if self.__sobel:
             self.filters_str += ':sobel'
@@ -61,26 +77,11 @@ class CV2_deshaker:
     def __get_initial_image(self, img, last_transformation):
         # Apply transformation to the initial image
         if last_transformation is not None:
-            img_to_transform = cv2.copyMakeBorder(img,
+            initial_img_stabilized = apply_cv2_transformation(last_transformation)
+        else:
+            initial_img_stabilized = cv2.copyMakeBorder(img,
                 self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
                 cv2.BORDER_CONSTANT, value=self.__border_color)
-
-            t_x, t_y, t_theta = last_transformation
-            transformation_matrix = np.array(
-                [[np.cos(t_theta), -np.sin(t_theta), t_x],
-                [np.sin(t_theta), np.cos(t_theta), t_y]],
-                dtype=np.float32)
-
-            initial_img_stabilized = cv2.warpAffine(img_to_transform,
-                transformation_matrix,
-                (img_to_transform.shape[1], img_to_transform.shape[0]))
-        else:
-            if self.__add_border:
-                initial_img_stabilized = cv2.copyMakeBorder(img,
-                    self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
-                    cv2.BORDER_CONSTANT, value=self.__border_color)
-            else:
-                initial_img_stabilized = img
 
         img_gray_tmp = cv2.cvtColor(initial_img_stabilized, cv2.COLOR_RGB2GRAY)
 
@@ -107,22 +108,15 @@ class CV2_deshaker:
             useHarrisDetector=self.__use_harris_detector,
             k=self.__k)
 
-        if self.__add_border:
-            return initial_img_stabilized, img_gray, keypoints
-
-        else:
-            return img, img_gray, keypoints
+        return initial_img_stabilized, img_gray, keypoints
 
 
     def __stabilize_image(self, img, img_ref_gray, keypoints_ref, directions='all', verbose=False):
         img_gray_tmp = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        if self.__add_border:
-            img_gray_tmp2 = cv2.copyMakeBorder(img_gray_tmp,
-                self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
-                cv2.BORDER_CONSTANT,
-                value=self.__border_color)
-        else:
-            img_gray_tmp2 = img_gray_tmp
+        img_gray_tmp2 = cv2.copyMakeBorder(img_gray_tmp,
+            self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
+            cv2.BORDER_CONSTANT,
+            value=self.__border_color)
 
         if self.__use_roi:
             img_gray_tmp2 = img_gray_tmp[
@@ -188,12 +182,9 @@ class CV2_deshaker:
             [np.sin(t_theta), np.cos(t_theta), t_y]],
             dtype=np.float32)
 
-        if self.__add_border:
-            img_to_transform = cv2.copyMakeBorder(img,
-                self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
-                cv2.BORDER_CONSTANT, value=self.__border_color)
-        else:
-            img_to_transform = img
+        img_to_transform = cv2.copyMakeBorder(img,
+            self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
+            cv2.BORDER_CONSTANT, value=self.__border_color)
 
         if False:
             # Select good points
@@ -236,8 +227,6 @@ class CV2_deshaker:
         suffix = ""
         if self.__use_roi:
             suffix += "roi_"
-        if self.__add_border:
-            suffix += "border"
 
         # Generate and log hash
         filter_str = "%s,stab=%s:%s" % (input_hash, suffix, self.filters_str)
@@ -245,7 +234,7 @@ class CV2_deshaker:
             hash = calculate_hash(filter_str=filter_str)
             return self.filters_str, None, None
         hash = log_filter(filter_str, shot['hash_log_file'])
-        print_lightcyan("\t\t\t(cv2) CV2_deshaker, output hash= %s" % (hash))
+        print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, ref_index:%d" % (len(images), ref_index))
 
         if last_transformation is not None and ref_index != 0:
             print_red("error: stabilize, last transformation will be ignored")
@@ -349,7 +338,7 @@ class CV2_deshaker:
 
 
 class Skimage_deshaker:
-    def __init__(self, add_border:bool=True) -> None:
+    def __init__(self) -> None:
         self.__max_corners = 1000
         self.__quality_level = 0.01
         self.__min_distance = 10.0
@@ -357,7 +346,6 @@ class Skimage_deshaker:
         self.__mask = None
         self.__use_harris_detector = False
         self.__k = 0.04
-        self.__add_border = add_border
         self.__pad_h = 20
         self.__pad_w = 20
         self.__crop_w = 12
@@ -365,15 +353,13 @@ class Skimage_deshaker:
         self.__sobel = False
         self.__border_color = [0, 0, 0]
 
-        self.filters_str = "%03d:%0.2f:%.1f:%d:%0.2f" % (
+        self.filters_str = "%03d:%0.2f:%.1f:%d:%0.2f:%d" % (
             self.__max_corners,
             self.__quality_level,
             self.__min_distance,
             self.__block_size,
-            self.__k)
-
-        if self.__add_border:
-            self.filters_str = ":%d:%d" % (self.__pad_h, self.__pad_w)
+            self.__k,
+            STABILIZE_BORDER)
 
         if self.__sobel:
             self.filters_str += ':sobel'
@@ -415,13 +401,9 @@ class Skimage_deshaker:
         #     use_static_ref = True
         #     suffix = "static"
 
-        if self.__add_border:
-            suffix = "border"
-        else:
-            suffix = "cropped"
 
         # Generate and log hash
-        filters_str = "%s,stab=%s:%s" % (input_hash, suffix, self.filters_str)
+        filters_str = "%s,stab=%s" % (input_hash, self.filters_str)
         if get_hash:
             hash = calculate_hash(filter_str=filters_str)
             return None, hash

@@ -56,10 +56,18 @@ def apply_avisynth_filters(shot, image_list,
             # print("-> line=[%s]" % (line.strip()))
 
         # Replace first and last frame for trim
+        # !!! Add frames because avisynth/FFmpge2 source is not frame accurate
+        if shot['start'] > 0:
+            avisynth_start = shot['start']
+            avisynth_count = shot['count'] + 2
+        else:
+            avisynth_start = shot['start']
+            avisynth_count = shot['count'] + 2
+
         input_file_search = re.search(re.compile("trim\(([^\)]+)"), line)
         if input_file_search is not None:
             line = line.replace(input_file_search.group(1),
-                "%d,-%d" % (shot['start'], shot['count']))
+                "%d,-%d" % (avisynth_start, avisynth_count))
 
         # Line has been patched
         lines[i] = line
@@ -119,7 +127,7 @@ def apply_avisynth_filters(shot, image_list,
     if do_extract:
         ffmpeg_command = ffmpeg_command_common + [
             "-i", os.path.abspath(consolidated_filepath),
-            "-start_number", str(shot['start']),
+            "-start_number", str(avisynth_start),
             filename_template
         ]
         process = create_process(command=ffmpeg_command, process_cfg=db_common['process'])

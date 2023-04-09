@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_geometry.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -177,7 +177,10 @@ class Ui_widget_geometry(object):
         sizePolicy3.setHeightForWidth(self.pushButton_target_discard.sizePolicy().hasHeightForWidth())
         self.pushButton_target_discard.setSizePolicy(sizePolicy3)
         self.pushButton_target_discard.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_target_discard.setIcon(icon2)
+        icon5 = QIcon()
+        icon5.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon5.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_target_discard.setIcon(icon5)
         self.pushButton_target_discard.setFlat(True)
 
         self.gridLayout.addWidget(self.pushButton_target_discard, 0, 5, 1, 1)
@@ -187,10 +190,10 @@ class Ui_widget_geometry(object):
         sizePolicy3.setHeightForWidth(self.pushButton_target_width_copy_from_shot.sizePolicy().hasHeightForWidth())
         self.pushButton_target_width_copy_from_shot.setSizePolicy(sizePolicy3)
         self.pushButton_target_width_copy_from_shot.setFocusPolicy(Qt.NoFocus)
-        icon5 = QIcon()
-        icon5.addFile(u"icons/grey/corner-up-left.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon5.addFile(u"icons/blue/corner-up-left.svg", QSize(), QIcon.Normal, QIcon.On)
-        self.pushButton_target_width_copy_from_shot.setIcon(icon5)
+        icon6 = QIcon()
+        icon6.addFile(u"icons/blue/corner-up-left.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon6.addFile(u"icons/blue/corner-up-left.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_target_width_copy_from_shot.setIcon(icon6)
         self.pushButton_target_width_copy_from_shot.setFlat(True)
 
         self.gridLayout.addWidget(self.pushButton_target_width_copy_from_shot, 0, 4, 1, 1)
@@ -248,10 +251,10 @@ class Ui_widget_geometry(object):
         self.pushButton_shot_crop_edition = QPushButton(self.groupBox_shot_default_geometry_2)
         self.pushButton_shot_crop_edition.setObjectName(u"pushButton_shot_crop_edition")
         self.pushButton_shot_crop_edition.setFocusPolicy(Qt.NoFocus)
-        icon6 = QIcon()
-        icon6.addFile(u"icons/grey/crop.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon6.addFile(u"icons/blue/crop.svg", QSize(), QIcon.Normal, QIcon.On)
-        self.pushButton_shot_crop_edition.setIcon(icon6)
+        icon7 = QIcon()
+        icon7.addFile(u"icons/grey/crop.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon7.addFile(u"icons/blue/crop.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_shot_crop_edition.setIcon(icon7)
         self.pushButton_shot_crop_edition.setCheckable(True)
         self.pushButton_shot_crop_edition.setAutoDefault(False)
         self.pushButton_shot_crop_edition.setFlat(True)
