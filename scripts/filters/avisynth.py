@@ -3,6 +3,7 @@ import os
 import sys
 import re
 import signal
+from filters.ffmpeg_utils import execute_simple_ffmpeg_command
 from utils.process import create_process
 from utils.get_image_list import (
     FILENAME_TEMPLATE,
@@ -69,7 +70,7 @@ def apply_avisynth_filters(shot, image_list,
         input_file_search = re.search(re.compile("trim\(([^\)]+)"), line)
         if input_file_search is not None:
             line = line.replace(input_file_search.group(1),
-                "%d,end=%d" % (avisynth_start, avisynth_start + avisynth_count - 1))
+                "%d,end=%d" % (avisynth_start, (avisynth_start + avisynth_count - 1)))
 
         # Line has been patched
         lines[i] = line
@@ -106,7 +107,7 @@ def apply_avisynth_filters(shot, image_list,
     # Execute the FFmpeg command
     ffmpeg_command_common = [db_common['tools']['ffmpeg']]
     ffmpeg_verbose="-hide_banner -loglevel error"
-    ffmpeg_command_common.extend(ffmpeg_verbose.split(' '))
+    # ffmpeg_command_common.extend(ffmpeg_verbose.split(' '))
 
 
     filename_template = os.path.abspath(os.path.join(output_folder,
@@ -127,21 +128,41 @@ def apply_avisynth_filters(shot, image_list,
 
 
     if do_extract:
-        ffmpeg_command = ffmpeg_command_common + [
-            "-i", os.path.abspath(consolidated_filepath),
-            "-start_number", str(avisynth_start),
-            filename_template
-        ]
-        process = create_process(command=ffmpeg_command, process_cfg=db_common['process'])
-        try:
-            stdout, stderr = process.communicate()
-        except KeyboardInterrupt:
-            process.send_signal(signal.SIGINT)
-            sys.exit()
-        except:
-            process.kill()
-            print("Error: timeout")
-            stdout, stderr = process.communicate()
+        if False:
+            ffv1_filename = filename_template%(1)
+            ffv1_filename=ffv1_filename.replace('png', 'mkv')
+            print(ffv1_filename)
+            ffmpeg_command = ffmpeg_command_common + [
+                "-i", os.path.abspath(consolidated_filepath),
+                "-r", str(25),
+                '-pixel_format', 'bgr24',
+                "-threads", "4",
+                "-vcodec", "ffv1",
+                "-y", ffv1_filename
+                # "-start_number", str(avisynth_start),
+                # filename_template
+            ]
+        else:
+            ffmpeg_command = ffmpeg_command_common + [
+                "-i", os.path.abspath(consolidated_filepath),
+                '-pixel_format', 'bgr24',
+                "-start_number", str(avisynth_start),
+                filename_template
+            ]
+        print(ffmpeg_command)
+        execute_simple_ffmpeg_command(ffmpeg_command=ffmpeg_command)
+        # print(ffmpeg_command)
+        # process = create_process(command=ffmpeg_command, process_cfg=db_common['process'])
+        # print("running")
+        # try:
+        #     stdout, stderr = process.communicate()
+        # except KeyboardInterrupt:
+        #     process.send_signal(signal.SIGINT)
+        #     sys.exit()
+        # except:
+        #     process.kill()
+        #     print("Error: timeout")
+        #     stdout, stderr = process.communicate()
     else:
         print("\t\t\timages already deinterlaced")
 

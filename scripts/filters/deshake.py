@@ -89,8 +89,11 @@ def deshake(shot, images:list, image_list:list,
     filter_str = ""
     last_transformation = None
     start = count = 0
-    inserted_first_frames = False
     transformations = {'start': None, 'end': None}
+    if segments[0]['start'] == 0:
+        inserted_first_frames = True
+    else:
+        inserted_first_frames = False
     for segment in segments:
 
         if not get_hash:

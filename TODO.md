@@ -1,5 +1,7 @@
 # TODO: script
 (1)
+- change into 50fps
+- create a ffv1 file
 - Create "other filters": replace frames by white
 
 (2)

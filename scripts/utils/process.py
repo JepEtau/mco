@@ -19,7 +19,7 @@ def get_process_cfg():
     }
 
 
-def create_process(command, process_cfg, bufsize=10**8):
+def create_process(command, process_cfg, bufsize=10**7):
 
     if sys.platform == 'win32':
         process = subprocess.Popen(command,
