@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>270</width>
+    <width>286</width>
     <height>370</height>
    </rect>
   </property>
@@ -364,7 +364,7 @@
          <number>10</number>
         </property>
         <attribute name="horizontalHeaderDefaultSectionSize">
-         <number>80</number>
+         <number>90</number>
         </attribute>
         <attribute name="horizontalHeaderStretchLastSection">
          <bool>true</bool>

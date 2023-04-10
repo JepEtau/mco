@@ -63,7 +63,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
                             Qt.AlignRight | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter]
         headers = ["shot no.", "frame no.", "new"]
-        default_col_width = [70, 120, 120]
+        default_col_width = [70, 100, 100]
         for col_no, header_str, col_width in zip(range(len(headers)),
                                                     headers,
                                                     default_col_width):

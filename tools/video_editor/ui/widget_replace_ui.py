@@ -24,7 +24,7 @@ class Ui_widget_replace(object):
     def setupUi(self, widget_replace):
         if not widget_replace.objectName():
             widget_replace.setObjectName(u"widget_replace")
-        widget_replace.resize(270, 370)
+        widget_replace.resize(286, 370)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -213,7 +213,7 @@ class Ui_widget_replace(object):
         self.tableWidget_replace.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableWidget_replace.setSortingEnabled(False)
         self.tableWidget_replace.setRowCount(10)
-        self.tableWidget_replace.horizontalHeader().setDefaultSectionSize(80)
+        self.tableWidget_replace.horizontalHeader().setDefaultSectionSize(90)
         self.tableWidget_replace.horizontalHeader().setStretchLastSection(True)
         self.tableWidget_replace.verticalHeader().setVisible(False)
         self.tableWidget_replace.verticalHeader().setMinimumSectionSize(22)

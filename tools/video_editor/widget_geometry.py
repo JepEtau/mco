@@ -53,7 +53,6 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.pushButton_target_width_edition.toggled[bool].connect(partial(self.event_shot_preview_changed, 'target_preview'))
         self.pushButton_target_width_copy_from_shot.clicked.connect(partial(self.event_target, 'copy_from_shot'))
         self.pushButton_target_discard.clicked.connect(partial(self.event_target, 'discard'))
-        self.spinBox_target_width.valueChanged[int].connect(self.event_target_width_changed)
 
         # Shot
         self.pushButton_shot_crop_edition.toggled[bool].connect(partial(self.event_shot_preview_changed, 'crop_edition'))
@@ -126,11 +125,9 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         if (values['k_part'] in ['g_asuivre', 'g_reportage']
             or len(values['shots']) == 1):
             self.groupBox_shot_geometry.setEnabled(False)
-            self.spinBox_target_width.setEnabled(False)
         else:
             # Enable custom only if more than 1 shot and not g_asuivre/g_reportage
             self.groupBox_shot_geometry.setEnabled(True)
-            self.spinBox_target_width.setEnabled(True)
 
 
     def refresh_values(self, frame:dict):
@@ -144,18 +141,14 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.label_message.clear()
 
         # Width before padding
-        self.spinBox_target_width.blockSignals(True)
-        self.spinBox_target_width.setValue(geometry['target']['w'])
-        self.spinBox_target_width.blockSignals(False)
+        self.lineEdit_target_width.setText(str(geometry['target']['w']))
 
         if frame['k_part'] in ['g_asuivre', 'g_reportage']:
             self.groupBox_shot_geometry.setEnabled(False)
-            self.spinBox_target_width.setEnabled(False)
             self.pushButton_target_width_copy_from_shot.setEnabled(False)
             self.is_target_disabled = True
         else:
             self.groupBox_shot_geometry.setEnabled(True)
-            self.spinBox_target_width.setEnabled(True)
             self.pushButton_target_width_copy_from_shot.setEnabled(True)
             self.is_target_disabled = False
 
@@ -386,7 +379,6 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.pushButton_target_width_edition.blockSignals(enabled)
         self.pushButton_target_width_copy_from_shot.blockSignals(enabled)
         self.pushButton_target_discard.blockSignals(enabled)
-        self.spinBox_target_width.blockSignals(enabled)
 
         # Shot
         self.pushButton_shot_crop_edition.blockSignals(enabled)
@@ -554,6 +546,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
             value = -1 if event.angleDelta().y() > 0 else +1
 
+            self.current_key_pressed = None
             if self.is_edition_enabled:
                 event.accept()
                 self.event_is_modified(

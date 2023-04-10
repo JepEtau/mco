@@ -77,7 +77,7 @@ class CV2_deshaker:
     def __get_initial_image(self, img, last_transformation):
         # Apply transformation to the initial image
         if last_transformation is not None:
-            initial_img_stabilized = apply_cv2_transformation(last_transformation)
+            initial_img_stabilized = apply_cv2_transformation(img, last_transformation)
         else:
             initial_img_stabilized = cv2.copyMakeBorder(img,
                 self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
@@ -212,13 +212,18 @@ class CV2_deshaker:
         """Stabilize images without smoothing the trajectory
         """
         verbose=False
-
+        transformations = {
+            'start': None,
+            'end': None,
+        }
         use_static_ref = False
 
         if ref == 'start':
+            # Start from first frame
             ref_index = 0
             use_static_ref = False
         elif ref == 'end':
+            # Start from last frame
             ref_index = len(images) - 1
         elif ref == 'middle':
             ref_index = int(len(images) / 2 - 1)
@@ -232,7 +237,7 @@ class CV2_deshaker:
         filter_str = "%s,stab=%s:%s" % (input_hash, suffix, self.filters_str)
         if get_hash:
             hash = calculate_hash(filter_str=filter_str)
-            return self.filters_str, None, None
+            return self.filters_str, None, transformations
         hash = log_filter(filter_str, shot['hash_log_file'])
         print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, ref_index:%d" % (len(images), ref_index))
 
@@ -267,10 +272,16 @@ class CV2_deshaker:
                 output_images.append(img_stabilized)
                 if verbose:
                     print("append")
+
+                if i == 0:
+                    transformations['start'] = transformation
+            transformations['end'] = transformation
+
         else:
             output_images = [img_stabilized]
             start = ref_index + 1
             end = len(images)
+            transformation = None
             for _ref in ['start', 'end']:
                 for i in range(start, end):
                     if verbose:
@@ -328,11 +339,17 @@ class CV2_deshaker:
                 start = 0
                 end = ref_index
 
-        # Do not return last transformation if not in start-to-end deshake
-        if ref != 'start':
-            transformation = None
+                if _ref == 'start':
+                    print_yellow("ref=start, save transformation as the last", end= '')
+                    print(transformation)
+                    transformations['end'] = transformation
+                elif _ref == 'end':
+                    print_yellow("ref=end, save transformation as the begin", end= '')
+                    print(transformation)
+                    transformations['start'] = transformation
+                transformation = None
 
-        return self.filters_str, output_images, transformation
+        return self.filters_str, output_images, transformations
 
 
 

@@ -44,6 +44,7 @@ STABILIZE_SHOT_PARAMETERS_KEYS = [
     'is_enabled',
 ]
 
+
 def parse_stabilize_configurations(db, k_ep_or_g:str):
     verbose = False
 

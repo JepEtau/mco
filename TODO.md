@@ -1,6 +1,5 @@
 # TODO: script
 (1)
-- deshake: apply transformation to the following frames and not just apply borders.
 
 (2)
 - change shot_start to shot no. in config files? or use middle of shot? Reason:  avisynth
@@ -19,7 +18,8 @@
 
 # TODO: video editor
 (1)
-- geometry widget: add error info
+- curves are not listed (g_debut)
+- curves: save when closing is not working
 - verify if key is pressed before changing crop values (key event)
 - stabilize widget/model
 - Add rulers when stabilize widget is selected

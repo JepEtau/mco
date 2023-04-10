@@ -26,14 +26,19 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
     sys.path.append(module_path)
     from upcunet_v3 import RealWaifuUpScaler
 
-    denoise_to_model = {
-        -1: 'conservative',
-        0: 'no-denoise',
-        1: 'denoise1x',
-        2: 'denoise2x',
-        3: 'denoise3x',
-    }
-    model_name = "up%dx-latest-%s.pth" % (scale, denoise_to_model[denoise])
+    if denoise < 4:
+        denoise_to_model = {
+            -1: 'conservative',
+            0: 'no-denoise',
+            1: 'denoise1x',
+            2: 'denoise2x',
+            3: 'denoise3x',
+        }
+        model_name = "up%dx-latest-%s.pth" % (scale, denoise_to_model[denoise])
+    # else:
+    #     if denoise == 5:
+    #         model_name = ""
+
     model_path = os.path.join(module_path, "weights_v3", model_name)
     if not os.path.isfile(model_path):
         raise Exception("Error: model file %s does not exist" % (model_path))

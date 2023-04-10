@@ -251,6 +251,30 @@
          <property name="bottomMargin">
           <number>3</number>
          </property>
+         <item row="0" column="5">
+          <widget class="QPushButton" name="pushButton_target_discard">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
+           </property>
+           <property name="text">
+            <string extracomment="Undo (Ctrl-Z)"/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/purple/undo.svg</normaloff>
+             <normalon>icons/purple/undo.svg</normalon>icons/purple/undo.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
          <item row="0" column="1">
           <widget class="QPushButton" name="pushButton_target_width_edition">
            <property name="focusPolicy">
@@ -273,39 +297,36 @@
           </widget>
          </item>
          <item row="0" column="3">
-          <widget class="QSpinBox" name="spinBox_target_width">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
+          <widget class="QLineEdit" name="lineEdit_target_width">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
            <property name="minimumSize">
             <size>
-             <width>60</width>
+             <width>40</width>
              <height>0</height>
             </size>
            </property>
-           <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
+           <property name="maximumSize">
+            <size>
+             <width>40</width>
+             <height>16777215</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>1440</string>
+           </property>
+           <property name="frame">
+            <bool>false</bool>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignCenter</set>
            </property>
-           <property name="minimum">
-            <number>1000</number>
-           </property>
-           <property name="maximum">
-            <number>1440</number>
-           </property>
-           <property name="singleStep">
-            <number>1</number>
-           </property>
-           <property name="value">
-            <number>1440</number>
+           <property name="readOnly">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -316,30 +337,6 @@
            </property>
            <property name="text">
             <string>width</string>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="5">
-          <widget class="QPushButton" name="pushButton_target_discard">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
-           </property>
-           <property name="text">
-            <string extracomment="Undo (Ctrl-Z)"/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/purple/undo.svg</normaloff>
-             <normalon>icons/purple/undo.svg</normalon>icons/purple/undo.svg</iconset>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
            </property>
           </widget>
          </item>

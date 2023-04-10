@@ -31,7 +31,6 @@ class Model_curves():
         # Use a single database to store the modified values
         # Thus, no history is possible with this implementation
         self.shots_per_curves = dict()
-
         self.is_curves_db_modified = False
         self.is_curves_selection_db_modified = False
 
@@ -51,6 +50,7 @@ class Model_curves():
         else:
             self.db_curves_library_initial = parse_curves_database(db=db, k_ep_or_g=k_ep)
         self.db_curves_library = dict()
+        pprint(self.db_curves_library_initial)
 
 
     # RGB curves

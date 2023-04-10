@@ -393,15 +393,24 @@ class Model_video_editor(Model_common):
         gc.collect()
         # pprint(self.framelist)
 
+        shot_no = selected_shots['shotlist'][0]
+        shot = self.shots[shot_no]
+
+        # Replace
         self.refresh_replace_list()
 
+        # Curves: update the curves db
+        if shot['k_part'] in ['g_debut', 'g_fin']:
+            curves_library = self.model_database.get_library_curves(shot['k_ed'], shot['k_ep'])
+            self.signal_curves_library_modified.emit(curves_library)
+
+
         if False:
-            shot_no = selected_shots['shotlist'][0]
-            shot = self.shots[shot_no]
             print_lightcyan("================================== SHOT =======================================")
             pprint(shot)
             print_lightcyan("===============================================================================")
         self.signal_ready_to_play.emit(self.playlist_properties)
+
 
 
     def event_save_and_close_requested(self):

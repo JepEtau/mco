@@ -136,7 +136,7 @@ def consolidate_shot(db, shot) -> None:
         # Target geometry: width defined
         try:
             if k_part in ['g_debut', 'g_fin']:
-                target_geometry = db[k_part]['target']['video']['geometry']['target']
+                target_geometry = db[k_part]['video']['geometry']['target']
             else:
                 target_geometry = db[k_ep]['video']['target'][k_part]['geometry']['target']
         except:
