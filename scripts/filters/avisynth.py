@@ -17,6 +17,8 @@ import numpy as np
 import cv2
 
 
+AVISYNTH_INSERT_FRAMES = 0
+
 def apply_avisynth_filters(shot, image_list,
     step_no, filters_str, input_hash, output_folder, db_common, get_hash:bool=False, do_force:bool=False):
 
@@ -58,16 +60,16 @@ def apply_avisynth_filters(shot, image_list,
         # Replace first and last frame for trim
         # !!! Add frames because avisynth/FFmpge2 source is not frame accurate
         if shot['start'] > 0:
-            avisynth_start = shot['start']
-            avisynth_count = shot['count'] + 2
+            avisynth_start = shot['start'] - AVISYNTH_INSERT_FRAMES
+            avisynth_count = shot['count'] +  2 * AVISYNTH_INSERT_FRAMES
         else:
             avisynth_start = shot['start']
-            avisynth_count = shot['count'] + 2
+            avisynth_count = shot['count'] +  AVISYNTH_INSERT_FRAMES
 
         input_file_search = re.search(re.compile("trim\(([^\)]+)"), line)
         if input_file_search is not None:
             line = line.replace(input_file_search.group(1),
-                "%d,-%d" % (avisynth_start, avisynth_count))
+                "%d,end=%d" % (avisynth_start, avisynth_start + avisynth_count - 1))
 
         # Line has been patched
         lines[i] = line

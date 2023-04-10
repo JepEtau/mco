@@ -123,10 +123,10 @@ def deshake(shot, images:list, image_list:list,
         previous_transformation = transformations['end']
 
         # Create a filter
-        filter_str += "deshake=%s:%d:%d:%s:%s=" % (
+        filter_str += "deshake=%s:%d:%d:%s:%s" % (
                 segment['alg'], start, count,
                 segment['ref'] if segment['ref'] is not None else 'none',
-                segment['directions'])
+                segment['mode'])
 
         if not get_hash:
             print("\t\t\t%s" % (filter_str))
@@ -139,7 +139,7 @@ def deshake(shot, images:list, image_list:list,
                 shot=shot,
                 images=images[start:start+count],
                 ref=segment['ref'],
-                directions=segment['directions'],
+                mode=segment['mode'],
                 last_transformation=previous_transformation,
                 step_no=step_no,
                 input_hash=input_hash,
@@ -158,7 +158,7 @@ def deshake(shot, images:list, image_list:list,
                 ref=segment['ref'],
                 step_no=step_no,
                 input_hash=input_hash,
-                directions=segment['directions'],
+                mode=segment['mode'],
                 get_hash=get_hash,
                 do_force=do_force)
             del deshaker
@@ -187,7 +187,7 @@ def deshake(shot, images:list, image_list:list,
             if not inserted_first_frames:
                 # frames have not been inserted because we were waiting for the first transformation
                 if segment['ref'] in 'start' or len(output_images) > 0:
-                    sys.exit(print_red("bug: deshake!!!"))
+                    sys.exit(print_red("bug: deshake!!! segment[ref]=%s, output images: %d" % (segment['ref'], len(output_images))))
 
                 print_lightcyan("Append %d images at the beggining" % (segment['start']))
                 for i in range(segment['start']):

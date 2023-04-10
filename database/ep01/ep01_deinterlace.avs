@@ -1,15 +1,11 @@
 
-SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
-
-FFMPEGSource2("A:\mco\inputs\f\f_ep01.mkv", cache=false, overwrite=true)
-trim(5643, -83)
+# SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
+FFMPEGSource2("A:\mco\inputs\f\f_ep01.mkv", cache=false)
 AssumeTFF()
-# QTGMC(preset="Slower", EdiThreads=2)
-QTGMC(preset="Slower", EdiThreads=2)
+# trim(5643, -83)
+QTGMC(preset="Slower")
 SelectEven()
 aWarpSharp2()
-
 ConvertToRGB24()
-# ImageWriter(file="frames\f_%05da.png", type="png")
-Prefetch(2)
+# Prefetch(2)
 

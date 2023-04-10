@@ -111,7 +111,7 @@ class CV2_deshaker:
         return initial_img_stabilized, img_gray, keypoints
 
 
-    def __stabilize_image(self, img, img_ref_gray, keypoints_ref, directions='all', verbose=False):
+    def __stabilize_image(self, img, img_ref_gray, keypoints_ref, mode='all', verbose=False):
         img_gray_tmp = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         img_gray_tmp2 = cv2.copyMakeBorder(img_gray_tmp,
             self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
@@ -160,16 +160,16 @@ class CV2_deshaker:
             print("warning: __stabilize_image: transformation not found")
             t_x = t_y = t_theta = 0
 
-        if directions == 'vertical':
+        if mode == 'vertical':
             t_x = 0
             t_theta = 0
-        elif directions == 'horizontal':
+        elif mode == 'horizontal':
             t_y = 0
             t_theta = 0
-        elif directions == 'translation':
+        elif mode == 'translation':
             t_theta = 0
         # else
-        #  i.e. directions == 'all':
+        #  i.e. mode == 'all':
 
         if verbose:
             print([t_x, t_y, t_theta])
@@ -207,7 +207,7 @@ class CV2_deshaker:
 
 
     def stabilize(self, shot, images,
-        ref, directions, last_transformation,
+        ref, mode, last_transformation,
         step_no, input_hash, get_hash:bool=False, do_force=False):
         """Stabilize images without smoothing the trajectory
         """
@@ -228,6 +228,9 @@ class CV2_deshaker:
         elif ref == 'middle':
             ref_index = int(len(images) / 2 - 1)
             use_static_ref = True
+        else:
+            sys.exit(print_red("CV2_deshaker.stabilize: error: ref=%s" % (ref)))
+
 
         suffix = ""
         if self.__use_roi:
@@ -267,7 +270,7 @@ class CV2_deshaker:
                     img=img_colored,
                     img_ref_gray=img_ref_gray,
                     keypoints_ref=keypoints_ref,
-                    directions=directions)
+                    mode=mode)
 
                 output_images.append(img_stabilized)
                 if verbose:
@@ -303,7 +306,7 @@ class CV2_deshaker:
                         img=img_colored,
                         img_ref_gray=img_ref_gray,
                         keypoints_ref=keypoints_ref,
-                        directions=directions)
+                        mode=mode)
 
                     if _ref == 'start':
                         output_images.append(img_stabilized)
@@ -340,11 +343,11 @@ class CV2_deshaker:
                 end = ref_index
 
                 if _ref == 'start':
-                    print_yellow("ref=start, save transformation as the last", end= '')
+                    print_yellow("ref=start, save transformation as the last ", end= '')
                     print(transformation)
                     transformations['end'] = transformation
                 elif _ref == 'end':
-                    print_yellow("ref=end, save transformation as the begin", end= '')
+                    print_yellow("ref=end, save transformation as the begin ", end= '')
                     print(transformation)
                     transformations['start'] = transformation
                 transformation = None
@@ -390,7 +393,7 @@ class Skimage_deshaker:
 
 
     def stabilize(self, shot, images, image_list, ref,
-        step_no, input_hash, directions='both',
+        step_no, input_hash, mode='both',
         get_hash:bool=False, do_force=False, verbose=False):
         """Stabilize images without smoothing the trajectory
         """

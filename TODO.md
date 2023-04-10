@@ -1,5 +1,6 @@
 # TODO: script
 (1)
+- Create "other filters": replace frames by white
 
 (2)
 - change shot_start to shot no. in config files? or use middle of shot? Reason:  avisynth
