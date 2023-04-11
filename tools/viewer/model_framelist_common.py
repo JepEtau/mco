@@ -9,10 +9,8 @@ import gc
 import re
 from copy import deepcopy
 
-from filters.utils import filter_id_to_step
 from utils.common import (
     K_GENERIQUES,
-    get_shot_from_frame_no_new,
 )
 
 
@@ -143,7 +141,7 @@ class Model_framelist_common(object):
         #         #     print("No offset:")
 
 
-        #         shot = get_shot_from_frame_no_new(db, frame_no=frame_no, k_ed=frame_k_ed, k_ep=frame_k_ep, k_part=k_part)
+        #         shot = get_shot(db, frame_no=frame_no, k_ed=frame_k_ed, k_ep=frame_k_ep, k_part=k_part)
         #         shot_no = shot['no']
         #         start = shot['start']
         #     else:
@@ -162,7 +160,6 @@ class Model_framelist_common(object):
             'k_ed': frame_k_ed,
             'no': frame_no,
             'filter_id': filter_id,
-            'step': filter_id_to_step(filter_id),
             'filepath': os.path.abspath(filepath),
             'shot_no': shot_no,
             'start': start

@@ -15,10 +15,9 @@ from pprint import pprint
 from filters.curve import Curve
 from utils.common import (
     K_GENERIQUES,
-    get_or_create_src_shot,
-    nested_dict_set,
+    get_shot_from_frame_no,
 )
-
+from utils.nested_dict import nested_dict_set
 from parsers.parser_generiques import (
     get_dependencies_for_generique,
 )
@@ -63,11 +62,8 @@ def parse_curve_configurations(db, k_ep_or_g:str):
                 continue
 
             # Get shot from frame no.
-            # print("parse_curve_configurations, find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
-            # shot = get_shot_from_frame_no_new(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
-            #   replaced by a function which creates the src shot if not defined in the config file
             try:
-                shot = get_or_create_src_shot(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+                shot = get_shot_from_frame_no(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
                 if shot is None:
                     continue
             except:

@@ -16,7 +16,7 @@ from logger import log
 from utils.common import (
     K_GENERIQUES,
     get_k_part_from_frame_no,
-    get_shot_from_frame_no_new,
+    get_shot_from_frame_no,
     pprint_video,
 )
 from parsers.parser_stabilize import (
@@ -134,7 +134,7 @@ class Model_stabilize():
                 k_ed_src = shot['src']['k_ed']
                 k_ep_src = shot['src']['k_ep']
                 k_part_src = get_k_part_from_frame_no(db, k_ed=k_ed_src, k_ep=k_ep_src, frame_no=shot['src']['start'])
-                shot_src = get_shot_from_frame_no_new(db,
+                shot_src = get_shot_from_frame_no(db,
                     shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src)
                 if 'count' not in shot['src'].keys():
                     shot['src']['count'] = shot_src['count']

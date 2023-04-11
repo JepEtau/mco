@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import numpy as np
 import subprocess
+
 
 def get_process_cfg():
     if hasattr(subprocess, 'STARTUPINFO'):

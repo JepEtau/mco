@@ -76,7 +76,7 @@ def ffmpeg_filter(shot, images:list, image_list:list,
     if not sys.platform == 'win32':
         # for fucking linux
         use_memory = False
-        do_use_ffv1 = True
+        do_use_ffv1 = False
 
     if use_memory:
         print("\t\t\tUse memory")

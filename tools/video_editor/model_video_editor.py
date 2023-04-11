@@ -296,7 +296,6 @@ class Model_video_editor(Model_common):
                     frame_no = shot['src']['start'] + i
                 else:
                     frame_no = i
-                    # frame_no = get_frame_no_from_filepath(p)
 
                 if not os.path.exists(p):
                     image_filepath = p_missing_frame

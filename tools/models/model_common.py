@@ -129,13 +129,6 @@ class Model_common(QObject):
         except:
             pass
 
-
-
-    def get_shot(self, shot_no:int):
-        print("%s.get_shot: shot no. %d:" % (__name__, shot_no))
-        return self.shots[shot_no]
-
-
     def get_shot_no_from_index(self, index:int):
         return self.playlist_frames[index]['shot_no']
 

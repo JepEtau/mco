@@ -17,8 +17,8 @@ from utils.hash import (
 )
 from utils.common import (
     K_GENERIQUES,
-    nested_dict_set,
 )
+from utils.nested_dict import nested_dict_set
 from utils.get_curves import get_lut_from_curves
 from utils.path import get_cache_path
 from utils.pretty_print import *

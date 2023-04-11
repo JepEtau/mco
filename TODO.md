@@ -13,8 +13,6 @@
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
 - clean filters.py
-- replace "get_or_create_src_shot" function by "get_src_shot" and generate a warning: patched it verify before removing it
-- parser_consolidate_audio_video is not used anymore: why?
 - (?) process single frame does not work anymore: repair and re-enable ?
 
 

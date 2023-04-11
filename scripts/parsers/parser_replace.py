@@ -11,9 +11,9 @@ from pathlib import (
 from pprint import pprint
 
 from utils.common import (
-    get_src_shot_from_frame_no,
-    nested_dict_set,
+    get_shot_from_frame_no,
 )
+from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 
 
@@ -54,7 +54,7 @@ def parse_replace_configurations(db, k_ep_or_g:str):
                 print("\tsearch %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
 
             try:
-                shot = get_src_shot_from_frame_no(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+                shot = get_shot_from_frame_no(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
             except:
                 if verbose:
                     print("warning: parse_replace_configurations: shot not found for frame no. %d in %s:%s:%s" % (

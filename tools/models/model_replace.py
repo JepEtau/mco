@@ -12,10 +12,8 @@ import collections
 from pprint import pprint
 from logger import log
 
-from utils.common import (
-    K_GENERIQUES,
-    nested_dict_set,
-)
+from utils.common import K_GENERIQUES
+from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 from parsers.parser_replace import (
     get_replaced_frames,

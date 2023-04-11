@@ -6,7 +6,6 @@ from utils.pretty_print import *
 FILENAME_TEMPLATE = "%s_%%05d__%s__%02d%s.png"
 
 
-
 def get_first_image_filepath(shot, folder, step_no, hash=''):
     suffix = "_%s" % (hash) if hash != '' else ''
     filename_template = FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, suffix)
@@ -21,7 +20,6 @@ def get_first_image_filepath(shot, folder, step_no, hash=''):
     image_filepath = os.path.join(os.path.normpath(folder),
         filename_template % (new_frame_no))
     return image_filepath
-
 
 
 def get_new_image_list(shot, step_no, hash=''):
@@ -63,7 +61,6 @@ def get_new_image_list(shot, step_no, hash=''):
                 filename_template % (new_frame_no)))
 
     return image_list
-
 
 
 def get_image_list(shot, folder, step_no, hash=''):

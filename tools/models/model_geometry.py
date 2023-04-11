@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import sys
-
-from filters.utils import FINAL_FRAME_WIDTH
 sys.path.append('../scripts')
 
 from copy import deepcopy
@@ -16,10 +14,9 @@ import collections
 from pprint import pprint
 from logger import log
 
-from utils.common import (
+from utils.nested_dict import (
     nested_dict_clean,
     nested_dict_set,
-    nested_dict_merge,
 )
 from utils.pretty_print import *
 from parsers.parser_geometry import (
@@ -27,7 +24,7 @@ from parsers.parser_geometry import (
     get_initial_default_shot_geometry,
     get_initial_shot_geometry,
 )
-
+from filters.utils import FINAL_FRAME_WIDTH
 
 class Model_geometry():
 

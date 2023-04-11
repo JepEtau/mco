@@ -4,12 +4,10 @@ from copy import deepcopy
 from pprint import pprint
 
 from utils.common import (
-    FPS,
     K_ALL_PARTS,
-    K_GENERIQUES,
-    nested_dict_set,
     pprint_video,
 )
+from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 from utils.time_conversions import ms_to_frames
 

@@ -17,8 +17,8 @@ from logger import log
 from utils.get_curves import calculate_channel_lut
 from utils.common import (
     K_GENERIQUES,
-    nested_dict_set,
 )
+from utils.nested_dict import nested_dict_set
 from parsers.parser_curves import (
     parse_curves_database,
     get_initial_curves_selection,

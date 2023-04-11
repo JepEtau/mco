@@ -15,9 +15,9 @@ from utils.pretty_print import *
 from utils.common import (
     K_GENERIQUES,
     get_k_part_from_frame_no,
-    get_src_shot_from_frame_no,
-    nested_dict_set,
+    get_shot_from_frame_no,
 )
+from utils.nested_dict import nested_dict_set
 
 # cv2.goodFeaturesToTrack
 STABILIZE_SHOT_PARAMETERS_DEFAULT = {
@@ -81,7 +81,7 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
             k_part = get_k_part_from_frame_no(db, k_ed, k_ep, frame_no)
             if k_part == '':
                 continue
-            shot = get_src_shot_from_frame_no(db, frame_no=frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+            shot = get_shot_from_frame_no(db, frame_no=frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
             if verbose:
                 if shot is None:
                     print_orange("\twarning, shot not found for frame no. %d in %s:%s:%s" % (
@@ -178,7 +178,12 @@ def get_shots_stabilize_parameters(db, k_ep, k_part) -> dict:
                 k_ed_src = shot['src']['k_ed']
             k_ep_src = shot['src']['k_ep']
             k_part_src = get_k_part_from_frame_no(db, k_ed_src, k_ep_src, shot['src']['start'])
-            shot_src = get_shot_from_frame_no_new(db, frame_no=shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src)
+            #
+            shot_src = get_shot_from_frame_no(db,
+                frame_no=shot['src']['start'],
+                k_ed=k_ed_src,
+                k_ep=k_ep_src,
+                k_part=k_part_src)
 
         # pprint(shot_src)
         # if 'stabilize' not in shot_src.keys():
@@ -229,7 +234,10 @@ def get_frames_stabilize(db, k_ep, k_part) -> dict:
                 k_ed_src = shot['src']['k_ed']
             k_ep_src = shot['src']['k_ep']
             k_part_src = get_k_part_from_frame_no(db, k_ed_src, k_ep_src, shot['src']['start'])
-            shot_src = get_shot_from_frame_no_new(db, frame_no=shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src)
+            shot_src = get_shot_from_frame_no(db, frame_no=shot['src']['start'],
+                k_ed=k_ed_src,
+                k_ep=k_ep_src,
+                k_part=k_part_src)
 
         if ('stabilize' in shot_src.keys() and 'frames' in shot_src['stabilize'].keys()):
             frames_stabilize.update({shot['no']: shot_src['stabilize']['frames']})

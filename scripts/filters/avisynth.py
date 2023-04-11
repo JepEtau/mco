@@ -31,7 +31,7 @@ AVISYNTH_ADD_FRAMES = 0
 
 def avisynth_deinterlace(shot, image_list,
     step_no, filters_str, output_folder, db_common, get_hash:bool=False):
-    verbose = True
+    verbose = False
 
     if verbose:
         print_lightcyan("avisynth_deinterlace")
@@ -76,7 +76,8 @@ def avisynth_deinterlace(shot, image_list,
             output_folder,
             "%s_%s_%s.avs" % (shot['k_ep'], filters_str, hash))
 
-    print_yellow(script_filepath)
+    if verbose:
+        print_yellow("\t\t\t%s" % (script_filepath))
     with open(script_filepath, mode='w') as script_file:
         for line in lines:
             script_file.write(line)
@@ -114,14 +115,15 @@ def avisynth_deinterlace(shot, image_list,
         do_use_ffv1_file = True
         if os.path.exists(progressive_filepath):
             if verbose:
-                print("\tffv1 is enabled and file exists: %s" % (progressive_filepath))
+                print("\t\t\tffv1 is enabled and file exists: %s" % (progressive_filepath))
                 do_generate_ffv1_file = False
 
         else:
             if verbose:
-                print("\tffv1 is enabled but file does not exist: %s" % (progressive_filepath))
+                print("\t\t\tffv1 is enabled but file does not exist: %s" % (progressive_filepath))
                 do_generate_ffv1_file = True
                 if sys.platform != 'win32':
+                    print_red("\t\t\terror: avisynth is not supported on this platform")
                     # Force deinterlace because avisynth is not supported
                     do_deinterlace = True
                     do_generate_ffv1_file = False
@@ -129,7 +131,7 @@ def avisynth_deinterlace(shot, image_list,
 
     else:
         if verbose:
-            print("\tffv1 is disabled")
+            print("\t\t\tffv1 is disabled")
             do_deinterlace = True
 
 

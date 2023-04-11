@@ -15,9 +15,9 @@ from parsers.parser_generiques import get_dependencies_for_generique
 from utils.common import (
     K_ALL_PARTS,
     K_GENERIQUES,
-    get_src_shot_from_frame_no,
-    nested_dict_set,
+    get_shot_from_frame_no,
 )
+from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 
 # n'utilise pas le no. de plan car en cas de modification de la
@@ -105,7 +105,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
 
                 # Get shot from shot
                 try:
-                    shot = get_src_shot_from_frame_no(db, shot_start, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+                    shot = get_shot_from_frame_no(db, shot_start, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
                 except:
                     # Shots not defined or unused
                     print_orange("\t\t\twarning: shot is not defined: shot_start %d, %s:%s:%s" % (shot_start, k_ed, k_ep, k_part))

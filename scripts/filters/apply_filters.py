@@ -269,35 +269,20 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
         # Avisynth+
         #-----------------------------------------------------------------------
         elif filter['type'] == 'avisynth':
-            if filter['task'] != 'deinterlace':
-                print_red("Error: avisynth filtering is not supported")
+            if filter['task'] == 'deinterlace':
+                hash, images = avisynth_deinterlace(
+                    shot=shot,
+                    image_list=image_list,
+                    step_no=step_no,
+                    filters_str=filter['str'],
+                    output_folder=output_folder,
+                    db_common=db['common'],
+                    get_hash=get_hashes)
+
+            else:
+                print_red("Error: avisynth filters are not supported")
                 pprint(filter)
                 sys.exit()
-
-
-            if sys.platform == 'win32':
-                hash, images = avisynth_deinterlace(
-                    shot=shot,
-                    image_list=image_list,
-                    step_no=step_no,
-                    filters_str=filter['str'],
-                    output_folder=output_folder,
-                    db_common=db['common'],
-                    get_hash=get_hashes)
-            else:
-                print_red("\t\t\terror: avisynth is not supported on this platform")
-
-                hash, images = avisynth_deinterlace(
-                    shot=shot,
-                    image_list=image_list,
-                    step_no=step_no,
-                    filters_str=filter['str'],
-                    output_folder=output_folder,
-                    db_common=db['common'],
-                    get_hash=get_hashes)
-
-
-
 
 
 

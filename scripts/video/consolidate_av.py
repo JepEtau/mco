@@ -5,12 +5,15 @@ from pprint import pprint
 
 from utils.common import (
     FPS,
-    nested_dict_set,
     pprint_audio,
     pprint_video
 )
+from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
-from utils.time_conversions import frames_to_ms, ms_to_frames
+from utils.time_conversions import (
+    frames_to_ms,
+    ms_to_frames,
+)
 
 
 
