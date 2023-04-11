@@ -24,7 +24,8 @@ from utils.pretty_print import *
 #   Parse the common episode file for all editions
 #
 #===========================================================================
-def parse_generiques_target(db, study_mode=False, verbose=False):
+def parse_generiques_target(db):
+    verbose = False
 
     for k_part_g in K_GENERIQUES:
 

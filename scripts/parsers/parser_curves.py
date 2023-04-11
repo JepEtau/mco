@@ -12,7 +12,7 @@ from pathlib import (
 )
 from pprint import pprint
 
-from images.curve import Curve
+from filters.curve import Curve
 from utils.common import (
     K_GENERIQUES,
     get_or_create_src_shot,

@@ -177,10 +177,6 @@ def parse_editions(database, cfg_foldername, verbose=False):
             print("warning: %s: remove edition [%s]" % (__name__, k_ed))
             continue
 
-        # Create filters structure if not exist
-        if 'filters' not in edition.keys():
-           edition['filters'] = dict()
-
         # Consolidate dimensions
         if 'dimensions' in edition.keys():
             # Custom dimensions used for this edition

@@ -19,7 +19,9 @@ from utils.process import get_process_cfg
 #   Parse common configuration file
 #
 #===========================================================================
-def parse_common_configuration(db, config_path, verbose=False):
+def parse_common_configuration(db, config_path):
+    verbose = True
+
     db['common'] = dict()
     db_common = db['common']
 
@@ -35,7 +37,9 @@ def parse_common_configuration(db, config_path, verbose=False):
         config_directories.read(filepath)
 
         for k_section in config_directories.sections():
-            db_common[k_section] = {}
+            if verbose:
+                print(k_section)
+            db_common[k_section] = dict()
             for _option in config_directories.options(k_section):
                 value = config_directories.get(k_section, _option)
                 db_common[k_section][_option] = value
@@ -65,24 +69,6 @@ def parse_common_configuration(db, config_path, verbose=False):
         sys.exit("Unexpected error:", sys.exc_info()[0])
 
 
-    # Options
-    #=============================================================================
-    for key in db_common['options'].keys():
-        value_str = db_common['options'][key]
-        db_common['options'][key] = list(value_str.replace(' ', '').split(','))
-
-    # Create empty list if not defined (avoid too many if/except)
-    for o in ['deinterlace_add_tasks',
-                'upscale_add_tasks',
-                'discard_tasks']:
-        if o not in db_common['options'].keys():
-            db_common['options'][o] = list()
-
-    if 'deinterlace_fast' in db_common['options'].keys():
-        db_common['options']['deinterlace_fast'] = True if db_common['options']['deinterlace_fast'][0] == 'y' else False
-    else:
-        db_common['options']['deinterlace_fast'] = False
-
 
     # Clean settings
     #=============================================================================
@@ -102,6 +88,8 @@ def parse_common_configuration(db, config_path, verbose=False):
                 'inputs',
                 'output',
                 'cache',
+                'cache_progressive',
+                'cache_progressive_default',
                 'cache_default',
                 'frames',
                 'frames_default',
@@ -126,7 +114,7 @@ def parse_common_configuration(db, config_path, verbose=False):
         db_common['directories'][d] = v
 
     # Use default values
-    for d in ['cache', 'frames']:
+    for d in ['cache', 'cache_progressive', 'frames']:
         if not os.path.exists(db_common['directories'][d]):
             db_common['directories'][d] = db_common['directories']['%s_default' % (d)]
         try: del db_common['directories']['%s_default' % (d)]
@@ -225,12 +213,6 @@ def parse_common_configuration(db, config_path, verbose=False):
         }
     }
 
-
-
-
-    # Other common settings
-    #===========================================================================
-    db_common['fps'] = 25.0
 
 
     # # Dimensions

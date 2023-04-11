@@ -38,7 +38,7 @@ def ffmpeg_deinterlace(shot, step_no,
 
     frame_start = shot['start']
     frame_count = shot['count']
-    input_file = shot['input']
+    input_file = shot['inputs']['interlaced']['filepath']
 
     # list of foutput filepath
     filename_template = os.path.abspath(os.path.join(output_folder,
@@ -140,7 +140,7 @@ def extract_single_frame(db, frame, filter_str, width, height, task='upscale'):
     ffmpeg_command.extend([
         "-ss", frame_no_to_sexagesimal(frame_no),
         "-i", frame['input'],
-        "-t", str(frames_count/db['common']['fps']),
+        "-t", str(frames_count/FPS),
         "-f", "image2pipe",
         "-filter_complex", clean_ffmpeg_filter(filter_str),
         "-map", "[outv]",

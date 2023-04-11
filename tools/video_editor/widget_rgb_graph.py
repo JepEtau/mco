@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from images.curve import (
+from filters.curve import (
     Curve,
     Curve_point,
 )

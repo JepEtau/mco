@@ -221,7 +221,6 @@ def process_frames(db, frames, cpu_count):
                 'verbose': db['common']['settings']['verbose']
             },
             'process': db['common']['process'],
-            'fps': db['common']['fps'],
             'directories': {
                 'nnedi3_weights': db['common']['directories']['nnedi3_weights'],
                 'realcugan_ncnn_vulkan': db['common']['directories']['realcugan_ncnn_vulkan'],
@@ -281,7 +280,6 @@ def extract_frames_for_study(db, k_ed, k_ep, k_part, tasks, force:bool=False, sh
     #             'verbose': db['common']['settings']['verbose'],
     #         },
     #         'process': db['common']['process'],
-    #         'fps': db['common']['fps'],
     #         'directories': {
     #             'frames': db['common']['directories']['frames'],
     #             'nnedi3_weights': db['common']['directories']['nnedi3_weights'],

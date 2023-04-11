@@ -77,7 +77,7 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
         concatenation_file = open(previous_concatenation_filepath, 'a')
 
     # Frame duration
-    duration_str = "duration %.02f\n" % (1/float(db['common']['fps']))
+    duration_str = "duration %.02f\n" % (1/FPS)
 
     # Write into the concatenation file
     for p in images_filepath:
@@ -129,7 +129,7 @@ def create_single_concatenation_file(db, k_ep, k_part, shot, previous_concatenat
         concatenation_file = open(previous_concatenation_filepath, "a")
 
     # Frame duration
-    duration_str = "duration %.02f\n" % (1/float(db['common']['fps']))
+    duration_str = "duration %.02f\n" % (1/FPS)
 
     # Write into the concatenation file
     for p in images_filepath:
@@ -220,7 +220,7 @@ def create_concatenation_file_silence(db, k_ep):
 
             # Frame duration
             black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
-            duration_str = "duration %.02f\n" % (1/float(db['common']['fps']))
+            duration_str = "duration %.02f\n" % (1/FPS)
 
             # Create the concatenation file for the silence
             create_folder_for_concatenation(db, k_ep)

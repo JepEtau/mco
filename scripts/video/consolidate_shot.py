@@ -50,9 +50,6 @@ def consolidate_shot(db, shot) -> None:
     # pprint(shot)
     # print("--------------------------------------------------------------------")
 
-    # Input
-    shot['input'] = db['editions'][k_ed]['inputs']['video'][k_ep]
-
     # Cache directory
 
     shot['cache'] = get_cache_path(db, shot)
@@ -173,13 +170,6 @@ def consolidate_shot(db, shot) -> None:
         'geometry', 'dimensions', 'final')
 
 
-    if False:
-    # if shot['no'] == 11:
-        print_lightcyan("================================== SHOT =======================================")
-        pprint(shot)
-        print_lightcyan("===============================================================================")
-        sys.exit()
-
 
     # RGB correction: calculate the lut from the curves
     #---------------------------------------------------------------------------
@@ -228,3 +218,23 @@ def consolidate_shot(db, shot) -> None:
     #     print_green(f['str'])
     # print_green(shot['last_step'])
     # sys.exit()
+
+
+
+    # Inputs
+    shot['inputs'] = deepcopy(db[k_ep]['video'][k_ed][k_part]['inputs'])
+
+    filename = os.path.split(shot['inputs']['interlaced']['filepath'])[1]
+    filename = filename.replace('.mkv', "_%s.mkv" % (shot['filters'][0]['hash']))
+
+    shot['inputs']['progressive']['filepath'] = os.path.join(
+        db['common']['directories']['cache_progressive'], filename)
+
+
+
+    if False:
+    # if shot['no'] == 11:
+        print_lightcyan("================================== SHOT =======================================")
+        pprint(shot)
+        print_lightcyan("===============================================================================")
+        sys.exit()

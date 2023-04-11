@@ -353,9 +353,6 @@ def upscale_esrgan(shot, images:list, image_list:list,
     elif model_name == '1x_ReFocus_V3_140000_G':
         suffix = '1x_ReFocus_V3_140000_G'
         scale = 1
-    elif model_name == 'sudo_RealESRGAN2x_Dropout_3.799.042_G':
-        suffix = "sudo_3.799.042_G"
-        scale = 2
     else:
         suffix = model_name
 

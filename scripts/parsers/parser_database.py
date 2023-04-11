@@ -61,7 +61,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
 
 
     # Parse and merge dictionaries -> common configuration
-    parse_common_configuration(database, PATH_DATABASE, verbose=verbose)
+    parse_common_configuration(database, PATH_DATABASE)
     if False:
         print("parse_common_configuration")
         print("------------------------------------")
@@ -71,7 +71,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
 
 
     # Parse editions: folders, files and additional settings: dimension
-    parse_editions(database, cfg_foldername=PATH_DATABASE, verbose=verbose)
+    parse_editions(database, cfg_foldername=PATH_DATABASE)
     if False:
         print("parse_editions")
         print("------------------------------------")
@@ -93,7 +93,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
 
 
     for k_ed_tmp in database['editions']['available']:
-        parse_generiques(database, k_ed=k_ed_tmp, verbose=verbose)
+        parse_generiques(database, k_ed=k_ed_tmp)
     if False:
         print("parse_generiques")
         print("------------------------------------")
@@ -106,7 +106,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
 
 
     # Parse database file which contains common settings for all episodes
-    parse_episodes_target(database, study_mode=study_mode)
+    parse_episodes_target(database)
     if False:
         print("parse_episodes_target")
         print("-------------- %s ------------------" % (k_ep))
@@ -116,7 +116,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
 
 
     # Parse database file used for the target
-    parse_generiques_target(database, study_mode=study_mode, verbose=verbose)
+    parse_generiques_target(database)
 
     # Create a dict of dependencies for generiques
     dependencies = dict()

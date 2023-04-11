@@ -1,7 +1,13 @@
 # TODO: script
 (1)
-- change into 50fps
-- create a ffv1 file
+- create ffv1 files:
+    - in ep##.ini
+    - directory specified in directories: default: cache/progressive
+    - if ffv1 does not exist: get the info from ep##.ini file
+        * generate the ffv1 file, extract from ffv1 file
+        * deinterlace from input file
+    - if exists: , extractf from ffv1 file
+
 - Create "other filters": replace frames by white
 
 (2)
