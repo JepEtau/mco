@@ -155,7 +155,7 @@ def parse_episode(db, k_ed, k_ep, verbose=False):
             'progressive': {
                 'enabled': False,
                 'start': 0,
-                'count': 0,
+                'count': -1,
             }
         }, k_part, 'inputs')
 

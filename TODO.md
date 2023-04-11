@@ -1,14 +1,7 @@
 # TODO: script
 (1)
-- create ffv1 files:
-    - in ep##.ini
-    - directory specified in directories: default: cache/progressive
-    - if ffv1 does not exist: get the info from ep##.ini file
-        * generate the ffv1 file, extract from ffv1 file
-        * deinterlace from input file
-    - if exists: , extractf from ffv1 file
-
-- Create "other filters": replace frames by white
+- verify img quality: deinterlaced vs deinterlaced/ffv1
+- Create "other filters": replace some images by white images
 
 (2)
 - change shot_start to shot no. in config files? or use middle of shot? Reason:  avisynth
@@ -27,7 +20,6 @@
 
 # TODO: video editor
 (1)
-- curves are not listed (g_debut)
 - curves: save when closing is not working
 - verify if key is pressed before changing crop values (key event)
 - stabilize widget/model

@@ -4,7 +4,7 @@ import sys
 import cv2
 import gc
 import torch
-from filters.avisynth import apply_avisynth_filters
+from filters.avisynth import avisynth_deinterlace
 from filters.ffmpeg_deinterlace import ffmpeg_deinterlace
 from filters.ffmpeg_filter import ffmpeg_filter
 from filters.python import apply_python_filters
@@ -269,34 +269,37 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
         # Avisynth+
         #-----------------------------------------------------------------------
         elif filter['type'] == 'avisynth':
+            if filter['task'] != 'deinterlace':
+                print_red("Error: avisynth filtering is not supported")
+                pprint(filter)
+                sys.exit()
+
+
             if sys.platform == 'win32':
-                hash, images = apply_avisynth_filters(
+                hash, images = avisynth_deinterlace(
                     shot=shot,
                     image_list=image_list,
                     step_no=step_no,
                     filters_str=filter['str'],
-                    input_hash=hash,
-                    output_folder=output_folder,
-                    db_common=db['common'],
-                    get_hash=get_hashes,
-                    do_force=do_force)
-            else:
-                print_red("\t\t\terror: avisynth is not supported on this platform")
-                print_orange("\t\t\treplaced by low-quality deinterlace algorithm (yadif)")
-
-                # Deinterlace
-                # http://avisynth.nl/index.php/Nnedi3_resize16#Parameters_for_nnedi3
-                filter_deinterlace="""nnedi=weights=nnedi3_weights:
-                    nsize=s8x6:nns=n128:qual=slow:etype=s:pscrn=new3,fps=fps=25
-                    """
-                filter_deinterlace_fast="""yadif,fps=fps=25 """
-                hash, images = ffmpeg_deinterlace(
-                    shot=shot,
-                    step_no=step_no,
-                    filter_str=filter_deinterlace_fast,
                     output_folder=output_folder,
                     db_common=db['common'],
                     get_hash=get_hashes)
+            else:
+                print_red("\t\t\terror: avisynth is not supported on this platform")
+
+                hash, images = avisynth_deinterlace(
+                    shot=shot,
+                    image_list=image_list,
+                    step_no=step_no,
+                    filters_str=filter['str'],
+                    output_folder=output_folder,
+                    db_common=db['common'],
+                    get_hash=get_hashes)
+
+
+
+
+
 
         # Null
         #-----------------------------------------------------------------------

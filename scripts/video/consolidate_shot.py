@@ -50,6 +50,10 @@ def consolidate_shot(db, shot) -> None:
     # pprint(shot)
     # print("--------------------------------------------------------------------")
 
+    # Inputs
+    shot['inputs'] = deepcopy(db[k_ep]['video'][k_ed][k_part]['inputs'])
+    shot['inputs']['progressive']['cache'] = db['common']['directories']['cache_progressive']
+
     # Cache directory
 
     shot['cache'] = get_cache_path(db, shot)
@@ -221,12 +225,9 @@ def consolidate_shot(db, shot) -> None:
 
 
 
-    # Inputs
-    shot['inputs'] = deepcopy(db[k_ep]['video'][k_ed][k_part]['inputs'])
-
+    # consolidate the FFv1 filepath
     filename = os.path.split(shot['inputs']['interlaced']['filepath'])[1]
     filename = filename.replace('.mkv', "_%s.mkv" % (shot['filters'][0]['hash']))
-
     shot['inputs']['progressive']['filepath'] = os.path.join(
         db['common']['directories']['cache_progressive'], filename)
 

@@ -23,7 +23,7 @@ from utils.hash import calculate_hash
 from video.consolidate_shot import consolidate_shot
 from filters.ffmpeg_utils import execute_ffmpeg_command
 from utils.path import create_folder_for_video
-from utils.time_conversions import current_datetime_str
+from utils.time_conversions import convert_s_to_m_s_ms, current_datetime_str
 from utils.pretty_print import *
 from video.concatenation import (
     combine_images_into_video,
@@ -174,9 +174,7 @@ def generate_video(db, k_ed:str, k_ep:str,
 
 
             elapsed_time = time.time() - start_shot_time
-            minutes = int(elapsed_time/60)
-            seconds = int(elapsed_time - (minutes * 60))
-            milliseconds = 1000 * (elapsed_time - (60 * minutes + seconds))
+            minutes, seconds, milliseconds = convert_s_to_m_s_ms(elapsed_time)
             print_purple("Shot no. %d generated in %02d:%02d.%d (%.02fs/f)" % (
                 shot['no'],
                 minutes, seconds, int(1 + milliseconds/100),
