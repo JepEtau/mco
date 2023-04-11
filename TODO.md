@@ -1,9 +1,9 @@
 # TODO: script
 (1)
-- verify img quality: deinterlaced vs deinterlaced/ffv1
-- Create "other filters": replace some images by white images
+- verify ffv1 duration before deinterlace
 
 (2)
+- Create "other filters": replace some images by white images
 - change shot_start to shot no. in config files? or use middle of shot? Reason:  avisynth
 - custom filter depending on shot. Reason: deshake or do not block filtering if no deshake parameters
 

@@ -31,7 +31,7 @@ AVISYNTH_ADD_FRAMES = 0
 
 def avisynth_deinterlace(shot, image_list,
     step_no, filters_str, output_folder, db_common, get_hash:bool=False):
-    verbose = False
+    verbose = True
 
     if verbose:
         print_lightcyan("avisynth_deinterlace")
@@ -59,17 +59,22 @@ def avisynth_deinterlace(shot, image_list,
         return hash, None
     hash = log_filter(filter_str, shot['hash_log_file'])
 
+    # Get progressive filename
+    progressive_filepath = shot['inputs']['progressive']['filepath']
+
     # Write it in the cache directory
-    if (shot['inputs']['progressive']['enabled']
-        and shot['inputs']['progressive']['start'] == 0
-        and shot['inputs']['progressive']['count'] == -1):
+    if shot['inputs']['progressive']['enabled']:
+        # and shot['inputs']['progressive']['start'] == 0
+        # and shot['inputs']['progressive']['count'] == -1):
         # Store it in the cache_progressive folder
         cache_progressive = shot['inputs']['progressive']['cache']
         if not os.path.exists(cache_progressive):
             os.makedirs(cache_progressive)
-        script_filepath = os.path.join(
-            cache_progressive,
-            "%s_%s_%s.avs" % (shot['k_ep'], filters_str, hash))
+        script_filepath = progressive_filepath.replace('.mkv', '.avs')
+
+        # os.path.join(
+        #     cache_progressive,
+        #     "%s_%s_%s.avs" % (shot['k_ep'], filters_str, hash))
     else:
         # Store it in the output folder
         script_filepath = os.path.join(
@@ -78,9 +83,10 @@ def avisynth_deinterlace(shot, image_list,
 
     if verbose:
         print_yellow("\t\t\t%s" % (script_filepath))
-    with open(script_filepath, mode='w') as script_file:
-        for line in lines:
-            script_file.write(line)
+    if not os.path.exists(script_filepath):
+        with open(script_filepath, mode='w') as script_file:
+            for line in lines:
+                script_file.write(line)
 
 
     # Output images
@@ -110,7 +116,6 @@ def avisynth_deinterlace(shot, image_list,
     do_use_ffv1_file = False
 
     # Try using ffv1 file if enable and exists
-    progressive_filepath = shot['inputs']['progressive']['filepath']
     if shot['inputs']['progressive']['enabled']:
         do_use_ffv1_file = True
         if os.path.exists(progressive_filepath):
@@ -121,18 +126,18 @@ def avisynth_deinterlace(shot, image_list,
         else:
             if verbose:
                 print("\t\t\tffv1 is enabled but file does not exist: %s" % (progressive_filepath))
-                do_generate_ffv1_file = True
-                if sys.platform != 'win32':
-                    print_red("\t\t\terror: avisynth is not supported on this platform")
-                    # Force deinterlace because avisynth is not supported
-                    do_deinterlace = True
-                    do_generate_ffv1_file = False
-                    do_use_ffv1_file = False
+            do_generate_ffv1_file = True
+            if sys.platform != 'win32':
+                print_red("\t\t\terror: avisynth is not supported on this platform")
+                # Force deinterlace because avisynth is not supported
+                do_deinterlace = True
+                do_generate_ffv1_file = False
+                do_use_ffv1_file = False
 
     else:
         if verbose:
             print("\t\t\tffv1 is disabled")
-            do_deinterlace = True
+        do_deinterlace = True
 
 
     # Execute the FFmpeg command
