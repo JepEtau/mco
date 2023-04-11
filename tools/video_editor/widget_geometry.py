@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QApplication
 )
 
-from utils.common import K_GENERIQUES, nested_dict_get
+from utils.common import K_GENERIQUES
 
 from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet, set_widget_stylesheet, update_selected_widget_stylesheet

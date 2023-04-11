@@ -125,7 +125,8 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                         output_folder=output_folder,
                         get_hash=get_hashes,
                         do_force=do_force)
-                    # print("\t\t\tupscale: returned %s" % (hash))
+                    # if not get_hashes:
+                    #     print("\t\t\tupscale: returned %s" % (hash))
 
                 elif xgan['name'] == 'real_esrgan':
                     if xgan['model'] == '':
@@ -142,7 +143,8 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                         output_folder=output_folder,
                         get_hash=get_hashes,
                         do_force=do_force)
-                    # print("\t\t\tupscale: returned %s" % (hash))
+                    # if not get_hashes:
+                    #     print("\t\t\tupscale: returned %s" % (hash))
 
                 elif xgan['name'] == 'esrgan':
                     if xgan['model'] == '':
@@ -175,8 +177,8 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                     output_folder=output_folder,
                     get_hash=get_hashes,
                     do_force=do_force)
-                if not get_hashes:
-                    print_lightgrey("\tupscale: returned %d images" % (len(images)))
+                # if not get_hashes:
+                #     print_lightgrey("\t\t\tupscale: returned %d images" % (len(images)))
 
         # Python: opencv2/scikit
         #-----------------------------------------------------------------------

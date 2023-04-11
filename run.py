@@ -3,7 +3,6 @@
 import sys
 sys.path.append('scripts')
 
-import os
 import argparse
 import gc
 from pprint import pprint
@@ -13,14 +12,16 @@ from audio.extract import extract_audio
 from audio.generate import generate_audio
 from filters.utils import FILTER_TAGS
 
-
-from images.extract_frames import extract_frames_for_study
-from parsers.parser_database import parse_database
+from parsers.parser_database import (
+    parse_database,
+    parse_database_for_study
+)
 from utils.common import (
     K_ALL_PARTS,
     K_GENERIQUES,
     get_database_size,
 )
+from utils.pretty_print import *
 from video.concatenation import (
     merge_audio_and_video_tracks,
     concatenate_all_clips,
@@ -66,13 +67,13 @@ def main():
         type=int,
         default=0,
         required=False,
-        help="debug: plans à générer: début. NON VERIFIE")
+        help="debug: plans à générer: début.")
 
     parser.add_argument("--shot_max",
         type=int,
         default=999999,
         required=False,
-        help="debug: plans à générer: fin. NON VERIFIE")
+        help="debug: plans à générer: fin.")
 
     parser.add_argument("--vfilter",
         default=FILTER_TAGS[-1],
@@ -89,13 +90,9 @@ def main():
         ],
         help="debug: applique les filtres audio jusqu\'à celui spécifié ici")
 
-    parser.add_argument("--study",
-        action="store_true",
-        help="debug: utilisé pour les études des trames, des filtres, etc. NON VERIFIE")
-
     parser.add_argument("--frames",
         action="store_true",
-        help="debug: utilisé pour les études des trames, des filtres, etc.")
+        help="debug: sera utilisé pour comparer des trames, des filtres, etc.")
 
     parser.add_argument("--edition",
         default='',
@@ -147,25 +144,28 @@ def main():
 
     video_filter = arguments.vfilter.replace('final', 'geometry')
     do_av_merge = False
-    if (not arguments.study
-    and arguments.afilter == ''
-    and not arguments.frames):
+    if not arguments.frames and arguments.afilter == '':
         if (arguments.part in ['g_debut', 'g_fin']
         or arguments.part == ''):
+
             print("\t- force processing audio and video")
             arguments.afilter = 'final'
             if video_filter == '':
                 video_filter = 'geometry'
             do_av_merge = True
+
         elif arguments.part != '':
             if video_filter == '':
                 video_filter = 'geometry'
             do_av_merge = True
 
     if arguments.parse_only:
-        # Parse database only
         # Parse database
-        parse_database(g_database, k_ed=k_ed, k_ep=k_episode, verbose=verbose, study_mode=arguments.frames)
+        parse_database(g_database,
+            k_ed=k_ed,
+            k_ep=k_episode,
+            verbose=verbose,
+            study_mode=arguments.frames)
         gc.collect()
         print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
 
@@ -228,17 +228,15 @@ def main():
         sys.exit("Error: a part shall be one of the following: %s" % (", ".join(K_ALL_PARTS)))
 
     # Parse database
-    if k_episode == 'ep00' and arguments.frames:
-        # for frame study
-        k_episode = 'ep01'
+    #-------------------------------------------------
+    if arguments.frames:
+        k_episode = 'ep01' if k_episode == 'ep00' else k_episode
+        parse_database_for_study(g_database, k_ep=k_episode, k_ed=k_ed)
+    else:
+        parse_database(g_database, k_ep=k_episode)
 
-    parse_database(g_database,
-        k_ep=k_episode,
-        k_ed=k_ed,
-        verbose=verbose, study_mode=arguments.frames)
     gc.collect()
     print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
-
 
     # Audio
     #-------------------------------------------------
@@ -289,7 +287,6 @@ def main():
                     force=arguments.force|arguments.regenerate)
 
 
-
     # Video
     #-------------------------------------------------
 
@@ -306,17 +303,7 @@ def main():
 
     if arguments.frames:
         # Extract frames
-        extract_frames_for_study(
-            db=g_database,
-            k_ed=k_ed,
-            k_ep=k_episode,
-            k_part=arguments.part,
-            last_task=video_filter,
-            force=arguments.force,
-            shot_min=shot_min, shot_max=shot_max)
-        return
-
-    # elif video_filter in ['deinterlace', 'upscale', 'geometry']:
+        sys.exit(print_red("Not yet supported. TODO: create a function to copy images from cache to frames directory"))
     else:
         # Generate the video
         generate_video(

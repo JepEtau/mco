@@ -22,13 +22,24 @@ from models.model_database import Model_database
 from models.model_common import (
     Model_common,
 )
-
-from utils.common import K_GENERIQUES, nested_dict_set
-from filters.utils import FINAL_FRAME_WIDTH, STABILIZE_BORDER, get_dimensions_from_crop_values, is_stabilize_task_enabled
-from utils.get_frame_list import get_frame_list, get_frame_list_single
 from video.consolidate_shot import consolidate_shot
-from filters.filters import calculate_geometry_parameters, cv2_geometry_filter, filter_rgb
+from filters.filters import (
+    calculate_geometry_parameters,
+    cv2_geometry_filter,
+    filter_rgb)
+from filters.utils import (
+    FINAL_FRAME_WIDTH,
+    STABILIZE_BORDER,
+    get_dimensions_from_crop_values,
+    is_stabilize_task_enabled
+)
+from utils.common import K_GENERIQUES
+from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
+from utils.get_frame_list import (
+    get_frame_list,
+    get_frame_list_single
+)
 
 
 class Model_video_editor(Model_common):

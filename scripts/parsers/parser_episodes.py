@@ -125,7 +125,7 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39):
 #   Parse a single episode configuration file
 #
 #===========================================================================
-def parse_episode(db, k_ed, k_ep, verbose=False):
+def parse_episode(db, k_ed, k_ep):
     verbose = False
 
     if verbose:

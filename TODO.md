@@ -13,7 +13,7 @@
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
 - clean filters.py
-- (?) process single frame does not work anymore: repair and re-enable ?
+- (?) '--frames' argument: copy frames form cache to 'frames' directory. Reason: compare with other tools? If frame does not exist, ignore
 
 
 # TODO: video editor

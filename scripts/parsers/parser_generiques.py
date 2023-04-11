@@ -14,7 +14,11 @@ from pprint import pprint
 
 from parsers.parser_audio import parse_audio_section_generique
 from parsers.parser_shots import parse_target_shotlist
-from utils.common import FPS, K_GENERIQUES, nested_dict_set
+from utils.common import (
+    FPS,
+    K_GENERIQUES
+)
+from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 
 

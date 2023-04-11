@@ -43,21 +43,13 @@ from utils.pretty_print import *
 
 
 
-def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
+def parse_database(database, k_ep,):
     """
         database: global database
         k_ep: episode to generate
         k_ed: if specified, only source will be used (study mode)
     """
     print_lightcyan("parse database: %s" % (k_ep))
-
-    if k_ed != '':
-        parse_database_for_study(database,
-            k_ep=k_ep,
-            k_ed=k_ed,
-            verbose=verbose,
-            study_mode=True)
-        return
 
 
     # Parse and merge dictionaries -> common configuration
@@ -159,7 +151,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
                 # Do not parse this episode another time
                 continue
             print_lightblue("  - parse %s:%s" % (k_ed_tmp, k_ep_tmp))
-            parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep_tmp, verbose=verbose)
+            parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep_tmp)
 
     # Parse other config files for each dependency
     for k_ed_tmp, v in dependencies.items():
@@ -222,7 +214,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
 
 
 
-def parse_database_for_study(db, k_ep, k_ed, verbose=False, study_mode=False):
+def parse_database_for_study(db, k_ep, k_ed):
     """
         database: global database
         k_ep: episode to generate
@@ -230,11 +222,12 @@ def parse_database_for_study(db, k_ep, k_ed, verbose=False, study_mode=False):
     """
 
     print("Parse database for study")
+    verbose = False
 
-    parse_common_configuration(db, PATH_DATABASE, verbose=verbose)
-    parse_editions(db, verbose=verbose)
+    parse_common_configuration(db, PATH_DATABASE)
+    parse_editions(db)
     db_init_episodes(db, k_ed=k_ed)
-    parse_generiques(db, k_ed=k_ed, verbose=verbose)
+    parse_generiques(db, k_ed=k_ed)
     parse_episode(db, k_ed=k_ed, k_ep=k_ep)
     parse_replace_configurations(db, k_ep_or_g=k_ep)
     parse_curve_configurations(db, k_ep_or_g=k_ep)
