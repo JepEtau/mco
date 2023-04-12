@@ -20,7 +20,7 @@ from utils.common import (
     K_ALL_PARTS_ORDERED,
 )
 from utils.hash import calculate_hash
-from video.consolidate_shot import consolidate_shot
+from shot.consolidate_shot import consolidate_shot
 from filters.ffmpeg_utils import execute_ffmpeg_command
 from utils.path import create_folder_for_video
 from utils.time_conversions import convert_s_to_m_s_ms, current_datetime_str
@@ -32,7 +32,7 @@ from video.concatenation import (
     create_concatenation_file_silence,
     create_concatenation_file_video,
 )
-from video.process_shot import process_shot
+from shot.process_shot import process_shot
 
 
 def generate_video(db, k_ed:str, k_ep:str,

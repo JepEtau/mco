@@ -37,10 +37,10 @@ class Widget_selection(QWidget, Ui_widget_selection):
     signal_close = Signal()
 
 
-    def __init__(self, ui, model):
+    def __init__(self, ui, controller):
         super(Widget_selection, self).__init__()
         self.setupUi(self)
-        self.model = model
+        self.controller = controller
         self.ui = ui
 
         # Setup and patch ui

@@ -30,9 +30,9 @@ GRAPH_WIDTH = 512
 class Widget_curves(Widget_common, Ui_widget_curves):
     signal_save_rgb_curves_as = Signal(dict)
 
-    def __init__(self, ui, model):
+    def __init__(self, ui, controller):
         super(Widget_curves, self).__init__(ui)
-        self.model = model
+        self.controller = controller
         self.ui = ui
         self.setObjectName('curves')
 

@@ -26,7 +26,7 @@ from utils.common import K_GENERIQUES
 from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet, set_widget_stylesheet, update_selected_widget_stylesheet
 
-from video_editor.model_video_editor import Model_video_editor
+from tools.video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_geometry_ui import Ui_widget_geometry
 
 
@@ -34,9 +34,9 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
     signal_geometry_modified = Signal(dict)
     signal_position_changed = Signal(str)
 
-    def __init__(self, ui, model:Model_video_editor):
+    def __init__(self, ui, controller:Controller_video_editor):
         super(Widget_geometry, self).__init__(ui)
-        self.model = model
+        self.controller = controller
         self.ui = ui
         self.setObjectName('geometry')
 

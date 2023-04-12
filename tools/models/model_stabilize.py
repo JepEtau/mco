@@ -2,6 +2,7 @@
 import sys
 sys.path.append('../scripts')
 
+
 import collections
 from copy import deepcopy
 import os
@@ -16,15 +17,14 @@ from logger import log
 from utils.common import (
     K_GENERIQUES,
     get_k_part_from_frame_no,
-    get_shot_from_frame_no,
-    pprint_video,
 )
+from utils.nested_dict import nested_dict_clean, nested_dict_set
+from utils.pretty_print import *
+
+from shot.utils import get_shot_from_frame_no
 from parsers.parser_stabilize import (
-    STABILIZE_SHOT_PARAMETERS_DEFAULT,
-    get_shots_stabilize_parameters,
-    get_frames_stabilize,
+    get_initial_shot_stabilize_settings,
 )
-#!!! This does not work, but still in the project for later use
 
 
 class Model_stabilize():
@@ -32,222 +32,168 @@ class Model_stabilize():
     def __init__(self):
         # Use a single database to store the modified values
         # Thus, no history is possible with this implementation
-        # self.db_stabilize_frames_initial = dict()
-        self.db_stabilize_frames = dict()
-        self.db_stabilize_shots_parameters = dict()
+        self.db_stabilize_initial = dict()
+        self.db_stabilize = dict()
         self.is_stabilize_db_modified = False
 
+
     def initialize_db_for_stabilize(self, db, k_ep, k_part):
-        self.db_stabilize_shots_parameters_initial = get_shots_stabilize_parameters(self.global_database, k_ep=k_ep, k_part=k_part)
-        self.db_stabilize_shots_parameters = dict()
+        self.db_stabilize_initial = get_initial_shot_stabilize_settings(db, k_ep=k_ep, k_part=k_part)
+        self.db_stabilize = dict()
+        # print_lightcyan(f"initialize_db_for_stabilize")
+        # pprint(self.db_stabilize_initial)
+        # sys.exit()
 
-        self.db_stabilize_frames_initial = get_frames_stabilize(self.global_database, k_ep=k_ep, k_part=k_part)
-        self.db_stabilize_frames = dict()
-
-
-
-    # Stabilize parameters
-    def get_shot_stabilize_parameters(self, shot_no, frame_no=-1, initial=False):
-        """ Return the parameters used for the stabilize
-        """
-        # print("get_shot_stabilize_parameters: shot no. %d, frame no. %d" % (shot_no, frame_no))
-        # pprint(self.db_stabilize_shots_parameters)
-
-        if shot_no in self.db_stabilize_shots_parameters.keys() and not initial:
-            # print("found in modified")
-            parameters = self.db_stabilize_shots_parameters[shot_no]
-        elif shot_no in self.db_stabilize_shots_parameters_initial.keys():
-            # print("found in initial")
-            parameters = self.db_stabilize_shots_parameters_initial[shot_no]
-        else:
-            # print("Error, no stabilize defined for this shot")
-            return deepcopy(STABILIZE_SHOT_PARAMETERS_DEFAULT)
-
-        if frame_no == -1:
-            return parameters
-
-        # A shot may contains multiple shots; this dict contains a list of segments
-        for segment in parameters:
-            if segment['start'] <= frame_no < segment['end']:
-                return segment
-        # print("segment not found for %d" % (frame_no))
-        return deepcopy(STABILIZE_SHOT_PARAMETERS_DEFAULT)
+    def is_stabilize_allowed(self, shot):
+        # indicates if we can use the stabilize widget
+        for f in shot['filters']:
+            if f['str'] == 'deshake':
+                return False
+        return True
 
 
-    def set_shot_stabilize_parameters(self, shot_no, shot_parameters):
-        if type(shot_parameters) is dict:
-            self.db_stabilize_shots_parameters[shot_no][0].update(shot_parameters)
-        else:
-            self.db_stabilize_shots_parameters[shot_no] = deepcopy(shot_parameters)
+
+    def get_shot_stabilize_settings(self, shot:dict):
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        shot_start = shot['start']
+        try:
+            return self.db_stabilize[k_ed][k_ep][k_part][shot_start]
+        except:
+            pass
+        try:
+            return self.db_stabilize_initial[k_ed][k_ep][k_part][shot_start]
+        except:
+            return None
+
+
+    def set_shot_stabilize_settings(self, shot:dict, settings):
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        shot_start = shot['start']
+        nested_dict_set(self.db_stabilize, settings, k_ed, k_ep, k_part, shot_start)
         self.is_stabilize_db_modified = True
 
 
-    def reset_shot_stabilize_parameters(self, shot_no):
-        print("reset shot stabilize parameters")
-        if shot_no in self.db_stabilize_shots_parameters.keys():
-            del self.db_stabilize_shots_parameters[shot_no]
-        self.flush_frames_stabilize(shot_no)
 
-
-
-    # Stabilize values for each frame
-    def get_frame_stabilize(self, shot_no, frame_no):
-        for db_tmp in [self.db_stabilize_frames,
-                        self.db_stabilize_frames_initial]:
-            if shot_no in db_tmp.keys() and frame_no in db_tmp[shot_no].keys():
-                return db_tmp[shot_no][frame_no]
-        return None
-
-
-    def set_frame_stabilize(self, shot_no, frame_no, transformation):
-        db_modified = self.db_stabilize_frames
-        if shot_no not in db_modified.keys():
-            db_modified[shot_no] = dict()
-        db_modified[shot_no][frame_no] = transformation
+    def delete_shot_stabilize_settings(self, shot):
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        shot_start = shot['start']
+        nested_dict_set(self.db_stabilize, None, k_ed, k_ep, k_part, shot_start)
         self.is_stabilize_db_modified = True
 
 
-    def flush_frames_stabilize(self, shot_no):
-        print("flush_frames_stabilize")
-        db_modified = self.db_stabilize_frames
-        if shot_no in db_modified.keys():
-            del db_modified[shot_no]
+    def discard_default_shot_stabilize_settings(self, shot):
+        log.info("discard_default_shot_stabilize_settings")
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        shot_start = shot['start']
+        try: del self.db_stabilize[k_ed][k_ep][k_part][shot_start]
+        except: pass
+        nested_dict_clean(self.db_stabilize)
+        if len(self.db_stabilize) == 0:
+            self.is_stabilize_db_modified = False
 
 
 
-
-
-    def save_stabilize_database(self, k_ep, k_part, shots):
-        print("save_stabilize_database")
+    def save_shot_stabilize_settings(self, shot):
+        verbose = False
         if not self.is_stabilize_db_modified:
             return True
 
-        log.info("save stabilize database %s:%s" % (k_ep, k_part))
+        # log.info(f"save stabilize database {k_ep}:{k_part}")
         db = self.global_database
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        shot_start = shot['start']
+        if verbose:
+            print(f"save_shot_stabilize_settings: {k_ed}:{k_ep}:{k_part} shot no. {shot['no']}, start={shot_start}")
 
-        for shot_no, shot in shots.items():
-            # print("***********************************************")
-            # pprint(shot)
+        # Open configuration file
+        if k_part in ['g_debut', 'g_fin']:
+            filepath = os.path.join(db['common']['directories']['config'], k_part, f"{k_part}_stabilize.ini")
+        else:
+            filepath = os.path.join(db['common']['directories']['config'], k_ep, f"{k_ep}_stabilize.ini")
+        if filepath.startswith("~/"):
+            filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
 
-            # Select the shot used for the generation
-            if 'src' in shot.keys() and shot['src']['use']:
-                k_ed_src = shot['src']['k_ed']
-                k_ep_src = shot['src']['k_ep']
-                k_part_src = get_k_part_from_frame_no(db, k_ed=k_ed_src, k_ep=k_ep_src, frame_no=shot['src']['start'])
-                shot_src = get_shot_from_frame_no(db,
-                    shot['src']['start'], k_ed=k_ed_src, k_ep=k_ep_src, k_part=k_part_src)
-                if 'count' not in shot['src'].keys():
-                    shot['src']['count'] = shot_src['count']
-                if shot_src is None:
-                    sys.exit("Error: save_stabilize_database: shot_src is None")
-            else:
-                k_ed_src = db[k_ep]['common']['video']['reference']['k_ed']
-                k_ep_src = k_ep
-                k_part_src = k_part
-                shot_src = shot
+        # Parse the file
+        if os.path.exists(filepath):
+            config_stabilize = configparser.ConfigParser(dict_type=collections.OrderedDict)
+            config_stabilize.read(filepath)
+        else:
+            config_stabilize = configparser.ConfigParser({}, collections.OrderedDict)
 
+        if verbose:
+            print_lightgreen("save_stabilize_database")
+            pprint(self.db_stabilize)
 
-            # Use the config file
-            if k_part in K_GENERIQUES:
-                k_ed_src = db[k_part]['common']['video']['reference']['k_ed']
-                k_part_src = k_part
-
-
-            # Add parameters
-            if shot_no not in self.db_stabilize_shots_parameters.keys():
-                log.info("This shot has not been modified, discard save")
-                print(("This shot has not been modified, discard save"))
-                self.is_stabilize_db_modified = False
-                return True
+        # Get settings from db
+        try: stabilize_settings = self.db_stabilize[k_ed][k_ep][k_part][shot_start]
+        except:
+            print("Warning: stabilize settings have not been modified")
 
 
-            # Open configuration file
-            if k_part in K_GENERIQUES:
-                filepath = os.path.join(db['common']['directories']['config'], k_part_src, "%s_stabilize.ini" % (k_part))
-            else:
-                filepath = os.path.join(db['common']['directories']['config'], k_ep_src, "%s_stabilize.ini" % (k_ep))
-            if filepath.startswith("~/"):
-                filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+        # Section, option
+        k_section = f"{k_ed}.{k_ep}.{k_part}"
+        k_option = str(shot_start)
 
+        # Set or remove option
+        if stabilize_settings is None:
+            # Remove from config file
+            try: config_stabilize.remove_option(k_section, k_option)
+            except: pass
+        else:
+            # Convert dict into a str
+            stabilize_settings_str = "enable=%s;" % ('true' if stabilize_settings['enabled'] else 'false')
+            for segment in stabilize_settings['segments']:
+                mode_str = ""
+                for k, v in segment['mode'].items():
+                    mode_str += f"+{k}" if v else ''
 
-            # Parse the file
-            if os.path.exists(filepath):
-                config_stabilize = configparser.ConfigParser(dict_type=collections.OrderedDict)
-                config_stabilize.read(filepath)
-            else:
-                config_stabilize = configparser.ConfigParser({}, collections.OrderedDict)
-
-            # pprint(self.db_stabilize_frames)
-
-            # Update the config file
-            k_section = '%s.%s.%s' % (k_ed_src, k_ep_src, k_part_src)
-
-            # Create a section if it does not exist
-            if not config_stabilize.has_section(k_section):
+                stabilize_settings_str += "\n%s:start=%d:end=%d:ref=%s:mode=%s" % (
+                    segment['alg'],
+                    segment['start'],
+                    segment['start'] + segment['count'],
+                    segment['ref'],
+                    mode_str)
+            # Set the new option
+            try:
+                config_stabilize.set(k_section, k_option, stabilize_settings_str)
+            except:
                 config_stabilize[k_section] = dict()
+                config_stabilize.set(k_section, k_option, stabilize_settings_str)
 
+        # Write to the database
+        with open(filepath, 'w') as config_file:
+            config_stabilize.write(config_file)
 
-            parameters = self.db_stabilize_shots_parameters[shot_no]
-            key_str = "%d_parameters" % (shot['start'])
+        # Remove from initial if exists
+        try:
+            del self.db_stabilize_initial[k_ed][k_ep][k_part][shot_start]
+        except:
+            pass
 
-            if parameters is None:
-                print("cannot add parameters")
-                pprint(parameters)
-                # No parameters or default for this shot
-                key_str = "%d_parameters" % (shot['start'])
-                if config_stabilize.has_option(k_section, key_str):
-                    del config_stabilize[k_section, key_str]
+        # Set the new curves selection in the initial database
+        nested_dict_set(self.db_stabilize_initial, deepcopy(stabilize_settings),
+            k_ed, k_ep, k_part, shot_start)
 
-                for f_no in range(shot['start'], shot['start'] + shot['count']):
-                    if config_stabilize.has_option(k_section, str(f_no)):
-                        del config_stabilize[k_section, str(f_no)]
-            else:
-                # Parameters are specified,
-                parameters_str = ""
-                for p in parameters:
-                    if p['is_enabled'] and p['is_processed']:
-                        # Calculation has already been done
-                        parameters_str += "\nsegment=%d:%d:%d, ref_points=%d:%.2f:%d:%d, delta_interval=%s" % (
-                            p['start'],
-                            p['end'],
-                            p['ref'],
-                            p['max_corners'],
-                            p['quality_level'],
-                            p['min_distance'],
-                            p['block_size'],
-                            ':'.join(map(lambda x: "%d" % (x), p['delta_interval']))
-                        )
-                    else:
-                        print("Error: calculations have not been done, discard")
-                        self.is_stabilize_db_modified = False
-                        return False
-                config_stabilize.set(k_section, key_str, parameters_str)
+        # Remove from modified
+        del self.db_stabilize[k_ed][k_ep][k_part][shot_start]
 
-            # Add dx, dy for each frame
-            for f_no in range(shot['start'], shot['start'] + shot['count']):
-                dx_dy_array = self.get_frame_stabilize(shot_no, frame_no=f_no)
-                if dx_dy_array is not None:
-                    transformation_str = "%f:%f" % (dx_dy_array[0], dx_dy_array[1])
-                    config_stabilize.set(k_section, str(f_no), transformation_str)
-                else:
-                    if config_stabilize.has_option(k_section, str(f_no)):
-                        config_stabilize.remove_option(k_section, str(f_no))
+        # Clean the dictionary
+        nested_dict_clean(self.db_stabilize)
 
-            if False:
-                # Remove unused sections and sort
-                for k_section in config_stabilize.sections():
-                    if len(config_stabilize[k_section]) == 0:
-                        config_stabilize.remove_section(k_section)
-
-            # Sort the section
-            config_stabilize[k_section] = collections.OrderedDict(sorted(config_stabilize[k_section].items(), key=lambda x: x[0]))
-
-
-            # Write to the database
-            with open(filepath, 'w') as config_file:
-                config_stabilize.write(config_file)
-
-        self.is_stabilize_db_modified = False
-        return True
+        # Clear modification flag if dict is empty
+        if len(self.db_stabilize.keys()) == 0:
+            self.is_stabilize_db_modified = False
+        else:
+            print("all curves selection have not been saved")
 
 

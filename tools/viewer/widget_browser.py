@@ -38,9 +38,9 @@ class Widget_browser(QWidget, Ui_widget_browser):
     signal_select_image = Signal(str)
     signal_close = Signal()
 
-    def __init__(self, ui, model):
+    def __init__(self, ui, controller):
         super(Widget_browser, self).__init__()
-        self.model = model
+        self.controller = controller
         self.ui = ui
 
         # Set and patch ui

@@ -4,6 +4,7 @@ import cv2
 import gc
 import os
 import numpy as np
+import platform
 from pprint import pprint
 import signal
 
@@ -73,7 +74,7 @@ def ffmpeg_filter(shot, images:list, image_list:list,
         use_memory = False
 
     do_use_ffv1 = False
-    if not sys.platform == 'win32':
+    if not platform.system() == "Windows":
         # for fucking linux
         use_memory = False
         do_use_ffv1 = False

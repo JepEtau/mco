@@ -12,8 +12,8 @@ from utils.common import (
 )
 from filters.ffmpeg_utils import (
     execute_simple_ffmpeg_command,
-    get_duration,
     execute_ffmpeg_command,
+    get_video_duration,
 )
 from utils.get_frame_list import (
     get_frame_list,
@@ -312,7 +312,7 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, force=False):
         video_filepath = os.path.join(cache_path, "video", "%s_video_%s.mkv" % (
             k_ep_or_g, db[k_ep_or_g]['target']['video'][k_part]['hash']))
 
-    video_frames_count = int(get_duration(db, video_filepath, integrity=False) * FPS)
+    video_frames_count = int(get_video_duration(db['common'], video_filepath, integrity=False) * FPS)
 
     # Get equivalent nb of frames from audio stream
     audio_filepath = os.path.join(cache_path, "audio", "%s_audio.%s" % (k_ep_or_g, db['common']['settings']['audio_format']))

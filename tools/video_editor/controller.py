@@ -19,10 +19,10 @@ from PySide6.QtCore import (
 
 from common.preferences import Preferences
 from models.model_database import Model_database
-from models.model_common import (
-    Model_common,
+from models.Controller_common import (
+    Controller_common,
 )
-from video.consolidate_shot import consolidate_shot
+from shot.consolidate_shot import consolidate_shot
 from filters.filters import (
     calculate_geometry_parameters,
     cv2_geometry_filter,
@@ -42,7 +42,7 @@ from utils.get_frame_list import (
 )
 
 
-class Model_video_editor(Model_common):
+class Controller_video_editor(Controller_common):
     signal_current_shot_modified = Signal(dict)
     signal_ready_to_play = Signal(dict)
     signal_is_modified = Signal(dict)
@@ -76,7 +76,7 @@ class Model_video_editor(Model_common):
     ]
 
     def __init__(self):
-        super(Model_video_editor, self).__init__()
+        super(Controller_video_editor, self).__init__()
 
         # Load saved preferences
         self.preferences = Preferences(
@@ -774,7 +774,7 @@ class Model_video_editor(Model_common):
         # pprint(self.current_selection)
         shot = self.shots[self.current_frame['shot_no']]
 
-        self.model_database.save_geometry_database(k_ed=k_ed, k_ep=k_ep, k_part=k_part, shot=shot)
+        self.model_database.save_geometry_database(k_ep=k_ep, k_part=k_part)
         self.signal_is_saved.emit('geometry')
 
 

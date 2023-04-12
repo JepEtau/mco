@@ -48,7 +48,7 @@ class Window_main(QMainWindow, Ui_MainWindow):
 
 
         # Internal variables
-        self.model = model
+        self.controller = controller
         self.is_closing = False
 
         # Widget properties

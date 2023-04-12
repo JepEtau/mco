@@ -9,6 +9,7 @@ from pathlib import (
 )
 from pprint import pprint
 import subprocess
+import platform
 
 from parsers.parser_filters import parse_filters
 from utils.process import get_process_cfg
@@ -123,7 +124,7 @@ def parse_common_configuration(db, config_path):
 
     # Executables
     #=============================================================================
-    if sys.platform == 'win32':
+    if platform.system() == "Windows":
         # Windows
         db_common['tools'] = {
             'ffmpeg': "ffmpeg.exe",

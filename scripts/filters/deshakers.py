@@ -111,7 +111,7 @@ class CV2_deshaker:
         return initial_img_stabilized, img_gray, keypoints
 
 
-    def __stabilize_image(self, img, img_ref_gray, keypoints_ref, mode='all', verbose=False):
+    def __stabilize_image(self, img, img_ref_gray, keypoints_ref, mode, verbose=False):
         img_gray_tmp = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         img_gray_tmp2 = cv2.copyMakeBorder(img_gray_tmp,
             self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
@@ -160,16 +160,12 @@ class CV2_deshaker:
             print("warning: __stabilize_image: transformation not found")
             t_x = t_y = t_theta = 0
 
-        if mode == 'vertical':
-            t_x = 0
-            t_theta = 0
-        elif mode == 'horizontal':
+        if not mode['vertical']:
             t_y = 0
+        if not mode['horizontal']:
+            t_x = 0
+        if not mode['rotation']:
             t_theta = 0
-        elif mode == 'translation':
-            t_theta = 0
-        # else
-        #  i.e. mode == 'all':
 
         if verbose:
             print([t_x, t_y, t_theta])
@@ -393,7 +389,7 @@ class Skimage_deshaker:
 
 
     def stabilize(self, shot, images, image_list, ref,
-        step_no, input_hash, mode='both',
+        step_no, input_hash, mode,
         get_hash:bool=False, do_force=False, verbose=False):
         """Stabilize images without smoothing the trajectory
         """

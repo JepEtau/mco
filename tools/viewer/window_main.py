@@ -31,7 +31,7 @@ PAINTER_MARGIN_TOP = 20
 class Window_main(Window_common):
 
     def __init__(self, model:Model_viewer):
-        super(Window_main, self).__init__(self, model)
+        super(Window_main, self).__init__(self, controller)
 
         # Get preferences from model
         p = self.model.get_preferences()

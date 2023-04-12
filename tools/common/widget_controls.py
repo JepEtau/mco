@@ -27,7 +27,7 @@ from common.sylesheet import (
     set_widget_stylesheet,
 )
 from common.ui.widget_controls_ui import Ui_widget_controls
-from video_editor.model_video_editor import Model_video_editor
+from tools.video_editor.controller import Controller_video_editor
 
 
 class Widget_controls(QWidget, Ui_widget_controls):
@@ -38,11 +38,11 @@ class Widget_controls(QWidget, Ui_widget_controls):
     signal_save_modifications = Signal(bool)
     signal_close = Signal()
 
-    def __init__(self, ui, model:Model_video_editor):
+    def __init__(self, ui, controller:Controller_video_editor):
         super(Widget_controls, self).__init__()
 
         self.setupUi(self)
-        self.model = model
+        self.controller = controller
         self.ui = ui
 
         # Setup and patch ui

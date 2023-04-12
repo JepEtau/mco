@@ -6,7 +6,7 @@ import multiprocessing
 from multiprocessing import *
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
-
+import platform
 from pprint import pprint
 
 
@@ -58,7 +58,7 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
     hash = log_filter(filter_str, shot['hash_log_file'])
 
     # multiprocessing
-    if sys.platform == 'win32':
+    if platform.system() == "Windows":
         cpu_count = int(multiprocessing.cpu_count() * (3/4))
     else:
         cpu_count = int(multiprocessing.cpu_count() * (1/2))

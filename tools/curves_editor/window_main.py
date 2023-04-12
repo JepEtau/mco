@@ -56,7 +56,7 @@ class Window_main(Window_common):
     signal_save_and_close = Signal()
 
     def __init__(self, model:Model_curves_editor):
-        super(Window_main, self).__init__(self, model)
+        super(Window_main, self).__init__(self, controller)
         # Get preferences from model
         p = self.model.get_preferences()
 

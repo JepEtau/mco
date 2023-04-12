@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 import os
 from pprint import pprint
+from filters.ffmpeg_utils import get_video_duration
 from filters.utils import get_step_no_from_task
-from utils.common import (
-    K_GENERIQUES,
-)
+from utils.common import FPS
+from utils.pretty_print import *
+from utils.time_conversions import frames_to_ms
 
 PATH_DATABASE = "./database"
 
@@ -132,117 +133,54 @@ def get_input_filepath(database, frame):
 
 
 
-def get_deinterlaced_filepath_list(db, shot:dict, task, do_50p=False):
-    # Returns a list of filepath for the specified task
 
-    if task not in ['deinterlace', 'pre_upscale', 'upscale']:
-        # reworked, thius, this function can be used only for deinterlace task
-        raise Exception("get_deinterlaced_filepath_list: this function cannot be used for task [%s]" % (task))
+def is_progressive_file_valid(shot, db_common):
+    verbose = False
 
-    # print("%s.task: k_step=%s, shot=" % (__name__, k_step))
-    # pprint(shot)
-    filepath_list = list()
-    prefix = "%s_" % (shot['k_ep'])
+    if verbose:
+        print_lightgreen("is_progressive_file_valid")
+    progressive_filepath = shot['inputs']['progressive']['filepath']
+    if not os.path.exists(progressive_filepath):
+        return False
 
-    if shot['k_part'] in K_GENERIQUES:
-        filter_id = get_filter_id_generique(db, shot, task)
+    progressive_duration = get_video_duration(db_common,
+        progressive_filepath,
+        integrity=False)
+    interlaced_duration = get_video_duration(
+        db_common,
+        shot['inputs']['interlaced']['filepath'],
+        integrity=False)
+
+    start = shot['inputs']['progressive']['start']
+    count = shot['inputs']['progressive']['count']
+
+    if verbose:
+        print("\tfile: %s" % (progressive_filepath))
+        print_lightgrey("\tinterlaced: %.02fs" % (interlaced_duration))
+        print_lightgrey("\tprogressive: %.02fs" % (progressive_duration))
+        print_lightgrey("\tstart: %d, count: %d" % (start, count))
+
+    if start == 0 and count == -1:
+        # Full video
+        if interlaced_duration != progressive_duration:
+            if verbose:
+                print("\tnot valid: interlaced != progressive")
+            return False
+
+    elif count == -1:
+        # Partial video from start to end of video file
+        interlaced_duration -= (frames_to_ms(start) / 1000)
+        if progressive_duration != interlaced_duration:
+            if verbose:
+                print("\tnot valid: %.02fs, should be %.02fs" % (progressive_duration, interlaced_duration))
+            return False
     else:
-        filter_id = get_filter_id(db, shot, task)
+        # Partial video
+        if progressive_duration != count * FPS:
+            if verbose:
+                print("\tnot valid: %.02fs, sould be %.02fs" % (progressive_duration, count * FPS))
+            return False
 
-    suffix = "__%s__%03d" % (shot['k_ed'], filter_id)
-
-    deinterlace_output_path = get_output_path_from_shot(db=db, shot=shot, task=task)
-    if do_50p:
-        shot_end = shot['start'] + 2 * shot['count']
-    else:
-        shot_end = shot['start'] + shot['count']
-    for no in range(shot['start'], shot_end):
-        filename = "%s%06d%s.png" % (prefix, no, suffix)
-        filepath_list.append(os.path.join(deinterlace_output_path, filename))
-
-    return filepath_list
-
-
-
-def get_deinterlaced_path_and_filename(db, shot:dict, task):
-    if task not in ['deinterlace', 'pre_upscale', 'upscale']:
-        # reworked, thius, this function can be used only for deinterlace task
-        raise Exception("get_deinterlaced_path_and_filename: this function cannot be used for task [%s]" % (task))
-    prefix = "%s_" % (shot['k_ep'])
-
-    if shot['k_part'] in K_GENERIQUES:
-        filter_id = get_filter_id_generique(db, shot, task)
-    else:
-        filter_id = get_filter_id(db, shot, task)
-
-    suffix = "__%s__%03d" % (shot['k_ed'], filter_id)
-    deinterlace_output_path = get_output_path_from_shot(db=db, shot=shot, task=task)
-    filename = prefix + '%' + "05d%s.png" % (suffix)
-
-    return deinterlace_output_path, filename
-
-
-
-def get_frames_output_filepaths(db, shot:dict, frame_no:int):
-    k_ep = shot['k_ep']
-    k_ed = shot['k_ed']
-
-    filepaths = dict()
-    for task in FILTER_BASE_NO:
-        if task == 'upscale_rgb_geometry':
-            suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO_DEBUG['upscale_rgb_geometry'])
-        else:
-            suffix = "__%s__%03d" % (k_ed, get_filter_id(db, shot, task))
-
-        outputFilename = "%s_%06d%s.png" % (k_ep, frame_no, suffix)
-        output_directory = get_output_path_from_shot(db=db, shot=shot, task=task)
-        if not os.path.exists(output_directory):
-            os.makedirs(output_directory)
-
-        filepaths[task] = os.path.join(output_directory, outputFilename).strip('\n')
-
-    # For debug and verification of video edition
-    for task in FILTER_BASE_NO_DEBUG:
-        if task in shot['tasks']:
-            suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO_DEBUG[task])
-            outputFilename = "%s_%06d%s.png" % (k_ep, frame_no, suffix)
-            output_directory = get_output_path_from_shot(db=db, shot=shot, task=task)
-            if not os.path.exists(output_directory):
-                os.makedirs(output_directory)
-            filepaths[task] = os.path.join(output_directory, outputFilename).strip('\n')
-            break
-
-    return filepaths
-
-
-
-def get_frames_output_paths_for_study(db, frame:dict):
-    k_ep = frame['k_ep']
-    k_ed = frame['k_ed']
-    k_part = frame['k_part']
-    frame_no = frame['no']
-
-    # Output directory for frames
-    if k_part in K_GENERIQUES:
-        output_directory = db[k_part]['common']['frames']['path_output']
-    else:
-        output_directory = os.path.join(db[k_ep]['common']['frames']['path_output'], k_part)
-    if not os.path.exists(output_directory):
-        os.makedirs(output_directory)
-
-    # Structure used to store the filepath for each task
-    filepaths = dict()
-    for task in FILTER_BASE_NO:
-        if task == 'upscale_rgb_geometry':
-            suffix = "__%s__%03d" % (k_ed, FILTER_BASE_NO_DEBUG['upscale_rgb_geometry'])
-        else:
-            suffix = "__%s__%03d" % (k_ed, get_filter_id(db, frame, task))
-
-        if frame['k_part'] in K_GENERIQUES:
-            outputFilename = "ep00_%06d_%s%s.png" % (frame_no, k_ep, suffix)
-        else:
-            outputFilename = "%s_%06d%s.png" % (k_ep, frame_no, suffix)
-
-        filepaths[task] = os.path.join(output_directory, outputFilename).strip('\n')
-
-    return filepaths
+    if verbose:
+        print("\tvalid")
+    return True

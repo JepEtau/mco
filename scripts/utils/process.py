@@ -2,6 +2,7 @@
 import os
 import sys
 import subprocess
+import platform
 
 
 def get_process_cfg():
@@ -21,7 +22,7 @@ def get_process_cfg():
 
 def create_process(command, process_cfg, bufsize=10**7):
 
-    if sys.platform == 'win32':
+    if platform.system() == "Windows":
         process = subprocess.Popen(command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,

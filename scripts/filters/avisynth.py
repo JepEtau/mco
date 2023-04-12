@@ -6,6 +6,7 @@ from datetime import datetime
 import time
 import cv2
 import numpy as np
+import platform
 
 from filters.ffmpeg_deinterlace import ffmpeg_deinterlace
 from filters.ffmpeg_utils import (
@@ -13,6 +14,7 @@ from filters.ffmpeg_utils import (
     get_video_resolution
 )
 from utils.common import FPS
+from utils.path import is_progressive_file_valid
 from utils.process import create_process
 from utils.get_image_list import (
     FILENAME_TEMPLATE,
@@ -118,7 +120,7 @@ def avisynth_deinterlace(shot, image_list,
     # Try using ffv1 file if enable and exists
     if shot['inputs']['progressive']['enabled']:
         do_use_ffv1_file = True
-        if os.path.exists(progressive_filepath):
+        if is_progressive_file_valid(shot=shot, db_common=db_common):
             if verbose:
                 print("\t\t\tffv1 is enabled and file exists: %s" % (progressive_filepath))
                 do_generate_ffv1_file = False
@@ -127,7 +129,7 @@ def avisynth_deinterlace(shot, image_list,
             if verbose:
                 print("\t\t\tffv1 is enabled but file does not exist: %s" % (progressive_filepath))
             do_generate_ffv1_file = True
-            if sys.platform != 'win32':
+            if platform.system() != "Windows":
                 print_red("\t\t\terror: avisynth is not supported on this platform")
                 # Force deinterlace because avisynth is not supported
                 do_deinterlace = True
@@ -173,7 +175,7 @@ def avisynth_deinterlace(shot, image_list,
         print(" %.02fs" % (time.time() - start_time))
 
     if do_deinterlace:
-        if sys.platform == 'win32':
+        if platform.system() == "Windows":
             avisynth_start = shot['start'] if shot['start'] < AVISYNTH_ADD_FRAMES else shot['start'] - AVISYNTH_ADD_FRAMES
             ffmpeg_command = ffmpeg_command_common + [
                 "-i", os.path.abspath(script_filepath),

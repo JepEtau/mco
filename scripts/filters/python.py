@@ -6,6 +6,7 @@ import multiprocessing
 from multiprocessing import *
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
+import platform
 
 from pprint import pprint
 from filters.dnn_superres import upscale_cv2_dnn_superres
@@ -64,7 +65,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
 
 
     # multiprocessing
-    if sys.platform == 'win32':
+    if platform.system() == "Windows":
         cpu_count = int(multiprocessing.cpu_count() * (3/4))
     else:
         cpu_count = int(multiprocessing.cpu_count() * (1/2))

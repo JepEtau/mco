@@ -21,8 +21,8 @@ from PySide6.QtWidgets import QApplication
 
 from common.preferences import Preferences
 from models.model_database import Model_database
-from models.model_common import (
-    Model_common,
+from models.Controller_common import (
+    Controller_common,
 )
 from models.model_framelist import Model_framelist
 from models.model_curves import Model_curves
@@ -37,7 +37,7 @@ from filters.filters import filter_rgb
 
 
 
-class Model_curves_editor(Model_common):
+class Model_curves_editor(Controller_common):
     signal_folders_parsed = Signal([dict])
     signal_current_shot_modified = Signal(dict)
     signal_reload_frame = Signal()

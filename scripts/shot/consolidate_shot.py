@@ -61,6 +61,7 @@ def consolidate_shot(db, shot) -> None:
 
 
     if False:
+        # Deprecated. keep in case of...
         # Frame ref is used for deinterlace, calculate it: use the offset array
         shot['ref'] = shot['start']
         if k_part in K_GENERIQUES:

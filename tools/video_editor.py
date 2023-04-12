@@ -16,9 +16,9 @@ def main():
     application = QApplication(sys.argv)
 
     from video_editor.window_main import Window_main
-    from video_editor.model_video_editor import Model_video_editor
+    from tools.video_editor.controller import Controller_video_editor
 
-    main_model = Model_video_editor()
+    main_model = Controller_video_editor()
     main_window = Window_main(main_model)
 
     main_model.set_view(main_window)

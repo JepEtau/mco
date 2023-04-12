@@ -226,7 +226,7 @@ class Model_database(Model_geometry,
             self.initialize_db_for_curves(db=self.global_database, k_ep='', k_part=k_part_g)
             self.initialize_db_for_replace(db=self.global_database, k_ep='', k_part=k_part_g)
             self.initialize_db_for_geometry(db=self.global_database, k_ep='', k_part=k_part_g)
-            # self.initialize_db_for_stabilize(db=self.global_database, k_ep='', k_part=k_part_g)
+            self.initialize_db_for_stabilize(db=self.global_database, k_ep='', k_part=k_part_g)
 
         gc.collect()
 

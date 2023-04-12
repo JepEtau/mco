@@ -36,7 +36,7 @@ PAINTER_MARGIN_TOP = 20
 
 class Window_common(QMainWindow):
 
-    def __init__(self, ui, model):
+    def __init__(self, ui, controller):
         super(Window_common, self).__init__()
 
 
@@ -58,7 +58,7 @@ class Window_common(QMainWindow):
         self.painter = QPainter()
 
         # Internal variables
-        self.model = model
+        self.controller = controller
 
         widget_list = self.model.get_widget_list()
         self.widgets = dict()

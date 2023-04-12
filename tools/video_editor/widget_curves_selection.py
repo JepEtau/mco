@@ -91,8 +91,8 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
         """)
 
 
-    def set_model(self, model):
-        self.model = model
+    def set_model(self, controller):
+        self.controller = controller
         # Connect signals
         self.model.signal_curves_library_modified[dict].connect(self.event_curves_library_modified)
         self.model.signal_load_curves[dict].connect(self.event_curves_selected)

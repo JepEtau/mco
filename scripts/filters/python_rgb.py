@@ -6,7 +6,7 @@ import multiprocessing
 from multiprocessing import *
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
-
+import platform
 from pprint import pprint
 
 
@@ -53,7 +53,7 @@ def apply_python_rgb_filter(shot, images:list, image_list:list,
     use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
 
     # multiprocessing
-    if sys.platform == 'win32':
+    if platform.system() == "Windows":
         cpu_count = int(multiprocessing.cpu_count() * (3/4))
     else:
         cpu_count = 2

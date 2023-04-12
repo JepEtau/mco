@@ -15,8 +15,8 @@ from parsers.parser_generiques import get_dependencies_for_generique
 from utils.common import (
     K_ALL_PARTS,
     K_GENERIQUES,
-    get_shot_from_frame_no,
 )
+from shot.utils import get_shot_from_frame_no
 from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 
@@ -110,10 +110,6 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                     # Shots not defined or unused
                     print_orange("\t\t\twarning: shot is not defined: shot_start %d, %s:%s:%s" % (shot_start, k_ed, k_ep, k_part))
                     continue
-
-                if shot_start != shot['start']:
-                    print_red("key [%d] is not the start of the shot no. %d" % (shot_start, shot['no']))
-                    sys.exit()
 
                 properties = config.get(k_section, k_str)
                 nested_dict_set(shot,

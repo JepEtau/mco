@@ -10,39 +10,22 @@ from pathlib import (
 )
 import re
 from pprint import pprint
+from parsers.parser_generiques import get_dependencies_for_generique
 from utils.pretty_print import *
 
 from utils.common import (
     K_GENERIQUES,
     get_k_part_from_frame_no,
-    get_shot_from_frame_no,
 )
+from shot.utils import get_shot_from_frame_no
 from utils.nested_dict import nested_dict_set
 
-# cv2.goodFeaturesToTrack
-STABILIZE_SHOT_PARAMETERS_DEFAULT = {
-    'start': -1,
-    'end': -1,
-    'ref': -1,
-    'max_corners': 0,
-    'quality_level': 0.01,
-    'min_distance': 7,
-    'block_size': 7,
-    'delta_interval': [0, 0, 0, 0],
-    'is_enabled': False,
-    'is_default': True,
-}
 
-STABILIZE_SHOT_PARAMETERS_KEYS = [
-    'start',
-    'end',
-    'ref',
-    'max_corners',
-    'quality_level',
-    'min_distance',
-    'block_size',
-    'is_enabled',
-]
+# mode, options=
+#   - vertical
+#   - horizontal
+#   - rotation
+STABILIZE_MODES = ['vertical', 'horizontal', 'rotation']
 
 
 def parse_stabilize_configurations(db, k_ep_or_g:str):
@@ -126,12 +109,24 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
 
             for segment in segments[1:]:
                 parameters = segment.split(':')
-                segment_dict = {'alg': parameters[0]}
+                segment_dict = {
+                    'alg': parameters[0],
+                    'mode': {
+                        'vertical': False,
+                        'horizontal': False,
+                        'rotation': False
+                    }
+                }
                 for parameter in parameters[1:]:
                     # print_orange("\t%s" % (parameter))
                     k, v = parameter.split('=')
                     if k in ['start', 'end']:
                         nested_dict_set(segment_dict, int(v), k)
+                    elif k == 'mode':
+                        options = v.split('+')
+                        for option in options:
+                            if option in STABILIZE_MODES:
+                                segment_dict['mode'][option] = True
                     else:
                         nested_dict_set(segment_dict, v, k)
 
@@ -150,97 +145,50 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
                 # sys.exit()
 
 
-def get_shots_stabilize_parameters(db, k_ep, k_part) -> dict:
-    """ Returns a dict of stabilize parameters for each shot of this k_ep:k_part
-    """
-    shots_stabilize_parameters = dict()
-    print_red("TODO: get_shots_stabilize_parameters: rework this")
-    return shots_stabilize_parameters
+def get_initial_shot_stabilize_settings(db, k_ep, k_part) -> dict:
+    verbose = False
+    if verbose:
+        print_lightgreen(f"get_shot_stabilization: {k_ep}:{k_part}")
+    stabilization_dict = dict()
 
-    # Get the list of editions and episode that are used by this ep/part
+
     if k_part in K_GENERIQUES:
-        db_video = db[k_part]['target']['video']
+        dependencies = get_dependencies_for_generique(db, k_part_g=k_part)
+        if verbose:
+            print_lightgrey(f"\tdependencies: {dependencies}")
+
+        for k_ed_src in dependencies.keys():
+            for k_ep_src in dependencies[k_ed_src]:
+                try: db_video = db[k_ep_src]['video'][k_ed_src][k_part]
+                except: continue
+
+                if 'shots' not in db_video.keys():
+                    continue
+                for shot in db_video['shots']:
+                    shot_start = shot['start']
+                    try:
+                        if shot['deshake'] is not None:
+                            nested_dict_set(stabilization_dict, shot['deshake'],
+                                k_ed_src, k_ep_src, k_part, shot_start)
+                    except:
+                        continue
     else:
-        # print("%s.get_shots_stabilize_parameters: %s:%s" % (__name__, k_ep, k_part))
-        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
-        k_ep_src = k_ep
-        db_video = db[k_ep_src][k_ed_src][k_part]['video']
-        # print("%s.get_shots_stabilize_parameters: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
+        dependencies = db['editions']['available']
+        if verbose:
+            print_lightgrey(f"\tdependencies: {dependencies}")
 
-    for shot in db_video['shots']:
-        # print(shot)
-        if ('src' not in shot.keys()
-            or ('use' in shot['src'].keys()
-            and not shot['src']['use'])):
-            shot_src = shot
-        else:
-            if 'k_ed' in shot['src'].keys():
-                k_ed_src = shot['src']['k_ed']
-            k_ep_src = shot['src']['k_ep']
-            k_part_src = get_k_part_from_frame_no(db, k_ed_src, k_ep_src, shot['src']['start'])
-            #
-            shot_src = get_shot_from_frame_no(db,
-                frame_no=shot['src']['start'],
-                k_ed=k_ed_src,
-                k_ep=k_ep_src,
-                k_part=k_part_src)
+        for k_ed_src in dependencies:
+            try: db_video = db[k_ep]['video'][k_ed_src][k_part]
+            except: continue
 
-        # pprint(shot_src)
-        # if 'stabilize' not in shot_src.keys():
-        #     shot_src['stabilize'] = {'frames': dict()}
-        # if 'parameters' not in shot_src['stabilize'].keys():
-        #     shot_src['stabilize']['parameters'] = [deepcopy(STABILIZE_SHOT_PARAMETERS_DEFAULT)]
-        #     if len(shot_src['stabilize']['frames'].keys()) > 0:
-        #         sys.exit("Error: %s:%s: At least one frame has stabilize but no parameters are defined" % (k_ep, k_part))
-        #         shot_src['stabilize']['parameters'][0]['is_enabled'] = True
-
-        if 'stabilize' in shot_src.keys():
-            if 'frames' in shot['stabilize'].keys():
-                for p in shot['stabilize']['parameters']:
-                    p['is_processed'] = True
-            else:
-                for p in shot['stabilize']['parameters']:
-                    p['is_processed'] = False
-
-            shots_stabilize_parameters[shot['no']] = shot_src['stabilize']['parameters']
-
-    return shots_stabilize_parameters
-
-
-
-def get_frames_stabilize(db, k_ep, k_part) -> dict:
-    """ Returns a dict of transformation parameters for each frame of this k_ep:k_part
-    """
-    frames_stabilize = dict()
-    print_red("TODO: get_shots_stabilize_parameters: rework this")
-    return frames_stabilize
-
-    # Get the list of editions and episode that are used by this ep/part
-    if k_part in K_GENERIQUES:
-        db_video = db[k_part]['target']['video']
-    else:
-        # print("%s.get_frames_stabilize: src=%s:%s:%s" % (__name__, k_ed_src, k_ep_src, k_part))
-        k_ed_src = db[k_ep]['target']['video']['src']['k_ed']
-        k_ep_src = k_ep
-        db_video = db[k_ep_src][k_ed_src][k_part]['video']
-
-    for shot in db_video['shots']:
-        if ('src' not in shot.keys()
-            or ('use' in shot['src'].keys()
-            and not shot['src']['use'])):
-            shot_src = shot
-        else:
-            if 'k_ed' in shot['src'].keys():
-                k_ed_src = shot['src']['k_ed']
-            k_ep_src = shot['src']['k_ep']
-            k_part_src = get_k_part_from_frame_no(db, k_ed_src, k_ep_src, shot['src']['start'])
-            shot_src = get_shot_from_frame_no(db, frame_no=shot['src']['start'],
-                k_ed=k_ed_src,
-                k_ep=k_ep_src,
-                k_part=k_part_src)
-
-        if ('stabilize' in shot_src.keys() and 'frames' in shot_src['stabilize'].keys()):
-            frames_stabilize.update({shot['no']: shot_src['stabilize']['frames']})
-
-    return frames_stabilize
-
+            if 'shots' not in db_video.keys():
+                continue
+            for shot in db_video['shots']:
+                shot_start = shot['start']
+                try:
+                    if shot['deshake'] is not None:
+                        nested_dict_set(stabilization_dict, shot['deshake'],
+                            k_ed_src, k_ep, k_part, shot_start)
+                except:
+                    continue
+    return stabilization_dict

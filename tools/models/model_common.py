@@ -22,15 +22,13 @@ from utils.common import (
 
 
 
-
-
-class Model_common(QObject):
+class Controller_common(QObject):
     signal_close = Signal()
     signal_shotlist_modified = Signal(dict)
 
 
     def __init__(self):
-        super(Model_common, self).__init__()
+        super(Controller_common, self).__init__()
         self.view = None
 
         # Internal variables

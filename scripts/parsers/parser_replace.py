@@ -10,9 +10,7 @@ from pathlib import (
 )
 from pprint import pprint
 
-from utils.common import (
-    get_shot_from_frame_no,
-)
+from shot.utils import get_shot_from_frame_no
 from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 

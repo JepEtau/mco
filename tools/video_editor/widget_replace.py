@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 
 from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
 
-from video_editor.model_video_editor import Model_video_editor
+from tools.video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_replace_ui import Ui_widget_replace
 from common.widget_common import Widget_common
 
@@ -28,9 +28,9 @@ class Widget_replace(Widget_common, Ui_widget_replace):
     signal_replace_modified = Signal(dict)
     signal_frame_selected = Signal(dict)
 
-    def __init__(self, ui, model:Model_video_editor):
+    def __init__(self, ui, controller:Controller_video_editor):
         super(Widget_replace, self).__init__(ui)
-        self.model = model
+        self.controller = controller
         self.ui = ui
         self.setObjectName('replace')
 

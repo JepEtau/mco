@@ -102,8 +102,8 @@ class Model_geometry():
         except:
             pass
         nested_dict_clean(self.db_target_geometry)
-        self.is_geometry_db_modified = False
-
+        if len(self.db_target_geometry) == 0:
+            self.is_geometry_db_modified = False
 
 
 
@@ -137,7 +137,6 @@ class Model_geometry():
         self.is_geometry_db_modified = True
 
 
-
     def discard_default_shot_geometry_modifications(self, shot):
         log.info("discard_shot_geometry_modifications")
         k_ed = shot['k_ed']
@@ -147,7 +146,8 @@ class Model_geometry():
         except: pass
 
         nested_dict_clean(self.db_default_shot_geometry)
-        self.is_geometry_db_modified = False
+        if len(self.db_default_shot_geometry) == 0:
+            self.is_geometry_db_modified = False
 
 
 
@@ -203,7 +203,7 @@ class Model_geometry():
 
 
 
-    def save_geometry_database(self, k_ed, k_ep, k_part, shot):
+    def save_geometry_database(self, k_ep, k_part):
         # Save all modifications
         verbose = False
 
@@ -212,7 +212,7 @@ class Model_geometry():
 
         log.info("save geometry database %s:%s" % (k_ep, k_part))
         if verbose:
-            print_lightgreen("\nSave geometry database: %s:%s:%s\n---------------------------------------" % (k_ed, k_ep, k_part))
+            print_lightgreen(f"\nSave geometry database: {k_ep}:{k_part}\n---------------------------------------")
         db = self.global_database
 
         # Open configuration file
@@ -283,7 +283,7 @@ class Model_geometry():
                         try: del self.db_default_shot_geometry_initial[k_ed_src][k_ep_src][k_part_src]
                         except: pass
 
-                        # Remove fro config file
+                        # Remove from config file
                         try: config_geometry.remove_option(k_section, k_part_src)
                         except: pass
 

@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 
 from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
 
-from video_editor.model_video_editor import Model_video_editor
+from tools.video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_stabilize_ui import Ui_widget_stabilize
 from common.widget_common import Widget_common
 
@@ -26,9 +26,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     signal_stabilize_modified = Signal(dict)
     signal_segment_selected = Signal(dict)
 
-    def __init__(self, ui, model:Model_video_editor):
+    def __init__(self, ui, controller:Controller_video_editor):
         super(Widget_stabilize, self).__init__(ui)
-        self.model = model
+        self.controller = controller
         self.ui = ui
         self.setObjectName('stabilize')
 
@@ -48,7 +48,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter]
-        headers = ["shot no.", "start", "end", "used"]
+        headers = ["start", "end", "used"]
         default_col_width = [70, 80, 80, 100]
         for col_no, header_str, col_width in zip(range(len(headers)),
                                                     headers,

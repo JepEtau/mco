@@ -74,24 +74,20 @@ def get_video_resolution(video_filepath, db_common):
 
 
 
-def get_duration(db, filename='', integrity=True):
-    ffprobe_command = [
-        db['common']['tools']['ffprobe'],
-        "-hide_banner"]
+def get_video_duration(db_common, filename='', integrity=True):
+    ffprobe_command = [db_common['tools']['ffprobe'], "-hide_banner"]
     if integrity:
         ffprobe_command.extend(["-count_frames"])
     ffprobe_command.extend(["-i", filename])
 
-    process = create_process(ffprobe_command, db['common']['process'])
+    process = create_process(ffprobe_command, db_common['process'])
     stdout, stderr = process.communicate()
 
     duration = 0
     if stderr is not None:
         line = stderr.decode(encoding='UTF-8')
         line += stdout.decode(encoding='UTF-8')
-        # print(line)
         if integrity:
-            # print(line)
             result= re.search(r"(File ended prematurely)", line)
             if result is not None:
                 return 0.0

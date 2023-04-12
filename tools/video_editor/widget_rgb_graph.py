@@ -81,8 +81,8 @@ class Widget_rgb_graph(QWidget):
         self.is_enabled = True
 
 
-    def set_model(self, model):
-        self.model = model
+    def set_model(self, controller):
+        self.controller = controller
 
         # Connect signals
         self.model.signal_load_curves[dict].connect(self.event_curves_loaded)

@@ -35,7 +35,7 @@ from video_editor.widget_replace import Widget_replace
 from video_editor.widget_geometry import Widget_geometry
 from video_editor.widget_stabilize import Widget_stabilize
 
-from video_editor.model_video_editor import Model_video_editor
+from tools.video_editor.controller import Controller_video_editor
 
 
 COLOR_PART_CROP_RECT = QColor(30, 230, 30)
@@ -51,8 +51,8 @@ class Window_main(Window_common):
     signal_save_and_close = Signal()
 
 
-    def __init__(self, model:Model_video_editor):
-        super(Window_main, self).__init__(self, model)
+    def __init__(self, controller:Controller_video_editor):
+        super(Window_main, self).__init__(self, controller)
         # Get preferences from model
         p = self.model.get_preferences()
 

@@ -2,6 +2,7 @@
 import os
 import sys
 
+import platform
 from pprint import pprint
 import subprocess
 
@@ -56,7 +57,7 @@ class FFmpeg_stabilizer:
 
 
         ffmpeg_verbose="-hide_banner -loglevel warning"
-        if sys.platform == 'win32':
+        if platform.system() == "Windows":
             command_ffmpeg_common = [os.path.abspath("../3rd_party/ffmpeg-5.1/bin/ffmpeg.exe")]
         else:
             command_ffmpeg_common = [os.path.abspath("../3rd_party/ffmpeg-5.1/ffmpeg")]
