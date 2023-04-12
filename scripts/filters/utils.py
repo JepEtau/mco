@@ -24,6 +24,7 @@ FILTER_TAGS = [
     'upscale',
     'sharpen',
     'pre_replace',
+    'no_deshake',
     'rgb',
     'geometry',
     'final'

@@ -21,8 +21,10 @@
 (1)
 - stabilize widget/model
 - filter selection: change combobox to radio buttons and disable the unused ones
+- when changing episode, deselect part to avoid parsing
 
 (2)
+- add loop mode
 - modification flags do not work: geometry, curves(?), replace(?)
 - curves: save when closing is not working
 - verify if key is pressed before changing crop values (key event)

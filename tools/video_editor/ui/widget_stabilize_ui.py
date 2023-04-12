@@ -110,9 +110,10 @@ class Ui_widget_stabilize(object):
 
         self.verticalLayout_2.addLayout(self.horizontalLayout)
 
-        self.groupBox = QGroupBox(self.frame)
-        self.groupBox.setObjectName(u"groupBox")
-        self.verticalLayout_4 = QVBoxLayout(self.groupBox)
+        self.groupBox_stabilize = QGroupBox(self.frame)
+        self.groupBox_stabilize.setObjectName(u"groupBox_stabilize")
+        self.groupBox_stabilize.setCheckable(True)
+        self.verticalLayout_4 = QVBoxLayout(self.groupBox_stabilize)
         self.verticalLayout_4.setSpacing(3)
         self.verticalLayout_4.setObjectName(u"verticalLayout_4")
         self.verticalLayout_4.setContentsMargins(9, 3, 3, 3)
@@ -120,7 +121,7 @@ class Ui_widget_stabilize(object):
         self.gridLayout.setSpacing(3)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(0, -1, -1, -1)
-        self.label = QLabel(self.groupBox)
+        self.label = QLabel(self.groupBox_stabilize)
         self.label.setObjectName(u"label")
         sizePolicy2 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
         sizePolicy2.setHorizontalStretch(0)
@@ -130,7 +131,7 @@ class Ui_widget_stabilize(object):
 
         self.gridLayout.addWidget(self.label, 0, 0, 1, 1)
 
-        self.pushButton_set_start = QPushButton(self.groupBox)
+        self.pushButton_set_start = QPushButton(self.groupBox_stabilize)
         self.pushButton_set_start.setObjectName(u"pushButton_set_start")
         sizePolicy3 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
         sizePolicy3.setHorizontalStretch(0)
@@ -145,12 +146,12 @@ class Ui_widget_stabilize(object):
 
         self.gridLayout.addWidget(self.pushButton_set_start, 0, 1, 1, 1)
 
-        self.label_3 = QLabel(self.groupBox)
+        self.label_3 = QLabel(self.groupBox_stabilize)
         self.label_3.setObjectName(u"label_3")
 
         self.gridLayout.addWidget(self.label_3, 1, 0, 1, 1)
 
-        self.pushButton_set_end = QPushButton(self.groupBox)
+        self.pushButton_set_end = QPushButton(self.groupBox_stabilize)
         self.pushButton_set_end.setObjectName(u"pushButton_set_end")
         sizePolicy3.setHeightForWidth(self.pushButton_set_end.sizePolicy().hasHeightForWidth())
         self.pushButton_set_end.setSizePolicy(sizePolicy3)
@@ -162,17 +163,17 @@ class Ui_widget_stabilize(object):
 
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
-        self.radioButton_4 = QRadioButton(self.groupBox)
+        self.radioButton_4 = QRadioButton(self.groupBox_stabilize)
         self.radioButton_4.setObjectName(u"radioButton_4")
 
         self.horizontalLayout_4.addWidget(self.radioButton_4)
 
-        self.radioButton_2 = QRadioButton(self.groupBox)
+        self.radioButton_2 = QRadioButton(self.groupBox_stabilize)
         self.radioButton_2.setObjectName(u"radioButton_2")
 
         self.horizontalLayout_4.addWidget(self.radioButton_2)
 
-        self.radioButton_3 = QRadioButton(self.groupBox)
+        self.radioButton_3 = QRadioButton(self.groupBox_stabilize)
         self.radioButton_3.setObjectName(u"radioButton_3")
 
         self.horizontalLayout_4.addWidget(self.radioButton_3)
@@ -180,7 +181,7 @@ class Ui_widget_stabilize(object):
 
         self.gridLayout.addLayout(self.horizontalLayout_4, 2, 1, 1, 1)
 
-        self.label_4 = QLabel(self.groupBox)
+        self.label_4 = QLabel(self.groupBox_stabilize)
         self.label_4.setObjectName(u"label_4")
 
         self.gridLayout.addWidget(self.label_4, 2, 0, 1, 1)
@@ -190,7 +191,7 @@ class Ui_widget_stabilize(object):
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.pushButton_undo = QPushButton(self.groupBox)
+        self.pushButton_undo = QPushButton(self.groupBox_stabilize)
         self.pushButton_undo.setObjectName(u"pushButton_undo")
         sizePolicy3.setHeightForWidth(self.pushButton_undo.sizePolicy().hasHeightForWidth())
         self.pushButton_undo.setSizePolicy(sizePolicy3)
@@ -201,7 +202,7 @@ class Ui_widget_stabilize(object):
 
         self.horizontalLayout_2.addWidget(self.pushButton_undo)
 
-        self.pushButton_calculate = QPushButton(self.groupBox)
+        self.pushButton_calculate = QPushButton(self.groupBox_stabilize)
         self.pushButton_calculate.setObjectName(u"pushButton_calculate")
 
         self.horizontalLayout_2.addWidget(self.pushButton_calculate)
@@ -210,7 +211,7 @@ class Ui_widget_stabilize(object):
         self.verticalLayout_4.addLayout(self.horizontalLayout_2)
 
 
-        self.verticalLayout_2.addWidget(self.groupBox)
+        self.verticalLayout_2.addWidget(self.groupBox_stabilize)
 
         self.tableWidget_stabilize = QTableWidget(self.frame)
         if (self.tableWidget_stabilize.columnCount() < 3):
@@ -268,7 +269,7 @@ class Ui_widget_stabilize(object):
         self.pushButton_save.setText("")
         self.pushButton_discard.setText("")
         self.pushButton_close.setText("")
-        self.groupBox.setTitle(QCoreApplication.translate("widget_stabilize", u"Stabilize/deshake", None))
+        self.groupBox_stabilize.setTitle(QCoreApplication.translate("widget_stabilize", u"Stabilize/deshake", None))
         self.label.setText(QCoreApplication.translate("widget_stabilize", u"start", None))
         self.pushButton_set_start.setText("")
         self.label_3.setText(QCoreApplication.translate("widget_stabilize", u"end", None))

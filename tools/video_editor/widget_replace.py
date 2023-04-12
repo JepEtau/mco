@@ -142,8 +142,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         log.info("refresh list of frames to replace")
         # is_allowed = self.controller.is_replace_allowed()
         # print_lightgreen("event_replace_list_refreshed: ", is_allowed)
-        # if is_allowed:
-        print_lightgreen("\tlet's refresh")
         self.tableWidget_replace.blockSignals(True)
 
         self.tableWidget_replace.clearContents()

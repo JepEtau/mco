@@ -579,7 +579,7 @@ class Model_curves_editor(Controller_common):
         # Generate the image for this frame
         options = self.preview_options
         if options is not None:
-            index, img = generate_single_image(self.current_frame, preview_options=options)
+            index, img = generate_image(self.current_frame, preview_options=options)
             self.set_current_frame_cache(img=img)
 
         return self.current_frame
@@ -590,9 +590,9 @@ class Model_curves_editor(Controller_common):
 
 
 
-def generate_single_image(frame:dict, preview_options:dict):
+def generate_image(frame:dict, preview_options:dict):
     # log.info("generate single image")
-    # print("\ngenerate_single_image:")
+    # print("\ngenerate_image:")
     # pprint(preview_options)
     now = time.time()
     img = None

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+from functools import partial
 import sys
 sys.path.append('../scripts')
 from pprint import pprint
@@ -62,19 +63,21 @@ class Widget_selection(QWidget, Ui_widget_selection):
         # Initialize widgets
         self.comboBox_episode.setFocusPolicy(Qt.NoFocus)
         self.comboBox_part.setFocusPolicy(Qt.NoFocus)
-        self.comboBox_step.setFocusPolicy(Qt.NoFocus)
         self.tableWidget_shots.setFocusPolicy(Qt.NoFocus)
-
-
-        step_labels = self.controller.get_step_labels()
-        self.comboBox_step.clear()
-        for s in step_labels:
-            self.comboBox_step.addItem(s)
 
         self.comboBox_episode.currentIndexChanged['int'].connect(self.event_episode_changed)
         self.comboBox_part.currentIndexChanged['int'].connect(self.event_part_changed)
-        self.comboBox_step.currentIndexChanged['int'].connect(self.event_step_changed)
 
+        self.steps_widgets = {
+            'deinterlace': self.radioButton_task_deinterlace,
+            'pre_upscale': self.radioButton_task_pre_upscale,
+            'upscale': self.radioButton_task_upscale,
+            'sharpen': self.radioButton_task_sharpen,
+            'pre_replace': self.radioButton_task_pre_replace,
+            'no_deshake': self.radioButton_task_no_deshake,
+        }
+        for step_str, w in self.steps_widgets.items():
+            w.clicked.connect(partial(self.event_step_changed, step_str))
 
         self.tableWidget_shots.clearContents()
         self.tableWidget_shots.setRowCount(0)
@@ -132,7 +135,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             'episode': k_ep,
             'shot_no': int(self.tableWidget_shots.item(row_no, 0).text()),
             'part': self.comboBox_part.currentText(),
-            'step': self.comboBox_step.currentText(),
+            'step': self.get_current_step(),
         }
         return preferences
 
@@ -336,11 +339,15 @@ class Widget_selection(QWidget, Ui_widget_selection):
             self.comboBox_part.blockSignals(False)
 
         # Steps
-        i = self.comboBox_step.findText(values['k_step'])
-        self.comboBox_step.blockSignals(True)
-        new_index = i if i != -1 else 0
-        self.comboBox_step.setCurrentIndex(i)
-        self.comboBox_step.blockSignals(False)
+        w = self.steps_widgets['deinterlace']
+        w.blockSignals(True)
+        w.setChecked(True)
+        w.blockSignals(False)
+        for step_str, w in self.steps_widgets.items():
+            if step_str == values['k_step']:
+                w.blockSignals(True)
+                w.setChecked(True)
+                w.blockSignals(False)
 
         # Shots
         shots = values['shots']
@@ -420,8 +427,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         values = {
             'k_ep': k_ep,
-            'k_part': self.comboBox_part.itemText(0),
-            'k_step': self.comboBox_step.currentText()
+            'k_part': '',
+            'k_step': self.get_current_step()
         }
 
         # if values['k_part'] != '':
@@ -430,7 +437,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
 
-    def event_part_changed(self, index):
+    def event_part_changed(self, index=-1):
         log.info("select ep: %s, part: %s" % (self.comboBox_episode.currentText(), self.comboBox_part.currentText()))
 
         k_ep = ''
@@ -441,16 +448,19 @@ class Widget_selection(QWidget, Ui_widget_selection):
         values = {
             'k_ep': k_ep,
             'k_part': self.comboBox_part.currentText(),
-            'k_step': self.comboBox_step.currentText()
+            'k_step': self.get_current_step()
         }
-
-        # if values['k_part'] != '':
         self.signal_selection_changed.emit(values)
         return True
 
+    def get_current_step(self):
+        for step_str, w in self.steps_widgets.items():
+            if w.isChecked():
+                return step_str
+        return 'deinterlace'
 
-    def event_step_changed(self, index):
-        log.info("changed step")
+    def event_step_changed(self, step_str):
+        log.info("step changed")
         # First selected row no
         selected_indexes = self.tableWidget_shots.selectedIndexes()
         try:
@@ -458,8 +468,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         except:
             row_no = 0
         self.initial_shot_no = int(self.tableWidget_shots.item(row_no, 0).text())
-
-        self.event_part_changed(index)
+        self.event_part_changed()
 
 
     def event_selection_changed(self, selected):
@@ -491,7 +500,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         selected_shots = {
             'k_ep': k_ep,
             'k_part': self.comboBox_part.currentText(),
-            'k_step': self.comboBox_step.currentText(),
+            'k_step': self.get_current_step(),
             'shotlist': selected_shot_nos
         }
         self.signal_selected_shots_changed.emit(selected_shots)
@@ -504,7 +513,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         self.comboBox_episode.setEnabled(enabled)
         self.comboBox_part.setEnabled(enabled)
-        self.comboBox_step.setEnabled(enabled)
         # self.tableWidget_shots.setEnabled(enabled)
 
 

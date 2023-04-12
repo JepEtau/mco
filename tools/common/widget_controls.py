@@ -226,7 +226,10 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.copied_frame_no = -1
 
         self.update_slider_value(0)
-        self.lineEdit_frame_no.setText(str(self.frame_nos[0]))
+        try:
+            self.lineEdit_frame_no.setText(f"{self.frame_nos[0]}")
+        except:
+            self.lineEdit_frame_no.clear()
 
         # Save the list of tick position
         self.ticks = playlist_properties['ticks']
