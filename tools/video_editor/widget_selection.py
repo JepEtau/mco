@@ -66,7 +66,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.tableWidget_shots.setFocusPolicy(Qt.NoFocus)
 
 
-        step_labels = self.model.get_step_labels()
+        step_labels = self.controller.get_step_labels()
         self.comboBox_step.clear()
         for s in step_labels:
             self.comboBox_step.addItem(s)
@@ -100,9 +100,9 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.tableWidget_shots.selectionModel().selectionChanged.connect(self.event_selection_changed)
         self.tableWidget_shots.installEventFilter(self)
 
-        self.model.signal_shotlist_modified[dict].connect(self.event_refresh_shotlist)
-        self.model.signal_is_modified[dict].connect(self.refresh_modification_status)
-        self.model.signal_current_shot_modified[dict].connect(self.event_current_shot_modified)
+        self.controller.signal_shotlist_modified[dict].connect(self.event_refresh_shotlist)
+        self.controller.signal_is_modified[dict].connect(self.refresh_modification_status)
+        self.controller.signal_current_shot_modified[dict].connect(self.event_current_shot_modified)
 
         self.set_enabled(False)
         set_stylesheet(self)

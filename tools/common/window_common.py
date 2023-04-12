@@ -60,7 +60,7 @@ class Window_common(QMainWindow):
         # Internal variables
         self.controller = controller
 
-        widget_list = self.model.get_widget_list()
+        widget_list = self.controller.get_widget_list()
         self.widgets = dict()
         for w in widget_list:
             self.widgets.update({w: None})
@@ -91,7 +91,7 @@ class Window_common(QMainWindow):
         self.customContextMenuRequested[QPoint].connect(self.event_right_click)
 
         # Connect signals coming from model
-        self.model.signal_shotlist_modified[dict].connect(self.event_shotlist_modified)
+        self.controller.signal_shotlist_modified[dict].connect(self.event_shotlist_modified)
 
 
 
@@ -127,7 +127,7 @@ class Window_common(QMainWindow):
 
         # print("saved_current_editor", saved_current_editor)
         if saved_current_editor == '':
-            saved_current_editor = self.model.get_selectable_widgets()[0]
+            saved_current_editor = self.controller.get_selectable_widgets()[0]
         self.set_current_editor(saved_current_editor)
 
         for w in self.widgets.values():
@@ -149,12 +149,12 @@ class Window_common(QMainWindow):
         self.current_frame_index = 0
         self.playing_frame_start_no = 0
 
-        # if 'controls' in self.model.get_widget_list():
+        # if 'controls' in self.controller.get_widget_list():
         #     log.info("selection changed, reset slider position")
         #     self.widget_controls.set_slider_value(0)
 
 
-        if 'geometry' in self.model.get_widget_list():
+        if 'geometry' in self.controller.get_widget_list():
             if selection['k_step'] in ['', 'deinterlace', 'pre_upscale', 'geometry']:
                 self.widget_geometry.set_geometry_edition_enabled(False)
             else:
@@ -177,7 +177,7 @@ class Window_common(QMainWindow):
         # print("%s:event_close" % (__name__))
         if not self.is_closing:
             self.is_closing = True
-            self.model.exit()
+            self.controller.exit()
             self.close_all_widgets()
 
     def close_all_widgets(self):
@@ -201,13 +201,13 @@ class Window_common(QMainWindow):
                 self.event_close()
                 return
 
-            if self.model.model_database.is_db_modified():
+            if self.controller.model_database.is_db_modified():
                 log.info("Changes are not saved")
                 message_box = QMessageBox()
                 message_box.setIcon(QMessageBox.Warning)
                 message_box.setWindowTitle("Save before closing?")
                 text = "Some modifications have not been saved:"
-                for s in self.model.get_modified_db():
+                for s in self.controller.get_modified_db():
                     text += "\n  - %s" % (s)
                 message_box.setText(text)
                 message_box.setInformativeText("Do you want to save before closing?")
@@ -254,7 +254,7 @@ class Window_common(QMainWindow):
     def event_shotlist_modified(self, shotlist):
         # episode/part has been changed
         enabled = True if len(shotlist['shots']) > 0 else False
-        for widget_name in self.model.get_widget_list():
+        for widget_name in self.controller.get_widget_list():
             log.info("%s: set enabled: %s" % (self.widgets[widget_name].objectName(), 'true' if enabled else 'false'))
 
             if widget_name == 'geometry':
@@ -298,7 +298,7 @@ class Window_common(QMainWindow):
 
     def select_next_editor(self):
         # print("\nselect next editor from: %s" % (self.current_editor))
-        selectable_widgets = self.model.get_selectable_widgets()
+        selectable_widgets = self.controller.get_selectable_widgets()
         widget_index = selectable_widgets.index(self.current_editor)
 
         try:
@@ -353,14 +353,14 @@ class Window_common(QMainWindow):
         log.info("ready to play")
         self.current_frame_index = 0
         self.playing_frame_count = playlist_properties['count']
-        f = self.model.get_frame_from_index(self.current_frame_index)
+        f = self.controller.get_frame_from_index(self.current_frame_index)
         self.display_frame(f)
 
 
     def event_move_to_frame_no(self, frame_index):
         # log.info("move to frame %d" % (frame_index))
         self.current_frame_index = frame_index
-        f = self.model.get_frame_from_index(self.current_frame_index)
+        f = self.controller.get_frame_from_index(self.current_frame_index)
         self.display_frame(f)
 
 
@@ -375,7 +375,7 @@ class Window_common(QMainWindow):
     def event_reload_frame(self):
         if self.current_frame_index == -1:
             return
-        f = self.model.get_frame_from_index(self.current_frame_index)
+        f = self.controller.get_frame_from_index(self.current_frame_index)
         self.display_frame(f)
 
 
@@ -414,7 +414,7 @@ class Window_common(QMainWindow):
             self.widget_controls.event_stop()
         else:
             self.widget_controls.set_playing_frame_properties(self.current_frame_index)
-            f = self.model.get_frame_from_index(self.current_frame_index)
+            f = self.controller.get_frame_from_index(self.current_frame_index)
             self.display_frame(f)
 
 

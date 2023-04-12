@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-
 import sys
+sys.path.append('../scripts')
 
 from filters.utils import FINAL_FRAME_WIDTH
-sys.path.append('../scripts')
 from functools import partial
 
 from logger import log
@@ -15,7 +14,11 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QColor
 
-from common.sylesheet import set_curves_radiobutton_stylesheet, set_stylesheet, set_widget_stylesheet
+from common.sylesheet import (
+    set_curves_radiobutton_stylesheet,
+    set_stylesheet,
+    set_widget_stylesheet
+)
 
 from video_editor.ui.widget_curves_ui import Ui_widget_curves
 from common.widget_common import Widget_common
@@ -36,9 +39,9 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.ui = ui
         self.setObjectName('curves')
 
-        self.widget_rgb_graph.set_model(model)
+        self.widget_rgb_graph.set_controller(controller)
         self.widget_rgb_graph.set_ui(self)
-        self.widget_curves_selection.set_model(model)
+        self.widget_curves_selection.set_controller(controller)
         self.widget_curves_selection.set_ui(self)
 
         # Internal variables
@@ -90,7 +93,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
         self.widget_curves_selection.signal_save_rgb_curves_requested[dict].connect(self.event_save_rgb_curves_as)
 
-        self.model.signal_is_saved[str].connect(self.event_is_saved)
+        self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
 
         # Default selection

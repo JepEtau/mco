@@ -53,7 +53,7 @@ class Model_stabilize():
 
 
 
-    def get_shot_stabilize_settings(self, shot:dict):
+    def get_shot_stabilize_settings(self, shot:dict) -> dict | None:
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
@@ -66,7 +66,7 @@ class Model_stabilize():
             return self.db_stabilize_initial[k_ed][k_ep][k_part][shot_start]
         except:
             return None
-
+        return None
 
     def set_shot_stabilize_settings(self, shot:dict, settings):
         k_ed = shot['k_ed']
@@ -87,8 +87,8 @@ class Model_stabilize():
         self.is_stabilize_db_modified = True
 
 
-    def discard_default_shot_stabilize_settings(self, shot):
-        log.info("discard_default_shot_stabilize_settings")
+    def discard_shot_stabilize_settings(self, shot):
+        log.info("discard_shot_stabilize_settings")
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']

@@ -27,7 +27,7 @@ from common.sylesheet import (
     set_widget_stylesheet,
 )
 from common.ui.widget_controls_ui import Ui_widget_controls
-from tools.video_editor.controller import Controller_video_editor
+from video_editor.controller import Controller_video_editor
 
 
 class Widget_controls(QWidget, Ui_widget_controls):
@@ -92,7 +92,7 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.pushButton_play_pause.toggled.connect(self.event_play_pause)
         self.slider_frames.valueChanged.connect(self.event_slider_moved)
 
-        self.model.signal_ready_to_play[dict].connect(self.event_refresh_slider)
+        self.controller.signal_ready_to_play[dict].connect(self.event_refresh_slider)
 
         self.slider_frames.installEventFilter(self)
 

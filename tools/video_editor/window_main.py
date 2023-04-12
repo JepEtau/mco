@@ -35,7 +35,7 @@ from video_editor.widget_replace import Widget_replace
 from video_editor.widget_geometry import Widget_geometry
 from video_editor.widget_stabilize import Widget_stabilize
 
-from tools.video_editor.controller import Controller_video_editor
+from video_editor.controller import Controller_video_editor
 
 
 COLOR_PART_CROP_RECT = QColor(30, 230, 30)
@@ -54,11 +54,11 @@ class Window_main(Window_common):
     def __init__(self, controller:Controller_video_editor):
         super(Window_main, self).__init__(self, controller)
         # Get preferences from model
-        p = self.model.get_preferences()
+        p = self.controller.get_preferences()
 
         # RGB Curves
         if 'curves' in self.widgets.keys():
-            self.widget_curves = Widget_curves(self, self.model)
+            self.widget_curves = Widget_curves(self, self.controller)
             self.widgets['curves'] = self.widget_curves
             self.widget_curves.set_initial_options(p)
             self.widget_curves.set_main_window_margin(PAINTER_MARGIN_LEFT)
@@ -66,7 +66,7 @@ class Window_main(Window_common):
 
         # Replace frames
         if 'replace' in self.widgets.keys():
-            self.widget_replace = Widget_replace(self, self.model)
+            self.widget_replace = Widget_replace(self, self.controller)
             self.widgets['replace'] = self.widget_replace
             self.widget_replace.set_initial_options(p)
             self.widget_replace.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'replace'))
@@ -74,7 +74,7 @@ class Window_main(Window_common):
 
         # Geometry: crop and resize
         if 'geometry' in self.widgets.keys():
-            self.widget_geometry = Widget_geometry(self, self.model)
+            self.widget_geometry = Widget_geometry(self, self.controller)
             self.widgets['geometry'] = self.widget_geometry
             self.widget_geometry.set_initial_options(p)
             self.widget_geometry.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'geometry'))
@@ -83,14 +83,14 @@ class Window_main(Window_common):
 
         # Stabilize
         if 'stabilize' in self.widgets.keys():
-            self.widget_stabilize = Widget_stabilize(self, self.model)
+            self.widget_stabilize = Widget_stabilize(self, self.controller)
             self.widgets['stabilize'] = self.widget_stabilize
             self.widget_stabilize.set_initial_options(p)
             self.widget_stabilize.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'stabilize'))
 
         # Player controls
         if 'controls' in self.widgets.keys():
-            self.widget_controls = Widget_controls(self, self.model)
+            self.widget_controls = Widget_controls(self, self.controller)
             self.widgets['controls'] = self.widget_controls
             self.widget_controls.set_initial_options(p)
             self.widget_controls.signal_button_pushed[str].connect(self.event_control_button_pressed)
@@ -98,18 +98,18 @@ class Window_main(Window_common):
             self.widget_controls.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'controls'))
 
         # Selection of episode/part/shot
-        self.widget_selection = Widget_selection(self, self.model)
+        self.widget_selection = Widget_selection(self, self.controller)
         self.widgets['selection'] = self.widget_selection
-        self.widget_selection.refresh_browsing_folder(self.model.get_available_episode_and_parts())
+        self.widget_selection.refresh_browsing_folder(self.controller.get_available_episode_and_parts())
         self.widget_selection.signal_selection_changed[dict].connect(self.event_selection_changed)
         self.widget_selection.set_initial_options(p)
         self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
         self.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
 
         # Model
-        self.model.signal_ready_to_play[dict].connect(self.event_ready_to_play)
-        self.model.signal_reload_frame.connect(self.event_reload_frame)
-        self.model.signal_close.connect(self.event_close_without_saving)
+        self.controller.signal_ready_to_play[dict].connect(self.event_ready_to_play)
+        self.controller.signal_reload_frame.connect(self.event_reload_frame)
+        self.controller.signal_close.connect(self.event_close_without_saving)
 
         # Show window/widgets and connect signals
         for w in self.widgets.values():
@@ -146,7 +146,7 @@ class Window_main(Window_common):
                 self.image = None
 
             # Get preview options
-            options = self.model.get_preview_options()
+            options = self.controller.get_preview_options()
             if options is None:
                 sys.exit("preview options are not set!")
 

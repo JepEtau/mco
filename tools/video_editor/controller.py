@@ -19,7 +19,7 @@ from PySide6.QtCore import (
 
 from common.preferences import Preferences
 from models.model_database import Model_database
-from models.Controller_common import (
+from common.controller_common import (
     Controller_common,
 )
 from shot.consolidate_shot import consolidate_shot
@@ -48,13 +48,14 @@ class Controller_video_editor(Controller_common):
     signal_is_modified = Signal(dict)
     signal_reload_frame = Signal()
     signal_is_saved = Signal(str)
+
     signal_replace_list_refreshed = Signal(dict)
+    signal_stabilize_settings_refreshed = Signal(dict)
 
     signal_load_curves = Signal(dict)
     signal_curves_library_modified = Signal(dict)
     signal_shot_per_curves_modified = Signal(list)
 
-    signal_stabilize_parameters_loaded = Signal(dict)
 
     # Send a signal to inform that the shot changed
     signal_shot_changed = Signal()
@@ -98,7 +99,7 @@ class Controller_video_editor(Controller_common):
         self.view.widget_geometry.signal_discard.connect(self.event_geometry_discard_requested)
         self.view.widget_geometry.signal_geometry_modified[dict].connect(self.event_geometry_modified)
 
-        self.view.widget_replace.signal_save.connect(self.event_save_replace_requested)
+        self.view.widget_replace.signal_save.connect(self.event_replace_save_requested)
         self.view.widget_replace.signal_discard.connect(self.event_replace_discard_requested)
         self.view.widget_replace.signal_replace_modified[dict].connect(self.event_frame_replaced)
 
@@ -427,7 +428,7 @@ class Controller_video_editor(Controller_common):
         k_ep = self.current_selection['k_ep']
         k_part = self.current_selection['k_part']
 
-        self.event_save_replace_requested()
+        self.event_replace_save_requested()
 
         print("TODO: Save the shot curves selection")
         # self.model_database.save_shot_curves_selection(
@@ -444,6 +445,11 @@ class Controller_video_editor(Controller_common):
 
     def get_modified_db(self):
         return self.model_database.get_modified_db()
+
+    def current_shot(self):
+        try: return self.shots[self.current_frame['shot_no']]
+        except: pass
+        return None
 
 
     # RGB curves
@@ -554,11 +560,40 @@ class Controller_video_editor(Controller_common):
         self.signal_is_saved.emit('curves_selection')
 
 
+    # Deshake/stabilize
+    #---------------------------------------------------------------------------
+    def is_stabilize_allowed(self) -> bool:
+        shot = self.current_shot()
+        if shot is None:
+            return False
+        is_allowed = self.model_database.is_stabilize_allowed(shot=shot)
+        return is_allowed
+
+
+    def event_stabilize_modified(self, event:dict):
+        print_lightcyan("TODO: implement this")
+
+
+    def event_stabilize_discard_requested(self):
+        log.info("discard modifications requested")
+        shot = self.current_shot()
+        self.model_database.discard_shot_stabilize_settings(
+            k_ep=shot['k_ep'], k_part=shot['k_part'])
+        self.signal_reload_frame.emit()
+
+
+    def event_stabilize_save_requested(self):
+        # Save current shot only
+        shot = self.current_shot()
+        self.model_database.save_shot_stabilize_settings(shot)
+        self.signal_is_saved.emit('stabilize')
+
+
 
     # Replace frames
     #---------------------------------------------------------------------------
     def is_replace_allowed(self) -> bool:
-        shot = self.get_current_shot()
+        shot = self.current_shot()
         if shot is None:
             return False
         is_allowed = self.model_database.is_replace_allowed(shot=shot)
@@ -623,11 +658,9 @@ class Controller_video_editor(Controller_common):
         log.info("replace %d" % (frame_no))
         print("shot no= %d" % (self.current_frame['shot_no']))
         # pprint(self.playlist_frames)
-        shot_no = self.current_frame['shot_no']
-        shot_src = self.shots[shot_no]
+        shot_src = self.current_shot()
+        shot_no = shot_src['no']
         index = frame_no - self.frames[shot_no][0]['frame_no']
-
-
 
         if action == 'replace':
             log.info("replace: shot_no=%d, frame_no=%d (index=%d) by %d" % (shot_no, frame_no, index, replace['src']))
@@ -657,10 +690,9 @@ class Controller_video_editor(Controller_common):
         self.signal_reload_frame.emit()
 
 
-    def event_save_replace_requested(self):
+    def event_replace_save_requested(self):
         self.model_database.save_replace_database()
         self.signal_is_saved.emit('replace')
-
 
 
 
@@ -673,12 +705,10 @@ class Controller_video_editor(Controller_common):
             - parameter     'crop_top', 'crop_right', 'crop_left', 'crop_down', 'width', 'shot'
             - value         int, str
         """
-        k_ed = self.current_frame['k_ed']
         k_ep = self.current_frame['k_ep']
         k_part = self.current_frame['k_part']
-        shot_no = self.current_frame['shot_no']
-        shot = self.shots[shot_no]
-        # print_green("\nevent_geometry_modified for %s:%s:%s" % (k_ed, k_ep, k_part))
+        shot = self.current_shot()
+        # print_green("\nevent_geometry_modified for %s:%s" % (k_ep, k_part))
         # print(event)
         element = event['element']
         event_type = event['type']
@@ -783,11 +813,6 @@ class Controller_video_editor(Controller_common):
     #---------------------------------------------------------------------------
 
 
-    def get_current_shot(self):
-        try: return self.shots[self.current_frame['shot_no']]
-        except: pass
-        return None
-
 
     def get_frame_from_index(self, index):
         """ returns the replace frame unless there is no replacemed frame or
@@ -802,6 +827,7 @@ class Controller_video_editor(Controller_common):
         frame = self.playlist_frames[index]
         frame_no = frame['frame_no']
         shot_no = frame['shot_no']
+        # new shot:
         shot = self.shots[shot_no]
 
         if not self.preview_options['replace']['is_enabled']:
@@ -860,13 +886,13 @@ class Controller_video_editor(Controller_common):
         # pprint(self.model_database.db_target_geometry)
         # pprint(frame['geometry'])
 
+        # Load new stabilize settings
+        if is_shot_changed:
+            settings = self.model_database.get_shot_stabilize_settings(shot=shot)
+            self.signal_stabilize_settings_refreshed.emit(settings)
 
         # Purge image from the previous frame
-        # this is necessary to limit the memory consumption
-        # TODO: create a cache structure which manage the cache
-        # and another thread to generate the next frames in background (when playing as a video)
         self.purge_current_frame_cache()
-
 
         # Set current frame
         self.current_frame = frame

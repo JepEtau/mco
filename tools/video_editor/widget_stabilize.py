@@ -18,9 +18,11 @@ from PySide6.QtWidgets import (
 
 from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
 
-from tools.video_editor.controller import Controller_video_editor
+from video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_stabilize_ui import Ui_widget_stabilize
 from common.widget_common import Widget_common
+from utils.pretty_print import *
+
 
 class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     signal_stabilize_modified = Signal(dict)
@@ -62,8 +64,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         # self.tableWidget_stabilize.itemDoubleClicked[QTableWidgetItem].connect(self.event_)
         self.tableWidget_stabilize.installEventFilter(self)
 
-        self.model.signal_stabilize_parameters_loaded[dict].connect(self.event_stabilize_parameters_loaded)
-        self.model.signal_is_saved[str].connect(self.event_is_saved)
+        self.controller.signal_stabilize_settings_refreshed[dict].connect(self.event_stabilize_settings_refreshed)
+        self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
         self.installEventFilter(self)
 
@@ -107,13 +109,14 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     def event_stabilize_requested(self):
         log.info("calculate")
 
-    def event_stabilize_parameters_loaded(self, parameters):
-        log.info("parameters changed")
-
 
 
     def event_segment_selected(self):
         log.info("segment selected")
+
+    def event_stabilize_settings_refreshed(self, stabilize_settings):
+        print_lightcyan("event_stabilize_settings_refreshed")
+        pprint(stabilize_settings)
 
 
     def event_key_pressed(self, event):

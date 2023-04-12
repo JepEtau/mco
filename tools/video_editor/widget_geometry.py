@@ -26,7 +26,7 @@ from utils.common import K_GENERIQUES
 from common.widget_common import Widget_common
 from common.sylesheet import set_stylesheet, set_widget_stylesheet, update_selected_widget_stylesheet
 
-from tools.video_editor.controller import Controller_video_editor
+from video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_geometry_ui import Ui_widget_geometry
 
 
@@ -81,7 +81,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.adjustSize()
 
         # Signals from model
-        self.model.signal_shotlist_modified[dict].connect(self.event_shotlist_modified)
+        self.controller.signal_shotlist_modified[dict].connect(self.event_shotlist_modified)
 
 
     def set_initial_options(self, preferences:dict):

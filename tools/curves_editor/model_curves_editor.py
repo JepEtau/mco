@@ -21,7 +21,7 @@ from PySide6.QtWidgets import QApplication
 
 from common.preferences import Preferences
 from models.model_database import Model_database
-from models.Controller_common import (
+from common.controller_common import (
     Controller_common,
 )
 from models.model_framelist import Model_framelist

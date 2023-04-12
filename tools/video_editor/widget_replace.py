@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
 
 from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
 
-from tools.video_editor.controller import Controller_video_editor
+from video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_replace_ui import Ui_widget_replace
 from common.widget_common import Widget_common
 
@@ -76,10 +76,10 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.tableWidget_replace.itemDoubleClicked[QTableWidgetItem].connect(self.event_replace_frame_selected)
         self.tableWidget_replace.installEventFilter(self)
 
-        self.model.signal_replace_list_refreshed[dict].connect(self.event_replace_list_refreshed)
-        self.model.signal_is_saved[str].connect(self.event_is_saved)
+        self.controller.signal_replace_list_refreshed[dict].connect(self.event_replace_list_refreshed)
+        self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
-        self.model.signal_shot_changed.connect(self.event_shot_changed)
+        self.controller.signal_shot_changed.connect(self.event_shot_changed)
 
         self.installEventFilter(self)
 
@@ -108,7 +108,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_shot_changed(self):
-        enabled = self.model.is_replace_allowed()
+        enabled = self.controller.is_replace_allowed()
         # if enabled:
         #     if self.current_edition_enabled:
         #         log.info("already enabled")
@@ -140,7 +140,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
     def event_replace_list_refreshed(self, values:dict):
         log.info("refresh list of frames to replace")
-        # is_allowed = self.model.is_replace_allowed()
+        # is_allowed = self.controller.is_replace_allowed()
         # print_lightgreen("event_replace_list_refreshed: ", is_allowed)
         # if is_allowed:
         print_lightgreen("\tlet's refresh")
@@ -320,7 +320,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
                 return True
 
         # elif key == Qt.Key_R:
-        #     new_index = self.model.get_next_replaced_frame_index(index=self.slider_frames.value())
+        #     new_index = self.controller.get_next_replaced_frame_index(index=self.slider_frames.value())
         #     if new_index != -1:
         #         self.update_slider_value(new_index)
 
