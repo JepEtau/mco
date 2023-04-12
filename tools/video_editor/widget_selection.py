@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
-
-from functools import partial
 import sys
 sys.path.append('../scripts')
+
+from functools import partial
+
+from utils.pretty_print import *
 from pprint import pprint
 from logger import log
 
@@ -357,13 +359,14 @@ class Widget_selection(QWidget, Ui_widget_selection):
         for k_shot, shot in shots.items():
             self.tableWidget_shots.insertRow(row_no)
             self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem(str(k_shot)))
-            src_txt = ""
-            if 'src' in shot.keys():
-                src_txt = "%s:%s" % (shot['src']['k_ed'], shot['src']['k_ep'])
+            try:
+                src_txt = f"{shot['src']['k_ed']}:{shot['src']['k_ep']}"
+            except:
+                print_red("ERROR: event_refresh_shotlist: k_ed/k_ep shall be defined in shot src. correct this ASAP")
             self.tableWidget_shots.setItem(row_no, 1, QTableWidgetItem(src_txt))
 
-            self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem(str(shot['src']['start'])))
-            self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(str(shot['src']['count'])))
+            self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem(f"{shot['src']['start']}"))
+            self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(f"{shot['src']['count']}"))
 
             # Curves
             k_initial_curves = shot['modifications']['curves']['initial']

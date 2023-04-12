@@ -142,7 +142,7 @@ class Model_stabilize():
 
         # Section, option
         k_section = f"{k_ed}.{k_ep}.{k_part}"
-        k_option = str(shot_start)
+        k_option = f"{shot_start}_deshake"
 
         # Set or remove option
         if stabilize_settings is None:
@@ -151,18 +151,25 @@ class Model_stabilize():
             except: pass
         else:
             # Convert dict into a str
-            stabilize_settings_str = "enable=%s;" % ('true' if stabilize_settings['enabled'] else 'false')
+            enable_str = "enable=%s;" % ('true' if stabilize_settings['enable'] else 'false')
+            segments_str = ""
             for segment in stabilize_settings['segments']:
                 mode_str = ""
                 for k, v in segment['mode'].items():
                     mode_str += f"+{k}" if v else ''
 
-                stabilize_settings_str += "\n%s:start=%d:end=%d:ref=%s:mode=%s" % (
+                segments_str += "\n%s:start=%d:end=%d:ref=%s:mode=%s;" % (
                     segment['alg'],
                     segment['start'],
-                    segment['start'] + segment['count'],
+                    segment['end'],
                     segment['ref'],
-                    mode_str)
+                    mode_str[1:])
+
+            if len(stabilize_settings['segments']) > 1:
+                stabilize_settings_str = f"\"\"\"{enable_str}{segments_str}\n\"\"\""
+            else:
+                stabilize_settings_str = f"\"{enable_str}{segments_str[1:]}\""
+
             # Set the new option
             try:
                 config_stabilize.set(k_section, k_option, stabilize_settings_str)

@@ -373,7 +373,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
 
-    def block_all_signals(self, enabled):
+    def block_all_signals(self, enabled:bool):
 
         # Target
         self.pushButton_target_width_edition.blockSignals(enabled)

@@ -4,6 +4,8 @@ sys.path.append('../scripts')
 from PySide6.QtCore import (
     Signal,
 )
+from copy import deepcopy
+from utils.pretty_print import *
 from pprint import pprint
 from logger import log
 

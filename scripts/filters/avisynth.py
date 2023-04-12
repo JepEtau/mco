@@ -65,7 +65,7 @@ def avisynth_deinterlace(shot, image_list,
     progressive_filepath = shot['inputs']['progressive']['filepath']
 
     # Write it in the cache directory
-    if shot['inputs']['progressive']['enabled']:
+    if shot['inputs']['progressive']['enable']:
         # and shot['inputs']['progressive']['start'] == 0
         # and shot['inputs']['progressive']['count'] == -1):
         # Store it in the cache_progressive folder
@@ -118,7 +118,7 @@ def avisynth_deinterlace(shot, image_list,
     do_use_ffv1_file = False
 
     # Try using ffv1 file if enable and exists
-    if shot['inputs']['progressive']['enabled']:
+    if shot['inputs']['progressive']['enable']:
         do_use_ffv1_file = True
         if is_progressive_file_valid(shot=shot, db_common=db_common):
             if verbose:
@@ -356,7 +356,7 @@ def avisynth_generate_avs_script(shot, script_filepath):
     # Deinterlace shot
     trim_line = "trim(%d,end=%d)" % (avisynth_start, (avisynth_start + avisynth_count - 1))
 
-    if shot['inputs']['progressive']['enabled']:
+    if shot['inputs']['progressive']['enable']:
         # Use progressive file
         if (shot['inputs']['progressive']['start'] == 0
             and shot['inputs']['progressive']['count'] == -1):

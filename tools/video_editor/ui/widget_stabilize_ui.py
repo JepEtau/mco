@@ -15,16 +15,17 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QApplication, QFrame, QGridLayout,
-    QGroupBox, QHBoxLayout, QHeaderView, QLabel,
-    QPushButton, QRadioButton, QSizePolicy, QSpacerItem,
-    QTableWidget, QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QApplication, QFrame,
+    QGridLayout, QGroupBox, QHBoxLayout, QHeaderView,
+    QLabel, QLineEdit, QPushButton, QRadioButton,
+    QSizePolicy, QSpacerItem, QTableWidget, QTableWidgetItem,
+    QVBoxLayout, QWidget)
 
 class Ui_widget_stabilize(object):
     def setupUi(self, widget_stabilize):
         if not widget_stabilize.objectName():
             widget_stabilize.setObjectName(u"widget_stabilize")
-        widget_stabilize.resize(270, 371)
+        widget_stabilize.resize(489, 370)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -53,6 +54,7 @@ class Ui_widget_stabilize(object):
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.pushButton_set_preview.sizePolicy().hasHeightForWidth())
         self.pushButton_set_preview.setSizePolicy(sizePolicy1)
+        self.pushButton_set_preview.setFocusPolicy(Qt.NoFocus)
         icon = QIcon()
         icon.addFile(u"icons/grey/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
         icon.addFile(u"icons/blue/eye.svg", QSize(), QIcon.Normal, QIcon.On)
@@ -66,6 +68,7 @@ class Ui_widget_stabilize(object):
         self.pushButton_save.setObjectName(u"pushButton_save")
         sizePolicy1.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
         self.pushButton_save.setSizePolicy(sizePolicy1)
+        self.pushButton_save.setFocusPolicy(Qt.NoFocus)
         icon1 = QIcon()
         icon1.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_save.setIcon(icon1)
@@ -79,6 +82,7 @@ class Ui_widget_stabilize(object):
         self.pushButton_discard.setObjectName(u"pushButton_discard")
         sizePolicy1.setHeightForWidth(self.pushButton_discard.sizePolicy().hasHeightForWidth())
         self.pushButton_discard.setSizePolicy(sizePolicy1)
+        self.pushButton_discard.setFocusPolicy(Qt.NoFocus)
         icon2 = QIcon()
         icon2.addFile(u"icons/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
         icon2.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
@@ -97,6 +101,7 @@ class Ui_widget_stabilize(object):
         self.pushButton_close.setObjectName(u"pushButton_close")
         sizePolicy1.setHeightForWidth(self.pushButton_close.sizePolicy().hasHeightForWidth())
         self.pushButton_close.setSizePolicy(sizePolicy1)
+        self.pushButton_close.setFocusPolicy(Qt.NoFocus)
         icon3 = QIcon()
         icon3.addFile(u"icons/grey/x-square.svg", QSize(), QIcon.Normal, QIcon.Off)
         icon3.addFile(u"icons/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.On)
@@ -112,6 +117,7 @@ class Ui_widget_stabilize(object):
 
         self.groupBox_stabilize = QGroupBox(self.frame)
         self.groupBox_stabilize.setObjectName(u"groupBox_stabilize")
+        self.groupBox_stabilize.setFocusPolicy(Qt.NoFocus)
         self.groupBox_stabilize.setCheckable(True)
         self.verticalLayout_4 = QVBoxLayout(self.groupBox_stabilize)
         self.verticalLayout_4.setSpacing(3)
@@ -121,70 +127,139 @@ class Ui_widget_stabilize(object):
         self.gridLayout.setSpacing(3)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(0, -1, -1, -1)
-        self.label = QLabel(self.groupBox_stabilize)
-        self.label.setObjectName(u"label")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.lineEdit_end = QLineEdit(self.groupBox_stabilize)
+        self.lineEdit_end.setObjectName(u"lineEdit_end")
+        self.lineEdit_end.setMaximumSize(QSize(40, 16777215))
+        self.lineEdit_end.setFocusPolicy(Qt.NoFocus)
+
+        self.horizontalLayout_3.addWidget(self.lineEdit_end)
+
+        self.pushButton_set_end = QPushButton(self.groupBox_stabilize)
+        self.pushButton_set_end.setObjectName(u"pushButton_set_end")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
-        self.label.setSizePolicy(sizePolicy2)
-
-        self.gridLayout.addWidget(self.label, 0, 0, 1, 1)
-
-        self.pushButton_set_start = QPushButton(self.groupBox_stabilize)
-        self.pushButton_set_start.setObjectName(u"pushButton_set_start")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.pushButton_set_start.sizePolicy().hasHeightForWidth())
-        self.pushButton_set_start.setSizePolicy(sizePolicy3)
-        self.pushButton_set_start.setMaximumSize(QSize(25, 16777215))
+        sizePolicy2.setHeightForWidth(self.pushButton_set_end.sizePolicy().hasHeightForWidth())
+        self.pushButton_set_end.setSizePolicy(sizePolicy2)
+        self.pushButton_set_end.setMaximumSize(QSize(25, 16777215))
+        self.pushButton_set_end.setFocusPolicy(Qt.NoFocus)
         icon4 = QIcon()
         icon4.addFile(u"icons/page_white_pick.png", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_set_start.setIcon(icon4)
-        self.pushButton_set_start.setFlat(True)
+        self.pushButton_set_end.setIcon(icon4)
+        self.pushButton_set_end.setFlat(True)
 
-        self.gridLayout.addWidget(self.pushButton_set_start, 0, 1, 1, 1)
+        self.horizontalLayout_3.addWidget(self.pushButton_set_end)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer_3)
+
+
+        self.gridLayout.addLayout(self.horizontalLayout_3, 1, 3, 1, 1)
+
+        self.label_4 = QLabel(self.groupBox_stabilize)
+        self.label_4.setObjectName(u"label_4")
+
+        self.gridLayout.addWidget(self.label_4, 2, 0, 1, 1)
+
+        self.label = QLabel(self.groupBox_stabilize)
+        self.label.setObjectName(u"label")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.label.sizePolicy().hasHeightForWidth())
+        self.label.setSizePolicy(sizePolicy3)
+
+        self.gridLayout.addWidget(self.label, 0, 0, 1, 1)
 
         self.label_3 = QLabel(self.groupBox_stabilize)
         self.label_3.setObjectName(u"label_3")
 
         self.gridLayout.addWidget(self.label_3, 1, 0, 1, 1)
 
-        self.pushButton_set_end = QPushButton(self.groupBox_stabilize)
-        self.pushButton_set_end.setObjectName(u"pushButton_set_end")
-        sizePolicy3.setHeightForWidth(self.pushButton_set_end.sizePolicy().hasHeightForWidth())
-        self.pushButton_set_end.setSizePolicy(sizePolicy3)
-        self.pushButton_set_end.setMaximumSize(QSize(25, 16777215))
-        self.pushButton_set_end.setIcon(icon4)
-        self.pushButton_set_end.setFlat(True)
-
-        self.gridLayout.addWidget(self.pushButton_set_end, 1, 1, 1, 1)
-
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.radioButton_4 = QRadioButton(self.groupBox_stabilize)
         self.radioButton_4.setObjectName(u"radioButton_4")
+        self.radioButton_4.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalLayout_4.addWidget(self.radioButton_4)
 
         self.radioButton_2 = QRadioButton(self.groupBox_stabilize)
         self.radioButton_2.setObjectName(u"radioButton_2")
+        self.radioButton_2.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalLayout_4.addWidget(self.radioButton_2)
 
         self.radioButton_3 = QRadioButton(self.groupBox_stabilize)
         self.radioButton_3.setObjectName(u"radioButton_3")
+        self.radioButton_3.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalLayout_4.addWidget(self.radioButton_3)
 
+        self.radioButton_5 = QRadioButton(self.groupBox_stabilize)
+        self.radioButton_5.setObjectName(u"radioButton_5")
+        self.radioButton_5.setEnabled(False)
+        self.radioButton_5.setFocusPolicy(Qt.NoFocus)
 
-        self.gridLayout.addLayout(self.horizontalLayout_4, 2, 1, 1, 1)
+        self.horizontalLayout_4.addWidget(self.radioButton_5)
 
-        self.label_4 = QLabel(self.groupBox_stabilize)
-        self.label_4.setObjectName(u"label_4")
+        self.lineEdit = QLineEdit(self.groupBox_stabilize)
+        self.lineEdit.setObjectName(u"lineEdit")
+        self.lineEdit.setEnabled(False)
+        self.lineEdit.setMaximumSize(QSize(40, 16777215))
+        self.lineEdit.setFocusPolicy(Qt.NoFocus)
+        self.lineEdit.setReadOnly(True)
 
-        self.gridLayout.addWidget(self.label_4, 2, 0, 1, 1)
+        self.horizontalLayout_4.addWidget(self.lineEdit)
+
+        self.pushButton_set_ref = QPushButton(self.groupBox_stabilize)
+        self.pushButton_set_ref.setObjectName(u"pushButton_set_ref")
+        self.pushButton_set_ref.setEnabled(False)
+        sizePolicy2.setHeightForWidth(self.pushButton_set_ref.sizePolicy().hasHeightForWidth())
+        self.pushButton_set_ref.setSizePolicy(sizePolicy2)
+        self.pushButton_set_ref.setMaximumSize(QSize(25, 16777215))
+        self.pushButton_set_ref.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_set_ref.setIcon(icon4)
+        self.pushButton_set_ref.setFlat(True)
+
+        self.horizontalLayout_4.addWidget(self.pushButton_set_ref)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_4.addItem(self.horizontalSpacer_2)
+
+
+        self.gridLayout.addLayout(self.horizontalLayout_4, 2, 3, 1, 1)
+
+        self.horizontalLayout_5 = QHBoxLayout()
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.lineEdit_start = QLineEdit(self.groupBox_stabilize)
+        self.lineEdit_start.setObjectName(u"lineEdit_start")
+        self.lineEdit_start.setMaximumSize(QSize(40, 16777215))
+        self.lineEdit_start.setFocusPolicy(Qt.NoFocus)
+
+        self.horizontalLayout_5.addWidget(self.lineEdit_start)
+
+        self.pushButton_set_start = QPushButton(self.groupBox_stabilize)
+        self.pushButton_set_start.setObjectName(u"pushButton_set_start")
+        sizePolicy2.setHeightForWidth(self.pushButton_set_start.sizePolicy().hasHeightForWidth())
+        self.pushButton_set_start.setSizePolicy(sizePolicy2)
+        self.pushButton_set_start.setMaximumSize(QSize(25, 16777215))
+        self.pushButton_set_start.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_set_start.setIcon(icon4)
+        self.pushButton_set_start.setFlat(True)
+
+        self.horizontalLayout_5.addWidget(self.pushButton_set_start)
+
+        self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_5.addItem(self.horizontalSpacer_4)
+
+
+        self.gridLayout.addLayout(self.horizontalLayout_5, 0, 3, 1, 1)
 
 
         self.verticalLayout_4.addLayout(self.gridLayout)
@@ -193,8 +268,9 @@ class Ui_widget_stabilize(object):
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.pushButton_undo = QPushButton(self.groupBox_stabilize)
         self.pushButton_undo.setObjectName(u"pushButton_undo")
-        sizePolicy3.setHeightForWidth(self.pushButton_undo.sizePolicy().hasHeightForWidth())
-        self.pushButton_undo.setSizePolicy(sizePolicy3)
+        sizePolicy2.setHeightForWidth(self.pushButton_undo.sizePolicy().hasHeightForWidth())
+        self.pushButton_undo.setSizePolicy(sizePolicy2)
+        self.pushButton_undo.setFocusPolicy(Qt.NoFocus)
         icon5 = QIcon()
         icon5.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_undo.setIcon(icon5)
@@ -202,8 +278,19 @@ class Ui_widget_stabilize(object):
 
         self.horizontalLayout_2.addWidget(self.pushButton_undo)
 
+        self.pushButton_set = QPushButton(self.groupBox_stabilize)
+        self.pushButton_set.setObjectName(u"pushButton_set")
+        self.pushButton_set.setFocusPolicy(Qt.NoFocus)
+
+        self.horizontalLayout_2.addWidget(self.pushButton_set)
+
+        self.horizontalSpacer_5 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_5)
+
         self.pushButton_calculate = QPushButton(self.groupBox_stabilize)
         self.pushButton_calculate.setObjectName(u"pushButton_calculate")
+        self.pushButton_calculate.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalLayout_2.addWidget(self.pushButton_calculate)
 
@@ -214,28 +301,39 @@ class Ui_widget_stabilize(object):
         self.verticalLayout_2.addWidget(self.groupBox_stabilize)
 
         self.tableWidget_stabilize = QTableWidget(self.frame)
-        if (self.tableWidget_stabilize.columnCount() < 3):
-            self.tableWidget_stabilize.setColumnCount(3)
+        if (self.tableWidget_stabilize.columnCount() < 4):
+            self.tableWidget_stabilize.setColumnCount(4)
         __qtablewidgetitem = QTableWidgetItem()
         self.tableWidget_stabilize.setHorizontalHeaderItem(0, __qtablewidgetitem)
         __qtablewidgetitem1 = QTableWidgetItem()
         self.tableWidget_stabilize.setHorizontalHeaderItem(1, __qtablewidgetitem1)
         __qtablewidgetitem2 = QTableWidgetItem()
         self.tableWidget_stabilize.setHorizontalHeaderItem(2, __qtablewidgetitem2)
+        __qtablewidgetitem3 = QTableWidgetItem()
+        self.tableWidget_stabilize.setHorizontalHeaderItem(3, __qtablewidgetitem3)
         if (self.tableWidget_stabilize.rowCount() < 5):
             self.tableWidget_stabilize.setRowCount(5)
-        __qtablewidgetitem3 = QTableWidgetItem()
-        self.tableWidget_stabilize.setVerticalHeaderItem(0, __qtablewidgetitem3)
         __qtablewidgetitem4 = QTableWidgetItem()
-        self.tableWidget_stabilize.setItem(0, 0, __qtablewidgetitem4)
+        self.tableWidget_stabilize.setVerticalHeaderItem(0, __qtablewidgetitem4)
         __qtablewidgetitem5 = QTableWidgetItem()
-        self.tableWidget_stabilize.setItem(0, 1, __qtablewidgetitem5)
+        self.tableWidget_stabilize.setItem(0, 0, __qtablewidgetitem5)
         __qtablewidgetitem6 = QTableWidgetItem()
-        self.tableWidget_stabilize.setItem(0, 2, __qtablewidgetitem6)
+        self.tableWidget_stabilize.setItem(0, 1, __qtablewidgetitem6)
+        __qtablewidgetitem7 = QTableWidgetItem()
+        self.tableWidget_stabilize.setItem(0, 2, __qtablewidgetitem7)
+        __qtablewidgetitem8 = QTableWidgetItem()
+        self.tableWidget_stabilize.setItem(0, 3, __qtablewidgetitem8)
         self.tableWidget_stabilize.setObjectName(u"tableWidget_stabilize")
+        sizePolicy4 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Expanding)
+        sizePolicy4.setHorizontalStretch(0)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(self.tableWidget_stabilize.sizePolicy().hasHeightForWidth())
+        self.tableWidget_stabilize.setSizePolicy(sizePolicy4)
+        self.tableWidget_stabilize.setFocusPolicy(Qt.NoFocus)
         self.tableWidget_stabilize.setFrameShape(QFrame.StyledPanel)
         self.tableWidget_stabilize.setFrameShadow(QFrame.Sunken)
         self.tableWidget_stabilize.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.tableWidget_stabilize.setSizeAdjustPolicy(QAbstractScrollArea.AdjustToContents)
         self.tableWidget_stabilize.setEditTriggers(QAbstractItemView.SelectedClicked)
         self.tableWidget_stabilize.setProperty("showDropIndicator", False)
         self.tableWidget_stabilize.setDragDropOverwriteMode(False)
@@ -243,8 +341,11 @@ class Ui_widget_stabilize(object):
         self.tableWidget_stabilize.setSelectionMode(QAbstractItemView.SingleSelection)
         self.tableWidget_stabilize.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableWidget_stabilize.setSortingEnabled(False)
+        self.tableWidget_stabilize.setWordWrap(False)
+        self.tableWidget_stabilize.setCornerButtonEnabled(False)
         self.tableWidget_stabilize.setRowCount(5)
-        self.tableWidget_stabilize.horizontalHeader().setDefaultSectionSize(70)
+        self.tableWidget_stabilize.setColumnCount(4)
+        self.tableWidget_stabilize.horizontalHeader().setDefaultSectionSize(90)
         self.tableWidget_stabilize.horizontalHeader().setStretchLastSection(True)
         self.tableWidget_stabilize.verticalHeader().setVisible(True)
         self.tableWidget_stabilize.verticalHeader().setCascadingSectionResizes(False)
@@ -270,33 +371,40 @@ class Ui_widget_stabilize(object):
         self.pushButton_discard.setText("")
         self.pushButton_close.setText("")
         self.groupBox_stabilize.setTitle(QCoreApplication.translate("widget_stabilize", u"Stabilize/deshake", None))
-        self.label.setText(QCoreApplication.translate("widget_stabilize", u"start", None))
-        self.pushButton_set_start.setText("")
-        self.label_3.setText(QCoreApplication.translate("widget_stabilize", u"end", None))
         self.pushButton_set_end.setText("")
+        self.label_4.setText(QCoreApplication.translate("widget_stabilize", u"initial ref.", None))
+        self.label.setText(QCoreApplication.translate("widget_stabilize", u"start", None))
+        self.label_3.setText(QCoreApplication.translate("widget_stabilize", u"end", None))
         self.radioButton_4.setText(QCoreApplication.translate("widget_stabilize", u"start", None))
         self.radioButton_2.setText(QCoreApplication.translate("widget_stabilize", u"middle", None))
         self.radioButton_3.setText(QCoreApplication.translate("widget_stabilize", u"end", None))
-        self.label_4.setText(QCoreApplication.translate("widget_stabilize", u"ref.", None))
+        self.radioButton_5.setText(QCoreApplication.translate("widget_stabilize", u"frame no.", None))
+        self.pushButton_set_ref.setText("")
+        self.pushButton_set_start.setText("")
         self.pushButton_undo.setText("")
+        self.pushButton_set.setText(QCoreApplication.translate("widget_stabilize", u"Set", None))
         self.pushButton_calculate.setText(QCoreApplication.translate("widget_stabilize", u"calculate (F5)", None))
         ___qtablewidgetitem = self.tableWidget_stabilize.horizontalHeaderItem(0)
         ___qtablewidgetitem.setText(QCoreApplication.translate("widget_stabilize", u"start", None));
         ___qtablewidgetitem1 = self.tableWidget_stabilize.horizontalHeaderItem(1)
         ___qtablewidgetitem1.setText(QCoreApplication.translate("widget_stabilize", u"end", None));
         ___qtablewidgetitem2 = self.tableWidget_stabilize.horizontalHeaderItem(2)
-        ___qtablewidgetitem2.setText(QCoreApplication.translate("widget_stabilize", u"ref", None));
-        ___qtablewidgetitem3 = self.tableWidget_stabilize.verticalHeaderItem(0)
-        ___qtablewidgetitem3.setText(QCoreApplication.translate("widget_stabilize", u"1", None));
+        ___qtablewidgetitem2.setText(QCoreApplication.translate("widget_stabilize", u"ref.", None));
+        ___qtablewidgetitem3 = self.tableWidget_stabilize.horizontalHeaderItem(3)
+        ___qtablewidgetitem3.setText(QCoreApplication.translate("widget_stabilize", u"mode", None));
+        ___qtablewidgetitem4 = self.tableWidget_stabilize.verticalHeaderItem(0)
+        ___qtablewidgetitem4.setText(QCoreApplication.translate("widget_stabilize", u"1", None));
 
         __sortingEnabled = self.tableWidget_stabilize.isSortingEnabled()
         self.tableWidget_stabilize.setSortingEnabled(False)
-        ___qtablewidgetitem4 = self.tableWidget_stabilize.item(0, 0)
-        ___qtablewidgetitem4.setText(QCoreApplication.translate("widget_stabilize", u"1", None));
-        ___qtablewidgetitem5 = self.tableWidget_stabilize.item(0, 1)
-        ___qtablewidgetitem5.setText(QCoreApplication.translate("widget_stabilize", u"8", None));
-        ___qtablewidgetitem6 = self.tableWidget_stabilize.item(0, 2)
-        ___qtablewidgetitem6.setText(QCoreApplication.translate("widget_stabilize", u"start", None));
+        ___qtablewidgetitem5 = self.tableWidget_stabilize.item(0, 0)
+        ___qtablewidgetitem5.setText(QCoreApplication.translate("widget_stabilize", u"1", None));
+        ___qtablewidgetitem6 = self.tableWidget_stabilize.item(0, 1)
+        ___qtablewidgetitem6.setText(QCoreApplication.translate("widget_stabilize", u"8", None));
+        ___qtablewidgetitem7 = self.tableWidget_stabilize.item(0, 2)
+        ___qtablewidgetitem7.setText(QCoreApplication.translate("widget_stabilize", u"start", None));
+        ___qtablewidgetitem8 = self.tableWidget_stabilize.item(0, 3)
+        ___qtablewidgetitem8.setText(QCoreApplication.translate("widget_stabilize", u"vertical+horizontal+rotation", None));
         self.tableWidget_stabilize.setSortingEnabled(__sortingEnabled)
 
         pass

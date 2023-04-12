@@ -22,11 +22,13 @@ from video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_stabilize_ui import Ui_widget_stabilize
 from common.widget_common import Widget_common
 from utils.pretty_print import *
+from parsers.parser_stabilize import SEGMENTS_MAX_COUNT
 
 
 class Widget_stabilize(Widget_common, Ui_widget_stabilize):
-    signal_stabilize_modified = Signal(dict)
+    signal_settings_modified = Signal(dict)
     signal_segment_selected = Signal(dict)
+
 
     def __init__(self, ui, controller:Controller_video_editor):
         super(Widget_stabilize, self).__init__(ui)
@@ -37,32 +39,29 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         # Internal variables
         self.previous_position = None
 
-        # Disable focus
-        self.tableWidget_stabilize.setFocusPolicy(Qt.NoFocus)
-
-        self.pushButton_calculate.clicked.connect(self.event_stabilize_requested)
-
         # Table
-        self.tableWidget_stabilize.clearContents()
-        self.tableWidget_stabilize.setRowCount(0)
-
-
+        table = self.tableWidget_stabilize
+        table.setFocusPolicy(Qt.NoFocus)
+        table.clearContents()
+        table.setRowCount(0)
         self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter,
-                            Qt.AlignRight | Qt.AlignVCenter]
-        headers = ["start", "end", "used"]
-        default_col_width = [70, 80, 80, 100]
+                            Qt.AlignCenter | Qt.AlignVCenter,
+                            Qt.AlignLeft | Qt.AlignVCenter]
+        headers = ["start", "end", "initial ref.", "mode"]
+        default_col_width = [50, 50, 80, 200]
         for col_no, header_str, col_width in zip(range(len(headers)),
                                                     headers,
                                                     default_col_width):
-            self.tableWidget_stabilize.horizontalHeaderItem(col_no).setText(header_str)
-            self.tableWidget_stabilize.setColumnWidth(col_no, col_width)
-        self.tableWidget_stabilize.horizontalHeader().setStretchLastSection(True)
+            table.horizontalHeaderItem(col_no).setText(header_str)
+            table.setColumnWidth(col_no, col_width)
+        table.selectionModel().selectionChanged.connect(self.event_segment_selected)
+        table.installEventFilter(self)
 
-        # Connect signals and filter events
-        self.tableWidget_stabilize.selectionModel().selectionChanged.connect(self.event_segment_selected)
-        # self.tableWidget_stabilize.itemDoubleClicked[QTableWidgetItem].connect(self.event_)
-        self.tableWidget_stabilize.installEventFilter(self)
+
+        # Buttons, etc.
+        self.groupBox_stabilize.clicked.connect(self.event_stabilize_modified)
+
 
         self.controller.signal_stabilize_settings_refreshed[dict].connect(self.event_stabilize_settings_refreshed)
         self.controller.signal_is_saved[str].connect(self.event_is_saved)
@@ -77,6 +76,10 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
         s = preferences['stabilize']
+
+        self.groupBox_stabilize.blockSignals(True)
+        self.groupBox_stabilize.setChecked(False)
+        self.groupBox_stabilize.blockSignals(False)
 
         self.tableWidget_stabilize.blockSignals(True)
         self.tableWidget_stabilize.clearContents()
@@ -103,9 +106,6 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         return preview_options
 
 
-    def block_signals(self, enabled):
-        pass
-
     def event_stabilize_requested(self):
         log.info("calculate")
 
@@ -114,9 +114,97 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     def event_segment_selected(self):
         log.info("segment selected")
 
+
+    def event_stabilize_modified(self):
+        # Get new settings
+        settings = {
+            'enable': self.groupBox_stabilize.isChecked(),
+            'segments' : list()
+        }
+
+        table = self.tableWidget_stabilize
+        for row_no in range(SEGMENTS_MAX_COUNT):
+            try:
+                start = int(table.item(row_no, 0).text())
+            except:
+                continue
+
+            segment = {
+                'start': start,
+                'end': int(table.item(row_no, 1).text()),
+                'ref': table.item(row_no, 2).text(),
+                'alg': 'cv2_deshake',
+                'mode': {
+                    'vertical': True,
+                    'horizontal': False,
+                    'rotation': False
+                },
+            }
+            mode_list = table.item(row_no, 3).text().split('+')
+            for k in mode_list:
+                segment['mode'][k] = True
+            settings['segments'].append(segment)
+        self.signal_settings_modified.emit(settings)
+
+        self.pushButton_save.setEnabled(True)
+
+
+    def block_all_signals(self, enabled:bool):
+        self.groupBox_stabilize.blockSignals(enabled)
+        self.tableWidget_stabilize.blockSignals(enabled)
+        self.pushButton_calculate.blockSignals(enabled)
+
+
+
     def event_stabilize_settings_refreshed(self, stabilize_settings):
-        print_lightcyan("event_stabilize_settings_refreshed")
-        pprint(stabilize_settings)
+        # print_lightcyan("event_stabilize_settings_refreshed")
+        # pprint(stabilize_settings)
+
+        self.block_all_signals(True)
+        if stabilize_settings is None:
+            self.groupBox_stabilize.setChecked(False)
+            self.tableWidget_stabilize.clearContents()
+            self.tableWidget_stabilize.setRowCount(0)
+            self.block_all_signals(False)
+            return
+
+        self.groupBox_stabilize.setChecked(stabilize_settings['enable'])
+
+        table = self.tableWidget_stabilize
+        segments = stabilize_settings['segments']
+
+        table.clearContents()
+        table.setRowCount(0)
+        if len(segments) > 0:
+            for row_no, segment in zip(range(len(segments)), segments):
+                mode_str = ""
+                # Ordered
+                for k in ['vertical', 'horizontal', 'rotation']:
+                    mode_str += f"+{k}" if segment['mode'][k] else ''
+
+                table.insertRow(row_no)
+                table.setItem(row_no, 0, QTableWidgetItem(f"{segment['start']}"))
+                table.setItem(row_no, 1, QTableWidgetItem(f"{segment['end']}"))
+                table.setItem(row_no, 2, QTableWidgetItem(f"{segment['ref']}"))
+                table.setItem(row_no, 3, QTableWidgetItem(mode_str[1:]))
+
+
+                for i in range(len(self.alignment)):
+                    table.item(row_no, i).setTextAlignment(self.alignment[i])
+                    table.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+
+
+            table.selectionModel().clearSelection()
+        else:
+            row_no = 0
+            self.pushButton_calculate.setEnabled(False)
+
+        for row_no in range(len(segments), SEGMENTS_MAX_COUNT):
+            table.insertRow(row_no)
+
+        self.block_all_signals(False)
+
 
 
     def event_key_pressed(self, event):

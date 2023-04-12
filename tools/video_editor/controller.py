@@ -107,6 +107,10 @@ class Controller_video_editor(Controller_common,
         self.view.widget_curves.widget_curves_selection.signal_save_curves_selection_requested.connect(self.event_save_curves_selection_requested)
         self.view.widget_curves.widget_curves_selection.signal_discard_curves[str].connect(self.event_discard_rgb_curves_modifications)
 
+        self.view.widget_stabilize.signal_settings_modified[dict].connect(self.event_stabilize_modified)
+        self.view.widget_stabilize.signal_save.connect(self.event_stabilize_save_requested)
+
+
 
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
         self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
@@ -592,8 +596,18 @@ class Controller_video_editor(Controller_common,
         return is_allowed
 
 
-    def event_stabilize_modified(self, event:dict):
-        print_lightcyan("TODO: implement this")
+    def event_stabilize_modified(self, settings):
+        print_lightcyan("event_stabilize_modified")
+        pprint(settings)
+        shot = self.current_shot()
+
+        # Validate settings and reorder segments
+
+        # Set new settings
+        self.model_database.set_shot_stabilize_settings(shot=shot, settings=settings)
+
+        new_settings = self.model_database.get_shot_stabilize_settings(shot=shot)
+        self.signal_stabilize_settings_refreshed.emit(new_settings)
 
 
     def event_stabilize_discard_requested(self):
@@ -609,3 +623,5 @@ class Controller_video_editor(Controller_common,
         shot = self.current_shot()
         self.model_database.save_shot_stabilize_settings(shot)
         self.signal_is_saved.emit('stabilize')
+
+
