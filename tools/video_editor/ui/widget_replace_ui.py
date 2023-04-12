@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_replace.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -122,7 +122,7 @@ class Ui_widget_replace(object):
         self.horizontalLayout_2 = QHBoxLayout(self.groupBox_replace)
         self.horizontalLayout_2.setSpacing(4)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setContentsMargins(3, 3, 3, 3)
+        self.horizontalLayout_2.setContentsMargins(3, 9, 3, 3)
         self.pushButton_copy = QPushButton(self.groupBox_replace)
         self.pushButton_copy.setObjectName(u"pushButton_copy")
         self.pushButton_copy.setMaximumSize(QSize(70, 16777215))

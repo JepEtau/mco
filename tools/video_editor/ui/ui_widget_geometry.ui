@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>328</width>
-    <height>348</height>
+    <width>289</width>
+    <height>336</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -243,7 +243,7 @@
           <number>3</number>
          </property>
          <property name="topMargin">
-          <number>5</number>
+          <number>9</number>
          </property>
          <property name="rightMargin">
           <number>3</number>
@@ -392,7 +392,7 @@
           <number>3</number>
          </property>
          <property name="topMargin">
-          <number>5</number>
+          <number>9</number>
          </property>
          <property name="rightMargin">
           <number>3</number>
@@ -533,7 +533,7 @@
           <number>3</number>
          </property>
          <property name="topMargin">
-          <number>5</number>
+          <number>9</number>
          </property>
          <property name="rightMargin">
           <number>3</number>
@@ -680,7 +680,7 @@
           <number>3</number>
          </property>
          <property name="topMargin">
-          <number>5</number>
+          <number>9</number>
          </property>
          <property name="rightMargin">
           <number>3</number>

@@ -70,7 +70,7 @@ class Window_main(Window_common):
             self.widgets['replace'] = self.widget_replace
             self.widget_replace.set_initial_options(p)
             self.widget_replace.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'replace'))
-            self.widget_replace.signal_frame_selected[dict].connect(self.event_replace_frame_selected)
+            self.widget_replace.signal_frame_selected[int].connect(self.event_frame_no_selected)
 
         # Geometry: crop and resize
         if 'geometry' in self.widgets.keys():
@@ -87,6 +87,7 @@ class Window_main(Window_common):
             self.widgets['stabilize'] = self.widget_stabilize
             self.widget_stabilize.set_initial_options(p)
             self.widget_stabilize.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'stabilize'))
+            self.widget_stabilize.signal_frame_selected[int].connect(self.event_frame_no_selected)
 
         # Player controls
         if 'controls' in self.widgets.keys():
@@ -229,13 +230,28 @@ class Window_main(Window_common):
 
         if (self.image is not None
         and self.image['cache_initial'] is not None):
-            if self.widget_curves.grab_split_line(x):
-                self.setCursor(Qt.SplitHCursor)
+            if self.current_editor == 'curves':
+                if self.widget_curves.grab_split_line(x):
+                    self.setCursor(Qt.SplitHCursor)
+                else:
+                    print("\t-> cache_initial: ", self.image['cache_initial'].shape)
+                    self.get_rgb_value(x, y)
+                event.accept()
+                return True
+            elif self.current_editor == 'stabilize':
+                line = self.widget_stabilize.grab_guidelines(x, y)
+                if line == 'vertical':
+                    self.setCursor(Qt.SplitHCursor)
+                elif line == 'horizontal':
+                    self.setCursor(Qt.SplitVCursor)
+                elif line == "both":
+                    self.setCursor(Qt.SizeAllCursor)
+                else:
+                    self.get_rgb_value(x, y)
             else:
                 print("\t-> cache_initial: ", self.image['cache_initial'].shape)
                 self.get_rgb_value(x, y)
             event.accept()
-            return True
         else:
             event.ignore()
 
@@ -243,24 +259,52 @@ class Window_main(Window_common):
     def mouseMoveEvent(self, event):
         x = event.x()
         y = event.y()
-        if self.widget_curves.move_split_line(x):
-            self.setCursor(Qt.SplitHCursor)
+        if self.current_editor == 'stabilize':
+            line = self.widget_stabilize.move_guidelines(x, y)
+            if line is None:
+                self.get_rgb_value(x, y)
+                event.ignore()
+                return
+            if line == 'vertical':
+                self.setCursor(Qt.SplitHCursor)
+            elif line == 'horizontal':
+                self.setCursor(Qt.SplitVCursor)
+            elif line == "both":
+                self.setCursor(Qt.SizeAllCursor)
             event.accept()
             self.event_reload_frame()
-        else:
-            self.get_rgb_value(x, y)
-            event.ignore()
+
+        elif self.current_editor == 'curves':
+            if self.widget_curves.move_split_line(x):
+                self.setCursor(Qt.SplitHCursor)
+                event.accept()
+                self.event_reload_frame()
+            else:
+                self.get_rgb_value(x, y)
+                event.ignore()
 
 
     def mouseMoved(self, x, y):
-        if self.widget_curves.split_line_moved(x, self.mouse_grabX):
-            self.setCursor(Qt.SplitHCursor)
+        if self.current_editor == 'curves':
+            if self.widget_curves.split_line_moved(x, self.mouse_grabX):
+                self.setCursor(Qt.SplitHCursor)
+                self.event_reload_frame()
+
+        elif self.current_editor == 'stabilize':
+            line = self.widget_stabilize.guidelines_moved(x, self.mouse_grabX, y, self.mouse_grabY)
+            if line == 'vertical':
+                self.setCursor(Qt.SplitHCursor)
+            elif line == 'horizontal':
+                self.setCursor(Qt.SplitVCursor)
+            elif line == "both":
+                self.setCursor(Qt.SizeAllCursor)
             self.event_reload_frame()
 
 
     def mouseReleaseEvent(self, event):
         self.setCursor(Qt.ArrowCursor)
         self.widget_curves.split_line_released(event.x())
+        self.widget_stabilize.guidelines_released(event.x(), event.y())
 
 
     def wheelEvent(self, event):
@@ -324,8 +368,7 @@ class Window_main(Window_common):
 
 
     def keyReleaseEvent(self, event):
-        # key = event.key()
-        # print_yellow("event_key_released: window_main:key: %d" % (key))
+        # print_yellow(f"keyReleaseEvent: {event.key()}")
         for w in self.widgets.values():
             w.event_key_released(event)
 
@@ -544,6 +587,21 @@ class Window_main(Window_common):
                 self.painter.drawLine(
                     preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top,
                     preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top + max(img_height, FINAL_FRAME_HEIGHT))
+
+            if preview['stabilize']['guidelines']:
+                try: crop_top = 0 if preview_shot_geometry['resize_preview'] else (-1*crop_top)
+                except:  crop_top = 0
+                pen = QPen(QColor(255,255,255))
+                pen.setStyle(Qt.SolidLine)
+                self.painter.setPen(pen)
+                self.painter.drawLine(
+                    preview['stabilize']['vertical_line_x'], 10,
+                    preview['stabilize']['vertical_line_x'], 10 + max(img_height, FINAL_FRAME_HEIGHT))
+
+                self.painter.drawLine(
+                    10,                                    preview['stabilize']['horizontal_line_y'] ,
+                    10 + max(img_width, FINAL_FRAME_WIDTH), preview['stabilize']['horizontal_line_y'] )
+
 
             self.painter.end()
         self.is_repainting = False

@@ -18,8 +18,11 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QRadioButton,
     QCheckBox,
-    QApplication
+    QApplication,
+
 )
+from PySide6.QtGui import (
+    QKeyEvent)
 
 from utils.common import K_GENERIQUES
 
@@ -519,8 +522,8 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
     def wheelEvent(self, event):
         if self.current_key_pressed is not None:
             modifiers = QApplication.keyboardModifiers()
-            print_lightgrey("wheelEvent: key: %d" % (self.current_key_pressed))
-            print_lightgrey("wheelEvent: modifiers", modifiers)
+            # print_lightgrey(f"wheelEvent: key: {self.current_key_pressed}")
+            # print_lightgrey(f"{modifiers}")
 
 
             is_default_shot_selected = self.groupBox_default_shot_geometry.isChecked()
@@ -546,7 +549,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
             value = -1 if event.angleDelta().y() > 0 else +1
 
-            self.current_key_pressed = None
+            # self.current_key_pressed = None
             if self.is_edition_enabled:
                 event.accept()
                 self.event_is_modified(
@@ -560,10 +563,10 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
 
-    def event_key_pressed(self, event):
+    def event_key_pressed(self, event:QKeyEvent):
         key = event.key()
         modifiers = event.modifiers()
-        # print_green("event_key_pressed: %d, modifiers=" % (key), modifiers)
+        # print_green(f"event_key_pressed: {key}")
 
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_S:
@@ -572,14 +575,14 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             else:
                 return False
 
-        if modifiers & Qt.AltModifier:
-            if key == Qt.Key_S:
-                if self.current_key_pressed != Qt.Key_S:
-                    self.signal_position_changed.emit('switch')
-                self.current_key_pressed = Qt.Key_S
-                return True
-            else:
-                return False
+        # if modifiers & Qt.AltModifier:
+        #     if key == Qt.Key_S:
+        #         if self.current_key_pressed != Qt.Key_S:
+        #             self.signal_position_changed.emit('switch')
+        #         self.current_key_pressed = Qt.Key_S
+        #         return True
+        #     else:
+        #         return False
 
         if key == Qt.Key_F2:
             if self.pushButton_set_preview.isEnabled():
@@ -606,7 +609,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
     def event_key_released(self, event):
-        # print_yellow("\tevent_key_released: widget_geometry:key: %d" % (self.current_key_pressed))
+        # print_yellow(f"event_key_released: {event.key()}")
         self.current_key_pressed = None
         return False
 

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_selection.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -37,7 +37,7 @@ class Ui_widget_selection(object):
         self.frame.setFrameShape(QFrame.Panel)
         self.frame.setFrameShadow(QFrame.Plain)
         self.verticalLayout = QVBoxLayout(self.frame)
-        self.verticalLayout.setSpacing(4)
+        self.verticalLayout.setSpacing(6)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(6, 6, 6, 6)
         self.widget_app_controls = Widget_app_controls(self.frame)
@@ -88,7 +88,7 @@ class Ui_widget_selection(object):
         self.verticalLayout.addLayout(self.horizontalLayout)
 
         self.verticalLayout_3 = QVBoxLayout()
-        self.verticalLayout_3.setSpacing(3)
+        self.verticalLayout_3.setSpacing(4)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.radioButton_task_deinterlace = QRadioButton(self.frame)
         self.radioButton_task_deinterlace.setObjectName(u"radioButton_task_deinterlace")

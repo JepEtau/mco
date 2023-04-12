@@ -31,8 +31,8 @@ from PySide6.QtWidgets import (
 from common.sylesheet import set_widget_stylesheet
 from utils.common import FPS
 
-PAINTER_MARGIN_LEFT = 20
-PAINTER_MARGIN_TOP = 20
+PAINTER_MARGIN_LEFT = 30
+PAINTER_MARGIN_TOP = 30
 
 class Window_common(QMainWindow):
 
@@ -53,6 +53,7 @@ class Window_common(QMainWindow):
         self.setWindowFlags(Qt.Window)
         self.setStyleSheet("background-color: black")
         self.setWindowFlags(self.windowFlags() | Qt.FramelessWindowHint)
+
 
         # Add painter
         self.painter = QPainter()
@@ -364,12 +365,11 @@ class Window_common(QMainWindow):
         self.display_frame(f)
 
 
-    def event_replace_frame_selected(self, item):
-        frame_no = item['frame_no']
-        log.info("move to frame %d" % (frame_no))
-        index = (frame_no - self.playing_frame_start_no)
+    def event_frame_no_selected(self, frame_no):
+        log.info(f"move to frame {frame_no}")
+        # index = frame_no - self.playing_frame_start_no
         log.warning("TODO: move to selected frame")
-        # self.widget_controls.update_slider_value(index)
+        self.widget_controls.update_slider_value(frame_no)
 
 
     def event_reload_frame(self):

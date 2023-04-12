@@ -113,6 +113,7 @@ def set_stylesheet(widget):
     widget.setStyleSheet("""QWidget {
         background-color: rgb(35, 35, 35);
         border-color: rgb(192, 192, 192);
+        font-size: 13px;
         }
     """)
 

@@ -93,6 +93,7 @@ class Widget_common(QWidget):
 
     def set_selected(self, is_selected):
         update_selected_widget_stylesheet(self.frame, is_selected=is_selected)
+        self.setFocus()
 
 
     def was_active(self):
@@ -118,7 +119,7 @@ class Widget_common(QWidget):
 
     def event_is_saved(self, editor):
         if editor == self.objectName() or editor == 'all':
-            log.info("values saved")
+            log.info(f"values saved: {editor}")
             self.pushButton_save.setEnabled(False)
             self.pushButton_discard.setEnabled(False)
 
@@ -158,8 +159,8 @@ class Widget_common(QWidget):
         return False
 
 
-    def event_key_released(self, event):
-        return False
+    # def event_key_released(self, event):
+    #     return False
 
 
     def changeEvent(self, event: QEvent) -> None:

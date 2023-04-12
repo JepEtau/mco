@@ -70,7 +70,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_episode.currentIndexChanged['int'].connect(self.event_episode_changed)
         self.comboBox_part.currentIndexChanged['int'].connect(self.event_part_changed)
 
-        self.steps_widgets = {
+        self.radioButtons_steps = {
             'deinterlace': self.radioButton_task_deinterlace,
             'pre_upscale': self.radioButton_task_pre_upscale,
             'upscale': self.radioButton_task_upscale,
@@ -78,7 +78,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             'pre_replace': self.radioButton_task_pre_replace,
             'no_deshake': self.radioButton_task_no_deshake,
         }
-        for step_str, w in self.steps_widgets.items():
+        for step_str, w in self.radioButtons_steps.items():
             w.clicked.connect(partial(self.event_step_changed, step_str))
 
         self.tableWidget_shots.clearContents()
@@ -341,11 +341,11 @@ class Widget_selection(QWidget, Ui_widget_selection):
             self.comboBox_part.blockSignals(False)
 
         # Steps
-        w = self.steps_widgets['deinterlace']
+        w = self.radioButtons_steps['deinterlace']
         w.blockSignals(True)
         w.setChecked(True)
         w.blockSignals(False)
-        for step_str, w in self.steps_widgets.items():
+        for step_str, w in self.radioButtons_steps.items():
             if step_str == values['k_step']:
                 w.blockSignals(True)
                 w.setChecked(True)
@@ -457,7 +457,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         return True
 
     def get_current_step(self):
-        for step_str, w in self.steps_widgets.items():
+        for step_str, w in self.radioButtons_steps.items():
             if w.isChecked():
                 return step_str
         return 'deinterlace'

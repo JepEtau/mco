@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_geometry.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -132,7 +132,7 @@ class Ui_widget_geometry(object):
         self.groupBox_target_geometry.setChecked(False)
         self.gridLayout = QGridLayout(self.groupBox_target_geometry)
         self.gridLayout.setObjectName(u"gridLayout")
-        self.gridLayout.setContentsMargins(3, 5, 3, 3)
+        self.gridLayout.setContentsMargins(3, 9, 3, 3)
         self.pushButton_target_discard = QPushButton(self.groupBox_target_geometry)
         self.pushButton_target_discard.setObjectName(u"pushButton_target_discard")
         sizePolicy2 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
@@ -210,7 +210,7 @@ class Ui_widget_geometry(object):
         self.groupBox_shot_default_geometry_2.setChecked(False)
         self.gridLayout_4 = QGridLayout(self.groupBox_shot_default_geometry_2)
         self.gridLayout_4.setObjectName(u"gridLayout_4")
-        self.gridLayout_4.setContentsMargins(3, 5, 3, 3)
+        self.gridLayout_4.setContentsMargins(3, 9, 3, 3)
         self.pushButton_shot_crop_preview = QPushButton(self.groupBox_shot_default_geometry_2)
         self.pushButton_shot_crop_preview.setObjectName(u"pushButton_shot_crop_preview")
         self.pushButton_shot_crop_preview.setFocusPolicy(Qt.NoFocus)
@@ -271,7 +271,7 @@ class Ui_widget_geometry(object):
         self.groupBox_default_shot_geometry.setChecked(True)
         self.gridLayout_3 = QGridLayout(self.groupBox_default_shot_geometry)
         self.gridLayout_3.setObjectName(u"gridLayout_3")
-        self.gridLayout_3.setContentsMargins(3, 5, 3, 3)
+        self.gridLayout_3.setContentsMargins(3, 9, 3, 3)
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.checkBox_default_shot_keep_ratio = QCheckBox(self.groupBox_default_shot_geometry)
@@ -338,7 +338,7 @@ class Ui_widget_geometry(object):
         self.groupBox_shot_geometry.setChecked(True)
         self.gridLayout_2 = QGridLayout(self.groupBox_shot_geometry)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.gridLayout_2.setContentsMargins(3, 5, 3, 3)
+        self.gridLayout_2.setContentsMargins(3, 9, 3, 3)
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.checkBox_shot_keep_ratio = QCheckBox(self.groupBox_shot_geometry)

@@ -1,6 +1,5 @@
 # TODO: script
 (1)
-- try TTA
 - simplify filters for video edition (deshake/replace): remove deshake, replace, rgb, geometry
 
 (2)
@@ -12,20 +11,18 @@
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
 - clean filters.py
-- custom filter depending on shot. Reason: ?
+- (?) custom filter depending on shot
 - (?) smooth stabilization: to evaluate
 
 
 # TODO: video editor
 (1)
 - stabilize widget/model
-- Add rulers when stabilize widget is selected
 
 (2)
 - add loop mode
 - modification flags do not work: geometry, curves(?), replace(?)
 - curves: save when closing is not working
-- verify if key is pressed before changing crop values (key event)
 - buttons (save, discard, ...) not working
 - geometry: implement discard function for width: detect if modified
 - curves: find shot from frame no and do not verify if it is the 1st frame.
@@ -33,6 +30,7 @@
 - when no image loaded, reset all widgets
 
 (3)
+- change selection widget to a standard widget (common)
 - F5 to refresh current shot only
 - Ctrl+F5 to refresh all shots
 - display filters for the shot

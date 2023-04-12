@@ -26,7 +26,7 @@ from common.widget_common import Widget_common
 
 class Widget_replace(Widget_common, Ui_widget_replace):
     signal_replace_modified = Signal(dict)
-    signal_frame_selected = Signal(dict)
+    signal_frame_selected = Signal(int)
 
     def __init__(self, ui, controller:Controller_video_editor):
         super(Widget_replace, self).__init__(ui)
@@ -73,7 +73,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
         # Connect signals and filter events
         self.tableWidget_replace.selectionModel().selectionChanged.connect(self.event_replace_selected)
-        self.tableWidget_replace.itemDoubleClicked[QTableWidgetItem].connect(self.event_replace_frame_selected)
+        self.tableWidget_replace.itemDoubleClicked[QTableWidgetItem].connect(self.event_frame_no_selected)
         self.tableWidget_replace.installEventFilter(self)
 
         self.controller.signal_replace_list_refreshed[dict].connect(self.event_replace_list_refreshed)
@@ -172,18 +172,14 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.tableWidget_replace.setFocus()
 
 
-    def event_replace_frame_selected(self, item:QTableWidgetItem):
+    def event_frame_no_selected(self, item:QTableWidgetItem):
         if not self.current_edition_enabled:
             return
         # double-click
         row_no = item.row()
         log.info("selected frame at row=%d" % (row_no))
         frame_no = int(self.tableWidget_replace.item(row_no, 1).text())
-        shot_no = int(self.tableWidget_replace.item(row_no, 0).text())
-        self.signal_frame_selected.emit({
-            'shot_no': shot_no,
-            'frame_no': frame_no,
-        })
+        self.signal_frame_selected.emit(frame_no)
 
 
     def event_selection_removed(self):
