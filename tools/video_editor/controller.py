@@ -457,6 +457,9 @@ class Controller_video_editor(Controller_common,
 
 
 
+    def get_current_frame_no(self):
+        return self.current_frame['frame_no']
+
 
     def get_frame_from_index(self, index):
         """ returns the replace frame unless there is no replacemed frame or
@@ -579,8 +582,6 @@ class Controller_video_editor(Controller_common,
             self.signal_shot_changed.emit()
 
         return self.current_frame
-
-
 
 
 

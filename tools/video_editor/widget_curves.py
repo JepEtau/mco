@@ -89,9 +89,10 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.pushButton_reset_current_channel.clicked.connect(partial(self.event_reset_channel, 'current'))
         self.pushButton_reset_all_channels.clicked.connect(partial(self.event_reset_channel, 'all'))
 
-
         self.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
         self.widget_curves_selection.signal_save_rgb_curves_requested[dict].connect(self.event_save_rgb_curves_as)
+
+        self.pushButton_split_line.toggled[bool].connect(self.event_split_line_toggled)
 
         self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
@@ -162,6 +163,16 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             self.label_message.clear()
         self.widget_curves_selection.refresh_values(frame)
 
+
+    def event_preview_changed(self, is_checked:bool=False):
+        # Overload to manage split line
+        if not is_checked:
+            self.pushButton_split_line.blockSignals(True)
+            self.pushButton_split_line.setChecked(False)
+            self.show_split_line = False
+            self.pushButton_split_line.blockSignals(False)
+        self.signal_preview_options_changed.emit()
+
     def get_preview_options(self):
         preview_options = {
             'is_enabled': self.pushButton_set_preview.isChecked(),
@@ -211,6 +222,21 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         # This margin corresponds to the main window margin and is used
         # when splitting the screen
         self.main_window_margin = margin
+
+
+    def event_split_line_toggled(self, is_checked:bool=False):
+        if is_checked and self.pushButton_set_preview.isChecked():
+            self.pushButton_split_line.blockSignals(True)
+            self.pushButton_split_line.setChecked(True)
+            self.pushButton_split_line.blockSignals(False)
+            self.show_split_line = True
+            log.info("display split line: %s" % ('true' if self.show_split_line else 'false'))
+        else:
+            self.pushButton_split_line.blockSignals(True)
+            self.pushButton_split_line.setChecked(False)
+            self.show_split_line = False
+            self.pushButton_split_line.blockSignals(False)
+        self.event_preview_changed(is_checked=is_checked)
 
 
     def grab_split_line(self, x):
@@ -334,12 +360,9 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             self.radioButton_select_m_channel.click()
             return True
 
-        if key == Qt.Key_S and not modifiers & Qt.AltModifier:
+        if key == Qt.Key_F3:
             # Display/Hide split line
-            if self.pushButton_set_preview.isChecked():
-                self.show_split_line = not self.show_split_line
-                log.info("display split line: %s" % ('true' if self.show_split_line else 'false'))
-                self.event_preview_changed(is_checked=True)
+            self.event_split_line_toggled(not self.pushButton_split_line.isChecked())
             return True
 
         if self.widget_curves_selection.is_active():

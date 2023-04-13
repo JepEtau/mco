@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
 )
 
-from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
+from common.sylesheet import set_stylesheet, set_widget_stylesheet, update_selected_widget_stylesheet
 
 from video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_stabilize_ui import Ui_widget_stabilize
@@ -42,6 +42,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         # Internal variables
         self.previous_position = None
+        self.removed_segment = None
+        self.segment_count = 0
 
         # Guidelines
         self.is_moving_guidelines = False
@@ -76,12 +78,13 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
 
         # Buttons, etc.
-        self.groupBox_stabilize.clicked.connect(self.event_stabilize_modified)
+        self.groupBox_stabilize.clicked.connect(self.event_settings_enable_toggled)
         self.checkBox_mode = {
             'horizontal': self.checkBox_horizontal,
             'vertical': self.checkBox_vertical,
             'rotation': self.checkBox_rotation,
         }
+        self.ref_list = ['start', 'middle', 'end']
         self.radioButton_ref = {
             'start': self.radioButton_start,
             'middle': self.radioButton_middle,
@@ -89,14 +92,22 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             'frame_no': self.radioButton_frame_no
         }
 
+        # Signals
         self.pushButton_guidelines.toggled[bool].connect(self.event_preview_changed)
 
-        # Signals
+        self.pushButton_set_start.clicked.connect(self.event_start_modified)
+        self.pushButton_set_end.clicked.connect(self.event_end_modified)
+        self.pushButton_switch_ref.clicked.connect(self.event_ref_modified)
+        self.pushButton_set_segment.clicked.connect(self.event_set_segment_requested)
+
         self.controller.signal_stabilize_settings_refreshed[dict].connect(self.event_stabilize_settings_refreshed)
         self.controller.signal_is_saved[str].connect(self.event_is_saved)
         self.installEventFilter(self)
 
         set_stylesheet(self)
+        set_widget_stylesheet(self.pushButton_set_start)
+        set_widget_stylesheet(self.pushButton_set_end)
+        set_widget_stylesheet(self.pushButton_switch_ref)
         self.adjustSize()
 
 
@@ -214,21 +225,29 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         return False
 
 
-
     def guidelines_released(self, x, y):
         self.is_moving_guidelines = False
         self.is_moving_vertical_line = False
         self.is_moving_horizontal_line = False
 
 
-
-    def event_stabilize_requested(self):
-        log.info("calculate")
+    def block_all_signals(self, enabled:bool):
+        self.groupBox_stabilize.blockSignals(enabled)
+        self.tableWidget_stabilize.blockSignals(enabled)
+        self.pushButton_calculate.blockSignals(enabled)
+        self.pushButton_set_end.blockSignals(enabled)
+        self.pushButton_set_start.blockSignals(enabled)
+        self.pushButton_set_ref.blockSignals(enabled)
+        self.pushButton_set_segment.blockSignals(enabled)
+        for w in self.checkBox_mode.values():
+            w.blockSignals(enabled)
+        for w in self.radioButton_ref.values():
+            w.blockSignals(enabled)
 
 
     def clear_inputs(self):
-        self.lineEdit_start.clear()
-        self.lineEdit_end.clear()
+        self.lineEdit_start.setText("0")
+        self.lineEdit_end.setText("0")
         self.lineEdit_ref_frame_no.clear()
         self.radioButton_start.blockSignals(True)
         self.radioButton_start.setChecked(True)
@@ -237,41 +256,20 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             w.setChecked(False)
 
 
-    def event_segment_selected(self):
-        log.info("segment selected")
-        table = self.tableWidget_stabilize
-        row_no = table.currentRow()
-        self.clear_inputs()
-        try:
-            start = int(table.item(row_no, 0).text())
-        except:
-            return
-
-        self.lineEdit_start.setText(table.item(row_no, 0).text())
-        self.lineEdit_end.setText(table.item(row_no, 1).text())
-        ref = table.item(row_no, 2).text()
-        try:
-            self.radioButton_ref[ref].setChecked(True)
-        except:
-            self.radioButton_ref['frame_no'].setChecked(True)
-            self.lineEdit_ref_frame_no.setText(ref)
-        mode_list = table.item(row_no, 3).text().split('+')
-        for m in mode_list:
-            self.checkBox_mode[m].setChecked(True)
+    def set_controls_enabled(self, enabled:bool=False):
+        self.tableWidget_stabilize.setEnabled(enabled)
+        self.pushButton_calculate.setEnabled(enabled)
+        self.pushButton_set_end.setEnabled(enabled)
+        self.pushButton_set_start.setEnabled(enabled)
+        self.pushButton_set_ref.setEnabled(enabled)
+        self.pushButton_set_segment.setEnabled(enabled)
+        for w in self.checkBox_mode.values():
+            w.setEnabled(enabled)
+        for w in self.radioButton_ref.values():
+            w.setEnabled(enabled)
 
 
-    def event_segment_double_clicked(self, item:QTableWidgetItem):
-        row_no = item.row()
-        log.info(f"selected frame at row={row_no}")
-        try:
-            frame_no = int(self.tableWidget_stabilize.item(row_no, 0).text())
-        except:
-            return
-        self.signal_frame_selected.emit(frame_no)
-
-
-
-    def event_stabilize_modified(self):
+    def get_current_settings(self) -> dict:
         # Get new settings
         settings = {
             'enable': self.groupBox_stabilize.isChecked(),
@@ -300,31 +298,35 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             for k in mode_list:
                 segment['mode'][k] = True
             settings['segments'].append(segment)
+        return settings
+
+
+    def event_settings_enable_toggled(self, is_checked:bool=False):
+        self.set_controls_enabled(is_checked)
+        settings = self.get_current_settings()
+        print_lightcyan("event_settings_enable_toggled")
+        pprint(settings)
         self.signal_settings_modified.emit(settings)
-
         self.pushButton_save.setEnabled(True)
-
-
-    def block_all_signals(self, enabled:bool):
-        self.groupBox_stabilize.blockSignals(enabled)
-        self.tableWidget_stabilize.blockSignals(enabled)
-        self.pushButton_calculate.blockSignals(enabled)
-
 
 
     def event_stabilize_settings_refreshed(self, stabilize_settings):
         # print_lightcyan("event_stabilize_settings_refreshed")
         # pprint(stabilize_settings)
 
+        self.removed_segment = None
+
         self.block_all_signals(True)
         if stabilize_settings is None:
             self.groupBox_stabilize.setChecked(False)
             self.tableWidget_stabilize.clearContents()
             self.tableWidget_stabilize.setRowCount(0)
+            self.set_controls_enabled(False)
             self.block_all_signals(False)
             return
 
-        self.groupBox_stabilize.setChecked(stabilize_settings['enable'])
+        is_enabled = stabilize_settings['enable']
+        self.groupBox_stabilize.setChecked(is_enabled)
 
         table = self.tableWidget_stabilize
         segments = stabilize_settings['segments']
@@ -349,19 +351,185 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
                     table.item(row_no, i).setTextAlignment(self.alignment[i])
                     table.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
-
-
             table.selectionModel().clearSelection()
         else:
             row_no = 0
             self.pushButton_calculate.setEnabled(False)
 
+        self.segment_count = len(segments)
         for row_no in range(len(segments), SEGMENTS_MAX_COUNT):
             table.insertRow(row_no)
 
-        table.selectRow(0)
+        self.clear_inputs()
+        self.set_controls_enabled(is_enabled)
+
+        if is_enabled:
+            table.selectRow(0)
+
         self.block_all_signals(False)
 
+
+    def event_segment_selected(self):
+        log.info("segment selected")
+        table = self.tableWidget_stabilize
+        row_no = table.currentRow()
+        self.clear_inputs()
+        try:
+            start = int(table.item(row_no, 0).text())
+        except:
+            return
+
+        self.lineEdit_start.setText(table.item(row_no, 0).text())
+        self.lineEdit_end.setText(table.item(row_no, 1).text())
+        ref = table.item(row_no, 2).text()
+        try:
+            self.radioButton_ref[ref].setChecked(True)
+        except:
+            self.radioButton_ref['frame_no'].setChecked(True)
+            self.lineEdit_ref_frame_no.setText(ref)
+        mode_list = table.item(row_no, 3).text().split('+')
+        for m in mode_list:
+            self.checkBox_mode[m].setChecked(True)
+
+        self.tableWidget_stabilize.setEnabled(True)
+        self.pushButton_calculate.setEnabled(True)
+        self.pushButton_set_end.setEnabled(True)
+        self.pushButton_set_start.setEnabled(True)
+        self.pushButton_set_ref.setEnabled(True)
+        self.pushButton_set_segment.setEnabled(True)
+
+
+    def event_segment_double_clicked(self, item:QTableWidgetItem):
+        row_no = item.row()
+        log.info(f"selected frame at row={row_no}")
+        try:
+            frame_no = int(self.tableWidget_stabilize.item(row_no, 0).text())
+        except:
+            return
+        self.signal_frame_selected.emit(frame_no)
+
+
+    def event_start_modified(self):
+        frame_no = self.controller.get_current_frame_no()
+        end_no = int(self.lineEdit_end.text())
+        if frame_no > end_no:
+            self.lineEdit_start.setText(f"{end_no}")
+            self.lineEdit_end.setText(f"{frame_no}")
+        else:
+            self.lineEdit_start.setText(f"{frame_no}")
+        if frame_no != end_no:
+            self.pushButton_set_segment.setEnabled(True)
+        else:
+            self.pushButton_set_segment.setEnabled(False)
+
+
+    def event_end_modified(self):
+        frame_no = self.controller.get_current_frame_no()
+        start_no = int(self.lineEdit_start.text())
+        if frame_no < start_no:
+            self.lineEdit_start.setText(f"{frame_no}")
+            self.lineEdit_end.setText(f"{start_no}")
+        else:
+            self.lineEdit_end.setText(f"{frame_no}")
+        if frame_no != start_no:
+            self.pushButton_set_segment.setEnabled(True)
+        else:
+            self.pushButton_set_segment.setEnabled(False)
+
+
+    def event_ref_modified(self):
+        for i, k in zip(range(len(self.ref_list)), self.ref_list):
+            print(f"{i}: ", end='')
+            if self.radioButton_ref[k].isChecked():
+                next_i = i + 1 if i < len(self.ref_list)-1 else 0
+                w = self.radioButton_ref[self.ref_list[next_i]]
+                w.blockSignals(True)
+                w.setChecked(True)
+                w.blockSignals(False)
+                break
+
+
+    def event_set_segment_requested(self):
+        print_lightcyan("Set Segment")
+        table = self.tableWidget_stabilize
+
+        # First selected row no
+        selected_indexes = table.selectedIndexes()
+        try: row_no = list(set([i.row() for i in selected_indexes]))[0]
+        except: row_no = -1
+
+        if self.segment_count == SEGMENTS_MAX_COUNT and row_no == -1:
+            # Cannot append segment
+            print_yellow("Error: cannot append new segment. Reason: max count and none selected")
+            return
+
+        # Get the new segment settings
+        start = self.lineEdit_start.text()
+        end = self.lineEdit_end.text()
+        for k, w in self.radioButton_ref.items():
+            if w.isChecked():
+                ref = k
+                break
+        mode_str = ""
+        for k, w in self.checkBox_mode.items():
+            if w.isChecked():
+                mode_str += f"+{k}"
+
+        # Modify the table
+        table.setItem(row_no, 0, QTableWidgetItem(start))
+        table.setItem(row_no, 1, QTableWidgetItem(end))
+        table.setItem(row_no, 2, QTableWidgetItem(ref))
+        table.setItem(row_no, 3, QTableWidgetItem(mode_str[1:]))
+
+        for col_no in range(len(self.alignment)):
+            table.item(row_no, col_no).setTextAlignment(self.alignment[col_no])
+            table.item(row_no, col_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+
+        # Get current segments
+        settings = self.get_current_settings()
+
+        self.pushButton_save.setEnabled(True)
+
+        print_lightgreen("event_set_segment_requested")
+        pprint(settings)
+        # self.signal_settings_modified.emit(settings)
+
+
+    def event_remove_segment_requested(self):
+        table = self.tableWidget_stabilize
+        row_no = table.currentRow()
+        self.clear_inputs()
+        try:
+            start = int(table.item(row_no, 0).text())
+        except:
+            print(table.item(row_no, 0).text())
+            return
+        # Save for history
+        k = f"{row_no}"
+        self.removed_segment = {k: list()}
+        for col_no in range(len(self.alignment)):
+            self.removed_segment[k].append(table.item(row_no, col_no).text())
+            table.setItem(row_no, col_no, QTableWidgetItem(""))
+
+
+    def restore_segment(self):
+        if self.removed_segment is None:
+            return
+        table = self.tableWidget_stabilize
+        row_no_str = list(self.removed_segment.keys())[0]
+        row_no = int(row_no_str)
+        values_str = self.removed_segment[row_no_str]
+        for col_no, value_str in zip(range(len(values_str)), values_str):
+            table.setItem(row_no, col_no, QTableWidgetItem(value_str))
+            for i in range(len(self.alignment)):
+                table.item(row_no, i).setTextAlignment(self.alignment[i])
+                table.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+        self.removed_segment = None
+
+
+    def event_stabilize_requested(self):
+        log.info("calculate")
 
 
     def event_key_pressed(self, event):
@@ -373,19 +541,35 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             if key == Qt.Key_S:
                 self.event_save_modifications()
                 return True
+            elif key == Qt.Key_Z:
+                self.restore_segment()
+                return True
 
         elif key == Qt.Key_F3:
             self.pushButton_guidelines.toggle()
             return True
         elif key == Qt.Key_S:
-            log.info("start")
+            self.event_start_modified()
             return True
         elif key == Qt.Key_E:
-            log.info("end")
+            self.event_end_modified()
+            return True
+        elif key == Qt.Key_I:
+            self.event_ref_modified()
+            return True
+        elif key == Qt.Key_V:
+            self.checkBox_vertical.toggle()
+            return True
+        elif key == Qt.Key_H:
+            self.checkBox_horizontal.toggle()
             return True
         elif key == Qt.Key_R:
-            log.info("reference")
+            self.checkBox_rotation.toggle()
             return True
+        elif key == Qt.Key_Enter or key == Qt.Key_Return:
+            self.event_set_segment_requested()
+            return True
+
 
         if key == Qt.Key_F2:
             if self.pushButton_set_preview.isEnabled():
@@ -416,14 +600,14 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
                 event.accept()
                 return True
             elif key == Qt.Key_Delete:
-                self.event_selection_removed()
+                self.event_remove_segment_requested()
                 return True
 
             return self.ui.keyPressEvent(event)
 
         # print(event.type())
-        if event.type() == QEvent.FocusOut:
-            self.tableWidget_stabilize.clearSelection()
+        # if event.type() == QEvent.FocusOut:
+        #     self.tableWidget_stabilize.clearSelection()
 
         elif event.type() == QEvent.Enter:
             self.is_entered = True

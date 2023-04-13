@@ -20,6 +20,7 @@
 - stabilize widget/model
 
 (2)
+- All buttons: get dark grey versions, modify all buttons
 - add loop mode
 - modification flags do not work: geometry, curves(?), replace(?)
 - curves: save when closing is not working

@@ -21,7 +21,8 @@ from PySide6.QtWidgets import (
 # Blue color: rgb(51, 102, 204)
 # icons:
 #   blue: 3366CC
-#   grey: 3C3C3C
+#   grey: bababa
+#   dark-grey: 3C3C3C
 #   purple:
 
 def update_selected_widget_stylesheet(widget, is_selected:bool):
@@ -46,26 +47,44 @@ def set_widget_stylesheet(widget, widget_type=''):
                 background-color: rgb(35, 35, 35);
                 color: rgb(220, 220, 220);
             }
+            QCheckBox:disabled {
+                color: rgb(60, 60, 60);
+            }
             QCheckBox::indicator {
-                width: 13px;
-                height: 13px;
+                width: 9px;
+                height: 9px;
                 background-color: rgb(60, 60, 60);
                 border: 1px;
-                border-radius: 3px;
             }
             QCheckBox::indicator:checked {
-                background-color: rgb(170, 170, 170);
+                /* background-color: rgb(170, 170, 170); */
+                background-color: rgb(51, 102, 204);
+                border: 2px solid rgb(60, 60, 60);
             }
             QCheckBox::indicator:indeterminate {
                 /* for debug: correct this */
                 background-color: rgb(100, 100, 100);
+                width: 13px;
+                height: 13px;
+            }
+            QCheckBox::indicator:unchecked {
+                background-color: rgb(60, 60, 60);
+                width: 13px;
+                height: 13px;
+            }
+            QCheckBox::indicator:disabled {
+                background-color: rgb(60, 60, 60);
             }
         """)
+
     elif type(widget) is QDoubleSpinBox:
         widget.setStyleSheet("""
             QDoubleSpinBox {
                 background-color: rgb(35, 35, 35);
                 color: rgb(220, 220, 220);
+            }
+            QDoubleSpinBox:disabled {
+                color: rgb(60, 60, 60);
             }
         """)
 
@@ -106,14 +125,30 @@ def set_widget_stylesheet(widget, widget_type=''):
                 }
             """)
 
+    elif type(widget) is QPushButton:
+        # PushButton with an icon
+        widget.setStyleSheet("""
+            QPushButton {
+                background-color: rgb(35, 35, 35);
+                color: rgb(220, 220, 220);
+                text-align:left;
+            }
+            QPushButton:disabled {
+                color: rgb(60, 60, 60);
+            }
+        """)
 
 
 def set_stylesheet(widget):
     # Widget
-    widget.setStyleSheet("""QWidget {
-        background-color: rgb(35, 35, 35);
-        border-color: rgb(192, 192, 192);
-        font-size: 13px;
+    widget.setStyleSheet("""
+        QWidget {
+            background-color: rgb(35, 35, 35);
+            border-color: rgb(192, 192, 192);
+            font-size: 13px;
+        }
+        QWidget:disabled {
+            background-color: rgb(60, 60, 60);
         }
     """)
 
@@ -134,11 +169,13 @@ def set_stylesheet(widget):
                 color: rgb(220, 220, 220);
                 margin-top: 9px;  /*leave space at the top for the title */
             }
-
             QGroupBox::title {
                 subcontrol-origin: margin;
                 left: 7px;
                 padding: 0px 3px;
+            }
+            QGroupBox:disabled {
+                color: rgb(60, 60, 60);
             }
         """)
 
@@ -149,14 +186,21 @@ def set_stylesheet(widget):
                 background-color: rgb(35, 35, 35);
                 color: rgb(220, 220, 220);
             }
+            QLabel:disabled {
+                color: rgb(60, 60, 60);
+            }
         """)
 
     # QLineEdit
     for w in widget.findChildren(QLineEdit, options=Qt.FindChildrenRecursively):
-        w.setStyleSheet("""QLineEdit {
-            background-color: rgb(60, 60, 60);
-            color: rgb(220, 220, 220);
-            border: 1px solid rgb(60, 60, 60);
+        w.setStyleSheet("""
+            QLineEdit {
+                background-color: rgb(60, 60, 60);
+                color: rgb(220, 220, 220);
+                border: 1px solid rgb(60, 60, 60);
+            }
+            QLineEdit:disabled {
+                color: rgb(60, 60, 60);
             }
         """)
 
@@ -190,6 +234,9 @@ def set_stylesheet(widget):
             QPushButton {
                 background-color: rgb(35, 35, 35);
                 color: rgb(220, 220, 220);
+            }
+            QPushButton:disabled {
+                color: rgb(60, 60, 60);
             }
         """)
 
@@ -284,23 +331,27 @@ def set_stylesheet(widget):
                 background-color: rgb(35, 35, 35);
                 color: rgb(220, 220, 220);
             }
-
+            QRadioButton:disabled {
+                color: rgb(60, 60, 60);
+            }
             QRadioButton::indicator {
                 width: 7px;
                 height: 7px;
                 margin: 2px;
                 border-radius: 6px;
             }
-
             QRadioButton::indicator:checked {
-                background-color: rgb(170, 170, 170);
+                /* background-color: rgb(170, 170, 170); */
+                background-color: rgb(51, 102, 204);
                 border: 3px solid rgb(60, 60, 60);
             }
-
             QRadioButton::indicator:unchecked {
                 background-color: rgb(60, 60, 60);
                 width: 13px;
                 height: 13px;
+            }
+            QRadioButton::indicator:disabled {
+                background-color: rgb(60, 60, 60);
             }
         """)
 

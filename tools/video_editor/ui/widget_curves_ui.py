@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_curves.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.3
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -54,11 +54,29 @@ class Ui_widget_curves(object):
 
         self.horizontalLayout.addWidget(self.pushButton_set_preview)
 
+        self.pushButton_split_line = QPushButton(self.frame)
+        self.pushButton_split_line.setObjectName(u"pushButton_split_line")
+        sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.pushButton_split_line.sizePolicy().hasHeightForWidth())
+        self.pushButton_split_line.setSizePolicy(sizePolicy)
+        self.pushButton_split_line.setFocusPolicy(Qt.NoFocus)
+        icon1 = QIcon()
+        icon1.addFile(u"icons/grey/flip-horizontal.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u"icons/blue/flip-horizontal.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_split_line.setIcon(icon1)
+        self.pushButton_split_line.setCheckable(True)
+        self.pushButton_split_line.setAutoDefault(False)
+        self.pushButton_split_line.setFlat(True)
+
+        self.horizontalLayout.addWidget(self.pushButton_split_line)
+
         self.pushButton_save = QPushButton(self.frame)
         self.pushButton_save.setObjectName(u"pushButton_save")
-        icon1 = QIcon()
-        icon1.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_save.setIcon(icon1)
+        icon2 = QIcon()
+        icon2.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.pushButton_save.setIcon(icon2)
         self.pushButton_save.setCheckable(False)
         self.pushButton_save.setAutoDefault(False)
         self.pushButton_save.setFlat(True)
@@ -67,10 +85,10 @@ class Ui_widget_curves(object):
 
         self.pushButton_discard = QPushButton(self.frame)
         self.pushButton_discard.setObjectName(u"pushButton_discard")
-        icon2 = QIcon()
-        icon2.addFile(u"icons/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon2.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
-        self.pushButton_discard.setIcon(icon2)
+        icon3 = QIcon()
+        icon3.addFile(u"icons/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon3.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_discard.setIcon(icon3)
         self.pushButton_discard.setCheckable(False)
         self.pushButton_discard.setAutoDefault(False)
         self.pushButton_discard.setFlat(True)
@@ -92,10 +110,10 @@ class Ui_widget_curves(object):
 
         self.pushButton_close = QPushButton(self.frame)
         self.pushButton_close.setObjectName(u"pushButton_close")
-        icon3 = QIcon()
-        icon3.addFile(u"icons/grey/x-square.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon3.addFile(u"icons/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.On)
-        self.pushButton_close.setIcon(icon3)
+        icon4 = QIcon()
+        icon4.addFile(u"icons/grey/x-square.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(u"icons/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_close.setIcon(icon4)
         self.pushButton_close.setCheckable(False)
         self.pushButton_close.setAutoDefault(False)
         self.pushButton_close.setFlat(True)
@@ -154,11 +172,11 @@ class Ui_widget_curves(object):
 
         self.lineEdit_coordinates = QLineEdit(self.frame)
         self.lineEdit_coordinates.setObjectName(u"lineEdit_coordinates")
-        sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.lineEdit_coordinates.sizePolicy().hasHeightForWidth())
-        self.lineEdit_coordinates.setSizePolicy(sizePolicy)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.lineEdit_coordinates.sizePolicy().hasHeightForWidth())
+        self.lineEdit_coordinates.setSizePolicy(sizePolicy1)
         self.lineEdit_coordinates.setMaximumSize(QSize(100, 16777215))
         self.lineEdit_coordinates.setFrame(False)
         self.lineEdit_coordinates.setAlignment(Qt.AlignCenter)
@@ -172,11 +190,11 @@ class Ui_widget_curves(object):
 
         self.label_out_4 = QLabel(self.frame)
         self.label_out_4.setObjectName(u"label_out_4")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.label_out_4.sizePolicy().hasHeightForWidth())
-        self.label_out_4.setSizePolicy(sizePolicy1)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Maximum)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.label_out_4.sizePolicy().hasHeightForWidth())
+        self.label_out_4.setSizePolicy(sizePolicy2)
         self.label_out_4.setAlignment(Qt.AlignCenter)
 
         self.horizontalLayout_2.addWidget(self.label_out_4)
@@ -184,11 +202,11 @@ class Ui_widget_curves(object):
         self.pushButton_reset_current_channel = QPushButton(self.frame)
         self.pushButton_reset_current_channel.setObjectName(u"pushButton_reset_current_channel")
         self.pushButton_reset_current_channel.setEnabled(True)
-        sizePolicy2 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.pushButton_reset_current_channel.sizePolicy().hasHeightForWidth())
-        self.pushButton_reset_current_channel.setSizePolicy(sizePolicy2)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.pushButton_reset_current_channel.sizePolicy().hasHeightForWidth())
+        self.pushButton_reset_current_channel.setSizePolicy(sizePolicy3)
         self.pushButton_reset_current_channel.setMaximumSize(QSize(70, 16777215))
 
         self.horizontalLayout_2.addWidget(self.pushButton_reset_current_channel)
@@ -196,8 +214,8 @@ class Ui_widget_curves(object):
         self.pushButton_reset_all_channels = QPushButton(self.frame)
         self.pushButton_reset_all_channels.setObjectName(u"pushButton_reset_all_channels")
         self.pushButton_reset_all_channels.setEnabled(True)
-        sizePolicy2.setHeightForWidth(self.pushButton_reset_all_channels.sizePolicy().hasHeightForWidth())
-        self.pushButton_reset_all_channels.setSizePolicy(sizePolicy2)
+        sizePolicy3.setHeightForWidth(self.pushButton_reset_all_channels.sizePolicy().hasHeightForWidth())
+        self.pushButton_reset_all_channels.setSizePolicy(sizePolicy3)
         self.pushButton_reset_all_channels.setMaximumSize(QSize(50, 16777215))
 
         self.horizontalLayout_2.addWidget(self.pushButton_reset_all_channels)
@@ -214,11 +232,11 @@ class Ui_widget_curves(object):
 
         self.lineEdit_rgb_values = QLineEdit(self.frame)
         self.lineEdit_rgb_values.setObjectName(u"lineEdit_rgb_values")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.lineEdit_rgb_values.sizePolicy().hasHeightForWidth())
-        self.lineEdit_rgb_values.setSizePolicy(sizePolicy3)
+        sizePolicy4 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy4.setHorizontalStretch(0)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(self.lineEdit_rgb_values.sizePolicy().hasHeightForWidth())
+        self.lineEdit_rgb_values.setSizePolicy(sizePolicy4)
         self.lineEdit_rgb_values.setFrame(False)
         self.lineEdit_rgb_values.setAlignment(Qt.AlignCenter)
         self.lineEdit_rgb_values.setReadOnly(True)
@@ -227,8 +245,8 @@ class Ui_widget_curves(object):
 
         self.lineEdit_rgb_values_new = QLineEdit(self.frame)
         self.lineEdit_rgb_values_new.setObjectName(u"lineEdit_rgb_values_new")
-        sizePolicy3.setHeightForWidth(self.lineEdit_rgb_values_new.sizePolicy().hasHeightForWidth())
-        self.lineEdit_rgb_values_new.setSizePolicy(sizePolicy3)
+        sizePolicy4.setHeightForWidth(self.lineEdit_rgb_values_new.sizePolicy().hasHeightForWidth())
+        self.lineEdit_rgb_values_new.setSizePolicy(sizePolicy4)
         self.lineEdit_rgb_values_new.setFrame(False)
         self.lineEdit_rgb_values_new.setAlignment(Qt.AlignCenter)
         self.lineEdit_rgb_values_new.setReadOnly(True)
@@ -237,8 +255,8 @@ class Ui_widget_curves(object):
 
         self.label_in = QLabel(self.frame)
         self.label_in.setObjectName(u"label_in")
-        sizePolicy1.setHeightForWidth(self.label_in.sizePolicy().hasHeightForWidth())
-        self.label_in.setSizePolicy(sizePolicy1)
+        sizePolicy2.setHeightForWidth(self.label_in.sizePolicy().hasHeightForWidth())
+        self.label_in.setSizePolicy(sizePolicy2)
         self.label_in.setAlignment(Qt.AlignCenter)
 
         self.layout_in_out.addWidget(self.label_in, 0, 0, 1, 1)
@@ -273,6 +291,7 @@ class Ui_widget_curves(object):
 
     def retranslateUi(self, widget_curves):
         self.pushButton_set_preview.setText("")
+        self.pushButton_split_line.setText("")
         self.pushButton_save.setText("")
         self.pushButton_discard.setText("")
         self.label_message.setText(QCoreApplication.translate("widget_curves", u"disabled", None))
