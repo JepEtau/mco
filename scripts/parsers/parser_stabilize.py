@@ -10,6 +10,7 @@ from pathlib import (
 )
 import re
 from pprint import pprint
+from filters.deshake import verify_stabilize_segments
 from parsers.parser_generiques import get_dependencies_for_generique
 from utils.pretty_print import *
 
@@ -140,6 +141,10 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
                 else:
                     # default: append
                     shot_segments.append(segment_dict)
+
+            are_segments_valid = verify_stabilize_segments(shot=shot, segments=shot_segments)
+            if not are_segments_valid:
+                sys.exit(print_red(f"Error: parse_stabilize_configurations: erroneous parameters:\n\t{filepath}\n\t{k_ed}:{k_ep}:{k_part} shot no. {shot['no']}, frame no. {shot['start']}"))
 
             if verbose:
                 pprint(shot['deshake'])

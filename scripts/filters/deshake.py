@@ -17,6 +17,40 @@ from utils.hash import (
 from utils.pretty_print import *
 
 
+def consolidate_stabilize_segments(segments):
+    if len(segments) < 2:
+        return segments
+    return sorted(segments, key=lambda s: s['start'])
+
+
+def verify_stabilize_segments(shot, segments):
+    if len(segments) == 0:
+        return True
+
+    # 1st segment
+    previous_segment = segments[0]
+    if previous_segment['end'] >= shot['count']:
+        # Segment shall fit in shot
+       return False
+
+    if len(segments) == 1:
+        # Single segment
+        return True
+
+    for segment in segments [1:]:
+        if segment['end'] >= shot['count']:
+            # Segment shall fit in shot
+            return False
+
+        if previous_segment['start'] <= segment['start'] <= previous_segment['end']:
+            # Segment shall not overlap the previous one
+            return False
+
+        previous_segment = segment
+
+    return True
+
+
 
 def deshake(shot, images:list, image_list:list,
     add_border:bool, step_no:int, input_hash:str,
@@ -44,7 +78,7 @@ def deshake(shot, images:list, image_list:list,
 
     # Convert to indexes
     for segment in segments:
-        segment['count'] = segment['end'] - segment['start']
+        segment['count'] = segment['end'] - segment['start'] + 1
         # segment['start'] -= shot['start']
 
     # Patch segments
@@ -60,6 +94,7 @@ def deshake(shot, images:list, image_list:list,
     #         # some frames between these 2 segments
     #         segments[0]['ref'] = 'end'
     #         segments[1]['ref'] = 'start'
+
 
     if len(segments) == 1:
         if segments[0]['ref'] == 'auto':

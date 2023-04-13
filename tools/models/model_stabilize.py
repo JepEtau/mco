@@ -115,6 +115,22 @@ class Model_stabilize():
         if verbose:
             print(f"save_shot_stabilize_settings: {k_ed}:{k_ep}:{k_part} shot no. {shot['no']}, start={shot_start}")
 
+        # Get settings from db
+        try: stabilize_settings = self.db_stabilize[k_ed][k_ep][k_part][shot_start]
+        except:
+            print("Warning: stabilize settings have not been modified")
+
+        # Do not save if not valid
+        if 'error' in stabilize_settings.keys() and stabilize_settings['error']:
+            # Error in segment definition, do not save
+            print_yellow("Warning: not valid, not saved")
+            return
+
+        # At least one segment
+        if len(stabilize_settings['segments']) == 0:
+            print_yellow("Warning: not segments, not saved")
+            return
+
         # Open configuration file
         if k_part in ['g_debut', 'g_fin']:
             filepath = os.path.join(db['common']['directories']['config'], k_part, f"{k_part}_stabilize.ini")

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_stabilize.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.4.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -111,6 +111,15 @@ class Ui_widget_stabilize(object):
         self.horizontalSpacer = QSpacerItem(5, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
+
+        self.label_message = QLabel(self.frame)
+        self.label_message.setObjectName(u"label_message")
+
+        self.horizontalLayout.addWidget(self.label_message)
+
+        self.horizontalSpacer_8 = QSpacerItem(5, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer_8)
 
         self.pushButton_close = QPushButton(self.frame)
         self.pushButton_close.setObjectName(u"pushButton_close")
@@ -425,6 +434,7 @@ class Ui_widget_stabilize(object):
         self.pushButton_guidelines.setText("")
         self.pushButton_discard.setText("")
         self.pushButton_save.setText("")
+        self.label_message.setText(QCoreApplication.translate("widget_stabilize", u"error", None))
         self.pushButton_close.setText("")
         self.groupBox_stabilize.setTitle(QCoreApplication.translate("widget_stabilize", u"Stabilize/deshake", None))
         self.pushButton_set_start.setText(QCoreApplication.translate("widget_stabilize", u"&Start", None))

@@ -1,6 +1,7 @@
 # TODO: script
 (1)
 - simplify filters for video edition (deshake/replace): remove deshake, replace, rgb, geometry
+- borders for deshake lres:8? hres:16? Reason: geometry shall not be modified if multiple deshake/stabilize
 
 (2)
 - (?) '--frames' argument: copy frames form cache to 'frames' directory. Reason: compare with other tools? If frame does not exist, ignore
@@ -17,16 +18,16 @@
 
 # TODO: video editor
 (1)
-- stabilize widget/model
+- stabilize: generate images
 
 (2)
-- All buttons: get dark grey versions, modify all buttons
+- All buttons: set disabledon
 - add loop mode
-- modification flags do not work: geometry, curves(?), replace(?)
-- curves: save when closing is not working
+- update save button when loading a segment or after modifications: use a signal
+- Save when closing is not working
+- display unsaved segment in selection widget
 - buttons (save, discard, ...) not working
 - geometry: implement discard function for width: detect if modified
-- curves: find shot from frame no and do not verify if it is the 1st frame.
 - edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db
 - when no image loaded, reset all widgets
 

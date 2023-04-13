@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 import sys
 sys.path.append('../scripts')
+
 
 import cv2
 import gc
@@ -25,6 +27,10 @@ from video_editor.controller_replace import Controller_replace
 from video_editor.controller_geometry import Controller_geometry
 from shot.consolidate_shot import consolidate_shot
 
+from filters.deshake import (
+    consolidate_stabilize_segments,
+    verify_stabilize_segments
+)
 from filters.filters import calculate_geometry_parameters
 from filters.utils import (
     STABILIZE_BORDER,
@@ -602,12 +608,37 @@ class Controller_video_editor(Controller_common,
         pprint(settings)
         shot = self.current_shot()
 
+        # Consolidate segments
+        settings['segments'] = consolidate_stabilize_segments(segments=settings['segments'])
+
         # Validate settings and reorder segments
+        settings['error'] = not verify_stabilize_segments(
+            shot=shot, segments=settings['segments'])
+
+        # Get current settings
+        current_settings = self.model_database.get_shot_stabilize_settings(shot=shot)
 
         # Set new settings
-        self.model_database.set_shot_stabilize_settings(shot=shot, settings=settings)
+        self.model_database.set_shot_stabilize_settings(shot=shot, settings=deepcopy(settings))
 
-        new_settings = self.model_database.get_shot_stabilize_settings(shot=shot)
+        # Return consolidated segments
+        new_settings = deepcopy(self.model_database.get_shot_stabilize_settings(shot=shot))
+        if (current_settings is None
+            and settings['enable']
+            and len(settings['segments']) == 0):
+            # Not already defined, define a new one
+            new_settings['error'] = False
+            new_settings['segments'] = [{
+                'alg': 'cv2_deshaker',
+                'start': 0,
+                'end': shot['count'] - 1,
+                'ref': 'middle',
+                'mode': {
+                    'vertical': True,
+                    'horizontal': True,
+                    'rotation': False,
+                }
+            }]
         self.signal_stabilize_settings_refreshed.emit(new_settings)
 
 

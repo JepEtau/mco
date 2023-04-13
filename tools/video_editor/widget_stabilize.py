@@ -92,6 +92,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             'frame_no': self.radioButton_frame_no
         }
 
+        self.label_message.clear()
+
         # Signals
         self.pushButton_guidelines.toggled[bool].connect(self.event_preview_changed)
 
@@ -108,6 +110,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         set_widget_stylesheet(self.pushButton_set_start)
         set_widget_stylesheet(self.pushButton_set_end)
         set_widget_stylesheet(self.pushButton_switch_ref)
+        set_widget_stylesheet(self.label_message, 'message')
         self.adjustSize()
 
 
@@ -148,9 +151,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
 
     def grab_guidelines(self, x, y):
-        print(f"x={x}, Vline={self.vertical_line_x}")
-        print(f"y={y}, Hline={self.horizontal_line_y}")
-
+        # print(f"x={x}, Vline={self.vertical_line_x}")
+        # print(f"y={y}, Hline={self.horizontal_line_y}")
         if self.pushButton_guidelines.isChecked():
             if (self.vertical_line_x - GUIDELINES_GRAB_OFFSET) <= x <= (self.vertical_line_x + GUIDELINES_GRAB_OFFSET):
                 self.vertical_line_x_gap = self.vertical_line_x - x
@@ -177,7 +179,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             self.is_moving_guidelines = True
             self.event_preview_changed(is_checked=True)
 
-            print_cyan(f"grabbed {self.moving_guidelines}")
+            # print_cyan(f"grabbed {self.moving_guidelines}")
             return self.moving_guidelines
 
         self.is_moving_guidelines = False
@@ -323,6 +325,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             self.tableWidget_stabilize.setRowCount(0)
             self.set_controls_enabled(False)
             self.block_all_signals(False)
+            self.label_message.setText("")
             return
 
         is_enabled = stabilize_settings['enable']
@@ -366,6 +369,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         if is_enabled:
             table.selectRow(0)
 
+        if 'error' in stabilize_settings.keys() and stabilize_settings['error']:
+            self.label_message.setText("ERROR!")
+        else:
+            self.label_message.clear()
+
         self.block_all_signals(False)
 
 
@@ -373,12 +381,12 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         log.info("segment selected")
         table = self.tableWidget_stabilize
         row_no = table.currentRow()
-        self.clear_inputs()
         try:
             start = int(table.item(row_no, 0).text())
         except:
             return
 
+        self.clear_inputs()
         self.lineEdit_start.setText(table.item(row_no, 0).text())
         self.lineEdit_end.setText(table.item(row_no, 1).text())
         ref = table.item(row_no, 2).text()
@@ -388,8 +396,13 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             self.radioButton_ref['frame_no'].setChecked(True)
             self.lineEdit_ref_frame_no.setText(ref)
         mode_list = table.item(row_no, 3).text().split('+')
-        for m in mode_list:
-            self.checkBox_mode[m].setChecked(True)
+        try:
+            for m in mode_list:
+                self.checkBox_mode[m].setChecked(True)
+        except:
+            print_yellow(f"mode_list={','.join(mode_list)}")
+            self.checkBox_mode['vertical'].setChecked(True)
+            pass
 
         self.tableWidget_stabilize.setEnabled(True)
         self.pushButton_calculate.setEnabled(True)
@@ -401,18 +414,23 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def event_segment_double_clicked(self, item:QTableWidgetItem):
         row_no = item.row()
-        log.info(f"selected frame at row={row_no}")
-        try:
-            frame_no = int(self.tableWidget_stabilize.item(row_no, 0).text())
-        except:
-            return
+        col_no = item.column()
+        log.info(f"selected frame at row={row_no}, col={col_no}")
+        if col_no == 1:
+            # Select end of the selected segment
+            try: frame_no = int(self.tableWidget_stabilize.item(row_no, col_no).text())
+            except: return
+        else:
+            # Select start of the selected segment
+            try: frame_no = int(self.tableWidget_stabilize.item(row_no, 0).text())
+            except: return
         self.signal_frame_selected.emit(frame_no)
 
 
     def event_start_modified(self):
         frame_no = self.controller.get_current_frame_no()
         end_no = int(self.lineEdit_end.text())
-        if frame_no > end_no:
+        if frame_no > end_no and end_no != 0:
             self.lineEdit_start.setText(f"{end_no}")
             self.lineEdit_end.setText(f"{frame_no}")
         else:
@@ -466,6 +484,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         # Get the new segment settings
         start = self.lineEdit_start.text()
         end = self.lineEdit_end.text()
+        if start == end:
+            log.info("cannot append, start=end")
+            return
         for k, w in self.radioButton_ref.items():
             if w.isChecked():
                 ref = k
@@ -491,9 +512,10 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         self.pushButton_save.setEnabled(True)
 
-        print_lightgreen("event_set_segment_requested")
-        pprint(settings)
-        # self.signal_settings_modified.emit(settings)
+        # print_lightgreen("event_set_segment_requested")
+        # pprint(settings)
+        self.pushButton_save.setEnabled(True)
+        self.signal_settings_modified.emit(settings)
 
 
     def event_remove_segment_requested(self):
