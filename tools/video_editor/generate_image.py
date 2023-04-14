@@ -11,11 +11,7 @@ from utils.pretty_print import *
 from filters.filters import (
     cv2_geometry_filter,
     filter_rgb)
-from filters.utils import (
-    FINAL_FRAME_WIDTH,
-    STABILIZE_BORDER,
-    get_dimensions_from_crop_values,
-)
+from filters.utils import get_dimensions_from_crop_values
 
 
 def generate_image(frame:dict, preview_options:dict):
@@ -36,8 +32,6 @@ def generate_image(frame:dict, preview_options:dict):
     # Initial image
     img_original = frame['cache_initial']
     img_height, img_width, c = img_original.shape
-
-
 
 
     # Final width and height

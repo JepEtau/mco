@@ -21,7 +21,7 @@ from utils.process import get_process_cfg
 #
 #===========================================================================
 def parse_common_configuration(db, config_path):
-    verbose = True
+    verbose = False
 
     db['common'] = dict()
     db_common = db['common']
@@ -38,8 +38,6 @@ def parse_common_configuration(db, config_path):
         config_directories.read(filepath)
 
         for k_section in config_directories.sections():
-            if verbose:
-                print(k_section)
             db_common[k_section] = dict()
             for _option in config_directories.options(k_section):
                 value = config_directories.get(k_section, _option)

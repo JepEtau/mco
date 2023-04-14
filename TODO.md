@@ -1,12 +1,12 @@
 # TODO: script
 (1)
-- simplify filters for video edition (deshake/replace): remove deshake, replace, rgb, geometry
-- borders for deshake lres:8? hres:16? Reason: geometry shall not be modified if multiple deshake/stabilize
+- simplify filters for video edition (deshake/replace): remove deshake, replace, rgb, geometry. Temp solution: replace deshake by null in filters
 
 (2)
-- (?) '--frames' argument: copy frames form cache to 'frames' directory. Reason: compare with other tools? If frame does not exist, ignore
+- '--frames' argument: use reference/offsets to compare images from different edition/filters
 
 (3)
+- add 'extract filter to deinterlace source  with yadif deinterlacer
 - Create "other filters": replace some images by white images
 - force save before pre_replace ? bug with g_reportage
 - effects: verify when replacing shots (asuivre/precedemment)
@@ -19,9 +19,9 @@
 # TODO: video editor
 (1)
 - stabilize: generate images
+- if no progressive images saved, use ffv1 file to fill buffer of images
 
 (2)
-- All buttons: set disabledon
 - add loop mode
 - update save button when loading a segment or after modifications: use a signal
 - Save when closing is not working

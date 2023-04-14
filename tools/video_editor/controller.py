@@ -1,9 +1,8 @@
 # -*- coding: utf-8 -*-
-from copy import deepcopy
 import sys
 sys.path.append('../scripts')
 
-
+from copy import deepcopy
 import cv2
 import gc
 import os
@@ -31,9 +30,9 @@ from filters.deshake import (
     consolidate_stabilize_segments,
     verify_stabilize_segments
 )
+from filters.deshakers import STABILIZE_BORDER_HIGH_RES
 from filters.filters import calculate_geometry_parameters
 from filters.utils import (
-    STABILIZE_BORDER,
     is_stabilize_task_enabled
 )
 from utils.common import K_GENERIQUES
@@ -283,7 +282,7 @@ class Controller_video_editor(Controller_common,
                     # Not geometry define, create a new one
                     print_yellow("\t\t\tNo shot geometry defined, stabilize filter detected, associate a shot geometry")
                     self.model_database.set_shot_geometry(shot=shot, geometry={
-                        'crop': [STABILIZE_BORDER] * 4,
+                        'crop': [STABILIZE_BORDER_HIGH_RES] * 4,
                         'keep_ratio': True,
                         'fit_to_width': False})
                     shot_geometry = self.model_database.get_shot_geometry(shot=shot)

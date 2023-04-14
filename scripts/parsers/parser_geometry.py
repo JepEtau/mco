@@ -88,9 +88,13 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                 properties = config.get(k_section, k_str)
                 if verbose:
                     print("\t\tproperties:", properties)
-                nested_dict_set(db[k_ep]['video'],
-                    get_geometry_from_properties(properties),
-                    k_ed, k_part, 'geometry')
+
+                try:
+                    nested_dict_set(db[k_ep]['video'],
+                        get_geometry_from_properties(properties),
+                        k_ed, k_part, 'geometry')
+                except:
+                    print_orange(f"warning: {k_ep}:{k_ed}:{k_part}: video does not exist")
                 # if verbose:
                 #     print("\t\tfinally:")
                 #     pprint(db[k_ep]['video'][k_ed][k_part]['geometry'])
@@ -108,7 +112,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                     shot = get_shot_from_frame_no(db, shot_start, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
                 except:
                     # Shots not defined or unused
-                    print_orange("\t\t\twarning: shot is not defined: shot_start %d, %s:%s:%s" % (shot_start, k_ed, k_ep, k_part))
+                    print_orange(f"\t\t\twarning: {k_ep}:{k_ed}:{k_part}: shot is not defined ({shot_start})")
                     continue
 
                 properties = config.get(k_section, k_str)

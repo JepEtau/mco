@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_geometry.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.3
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -155,6 +155,8 @@ class Ui_widget_geometry(object):
         icon5 = QIcon()
         icon5.addFile(u"icons/grey/box-select.svg", QSize(), QIcon.Normal, QIcon.Off)
         icon5.addFile(u"icons/blue/box-select.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon5.addFile(u"icons/grey/box-select.svg", QSize(), QIcon.Disabled, QIcon.Off)
+        icon5.addFile(u"icons/grey/box-select.svg", QSize(), QIcon.Disabled, QIcon.On)
         self.pushButton_target_width_edition.setIcon(icon5)
         self.pushButton_target_width_edition.setCheckable(True)
         self.pushButton_target_width_edition.setFlat(True)

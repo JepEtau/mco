@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_curves_selection.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.3
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -114,7 +114,8 @@ class Ui_widget_curves_selection(object):
         sizePolicy4.setHeightForWidth(self.pushButton_delete.sizePolicy().hasHeightForWidth())
         self.pushButton_delete.setSizePolicy(sizePolicy4)
         icon1 = QIcon()
-        icon1.addFile(u"icons/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u"icons/grey/x-square.svg", QSize(), QIcon.Disabled, QIcon.Off)
+        icon1.addFile(u"icons/grey/x-square.svg", QSize(), QIcon.Disabled, QIcon.On)
         self.pushButton_delete.setIcon(icon1)
         self.pushButton_delete.setFlat(True)
 

@@ -5,8 +5,10 @@ sys.path.append('scripts')
 
 import argparse
 import gc
-from pprint import pprint
 import signal
+
+from pprint import pprint
+from utils.pretty_print import *
 
 from audio.extract import extract_audio
 from audio.generate import generate_audio
@@ -21,7 +23,7 @@ from utils.common import (
     K_GENERIQUES,
     get_database_size,
 )
-from utils.pretty_print import *
+from utils.frames import copy_frames_for_study
 from video.concatenation import (
     merge_audio_and_video_tracks,
     concatenate_all_clips,
@@ -92,13 +94,13 @@ def main():
 
     parser.add_argument("--frames",
         action="store_true",
-        help="debug: sera utilisé pour comparer des trames, des filtres, etc.")
+        help="debug: sera utilisé pour comparer des trames, des filtres, etc. Nécessite les arguments --edition, --episode et --part)")
 
     parser.add_argument("--edition",
         default='',
         required=False,
         choices=editions,
-        help="debug: utilise cette edition pour étude. Ne doit pas être spécifié pour la génération finale. NON VERIFIE")
+        help="debug: utilise cette edition")
 
     parser.add_argument("--force",
         action="store_true",
@@ -224,14 +226,13 @@ def main():
             print("\t- add chapters")
 
 
-    if arguments.frames and arguments.part=='':
-        sys.exit("Error: a part shall be one of the following: %s" % (", ".join(K_ALL_PARTS)))
-
     # Parse database
     #-------------------------------------------------
     if arguments.frames:
-        k_episode = 'ep01' if k_episode == 'ep00' else k_episode
-        parse_database_for_study(g_database, k_ep=k_episode, k_ed=k_ed)
+        if k_ed == '' or k_episode == 'ep00' or arguments.part == '':
+            sys.exit(print_red("Erreur: l'édition, l'épisode et la partie doivent être spécifiés"))
+
+        parse_database_for_study(g_database, k_ed=k_ed, k_ep=k_episode, k_part=arguments.part)
     else:
         parse_database(g_database, k_ep=k_episode)
 
@@ -303,7 +304,11 @@ def main():
 
     if arguments.frames:
         # Extract frames
-        sys.exit(print_red("Not yet supported. TODO: create a function to copy images from cache to frames directory"))
+        copy_frames_for_study(db=g_database,
+            k_ed=k_ed,
+            k_ep=k_episode,
+            k_part=arguments.part,
+            last_task=video_filter)
     else:
         # Generate the video
         generate_video(

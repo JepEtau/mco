@@ -2,6 +2,7 @@
 import sys
 
 from pprint import pprint
+from utils.pretty_print import *
 
 from parsers.parser_common import parse_common_configuration
 from parsers.parser_editions import parse_editions
@@ -38,7 +39,7 @@ from video.consolidate_av import (
     calculate_av_sync,
 )
 from utils.path import PATH_DATABASE
-from utils.pretty_print import *
+
 
 
 
@@ -214,7 +215,7 @@ def parse_database(database, k_ep,):
 
 
 
-def parse_database_for_study(db, k_ep, k_ed):
+def parse_database_for_study(db, k_ed, k_ep, k_part):
     """
         database: global database
         k_ep: episode to generate
@@ -225,7 +226,7 @@ def parse_database_for_study(db, k_ep, k_ed):
     verbose = False
 
     parse_common_configuration(db, PATH_DATABASE)
-    parse_editions(db)
+    parse_editions(db, cfg_foldername=PATH_DATABASE)
     db_init_episodes(db, k_ed=k_ed)
     parse_generiques(db, k_ed=k_ed)
     parse_episode(db, k_ed=k_ed, k_ep=k_ep)
@@ -233,11 +234,13 @@ def parse_database_for_study(db, k_ep, k_ed):
     parse_curve_configurations(db, k_ep_or_g=k_ep)
     parse_geometry_configurations(db, k_ep_or_g=k_ep)
 
-    for k_part_g in ['g_debut', 'g_fin']:
-        parse_replace_configurations(db, k_ep_or_g=k_part_g)
-        parse_curve_configurations(db, k_ep_or_g=k_part_g)
-        parse_geometry_configurations(db, k_ep_or_g=k_part_g)
-        parse_frames_for_study_g(db, k_ep=k_part_g)
+    for k_part in ['g_debut', 'g_fin']:
+        parse_replace_configurations(db, k_ep_or_g=k_part)
+        parse_curve_configurations(db, k_ep_or_g=k_part)
+        parse_geometry_configurations(db, k_ep_or_g=k_part)
+
+    if k_part in K_GENERIQUES:
+        parse_frames_for_study_g(db, k_part_g=k_part)
 
     parse_frames_for_study(db, k_ep=k_ep)
 

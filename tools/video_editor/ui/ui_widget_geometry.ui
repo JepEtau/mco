@@ -286,7 +286,10 @@
            <property name="icon">
             <iconset>
              <normaloff>icons/grey/box-select.svg</normaloff>
-             <normalon>icons/blue/box-select.svg</normalon>icons/grey/box-select.svg</iconset>
+             <normalon>icons/blue/box-select.svg</normalon>
+             <disabledoff>icons/grey/box-select.svg</disabledoff>
+            <disabledon>icons/grey/box-select.svg</disabledon>
+                 icons/grey/box-select.svg</iconset>
            </property>
            <property name="checkable">
             <bool>true</bool>

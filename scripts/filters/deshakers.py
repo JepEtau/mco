@@ -12,7 +12,6 @@ from skimage.util import img_as_ubyte
 from skimage.util import img_as_float
 
 from filters.filters import edge_sharpen_sobel_gray
-from filters.utils import STABILIZE_BORDER
 from utils.hash import (
     calculate_hash,
     log_filter
@@ -20,10 +19,18 @@ from utils.hash import (
 from utils.pretty_print import *
 
 
+STABILIZE_BORDER_LOW_RES = 12
+STABILIZE_BORDER_HIGH_RES = 2 * STABILIZE_BORDER_LOW_RES
+# discreminiate resolution by dimensions:
+STABILIZE_LOW_RES_IMG_WIDTH = 1080
+STABILIZE_LOW_RES_IMG_HEIGHT = 864
+
+
+
 def apply_cv2_transformation(img, x_y_theta:list):
+    pad = STABILIZE_BORDER_LOW_RES if img.shape[0]<STABILIZE_LOW_RES_IMG_HEIGHT else STABILIZE_BORDER_HIGH_RES
     img_to_transform = cv2.copyMakeBorder(img,
-        STABILIZE_BORDER, STABILIZE_BORDER,
-        STABILIZE_BORDER, STABILIZE_BORDER,
+        pad, pad, pad, pad,
         cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
     t_x, t_y, t_theta = x_y_theta
@@ -47,8 +54,7 @@ class CV2_deshaker:
         self.__mask = None
         self.__use_harris_detector = False
         self.__k = 0.04
-        self.__pad_h = STABILIZE_BORDER
-        self.__pad_w = STABILIZE_BORDER
+        self.__pad = STABILIZE_LOW_RES_IMG_HEIGHT
         self.__border_color = [0, 0, 0]
 
         self.__use_roi = False
@@ -57,17 +63,6 @@ class CV2_deshaker:
 
         # Do not use sobel, only for testing purpose
         self.__sobel = False
-
-        self.filters_str = "%03d:%0.2f:%.1f:%d:%0.2f:%d" % (
-            self.__max_corners,
-            self.__quality_level,
-            self.__min_distance,
-            self.__block_size,
-            self.__k,
-            STABILIZE_BORDER)
-
-        if self.__sobel:
-            self.filters_str += ':sobel'
 
         self._height, self._width, self._channels = 0, 0, 0
 
@@ -80,7 +75,7 @@ class CV2_deshaker:
             initial_img_stabilized = apply_cv2_transformation(img, last_transformation)
         else:
             initial_img_stabilized = cv2.copyMakeBorder(img,
-                self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
+                self.__pad, self.__pad, self.__pad, self.__pad,
                 cv2.BORDER_CONSTANT, value=self.__border_color)
 
         img_gray_tmp = cv2.cvtColor(initial_img_stabilized, cv2.COLOR_RGB2GRAY)
@@ -114,7 +109,7 @@ class CV2_deshaker:
     def __stabilize_image(self, img, img_ref_gray, keypoints_ref, mode, verbose=False):
         img_gray_tmp = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         img_gray_tmp2 = cv2.copyMakeBorder(img_gray_tmp,
-            self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
+            self.__pad, self.__pad, self.__pad, self.__pad,
             cv2.BORDER_CONSTANT,
             value=self.__border_color)
 
@@ -179,7 +174,7 @@ class CV2_deshaker:
             dtype=np.float32)
 
         img_to_transform = cv2.copyMakeBorder(img,
-            self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
+            self.__pad, self.__pad, self.__pad, self.__pad,
             cv2.BORDER_CONSTANT, value=self.__border_color)
 
         if False:
@@ -227,18 +222,34 @@ class CV2_deshaker:
         else:
             sys.exit(print_red("CV2_deshaker.stabilize: error: ref=%s" % (ref)))
 
+        # Define a filter str
+        filters_str = "%03d:%0.2f:%.1f:%d:%0.2f" % (
+                    self.__max_corners,
+                    self.__quality_level,
+                    self.__min_distance,
+                    self.__block_size,
+                    self.__k)
+        filters_str += "%d:%d" % (
+            STABILIZE_BORDER_LOW_RES,
+            STABILIZE_BORDER_HIGH_RES)
+        if self.__sobel:
+            filters_str += ':sobel'
 
         suffix = ""
         if self.__use_roi:
             suffix += "roi_"
 
         # Generate and log hash
-        filter_str = "%s,stab=%s:%s" % (input_hash, suffix, self.filters_str)
+        filter_str = "%s,stab=%s:%s" % (input_hash, suffix, filters_str)
         if get_hash:
             hash = calculate_hash(filter_str=filter_str)
-            return self.filters_str, None, transformations
+            return filters_str, None, transformations
         hash = log_filter(filter_str, shot['hash_log_file'])
         print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, ref_index:%d" % (len(images), ref_index))
+
+
+        # Set border size
+        self.__pad = STABILIZE_BORDER_LOW_RES if images[ref_index].shape[0]<STABILIZE_LOW_RES_IMG_HEIGHT else STABILIZE_BORDER_HIGH_RES
 
         if last_transformation is not None and ref_index != 0:
             print_red("error: stabilize, last transformation will be ignored")
@@ -317,8 +328,8 @@ class CV2_deshaker:
                     img_gray_tmp2 = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_RGB2GRAY)
                     if self.__use_roi:
                         img_gray_tmp2 = img_gray_tmp2[
-                            self.__crop_h+self.__pad_h:self.__pad_h+img_gray_tmp2.shape[0],
-                            self.__crop_w+self.__pad_w:self.__pad_w+img_gray_tmp2.shape[1]]
+                            self.__crop_h+self.__pad:self.__pad+img_gray_tmp2.shape[0],
+                            self.__crop_w+self.__pad:self.__pad+img_gray_tmp2.shape[1]]
 
                     if self.__sobel:
                         img_ref_gray = edge_sharpen_sobel_gray(image_gray=img_gray_tmp2, index=self.__index)
@@ -348,12 +359,13 @@ class CV2_deshaker:
                     transformations['start'] = transformation
                 transformation = None
 
-        return self.filters_str, output_images, transformations
+        return filters_str, output_images, transformations
 
 
 
 
 class Skimage_deshaker:
+    # DO NOT USE (archive)
     def __init__(self) -> None:
         self.__max_corners = 1000
         self.__quality_level = 0.01
@@ -362,26 +374,15 @@ class Skimage_deshaker:
         self.__mask = None
         self.__use_harris_detector = False
         self.__k = 0.04
-        self.__pad_h = 20
-        self.__pad_w = 20
+        self.__pad = STABILIZE_LOW_RES_IMG_HEIGHT
         self.__crop_w = 12
         self.__crop_h = 12
+        self.__use_roi = False
         self.__sobel = False
         self.__border_color = [0, 0, 0]
 
-        self.filters_str = "%03d:%0.2f:%.1f:%d:%0.2f:%d" % (
-            self.__max_corners,
-            self.__quality_level,
-            self.__min_distance,
-            self.__block_size,
-            self.__k,
-            STABILIZE_BORDER)
-
-        if self.__sobel:
-            self.filters_str += ':sobel'
 
         self._height, self._width, self._channels = 0, 0, 0
-
         self.__index = 0
 
         sys.exit(print_red("Error: Skimage_deshaker is not working"))
@@ -405,21 +406,33 @@ class Skimage_deshaker:
             ref_index = int(len(images) / 2 - 1)
             use_static_ref = True
 
-        # if frame_ref_index is None:
-        #     use_static_ref = False
-        #     frame_ref_index = 0
-        #     suffix = "prev"
-        # elif frame_ref_index == -1:
-        #     use_static_ref = True
-        #     frame_ref_index = int(count/2)
-        #     suffix = "static"
-        # else:
-        #     use_static_ref = True
-        #     suffix = "static"
 
+        # Define a filter str
+        filters_str = "%03d:%0.2f:%.1f:%d:%0.2f" % (
+                    self.__max_corners,
+                    self.__quality_level,
+                    self.__min_distance,
+                    self.__block_size,
+                    self.__k)
+        filters_str += "%d:%d" % (
+            STABILIZE_BORDER_LOW_RES,
+            STABILIZE_BORDER_HIGH_RES)
+        if self.__sobel:
+            filters_str += ':sobel'
+        suffix = ""
+        if self.__use_roi:
+            suffix += "roi_"
 
         # Generate and log hash
-        filters_str = "%s,stab=%s" % (input_hash, self.filters_str)
+        filter_str = "%s,stab=%s:%s" % (input_hash, suffix, filters_str)
+        if get_hash:
+            hash = calculate_hash(filter_str=filter_str)
+            return filters_str, None, None
+        hash = log_filter(filter_str, shot['hash_log_file'])
+        print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, ref_index:%d" % (len(images), ref_index))
+
+        # Generate and log hash
+        filters_str = "%s,stab=%s" % (input_hash, filters_str)
         if get_hash:
             hash = calculate_hash(filter_str=filters_str)
             return None, hash
@@ -435,13 +448,13 @@ class Skimage_deshaker:
 
         # Add padding and apply sobel filter to enhance edges
         img_gray_tmp = cv2.copyMakeBorder(cv2.cvtColor(img_ref, cv2.COLOR_RGB2GRAY),
-            self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
+            self.__pad, self.__pad, self.__pad, self.__pad,
             cv2.BORDER_CONSTANT, value=self.__border_color)
         img_gray_ref = sobel(img_as_float(img_gray_tmp))
 
         # Add first image to the list
         img_stabilized = cv2.copyMakeBorder(img_ref,
-            self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
+            self.__pad, self.__pad, self.__pad, self.__pad,
             cv2.BORDER_CONSTANT, value=self.__border_color)
         output_images = [img_stabilized]
 
@@ -450,7 +463,7 @@ class Skimage_deshaker:
 
             # Add padding and apply sobel filter to enhance edges
             img_gray_tmp = cv2.copyMakeBorder(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY),
-                self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
+                self.__pad, self.__pad, self.__pad, self.__pad,
                 cv2.BORDER_CONSTANT, value=self.__border_color)
             img_gray = sobel(img_as_float(img_gray_tmp))
 
@@ -465,13 +478,13 @@ class Skimage_deshaker:
             tf_shift = transform.SimilarityTransform(translation=[-shift_x, -shift_y])
 
             img_bordered = cv2.copyMakeBorder(img,
-                self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
+                self.__pad, self.__pad, self.__pad, self.__pad,
                 cv2.BORDER_CONSTANT, value=self.__border_color)
             img_stabilized = transform.warp(img_as_float(img_bordered), tf_shift)
 
             output_images.append(img_as_ubyte(img_stabilized))
 
 
-        return output_images, self.filters_str
+        return output_images, filters_str
 
 

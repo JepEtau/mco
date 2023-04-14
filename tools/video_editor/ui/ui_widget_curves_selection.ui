@@ -194,7 +194,8 @@
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>icons/purple/x-square.svg</normaloff>icons/purple/x-square.svg</iconset>
+              <disabledoff>icons/grey/x-square.svg</disabledoff>
+              <disabledon>icons/grey/x-square.svg</disabledon>icons/purple/x-square.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
