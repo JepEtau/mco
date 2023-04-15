@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
 )
 
-from common.sylesheet import set_widget_stylesheet
+from common.stylesheet import set_widget_stylesheet
 from utils.common import FPS
 
 PAINTER_MARGIN_LEFT = 30

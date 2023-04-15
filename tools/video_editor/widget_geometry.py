@@ -27,7 +27,7 @@ from PySide6.QtGui import (
 from utils.common import K_GENERIQUES
 
 from common.widget_common import Widget_common
-from common.sylesheet import set_stylesheet, set_widget_stylesheet, update_selected_widget_stylesheet
+from common.stylesheet import set_stylesheet, set_widget_stylesheet, update_selected_widget_stylesheet
 
 from video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_geometry_ui import Ui_widget_geometry

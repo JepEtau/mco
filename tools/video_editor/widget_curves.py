@@ -14,7 +14,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QColor
 
-from common.sylesheet import (
+from common.stylesheet import (
     set_curves_radiobutton_stylesheet,
     set_stylesheet,
     set_widget_stylesheet

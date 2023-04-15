@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 
 from utils.common import K_GENERIQUES, K_PARTS, K_ALL_PARTS
 
-from common.sylesheet import set_stylesheet, set_widget_stylesheet
+from common.stylesheet import set_stylesheet, set_widget_stylesheet
 from viewer.ui.widget_browser_ui import Ui_widget_browser
 
 

@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
 )
 
-from common.sylesheet import set_stylesheet, set_widget_stylesheet, update_selected_widget_stylesheet
+from common.stylesheet import set_stylesheet, set_widget_stylesheet, update_selected_widget_stylesheet
 
 from video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_stabilize_ui import Ui_widget_stabilize

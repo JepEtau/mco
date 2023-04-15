@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
 from pprint import pprint
+import sys
 from filters.ffmpeg_utils import get_video_duration
 from filters.utils import get_step_no_from_task
 from utils.common import FPS
@@ -134,13 +135,15 @@ def get_input_filepath(database, frame):
 
 
 
-def is_progressive_file_valid(shot, db_common):
-    verbose = False
+def is_progressive_file_valid(shot, db_common, verbose:bool=False):
+    verbose = True
 
     if verbose:
         print_lightgreen("is_progressive_file_valid")
     progressive_filepath = shot['inputs']['progressive']['filepath']
     if not os.path.exists(progressive_filepath):
+        if verbose:
+            print(f"progressive filepath: {progressive_filepath}")
         return False
 
     progressive_duration = get_video_duration(db_common,
@@ -176,9 +179,10 @@ def is_progressive_file_valid(shot, db_common):
             return False
     else:
         # Partial video
-        if progressive_duration != count * FPS:
+        if progressive_duration != count / FPS:
             if verbose:
                 print("\tnot valid: %.02fs, sould be %.02fs" % (progressive_duration, count * FPS))
+                sys.exit(print_yellow(f"verify this!"))
             return False
 
     if verbose:

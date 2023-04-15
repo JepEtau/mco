@@ -29,19 +29,19 @@ from utils.time_conversions import convert_s_to_m_s_ms, frame_no_to_sexagesimal
 
 
 # Extract more frames to verify frames no for each shot
-AVISYNTH_ADD_FRAMES = 0
+AVISYNTH_ADD_FRAMES = 2
 
 def avisynth_deinterlace(shot, image_list,
     step_no, filters_str, output_folder, db_common, get_hash:bool=False):
-    verbose = False
-
-    if verbose:
-        print_lightcyan("avisynth_deinterlace")
+    verbose = True
 
     # Deinterlace only
     if not get_hash:
         print_cyan("(AviSynth)", end='')
         print_lightcyan("\tfilters=%s" % (filters_str))
+
+    if verbose:
+        print_lightcyan("avisynth_deinterlace")
 
     # Create the output folder
     if not os.path.exists(output_folder):
@@ -105,6 +105,8 @@ def avisynth_deinterlace(shot, image_list,
     do_extract = False
     for f in output_image_list:
         if not os.path.exists(f):
+            if verbose:
+                print(f"missing file: {f}")
             do_extract = True
             break
     if not do_extract:
@@ -151,6 +153,7 @@ def avisynth_deinterlace(shot, image_list,
 
     # Generate FFv1 file if not exists
     if do_generate_ffv1_file:
+        sys.exit()
         ffmpeg_command = ffmpeg_command_common + [
             "-i", os.path.abspath(script_filepath),
             "-r", str(25),
@@ -160,14 +163,16 @@ def avisynth_deinterlace(shot, image_list,
             "-y", progressive_filepath
         ]
         start_time = time.time()
-        print("\t\t\t%s: wait about 30 minutes" % (datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        print_lightgreen(f"%s: {shot['k_ed']}:{shot['k_ep']}:{shot['k_part']} FFv1 file has to be generated" % (
+            datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+        print_lightgreen("\tIt may take about 30 minutes")
 
         print_lightgrey("\t\t\t%s" % (' '.join(ffmpeg_command)))
         execute_simple_ffmpeg_command(ffmpeg_command=ffmpeg_command)
 
         elapsed_time = time.time() - start_time
         minutes, seconds, milliseconds = convert_s_to_m_s_ms(elapsed_time)
-        print_purple("\t\t\tDeinterlaced in %02d:%02d.%d (%.02fs/f)" % (
+        print_purple("\t\t\tDeinterlaced shot no. %d in %02d:%02d.%d (%.02fs/f)" % (
             shot['no'],
             minutes, seconds, int(1 + milliseconds/100),
             elapsed_time/shot['count']))
@@ -404,7 +409,16 @@ def avisynth_generate_avs_script(shot, script_filepath):
             input_file_search = re.search(re.compile("trim\(([^\)]+)"), stripped_line)
             if input_file_search is not None:
                 stripped_line = stripped_line.replace(input_file_search.group(1), "first_frame,last_frame")
-        filter_str += stripped_line + ';'
+
+        # Do not append lines which contains multiprocessing keywords
+        do_append = True
+        if ('MT_MODE' in stripped_line
+            or 'MTMode' in stripped_line
+            or 'Prefetch' in stripped_line):
+            do_append = False
+
+        if do_append:
+            filter_str += stripped_line + ';'
 
 
 

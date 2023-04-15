@@ -1,6 +1,6 @@
 # TODO: script
 (1)
-- simplify filters for video edition (deshake/replace): remove deshake, replace, rgb, geometry. Temp solution: replace deshake by null in filters
+- simplify filters for video edition (deshake/replace): remove deshake, replace, rgb, geometry. Temp solution: replace deshake by null in filters or remove stabilize ini file
 
 (2)
 - '--frames' argument: use reference/offsets to compare images from different edition/filters

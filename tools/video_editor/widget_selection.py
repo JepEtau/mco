@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from common.sylesheet import (
+from common.stylesheet import (
     set_stylesheet,
     update_selected_widget_stylesheet,
 )
