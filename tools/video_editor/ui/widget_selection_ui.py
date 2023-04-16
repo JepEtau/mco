@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_selection.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.5.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -116,17 +116,11 @@ class Ui_widget_selection(object):
 
         self.verticalLayout_3.addWidget(self.radioButton_task_sharpen)
 
-        self.radioButton_task_pre_replace = QRadioButton(self.frame)
-        self.radioButton_task_pre_replace.setObjectName(u"radioButton_task_pre_replace")
-        self.radioButton_task_pre_replace.setFocusPolicy(Qt.NoFocus)
+        self.radioButton_task_edition = QRadioButton(self.frame)
+        self.radioButton_task_edition.setObjectName(u"radioButton_task_edition")
+        self.radioButton_task_edition.setFocusPolicy(Qt.NoFocus)
 
-        self.verticalLayout_3.addWidget(self.radioButton_task_pre_replace)
-
-        self.radioButton_task_no_deshake = QRadioButton(self.frame)
-        self.radioButton_task_no_deshake.setObjectName(u"radioButton_task_no_deshake")
-        self.radioButton_task_no_deshake.setFocusPolicy(Qt.NoFocus)
-
-        self.verticalLayout_3.addWidget(self.radioButton_task_no_deshake)
+        self.verticalLayout_3.addWidget(self.radioButton_task_edition)
 
 
         self.verticalLayout.addLayout(self.verticalLayout_3)
@@ -222,8 +216,7 @@ class Ui_widget_selection(object):
         self.radioButton_task_pre_upscale.setText(QCoreApplication.translate("widget_selection", u"before upscale", None))
         self.radioButton_task_upscale.setText(QCoreApplication.translate("widget_selection", u"upscale", None))
         self.radioButton_task_sharpen.setText(QCoreApplication.translate("widget_selection", u"sharpen", None))
-        self.radioButton_task_pre_replace.setText(QCoreApplication.translate("widget_selection", u"sharpen, no replace", None))
-        self.radioButton_task_no_deshake.setText(QCoreApplication.translate("widget_selection", u"sharpen, no replace, no deshake", None))
+        self.radioButton_task_edition.setText(QCoreApplication.translate("widget_selection", u"edition", None))
         ___qtablewidgetitem = self.tableWidget_shots.horizontalHeaderItem(0)
         ___qtablewidgetitem.setText(QCoreApplication.translate("widget_selection", u"shot", None));
         ___qtablewidgetitem1 = self.tableWidget_shots.horizontalHeaderItem(1)

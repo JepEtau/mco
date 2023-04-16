@@ -8,6 +8,10 @@ import gc
 import os
 import os.path
 import time
+import multiprocessing
+from multiprocessing import *
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 
 from pprint import pprint
 from logger import log
@@ -28,6 +32,7 @@ from shot.consolidate_shot import consolidate_shot
 
 from filters.deshake import (
     consolidate_stabilize_segments,
+    deshake,
     verify_stabilize_segments
 )
 from filters.deshakers import STABILIZE_BORDER_HIGH_RES
@@ -114,7 +119,7 @@ class Controller_video_editor(Controller_common,
 
         self.view.widget_stabilize.signal_settings_modified[dict].connect(self.event_stabilize_modified)
         self.view.widget_stabilize.signal_save.connect(self.event_stabilize_save_requested)
-
+        self.view.widget_stabilize.signal_preview_requested.connect(self.event_stabilize_preview_requested)
 
 
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
@@ -200,7 +205,7 @@ class Controller_video_editor(Controller_common,
             # Consolidate shot
             shot['last_task'] = task
             consolidate_shot(db, shot=shot)
-            # NOTE replace: if last task is 'pre_replace', the hashes
+            # NOTE replace: if last task is 'edition', the hashes
             # are different from the final generation
 
             # Get a list of path for each frame  for this shot
@@ -312,7 +317,7 @@ class Controller_video_editor(Controller_common,
             self.frames[shot_no] = list()
             for p, i in zip(filepath_tmp, range(len(filepath_tmp))):
 
-                if task in ['deinterlace', 'pre_replace']:
+                if task in ['deinterlace', 'edition']:
                     # Use the frame no. from video to simplify frame replacement
                     frame_no = shot['src']['start'] + i
                 else:
@@ -324,7 +329,6 @@ class Controller_video_editor(Controller_common,
                 else:
                     image_filepath = p
 
-                shot['frame_nos'].append(frame_no)
                 self.frames[shot_no].append({
                     'dst': shot['dst'],
                     'src': shot['src'],
@@ -345,6 +349,7 @@ class Controller_video_editor(Controller_common,
                     },
                     'cache_initial': None,
                     'cache': None,
+                    'cache_deshake': None,
                 })
             # for f in self.frames[shot_no]:
             #     print(f['frame_no'])
@@ -425,7 +430,23 @@ class Controller_video_editor(Controller_common,
             self.signal_curves_library_modified.emit(curves_library)
 
 
-        if False:
+        print_lightgrey("\tload images")
+        start_time = time.time()
+        cpu_count = 12
+        # image_filepathes = [f['filepath'] for f in self.frames[shot_no]]
+        worklist = list()
+        for i, f in zip(range(len(self.frames[shot_no])), self.frames[shot_no]):
+            if f['cache_initial'] is None:
+                worklist.append([i, f['filepath']])
+        with ThreadPoolExecutor(max_workers=min(cpu_count, len(self.frames[shot_no]))) as executor:
+            work_result = {executor.submit(load_image, i, f): list for (i, f) in worklist}
+            for future in concurrent.futures.as_completed(work_result):
+                no, img = future.result()
+                self.frames[shot_no][no]['cache_initial'] = img
+        print_green("%.02fs" % (time.time() - start_time))
+
+
+        if True:
             print_lightcyan("================================== SHOT =======================================")
             pprint(shot)
             print_lightcyan("===============================================================================")
@@ -629,8 +650,8 @@ class Controller_video_editor(Controller_common,
             new_settings['error'] = False
             new_settings['segments'] = [{
                 'alg': 'cv2_deshaker',
-                'start': 0,
-                'end': shot['count'] - 1,
+                'start': shot['start'],
+                'end':  shot['start'] + shot['count'] - 1,
                 'ref': 'middle',
                 'mode': {
                     'vertical': True,
@@ -638,6 +659,12 @@ class Controller_video_editor(Controller_common,
                     'rotation': False,
                 }
             }]
+
+        if not new_settings['error']:
+            # Flush images
+            for f in self.frames[shot['no']]:
+                f['cache_deshake'] = None
+
         self.signal_stabilize_settings_refreshed.emit(new_settings)
 
 
@@ -656,3 +683,60 @@ class Controller_video_editor(Controller_common,
         self.signal_is_saved.emit('stabilize')
 
 
+    def event_stabilize_preview_requested(self):
+        shot = self.current_shot()
+        shot_no = shot['no']
+
+        # Get stabilization parameters
+        print_lightcyan("event_stabilize_preview_requested")
+        settings = self.model_database.get_shot_stabilize_settings(shot=shot)
+        is_valid = verify_stabilize_segments(shot=shot, segments=settings['segments'])
+        if not is_valid:
+            print_red("Segments are not valid")
+            return
+
+        # Get all images
+        print_lightgrey("\tload images")
+        start_time = time.time()
+        cpu_count = 12
+        # image_filepathes = [f['filepath'] for f in self.frames[shot_no]]
+        worklist = list()
+        for i, f in zip(range(len(self.frames[shot_no])), self.frames[shot_no]):
+            if f['cache_initial'] is None:
+                worklist.append([i, f['filepath']])
+        with ThreadPoolExecutor(max_workers=min(cpu_count, len(self.frames[shot_no]))) as executor:
+            work_result = {executor.submit(load_image, i, f): list for (i, f) in worklist}
+            for future in concurrent.futures.as_completed(work_result):
+                no, img = future.result()
+                self.frames[shot_no][no]['cache_initial'] = img
+        print_green("%.02fs" % (time.time() - start_time))
+
+         # Deshake
+        images = list(f['cache_initial'] for f in self.frames[shot_no])
+        image_list = [f['filepath'] for f in self.frames[shot_no]]
+        print_lightgrey("\tdeshake")
+
+        # Patch shot deshake with the modified values
+        shot['deshake'] = settings
+
+        # Deshake
+        hash, output_images = deshake(
+            shot=shot,
+            images=images,
+            image_list=image_list,
+            add_border=True,
+            step_no=shot['last_step']['step_no'],
+            input_hash=shot['filters'][shot['last_step']['step_no'] - 1],
+            get_hash=False,
+            do_force=False)
+
+        print_lightgrey("\tended")
+        for f, img in zip(self.frames[shot_no], output_images):
+            f['cache_deshake'] = img
+
+        self.signal_reload_frame.emit()
+
+
+
+def load_image(i, f):
+    return i, cv2.imread(f, cv2.IMREAD_COLOR)

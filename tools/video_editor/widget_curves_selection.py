@@ -29,7 +29,10 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
 
 
     def __init__(self, parent):
-        super(Widget_curves_selection, self).__init__(parent)
+        super(Widget_curves_selection, self).__init__()
+        Ui_widget_curves_selection.__init__(self)
+
+
         self.setupUi(self)
         self.setObjectName('curves_selection')
         self.setAttribute(Qt.WA_DeleteOnClose)

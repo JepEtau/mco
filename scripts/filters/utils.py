@@ -22,8 +22,7 @@ FILTER_TAGS = [
     'pre_upscale',
     'upscale',
     'sharpen',
-    'pre_replace',
-    'no_deshake',
+    'edition',
     'rgb',
     'geometry',
     'final'
@@ -38,7 +37,7 @@ def get_step_no_from_task(shot, task):
         if __task == f['task']:
             return i
 
-    sys.exit(print_red("Error: get_step_no_from_task: [%s] not found" % (task)))
+    print_red("Error: get_step_no_from_task: [%s] not found" % (task))
     return None
 
 
@@ -90,7 +89,9 @@ def is_stabilize_task_enabled(shot):
     # Returns true if deshake/stabilize task is enabled, False otherwise
 
     # No deshake parameters or disabled
-    if shot['deshake'] is None or shot['deshake']['enable'] == False:
+    if ('deshake' not in shot.keys()
+        or shot['deshake'] is None
+        or not shot['deshake']['enable']):
         return False
 
     # Is deshake/stablize task is in list of filters

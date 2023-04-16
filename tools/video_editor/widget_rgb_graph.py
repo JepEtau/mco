@@ -125,9 +125,9 @@ class Widget_rgb_graph(QWidget):
 
 
     def event_curves_loaded(self, curves:dict):
-        if curves is not None:
-            # log.info("load curves in RGB graph")
-            # print("%s.event_load_curves: load curves in RGB graph" % (__name__))
+        # log.info("load curves in RGB graph")
+        # print("%s.event_load_curves: load curves in RGB graph" % (__name__))
+        try:
             for k in self.channels.keys():
                 if self.channels[k]['curve'] is not None:
                     del self.channels[k]['curve']
@@ -135,8 +135,8 @@ class Widget_rgb_graph(QWidget):
                 self.channels[k]['lut'] = np.array([]).astype('int')
                 self.channels[k]['polypoints'] = np.array([]).astype('int')
                 self.channels[k]['is_selected'] = False
-        else:
-            # log.info("reset RGB graph as there is no channels")
+        except:
+            log.info("reset RGB graph as there is no channels")
             for k in self.channels.keys():
                 self.channels[k]['curve'] = Curve()
                 self.channels[k]['lut'] = np.array([]).astype('int')

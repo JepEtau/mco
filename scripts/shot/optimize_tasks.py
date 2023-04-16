@@ -26,7 +26,7 @@ def optimize_tasks(db, shot) -> int:
             continue
 
         output_folder = os.path.join(shot['cache'], "%02d" %  (step_no))
-        if filter['task'] == 'pre_replace':
+        if filter['task'] == 'edition':
             image_list = get_image_list_pre_replace(shot,
                 folder=output_folder,
                 step_no=step_no,

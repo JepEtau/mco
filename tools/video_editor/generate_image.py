@@ -30,7 +30,10 @@ def generate_image(frame:dict, preview_options:dict):
         pprint(geometry_values)
 
     # Initial image
-    img_original = frame['cache_initial']
+    if frame['cache_deshake'] is not None:
+        img_original = frame['cache_deshake']
+    else:
+        img_original = frame['cache_initial']
     img_height, img_width, c = img_original.shape
 
 

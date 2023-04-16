@@ -31,7 +31,7 @@ STABILIZE_MODES = ['vertical', 'horizontal', 'rotation']
 
 
 def parse_stabilize_configurations(db, k_ep_or_g:str):
-    verbose = False
+    verbose = True
 
     # Open configuration file
     filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_stabilize.ini" % (k_ep_or_g))
@@ -148,7 +148,8 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
 
             if verbose:
                 pprint(shot['deshake'])
-                # sys.exit()
+                # if k_ed == 'f' and shot['no'] == 23:
+                #     sys.exit()
 
 
 def get_initial_shot_stabilize_settings(db, k_ep, k_part) -> dict:

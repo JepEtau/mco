@@ -32,6 +32,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     signal_settings_modified = Signal(dict)
     signal_segment_selected = Signal(dict)
     signal_frame_selected = Signal(int)
+    signal_preview_requested = Signal()
 
 
     def __init__(self, ui, controller:Controller_video_editor):
@@ -96,15 +97,19 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         # Signals
         self.pushButton_guidelines.toggled[bool].connect(self.event_preview_changed)
-
         self.pushButton_set_start.clicked.connect(self.event_start_modified)
         self.pushButton_set_end.clicked.connect(self.event_end_modified)
         self.pushButton_switch_ref.clicked.connect(self.event_ref_modified)
         self.pushButton_set_segment.clicked.connect(self.event_set_segment_requested)
+        self.pushButton_calculate.clicked.connect(self.event_stabilize_requested)
+        self.groupBox_stabilize.installEventFilter(self)
+        self.installEventFilter(self)
+
 
         self.controller.signal_stabilize_settings_refreshed[dict].connect(self.event_stabilize_settings_refreshed)
         self.controller.signal_is_saved[str].connect(self.event_is_saved)
-        self.installEventFilter(self)
+        self.controller.signal_shot_changed.connect(self.event_shot_changed)
+
 
         set_stylesheet(self)
         set_widget_stylesheet(self.pushButton_set_start)
@@ -129,10 +134,47 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         self.clear_inputs()
 
+        self.pushButton_set_preview.blockSignals(True)
+        self.pushButton_set_preview.setEnabled(False)
+        self.pushButton_set_preview.setChecked(False)
+        self.pushButton_set_preview.blockSignals(False)
+
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
 
+
+    def event_shot_changed(self):
+        enabled = self.controller.is_replace_allowed()
+
+        if not enabled:
+            self.pushButton_set_preview.blockSignals(True)
+            self.pushButton_set_preview.setEnabled(False)
+            self.pushButton_set_preview.setChecked(False)
+            self.pushButton_set_preview.blockSignals(False)
+
+            self.pushButton_set_preview.blockSignals(True)
+            self.pushButton_set_preview.setEnabled(False)
+            self.pushButton_set_preview.setChecked(False)
+            self.pushButton_set_preview.blockSignals(False)
+
+
+        self.pushButton_set_preview.blockSignals(True)
+        self.pushButton_set_preview.setEnabled(enabled)
+        self.pushButton_set_preview.blockSignals(False)
+
+
+
+    def set_enabled(self, enable):
+        # Disable preview if not allowed
+        self.pushButton_set_preview.setEnabled(enable)
+        self.pushButton_calculate.setEnabled(enable)
+
+        if not enable:
+            # Disable preview if not enable, but keep edition
+            self.pushButton_set_preview.blockSignals(True)
+            self.pushButton_set_preview.setChecked(False)
+            self.pushButton_set_preview.blockSignals(False)
 
 
     def refresh_values(self, frame:dict):
@@ -328,6 +370,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             self.label_message.setText("")
             return
 
+        pprint(stabilize_settings)
         is_enabled = stabilize_settings['enable']
         self.groupBox_stabilize.setChecked(is_enabled)
 
@@ -405,7 +448,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             pass
 
         self.tableWidget_stabilize.setEnabled(True)
-        self.pushButton_calculate.setEnabled(True)
+        if self.pushButton_set_preview.isEnabled():
+            self.pushButton_calculate.setEnabled(True)
         self.pushButton_set_end.setEnabled(True)
         self.pushButton_set_start.setEnabled(True)
         self.pushButton_set_ref.setEnabled(True)
@@ -552,6 +596,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def event_stabilize_requested(self):
         log.info("calculate")
+        self.signal_preview_requested.emit()
 
 
     def event_key_pressed(self, event):
@@ -597,6 +642,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             if self.pushButton_set_preview.isEnabled():
                 self.pushButton_set_preview.toggle()
                 return True
+        if key == Qt.Key_F7:
+            self.event_stabilize_requested()
+            return True
 
         if QApplication.focusObject() is self.tableWidget_stabilize:
             if key == Qt.Key_Delete:
@@ -624,7 +672,6 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             elif key == Qt.Key_Delete:
                 self.event_remove_segment_requested()
                 return True
-
             return self.ui.keyPressEvent(event)
 
         # print(event.type())

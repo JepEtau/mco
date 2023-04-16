@@ -40,7 +40,7 @@ class Model_replace():
     def is_replace_allowed(self, shot):
         # indicates if we can use the replace widget
         for f in shot['filters']:
-            if f['task'] == 'pre_replace':
+            if f['task'] == 'edition':
                 return True
         return False
 

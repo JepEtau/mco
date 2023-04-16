@@ -66,7 +66,7 @@ def extract_audio(db, k_ep:str, k_ed, force=False, verbose=False) -> str:
 
 
         # FFmpeg command
-        ffmpeg_command = [db['common']['settings']['ffmpeg_exe']]
+        ffmpeg_command = [db['common']['tools']['ffmpeg']]
         ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
         ffmpeg_command.extend([
             "-i", input_filepath,

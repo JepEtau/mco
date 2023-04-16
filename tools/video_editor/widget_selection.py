@@ -75,8 +75,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             'pre_upscale': self.radioButton_task_pre_upscale,
             'upscale': self.radioButton_task_upscale,
             'sharpen': self.radioButton_task_sharpen,
-            'pre_replace': self.radioButton_task_pre_replace,
-            'no_deshake': self.radioButton_task_no_deshake,
+            'edition': self.radioButton_task_edition,
         }
         for step_str, w in self.radioButtons_steps.items():
             w.clicked.connect(partial(self.event_step_changed, step_str))

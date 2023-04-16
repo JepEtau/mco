@@ -16,14 +16,14 @@ def main(arguments):
     application = QApplication(sys.argv)
 
     from filter_info.window_main import Window_main
-    from filter_info.model_filter_info import Model_filter_info
+    from filter_info.controller_filter_info import Controller_filter_info
 
-    main_model = Model_filter_info()
-    main_window = Window_main(main_model)
+    controller = Controller_filter_info()
+    main_window = Window_main(controller)
 
-    main_model.set_view(main_window)
+    controller.set_view(main_window)
     main_window.show()
-    main_model.load_file(arguments.input)
+    controller.load_file(arguments.input)
     sys.exit(application.exec())
 
 

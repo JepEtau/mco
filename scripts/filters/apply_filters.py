@@ -1,8 +1,13 @@
 # -*- coding: utf-8 -*-
+import multiprocessing
+from multiprocessing import *
+import concurrent.futures
+from concurrent.futures import ThreadPoolExecutor
 import os
-import sys
+import platform
 import cv2
 import gc
+import sys
 import torch
 from filters.avisynth import avisynth_deinterlace
 from filters.ffmpeg_deinterlace import ffmpeg_deinterlace
@@ -10,7 +15,7 @@ from filters.ffmpeg_filter import ffmpeg_filter
 from filters.python import apply_python_filters
 from filters.python_replace import (
     python_replace,
-    python_pre_replace,
+    python_edition,
 )
 from filters.utils import MAX_FRAMES_COUNT
 from filters.x_gan import (
@@ -26,6 +31,9 @@ from utils.get_image_list import (
 from utils.pretty_print import *
 
 
+
+def load_image(i, filepath):
+    return i, cv2.imread(filepath, cv2.IMREAD_COLOR)
 
 
 def apply_filters(db, shot, step_no_start=0, get_hashes=False):
@@ -65,6 +73,11 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
             # shot['last_step']['shape'] = img.shape
             # return hashes
 
+    if platform.system() == "Windows":
+        cpu_count = int(multiprocessing.cpu_count() * (3/4))
+    else:
+        cpu_count = 2
+
 
     # walk through filters
     for filter in filters:
@@ -81,8 +94,18 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
 
             if step_no > 0 and shot['count'] < MAX_FRAMES_COUNT and len(images) != shot['count']:
                 print_lightgrey("\t\t\tLoading %d images in memory, from %s" % (shot['count'], image_list[0]), flush=True)
-                images = [cv2.imread(f_input, cv2.IMREAD_COLOR) for f_input in image_list]
+
+                # images = [cv2.imread(f_input, cv2.IMREAD_COLOR) for f_input in image_list]
+                images = [None] * shot['count']
+                nos = list(range(shot['count']))
+                with ThreadPoolExecutor(max_workers=min(cpu_count, shot['count'])) as executor:
+                    work_result = {executor.submit(load_image, i, fp): list for i, fp in zip(nos, image_list)}
+                    for future in concurrent.futures.as_completed(work_result):
+                        i, img = future.result()
+                        images[i] = img
+
                 shot['last_step']['shape'] = images[0].shape
+
             elif step_no > 0:
                 if shot['count'] >= MAX_FRAMES_COUNT:
                     print("Error: cannot load %d images in memory, max: %d" % (shot['count'], MAX_FRAMES_COUNT), flush=True)
@@ -119,7 +142,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                         image_list=image_list,
                         scale=int(xgan['s']),
                         denoise=int(xgan['n']),
-                        module_path=db['common']['directories']['real_cugan'],
+                        directories=db['common']['directories'],
                         input_hash=hash,
                         step_no=step_no,
                         output_folder=output_folder,
@@ -137,7 +160,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                         image_list=image_list,
                         scale=2,
                         model_name=xgan['model'],
-                        module_path=db['common']['directories']['real_esrgan'],
+                        directories=db['common']['directories'],
                         input_hash=hash,
                         step_no=step_no,
                         output_folder=output_folder,
@@ -155,7 +178,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                         image_list=image_list,
                         scale=2,
                         model_name=xgan['model'],
-                        module_path=db['common']['directories']['esrgan'],
+                        directories=db['common']['directories'],
                         input_hash=hash,
                         step_no=step_no,
                         output_folder=output_folder,
@@ -196,7 +219,8 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                     get_hash=get_hashes)
 
             elif filter['str'] == 'pre_replace':
-                hash, image_list, images = python_pre_replace(
+                # This task is 'edition', save images that will be used by the video editor
+                hash, image_list, images = python_edition(
                     shot,
                     images=images,
                     image_list=image_list,

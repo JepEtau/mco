@@ -29,7 +29,7 @@ from utils.time_conversions import convert_s_to_m_s_ms, frame_no_to_sexagesimal
 
 
 # Extract more frames to verify frames no for each shot
-AVISYNTH_ADD_FRAMES = 2
+AVISYNTH_ADD_FRAMES = 0
 
 def avisynth_deinterlace(shot, image_list,
     step_no, filters_str, output_folder, db_common, get_hash:bool=False):
@@ -153,7 +153,6 @@ def avisynth_deinterlace(shot, image_list,
 
     # Generate FFv1 file if not exists
     if do_generate_ffv1_file:
-        sys.exit()
         ffmpeg_command = ffmpeg_command_common + [
             "-i", os.path.abspath(script_filepath),
             "-r", str(25),

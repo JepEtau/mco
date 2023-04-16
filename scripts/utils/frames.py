@@ -90,20 +90,21 @@ def copy_frames_for_study(db, k_ed, k_ep, k_part, last_task):
         suffix = "_%s" % (hash) if hash != '' else ''
         filename_template = FILENAME_TEMPLATE % (k_ep, k_ed, step_no, suffix)
 
-        if step_no == 0 or shot['last_task'] == 'pre_replace':
+        if step_no == 0 or shot['last_task'] == 'edition':
             new_frame_no = frame_no
         else:
-            new_frame_no = 0
-
-        image_filename = filename_template % (new_frame_no)
+            new_frame_no = frame_no - shot['start']
+        image_src_filename = filename_template % (new_frame_no)
         image_src_filepath = os.path.join(
             shot['cache'], "%02d" % (step_no),
-            image_filename)
-        image_dst_folder = os.path.join(
-            db_frames['path_output'],
-            f"{shot['no']:03}",
-            "%02d" % (step_no))
+            image_src_filename)
 
+        if k_part in K_GENERIQUES:
+            image_dst_folder = os.path.join(db_frames['path_output'])
+        else:
+            image_dst_folder = os.path.join(db_frames['path_output'], k_part)
+        image_dst_filename = filename_template % (frame_no)
+        image_dst_filepath = os.path.join(image_dst_folder, image_dst_filename)
 
         # Copy image
         if os.path.exists(image_src_filepath):
@@ -112,8 +113,8 @@ def copy_frames_for_study(db, k_ed, k_ep, k_part, last_task):
             if not os.path.exists(image_dst_folder):
                 os.makedirs(image_dst_folder)
 
-            print_lightgreen(f"{image_filename}: {shot['cache']}/{step_no:02} -> {image_dst_folder}")
-            shutil.copy2(image_src_filepath, image_dst_folder)
+            print_lightgreen(f"{image_src_filename}: {shot['cache']}/{step_no:02} -> {image_dst_filepath}")
+            shutil.copy2(image_src_filepath, image_dst_filepath)
 
         else:
             print_orange(f"{image_src_filepath}: missing file")

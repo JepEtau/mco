@@ -210,8 +210,8 @@ def consolidate_shot(db, shot) -> None:
 
     # Find replace filter
     for step_no, filter in zip(range(len(shot['filters'])), shot['filters']):
-        if filter['task'] in ['replace', 'pre_replace']:
-            shot['last_step']['step_no_replace'] = step_no
+        if filter['task'] in ['replace', 'edition']:
+            shot['last_step']['step_edition'] = step_no
             break
 
     # print_cyan("Filters: %s:%s:%s, shot no. %d" % (shot['k_ed'], shot['k_ep'], shot['k_part'], shot['no']))

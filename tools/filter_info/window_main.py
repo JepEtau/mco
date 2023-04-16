@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
 )
 
-from filter_info.model_filter_info import Model_filter_info
+from filter_info.controller_filter_info import Controller_filter_info
 from filter_info.ui.window_main_ui import Ui_MainWindow
 from utils.pretty_print import *
 
@@ -28,7 +28,7 @@ from utils.pretty_print import *
 
 class Window_main(QMainWindow, Ui_MainWindow):
 
-    def __init__(self, model:Model_filter_info):
+    def __init__(self, controller:Controller_filter_info):
         super(Window_main, self).__init__()
 
         # Create and Patch UI
@@ -67,7 +67,7 @@ class Window_main(QMainWindow, Ui_MainWindow):
         # self.lineEdit_filename.setAcceptDrops(True)
 
         # Get preferences from model
-        p = self.model.get_preferences()
+        p = self.controller.get_preferences()
         self.set_initial_options(p)
 
         # Events
@@ -76,7 +76,7 @@ class Window_main(QMainWindow, Ui_MainWindow):
         self.action_exit.setShortcut(u"Ctrl+Q")
         self.action_exit.triggered.connect(self.event_close)
 
-        self.model.signal_refresh_filters[dict].connect(self.event_refresh_filters)
+        self.controller.signal_refresh_filters[dict].connect(self.event_refresh_filters)
 
 
     def set_initial_options(self, preferences:dict):
@@ -171,7 +171,7 @@ class Window_main(QMainWindow, Ui_MainWindow):
     def dropEvent(self, event):
         urls = event.mimeData().urls()
         filepath = urls[0].toLocalFile()
-        self.model.event_new_file(filepath)
+        self.controller.event_new_file(filepath)
 
 
     def dragEnterEvent(self, event):
@@ -188,7 +188,7 @@ class Window_main(QMainWindow, Ui_MainWindow):
     def event_close(self):
         if not self.is_closing:
             self.is_closing = True
-            self.model.exit()
+            self.controller.exit()
             self.close_all_widgets()
 
 

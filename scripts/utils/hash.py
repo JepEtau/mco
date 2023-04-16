@@ -72,7 +72,7 @@ def get_hash_from_task(shot, task):
             return f['hash']
 
     pprint(shot['filters'])
-    sys.exit(print_red("Error: get_hash_from_step: [%s] not found" % (task)))
+    print_red("Error: get_hash_from_step: [%s] not found" % (task))
     return None
 
 

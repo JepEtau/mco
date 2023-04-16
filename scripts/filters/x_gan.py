@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 import cv2
 import os
 import sys
@@ -20,9 +21,9 @@ from utils.pretty_print import *
 
 
 def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:int,
-    module_path:str, input_hash, step_no, output_folder:str, get_hash:bool=False, do_force:bool=False):
+    directories:str, input_hash, step_no, output_folder:str, get_hash:bool=False, do_force:bool=False):
 
-    print_green(module_path)
+    module_path = os.path.join(directories['3rd_party'], directories['real_cugan'])
     sys.path.append(module_path)
     from upcunet_v3 import RealWaifuUpScaler
 
@@ -34,14 +35,15 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
             2: 'denoise2x',
             3: 'denoise3x',
         }
-        model_name = "up%dx-latest-%s.pth" % (scale, denoise_to_model[denoise])
+        model_name = f"up{scale}x-latest-{denoise_to_model[denoise]}.pth"
+
     # else:
     #     if denoise == 5:
     #         model_name = ""
 
-    model_path = os.path.join(module_path, "weights_v3", model_name)
-    if not os.path.isfile(model_path):
-        raise Exception("Error: model file %s does not exist" % (model_path))
+    model_filepath = os.path.join(directories['3rd_party'], "models", 'real_cugan', model_name)
+    if not os.path.isfile(model_filepath):
+        raise Exception("Error: model file %s does not exist" % (model_filepath))
 
     # ModelName="up2x-latest-no-denoise.pth"
     # ModelName="up2x-latest-denoise1x.pth"
@@ -85,7 +87,7 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
     # Load model
     upscaler = RealWaifuUpScaler(
         scale=scale,
-        weight_path=model_path,
+        weight_path=model_filepath,
         half=half,
         device=device)
 
@@ -135,19 +137,21 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
 
 
 def upscale_real_esrgan(shot, images:list, image_list:list,
-    scale:int, model_name:str, module_path:str, input_hash:str, step_no, output_folder:str,
+    scale:int, model_name:str, directories:str, input_hash:str, step_no, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
+    module_path = os.path.join(directories['3rd_party'], directories['real_esrgan'])
     sys.path.append(module_path)
     from realesrgan.archs.srvgg_arch import SRVGGNetCompact
     from realesrgan import RealESRGANer
     from basicsr.archs.rrdbnet_arch import RRDBNet
 
-    model_filepath = os.path.join(module_path, "weights", "%s.pth" % (model_name))
+    model_filepath = os.path.join(directories['3rd_party'], "models", 'real_esrgan', "%s.pth" % (model_name))
     if not os.path.isfile(model_filepath):
         sys.exit(print_red("Error: model file %s does not exist" % (model_filepath)))
 
     # log hash
+    netscale = -1
     if model_name == 'realesr-animevideov3':
         suffix = "animevideov3"
         netscale = 4
@@ -159,7 +163,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
         netscale = 1
     elif model_name == '2x_LD-Anime_Compact_330k_net_g':
         suffix = "2x_LD-Anime_Compact_330k_net_g"
-        netscale = 4
+        netscale = 2
     elif model_name == 'RealESRGAN_x2plus':
         suffix = "RealESRGAN_x2plus"
         netscale = 2
@@ -169,12 +173,15 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     elif model_name == 'sudo_RealESRGAN2x_Dropout_3.799.042_G':
         suffix = 'sudo_3.799.042_G'
         netscale = 2
-    elif model_name.startswith('4x_'):
-        suffix = model_name
-        netscale = 4
     else:
         suffix = model_name
-        netscale = 2
+
+    match = re.match("^([\d]{1})[xX]{1}.*", model_name)
+    if match is not None:
+        netscale = int(match.group(1))
+
+    if netscale == -1:
+        sys.exit(print_red(f"Error, cannot find netscale for model {model_name}"))
 
     # Hash
     filter_str = "%s,%s" % (input_hash, suffix)
@@ -296,10 +303,11 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
 
 
 def upscale_esrgan(shot, images:list, image_list:list,
-    scale:int, model_name:str, module_path:str, input_hash, step_no, output_folder:str,
+    scale:int, model_name:str, directories:str, input_hash, step_no, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
-    model_filepath = os.path.join(module_path, "models", "%s.pth" % (model_name))
+    module_path = os.path.join(directories['3rd_party'], directories['esrgan'])
+    model_filepath = os.path.join(directories['3rd_party'], "models", 'esrgan', "%s.pth" % (model_name))
     if not os.path.isfile(model_filepath):
         sys.exit(print_red("Error: model file %s does not exist" % (model_filepath)))
 
@@ -353,8 +361,15 @@ def upscale_esrgan(shot, images:list, image_list:list,
     elif model_name == '1x_ReFocus_V3_140000_G':
         suffix = '1x_ReFocus_V3_140000_G'
         scale = 1
+    elif model_name == '1x_BeaverIt.pth':
+        suffix = '1x_BeaverIt.pth'
+        scale = 1
     else:
         suffix = model_name
+
+    match = re.match("^([\d]{1})[xX]{1}_.*", model_name)
+    if match is not None:
+        scale = int(match.group(1))
 
     # Hash
     filter_str = "%s,%s" % (input_hash, model_name)
@@ -420,7 +435,7 @@ def upscale_esrgan(shot, images:list, image_list:list,
                 img = cv2.imread(image_list[f_no], cv2.IMREAD_COLOR)
 
             # Upscale
-            output_img = esrgan_upscale.upscale(
+            output_img = esrgan_upscale.run(
                 img=img,
                 scale=scale)
 

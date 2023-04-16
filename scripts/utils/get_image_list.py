@@ -10,8 +10,8 @@ def get_first_image_filepath(shot, folder, step_no, hash=''):
     suffix = "_%s" % (hash) if hash != '' else ''
     filename_template = FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, suffix)
 
-    if step_no == 0 or shot['last_task'] == 'pre_replace':
-        # Deinterlace or pre_replace uses the original frame no.
+    if step_no == 0 or shot['last_task'] == 'edition':
+        # Deinterlace or edition uses the original frame no.
         print("\t\t\tget_first_image_filepath: deinterlaced")
         new_frame_no = shot['start']
     else:
@@ -23,7 +23,7 @@ def get_first_image_filepath(shot, folder, step_no, hash=''):
 
 
 def get_new_image_list(shot, step_no, hash=''):
-    # if step_no != shot['last_step']['step_no_replace'])
+    # if step_no != shot['last_step']['step_edition'])
     #     sys.exit()
     print_orange("\t\t\tget_new_image_list: use replace list, step=%d" % (step_no))
 
@@ -65,10 +65,11 @@ def get_new_image_list(shot, step_no, hash=''):
 
 def get_image_list(shot, folder, step_no, hash=''):
     try:
-        if step_no == shot['last_step']['step_no_replace']:
-            print_red("error: get_image_list, current step is step_no")
+        if step_no == shot['last_step']['step_edition']:
+            print_red("warning: get_image_list, current step is step_edition")
+            return get_image_list_pre_replace(shot, folder, step_no, hash=hash)
     # try:
-    #     if step_no == shot['last_step']['step_no_replace']:
+    #     if step_no == shot['last_step']['step_edition']:
     #         return get_new_image_list(shot=shot, step_no=step_no, hash=hash)
     except:
         # print_orange("get_image_list: continue, step=%d" % (step_no))

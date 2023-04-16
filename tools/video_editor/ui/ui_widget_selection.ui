@@ -216,22 +216,12 @@
          </widget>
         </item>
         <item>
-         <widget class="QRadioButton" name="radioButton_task_pre_replace">
+         <widget class="QRadioButton" name="radioButton_task_edition">
           <property name="focusPolicy">
            <enum>Qt::NoFocus</enum>
           </property>
           <property name="text">
-           <string>sharpen, no replace</string>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QRadioButton" name="radioButton_task_no_deshake">
-          <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
-          </property>
-          <property name="text">
-           <string>sharpen, no replace, no deshake</string>
+           <string>edition</string>
           </property>
          </widget>
         </item>

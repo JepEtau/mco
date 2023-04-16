@@ -22,7 +22,7 @@ def consolidate_filters(shot):
                 filter['str'] += "=no_border"
 
 
-    # Insert 'replace' at the right place
+    # Insert 'replace' at the right position
     is_inserted = False
     replace_filter = {
         'type': 'python',
@@ -103,7 +103,7 @@ def consolidate_filters(shot):
     # Append RGB curves
     shot['filters'].append({
         'type': 'python',
-        'save': True if shot['count'] >= MAX_FRAMES_COUNT else False,
+        'save': False,
         'str': 'rgb',
         'task': 'rgb'
     })
@@ -118,31 +118,41 @@ def consolidate_filters(shot):
     })
 
 
-    # Patch the list for 'pre_replace' task
-    if shot['last_task'] == 'pre_replace':
+    # Patch the list for 'edition' task
+    if shot['last_task'] == 'edition':
         # Change the task 'replace' into 'null'
         for filter in shot['filters']:
             if filter['task'] == 'replace':
-                filter['type'] = 'null'
-                filter['task'] = ''
-                filter['str'] = ''
+                filter.update({'type': 'null', 'task': '', 'str': ''})
+            elif 'deshake' in filter['str']:
+                filter.update({'type': 'null', 'task': '', 'str': ''})
 
-        # Now insert a 'pre_replace' task just before 'rgb' filter
-        replace_filter = {
+        # Now insert an 'edition' task just before 'rgb' filter
+        edition_filter = {
             'type': 'python',
             'save': True,
             'str': 'pre_replace',
-            'task': 'pre_replace',
+            'task': 'edition',
         }
         for step_no in range(len(shot['filters'])):
             filter = shot['filters'][step_no]
 
             if filter['task'] == 'rgb':
-                # Do not save the previous filter because the 'pre_replace' filter will do it
+                # Do not save the previous filter because the 'edition' filter will do it
                 shot['filters'][step_no-1]['save'] = False
                 # Insert the pre_upsacle filter
-                shot['filters'].insert(step_no, replace_filter)
+                shot['filters'].insert(step_no, edition_filter)
+                edition_step_no = step_no
                 break
+
+        # Simplify
+        for step_no in range(edition_step_no-1, 1 , -1):
+            print(f"step_no = {step_no}")
+            f = shot['filters'][step_no]
+            if not (f['task'] == '' and f['type'] == 'null'):
+                f.update({'task': 'edition', 'save': True})
+                break
+
 
 
     # Force saving last task

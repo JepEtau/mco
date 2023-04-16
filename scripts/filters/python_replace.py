@@ -64,7 +64,7 @@ def python_replace(shot:dict,
     return hash, output_image_list, images
 
 
-def python_pre_replace(shot:dict,
+def python_edition(shot:dict,
         images:list, image_list:list,
         step_no:int,
         filters_str:str,

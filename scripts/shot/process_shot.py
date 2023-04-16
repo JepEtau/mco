@@ -48,8 +48,8 @@ def process_shot(db, shot, cpu_count=0):
     gc.collect()
 
 
-    # No effects if last task is pre_replace
-    if shot['last_task'] == 'pre_replace':
+    # No effects if last task is edition. deinterlace task ?
+    if shot['last_task'] == 'edition':
         return
 
     # Effects

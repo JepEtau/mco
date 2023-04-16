@@ -61,12 +61,12 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
                 hash=hash)
 
     else:
-        if shot['last_task'] == 'pre_replace':
+        if shot['last_task'] == 'edition':
             image_list = get_image_list_pre_replace(shot=shot,
                 folder=current_output_folder,
                 step_no=step_no,
                 hash=hash)
-        elif step_no == shot['last_step']['step_no_replace']:
+        elif step_no == shot['last_step']['step_edition']:
             image_list = get_new_image_list(shot=shot,
                 step_no=step_no,
                 hash=shot['filters'][step_no - STEP_INC]['hash'])
@@ -131,7 +131,7 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
 
 
     # Add files for effects
-    if 'effects' in shot.keys():
+    if 'effects' in shot.keys() and shot['last_task'] != 'edition':
         effect = shot['effects'][0]
         print_lightgreen("get_frame_list_single: effect=%s" % (effect))
 
@@ -220,7 +220,7 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
             shot_src_start = shot['src']['start']
             shot_src_count = shot['src']['count']
             filename_template = FILENAME_TEMPLATE % (k_ep_src, k_ed, step_no, suffix)
-            if shot['last_task'] not in ['deinterlace', 'pre_replace']:
+            if shot['last_task'] not in ['deinterlace', 'edition']:
                 shot_src_start = 0
 
             for f_no in range(shot_src_start + shot_src_count,
@@ -317,7 +317,7 @@ def get_frame_list_single(db, k_ep, k_part, shot) -> list:
 
             # Append the frames before the loop
             filename_template = FILENAME_TEMPLATE % (k_ep_src, k_ed, step_no, suffix)
-            if shot['last_task'] not in ['deinterlace', 'pre_replace']:
+            if shot['last_task'] not in ['deinterlace', 'edition']:
                 end -= start
                 start = 0
             print_orange("start=%d, end=%d" % (start, end))
@@ -327,7 +327,7 @@ def get_frame_list_single(db, k_ep, k_part, shot) -> list:
 
             # Loop
             filename_template = FILENAME_TEMPLATE % (k_ep_src, k_ed, step_no, suffix)
-            if shot['last_task'] in ['deinterlace', 'pre_replace']:
+            if shot['last_task'] in ['deinterlace', 'edition']:
                 filepath = os.path.join(input_folder, filename_template % (frame_no))
             else:
                 filepath = os.path.join(input_folder, filename_template % (frame_no - shot['start']))
@@ -380,7 +380,7 @@ def get_frame_list_single(db, k_ep, k_part, shot) -> list:
             shot_src_start = shot['src']['start']
             shot_src_count = shot['src']['count']
             filename_template = FILENAME_TEMPLATE % (k_ep_src, k_ed, step_no, suffix)
-            if shot['last_task'] not in ['deinterlace', 'pre_replace']:
+            if shot['last_task'] not in ['deinterlace', 'edition']:
                 shot_src_start = 0
 
             for f_no in range(shot_src_start + shot_src_count,

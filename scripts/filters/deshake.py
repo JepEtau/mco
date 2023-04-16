@@ -30,7 +30,7 @@ def verify_stabilize_segments(shot, segments):
 
     # 1st segment
     previous_segment = segments[0]
-    if previous_segment['end'] >= shot['count']:
+    if previous_segment['end'] >= shot['start'] + shot['count']:
         # Segment shall fit in shot
        return False
 
@@ -39,7 +39,7 @@ def verify_stabilize_segments(shot, segments):
         return True
 
     for segment in segments [1:]:
-        if segment['end'] >= shot['count']:
+        if segment['end'] >= shot['start'] + shot['count']:
             # Segment shall fit in shot
             return False
 
@@ -80,7 +80,7 @@ def deshake(shot, images:list, image_list:list,
     # Convert to indexes
     for segment in segments:
         segment['count'] = segment['end'] - segment['start'] + 1
-        # segment['start'] -= shot['start']
+        segment['start'] -= shot['start']
 
     # Patch segments
     # if len(segments) == 2:
@@ -185,8 +185,6 @@ def deshake(shot, images:list, image_list:list,
                 get_hash=get_hash,
                 do_force=do_force)
             del deshaker
-            print(transformations)
-
 
         elif algorithm == 'skimage_deshaker':
             deshaker = Skimage_deshaker()
