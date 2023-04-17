@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys
+import time
+
+from filters.deshakers import STABILIZE_BORDER_HIGH_RES
 sys.path.append('../scripts')
 import cv2
 import numpy as np
@@ -30,10 +33,12 @@ def generate_image(frame:dict, preview_options:dict):
         pprint(geometry_values)
 
     # Initial image
-    if frame['cache_deshake'] is not None:
+    if frame['cache_deshake'] is not None and preview_options['stabilize']['enabled']:
         img_original = frame['cache_deshake']
+        is_using_deshake = True
     else:
         img_original = frame['cache_initial']
+        is_using_deshake = False
     img_height, img_width, c = img_original.shape
 
 
@@ -56,8 +61,21 @@ def generate_image(frame:dict, preview_options:dict):
     preview_shot_geometry = preview_options['geometry']['shot']
 
     # Cropped dimensions
+    if preview_options['stabilize']['enabled']:
+        print_yellow(f"{time.time():.02f} stabilize is enabled, change crop values")
+        print(shot_geometry['crop'])
+        print("to")
+        crop_values = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
+        print(crop_values)
+        if not is_using_deshake:
+            print("deshake image not used ERRRRRRRRRRRRRRRRRRRRRRRRRRRRROOOOOOOOOOOOOORRRRRRRR")
+    else:
+        crop_values = shot_geometry['crop']
+        if is_using_deshake:
+            print("WHATTTT? deshake image is used")
+
     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-        width=img_width, height=img_height, crop=shot_geometry['crop'])
+        width=img_width, height=img_height, crop=crop_values)
 
     # Apply RGB curves
     #------------------------------------

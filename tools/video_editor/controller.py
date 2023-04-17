@@ -63,6 +63,7 @@ class Controller_video_editor(Controller_common,
     # Send a signal to inform that the shot changed
     # UI shall update all widgets
     signal_shot_changed = Signal(dict)
+    signal_preview_options_consolidated = Signal(dict)
 
 
 
@@ -463,8 +464,8 @@ class Controller_video_editor(Controller_common,
 
         new_shot_id = f"{shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}"
         if previous_shot_id != new_shot_id:
-            new_preview_options = self.consolidate_preview_options()
-            self.signal_shot_changed.emit(new_preview_options)
+            self.consolidate_preview_options()
+            self.signal_shot_changed.emit(self.preview_options)
 
 
     def event_save_and_close_requested(self):
@@ -627,32 +628,35 @@ class Controller_video_editor(Controller_common,
             # Cannot generate the image because no preview option is defined
             # The preview options will be updated by the window UI
 
-
-
         return self.current_frame
 
 
 
+
     def event_preview_options_changed(self, preview_options):
-        verbose = True
-        if verbose:
-            print_lightcyan("\npreview mode changed:")
-            pprint(preview_options)
         self.preview_options = preview_options
         self.consolidate_preview_options()
-        if verbose:
-            print_lightgreen("\tconsolidated:")
-            pprint(self.preview_options)
         self.signal_reload_frame.emit()
+
 
 
     def consolidate_preview_options(self):
         # Modify preview settings because some widget have to be disabled
         options = self.preview_options
 
-        if self.current_task not in ['edition', 'sharpen', 'pre_rgb']:
-            # Geometry is disabled before upscale
-            options['geometry']['enabled'] = False
+        verbose = True
+        if verbose:
+            print(f"Consolidate preview options, task: {self.current_task}")
+            print_lightcyan("\npreview mode changed:")
+            pprint( self.preview_options)
+
+        options['replace']['allowed'] = True
+        if self.current_task == 'edition':
+            options['geometry']['allowed'] = True
+            options['stabilize']['allowed'] = True
+        else:
+            options['geometry']['allowed'] = False
+            options['stabilize']['allowed'] = False
 
         if self.current_task not in ['edition']:
             # Stabilize is disable if not in edition mode
@@ -666,7 +670,7 @@ class Controller_video_editor(Controller_common,
             # Force replace if stabilize
             options['replace']['enabled'] = True
 
-        if not options['geometry']['enabled']:
+        if not options['geometry']['allowed']:
             # If geometry is disabled, disable all preview
             tmp = options['geometry']['shot']['is_default']
             for k0 in options['geometry'].keys():
@@ -680,6 +684,11 @@ class Controller_video_editor(Controller_common,
 
         self.preview_options = options
 
+        if verbose:
+            print_lightgreen("\tconsolidated:")
+            pprint(self.preview_options)
+
+        self.signal_preview_options_consolidated.emit(self.preview_options)
 
 
     # Deshake/stabilize
@@ -744,12 +753,13 @@ class Controller_video_editor(Controller_common,
         self.signal_is_saved.emit('stabilize')
 
 
+
     def event_stabilize_preview_requested(self):
         shot = self.current_shot()
         shot_no = shot['no']
 
         # Get stabilization parameters
-        print_lightcyan("event_stabilize_preview_requested")
+        print_lightcyan("Stabilization requested")
         settings = self.model_database.get_shot_stabilize_settings(shot=shot)
         is_valid = verify_stabilize_segments(shot=shot, segments=settings['segments'])
         if not is_valid:
@@ -795,8 +805,10 @@ class Controller_video_editor(Controller_common,
         for f, img in zip(self.frames[shot_no], output_images):
             f['cache_deshake'] = img
 
+        # Consolidate preview
+        self.preview_options['stabilize']['enabled'] = True
+        self.consolidate_preview_options()
         self.signal_reload_frame.emit()
-
 
 
 def load_image(i, f):

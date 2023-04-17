@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
+
+from filters.deshakers import STABILIZE_BORDER_HIGH_RES
 sys.path.append('../scripts')
 from copy import deepcopy
 
@@ -31,6 +33,14 @@ class Controller_geometry():
         k_ep = self.current_frame['k_ep']
         k_part = self.current_frame['k_part']
         shot = self.current_shot()
+        crop_min = 0
+        try:
+            stabilize_settings = self.model_database.get_shot_stabilize_settings(shot=shot)
+            if stabilize_settings['enable']:
+                crop_min = -STABILIZE_BORDER_HIGH_RES
+        except:
+            pass
+
         # print_green("\nevent_geometry_modified for %s:%s" % (k_ep, k_part))
         # print(event)
         element = event['element']
@@ -82,16 +92,16 @@ class Controller_geometry():
                     crop_top, c_bottom, c_left, c_right = geometry['crop']
 
                 if parameter == 'crop_top':
-                    geometry['crop'][0] = max(0, min(crop_top + value, 400))
+                    geometry['crop'][0] = max(crop_min, min(crop_top + value, 400))
 
                 elif parameter == 'crop_bottom':
-                    geometry['crop'][1] = max(0, min(c_bottom - value, 400))
+                    geometry['crop'][1] = max(crop_min, min(c_bottom - value, 400))
 
                 elif parameter == 'crop_left':
-                    geometry['crop'][2] = max(0, min(c_left + value, 400))
+                    geometry['crop'][2] = max(crop_min, min(c_left + value, 400))
 
                 elif parameter == 'crop_right':
-                    geometry['crop'][3] = max(0, min(c_right + value, 400))
+                    geometry['crop'][3] = max(crop_min, min(c_right + value, 400))
 
             elif parameter in ['keep_ratio', 'fit_to_width']:
                 nested_dict_set(geometry, value, parameter)

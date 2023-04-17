@@ -220,6 +220,19 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.groupBox_shot_geometry.blockSignals(False)
 
 
+    def refresh_preview_options(self, new_preview_settings):
+        try:
+            self.is_edition_allowed = new_preview_settings['geometry']['allowed']
+        except:
+            self.is_edition_allowed = False
+
+        self.pushButton_set_preview.blockSignals(True)
+        if self.is_edition_allowed:
+            self.pushButton_set_preview.setEnabled(True)
+        else:
+            self.pushButton_set_preview.setEnabled(False)
+            self.pushButton_set_preview.setChecked(False)
+        self.pushButton_set_preview.blockSignals(False)
 
 
     def event_is_modified(self, element, event_type, parameter, value):
@@ -361,7 +374,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
     def get_preview_options(self):
         log.info("get_preview_options")
         preview_options = {
-            'enabled': self.is_edition_allowed,
+            'allowed': self.is_edition_allowed,
             'final_preview': self.pushButton_set_preview.isChecked(),
             'target': {
                 'width_edition': self.pushButton_target_width_edition.isChecked(),

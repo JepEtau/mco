@@ -27,7 +27,12 @@ from common.window_common import (
     PAINTER_MARGIN_LEFT,
     PAINTER_MARGIN_TOP,
 )
-from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
+from filters.deshakers import STABILIZE_BORDER_HIGH_RES
+from filters.utils import (
+    FINAL_FRAME_HEIGHT,
+    FINAL_FRAME_WIDTH,
+    get_dimensions_from_crop_values,
+)
 from common.widget_controls import Widget_controls
 from video_editor.widget_selection import Widget_selection
 from video_editor.widget_curves import Widget_curves
@@ -88,6 +93,8 @@ class Window_main(Window_common):
             self.widget_stabilize.set_initial_options(p)
             self.widget_stabilize.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'stabilize'))
             self.widget_stabilize.signal_frame_selected[int].connect(self.event_frame_no_selected)
+            self.widget_stabilize.signal_show_guidelines_changed[bool].connect(self.event_show_guidelines_changed)
+        self.show_guidelines = False
 
         # Player controls
         if 'controls' in self.widgets.keys():
@@ -107,11 +114,12 @@ class Window_main(Window_common):
         self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
         self.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
 
-        # Model
-        self.controller.signal_shot_changed.connect(self.event_shot_changed)
+        # Controller
+        self.controller.signal_shot_changed[dict].connect(self.event_shot_changed)
         self.controller.signal_ready_to_play[dict].connect(self.event_ready_to_play)
         self.controller.signal_reload_frame.connect(self.event_reload_frame)
         self.controller.signal_close.connect(self.event_close_without_saving)
+        self.controller.signal_preview_options_consolidated.connect(self.event_preview_options_consolidated)
 
         # Show window/widgets and connect signals
         for w in self.widgets.values():
@@ -125,8 +133,13 @@ class Window_main(Window_common):
 
 
     def event_shot_changed(self, new_preview_settings):
-        self.widget_replace.event_shot_changed(new_preview_settings)
-        self.widget_stabilize.event_shot_changed(new_preview_settings)
+        self.event_preview_options_consolidated(new_preview_settings)
+
+
+    def event_preview_options_consolidated(self, new_preview_settings):
+        self.widget_replace.refresh_preview_options(new_preview_settings)
+        self.widget_stabilize.refresh_preview_options(new_preview_settings)
+        self.widget_geometry.refresh_preview_options(new_preview_settings)
 
 
 
@@ -178,6 +191,10 @@ class Window_main(Window_common):
         self.repaint()
         # print("\t\t%f" % int(1000 * (time.time() - now)))
 
+
+    def event_show_guidelines_changed(self, enabled):
+        self.show_guidelines = enabled
+        self.repaint()
 
 
     def get_rgb_value(self, xr, yr):
@@ -255,6 +272,10 @@ class Window_main(Window_common):
                     self.setCursor(Qt.SizeAllCursor)
                 else:
                     self.get_rgb_value(x, y)
+                if line is not None:
+                    self.repaint()
+                event.accept()
+                return True
             else:
                 print("\t-> cache_initial: ", self.image['cache_initial'].shape)
                 self.get_rgb_value(x, y)
@@ -279,7 +300,9 @@ class Window_main(Window_common):
             elif line == "both":
                 self.setCursor(Qt.SizeAllCursor)
             event.accept()
-            self.event_reload_frame()
+            if line is not None:
+                self.repaint()
+
 
         elif self.current_editor == 'curves':
             if self.widget_curves.move_split_line(x):
@@ -305,14 +328,17 @@ class Window_main(Window_common):
                 self.setCursor(Qt.SplitVCursor)
             elif line == "both":
                 self.setCursor(Qt.SizeAllCursor)
-            self.event_reload_frame()
+            else:
+                self.get_rgb_value(x, y)
+            if line is not None:
+                self.repaint()
 
 
     def mouseReleaseEvent(self, event):
         self.setCursor(Qt.ArrowCursor)
         self.widget_curves.split_line_released(event.x())
         self.widget_stabilize.guidelines_released(event.x(), event.y())
-
+        self.repaint()
 
     def wheelEvent(self, event):
         if self.current_editor == 'geometry':
@@ -479,12 +505,18 @@ class Window_main(Window_common):
                     else:
                         # print("paintEvent: draw rect crop on the original image")
                         # Original
-                        self.painter.drawImage(
-                            QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
+                        x0 = PAINTER_MARGIN_LEFT
+                        y0 = PAINTER_MARGIN_TOP - delta_y
+                        crop = shot_geometry['crop']
+                        if preview['stabilize']['enabled']:
+                            # x0 += STABILIZE_BORDER_HIGH_RES
+                            # y0 += STABILIZE_BORDER_HIGH_RES
+                            crop = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
+                        self.painter.drawImage(QPoint(x0, y0), q_image)
 
                         # Add a red rect for the crop
                         crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                            width=initial_img_width, height=initial_img_height, crop=shot_geometry['crop'])
+                            width=initial_img_width, height=initial_img_height, crop=crop)
 
                         pen = QPen(COLOR_CROP_RECT)
                         pen.setWidth(PEN_CROP_SIZE)
@@ -493,6 +525,11 @@ class Window_main(Window_common):
                         # https://doc.qt.io/qt-6/qrect.html, PEN_CROP_SIZE = 1
                         # print("\timg: %dx%d" % (img.data.shape[1], img.data.shape[0]))
                         # print("\trect: (%d;%d) w=%d, h=%d" % (c_l - 1, c_t - delta_y - 1, c_w + 1, c_h + 1))
+
+                        if preview['stabilize']['enabled']:
+                            cropped_width += 2*STABILIZE_BORDER_HIGH_RES
+                            cropped_height += 2*STABILIZE_BORDER_HIGH_RES
+
                         self.painter.drawRect(
                             PAINTER_MARGIN_LEFT + crop_left - 1,
                             PAINTER_MARGIN_LEFT + crop_top - delta_y - 1,
@@ -595,19 +632,19 @@ class Window_main(Window_common):
                     preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top,
                     preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top + max(img_height, FINAL_FRAME_HEIGHT))
 
-            if preview['stabilize']['guidelines']:
-                try: crop_top = 0 if preview_shot_geometry['resize_preview'] else (-1*crop_top)
-                except:  crop_top = 0
+            if self.show_guidelines:
+                x, y = self.widget_stabilize.guidelines_coordinates()
+
                 pen = QPen(QColor(255,255,255))
                 pen.setStyle(Qt.SolidLine)
                 self.painter.setPen(pen)
                 self.painter.drawLine(
-                    preview['stabilize']['vertical_line_x'], 10,
-                    preview['stabilize']['vertical_line_x'], 10 + max(img_height, FINAL_FRAME_HEIGHT))
+                    x, 10,
+                    x, 10 + max(img_height, FINAL_FRAME_HEIGHT))
 
                 self.painter.drawLine(
-                    10,                                    preview['stabilize']['horizontal_line_y'] ,
-                    10 + max(img_width, FINAL_FRAME_WIDTH), preview['stabilize']['horizontal_line_y'] )
+                    10, y,
+                    10 + max(img_width, FINAL_FRAME_WIDTH), y)
 
 
             self.painter.end()

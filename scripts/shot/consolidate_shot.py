@@ -6,6 +6,7 @@ from pprint import pprint
 
 from filters.apply_filters import apply_filters
 from filters.consolidate import consolidate_filters
+from filters.deshakers import STABILIZE_BORDER_HIGH_RES
 from filters.utils import (
     get_filters_from_shot,
     get_step_no_from_last_task,
@@ -154,6 +155,7 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
             target_geometry = None
         nested_dict_set(shot, target_geometry, 'geometry', 'target')
 
+        # Get default geometry for a shot
         try:
             default_shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['geometry']
             default_shot_src_geometry['is_default'] = True
@@ -165,6 +167,7 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
                 'is_default': True
             }
 
+        # Get the customized geometry for a shot
         try:
             shot_src_geometry = db[k_ep_src]['video'][k_ed_src][k_part_src]['shots'][shot_no_src]['geometry']['shot']
             shot_src_geometry['is_default'] = False
@@ -172,12 +175,23 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
             shot_src_geometry = None
 
         if shot_src_geometry is not None:
+            # Use the customized
             nested_dict_set(shot, shot_src_geometry, 'geometry', 'shot')
             shot['geometry']['shot']['is_default'] = False
         else:
+            # Use the default because no customized defined
             nested_dict_set(shot, default_shot_src_geometry, 'geometry', 'shot')
             try: shot['geometry']['shot']['is_default'] = True
             except: pass
+
+        # Update the crop values if deshake/stabilize will be done
+        try:
+            if shot['deshake']['enable']:
+                shot['geometry']['shot']['crop'] = list(
+                    map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot['geometry']['shot']['crop']))
+        except:
+            shot['geometry']['shot']['crop'] = list(
+                map(lambda x: min(0, x), shot['geometry']['shot']['crop']))
 
     nested_dict_set(shot,
         db['common']['dimensions']['final'],

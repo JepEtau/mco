@@ -5,6 +5,7 @@
 (2)
 - create a pre_rgb filter to modify RGB with deshaked/replaced images only
 - remove 'save images' after deinterlacing from ffv1 file unless last task is deinterlace
+- verify negative values for crop values when deshake is disable
 
 (3)
 - Create "other filters": replace some images by white images
@@ -38,6 +39,7 @@
 - F5 to refresh current shot only
 - Ctrl+F5 to refresh all shots
 - display filters for the shot
+- (?)Replace not allowed when multiple shot selected
 
 
 # TODO other
