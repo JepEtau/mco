@@ -157,7 +157,7 @@ def parse_editions(database, cfg_foldername, verbose=False):
             config.read(edition_common_filename)
             for k_section in config.sections():
                 if k_section.startswith("filters"):
-                    parse_filters(db_editions[k_ed], config, k_section, verbose)
+                    parse_filters(db_editions[k_ed], config, k_section)
                     continue
 
                 if k_section == 'dimensions':

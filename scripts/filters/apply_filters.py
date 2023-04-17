@@ -253,8 +253,8 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                     hash = previous_hash
                     hashes.append([step_no, '', ''])
                     step_no += STEP_INC
-                    if filter['str'] != 'deshake':
-                        print_red("\t\t\terror: python filter: something went wrong: %s" % (filter['str']))
+                    if filter['str'] != 'deshake' and filter['str'] != 'rgb':
+                        print_yellow("\t\t\twarning: python filter: something went wrong: %s" % (filter['str']))
 
                     # Exit if last task
                     if not get_hashes and filter['task'] == shot['last_task']:

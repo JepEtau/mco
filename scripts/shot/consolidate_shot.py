@@ -39,6 +39,13 @@ def consolidate_shot(db, shot) -> None:
         None
 
     """
+    verbose = True
+    if verbose:
+        print_lightgreen("Consolidate shot:")
+        print_lightcyan("================================== SHOT =======================================")
+        pprint(shot)
+        print_lightcyan("-------------------------------------------------------------------------------")
+
 
     # k_ed, k_ep and k_part are the source keys for this shot
     # [dst][k_ep] and [dst][k_part] are the destination (i.e. target)

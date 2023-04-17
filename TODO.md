@@ -1,29 +1,24 @@
-# TODO: script
+# TODO script
 (1)
-- simplify filters for video edition (deshake/replace): remove deshake, replace, rgb, geometry. Temp solution: replace deshake by null in filters or remove stabilize ini file
 - geometry: use stabilize padding value: already done? seems not
-- bug s:ep2, output mkv filename
-- custom filter depending on shot: g_debut
-- 2xHFA2kCompact_net_g_74000
-
 
 (2)
 - create a pre_rgb filter to modify RGB with deshaked/replaced images only
 - remove 'save images' after deinterlacing from ffv1 file unless last task is deinterlace
 
 (3)
-- add 'extract filter to deinterlace source  with yadif deinterlacer
 - Create "other filters": replace some images by white images
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
+- add 'extract filter to deinterlace source  with yadif deinterlacer
 - clean filters.py
 - (?) smooth stabilization: to evaluate
 
 
-# TODO: video editor
+# TODO video editor
 (1)
 - preview button for stabilize
-- memorize transformation
+- use transformation saved in a cache list
 
 (2)
 - add loop mode
@@ -42,5 +37,9 @@
 - Ctrl+F5 to refresh all shots
 - display filters for the shot
 
-# TODO: other
+
+# TODO other
 - create a script to remove previous images
+- retry animesr
+- list models that are already tested
+- 2xHFA2kCompact_net_g_74000

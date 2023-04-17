@@ -31,7 +31,7 @@ STABILIZE_MODES = ['vertical', 'horizontal', 'rotation']
 
 
 def parse_stabilize_configurations(db, k_ep_or_g:str):
-    verbose = True
+    verbose = False
 
     # Open configuration file
     filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_stabilize.ini" % (k_ep_or_g))

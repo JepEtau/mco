@@ -189,7 +189,7 @@ def parse_episode(db, k_ed, k_ep):
         # Filters
         #----------------------------------------------------
         elif k_section.startswith("filters"):
-            parse_filters(db_video, config, k_section, verbose=verbose)
+            parse_filters(db_video, config, k_section)
 
         # Parts: frame start and (end+1)
         #----------------------------------------------------

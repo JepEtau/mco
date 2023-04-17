@@ -28,17 +28,15 @@ def __clean_filter(a_string):
 
 
 
-def parse_filters(db_video, config, k_section, verbose=False):
+def parse_filters(db_video, config, k_section):
     verbose = False
     if verbose:
-        print_green("-------------------------------")
-        print_green("|        parse_filters        |")
-        print_green("| k_section=[%s]" % (k_section))
+        print_lightcyan("Parse_filters: ")
+        print_green(f"\tsection: {k_section}")
         if k_section.startswith('filters'):
             for k_option in config.options(k_section):
-                print_lightcyan("%s=" % (k_option), end='')
-                print_blue(config.get(k_section, k_option))
-        print_green("-------------------------------")
+                print_green(f"\t{k_option} = ", end='')
+                print_lightgrey(config.get(k_section, k_option))
 
     # Find part and subpart
     # k_section is filters_part[_subpart]
@@ -49,48 +47,49 @@ def parse_filters(db_video, config, k_section, verbose=False):
     else:
         k_part = tmp.group(1)
 
-    k_option = config.options(k_section)[0]
-    if k_option != 'default' and not k_option.isdecimal():
-        # Not allowed
+    for k_option in config.options(k_section):
+        if k_option != 'default' and not k_option.isdecimal():
+            # Not allowed
+            if verbose:
+                print_yellow("\tDiscarded")
+            print_red(f"\tError: filter {k_section}/{k_option}")
+            return
+
         if verbose:
-            print_yellow("\tDiscarded")
-        return
+            print_green(f"\tparse filter {k_section}/{k_option}")
+        # Convert filter str to a list of dict
+        steps_str = config.get(k_section, k_option)
+        steps_str = __clean_filter(steps_str)
+        step_list = steps_str.split(';')
 
-    # Convert filter str to a list of dict
-    steps_str = config.get(k_section, k_option)
-    steps_str = __clean_filter(steps_str)
-    step_list = steps_str.split(';')
+        filters = list()
+        for step_str in step_list:
+            step_dict = {
+                'save': False
+            }
+            if step_str.startswith('*'):
+                step_str = step_str[1:]
+                step_dict['save'] = True
 
-    filters = list()
-    for step_str in step_list:
-        step_dict = {
-            'save': False
-        }
-        if step_str.startswith('*'):
-            step_str = step_str[1:]
-            step_dict['save'] = True
-
-        result = re.match(re.compile("^([a-z_]+):(.+)$"), step_str)
-        if result is not None:
-            step_dict['type'] = result.group(1)
-            step_dict['str'] = result.group(2)
-            filters.append(step_dict)
-        else:
-            # May use yes-pattern or no-pattern in the previous regex
-            # but no time
-            result = re.match(re.compile("^([a-z]+)$"), step_str)
+            result = re.match(re.compile("^([a-z_]+):(.+)$"), step_str)
             if result is not None:
                 step_dict['type'] = result.group(1)
-                step_dict['str'] = ''
+                step_dict['str'] = result.group(2)
                 filters.append(step_dict)
+            else:
+                # May use yes-pattern or no-pattern in the previous regex
+                # but no time
+                result = re.match(re.compile("^([a-z]+)$"), step_str)
+                if result is not None:
+                    step_dict['type'] = result.group(1)
+                    step_dict['str'] = ''
+                    filters.append(step_dict)
 
-    nested_dict_set(db_video, filters, k_part, 'filters', k_option)
+        nested_dict_set(db_video, filters, k_part, 'filters', k_option)
 
     if verbose:
-        print_yellow("______________ %s: %s ______________" % (__name__, k_section))
+        print_green(f"\tfinally: section {k_section}")
         pprint(db_video[k_part]['filters'])
-        print_yellow("__________________________________________________________________\n")
-
 
 
 

@@ -47,29 +47,40 @@ def get_step_no_from_last_task(shot):
 
 
 def get_filters_from_shot(db, shot):
+    verbose = True
     k_ed = shot['k_ed']
     k_ep = shot['k_ep']
     k_part = shot['k_part']
+    if verbose:
+        print_lightgreen(f"get filters from shot: {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}, start: {shot['start']}")
 
     if shot['filters'] == 'default':
+        if verbose:
+            print_lightgrey(f"\tdefault filter")
+            pprint(db[k_ep]['video'][k_ed][k_part]['filters'])
+
         # This shot uses default filters. Use the one defined in the part
         if 'filters' not in db[k_ep]['video'][k_ed][k_part].keys():
-            sys.exit(print_red("Error: no default filter defined: %s:%s:%s" %
-                (k_ed, k_ep, k_part)))
+            sys.exit(print_red("Error: {k_ed}:{k_ep}:{k_part}: no available filters"))
+
         filters = db[k_ep]['video'][k_ed][k_part]['filters']['default']
 
-    elif not isinstance(shot['filters'], dict):
-        # This shot uses a custom filter defined in the 'filters' struct in this part
-        filters = db[k_ep]['video'][k_ed][k_part]['filters']["%s.%s" % (k_part, shot['filters'])]
+    elif isinstance(shot['filters'], str):
+        if verbose:
+            print_lightgrey(f"\tcustom filter: {shot['filters']}")
 
-    elif isinstance(shot['filters'], dict):
-        # The filters are defined in the shot structure
-        return shot['filters']
+        # This shot uses a custom filter defined in the 'filters' struct in this part
+        try:
+            filters = db[k_ep]['video'][k_ed][k_part]['filters'][shot['filters']]
+        except:
+            print_red(f"Error: {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}, filter {shot['filters']} not found")
+            print_red(f"\tdefined filters: {list(db[k_ep]['video'][k_ed][k_part]['filters'].keys())}")
+            print_orange(f"\tfallback: using default")
+            filters = db[k_ep]['video'][k_ed][k_part]['filters']['default']
 
     else:
         # This shot may default filters, but to be validated
-        print("no filters defined for %s:%s:%s no.%d" % (k_ed, k_ep, k_part, shot['no']))
-        filters = db[k_ep]['video'][k_ed][k_part]['filters']['default']
+        print_red(f"Error: no filters defined for {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}")
         sys.exit()
 
     return deepcopy(filters)

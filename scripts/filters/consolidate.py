@@ -147,7 +147,6 @@ def consolidate_filters(shot):
 
         # Simplify
         for step_no in range(edition_step_no-1, 1 , -1):
-            print(f"step_no = {step_no}")
             f = shot['filters'][step_no]
             if not (f['task'] == '' and f['type'] == 'null'):
                 f.update({'task': 'edition', 'save': True})

@@ -40,9 +40,6 @@ def avisynth_deinterlace(shot, image_list,
         print_cyan("(AviSynth)", end='')
         print_lightcyan("\tfilters=%s" % (filters_str))
 
-    if verbose:
-        print_lightcyan("avisynth_deinterlace")
-
     # Create the output folder
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -60,6 +57,9 @@ def avisynth_deinterlace(shot, image_list,
         hash = calculate_hash(filter_str=filter_str)
         return hash, None
     hash = log_filter(filter_str, shot['hash_log_file'])
+
+    if verbose:
+        print_lightcyan("avisynth_deinterlace")
 
     # Get progressive filename
     progressive_filepath = shot['inputs']['progressive']['filepath']
