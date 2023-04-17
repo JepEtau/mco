@@ -108,8 +108,6 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         self.controller.signal_stabilize_settings_refreshed[dict].connect(self.event_stabilize_settings_refreshed)
         self.controller.signal_is_saved[str].connect(self.event_is_saved)
-        self.controller.signal_shot_changed.connect(self.event_shot_changed)
-
 
         set_stylesheet(self)
         set_widget_stylesheet(self.pushButton_set_start)
@@ -144,24 +142,15 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.adjustSize()
 
 
-    def event_shot_changed(self):
-        enabled = self.controller.is_replace_allowed()
+    def event_shot_changed(self, new_preview_settings):
+        try: enabled = new_preview_settings['stabilize']['enabled']
+        except: enabled = False
 
         if not enabled:
             self.pushButton_set_preview.blockSignals(True)
             self.pushButton_set_preview.setEnabled(False)
             self.pushButton_set_preview.setChecked(False)
             self.pushButton_set_preview.blockSignals(False)
-
-            self.pushButton_set_preview.blockSignals(True)
-            self.pushButton_set_preview.setEnabled(False)
-            self.pushButton_set_preview.setChecked(False)
-            self.pushButton_set_preview.blockSignals(False)
-
-
-        self.pushButton_set_preview.blockSignals(True)
-        self.pushButton_set_preview.setEnabled(enabled)
-        self.pushButton_set_preview.blockSignals(False)
 
 
 
@@ -183,7 +172,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def get_preview_options(self):
         preview_options = {
-            'is_enabled': self.pushButton_set_preview.isChecked(),
+            'enabled': self.pushButton_set_preview.isChecked(),
             'guidelines': self.pushButton_guidelines.isChecked(),
             'vertical_line_x': self.vertical_line_x,
             'horizontal_line_y': self.horizontal_line_y,
@@ -275,7 +264,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.is_moving_horizontal_line = False
 
 
-    def block_all_signals(self, enabled:bool):
+    def block_signals(self, enabled:bool):
         self.groupBox_stabilize.blockSignals(enabled)
         self.tableWidget_stabilize.blockSignals(enabled)
         self.pushButton_calculate.blockSignals(enabled)
@@ -360,13 +349,13 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         self.removed_segment = None
 
-        self.block_all_signals(True)
+        self.block_signals(True)
         if stabilize_settings is None:
             self.groupBox_stabilize.setChecked(False)
             self.tableWidget_stabilize.clearContents()
             self.tableWidget_stabilize.setRowCount(0)
             self.set_controls_enabled(False)
-            self.block_all_signals(False)
+            self.block_signals(False)
             self.label_message.setText("")
             return
 
@@ -417,7 +406,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         else:
             self.label_message.clear()
 
-        self.block_all_signals(False)
+        self.block_signals(False)
 
 
     def event_segment_selected(self):

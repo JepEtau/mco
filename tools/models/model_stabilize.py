@@ -44,14 +44,6 @@ class Model_stabilize():
         # pprint(self.db_stabilize_initial)
         # sys.exit()
 
-    def is_stabilize_allowed(self, shot):
-        # indicates if we can use the stabilize widget
-        for f in shot['filters']:
-            if f['str'] == 'deshake':
-                return False
-        return True
-
-
 
     def get_shot_stabilize_settings(self, shot:dict) -> dict | None:
         k_ed = shot['k_ed']

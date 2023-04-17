@@ -17,8 +17,10 @@
 
 # TODO video editor
 (1)
+- separate allowed/preview
 - preview button for stabilize
 - use transformation saved in a cache list
+- parse single shot only if database already been parsed
 
 (2)
 - add loop mode

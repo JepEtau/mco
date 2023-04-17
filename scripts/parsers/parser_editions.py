@@ -52,7 +52,7 @@ def parser_edition_common(db_common, filename, verbose=False):
 #===========================================================================
 def parse_editions(database, cfg_foldername, verbose=False):
     db_common = database['common']
-    # verbose = True
+    verbose = False
 
     mkv_foldername = db_common['directories']['inputs']
     database['editions'] = dict()

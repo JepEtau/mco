@@ -37,7 +37,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         # Internal variables
         self.copied_frame_no = -1
         self.previous_position = None
-        self.current_edition_enabled = True
+        self.is_edition_allowed = False
 
         # Disable focus
         self.lineEdit_frame_no.setFocusPolicy(Qt.NoFocus)
@@ -79,8 +79,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.controller.signal_replace_list_refreshed[dict].connect(self.event_replace_list_refreshed)
         self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
-        self.controller.signal_shot_changed.connect(self.event_shot_changed)
-
         self.installEventFilter(self)
 
         set_stylesheet(self)
@@ -106,24 +104,20 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
 
+        self.is_edition_allowed = False
 
-    def event_shot_changed(self):
-        enabled = self.controller.is_replace_allowed()
-        # if enabled:
-        #     if self.current_edition_enabled:
-        #         log.info("already enabled")
-        #         # already disabled, do not save another time
-        #         return
 
-        # else:
-        #     if not self.current_edition_enabled:
-        #         log.info("already disabled")
-        #         # already disabled, do not save another time
-        #         return
+
+    def event_shot_changed(self, new_preview_settings):
+        try: enabled = new_preview_settings['replace']['enabled']
+        except: enabled = False
         if not enabled:
             self.lineEdit_frame_no.clear()
             self.lineEdit_replaced_by.clear()
 
+        self.pushButton_set_preview.blockSignals(True)
+        self.pushButton_set_preview.setEnabled(enabled)
+        self.pushButton_set_preview.blockSignals(False)
 
         self.lineEdit_frame_no.setEnabled(enabled)
         self.lineEdit_replaced_by.setEnabled(enabled)
@@ -132,15 +126,11 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.pushButton_remove.setEnabled(enabled)
         self.tableWidget_replace.setEnabled(enabled)
 
-        self.pushButton_set_preview.blockSignals(True)
-        self.pushButton_set_preview.setEnabled(enabled)
-        self.pushButton_set_preview.blockSignals(False)
-
+        self.is_edition_allowed = enabled
 
 
     def event_replace_list_refreshed(self, values:dict):
         log.info("refresh list of frames to replace")
-        # is_allowed = self.controller.is_replace_allowed()
         # print_lightgreen("event_replace_list_refreshed: ", is_allowed)
         self.tableWidget_replace.blockSignals(True)
 
@@ -162,18 +152,16 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         # else:
         #     print_lightgreen("\trefresh was not allowed")
 
-        self.event_shot_changed()
-
 
     def event_replace_selected(self):
-        if not self.current_edition_enabled:
+        if not self.is_edition_allowed:
             return
         log.info("event_replace_selected")
         self.tableWidget_replace.setFocus()
 
 
     def event_frame_no_selected(self, item:QTableWidgetItem):
-        if not self.current_edition_enabled:
+        if not self.is_edition_allowed:
             return
         # double-click
         row_no = item.row()
@@ -183,7 +171,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_selection_removed(self):
-        if not self.current_edition_enabled:
+        if not self.is_edition_allowed:
             return
         print("event_selection_removed")
         selected_indexes = self.tableWidget_replace.selectedIndexes()
@@ -219,7 +207,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_frame_no_copied(self):
-        if not self.current_edition_enabled:
+        if not self.is_edition_allowed:
             return
 
         self.copied_frame_no = int(self.lineEdit_frame_no.text())
@@ -228,7 +216,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_frame_no_paste(self):
-        if not self.current_edition_enabled:
+        if not self.is_edition_allowed:
             return
 
         log.info("event: paste")
@@ -246,7 +234,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_undo_replace(self):
-        if not self.current_edition_enabled:
+        if not self.is_edition_allowed:
             return
         log.info("event: undo for frame_no: %d")
         self.signal_replace_modified.emit({
@@ -256,7 +244,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_removed(self):
-        if not self.current_edition_enabled:
+        if not self.is_edition_allowed:
             return
         log.info("event: remove")
         self.pushButton_discard.setEnabled(True)
@@ -269,7 +257,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
     def get_preview_options(self):
         preview_options = {
-            'is_enabled': self.pushButton_set_preview.isChecked(),
+            'enabled': self.pushButton_set_preview.isChecked(),
         }
         return preview_options
 
@@ -281,7 +269,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_key_pressed(self, event):
-        if not self.current_edition_enabled:
+        if not self.is_edition_allowed:
             return False
 
         key = event.key()

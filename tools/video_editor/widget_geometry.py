@@ -48,8 +48,8 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.saved_preview_options = None
         self.saved_states = dict()
         self.current_edition_and_preview_enabled = True
-        self.is_edition_enabled = True
         self.is_target_disabled = False
+        self.is_edition_allowed = False
 
 
         # Target
@@ -121,6 +121,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
 
+        self.is_edition_allowed = False
 
 
     def event_shotlist_modified(self, values:dict):
@@ -288,7 +289,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             for w in self.findChildren(QPushButton, options=Qt.FindChildrenRecursively):
                 w.blockSignals(True)
                 self.saved_states['push_buttons'][w.objectName()] = {
-                    'is_enabled': w.isEnabled(),
+                    'enabled': w.isEnabled(),
                     'is_checked': w.isChecked(),
                 }
                 w.setEnabled(False)
@@ -298,7 +299,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             for w in self.findChildren(QLineEdit, options=Qt.FindChildrenRecursively):
                 w.blockSignals(True)
                 self.saved_states['line_edit'][w.objectName()] = {
-                    'is_enabled': w.isEnabled(),
+                    'enabled': w.isEnabled(),
                     'is_read_only': w.isReadOnly(),
                 }
                 w.setEnabled(False)
@@ -308,7 +309,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             for w in self.findChildren(QRadioButton, options=Qt.FindChildrenRecursively):
                 w.blockSignals(True)
                 self.saved_states['radio_buttons'][w.objectName()] = {
-                    'is_enabled': w.isEnabled(),
+                    'enabled': w.isEnabled(),
                 }
                 w.setEnabled(False)
 
@@ -316,7 +317,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             for w in self.findChildren(QCheckBox, options=Qt.FindChildrenRecursively):
                 w.blockSignals(True)
                 self.saved_states['check_box'][w.objectName()] = {
-                    'is_enabled': w.isEnabled(),
+                    'enabled': w.isEnabled(),
                 }
                 w.setEnabled(False)
 
@@ -326,21 +327,21 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             current_preview_state = self.pushButton_set_preview.isChecked()
             try:
                 for w in self.findChildren(QPushButton, options=Qt.FindChildrenRecursively):
-                    w.setEnabled(self.saved_states['push_buttons'][w.objectName()]['is_enabled'])
+                    w.setEnabled(self.saved_states['push_buttons'][w.objectName()]['enabled'])
                     w.setChecked(self.saved_states['push_buttons'][w.objectName()]['is_checked'])
                     w.blockSignals(False)
 
                 for w in self.findChildren(QLineEdit, options=Qt.FindChildrenRecursively):
-                    w.setEnabled(self.saved_states['line_edit'][w.objectName()]['is_enabled'])
+                    w.setEnabled(self.saved_states['line_edit'][w.objectName()]['enabled'])
                     w.setReadOnly(self.saved_states['line_edit'][w.objectName()]['is_read_only'])
                     w.blockSignals(False)
 
                 for w in self.findChildren(QRadioButton, options=Qt.FindChildrenRecursively):
-                    w.setEnabled(self.saved_states['radio_buttons'][w.objectName()]['is_enabled'])
+                    w.setEnabled(self.saved_states['radio_buttons'][w.objectName()]['enabled'])
                     w.blockSignals(False)
 
                 for w in self.findChildren(QCheckBox, options=Qt.FindChildrenRecursively):
-                    w.setEnabled(self.saved_states['check_box'][w.objectName()]['is_enabled'])
+                    w.setEnabled(self.saved_states['check_box'][w.objectName()]['enabled'])
                     w.blockSignals(False)
             except:
                 print("warning: state was not saved")
@@ -360,6 +361,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
     def get_preview_options(self):
         log.info("get_preview_options")
         preview_options = {
+            'enabled': self.is_edition_allowed,
             'final_preview': self.pushButton_set_preview.isChecked(),
             'target': {
                 'width_edition': self.pushButton_target_width_edition.isChecked(),
@@ -550,7 +552,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             value = -1 if event.angleDelta().y() > 0 else +1
 
             # self.current_key_pressed = None
-            if self.is_edition_enabled:
+            if self.is_edition_allowed:
                 event.accept()
                 self.event_is_modified(
                     element=element,

@@ -349,10 +349,10 @@ class Window_common(QMainWindow):
             preview_options.update({e: w.get_preview_options()})
 
         # Stabilize requires the replaced frames
-        is_stabilize_allowed = preview_options['replace']['is_enabled']
+        is_stabilize_allowed = preview_options['replace']['enabled']
         self.widgets['stabilize'].set_enabled(is_stabilize_allowed)
         if not is_stabilize_allowed:
-            preview_options['stabilize']['is_enabled'] = False
+            preview_options['stabilize']['enabled'] = False
 
         self.signal_preview_options_changed.emit(preview_options)
 

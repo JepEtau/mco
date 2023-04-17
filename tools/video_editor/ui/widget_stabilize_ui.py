@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_stabilize.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.5.0
+## Created by: Qt User Interface Compiler version 6.4.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -56,8 +56,10 @@ class Ui_widget_stabilize(object):
         self.pushButton_set_preview.setSizePolicy(sizePolicy1)
         self.pushButton_set_preview.setFocusPolicy(Qt.NoFocus)
         icon = QIcon()
-        icon.addFile(u"icons/blue/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"icons/grey/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
         icon.addFile(u"icons/blue/eye.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon.addFile(u"icons/grey/eye.svg", QSize(), QIcon.Disabled, QIcon.Off)
+        icon.addFile(u"icons/grey/eye.svg", QSize(), QIcon.Disabled, QIcon.On)
         self.pushButton_set_preview.setIcon(icon)
         self.pushButton_set_preview.setCheckable(True)
         self.pushButton_set_preview.setFlat(True)

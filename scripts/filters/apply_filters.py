@@ -120,88 +120,93 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
         # xGAN
         #-----------------------------------------------------------------------
         if filter['type'] in ['real_cugan', 'real_esrgan', 'esrgan']:
-            if torch.cuda.is_available():
-                xgan = {
-                    'name': filter['type'],
-                    'model': '',
-                }
-
-                args = filter['str'].split(',')
-                for arg in args:
-                    arg_name, arg_value = arg.split('=')
-                    xgan[arg_name] = arg_value
-
-                # Model name is required
-                if xgan['name'] == 'real_cugan':
-                    if 'n' not in xgan.keys():
-                        sys.exit(print_red("\n(Real-CUGAN): denoise value is required"))
-                    # print("\n\t\t\t(Real-CUGAN) scale: %d, denoise: %d" % (int(xgan['s']), int(xgan['n'])))
-                    hash, scale, images = upscale_real_cugan(
-                        shot=shot,
-                        images=images,
-                        image_list=image_list,
-                        scale=int(xgan['s']),
-                        denoise=int(xgan['n']),
-                        directories=db['common']['directories'],
-                        input_hash=hash,
-                        step_no=step_no,
-                        output_folder=output_folder,
-                        get_hash=get_hashes,
-                        do_force=do_force)
-                    # if not get_hashes:
-                    #     print("\t\t\tupscale: returned %s" % (hash))
-
-                elif xgan['name'] == 'real_esrgan':
-                    if xgan['model'] == '':
-                        sys.exit(print_red("\n(Real-ESRGAN) model name is required"))
-                    hash, scale, images = upscale_real_esrgan(
-                        shot=shot,
-                        images=images,
-                        image_list=image_list,
-                        scale=2,
-                        model_name=xgan['model'],
-                        directories=db['common']['directories'],
-                        input_hash=hash,
-                        step_no=step_no,
-                        output_folder=output_folder,
-                        get_hash=get_hashes,
-                        do_force=do_force)
-                    # if not get_hashes:
-                    #     print("\t\t\tupscale: returned %s" % (hash))
-
-                elif xgan['name'] == 'esrgan':
-                    if xgan['model'] == '':
-                        sys.exit(print_red("\n(ESRGAN) model name is required"))
-                    hash, scale, images = upscale_esrgan(
-                        shot=shot,
-                        images=images,
-                        image_list=image_list,
-                        scale=2,
-                        model_name=xgan['model'],
-                        directories=db['common']['directories'],
-                        input_hash=hash,
-                        step_no=step_no,
-                        output_folder=output_folder,
-                        get_hash=get_hashes,
-                        do_force=do_force)
-            else:
+            if not torch.cuda.is_available():
                 print_red("\t\t\terror: cannot upscale with this GPU/CPU")
-                print_orange("\t\t\tfallback: bad quality upscale (CV2: nearest)")
-                filter_str = "scale=2:nearest"
+                # print_orange("\t\t\tfallback: bad quality upscale (CV2: nearest)")
+                # filter_str = "scale=2:nearest"
+                # hash, images = apply_python_filters(
+                #     shot,
+                #     images=images,
+                #     image_list=image_list,
+                #     step_no=step_no,
+                #     filters_str=filter_str,
+                #     input_hash=hash,
+                #     do_save=filter['save'],
+                #     output_folder=output_folder,
+                #     get_hash=get_hashes,
+                #     do_force=do_force)
+                # if not get_hashes:
+                #     print_lightgrey("\t\t\tupscale: returned %d images" % (len(images)))
+                if not get_hashes:
+                    sys.exit("Goodbye!")
 
-                hash, images = apply_python_filters(
-                    shot,
+
+            xgan = {
+                'name': filter['type'],
+                'model': '',
+            }
+
+            args = filter['str'].split(',')
+            for arg in args:
+                arg_name, arg_value = arg.split('=')
+                xgan[arg_name] = arg_value
+
+            # Model name is required
+            if xgan['name'] == 'real_cugan':
+                if 'n' not in xgan.keys():
+                    sys.exit(print_red("\n(Real-CUGAN): denoise value is required"))
+                # print("\n\t\t\t(Real-CUGAN) scale: %d, denoise: %d" % (int(xgan['s']), int(xgan['n'])))
+                hash, scale, images = upscale_real_cugan(
+                    shot=shot,
                     images=images,
                     image_list=image_list,
-                    step_no=step_no,
-                    filters_str=filter_str,
+                    scale=int(xgan['s']),
+                    denoise=int(xgan['n']),
+                    directories=db['common']['directories'],
                     input_hash=hash,
-                    do_save=filter['save'],
+                    step_no=step_no,
                     output_folder=output_folder,
                     get_hash=get_hashes,
                     do_force=do_force)
                 # if not get_hashes:
-                #     print_lightgrey("\t\t\tupscale: returned %d images" % (len(images)))
+                #     print("\t\t\tupscale: returned %s" % (hash))
+
+            elif xgan['name'] == 'real_esrgan':
+                if xgan['model'] == '':
+                    sys.exit(print_red("\n(Real-ESRGAN) model name is required"))
+                hash, scale, images = upscale_real_esrgan(
+                    shot=shot,
+                    images=images,
+                    image_list=image_list,
+                    scale=2,
+                    model_name=xgan['model'],
+                    directories=db['common']['directories'],
+                    input_hash=hash,
+                    step_no=step_no,
+                    output_folder=output_folder,
+                    get_hash=get_hashes,
+                    do_force=do_force)
+                # if not get_hashes:
+                #     print("\t\t\tupscale: returned %s" % (hash))
+
+            elif xgan['name'] == 'esrgan':
+                if xgan['model'] == '':
+                    sys.exit(print_red("\n(ESRGAN) model name is required"))
+                hash, scale, images = upscale_esrgan(
+                    shot=shot,
+                    images=images,
+                    image_list=image_list,
+                    scale=2,
+                    model_name=xgan['model'],
+                    directories=db['common']['directories'],
+                    input_hash=hash,
+                    step_no=step_no,
+                    output_folder=output_folder,
+                    get_hash=get_hashes,
+                    do_force=do_force)
+
+
+
 
         # Python: opencv2/scikit
         #-----------------------------------------------------------------------

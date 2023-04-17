@@ -33,7 +33,7 @@ AVISYNTH_ADD_FRAMES = 0
 
 def avisynth_deinterlace(shot, image_list,
     step_no, filters_str, output_folder, db_common, get_hash:bool=False):
-    verbose = True
+    verbose = False
 
     # Deinterlace only
     if not get_hash:

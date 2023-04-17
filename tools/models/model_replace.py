@@ -37,13 +37,6 @@ class Model_replace():
         self.db_replaced_frames = dict()
 
 
-    def is_replace_allowed(self, shot):
-        # indicates if we can use the replace widget
-        for f in shot['filters']:
-            if f['task'] == 'edition':
-                return True
-        return False
-
     # Replaced frames
     def get_replace_frame_no(self, shot:dict, frame_no:int):
         """ Return the new frame no. if replaced. Returns -1 otherwise

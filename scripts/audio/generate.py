@@ -64,7 +64,7 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False):
 
 
     # Extract audio file if needed
-    input_filepath = extract_audio(db, k_ep, k_ed, force=force, verbose=verbose)
+    input_filepath = extract_audio(db, k_ep, k_ed, force=force)
 
     # Read the input audio file
     channels_count, sample_rate, in_track, duration = read_audio_file(input_filepath, verbose=True)

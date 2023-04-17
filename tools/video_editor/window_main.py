@@ -108,6 +108,7 @@ class Window_main(Window_common):
         self.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
 
         # Model
+        self.controller.signal_shot_changed.connect(self.event_shot_changed)
         self.controller.signal_ready_to_play[dict].connect(self.event_ready_to_play)
         self.controller.signal_reload_frame.connect(self.event_reload_frame)
         self.controller.signal_close.connect(self.event_close_without_saving)
@@ -120,6 +121,12 @@ class Window_main(Window_common):
         # Set initial values
         self.set_initial_options(p)
         self.event_show_fullscreen()
+
+
+
+    def event_shot_changed(self, new_preview_settings):
+        self.widget_replace.event_shot_changed(new_preview_settings)
+        self.widget_stabilize.event_shot_changed(new_preview_settings)
 
 
 

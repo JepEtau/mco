@@ -26,10 +26,12 @@ from utils.pretty_print import *
 
 
 
-def consolidate_shot(db, shot) -> None:
+def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
     """This procedure is used to simplify a single shot and add
     properties to process it: removes unecessary property, add
     paths to input/output files, update frames no. depending on edition, etc.
+
+    edition_mode: used to not consolidate geometry/curves and remove replace/stabilize/deshake
 
     Args:
         db: the global database
@@ -39,7 +41,7 @@ def consolidate_shot(db, shot) -> None:
         None
 
     """
-    verbose = True
+    verbose = False
     if verbose:
         print_lightgreen("Consolidate shot:")
         print_lightcyan("================================== SHOT =======================================")
@@ -240,10 +242,19 @@ def consolidate_shot(db, shot) -> None:
         db['common']['directories']['cache_progressive'], filename)
 
 
+    # Remove keys which shall not be used by video editor
+    if edition_mode:
+        # for k in ['replace', 'deshake', 'geometry', 'curves']:
+        for k in ['replace', 'deshake']:
+            try:
+                shot[k].clear()
+            except:
+                pass
+        try: shot['curves']['lut'].clear()
+        except: pass
 
-    if False:
-    # if shot['no'] == 11:
-        print_lightcyan("================================== SHOT =======================================")
+    if verbose:
+        print_lightcyan("TO")
         pprint(shot)
         print_lightcyan("===============================================================================")
         sys.exit()

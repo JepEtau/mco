@@ -60,10 +60,11 @@ class Controller_video_editor(Controller_common,
 
     signal_stabilize_settings_refreshed = Signal(dict)
 
-
-
     # Send a signal to inform that the shot changed
-    signal_shot_changed = Signal()
+    # UI shall update all widgets
+    signal_shot_changed = Signal(dict)
+
+
 
     WIDGET_LIST = [
         'controls',
@@ -95,7 +96,7 @@ class Controller_video_editor(Controller_common,
         # Variables
         self.model_database = Model_database()
         self.filepath = list()
-
+        self.current_task = ''
 
     def set_view(self, view):
         self.view = view
@@ -149,6 +150,8 @@ class Controller_video_editor(Controller_common,
         k_ep_selected = values['k_ep']
         k_part_selected = values['k_part']
         task = 'deinterlace' if values['k_step'] == '' else values['k_step']
+
+        self.current_task = values['k_step']
 
         if ((k_ep_selected == '' and k_part_selected == '')
             or (k_ep_selected != '' and k_part_selected == '')):
@@ -204,7 +207,7 @@ class Controller_video_editor(Controller_common,
 
             # Consolidate shot
             shot['last_task'] = task
-            consolidate_shot(db, shot=shot)
+            consolidate_shot(db, shot=shot, edition_mode=True)
             # NOTE replace: if last task is 'edition', the hashes
             # are different from the final generation
 
@@ -390,6 +393,12 @@ class Controller_video_editor(Controller_common,
         if len(selected_shots['shotlist']) == 0:
             return
 
+        try:
+            shot = self.current_shot()
+            previous_shot_id = f"{shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}"
+        except:
+            previous_shot_id = ""
+
         frame_nos = list()
         index = 0
         ticklist = [0]
@@ -446,11 +455,16 @@ class Controller_video_editor(Controller_common,
         print_green("%.02fs" % (time.time() - start_time))
 
 
-        if True:
+        if False:
             print_lightcyan("================================== SHOT =======================================")
             pprint(shot)
             print_lightcyan("===============================================================================")
         self.signal_ready_to_play.emit(self.playlist_properties)
+
+        new_shot_id = f"{shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}"
+        if previous_shot_id != new_shot_id:
+            new_preview_options = self.consolidate_preview_options()
+            self.signal_shot_changed.emit(new_preview_options)
 
 
     def event_save_and_close_requested(self):
@@ -481,8 +495,6 @@ class Controller_video_editor(Controller_common,
         except: pass
         return None
 
-
-
     def get_current_frame_no(self):
         return self.current_frame['frame_no']
 
@@ -497,13 +509,20 @@ class Controller_video_editor(Controller_common,
         if len(self.playlist_frames) == 0:
             return None
 
+        try:
+            shot = self.current_shot()
+            previous_shot_id = f"{shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}"
+        except:
+            previous_shot_id = ""
+
         frame = self.playlist_frames[index]
         frame_no = frame['frame_no']
         shot_no = frame['shot_no']
-        # new shot:
+
+        # Select new shot:
         shot = self.shots[shot_no]
 
-        if not self.preview_options['replace']['is_enabled']:
+        if not self.preview_options['replace']['enabled']:
 
             try: del frame['replace']
             except: pass
@@ -520,12 +539,14 @@ class Controller_video_editor(Controller_common,
                 frame['replace'] = frame_no
 
         # If shot is different
-        if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
+        new_shot_id = f"{shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}"
+        if previous_shot_id != new_shot_id:
             is_shot_changed = True
             frame['reload_parameters'] = True
         else:
             is_shot_changed = False
             frame['reload_parameters'] = False
+
 
         # Update curves and load it into the graph
         frame['curves'] = self.model_database.get_shot_curves_selection(
@@ -567,6 +588,10 @@ class Controller_video_editor(Controller_common,
         # Purge image from the previous frame
         self.purge_current_frame_cache()
 
+        if is_shot_changed:
+            self.consolidate_preview_options()
+            self.signal_shot_changed.emit(self.preview_options)
+
         # Set current frame
         self.current_frame = frame
 
@@ -604,28 +629,64 @@ class Controller_video_editor(Controller_common,
 
 
 
-        if is_shot_changed:
-            self.signal_shot_changed.emit()
-
         return self.current_frame
 
 
+
+    def event_preview_options_changed(self, preview_options):
+        verbose = True
+        if verbose:
+            print_lightcyan("\npreview mode changed:")
+            pprint(preview_options)
+        self.preview_options = preview_options
+        self.consolidate_preview_options()
+        if verbose:
+            print_lightgreen("\tconsolidated:")
+            pprint(self.preview_options)
+        self.signal_reload_frame.emit()
+
+
+    def consolidate_preview_options(self):
+        # Modify preview settings because some widget have to be disabled
+        options = self.preview_options
+
+        if self.current_task not in ['edition', 'sharpen', 'pre_rgb']:
+            # Geometry is disabled before upscale
+            options['geometry']['enabled'] = False
+
+        if self.current_task not in ['edition']:
+            # Stabilize is disable if not in edition mode
+            options['stabilize']['enabled'] = False
+
+        if not options['replace']['enabled']:
+            # Cannot stabilize if replace not active (use replace to stabilize)
+            options['stabilize']['enabled'] = False
+
+        if options['stabilize']['enabled']:
+            # Force replace if stabilize
+            options['replace']['enabled'] = True
+
+        if not options['geometry']['enabled']:
+            # If geometry is disabled, disable all preview
+            tmp = options['geometry']['shot']['is_default']
+            for k0 in options['geometry'].keys():
+                try:
+                    for k1 in options['geometry'][k0].keys():
+                        options['geometry'][k0][k1] = False
+                except:
+                        options['geometry'][k0] = False
+
+            options['geometry']['shot']['is_default'] = tmp
+
+        self.preview_options = options
 
 
 
     # Deshake/stabilize
     #---------------------------------------------------------------------------
-    def is_stabilize_allowed(self) -> bool:
-        shot = self.current_shot()
-        if shot is None:
-            return False
-        is_allowed = self.model_database.is_stabilize_allowed(shot=shot)
-        return is_allowed
-
-
     def event_stabilize_modified(self, settings):
-        print_lightcyan("event_stabilize_modified")
-        pprint(settings)
+        # print_lightcyan("event_stabilize_modified")
+        # pprint(settings)
         shot = self.current_shot()
 
         # Consolidate segments

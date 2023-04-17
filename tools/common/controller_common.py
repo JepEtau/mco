@@ -141,7 +141,6 @@ class Controller_common(QObject):
             print("---------------------------------------")
             pprint(preview_options)
             print("")
-
         self.preview_options = preview_options
         self.signal_reload_frame.emit()
 

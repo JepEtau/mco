@@ -15,14 +15,6 @@ class Controller_replace():
 
     # Replace frames
     #---------------------------------------------------------------------------
-    def is_replace_allowed(self) -> bool:
-        shot = self.current_shot()
-        if shot is None:
-            return False
-        is_allowed = self.model_database.is_replace_allowed(shot=shot)
-        return is_allowed
-
-
     def refresh_replace_list(self):
         # List of frames to replace
         log.info("refresh list")

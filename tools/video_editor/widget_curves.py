@@ -125,7 +125,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         try:
             w = preferences[self.objectName()]['widget']
             self.pushButton_set_preview.blockSignals(True)
-            self.pushButton_set_preview.setChecked(w['is_enabled'])
+            self.pushButton_set_preview.setChecked(w['enabled'])
             self.pushButton_set_preview.blockSignals(False)
         except:
             log.warning("cannot set initial options")
@@ -175,7 +175,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
     def get_preview_options(self):
         preview_options = {
-            'is_enabled': self.pushButton_set_preview.isChecked(),
+            'enabled': self.pushButton_set_preview.isChecked(),
             'split': self.show_split_line,
             'split_x': self.split_x - self.main_window_margin,
         }

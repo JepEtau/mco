@@ -47,7 +47,7 @@ def get_step_no_from_last_task(shot):
 
 
 def get_filters_from_shot(db, shot):
-    verbose = True
+    verbose = False
     k_ed = shot['k_ed']
     k_ep = shot['k_ep']
     k_part = shot['k_part']

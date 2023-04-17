@@ -624,7 +624,7 @@ def generate_image(frame:dict, preview_options:dict):
         img_resized = img_original
 
     # Apply rgb curves
-    if preview_options['curves']['is_enabled'] and frame['curves'] is not None:
+    if preview_options['curves']['enabled'] and frame['curves'] is not None:
         try:
             img_rgb = filter_rgb(frame, img_resized)
         except:
