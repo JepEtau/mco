@@ -386,6 +386,8 @@ def calculate_geometry_parameters(shot, img, verbose:bool=False):
         pprint(shot['geometry'])
 
     img_height, img_width, c = img.shape
+    if verbose:
+        print_lightgrey(f"\t-> image shape ({img_width}, {img_height})")
 
     # Final width and height
     w_final = shot['geometry']['dimensions']['final']['w']

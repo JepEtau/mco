@@ -115,7 +115,6 @@ class Window_main(Window_common):
         self.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
 
         # Controller
-        self.controller.signal_shot_changed[dict].connect(self.event_shot_changed)
         self.controller.signal_ready_to_play[dict].connect(self.event_ready_to_play)
         self.controller.signal_reload_frame.connect(self.event_reload_frame)
         self.controller.signal_close.connect(self.event_close_without_saving)
@@ -132,8 +131,12 @@ class Window_main(Window_common):
 
 
 
-    def event_shot_changed(self, new_preview_settings):
-        self.event_preview_options_consolidated(new_preview_settings)
+    def get_preview_options(self):
+        log.info("get preview options")
+        preview_options = dict()
+        for e, w in self.widgets.items():
+            preview_options.update({e: w.get_preview_options()})
+        return preview_options
 
 
     def event_preview_options_consolidated(self, new_preview_settings):
@@ -174,7 +177,7 @@ class Window_main(Window_common):
 
             # Set an internal image object
             self.image = {
-                'cache_initial': frame['cache_initial'],
+                'cache_initial': frame['cache_initial'] if not options['stabilize']['enabled'] else frame['cache_deshake'],
                 'cache': frame['cache'],
                 'geometry': frame['geometry'],
                 'geometry_values': frame['geometry_values'],
@@ -456,15 +459,21 @@ class Window_main(Window_common):
 
                 if preview_shot_geometry['crop_edition'] and not preview_shot_geometry['crop_preview']:
                     # Crop editon: rectangle but no preview
+
                     if preview_shot_geometry['resize_preview']:
-                        # print("paintEvent: draw rect crop on the resized image")
+                        # Crop editon: rectangle + resize
+                        # Draw rect on the resized image
+                        x0 = PAINTER_MARGIN_LEFT
+                        y0 = PAINTER_MARGIN_TOP - delta_y
+
+                        # Patch the crop value if displaying deshaked shot
+                        crop = shot_geometry['crop']
+                        if preview['stabilize']['enabled']:
+                            crop = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
 
                         # Image is resized, add the recalculated crop
                         crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                            width=initial_img_width, height=initial_img_height, crop=shot_geometry['crop'])
-                        # resized_width = int(0.5 + (img_width * geometry['resize']['w']) / float(cropped_width))
-                        # resized_height = int(0.5 + (img_height * geometry['resize']['h']) / float(cropped_height))
-
+                            width=initial_img_width, height=initial_img_height, crop=crop)
                         w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
                         pad_left = int(((FINAL_FRAME_WIDTH - w_tmp) / 2)+0.5)
                         crop_left = int((crop_left * FINAL_FRAME_HEIGHT) / float(cropped_height))
@@ -473,13 +482,11 @@ class Window_main(Window_common):
                         # print("\t-> w=%d, c_w=%d, w_tmp=%d, pad: %d" % (w, c_w, w_tmp, pad_left))
                         # print("\t-> crop_left=%d, crop_top=%d" % (c_l, crop_top))
 
-                        self.image['origin'] = [
-                            PAINTER_MARGIN_LEFT + pad_left - crop_left,
-                            PAINTER_MARGIN_TOP - crop_top - delta_y]
+                        self.image['origin'] = [x0 + pad_left - crop_left, y0 - crop_top]
+
                         self.painter.drawImage(
-                                QPoint(PAINTER_MARGIN_LEFT + pad_left - crop_left,
-                                        PAINTER_MARGIN_TOP - crop_top - delta_y),
-                                q_image)
+                            QPoint(x0 + pad_left - crop_left, y0 - crop_top),
+                            q_image)
 
                         # Add the cropped resized rect
                         pen = QPen(COLOR_CROP_RECT)
@@ -510,8 +517,6 @@ class Window_main(Window_common):
                         y0 = PAINTER_MARGIN_TOP - delta_y
                         crop = shot_geometry['crop']
                         if preview['stabilize']['enabled']:
-                            # x0 += STABILIZE_BORDER_HIGH_RES
-                            # y0 += STABILIZE_BORDER_HIGH_RES
                             crop = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
                         self.painter.drawImage(QPoint(x0, y0), q_image)
 
@@ -527,9 +532,7 @@ class Window_main(Window_common):
                         # print("\timg: %dx%d" % (img.data.shape[1], img.data.shape[0]))
                         # print("\trect: (%d;%d) w=%d, h=%d" % (c_l - 1, c_t - delta_y - 1, c_w + 1, c_h + 1))
 
-                        if preview['stabilize']['enabled']:
-                            cropped_width += 2*STABILIZE_BORDER_HIGH_RES
-                            cropped_height += 2*STABILIZE_BORDER_HIGH_RES
+
 
                         self.painter.drawRect(
                             PAINTER_MARGIN_LEFT + crop_left - 1,
@@ -569,8 +572,11 @@ class Window_main(Window_common):
                     else:
                         # print("paintEvent: draw cropped image on the original image")
                         # Crop and no rect
+                        crop = shot_geometry['crop']
+                        if preview['stabilize']['enabled']:
+                            crop = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
                         crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                            width=initial_img_width, height=initial_img_height, crop=shot_geometry['crop'])
+                            width=initial_img_width, height=initial_img_height, crop=crop)
 
                         self.painter.drawImage(
                             QPoint(PAINTER_MARGIN_LEFT + crop_left,
@@ -588,8 +594,12 @@ class Window_main(Window_common):
                     and preview_shot_geometry['resize_preview']):
 
                     # Image is resized, add the recalculated crop
+                    crop = shot_geometry['crop']
+                    if preview['stabilize']['enabled']:
+                        crop = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
+
                     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                            width=initial_img_width, height=initial_img_height, crop=shot_geometry['crop'])
+                            width=initial_img_width, height=initial_img_height, crop=crop)
                     w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
                     pad_left = int(((FINAL_FRAME_WIDTH - w_tmp) / 2) + 0.5)
                     # print("\t-> w=%d, c_w=%d, w_tmp=%d, pad: %d" % (w, c_w, w_tmp, pad_left))

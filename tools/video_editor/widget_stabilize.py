@@ -50,6 +50,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.segment_count = 0
         self.is_edition_allowed = False
         self.previous_preview_state = False
+        self.initial_preview_state = False
 
         # Guidelines
         self.is_moving_guidelines = False
@@ -125,6 +126,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
         s = preferences['stabilize']
+        pprint(s)
         self.block_signals(True)
 
         self.groupBox_stabilize.setChecked(False)
@@ -133,9 +135,10 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.clear_inputs()
 
         # Push button is used to calculate then display
-        self.pushButton_set_preview.setEnabled(False)
-        self.pushButton_set_preview.setChecked(False)
-        self.previous_preview_state = False
+        self.pushButton_set_preview.setEnabled(s['widget']['allowed'])
+        self.pushButton_set_preview.setChecked(s['widget']['enabled'])
+        self.previous_preview_state = s['widget']['enabled']
+        self.initial_preview_state = s['widget']['enabled']
 
         self.block_signals(False)
 
@@ -421,6 +424,10 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             log.info('enable preview')
 
         self.block_signals(False)
+        if self.initial_preview_state and self.pushButton_set_preview.isChecked():
+            log.info("ask for new calculations")
+            self.initial_preview_state = False
+            self.event_set_preview_toggled(True)
 
 
     def event_segment_selected(self):

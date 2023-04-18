@@ -339,7 +339,8 @@ class Window_common(QMainWindow):
 
 
     def event_selected_shots_changed(self, selection):
-        self.event_preview_options_changed('selection')
+        log.info("selected shot changed")
+        # self.event_preview_options_changed('selection')
 
 
     def event_preview_options_changed(self, widget):

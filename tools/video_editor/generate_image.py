@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 import sys
 import time
 
@@ -19,9 +20,11 @@ from filters.utils import get_dimensions_from_crop_values
 
 def generate_image(frame:dict, preview_options:dict):
     # log.info("generate single image")
+    print_purple(("generate single image"))
+    # pprint(frame)
 
     # geometry_values are the calculated dimensions, crop, pad etc.
-    geometry_values = frame['geometry_values']
+    geometry_values = deepcopy(frame['geometry_values'])
 
     verbose = False
     if verbose:
@@ -34,6 +37,7 @@ def generate_image(frame:dict, preview_options:dict):
 
     # Initial image
     if frame['cache_deshake'] is not None and preview_options['stabilize']['enabled']:
+        print_yellow("use deshake img")
         img_original = frame['cache_deshake']
         is_using_deshake = True
     else:
@@ -103,7 +107,8 @@ def generate_image(frame:dict, preview_options:dict):
     # Final image: function
     #------------------------------------
     if preview_geometry['final_preview']:
-        img_finalized = cv2_geometry_filter(img=img_rgb, geometry=frame['geometry_values'])
+        pprint(geometry_values)
+        img_finalized = cv2_geometry_filter(img=img_rgb, geometry=geometry_values)
         return (frame['index'], img_finalized)
 
 

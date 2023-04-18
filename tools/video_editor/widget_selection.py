@@ -406,17 +406,18 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.set_enabled(True)
 
         if len(shots) > 0:
-            log.info("select shot no. 0")
             if self.initial_shot_no is not None:
+                log.info(f"select shot no. {self.initial_shot_no}")
                 self.tableWidget_shots.selectRow(self.initial_shot_no)
                 self.initial_shot_no = None
             else:
+                log.info("select shot no. 0")
                 self.tableWidget_shots.selectRow(0)
 
 
 
     def event_episode_changed(self, index=0):
-        log.info("select ep: %s, part: %s" % (self.comboBox_episode.currentText(), self.comboBox_part.currentText()))
+        log.info(f"select {self.comboBox_episode.currentText()}:{self.comboBox_part.currentText()}, {self.get_current_step()}")
         self.refresh_combobox_part(-1)
         # Generate a signal to inform that the following shall be updated:
         #   - editions

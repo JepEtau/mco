@@ -18,6 +18,7 @@
 
 # TODO video editor
 (1)
+- when loading a shot, if stabilize preview was enable, generate images
 - geometry: use stabilize padding value
 - separate allowed/preview
 - preview button for stabilize
