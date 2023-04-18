@@ -354,12 +354,6 @@ class Ui_widget_stabilize(object):
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer_5)
 
-        self.pushButton_calculate = QPushButton(self.groupBox_stabilize)
-        self.pushButton_calculate.setObjectName(u"pushButton_calculate")
-        self.pushButton_calculate.setFocusPolicy(Qt.NoFocus)
-
-        self.horizontalLayout_2.addWidget(self.pushButton_calculate)
-
 
         self.verticalLayout_4.addLayout(self.horizontalLayout_2)
 
@@ -453,7 +447,6 @@ class Ui_widget_stabilize(object):
         self.pushButton_switch_ref.setText(QCoreApplication.translate("widget_stabilize", u"&Initial ref.", None))
         self.pushButton_undo.setText("")
         self.pushButton_set_segment.setText("")
-        self.pushButton_calculate.setText(QCoreApplication.translate("widget_stabilize", u"calculate (F5)", None))
         ___qtablewidgetitem = self.tableWidget_stabilize.horizontalHeaderItem(0)
         ___qtablewidgetitem.setText(QCoreApplication.translate("widget_stabilize", u"start", None));
         ___qtablewidgetitem1 = self.tableWidget_stabilize.horizontalHeaderItem(1)

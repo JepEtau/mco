@@ -89,7 +89,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
         s = preferences['replace']
-
+        self.block_signals(True)
         self.lineEdit_frame_no.clear()
         self.lineEdit_replaced_by.clear()
         self.tableWidget_replace.blockSignals(True)
@@ -99,6 +99,9 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.pushButton_remove.setEnabled(False)
         self.pushButton_paste.setEnabled(False)
         self.pushButton_copy.setEnabled(True)
+
+        self.pushButton_set_preview.setChecked(s['widget']['enabled'])
+        self.block_signals(False)
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
@@ -268,6 +271,9 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.pushButton_copy.blockSignals(enabled)
         self.pushButton_paste.blockSignals(enabled)
         self.pushButton_remove.blockSignals(enabled)
+        self.pushButton_set_preview.blockSignals(enabled)
+        self.pushButton_discard.blockSignals(enabled)
+        self.pushButton_save.blockSignals(enabled)
 
 
     def event_key_pressed(self, event):

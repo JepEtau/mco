@@ -47,7 +47,7 @@ class Widget_common(QWidget):
         self.pushButton_close.setFocusPolicy(Qt.NoFocus)
 
         # Connect signals and filter events
-        self.pushButton_set_preview.toggled[bool].connect(self.event_preview_changed)
+        self.pushButton_set_preview.toggled[bool].connect(self.event_set_preview_toggled)
         self.pushButton_save.clicked.connect(self.event_save_modifications)
         self.pushButton_discard.clicked.connect(self.event_discard_modifications)
         self.pushButton_close.clicked.connect(self.event_close)
@@ -112,8 +112,8 @@ class Widget_common(QWidget):
         raise Exception("Error: override this function")
 
 
-    def event_preview_changed(self, is_checked:bool=False):
-        # log.info("widget preview changed to %s" % ('true' if is_checked else 'false'))
+    def event_set_preview_toggled(self, is_checked:bool=False):
+        log.info(f"widget preview changed to {is_checked}")
         self.signal_preview_options_changed.emit()
 
 

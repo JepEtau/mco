@@ -1,10 +1,10 @@
 # TODO script
 (1)
-- geometry: use stabilize padding value: already done? seems not
+- remove 'save images' after deinterlacing from ffv1 file unless last task is deinterlace
+- concatenation of video files seems not working anymore
 
 (2)
 - create a pre_rgb filter to modify RGB with deshaked/replaced images only
-- remove 'save images' after deinterlacing from ffv1 file unless last task is deinterlace
 - verify negative values for crop values when deshake is disable
 
 (3)
@@ -18,6 +18,7 @@
 
 # TODO video editor
 (1)
+- geometry: use stabilize padding value
 - separate allowed/preview
 - preview button for stabilize
 - use transformation saved in a cache list

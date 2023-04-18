@@ -83,10 +83,10 @@
           </property>
           <property name="icon">
            <iconset>
-            <disabledoff>icons/grey/eye.svg</disabledoff>
-            <disabledon>icons/grey/eye.svg</disabledon>
             <normaloff>icons/grey/eye.svg</normaloff>
-            <normalon>icons/blue/eye.svg</normalon>icons/grey/eye.svg</iconset>
+            <normalon>icons/blue/eye.svg</normalon>
+            <disabledoff>icons/grey/eye.svg</disabledoff>
+            <disabledon>icons/grey/eye.svg</disabledon>icons/grey/eye.svg</iconset>
           </property>
           <property name="checkable">
            <bool>true</bool>
@@ -658,16 +658,6 @@
               </size>
              </property>
             </spacer>
-           </item>
-           <item>
-            <widget class="QPushButton" name="pushButton_calculate">
-             <property name="focusPolicy">
-              <enum>Qt::NoFocus</enum>
-             </property>
-             <property name="text">
-              <string>calculate (F5)</string>
-             </property>
-            </widget>
            </item>
           </layout>
          </item>

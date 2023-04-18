@@ -16,8 +16,10 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
 )
 
-from common.stylesheet import set_stylesheet, set_widget_stylesheet, update_selected_widget_stylesheet
-
+from common.stylesheet import (
+    set_stylesheet,
+    set_widget_stylesheet,
+)
 from video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_stabilize_ui import Ui_widget_stabilize
 from common.widget_common import Widget_common
@@ -123,46 +125,36 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
         s = preferences['stabilize']
+        self.block_signals(True)
 
-        self.groupBox_stabilize.blockSignals(True)
         self.groupBox_stabilize.setChecked(False)
-        self.groupBox_stabilize.blockSignals(False)
-
-        self.tableWidget_stabilize.blockSignals(True)
         self.tableWidget_stabilize.clearContents()
         self.tableWidget_stabilize.setRowCount(0)
-
         self.clear_inputs()
 
-        self.pushButton_set_preview.blockSignals(True)
+        # Push button is used to calculate then display
         self.pushButton_set_preview.setEnabled(False)
         self.pushButton_set_preview.setChecked(False)
-        self.pushButton_set_preview.blockSignals(False)
+        self.previous_preview_state = False
+
+        self.block_signals(False)
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
 
 
+
     def refresh_preview_options(self, new_preview_settings):
-        enabled = new_preview_settings['stabilize']['enabled']
-        if enabled:
-            self.pushButton_set_preview.blockSignals(True)
-            self.pushButton_set_preview.setEnabled(True)
-            self.pushButton_set_preview.setChecked(True)
-            self.pushButton_set_preview.blockSignals(False)
-
-        # Disable preview button if not allowed
         self.is_edition_allowed = new_preview_settings['stabilize']['allowed']
-        if not self.is_edition_allowed:
-            self.pushButton_set_preview.blockSignals(True)
-            self.pushButton_set_preview.setEnabled(False)
-            self.pushButton_set_preview.setChecked(False)
-            self.pushButton_set_preview.blockSignals(False)
+        enabled = new_preview_settings['stabilize']['enabled']
 
-
-    def refresh_values(self, frame:dict):
-        pass
+        self.pushButton_set_preview.blockSignals(True)
+        self.pushButton_set_preview.setEnabled(self.is_edition_allowed)
+        self.pushButton_set_preview.setChecked(enabled)
+        self.previous_preview_state = enabled
+        self.pushButton_set_preview.blockSignals(False)
+        log.info(f"enable: {enabled}, allowed: {self.is_edition_allowed}")
 
 
     def get_preview_options(self):
@@ -172,6 +164,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         }
         return preview_options
 
+
+
+    def refresh_values(self, frame:dict):
+        # Refresh some specific values refreshed and stored in the frame struct
+        pass
 
 
     def grab_guidelines(self, x, y):
@@ -269,6 +266,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
 
     def block_signals(self, enabled:bool):
+        self.pushButton_set_preview.blockSignals(enabled)
         self.groupBox_stabilize.blockSignals(enabled)
         self.tableWidget_stabilize.blockSignals(enabled)
         self.pushButton_set_end.blockSignals(enabled)
@@ -341,12 +339,13 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         settings = self.get_current_settings()
         # print_lightcyan("event_settings_enable_toggled")
         # pprint(settings)
+        self.edition_started()
         self.signal_settings_modified.emit(settings)
         self.pushButton_save.setEnabled(True)
 
 
     def event_stabilize_settings_refreshed(self, stabilize_settings):
-        # print_lightcyan("event_stabilize_settings_refreshed")
+        log.info("event_stabilize_settings_refreshed")
         # pprint(stabilize_settings)
 
         self.removed_segment = None
@@ -357,6 +356,12 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             self.tableWidget_stabilize.clearContents()
             self.tableWidget_stabilize.setRowCount(0)
             self.set_controls_enabled(False)
+
+            # Disable calculations/preview
+            self.pushButton_set_preview.setEnabled(False)
+            self.pushButton_set_preview.setChecked(False)
+            self.previous_preview_state = False
+
             self.block_signals(False)
             self.label_message.setText("")
             return
@@ -404,14 +409,16 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         if 'error' in stabilize_settings.keys() and stabilize_settings['error']:
             self.label_message.setText("ERROR!")
+            # Disable calculations/preview
+            self.pushButton_set_preview.setEnabled(False)
+            self.pushButton_set_preview.setChecked(False)
+            self.previous_preview_state = False
+            log.info('disable preview')
         else:
             self.label_message.clear()
-
             # Enable preview
-            self.pushButton_set_preview.blockSignals(True)
             self.pushButton_set_preview.setEnabled(True)
-            self.pushButton_set_preview.blockSignals(False)
-
+            log.info('enable preview')
 
         self.block_signals(False)
 
@@ -477,7 +484,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             self.pushButton_set_segment.setEnabled(True)
         else:
             self.pushButton_set_segment.setEnabled(False)
-        self.disable_preview()
+        self.edition_started()
 
 
     def event_end_modified(self):
@@ -492,7 +499,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             self.pushButton_set_segment.setEnabled(True)
         else:
             self.pushButton_set_segment.setEnabled(False)
-        self.disable_preview()
+        self.edition_started()
 
 
     def event_ref_modified(self):
@@ -505,7 +512,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
                 w.setChecked(True)
                 w.blockSignals(False)
                 break
-        self.disable_preview()
+        self.edition_started()
 
 
     def event_set_segment_requested(self):
@@ -547,17 +554,15 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             table.item(row_no, col_no).setTextAlignment(self.alignment[col_no])
             table.item(row_no, col_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
-
         # Get current segments
         settings = self.get_current_settings()
-
-        self.pushButton_save.setEnabled(True)
 
         # print_lightgreen("event_set_segment_requested")
         # pprint(settings)
         self.pushButton_save.setEnabled(True)
         self.pushButton_set_preview.setEnabled(False)
         self.pushButton_set_preview.setChecked(False)
+        self.previous_preview_state = False
         self.signal_settings_modified.emit(settings)
 
 
@@ -576,7 +581,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         for col_no in range(len(self.alignment)):
             self.removed_segment[k].append(table.item(row_no, col_no).text())
             table.setItem(row_no, col_no, QTableWidgetItem(""))
-        self.disable_preview()
+        self.edition_started()
 
 
     def restore_segment(self):
@@ -592,25 +597,28 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
                 table.item(row_no, i).setTextAlignment(self.alignment[i])
                 table.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
         self.removed_segment = None
-        self.disable_preview()
+        self.edition_started()
 
 
-    def disable_preview(self):
-        # Start edition, disable
+    def edition_started(self):
+        # Start edition, disable preview
         self.pushButton_set_preview.blockSignals(True)
         self.pushButton_set_preview.setEnabled(False)
         self.pushButton_set_preview.setChecked(False)
+        self.previous_preview_state = False
         self.pushButton_set_preview.blockSignals(False)
 
 
-    def event_preview_changed(self, is_checked:bool=False):
-        # log.info("widget preview changed to %s" % ('true' if is_checked else 'false'))
+
+    def event_set_preview_toggled(self, is_checked:bool=False):
+        log.info(f"preview button changed to {is_checked}")
         if is_checked:
-            print_purple("event_preview_changed: request to calculate")
+            print_purple("event_set_preview_toggled: request to calculate")
             self.signal_preview_requested.emit()
         elif self.previous_preview_state != is_checked:
             self.signal_preview_options_changed.emit()
         self.previous_preview_state = is_checked
+
 
     def event_key_pressed(self, event):
         key = event.key()

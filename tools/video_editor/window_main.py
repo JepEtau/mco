@@ -137,6 +137,7 @@ class Window_main(Window_common):
 
 
     def event_preview_options_consolidated(self, new_preview_settings):
+        log.info("preview options have been consolidated, refresh widgets")
         self.widget_replace.refresh_preview_options(new_preview_settings)
         self.widget_stabilize.refresh_preview_options(new_preview_settings)
         self.widget_geometry.refresh_preview_options(new_preview_settings)
