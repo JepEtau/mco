@@ -177,7 +177,6 @@ class Window_main(Window_common):
 
             # Set an internal image object
             self.image = {
-                'cache_initial': frame['cache_initial'] if not options['stabilize']['enabled'] else frame['cache_deshake'],
                 'cache': frame['cache'],
                 'geometry': frame['geometry'],
                 'geometry_values': frame['geometry_values'],
@@ -186,6 +185,11 @@ class Window_main(Window_common):
                 },
                 'preview_options': options,
             }
+
+            if options['stabilize']['enabled'] and frame['stabilize']['enable']:
+                self.image['cache_initial'] = frame['cache_deshake']
+            else:
+                self.image['cache_initial'] = frame['cache_initial']
 
 
             # Update info in the other widgets

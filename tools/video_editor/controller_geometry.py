@@ -2,6 +2,7 @@
 import sys
 
 from filters.deshakers import STABILIZE_BORDER_HIGH_RES
+from filters.filters import calculate_geometry_parameters
 sys.path.append('../scripts')
 from copy import deepcopy
 
@@ -48,6 +49,7 @@ class Controller_geometry():
         parameter = event['parameter']
         value = event['value']
 
+
         # Select between shot and default shot
         if element == 'shot' and event_type == 'select' and parameter == 'shot':
             if value == 'default_shot':
@@ -58,6 +60,7 @@ class Controller_geometry():
                 self.model_database.set_shot_geometry(shot=shot,
                     geometry=deepcopy(self.model_database.get_default_shot_geometry(shot)))
 
+
         # Modify target width
         if element == 'target' and parameter == 'width':
             if k_part in ['g_asuivre', 'g_reportage']:
@@ -66,6 +69,7 @@ class Controller_geometry():
             if event_type == 'set':
                 geometry = self.model_database.get_target_geometry(k_ep=k_ep, k_part=k_part).copy()
                 if value == 'auto':
+                    # TODO: remove auto
                     # This will have to be calculated from shot
                     geometry['w'] = -1
                 else:
@@ -113,8 +117,84 @@ class Controller_geometry():
             else:
                 self.model_database.set_default_shot_geometry(shot=shot, geometry=geometry)
 
+        # Refresh all frames of this shot
+        self.refresh_geometry_for_each_frame(shot=shot)
+
         self.signal_reload_frame.emit()
         return
+
+
+    def refresh_geometry_for_each_frame(self, shot):
+        log.info(f"{shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}, refresh geometry for each frame")
+        target_geometry = self.model_database.get_target_geometry(k_ep=shot['k_ep'], k_part=shot['k_part'])
+        default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
+        shot_geometry = self.model_database.get_shot_geometry(shot=shot)
+
+        stabilize_settings = self.model_database.get_shot_stabilize_settings(shot=shot)
+        # TODO what to di if is erroneous?
+        try:
+            is_stabilize_enabled = stabilize_settings['enable']
+        except:
+            is_stabilize_enabled = False
+
+        virtual_shot = {'geometry': deepcopy(shot['geometry'])}
+        frame = self.frames[shot['no']][0]
+        if is_stabilize_enabled:
+            try:
+                virtual_shot['geometry']['default']['crop'] = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES,
+                                                            virtual_shot['geometry']['default']['crop']))
+            except:
+                print_orange("no geometry/default/crop")
+                pass
+            try:
+                virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES,
+                                                            virtual_shot['geometry']['shot']['crop']))
+            except:
+                print_orange("info: no geometry/shot/crop")
+                pass
+
+            if frame['cache_deshake'] is not None:
+                shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_deshake'])
+            else:
+                # Deshake has not been done, use initial frame geometry and path stabilize_enable flag
+                print_orange("no deshake img cached while trying to update geometry")
+                shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_initial'])
+                is_stabilize_enabled = False
+        else:
+            shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_initial'])
+        is_geometry_erroneous = False if shot_geometry_values['pad_error'] is None else True
+
+        # if target_geometry['w'] == -1:
+        #     print_lightcyan("calculate target geometry %s:%s" % (frame['k_ep'], frame['k_part']))
+        #     # Calculate width:
+        #     # TODO BUG won't work if deshake is enabled
+        #     geometry = calculate_geometry_parameters(shot=shot, img=frame['cache_initial'])
+        #     target_geometry['w'] = geometry['resize']['w']
+        #     self.model_database.set_target_geometry(
+        #         k_ep=frame['k_ep'], k_part=frame['k_part'],
+        #         geometry=target_geometry)
+
+        for frame in self.frames[shot['no']]:
+            if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage']:
+                k_part_src = shot['dst']['k_part'][2:]
+            else:
+                k_part_src = shot['dst']['k_part']
+
+            target_geometry = self.model_database.get_target_geometry(k_ep=shot['dst']['k_ep'], k_part=k_part_src)
+            frame['geometry'].update({
+                'target': target_geometry,
+                'default': default_shot_geometry,
+                'shot': shot_geometry,
+                # Used when the width of the cropped img  for the shot < width of the cropped img of the part
+                # is updated by the generate function
+                'error': False,
+            })
+            frame['geometry_values'] = shot_geometry_values
+
+            # TODO is this flag useful?
+            frame['geometry']['error'] = is_geometry_erroneous
+
+
 
 
     def event_geometry_discard_requested(self):

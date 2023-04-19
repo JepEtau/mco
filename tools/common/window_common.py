@@ -386,8 +386,6 @@ class Window_common(QMainWindow):
             log.info("start playing")
             speed = self.widget_controls.get_playing_speed()
             self.timer_delay = int(1000/(FPS*speed))
-            # self.timer_delay = 25
-            print("timer: %dms" % (self.timer_delay))
             self.timer.start(self.timer_delay, Qt.PreciseTimer, self)
             self.now = time.time()
 

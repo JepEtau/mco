@@ -19,25 +19,25 @@ from filters.utils import get_dimensions_from_crop_values
 
 
 def generate_image(frame:dict, preview_options:dict):
-    # log.info("generate single image")
-    print_purple(("generate single image"))
-    # pprint(frame)
+    verbose = False
+
+    if verbose:
+        log.info("generate single image")
+        print_purple(("generate single image"))
+        # pprint(frame)
 
     # geometry_values are the calculated dimensions, crop, pad etc.
     geometry_values = deepcopy(frame['geometry_values'])
 
-    verbose = False
     if verbose:
         print("\ngenerate_image:")
         pprint(preview_options)
         print("\t-> %s:%s:%s" % (frame['k_ed'], frame['k_ep'], frame['k_part']))
-
         print_lightcyan("geometry parameters")
         pprint(geometry_values)
 
     # Initial image
     if frame['cache_deshake'] is not None and preview_options['stabilize']['enabled']:
-        print_yellow("use deshake img")
         img_original = frame['cache_deshake']
         is_using_deshake = True
     else:
@@ -65,14 +65,12 @@ def generate_image(frame:dict, preview_options:dict):
     preview_shot_geometry = preview_options['geometry']['shot']
 
     # Cropped dimensions
-    if preview_options['stabilize']['enabled']:
-        print_yellow(f"{time.time():.02f} stabilize is enabled, change crop values")
-        print(shot_geometry['crop'])
-        print("to")
+    if preview_options['stabilize']['enabled'] and frame['stabilize']['enable']:
         crop_values = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
-        print(crop_values)
         if not is_using_deshake:
+            print_yellow(f"{time.time():.02f} stabilize is enabled, change crop values")
             print("deshake image not used ERRRRRRRRRRRRRRRRRRRRRRRRRRRRROOOOOOOOOOOOOORRRRRRRR")
+            pprint(frame)
     else:
         crop_values = shot_geometry['crop']
         if is_using_deshake:

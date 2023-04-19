@@ -34,7 +34,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     signal_settings_modified = Signal(dict)
     signal_segment_selected = Signal(dict)
     signal_frame_selected = Signal(int)
-    signal_preview_requested = Signal()
+    signal_stabilization_requested = Signal()
     signal_show_guidelines_changed = Signal(bool)
 
 
@@ -51,6 +51,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.is_edition_allowed = False
         self.previous_preview_state = False
         self.initial_preview_state = False
+        self.is_obsolete = True
 
         # Guidelines
         self.is_moving_guidelines = False
@@ -102,6 +103,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.label_message.clear()
 
         # Signals
+        self.pushButton_stabilize.clicked.connect(self.event_stabilize_requested)
         self.pushButton_guidelines.toggled[bool].connect(self.event_guidelines_changed)
         self.pushButton_set_start.clicked.connect(self.event_start_modified)
         self.pushButton_set_end.clicked.connect(self.event_end_modified)
@@ -112,6 +114,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
 
         self.controller.signal_stabilize_settings_refreshed[dict].connect(self.event_stabilize_settings_refreshed)
+        self.controller.signal_stabilization_done.connect(self.event_stabilization_done)
         self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
         set_stylesheet(self)
@@ -139,6 +142,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.pushButton_set_preview.setChecked(s['widget']['enabled'])
         self.previous_preview_state = s['widget']['enabled']
         self.initial_preview_state = s['widget']['enabled']
+        self.pushButton_stabilize.setEnabled(False)
+        self.is_obsolete = True
 
         self.block_signals(False)
 
@@ -155,12 +160,13 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.pushButton_set_preview.blockSignals(True)
         self.pushButton_set_preview.setEnabled(self.is_edition_allowed)
         self.pushButton_set_preview.setChecked(enabled)
-        self.previous_preview_state = enabled
+        # self.previous_preview_state = enabled
         self.pushButton_set_preview.blockSignals(False)
         log.info(f"enable: {enabled}, allowed: {self.is_edition_allowed}")
 
 
     def get_preview_options(self):
+        log.info(f"{self.objectName()}: get_preview_options")
         preview_options = {
             'allowed': self.is_edition_allowed,
             'enabled': self.pushButton_set_preview.isChecked(),
@@ -270,6 +276,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def block_signals(self, enabled:bool):
         self.pushButton_set_preview.blockSignals(enabled)
+        self.pushButton_stabilize.blockSignals(enabled)
         self.groupBox_stabilize.blockSignals(enabled)
         self.tableWidget_stabilize.blockSignals(enabled)
         self.pushButton_set_end.blockSignals(enabled)
@@ -348,7 +355,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
 
     def event_stabilize_settings_refreshed(self, stabilize_settings):
-        log.info("event_stabilize_settings_refreshed")
+        log.info("Refresh the widget table")
         # pprint(stabilize_settings)
 
         self.removed_segment = None
@@ -361,9 +368,10 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             self.set_controls_enabled(False)
 
             # Disable calculations/preview
-            self.pushButton_set_preview.setEnabled(False)
-            self.pushButton_set_preview.setChecked(False)
-            self.previous_preview_state = False
+            self.pushButton_stabilize.setEnabled(False)
+            # self.pushButton_set_preview.setEnabled(False)
+            # self.pushButton_set_preview.setChecked(False)
+            # self.previous_preview_state = False
 
             self.block_signals(False)
             self.label_message.setText("")
@@ -398,7 +406,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             table.selectionModel().clearSelection()
         else:
             row_no = 0
-            self.pushButton_set_preview.setEnabled(False)
+            self.pushButton_stabilize.setEnabled(False)
+            self.is_obsolete = True
+            # self.pushButton_set_preview.setEnabled(False)
 
         self.segment_count = len(segments)
         for row_no in range(len(segments), SEGMENTS_MAX_COUNT):
@@ -413,21 +423,29 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         if 'error' in stabilize_settings.keys() and stabilize_settings['error']:
             self.label_message.setText("ERROR!")
             # Disable calculations/preview
-            self.pushButton_set_preview.setEnabled(False)
-            self.pushButton_set_preview.setChecked(False)
+            self.pushButton_stabilize.setEnabled(False)
+            # self.pushButton_set_preview.setEnabled(False)
+            # self.pushButton_set_preview.setChecked(False)
             self.previous_preview_state = False
             log.info('disable preview')
+        elif self.is_obsolete:
+            log.info('enable stabilize button')
+            self.label_message.setText("Obsolete")
+            self.pushButton_stabilize.setEnabled(True)
         else:
+            log.info('disable stabilize button')
             self.label_message.clear()
-            # Enable preview
-            self.pushButton_set_preview.setEnabled(True)
-            log.info('enable preview')
+            self.pushButton_stabilize.setEnabled(False)
+
 
         self.block_signals(False)
-        if self.initial_preview_state and self.pushButton_set_preview.isChecked():
-            log.info("ask for new calculations")
+        if (self.initial_preview_state and self.is_obsolete):
+            # Initial preview option
+            log.info("initial preview option: stabilize")
             self.initial_preview_state = False
-            self.event_set_preview_toggled(True)
+            self.event_stabilize_requested()
+            # self.event_set_preview_toggled(True)
+
 
 
     def event_segment_selected(self):
@@ -567,9 +585,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         # print_lightgreen("event_set_segment_requested")
         # pprint(settings)
         self.pushButton_save.setEnabled(True)
-        self.pushButton_set_preview.setEnabled(False)
-        self.pushButton_set_preview.setChecked(False)
-        self.previous_preview_state = False
+        # self.pushButton_set_preview.setEnabled(False)
+        # self.pushButton_set_preview.setChecked(False)
+        # self.previous_preview_state = False
         self.signal_settings_modified.emit(settings)
 
 
@@ -609,21 +627,39 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def edition_started(self):
         # Start edition, disable preview
-        self.pushButton_set_preview.blockSignals(True)
-        self.pushButton_set_preview.setEnabled(False)
-        self.pushButton_set_preview.setChecked(False)
-        self.previous_preview_state = False
-        self.pushButton_set_preview.blockSignals(False)
+        # self.pushButton_stabilize.setEnabled(True)
+        # self.pushButton_set_preview.blockSignals(True)
+        # self.pushButton_set_preview.setEnabled(False)
+        # self.pushButton_set_preview.setChecked(False)
+        # self.previous_preview_state = False
+        # self.pushButton_set_preview.blockSignals(False)
+        self.is_obsolete = True
 
+    def event_stabilize_requested(self):
+        log.info(f"Request to stabilize")
+        self.signal_stabilization_requested.emit()
 
+    def event_stabilization_done(self):
+        log.info('stabilization done')
+        self.label_message.clear()
+        self.pushButton_stabilize.setEnabled(False)
+        self.is_obsolete = False
 
     def event_set_preview_toggled(self, is_checked:bool=False):
         log.info(f"preview button changed to {is_checked}")
         if is_checked:
-            print_purple("event_set_preview_toggled: request to calculate")
-            self.signal_preview_requested.emit()
-        elif self.previous_preview_state != is_checked:
+            print_purple("Changed preview to enabled, request to calculate")
+            if self.is_obsolete:
+                self.signal_stabilization_requested.emit()
+
+        # elif self.previous_preview_state != is_checked:
+        #     self.signal_preview_options_changed.emit()
+
+        else:
+            self.is_obsolete = True
             self.signal_preview_options_changed.emit()
+            # self.pushButton_stabilize.setEnabled(True)
+
         self.previous_preview_state = is_checked
 
 

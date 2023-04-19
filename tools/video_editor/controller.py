@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
+
+from utils.nested_dict import nested_dict_set
 sys.path.append('../scripts')
 
 from copy import deepcopy
@@ -59,6 +61,7 @@ class Controller_video_editor(Controller_common,
     signal_is_saved = Signal(str)
 
     signal_stabilize_settings_refreshed = Signal(dict)
+    signal_stabilization_done = Signal()
 
     signal_preview_options_consolidated = Signal(dict)
 
@@ -118,7 +121,7 @@ class Controller_video_editor(Controller_common,
 
         self.view.widget_stabilize.signal_settings_modified[dict].connect(self.event_stabilize_modified)
         self.view.widget_stabilize.signal_save.connect(self.event_stabilize_save_requested)
-        self.view.widget_stabilize.signal_preview_requested.connect(self.event_stabilize_preview_requested)
+        self.view.widget_stabilize.signal_stabilization_requested.connect(self.event_stabilization_requested)
 
 
         self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
@@ -392,11 +395,13 @@ class Controller_video_editor(Controller_common,
         except:
             previous_shot_id = ""
 
+        # Create a list of frames for each selected shot
         frame_nos = list()
         index = 0
         ticklist = [0]
         self.playlist_frames.clear()
         for shot_no in selected_shots['shotlist']:
+            # mmmmh what??? should use self.shot
             shot = self.frames[shot_no]
             for frame in shot:
                 frame['index'] = index
@@ -405,24 +410,6 @@ class Controller_video_editor(Controller_common,
                 frame_nos.append(frame['frame_no'])
             ticklist.append(ticklist[-1] + len(self.frames[shot_no]))
 
-
-        self.playlist_properties.update({
-            # 'start': self.shots[selected_shots['shotlist'][0]]['start'],
-            'frame_nos': frame_nos,
-            'count': len(self.playlist_frames),
-            'ticks': ticklist,
-        })
-
-        # Flush internal variables
-        self.current_frame = None
-
-
-        gc.collect()
-        # pprint(self.framelist)
-
-        self.current_shot_no = selected_shots['shotlist'][0]
-        shot = self.current_shot()
-        shot_no = shot['no']
 
         # Load images
         print_lightgrey("\tload images")
@@ -441,10 +428,42 @@ class Controller_video_editor(Controller_common,
         print_green("%.02fs" % (time.time() - start_time))
 
 
+        # Update each frame
+        for shot_no in selected_shots['shotlist']:
+            shot = self.shots[shot_no]
+
+            # Update each frame with deshake status flag
+            self.refresh_stabilize_flag_for_each_frame(shot=shot)
+
+            # Geometry: must be done AFTER having set stabilize flag
+            self.refresh_geometry_for_each_frame(shot=shot)
+
+
+        # pprint(self.frames[selected_shots['shotlist'][0]])
+
+        self.playlist_properties.update({
+            # 'start': self.shots[selected_shots['shotlist'][0]]['start'],
+            'frame_nos': frame_nos,
+            'count': len(self.playlist_frames),
+            'ticks': ticklist,
+        })
+
+        # Set current to None to refresh widgets
+        self.current_frame = None
+
+        self.current_shot_no = selected_shots['shotlist'][0]
+        shot = self.current_shot()
+        shot_no = shot['no']
+
+
+
+
         if False:
             print_lightcyan("================================== SHOT =======================================")
             pprint(shot)
             print_lightcyan("===============================================================================")
+
+
 
         # Replace
         self.refresh_replace_list()
@@ -509,7 +528,7 @@ class Controller_video_editor(Controller_common,
         the initial flag is set to True
         framelist contains all path for each frame of this playlist
         """
-        log.info("get_frame: get_frame from index. %d" % (index))
+        # log.info("get_frame: get_frame from index. %d" % (index))
         # print_lightgreen("playlist: nb of frames: %d" % (len(self.playlist_frames)))
         if len(self.playlist_frames) == 0:
             return None
@@ -528,12 +547,12 @@ class Controller_video_editor(Controller_common,
 
         # Select shot:
         shot = self.shots[shot_no]
-        if not self.preview_options['replace']['enabled']:
 
+        # Replace: remove key if disabled
+        if not self.preview_options['replace']['enabled']:
             try: del frame['replace']
             except: pass
         else:
-
             # print_green("\tshot no. %d, frame no. %d" % (shot_no, frame_no))
             new_frame_no = self.model_database.get_replace_frame_no(shot, frame_no)
             if new_frame_no == -1:
@@ -544,7 +563,8 @@ class Controller_video_editor(Controller_common,
                 frame = self.playlist_frames[index + (new_frame_no - frame_no)]
                 frame['replace'] = frame_no
 
-        # If shot is different
+
+        # If shot is different: todo: is reload_parameters required?
         new_shot_id = f"{shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}"
         if previous_shot_id != new_shot_id:
             is_shot_changed = True
@@ -558,6 +578,7 @@ class Controller_video_editor(Controller_common,
         frame['curves'] = self.model_database.get_shot_curves_selection(
             db=self.model_database.database(), shot=shot)
         if is_shot_changed:
+            # Shot is different, refresh the curve database in the curves widget
             try:
                 self.signal_load_curves.emit(frame['curves'])
                 shot_list = self.model_database.get_shots_per_curves(frame['curves']['k_curves'])
@@ -565,26 +586,11 @@ class Controller_video_editor(Controller_common,
             except:
                 self.signal_load_curves.emit(None)
                 self.signal_shot_per_curves_modified.emit(None)
-        elif self.current_frame is None:
-            self.signal_load_curves.emit(None)
+        # Remove this
+        # elif self.current_frame is None:
+        #     self.signal_load_curves.emit(None)
 
-        # Load current geometry
-        k_part_src = shot['dst']['k_part'][2:] if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage'] else shot['dst']['k_part']
-        target_geometry = self.model_database.get_target_geometry(k_ep=shot['dst']['k_ep'], k_part=k_part_src)
-        frame['geometry'].update({
-            'target': target_geometry,
-            'default': self.model_database.get_default_shot_geometry(shot=shot),
-            'shot': self.model_database.get_shot_geometry(shot=shot),
-
-            # Used when the width of the cropped img  for the shot < width of the cropped img of the part
-            # is updated by the generate function
-            'error': False,
-        })
-        # print_yellow("db_target_geometry_initial")
-        # pprint(self.model_database.db_target_geometry_initial)
-        # print_yellow("db_target_geometry")
-        # pprint(self.model_database.db_target_geometry)
-        # pprint(frame['geometry'])
+        # Get geometry: already done each time a modification is done
 
         # Load new stabilize settings
         if is_shot_changed:
@@ -594,9 +600,9 @@ class Controller_video_editor(Controller_common,
         # Purge image from the previous frame
         self.purge_current_frame_cache()
 
-        if is_shot_changed:
-            self.consolidate_preview_options()
-            self.signal_preview_options_consolidated.emit(self.preview_options)
+        # if is_shot_changed:
+        #     self.consolidate_preview_options()
+        #     self.signal_preview_options_consolidated.emit(self.preview_options)
 
         # Set current frame
         self.current_frame = frame
@@ -615,44 +621,9 @@ class Controller_video_editor(Controller_common,
                 frame['cache_initial'] = None
                 return None
 
-            if target_geometry['w'] == -1:
-                print_lightcyan("calculate target geometry %s:%s" % (frame['k_ep'], frame['k_part']))
-                # Calculate width:
-                # TODO BUG won't work if deshake is enabled
-                geometry = calculate_geometry_parameters(shot=frame, img=frame['cache_initial'])
-                target_geometry['w'] = geometry['resize']['w']
-                self.model_database.set_target_geometry(
-                    k_ep=frame['k_ep'], k_part=frame['k_part'],
-                    geometry=target_geometry)
+            # Update target geometry if none provided
+            # TODO move to controller_geometry
 
-            virtual_shot = {'geometry': deepcopy(frame['geometry'])}
-            if options['stabilize']['enabled']:
-                # Patch crop values because it has not been done: crop values should be saved whatever the
-                #
-                try:
-                    virtual_shot['geometry']['default']['crop'] = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES,
-                                                                virtual_shot['geometry']['default']['crop']))
-                except:
-                    print_orange("no geometry/default/crop")
-                    pass
-                try:
-                    virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES,
-                                                                virtual_shot['geometry']['shot']['crop']))
-                except:
-                    print_orange("no geometry/shot/crop")
-                    pass
-
-                if frame['cache_deshake'] is None:
-                    # The original has not yet been loaded
-                    sys.exit(print_red("image not loaded!)"))
-
-                frame['geometry_values'] = calculate_geometry_parameters(shot=virtual_shot,
-                    img=frame['cache_deshake'])
-            else:
-                frame['geometry_values'] = calculate_geometry_parameters(shot=virtual_shot,
-                    img=frame['cache_initial'])
-
-            frame['geometry']['error'] = True if frame['geometry_values']['pad_error'] is not None else False
 
             index, img = generate_image(self.current_frame, preview_options=options)
             self.set_current_frame_cache(img=img)
@@ -677,10 +648,10 @@ class Controller_video_editor(Controller_common,
 
     def consolidate_preview_options(self):
         # Modify preview settings because some widget have to be disabled
+        verbose = False
         log.info("consolidate options")
         options = self.preview_options
 
-        verbose = True
         if verbose:
             print(f"Consolidate preview options, task: {self.current_task}")
             print_lightcyan("\npreview mode changed:")
@@ -770,7 +741,21 @@ class Controller_video_editor(Controller_common,
             for f in self.frames[shot['no']]:
                 f['cache_deshake'] = None
 
+        if new_settings['enable'] != current_settings['enable']:
+            # Geometry has to be consolidated if change enabled/disable
+            self.refresh_geometry_for_each_frame(shot=shot)
+
+
         self.signal_stabilize_settings_refreshed.emit(new_settings)
+
+
+    def refresh_stabilize_flag_for_each_frame(self, shot):
+        shot_stabilize = self.model_database.get_shot_stabilize_settings(shot=shot)
+        for frame in self.frames[shot['no']]:
+            try:
+                nested_dict_set(frame, shot_stabilize['enable'], 'stabilize', 'enable')
+            except:
+                nested_dict_set(frame, False, 'stabilize', 'enable')
 
 
     def event_stabilize_discard_requested(self):
@@ -789,7 +774,7 @@ class Controller_video_editor(Controller_common,
 
 
 
-    def event_stabilize_preview_requested(self):
+    def event_stabilization_requested(self):
         shot = self.current_shot()
         shot_no = shot['no']
 
@@ -840,11 +825,19 @@ class Controller_video_editor(Controller_common,
         for f, img in zip(self.frames[shot_no], output_images):
             f['cache_deshake'] = img
 
+
+        # Refresh all frames of this shot: ste the stabilize 'enable' flag
+        self.refresh_stabilize_flag_for_each_frame(shot)
+
+        # Geometry has to be consolidated if change enabled/disable
+        self.refresh_geometry_for_each_frame(shot=shot)
+
         # Consolidate preview
         self.preview_options['stabilize']['enabled'] = True
         self.consolidate_preview_options()
         self.signal_preview_options_consolidated.emit(self.preview_options)
         self.signal_reload_frame.emit()
+        self.signal_stabilization_done.emit()
 
 
 def load_image(i, f):

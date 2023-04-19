@@ -372,7 +372,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
     def get_preview_options(self):
-        log.info("get_preview_options")
+        log.info(f"{self.objectName()}: get_preview_options")
         preview_options = {
             'allowed': self.is_edition_allowed,
             'final_preview': self.pushButton_set_preview.isChecked(),
