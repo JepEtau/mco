@@ -177,8 +177,8 @@ class Widget_controls(QWidget, Ui_widget_controls):
             self.slider_frames.setEnabled(False)
 
 
-    def update_slider_value(self, index:int):
-        # log.info("update_slider_value: %d" % (index))
+    def move_slider_to(self, index:int):
+        # log.info(f"move_slider_to: {index}")
         if index >= len(self.frame_nos):
             log.info("out of range: %d" % (index))
             index = len(self.frame_nos) - 1
@@ -186,14 +186,15 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
 
     def set_slider_value(self, value):
+        # log.info(f"set_slider_value: {value}")
         self.slider_frames.blockSignals(True)
-        self.update_slider_value(value)
+        self.move_slider_to(value)
         self.slider_frames.blockSignals(False)
 
 
 
     def set_playing_frame_properties(self, current_index):
-        self.update_slider_value(current_index)
+        self.move_slider_to(current_index)
 
 
     def set_slider_to_previous_tick(self):
@@ -201,7 +202,7 @@ class Widget_controls(QWidget, Ui_widget_controls):
         for i in range(len(self.ticks) - 1):
             if self.ticks[i] <= current_clider_value <= self.ticks[i+1]:
                 break
-        self.update_slider_value(self.ticks[i])
+        self.move_slider_to(self.ticks[i])
 
 
     def set_slider_to_following_tick(self):
@@ -209,7 +210,7 @@ class Widget_controls(QWidget, Ui_widget_controls):
         for i in range(len(self.ticks) - 1):
             if self.ticks[i] <= current_clider_value < self.ticks[i+1]:
                 break
-        self.update_slider_value(self.ticks[i+1])
+        self.move_slider_to(self.ticks[i+1])
 
 
     def get_playing_speed(self):
@@ -217,15 +218,14 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
 
     def event_refresh_slider(self, playlist_properties):
-        # log.info("ready to play, refresh slider")
+        log.info("ready to play, refresh slider")
 
         self.slider_frames.blockSignals(True)
         self.slider_frames.setMaximum(playlist_properties['count'] - 1)
         self.frame_nos = playlist_properties['frame_nos']
-        # self.frames_end = self.frames_start + playlist_properties['count']
         self.copied_frame_no = -1
 
-        self.update_slider_value(0)
+        self.slider_frames.setValue(0)
         try:
             self.lineEdit_frame_no.setText(f"{self.frame_nos[0]}")
         except:
@@ -240,25 +240,26 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
 
     def event_slider_moved(self, value):
+        # log.info(f"event, slider moved to {value}")
         if self.status == 'paused':
             self.pushButton_play_pause.blockSignals(True)
             self.pushButton_play_pause.setChecked(True)
             self.pushButton_play_pause.setIcon(self.icon_play)
             self.pushButton_play_pause.blockSignals(False)
-        f_no = self.frame_nos[self.slider_frames.value()]
-        # log.info("event: moved to %d" % (f_no))
-        self.lineEdit_frame_no.setText(str(f_no))
+        frame_no = self.frame_nos[self.slider_frames.value()]
+        self.lineEdit_frame_no.setText(str(frame_no))
+        # log.info(f"event, slider moved to frame {frame_no}")
         self.signal_slider_moved.emit(self.slider_frames.value())
 
 
     def event_previous_frame(self, delta=1):
         # log.info("event_previous_frame: %d" % (self.slider_frames.value()))
-        self.update_slider_value(
+        self.move_slider_to(
             max(0, self.slider_frames.value() - delta))
 
 
     def event_next_frame(self, delta=1):
-        self.update_slider_value(
+        self.move_slider_to(
             min(self.slider_frames.value() + delta, self.slider_frames.maximum()))
 
 

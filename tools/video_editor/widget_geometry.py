@@ -54,7 +54,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         # Target
         self.pushButton_target_width_edition.toggled[bool].connect(partial(self.event_shot_preview_changed, 'target_preview'))
-        self.pushButton_target_width_copy_from_shot.clicked.connect(partial(self.event_target, 'copy_from_shot'))
+        # self.pushButton_target_width_copy_from_shot.clicked.connect(partial(self.event_target, 'copy_from_shot'))
         self.pushButton_target_discard.clicked.connect(partial(self.event_target, 'discard'))
 
         # Shot
@@ -149,11 +149,11 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         if frame['k_part'] in ['g_asuivre', 'g_reportage']:
             self.groupBox_shot_geometry.setEnabled(False)
-            self.pushButton_target_width_copy_from_shot.setEnabled(False)
+            # self.pushButton_target_width_copy_from_shot.setEnabled(False)
             self.is_target_disabled = True
         else:
             self.groupBox_shot_geometry.setEnabled(True)
-            self.pushButton_target_width_copy_from_shot.setEnabled(True)
+            # self.pushButton_target_width_copy_from_shot.setEnabled(True)
             self.is_target_disabled = False
 
 
@@ -259,10 +259,6 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
     def event_target(self, action):
         log.info("action=%s" % (action))
-        # if action == 'preview':
-        #     self.signal_preview_options_changed.emit()
-        # elif action == 'show_edition':
-        #     self.signal_preview_options_changed.emit()
         if action == 'copy_from_shot':
             self.event_is_modified(element='target',
                 event_type='set', parameter='width', value='auto')
@@ -395,7 +391,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         # Target
         self.pushButton_target_width_edition.blockSignals(enabled)
-        self.pushButton_target_width_copy_from_shot.blockSignals(enabled)
+        # self.pushButton_target_width_copy_from_shot.blockSignals(enabled)
         self.pushButton_target_discard.blockSignals(enabled)
 
         # Shot

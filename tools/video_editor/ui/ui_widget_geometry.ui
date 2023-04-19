@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>289</width>
-    <height>336</height>
+    <width>321</width>
+    <height>364</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -95,65 +95,6 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_save">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset>
-            <normaloff>icons/purple/save.svg</normaloff>icons/purple/save.svg</iconset>
-          </property>
-          <property name="checkable">
-           <bool>false</bool>
-          </property>
-          <property name="autoDefault">
-           <bool>false</bool>
-          </property>
-          <property name="flat">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButton_discard">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-            <horstretch>0</horstretch>
-            <verstretch>0</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="focusPolicy">
-           <enum>Qt::NoFocus</enum>
-          </property>
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset>
-            <normaloff>icons/grey/undo.svg</normaloff>
-            <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
-          </property>
-          <property name="checkable">
-           <bool>false</bool>
-          </property>
-          <property name="autoDefault">
-           <bool>false</bool>
-          </property>
-          <property name="flat">
-           <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
          <spacer name="horizontalSpacer_2">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -188,6 +129,65 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_discard">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>icons/grey/undo.svg</normaloff>
+            <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
+          <property name="autoDefault">
+           <bool>false</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_save">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>icons/purple/save.svg</normaloff>icons/purple/save.svg</iconset>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
+          <property name="autoDefault">
+           <bool>false</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QPushButton" name="pushButton_close">
@@ -251,54 +251,6 @@
          <property name="bottomMargin">
           <number>3</number>
          </property>
-         <item row="0" column="5">
-          <widget class="QPushButton" name="pushButton_target_discard">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
-           </property>
-           <property name="text">
-            <string extracomment="Undo (Ctrl-Z)"/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/purple/undo.svg</normaloff>
-             <normalon>icons/purple/undo.svg</normalon>icons/purple/undo.svg</iconset>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="pushButton_target_width_edition">
-           <property name="focusPolicy">
-            <enum>Qt::NoFocus</enum>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>icons/grey/box-select.svg</normaloff>
-             <normalon>icons/blue/box-select.svg</normalon>
-             <disabledoff>icons/grey/box-select.svg</disabledoff>
-            <disabledon>icons/grey/box-select.svg</disabledon>
-                 icons/grey/box-select.svg</iconset>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="3">
           <widget class="QLineEdit" name="lineEdit_target_width">
            <property name="sizePolicy">
@@ -344,7 +296,7 @@
           </widget>
          </item>
          <item row="0" column="4">
-          <widget class="QPushButton" name="pushButton_target_width_copy_from_shot">
+          <widget class="QPushButton" name="pushButton_target_discard">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -355,12 +307,35 @@
             <enum>Qt::NoFocus</enum>
            </property>
            <property name="text">
-            <string extracomment="Copy from shot"/>
+            <string extracomment="Undo (Ctrl-Z)"/>
            </property>
            <property name="icon">
             <iconset>
-             <normaloff>icons/blue/corner-up-left.svg</normaloff>
-             <normalon>icons/blue/corner-up-left.svg</normalon>icons/blue/corner-up-left.svg</iconset>
+             <normaloff>icons/purple/undo.svg</normaloff>
+             <normalon>icons/purple/undo.svg</normalon>icons/purple/undo.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="pushButton_target_width_edition">
+           <property name="focusPolicy">
+            <enum>Qt::NoFocus</enum>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>icons/grey/box-select.svg</normaloff>
+             <normalon>icons/blue/box-select.svg</normalon>
+             <disabledoff>icons/grey/box-select.svg</disabledoff>
+             <disabledon>icons/grey/box-select.svg</disabledon>icons/grey/box-select.svg</iconset>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
            </property>
            <property name="flat">
             <bool>true</bool>

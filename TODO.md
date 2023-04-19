@@ -2,8 +2,10 @@
 (1)
 - remove 'save images' after deinterlacing from ffv1 file unless last task is deinterlace
 - concatenation of video files seems not working anymore
+- remove common_<ed>.ini files
 
 (2)
+- stabilize: when 2 segments are separated by some frames, the first image of the 2nd segment is not aligned with previous frames (g_fin, shot no. 0)
 - create a pre_rgb filter to modify RGB with deshaked/replaced images only
 - verify negative values for crop values when deshake is disable
 
@@ -18,20 +20,20 @@
 
 # TODO video editor
 (1)
-- when loading a shot, if stabilize preview was enable, generate images
-- geometry: use stabilize padding value
-- separate allowed/preview
-- preview button for stabilize
 - use transformation saved in a cache list
-- parse single shot only if database already been parsed
+- stabilize all selected shots (but keep transformation matrix only?)
+- add buttons to hide widgets
 
 (2)
+- disable all widgets if missing images
 - add loop mode
+- Add a pre_rgb step
+- parse single shot only if database already been parsed
 - update save button when loading a segment or after modifications: use a signal
 - Save when closing is not working
 - display unsaved shot in selection widget
 - buttons (save, discard, ...) not working
-- geometry: implement discard function for width: detect if modified
+- add save 'target' in geometry widget
 - edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db
 - when no image loaded, reset all widgets
 

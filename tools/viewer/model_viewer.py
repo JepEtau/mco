@@ -179,6 +179,6 @@ class Model_viewer(QObject):
 
     def select_frame(self, image_name=''):
         # log.info("select frame: %s" % (image_name))
-        frame = self.framelist.get_frame_from_index(image_name)
+        frame = self.framelist.get_frame_at_index(image_name)
         self.signal_display_frame.emit(frame)
 

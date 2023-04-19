@@ -75,7 +75,7 @@ class Window_main(Window_common):
             self.widgets['replace'] = self.widget_replace
             self.widget_replace.set_initial_options(p)
             self.widget_replace.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'replace'))
-            self.widget_replace.signal_frame_selected[int].connect(self.event_frame_no_selected)
+            self.widget_replace.signal_frame_selected[int].connect(self.event_move_to_frame_no)
 
         # Geometry: crop and resize
         if 'geometry' in self.widgets.keys():
@@ -92,7 +92,7 @@ class Window_main(Window_common):
             self.widgets['stabilize'] = self.widget_stabilize
             self.widget_stabilize.set_initial_options(p)
             self.widget_stabilize.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'stabilize'))
-            self.widget_stabilize.signal_frame_selected[int].connect(self.event_frame_no_selected)
+            self.widget_stabilize.signal_frame_selected[int].connect(self.event_move_to_frame_no)
             self.widget_stabilize.signal_show_guidelines_changed[bool].connect(self.event_show_guidelines_changed)
         self.show_guidelines = False
 
@@ -102,7 +102,7 @@ class Window_main(Window_common):
             self.widgets['controls'] = self.widget_controls
             self.widget_controls.set_initial_options(p)
             self.widget_controls.signal_button_pushed[str].connect(self.event_control_button_pressed)
-            self.widget_controls.signal_slider_moved[int].connect(self.event_move_to_frame_no)
+            self.widget_controls.signal_slider_moved[int].connect(self.event_move_to_frame_index)
             self.widget_controls.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'controls'))
 
         # Selection of episode/part/shot

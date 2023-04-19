@@ -30,7 +30,8 @@ def verify_stabilize_segments(shot, segments):
 
     # 1st segment
     previous_segment = segments[0]
-    if previous_segment['end'] >= shot['start'] + shot['count']:
+    if (previous_segment['start'] < shot['start']
+        or previous_segment['end'] >= shot['start'] + shot['count']):
         # Segment shall fit in shot
        return False
 

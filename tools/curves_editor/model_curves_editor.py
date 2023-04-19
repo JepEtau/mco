@@ -527,7 +527,7 @@ class Model_curves_editor(Controller_common):
             return None
 
 
-        frame = self.framelist.get_frame_from_index(image_name)
+        frame = self.framelist.get_frame_at_index(image_name)
 
         # Shot has changed: update UI with parameters for this shot (curves, crop, resize)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:

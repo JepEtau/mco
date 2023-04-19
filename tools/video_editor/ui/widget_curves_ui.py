@@ -72,29 +72,6 @@ class Ui_widget_curves(object):
 
         self.horizontalLayout.addWidget(self.pushButton_split_line)
 
-        self.pushButton_save = QPushButton(self.frame)
-        self.pushButton_save.setObjectName(u"pushButton_save")
-        icon2 = QIcon()
-        icon2.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_save.setIcon(icon2)
-        self.pushButton_save.setCheckable(False)
-        self.pushButton_save.setAutoDefault(False)
-        self.pushButton_save.setFlat(True)
-
-        self.horizontalLayout.addWidget(self.pushButton_save)
-
-        self.pushButton_discard = QPushButton(self.frame)
-        self.pushButton_discard.setObjectName(u"pushButton_discard")
-        icon3 = QIcon()
-        icon3.addFile(u"icons/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon3.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
-        self.pushButton_discard.setIcon(icon3)
-        self.pushButton_discard.setCheckable(False)
-        self.pushButton_discard.setAutoDefault(False)
-        self.pushButton_discard.setFlat(True)
-
-        self.horizontalLayout.addWidget(self.pushButton_discard)
-
         self.horizontalSpacer_2 = QSpacerItem(22, 10, QSizePolicy.Fixed, QSizePolicy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer_2)
@@ -107,6 +84,29 @@ class Ui_widget_curves(object):
         self.horizontalSpacer = QSpacerItem(5, 10, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
+
+        self.pushButton_discard = QPushButton(self.frame)
+        self.pushButton_discard.setObjectName(u"pushButton_discard")
+        icon2 = QIcon()
+        icon2.addFile(u"icons/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon2.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_discard.setIcon(icon2)
+        self.pushButton_discard.setCheckable(False)
+        self.pushButton_discard.setAutoDefault(False)
+        self.pushButton_discard.setFlat(True)
+
+        self.horizontalLayout.addWidget(self.pushButton_discard)
+
+        self.pushButton_save = QPushButton(self.frame)
+        self.pushButton_save.setObjectName(u"pushButton_save")
+        icon3 = QIcon()
+        icon3.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.pushButton_save.setIcon(icon3)
+        self.pushButton_save.setCheckable(False)
+        self.pushButton_save.setAutoDefault(False)
+        self.pushButton_save.setFlat(True)
+
+        self.horizontalLayout.addWidget(self.pushButton_save)
 
         self.pushButton_close = QPushButton(self.frame)
         self.pushButton_close.setObjectName(u"pushButton_close")
@@ -292,9 +292,9 @@ class Ui_widget_curves(object):
     def retranslateUi(self, widget_curves):
         self.pushButton_set_preview.setText("")
         self.pushButton_split_line.setText("")
-        self.pushButton_save.setText("")
-        self.pushButton_discard.setText("")
         self.label_message.setText(QCoreApplication.translate("widget_curves", u"disabled", None))
+        self.pushButton_discard.setText("")
+        self.pushButton_save.setText("")
         self.pushButton_close.setText("")
         self.radioButton_select_m_channel.setText(QCoreApplication.translate("widget_curves", u"M", None))
         self.radioButton_select_r_channel.setText(QCoreApplication.translate("widget_curves", u"R", None))

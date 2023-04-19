@@ -62,8 +62,8 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter]
-        headers = ["shot no.", "frame no.", "new"]
-        default_col_width = [70, 100, 100]
+        headers = ["shot", "frame", "by"]
+        default_col_width = [60, 80, 80]
         for col_no, header_str, col_width in zip(range(len(headers)),
                                                     headers,
                                                     default_col_width):
@@ -73,7 +73,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
         # Connect signals and filter events
         self.tableWidget_replace.selectionModel().selectionChanged.connect(self.event_replace_selected)
-        self.tableWidget_replace.itemDoubleClicked[QTableWidgetItem].connect(self.event_frame_no_selected)
+        self.tableWidget_replace.itemDoubleClicked[QTableWidgetItem].connect(self.event_move_to_frame_no)
         self.tableWidget_replace.installEventFilter(self)
 
         self.controller.signal_replace_list_refreshed[dict].connect(self.event_replace_list_refreshed)
@@ -121,7 +121,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.pushButton_copy.setEnabled(enabled)
         self.pushButton_paste.setEnabled(enabled)
         self.pushButton_remove.setEnabled(enabled)
-        self.tableWidget_replace.setEnabled(enabled)
 
         # Not allowed when multiple shot selected
         try: allowed = new_preview_settings['replace']['allowed']
@@ -135,7 +134,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
     def event_replace_list_refreshed(self, values:dict):
         log.info("refresh list of frames to replace")
-        # print_lightgreen("event_replace_list_refreshed: ", is_allowed)
         self.tableWidget_replace.blockSignals(True)
 
         self.tableWidget_replace.clearContents()
@@ -153,8 +151,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.tableWidget_replace.selectionModel().clearSelection()
         self.tableWidget_replace.blockSignals(False)
         self.tableWidget_replace.setEnabled(True)
-        # else:
-        #     print_lightgreen("\trefresh was not allowed")
 
 
     def event_replace_selected(self):
@@ -164,13 +160,14 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.tableWidget_replace.setFocus()
 
 
-    def event_frame_no_selected(self, item:QTableWidgetItem):
-        if not self.is_edition_allowed:
-            return
+    def event_move_to_frame_no(self, item:QTableWidgetItem):
         # double-click
         row_no = item.row()
-        log.info("selected frame at row=%d" % (row_no))
-        frame_no = int(self.tableWidget_replace.item(row_no, 1).text())
+        column_no = item.column()
+        if column_no == 0:
+            return
+        # log.info(f"selected frame at row={row_no}, column {row_no}")
+        frame_no = int(self.tableWidget_replace.item(row_no, column_no).text())
         self.signal_frame_selected.emit(frame_no)
 
 
@@ -312,7 +309,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         # elif key == Qt.Key_R:
         #     new_index = self.controller.get_next_replaced_frame_index(index=self.slider_frames.value())
         #     if new_index != -1:
-        #         self.update_slider_value(new_index)
+        #         self.move_slider_to(new_index)
 
         return False
 

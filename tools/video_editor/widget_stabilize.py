@@ -129,7 +129,6 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
         s = preferences['stabilize']
-        pprint(s)
         self.block_signals(True)
 
         self.groupBox_stabilize.setChecked(False)
@@ -494,6 +493,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             # Select start of the selected segment
             try: frame_no = int(self.tableWidget_stabilize.item(row_no, 0).text())
             except: return
+        log.info(f"signal_frame_selected: {frame_no}")
         self.signal_frame_selected.emit(frame_no)
 
 

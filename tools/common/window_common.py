@@ -355,28 +355,27 @@ class Window_common(QMainWindow):
         log.info("ready to play")
         self.current_frame_index = 0
         self.playing_frame_count = playlist_properties['count']
-        f = self.controller.get_frame_from_index(self.current_frame_index)
+        f = self.controller.get_frame_at_index(self.current_frame_index)
         self.display_frame(f)
 
 
-    def event_move_to_frame_no(self, frame_index):
+    def event_move_to_frame_index(self, frame_index):
         # log.info("move to frame %d" % (frame_index))
         self.current_frame_index = frame_index
-        f = self.controller.get_frame_from_index(self.current_frame_index)
+        f = self.controller.get_frame_at_index(self.current_frame_index)
         self.display_frame(f)
 
 
-    def event_frame_no_selected(self, frame_no):
-        log.info(f"move to frame {frame_no}")
-        # index = frame_no - self.playing_frame_start_no
-        log.warning("TODO: move to selected frame")
-        self.widget_controls.update_slider_value(frame_no)
+    def event_move_to_frame_no(self, frame_no):
+        index = self.controller.get_index_from_frame_no(frame_no)
+        # log.info(f"move to frame {frame_no} at index {index}")
+        self.widget_controls.move_slider_to(index)
 
 
     def event_reload_frame(self):
         if self.current_frame_index == -1:
             return
-        f = self.controller.get_frame_from_index(self.current_frame_index)
+        f = self.controller.get_frame_at_index(self.current_frame_index)
         self.display_frame(f)
 
 
@@ -396,7 +395,7 @@ class Window_common(QMainWindow):
         elif action == 'stop':
             self.timer.stop()
             self.widget_selection.set_enabled(True)
-            self.event_move_to_frame_no(0)
+            self.event_move_to_frame_index(0)
 
 
 
@@ -413,7 +412,7 @@ class Window_common(QMainWindow):
             self.widget_controls.event_stop()
         else:
             self.widget_controls.set_playing_frame_properties(self.current_frame_index)
-            f = self.controller.get_frame_from_index(self.current_frame_index)
+            f = self.controller.get_frame_at_index(self.current_frame_index)
             self.display_frame(f)
 
 

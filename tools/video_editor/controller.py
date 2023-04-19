@@ -384,6 +384,10 @@ class Controller_video_editor(Controller_common,
 
 
     def event_selected_shots_changed(self, selected_shots:dict):
+        print_lightgreen(f"selected shots: {selected_shots['k_ep']}:{selected_shots['k_part']}, %s, step: {selected_shots['k_step']}" % (
+            ','.join(map(lambda x: str(x), selected_shots['shotlist']))))
+
+
         log.info(f"selected shots: {selected_shots['k_ep']}:{selected_shots['k_part']}, %s, {selected_shots['k_step']}" % (
             ','.join(map(lambda x: str(x), selected_shots['shotlist']))))
 
@@ -411,6 +415,7 @@ class Controller_video_editor(Controller_common,
                 frame_nos.append(frame['frame_no'])
             ticklist.append(ticklist[-1] + len(self.frames[shot_no]))
 
+        gc.collect()
 
         # Load images
         print_lightgrey("\tload images")
@@ -471,19 +476,23 @@ class Controller_video_editor(Controller_common,
 
 
         new_shot_id = f"{shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}"
+
+        # Get preview options
+        self.preview_options = self.view.get_preview_options()
+        self.consolidate_preview_options()
+
         if previous_shot_id != new_shot_id:
             # Stabilize current shot
-            if stabilize_settings is not None and stabilize_settings['enable']:
+            if (stabilize_settings is not None
+                and stabilize_settings['enable']
+                and self.preview_options['stabilize']['enabled']):
                 self.stabilize(shot=self.current_shot())
-
-                # Consolidate preview
-                self.preview_options = self.view.get_preview_options()
-                self.preview_options['stabilize']['enabled'] = True
-                self.consolidate_preview_options()
-                self.signal_preview_options_consolidated.emit(self.preview_options)
 
                 # Refresh UI
                 self.signal_stabilization_done.emit()
+
+            # Consolidate preview
+            self.signal_preview_options_consolidated.emit(self.preview_options)
 
         self.signal_stabilize_settings_refreshed.emit(stabilize_settings)
 
@@ -529,13 +538,16 @@ class Controller_video_editor(Controller_common,
     def get_current_frame_no(self):
         return self.current_frame['frame_no']
 
+    def get_index_from_frame_no(self, frame_no):
+        # log.info(f"get index for frame no. {frame_no}")
+        return self.playlist_properties['frame_nos'].index(frame_no)
 
-    def get_frame_from_index(self, index):
+    def get_frame_at_index(self, index):
         """ returns the replace frame unless there is no replacemed frame or
         the initial flag is set to True
         framelist contains all path for each frame of this playlist
         """
-        # log.info("get_frame: get_frame from index. %d" % (index))
+        # log.info(f"get_frame: get_frame at index {index}")
         # print_lightgreen("playlist: nb of frames: %d" % (len(self.playlist_frames)))
         if len(self.playlist_frames) == 0:
             return None
@@ -774,12 +786,11 @@ class Controller_video_editor(Controller_common,
 
 
     def stabilize(self, shot):
-        print_lightgrey("\tDo stabilize")
-        log.info("\tDo stabilize")
+        print_lightgreen("\tStabilization requested")
+        log.info("\tStabilization requested")
         shot_no = shot['no']
 
         # Get stabilization parameters
-        print_lightcyan("Stabilization requested")
         settings = self.model_database.get_shot_stabilize_settings(shot=shot)
         try:
             is_valid = verify_stabilize_segments(shot=shot, segments=settings['segments'])
@@ -794,24 +805,43 @@ class Controller_video_editor(Controller_common,
         start_time = time.time()
         cpu_count = 12
         # image_filepathes = [f['filepath'] for f in self.frames[shot_no]]
+
         worklist = list()
-        for i, f in zip(range(len(self.frames[shot_no])), self.frames[shot_no]):
-            if f['cache_initial'] is None:
-                worklist.append([i, f['filepath']])
+        for i, frame in zip(range(len(self.frames[shot_no])), self.frames[shot_no]):
+            if frame['cache_initial'] is None:
+                worklist.append([i, frame['filepath']])
+
         with ThreadPoolExecutor(max_workers=min(cpu_count, len(self.frames[shot_no]))) as executor:
             work_result = {executor.submit(load_image, i, f): list for (i, f) in worklist}
             for future in concurrent.futures.as_completed(work_result):
                 no, img = future.result()
                 self.frames[shot_no][no]['cache_initial'] = img
+
         print_green("%.02fs" % (time.time() - start_time))
 
-         # Deshake
-        images = list(f['cache_initial'] for f in self.frames[shot_no])
-        image_list = [f['filepath'] for f in self.frames[shot_no]]
+        # Create a list of images
+        frames = self.frames[shot_no]
+        images = list()
+        image_list = list()
+        for frame in frames:
+            frame_no = frame['frame_no']
+            new_frame_no = self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no)
+            if new_frame_no != -1:
+                print(f"{frame_no} replaced by {new_frame_no}")
+                frame_index = new_frame_no - shot['start']
+            else:
+                frame_index = frame_no - shot['start']
+
+            images.append(frames[frame_index]['cache_initial'])
+            image_list.append(frames[frame_index]['filepath'])
+
+        pprint(image_list)
         print_lightgrey("\tdeshake")
 
         # Patch shot deshake with the modified values
         shot['deshake'] = settings
+
+        pprint(shot)
 
         # Deshake
         hash, output_images = deshake(
