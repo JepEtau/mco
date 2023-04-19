@@ -95,7 +95,6 @@ class Model_replace():
         return
 
 
-
     def discard_replace_modifications(self):
         log.info("discard_replace_modifications")
         self.db_replaced_frames.clear()

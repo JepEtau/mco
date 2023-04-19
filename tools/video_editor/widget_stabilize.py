@@ -639,11 +639,14 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         log.info(f"Request to stabilize")
         self.signal_stabilization_requested.emit()
 
+
     def event_stabilization_done(self):
         log.info('stabilization done')
-        self.label_message.clear()
         self.pushButton_stabilize.setEnabled(False)
         self.is_obsolete = False
+        self.initial_preview_state = False
+        self.label_message.clear()
+
 
     def event_set_preview_toggled(self, is_checked:bool=False):
         log.info(f"preview button changed to {is_checked}")

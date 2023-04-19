@@ -181,14 +181,14 @@ class Controller_geometry():
                 k_part_src = shot['dst']['k_part']
 
             target_geometry = self.model_database.get_target_geometry(k_ep=shot['dst']['k_ep'], k_part=k_part_src)
-            frame['geometry'].update({
+            nested_dict_set(frame, {
                 'target': target_geometry,
                 'default': default_shot_geometry,
                 'shot': shot_geometry,
                 # Used when the width of the cropped img  for the shot < width of the cropped img of the part
                 # is updated by the generate function
                 'error': False,
-            })
+            }, 'geometry')
             frame['geometry_values'] = shot_geometry_values
 
             # TODO is this flag useful?

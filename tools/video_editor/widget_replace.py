@@ -202,12 +202,12 @@ class Widget_replace(Widget_common, Ui_widget_replace):
             self.pushButton_remove.setEnabled(True)
         else:
             self.lineEdit_frame_no.setText(str(frame['frame_no']))
-            if frame['replaced_by'] == -1:
-                self.lineEdit_replaced_by.clear()
-                self.pushButton_remove.setEnabled(False)
-            else:
+            try:
                 self.lineEdit_replaced_by.setText(str(frame['replaced_by']))
                 self.pushButton_remove.setEnabled(True)
+            except:
+                self.lineEdit_replaced_by.clear()
+                self.pushButton_remove.setEnabled(False)
 
 
     def event_frame_no_copied(self):
