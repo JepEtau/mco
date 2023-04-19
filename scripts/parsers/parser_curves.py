@@ -21,6 +21,7 @@ from utils.nested_dict import nested_dict_set
 from parsers.parser_generiques import (
     get_dependencies_for_generique,
 )
+from utils.pretty_print import *
 
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages
@@ -68,6 +69,10 @@ def parse_curve_configurations(db, k_ep_or_g:str):
                     continue
             except:
                 continue
+
+            if frame_no != shot['start']:
+                print_orange(f"warning: parse curves configuration:", end=' ')
+                print(f"{frame_no} is not the start of {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}, {shot['start']}")
 
             # Append curves struct to the shot
             shot['curves'] = {

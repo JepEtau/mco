@@ -72,6 +72,12 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
                     print_orange("\twarning, shot not found for frame no. %d in %s:%s:%s" % (
                         frame_no, k_ed, k_ep, k_part))
 
+            if frame_no != shot['start']:
+                print_orange(f"warning: parse stabilize configuration:", end=' ')
+                print(f"{frame_no} is not the start of {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}, {shot['start']}")
+
+
+
             # Read and split parameters for this shot
             segments_str = config.get(k_section, frame_no_str)
             for c in ['\r', '\n', ' ', '\t', "\"", "\'"]:
@@ -144,8 +150,9 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
 
             are_segments_valid = verify_stabilize_segments(shot=shot, segments=shot_segments)
             if not are_segments_valid:
-                sys.exit(print_red(f"Error: parse_stabilize_configurations: erroneous parameters:\n\t{filepath}\n\t{k_ed}:{k_ep}:{k_part} shot no. {shot['no']}, frame no. {shot['start']}"))
-
+                print_red(f"Error: parse_stabilize_configurations: erroneous parameters:\n\t{filepath}\n\t{k_ed}:{k_ep}:{k_part} shot no. {shot['no']}, {shot['start']}->{shot['start']+shot['count']}")
+                pprint(shot_segments)
+                sys.exit()
             if verbose:
                 pprint(shot['deshake'])
                 # if k_ed == 'f' and shot['no'] == 23:

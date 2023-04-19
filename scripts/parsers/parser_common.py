@@ -8,27 +8,27 @@ from pathlib import (
     PosixPath,
 )
 from pprint import pprint
-import subprocess
 import platform
-
-from parsers.parser_filters import parse_filters
+from utils.nested_dict import nested_dict_set
+from utils.pretty_print import *
 from utils.process import get_process_cfg
 
 
-#===========================================================================
-#
-#   Parse common configuration file
-#
-#===========================================================================
 def parse_common_configuration(db, config_path):
     verbose = False
+
+    if verbose:
+        print_lightcyan("Parse common configuration, file: ", end='')
 
     db['common'] = dict()
     db_common = db['common']
 
     # Get directories configuration file
     #=============================================================================
-    filepath = os.path.join(config_path, "directories.ini")
+    filepath = os.path.normpath(os.path.abspath(os.path.join(config_path, "directories.ini")))
+    if verbose:
+        print(f"{filepath}")
+
     if filepath.startswith("~/"):
         filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
     if not os.path.exists(filepath):
@@ -214,9 +214,19 @@ def parse_common_configuration(db, config_path):
 
 
 
-    # # Dimensions
-    # #===========================================================================
-    # for k in db_common['dimensions'].keys():
-    #     db_common['dimensions'][k] = int(db_common['dimensions'][k])
+    # Others
+    #===========================================================================
+
+    # Discard editions
+    try:
+        editions_to_discard = list(db_common['editions']['discard'].split(','))
+    except:
+        editions_to_discard = list()
+        pass
+    nested_dict_set(db_common, editions_to_discard, 'editions', 'discard')
+
+    if verbose:
+        pprint(db)
+        sys.exit()
 
 

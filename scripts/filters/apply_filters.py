@@ -306,6 +306,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
                     image_list=image_list,
                     step_no=step_no,
                     filters_str=filter['str'],
+                    do_save=filter['save'],
                     output_folder=output_folder,
                     db_common=db['common'],
                     get_hash=get_hashes)

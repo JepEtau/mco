@@ -104,16 +104,21 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                 # Custom values for a shot
 
                 # if the key is the start/middle of a shot
-                try: shot_start = int(k_str)
+                try: frame_no = int(k_str)
                 except: continue
 
                 # Get shot from shot
                 try:
-                    shot = get_shot_from_frame_no(db, shot_start, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+                    shot = get_shot_from_frame_no(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
                 except:
                     # Shots not defined or unused
-                    print_orange(f"\t\t\twarning: {k_ep}:{k_ed}:{k_part}: shot is not defined ({shot_start})")
+                    print_orange(f"\t\t\twarning: {k_ep}:{k_ed}:{k_part}: shot is not defined ({frame_no})")
                     continue
+
+                if frame_no != shot['start']:
+                    print_orange(f"warning: parse geometry configuration:", end=' ')
+                    print(f"{frame_no} is not the start of {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}, {shot['start']}")
+
 
                 properties = config.get(k_section, k_str)
                 nested_dict_set(shot,

@@ -55,24 +55,10 @@ def parse_database(database, k_ep,):
 
     # Parse and merge dictionaries -> common configuration
     parse_common_configuration(database, PATH_DATABASE)
-    if False:
-        print("parse_common_configuration")
-        print("------------------------------------")
-        pprint(database)
-        print("------------------------------------")
-        sys.exit()
 
 
     # Parse editions: folders, files and additional settings: dimension
     parse_editions(database, cfg_foldername=PATH_DATABASE)
-    if False:
-        print("parse_editions")
-        print("------------------------------------")
-        pprint(database['editions'])
-        print("------------------------------------")
-        sys.exit()
-
-
 
     # Initialize dictionary for episodes per edition
     for k_ed_tmp in database['editions']['available']:

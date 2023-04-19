@@ -32,7 +32,10 @@ from utils.time_conversions import convert_s_to_m_s_ms, frame_no_to_sexagesimal
 AVISYNTH_ADD_FRAMES = 0
 
 def avisynth_deinterlace(shot, image_list,
-    step_no, filters_str, output_folder, db_common, get_hash:bool=False):
+    step_no, filters_str,
+    do_save:bool, output_folder:str,
+    db_common, get_hash:bool=False):
+
     verbose = False
 
     # Deinterlace only
@@ -40,9 +43,7 @@ def avisynth_deinterlace(shot, image_list,
         print_cyan("(AviSynth)", end='')
         print_lightcyan("\tfilters=%s" % (filters_str))
 
-    # Create the output folder
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
+
 
     # Use a script template
     script_filepath =os.path.abspath(os.path.join(
@@ -57,6 +58,7 @@ def avisynth_deinterlace(shot, image_list,
         hash = calculate_hash(filter_str=filter_str)
         return hash, None
     hash = log_filter(filter_str, shot['hash_log_file'])
+
 
     if verbose:
         print_lightcyan("avisynth_deinterlace")
@@ -82,6 +84,10 @@ def avisynth_deinterlace(shot, image_list,
         script_filepath = os.path.join(
             output_folder,
             "%s_%s_%s.avs" % (shot['k_ep'], filters_str, hash))
+
+    # Create the output folder
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
 
     if verbose:
         print_yellow("\t\t\t%s" % (script_filepath))
@@ -250,7 +256,8 @@ def avisynth_deinterlace(shot, image_list,
             if raw_frame is None or len(raw_frame) == 0:
                 sys.exit("error: frame %d has not been extracted\n\t%s" % (no, ffmpeg_command))
             img = raw_frame.reshape((height, width, 3))
-            cv2.imwrite(img_filepath, img)
+            if  do_save:
+                cv2.imwrite(img_filepath, img)
             output_images.append(img)
             no += 1
             print_yellow("\t\t\textracting: %d%%" % (int((100.0 * no)/frame_count)), flush=True, end='\r')

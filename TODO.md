@@ -1,19 +1,18 @@
 # TODO script
 (1)
-- remove 'save images' after deinterlacing from ffv1 file unless last task is deinterlace
-- concatenation of video files seems not working anymore
-- remove common_<ed>.ini files
+
 
 (2)
 - stabilize: when 2 segments are separated by some frames, the first image of the 2nd segment is not aligned with previous frames (g_fin, shot no. 0)
-- create a pre_rgb filter to modify RGB with deshaked/replaced images only
 - verify negative values for crop values when deshake is disable
 
 (3)
-- Create "other filters": replace some images by white images
+- remove k_ed_ref
+- create a pre_rgb filter to modify RGB with deshaked/replaced images only
+- create "other filters": replace some images by white images
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
-- add 'extract filter to deinterlace source  with yadif deinterlacer
+- (?) add 'extract' filter to deinterlace source  with yadif deinterlacer
 - clean filters.py
 - (?) smooth stabilization: to evaluate
 
@@ -25,7 +24,7 @@
 - add buttons to hide widgets
 
 (2)
-- disable all widgets if missing images
+- disable all widgets if images missing
 - add loop mode
 - Add a pre_rgb step
 - parse single shot only if database already been parsed

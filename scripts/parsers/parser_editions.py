@@ -54,8 +54,12 @@ def parse_editions(database, cfg_foldername, verbose=False):
     db_common = database['common']
     verbose = False
 
+    if verbose:
+        print_lightcyan(f"parse editions:")
+
     mkv_foldername = db_common['directories']['inputs']
-    database['editions'] = dict()
+    if 'editions' not in database.keys():
+        database['editions'] = dict()
     db_editions = database['editions']
     available_editions = list()
 
@@ -71,11 +75,13 @@ def parse_editions(database, cfg_foldername, verbose=False):
     for folder in os.listdir(mkv_foldername):
         # list of folders in mkv files
         f_edition = os.path.join(mkv_foldername, folder)
+        if verbose:
+            print_lightgrey(f"\t{folder}")
 
         if os.path.isdir(f_edition):
             # Edition found
             if verbose:
-                print("found folder(edition)=%s" % (folder))
+                print(f"found folder(edition)=%s" % (folder))
             db_editions[folder] = {
                 'inputs': {
                     'video': dict(),
@@ -88,11 +94,11 @@ def parse_editions(database, cfg_foldername, verbose=False):
             # List episodes and their input files for each edition
             for filename in os.listdir(f_edition):
                 if verbose:
-                    print("filename= %s" % (filename))
+                    print("\tfilename= %s" % (filename))
                 filepath = os.path.join(db_common['directories']['inputs'], folder, filename)
                 if os.path.isfile(filepath):
                     if verbose:
-                        print("search ep no. from %s" % (filename))
+                        print("\tsearch ep no. from %s" % (filename))
                     tmp = None
                     tmp = re.search(re.compile("^([a-z_a-z0-9]+)_ep([0-9]{2})(?:-([0-9]{2}))?"), filename)
                     if tmp is not None:
@@ -130,6 +136,7 @@ def parse_editions(database, cfg_foldername, verbose=False):
             available_editions.append(folder)
 
     if verbose:
+        print_lightgreen("Found editions:")
         pprint(db_editions)
 
 
@@ -139,33 +146,15 @@ def parse_editions(database, cfg_foldername, verbose=False):
     if not os.path.isdir(cfg_foldername):
         sys.exit(print_red("Error: parse_editions: config %s is not a valid folder" % (cfg_foldername)))
 
-    # Get common file for each edition
-    for k_ed in available_editions.copy():
-        edition_common_filename = os.path.join(cfg_foldername, "common_%s.ini" % (k_ed))
-        if not os.path.isfile(edition_common_filename):
-            # print("warning: %s: remove edition [%s]" % (__name__, k_ed))
-            # No config file found for this edition, remove it from the available
-            del db_editions[k_ed]
-            available_editions.remove(k_ed)
-            continue
-        else:
-            if verbose:
-                print("consolidate edition [%s]" % (k_ed))
 
-            # Parse comon ini file for each edition
-            config = configparser.ConfigParser()
-            config.read(edition_common_filename)
-            for k_section in config.sections():
-                if k_section.startswith("filters"):
-                    parse_filters(db_editions[k_ed], config, k_section)
-                    continue
+    # Remove editions that should not be parsed
+    for k_ed in db_common['editions']['discard']:
+        available_editions.remove(k_ed)
+        del db_editions[k_ed]
 
-                if k_section == 'dimensions':
-                    for k_option in config.options(k_section):
-                        value_str = config.get(k_section, k_option)
-                        k_tmp, k_step_tmp = k_option.split('_')
-                        nested_dict_set(db_editions[k_ed], int(value_str), 'dimensions', k_step_tmp, k_tmp[0])
-                    continue
+    if verbose:
+        print_lightgreen("Editions:")
+        pprint(db_editions.keys())
 
     # Consolidate editions
     db_editions['available']  = list()
@@ -195,6 +184,6 @@ def parse_editions(database, cfg_foldername, verbose=False):
         db_editions['available'] .append(k_ed)
 
 
-    # Set the edition used as the ereference for the calculation of the frame no.
-    db_editions['k_ed_ref'] = database['common']['reference']['edition']
+    # Set the edition used as the reference for the calculation of the frame no.
+    # db_editions['k_ed_ref'] = database['common']['reference']['edition']
 

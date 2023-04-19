@@ -46,9 +46,6 @@ def consolidate_filters(shot):
         # print_green("replace filter: append")
 
 
-    # Force saving: deinterlace
-    shot['filters'][0]['save'] = True
-
     # Associate task to filter
     for i in range(len(shot['filters'])):
         filter = shot['filters'][i]

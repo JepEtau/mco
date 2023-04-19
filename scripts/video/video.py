@@ -131,7 +131,6 @@ def generate_video(db, k_ed:str, k_ep:str,
                     cpu_count=cpu_count)
             else:
                 consolidate_shot(db, shot=shot)
-                pprint(shot)
 
             # Calculate hash for the video
             shot_hash = shot['last_step']['hash']
@@ -221,12 +220,11 @@ def generate_video(db, k_ed:str, k_ep:str,
 
     # For each part, concatenate shots in a single clip
     for k_p, v in video_files.items():
-        if len(v['shotlist']) > 1 and not simulation:
-            print_lightgreen("concatenate_shots, k_part=%s" % (k_p))
-            concatenate_shots(db, k_ep=k_ep, k_part=k_p, video_files=v, force=force)
+        if len(v['shotlist']) > 1:
+            concatenate_shots(db, k_ep=k_ep, k_part=k_p, video_files=v, force=force, simulation=simulation)
 
     # Create concatenation files and video files for silences
-    if k_part == '' and not simulation:
+    if k_part == '':
         # Only if a full generation is asked
         video_files_tmp = create_concatenation_file_silence(db, k_ep=k_ep)
         for k_p, filepaths in video_files_tmp.items():
@@ -242,7 +240,7 @@ def generate_video(db, k_ed:str, k_ep:str,
 
 
     # Concatenate video clips from all parts
-    if k_part == '' and not simulation:
+    if k_part == '':
         # Generate concatenation files which contains all video files
         concatenation_filepath = create_concatenation_file_video(db,
             k_ep=k_ep, k_part=k_part, video_files=video_files)
@@ -252,18 +250,21 @@ def generate_video(db, k_ed:str, k_ep:str,
             "video", "%s_video_%s.mkv" % (k_ep, db_video['hash']))
         if not os.path.exists(episode_video_filepath) or force or do_regenerate:
             print("%s concatenate video clips to %s" % (current_datetime_str(), episode_video_filepath))
-            command_ffmpeg = [db['common']['settings']['ffmpeg_exe']]
-            command_ffmpeg.extend(db['common']['settings']['verbose'].split(' '))
-            command_ffmpeg.extend([
+            ffmpeg_command = [db['common']['settings']['ffmpeg_exe']]
+            ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
+            ffmpeg_command.extend([
                 "-f", "concat",
                 "-safe", "0",
                 "-i", concatenation_filepath,
                 "-c", "copy",
                 "-y", episode_video_filepath
             ])
-            std = execute_ffmpeg_command(db, command=command_ffmpeg, filename=episode_video_filepath)
-            if len(std) > 0:
-                print(std)
+            if simulation:
+                print_lightgrey(' '.join(ffmpeg_command))
+            else:
+                std = execute_ffmpeg_command(db, command=ffmpeg_command, filename=episode_video_filepath)
+                if len(std) > 0:
+                    print(std)
 
 
 

@@ -249,7 +249,7 @@ def main():
                 extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=k_ed, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
                 if k_ed != g_database[k_part_g]['audio']['src']['k_ed']:
-                    print("Warning: audio: discard specified edition, use final edition: %s" % (g_database[k_part_g]['audio']['src']['k_ed']))
+                    print_orange("Warning: audio: discard specified edition, use final edition: g_database[k_part_g]['audio']['src']['k_ed']")
                 generate_audio(g_database,
                     k_ep_or_g=k_part_g,
                     verbose=True,
@@ -260,8 +260,6 @@ def main():
             if arguments.afilter == 'extract':
                 extract_audio(g_database, k_ep_or_g=k_episode, k_ed=k_ed, verbose=True, force=arguments.force)
             elif arguments.afilter == 'final':
-                # if k_ed != g_database[k_part_g]['audio']['src']['k_ed']:
-                #     print("Warning: audio: discard specified edition, use final edition: %s" % (g_database[k_part_g]['audio']['src']['k_ed']))
                 generate_audio(g_database,
                     k_ep_or_g=k_episode,
                     verbose=True,
@@ -277,7 +275,7 @@ def main():
             elif arguments.afilter == 'final':
                 for k_part_g in ['g_debut', 'g_fin']:
                     if k_ed != g_database[k_part_g]['audio']['src']['k_ed']:
-                        print("Warning: audio: discard specified edition, use final edition: %s" % (g_database[k_part_g]['audio']['src']['k_ed']))
+                        print_orange(f"Warning: audio: discard specified edition, use final edition: {g_database[k_part_g]['audio']['src']['k_ed']}")
                     generate_audio(g_database,
                         k_ep_or_g=k_part_g,
                         force=arguments.force)
@@ -336,12 +334,12 @@ def main():
     #-------------------------------------------------
     if k_ed == '':
         # Create final video only if edition is not specified
-        if do_av_merge and not arguments.simulate:
+        if do_av_merge:
             if arguments.part in ['g_debut', 'g_fin']:
                 # Part is specified, merge audio and video files
-                merge_audio_and_video_tracks(g_database, k_ep_or_g=arguments.part, force=arguments.force)
-            elif arguments.part == '':
+                merge_audio_and_video_tracks(g_database, k_ep_or_g=arguments.part, force=arguments.force, simulation=arguments.simulate)
 
+            elif arguments.part == '' and not arguments.simulate:
                 # Merge all video and audio tracks
                 for k in ['g_debut', 'g_fin']:
                     merge_audio_and_video_tracks(g_database, k_ep_or_g=k, force=arguments.force|arguments.regenerate)
