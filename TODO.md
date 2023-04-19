@@ -1,6 +1,6 @@
 # TODO script
 (1)
-
+- replace does not work  when no using frames
 
 (2)
 - stabilize: when 2 segments are separated by some frames, the first image of the 2nd segment is not aligned with previous frames (g_fin, shot no. 0)
@@ -19,6 +19,8 @@
 
 # TODO video editor
 (1)
+- replace list is not working
+- shortcut geometro should be enabled whatever the selected widget...but not....
 - use transformation saved in a cache list
 - stabilize all selected shots (but keep transformation matrix only?)
 - add buttons to hide widgets

@@ -26,7 +26,7 @@ from common.widget_common import Widget_common
 from utils.pretty_print import *
 from parsers.parser_stabilize import SEGMENTS_MAX_COUNT
 
-GUIDELINES_X_MAX = 1600
+GUIDELINES_X_MAX = 1800
 GUIDELINES_Y_MAX = 1200
 GUIDELINES_GRAB_OFFSET = 30
 
@@ -331,7 +331,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
                 'ref': table.item(row_no, 2).text(),
                 'alg': 'cv2_deshaker',
                 'mode': {
-                    'vertical': True,
+                    'vertical': False,
                     'horizontal': False,
                     'rotation': False
                 },
@@ -588,6 +588,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         # self.pushButton_set_preview.setEnabled(False)
         # self.pushButton_set_preview.setChecked(False)
         # self.previous_preview_state = False
+        self.is_obsolete = True
         self.signal_settings_modified.emit(settings)
 
 

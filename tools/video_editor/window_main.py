@@ -180,6 +180,7 @@ class Window_main(Window_common):
                 'cache': frame['cache'],
                 'geometry': frame['geometry'],
                 'geometry_values': frame['geometry_values'],
+                'stabilize': frame['stabilize'],
                 'curves': {
                     'lut': None
                 },
@@ -429,6 +430,8 @@ class Window_main(Window_common):
         img = self.image['cache']
         if img is None:
             return
+        if self.image['cache_initial'] is None:
+            return
 
         if self.is_repainting:
             log.error("error: self.is_repainting is True!!")
@@ -472,7 +475,7 @@ class Window_main(Window_common):
 
                         # Patch the crop value if displaying deshaked shot
                         crop = shot_geometry['crop']
-                        if preview['stabilize']['enabled']:
+                        if preview['stabilize']['enabled'] and self.image['stabilize']['enable']:
                             crop = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
 
                         # Image is resized, add the recalculated crop
@@ -520,7 +523,7 @@ class Window_main(Window_common):
                         x0 = PAINTER_MARGIN_LEFT
                         y0 = PAINTER_MARGIN_TOP - delta_y
                         crop = shot_geometry['crop']
-                        if preview['stabilize']['enabled']:
+                        if preview['stabilize']['enabled'] and self.image['stabilize']['enable']:
                             crop = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
                         self.painter.drawImage(QPoint(x0, y0), q_image)
 
@@ -611,6 +614,7 @@ class Window_main(Window_common):
                     crop_left = int((crop_left * FINAL_FRAME_HEIGHT) / float(cropped_height))
                     crop_top = int((crop_top * FINAL_FRAME_HEIGHT) / float(cropped_height))
 
+                    pprint(self.image['geometry_values'])
                     final_pad = self.image['geometry_values']['pad']
 
                     # Add the target rect

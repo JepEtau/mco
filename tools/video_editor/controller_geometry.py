@@ -39,6 +39,7 @@ class Controller_geometry():
             stabilize_settings = self.model_database.get_shot_stabilize_settings(shot=shot)
             if stabilize_settings['enable']:
                 crop_min = -STABILIZE_BORDER_HIGH_RES
+            # print(f"event_geometry_modified, crop_min={crop_min}")
         except:
             pass
 
@@ -125,8 +126,14 @@ class Controller_geometry():
 
 
     def refresh_geometry_for_each_frame(self, shot):
-        log.info(f"{shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}, refresh geometry for each frame")
-        target_geometry = self.model_database.get_target_geometry(k_ep=shot['k_ep'], k_part=shot['k_part'])
+        # log.info(f"{shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}, refresh geometry for each frame")
+        # target_geometry = self.model_database.get_target_geometry(k_ep=shot['k_ep'], k_part=shot['k_part'])
+        if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage']:
+            k_part_src = shot['dst']['k_part'][2:]
+        else:
+            k_part_src = shot['dst']['k_part']
+        target_geometry = self.model_database.get_target_geometry(k_ep=shot['dst']['k_ep'], k_part=k_part_src)
+
         default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
         shot_geometry = self.model_database.get_shot_geometry(shot=shot)
 
@@ -138,6 +145,7 @@ class Controller_geometry():
             is_stabilize_enabled = False
 
         virtual_shot = {'geometry': deepcopy(shot['geometry'])}
+        virtual_shot['geometry']['target'] = target_geometry
         frame = self.frames[shot['no']][0]
         if is_stabilize_enabled:
             try:
@@ -175,12 +183,12 @@ class Controller_geometry():
         #         geometry=target_geometry)
 
         for frame in self.frames[shot['no']]:
-            if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage']:
-                k_part_src = shot['dst']['k_part'][2:]
-            else:
-                k_part_src = shot['dst']['k_part']
+            # if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage']:
+            #     k_part_src = shot['dst']['k_part'][2:]
+            # else:
+            #     k_part_src = shot['dst']['k_part']
 
-            target_geometry = self.model_database.get_target_geometry(k_ep=shot['dst']['k_ep'], k_part=k_part_src)
+            # target_geometry = self.model_database.get_target_geometry(k_ep=shot['dst']['k_ep'], k_part=k_part_src)
             nested_dict_set(frame, {
                 'target': target_geometry,
                 'default': default_shot_geometry,

@@ -422,16 +422,18 @@ class Controller_video_editor(Controller_common,
         start_time = time.time()
         cpu_count = 12
         # image_filepathes = [f['filepath'] for f in self.frames[shot_no]]
-        worklist = list()
-        for i, f in zip(range(len(self.frames[shot_no])), self.frames[shot_no]):
-            if f['cache_initial'] is None:
-                worklist.append([i, f['filepath']])
-        with ThreadPoolExecutor(max_workers=min(cpu_count, len(self.frames[shot_no]))) as executor:
-            work_result = {executor.submit(load_image, i, f): list for (i, f) in worklist}
-            for future in concurrent.futures.as_completed(work_result):
-                no, img = future.result()
-                self.frames[shot_no][no]['cache_initial'] = img
-        print_green("%.02fs" % (time.time() - start_time))
+        for shot_no in selected_shots['shotlist']:
+            worklist = list()
+            for i, f in zip(range(len(self.frames[shot_no])), self.frames[shot_no]):
+                if f['cache_initial'] is None:
+                    worklist.append([i, f['filepath']])
+            if len(self.frames[shot_no]) > 0:
+                with ThreadPoolExecutor(max_workers=min(cpu_count, len(self.frames[shot_no]))) as executor:
+                    work_result = {executor.submit(load_image, i, f): list for (i, f) in worklist}
+                    for future in concurrent.futures.as_completed(work_result):
+                        no, img = future.result()
+                        self.frames[shot_no][no]['cache_initial'] = img
+            print_green("%.02fs" % (time.time() - start_time))
 
 
         # Update each frame
@@ -505,18 +507,7 @@ class Controller_video_editor(Controller_common,
         k_ep = self.current_selection['k_ep']
         k_part = self.current_selection['k_part']
 
-        self.event_replace_save_requested()
 
-        print("TODO: Save the shot curves selection")
-        # self.model_database.save_shot_curves_selection(
-        #     self.shots,
-        #     k_ed='',
-        #     k_ep='',
-        #     k_part=k_part,
-        #     shot_no=-1)
-
-        self.event_save_geometry_requested()
-        self.model_database.save_all_curves(k_ep_or_g=k_part if k_part in K_GENERIQUES else k_ep)
         self.signal_close.emit()
 
 
@@ -835,7 +826,6 @@ class Controller_video_editor(Controller_common,
             images.append(frames[frame_index]['cache_initial'])
             image_list.append(frames[frame_index]['filepath'])
 
-        pprint(image_list)
         print_lightgrey("\tdeshake")
 
         # Patch shot deshake with the modified values
