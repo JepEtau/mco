@@ -220,10 +220,10 @@ def parse_database_for_study(db, k_ed, k_ep, k_part):
     parse_curve_configurations(db, k_ep_or_g=k_ep)
     parse_geometry_configurations(db, k_ep_or_g=k_ep)
 
-    for k_part in ['g_debut', 'g_fin']:
-        parse_replace_configurations(db, k_ep_or_g=k_part)
-        parse_curve_configurations(db, k_ep_or_g=k_part)
-        parse_geometry_configurations(db, k_ep_or_g=k_part)
+    for k_p in ['g_debut', 'g_fin']:
+        parse_replace_configurations(db, k_ep_or_g=k_p)
+        parse_curve_configurations(db, k_ep_or_g=k_p)
+        parse_geometry_configurations(db, k_ep_or_g=k_p)
 
     if k_part in K_GENERIQUES:
         parse_frames_for_study_g(db, k_part_g=k_part)

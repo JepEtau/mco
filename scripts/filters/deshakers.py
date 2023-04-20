@@ -67,6 +67,7 @@ class CV2_deshaker:
         self._height, self._width, self._channels = 0, 0, 0
 
         self.__index = 0
+        self.__transformations = list()
 
 
     def __get_initial_image(self, img, last_transformation):
@@ -247,6 +248,8 @@ class CV2_deshaker:
         hash = log_filter(filter_str, shot['hash_log_file'])
         print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, ref_index:%d" % (len(images), ref_index))
 
+        # Reset transformation
+        self.__transformations.clear()
 
         # Set border size
         self.__pad = STABILIZE_BORDER_LOW_RES if images[ref_index].shape[0]<STABILIZE_LOW_RES_IMG_HEIGHT else STABILIZE_BORDER_HIGH_RES
@@ -279,6 +282,7 @@ class CV2_deshaker:
                     keypoints_ref=keypoints_ref,
                     mode=mode)
 
+                self.__transformations.append(transformation)
                 output_images.append(img_stabilized)
                 if verbose:
                     print("append")
@@ -288,6 +292,7 @@ class CV2_deshaker:
             transformations['end'] = transformation
 
         else:
+            self.__transformations.append(last_transformation)
             output_images = [img_stabilized]
             start = ref_index + 1
             end = len(images)
@@ -317,10 +322,12 @@ class CV2_deshaker:
 
                     if _ref == 'start':
                         output_images.append(img_stabilized)
+                        self.__transformations.append(transformation)
                         if verbose:
                             print("append")
                     elif _ref == 'end':
                         output_images.insert(0, img_stabilized)
+                        self.__transformations.insert(0, transformation)
                         if verbose:
                             print("insert")
 
@@ -362,6 +369,8 @@ class CV2_deshaker:
         return filters_str, output_images, transformations
 
 
+    def get_transformations(self):
+        return self.__transformations
 
 
 class Skimage_deshaker:

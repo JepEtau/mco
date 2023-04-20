@@ -163,16 +163,16 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
         netscale = 1
     elif model_name == '2x_LD-Anime_Compact_330k_net_g':
         suffix = "2x_LD-Anime_Compact_330k_net_g"
-        netscale = 2
     elif model_name == 'RealESRGAN_x2plus':
         suffix = "RealESRGAN_x2plus"
         netscale = 2
     elif model_name == '2x_Futsuu_Anime_Compact_130k_net_g':
         suffix = model_name
-        netscale = 2
     elif model_name == 'sudo_RealESRGAN2x_Dropout_3.799.042_G':
         suffix = 'sudo_3.799.042_G'
         netscale = 2
+    elif model_name == '2xHFA2kCompact_net_g_74000':
+        suffix = 'HFA2kCompact_net_g_74000'
     else:
         suffix = model_name
 
@@ -240,6 +240,8 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     elif model_name == '2x_LD-Anime_Compact_330k_net_g':
         model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=2, act_type='prelu')
     elif model_name == '2x_Futsuu_Anime_Compact_130k_net_g':
+        model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=2, act_type='prelu')
+    elif model_name == '2xHFA2kCompact_net_g_74000':
         model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=2, act_type='prelu')
     elif model_name == '1x_HurrDeblur_SuperUltraCompact_nf24-nc8_244k_net_g':
         model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=24, num_conv=8, upscale=1, act_type='prelu')

@@ -124,7 +124,6 @@ def deshake(shot, images:list, image_list:list,
 
     output_images = list()
     filter_str = ""
-    last_transformation = None
     start = count = 0
     transformations = {'start': None, 'end': None}
     if segments[0]['start'] == 0:
