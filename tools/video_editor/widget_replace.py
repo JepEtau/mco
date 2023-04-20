@@ -37,7 +37,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         # Internal variables
         self.copied_frame_no = -1
         self.previous_position = None
-        self.is_edition_allowed = True
+        self.is_edition_allowed = False
 
         # Disable focus
         self.lineEdit_frame_no.setFocusPolicy(Qt.NoFocus)
@@ -89,6 +89,9 @@ class Widget_replace(Widget_common, Ui_widget_replace):
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
         s = preferences['replace']
+
+        self.is_edition_allowed = False
+
         self.block_signals(True)
         self.lineEdit_frame_no.clear()
         self.lineEdit_replaced_by.clear()
@@ -98,7 +101,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
         self.pushButton_remove.setEnabled(False)
         self.pushButton_paste.setEnabled(False)
-        self.pushButton_copy.setEnabled(True)
+        self.pushButton_copy.setEnabled(False)
 
         self.pushButton_set_preview.setChecked(s['widget']['enabled'])
         self.block_signals(False)
@@ -106,26 +109,28 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
-        self.is_edition_allowed = True
 
 
     def refresh_preview_options(self, new_preview_settings):
-        try: enabled = new_preview_settings['replace']['enabled']
-        except: enabled = False
-        if not enabled:
+        try:
+            enabled = new_preview_settings['replace']['enabled']
+        except:
+            enabled = False
+        try:
+            allowed = new_preview_settings['replace']['allowed']
+        except:
+            allowed = False
+        self.is_edition_allowed = allowed
+
+        if not enabled or not allowed:
             self.lineEdit_frame_no.clear()
             self.lineEdit_replaced_by.clear()
 
-        self.lineEdit_frame_no.setEnabled(enabled)
-        self.lineEdit_replaced_by.setEnabled(enabled)
-        self.pushButton_copy.setEnabled(enabled)
-        self.pushButton_paste.setEnabled(enabled)
-        self.pushButton_remove.setEnabled(enabled)
-
-        # Not allowed when multiple shot selected
-        try: allowed = new_preview_settings['replace']['allowed']
-        except: allowed = True
-        self.is_edition_allowed = allowed
+        self.lineEdit_frame_no.setEnabled(allowed)
+        self.lineEdit_replaced_by.setEnabled(allowed)
+        self.pushButton_copy.setEnabled(allowed)
+        self.pushButton_paste.setEnabled(allowed)
+        self.pushButton_remove.setEnabled(allowed)
 
         self.pushButton_set_preview.blockSignals(True)
         self.pushButton_set_preview.setEnabled(allowed)

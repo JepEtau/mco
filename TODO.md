@@ -1,34 +1,31 @@
 # TODO script
 (1)
-- replace does not work  when no using frames
+- create a pre_rgb filter to modify RGB with deshaked/replaced images only
 
 (2)
 - stabilize: when 2 segments are separated by some frames, the first image of the 2nd segment is not aligned with previous frames (g_fin, shot no. 0)
-- verify negative values for crop values when deshake is disable
+- (?) smooth stabilization: to evaluate (g_fin)
 
 (3)
+- verify negative values for crop values when deshake is disable
 - remove k_ed_ref
-- create a pre_rgb filter to modify RGB with deshaked/replaced images only
 - create "other filters": replace some images by white images
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
 - (?) add 'extract' filter to deinterlace source  with yadif deinterlacer
 - clean filters.py
-- (?) smooth stabilization: to evaluate
 
 
 # TODO video editor
 (1)
-- replace list is not working
-- shortcut geometro should be enabled whatever the selected widget...but not....
-- use transformation saved in a cache list
-- stabilize all selected shots (but keep transformation matrix only?)
-- add buttons to hide widgets
+- Get transformations matrix and save them in frame struct
+- stabilize all selected shots (keep transformation matrix only)
+- add buttons to show/hide widgets
 
 (2)
-- disable all widgets if images missing
-- add loop mode
 - Add a pre_rgb step
+- add loop mode
+- disable all widgets if images missing
 - parse single shot only if database already been parsed
 - update save button when loading a segment or after modifications: use a signal
 - Save when closing is not working

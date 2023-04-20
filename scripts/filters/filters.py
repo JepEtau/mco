@@ -381,7 +381,7 @@ def cv2_geometry_filter(img, geometry):
 
 def calculate_geometry_parameters(shot, img, verbose:bool=False):
     # Returns the values which will be used when resizing/cropping/padding an image
-    verbose = True
+    verbose = False
     if verbose:
         print_cyan("\ncalculate_geometry_parameters\n------------------------------")
         pprint(shot['geometry'])
@@ -1029,4 +1029,21 @@ def strokeEdges(src, dst, blurKsize = 7, edgeKsize = 5):
 
 
 
+def improve_edges(input_filepath, output_filepath):
+    img_input_rgb = cv2.imread(input_filepath, cv2.IMREAD_COLOR)
+    gray = cv2.cvtColor(img_input_rgb, cv2.COLOR_BGR2GRAY)
+
+    canny = cv2.Canny(gray,240,255)
+    b, g, r = cv2.split(img_input_rgb)
+    layer_b = np.clip(cv2.multiply(b, canny), 0, 255).astype(np.uint8)
+    layer_g = np.clip(cv2.multiply(g, canny), 0, 255).astype(np.uint8)
+    layer_r = np.clip(cv2.multiply(r, canny), 0, 255).astype(np.uint8)
+
+    blend_factor = 0.1
+    bbp = cv2.addWeighted(b, 1, layer_b, blend_factor, 0).reshape(b.shape)
+    ggp = cv2.addWeighted(g, 1, layer_g, blend_factor, 0).reshape(g.shape)
+    rrp = cv2.addWeighted(r, 1, layer_r, blend_factor, 0).reshape(r.shape)
+    img_output = cv2.merge((bbp, ggp, rrp))
+
+    cv2.imwrite(output_filepath, img_output)
 

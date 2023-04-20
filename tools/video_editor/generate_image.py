@@ -64,21 +64,18 @@ def generate_image(frame:dict, preview_options:dict):
         print_lightgreen("shot_geometry:")
         pprint(shot_geometry)
 
-
     preview_geometry = preview_options['geometry']
     preview_shot_geometry = preview_options['geometry']['shot']
 
     # Cropped dimensions
     if frame['stabilize']['enable']:
-        pprint(shot_geometry)
         # preview_options['stabilize']['enabled'] and
         crop_values = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
         if not is_using_deshake:
-            print_yellow(f"{time.time():.02f} stabilize is enabled, change crop values")
-            print("deshake image not used ERRRRRRRRRRRRRRRRRRRRRRRRRRRRROOOOOOOOOOOOOORRRRRRRR")
+            print_yellow("ERRRRRRROR: stabilize is enabled in frame deshake image not used ")
             if img_original is None:
                 return None
-            pprint(frame)
+            # pprint(frame)
     else:
         crop_values = shot_geometry['crop']
         if is_using_deshake:
@@ -114,8 +111,6 @@ def generate_image(frame:dict, preview_options:dict):
     # Final image: function
     #------------------------------------
     if preview_geometry['final_preview']:
-        # pprint(geometry_values)
-        # pprint(frame)
         nested_dict_set(frame['geometry'], {'w': w_final, 'h': h_final}, 'dimensions', 'final')
         virtual_shot = {'geometry': deepcopy(frame['geometry'])}
         if frame['stabilize']['enable']:
@@ -126,7 +121,6 @@ def generate_image(frame:dict, preview_options:dict):
                                                                 virtual_shot['geometry']['shot']['crop']))
             except: pass
         geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=img_original)
-        pprint(geometry_values)
         img_finalized = cv2_geometry_filter(img=img_rgb, geometry=geometry_values)
         return (frame['index'], img_finalized)
 

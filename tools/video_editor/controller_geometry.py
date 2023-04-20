@@ -128,6 +128,11 @@ class Controller_geometry():
     def refresh_geometry_for_each_frame(self, shot):
         # log.info(f"{shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}, refresh geometry for each frame")
         # target_geometry = self.model_database.get_target_geometry(k_ep=shot['k_ep'], k_part=shot['k_part'])
+        if len(self.frames[shot['no']]) == 0:
+            # No images
+            print_orange(f"refresh geometry: no frames. {shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}")
+            return
+
         if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage']:
             k_part_src = shot['dst']['k_part'][2:]
         else:

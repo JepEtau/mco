@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import sys
 sys.path.append('../scripts')
+
+from utils.pretty_print import *
 from PySide6.QtCore import (
     Signal,
 )
@@ -19,15 +21,21 @@ class Controller_replace():
         # List of frames to replace
         log.info("refresh list")
         list_replace = list()
+
         for frame in self.playlist_frames:
+            shot = self.shots[frame['shot_no']]
+            if self.current_task not in ['deinterlace', 'edition']:
+                offset = shot['start']
+            else:
+                offset = 0
+
             frame_no = self.model_database.get_replace_frame_no(
-                    shot=self.shots[frame['shot_no']],
-                    frame_no=frame['frame_no'])
+                shot=shot, frame_no=frame['frame_no'] + offset)
             if frame_no != -1:
                 list_replace.append({
                     'shot_no': frame['shot_no'],
                     'src': frame_no,
-                    'dst': frame['frame_no'],
+                    'dst': frame['frame_no'] + offset,
                 })
         # print_lightcyan("model video editor: refresh_replace_list")
         # pprint(list_replace)
@@ -75,6 +83,7 @@ class Controller_replace():
 
 
     def event_frame_replaced(self, replace:dict):
+        print(f"event_frame_replaced: {self.preview_options['replace']['allowed']}")
         action = replace['action']
         frame_no = replace['dst']
         log.info("replace %d" % (frame_no))

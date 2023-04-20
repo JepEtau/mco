@@ -144,8 +144,10 @@ class Controller_video_editor(Controller_common,
         """ Directory or step has been changed, update the database, list all images,
             list all shots
         """
-        print_lightcyan("----------------------- selection_changed -------------------------")
-        pprint(values)
+        verbose = True
+        if verbose:
+            print_lightcyan("----------------------- selection_changed -------------------------")
+            pprint(values)
         k_ep_selected = values['k_ep']
         k_part_selected = values['k_part']
         task = 'deinterlace' if values['k_step'] == '' else values['k_step']
@@ -384,9 +386,10 @@ class Controller_video_editor(Controller_common,
 
 
     def event_selected_shots_changed(self, selected_shots:dict):
-        print_lightgreen(f"selected shots: {selected_shots['k_ep']}:{selected_shots['k_part']}, %s, step: {selected_shots['k_step']}" % (
-            ','.join(map(lambda x: str(x), selected_shots['shotlist']))))
-
+        verbose = True
+        if verbose:
+            print_lightgreen(f"selected shots: {selected_shots['k_ep']}:{selected_shots['k_part']}, %s, step: {selected_shots['k_step']}" % (
+                ','.join(map(lambda x: str(x), selected_shots['shotlist']))))
 
         log.info(f"selected shots: {selected_shots['k_ep']}:{selected_shots['k_part']}, %s, {selected_shots['k_step']}" % (
             ','.join(map(lambda x: str(x), selected_shots['shotlist']))))
@@ -408,18 +411,24 @@ class Controller_video_editor(Controller_common,
         for shot_no in selected_shots['shotlist']:
             # mmmmh what??? should use self.shot
             shot = self.frames[shot_no]
+            if self.current_task not in ['deinterlace', 'edition']:
+                offset = self.shots[shot_no]['start']
+            else:
+                offset = 0
+
             for frame in shot:
                 frame['index'] = index
                 index += 1
                 self.playlist_frames.append(frame)
-                frame_nos.append(frame['frame_no'])
+                frame_nos.append(frame['frame_no'] + offset)
             ticklist.append(ticklist[-1] + len(self.frames[shot_no]))
 
         gc.collect()
 
         # Load images
-        print_lightgrey("\tload images")
-        start_time = time.time()
+        if verbose:
+            print_lightgrey("\tload images")
+            start_time = time.time()
         cpu_count = 12
         # image_filepathes = [f['filepath'] for f in self.frames[shot_no]]
         for shot_no in selected_shots['shotlist']:
@@ -433,6 +442,7 @@ class Controller_video_editor(Controller_common,
                     for future in concurrent.futures.as_completed(work_result):
                         no, img = future.result()
                         self.frames[shot_no][no]['cache_initial'] = img
+        if verbose:
             print_green("%.02fs" % (time.time() - start_time))
 
 
@@ -498,6 +508,7 @@ class Controller_video_editor(Controller_common,
 
         self.signal_stabilize_settings_refreshed.emit(stabilize_settings)
 
+        self.signal_preview_options_consolidated.emit(self.preview_options)
         log.info(f"selected shots: shot is ready to play")
         self.signal_ready_to_play.emit(self.playlist_properties)
 
@@ -659,20 +670,29 @@ class Controller_video_editor(Controller_common,
             print_lightcyan("\npreview mode changed:")
             pprint( self.preview_options)
 
-        options['replace']['allowed'] = True
-        if self.current_task == 'edition':
+        if self.current_task in ['deinterlace', 'edition']:
+            options['replace']['allowed'] = True
+        else:
+            # Do not allow edition because we do not know if we are using frames
+            # generated for edition or with final filters
+            options['replace']['allowed'] = False
+
+
+        if self.current_task in ['edition', 'pre_rgb']:
             options['geometry']['allowed'] = True
-            options['stabilize']['allowed'] = True
         else:
             options['geometry']['allowed'] = False
-            options['stabilize']['allowed'] = False
 
-        if self.current_task not in ['edition']:
+        if self.current_task == 'edition':
+            options['stabilize']['allowed'] = True
+        else:
+            options['stabilize']['allowed'] = False
             # Stabilize is disable if not in edition mode
             options['stabilize']['enabled'] = False
 
+
         if not options['replace']['enabled']:
-            # Cannot stabilize if replace not active (use replace to stabilize)
+            # Cannot stabilize if replace not active (use replaced frames to stabilize)
             options['stabilize']['enabled'] = False
 
         if options['stabilize']['enabled']:
@@ -830,8 +850,6 @@ class Controller_video_editor(Controller_common,
 
         # Patch shot deshake with the modified values
         shot['deshake'] = settings
-
-        pprint(shot)
 
         # Deshake
         hash, output_images = deshake(
