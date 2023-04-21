@@ -7,6 +7,7 @@ import time
 import torch
 import numpy as np
 from pprint import pprint
+from utils.pretty_print import *
 from filters.utils import MAX_FRAMES_COUNT
 
 from utils.hash import (
@@ -16,7 +17,6 @@ from utils.hash import (
 from utils.get_image_list import (
     get_image_list,
 )
-from utils.pretty_print import *
 
 
 
@@ -49,10 +49,10 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
     # ModelName="up2x-latest-denoise1x.pth"
     #{0,1,2,3,4,auto}; the larger the number, the smaller the memory consumption
     # Tile=4
-    suffix = "s%d_n%d" % (scale, denoise)
+    suffix = f"s{scale}_n{denoise}"
 
     # Hash
-    filter_str = "%s,%s" % (input_hash, model_name)
+    filter_str = f"{input_hash},{suffix}"
     if get_hash:
         hash = calculate_hash(filter_str=filter_str)
         hash += "_" + suffix
@@ -184,7 +184,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
         sys.exit(print_red(f"Error, cannot find netscale for model {model_name}"))
 
     # Hash
-    filter_str = "%s,%s" % (input_hash, suffix)
+    filter_str = f"{input_hash},{suffix}"
     if get_hash:
         hash = calculate_hash(filter_str=filter_str)
         hash += "_" + suffix
@@ -321,7 +321,7 @@ def upscale_esrgan(shot, images:list, image_list:list,
     from filters.esrgan import Esrgan_upscale
 
     # Default values for upscaler
-    suffix = "%s_%s" % (model_name, input_hash)
+    suffix = f"{model_name}_{input_hash}"
     seamless = None
     if model_name == '2x_LD-Anime_Skr_v1.0':
         suffix = "skr"
@@ -374,7 +374,7 @@ def upscale_esrgan(shot, images:list, image_list:list,
         scale = int(match.group(1))
 
     # Hash
-    filter_str = "%s,%s" % (input_hash, model_name)
+    filter_str = f"{input_hash},{suffix}"
     if get_hash:
         hash = calculate_hash(filter_str=filter_str)
         hash += "_" + suffix
