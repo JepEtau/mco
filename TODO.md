@@ -1,7 +1,7 @@
 # TODO script
 (1)
 - create a pre_rgb filter to modify RGB with deshaked/replaced images only
-- integrate animesr
+- correct frame offset animesr
 
 (2)
 - stabilize: when 2 segments are separated by some frames, the first image of the 2nd segment is not aligned with previous frames (g_fin, shot no. 0)
@@ -47,5 +47,4 @@
 
 # TODO other
 - create a script to remove previous images
-- retry animesr
 - list models that are already tested

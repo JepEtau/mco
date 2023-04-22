@@ -99,7 +99,7 @@ def parse_common_configuration(db, config_path):
         db_common['directories'][d] = os.path.normpath(os.path.abspath(v))
 
 
-    for d in ['real_cugan', 'real_esrgan']:
+    for d in ['real_cugan', 'real_esrgan', 'esrgan', 'animesr']:
         v = db_common['directories'][d]
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')
@@ -219,7 +219,7 @@ def parse_common_configuration(db, config_path):
 
     # Discard editions
     try:
-        editions_to_discard = list(db_common['editions']['discard'].split(','))
+        editions_to_discard = list(db_common['editions']['discard'].split(',').replace(' ', ''))
     except:
         editions_to_discard = list()
         pass

@@ -61,7 +61,7 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
         if len(shot_properties) > 1:
             for p in shot_properties:
                 d = p.split('=')
-                if d[0] == 'filter':
+                if d[0] == 'filters':
                     # custom filter
                     db_shots[shot_no]['filters'] = d[1]
 
@@ -170,111 +170,6 @@ def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
 
 
 
-
-# def consolidate_target_shots_after_parse(db, k_ep, k_part, k_ed) -> None:
-#     """This procedure is used to consolidate the parsed shots
-#     It updates the total duration (in frames of the video for a part
-
-#     Args:
-#         db_video: the structure which contains the shots
-#                     and video properties
-
-#     Returns:
-#         None
-
-#     """
-#     K_PART_DEBUG = ''
-#     K_EP_DEBUG = ''
-#     SHOT_NO = 1
-
-#     if k_ed=='k' and k_ep==K_EP_DEBUG and k_part==K_PART_DEBUG:
-#         print("%s:consolidate_parsed_shots: %s:%s:%s" % (__name__, k_ed, k_ep, k_part))
-#         pprint(db[k_ep]['video'][k_ed][k_part]['shots'][SHOT_NO])
-#         print("")
-#         # sys.exit()
-
-#     db_video = db[k_ep]['video'][k_ed][k_part]
-
-#     # Create a single shot if no shot defined by the configuration file
-#     if 'shots' not in db_video.keys():
-#         # Create shot only if it the src (i.e. used for the target)
-#         if k_part in K_GENERIQUES:
-#             k_ed_src = db[k_part]['video']['src']['k_ed']
-#             k_ep_src = db[k_part]['video']['src']['k_ep']
-#         else:
-#             k_ed_src = db[k_ep]['video']['target'][k_part]['k_ed_src']
-#             k_ep_src = k_ep
-
-#         # print("SRC for %s:%s:%s is %s:%s:%s" % (k_ed, k_ep, k_part, k_ed_src, k_ep_src, k_part))
-#         if k_ed == k_ed_src and k_ep == k_ep_src:
-#             # print("\tDO create a shot for %s:%s:%s" % (k_ed, k_ep, k_part))
-
-#             # print("todo: %s:consolidate_parsed_shots: verify generation of %s:%s:%s" % (__name__, k_ep, k_ed, k_part))
-#             # pprint(db_video)
-#             if 'count' not in db_video.keys() or db_video['count'] == 0:
-#                 return
-#             db_video['shots'] = [{
-#                 'no': 0,
-#                 'start': db_video['start'],
-#                 'filters': 'default',
-#                 'count': db_video['count'],
-#                 'curves': None,
-#                 'replace': dict(),
-#                 'dst':{
-#                     'k_ep': k_ep,
-#                     'k_part': k_part,
-#                 }
-#             }]
-#         # else:
-#         #     print("\tdo not create a shot for %s:%s:%s" % (k_ed, k_ep, k_part))
-#         # print("consolidate_parsed_shots: -->")
-#         # pprint(db_video['shots'])
-#         # print("")
-#         return
-
-
-#     # Update each shot durations
-#     shots = db_video['shots']
-#     frames_count = 0
-#     for i in range(0, len(shots)):
-#         # print(shots[i])
-#         if shots[i] is None:
-#             continue
-
-#         if shots[i]['count'] == 0:
-#             if i + 1 >= len(shots):
-#                 # Last shot: use the count field of the part
-#                 shots[i]['count'] = db_video['start'] + db_video['count'] - shots[i]['start']
-#             else:
-#                 shots[i]['count'] = shots[i+1]['start'] - shots[i]['start']
-
-#             # Update count in the src structure
-#             if ('src' in shots[i].keys()
-#                 and shots[i]['dst']['k_part'] not in ['precedemment', 'asuivre']):
-#                 # 2022-12-02: do not modify the frame count if the dst is replaced
-#                 #   which is the case of these parts
-#                 # TODO: verify when replacing episode by 'precedemment' or 'asuivre'
-#                 shots[i]['src']['count'] = shots[i]['count']
-
-#         if 'effects' in shots[i]:
-#             if shots[i]['effects'][0] == 'loop':
-#                 frames_count += shots[i]['effects'][2]
-#                 sys.exit("%s: add loop duration" % (__name__))
-
-#         if shots[i]['count'] <= 0 and i < len(shots)-1:
-#             print("Error: %s:%s:%s: shot start=%d, shot length (%d) < 0 " % (k_ed, k_ep, k_part, shots[i]['start'], shots[i]['count']))
-#             # pprint(shots)
-#             sys.exit()
-
-#         frames_count += shots[i]['count']
-
-#     # The new part duration is the sum of all shots duration
-#     # db_video['count'] = frames_count
-#     if k_ed=='k' and k_ep==K_EP_DEBUG and k_part==K_PART_DEBUG:
-#         print("----->")
-#         pprint(db[k_ep][k_ed][k_part]['video']['shots'][SHOT_NO])
-#         print("")
-#         sys.exit()
 
 
 def parse_target_shotlist(db_shots, config, k_section, verbose=False) -> None:

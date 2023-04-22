@@ -147,6 +147,12 @@ def parse_editions(database, cfg_foldername, verbose=False):
         sys.exit(print_red("Error: parse_editions: config %s is not a valid folder" % (cfg_foldername)))
 
 
+    if verbose:
+        print_lightgreen("Available editions:", end=' ')
+        print(available_editions)
+        print_lightgreen("Discard editions:", end=' ')
+        print(db_common['editions']['discard'])
+
     # Remove editions that should not be parsed
     for k_ed in db_common['editions']['discard']:
         available_editions.remove(k_ed)
