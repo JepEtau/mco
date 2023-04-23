@@ -14,7 +14,10 @@ from filters.ffmpeg_utils import clean_ffmpeg_filter
 
 from filters.homography import Homography
 from filters.deshake import deshake
-from filters.python_geometry import apply_python_geometry_filter
+from filters.python_geometry import (
+    add_borders,
+    apply_python_geometry_filter,
+)
 from filters.utils import MAX_FRAMES_COUNT
 from utils.pretty_print import *
 from utils.hash import (
@@ -76,16 +79,26 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
     # Process all images
     filter_name = filter_list[0][0]
 
+    if filter_name == 'add_borders':
+        # Add borders
+        return add_borders(
+            shot=shot,
+            images=images,
+            image_list=image_list,
+            step_no=step_no,
+            filters_str=filters_str,
+            input_hash=input_hash,
+            get_hash=get_hash,
+            do_save=do_save,
+            output_folder=output_folder)
 
-    if filter_name == 'deshake':
-        add_border = False if 'no_border' in filter_list[0][1] else True
 
+    elif filter_name == 'deshake':
         # Deshake
         hash, output_images = deshake(
             shot=shot,
             images=images,
             image_list=image_list,
-            add_border=add_border,
             step_no=step_no,
             input_hash=input_hash,
             get_hash=get_hash,
@@ -123,13 +136,11 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
 
     elif filter_name == 'stabilize':
         sys.exit(print_red("Smooth stabilize not yet supported"))
-        add_border = False if 'no_border' in filter_list[0][1] else True
 
 
     elif filter_name == 'homography':
         # Deshake
-        add_border = False if 'no_border' in filter_list[0][1] else True
-        homography = Homography(add_border=add_border)
+        homography = Homography()
         hash, output_images = homography.stabilize(
             images=images,
             ref='start',

@@ -6,10 +6,11 @@ from pprint import pprint
 
 from filters.apply_filters import apply_filters
 from filters.consolidate import consolidate_filters
-from filters.deshakers import STABILIZE_BORDER_HIGH_RES
+from filters import IMG_BORDER_HIGH_RES
 from filters.utils import (
     get_filters_from_shot,
     get_step_no_from_last_task,
+    has_add_border_task,
 )
 from utils.hash import (
     calculate_hash,
@@ -68,51 +69,6 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
 
     shot['cache'] = get_cache_path(db, shot)
     # os.path.join(db['common']['directories']['cache'], k_ep, k_part, "%03d" % (shot['no']))
-
-
-    if False:
-        # Deprecated. keep in case of...
-        # Frame ref is used for deinterlace, calculate it: use the offset array
-        shot['ref'] = shot['start']
-        if k_part in K_GENERIQUES:
-            k_ep_target = db[k_part]['video']['src']['k_ep']
-            # k_ed_ref = db[k_ep]['target']['video']['k_ed_ref']
-            k_ed_ref = k_ed
-        else:
-            # pprint(db[k_ep]['target']['video'])
-            # pprint(shot)
-            # k_ed_target = db[k_ep]['target']['video']['src']['k_ed']
-            try:
-                k_ed_ref = db[k_ep]['video']['target']['k_ed_ref']
-                # if shot['k_ep'] != shot['dst']['k_ep']:
-                k_ep_target = shot['dst']['k_ep']
-            except:
-                # study mode
-                k_ed_ref = k_ed
-                k_ep_target = k_ep
-
-
-        if ((k_ed != k_ed_ref or k_ep != k_ep_target)
-            and k_part == shot['dst']['k_part']):
-            # Apply offset only if part is different:
-            # when replacing episode<->asuivre or episode<->precedemment or asuivre <-> precedemment
-            print("\t\t\tapply offset for %s: target:%s:%s:%s ref:%s:%s:%s" % (
-                k_part,
-                k_ed, k_ep_target, shot['dst']['k_part'],
-                k_ed_ref, k_ep, k_part))
-            try:
-                offsets = db[k_ep]['video'][k_ed][k_part]['offsets']
-                # print("%s:%s:%s, offsets=" % (k_ed_src, k_ep, k_part), offsets)
-                for offset in offsets:
-                    if offset['start'] <= shot['start'] <= offset['end']:
-                        # shot['ref'] = shot['start'] + offset['offset']
-                        shot['start'] = shot['start'] - offset['offset']
-                        break
-            except:
-                print("offsets are not defined in %s:%s for part %s" % (k_ed, k_ep, k_part))
-        # else:
-        #     print("\t\t\tdisable offset for %s" % (k_part))
-
 
 
     # Geometry
@@ -183,15 +139,6 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
             nested_dict_set(shot, default_shot_src_geometry, 'geometry', 'shot')
             try: shot['geometry']['shot']['is_default'] = True
             except: pass
-
-        # Update the crop values if deshake/stabilize will be done
-        try:
-            if shot['deshake']['enable']:
-                shot['geometry']['shot']['crop'] = list(
-                    map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot['geometry']['shot']['crop']))
-        except:
-            shot['geometry']['shot']['crop'] = list(
-                map(lambda x: min(0, x), shot['geometry']['shot']['crop']))
 
     nested_dict_set(shot,
         db['common']['dimensions']['final'],
@@ -266,6 +213,8 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
                 pass
         try: shot['curves']['lut'].clear()
         except: pass
+
+
 
     if verbose:
         print_lightcyan("TO")

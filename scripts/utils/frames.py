@@ -80,10 +80,6 @@ def copy_frames_for_study(db, k_ed, k_ep, k_part, last_task):
                 print_lightcyan("===============================================================================")
 
 
-        # Get the 'real' frame no: apply offsets
-        # TODO
-
-
         # Finally get image filename and filepath
         step_no = shot['last_step']['step_no']
         hash = shot['last_step']['hash']

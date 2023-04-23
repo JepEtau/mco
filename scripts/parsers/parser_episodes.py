@@ -108,7 +108,6 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39):
             # Video
             #----------------------------------------------------
             elif k_section == 'video':
-                db_ep_target['k_ed_ref'] = db['common']['reference']['edition']
                 parse_video_section(db_ep_target, config, k_ep, verbose=False)
 
             # Shots
@@ -223,51 +222,6 @@ def parse_episode(db, k_ed, k_ep):
                         # TODO rework as the function/parameteres are the same!
                         parse_shotlist(db_video_part['shots'],
                             k_ep, k_part, value_str)
-
-        # Offsets
-        #----------------------------------------------------
-        if k_section == 'offsets':
-
-            for k_part in config.options(k_section):
-                if verbose:
-                    print("\t\t%s" % (k_part))
-
-                # Parse list of offsets
-                value_str = config.get(k_section, k_part)
-                offsets = []
-                for offset in value_str.split('\n'):
-                    diffStr = offset.replace(' ','')
-                    tmp = None
-                    tmp = re.match(re.compile("^(\d+):(-?\d+)$"), diffStr)
-                    if tmp is not None:
-                        frameStart = int(tmp.group(1))
-                        offset = int(tmp.group(2)) - frameStart
-                        if offsets:
-                            offsets[len(offsets)-1]['end'] = frameStart - 1
-                        offsets.append({'start': frameStart, 'offset': offset, 'end': 99999999})
-                        # print("\t\t\tframeStart=%d, offset=%d" % (frameStart, offset))
-
-                db_video[k_part].update({
-                    'offsets': offsets,
-                })
-                # print("offsets, %s, part %s: " % (k_ep, k_part), offsets)
-                # pprint(offsets)
-                # print("TODO: reorder offsets")
-
-    # Copy frames dict from common if not specified in configuration file
-    # for k in db[k_ep]['common'].keys():
-    #     # todo: improve this if other sections are listed in common episode file
-    #     if k == 'filters':
-    #         continue
-
-    #     if k not in db_episode.keys():
-    #         db_episode[k] = {}
-    #         # Deactivate this to simplify the structure
-    #         if False:
-    #             if 'frames' not in cfg_ep[k].keys():
-    #                 cfg_ep[k]['frames'] = deepcopy(cfg_ep_common[k]['frames'])
-    #                 for frame in cfg_ep[k]['frames']:
-    #                     frame['no'] = frame['ref']
 
 
     # Set dimensions

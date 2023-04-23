@@ -144,8 +144,10 @@ class Model_curves():
                 shotlist.remove(shot_no)
                 break
             except: pass
+
         try:
-            self.shots_per_curves[k_curves].append(shot_no)
+            if shot_no not in self.shots_per_curves[k_curves]:
+                self.shots_per_curves[k_curves].append(shot_no)
         except:
             self.shots_per_curves[k_curves] = [shot_no]
 

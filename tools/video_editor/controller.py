@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import sys
-
-from utils.nested_dict import nested_dict_set
 sys.path.append('../scripts')
 
 from copy import deepcopy
@@ -18,6 +16,7 @@ from concurrent.futures import ThreadPoolExecutor
 from pprint import pprint
 from logger import log
 from utils.pretty_print import *
+from utils.nested_dict import nested_dict_set
 
 from PySide6.QtCore import (
     Signal,
@@ -37,11 +36,8 @@ from filters.deshake import (
     deshake,
     verify_stabilize_segments
 )
-from filters.deshakers import STABILIZE_BORDER_HIGH_RES
-from filters.filters import calculate_geometry_parameters
-from filters.utils import (
-    is_stabilize_task_enabled
-)
+from filters.python_geometry import IMG_BORDER_HIGH_RES
+from filters.utils import has_add_border_task
 from utils.common import K_GENERIQUES
 from utils.get_frame_list import (
     get_frame_list,
@@ -287,11 +283,11 @@ class Controller_video_editor(Controller_common,
                         'keep_ratio': True,
                         'fit_to_width': False})
                     shot_geometry = self.model_database.get_shot_geometry(shot=shot)
-                elif is_stabilize_task_enabled(shot):
+                elif has_add_border_task(shot):
                     # Not geometry define, create a new one
                     print_yellow("\t\t\tNo shot geometry defined, stabilize filter detected, associate a shot geometry")
                     self.model_database.set_shot_geometry(shot=shot, geometry={
-                        'crop': [STABILIZE_BORDER_HIGH_RES] * 4,
+                        'crop': [IMG_BORDER_HIGH_RES] * 4,
                         'keep_ratio': True,
                         'fit_to_width': False})
                     shot_geometry = self.model_database.get_shot_geometry(shot=shot)
@@ -649,7 +645,6 @@ class Controller_video_editor(Controller_common,
 
 
 
-
     def event_preview_options_changed(self, preview_options):
         log.info("preview options changed")
         self.preview_options = preview_options
@@ -670,6 +665,13 @@ class Controller_video_editor(Controller_common,
             print_lightcyan("\npreview mode changed:")
             pprint( self.preview_options)
 
+        if (self.current_task == 'deinterlace'
+            or not has_add_border_task(self.current_shot())):
+            options['geometry']['add_borders'] = True
+        else:
+            options['geometry']['add_borders'] = False
+
+
         if self.current_task in ['deinterlace', 'edition']:
             options['replace']['allowed'] = True
         else:
@@ -678,17 +680,22 @@ class Controller_video_editor(Controller_common,
             options['replace']['allowed'] = False
 
 
-        if self.current_task in ['edition', 'pre_rgb']:
+        if self.current_task in ['edition', 'sharpen']:
             options['geometry']['allowed'] = True
         else:
             options['geometry']['allowed'] = False
 
-        if self.current_task == 'edition':
-            options['stabilize']['allowed'] = True
+        if False:
+            if self.current_task == 'edition':
+                options['stabilize']['allowed'] = True
+            else:
+                options['stabilize']['allowed'] = False
+                # Stabilize is disable if not in edition mode
+                options['stabilize']['enabled'] = False
         else:
-            options['stabilize']['allowed'] = False
-            # Stabilize is disable if not in edition mode
-            options['stabilize']['enabled'] = False
+            # Force enabled to fasten edition
+            options['stabilize']['allowed'] = True
+            # options['stabilize']['enabled'] = True
 
 
         if not options['replace']['enabled']:
@@ -722,8 +729,8 @@ class Controller_video_editor(Controller_common,
     # Deshake/stabilize
     #---------------------------------------------------------------------------
     def event_stabilize_modified(self, settings):
-        # print_lightcyan("event_stabilize_modified")
-        # pprint(settings)
+        print_lightcyan("event_stabilize_modified")
+        pprint(settings)
         shot = self.current_shot()
 
         # Consolidate segments
@@ -750,7 +757,7 @@ class Controller_video_editor(Controller_common,
                 'alg': 'cv2_deshaker',
                 'start': shot['start'],
                 'end':  shot['start'] + shot['count'] - 1,
-                'ref': 'middle',
+                'ref': 'start',
                 'mode': {
                     'vertical': True,
                     'horizontal': True,
@@ -763,7 +770,8 @@ class Controller_video_editor(Controller_common,
             for f in self.frames[shot['no']]:
                 f['cache_deshake'] = None
 
-        if new_settings['enable'] != current_settings['enable']:
+        if (current_settings is not None
+            and new_settings['enable'] != current_settings['enable']):
             # Geometry has to be consolidated if change enabled/disable
             self.refresh_geometry_for_each_frame(shot=shot)
 
@@ -856,7 +864,6 @@ class Controller_video_editor(Controller_common,
             shot=shot,
             images=images,
             image_list=image_list,
-            add_border=True,
             step_no=shot['last_step']['step_no'],
             input_hash=shot['filters'][shot['last_step']['step_no'] - 1],
             get_hash=False,

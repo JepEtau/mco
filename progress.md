@@ -197,7 +197,6 @@
 # Générique asuivre
 * [x] édition, épisode: s:ep12
 * [x] shots
-* [x] offsets
 * [x] filtres
 * [ ] géométrie
 * [ ] courbes RVB

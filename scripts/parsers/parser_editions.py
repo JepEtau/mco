@@ -189,7 +189,3 @@ def parse_editions(database, cfg_foldername, verbose=False):
 
         db_editions['available'] .append(k_ed)
 
-
-    # Set the edition used as the reference for the calculation of the frame no.
-    # db_editions['k_ed_ref'] = database['common']['reference']['edition']
-

@@ -268,7 +268,11 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
             "-f", "concat",
             "-safe", "0",
             "-i", input_filename,
-            "-pix_fmt", db_settings['video_pixel_format']
+            "-pix_fmt", db_settings['video_pixel_format'],
+            "-colorspace:v", "bt709",
+            "-color_primaries:v", "bt709",
+            "-color_trc:v", "bt709",
+            "-color_range:v", "tv"
         ])
 
         ffmpeg_command.extend(db_settings['video_quality'].split(' '))
@@ -296,7 +300,7 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
 
 
 
-def merge_audio_and_video_tracks(db, k_ep_or_g, force:bool=False, simulation:bool=False):
+def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, simulation:bool=False):
     # Output filepath
     print_lightgreen(f"Merge audio and video tracks: {k_ep_or_g}")
     if k_ep_or_g in ['g_debut', 'g_fin']:
@@ -309,14 +313,16 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, force:bool=False, simulation:boo
     if os.path.exists(audio_video_filepath) and not force and not simulation:
         return
 
+    suffix = '' if last_task == '' or last_task == 'final' else f"_{last_task}"
+
     # Get nb of frames from video stream
     if k_ep_or_g in ['g_debut', 'g_fin']:
-        video_filepath = os.path.join(cache_path, "video", "%s_video_%s.mkv" % (
-            k_ep_or_g, db[k_ep_or_g]['video']['hash']))
+        video_filepath = os.path.join(cache_path, "video",
+            f"{k_ep_or_g}_video_{db[k_ep_or_g]['video']['hash']}{suffix}.mkv")
     else:
         # TODO k_part is missing...
-        video_filepath = os.path.join(cache_path, "video", "%s_video_%s.mkv" % (
-            k_ep_or_g, db[k_ep_or_g]['target']['video'][k_part]['hash']))
+        video_filepath = os.path.join(cache_path, "video",
+            f"{k_ep_or_g}_video_{db[k_ep_or_g]['target']['video'][k_part]['hash']}{suffix}.mkv")
 
     try:
         video_frames_count = int(get_video_duration(db['common'], video_filepath, integrity=False) * FPS)

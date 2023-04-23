@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 import sys
-
-from filters.deshakers import STABILIZE_BORDER_HIGH_RES
-from filters.filters import calculate_geometry_parameters
 sys.path.append('../scripts')
+
+from filters.python_geometry import IMG_BORDER_HIGH_RES
+from filters.filters import calculate_geometry_parameters
 from copy import deepcopy
 
 from pprint import pprint
@@ -38,7 +38,7 @@ class Controller_geometry():
         try:
             stabilize_settings = self.model_database.get_shot_stabilize_settings(shot=shot)
             if stabilize_settings['enable']:
-                crop_min = -STABILIZE_BORDER_HIGH_RES
+                crop_min = -IMG_BORDER_HIGH_RES
             # print(f"event_geometry_modified, crop_min={crop_min}")
         except:
             pass
@@ -152,29 +152,29 @@ class Controller_geometry():
         virtual_shot = {'geometry': deepcopy(shot['geometry'])}
         virtual_shot['geometry']['target'] = target_geometry
         frame = self.frames[shot['no']][0]
-        if is_stabilize_enabled:
-            try:
-                virtual_shot['geometry']['default']['crop'] = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES,
-                                                            virtual_shot['geometry']['default']['crop']))
-            except:
-                print_orange("no geometry/default/crop")
-                pass
-            try:
-                virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES,
-                                                            virtual_shot['geometry']['shot']['crop']))
-            except:
-                print_orange("info: no geometry/shot/crop")
-                pass
 
-            if frame['cache_deshake'] is not None:
-                shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_deshake'])
-            else:
-                # Deshake has not been done, use initial frame geometry and path stabilize_enable flag
-                print_orange("no deshake img cached while trying to update geometry")
-                shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_initial'])
-                is_stabilize_enabled = False
-        else:
-            shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_initial'])
+        try:
+            virtual_shot['geometry']['default']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
+                                                        virtual_shot['geometry']['default']['crop']))
+        except:
+            print_orange("no geometry/default/crop")
+            pass
+        try:
+            virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
+                                                        virtual_shot['geometry']['shot']['crop']))
+        except:
+            print_orange("info: no geometry/shot/crop")
+            pass
+
+        # if frame['cache_deshake'] is not None:
+        #     shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_deshake'])
+        # else:
+            # Deshake has not been done, use initial frame geometry and path stabilize_enable flag
+        #     print_orange("no deshake img cached while trying to update geometry")
+        #     shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_initial'])
+        #     is_stabilize_enabled = False
+        # else:
+        shot_geometry_values = calculate_geometry_parameters(shot=shot, img=frame['cache_initial'])
         is_geometry_erroneous = False if shot_geometry_values['pad_error'] is None else True
 
         # if target_geometry['w'] == -1:

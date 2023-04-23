@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 from copy import deepcopy
 import sys
+sys.path.append('../scripts')
 import time
 
-from filters.deshakers import STABILIZE_BORDER_HIGH_RES
+from filters.python_geometry import IMG_BORDER_HIGH_RES
 from utils.nested_dict import nested_dict_set
-sys.path.append('../scripts')
 import cv2
 import numpy as np
 
@@ -26,7 +26,7 @@ def generate_image(frame:dict, preview_options:dict):
     if verbose:
         log.info("generate single image")
         print_purple(("generate single image"))
-        # pprint(frame)
+        pprint(frame)
 
     # geometry_values are the calculated dimensions, crop, pad etc.
     geometry_values = deepcopy(frame['geometry_values'])
@@ -40,11 +40,11 @@ def generate_image(frame:dict, preview_options:dict):
 
     # Initial image
     if frame['cache_deshake'] is not None and preview_options['stabilize']['enabled']:
-        print("using deshake")
+        # print("using deshake")
         img_original = frame['cache_deshake']
         is_using_deshake = True
     else:
-        print("using original")
+        # print("using original")
         img_original = frame['cache_initial']
         is_using_deshake = False
     img_height, img_width, c = img_original.shape
@@ -68,18 +68,11 @@ def generate_image(frame:dict, preview_options:dict):
     preview_shot_geometry = preview_options['geometry']['shot']
 
     # Cropped dimensions
-    if frame['stabilize']['enable']:
-        # preview_options['stabilize']['enabled'] and
-        crop_values = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
-        if not is_using_deshake:
-            print_yellow("ERRRRRRROR: stabilize is enabled in frame deshake image not used ")
-            if img_original is None:
-                return None
-            # pprint(frame)
-    else:
+    if preview_options['geometry']['add_borders']:
+        # No border were added
         crop_values = shot_geometry['crop']
-        if is_using_deshake:
-            print("WHATTTT? deshake image is used")
+    else:
+        crop_values = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
 
     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
         width=img_width, height=img_height, crop=crop_values)
@@ -113,11 +106,11 @@ def generate_image(frame:dict, preview_options:dict):
     if preview_geometry['final_preview']:
         nested_dict_set(frame['geometry'], {'w': w_final, 'h': h_final}, 'dimensions', 'final')
         virtual_shot = {'geometry': deepcopy(frame['geometry'])}
-        if frame['stabilize']['enable']:
-            try: virtual_shot['geometry']['default']['crop'] = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES,
+        if frame['k_part'] != 'reportage':
+            try: virtual_shot['geometry']['default']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
                                                                 virtual_shot['geometry']['default']['crop']))
             except: pass
-            try: virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES,
+            try: virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
                                                                 virtual_shot['geometry']['shot']['crop']))
             except: pass
         geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=img_original)

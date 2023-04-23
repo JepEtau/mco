@@ -14,6 +14,7 @@ from logger import log
 
 from PySide6.QtCore import (
     QPoint,
+    QSize,
     Qt,
     Signal,
 )
@@ -27,7 +28,7 @@ from common.window_common import (
     PAINTER_MARGIN_LEFT,
     PAINTER_MARGIN_TOP,
 )
-from filters.deshakers import STABILIZE_BORDER_HIGH_RES
+from filters.python_geometry import IMG_BORDER_HIGH_RES
 from filters.utils import (
     FINAL_FRAME_HEIGHT,
     FINAL_FRAME_WIDTH,
@@ -475,8 +476,8 @@ class Window_main(Window_common):
 
                         # Patch the crop value if displaying deshaked shot
                         crop = shot_geometry['crop']
-                        if preview['stabilize']['enabled'] and self.image['stabilize']['enable']:
-                            crop = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
+                        if not preview['geometry']['add_borders']:
+                            crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
 
                         # Image is resized, add the recalculated crop
                         crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
@@ -523,8 +524,8 @@ class Window_main(Window_common):
                         x0 = PAINTER_MARGIN_LEFT
                         y0 = PAINTER_MARGIN_TOP - delta_y
                         crop = shot_geometry['crop']
-                        if preview['stabilize']['enabled'] and self.image['stabilize']['enable']:
-                            crop = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
+                        if not preview['geometry']['add_borders']:
+                            crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
                         self.painter.drawImage(QPoint(x0, y0), q_image)
 
                         # Add a red rect for the crop
@@ -550,8 +551,9 @@ class Window_main(Window_common):
                 elif preview_shot_geometry['crop_preview']:
                     if preview_shot_geometry['resize_preview']:
                         # print("paintEvent: draw cropped image and resized")
-                        crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                            width=initial_img_width, height=initial_img_height, crop=shot_geometry['crop'])
+                        if not preview['geometry']['add_borders']:
+                            crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
+                                width=initial_img_width, height=initial_img_height, crop=shot_geometry['crop'])
 
                         w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
                         pad_left = int(((FINAL_FRAME_WIDTH - img_width) / 2) + 0.5)
@@ -580,8 +582,8 @@ class Window_main(Window_common):
                         # print("paintEvent: draw cropped image on the original image")
                         # Crop and no rect
                         crop = shot_geometry['crop']
-                        if preview['stabilize']['enabled']:
-                            crop = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
+                        if not preview['geometry']['add_borders']:
+                            crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
                         crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
                             width=initial_img_width, height=initial_img_height, crop=crop)
 
@@ -593,8 +595,15 @@ class Window_main(Window_common):
                 else:
                     # original
                     # print("paintEvent: draw original image")
-                    self.painter.drawImage(
-                        QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
+
+                    if preview['geometry']['add_borders']:
+                        self.painter.drawImage(
+                            QPoint(PAINTER_MARGIN_LEFT+IMG_BORDER_HIGH_RES, PAINTER_MARGIN_TOP+IMG_BORDER_HIGH_RES - delta_y),
+                            q_image.scaled(q_image.width()*2, q_image.height()*2, aspectMode=Qt.KeepAspectRatio))
+
+                    else:
+                        self.painter.drawImage(
+                            QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
 
                 if (preview['geometry']['target']['width_edition']
                     and preview_shot_geometry['crop_edition']
@@ -602,8 +611,8 @@ class Window_main(Window_common):
 
                     # Image is resized, add the recalculated crop
                     crop = shot_geometry['crop']
-                    if preview['stabilize']['enabled']:
-                        crop = list(map(lambda x: x + STABILIZE_BORDER_HIGH_RES, shot_geometry['crop']))
+                    if not preview['geometry']['add_borders']:
+                        crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
 
                     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
                             width=initial_img_width, height=initial_img_height, crop=crop)
@@ -614,7 +623,6 @@ class Window_main(Window_common):
                     crop_left = int((crop_left * FINAL_FRAME_HEIGHT) / float(cropped_height))
                     crop_top = int((crop_top * FINAL_FRAME_HEIGHT) / float(cropped_height))
 
-                    pprint(self.image['geometry_values'])
                     final_pad = self.image['geometry_values']['pad']
 
                     # Add the target rect
@@ -659,11 +667,11 @@ class Window_main(Window_common):
                 self.painter.setPen(pen)
                 self.painter.drawLine(
                     x, 10,
-                    x, 10 + max(img_height, FINAL_FRAME_HEIGHT))
+                    x, 10 + max(img_height, FINAL_FRAME_HEIGHT + PAINTER_MARGIN_TOP + IMG_BORDER_HIGH_RES))
 
                 self.painter.drawLine(
                     10, y,
-                    10 + max(img_width, FINAL_FRAME_WIDTH), y)
+                    10 + max(img_width, FINAL_FRAME_WIDTH + PAINTER_MARGIN_LEFT + IMG_BORDER_HIGH_RES), y)
 
 
             self.painter.end()

@@ -337,15 +337,15 @@ def main():
         if do_av_merge:
             if arguments.part in ['g_debut', 'g_fin']:
                 # Part is specified, merge audio and video files
-                merge_audio_and_video_tracks(g_database, k_ep_or_g=arguments.part, force=arguments.force, simulation=arguments.simulate)
+                merge_audio_and_video_tracks(g_database, k_ep_or_g=arguments.part, last_task=video_filter, force=arguments.force, simulation=arguments.simulate)
 
             elif arguments.part == '' and not arguments.simulate:
                 # Merge all video and audio tracks
                 for k in ['g_debut', 'g_fin']:
-                    merge_audio_and_video_tracks(g_database, k_ep_or_g=k, force=arguments.force|arguments.regenerate)
+                    merge_audio_and_video_tracks(g_database, k_ep_or_g=k, last_task=video_filter, force=arguments.force|arguments.regenerate)
 
                 # Merge video and audio stream from all parts (except g_debut and g_fin)
-                merge_audio_and_video_tracks(g_database, k_ep_or_g=k_episode, force=arguments.force|arguments.regenerate)
+                merge_audio_and_video_tracks(g_database, k_ep_or_g=k_episode, last_task=video_filter, force=arguments.force|arguments.regenerate)
 
                 # Concatenate all parts
                 concatenate_all_clips(g_database, k_episode, force=arguments.force|arguments.regenerate)

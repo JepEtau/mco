@@ -208,11 +208,11 @@ def get_dependencies_for_generique(db, k_part_g='') -> dict:
     # Audio
     try:
         db_audio = db[k_part_g]['audio']
-        k_ed_ref = db_audio['src']['k_ed']
-        k_ep_ref = db_audio['src']['k_ep']
-        if k_ed_ref not in dependencies.keys():
-            dependencies[k_ed_ref] = list()
-        dependencies[k_ed_ref].append(k_ep_ref)
+        k_ed_src = db_audio['src']['k_ed']
+        k_ep_src = db_audio['src']['k_ep']
+        if k_ed_src not in dependencies.keys():
+            dependencies[k_ed_src] = list()
+        dependencies[k_ed_src].append(k_ep_src)
     except:
         pass
 
@@ -221,11 +221,11 @@ def get_dependencies_for_generique(db, k_part_g='') -> dict:
 
     # Common part contains the source
     if 'k_ep' in db_video['src'].keys():
-        k_ed_ref = db_video['src']['k_ed']
-        k_ep_ref = db_video['src']['k_ep']
-        if k_ed_ref not in dependencies.keys():
-            dependencies[k_ed_ref] = list()
-        dependencies[k_ed_ref].append(k_ep_ref)
+        k_ed_src = db_video['src']['k_ed']
+        k_ep_src = db_video['src']['k_ep']
+        if k_ed_src not in dependencies.keys():
+            dependencies[k_ed_src] = list()
+        dependencies[k_ed_src].append(k_ep_src)
 
     # Shots
     if 'shots' not in db_video.keys():

@@ -4,9 +4,6 @@ import sys
 from pprint import pprint
 from copy import deepcopy
 from filters.deshakers import (
-    STABILIZE_BORDER_HIGH_RES,
-    STABILIZE_BORDER_LOW_RES,
-    STABILIZE_LOW_RES_IMG_HEIGHT,
     CV2_deshaker,
     Skimage_deshaker,
     apply_cv2_transformation,
@@ -55,7 +52,7 @@ def verify_stabilize_segments(shot, segments):
 
 
 def deshake(shot, images:list, image_list:list,
-    add_border:bool, step_no:int, input_hash:str,
+    step_no:int, input_hash:str,
     get_hash:bool=False, do_force:bool=False):
 
     try:
@@ -140,11 +137,8 @@ def deshake(shot, images:list, image_list:list,
                         # No need to apply transformation because ref of this segment is start
                         # i.e. last_transformation=None
                         print_lightcyan("Append %d images before 1st segment" % (segment['start']))
-                        pad = STABILIZE_BORDER_LOW_RES if images[0].shape[0]<STABILIZE_LOW_RES_IMG_HEIGHT else STABILIZE_BORDER_HIGH_RES
                         for i in range(segment['start']):
-                            output_images.append(cv2.copyMakeBorder(images[i],
-                                pad, pad, pad, pad,
-                                cv2.BORDER_CONSTANT, value=[0, 0, 0]))
+                            output_images.append(images[i])
                         inserted_first_frames = True
                     # else:
                     #   ref is middle or end, apply transformation to the first frames

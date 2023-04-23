@@ -11,18 +11,31 @@ from filters.utils import (
 
 def consolidate_filters(shot):
     # Deshake & stabilization: do not add pad if more than 1 time
-    deshake_stab_count = 0
-    for filter in shot['filters']:
-        if (filter['str'].startswith('deshake')
-            or filter['str'].startswith('stabilize')
-            or filter['str'].startswith('homography')):
 
-            deshake_stab_count += 1
-            if deshake_stab_count > 1:
-                filter['str'] += "=no_border"
+    # Add borders even if no deshake/stabilize to simplify
+    # !!! Except for reportage
+    if shot['k_part'] != 'reportage':
+        add_borders_filter = {
+            'type': 'python',
+            'save': False,
+            'str': 'add_borders',
+            'task': 'add_borders',
+        }
+        shot['filters'].insert(STEP_INC, add_borders_filter)
+    # deshake_stab_count = 0
+    # for filter in shot['filters']:
+    #     if (filter['str'].startswith('deshake')
+    #         or filter['str'].startswith('stabilize')
+    #         or filter['str'].startswith('homography')):
+
+    #         deshake_stab_count += 1
+    #         if deshake_stab_count > 1:
+    #             filter['str'] += "=no_border"
 
 
-    # Insert 'replace' at the right position
+    # Insert 'replace' at the best place
+    # just after add borders if deshake/temporal filtering or animeSR upscaling
+    # in general, always after add_borders except for reportage
     is_inserted = False
     replace_filter = {
         'type': 'python',
@@ -34,7 +47,8 @@ def consolidate_filters(shot):
         filter_str = shot['filters'][step_no]['str']
         if ('hqdn3d' in filter_str
         or 'deshake' in filter_str
-        or 'stabilize' in filter_str):
+        or 'stabilize' in filter_str
+        or shot['filters'][step_no]['type'] == 'animesr'):
             # Insert before temporal filter
             shot['filters'].insert(step_no, replace_filter)
             # print_green("replace filter: inserted at position %d" % (step_no))

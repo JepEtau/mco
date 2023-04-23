@@ -61,7 +61,7 @@ def get_filters_from_shot(db, shot):
 
         # This shot uses default filters. Use the one defined in the part
         if 'filters' not in db[k_ep]['video'][k_ed][k_part].keys():
-            sys.exit(print_red("Error: {k_ed}:{k_ep}:{k_part}: no available filters"))
+            sys.exit(print_red(f"Error: {k_ed}:{k_ep}:{k_part}: no available filters"))
 
         filters = db[k_ep]['video'][k_ed][k_part]['filters']['default']
 
@@ -93,6 +93,14 @@ def get_dimensions_from_crop_values(width, height, crop) -> list:
     c_h = height - (c_t + c_b)
     return [c_t, c_b, c_l, c_r, c_w, c_h]
 
+
+
+def has_add_border_task(shot):
+    # Returns true if borders have been added
+    for f in shot['filters'][STEP_INC:]:
+        if f['str'] == 'add_borders':
+            return True
+    return False
 
 
 

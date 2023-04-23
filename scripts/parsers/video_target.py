@@ -17,7 +17,6 @@ def parse_video_section(db_video, config, k_ep, verbose=False):
 
     k_section = 'video'
 
-    k_ed_ref = None
     k_ed_src = None
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option)
@@ -26,10 +25,6 @@ def parse_video_section(db_video, config, k_ep, verbose=False):
 
         if k_option == 'source':
             k_ed_src = value_str
-            continue
-
-        if k_option == 'ed_ref':
-            k_ed_ref = value_str
             continue
 
         # Parse only supported sections
@@ -106,10 +101,6 @@ def parse_video_section(db_video, config, k_ep, verbose=False):
     for k_part in K_NON_GENERIQUE_PARTS:
         if db_video[k_part]['k_ed_src'] is None:
             sys.exit("Errror: parse_video_section: edition shall be defined for %s:%s" % (k_ep, k_part))
-
-    # Set the edition used as the reference for the frames no.
-    db_video['k_ed_ref'] = k_ed_ref
-
 
     if k_part == 'g_fin':
         pprint(db_video[k_part])

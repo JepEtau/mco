@@ -77,6 +77,7 @@ def upscale_cv2_dnn_superres(shot, images:list, image_list:list,
 
     model_filepath = os.path.abspath(os.path.join("../..",
         "mco_3rd_party",
+        "models",
         "dnn_superres",
         model_filepath))
     print_yellow("dnn_superres: model=%s" % (model_filepath))

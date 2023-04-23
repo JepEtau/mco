@@ -393,7 +393,8 @@ class Widget_rgb_graph(QWidget):
 
         painter = QPainter()
         if painter.begin(self):
-            # Paint Borders and Grid
+
+            # Draw borders and grid
             pen = QPen(self.GRID_COLOR)
             pen.setWidth(self.GRID_AXIS_WIDTH)
             pen.setStyle(Qt.DotLine)
@@ -404,6 +405,7 @@ class Widget_rgb_graph(QWidget):
                 y = int(i * h/8) - 1
                 painter.drawLine(x, 0, x, y_max)
                 painter.drawLine(0, y, x_max, y)
+            painter.drawLine(0, y_max, x_max, 0)
 
             painter.setRenderHint(QPainter.Antialiasing)
 

@@ -220,17 +220,6 @@ class Model_framelist():
 
             # Apply offset to the frame no if needed
             frame_no = frame['frame_no']
-            if 'offsets' in db_video_src.keys():
-                if frame['k_ed'] != db['editions']['k_ed_ref']:
-                    # print("apply offset for %s" % (frame['filename']))
-                    # Apply offset
-                    offsets = db_video_src['offsets']
-                    for offset in offsets:
-                        if offset['start'] <= frame_no <= offset['end']:
-                            frame_no += offset['offset']
-                            break
-                    # print("\tnew frame_no: %d" % (frame_no))
-
 
             # Find shot no in k_ed_src:k_ep_src
             try:

@@ -28,8 +28,9 @@ from pprint import pprint
 from skimage import color
 from skimage import restoration
 from filters.ffmpeg_utils import clean_ffmpeg_filter
+from filters import IMG_BORDER_HIGH_RES
 
-from filters.utils import FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
+from filters.utils import FINAL_FRAME_WIDTH, get_dimensions_from_crop_values, has_add_border_task
 from utils.pretty_print import *
 
 
@@ -381,7 +382,7 @@ def cv2_geometry_filter(img, geometry):
 
 def calculate_geometry_parameters(shot, img, verbose:bool=False):
     # Returns the values which will be used when resizing/cropping/padding an image
-    verbose = False
+    verbose = True
     if verbose:
         print_cyan("\ncalculate_geometry_parameters\n------------------------------")
         pprint(shot['geometry'])
@@ -401,8 +402,17 @@ def calculate_geometry_parameters(shot, img, verbose:bool=False):
         shot_geometry = shot['geometry']['default']
 
     # Crop the image
+    # Update the crop values if borders has been added
+    if has_add_border_task(shot):
+        cropped_value = list()
+        # cropped_value = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
+        for x in shot_geometry['crop']:
+            cropped_value.append(x + IMG_BORDER_HIGH_RES)
+    else:
+        cropped_value = shot_geometry['crop']
+
     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-        width=img_width, height=img_height, crop=shot_geometry['crop'])
+        width=img_width, height=img_height, crop=cropped_value)
     if verbose:
         print_lightgrey("\t-> cropped size (%d, %d)" % (cropped_width, cropped_height))
 

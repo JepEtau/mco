@@ -19,29 +19,16 @@ from utils.hash import (
 from utils.pretty_print import *
 
 
-STABILIZE_BORDER_LOW_RES = 12
-STABILIZE_BORDER_HIGH_RES = 2 * STABILIZE_BORDER_LOW_RES
-# discreminiate resolution by dimensions:
-STABILIZE_LOW_RES_IMG_WIDTH = 1080
-STABILIZE_LOW_RES_IMG_HEIGHT = 864
-
-
 
 def apply_cv2_transformation(img, x_y_theta:list):
-    pad = STABILIZE_BORDER_LOW_RES if img.shape[0]<STABILIZE_LOW_RES_IMG_HEIGHT else STABILIZE_BORDER_HIGH_RES
-    img_to_transform = cv2.copyMakeBorder(img,
-        pad, pad, pad, pad,
-        cv2.BORDER_CONSTANT, value=[0, 0, 0])
-
     t_x, t_y, t_theta = x_y_theta
     transformation_matrix = np.array(
         [[np.cos(t_theta), -np.sin(t_theta), t_x],
         [np.sin(t_theta), np.cos(t_theta), t_y]],
         dtype=np.float32)
 
-    output_img = cv2.warpAffine(img_to_transform,
-        transformation_matrix,
-        (img_to_transform.shape[1], img_to_transform.shape[0]))
+    output_img = cv2.warpAffine(img,
+        transformation_matrix, (img.shape[1], img.shape[0]))
     return output_img
 
 
@@ -54,7 +41,6 @@ class CV2_deshaker:
         self.__mask = None
         self.__use_harris_detector = False
         self.__k = 0.04
-        self.__pad = STABILIZE_LOW_RES_IMG_HEIGHT
         self.__border_color = [0, 0, 0]
 
         self.__use_roi = False
@@ -75,9 +61,7 @@ class CV2_deshaker:
         if last_transformation is not None:
             initial_img_stabilized = apply_cv2_transformation(img, last_transformation)
         else:
-            initial_img_stabilized = cv2.copyMakeBorder(img,
-                self.__pad, self.__pad, self.__pad, self.__pad,
-                cv2.BORDER_CONSTANT, value=self.__border_color)
+            initial_img_stabilized = img
 
         img_gray_tmp = cv2.cvtColor(initial_img_stabilized, cv2.COLOR_RGB2GRAY)
 
@@ -109,10 +93,6 @@ class CV2_deshaker:
 
     def __stabilize_image(self, img, img_ref_gray, keypoints_ref, mode, verbose=False):
         img_gray_tmp = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        img_gray_tmp2 = cv2.copyMakeBorder(img_gray_tmp,
-            self.__pad, self.__pad, self.__pad, self.__pad,
-            cv2.BORDER_CONSTANT,
-            value=self.__border_color)
 
         if self.__use_roi:
             img_gray_tmp2 = img_gray_tmp[
@@ -120,10 +100,10 @@ class CV2_deshaker:
                 self.__crop_w:img_gray_tmp.shape[1] - self.__crop_w,]
 
         if self.__sobel:
-            img_gray = edge_sharpen_sobel_gray(image_gray=img_gray_tmp2, index=self.__index)
+            img_gray = edge_sharpen_sobel_gray(image_gray=img_gray_tmp, index=self.__index)
             self.__index += 1
         else:
-            img_gray = img_gray_tmp2
+            img_gray = img_gray_tmp
 
         try:
             # Calculate optical flow (i.e. track feature points)
@@ -174,10 +154,6 @@ class CV2_deshaker:
             [np.sin(t_theta), np.cos(t_theta), t_y]],
             dtype=np.float32)
 
-        img_to_transform = cv2.copyMakeBorder(img,
-            self.__pad, self.__pad, self.__pad, self.__pad,
-            cv2.BORDER_CONSTANT, value=self.__border_color)
-
         if False:
             # Select good points
             if keypoints is not None:
@@ -191,9 +167,8 @@ class CV2_deshaker:
             cv2.waitKey()
 
         # Apply transformation
-        img_stabilized = cv2.warpAffine(img_to_transform,
-            transformation_matrix,
-            (img_to_transform.shape[1], img_to_transform.shape[0]))
+        img_stabilized = cv2.warpAffine(img,
+            transformation_matrix, (img.shape[1], img.shape[0]))
 
         return img_stabilized, last_transformation
 
@@ -230,9 +205,6 @@ class CV2_deshaker:
                     self.__min_distance,
                     self.__block_size,
                     self.__k)
-        filters_str += "%d:%d" % (
-            STABILIZE_BORDER_LOW_RES,
-            STABILIZE_BORDER_HIGH_RES)
         if self.__sobel:
             filters_str += ':sobel'
 
@@ -251,8 +223,6 @@ class CV2_deshaker:
         # Reset transformation
         self.__transformations.clear()
 
-        # Set border size
-        self.__pad = STABILIZE_BORDER_LOW_RES if images[ref_index].shape[0]<STABILIZE_LOW_RES_IMG_HEIGHT else STABILIZE_BORDER_HIGH_RES
 
         if last_transformation is not None and ref_index != 0:
             print_red("error: stabilize, last transformation will be ignored")
@@ -383,7 +353,6 @@ class Skimage_deshaker:
         self.__mask = None
         self.__use_harris_detector = False
         self.__k = 0.04
-        self.__pad = STABILIZE_LOW_RES_IMG_HEIGHT
         self.__crop_w = 12
         self.__crop_h = 12
         self.__use_roi = False
@@ -423,9 +392,6 @@ class Skimage_deshaker:
                     self.__min_distance,
                     self.__block_size,
                     self.__k)
-        filters_str += "%d:%d" % (
-            STABILIZE_BORDER_LOW_RES,
-            STABILIZE_BORDER_HIGH_RES)
         if self.__sobel:
             filters_str += ':sobel'
         suffix = ""
@@ -449,32 +415,22 @@ class Skimage_deshaker:
         print_lightcyan("\t\t\t(skimage) deshaker, output hash= %s" % (step_no, hash))
 
         # img_stabilized, img_ref_gray, keypoints_ref = self.__get_initial_image(
-        #     img=images[ref_index],
-        #     add_border=add_border)
+        #     img=images[ref_index])
         # self._height, self._width, self._channels = img_stabilized.shape
 
         img_ref = images[0]
 
-        # Add padding and apply sobel filter to enhance edges
-        img_gray_tmp = cv2.copyMakeBorder(cv2.cvtColor(img_ref, cv2.COLOR_RGB2GRAY),
-            self.__pad, self.__pad, self.__pad, self.__pad,
-            cv2.BORDER_CONSTANT, value=self.__border_color)
-        img_gray_ref = sobel(img_as_float(img_gray_tmp))
+        # Apply sobel filter to enhance edges
+        img_gray_ref = sobel(img_as_float(img_ref))
 
         # Add first image to the list
-        img_stabilized = cv2.copyMakeBorder(img_ref,
-            self.__pad, self.__pad, self.__pad, self.__pad,
-            cv2.BORDER_CONSTANT, value=self.__border_color)
-        output_images = [img_stabilized]
+        output_images = [img_ref]
 
         for i in range(1, len(images)):
             img = images[i]
 
-            # Add padding and apply sobel filter to enhance edges
-            img_gray_tmp = cv2.copyMakeBorder(cv2.cvtColor(img, cv2.COLOR_RGB2GRAY),
-                self.__pad, self.__pad, self.__pad, self.__pad,
-                cv2.BORDER_CONSTANT, value=self.__border_color)
-            img_gray = sobel(img_as_float(img_gray_tmp))
+            # Apply sobel filter to enhance edges
+            img_gray = sobel(img_as_float(img))
 
             shift, error, diffphase = phase_cross_correlation(
                 img_gray_ref,
@@ -485,11 +441,7 @@ class Skimage_deshaker:
             print(shift)
             print(diffphase)
             tf_shift = transform.SimilarityTransform(translation=[-shift_x, -shift_y])
-
-            img_bordered = cv2.copyMakeBorder(img,
-                self.__pad, self.__pad, self.__pad, self.__pad,
-                cv2.BORDER_CONSTANT, value=self.__border_color)
-            img_stabilized = transform.warp(img_as_float(img_bordered), tf_shift)
+            img_stabilized = transform.warp(img_as_float(img), tf_shift)
 
             output_images.append(img_as_ubyte(img_stabilized))
 

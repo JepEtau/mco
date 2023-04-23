@@ -136,7 +136,7 @@ def get_input_filepath(database, frame):
 
 
 def is_progressive_file_valid(shot, db_common, verbose:bool=False):
-    verbose = False
+    verbose = True
 
     if verbose:
         print_lightgreen("is_progressive_file_valid")
@@ -179,9 +179,9 @@ def is_progressive_file_valid(shot, db_common, verbose:bool=False):
             return False
     else:
         # Partial video
-        if progressive_duration != count / FPS:
+        if progressive_duration != (count / FPS):
             if verbose:
-                print("\tnot valid: %.02fs, sould be %.02fs" % (progressive_duration, count * FPS))
+                print("\tnot valid: %.02fs, should be %.02fs" % (progressive_duration, count / FPS))
                 sys.exit(print_yellow(f"verify this!"))
             return False
 
