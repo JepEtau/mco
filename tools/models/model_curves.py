@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append('../scripts')
+
 
 from copy import deepcopy
 import os

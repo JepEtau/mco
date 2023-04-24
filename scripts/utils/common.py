@@ -289,14 +289,21 @@ def get_database_size(obj, seen=None):
 
 
 def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int):
+    verbose = False
+
     # Returns the part from the frame no.:
     db_ep = db[k_ep]['video'][k_ed]
     for k_p in K_ALL_PARTS:
-        # print("%s.get_k_part_from_frame_no: %d in %s:%s:%s ?" % (__name__, frame_no, k_ed, k_ep, k_p))
+        if verbose:
+            print(f"\tget_k_part_from_frame_no: {frame_no} in {k_ed}:{k_ep}:{k_p}")
         # pprint(db_ep[k_p])
-        if 'start' not in db_ep[k_p].keys():
-            print("warning: todo: missing part in database: %s:%s:%s" % (k_ed, k_ep, k_p))
-            continue
+        try:
+            if 'start' not in db_ep[k_p].keys():
+                print("warning: todo: missing part in database: %s:%s:%s" % (k_ed, k_ep, k_p))
+                continue
+        except:
+            print(f"\twarning: get_k_part_from_frame_no: part not found for frame {frame_no} in %s:%s:%s" % (k_ed, k_ep, k_p))
+            return ''
         start = db_ep[k_p]['start']
         count = db_ep[k_p]['count']
         if start <= frame_no < (start + count):

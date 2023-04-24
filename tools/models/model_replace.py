@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append('../scripts')
+
 
 import os
 import os.path

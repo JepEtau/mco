@@ -1,2 +1,4 @@
 # -*- coding: utf-8 -*-
-from logger.logger import *
+
+from .logger import *
+

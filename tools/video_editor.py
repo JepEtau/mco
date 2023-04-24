@@ -15,8 +15,8 @@ if os.name == 'nt':
 def main():
     application = QApplication(sys.argv)
 
-    from video_editor.window_main import Window_main
-    from video_editor.controller import Controller_video_editor
+    from ui.window_main import Window_main
+    from controllers.controller import Controller_video_editor
 
     main_model = Controller_video_editor()
     main_window = Window_main(main_model)
@@ -28,10 +28,4 @@ def main():
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
-
-    # print(cv2.ocl.haveOpenCL() )
-    # if cv2.ocl.haveOpenCL():
-    #     cv2.ocl.setUseOpenCL(True)
-    # print(cv2.ocl.haveOpenCL() )
-
     main()

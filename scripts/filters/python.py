@@ -269,7 +269,10 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
 
 
     if len(worklist) == 0:
-        sys.exit(print_red("error: apply_python_filters: worklist is empty"))
+        # Maybe the upscale function
+        if filters_str.startswith("scale="):
+            return hash, output_images
+        sys.exit(print_red(f"error: apply_python_filters: worklist is empty, filters={filters_str}"))
 
     # Execute the pool of works
     if cpu_count > 1:

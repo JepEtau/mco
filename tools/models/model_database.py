@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append('../scripts')
+
 
 
 from copy import deepcopy
@@ -47,12 +47,11 @@ from video.consolidate_av import (
 )
 from parsers.parser_shots import consolidate_target_shots, consolidate_target_shots_g
 
-from models.model_geometry import Model_geometry
-from models.model_curves import Model_curves
-from models.model_replace import Model_replace
-from models.model_stabilize import Model_stabilize
-
-
+from .model_geometry import *
+from .model_curves import *
+from .model_replace import *
+from .model_database import *
+from .model_stabilize import *
 
 class Model_database(Model_geometry,
                     Model_curves,
@@ -70,7 +69,7 @@ class Model_database(Model_geometry,
         # Variables
         self.global_database = None
         self.initial_database = dict()
-        database_path = os.path.join("..", PATH_DATABASE)
+        database_path = os.path.join(PATH_DATABASE)
 
         parse_common_configuration(self.initial_database, database_path)
 
