@@ -2,6 +2,7 @@
 import sys
 
 from pprint import pprint
+from utils.pretty_print import *
 
 from parsers.parser_common import parse_common_configuration
 from parsers.parser_editions import parse_editions
@@ -38,12 +39,12 @@ from video.consolidate_av import (
     calculate_av_sync,
 )
 from utils.path import PATH_DATABASE
-from utils.pretty_print import *
 
 
 
 
-def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
+
+def parse_database(database, k_ep,):
     """
         database: global database
         k_ep: episode to generate
@@ -51,35 +52,13 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
     """
     print_lightcyan("parse database: %s" % (k_ep))
 
-    if k_ed != '':
-        parse_database_for_study(database,
-            k_ep=k_ep,
-            k_ed=k_ed,
-            verbose=verbose,
-            study_mode=True)
-        return
-
 
     # Parse and merge dictionaries -> common configuration
-    parse_common_configuration(database, PATH_DATABASE, verbose=verbose)
-    if False:
-        print("parse_common_configuration")
-        print("------------------------------------")
-        pprint(database)
-        print("------------------------------------")
-        sys.exit()
+    parse_common_configuration(database, PATH_DATABASE)
 
 
     # Parse editions: folders, files and additional settings: dimension
-    parse_editions(database, verbose=verbose)
-    if False:
-        print("parse_editions")
-        print("------------------------------------")
-        pprint(database['editions'])
-        print("------------------------------------")
-        sys.exit()
-
-
+    parse_editions(database, cfg_foldername=PATH_DATABASE)
 
     # Initialize dictionary for episodes per edition
     for k_ed_tmp in database['editions']['available']:
@@ -93,7 +72,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
 
 
     for k_ed_tmp in database['editions']['available']:
-        parse_generiques(database, k_ed=k_ed_tmp, verbose=verbose)
+        parse_generiques(database, k_ed=k_ed_tmp)
     if False:
         print("parse_generiques")
         print("------------------------------------")
@@ -106,7 +85,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
 
 
     # Parse database file which contains common settings for all episodes
-    parse_episodes_target(database, study_mode=study_mode)
+    parse_episodes_target(database)
     if False:
         print("parse_episodes_target")
         print("-------------- %s ------------------" % (k_ep))
@@ -116,7 +95,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
 
 
     # Parse database file used for the target
-    parse_generiques_target(database, study_mode=study_mode, verbose=verbose)
+    parse_generiques_target(database)
 
     # Create a dict of dependencies for generiques
     dependencies = dict()
@@ -159,7 +138,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
                 # Do not parse this episode another time
                 continue
             print_lightblue("  - parse %s:%s" % (k_ed_tmp, k_ep_tmp))
-            parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep_tmp, verbose=verbose)
+            parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep_tmp)
 
     # Parse other config files for each dependency
     for k_ed_tmp, v in dependencies.items():
@@ -222,7 +201,7 @@ def parse_database(database, k_ep, k_ed='', verbose=False, study_mode=False):
 
 
 
-def parse_database_for_study(db, k_ep, k_ed, verbose=False, study_mode=False):
+def parse_database_for_study(db, k_ed, k_ep, k_part):
     """
         database: global database
         k_ep: episode to generate
@@ -230,21 +209,24 @@ def parse_database_for_study(db, k_ep, k_ed, verbose=False, study_mode=False):
     """
 
     print("Parse database for study")
+    verbose = False
 
-    parse_common_configuration(db, PATH_DATABASE, verbose=verbose)
-    parse_editions(db, verbose=verbose)
+    parse_common_configuration(db, PATH_DATABASE)
+    parse_editions(db, cfg_foldername=PATH_DATABASE)
     db_init_episodes(db, k_ed=k_ed)
-    parse_generiques(db, k_ed=k_ed, verbose=verbose)
+    parse_generiques(db, k_ed=k_ed)
     parse_episode(db, k_ed=k_ed, k_ep=k_ep)
     parse_replace_configurations(db, k_ep_or_g=k_ep)
     parse_curve_configurations(db, k_ep_or_g=k_ep)
     parse_geometry_configurations(db, k_ep_or_g=k_ep)
 
-    for k_part_g in ['g_debut', 'g_fin']:
-        parse_replace_configurations(db, k_ep_or_g=k_part_g)
-        parse_curve_configurations(db, k_ep_or_g=k_part_g)
-        parse_geometry_configurations(db, k_ep_or_g=k_part_g)
-        parse_frames_for_study_g(db, k_ep=k_part_g)
+    for k_p in ['g_debut', 'g_fin']:
+        parse_replace_configurations(db, k_ep_or_g=k_p)
+        parse_curve_configurations(db, k_ep_or_g=k_p)
+        parse_geometry_configurations(db, k_ep_or_g=k_p)
+
+    if k_part in K_GENERIQUES:
+        parse_frames_for_study_g(db, k_part_g=k_part)
 
     parse_frames_for_study(db, k_ep=k_ep)
 

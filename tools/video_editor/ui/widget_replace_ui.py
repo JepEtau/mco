@@ -56,42 +56,44 @@ class Ui_widget_replace(object):
         icon = QIcon()
         icon.addFile(u"icons/grey/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
         icon.addFile(u"icons/blue/eye.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon.addFile(u"icons/grey/eye.svg", QSize(), QIcon.Disabled, QIcon.Off)
+        icon.addFile(u"icons/grey/eye.svg", QSize(), QIcon.Disabled, QIcon.On)
         self.pushButton_set_preview.setIcon(icon)
         self.pushButton_set_preview.setCheckable(True)
         self.pushButton_set_preview.setFlat(True)
 
         self.horizontalLayout.addWidget(self.pushButton_set_preview)
 
-        self.pushButton_save = QPushButton(self.frame)
-        self.pushButton_save.setObjectName(u"pushButton_save")
-        sizePolicy1.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
-        self.pushButton_save.setSizePolicy(sizePolicy1)
-        icon1 = QIcon()
-        icon1.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_save.setIcon(icon1)
-        self.pushButton_save.setCheckable(False)
-        self.pushButton_save.setAutoDefault(False)
-        self.pushButton_save.setFlat(True)
+        self.horizontalSpacer = QSpacerItem(5, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
-        self.horizontalLayout.addWidget(self.pushButton_save)
+        self.horizontalLayout.addItem(self.horizontalSpacer)
 
         self.pushButton_discard = QPushButton(self.frame)
         self.pushButton_discard.setObjectName(u"pushButton_discard")
         sizePolicy1.setHeightForWidth(self.pushButton_discard.sizePolicy().hasHeightForWidth())
         self.pushButton_discard.setSizePolicy(sizePolicy1)
-        icon2 = QIcon()
-        icon2.addFile(u"icons/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon2.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
-        self.pushButton_discard.setIcon(icon2)
+        icon1 = QIcon()
+        icon1.addFile(u"icons/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u"icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_discard.setIcon(icon1)
         self.pushButton_discard.setCheckable(False)
         self.pushButton_discard.setAutoDefault(False)
         self.pushButton_discard.setFlat(True)
 
         self.horizontalLayout.addWidget(self.pushButton_discard)
 
-        self.horizontalSpacer = QSpacerItem(5, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.pushButton_save = QPushButton(self.frame)
+        self.pushButton_save.setObjectName(u"pushButton_save")
+        sizePolicy1.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
+        self.pushButton_save.setSizePolicy(sizePolicy1)
+        icon2 = QIcon()
+        icon2.addFile(u"icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.pushButton_save.setIcon(icon2)
+        self.pushButton_save.setCheckable(False)
+        self.pushButton_save.setAutoDefault(False)
+        self.pushButton_save.setFlat(True)
 
-        self.horizontalLayout.addItem(self.horizontalSpacer)
+        self.horizontalLayout.addWidget(self.pushButton_save)
 
         self.pushButton_close = QPushButton(self.frame)
         self.pushButton_close.setObjectName(u"pushButton_close")
@@ -122,7 +124,7 @@ class Ui_widget_replace(object):
         self.horizontalLayout_2 = QHBoxLayout(self.groupBox_replace)
         self.horizontalLayout_2.setSpacing(4)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setContentsMargins(3, 3, 3, 3)
+        self.horizontalLayout_2.setContentsMargins(3, 9, 3, 3)
         self.pushButton_copy = QPushButton(self.groupBox_replace)
         self.pushButton_copy.setObjectName(u"pushButton_copy")
         self.pushButton_copy.setMaximumSize(QSize(70, 16777215))
@@ -213,7 +215,7 @@ class Ui_widget_replace(object):
         self.tableWidget_replace.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.tableWidget_replace.setSortingEnabled(False)
         self.tableWidget_replace.setRowCount(10)
-        self.tableWidget_replace.horizontalHeader().setDefaultSectionSize(80)
+        self.tableWidget_replace.horizontalHeader().setDefaultSectionSize(90)
         self.tableWidget_replace.horizontalHeader().setStretchLastSection(True)
         self.tableWidget_replace.verticalHeader().setVisible(False)
         self.tableWidget_replace.verticalHeader().setMinimumSectionSize(22)
@@ -232,8 +234,8 @@ class Ui_widget_replace(object):
 
     def retranslateUi(self, widget_replace):
         self.pushButton_set_preview.setText("")
-        self.pushButton_save.setText("")
         self.pushButton_discard.setText("")
+        self.pushButton_save.setText("")
         self.pushButton_close.setText("")
         self.groupBox_replace.setTitle(QCoreApplication.translate("widget_replace", u"Replace frames", None))
         self.pushButton_copy.setText("")
@@ -241,9 +243,9 @@ class Ui_widget_replace(object):
         self.pushButton_paste.setText("")
         self.pushButton_remove.setText("")
         ___qtablewidgetitem = self.tableWidget_replace.horizontalHeaderItem(0)
-        ___qtablewidgetitem.setText(QCoreApplication.translate("widget_replace", u"shot no.", None));
+        ___qtablewidgetitem.setText(QCoreApplication.translate("widget_replace", u"shot", None));
         ___qtablewidgetitem1 = self.tableWidget_replace.horizontalHeaderItem(1)
-        ___qtablewidgetitem1.setText(QCoreApplication.translate("widget_replace", u"frame no.", None));
+        ___qtablewidgetitem1.setText(QCoreApplication.translate("widget_replace", u"frame", None));
         ___qtablewidgetitem2 = self.tableWidget_replace.horizontalHeaderItem(2)
         ___qtablewidgetitem2.setText(QCoreApplication.translate("widget_replace", u"replaced by", None));
         ___qtablewidgetitem3 = self.tableWidget_replace.verticalHeaderItem(0)

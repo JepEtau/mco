@@ -28,8 +28,9 @@ from pprint import pprint
 from skimage import color
 from skimage import restoration
 from filters.ffmpeg_utils import clean_ffmpeg_filter
+from filters import IMG_BORDER_HIGH_RES
 
-from utils.common import get_dimensions_from_crop_values
+from filters.utils import FINAL_FRAME_WIDTH, get_dimensions_from_crop_values, has_add_border_task
 from utils.pretty_print import *
 
 
@@ -192,67 +193,6 @@ def filter_remove_contours(in_img, thresh, maxval):
     return out_img
 
 
-# openCV: superRes
-# pip install opencv-contrib-python
-from cv2 import dnn_superres
-def filter_scale_superres(filter, image, out_img_filepath=None):
-    # sys.exit("superres is not supported")
-    print("\tfilter=%s" % (filter))
-    method = filter[len('superres='):]
-    print("\tmethod=%s" % (method))
-    print("\toutput file: %s" % (out_img_filepath))
-
-    sr = dnn_superres.DnnSuperResImpl_create()
-    # method = 'edsr'
-    # method = 'espcn'
-    # method = 'fsrcnn'
-
-    # input_image = image[0:int(image.shape[1]/2),
-    #                 0:int(image.shape[0]/2)]
-    input_image = image
-    # cv2.imshow("image",input_image)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
-
-    if method == 'edsr':
-        # slow and bad quality for g_reportage
-        edsr_2x_filepath = "EDSR_x2.pb"
-        sr.readModel(edsr_2x_filepath)
-        print("\tmodel read")
-        sr.setModel("edsr", 2)
-        scale = sr.getScale()
-        print("\tmodel set: scale=%d" % (scale))
-        result = sr.upsample(input_image)
-        print("\tdone")
-
-    elif method == 'espcn':
-        espcn_2x_filepath = "ESPCN_x2.pb"
-        sr.readModel(espcn_2x_filepath)
-        sr.setModel("espcn", 2)
-        result = sr.upsample(input_image)
-        print("done")
-
-    elif method == 'fsrcnn':
-        fsrcnn_2x_filepath = "FSRCNN_x2.pb"
-        sr.readModel(fsrcnn_2x_filepath)
-        sr.setModel("fsrcnn", 2)
-        result = sr.upsample(input_image)
-
-    elif method == 'lapsrn':
-        lapsrn_2x_filepath = "LapSRN_x2.pb"
-        sr.readModel(lapsrn_2x_filepath)
-        sr.setModel("lapsrn", 2)
-        result = sr.upsample(input_image)
-    else:
-        print("filters_scale_superres: option is not recognized: %s" % (method))
-        sys.exit("filters_scale_superres: option is not recognized: %s" % (method))
-
-
-    print("wite file to %s" % (out_img_filepath))
-    cv2.imwrite(out_img_filepath, result)
-    return result
-
-
 
 
 def filter_pre_upscale(frame, img):
@@ -388,34 +328,49 @@ def cv2_geometry_filter(img, geometry):
     # pprint(geometry)
 
     # geometry = {
-    #     'initial': {'h': h, 'w': w},
-    #     'crop': [c_t, c_b, c_l, c_r],
-    #     'resize': {'h': h_final, 'w': w_tmp},
-    #     'crop_2': {'x0': x0, 'x1': x1},
+    #     'initial': {'h': img_height, 'w': img_width},
+    #     'crop': [crop_top, crop_bottom, crop_left, crop_right],
+    #     'resize': {'h': resized_height, 'w': resized_width},
+    #     'crop_2': crop_2,
+    #     'pad_error': pad_error,
     #     'pad': {'left': pad_left, 'right': pad_right},
     #     'final': {'h': h_final, 'w': w_final},
     # }
 
     # Crop the image
-    c_t, c_b, c_l, c_r = geometry['crop']
+    crop_top, crop_bottom, crop_left, crop_right = geometry['crop']
     img_cropped = np.ascontiguousarray(img[
-        c_t : geometry['initial']['h'] - c_b,
-        c_l : geometry['initial']['w'] - c_r], dtype=np.uint8)
+        crop_top : geometry['initial']['h'] - crop_bottom,
+        crop_left : geometry['initial']['w'] - crop_right], dtype=np.uint8)
 
     # Resize
     img_resized = cv2.resize(src=img_cropped,
         dsize=(geometry['resize']['w'], geometry['resize']['h']),
         interpolation=cv2.INTER_LANCZOS4)
 
-    # Crop the image a second time to fit to the part dimensions
-    if geometry['crop_2']['x0'] is not None:
+    # Crop the image a second time to fit to the target dimensions
+    crop_2 = geometry['crop_2']
+    if crop_2 is not None:
+        crop_2_top, crop_2_bottom, crop_2_left, crop_2_right = crop_2
         img_resized_cropped = np.ascontiguousarray(img_resized[
-            0:geometry['final']['h'],
-            geometry['crop_2']['x0']:geometry['crop_2']['x1'],])
+            crop_2_top:img_resized.shape[0] - crop_2_bottom,
+            crop_2_left:img_resized.shape[1] - crop_2_right,])
     else:
         img_resized_cropped = img_resized
 
-    img_finalized = cv2.copyMakeBorder(src=img_resized_cropped,
+    # Error case
+    pad_error = geometry['pad_error']
+    if pad_error is not None:
+        print_red("Error: add padding but should not")
+        img_resized_consolidated = cv2.copyMakeBorder(src=img_resized_cropped,
+        top=pad_error[0], bottom=pad_error[1],
+        left=pad_error[2], right=pad_error[3],
+        borderType=cv2.BORDER_CONSTANT, value=[255, 255, 255])
+    else:
+        img_resized_consolidated = img_resized_cropped
+
+    # Add padding
+    img_finalized = cv2.copyMakeBorder(src=img_resized_consolidated,
         top=0, bottom=0, left=geometry['pad']['left'], right=geometry['pad']['right'],
         borderType=cv2.BORDER_CONSTANT, value=[0, 0, 0])
 
@@ -423,113 +378,186 @@ def cv2_geometry_filter(img, geometry):
 
 
 
-def calculate_geometry_parameters(shot, img):
+
+
+def calculate_geometry_parameters(shot, img, verbose:bool=False):
     # Returns the values which will be used when resizing/cropping/padding an image
+    verbose = True
+    if verbose:
+        print_cyan("\ncalculate_geometry_parameters\n------------------------------")
+        pprint(shot['geometry'])
 
-    # print("crop and resize: %s -> %s" % (frame['filepath']['sharpen'], frame['filepath']['geometry']))
-    h, w, c = img.shape
-
-    # print("------------------")
-    # pprint(frame['geometry'])
-    # print(img.shape)
-    # if (frame['geometry'] is None
-    # or (frame['geometry']['part'] is None and frame['geometry']['shot'] is None)):
-    #     print("Error: no geometry defined, cannot modify the image")
-    #     return None
-
-
-    # Crop
-    try:
-        c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(
-            width=w, height=h, crop=shot['geometry']['part']['crop'])
-        try:
-            # Use the customized geometry
-            # print("use the customized geometry")
-            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(
-                width=w, height=h, crop=shot['geometry']['shot']['crop'])
-        except:
-            # Use the part geometry
-            # print:("use the part geometry")
-            c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(
-                width=w, height=h, crop=shot['geometry']['part']['crop'])
-            # print("\t-> use the part geometry %d:%d:%d:%d  %dx%d" % (c_t, c_b, c_l, c_r, c_w, c_h))
-
-        # Crop the image
-        # img = np.ascontiguousarray(img[c_t:h-c_b, c_l:w-c_r], dtype=np.uint8)
-    except:
-        c_t_p, c_b_p, c_l_p, c_r_p, c_w_p, c_h_p = get_dimensions_from_crop_values(
-            width=w, height=h, crop=[0,0,0,0])
-        c_t, c_b, c_l, c_r, c_w, c_h = get_dimensions_from_crop_values(
-            width=w, height=h, crop=[0,0,0,0])
-
+    img_height, img_width, c = img.shape
+    if verbose:
+        print_lightgrey(f"\t-> image shape ({img_width}, {img_height})")
 
     # Final width and height
     w_final = shot['geometry']['dimensions']['final']['w']
     h_final = shot['geometry']['dimensions']['final']['h']
 
-    # Calculate resized width for both part and (part or custom)
-    w_p_tmp = int((c_w_p * h_final) / float(c_h_p))
-    w_tmp = int((c_w * h_final) / float(c_h))
-    # print("cropped image: ", img.shape)
-    # pprint("w_p_tmp=%d, w_tmp=%d" % (w_p_tmp, w_tmp))
-    # pprint("h_final=%d" % (h_final))
+    # Shot geometry
+    shot_geometry = shot['geometry']['shot']
+    if shot_geometry is None and 'default' in shot['geometry'].keys():
+        # Shot geometry may contains the default geometry when using video editor
+        shot_geometry = shot['geometry']['default']
 
-    # Resize
-    # img_resized = cv2.resize(img,
-    #     (w_tmp, h_final),
-    #     interpolation=cv2.INTER_LANCZOS4)
-    # print("img_resized before adjustments: ", img_resized.shape)
+    # Crop the image
+    # Update the crop values if borders has been added
+    if has_add_border_task(shot):
+        cropped_value = list()
+        # cropped_value = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
+        for x in shot_geometry['crop']:
+            cropped_value.append(x + IMG_BORDER_HIGH_RES)
+    else:
+        cropped_value = shot_geometry['crop']
 
-    # Verify custom vs part cropped and resized image
-    x0 = x1 = None
-    if w_tmp != w_p_tmp:
-        # This is a custom geometry, width shall be the same as the part's one
-        # It is done AFTER resizing because the resize may be different:
-        #   i.e. when keep_ratio is disabled (custom width)
-        if w_tmp > w_p_tmp:
-            # Crop the image
-            # Calculate the position of the left crop of the part after resizing
-            c_l_p_resized = int(((c_l_p) * h_final) / float(c_h_p))
-            c_l_resized = int(((c_l) * h_final) / float(c_h))
-            x0 = c_l_resized - c_l_p_resized
-            x1 = w_p_tmp + x0
-            # print("crop the image: x0=%d, x1=%d, (w_tmp + x0)=%d" % (x0, x1, w_tmp+x0))
-            if x1 > w_tmp:
-                # Crop is too big on the left
-                # print("crop is too big")
-                x0 = w_tmp - w_p_tmp
-                x1 = w_tmp
-            # print("crop the image: c_l_p_resized=%d, c_l_resized=%d, x0=%d, x1=%d -> new resized width=%d" % (
-                # c_l_p_resized, c_l_resized, x0, x1, x1 - x0))
-            # img_resized_final = np.ascontiguousarray(img_resized[0:h_final,  x0:x1,])
-        elif w_p_tmp > w_tmp:
-            # Add RED padding, for debug
-            sys.exit(print_red("Error: incorrect shot geometry"))
+    crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
+        width=img_width, height=img_height, crop=cropped_value)
+    if verbose:
+        print_lightgrey("\t-> cropped size (%d, %d)" % (cropped_width, cropped_height))
 
+    # (1) Crop
 
+    # Resize image: calculate new dimensions
+    target_width = shot['geometry']['target']['w']
+    if target_width == -1:
+        # Calculate target width
+        fit_to_width = False
+        keep_ratio = True
+    else:
+        fit_to_width = shot_geometry['fit_to_width']
+        keep_ratio = shot_geometry['keep_ratio']
+    crop_2 = None
+    pad_error = None
+    resized_height_debug = None
+    resized_width_debug = None
 
-    # print("img_resized after adjustments: ", img_resized_final.shape)
-    # print("   w_resized should be: %s" % (w_p_tmp))
+    if keep_ratio and fit_to_width:
+        # Use the width to calculate new height, then crop to final height
+        if verbose:
+            print_green("\tKeep ratio, fit to part width (%d)" % (target_width))
+        resized_width = target_width
+        resized_height = int(((cropped_height * target_width) / float(cropped_width)))
+        if verbose:
+            print_lightgrey("\t-> resized (%d, %d)" % (resized_width, resized_height))
+
+        # (2) Do resize
+
+        if resized_height < h_final:
+            # Error: do add white padding
+            if verbose:
+                print_red("\t-> Error: heigth is < final_height, add white padding")
+            pad_error_top = int(((h_final - resized_height) / 2) + 0.5)
+            pad_error_bottom = h_final - (resized_height + pad_error_top)
+            pad_error = [pad_error_top, pad_error_bottom, 0, 0]
+            # Recalculate resized_height (debug)
+            resized_height_debug = resized_height + pad_error[0] + pad_error[1]
+
+            # (3a) Do add padding (height)
+
+        elif resized_height > h_final:
+            # 2nd crop: crop height
+            if verbose:
+                print_lightgrey("\t-> 2nd crop: height (%d -> %d)" % (resized_height, h_final))
+            crop_2_top = int((resized_height - h_final) / 2 + 0.5)
+            crop_2_bottom = (resized_height - h_final) - crop_2_top
+            crop_2 = [crop_2_top, crop_2_bottom, 0, 0]
+
+            # Recalculate resized_height (debug)
+            resized_height_debug = resized_height - (crop_2[0] + crop_2[1])
+
+            # (3b) Do crop (height)
+
+    elif keep_ratio and not fit_to_width :
+        # Use the height to calculate new width, then crop to final width
+        if verbose:
+            print_green("\tkeep ratio, fit to final height (%d)" % (h_final))
+
+        resized_height = h_final
+        resized_width = int(((cropped_width * resized_height) / float(cropped_height))/2) * 2
+        if verbose:
+            print_lightgrey("\t-> resized (%d, %d)" % (resized_width, resized_height))
+
+        # (2) Do resize
+
+        if resized_width < target_width:
+            # Error: do add white padding
+            if verbose:
+                print_red("\t-> Error: width is < final_width, add white padding")
+            pad_error_left = int(((target_width - resized_width) / 2) + 0.5)
+            pad_error_right = target_width - (resized_width + pad_error_left)
+            pad_error = [0, 0, pad_error_left, pad_error_right]
+            # Recalculate resized_width (debug)
+            resized_width_debug = resized_width + (pad_error[2] + pad_error[3])
+
+            # (3a) Do add padding (width)
+
+        elif resized_width > target_width:
+            # 2nd crop: crop width
+            if verbose:
+                print_lightgrey("\t-> 2nd crop: width (%d -> %d)" % (resized_width, target_width))
+            crop_2_left = int((resized_width - target_width) / 2 + 0.5)
+            crop_2_right = (resized_width - target_width) - crop_2_left
+            crop_2 = [0, 0, crop_2_left, crop_2_right]
+
+            # Recalculate resized_width (debug)
+            resized_width_debug = resized_width - (crop_2[2] + crop_2[3])
+
+            # (3b) Do crop (width)
+
+    elif not keep_ratio and fit_to_width:
+        # Adjust the image to the part width and final height
+        if verbose:
+            print_green("\tDo not keep ratio, fit to part width and final height (%d, %d)" % (target_width, h_final))
+        resized_width = target_width
+        resized_height = h_final
+        if verbose:
+            print_lightgrey("\t-> resized (%d, %d)" % (resized_width, resized_height))
+
+        # (2) Do resize
+
+    elif not keep_ratio and not fit_to_width:
+        # Not possible
+        pprint(shot['geometry'])
+        sys.exit(print_red("Error: no valid values for keep_ratio/fit_to_width"))
+
 
     # Add padding to the cropped & resized image
-    pad_left = int(((w_final - w_p_tmp) / 2) + 0.5)
-    pad_right = w_final - (w_p_tmp + pad_left)
-    # img_finalized = cv2.copyMakeBorder(img_resized_final, 0, 0, pad_left, pad_right,
-    #     cv2.BORDER_CONSTANT, value=[0, 0, 0])
+    pad_left = int(((w_final - shot['geometry']['target']['w']) / 2) + 0.5)
+    pad_right = w_final - (shot['geometry']['target']['w'] + pad_left)
 
-    # print("img_finalized: ", img_finalized.shape)
-    # sys.exit()
+    # (4) Add padding
 
-    geometry = {
-        'initial': {'h': h, 'w': w},
-        'crop': [c_t, c_b, c_l, c_r],
-        'resize': {'h': h_final, 'w': w_tmp},
-        'crop_2': {'x0': x0, 'x1': x1},
+
+    # Verifications
+    resized_width_debug = resized_width if resized_width_debug is None else resized_width_debug
+    resized_height_debug = resized_height if resized_height_debug is None else resized_height_debug
+    # Verify resized dimensions (debug)
+    if resized_width_debug != shot['geometry']['target']['w'] or resized_height_debug != h_final:
+        sys.exit(print("error: resize: recalculated (w, h): (%d, %d), expected (%d, %d)" % (
+            resized_width_debug, resized_height_debug, shot['geometry']['target']['w'], h_final)))
+    # Verify final dimensions (debug)
+    if (resized_width_debug  + pad_left + pad_right) != w_final or resized_height_debug != h_final:
+        sys.exit(print("error: final: recalculated (w, h): (%d, %d), expected (%d, %d)" % (
+            resized_width_debug, resized_height_debug, shot['geometry']['target']['w'], h_final)))
+
+
+    geometry_parameters = {
+        'initial': {'h': img_height, 'w': img_width},
+        'crop': [crop_top, crop_bottom, crop_left, crop_right],
+        'resize': {'h': resized_height, 'w': resized_width},
+        'crop_2': crop_2,
+        'pad_error': pad_error,
         'pad': {'left': pad_left, 'right': pad_right},
         'final': {'h': h_final, 'w': w_final},
     }
+    if verbose:
+        print_cyan("calculated geometry_parameters:")
+        pprint(geometry_parameters)
+        print_cyan("-----------------------------")
+    # sys.exit()
 
-    return geometry
+    return geometry_parameters
 
 
 
@@ -1011,160 +1039,21 @@ def strokeEdges(src, dst, blurKsize = 7, edgeKsize = 5):
 
 
 
+def improve_edges(input_filepath, output_filepath):
+    img_input_rgb = cv2.imread(input_filepath, cv2.IMREAD_COLOR)
+    gray = cv2.cvtColor(img_input_rgb, cv2.COLOR_BGR2GRAY)
 
+    canny = cv2.Canny(gray,240,255)
+    b, g, r = cv2.split(img_input_rgb)
+    layer_b = np.clip(cv2.multiply(b, canny), 0, 255).astype(np.uint8)
+    layer_g = np.clip(cv2.multiply(g, canny), 0, 255).astype(np.uint8)
+    layer_r = np.clip(cv2.multiply(r, canny), 0, 255).astype(np.uint8)
 
+    blend_factor = 0.1
+    bbp = cv2.addWeighted(b, 1, layer_b, blend_factor, 0).reshape(b.shape)
+    ggp = cv2.addWeighted(g, 1, layer_g, blend_factor, 0).reshape(g.shape)
+    rrp = cv2.addWeighted(r, 1, layer_r, blend_factor, 0).reshape(r.shape)
+    img_output = cv2.merge((bbp, ggp, rrp))
 
-def detectAndDescribe(image, method=None):
-    """
-    Compute key points and feature descriptors using an specific method
-    """
+    cv2.imwrite(output_filepath, img_output)
 
-    assert method is not None, "You need to define a feature detection method. Values are: 'sift', 'surf'"
-
-    # detect and extract features from the image
-    if method == 'sift':
-        descriptor = cv2.SIFT_create()
-    elif method == 'surf':
-        descriptor = cv2.xfeatures2d.SURF_create()
-    elif method == 'brisk':
-        descriptor = cv2.BRISK_create()
-    elif method == 'orb':
-        descriptor = cv2.ORB_create()
-
-    # get keypoints and descriptors
-    (kps, features) = descriptor.detectAndCompute(image, None)
-
-    return (kps, features)
-
-
-
-
-def createMatcher(method,crossCheck):
-    "Create and return a Matcher Object"
-
-    if method == 'sift' or method == 'surf':
-        bf = cv2.BFMatcher(cv2.NORM_L2, crossCheck=crossCheck)
-        # bf = cv2.BFMatcher(cv2.NORM_L2SQR, crossCheck=crossCheck)
-    elif method == 'orb' or method == 'brisk':
-        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=crossCheck)
-    return bf
-
-
-def matchKeyPointsBF(featuresA, featuresB, method):
-    bf = createMatcher(method, crossCheck=True)
-
-    # Match descriptors.
-    best_matches = bf.match(featuresA,featuresB)
-
-    # Sort the features in order of distance.
-    # The points with small distance (more similarity) are ordered first in the vector
-    rawMatches = sorted(best_matches, key = lambda x:x.distance)
-    # print("Raw matches (Brute force):", len(rawMatches))
-    return rawMatches
-
-
-def matchKeyPointsKNN(featuresA, featuresB, ratio, method):
-    bf = createMatcher(method, crossCheck=False)
-    # compute the raw matches and initialize the list of actual matches
-    rawMatches = bf.knnMatch(featuresA, featuresB, 2)
-    print("Raw matches (knn):", len(rawMatches))
-    matches = []
-
-    # loop over the raw matches
-    for m,n in rawMatches:
-        # ensure the distance is within a certain ratio of each
-        # other (i.e. Lowe's ratio test)
-        if m.distance < n.distance * ratio:
-            matches.append(m)
-    return matches
-
-
-
-
-
-# def findHomography(srcPoints, dstPoints, method=None, ransacReprojThreshold=None, mask=None, maxIters=None, confidence=None, /) -> retval, mask
-# findHomography(srcPoints, dstPoints[, method[, ransacReprojThreshold[, mask[, maxIters[, confidence]]]]]) -> retval, mask
-# .   @brief Finds a perspective transformation between two planes.
-# .
-# .   @param srcPoints Coordinates of the points in the original plane, a matrix of the type CV_32FC2
-# .   or vector\<Point2f\> .
-# .   @param dstPoints Coordinates of the points in the target plane, a matrix of the type CV_32FC2 or
-# .   a vector\<Point2f\> .
-# .   @param method Method used to compute a homography matrix. The following methods are possible:
-# .   -   **0** - a regular method using all the points, i.e., the least squares method
-# .   -   @ref RANSAC - RANSAC-based robust method
-# .   -   @ref LMEDS - Least-Median robust method
-# .   -   @ref RHO - PROSAC-based robust method
-# .   @param ransacReprojThreshold Maximum allowed reprojection error to treat a point pair as an inlier
-# .   (used in the RANSAC and RHO methods only). That is, if
-# .   \f[\| \texttt{dstPoints} _i -  \texttt{convertPointsHomogeneous} ( \texttt{H} * \texttt{srcPoints} _i) \|_2  >  \texttt{ransacReprojThreshold}\f]
-# .   then the point \f$i\f$ is considered as an outlier. If srcPoints and dstPoints are measured in pixels,
-# .   it usually makes sense to set this parameter somewhere in the range of 1 to 10.
-# .   @param mask Optional output mask set by a robust method ( RANSAC or LMeDS ). Note that the input
-# .   mask values are ignored.
-# .   @param maxIters The maximum number of RANSAC iterations.
-# .   @param confidence Confidence level, between 0 and 1.
-# .
-# .   The function finds and returns the perspective transformation \f$H\f$ between the source and the
-# .   destination planes:
-# .
-# .   \f[s_i  \vecthree{x'_i}{y'_i}{1} \sim H  \vecthree{x_i}{y_i}{1}\f]
-# .
-# .   so that the back-projection error
-# .
-# .   \f[\sum _i \left ( x'_i- \frac{h_{11} x_i + h_{12} y_i + h_{13}}{h_{31} x_i + h_{32} y_i + h_{33}} \right )^2+ \left ( y'_i- \frac{h_{21} x_i + h_{22} y_i + h_{23}}{h_{31} x_i + h_{32} y_i + h_{33}} \right )^2\f]
-# .
-# .   is minimized. If the parameter method is set to the default value 0, the function uses all the point
-# .   pairs to compute an initial homography estimate with a simple least-squares scheme.
-# .
-# .   However, if not all of the point pairs ( \f$srcPoints_i\f$, \f$dstPoints_i\f$ ) fit the rigid perspective
-# .   transformation (that is, there are some outliers), this initial estimate will be poor. In this case,
-# .   you can use one of the three robust methods. The methods RANSAC, LMeDS and RHO try many different
-# .   random subsets of the corresponding point pairs (of four pairs each, collinear pairs are discarded), estimate the homography matrix
-# .   using this subset and a simple least-squares algorithm, and then compute the quality/goodness of the
-# .   computed homography (which is the number of inliers for RANSAC or the least median re-projection error for
-# .   LMeDS). The best subset is then used to produce the initial estimate of the homography matrix and
-# .   the mask of inliers/outliers.
-# .
-# .   Regardless of the method, robust or not, the computed homography matrix is refined further (using
-# .   inliers only in case of a robust method) with the Levenberg-Marquardt method to reduce the
-# .   re-projection error even more.
-# .
-# .   The methods RANSAC and RHO can handle practically any ratio of outliers but need a threshold to
-# .   distinguish inliers from outliers. The method LMeDS does not need any threshold but it works
-# .   correctly only when there are more than 50% of inliers. Finally, if there are no outliers and the
-# .   noise is rather small, use the default method (method=0).
-# .
-# .   The function is used to find initial intrinsic and extrinsic matrices. Homography matrix is
-# .   determined up to a scale. Thus, it is normalized so that \f$h_{33}=1\f$. Note that whenever an \f$H\f$ matrix
-# .   cannot be estimated, an empty one will be returned.
-# .
-# .   @sa
-# .   getAffineTransform, estimateAffine2D, estimateAffinePartial2D, getPerspectiveTransform, warpPerspective,
-# .   perspectiveTransform
-def getHomography(kpsA, kpsB, featuresA, featuresB, matches, method_str='RHO', ransacReprojThresh=None):
-    # convert the keypoints to numpy arrays
-    kpsA = np.float32([kp.pt for kp in kpsA])
-    kpsB = np.float32([kp.pt for kp in kpsB])
-
-    if len(matches) > 4:
-
-        # construct the two sets of points
-        ptsA = np.float32([kpsA[m.queryIdx] for m in matches])
-        ptsB = np.float32([kpsB[m.trainIdx] for m in matches])
-
-        if method_str.upper() == 'RHO':
-            method = cv2.RHO
-        elif method_str.upper() == 'RANSAC':
-            method = cv2.RANSAC
-        elif method_str.upper() == 'LMEDS':
-            method = cv2.LMEDS
-
-        # estimate the homography between the sets of points
-        # (H, status) = cv2.findHomography(ptsA, ptsB, cv2.RANSAC, reprojThresh)
-        # (H, status) = cv2.findHomography(ptsA, ptsB, cv2.LMEDS, reprojThresh)
-        (H, status) = cv2.findHomography(ptsA, ptsB, method, ransacReprojThresh)
-
-        return (matches, H, status)
-    else:
-        return None

@@ -25,7 +25,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from images.curve import (
+from filters.curve import (
     Curve,
     Curve_point,
 )
@@ -81,11 +81,11 @@ class Widget_rgb_graph(QWidget):
         self.is_enabled = True
 
 
-    def set_model(self, model):
-        self.model = model
+    def set_controller(self, controller):
+        self.controller = controller
 
         # Connect signals
-        self.model.signal_load_curves[dict].connect(self.event_curves_loaded)
+        self.controller.signal_load_curves[dict].connect(self.event_curves_loaded)
 
 
     def set_ui(self, ui):
@@ -125,9 +125,9 @@ class Widget_rgb_graph(QWidget):
 
 
     def event_curves_loaded(self, curves:dict):
-        if curves is not None:
-            # log.info("load curves in RGB graph")
-            # print("%s.event_load_curves: load curves in RGB graph" % (__name__))
+        # log.info("load curves in RGB graph")
+        # print("%s.event_load_curves: load curves in RGB graph" % (__name__))
+        try:
             for k in self.channels.keys():
                 if self.channels[k]['curve'] is not None:
                     del self.channels[k]['curve']
@@ -135,8 +135,8 @@ class Widget_rgb_graph(QWidget):
                 self.channels[k]['lut'] = np.array([]).astype('int')
                 self.channels[k]['polypoints'] = np.array([]).astype('int')
                 self.channels[k]['is_selected'] = False
-        else:
-            # log.info("reset RGB graph as there is no channels")
+        except:
+            log.info("reset RGB graph as there is no channels")
             for k in self.channels.keys():
                 self.channels[k]['curve'] = Curve()
                 self.channels[k]['lut'] = np.array([]).astype('int')
@@ -393,7 +393,8 @@ class Widget_rgb_graph(QWidget):
 
         painter = QPainter()
         if painter.begin(self):
-            # Paint Borders and Grid
+
+            # Draw borders and grid
             pen = QPen(self.GRID_COLOR)
             pen.setWidth(self.GRID_AXIS_WIDTH)
             pen.setStyle(Qt.DotLine)
@@ -404,6 +405,7 @@ class Widget_rgb_graph(QWidget):
                 y = int(i * h/8) - 1
                 painter.drawLine(x, 0, x, y_max)
                 painter.drawLine(0, y, x_max, y)
+            painter.drawLine(0, y_max, x_max, 0)
 
             painter.setRenderHint(QPainter.Antialiasing)
 

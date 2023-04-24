@@ -25,11 +25,8 @@ class Model_framelist(Model_framelist_common):
 
 
     def consolidate_database(self, k_ep, k_part):
-        self.model_database.consolidate_database(
-            k_ep, k_part,
-            do_parse_curves=False,
-            do_parse_replace=False,
-            do_parse_geometry=False)
+        # self.model_database.consolidate_database(k_ep, k_part)
+        pass
 
 
     def get_hide_struct(self):

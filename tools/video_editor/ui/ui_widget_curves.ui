@@ -74,37 +74,26 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="pushButton_save">
+         <widget class="QPushButton" name="pushButton_split_line">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
           <property name="text">
            <string/>
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>icons/purple/save.svg</normaloff>icons/purple/save.svg</iconset>
+            <normaloff>icons/grey/flip-horizontal.svg</normaloff>
+            <normalon>icons/blue/flip-horizontal.svg</normalon>icons/grey/flip-horizontal.svg</iconset>
           </property>
           <property name="checkable">
-           <bool>false</bool>
-          </property>
-          <property name="autoDefault">
-           <bool>false</bool>
-          </property>
-          <property name="flat">
            <bool>true</bool>
-          </property>
-         </widget>
-        </item>
-        <item>
-         <widget class="QPushButton" name="pushButton_discard">
-          <property name="text">
-           <string/>
-          </property>
-          <property name="icon">
-           <iconset>
-            <normaloff>icons/grey/undo.svg</normaloff>
-            <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
-          </property>
-          <property name="checkable">
-           <bool>false</bool>
           </property>
           <property name="autoDefault">
            <bool>false</bool>
@@ -149,6 +138,47 @@
            </size>
           </property>
          </spacer>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_discard">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>icons/grey/undo.svg</normaloff>
+            <normalon>icons/purple/undo.svg</normalon>icons/grey/undo.svg</iconset>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
+          <property name="autoDefault">
+           <bool>false</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton_save">
+          <property name="text">
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>icons/purple/save.svg</normaloff>icons/purple/save.svg</iconset>
+          </property>
+          <property name="checkable">
+           <bool>false</bool>
+          </property>
+          <property name="autoDefault">
+           <bool>false</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
         <item>
          <widget class="QPushButton" name="pushButton_close">

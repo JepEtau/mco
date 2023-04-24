@@ -8,25 +8,27 @@ from pathlib import (
     PosixPath,
 )
 from pprint import pprint
-import subprocess
-
-from parsers.parser_filters import parse_filters
+import platform
+from utils.nested_dict import nested_dict_set
+from utils.pretty_print import *
 from utils.process import get_process_cfg
 
-DATABASE_PATH = "../database"
 
-#===========================================================================
-#
-#   Parse common configuration file
-#
-#===========================================================================
-def parse_common_configuration(db, config_path, verbose=False):
+def parse_common_configuration(db, config_path):
+    verbose = False
+
+    if verbose:
+        print_lightcyan("Parse common configuration, file: ", end='')
+
     db['common'] = dict()
     db_common = db['common']
 
     # Get directories configuration file
     #=============================================================================
-    filepath = os.path.join(config_path, "directories.ini")
+    filepath = os.path.normpath(os.path.abspath(os.path.join(config_path, "directories.ini")))
+    if verbose:
+        print(f"{filepath}")
+
     if filepath.startswith("~/"):
         filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
     if not os.path.exists(filepath):
@@ -36,7 +38,7 @@ def parse_common_configuration(db, config_path, verbose=False):
         config_directories.read(filepath)
 
         for k_section in config_directories.sections():
-            db_common[k_section] = {}
+            db_common[k_section] = dict()
             for _option in config_directories.options(k_section):
                 value = config_directories.get(k_section, _option)
                 db_common[k_section][_option] = value
@@ -66,24 +68,6 @@ def parse_common_configuration(db, config_path, verbose=False):
         sys.exit("Unexpected error:", sys.exc_info()[0])
 
 
-    # Options
-    #=============================================================================
-    for key in db_common['options'].keys():
-        value_str = db_common['options'][key]
-        db_common['options'][key] = list(value_str.replace(' ', '').split(','))
-
-    # Create empty list if not defined (avoid too many if/except)
-    for o in ['deinterlace_add_tasks',
-                'upscale_add_tasks',
-                'discard_tasks']:
-        if o not in db_common['options'].keys():
-            db_common['options'][o] = list()
-
-    if 'deinterlace_fast' in db_common['options'].keys():
-        db_common['options']['deinterlace_fast'] = True if db_common['options']['deinterlace_fast'][0] == 'y' else False
-    else:
-        db_common['options']['deinterlace_fast'] = False
-
 
     # Clean settings
     #=============================================================================
@@ -103,6 +87,8 @@ def parse_common_configuration(db, config_path, verbose=False):
                 'inputs',
                 'output',
                 'cache',
+                'cache_progressive',
+                'cache_progressive_default',
                 'cache_default',
                 'frames',
                 'frames_default',
@@ -113,7 +99,7 @@ def parse_common_configuration(db, config_path, verbose=False):
         db_common['directories'][d] = os.path.normpath(os.path.abspath(v))
 
 
-    for d in ['real_cugan', 'real_esrgan', 'esrgan']:
+    for d in ['real_cugan', 'real_esrgan', 'esrgan', 'animesr']:
         v = db_common['directories'][d]
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')
@@ -127,7 +113,7 @@ def parse_common_configuration(db, config_path, verbose=False):
         db_common['directories'][d] = v
 
     # Use default values
-    for d in ['cache', 'frames']:
+    for d in ['cache', 'cache_progressive', 'frames']:
         if not os.path.exists(db_common['directories'][d]):
             db_common['directories'][d] = db_common['directories']['%s_default' % (d)]
         try: del db_common['directories']['%s_default' % (d)]
@@ -136,7 +122,7 @@ def parse_common_configuration(db, config_path, verbose=False):
 
     # Executables
     #=============================================================================
-    if sys.platform == 'win32':
+    if platform.system() == "Windows":
         # Windows
         db_common['tools'] = {
             'ffmpeg': "ffmpeg.exe",
@@ -228,15 +214,19 @@ def parse_common_configuration(db, config_path, verbose=False):
 
 
 
-
-    # Other common settings
+    # Others
     #===========================================================================
-    db_common['fps'] = 25.0
 
+    # Discard editions
+    try:
+        editions_to_discard = list(db_common['editions']['discard'].split(',').replace(' ', ''))
+    except:
+        editions_to_discard = list()
+        pass
+    nested_dict_set(db_common, editions_to_discard, 'editions', 'discard')
 
-    # # Dimensions
-    # #===========================================================================
-    # for k in db_common['dimensions'].keys():
-    #     db_common['dimensions'][k] = int(db_common['dimensions'][k])
+    if verbose:
+        pprint(db)
+        sys.exit()
 
 

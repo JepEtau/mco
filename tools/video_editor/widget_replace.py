@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-
 import sys
 sys.path.append('../scripts')
+
+from utils.pretty_print import *
 
 from logger import log
 from pprint import pprint
@@ -17,25 +18,26 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
 )
 
-from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
+from common.stylesheet import set_stylesheet, update_selected_widget_stylesheet
 
-from video_editor.model_video_editor import Model_video_editor
+from video_editor.controller import Controller_video_editor
 from video_editor.ui.widget_replace_ui import Ui_widget_replace
 from common.widget_common import Widget_common
 
 class Widget_replace(Widget_common, Ui_widget_replace):
     signal_replace_modified = Signal(dict)
-    signal_frame_selected = Signal(dict)
+    signal_frame_selected = Signal(int)
 
-    def __init__(self, ui, model:Model_video_editor):
+    def __init__(self, ui, controller:Controller_video_editor):
         super(Widget_replace, self).__init__(ui)
-        self.model = model
+        self.controller = controller
         self.ui = ui
         self.setObjectName('replace')
 
         # Internal variables
         self.copied_frame_no = -1
         self.previous_position = None
+        self.is_edition_allowed = False
 
         # Disable focus
         self.lineEdit_frame_no.setFocusPolicy(Qt.NoFocus)
@@ -60,8 +62,8 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter]
-        headers = ["shot no.", "frame no.", "new"]
-        default_col_width = [70, 100, 100]
+        headers = ["shot", "frame", "by"]
+        default_col_width = [60, 80, 80]
         for col_no, header_str, col_width in zip(range(len(headers)),
                                                     headers,
                                                     default_col_width):
@@ -71,11 +73,11 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
         # Connect signals and filter events
         self.tableWidget_replace.selectionModel().selectionChanged.connect(self.event_replace_selected)
-        self.tableWidget_replace.itemDoubleClicked[QTableWidgetItem].connect(self.event_replace_frame_selected)
+        self.tableWidget_replace.itemDoubleClicked[QTableWidgetItem].connect(self.event_move_to_frame_no)
         self.tableWidget_replace.installEventFilter(self)
 
-        self.model.signal_replace_list_refreshed[dict].connect(self.event_replace_list_refreshed)
-        self.model.signal_is_saved[str].connect(self.event_is_saved)
+        self.controller.signal_replace_list_refreshed[dict].connect(self.event_replace_list_refreshed)
+        self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
         self.installEventFilter(self)
 
@@ -88,6 +90,9 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         log.info("set_initial_options")
         s = preferences['replace']
 
+        self.is_edition_allowed = False
+
+        self.block_signals(True)
         self.lineEdit_frame_no.clear()
         self.lineEdit_replaced_by.clear()
         self.tableWidget_replace.blockSignals(True)
@@ -96,15 +101,44 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
         self.pushButton_remove.setEnabled(False)
         self.pushButton_paste.setEnabled(False)
-        self.pushButton_copy.setEnabled(True)
+        self.pushButton_copy.setEnabled(False)
+
+        self.pushButton_set_preview.setChecked(s['widget']['enabled'])
+        self.block_signals(False)
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
 
 
+    def refresh_preview_options(self, new_preview_settings):
+        try:
+            enabled = new_preview_settings['replace']['enabled']
+        except:
+            enabled = False
+        try:
+            allowed = new_preview_settings['replace']['allowed']
+        except:
+            allowed = False
+        self.is_edition_allowed = allowed
+
+        if not enabled or not allowed:
+            self.lineEdit_frame_no.clear()
+            self.lineEdit_replaced_by.clear()
+
+        self.lineEdit_frame_no.setEnabled(allowed)
+        self.lineEdit_replaced_by.setEnabled(allowed)
+        self.pushButton_copy.setEnabled(allowed)
+        self.pushButton_paste.setEnabled(allowed)
+        self.pushButton_remove.setEnabled(allowed)
+
+        self.pushButton_set_preview.blockSignals(True)
+        self.pushButton_set_preview.setEnabled(allowed)
+        self.pushButton_set_preview.blockSignals(False)
+
 
     def event_replace_list_refreshed(self, values:dict):
+        log.info("refresh list of frames to replace")
         self.tableWidget_replace.blockSignals(True)
 
         self.tableWidget_replace.clearContents()
@@ -125,23 +159,26 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_replace_selected(self):
+        if not self.is_edition_allowed:
+            return
         log.info("event_replace_selected")
         self.tableWidget_replace.setFocus()
 
 
-    def event_replace_frame_selected(self, item:QTableWidgetItem):
+    def event_move_to_frame_no(self, item:QTableWidgetItem):
         # double-click
         row_no = item.row()
-        log.info("selected frame at row=%d" % (row_no))
-        frame_no = int(self.tableWidget_replace.item(row_no, 1).text())
-        shot_no = int(self.tableWidget_replace.item(row_no, 0).text())
-        self.signal_frame_selected.emit({
-            'shot_no': shot_no,
-            'frame_no': frame_no,
-        })
+        column_no = item.column()
+        if column_no == 0:
+            return
+        # log.info(f"selected frame at row={row_no}, column {row_no}")
+        frame_no = int(self.tableWidget_replace.item(row_no, column_no).text())
+        self.signal_frame_selected.emit(frame_no)
 
 
     def event_selection_removed(self):
+        if not self.is_edition_allowed:
+            return
         print("event_selection_removed")
         selected_indexes = self.tableWidget_replace.selectedIndexes()
         selected_row_nos = list(set([i.row() for i in selected_indexes]))
@@ -167,21 +204,27 @@ class Widget_replace(Widget_common, Ui_widget_replace):
             self.pushButton_remove.setEnabled(True)
         else:
             self.lineEdit_frame_no.setText(str(frame['frame_no']))
-            if frame['replaced_by'] == -1:
-                self.lineEdit_replaced_by.clear()
-                self.pushButton_remove.setEnabled(False)
-            else:
+            try:
                 self.lineEdit_replaced_by.setText(str(frame['replaced_by']))
                 self.pushButton_remove.setEnabled(True)
+            except:
+                self.lineEdit_replaced_by.clear()
+                self.pushButton_remove.setEnabled(False)
 
 
     def event_frame_no_copied(self):
+        if not self.is_edition_allowed:
+            return
+
         self.copied_frame_no = int(self.lineEdit_frame_no.text())
         log.info("event: copy %d" % (self.copied_frame_no))
         self.pushButton_paste.setEnabled(True)
 
 
     def event_frame_no_paste(self):
+        if not self.is_edition_allowed:
+            return
+
         log.info("event: paste")
         frame_no = int(self.lineEdit_frame_no.text())
         if (self.copied_frame_no != -1
@@ -197,6 +240,8 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_undo_replace(self):
+        if not self.is_edition_allowed:
+            return
         log.info("event: undo for frame_no: %d")
         self.signal_replace_modified.emit({
             'action': 'undo',
@@ -205,6 +250,8 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_removed(self):
+        if not self.is_edition_allowed:
+            return
         log.info("event: remove")
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
@@ -216,7 +263,8 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
     def get_preview_options(self):
         preview_options = {
-            'is_enabled': self.pushButton_set_preview.isChecked(),
+            'allowed': self.is_edition_allowed,
+            'enabled': self.pushButton_set_preview.isChecked(),
         }
         return preview_options
 
@@ -225,9 +273,15 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.pushButton_copy.blockSignals(enabled)
         self.pushButton_paste.blockSignals(enabled)
         self.pushButton_remove.blockSignals(enabled)
+        self.pushButton_set_preview.blockSignals(enabled)
+        self.pushButton_discard.blockSignals(enabled)
+        self.pushButton_save.blockSignals(enabled)
 
 
     def event_key_pressed(self, event):
+        if not self.is_edition_allowed:
+            return False
+
         key = event.key()
         modifiers = event.modifiers()
         # print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
@@ -258,9 +312,9 @@ class Widget_replace(Widget_common, Ui_widget_replace):
                 return True
 
         # elif key == Qt.Key_R:
-        #     new_index = self.model.get_next_replaced_frame_index(index=self.slider_frames.value())
+        #     new_index = self.controller.get_next_replaced_frame_index(index=self.slider_frames.value())
         #     if new_index != -1:
-        #         self.update_slider_value(new_index)
+        #         self.move_slider_to(new_index)
 
         return False
 

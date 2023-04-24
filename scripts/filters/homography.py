@@ -7,15 +7,15 @@ from utils.pretty_print import *
 from utils.hash import log_filter
 from matplotlib import pyplot as plt
 
+
+# TODO This class cannot be used anymore: rework this!
 class Homography:
-    def __init__(self, extractor=None, matching=None, add_border=True) -> None:
+    def __init__(self, extractor=None, matching=None) -> None:
         self.__pad_h = 20
         self.__pad_w = 20
         self.__use_roi=False
         self.__crop_w = 20
         self.__crop_h = 20
-        self.__border_color = [0, 0, 0]
-        self.__add_border = add_border
 
         # sift, surf, brisk, orb
         if extractor is None:
@@ -32,53 +32,31 @@ class Homography:
         self.filters_str = "%s_%s" % (
             self.feature_extractor,
             self.feature_matching)
-        if self.__add_border:
-            self.filters_str += "_%d_%d" % (self.__pad_h, self.__pad_w)
 
         self._height, self._width, self._channels = 0, 0, 0
+
+        sys.exit(print_red("Homography: rework this class"))
 
 
     def __get_initial_image(self, img):
         img_gray_tmp = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        if self.__add_border:
-            img_gray = cv2.copyMakeBorder(img_gray_tmp,
-                self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
-                cv2.BORDER_CONSTANT, value=self.__border_color)
-        else:
-            img_gray = img_gray_tmp
-
         if self.__use_roi:
-            img_gray = img_gray_tmp[
+            img_gray = img_gray[
                 self.__crop_h:self.__crop_h+img_gray_tmp.shape[0],
                 self.__crop_w:self.__crop_w+img_gray_tmp.shape[1]]
 
         keypoints, features = self.detect_and_describe(img_gray,
             method=self.feature_extractor)
 
-        if self.__add_border:
-            img_stabilized = cv2.copyMakeBorder(img,
-                self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
-                cv2.BORDER_CONSTANT, value=self.__border_color)
-        else:
-            img_stabilized = img
-
-        return img_stabilized, keypoints, features
+        return img, keypoints, features
 
 
     def __stabilize_image(self, img, keypoints_ref, features_ref, do_log=False):
-        img_gray_tmp = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        if self.__add_border:
-            img_gray = cv2.copyMakeBorder(img_gray_tmp,
-                self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
-                cv2.BORDER_CONSTANT,
-                value=self.__border_color)
-        else:
-            img_gray = img_gray_tmp
-
+        img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
         if self.__use_roi:
-            img_gray = img_gray_tmp[
-                self.__crop_h:img_gray_tmp.shape[0] - self.__crop_h,
-                self.__crop_w:img_gray_tmp.shape[1] - self.__crop_w,]
+            img_gray = img_gray[
+                self.__crop_h:img_gray.shape[0] - self.__crop_h,
+                self.__crop_w:img_gray.shape[1] - self.__crop_w,]
 
         cv2.imwrite("test.png", img_gray)
 
@@ -111,17 +89,9 @@ class Homography:
             print("Error!")
         (matches, H, status) = M
 
-        if self.__add_border:
-            # Add borders before applying transformation
-            img_with_borders = cv2.copyMakeBorder(img,
-                self.__pad_h, self.__pad_h, self.__pad_w, self.__pad_w,
-                cv2.BORDER_CONSTANT, value=self.__border_color)
-        else:
-            img_with_borders = img
-
         # Apply the perspective transformation
-        img_stabilized = cv2.warpPerspective(img_with_borders,
-            H, (img_with_borders.shape[1], img_with_borders.shape[0]))
+        img_stabilized = cv2.warpPerspective(img,
+            H, (img.shape[1], img.shape[0]))
 
         return img_stabilized
 
@@ -142,8 +112,6 @@ class Homography:
         suffix = ""
         if self.__use_roi:
             suffix += "roi_"
-        if self.__add_border:
-            suffix += "border"
 
         # Generate and log hash
         hash = log_filter("%s,homography=%s:%s" % (input_hash, suffix, self.filters_str), shot['hash_log_file'])

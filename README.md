@@ -1,9 +1,15 @@
 # MCO
 
+## Commandes
+Une fois les installations et les fichiers d'entrée ajoutés à ce projet, exécuter la commande suivante pour générer la version finale de l'épisode 1:
+```sh
+python run.py --episode 1
+```
+
+[Plus de commandes...](./usage.md)
+<br/><br/>
 
 ## Exigences et installations
-[mco_manuel](https://github.com/JepEtau/mco_manuels)
-
 - Python **3.10** (< 3.11)
 - Modules Python
 - mkvmerge: [MKVToolNix](https://mkvtoolnix.download)
@@ -11,29 +17,20 @@
 - [AviSynth](https://avisynth.nl)
 - Filtres et plugin AviSynth
 - [FFmpeg](https://ffmpeg.org)
-- [Real-CUGAN] (https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
-- [Real-ESRGAN] (https://github.com/xinntao/Real-ESRGAN)
-- [ESRGAN] (https://github.com/JoeyBallentine/ESRGAN)
+- [Real-CUGAN](https://github.com/bilibili/ailab/tree/main/Real-CUGAN)
+- [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)
+- [ESRGAN](https://github.com/JoeyBallentine/ESRGAN)
 - Modèles pour Real-ESRGAN, ESRGAN
 - (optionnel: [nnedi3_weights.bin](https://github.com/dubhater/vapoursynth-nnedi3/blob/master/src/))
 <br/><br/>
 
 ## Fichiers video d'entrée
 A stocker dans les répertoires suivants:
-- Edition 'f': [inputs/k](./inputs/k/README.md)
+- Edition 'f': [inputs/f](./inputs/f/README.md)
 - Edition 'k': [inputs/k](./inputs/k/README.md)
 - Edition 's': [inputs/s](./inputs/s/README.md) (ep 1, 2, 11, 12)
 - Edition 's0': [inputs/s0](./inputs/s0/README.md) (ep 1)
 - Edition 'b': [inputs/b](./inputs/b/README.md) (ep 01 audio)
-<br/><br/>
-
-## Commandes
-Exécuter les commandes suivantes dans le répertoire `scripts` pour générer l'ensemble de la vidéo en version finale:
-```sh
-python run.py --episode 1
-```
-
-[Plus de commandes...](./scripts/README.md)
 <br/><br/>
 
 

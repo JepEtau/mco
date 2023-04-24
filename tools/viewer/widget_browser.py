@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 
 from utils.common import K_GENERIQUES, K_PARTS, K_ALL_PARTS
 
-from common.sylesheet import set_stylesheet, set_widget_stylesheet
+from common.stylesheet import set_stylesheet, set_widget_stylesheet
 from viewer.ui.widget_browser_ui import Ui_widget_browser
 
 
@@ -38,9 +38,9 @@ class Widget_browser(QWidget, Ui_widget_browser):
     signal_select_image = Signal(str)
     signal_close = Signal()
 
-    def __init__(self, ui, model):
+    def __init__(self, ui, controller):
         super(Widget_browser, self).__init__()
-        self.model = model
+        self.controller = controller
         self.ui = ui
 
         # Set and patch ui
@@ -162,9 +162,9 @@ class Widget_browser(QWidget, Ui_widget_browser):
         # Part
         self.refresh_combobox_part()
         self.combobox_part.blockSignals(True)
-        self.combobox_part.setCurrentText(s['part'])
-        if s['part'] in K_ALL_PARTS:
-            index = self.combobox_part.findText(s['part'])
+        self.combobox_part.setCurrentText(s['k_part'])
+        if s['k_part'] in K_ALL_PARTS:
+            index = self.combobox_part.findText(s['k_part'])
             self.combobox_part.setCurrentIndex(index)
         self.combobox_part.blockSignals(False)
 

@@ -12,14 +12,14 @@ from utils.common import (
 )
 from filters.ffmpeg_utils import (
     execute_simple_ffmpeg_command,
-    get_duration,
     execute_ffmpeg_command,
+    get_video_duration,
 )
-from utils.get_framelist import (
-    get_framelist,
-    get_framelist_single,
+from utils.get_frame_list import (
+    get_frame_list,
+    get_frame_list_single,
 )
-from utils.hash import get_image_list
+from utils.get_image_list import get_image_list
 from utils.path import create_folder_for_concatenation
 from utils.pretty_print import *
 from utils.time_conversions import (
@@ -31,12 +31,11 @@ from utils.time_conversions import (
 
 
 def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_filepath=''):
-
+    print_lightgreen(f"Create concatenation file: ", end='')
+    print_lightcyan(f"{k_ep}, {k_part}, shot no. {shot['no']}: ", end='')
     # Use a single concatenation file for
-    #   - g_asuivre, g_reoportage
-    #   - precedemment
-    #   - asuivre
-    if k_part in ['g_asuivre', 'g_reportage', 'precedemment', 'asuivre']:
+    #   - g_asuivre, g_reportage
+    if k_part in ['g_asuivre', 'g_reportage']:
         return create_single_concatenation_file(db,
             k_ep=k_ep, k_part=k_part, shot=shot,
             previous_concatenation_filepath=previous_concatenation_filepath)
@@ -46,14 +45,13 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
     #   - reportage
 
     # Get the list of images
-    images_filepath = get_framelist(db=db,
+    images_filepath = get_frame_list(db=db,
         k_ep=k_ep, k_part=k_part, shot=shot)
 
     # Folder for concatenation file
     create_folder_for_concatenation(db, k_ep, k_part)
 
     # Open concatenation file
-    hash = shot['last_step']['hash']
     k_ed = shot['k_ed']
     if (previous_concatenation_filepath == ''
         or len(images_filepath) >= 5):
@@ -61,23 +59,27 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
         # cannot create a video file from less than 5 frames
         if k_part in ['g_debut', 'g_fin']:
             concatenation_filepath = os.path.join(
-                db[k_part]['cache_path'], "concatenation",
-                "%s_%03d__%s_.txt" % (k_part, shot['no'], k_ed))
+                db[k_part]['cache_path'],
+                "concatenation",
+                f"{k_part}_{shot['no']:03}__{k_ed}_{shot['k_ep']}_.txt")
         else:
             concatenation_filepath = os.path.join(
-                db[k_ep]['cache_path'], "concatenation",
-                "%s_%s_%03d__%s_.txt" % (k_ep, k_part, shot['no'], k_ed))
+                db[k_ep]['cache_path'],
+                "concatenation",
+                f"{k_ep}_{k_part}_{shot['no']:03}__{k_ed}_.txt")
 
         # Save this filepath because it may be used for next shot
         previous_concatenation_filepath = concatenation_filepath
         concatenation_file = open(concatenation_filepath, "w")
 
     else:
-        print("\t\t\tuse previous concatenation file: %s" % (previous_concatenation_filepath))
+        sys.exit(print_red("(TODO: deprecate) Use previous concatenation file: %s" % (previous_concatenation_filepath)))
         concatenation_file = open(previous_concatenation_filepath, 'a')
 
+    print(f"{concatenation_filepath}")
+
     # Frame duration
-    duration_str = "duration %.02f\n" % (1/float(db['common']['fps']))
+    duration_str = "duration %.02f\n" % (1/FPS)
 
     # Write into the concatenation file
     for p in images_filepath:
@@ -101,7 +103,7 @@ def create_single_concatenation_file(db, k_ep, k_part, shot, previous_concatenat
     k_ep_or_g = k_ep if k_part not in ['g_debut', 'g_fin'] else k_part
 
     # Get the list of images
-    images_filepath = get_framelist_single(db,
+    images_filepath = get_frame_list_single(db,
         k_ep=k_ep, k_part=k_part, shot=shot)
 
     # Folder for concatenation file
@@ -118,10 +120,9 @@ def create_single_concatenation_file(db, k_ep, k_part, shot, previous_concatenat
             concatenation_filepath = os.path.join(
                 db[k_ep_or_g]['cache_path'], "concatenation",
                 "%s_video.txt" % (k_ep_or_g))
-
         else:
             concatenation_filepath = os.path.join(db[k_ep_or_g]['cache_path'],
-                "concatenation", "%s_%s_%03d__%s_.txt" % (k_ep, k_part, 0, k_ed))
+                "concatenation", "%s_%s_%03d__%s_%s_.txt" % (k_ep, k_part, 0, k_ed, shot['src']['k_ep']))
         previous_concatenation_filepath = concatenation_filepath
         concatenation_file = open(concatenation_filepath, "w")
 
@@ -130,7 +131,7 @@ def create_single_concatenation_file(db, k_ep, k_part, shot, previous_concatenat
         concatenation_file = open(previous_concatenation_filepath, "a")
 
     # Frame duration
-    duration_str = "duration %.02f\n" % (1/float(db['common']['fps']))
+    duration_str = "duration %.02f\n" % (1/FPS)
 
     # Write into the concatenation file
     for p in images_filepath:
@@ -182,7 +183,7 @@ def create_concatenation_file_video(db, k_ep, k_part, video_files:dict):
                     filepath = shot['path']
                     hash = shot['hash']
 
-                    p = filepath.replace('.txt', '_%s.mkv' % (hash))
+                    p = filepath.replace('.txt', '_%s_%s.mkv' % (hash, shot['last_task']))
                     p = p.replace('concatenation', 'video')
                     concatenation_file.write("file \'%s\' \n" % (p))
         else:
@@ -221,7 +222,7 @@ def create_concatenation_file_silence(db, k_ep):
 
             # Frame duration
             black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
-            duration_str = "duration %.02f\n" % (1/float(db['common']['fps']))
+            duration_str = "duration %.02f\n" % (1/FPS)
 
             # Create the concatenation file for the silence
             create_folder_for_concatenation(db, k_ep)
@@ -244,14 +245,20 @@ def create_concatenation_file_silence(db, k_ep):
 
 
 def combine_images_into_video(db_common, k_part, video_shot, force=False, simulation:bool=False):
+    verbose = False
+
     input_filename = video_shot['path']
     shot_filepath = input_filename.replace("concatenation", "video")
-    shot_filepath = shot_filepath.replace('.txt', '_%s.mkv' % (video_shot['hash']))
+    suffix = "_%s" % (video_shot['hash'])
+    if video_shot['last_task'] != '':
+        suffix += "_%s" % (video_shot['last_task'])
+    shot_filepath = shot_filepath.replace('.txt', '%s.mkv' % (suffix))
 
-    print("%s.combine_images_into_video: %s: %s -> %s" % (__name__, k_part, input_filename, shot_filepath))
+    print_lightgreen(f"Combine images into video: ", end='')
+    print_lightcyan(f"{k_part}: ", end='')
+    print(f"{shot_filepath}")
 
     if not os.path.exists(shot_filepath) or force:
-        print("%s concatenate images to %s" % (current_datetime_str(), shot_filepath))
         db_settings = db_common['settings']
 
         ffmpeg_command = [db_common['tools']['ffmpeg']]
@@ -261,7 +268,11 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
             "-f", "concat",
             "-safe", "0",
             "-i", input_filename,
-            "-pix_fmt", db_settings['video_pixel_format']
+            "-pix_fmt", db_settings['video_pixel_format'],
+            "-colorspace:v", "bt709",
+            "-color_primaries:v", "bt709",
+            "-color_trc:v", "bt709",
+            "-color_range:v", "tv"
         ])
 
         ffmpeg_command.extend(db_settings['video_quality'].split(' '))
@@ -272,22 +283,26 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
             ffmpeg_command.extend(db_settings['video_tune'].split(' '))
         ffmpeg_command.extend(["-y", shot_filepath])
 
-        # print_green(ffmpeg_command)
+        if verbose:
+            print_green(ffmpeg_command)
         if simulation:
             return
 
         success = execute_simple_ffmpeg_command(ffmpeg_command=ffmpeg_command)
         if not success:
             print_red("error: failed to generate %s" % (shot_filepath))
-            os.remove(shot_filepath)
+            try:
+                os.remove(shot_filepath)
+            except:
+                pass
 
     return None
 
 
 
-def merge_audio_and_video_tracks(db, k_ep_or_g, force=False):
+def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, simulation:bool=False):
     # Output filepath
-    print("merge_audio_and_video_tracks: %s" % (k_ep_or_g))
+    print_lightgreen(f"Merge audio and video tracks: {k_ep_or_g}")
     if k_ep_or_g in ['g_debut', 'g_fin']:
         cache_path = db[k_ep_or_g]['cache_path']
         audio_video_filepath = os.path.join(cache_path, "%s.mkv" % (k_ep_or_g))
@@ -295,31 +310,40 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, force=False):
         cache_path = db[k_ep_or_g]['cache_path']
         audio_video_filepath = os.path.join(cache_path, "%s_av.mkv" % (k_ep_or_g))
 
-    if os.path.exists(audio_video_filepath) and not force:
+    if os.path.exists(audio_video_filepath) and not force and not simulation:
         return
+
+    suffix = '' if last_task == '' or last_task == 'final' else f"_{last_task}"
 
     # Get nb of frames from video stream
     if k_ep_or_g in ['g_debut', 'g_fin']:
-        video_filepath = os.path.join(cache_path, "video", "%s_video_%s.mkv" % (
-            k_ep_or_g, db[k_ep_or_g]['video']['hash']))
+        video_filepath = os.path.join(cache_path, "video",
+            f"{k_ep_or_g}_video_{db[k_ep_or_g]['video']['hash']}{suffix}.mkv")
     else:
-        video_filepath = os.path.join(cache_path, "video", "%s_video_%s.mkv" % (
-            k_ep_or_g, db[k_ep_or_g]['target']['video']['part']['hash']))
+        # TODO k_part is missing...
+        video_filepath = os.path.join(cache_path, "video",
+            f"{k_ep_or_g}_video_{db[k_ep_or_g]['target']['video'][k_part]['hash']}{suffix}.mkv")
 
-    video_frames_count = int(get_duration(db, video_filepath, integrity=False) * FPS)
+    try:
+        video_frames_count = int(get_video_duration(db['common'], video_filepath, integrity=False) * FPS)
+    except:
+        video_frames_count = 0
 
     # Get equivalent nb of frames from audio stream
     audio_filepath = os.path.join(cache_path, "audio", "%s_audio.%s" % (k_ep_or_g, db['common']['settings']['audio_format']))
-    channels_count, sample_rate, in_track, duration = read_audio_file(audio_filepath)
+    try:
+        channels_count, sample_rate, in_track, duration = read_audio_file(audio_filepath)
+    except:
+        duration = 0
     audio_frames_count = int(duration*FPS)
 
-    print("%s %s: merge audio and video: %s" % (current_datetime_str(), k_ep_or_g, audio_video_filepath))
-    print("\t\tvideo: %s: %d" % (video_filepath, video_frames_count))
-    print("\t\taudio: %s: %d" % (audio_filepath, audio_frames_count))
+    print(f"{current_datetime_str()} {k_ep_or_g}: merge audio and video: {audio_video_filepath}")
+    print(f"\t\tvideo: {video_filepath}: {video_frames_count}")
+    print(f"\t\taudio: {audio_filepath}: {audio_frames_count}")
 
     # Cannot continue if nb of frames differ
     if audio_frames_count != video_frames_count:
-        sys.exit("Error: %s.merge_audio_and_video_tracks: nb of frames differs" % (__name__))
+        sys.exit(print_red(f"Error: cannot merge audio and video tracks: nb of frames differs"))
 
     # Merge Audio and Video tracks
     ffmpeg_command = [db['common']['tools']['ffmpeg']]
@@ -332,15 +356,21 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, force=False):
         "-shortest",
         "-y", audio_video_filepath
     ])
-    std = execute_ffmpeg_command(db, command=ffmpeg_command, filename=audio_video_filepath)
-    if len(std) > 0:
-        print(std)
+    if simulation:
+        print_lightgrey(' '.join(ffmpeg_command))
+    else:
+        std = execute_ffmpeg_command(db, command=ffmpeg_command, filename=audio_video_filepath)
+        if len(std) > 0:
+            print(std)
 
 
 
-def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict, force:bool=False):
-    print_cyan("concatenate_shots %s:%s" % (k_ep, k_part))
-    # pprint(video_files)
+def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict, force:bool=False, simulation:bool=False):
+    verbose=False
+    print_lightcyan(f"Concatenate shots: {k_ep}:{k_part}")
+    if verbose:
+        pprint(video_files)
+
     if k_part in ['g_debut', 'g_fin']:
         suffix = "%s_video" % (k_part)
         k_ep_or_g = k_part
@@ -351,10 +381,15 @@ def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict, force:bool=Fal
     # Folder used to store concatenation file
     create_folder_for_concatenation(db, k_ep, k_part)
 
+
+    # Last task is the suffix
+    last_task = video_files['shotlist'][0]['last_task']
+    last_task_str = '' if last_task == '' else f"_{last_task}"
+
     # Open concatenation file
     cache_directory = db[k_ep_or_g]['cache_path']
     concatenation_filepath = os.path.join(cache_directory,
-        "concatenation", "%s_%s.txt" % (suffix, video_files['hash']))
+        "concatenation", f"{suffix}_{video_files['hash']}{last_task_str}.txt")
     concatenation_file = open(concatenation_filepath, "w")
 
     # Output video file
@@ -368,7 +403,7 @@ def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict, force:bool=Fal
     for shot in video_files['shotlist']:
         filepath = shot['path']
         hash = shot['hash']
-        p = filepath.replace('.txt', '_%s.mkv' % (hash))
+        p = filepath.replace('.txt', f"_{hash}{last_task_str}.mkv")
         p = p.replace('concatenation', 'video')
         concatenation_file.write("file \'%s\' \n" % (p))
     concatenation_file.close()
@@ -387,8 +422,11 @@ def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict, force:bool=Fal
         "-c", "copy",
         "-y", output_filepath
     ])
-    std = execute_ffmpeg_command(db, command=ffmpeg_command, filename=output_filepath)
-    print(std)
+    if simulation:
+        print_lightgrey(' '.join(ffmpeg_command))
+    else:
+        std = execute_ffmpeg_command(db, command=ffmpeg_command, filename=output_filepath)
+        print(std)
 
 
 

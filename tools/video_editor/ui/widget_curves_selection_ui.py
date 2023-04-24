@@ -24,7 +24,7 @@ class Ui_widget_curves_selection(object):
     def setupUi(self, widget_curves_selection):
         if not widget_curves_selection.objectName():
             widget_curves_selection.setObjectName(u"widget_curves_selection")
-        widget_curves_selection.resize(171, 452)
+        widget_curves_selection.resize(165, 482)
         self.verticalLayout_3 = QVBoxLayout(widget_curves_selection)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
@@ -63,31 +63,17 @@ class Ui_widget_curves_selection(object):
 
         self.verticalLayout_2.addWidget(self.pushButton_discard)
 
-        self.pushButton_delete = QPushButton(widget_curves_selection)
-        self.pushButton_delete.setObjectName(u"pushButton_delete")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.pushButton_delete.sizePolicy().hasHeightForWidth())
-        self.pushButton_delete.setSizePolicy(sizePolicy2)
-        icon1 = QIcon()
-        icon1.addFile(u"icons/purple/x-square.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_delete.setIcon(icon1)
-        self.pushButton_delete.setFlat(True)
-
-        self.verticalLayout_2.addWidget(self.pushButton_delete)
-
         self.verticalSpacer_2 = QSpacerItem(20, 10, QSizePolicy.Minimum, QSizePolicy.MinimumExpanding)
 
         self.verticalLayout_2.addItem(self.verticalSpacer_2)
 
         self.label_edition_6 = QLabel(widget_curves_selection)
         self.label_edition_6.setObjectName(u"label_edition_6")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.label_edition_6.sizePolicy().hasHeightForWidth())
-        self.label_edition_6.setSizePolicy(sizePolicy3)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.label_edition_6.sizePolicy().hasHeightForWidth())
+        self.label_edition_6.setSizePolicy(sizePolicy2)
 
         self.verticalLayout_2.addWidget(self.label_edition_6)
 
@@ -97,11 +83,11 @@ class Ui_widget_curves_selection(object):
         QListWidgetItem(self.list_shots)
         self.list_shots.setObjectName(u"list_shots")
         self.list_shots.setEnabled(False)
-        sizePolicy4 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Expanding)
-        sizePolicy4.setHorizontalStretch(0)
-        sizePolicy4.setVerticalStretch(0)
-        sizePolicy4.setHeightForWidth(self.list_shots.sizePolicy().hasHeightForWidth())
-        self.list_shots.setSizePolicy(sizePolicy4)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Expanding)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.list_shots.sizePolicy().hasHeightForWidth())
+        self.list_shots.setSizePolicy(sizePolicy3)
         self.list_shots.setMinimumSize(QSize(0, 300))
         self.list_shots.setMaximumSize(QSize(40, 16777215))
         self.list_shots.setEditTriggers(QAbstractItemView.NoEditTriggers)
@@ -111,6 +97,29 @@ class Ui_widget_curves_selection(object):
         self.list_shots.setItemAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
 
         self.verticalLayout_2.addWidget(self.list_shots)
+
+        self.pushButton = QPushButton(widget_curves_selection)
+        self.pushButton.setObjectName(u"pushButton")
+        sizePolicy1.setHeightForWidth(self.pushButton.sizePolicy().hasHeightForWidth())
+        self.pushButton.setSizePolicy(sizePolicy1)
+        self.pushButton.setMaximumSize(QSize(50, 16777215))
+
+        self.verticalLayout_2.addWidget(self.pushButton)
+
+        self.pushButton_delete = QPushButton(widget_curves_selection)
+        self.pushButton_delete.setObjectName(u"pushButton_delete")
+        sizePolicy4 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        sizePolicy4.setHorizontalStretch(0)
+        sizePolicy4.setVerticalStretch(0)
+        sizePolicy4.setHeightForWidth(self.pushButton_delete.sizePolicy().hasHeightForWidth())
+        self.pushButton_delete.setSizePolicy(sizePolicy4)
+        icon1 = QIcon()
+        icon1.addFile(u"icons/grey/x-square.svg", QSize(), QIcon.Disabled, QIcon.Off)
+        icon1.addFile(u"icons/grey/x-square.svg", QSize(), QIcon.Disabled, QIcon.On)
+        self.pushButton_delete.setIcon(icon1)
+        self.pushButton_delete.setFlat(True)
+
+        self.verticalLayout_2.addWidget(self.pushButton_delete)
 
         self.verticalSpacer = QSpacerItem(20, 10, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
@@ -159,7 +168,6 @@ class Ui_widget_curves_selection(object):
     def retranslateUi(self, widget_curves_selection):
         widget_curves_selection.setWindowTitle(QCoreApplication.translate("widget_curves_selection", u"Form", None))
         self.pushButton_discard.setText("")
-        self.pushButton_delete.setText("")
         self.label_edition_6.setText(QCoreApplication.translate("widget_curves_selection", u"Used by", None))
 
         __sortingEnabled = self.list_shots.isSortingEnabled()
@@ -170,6 +178,8 @@ class Ui_widget_curves_selection(object):
         ___qlistwidgetitem1.setText(QCoreApplication.translate("widget_curves_selection", u"004", None));
         self.list_shots.setSortingEnabled(__sortingEnabled)
 
+        self.pushButton.setText(QCoreApplication.translate("widget_curves_selection", u"Lib.", None))
+        self.pushButton_delete.setText("")
         self.pushButton_save_rgb_curves.setText("")
     # retranslateUi
 

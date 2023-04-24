@@ -1,52 +1,67 @@
 # -*- coding: utf-8 -*-
+import re
 import cv2
 import os
 import sys
 import time
 import torch
 import numpy as np
-# from pathlib import Path
 from pprint import pprint
+from utils.pretty_print import *
 from filters.utils import MAX_FRAMES_COUNT
 
 from utils.hash import (
-    get_image_list,
+    calculate_hash,
     log_filter,
 )
-from utils.pretty_print import *
+from utils.get_image_list import (
+    get_image_list,
+)
 
 
 
 def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:int,
-    module_path:str, input_hash, step_no, output_folder:str, get_hash:bool=False, do_force:bool=False):
+    directories:str, input_hash, step_no, output_folder:str, get_hash:bool=False, do_force:bool=False):
 
+    module_path = os.path.join(directories['3rd_party'], directories['real_cugan'])
     sys.path.append(module_path)
     from upcunet_v3 import RealWaifuUpScaler
 
-    denoise_to_model = {
-        -1: 'conservative',
-        0: 'no-denoise',
-        1: 'denoise1x',
-        2: 'denoise2x',
-        3: 'denoise3x',
-    }
-    model_name = "up%dx-latest-%s.pth" % (scale, denoise_to_model[denoise])
-    model_path = os.path.join(module_path, "weights_v3", model_name)
-    if not os.path.isfile(model_path):
-        raise Exception("Error: model file %s does not exist" % (model_path))
+    if denoise < 4:
+        denoise_to_model = {
+            -1: 'conservative',
+            0: 'no-denoise',
+            1: 'denoise1x',
+            2: 'denoise2x',
+            3: 'denoise3x',
+        }
+        model_name = f"up{scale}x-latest-{denoise_to_model[denoise]}.pth"
+
+    # else:
+    #     if denoise == 5:
+    #         model_name = ""
+
+    model_filepath = os.path.join(directories['3rd_party'], "models", 'real_cugan', model_name)
+    if not os.path.isfile(model_filepath):
+        raise Exception("Error: model file %s does not exist" % (model_filepath))
 
     # ModelName="up2x-latest-no-denoise.pth"
     # ModelName="up2x-latest-denoise1x.pth"
     #{0,1,2,3,4,auto}; the larger the number, the smaller the memory consumption
     # Tile=4
-    suffix = "s%d_n%d" % (scale, denoise)
-    hash = log_filter("%s,%s" % (input_hash, model_name), shot['hash_log_file'])
-    # Patch hash
-    hash += "_" + suffix
-    if get_hash:
-        return hash, scale, None
+    suffix = f"s{scale}_n{denoise}"
 
-    print_green("(REAL_CUGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
+    # Hash
+    filter_str = f"{input_hash},{suffix}"
+    if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
+        hash += "_" + suffix
+        return hash, scale, None
+    hash = log_filter(filter_str, shot['hash_log_file'])
+    hash += "_" + suffix
+
+
+    print_cyan("(REAL_CUGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
         step_no, model_name, input_hash, hash, suffix))
 
 
@@ -72,7 +87,7 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
     # Load model
     upscaler = RealWaifuUpScaler(
         scale=scale,
-        weight_path=model_path,
+        weight_path=model_filepath,
         half=half,
         device=device)
 
@@ -122,19 +137,21 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
 
 
 def upscale_real_esrgan(shot, images:list, image_list:list,
-    scale:int, model_name:str, module_path:str, input_hash:str, step_no, output_folder:str,
+    scale:int, model_name:str, directories:str, input_hash:str, step_no, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
+    module_path = os.path.join(directories['3rd_party'], directories['real_esrgan'])
     sys.path.append(module_path)
     from realesrgan.archs.srvgg_arch import SRVGGNetCompact
     from realesrgan import RealESRGANer
     from basicsr.archs.rrdbnet_arch import RRDBNet
 
-    model_filepath = os.path.join(module_path, "weights", "%s.pth" % (model_name))
+    model_filepath = os.path.join(directories['3rd_party'], "models", 'real_esrgan', "%s.pth" % (model_name))
     if not os.path.isfile(model_filepath):
         sys.exit(print_red("Error: model file %s does not exist" % (model_filepath)))
 
     # log hash
+    netscale = -1
     if model_name == 'realesr-animevideov3':
         suffix = "animevideov3"
         netscale = 4
@@ -146,24 +163,37 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
         netscale = 1
     elif model_name == '2x_LD-Anime_Compact_330k_net_g':
         suffix = "2x_LD-Anime_Compact_330k_net_g"
-        netscale = 4
     elif model_name == 'RealESRGAN_x2plus':
         suffix = "RealESRGAN_x2plus"
         netscale = 2
     elif model_name == '2x_Futsuu_Anime_Compact_130k_net_g':
         suffix = model_name
+    elif model_name == 'sudo_RealESRGAN2x_Dropout_3.799.042_G':
+        suffix = 'sudo_3.799.042_G'
         netscale = 2
+    elif model_name == '2xHFA2kCompact_net_g_74000':
+        suffix = 'HFA2kCompact_net_g_74000'
     else:
         suffix = model_name
-        netscale = 2
 
-    hash = log_filter("%s,%s" % (input_hash, suffix), shot['hash_log_file'])
-    # Patch hash
-    hash += "_" + suffix
+    match = re.match("^([\d]{1})[xX]{1}.*", model_name)
+    if match is not None:
+        netscale = int(match.group(1))
+
+    if netscale == -1:
+        sys.exit(print_red(f"Error, cannot find netscale for model {model_name}"))
+
+    # Hash
+    filter_str = f"{input_hash},{suffix}"
     if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
+        hash += "_" + suffix
         return hash, netscale, None
+    hash = log_filter(filter_str, shot['hash_log_file'])
+    hash += "_" + suffix
 
-    print_green("(REAL_ESRGAN)\tstep no. %d, upscaling with model %s, input hash= %s, output hash= %s, suffix= %s" % (
+
+    print_cyan("(REAL_ESRGAN)\tstep no. %d, upscaling with model %s, input hash= %s, output hash= %s, suffix= %s" % (
         step_no, model_name, input_hash, hash, suffix))
 
     # Default values for upscaler
@@ -211,11 +241,15 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
         model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=2, act_type='prelu')
     elif model_name == '2x_Futsuu_Anime_Compact_130k_net_g':
         model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=2, act_type='prelu')
+    elif model_name == '2xHFA2kCompact_net_g_74000':
+        model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=2, act_type='prelu')
     elif model_name == '1x_HurrDeblur_SuperUltraCompact_nf24-nc8_244k_net_g':
         model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=24, num_conv=8, upscale=1, act_type='prelu')
     elif model_name == 'RealESRGAN_x2plus':
         # x2 RRDBNet model
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
+    else:
+        sys.exit(print_red("error: model %s is not initialized" % (model_name)))
 
     # Load model
     upscaler = RealESRGANer(
@@ -271,10 +305,11 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
 
 
 def upscale_esrgan(shot, images:list, image_list:list,
-    scale:int, model_name:str, module_path:str, input_hash, step_no, output_folder:str,
+    scale:int, model_name:str, directories:str, input_hash, step_no, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
-    model_filepath = os.path.join(module_path, "models", "%s.pth" % (model_name))
+    module_path = os.path.join(directories['3rd_party'], directories['esrgan'])
+    model_filepath = os.path.join(directories['3rd_party'], "models", 'esrgan', "%s.pth" % (model_name))
     if not os.path.isfile(model_filepath):
         sys.exit(print_red("Error: model file %s does not exist" % (model_filepath)))
 
@@ -286,7 +321,7 @@ def upscale_esrgan(shot, images:list, image_list:list,
     from filters.esrgan import Esrgan_upscale
 
     # Default values for upscaler
-    suffix = "%s_%s" % (model_name, input_hash)
+    suffix = f"{model_name}_{input_hash}"
     seamless = None
     if model_name == '2x_LD-Anime_Skr_v1.0':
         suffix = "skr"
@@ -328,16 +363,28 @@ def upscale_esrgan(shot, images:list, image_list:list,
     elif model_name == '1x_ReFocus_V3_140000_G':
         suffix = '1x_ReFocus_V3_140000_G'
         scale = 1
+    elif model_name == '1x_BeaverIt.pth':
+        suffix = '1x_BeaverIt.pth'
+        scale = 1
     else:
         suffix = model_name
 
-    hash = log_filter("%s,%s" % (input_hash, model_name), shot['hash_log_file'])
-    # Patch hash
-    hash += "_" + suffix
-    if get_hash:
-        return hash, scale, None
+    match = re.match("^([\d]{1})[xX]{1}_.*", model_name)
+    if match is not None:
+        scale = int(match.group(1))
 
-    print_green("(ESRGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
+    # Hash
+    filter_str = f"{input_hash},{suffix}"
+    if get_hash:
+        hash = calculate_hash(filter_str=filter_str)
+        hash += "_" + suffix
+        return hash, scale, None
+    hash = log_filter(filter_str, shot['hash_log_file'])
+    hash += "_" + suffix
+
+
+
+    print_cyan("(ESRGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
         step_no, model_name, input_hash, hash, suffix))
 
 
@@ -390,7 +437,7 @@ def upscale_esrgan(shot, images:list, image_list:list,
                 img = cv2.imread(image_list[f_no], cv2.IMREAD_COLOR)
 
             # Upscale
-            output_img = esrgan_upscale.upscale(
+            output_img = esrgan_upscale.run(
                 img=img,
                 scale=scale)
 

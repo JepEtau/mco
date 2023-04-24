@@ -16,8 +16,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QApplication, QComboBox,
-    QFrame, QHeaderView, QSizePolicy, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget)
+    QFrame, QHBoxLayout, QHeaderView, QRadioButton,
+    QSizePolicy, QSpacerItem, QTableWidget, QTableWidgetItem,
+    QVBoxLayout, QWidget)
 
 from common.widget_app_controls import Widget_app_controls
 
@@ -25,7 +26,7 @@ class Ui_widget_selection(object):
     def setupUi(self, widget_selection):
         if not widget_selection.objectName():
             widget_selection.setObjectName(u"widget_selection")
-        widget_selection.resize(500, 712)
+        widget_selection.resize(500, 839)
         widget_selection.setMaximumSize(QSize(500, 16777215))
         self.verticalLayout_2 = QVBoxLayout(widget_selection)
         self.verticalLayout_2.setSpacing(0)
@@ -36,7 +37,7 @@ class Ui_widget_selection(object):
         self.frame.setFrameShape(QFrame.Panel)
         self.frame.setFrameShadow(QFrame.Plain)
         self.verticalLayout = QVBoxLayout(self.frame)
-        self.verticalLayout.setSpacing(4)
+        self.verticalLayout.setSpacing(6)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(6, 6, 6, 6)
         self.widget_app_controls = Widget_app_controls(self.frame)
@@ -44,6 +45,9 @@ class Ui_widget_selection(object):
 
         self.verticalLayout.addWidget(self.widget_app_controls)
 
+        self.horizontalLayout = QHBoxLayout()
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalLayout.setContentsMargins(-1, -1, -1, 0)
         self.comboBox_episode = QComboBox(self.frame)
         self.comboBox_episode.addItem("")
         self.comboBox_episode.addItem("")
@@ -54,7 +58,7 @@ class Ui_widget_selection(object):
         sizePolicy.setHeightForWidth(self.comboBox_episode.sizePolicy().hasHeightForWidth())
         self.comboBox_episode.setSizePolicy(sizePolicy)
 
-        self.verticalLayout.addWidget(self.comboBox_episode)
+        self.horizontalLayout.addWidget(self.comboBox_episode)
 
         self.comboBox_part = QComboBox(self.frame)
         self.comboBox_part.addItem("")
@@ -71,18 +75,55 @@ class Ui_widget_selection(object):
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.comboBox_part.sizePolicy().hasHeightForWidth())
         self.comboBox_part.setSizePolicy(sizePolicy1)
+        self.comboBox_part.setMinimumSize(QSize(140, 0))
         self.comboBox_part.setMaximumSize(QSize(140, 16777215))
 
-        self.verticalLayout.addWidget(self.comboBox_part)
+        self.horizontalLayout.addWidget(self.comboBox_part)
 
-        self.comboBox_step = QComboBox(self.frame)
-        self.comboBox_step.addItem("")
-        self.comboBox_step.setObjectName(u"comboBox_step")
-        sizePolicy1.setHeightForWidth(self.comboBox_step.sizePolicy().hasHeightForWidth())
-        self.comboBox_step.setSizePolicy(sizePolicy1)
-        self.comboBox_step.setMaximumSize(QSize(120, 16777215))
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
-        self.verticalLayout.addWidget(self.comboBox_step)
+        self.horizontalLayout.addItem(self.horizontalSpacer)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout)
+
+        self.verticalLayout_3 = QVBoxLayout()
+        self.verticalLayout_3.setSpacing(4)
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.radioButton_task_deinterlace = QRadioButton(self.frame)
+        self.radioButton_task_deinterlace.setObjectName(u"radioButton_task_deinterlace")
+        self.radioButton_task_deinterlace.setFocusPolicy(Qt.NoFocus)
+        self.radioButton_task_deinterlace.setChecked(False)
+
+        self.verticalLayout_3.addWidget(self.radioButton_task_deinterlace)
+
+        self.radioButton_task_pre_upscale = QRadioButton(self.frame)
+        self.radioButton_task_pre_upscale.setObjectName(u"radioButton_task_pre_upscale")
+        self.radioButton_task_pre_upscale.setFocusPolicy(Qt.NoFocus)
+        self.radioButton_task_pre_upscale.setChecked(True)
+
+        self.verticalLayout_3.addWidget(self.radioButton_task_pre_upscale)
+
+        self.radioButton_task_upscale = QRadioButton(self.frame)
+        self.radioButton_task_upscale.setObjectName(u"radioButton_task_upscale")
+        self.radioButton_task_upscale.setFocusPolicy(Qt.NoFocus)
+
+        self.verticalLayout_3.addWidget(self.radioButton_task_upscale)
+
+        self.radioButton_task_sharpen = QRadioButton(self.frame)
+        self.radioButton_task_sharpen.setObjectName(u"radioButton_task_sharpen")
+        self.radioButton_task_sharpen.setFocusPolicy(Qt.NoFocus)
+
+        self.verticalLayout_3.addWidget(self.radioButton_task_sharpen)
+
+        self.radioButton_task_edition = QRadioButton(self.frame)
+        self.radioButton_task_edition.setObjectName(u"radioButton_task_edition")
+        self.radioButton_task_edition.setFocusPolicy(Qt.NoFocus)
+
+        self.verticalLayout_3.addWidget(self.radioButton_task_edition)
+
+
+        self.verticalLayout.addLayout(self.verticalLayout_3)
 
         self.tableWidget_shots = QTableWidget(self.frame)
         if (self.tableWidget_shots.columnCount() < 6):
@@ -171,8 +212,11 @@ class Ui_widget_selection(object):
         self.comboBox_part.setItemText(6, QCoreApplication.translate("widget_selection", u"reportage", None))
         self.comboBox_part.setItemText(7, QCoreApplication.translate("widget_selection", u"g_fin", None))
 
-        self.comboBox_step.setItemText(0, QCoreApplication.translate("widget_selection", u"deinterlace", None))
-
+        self.radioButton_task_deinterlace.setText(QCoreApplication.translate("widget_selection", u"deinterlace", None))
+        self.radioButton_task_pre_upscale.setText(QCoreApplication.translate("widget_selection", u"before upscale", None))
+        self.radioButton_task_upscale.setText(QCoreApplication.translate("widget_selection", u"upscale", None))
+        self.radioButton_task_sharpen.setText(QCoreApplication.translate("widget_selection", u"sharpen", None))
+        self.radioButton_task_edition.setText(QCoreApplication.translate("widget_selection", u"edition", None))
         ___qtablewidgetitem = self.tableWidget_shots.horizontalHeaderItem(0)
         ___qtablewidgetitem.setText(QCoreApplication.translate("widget_selection", u"shot", None));
         ___qtablewidgetitem1 = self.tableWidget_shots.horizontalHeaderItem(1)

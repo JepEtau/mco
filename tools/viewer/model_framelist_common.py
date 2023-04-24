@@ -9,10 +9,8 @@ import gc
 import re
 from copy import deepcopy
 
-from filters.utils import filter_id_to_step
 from utils.common import (
     K_GENERIQUES,
-    get_shot_from_frame_no_new,
 )
 
 
@@ -107,52 +105,6 @@ class Model_framelist_common(object):
                 return
             filepath = os.path.join(self.get_images_path(), frame_k_ep, k_part, filename)
 
-        # Get shot from frame_no.
-        # try:
-        #     db = self.model_database.database()
-        #     if db is not None:
-        #         if k_part in K_GENERIQUES:
-        #             # Use the ed:ep defined as reference
-        #             k_ed_src = db[k_part]['target']['video']['src']['k_ed']
-        #             k_ep_src = db[k_part]['target']['video']['src']['k_ep']
-        #         else:
-        #             k_ed_src = frame_k_ed
-        #             k_ep_src = frame_k_ep
-
-        #         if 'shots' not in db[k_ep_src][k_ed_src][k_part]['video'].keys():
-        #             # Parse and consolidate db if not alreday done
-        #             self.model_database.consolidate_database(frame_k_ep, k_part,
-        #                 do_parse_curves=False,
-        #                 do_parse_replace=False,
-        #                 do_parse_geometry=False)
-        #         if 'shots' not in db[k_ep_src][k_ed_src][k_part]['video'].keys():
-        #             # pprint(db[frame_k_ep][frame_k_ed][k_part])
-        #             print("Error: shots for %s:%s:%s were not consolidated" % (k_ep_src, k_ed_src, k_part))
-        #         # print("\tGet shot: %d in %s:%s:%s" % (frame_no, frame_k_ed, frame_k_ep, k_part))
-
-        #         # Apply offset
-        #         if 'offsets' in db[frame_k_ep][frame_k_ed][k_part]['video']:
-        #             # print("Apply offset:")
-        #             offsets = db[frame_k_ep][frame_k_ed][k_part]['video']['offsets']
-        #             # print("edition=%s, episode_no!%d, offsets=" % (edition, episode_no), offsets)
-        #             for offset in offsets:
-        #                 if offset['start'] <= frame_no <= offset['end']:
-        #                     frame_no = frame_no + offset['offset']
-        #                     break
-        #         # else:
-        #         #     print("No offset:")
-
-
-        #         shot = get_shot_from_frame_no_new(db, frame_no=frame_no, k_ed=frame_k_ed, k_ep=frame_k_ep, k_part=k_part)
-        #         shot_no = shot['no']
-        #         start = shot['start']
-        #     else:
-        #         print("%s.__append__: warning: database is empty" % (__name__))
-        #         shot_no = 0
-        #         start = 0
-        # except:
-        #     shot_no = 0
-        #     start = 0
         shot_no = 0
         start = 0
 
@@ -162,7 +114,6 @@ class Model_framelist_common(object):
             'k_ed': frame_k_ed,
             'no': frame_no,
             'filter_id': filter_id,
-            'step': filter_id_to_step(filter_id),
             'filepath': os.path.abspath(filepath),
             'shot_no': shot_no,
             'start': start

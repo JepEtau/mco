@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
-import numpy as np
 import subprocess
+import platform
+
 
 def get_process_cfg():
     if hasattr(subprocess, 'STARTUPINFO'):
@@ -19,9 +20,9 @@ def get_process_cfg():
     }
 
 
-def create_process(command, process_cfg, bufsize=10**8):
+def create_process(command, process_cfg, bufsize=10**7):
 
-    if sys.platform == 'win32':
+    if platform.system() == "Windows":
         process = subprocess.Popen(command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,

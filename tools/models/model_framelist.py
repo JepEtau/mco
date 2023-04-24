@@ -1,26 +1,22 @@
 # -*- coding: utf-8 -*-
 import sys
-from parsers.parser_curves import parse_curve_configurations
-from parsers.parser_episodes import parse_episode, parse_get_dependencies_for_episodes
-from parsers.parser_generiques import get_dependencies_for_generique
-
-from filters.utils import filter_id_to_step
 sys.path.append('../scripts')
-
 import os
 import os.path
 from pprint import pprint
 import gc
 import re
-from copy import deepcopy
+
+from parsers.parser_curves import parse_curve_configurations
+from parsers.parser_episodes import (
+    parse_episode,
+    parse_get_dependencies_for_episodes
+)
+from parsers.parser_generiques import get_dependencies_for_generique
 
 from models.model_database import Model_database
-from utils.common import (
-    K_GENERIQUES,
-    nested_dict_set,
-    pprint_video,
-)
-
+from utils.common import K_GENERIQUES
+from utils.nested_dict import nested_dict_set
 
 
 def get_info_from_filename(filename):
@@ -95,7 +91,6 @@ class Model_framelist():
             'k_ed': k_ed_frame,
             'k_ep': k_ep_frame if k_ep == '' else k_ep,
             'k_part': k_part,
-            'k_step': filter_id_to_step(filter_id),
             'frame_no': frame_no,
             'filter_id': filter_id,
             # shot no. will be found after consolidation
@@ -225,17 +220,6 @@ class Model_framelist():
 
             # Apply offset to the frame no if needed
             frame_no = frame['frame_no']
-            if 'offsets' in db_video_src.keys():
-                if frame['k_ed'] != db['editions']['k_ed_ref']:
-                    # print("apply offset for %s" % (frame['filename']))
-                    # Apply offset
-                    offsets = db_video_src['offsets']
-                    for offset in offsets:
-                        if offset['start'] <= frame_no <= offset['end']:
-                            frame_no += offset['offset']
-                            break
-                    # print("\tnew frame_no: %d" % (frame_no))
-
 
             # Find shot no in k_ed_src:k_ep_src
             try:
@@ -350,12 +334,7 @@ class Model_framelist():
 
     def get_available_filter_ids(self):
         return self.available_filter_ids
-        # filter_ids = list()
-        # available_filter_ids = self.filter_ids()
-        # for f_id in available_filter_ids:
-        #     if filter_id_to_step(f_id) == self.filter_by['step']:
-        #         filter_ids.append(f_id)
-        # return filter_ids
+
 
 
 

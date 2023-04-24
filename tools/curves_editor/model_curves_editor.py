@@ -21,8 +21,8 @@ from PySide6.QtWidgets import QApplication
 
 from common.preferences import Preferences
 from models.model_database import Model_database
-from models.model_common import (
-    Model_common,
+from common.controller_common import (
+    Controller_common,
 )
 from models.model_framelist import Model_framelist
 from models.model_curves import Model_curves
@@ -37,7 +37,7 @@ from filters.filters import filter_rgb
 
 
 
-class Model_curves_editor(Model_common):
+class Model_curves_editor(Controller_common):
     signal_folders_parsed = Signal([dict])
     signal_current_shot_modified = Signal(dict)
     signal_reload_frame = Signal()
@@ -128,7 +128,7 @@ class Model_curves_editor(Model_common):
         self.selection_changed({
                 'k_ed': p['selection']['edition'],
                 'k_ep': k_ep,
-                'k_part': p['selection']['part'],
+                'k_part': p['selection']['k_part'],
                 'k_step': p['selection']['step'],
                 'filter_ids': list(),
                 'shots': list(),
@@ -433,10 +433,10 @@ class Model_curves_editor(Model_common):
 
 
     def event_discard_rgb_curves_modifications(self, k_curves:str):
-        self.model_curves.discard_rgb_curves_modifications(k_curves)
         k_ed = self.current_frame['k_ed']
         k_ep = self.current_frame['k_ep']
         k_part = self.current_frame['k_part']
+        self.model_curves.discard_rgb_curves_modifications(k_curves, k_ed=k_ed, k_ep=k_ep)
 
         # Get the initial curves
         curves = self.model_curves.get_curves(
@@ -527,7 +527,7 @@ class Model_curves_editor(Model_common):
             return None
 
 
-        frame = self.framelist.get_frame(image_name)
+        frame = self.framelist.get_frame_at_index(image_name)
 
         # Shot has changed: update UI with parameters for this shot (curves, crop, resize)
         if self.current_frame is None or frame['shot_no'] != self.current_frame['shot_no']:
@@ -579,7 +579,7 @@ class Model_curves_editor(Model_common):
         # Generate the image for this frame
         options = self.preview_options
         if options is not None:
-            index, img = generate_single_image(self.current_frame, preview_options=options)
+            index, img = generate_image(self.current_frame, preview_options=options)
             self.set_current_frame_cache(img=img)
 
         return self.current_frame
@@ -590,9 +590,9 @@ class Model_curves_editor(Model_common):
 
 
 
-def generate_single_image(frame:dict, preview_options:dict):
+def generate_image(frame:dict, preview_options:dict):
     # log.info("generate single image")
-    # print("\ngenerate_single_image:")
+    # print("\ngenerate_image:")
     # pprint(preview_options)
     now = time.time()
     img = None
@@ -624,7 +624,7 @@ def generate_single_image(frame:dict, preview_options:dict):
         img_resized = img_original
 
     # Apply rgb curves
-    if preview_options['curves']['is_enabled'] and frame['curves'] is not None:
+    if preview_options['curves']['enabled'] and frame['curves'] is not None:
         try:
             img_rgb = filter_rgb(frame, img_resized)
         except:

@@ -3,6 +3,7 @@ import logging
 import logging.config
 import os.path
 import re
+import platform
 from subprocess import call
 import sys
 
@@ -36,8 +37,8 @@ class CustomHandler(logging.StreamHandler):
         self._uiDialog = Qdialog_NoClose(parent=None, modal=False)
         self._ui = Ui_logger()
         self._ui.setupUi(self._uiDialog)
-        if sys.platform == 'win32':
-            self._uiDialog.move(1700, 100)
+        if platform.system() == "Windows":
+            self._uiDialog.move(2600, 1250)
         else:
             self._uiDialog.move(2500, 100)
 
@@ -98,7 +99,7 @@ class CustomHandler(logging.StreamHandler):
         _file = self.__files[row][0]
         _lineNo = self.__files[row][1]
         _exe = "code"
-        if sys.platform == 'win32':
+        if platform.system() == "Windows":
             command_line = "%s -g %s:%s" % (_exe, _file, _lineNo)
             os.system(command_line)
         elif sys.platform == 'linux':

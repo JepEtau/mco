@@ -21,7 +21,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from common.sylesheet import set_stylesheet, update_selected_widget_stylesheet
+from common.stylesheet import set_stylesheet, update_selected_widget_stylesheet
 
 class Widget_common(QWidget):
     signal_save = Signal()
@@ -47,7 +47,7 @@ class Widget_common(QWidget):
         self.pushButton_close.setFocusPolicy(Qt.NoFocus)
 
         # Connect signals and filter events
-        self.pushButton_set_preview.toggled[bool].connect(self.event_preview_changed)
+        self.pushButton_set_preview.toggled[bool].connect(self.event_set_preview_toggled)
         self.pushButton_save.clicked.connect(self.event_save_modifications)
         self.pushButton_discard.clicked.connect(self.event_discard_modifications)
         self.pushButton_close.clicked.connect(self.event_close)
@@ -93,6 +93,7 @@ class Widget_common(QWidget):
 
     def set_selected(self, is_selected):
         update_selected_widget_stylesheet(self.frame, is_selected=is_selected)
+        self.setFocus()
 
 
     def was_active(self):
@@ -111,14 +112,14 @@ class Widget_common(QWidget):
         raise Exception("Error: override this function")
 
 
-    def event_preview_changed(self, is_checked:bool=False):
-        # log.info("widget preview changed to %s" % ('true' if is_checked else 'false'))
+    def event_set_preview_toggled(self, is_checked:bool=False):
+        log.info(f"widget preview changed to {is_checked}")
         self.signal_preview_options_changed.emit()
 
 
     def event_is_saved(self, editor):
         if editor == self.objectName() or editor == 'all':
-            log.info("values saved")
+            log.info(f"values saved: {editor}")
             self.pushButton_save.setEnabled(False)
             self.pushButton_discard.setEnabled(False)
 
@@ -142,7 +143,8 @@ class Widget_common(QWidget):
         if self.event_key_pressed(event):
             event.accept()
             return True
-        return self.ui.keyPressEvent(event)
+        # return self.ui.keyPressEvent(event)
+        return False
 
 
     def event_key_pressed(self, event):
@@ -153,11 +155,12 @@ class Widget_common(QWidget):
         if self.event_key_released(event):
             event.accept()
             return True
-        return self.ui.keyReleaseEvent(event)
-
-
-    def event_key_released(self, event):
+        # return self.ui.keyReleaseEvent(event)
         return False
+
+
+    # def event_key_released(self, event):
+    #     return False
 
 
     def changeEvent(self, event: QEvent) -> None:

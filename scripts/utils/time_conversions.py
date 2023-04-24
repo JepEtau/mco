@@ -13,6 +13,12 @@ MS = "^([0-9]{1,2}):([0-9]{1,2})$"
 TIMESTAMP_S = "^(\d*).(\d*)$"
 
 
+def convert_s_to_m_s_ms(elapsed_time_s):
+    minutes = int(elapsed_time_s/60)
+    seconds = int(elapsed_time_s - (minutes * 60))
+    milliseconds = 1000 * (elapsed_time_s - (60 * minutes + seconds))
+    return minutes, seconds, milliseconds
+
 def frames_to_ms(count:int) -> int:
     return int((float(count) * 1000) / FPS)
 
@@ -82,8 +88,6 @@ def timestamp_to_sexagesimal(timestamp:float):
     minutes = int(remaining_s / 60)
     remaining_s = remaining_s - (minutes * 60)
     return "%02d:%02d:%02d.%03d" % (hours, minutes, remaining_s, ms)
-
-
 
 
 

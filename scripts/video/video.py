@@ -2,6 +2,12 @@
 import sys
 import os
 import time
+# from datetime import (
+#     date,
+#     datetime,
+#     time,
+#     timedelta
+# )
 
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
@@ -14,10 +20,10 @@ from utils.common import (
     K_ALL_PARTS_ORDERED,
 )
 from utils.hash import calculate_hash
-from video.consolidate_shot import consolidate_shot
+from shot.consolidate_shot import consolidate_shot
 from filters.ffmpeg_utils import execute_ffmpeg_command
 from utils.path import create_folder_for_video
-from utils.time_conversions import current_datetime_str
+from utils.time_conversions import convert_s_to_m_s_ms, current_datetime_str
 from utils.pretty_print import *
 from video.concatenation import (
     combine_images_into_video,
@@ -26,7 +32,7 @@ from video.concatenation import (
     create_concatenation_file_silence,
     create_concatenation_file_video,
 )
-from video.process_shot import process_shot
+from shot.process_shot import process_shot
 
 
 def generate_video(db, k_ed:str, k_ep:str,
@@ -34,7 +40,6 @@ def generate_video(db, k_ed:str, k_ep:str,
                     force:bool=False, simulation:bool=False,
                     shot_min:int=0, shot_max:int=999999,
                     do_regenerate=False):
-    start_time = time.time()
 
     # Create the video directory
     create_folder_for_video(db, k_ep)
@@ -105,7 +110,7 @@ def generate_video(db, k_ed:str, k_ep:str,
                 })
 
 
-            print_lightcyan("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
+            print_lightgreen("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
                 "{:3d}".format(shot['no']),
                 "{:5d}".format(shot['start']),
                 shot['dst']['count'],
@@ -116,7 +121,7 @@ def generate_video(db, k_ed:str, k_ep:str,
                 shot['count']),
                 flush=True)
 
-            # Add list of task for this shot
+            # Set the last task
             shot['last_task'] = last_task
 
             # Generate frames for this shot
@@ -126,7 +131,6 @@ def generate_video(db, k_ed:str, k_ep:str,
                     cpu_count=cpu_count)
             else:
                 consolidate_shot(db, shot=shot)
-                pprint(shot)
 
             # Calculate hash for the video
             shot_hash = shot['last_step']['hash']
@@ -144,6 +148,7 @@ def generate_video(db, k_ed:str, k_ep:str,
             # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
             # print("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n")
             # Create concatenation file
+            do_generate_shot_video = False
             tmp = create_concatenation_file(db,
                 k_ep=k_ep_src_main, k_part=k_p, shot=shot,
                 previous_concatenation_filepath=previous_concatenation_filepath)
@@ -151,14 +156,34 @@ def generate_video(db, k_ed:str, k_ep:str,
                 # Add the filepath to the the concatenation video file
                 video_files[k_p]['shotlist'].append({
                     'path': tmp,
-                    'hash': shot_hash
+                    'hash': shot_hash,
+                    'last_task': shot['last_task'] if shot['last_task'] != 'final' else ''
                 })
+                do_generate_shot_video = True
             previous_concatenation_filepath = tmp
 
-            if k_p == 'episode':
-                minutes, seconds = divmod(time.time() - start_shot_time, 60)
-                if minutes != 0 and seconds != 0:
-                    print("\t\t\t%d:%02d" % (minutes, seconds), flush=True)
+
+            if do_generate_shot_video and shot['last_task'] != 'deinterlace':
+                # print_purple("\tcombine images to video (shot): k_p=%s, shot no. %d" % (k_p, shot['no']))
+                combine_images_into_video(db['common'],
+                    k_p,
+                    video_shot= video_files[k_p]['shotlist'][-1],
+                    force=force,
+                    simulation=simulation)
+
+
+            elapsed_time = time.time() - start_shot_time
+            minutes, seconds, milliseconds = convert_s_to_m_s_ms(elapsed_time)
+            print_purple("Shot no. %d generated in %02d:%02d.%d (%.02fs/f)" % (
+                shot['no'],
+                minutes, seconds, int(1 + milliseconds/100),
+                elapsed_time/shot['count']))
+            # print_purple(str(elapsed_time))
+            # minutes, seconds = divmod(elapsed_time, 60.0)
+            # print_purple("\n\tshot generated in %d:%02d" % (minutes, seconds), flush=True)
+            # if minutes != 0 and seconds != 0:
+            #     print_purple("\t\t\t\nshot generated in %d:%02d" % (minutes, seconds), flush=True)
+
 
         hashes_str = hashes_str[:-1]
         db_video['hash'] = calculate_hash(hashes_str)
@@ -167,38 +192,39 @@ def generate_video(db, k_ed:str, k_ep:str,
     # minutes, seconds = divmod(time.time() - start_shot_time,60)
     # print("=> processed shots in %d:%02d" % (minutes, seconds), flush=True)
 
-    pprint(video_files)
-    # Combine images to mkv
-    for k_p, video_shots in video_files.items():
-        if k_part != '' and k_p != k_part or simulation:
-            # Do not combine when a single part has to be processed
-            # print_yellow("Do not combine when a single part has to be processed: k_p=%s" % (k_p))
-            continue
+    # pprint(video_files)
+    if False:
+        # TODO already done shot per shot, remove this after verification
+        # Combine images to mkv
+        for k_p, video_shots in video_files.items():
+            if k_part != '' and k_p != k_part or simulation:
+                # Do not combine when a single part has to be processed
+                # print_yellow("Do not combine when a single part has to be processed: k_p=%s" % (k_p))
+                continue
 
-        print_purple("\tcombine images to video (shot): k_p=%s" % (k_p))
+            print_purple("\tcombine images to video (shot): k_p=%s" % (k_p))
 
-        if False:
-            # Multi processing
-            cpu_count = int(multiprocessing.cpu_count() / 2)
-            with ThreadPoolExecutor(max_workers=cpu_count) as executor:
-                work_result = {executor.submit(combine_images_into_video,
-                                db['common'], k_p, work, force=force, simulation=simulation): None
-                                for work in video_shots['shotlist']}
-                for future in concurrent.futures.as_completed(work_result):
-                    pass
-        else:
-            for video_shot in video_shots['shotlist']:
-                combine_images_into_video(db['common'], k_p, video_shot, force=force, simulation=simulation)
+            if False:
+                # Multi processing
+                cpu_count = int(multiprocessing.cpu_count() / 2)
+                with ThreadPoolExecutor(max_workers=cpu_count) as executor:
+                    work_result = {executor.submit(combine_images_into_video,
+                                    db['common'], k_p, work, force=force, simulation=simulation): None
+                                    for work in video_shots['shotlist']}
+                    for future in concurrent.futures.as_completed(work_result):
+                        pass
+            else:
+                for video_shot in video_shots['shotlist']:
+                    combine_images_into_video(db['common'], k_p, video_shot, force=force, simulation=simulation)
 
 
     # For each part, concatenate shots in a single clip
     for k_p, v in video_files.items():
-        if len(v['shotlist']) > 1 and not simulation:
-            print_lightgreen("concatenate_shots, k_part=%s" % (k_p))
-            concatenate_shots(db, k_ep=k_ep, k_part=k_p, video_files=v, force=force)
+        if len(v['shotlist']) > 1:
+            concatenate_shots(db, k_ep=k_ep, k_part=k_p, video_files=v, force=force, simulation=simulation)
 
     # Create concatenation files and video files for silences
-    if k_part == '' and not simulation:
+    if k_part == '':
         # Only if a full generation is asked
         video_files_tmp = create_concatenation_file_silence(db, k_ep=k_ep)
         for k_p, filepaths in video_files_tmp.items():
@@ -214,7 +240,7 @@ def generate_video(db, k_ed:str, k_ep:str,
 
 
     # Concatenate video clips from all parts
-    if k_part == '' and not simulation:
+    if k_part == '':
         # Generate concatenation files which contains all video files
         concatenation_filepath = create_concatenation_file_video(db,
             k_ep=k_ep, k_part=k_part, video_files=video_files)
@@ -224,18 +250,21 @@ def generate_video(db, k_ed:str, k_ep:str,
             "video", "%s_video_%s.mkv" % (k_ep, db_video['hash']))
         if not os.path.exists(episode_video_filepath) or force or do_regenerate:
             print("%s concatenate video clips to %s" % (current_datetime_str(), episode_video_filepath))
-            command_ffmpeg = [db['common']['settings']['ffmpeg_exe']]
-            command_ffmpeg.extend(db['common']['settings']['verbose'].split(' '))
-            command_ffmpeg.extend([
+            ffmpeg_command = [db['common']['settings']['ffmpeg_exe']]
+            ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
+            ffmpeg_command.extend([
                 "-f", "concat",
                 "-safe", "0",
                 "-i", concatenation_filepath,
                 "-c", "copy",
                 "-y", episode_video_filepath
             ])
-            std = execute_ffmpeg_command(db, command=command_ffmpeg, filename=episode_video_filepath)
-            if len(std) > 0:
-                print(std)
+            if simulation:
+                print_lightgrey(' '.join(ffmpeg_command))
+            else:
+                std = execute_ffmpeg_command(db, command=ffmpeg_command, filename=episode_video_filepath)
+                if len(std) > 0:
+                    print(std)
 
 
 

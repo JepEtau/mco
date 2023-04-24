@@ -61,7 +61,7 @@ class Model_viewer(QObject):
         self.framelist.set_new_filter_by(p['hide'])
         self.directory_changed({
             'k_ep': k_ep,
-            'k_part': p['browser']['part']
+            'k_part': p['browser']['k_part']
         })
 
 
@@ -179,6 +179,6 @@ class Model_viewer(QObject):
 
     def select_frame(self, image_name=''):
         # log.info("select frame: %s" % (image_name))
-        frame = self.framelist.get_frame(image_name)
+        frame = self.framelist.get_frame_at_index(image_name)
         self.signal_display_frame.emit(frame)
 

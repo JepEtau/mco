@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import cv2
+import logging
+from pathlib import Path
 import numpy as np
 import os
 import sys
@@ -15,8 +17,18 @@ from upscale import (
 )
 from utils.architecture.RRDB import RRDBNet
 import utils.dataops as ops
+from utils.architecture.RRDB import RRDBNet as ESRGAN
+from utils.architecture.SPSR import SPSRNet as SPSR
+from utils.architecture.SRVGG import SRVGGNetCompact as RealESRGANv2
+
 
 class Esrgan_upscale():
+    model_str: str = None
+    input: Path = None
+    output: Path = None
+    reverse: bool = None
+    skip_existing: bool = None
+    delete_input: bool = None
     seamless: SeamlessOptions = None
     cpu: bool = None
     fp16: bool = None
@@ -27,6 +39,7 @@ class Esrgan_upscale():
     alpha_threshold: float = None
     alpha_boundary_offset: float = None
     alpha_mode: AlphaOptions = None
+    log: logging.Logger = None
 
     device: torch.device = None
     in_nc: int = None
@@ -38,7 +51,7 @@ class Esrgan_upscale():
     last_nb: int = None
     last_scale: int = None
     last_kind: str = None
-    model: Union[torch.nn.Module, RRDBNet] = None
+    model: Union[torch.nn.Module, ESRGAN, RealESRGANv2, SPSR] = None
 
     def __init__(
         self,
@@ -52,7 +65,14 @@ class Esrgan_upscale():
         alpha_threshold: float = 0.5,
         alpha_boundary_offset: float = 0.2,
         alpha_mode: Optional[AlphaOptions] = None,
+        log: logging.Logger = logging.getLogger(),
     ) -> None:
+        self.model_str = ""
+        self.input = ""
+        self.output = ""
+        self.reverse = False
+        self.skip_existing = True
+        self.delete_input = False
         self.seamless = seamless
         self.cpu = cpu
         self.fp16 = fp16
@@ -63,32 +83,18 @@ class Esrgan_upscale():
         self.alpha_threshold = alpha_threshold
         self.alpha_boundary_offset = alpha_boundary_offset
         self.alpha_mode = alpha_mode
+        self.log = log
         if self.fp16:
             torch.set_default_tensor_type(
                 torch.HalfTensor if self.cpu else torch.cuda.HalfTensor
             )
 
+    # This code is a somewhat modified version of  joeyballentine's fork
+    #  of BlueAmulet's fork which is a fork of ESRGAN by Xinntao
+    def run(self, img: np.ndarray, scale:int) -> np.ndarray:
 
-    def load_model(self, model_path: str):
-        print("\t\t\tload_model: %s" % (os.path.abspath(model_path)))
-        state_dict = torch.load(os.path.abspath(model_path))
+        split_depths = {}
 
-        # Regular ESRGAN, "new-arch" ESRGAN, Real-ESRGAN v1
-        self.model = RRDBNet(state_dict)
-        self.in_nc = self.model.in_nc
-        self.out_nc = self.model.out_nc
-        self.nf = self.model.num_filters
-        self.nb = self.model.num_blocks
-        self.scale = self.model.scale
-
-        del state_dict
-        self.model.eval()
-        for k, v in self.model.named_parameters():
-            v.requires_grad = False
-        self.model = self.model.to(self.device)
-
-
-    def upscale(self, img: np.ndarray, scale:int) -> np.ndarray:
         # Seamless modes
         if self.seamless == SeamlessOptions.TILE:
             img = cv2.copyMakeBorder(img, 16, 16, 16, 16, cv2.BORDER_WRAP)
@@ -104,22 +110,120 @@ class Esrgan_upscale():
             )
         final_scale: int = 1
 
+        i = 0
 
-        rlt, depth = ops.auto_split_upscale(
-            lr_img=img,
-            upscale_function=self.__upscale,
-            scale=scale
-        )
+        if self.cache_max_split_depth and len(split_depths.keys()) > 0:
+            rlt, depth = ops.auto_split_upscale(
+                img,
+                self.upscale,
+                self.last_scale,
+                max_depth=split_depths[i],
+            )
+        else:
+            rlt, depth = ops.auto_split_upscale(
+                img, self.upscale, self.last_scale
+            )
+            split_depths[i] = depth
+
+        final_scale *= self.last_scale
+
         img = rlt.astype("uint8")
+
         if self.seamless:
             img = self.crop_seamless(img, final_scale)
 
         return img
 
 
-    # This code is a somewhat modified version of  joeyballentine's fork
-    #  of BlueAmulet's fork which is a fork of ESRGAN by Xinntao
-    def __upscale(self, img: np.ndarray) -> np.ndarray:
+
+    def process(self, img: np.ndarray):
+        """
+        Does the processing part of ESRGAN. This method only exists because the same block of code needs to be ran twice for images with transparency.
+
+                Parameters:
+                        img (array): The image to process
+
+                Returns:
+                        rlt (array): The processed image
+        """
+        if img.shape[2] == 3:
+            img = img[:, :, [2, 1, 0]]
+        elif img.shape[2] == 4:
+            img = img[:, :, [2, 1, 0, 3]]
+        img = torch.from_numpy(np.transpose(img, (2, 0, 1))).float()
+        if self.fp16:
+            img = img.half()
+        img_LR = img.unsqueeze(0)
+        img_LR = img_LR.to(self.device)
+
+        output = self.model(img_LR).data.squeeze(0).float().cpu().clamp_(0, 1).numpy()
+        if output.shape[0] == 3:
+            output = output[[2, 1, 0], :, :]
+        elif output.shape[0] == 4:
+            output = output[[2, 1, 0, 3], :, :]
+        output = np.transpose(output, (1, 2, 0))
+        return output
+
+
+    def load_model(self, model_path: str):
+        print("\t\t\tload_model: %s" % (os.path.abspath(model_path)))
+        if model_path != self.last_model:
+            # interpolating OTF, example: 4xBox:25&4xPSNR:75
+            if (":" in model_path or "@" in model_path) and (
+                "&" in model_path or "|" in model_path
+            ):
+                interps = model_path.split("&")[:2]
+                model_1 = torch.load(interps[0].split("@")[0])
+                model_2 = torch.load(interps[1].split("@")[0])
+                state_dict = OrderedDict()
+                for k, v_1 in model_1.items():
+                    v_2 = model_2[k]
+                    state_dict[k] = (int(interps[0].split("@")[1]) / 100) * v_1 + (
+                        int(interps[1].split("@")[1]) / 100
+                    ) * v_2
+            else:
+                state_dict = torch.load(model_path)
+
+            # SRVGGNet Real-ESRGAN (v2)
+            if (
+                "params" in state_dict.keys()
+                and "body.0.weight" in state_dict["params"].keys()
+            ):
+                self.model = RealESRGANv2(state_dict)
+                self.last_in_nc = self.model.num_in_ch
+                self.last_out_nc = self.model.num_out_ch
+                self.last_nf = self.model.num_feat
+                self.last_nb = self.model.num_conv
+                self.last_scale = self.model.scale
+                self.last_model = model_path
+            # SPSR (ESRGAN with lots of extra layers)
+            elif "f_HR_conv1.0.weight" in state_dict:
+                self.model = SPSR(state_dict)
+                self.last_in_nc = self.model.in_nc
+                self.last_out_nc = self.model.out_nc
+                self.last_nf = self.model.num_filters
+                self.last_nb = self.model.num_blocks
+                self.last_scale = self.model.scale
+                self.last_model = model_path
+            # Regular ESRGAN, "new-arch" ESRGAN, Real-ESRGAN v1
+            else:
+                self.model = ESRGAN(state_dict)
+                self.last_in_nc = self.model.in_nc
+                self.last_out_nc = self.model.out_nc
+                self.last_nf = self.model.num_filters
+                self.last_nb = self.model.num_blocks
+                self.last_scale = self.model.scale
+                self.last_model = model_path
+
+            del state_dict
+        self.model.eval()
+        for k, v in self.model.named_parameters():
+            v.requires_grad = False
+        self.model = self.model.to(self.device)
+        self.last_model = model_path
+
+    # This code is a somewhat modified version of BlueAmulet's fork of ESRGAN by Xinntao
+    def upscale(self, img: np.ndarray) -> np.ndarray:
         """
         Upscales the image passed in with the specified model
 
@@ -136,8 +240,8 @@ class Esrgan_upscale():
         if (
             img.ndim == 3
             and img.shape[2] == 4
-            and self.in_nc == 3
-            and self.out_nc == 3
+            and self.last_in_nc == 3
+            and self.last_out_nc == 3
         ):
 
             # Fill alpha with white and with black, remove the difference
@@ -209,49 +313,18 @@ class Esrgan_upscale():
         else:
             if img.ndim == 2:
                 img = np.tile(
-                    np.expand_dims(img, axis=2), (1, 1, min(self.in_nc, 3))
+                    np.expand_dims(img, axis=2), (1, 1, min(self.last_in_nc, 3))
                 )
-            if img.shape[2] > self.in_nc:  # remove extra channels
-                img = img[:, :, : self.in_nc]
+            if img.shape[2] > self.last_in_nc:  # remove extra channels
+                self.log.warning("Truncating image channels")
+                img = img[:, :, : self.last_in_nc]
             # pad with solid alpha channel
-            elif img.shape[2] == 3 and self.in_nc == 4:
+            elif img.shape[2] == 3 and self.last_in_nc == 4:
                 img = np.dstack((img, np.full(img.shape[:-1], 1.0)))
             output = self.process(img)
 
         output = (output * 255.0).round()
 
-        return output
-
-
-
-    # This code is a somewhat modified version of  joeyballentine's fork
-    #  of BlueAmulet's fork which is a fork of ESRGAN by Xinntao
-    def process(self, img: np.ndarray):
-        """
-        Does the processing part of ESRGAN. This method only exists because the same block of code needs to be ran twice for images with transparency.
-
-                Parameters:
-                        img (array): The image to process
-
-                Returns:
-                        rlt (array): The processed image
-        """
-        if img.shape[2] == 3:
-            img = img[:, :, [2, 1, 0]]
-        elif img.shape[2] == 4:
-            img = img[:, :, [2, 1, 0, 3]]
-        img = torch.from_numpy(np.transpose(img, (2, 0, 1))).float()
-        if self.fp16:
-            img = img.half()
-        img_LR = img.unsqueeze(0)
-        img_LR = img_LR.to(self.device)
-
-        output = self.model(img_LR).data.squeeze(0).float().cpu().clamp_(0, 1).numpy()
-        if output.shape[0] == 3:
-            output = output[[2, 1, 0], :, :]
-        elif output.shape[0] == 4:
-            output = output[[2, 1, 0, 3], :, :]
-        output = np.transpose(output, (1, 2, 0))
         return output
 
 

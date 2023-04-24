@@ -14,23 +14,28 @@ import collections
 from pprint import pprint
 from logger import log
 
-from utils.common import (
+from utils.nested_dict import (
+    nested_dict_clean,
     nested_dict_set,
-    nested_dict_merge,
 )
+from utils.pretty_print import *
 from parsers.parser_geometry import (
-    get_initial_part_geometry,
+    get_initial_target_geometry,
+    get_initial_default_shot_geometry,
     get_initial_shot_geometry,
 )
-
+from filters.utils import FINAL_FRAME_WIDTH
 
 class Model_geometry():
 
     def __init__(self):
         # Use a single database to store the modified values
         # Thus, no history is possible with this implementation
-        self.db_part_geometry_initial = dict()
-        self.db_part_geometry = dict()
+        self.db_target_geometry_initial = dict()
+        self.db_target_geometry = dict()
+
+        self.db_default_shot_geometry_initial = dict()
+        self.db_default_shot_geometry = dict()
 
         self.db_shot_geometry_initial = dict()
         self.db_shot_geometry = dict()
@@ -39,57 +44,118 @@ class Model_geometry():
 
 
     def initialize_db_for_geometry(self, db, k_ep, k_part):
-        # print("Model_geometry:initialize_db_for_geometry: get initial geometry: %s:%s" % (k_ep, k_part))
         # This function is used by the video editor
         # which uses the consolidated shots
-        self.db_part_geometry_initial = get_initial_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
-        self.db_part_geometry = dict()
+
+        # Target geometry
         if k_part in ['g_asuivre', 'g_reportage']:
-            db_tmp = get_initial_part_geometry(self.global_database, k_ep=k_ep, k_part=k_part[2:])
-            nested_dict_merge(self.db_part_geometry_initial, db_tmp)
+            self.db_target_geometry_initial = get_initial_target_geometry(self.global_database,
+                k_ep=k_ep, k_part=k_part[2:])
         else:
-            self.db_shot_geometry_initial = get_initial_shot_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
+            self.db_target_geometry_initial = get_initial_target_geometry(self.global_database,
+                k_ep=k_ep, k_part=k_part)
+        self.db_target_geometry = dict()
+
+        # Default shot geometry
+        self.db_default_shot_geometry_initial = get_initial_default_shot_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
+        self.db_default_shot_geometry = dict()
+
+        # Shot geometry
+        self.db_shot_geometry_initial = get_initial_shot_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
         self.db_shot_geometry = dict()
 
+        if False:
+            self.is_geometry_db_modified = False
+            print_cyan("db_target_geometry_initial:")
+            pprint(self.db_target_geometry_initial)
+            print_cyan("db_default_shot_geometry_initial:")
+            pprint(self.db_default_shot_geometry_initial)
+            print_cyan("db_shot_geometry_initial:")
+            pprint(self.db_shot_geometry_initial)
+            sys.exit()
 
 
-    # Final geometry for each part
-    def get_part_geometry(self, k_ed, k_ep, k_part):
-        # pprint(self.db_part_geometry_initial)
-        try:
-            return self.db_part_geometry[k_ed][k_ep][k_part]
+
+    # Target
+    #---------------------------------------------------------------------------
+    def get_target_geometry(self, k_ep, k_part):
+        k_ep_target = 'ep00' if k_part in ['g_debut', 'g_fin'] else k_ep
+        try: return self.db_target_geometry[k_ep_target][k_part]
         except:
-            try:
-                return self.db_part_geometry_initial[k_ed][k_ep][k_part]
-            except:
-                pass
-        # print("get_part_geometry: %s:%s:%s" % (k_ed, k_ep, k_part))
-        # print("-> not found")
-        return {'crop': [0, 0, 0, 0]}
+            try: return self.db_target_geometry_initial[k_ep_target][k_part]
+            except: pass
+        # print_orange("target geometry not found in db")
+        return {'w': FINAL_FRAME_WIDTH}
 
 
-    def set_part_geometry(self, k_ed, k_ep, k_part, geometry):
-        # print("set_part_geometry: %s:%s:%s" % (k_ed, k_ep, k_part))
-        nested_dict_set(self.db_part_geometry, geometry, k_ed, k_ep, k_part)
+    def set_target_geometry(self, k_ep, k_part, geometry):
+        k_ep_target = 'ep00' if k_part in ['g_debut', 'g_fin'] else k_ep
+        nested_dict_set(self.db_target_geometry, geometry, k_ep_target, k_part)
         self.is_geometry_db_modified = True
 
 
-    def discard_part_geometry_modifications(self, k_ed, k_ep, k_part):
-        log.info("discard_part_geometry_modifications")
+    def discard_target_geometry_modifications(self, k_ep, k_part):
+        k_ep_target = 'ep00' if k_part in ['g_debut', 'g_fin'] else k_ep
+        log.info("discard_target_geometry_modifications")
         try:
-            del self.db_part_geometry[k_ed][k_ep][k_part]
+            del self.db_target_geometry[k_ep_target][k_part]
         except:
             pass
-
-        if len(self.db_part_geometry[k_ed][k_ep].keys()) == 0:
-            del self.db_part_geometry[k_ed][k_ep]
-        if len(self.db_part_geometry[k_ed].keys()) == 0:
-            del self.db_part_geometry[k_ed]
-        self.is_geometry_db_modified = False
+        nested_dict_clean(self.db_target_geometry)
+        if len(self.db_target_geometry) == 0:
+            self.is_geometry_db_modified = False
 
 
 
-    def get_shot_geometry(self, shot):
+    # Default shot
+    #---------------------------------------------------------------------------
+    def get_default_shot_geometry(self, shot):
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        try:
+            return self.db_default_shot_geometry[k_ed][k_ep][k_part]
+        except:
+            try: return self.db_default_shot_geometry_initial[k_ed][k_ep][k_part]
+            except: pass
+        # print_orange("default shot geometry not found in db")
+        return None
+
+    def set_default_shot_geometry(self, shot, geometry):
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        nested_dict_set(self.db_default_shot_geometry, geometry, k_ed, k_ep, k_part)
+        self.is_geometry_db_modified = True
+
+
+    def remove_default_shot_geometry(self, shot):
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        nested_dict_set(self.db_default_shot_geometry, None, k_ed, k_ep, k_part)
+        self.is_geometry_db_modified = True
+
+
+    def discard_default_shot_geometry_modifications(self, shot):
+        log.info("discard_shot_geometry_modifications")
+        k_ed = shot['k_ed']
+        k_ep = shot['k_ep']
+        k_part = shot['k_part']
+        try: del self.db_default_shot_geometry[k_ed][k_ep][k_part]
+        except: pass
+
+        nested_dict_clean(self.db_default_shot_geometry)
+        if len(self.db_default_shot_geometry) == 0:
+            self.is_geometry_db_modified = False
+
+
+
+
+
+    # Shot (custom)
+    #---------------------------------------------------------------------------
+    def get_shot_geometry(self, shot:dict):
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
@@ -101,9 +167,10 @@ class Model_geometry():
                 return self.db_shot_geometry_initial[k_ed][k_ep][k_part][shot_start]
             except:
                 pass
+        # print_orange("shot geometry not found in db")
         return None
 
-    def set_shot_geometry(self, shot, geometry):
+    def set_shot_geometry(self, shot:dict, geometry:dict):
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
@@ -112,97 +179,40 @@ class Model_geometry():
         self.is_geometry_db_modified = True
 
 
-    def remove_shot_geometry(self, shot):
+    def remove_shot_geometry(self, shot:dict):
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
         shot_start = shot['start']
-        try:
-            self.db_shot_geometry[k_ed][k_ep][k_part][shot_start] = None
-        except:
-            nested_dict_set(self.db_shot_geometry, None, k_ed, k_ep, k_part, shot_start)
+        nested_dict_set(self.db_shot_geometry, None, k_ed, k_ep, k_part, shot_start)
         self.is_geometry_db_modified = True
 
 
-
-    def discard_shot_geometry_modifications(self, shot):
+    def discard_shot_geometry_modifications(self, shot:dict):
         log.info("discard_shot_geometry_modifications")
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
         k_part = shot['k_part']
         shot_start = shot['start']
-        try:
-            del self.db_shot_geometry[k_ed][k_ep][k_part][shot_start]
-        except:
-            pass
+        try: del self.db_shot_geometry[k_ed][k_ep][k_part][shot_start]
+        except: pass
 
-        if len(self.db_shot_geometry[k_ed][k_ep][k_part].keys()) == 0:
-            del self.db_shot_geometry[k_ed][k_ep][k_part]
-        if len(self.db_shot_geometry[k_ed][k_ep].keys()) == 0:
-            del self.db_shot_geometry[k_ed][k_ep]
-        if len(self.db_shot_geometry[k_ed].keys()) == 0:
-            del self.db_shot_geometry[k_ed]
+        nested_dict_clean(self.db_shot_geometry)
         self.is_geometry_db_modified = False
 
 
 
-    # def get_shot_geometry(self, k_ed, k_ep, k_part, shot):
-    #     # print("get shot geometry for %s:%s:%s" % (k_ed, k_ep, k_part), end='')
-    #     # print("\t<- shot: %s:%s:%s" % (shot['k_ed'], shot['k_ep'], shot['k_part']))
-    #     db = self.global_database
-    #     if k_part in ['g_asuivre', 'g_reportage']:
-    #         # Consider this part geometry as a customized one.
-    #         # So that this part will have teh same dimension as the following part
-    #         shot_geometry = {
-    #             'part': self.get_part_geometry(
-    #                         k_ed=k_ed,
-    #                         k_ep=k_ep,
-    #                         k_part=k_part[2:]),
-    #             'shot': self.get_part_geometry(
-    #                         k_ed=db[k_part]['target']['video']['src']['k_ed'],
-    #                         k_ep=db[k_part]['target']['video']['src']['k_ep'],
-    #                         k_part=k_part),
-    #         }
 
-    #     elif k_part in ['g_debut', 'g_fin']:
-    #         # In this case, the custom geometry is the part of the dependency
-    #         # print("* k_part=%s" % (k_part))
-    #         k_ed_target = db[k_part]['target']['video']['src']['k_ed']
-    #         k_ep_target = db[k_part]['target']['video']['src']['k_ep']
-    #         shot_geometry = {
-    #             'part': self.get_part_geometry(
-    #                         k_ed=k_ed_target, k_ep=k_ep_target, k_part=k_part),
-    #             'shot': None
-    #         }
-    #         if shot['k_ed'] != k_ed_target or shot['k_ep'] != k_ep_target:
-    #             # Use the geometry for this part and use it as a custom
-    #             # print("\t   shot k_ed:k_ep is <> ref k_ed:k_ep, use %s:%s:%s" % (
-    #             #     shot['k_ed'], shot['k_ep'], shot['k_part']))
-    #             shot_geometry.update({
-    #                 'shot': self.get_part_geometry(
-    #                             k_ed=shot['k_ed'], k_ep=shot['k_ep'], k_part=shot['k_part']),
-    #             })
-    #     else:
-    #         shot_geometry = {
-    #             'part': self.get_part_geometry(k_ed=k_ed, k_ep=k_ep, k_part=k_part),
-    #             'shot': self.get_shot_geometry(shot=shot),
-    #         }
-
-    #     # print("\tshot_geometry:", shot_geometry)
-    #     return shot_geometry
-
-
-
-
-
-    def save_geometry_database(self, k_ed, k_ep, k_part, shot):
+    def save_geometry_database(self, k_ep, k_part):
         # Save all modifications
+        verbose = False
 
         if not self.is_geometry_db_modified:
             return True
 
         log.info("save geometry database %s:%s" % (k_ep, k_part))
-        # print("\n\nsave_geometry_database: %s:%s:%s\n---------------------------------------" % (k_ed, k_ep, k_part))
+        if verbose:
+            print_lightgreen(f"\nSave geometry database: {k_ep}:{k_part}\n---------------------------------------")
         db = self.global_database
 
         # Open configuration file
@@ -220,100 +230,165 @@ class Model_geometry():
         else:
             config_geometry = configparser.ConfigParser({}, collections.OrderedDict)
 
-        # Update the config: geometry of a part
-        for k_ed_src, ed_values in self.db_part_geometry.items():
+
+        # Target
+        if verbose:
+            print_lightgreen("Save target geometry")
+        for k_ep_src, ep_values in self.db_target_geometry.items():
+            for k_part_src, part_values in ep_values.items():
+                k_section = '%s' % (k_part_src)
+
+                if not config_geometry.has_section(k_section):
+                    config_geometry[k_section] = dict()
+                if verbose:
+                    print("\tk_section = %s" % (k_section))
+
+                # Update the values
+                try:
+                    value_array = list()
+                    try:
+                        width = part_values['w']
+                        value_array.append("width=%s" % (width))
+                        nested_dict_set(self.db_target_geometry_initial, deepcopy(part_values),
+                            k_ep_src, k_part_src)
+                    except: pass
+
+                    config_geometry.set(k_section, 'target', ', '.join(value_array))
+                except: pass
+        nested_dict_clean(self.db_target_geometry_initial)
+        self.db_target_geometry.clear()
+        if verbose:
+            print_lightcyan("\tnew initial target geometry:")
+            pprint(self.db_target_geometry_initial)
+            print_lightcyan("\tnew modified target geometry:")
+            pprint(self.db_target_geometry)
+
+
+        # Default shot_geometry
+        if verbose:
+            print_lightgreen("Save default shot geometry")
+            print_lightcyan("\tdefault shot geometry:")
+            pprint(self.db_default_shot_geometry)
+        for k_ed_src, ed_values in self.db_default_shot_geometry.items():
             for k_ep_src, ep_values in ed_values.items():
-                for k_part_src, part_values in ep_values.items():
+                for k_part_src, shot_geometry in ep_values.items():
 
                     k_section = '%s.%s.%s' % (k_ed_src, k_ep_src, k_part_src)
                     if not config_geometry.has_section(k_section):
                         config_geometry[k_section] = dict()
                     # print("k_section = %s" % (k_section))
 
+                    if shot_geometry is None:
+                        # Remove from database
+                        try: del self.db_default_shot_geometry_initial[k_ed_src][k_ep_src][k_part_src]
+                        except: pass
+
+                        # Remove from config file
+                        try: config_geometry.remove_option(k_section, k_part_src)
+                        except: pass
+
+                        continue
+
                     # Update the values
                     try:
                         value_array = list()
                         try:
-                            geometry_crop = part_values['crop']
-                            value_array.append("crop=%s" % (':'.join(map(lambda x: "%d" % (x), geometry_crop))))
-                            nested_dict_set(self.db_part_geometry_initial, deepcopy(geometry_crop),
+                            crop = shot_geometry['crop']
+                            value_array.append("crop=%s" % (':'.join(map(lambda x: "%d" % (x), crop))))
+                            nested_dict_set(self.db_default_shot_geometry_initial, deepcopy(crop),
                                 k_ed_src, k_ep_src, k_part_src, 'crop')
                         except: pass
 
-                        # try:
-                        #     geometry_resize = part_values['resize']
-                        #     value_array.append("resize=%s" % (':'.join(map(lambda x: "%d" % (x), geometry_resize))))
-                        #     nested_dict_set(self.db_part_geometry_initial, deepcopy(geometry_resize),
-                        #         k_ed_src, k_ep_src, k_part_src, 'resize')
-                        # except: pass
-
                         try:
-                            geometry_fit_to_part = part_values['resize']['fit_to_part']
-                            value_array.append("fit_to_part=%s" % ('true' if geometry_fit_to_part else 'false'))
-                            nested_dict_set(self.db_part_geometry_initial, deepcopy(part_values['resize']),
-                                k_ed_src, k_ep_src, k_part_src, 'resize')
+                            keep_ratio = shot_geometry['keep_ratio']
+                            value_array.append("keep_ratio=%s" % ('true' if keep_ratio else 'false'))
+                            nested_dict_set(self.db_default_shot_geometry_initial, deepcopy(keep_ratio),
+                                k_ed_src, k_ep_src, k_part_src, 'keep_ratio')
                         except: pass
 
                         try:
-                            geometry_ratio = part_values['ratio']
-                            value_array.append("keep_ratio=%s" % ('true' if geometry_ratio else 'false'))
-                            nested_dict_set(self.db_part_geometry_initial, deepcopy(geometry_ratio),
-                                k_ed_src, k_ep_src, k_part_src, 'ratio')
+                            fit_to_width= shot_geometry['fit_to_width']
+                            value_array.append("fit_to_width=%s" % ('true' if fit_to_width else 'false'))
+                            nested_dict_set(self.db_default_shot_geometry_initial, deepcopy(fit_to_width),
+                                k_ed_src, k_ep_src, k_part_src, 'fit_to_width')
                         except: pass
 
-                        config_geometry.set(k_section, 'part', ', '.join(value_array))
-                    except: pass
+                        config_geometry.set(k_section, 'default', ', '.join(value_array))
+                    except:
+                        pass
+        nested_dict_clean(self.db_default_shot_geometry_initial)
+        self.db_default_shot_geometry.clear()
+        if verbose:
+            print_lightcyan("\tnew initial default shot geometry:")
+            pprint(self.db_default_shot_geometry_initial)
+            print_lightcyan("\tnew modified default shot geometry:")
+            pprint(self.db_default_shot_geometry)
 
 
-        # Update the config: geometry of each shot
+
+
+        # shot_geometry
+        if verbose:
+            print_lightgreen("Save  geometry")
+            print_lightcyan("\tshot geometry:")
+            pprint(self.db_shot_geometry)
         for k_ed_src, ed_values in self.db_shot_geometry.items():
             for k_ep_src, ep_values in ed_values.items():
-                for k_part_src, part_values in ep_values.items():
-                    for shot_start, shot_values in part_values.items():
+                for k_part_src, frame_nos in ep_values.items():
+                    for frame_no, shot_geometry in frame_nos.items():
 
                         k_section = '%s.%s.%s' % (k_ed_src, k_ep_src, k_part_src)
                         if not config_geometry.has_section(k_section):
                             config_geometry[k_section] = dict()
-                        # print("k_section = %s" % (k_section))
 
-                        if shot_values is None:
-                            try:
-                                del self.db_shot_geometry_initial[k_ed_src][k_ep_src][k_part_src][shot_start]
-                            except:
-                                pass
-                            try:
-                                config_geometry.remove_option(k_section, str(shot_start))
-                            except:
-                                pass
+                        if verbose:
+                            print("k_section:%s, frame_no:%d" % (k_section, frame_no))
+
+                        if shot_geometry is None:
+                            # Remove from database
+                            try: del self.db_shot_geometry_initial[k_ed_src][k_ep_src][k_part_src][frame_no]
+                            except: pass
+
+                            # Remove from config file
+                            try: config_geometry.remove_option(k_section, str(frame_no))
+                            except: pass
+
                             continue
 
                         # Update the values
                         try:
                             value_array = list()
                             try:
-                                geometry_crop = shot_values['crop']
-                                value_array.append("crop=%s" % (':'.join(map(lambda x: "%d" % (x), geometry_crop))))
-                                nested_dict_set(self.db_shot_geometry_initial, deepcopy(geometry_crop),
-                                    k_ed_src, k_ep_src, k_part_src, shot_start, 'crop')
+                                crop = shot_geometry['crop']
+                                value_array.append("crop=%s" % (':'.join(map(lambda x: "%d" % (x), crop))))
+                                nested_dict_set(self.db_shot_geometry_initial, deepcopy(crop),
+                                    k_ed_src, k_ep_src, k_part_src, frame_no, 'crop')
                             except: pass
 
                             try:
-                                geometry_resize = shot_values['resize']
-                                value_array.append("resize=%s" % (':'.join(map(lambda x: "%d" % (x), geometry_resize))))
-                                nested_dict_set(self.db_shot_geometry_initial, deepcopy(geometry_resize),
-                                    k_ed_src, k_ep_src, k_part_src, shot_start, 'resize')
+                                keep_ratio = shot_geometry['keep_ratio']
+                                value_array.append("keep_ratio=%s" % ('true' if keep_ratio else 'false'))
+                                nested_dict_set(self.db_shot_geometry_initial, deepcopy(keep_ratio),
+                                    k_ed_src, k_ep_src, k_part_src, frame_no, 'keep_ratio')
                             except: pass
 
                             try:
-                                geometry_ratio = shot_values['ratio']
-                                value_array.append("keep_ratio=%s" % ('true' if geometry_ratio else 'false'))
-                                nested_dict_set(self.db_shot_geometry_initial, deepcopy(geometry_ratio),
-                                    k_ed_src, k_ep_src, k_part_src, shot_start, 'ratio')
+                                fit_to_width= shot_geometry['fit_to_width']
+                                value_array.append("fit_to_width=%s" % ('true' if fit_to_width else 'false'))
+                                nested_dict_set(self.db_shot_geometry_initial, deepcopy(fit_to_width),
+                                    k_ed_src, k_ep_src, k_part_src, frame_no, 'fit_to_width')
                             except: pass
 
-                            config_geometry.set(k_section, str(shot_start), ', '.join(value_array))
+                            config_geometry.set(k_section, str(frame_no), ', '.join(value_array))
                         except:
                             pass
+        self.db_shot_geometry.clear()
+        nested_dict_clean(self.db_shot_geometry_initial)
+        if verbose:
+            print_lightcyan("\tnew initial shot geometry:")
+            pprint(self.db_shot_geometry_initial)
+            print_lightcyan("\tnew modified shot geometry:")
+            pprint(self.db_shot_geometry)
 
 
         # Write to the config file
@@ -321,7 +396,7 @@ class Model_geometry():
             config_geometry.write(config_file)
 
         # Clean the dictonaries
-        self.db_part_geometry.clear()
+        self.db_default_shot_geometry.clear()
         self.db_shot_geometry.clear()
 
         self.is_geometry_db_modified = False

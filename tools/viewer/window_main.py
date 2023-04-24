@@ -2,6 +2,7 @@
 import sys
 import gc
 from pprint import pprint
+from filters.utils import FINAL_FRAME_HEIGHT
 from logger import log
 
 from PySide6.QtCore import (
@@ -30,7 +31,7 @@ PAINTER_MARGIN_TOP = 20
 class Window_main(Window_common):
 
     def __init__(self, model:Model_viewer):
-        super(Window_main, self).__init__(self, model)
+        super(Window_main, self).__init__(self, controller)
 
         # Get preferences from model
         p = self.model.get_preferences()
@@ -153,7 +154,7 @@ class Window_main(Window_common):
         if self.painter.begin(self):
             if self.widget_browser.is_fit_to_image_enabled():
                 self.painter.drawImage(QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP),
-                    self.image.scaled(min(self.width(), 1920), min(self.height(), 1080), Qt.KeepAspectRatio))
+                    self.image.scaled(min(self.width(), 1920), min(self.height(), FINAL_FRAME_HEIGHT), Qt.KeepAspectRatio))
             else:
                 self.painter.drawImage(QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP), self.image)
             self.painter.end()

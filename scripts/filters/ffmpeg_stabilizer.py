@@ -2,6 +2,7 @@
 import os
 import sys
 
+import platform
 from pprint import pprint
 import subprocess
 
@@ -16,13 +17,14 @@ from utils.common import (
 )
 
 
+# TODO This class cannot be used anymore: rework this!
 class FFmpeg_stabilizer:
     def __init__(self) -> None:
         self.__shakiness = 10
         self.__accuracy = 15
 
 
-    def stabilize(self, image_list, output, input_hash, do_log=False):
+    def stabilize(self, shot, image_list, output, input_hash, do_log=False):
         if not os.path.exists(output):
             os.makedirs(output)
 
@@ -55,7 +57,7 @@ class FFmpeg_stabilizer:
 
 
         ffmpeg_verbose="-hide_banner -loglevel warning"
-        if sys.platform == 'win32':
+        if platform.system() == "Windows":
             command_ffmpeg_common = [os.path.abspath("../3rd_party/ffmpeg-5.1/bin/ffmpeg.exe")]
         else:
             command_ffmpeg_common = [os.path.abspath("../3rd_party/ffmpeg-5.1/ffmpeg")]

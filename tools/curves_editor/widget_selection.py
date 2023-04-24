@@ -32,7 +32,7 @@ from PySide6.QtWidgets import (
 )
 
 
-from common.sylesheet import (
+from common.stylesheet import (
     set_stylesheet,
     update_selected_widget_stylesheet,
 )
@@ -53,12 +53,12 @@ class Widget_selection(QWidget, Ui_widget_selection):
     signal_remove_curves_selection_requested = Signal()
 
 
-    def __init__(self, ui, model):
+    def __init__(self, ui, controller):
         super(Widget_selection, self).__init__()
 
 
         self.setupUi(self)
-        self.model = model
+        self.controller = controller
         self.ui = ui
         self.setObjectName('selection')
 
@@ -250,9 +250,9 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         # Part
         self.refresh_combobox_part()
-        self.comboBox_part.setCurrentText(s['part'])
-        if s['part'] in K_ALL_PARTS:
-            index = self.comboBox_part.findText(s['part'])
+        self.comboBox_part.setCurrentText(s['k_part'])
+        if s['k_part'] in K_ALL_PARTS:
+            index = self.comboBox_part.findText(s['k_part'])
             self.comboBox_part.setCurrentIndex(index)
 
         # Step

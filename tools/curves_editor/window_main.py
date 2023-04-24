@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 
 import sys
+
+from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, MAX_FRAME_WIDTH
 sys.path.append('../scripts')
 
 import cv2
@@ -54,7 +56,7 @@ class Window_main(Window_common):
     signal_save_and_close = Signal()
 
     def __init__(self, model:Model_curves_editor):
-        super(Window_main, self).__init__(self, model)
+        super(Window_main, self).__init__(self, controller)
         # Get preferences from model
         p = self.model.get_preferences()
 
@@ -119,7 +121,7 @@ class Window_main(Window_common):
 
 
     def event_image_selected(self, image_name):
-        # self.model.get_frame(name)
+        # self.model.get_frame_at_index(name)
         # log.info("get image [%s]" % (image_name))
         f = self.model.get_frame_from_name(image_name)
         self.display_frame(f)
@@ -384,7 +386,7 @@ class Window_main(Window_common):
         h, w, c = img.shape
         q_image = QImage(img.data, w, h, w * 3, QImage.Format_BGR888)
         self
-        w_final, h_final = (1440, 1080)
+        w_final, h_final = (FINAL_FRAME_WIDTH, FINAL_FRAME_HEIGHT)
 
         self.image['origin'] = [PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y]
         if self.painter.begin(self):

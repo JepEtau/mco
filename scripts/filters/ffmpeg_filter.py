@@ -1,17 +1,23 @@
 # -*- coding: utf-8 -*-
 import sys
 import cv2
+import gc
 import os
 import numpy as np
+import platform
 from pprint import pprint
+import signal
 
 from filters.ffmpeg_utils import clean_ffmpeg_filter
 from filters.utils import MAX_FRAMES_COUNT
 from utils.common import FPS
 from utils.pretty_print import *
-from utils.hash import (
+from utils.get_image_list import (
     FILENAME_TEMPLATE,
     get_image_list,
+)
+from utils.hash import (
+    calculate_hash,
     log_filter
 )
 from utils.process import (
@@ -25,23 +31,28 @@ def ffmpeg_filter(shot, images:list, image_list:list,
     step_no, input_hash, filter_str, do_save:bool, output_folder, db_common,
     get_hash:bool=False, do_force:bool=False):
 
-    """Apply FFmpeg to frames and output them as frames
+    """Apply FFmpeg filter to images
     """
-    filter_str = clean_ffmpeg_filter(filter_str)
-    hash = log_filter("%s,%s" % (input_hash, filter_str), shot['hash_log_file'])
+
+    filter_str_hash = "%s,%s" % (input_hash, clean_ffmpeg_filter(filter_str))
     if get_hash:
+        hash = calculate_hash(filter_str=filter_str_hash)
         return hash, None
-    print_green("(FFmpeg)\tstep no. %d, filter=[%s], input_hash= %s, output hash= %s" % (step_no, filter_str, input_hash, hash))
+    hash = log_filter(filter_str_hash, shot['hash_log_file'])
+    print_cyan("(FFmpeg)\tstep no. %d, filter=[%s], input_hash= %s, output hash= %s" % (step_no, filter_str, input_hash, hash))
 
     # Output images in memory
     use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
 
-    if do_save:
-        # Generate a list of output images
-        output_image_list = get_image_list(shot=shot,
-            folder=output_folder,
-            step_no=step_no,
-            hash=hash)
+
+    # Generate a list of output images
+    output_image_list = get_image_list(shot=shot,
+        folder=output_folder,
+        step_no=step_no,
+        hash=hash)
+    if do_save and not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
     output_images = list()
     frame_count = shot['count']
 
@@ -58,7 +69,18 @@ def ffmpeg_filter(shot, images:list, image_list:list,
         "-hide_banner",
         "-loglevel", "error"]
 
+    # Force to use concatenate file because process bufsize is limited
+    if frame_count > (2000000000 / img_size):
+        use_memory = False
+
+    do_use_ffv1 = False
+    if not platform.system() == "Windows":
+        # for fucking linux
+        use_memory = False
+        do_use_ffv1 = False
+
     if use_memory:
+        print("\t\t\tUse memory")
         # All images are in memory
         ffmpeg_command.extend([
             '-f', 'rawvideo',
@@ -80,9 +102,10 @@ def ffmpeg_filter(shot, images:list, image_list:list,
         bytes_arr = bytearray()
         for img in images:
             bytes_arr.extend(img.tobytes())
+        # print_yellow("bufsize=\t%d" % (bufsize))
+        # print_yellow("stdin size=\t%d" % (len(bytes_arr)))
+        # print_yellow(ffmpeg_command)
 
-        print_yellow("bufsize= %d" % (bufsize))
-        print_yellow("stdin size = %d" % (len(bytes_arr)))
         process = create_process(ffmpeg_command, db_common['process'], bufsize=bufsize)
         stdout, stderr = process.communicate(input=bytes(bytes_arr))
         for i, index in zip(range(frame_count), range(0, frame_count*img_size, img_size)):
@@ -92,41 +115,130 @@ def ffmpeg_filter(shot, images:list, image_list:list,
                 cv2.imwrite(img=img, filename=output_image_list[i])
 
     else:
-        # Create a concatenation file
-        duration_str = "duration %.02f\n" % (1/float(FPS))
-        concatenation_filepath = os.path.join(output_folder, "concatenation_tmp.txt")
-        concatenation_file = open(concatenation_filepath, "w")
-        for f in image_list:
-            concatenation_file.write("file \'%s\' \n" % (os.path.abspath(f)))
-            concatenation_file.write(duration_str)
-        concatenation_file.close()
 
-        # Concatenate, filter, output
-        ffmpeg_command.extend([
-            "-r", str(FPS),
-            "-f", "concat",
-            "-safe", "0",
-            "-i", concatenation_filepath,
+        # Images already saved?
+        if os.path.exists(image_list[-1]):
+            are_already_been_saved = True
+            print_lightgrey("\t\t\tImages have already been saved")
+        else:
+            are_already_been_saved = False
+            print_lightgrey("\t\t\tImages have not been saved")
 
-            "-filter_complex", "[0:v]%s[outv]" % (filter_str),
-            "-map", "[outv]",
 
-            "-f", "image2pipe",
-            "-pix_fmt", "bgr24",
-            "-vcodec", "rawvideo",
-            "-"
-        ])
-        process = create_process(ffmpeg_command, db_common['process'])
+        if are_already_been_saved and not do_use_ffv1:
+            print_lightgrey("\t\t\tUse FFmpeg concatenate filter")
 
-        # Save images
-        for frame_no, img_filepath in zip(range(frame_count), output_image_list):
-            print("FFmpeg filter: %d%%" % (int((100.0 * frame_no)/frame_count)), end='\r')
-            raw_frame = process.stdout.read(img_size)
-            img = np.frombuffer(raw_frame, dtype=np.uint8).reshape((height, width, channels))
-            cv2.imwrite(filename=img_filepath, img=img)
-        stdout, stderr = process.communicate()
-        print("                                       ", end='\r')
+            if not do_use_ffv1:
+                input_folder = os.path.dirname(image_list[0])
+                if not os.path.exists(input_folder):
+                    os.makedirs(input_folder)
+                for img, filepath in zip(images, image_list):
+                    cv2.imwrite(img=img, filename=filepath)
 
+            # Images are not needed anymore
+            images.clear()
+            gc.collect()
+
+            # Create a concatenation file
+            duration_str = "duration %.02f\n" % (1/float(FPS))
+            concatenation_filepath = os.path.join(input_folder, "concatenation_tmp.txt")
+            concatenation_file = open(concatenation_filepath, "w")
+            for f in image_list:
+                concatenation_file.write("file \'%s\' \n" % (os.path.abspath(f)))
+                concatenation_file.write(duration_str)
+            concatenation_file.close()
+
+            # Concatenate, Filtering
+            ffmpeg_command.extend([
+                "-r", str(FPS),
+                "-f", "concat",
+                "-safe", "0",
+                "-i", concatenation_filepath,
+
+                "-filter_complex", "[0:v]%s[outv]" % (filter_str),
+                "-map", "[outv]",
+
+                "-f", "image2pipe",
+                "-pix_fmt", "bgr24",
+                "-vcodec", "rawvideo",
+                "-"
+            ])
+            process = create_process(ffmpeg_command, db_common['process'])
+
+            # Save images
+            for frame_no, img_filepath in zip(range(frame_count), output_image_list):
+                print("\t\t\tFFmpeg filter: %d%%" % (int((100.0 * frame_no)/frame_count)), end='\r')
+                raw_frame = process.stdout.read(img_size)
+                img = np.frombuffer(raw_frame, dtype=np.uint8).reshape((height, width, channels))
+                if do_save:
+                    cv2.imwrite(filename=img_filepath, img=img)
+                output_images.append(img)
+            stdout, stderr = process.communicate()
+            print("                                       ", end='\r')
+
+        else:
+            print_lightgrey("\t\t\tGenerate and use a FFV1 file")
+
+            # Remove temporary file
+            try: os.remove(ffv1_filepath)
+            except:pass
+
+            # Create a FFV1 file
+            ffv1_filepath = os.path.join(output_folder, 'tmp.mkv')
+            height, width, c = images[0].shape
+            ffmpeg_command = [db_common['tools']['ffmpeg']]
+            ffmpeg_command.extend(["-loglevel", "debug"])
+            frame_count = len(images)
+            ffmpeg_command.extend([
+                '-f', 'rawvideo',
+                '-pixel_format', 'bgr24',
+                '-video_size', "%dx%d" % (width, height),
+                "-r", str(FPS),
+                '-i', 'pipe:0',
+
+                "-vcodec", "ffv1",
+                "-y", ffv1_filepath
+            ])
+            process = create_process(ffmpeg_command, db_common['process'])
+            for img in images:
+                process.stdin.write(img.tobytes())
+            print_lightgrey("\t\t\tWaiting for end", flush=True)
+            stdout, stderr = process.communicate()
+
+
+            # Images are not needed anymore
+            images.clear()
+            gc.collect()
+
+            # Filtering
+            print_lightgrey("\t\t\tStart filtering", flush=True)
+            ffmpeg_command.extend([
+                "-i", ffv1_filepath,
+
+                "-filter_complex", "[0:v]%s[outv]" % (filter_str),
+                "-map", "[outv]",
+
+                "-f", "image2pipe",
+                "-pix_fmt", "bgr24",
+                "-vcodec", "rawvideo",
+                "-"
+            ])
+            process = create_process(ffmpeg_command, db_common['process'])
+
+            # Save images
+            for frame_no, img_filepath in zip(range(frame_count), output_image_list):
+                print("\t\t\tFFmpeg filter: %d%%" % (int((100.0 * frame_no)/frame_count)), end='\r')
+                raw_frame = process.stdout.read(img_size)
+                img = np.frombuffer(raw_frame, dtype=np.uint8).reshape((height, width, channels))
+                if do_save:
+                    cv2.imwrite(filename=img_filepath, img=img)
+                output_images.append(img)
+            stdout, stderr = process.communicate()
+            print("                                       ", end='\r')
+
+            # Remove temporary file
+            try: os.remove(ffv1_filepath)
+            except:pass
 
     return hash, output_images
 

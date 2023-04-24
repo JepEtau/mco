@@ -12,8 +12,10 @@ from filters.ffmpeg_utils import (
     get_video_resolution
 )
 from filters.utils import MAX_FRAMES_COUNT
-
-from utils.hash import FILENAME_TEMPLATE, log_filter
+from utils.get_image_list import (
+    FILENAME_TEMPLATE
+)
+from utils.hash import calculate_hash, log_filter
 from utils.pretty_print import *
 from utils.time_conversions import *
 from utils.process import create_process
@@ -22,26 +24,32 @@ from utils.process import create_process
 
 
 def ffmpeg_deinterlace(shot, step_no,
-        filter_str, output_folder:str, db_common, get_hash:bool=False):
+        filter_str, output_folder:str, db_common, get_hash:bool=False, forced_hash=''):
 
     filter_str=clean_ffmpeg_filter(filter_str)
-    hash = log_filter(filter_str, shot['hash_log_file'])
 
-    if get_hash:
-        return hash, list()
+    if forced_hash == '':
+        # Generate and log hash
+        if get_hash:
+            hash = calculate_hash(filter_str=filter_str)
+            return hash, list()
+        hash = log_filter(filter_str, shot['hash_log_file'])
+    else:
+        # Hash is forced by the calling function
+        hash = forced_hash
 
-    print_green("(FFmpeg)\tstep no. %d, filters=%s, hash= %s" % (step_no, filter_str, hash))
+    print_cyan("(FFmpeg)\tstep no. %d, filters=%s, hash= %s" % (step_no, filter_str, hash))
 
     frame_start = shot['start']
     frame_count = shot['count']
-    input_file = shot['input']
+    input_file = shot['inputs']['interlaced']['filepath']
 
     # list of foutput filepath
     filename_template = os.path.abspath(os.path.join(output_folder,
         FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, '_' + hash)))
 
-    # img_filepaths = [os.path.join(output, "f_%05d_%s.png" % (i, hash)) for i in range(frame_start, frame_start+frame_count)]
     output_image_list = [filename_template % (i) for i in range(frame_start, frame_start+frame_count)]
+    output_images = list()
 
     # Discard if output files already exist
     do_extract = False
@@ -50,7 +58,7 @@ def ffmpeg_deinterlace(shot, step_no,
             do_extract = True
             break
     if not do_extract:
-        return hash, list()
+        return hash, output_images
 
     # Get video dimensions
     width, height = get_video_resolution(input_file, db_common)
@@ -77,27 +85,23 @@ def ffmpeg_deinterlace(shot, step_no,
         "-vcodec", "rawvideo",
         "-"
     ])
-    # print_green("image dimension: %dx%d" % (width, height))
-    # print_lightgreen(ffmpeg_command, flush=True)
+    print_lightgrey("\t\t\t%s" % (' '.join(ffmpeg_command)))
     process = create_process(command=ffmpeg_command,
         process_cfg=db_common['process'])
 
 
     # Get frame(s) extracted by FFmpeg
-    output_images = list()
-    no = 0
-    while no < frame_count:
+    for no, img_filepath in zip(range(frame_count), output_image_list):
         raw_frame = np.frombuffer(process.stdout.read(3 * height * width), dtype=np.uint8)
-        # process.stdout.flush()
         if raw_frame is None or len(raw_frame) == 0:
             sys.exit("error: frame %d has not been extracted\n\t%s" % (no, ffmpeg_command))
         img = raw_frame.reshape((height, width, 3))
-        cv2.imwrite(output_image_list[no], img)
+        cv2.imwrite(img_filepath, img)
         if use_memory:
             output_images.append(img)
         no += 1
         print_yellow("\t\t\textracting: %d%%" % (int((100.0 * no)/frame_count)), flush=True, end='\r')
-    print("\t\t\t                           ", end='\r')
+    print("\t\t                                                  ", end='\r')
 
     return hash, output_images
 
@@ -136,7 +140,7 @@ def extract_single_frame(db, frame, filter_str, width, height, task='upscale'):
     ffmpeg_command.extend([
         "-ss", frame_no_to_sexagesimal(frame_no),
         "-i", frame['input'],
-        "-t", str(frames_count/db['common']['fps']),
+        "-t", str(frames_count/FPS),
         "-f", "image2pipe",
         "-filter_complex", clean_ffmpeg_filter(filter_str),
         "-map", "[outv]",

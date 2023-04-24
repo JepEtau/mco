@@ -16,10 +16,10 @@ from utils.time_conversions import (
 )
 
 
-def extract_audio(db, k_ep:str, k_ed, force=False, verbose=False) -> str:
+def extract_audio(db, k_ep:str, k_ed, force=False) -> str:
     # Returns the extracted filepath
+    verbose = False
 
-    verbose = True
     # print("%s.extract_audio: %s:%s" % (__name__, k_ed, k_ep_or_g))
     print("%s extract_audio from %s:%s" % (current_datetime_str(), k_ed, k_ep))
     # if k_ep_or_g in ['g_debut', 'g_fin']:
@@ -66,7 +66,7 @@ def extract_audio(db, k_ep:str, k_ed, force=False, verbose=False) -> str:
 
 
         # FFmpeg command
-        ffmpeg_command = [db['common']['settings']['ffmpeg_exe']]
+        ffmpeg_command = [db['common']['tools']['ffmpeg']]
         ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
         ffmpeg_command.extend([
             "-i", input_filepath,

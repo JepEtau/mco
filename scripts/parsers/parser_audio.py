@@ -11,8 +11,8 @@ from utils.common import (
     K_PARTS,
     pprint_audio,
     pprint_video,
-    nested_dict_set,
 )
+from utils.nested_dict import nested_dict_set
 from utils.time_conversions import (
     frames_to_ms,
     ms_to_frames,

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>500</width>
-    <height>712</height>
+    <height>839</height>
    </rect>
   </property>
   <property name="maximumSize">
@@ -45,7 +45,7 @@
      </property>
      <layout class="QVBoxLayout" name="verticalLayout">
       <property name="spacing">
-       <number>4</number>
+       <number>6</number>
       </property>
       <property name="leftMargin">
        <number>6</number>
@@ -63,101 +63,169 @@
        <widget class="Widget_app_controls" name="widget_app_controls" native="true"/>
       </item>
       <item>
-       <widget class="QComboBox" name="comboBox_episode">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <property name="bottomMargin">
+         <number>0</number>
         </property>
         <item>
-         <property name="text">
-          <string/>
-         </property>
+         <widget class="QComboBox" name="comboBox_episode">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <item>
+           <property name="text">
+            <string/>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>ep01</string>
+           </property>
+          </item>
+         </widget>
         </item>
         <item>
-         <property name="text">
-          <string>ep01</string>
-         </property>
+         <widget class="QComboBox" name="comboBox_part">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>140</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>140</width>
+            <height>16777215</height>
+           </size>
+          </property>
+          <item>
+           <property name="text">
+            <string>precedemment</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>g_debut</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>episode</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>g_asuivre</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>asuivre</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>g_reportage</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>reportage</string>
+           </property>
+          </item>
+          <item>
+           <property name="text">
+            <string>g_fin</string>
+           </property>
+          </item>
+         </widget>
         </item>
-       </widget>
+        <item>
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+       </layout>
       </item>
       <item>
-       <widget class="QComboBox" name="comboBox_part">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>140</width>
-          <height>16777215</height>
-         </size>
+       <layout class="QVBoxLayout" name="verticalLayout_3">
+        <property name="spacing">
+         <number>4</number>
         </property>
         <item>
-         <property name="text">
-          <string>precedemment</string>
-         </property>
+         <widget class="QRadioButton" name="radioButton_task_deinterlace">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
+          <property name="text">
+           <string>deinterlace</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+         </widget>
         </item>
         <item>
-         <property name="text">
-          <string>g_debut</string>
-         </property>
+         <widget class="QRadioButton" name="radioButton_task_pre_upscale">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
+          <property name="text">
+           <string>before upscale</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+         </widget>
         </item>
         <item>
-         <property name="text">
-          <string>episode</string>
-         </property>
+         <widget class="QRadioButton" name="radioButton_task_upscale">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
+          <property name="text">
+           <string>upscale</string>
+          </property>
+         </widget>
         </item>
         <item>
-         <property name="text">
-          <string>g_asuivre</string>
-         </property>
+         <widget class="QRadioButton" name="radioButton_task_sharpen">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
+          <property name="text">
+           <string>sharpen</string>
+          </property>
+         </widget>
         </item>
         <item>
-         <property name="text">
-          <string>asuivre</string>
-         </property>
+         <widget class="QRadioButton" name="radioButton_task_edition">
+          <property name="focusPolicy">
+           <enum>Qt::NoFocus</enum>
+          </property>
+          <property name="text">
+           <string>edition</string>
+          </property>
+         </widget>
         </item>
-        <item>
-         <property name="text">
-          <string>g_reportage</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>reportage</string>
-         </property>
-        </item>
-        <item>
-         <property name="text">
-          <string>g_fin</string>
-         </property>
-        </item>
-       </widget>
-      </item>
-      <item>
-       <widget class="QComboBox" name="comboBox_step">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>120</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <item>
-         <property name="text">
-          <string>deinterlace</string>
-         </property>
-        </item>
-       </widget>
+       </layout>
       </item>
       <item>
        <widget class="QTableWidget" name="tableWidget_shots">

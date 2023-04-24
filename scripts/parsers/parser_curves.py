@@ -12,16 +12,16 @@ from pathlib import (
 )
 from pprint import pprint
 
-from images.curve import Curve
+from filters.curve import Curve
 from utils.common import (
     K_GENERIQUES,
-    get_or_create_src_shot,
-    nested_dict_set,
 )
-
+from shot.utils import get_shot_from_frame_no
+from utils.nested_dict import nested_dict_set
 from parsers.parser_generiques import (
     get_dependencies_for_generique,
 )
+from utils.pretty_print import *
 
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages
@@ -63,15 +63,16 @@ def parse_curve_configurations(db, k_ep_or_g:str):
                 continue
 
             # Get shot from frame no.
-            # print("parse_curve_configurations, find %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_part))
-            # shot = get_shot_from_frame_no_new(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
-            #   replaced by a function which creates the src shot if not defined in the config file
             try:
-                shot = get_or_create_src_shot(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
+                shot = get_shot_from_frame_no(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
                 if shot is None:
                     continue
             except:
                 continue
+
+            if frame_no != shot['start']:
+                print_orange(f"warning: parse curves configuration:", end=' ')
+                print(f"{frame_no} is not the start of {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}, {shot['start']}")
 
             # Append curves struct to the shot
             shot['curves'] = {
@@ -82,6 +83,8 @@ def parse_curve_configurations(db, k_ep_or_g:str):
 
 
 def get_curves_channels_from_db(db, k_ed, k_ep, k_part, k_curves:str) -> dict:
+    # Return also the curves as a single line
+    curves_points_str = ""
     k_ep_or_g = k_part if k_part in K_GENERIQUES else k_ep
 
     # Open configuration file
@@ -109,6 +112,7 @@ def get_curves_channels_from_db(db, k_ed, k_ep, k_part, k_curves:str) -> dict:
         }
         for k_channel in ['r', 'g', 'b', 'm']:
             points_str = config.get(k_section, k_channel).replace(' ', '').strip()
+            curves_points_str += "%s=%s;" % (k_channel, points_str)
             points = points_str.split(',')
             rgb_channels[k_channel].remove_all_points()
             for point in points:
@@ -117,7 +121,7 @@ def get_curves_channels_from_db(db, k_ed, k_ep, k_part, k_curves:str) -> dict:
     except:
         print("Warning: %s:%s:%s: [%s] is not found in curves db: %s" % (k_ed, k_ep, k_part, k_section, filepath))
         return None
-    return rgb_channels
+    return rgb_channels, curves_points_str[:-1]
 
 
 
@@ -130,12 +134,9 @@ def get_initial_curves_selection(db, k_ep, k_part) -> dict:
 
     # Get the list of editions and episode that are used by this ep/part
     if k_part in K_GENERIQUES:
-        db_video = db[k_part]['video']
         dependencies = get_dependencies_for_generique(db, k_part_g=k_part)
         for k_ed_src in dependencies.keys():
             for k_ep_src in dependencies[k_ed_src]:
-
-                # print("get_initial_curves_selection: get db_video for %s:%s:%s" % (k_ed_src, k_ep_src, k_part))
                 if k_ep_src == '':
                     continue
 
@@ -144,21 +145,16 @@ def get_initial_curves_selection(db, k_ep, k_part) -> dict:
                     continue
 
                 for shot in db_video['shots']:
-                    shot_src = shot
                     shot_start = shot['start']
-
-                    # Append to the dict if RGB curves are defined
-                    if 'curves' not in shot.keys():
+                    try:
+                        if shot['curves'] is not None:
+                            nested_dict_set(shot_curves, shot['curves'],
+                                k_ed_src, k_ep_src, k_part, shot_start)
+                    except:
                         continue
-
-                    if shot['curves'] is not None:
-                        nested_dict_set(shot_curves, shot_src['curves'],
-                            k_ed_src, k_ep_src, k_part, shot_start)
-
 
     else:
         for k_ed_src in db['editions']['available']:
-            # print("get_initial_curves_selection: get db_video for %s:%s:%s" % (k_ed_src, k_ep, k_part))
             if k_ep == '':
                 continue
 
@@ -167,16 +163,14 @@ def get_initial_curves_selection(db, k_ep, k_part) -> dict:
                 continue
 
             for shot in db_video['shots']:
-                shot_src = shot
                 shot_start = shot['start']
-
-                # Append to the dict if RGB curves are defined
-                if 'curves' not in shot.keys():
+                try:
+                    if shot['curves'] is not None:
+                        nested_dict_set(shot_curves, shot['curves'],
+                            k_ed_src, k_ep, k_part, shot_start)
+                except:
                     continue
 
-                if shot['curves'] is not None:
-                    nested_dict_set(shot_curves, shot_src['curves'],
-                        k_ed_src, k_ep, k_part, shot_start)
 
     # print("get_curves_selection")
     # pprint(shot_curves)

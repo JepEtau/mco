@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-
 import sys
 sys.path.append('../scripts')
+
+from filters.utils import FINAL_FRAME_WIDTH
 from functools import partial
 
 from logger import log
@@ -13,7 +14,11 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import QColor
 
-from common.sylesheet import set_curves_radiobutton_stylesheet, set_stylesheet, set_widget_stylesheet
+from common.stylesheet import (
+    set_curves_radiobutton_stylesheet,
+    set_stylesheet,
+    set_widget_stylesheet
+)
 
 from video_editor.ui.widget_curves_ui import Ui_widget_curves
 from common.widget_common import Widget_common
@@ -28,15 +33,15 @@ GRAPH_WIDTH = 512
 class Widget_curves(Widget_common, Ui_widget_curves):
     signal_save_rgb_curves_as = Signal(dict)
 
-    def __init__(self, ui, model):
+    def __init__(self, ui, controller):
         super(Widget_curves, self).__init__(ui)
-        self.model = model
+        self.controller = controller
         self.ui = ui
         self.setObjectName('curves')
 
-        self.widget_rgb_graph.set_model(model)
+        self.widget_rgb_graph.set_controller(controller)
         self.widget_rgb_graph.set_ui(self)
-        self.widget_curves_selection.set_model(model)
+        self.widget_curves_selection.set_controller(controller)
         self.widget_curves_selection.set_ui(self)
 
         # Internal variables
@@ -84,11 +89,12 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.pushButton_reset_current_channel.clicked.connect(partial(self.event_reset_channel, 'current'))
         self.pushButton_reset_all_channels.clicked.connect(partial(self.event_reset_channel, 'all'))
 
-
         self.widget_curves_selection.signal_curves_selection_changed[str].connect(self.event_curves_selection_changed)
         self.widget_curves_selection.signal_save_rgb_curves_requested[dict].connect(self.event_save_rgb_curves_as)
 
-        self.model.signal_is_saved[str].connect(self.event_is_saved)
+        self.pushButton_split_line.toggled[bool].connect(self.event_split_line_toggled)
+
+        self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
 
         # Default selection
@@ -119,7 +125,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         try:
             w = preferences[self.objectName()]['widget']
             self.pushButton_set_preview.blockSignals(True)
-            self.pushButton_set_preview.setChecked(w['is_enabled'])
+            self.pushButton_set_preview.setChecked(w['enabled'])
             self.pushButton_set_preview.blockSignals(False)
         except:
             log.warning("cannot set initial options")
@@ -157,9 +163,19 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             self.label_message.clear()
         self.widget_curves_selection.refresh_values(frame)
 
+
+    def event_preview_changed(self, is_checked:bool=False):
+        # Overload to manage split line
+        if not is_checked:
+            self.pushButton_split_line.blockSignals(True)
+            self.pushButton_split_line.setChecked(False)
+            self.show_split_line = False
+            self.pushButton_split_line.blockSignals(False)
+        self.signal_preview_options_changed.emit()
+
     def get_preview_options(self):
         preview_options = {
-            'is_enabled': self.pushButton_set_preview.isChecked(),
+            'enabled': self.pushButton_set_preview.isChecked(),
             'split': self.show_split_line,
             'split_x': self.split_x - self.main_window_margin,
         }
@@ -208,6 +224,21 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.main_window_margin = margin
 
 
+    def event_split_line_toggled(self, is_checked:bool=False):
+        if is_checked and self.pushButton_set_preview.isChecked():
+            self.pushButton_split_line.blockSignals(True)
+            self.pushButton_split_line.setChecked(True)
+            self.pushButton_split_line.blockSignals(False)
+            self.show_split_line = True
+            log.info("display split line: %s" % ('true' if self.show_split_line else 'false'))
+        else:
+            self.pushButton_split_line.blockSignals(True)
+            self.pushButton_split_line.setChecked(False)
+            self.show_split_line = False
+            self.pushButton_split_line.blockSignals(False)
+        self.event_preview_changed(is_checked=is_checked)
+
+
     def grab_split_line(self, x):
         # log.info("x=%d, split_x=%d" % (x, self.split_x))
         if (self.pushButton_set_preview.isChecked()
@@ -226,7 +257,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             return False
         # log.info("move_split_line: x=%d, split_x=%d" % (x, self.split_x))
         if ( (x + self.split_x_gap) < self.main_window_margin
-        or (x + self.split_x_gap) > self.main_window_margin + 1440):
+        or (x + self.split_x_gap) > self.main_window_margin + FINAL_FRAME_WIDTH):
             return False
         if (self.pushButton_set_preview.isChecked()
             and self.is_moving_split_line):
@@ -273,9 +304,10 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
 
     def event_is_saved(self, editor):
-        log.info("%s: event is saved" % (self.objectName()))
-        # Override fuction because the key is differs from this widget name
-        # if editor == "curves_selection" or editor == 'all':
+        # Override fuction because the key is differs from this widget name: ???
+        if editor == "curves_selection" or editor == 'all':
+            log.info("%s: event is saved" % (self.objectName()))
+
         #     print("widget_curves: event_is_saved")
         #     log.info("values saved")
         #     self.pushButton_save.setEnabled(False)
@@ -284,8 +316,8 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         # reenable save button, otherwise saving other shots is not possible.
         # save button should be enables/disables depending on the selected shot
         # but not yet implemented
-        self.pushButton_save.setEnabled(True)
-        pass
+            self.pushButton_save.setEnabled(True)
+            pass
 
 
     def event_close(self):
@@ -328,12 +360,9 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             self.radioButton_select_m_channel.click()
             return True
 
-        if key == Qt.Key_S and not modifiers & Qt.AltModifier:
+        if key == Qt.Key_F3:
             # Display/Hide split line
-            if self.pushButton_set_preview.isChecked():
-                self.show_split_line = not self.show_split_line
-                log.info("display split line: %s" % ('true' if self.show_split_line else 'false'))
-                self.event_preview_changed(is_checked=True)
+            self.event_split_line_toggled(not self.pushButton_split_line.isChecked())
             return True
 
         if self.widget_curves_selection.is_active():
