@@ -1,15 +1,7 @@
 # MCO
 
-## Commandes
-Une fois les installations et les fichiers d'entrée ajoutés à ce projet, exécuter la commande suivante pour générer la version finale de l'épisode 1:
-```sh
-python run.py --episode 1
-```
 
-[Plus de commandes...](./usage.md)
-<br/><br/>
-
-## Exigences et installations
+## Installations
 - Python **3.10** (< 3.11)
 - Modules Python
 - mkvmerge: [MKVToolNix](https://mkvtoolnix.download)
@@ -23,6 +15,17 @@ python run.py --episode 1
 - Modèles pour Real-ESRGAN, ESRGAN
 - (optionnel: [nnedi3_weights.bin](https://github.com/dubhater/vapoursynth-nnedi3/blob/master/src/))
 <br/><br/>
+
+
+## Exécution
+Une fois les installations et les fichiers d'entrée ajoutés à ce projet, exécuter la commande suivante pour générer la version finale de l'épisode 1:
+```sh
+python run.py --episode 1
+```
+
+[Plus de commandes...](./usage.md)
+<br/><br/>
+
 
 ## Fichiers video d'entrée
 A stocker dans les répertoires suivants:

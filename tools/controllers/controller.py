@@ -100,6 +100,8 @@ class Controller_video_editor(Controller_common,
 
         self.view.widget_selection.signal_selection_changed[dict].connect(self.selection_changed)
         self.view.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
+        self.view.widget_selection.signal_selected_step_changed(str).connect(self.event_selected_step_changed)
+
 
         self.view.widget_geometry.signal_save.connect(self.event_save_geometry_requested)
         self.view.widget_geometry.signal_discard.connect(self.event_geometry_discard_requested)
@@ -133,8 +135,192 @@ class Controller_video_editor(Controller_common,
         })
 
 
+    def consolidate_shot_for_edition(self, shot, k_ep, k_part, k_step):
+        db = self.model_database.database()
+
+        p_missing_frame = os.path.join('tools', 'icons', 'missing.png')
+
+        print_lightgreen("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
+            "{:3d}".format(shot['no']),
+            "{:5d}".format(shot['start']),
+            shot['dst']['count'],
+            shot['k_ed'],
+            shot['k_ep'],
+            shot['k_part'],
+            shot['start'],
+            shot['count']),
+            flush=True)
+
+        # Consolidate shot
+        shot['last_task'] = k_step
+        consolidate_shot(db, shot=shot, edition_mode=True)
+        # NOTE replace: if last task is 'edition', the hashes
+        # are different from the final generation
+
+        # Get a list of path for each frame  for this shot
+        if k_part in ['g_asuivre', 'g_reportage']:
+            filepath_tmp = get_frame_list_single(db, k_ep=k_ep, k_part=k_part, shot=shot)
+        else:
+            filepath_tmp = get_frame_list(db, k_ep=k_ep, k_part=k_part, shot=shot)
+        self.filepath.append(filepath_tmp)
+
+        shot_no = shot['no']
+        self.shots[shot_no] = shot
+
+        # Get curves for this shot
+        curves = self.model_database.get_shot_curves_selection(db=db, shot=shot)
+        try:
+            k_curves = curves['k_curves']
+        except:
+            k_curves =''
+        if curves is None and shot['curves'] is not None:
+            print("Error: curves [%s] is not found in curves library, correct this!" % (shot['curves']['k_curves']))
+            pprint(curves)
+            print("-----")
+            pprint(shot)
+            sys.exit()
+            shot['curves']['k_curves'] = '~' + shot['curves']['k_curves']
+
+
+        # Update this shot for UI:
+        # to do: put in a 'ui' structure
+        shot.update({
+            'is_valid': True,
+
+            # Frame no. ... for what?
+            'frame_nos': list(),
+
+            # Structure to display the modifications in the selection widget
+            'modifications': {
+                'curves' : {
+                    'initial': k_curves,
+                    'new': None,
+                },
+            },
+        })
+
+
+        # Get the target geometry
+        target_geometry = None
+        default_shot_geometry = None
+        shot_geometry = None
+        if k_part in ['g_debut', 'g_fin']:
+            # Use the k_ed:k_ep defined as the source for this geometry
+            target_geometry = self.model_database.get_target_geometry(
+                    k_ep='ep00',
+                    k_part=k_part)
+        elif k_part in ['g_asuivre', 'g_reportage']:
+            # Use the following part to get the geometry for this part
+            target_geometry = self.model_database.get_target_geometry(
+                k_ep=k_ep, k_part=k_part[2:])
+        else:
+            # Use the selected ed:ep:part
+            target_geometry = self.model_database.get_target_geometry(
+                k_ep=k_ep, k_part=k_part)
+
+        # Get shot and default geometry
+        default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
+        shot_geometry = self.model_database.get_shot_geometry(shot=shot)
+        if shot_geometry is None and default_shot_geometry is None:
+            if shot['k_part'] in ['g_asuivre', 'g_reportage']:
+                print_yellow("\t\t\tNo shot geometry defined, create a shot geometry")
+                # Not geometry define, create a new one
+                self.model_database.set_shot_geometry(shot=shot, geometry={
+                    'crop': [0] * 4,
+                    'keep_ratio': True,
+                    'fit_to_width': False})
+                shot_geometry = self.model_database.get_shot_geometry(shot=shot)
+            elif has_add_border_task(shot):
+                # Not geometry define, create a new one
+                print_yellow("\t\t\tNo shot geometry defined, stabilize filter detected, associate a shot geometry")
+                self.model_database.set_shot_geometry(shot=shot, geometry={
+                    'crop': [IMG_BORDER_HIGH_RES] * 4,
+                    'keep_ratio': True,
+                    'fit_to_width': False})
+                shot_geometry = self.model_database.get_shot_geometry(shot=shot)
+            else:
+                print_yellow("\t\t\tNo shot geometry defined, associate a default shot geometry")
+                self.model_database.set_default_shot_geometry(shot=shot, geometry={
+                    'crop': [0] * 4,
+                    'keep_ratio': True,
+                    'fit_to_width': False})
+                default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
+
+        if False:
+        # if shot['no'] == 0:
+            print_lightcyan("================================== SHOT =======================================")
+            pprint(shot)
+            print_lightcyan("===============================================================================")
+            print_lightcyan("target_geometry:")
+            pprint(target_geometry)
+            print_lightcyan("default_shot_geometry:")
+            pprint(default_shot_geometry)
+            print_lightcyan("shot_geometry:")
+            pprint(shot_geometry)
+            # sys.exit()
+            pprint(filepath_tmp)
+
+        # Create a list of frames for this shot
+        self.frames[shot_no] = list()
+        for p, i in zip(filepath_tmp, range(len(filepath_tmp))):
+
+            # Use the frame no. from video to simplify frame replacement/display/stabilize
+            frame_no = shot['src']['start'] + i
+
+            if not os.path.exists(p):
+                image_filepath = p_missing_frame
+                shot['is_valid'] = False
+            else:
+                image_filepath = p
+
+            self.frames[shot_no].append({
+                'dst': shot['dst'],
+                'src': shot['src'],
+                'k_ed': shot['k_ed'],
+                'k_ep': shot['k_ep'],
+                'k_part': shot['k_part'],
+                'shot_no': shot_no,
+                'frame_no': frame_no,
+
+                'filepath': image_filepath,
+                # 'replaced_by': self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no),
+                'curves': curves,
+                'geometry': None,
+                # 'geometry': {
+                #     'target': target_geometry,
+                #     'default': default_shot_geometry,
+                #     'shot': shot_geometry,
+                #     'dimensions': shot['geometry']['dimensions'],
+                # },
+                'cache_initial': None,
+                'cache': None,
+                'cache_deshake': None,
+            })
+
+
     # Select a new episode/part
     #---------------------------------------------------------------------------
+    def event_selected_step_changed(self, k_step):
+        k_ep = self.current_selection['k_ep']
+        k_part = self.current_selection['k_part']
+
+        self.consolidate_shot_for_edition(self, self.current_shot(),
+            k_ep, k_part, k_step)
+
+        # TODO: It should use the k_ed from the shot src even for generique
+        k_ed_selected = '' if k_part in K_GENERIQUES else self.current_shot()['src']['k_ed']
+
+        self.model_database.initialize_shots_per_curves(self.shots)
+        # print("selected: %s:%s:%s" % (k_ed_selected, k_ep_selected, k_part_selected))
+        if k_part in K_GENERIQUES:
+            curves_library = self.model_database.get_library_curves(
+                self.shots[0]['k_ed'], self.shots[0]['k_ep'])
+        else:
+            curves_library = self.model_database.get_library_curves(k_ed_selected, k_ep)
+        self.signal_curves_library_modified.emit(curves_library)
+        self.signal_shotlist_modified.emit(self.current_selection)
+
+
 
     def selection_changed(self, values:dict):
         """ Directory or step has been changed, update the database, list all images,
@@ -146,7 +332,7 @@ class Controller_video_editor(Controller_common,
             pprint(values)
         k_ep_selected = values['k_ep']
         k_part_selected = values['k_part']
-        task = 'deinterlace' if values['k_step'] == '' else values['k_step']
+        k_step = 'deinterlace' if values['k_step'] == '' else values['k_step']
 
         self.current_task = values['k_step']
 
@@ -164,7 +350,6 @@ class Controller_video_editor(Controller_common,
         # self.shots is a pointer to the shots for this episode/part
         db = self.model_database.database()
 
-        p_missing_frame = os.path.join('tools', 'icons', 'missing.png')
 
         # Remove all frames
         self.frames.clear()
@@ -190,168 +375,9 @@ class Controller_video_editor(Controller_common,
         # Walk through shots
         shots = db_video['shots']
         for shot in shots:
+            self.consolidate_shot_for_edition(shot=shot, k_step=k_step)
             # For debug only
-            print_lightgreen("\t\t%s: %s\t(%d)\t<- %s:%s:%s   %d (%d)" % (
-                "{:3d}".format(shot['no']),
-                "{:5d}".format(shot['start']),
-                shot['dst']['count'],
-                shot['k_ed'],
-                shot['k_ep'],
-                shot['k_part'],
-                shot['start'],
-                shot['count']),
-                flush=True)
 
-            # Consolidate shot
-            shot['last_task'] = task
-            consolidate_shot(db, shot=shot, edition_mode=True)
-            # NOTE replace: if last task is 'edition', the hashes
-            # are different from the final generation
-
-            # Get a list of path for each frame  for this shot
-            if k_part_selected in ['g_asuivre', 'g_reportage']:
-                filepath_tmp = get_frame_list_single(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
-            else:
-                filepath_tmp = get_frame_list(db, k_ep=k_ep_selected, k_part=k_part_selected, shot=shot)
-            self.filepath.append(filepath_tmp)
-
-            shot_no = shot['no']
-            self.shots[shot_no] = shot
-
-            # Get curves for this shot
-            curves = self.model_database.get_shot_curves_selection(db=db, shot=shot)
-            try:
-                k_curves = curves['k_curves']
-            except:
-                k_curves =''
-            if curves is None and shot['curves'] is not None:
-                print("Error: curves [%s] is not found in curves library, correct this!" % (shot['curves']['k_curves']))
-                pprint(curves)
-                print("-----")
-                pprint(shot)
-                sys.exit()
-                shot['curves']['k_curves'] = '~' + shot['curves']['k_curves']
-
-
-            # Update this shot for UI:
-            # to do: put in a 'ui' structure
-            shot.update({
-                'is_valid': True,
-
-                # Frame no. ... for what?
-                'frame_nos': list(),
-
-                # Structure to display the modifications in the selection widget
-                'modifications': {
-                    'curves' : {
-                        'initial': k_curves,
-                        'new': None,
-                    },
-                },
-            })
-
-
-            # Get the target geometry
-            target_geometry = None
-            default_shot_geometry = None
-            shot_geometry = None
-            if k_part_selected in ['g_debut', 'g_fin']:
-                # Use the k_ed:k_ep defined as the source for this geometry
-                target_geometry = self.model_database.get_target_geometry(
-                        k_ep='ep00',
-                        k_part=k_part_selected)
-            elif k_part_selected in ['g_asuivre', 'g_reportage']:
-                # Use the following part to get the geometry for this part
-                target_geometry = self.model_database.get_target_geometry(
-                        k_ep=k_ep_selected,
-                        k_part=k_part_selected[2:])
-            else:
-                # Use the selected ed:ep:part
-                target_geometry = self.model_database.get_target_geometry(
-                        k_ep=k_ep_selected,
-                        k_part=k_part_selected)
-
-            # Get shot and default geometry
-            default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
-            shot_geometry = self.model_database.get_shot_geometry(shot=shot)
-            if shot_geometry is None and default_shot_geometry is None:
-                if shot['k_part'] in ['g_asuivre', 'g_reportage']:
-                    print_yellow("\t\t\tNo shot geometry defined, create a shot geometry")
-                    # Not geometry define, create a new one
-                    self.model_database.set_shot_geometry(shot=shot, geometry={
-                        'crop': [0] * 4,
-                        'keep_ratio': True,
-                        'fit_to_width': False})
-                    shot_geometry = self.model_database.get_shot_geometry(shot=shot)
-                elif has_add_border_task(shot):
-                    # Not geometry define, create a new one
-                    print_yellow("\t\t\tNo shot geometry defined, stabilize filter detected, associate a shot geometry")
-                    self.model_database.set_shot_geometry(shot=shot, geometry={
-                        'crop': [IMG_BORDER_HIGH_RES] * 4,
-                        'keep_ratio': True,
-                        'fit_to_width': False})
-                    shot_geometry = self.model_database.get_shot_geometry(shot=shot)
-                else:
-                    print_yellow("\t\t\tNo shot geometry defined, associate a default shot geometry")
-                    self.model_database.set_default_shot_geometry(shot=shot, geometry={
-                        'crop': [0] * 4,
-                        'keep_ratio': True,
-                        'fit_to_width': False})
-                    default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
-
-            if False:
-            # if shot['no'] == 0:
-                print_lightcyan("================================== SHOT =======================================")
-                pprint(shot)
-                print_lightcyan("===============================================================================")
-                print_lightcyan("target_geometry:")
-                pprint(target_geometry)
-                print_lightcyan("default_shot_geometry:")
-                pprint(default_shot_geometry)
-                print_lightcyan("shot_geometry:")
-                pprint(shot_geometry)
-                # sys.exit()
-                pprint(filepath_tmp)
-
-            # Create a list of frames for this shot
-            self.frames[shot_no] = list()
-            for p, i in zip(filepath_tmp, range(len(filepath_tmp))):
-
-                if task in ['deinterlace', 'edition']:
-                    # Use the frame no. from video to simplify frame replacement
-                    frame_no = shot['src']['start'] + i
-                else:
-                    frame_no = i
-
-                if not os.path.exists(p):
-                    image_filepath = p_missing_frame
-                    shot['is_valid'] = False
-                else:
-                    image_filepath = p
-
-                self.frames[shot_no].append({
-                    'dst': shot['dst'],
-                    'src': shot['src'],
-                    'k_ed': shot['k_ed'],
-                    'k_ep': shot['k_ep'],
-                    'k_part': shot['k_part'],
-                    'shot_no': shot_no,
-                    'frame_no': frame_no,
-
-                    'filepath': image_filepath,
-                    # 'replaced_by': self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no),
-                    'curves': curves,
-                    'geometry': None,
-                    # 'geometry': {
-                    #     'target': target_geometry,
-                    #     'default': default_shot_geometry,
-                    #     'shot': shot_geometry,
-                    #     'dimensions': shot['geometry']['dimensions'],
-                    # },
-                    'cache_initial': None,
-                    'cache': None,
-                    'cache_deshake': None,
-                })
             # for f in self.frames[shot_no]:
             #     print(f['frame_no'])
             # sys.exit()
@@ -362,7 +388,7 @@ class Controller_video_editor(Controller_common,
             'k_ed': k_ed_selected,
             'k_ep': k_ep_selected,
             'k_part': k_part_selected,
-            'k_step': task,
+            'k_step': k_step,
             'shots': self.shots,
         }
 
@@ -379,6 +405,8 @@ class Controller_video_editor(Controller_common,
             curves_library = self.model_database.get_library_curves(k_ed_selected, k_ep_selected)
         self.signal_curves_library_modified.emit(curves_library)
         self.signal_shotlist_modified.emit(self.current_selection)
+
+
 
 
     def event_selected_shots_changed(self, selected_shots:dict):
@@ -418,7 +446,6 @@ class Controller_video_editor(Controller_common,
                 self.playlist_frames.append(frame)
                 frame_nos.append(frame['frame_no'] + offset)
             ticklist.append(ticklist[-1] + len(self.frames[shot_no]))
-
         gc.collect()
 
         # Load images
@@ -672,12 +699,13 @@ class Controller_video_editor(Controller_common,
             options['geometry']['add_borders'] = False
 
 
-        if self.current_task in ['deinterlace', 'edition']:
-            options['replace']['allowed'] = True
-        else:
-            # Do not allow edition because we do not know if we are using frames
-            # generated for edition or with final filters
-            options['replace']['allowed'] = False
+        options['replace']['allowed'] = True
+        # if self.current_task in ['deinterlace', 'edition']:
+        #     options['replace']['allowed'] = True
+        # else:
+        #     # Do not allow edition because we do not know if we are using frames
+        #     # generated for edition or with final filters
+        #     options['replace']['allowed'] = False
 
 
         if self.current_task in ['edition', 'sharpen']:

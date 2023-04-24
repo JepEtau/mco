@@ -24,18 +24,13 @@ class Controller_replace():
 
         for frame in self.playlist_frames:
             shot = self.shots[frame['shot_no']]
-            if self.current_task not in ['deinterlace', 'edition']:
-                offset = shot['start']
-            else:
-                offset = 0
-
             frame_no = self.model_database.get_replace_frame_no(
-                shot=shot, frame_no=frame['frame_no'] + offset)
+                shot=shot, frame_no=frame['frame_no'])
             if frame_no != -1:
                 list_replace.append({
                     'shot_no': frame['shot_no'],
                     'src': frame_no,
-                    'dst': frame['frame_no'] + offset,
+                    'dst': frame['frame_no'],
                 })
         # print_lightcyan("model video editor: refresh_replace_list")
         # pprint(list_replace)

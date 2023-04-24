@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-
 import sys
 
 from pprint import pprint
@@ -21,6 +20,7 @@ from PySide6.QtWidgets import (
     QSlider,
     QWidget,
 )
+from utils.pretty_print import print_purple
 
 from utils.stylesheet import (
     set_stylesheet,
@@ -68,13 +68,10 @@ class Widget_controls(QWidget, Ui_widget_controls):
         # self.pushButton_play_pause.setIcon(self.icon_pause)
 
 
-        self.spinBox_speed.setFocusPolicy(Qt.NoFocus)
-        self.label_ed_ep_part.setFocusPolicy(Qt.NoFocus)
         self.label_ed_ep_part.clear()
-        self.label_shot_no.setFocusPolicy(Qt.NoFocus)
         self.label_shot_no.clear()
-        self.lineEdit_frame_no.setFocusPolicy(Qt.NoFocus)
         self.lineEdit_frame_no.clear()
+        self.lineEdit_frame_index.clear()
 
         # variables
         self.previous_position = None
@@ -135,8 +132,6 @@ class Widget_controls(QWidget, Ui_widget_controls):
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
 
-        for w in [self.spinBox_speed]:
-            w.blockSignals(False)
 
     def get_preview_options(self):
         return None
@@ -146,20 +141,19 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
     def set_enabled(self, enabled):
         self.pushButton_play_pause.setEnabled(enabled)
-        self.spinBox_speed.setEnabled(enabled)
         self.slider_frames.setEnabled(enabled)
 
 
     def refresh_values(self, frame:dict):
-        k_ed_ep_part = "%s:%s:%s" % (frame['k_ed'], frame['k_ep'], frame['k_part'])
-        self.label_ed_ep_part.setText(k_ed_ep_part)
-        self.label_shot_no.setText(str(frame['shot_no']))
-        self.lineEdit_frame_no.setText(str(frame['frame_no']))
-
+        self.label_ed_ep_part.setText(f"{frame['k_ed']}:{frame['k_ep']}:{frame['k_part']}")
+        self.label_shot_no.setText(f"{frame['shot_no']}")
+        self.lineEdit_frame_no.setText(f"{frame['frame_no']}")
+        self.lineEdit_frame_index.setText(f"{frame['index']}")
 
 
     def refresh(self, values:dict):
-        self.lineEdit_frame_no.setText(str(values['frame_no']))
+        self.lineEdit_frame_no.setText(f"{values['frame_no']}")
+        self.lineEdit_frame_index.setText(f"{values['frame_index']}")
         self.slider_frames.setMaximum(values['count'])
         self.slider_frames.setTickPosition(values['position'])
         self.refresh_status(values['status'])
@@ -169,11 +163,9 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.status = status
         if self.status == 'stopped' or self.status == 'paused':
             self.pushButton_play_pause.setEnabled(True)
-            self.spinBox_speed.setEnabled(True)
             self.slider_frames.setEnabled(True)
         elif self.status == 'playing':
             self.pushButton_play_pause.setEnabled(True)
-            self.spinBox_speed.setEnabled(False)
             self.slider_frames.setEnabled(False)
 
 
@@ -214,7 +206,7 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
 
     def get_playing_speed(self):
-        return self.spinBox_speed.value()
+        return 1
 
 
     def event_refresh_slider(self, playlist_properties):
@@ -231,6 +223,11 @@ class Widget_controls(QWidget, Ui_widget_controls):
         except:
             self.lineEdit_frame_no.clear()
 
+        try:
+            self.lineEdit_frame_index.setText(f"0")
+        except:
+            self.lineEdit_frame_index.clear()
+
         # Save the list of tick position
         self.ticks = playlist_properties['ticks']
 
@@ -246,8 +243,10 @@ class Widget_controls(QWidget, Ui_widget_controls):
             self.pushButton_play_pause.setChecked(True)
             self.pushButton_play_pause.setIcon(self.icon_play)
             self.pushButton_play_pause.blockSignals(False)
-        frame_no = self.frame_nos[self.slider_frames.value()]
-        self.lineEdit_frame_no.setText(str(frame_no))
+        frame_index = self.slider_frames.value()
+        frame_no = self.frame_nos[frame_index]
+        self.lineEdit_frame_no.setText(f"{frame_no}")
+        self.lineEdit_frame_index.setText(f"frame_index")
         # log.info(f"event, slider moved to frame {frame_no}")
         self.signal_slider_moved.emit(self.slider_frames.value())
 

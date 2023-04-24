@@ -15,10 +15,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QDoubleSpinBox, QFrame,
-    QHBoxLayout, QLabel, QLayout, QLineEdit,
-    QPushButton, QSizePolicy, QSpacerItem, QVBoxLayout,
-    QWidget)
+from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
+    QLayout, QLineEdit, QPushButton, QSizePolicy,
+    QSpacerItem, QVBoxLayout, QWidget)
 
 from ui.widget_custom_qslider import Widget_custom_qslider
 
@@ -26,6 +25,7 @@ class Ui_widget_controls(object):
     def setupUi(self, widget_controls):
         if not widget_controls.objectName():
             widget_controls.setObjectName(u"widget_controls")
+        widget_controls.resize(869, 85)
         self.verticalLayout = QVBoxLayout(widget_controls)
         self.verticalLayout.setSpacing(3)
         self.verticalLayout.setObjectName(u"verticalLayout")
@@ -48,29 +48,9 @@ class Ui_widget_controls(object):
 
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.spinBox_speed = QDoubleSpinBox(widget_controls)
-        self.spinBox_speed.setObjectName(u"spinBox_speed")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.spinBox_speed.sizePolicy().hasHeightForWidth())
-        self.spinBox_speed.setSizePolicy(sizePolicy1)
-        self.spinBox_speed.setWrapping(False)
-        self.spinBox_speed.setFrame(True)
-        self.spinBox_speed.setAlignment(Qt.AlignCenter)
-        self.spinBox_speed.setReadOnly(False)
-        self.spinBox_speed.setButtonSymbols(QAbstractSpinBox.UpDownArrows)
-        self.spinBox_speed.setKeyboardTracking(False)
-        self.spinBox_speed.setDecimals(1)
-        self.spinBox_speed.setMinimum(0.500000000000000)
-        self.spinBox_speed.setMaximum(1.500000000000000)
-        self.spinBox_speed.setSingleStep(0.500000000000000)
-        self.spinBox_speed.setValue(1.000000000000000)
-
-        self.horizontalLayout.addWidget(self.spinBox_speed)
-
         self.pushButton_play_pause = QPushButton(widget_controls)
         self.pushButton_play_pause.setObjectName(u"pushButton_play_pause")
+        self.pushButton_play_pause.setFocusPolicy(Qt.NoFocus)
         icon = QIcon()
         icon.addFile(u"tools/icons/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_play_pause.setIcon(icon)
@@ -113,10 +93,14 @@ class Ui_widget_controls(object):
 
         self.lineEdit_frame_no = QLineEdit(widget_controls)
         self.lineEdit_frame_no.setObjectName(u"lineEdit_frame_no")
+        sizePolicy1 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.lineEdit_frame_no.sizePolicy().hasHeightForWidth())
         self.lineEdit_frame_no.setSizePolicy(sizePolicy1)
         self.lineEdit_frame_no.setMinimumSize(QSize(55, 0))
         self.lineEdit_frame_no.setMaximumSize(QSize(60, 16777215))
+        self.lineEdit_frame_no.setFocusPolicy(Qt.NoFocus)
         self.lineEdit_frame_no.setFrame(False)
         self.lineEdit_frame_no.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
         self.lineEdit_frame_no.setReadOnly(True)
@@ -126,6 +110,19 @@ class Ui_widget_controls(object):
         self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer)
+
+        self.lineEdit_frame_index = QLineEdit(widget_controls)
+        self.lineEdit_frame_index.setObjectName(u"lineEdit_frame_index")
+        sizePolicy1.setHeightForWidth(self.lineEdit_frame_index.sizePolicy().hasHeightForWidth())
+        self.lineEdit_frame_index.setSizePolicy(sizePolicy1)
+        self.lineEdit_frame_index.setMinimumSize(QSize(55, 0))
+        self.lineEdit_frame_index.setMaximumSize(QSize(60, 16777215))
+        self.lineEdit_frame_index.setFocusPolicy(Qt.NoFocus)
+        self.lineEdit_frame_index.setFrame(False)
+        self.lineEdit_frame_index.setAlignment(Qt.AlignRight|Qt.AlignTrailing|Qt.AlignVCenter)
+        self.lineEdit_frame_index.setReadOnly(True)
+
+        self.horizontalLayout_3.addWidget(self.lineEdit_frame_index)
 
 
         self.verticalLayout.addLayout(self.horizontalLayout_3)
@@ -142,5 +139,6 @@ class Ui_widget_controls(object):
         self.label_ed_ep_part.setText(QCoreApplication.translate("widget_controls", u"s:ep11:g_reportage", None))
         self.label_shot_no.setText(QCoreApplication.translate("widget_controls", u"130", None))
         self.lineEdit_frame_no.setText(QCoreApplication.translate("widget_controls", u"123456", None))
+        self.lineEdit_frame_index.setText(QCoreApplication.translate("widget_controls", u"123456", None))
     # retranslateUi
 

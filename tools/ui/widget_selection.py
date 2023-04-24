@@ -37,6 +37,7 @@ from ui.ui.widget_selection_ui import Ui_widget_selection
 class Widget_selection(QWidget, Ui_widget_selection):
     signal_selection_changed = Signal(dict)
     signal_selected_shots_changed = Signal(dict)
+    signal_selected_step_changed = Signal(str)
     signal_close = Signal()
 
 
@@ -471,7 +472,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
         except:
             row_no = 0
         self.initial_shot_no = int(self.tableWidget_shots.item(row_no, 0).text())
-        self.event_part_changed()
+        self.signal_selected_step_changed(self.get_current_step())
+
 
 
     def event_selection_changed(self, selected):
