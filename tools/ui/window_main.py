@@ -524,7 +524,6 @@ class Window_main(Window_common):
                         x0 = PAINTER_MARGIN_LEFT
                         y0 = PAINTER_MARGIN_TOP - delta_y
                         crop = shot_geometry['crop']
-                        print(crop)
                         if not preview['geometry']['add_borders']:
                             crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
                         self.painter.drawImage(QPoint(x0, y0), q_image)
@@ -533,7 +532,7 @@ class Window_main(Window_common):
                         crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
                             width=initial_img_width, height=initial_img_height, crop=crop)
 
-                        print(f"({crop_left}, {crop_top}) -> ({cropped_width},{cropped_height})")
+                        # print(f"({crop_left}, {crop_top}) -> ({cropped_width},{cropped_height})")
 
                         pen = QPen(COLOR_CROP_RECT)
                         pen.setWidth(PEN_CROP_SIZE)

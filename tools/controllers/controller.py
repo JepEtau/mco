@@ -104,8 +104,10 @@ class Controller_video_editor(Controller_common,
         self.view.widget_selection.signal_selected_step_changed[str].connect(self.event_selected_step_changed)
 
 
-        self.view.widget_geometry.signal_save.connect(self.event_save_geometry_requested)
+        self.view.widget_geometry.signal_save.connect(self.event_geometry_save_requested)
         self.view.widget_geometry.signal_discard.connect(self.event_geometry_discard_requested)
+        self.view.widget_geometry.signal_save_target_requested.connect(self.event_geometry_save_target_requested)
+        self.view.widget_geometry.signal_discard_target_requested.connect(self.event_geometry_discard_target_requested)
         self.view.widget_geometry.signal_geometry_modified[dict].connect(self.event_geometry_modified)
 
         self.view.widget_replace.signal_save.connect(self.event_replace_save_requested)

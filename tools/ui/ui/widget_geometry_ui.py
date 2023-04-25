@@ -133,6 +133,12 @@ class Ui_widget_geometry(object):
         self.gridLayout = QGridLayout(self.groupBox_target_geometry)
         self.gridLayout.setObjectName(u"gridLayout")
         self.gridLayout.setContentsMargins(3, 9, 3, 3)
+        self.label_9 = QLabel(self.groupBox_target_geometry)
+        self.label_9.setObjectName(u"label_9")
+        self.label_9.setLineWidth(0)
+
+        self.gridLayout.addWidget(self.label_9, 0, 0, 1, 1)
+
         self.lineEdit_target_width = QLineEdit(self.groupBox_target_geometry)
         self.lineEdit_target_width.setObjectName(u"lineEdit_target_width")
         sizePolicy2 = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
@@ -147,12 +153,6 @@ class Ui_widget_geometry(object):
         self.lineEdit_target_width.setReadOnly(True)
 
         self.gridLayout.addWidget(self.lineEdit_target_width, 0, 3, 1, 1)
-
-        self.label_9 = QLabel(self.groupBox_target_geometry)
-        self.label_9.setObjectName(u"label_9")
-        self.label_9.setLineWidth(0)
-
-        self.gridLayout.addWidget(self.label_9, 0, 0, 1, 1)
 
         self.pushButton_target_discard = QPushButton(self.groupBox_target_geometry)
         self.pushButton_target_discard.setObjectName(u"pushButton_target_discard")
@@ -183,6 +183,18 @@ class Ui_widget_geometry(object):
         self.pushButton_target_width_edition.setFlat(True)
 
         self.gridLayout.addWidget(self.pushButton_target_width_edition, 0, 1, 1, 1)
+
+        self.pushButton_target_save = QPushButton(self.groupBox_target_geometry)
+        self.pushButton_target_save.setObjectName(u"pushButton_target_save")
+        sizePolicy1.setHeightForWidth(self.pushButton_target_save.sizePolicy().hasHeightForWidth())
+        self.pushButton_target_save.setSizePolicy(sizePolicy1)
+        self.pushButton_target_save.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_target_save.setIcon(icon2)
+        self.pushButton_target_save.setCheckable(False)
+        self.pushButton_target_save.setAutoDefault(False)
+        self.pushButton_target_save.setFlat(True)
+
+        self.gridLayout.addWidget(self.pushButton_target_save, 0, 5, 1, 1)
 
 
         self.verticalLayout_2.addWidget(self.groupBox_target_geometry)
@@ -404,10 +416,11 @@ class Ui_widget_geometry(object):
         self.pushButton_save.setText("")
         self.pushButton_close.setText("")
         self.groupBox_target_geometry.setTitle(QCoreApplication.translate("widget_geometry", u"Target", None))
-        self.lineEdit_target_width.setText(QCoreApplication.translate("widget_geometry", u"1440", None))
         self.label_9.setText(QCoreApplication.translate("widget_geometry", u"width", None))
+        self.lineEdit_target_width.setText(QCoreApplication.translate("widget_geometry", u"1440", None))
         self.pushButton_target_discard.setText("")
         self.pushButton_target_width_edition.setText("")
+        self.pushButton_target_save.setText("")
         self.groupBox_shot_default_geometry_2.setTitle(QCoreApplication.translate("widget_geometry", u"Preview", None))
         self.pushButton_shot_crop_preview.setText("")
         self.pushButton_shot_resize_preview.setText("")

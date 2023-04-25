@@ -382,7 +382,7 @@ def cv2_geometry_filter(img, geometry):
 
 def calculate_geometry_parameters(shot, img, verbose:bool=False):
     # Returns the values which will be used when resizing/cropping/padding an image
-    verbose = True
+    verbose = False
     if verbose:
         print_cyan("\ncalculate_geometry_parameters\n------------------------------")
         pprint(shot['geometry'])

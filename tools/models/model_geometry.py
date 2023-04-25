@@ -102,7 +102,9 @@ class Model_geometry():
         except:
             pass
         nested_dict_clean(self.db_target_geometry)
-        if len(self.db_target_geometry) == 0:
+        if (len(self.db_default_shot_geometry.keys()) == 0
+            and len(self.db_shot_geometry.keys()) == 0
+            and len(self.db_target_geometry.keys()) == 0):
             self.is_geometry_db_modified = False
 
 
@@ -146,7 +148,9 @@ class Model_geometry():
         except: pass
 
         nested_dict_clean(self.db_default_shot_geometry)
-        if len(self.db_default_shot_geometry) == 0:
+        if (len(self.db_default_shot_geometry.keys()) == 0
+            and len(self.db_shot_geometry.keys()) == 0
+            and len(self.db_target_geometry.keys()) == 0):
             self.is_geometry_db_modified = False
 
 
@@ -198,12 +202,15 @@ class Model_geometry():
         except: pass
 
         nested_dict_clean(self.db_shot_geometry)
-        self.is_geometry_db_modified = False
+        if (len(self.db_default_shot_geometry.keys()) == 0
+            and len(self.db_shot_geometry.keys()) == 0
+            and len(self.db_target_geometry.keys()) == 0):
+            self.is_geometry_db_modified = False
 
 
 
 
-    def save_geometry_database(self, k_ep, k_part):
+    def save_shot_geometry_database(self, k_ep, k_part):
         # Save all modifications
         verbose = False
 
@@ -229,39 +236,6 @@ class Model_geometry():
             config_geometry.read(filepath)
         else:
             config_geometry = configparser.ConfigParser({}, collections.OrderedDict)
-
-
-        # Target
-        if verbose:
-            print_lightgreen("Save target geometry")
-        for k_ep_src, ep_values in self.db_target_geometry.items():
-            for k_part_src, part_values in ep_values.items():
-                k_section = '%s' % (k_part_src)
-
-                if not config_geometry.has_section(k_section):
-                    config_geometry[k_section] = dict()
-                if verbose:
-                    print("\tk_section = %s" % (k_section))
-
-                # Update the values
-                try:
-                    value_array = list()
-                    try:
-                        width = part_values['w']
-                        value_array.append("width=%s" % (width))
-                        nested_dict_set(self.db_target_geometry_initial, deepcopy(part_values),
-                            k_ep_src, k_part_src)
-                    except: pass
-
-                    config_geometry.set(k_section, 'target', ', '.join(value_array))
-                except: pass
-        nested_dict_clean(self.db_target_geometry_initial)
-        self.db_target_geometry.clear()
-        if verbose:
-            print_lightcyan("\tnew initial target geometry:")
-            pprint(self.db_target_geometry_initial)
-            print_lightcyan("\tnew modified target geometry:")
-            pprint(self.db_target_geometry)
 
 
         # Default shot_geometry
@@ -323,8 +297,6 @@ class Model_geometry():
             pprint(self.db_default_shot_geometry_initial)
             print_lightcyan("\tnew modified default shot geometry:")
             pprint(self.db_default_shot_geometry)
-
-
 
 
         # shot_geometry
@@ -399,8 +371,86 @@ class Model_geometry():
         self.db_default_shot_geometry.clear()
         self.db_shot_geometry.clear()
 
-        self.is_geometry_db_modified = False
+        if (len(self.db_default_shot_geometry.keys()) == 0
+            and len(self.db_shot_geometry.keys()) == 0
+            and len(self.db_target_geometry.keys()) == 0):
+            self.is_geometry_db_modified = False
+
+
+
+
+
+    def save_target_geometry_database(self, k_ep, k_part):
+        # Save all modifications
+        verbose = False
+
+        if not self.is_geometry_db_modified:
+            return True
+
+        log.info("save geometry database %s:%s" % (k_ep, k_part))
+        if verbose:
+            print_lightgreen(f"\nSave geometry database: {k_ep}:{k_part}\n---------------------------------------")
+        db = self.global_database
+
+        # Open configuration file
+        if k_part in ['g_debut', 'g_fin']:
+            filepath = os.path.join(db['common']['directories']['config'], k_part, "%s_geometry.ini" % (k_part))
+        else:
+            filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_geometry.ini" % (k_ep))
+        if filepath.startswith("~/"):
+            filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+
+        # Parse the file
+        if os.path.exists(filepath):
+            config_geometry = configparser.ConfigParser(dict_type=collections.OrderedDict)
+            config_geometry.read(filepath)
+        else:
+            config_geometry = configparser.ConfigParser({}, collections.OrderedDict)
+
+
+        # Target
+        if verbose:
+            print_lightgreen("Save target geometry")
+        for k_ep_src, ep_values in self.db_target_geometry.items():
+            for k_part_src, part_values in ep_values.items():
+                k_section = '%s' % (k_part_src)
+
+                if not config_geometry.has_section(k_section):
+                    config_geometry[k_section] = dict()
+                if verbose:
+                    print("\tk_section = %s" % (k_section))
+
+                # Update the values
+                try:
+                    value_array = list()
+                    try:
+                        width = part_values['w']
+                        value_array.append("width=%s" % (width))
+                        nested_dict_set(self.db_target_geometry_initial, deepcopy(part_values),
+                            k_ep_src, k_part_src)
+                    except: pass
+
+                    config_geometry.set(k_section, 'target', ', '.join(value_array))
+                except: pass
+        nested_dict_clean(self.db_target_geometry_initial)
+        self.db_target_geometry.clear()
+        if verbose:
+            print_lightcyan("\tnew initial target geometry:")
+            pprint(self.db_target_geometry_initial)
+            print_lightcyan("\tnew modified target geometry:")
+            pprint(self.db_target_geometry)
+
+
+        # Write to the config file
+        with open(filepath, 'w') as config_file:
+            config_geometry.write(config_file)
+
+        # Clean the dictonaries
+        self.db_target_geometry.clear()
+
+        if (len(self.db_default_shot_geometry.keys()) == 0
+            and len(self.db_shot_geometry.keys()) == 0
+            and len(self.db_target_geometry.keys()) == 0):
+            self.is_geometry_db_modified = False
         return True
-
-
 

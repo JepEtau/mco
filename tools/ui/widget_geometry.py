@@ -36,6 +36,8 @@ from ui.ui.widget_geometry_ui import Ui_widget_geometry
 class Widget_geometry(Widget_common, Ui_widget_geometry):
     signal_geometry_modified = Signal(dict)
     signal_position_changed = Signal(str)
+    signal_save_target_requested = Signal()
+    signal_discard_target_requested = Signal()
 
     def __init__(self, ui, controller:Controller_video_editor):
         super(Widget_geometry, self).__init__(ui)
@@ -56,6 +58,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.pushButton_target_width_edition.toggled[bool].connect(partial(self.event_shot_preview_changed, 'target_preview'))
         # self.pushButton_target_width_copy_from_shot.clicked.connect(partial(self.event_target, 'copy_from_shot'))
         self.pushButton_target_discard.clicked.connect(partial(self.event_target, 'discard'))
+        self.pushButton_target_save.clicked.connect(partial(self.event_target, 'save'))
 
         # Shot
         self.pushButton_shot_crop_edition.toggled[bool].connect(partial(self.event_shot_preview_changed, 'crop_edition'))
@@ -111,6 +114,10 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         except:
             log.warning("cannot set initial options")
             pass
+
+        self.pushButton_target_discard.setEnabled(False)
+        self.pushButton_target_save.setEnabled(False)
+
         self.block_all_signals(False)
 
         # Force enabled/disable to save the current states for all widgets
@@ -245,6 +252,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
             self.pushButton_shot_discard.setEnabled(True)
         elif element == 'target':
             self.pushButton_target_discard.setEnabled(True)
+            self.pushButton_target_save.setEnabled(True)
 
         self.signal_geometry_modified.emit({
             # element in 'default_shot', 'shot', 'target'
@@ -259,13 +267,12 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
     def event_target(self, action):
         log.info("action=%s" % (action))
-        if action == 'copy_from_shot':
-            self.event_is_modified(element='target',
-                event_type='set', parameter='width', value='auto')
+        self.pushButton_target_discard.setEnabled(False)
+        self.pushButton_target_save.setEnabled(False)
+        if action == 'save':
+            self.signal_save_target_requested.emit()
         elif action == 'discard':
-            self.pushButton_target_discard.setEnabled(True)
-            self.event_is_modified(element='target',
-                event_type='discard', parameter='width', value=-1)
+            self.signal_discard_target_requested.emit()
 
 
     def event_target_width_changed(self, value):
@@ -393,6 +400,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.pushButton_target_width_edition.blockSignals(enabled)
         # self.pushButton_target_width_copy_from_shot.blockSignals(enabled)
         self.pushButton_target_discard.blockSignals(enabled)
+        self.pushButton_target_save.blockSignals(enabled)
 
         # Shot
         self.pushButton_shot_crop_edition.blockSignals(enabled)

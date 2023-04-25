@@ -208,17 +208,42 @@ class Controller_geometry():
             frame['geometry']['error'] = is_geometry_erroneous
 
 
-
-
     def event_geometry_discard_requested(self):
+        log.info("discard modifications requested")
+        shot = self.current_shot()
+        self.model_database.discard_default_shot_geometry_modifications(shot)
+        self.model_database.discard_shot_geometry_modifications(shot)
+        self.refresh_geometry_for_each_frame(shot=shot)
+        self.signal_reload_frame.emit()
+
+
+    def event_geometry_save_requested(self):
+        k_part = self.current_selection['k_part']
+        db = self.model_database.database()
+        if k_part in ['g_debut', 'g_fin']:
+            k_ed = self.current_frame['k_ed']
+            k_ep = self.current_frame['k_ep']
+        else:
+            k_ep = self.current_selection['k_ep']
+            k_ed = self.current_frame['k_ed']
+        # pprint(self.current_selection)
+        shot = self.current_shot()
+
+        self.model_database.save_shot_geometry_database(k_ep=k_ep, k_part=k_part)
+        self.signal_is_saved.emit('geometry')
+
+
+
+    def event_geometry_discard_target_requested(self):
         log.info("discard modifications requested")
         k_part = self.current_selection['k_part']
         k_ep = self.current_frame['k_ep']
         self.model_database.discard_target_geometry_modifications(k_ep=k_ep, k_part=k_part)
+        self.refresh_geometry_for_each_frame(shot=self.current_shot())
         self.signal_reload_frame.emit()
 
 
-    def event_save_geometry_requested(self):
+    def event_geometry_save_target_requested(self):
         k_part = self.current_selection['k_part']
         db = self.model_database.database()
         if k_part in ['g_debut', 'g_fin']:
@@ -230,8 +255,6 @@ class Controller_geometry():
         # pprint(self.current_selection)
         shot = self.shots[self.current_frame['shot_no']]
 
-        self.model_database.save_geometry_database(k_ep=k_ep, k_part=k_part)
+        self.model_database.save_target_geometry_database(k_ep=k_ep, k_part=k_part)
         self.signal_is_saved.emit('geometry')
-
-
 
