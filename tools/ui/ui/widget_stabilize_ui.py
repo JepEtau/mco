@@ -15,17 +15,18 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QApplication, QCheckBox,
-    QFrame, QGridLayout, QGroupBox, QHBoxLayout,
-    QHeaderView, QLabel, QLineEdit, QPushButton,
-    QRadioButton, QSizePolicy, QSpacerItem, QTableWidget,
-    QTableWidgetItem, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QFrame, QGridLayout,
+    QGroupBox, QHBoxLayout, QLabel, QLineEdit,
+    QPushButton, QRadioButton, QSizePolicy, QSpacerItem,
+    QVBoxLayout, QWidget)
+
+from ui.table_stabilize import Table_stabilize
 
 class Ui_widget_stabilize(object):
     def setupUi(self, widget_stabilize):
         if not widget_stabilize.objectName():
             widget_stabilize.setObjectName(u"widget_stabilize")
-        widget_stabilize.resize(492, 370)
+        widget_stabilize.resize(542, 370)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -375,61 +376,10 @@ class Ui_widget_stabilize(object):
 
         self.verticalLayout_2.addWidget(self.groupBox_stabilize)
 
-        self.tableWidget_stabilize = QTableWidget(self.frame)
-        if (self.tableWidget_stabilize.columnCount() < 4):
-            self.tableWidget_stabilize.setColumnCount(4)
-        __qtablewidgetitem = QTableWidgetItem()
-        self.tableWidget_stabilize.setHorizontalHeaderItem(0, __qtablewidgetitem)
-        __qtablewidgetitem1 = QTableWidgetItem()
-        self.tableWidget_stabilize.setHorizontalHeaderItem(1, __qtablewidgetitem1)
-        __qtablewidgetitem2 = QTableWidgetItem()
-        self.tableWidget_stabilize.setHorizontalHeaderItem(2, __qtablewidgetitem2)
-        __qtablewidgetitem3 = QTableWidgetItem()
-        self.tableWidget_stabilize.setHorizontalHeaderItem(3, __qtablewidgetitem3)
-        if (self.tableWidget_stabilize.rowCount() < 5):
-            self.tableWidget_stabilize.setRowCount(5)
-        __qtablewidgetitem4 = QTableWidgetItem()
-        self.tableWidget_stabilize.setVerticalHeaderItem(0, __qtablewidgetitem4)
-        __qtablewidgetitem5 = QTableWidgetItem()
-        self.tableWidget_stabilize.setItem(0, 0, __qtablewidgetitem5)
-        __qtablewidgetitem6 = QTableWidgetItem()
-        self.tableWidget_stabilize.setItem(0, 1, __qtablewidgetitem6)
-        __qtablewidgetitem7 = QTableWidgetItem()
-        self.tableWidget_stabilize.setItem(0, 2, __qtablewidgetitem7)
-        __qtablewidgetitem8 = QTableWidgetItem()
-        self.tableWidget_stabilize.setItem(0, 3, __qtablewidgetitem8)
-        self.tableWidget_stabilize.setObjectName(u"tableWidget_stabilize")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.tableWidget_stabilize.sizePolicy().hasHeightForWidth())
-        self.tableWidget_stabilize.setSizePolicy(sizePolicy3)
-        self.tableWidget_stabilize.setFocusPolicy(Qt.NoFocus)
-        self.tableWidget_stabilize.setFrameShape(QFrame.StyledPanel)
-        self.tableWidget_stabilize.setFrameShadow(QFrame.Sunken)
-        self.tableWidget_stabilize.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.tableWidget_stabilize.setSizeAdjustPolicy(QAbstractScrollArea.AdjustIgnored)
-        self.tableWidget_stabilize.setEditTriggers(QAbstractItemView.SelectedClicked)
-        self.tableWidget_stabilize.setProperty("showDropIndicator", False)
-        self.tableWidget_stabilize.setDragDropOverwriteMode(False)
-        self.tableWidget_stabilize.setAlternatingRowColors(True)
-        self.tableWidget_stabilize.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.tableWidget_stabilize.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.tableWidget_stabilize.setSortingEnabled(False)
-        self.tableWidget_stabilize.setWordWrap(False)
-        self.tableWidget_stabilize.setCornerButtonEnabled(False)
-        self.tableWidget_stabilize.setRowCount(5)
-        self.tableWidget_stabilize.setColumnCount(4)
-        self.tableWidget_stabilize.horizontalHeader().setDefaultSectionSize(90)
-        self.tableWidget_stabilize.horizontalHeader().setStretchLastSection(True)
-        self.tableWidget_stabilize.verticalHeader().setVisible(True)
-        self.tableWidget_stabilize.verticalHeader().setCascadingSectionResizes(False)
-        self.tableWidget_stabilize.verticalHeader().setMinimumSectionSize(22)
-        self.tableWidget_stabilize.verticalHeader().setDefaultSectionSize(22)
-        self.tableWidget_stabilize.verticalHeader().setHighlightSections(True)
-        self.tableWidget_stabilize.verticalHeader().setStretchLastSection(False)
+        self.widget = Table_stabilize(self.frame)
+        self.widget.setObjectName(u"widget")
 
-        self.verticalLayout_2.addWidget(self.tableWidget_stabilize)
+        self.verticalLayout_2.addWidget(self.widget)
 
 
         self.mainLayout.addWidget(self.frame)
@@ -463,29 +413,6 @@ class Ui_widget_stabilize(object):
         self.pushButton_switch_ref.setText(QCoreApplication.translate("widget_stabilize", u"&Initial ref.", None))
         self.pushButton_undo.setText("")
         self.pushButton_set_segment.setText("")
-        ___qtablewidgetitem = self.tableWidget_stabilize.horizontalHeaderItem(0)
-        ___qtablewidgetitem.setText(QCoreApplication.translate("widget_stabilize", u"start", None));
-        ___qtablewidgetitem1 = self.tableWidget_stabilize.horizontalHeaderItem(1)
-        ___qtablewidgetitem1.setText(QCoreApplication.translate("widget_stabilize", u"end", None));
-        ___qtablewidgetitem2 = self.tableWidget_stabilize.horizontalHeaderItem(2)
-        ___qtablewidgetitem2.setText(QCoreApplication.translate("widget_stabilize", u"ref.", None));
-        ___qtablewidgetitem3 = self.tableWidget_stabilize.horizontalHeaderItem(3)
-        ___qtablewidgetitem3.setText(QCoreApplication.translate("widget_stabilize", u"mode", None));
-        ___qtablewidgetitem4 = self.tableWidget_stabilize.verticalHeaderItem(0)
-        ___qtablewidgetitem4.setText(QCoreApplication.translate("widget_stabilize", u"1", None));
-
-        __sortingEnabled = self.tableWidget_stabilize.isSortingEnabled()
-        self.tableWidget_stabilize.setSortingEnabled(False)
-        ___qtablewidgetitem5 = self.tableWidget_stabilize.item(0, 0)
-        ___qtablewidgetitem5.setText(QCoreApplication.translate("widget_stabilize", u"1", None));
-        ___qtablewidgetitem6 = self.tableWidget_stabilize.item(0, 1)
-        ___qtablewidgetitem6.setText(QCoreApplication.translate("widget_stabilize", u"8", None));
-        ___qtablewidgetitem7 = self.tableWidget_stabilize.item(0, 2)
-        ___qtablewidgetitem7.setText(QCoreApplication.translate("widget_stabilize", u"start", None));
-        ___qtablewidgetitem8 = self.tableWidget_stabilize.item(0, 3)
-        ___qtablewidgetitem8.setText(QCoreApplication.translate("widget_stabilize", u"vertical+horizontal+rotation", None));
-        self.tableWidget_stabilize.setSortingEnabled(__sortingEnabled)
-
         pass
     # retranslateUi
 

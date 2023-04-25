@@ -15,6 +15,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QTableWidgetItem,
 )
+from ui.table_stabilize import Table_stabilize
 
 from utils.stylesheet import (
     set_stylesheet,
@@ -66,20 +67,6 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         # Table
         table = self.tableWidget_stabilize
-        table.setFocusPolicy(Qt.NoFocus)
-        table.clearContents()
-        table.setRowCount(0)
-        self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
-                            Qt.AlignRight | Qt.AlignVCenter,
-                            Qt.AlignCenter | Qt.AlignVCenter,
-                            Qt.AlignLeft | Qt.AlignVCenter]
-        headers = ["start", "end", "initial ref.", "mode"]
-        default_col_width = [50, 50, 80, 200]
-        for col_no, header_str, col_width in zip(range(len(headers)),
-                                                    headers,
-                                                    default_col_width):
-            table.horizontalHeaderItem(col_no).setText(header_str)
-            table.setColumnWidth(col_no, col_width)
         table.selectionModel().selectionChanged.connect(self.event_segment_selected)
         table.itemDoubleClicked[QTableWidgetItem].connect(self.event_segment_double_clicked)
         table.installEventFilter(self)
@@ -362,8 +349,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.block_signals(True)
         if stabilize_settings is None or len(stabilize_settings) == 0:
             self.groupBox_stabilize.setChecked(False)
-            self.tableWidget_stabilize.clearContents()
-            self.tableWidget_stabilize.setRowCount(0)
+            self.tableWidget_stabilize.clear_contents()
             self.set_controls_enabled(False)
 
             # Disable calculations/preview
@@ -382,36 +368,14 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         table = self.tableWidget_stabilize
         segments = stabilize_settings['segments']
 
-        table.clearContents()
-        table.setRowCount(0)
+        self.tableWidget_stabilize.clear_contents()
         if len(segments) > 0:
-            for row_no, segment in zip(range(len(segments)), segments):
-                mode_str = ""
-                # Ordered
-                for k in ['vertical', 'horizontal', 'rotation']:
-                    mode_str += f"+{k}" if segment['mode'][k] else ''
-
-                table.insertRow(row_no)
-                table.setItem(row_no, 0, QTableWidgetItem(f"{segment['start']}"))
-                table.setItem(row_no, 1, QTableWidgetItem(f"{segment['end']}"))
-                table.setItem(row_no, 2, QTableWidgetItem(f"{segment['ref']}"))
-                table.setItem(row_no, 3, QTableWidgetItem(mode_str[1:]))
-
-
-                for i in range(len(self.alignment)):
-                    table.item(row_no, i).setTextAlignment(self.alignment[i])
-                    table.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-
-            table.selectionModel().clearSelection()
+            self.tableWidget_stabilize.update_content(segments)
         else:
             row_no = 0
             self.pushButton_stabilize.setEnabled(False)
             self.is_obsolete = True
             # self.pushButton_set_preview.setEnabled(False)
-
-        self.segment_count = len(segments)
-        for row_no in range(len(segments), SEGMENTS_MAX_COUNT):
-            table.insertRow(row_no)
 
         self.clear_inputs()
         self.set_controls_enabled(is_enabled)
