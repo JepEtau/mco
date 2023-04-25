@@ -25,29 +25,28 @@ def generate_image(frame:dict, preview_options:dict):
 
     if verbose:
         log.info("generate single image")
-        print_purple(("generate single image"))
+        print_purple(f"Generate image: {frame['k_ed']}:{frame['k_ep']}:{frame['k_part']}:{frame['shot_no']:03}:{frame['frame_no']}")
         pprint(frame)
 
     # geometry_values are the calculated dimensions, crop, pad etc.
     geometry_values = deepcopy(frame['geometry_values'])
 
     if verbose:
-        print("\ngenerate_image:")
+        print_lightcyan("\t- preview options:")
         pprint(preview_options)
-        print("\t-> %s:%s:%s" % (frame['k_ed'], frame['k_ep'], frame['k_part']))
-        print_lightcyan("geometry parameters")
+        print_lightcyan("\t- calculated geometry values")
         pprint(geometry_values)
 
     # Initial image
     if frame['cache_deshake'] is not None and preview_options['stabilize']['enabled']:
-        # print("using deshake")
-        img_original = frame['cache_deshake']
-        is_using_deshake = True
+        if verbose:
+            print_lightcyan("\t- use deshake img")
+        img_initial = frame['cache_deshake']
     else:
-        # print("using original")
-        img_original = frame['cache_initial']
-        is_using_deshake = False
-    img_height, img_width, c = img_original.shape
+        if verbose:
+            print_lightcyan("\t- use initial img")
+        img_initial = frame['cache_initial']
+    img_height, img_width, c = img_initial.shape
 
 
     # Final width and height
@@ -61,8 +60,8 @@ def generate_image(frame:dict, preview_options:dict):
         shot_geometry = frame['geometry']['default']
 
     if verbose:
-        print_lightgreen("shot_geometry:")
-        pprint(shot_geometry)
+        print_lightcyan("\t- geometry used for this shot:", end=' ')
+        print(shot_geometry)
 
     preview_geometry = preview_options['geometry']
     preview_shot_geometry = preview_options['geometry']['shot']
@@ -77,15 +76,19 @@ def generate_image(frame:dict, preview_options:dict):
     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
         width=img_width, height=img_height, crop=crop_values)
 
+    if verbose:
+        print_lightcyan("\t- modified geometry:", end=' ')
+        print(f"crop: ({crop_top}, {crop_bottom}, {crop_left}, {crop_right}), cropped img: {cropped_width}x{cropped_height}")
+
 
     # Apply RGB curves
     #------------------------------------
     if preview_options['curves']['enabled'] and frame['curves'] is not None:
         try:
-            img_rgb = filter_rgb(frame, img_original)
+            img_rgb = filter_rgb(frame, img_initial)
         except:
             print("Cannot apply RGB curves")
-            img_rgb = img_original
+            img_rgb = img_initial
 
         if preview_options['curves']['split']:
             # Merge 2 images to split the screen
@@ -94,10 +97,9 @@ def generate_image(frame:dict, preview_options:dict):
                 w_tmp = int((cropped_width * h_final) / float(cropped_height))
                 pad_left = int((w_final - w_tmp) / 2)
                 x = max(0, int((x-pad_left) / (h_final / float(cropped_height))) + crop_left)
-            img_rgb[0:img_height, x:img_width,] = img_original[0:img_height,x:img_width,]
+            img_rgb[0:img_height, x:img_width,] = img_initial[0:img_height,x:img_width,]
     else:
-        img_rgb = img_original
-
+        img_rgb = img_initial
 
 
 
@@ -113,9 +115,10 @@ def generate_image(frame:dict, preview_options:dict):
             try: virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
                                                                 virtual_shot['geometry']['shot']['crop']))
             except: pass
-        geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=img_original)
+        geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=img_initial)
         img_finalized = cv2_geometry_filter(img=img_rgb, geometry=geometry_values)
         return (frame['index'], img_finalized)
+
 
 
     # Crop the image
@@ -123,19 +126,19 @@ def generate_image(frame:dict, preview_options:dict):
     if not preview_shot_geometry['crop_preview'] and preview_shot_geometry['crop_edition']:
         # Add a rectangle to the original image
         if verbose:
-            print("\t-> Use the original image")
+            print("\t-> image not cropped")
         img_cropped = img_rgb
 
     elif preview_shot_geometry['crop_preview']:
         # Crop and NO rectangle
         if verbose:
-            print("\t-> Crop the image, ", end='')
+            print("\t-> image cropped, ", end=' ')
         # (1) Crop the image
         img_cropped = np.ascontiguousarray(img_rgb[
             crop_top : img_height - crop_bottom,
             crop_left : img_width - crop_right], dtype=np.uint8)
         if verbose:
-            print("cropped: ", img_cropped.shape)
+            print(img_cropped.shape)
 
     else:
         # Not options['crop_preview'] and not preview_shot_geometry['crop_edition']

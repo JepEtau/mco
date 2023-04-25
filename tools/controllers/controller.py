@@ -15,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 
 from pprint import pprint
 from logger import log
+from utils.hash import get_hash_from_last_task
 from utils.pretty_print import *
 from utils.nested_dict import nested_dict_set
 
@@ -37,7 +38,7 @@ from filters.deshake import (
     verify_stabilize_segments
 )
 from filters.python_geometry import IMG_BORDER_HIGH_RES
-from filters.utils import has_add_border_task
+from filters.utils import get_step_no_from_last_task, has_add_border_task
 from utils.common import K_GENERIQUES
 from utils.get_frame_list import (
     get_frame_list,
@@ -100,7 +101,7 @@ class Controller_video_editor(Controller_common,
 
         self.view.widget_selection.signal_selection_changed[dict].connect(self.selection_changed)
         self.view.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
-        self.view.widget_selection.signal_selected_step_changed(str).connect(self.event_selected_step_changed)
+        self.view.widget_selection.signal_selected_step_changed[str].connect(self.event_selected_step_changed)
 
 
         self.view.widget_geometry.signal_save.connect(self.event_save_geometry_requested)
@@ -247,17 +248,7 @@ class Controller_video_editor(Controller_common,
                 default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
 
         if False:
-        # if shot['no'] == 0:
-            print_lightcyan("================================== SHOT =======================================")
-            pprint(shot)
-            print_lightcyan("===============================================================================")
-            print_lightcyan("target_geometry:")
-            pprint(target_geometry)
-            print_lightcyan("default_shot_geometry:")
-            pprint(default_shot_geometry)
-            print_lightcyan("shot_geometry:")
-            pprint(shot_geometry)
-            # sys.exit()
+            print_yellow(f"consolidate_shot_for_edition: {k_ep}:{k_part} <- {shot['k_ep']}:{shot['k_part']}:{shot['no']}")
             pprint(filepath_tmp)
 
         # Create a list of frames for this shot
@@ -301,24 +292,86 @@ class Controller_video_editor(Controller_common,
     # Select a new episode/part
     #---------------------------------------------------------------------------
     def event_selected_step_changed(self, k_step):
+        print_lightcyan(f"selected step changed to {k_step}")
+        log.info(f"selected step changed to {k_step}")
         k_ep = self.current_selection['k_ep']
         k_part = self.current_selection['k_part']
+        db = self.model_database.database()
 
-        self.consolidate_shot_for_edition(self, self.current_shot(),
-            k_ep, k_part, k_step)
+        do_reconsolidate_shot = False
+        if ((self.current_task == 'edition' or k_step == 'edition')
+            and k_step != self.current_task):
+            # Reconsolidate shot is mandatory because hash differs
+            #  edition is made without deshake/stabilize filters
+            do_reconsolidate_shot = True
 
-        # TODO: It should use the k_ed from the shot src even for generique
-        k_ed_selected = '' if k_part in K_GENERIQUES else self.current_shot()['src']['k_ed']
+        self.current_task = k_step
 
-        self.model_database.initialize_shots_per_curves(self.shots)
-        # print("selected: %s:%s:%s" % (k_ed_selected, k_ep_selected, k_part_selected))
-        if k_part in K_GENERIQUES:
-            curves_library = self.model_database.get_library_curves(
-                self.shots[0]['k_ed'], self.shots[0]['k_ep'])
-        else:
-            curves_library = self.model_database.get_library_curves(k_ed_selected, k_ep)
-        self.signal_curves_library_modified.emit(curves_library)
-        self.signal_shotlist_modified.emit(self.current_selection)
+        # Current selected shots
+        shotlist = self.playlist_properties['shotlist']
+
+        p_missing_frame = os.path.join('tools', 'icons', 'missing.png')
+
+        for shot_no in shotlist:
+            shot = self.shots[shot_no]
+
+            # Update shot with last task
+            shot['last_task'] = k_step
+
+
+            if do_reconsolidate_shot:
+                consolidate_shot(db, shot=shot, edition_mode=True)
+            else:
+                shot['last_step'].update({
+                    'hash': get_hash_from_last_task(shot),
+                    'step_no': get_step_no_from_last_task(shot),
+                })
+
+            if shot['last_step']['step_no'] is None:
+                # Step not found
+                filepath_tmp = [""] * shot['count']
+            else:
+                # Get a list of path for each frame  for this shot
+                if k_part in ['g_asuivre', 'g_reportage']:
+                    filepath_tmp = get_frame_list_single(db, k_ep=k_ep, k_part=k_part, shot=shot)
+                else:
+                    filepath_tmp = get_frame_list(db, k_ep=k_ep, k_part=k_part, shot=shot)
+                self.filepath.append(filepath_tmp)
+
+            # print_yellow(f"event_selected_step_changed: {k_ep}:{k_part} <- {shot['k_ep']}:{shot['k_part']}:{shot['no']}")
+            # pprint(filepath_tmp)
+
+            # Modify the list of frames for this shot
+            for p, i in zip(filepath_tmp, range(len(filepath_tmp))):
+                if not os.path.exists(p):
+                    image_filepath = p_missing_frame
+                    shot['is_valid'] = False
+                else:
+                    image_filepath = p
+
+                self.frames[shot_no][i].update({
+                    'task': self.current_task,
+                    'cache_initial': None,
+                    'filepath': image_filepath,
+                    'cache': None,
+                    'cache_deshake': None,
+                })
+
+        # Load images
+        cpu_count = 12
+        for shot_no in shotlist:
+            frame_count = len(self.frames[shot_no])
+            filepathes = [frame['filepath'] for frame in self.frames[shot_no]]
+            with ThreadPoolExecutor(max_workers=min(cpu_count, frame_count)) as executor:
+                work_result = {executor.submit(load_image, index, img_filepath): list for (index, img_filepath) in zip(range(frame_count), filepathes)}
+                for future in concurrent.futures.as_completed(work_result):
+                    no, img = future.result()
+                    self.frames[shot_no][no]['cache_initial'] = img
+
+        self.preview_options = self.view.get_preview_options()
+        self.consolidate_preview_options()
+        self.signal_preview_options_consolidated.emit(self.preview_options)
+        self.signal_ready_to_play.emit(self.playlist_properties)
 
 
 
@@ -375,15 +428,10 @@ class Controller_video_editor(Controller_common,
         # Walk through shots
         shots = db_video['shots']
         for shot in shots:
-            self.consolidate_shot_for_edition(shot=shot, k_step=k_step)
-            # For debug only
-
-            # for f in self.frames[shot_no]:
-            #     print(f['frame_no'])
-            # sys.exit()
+            self.consolidate_shot_for_edition(shot=shot,
+            k_ep=k_ep_selected, k_part=k_part_selected, k_step=k_step)
 
         # Create a dict to update the "browser" part of the editor widget
-
         self.current_selection = {
             'k_ed': k_ed_selected,
             'k_ep': k_ep_selected,
@@ -434,17 +482,17 @@ class Controller_video_editor(Controller_common,
         self.playlist_frames.clear()
         for shot_no in selected_shots['shotlist']:
             # mmmmh what??? should use self.shot
-            shot = self.frames[shot_no]
+            frames = self.frames[shot_no]
             if self.current_task not in ['deinterlace', 'edition']:
-                offset = self.shots[shot_no]['start']
+                offset = self.shots[shot_no]['src']['start']
             else:
                 offset = 0
 
-            for frame in shot:
+            for index, frame in zip(range(len(frames)), frames):
                 frame['index'] = index
-                index += 1
                 self.playlist_frames.append(frame)
                 frame_nos.append(frame['frame_no'] + offset)
+
             ticklist.append(ticklist[-1] + len(self.frames[shot_no]))
         gc.collect()
 
@@ -485,10 +533,10 @@ class Controller_video_editor(Controller_common,
 
 
         self.playlist_properties.update({
-            # 'start': self.shots[selected_shots['shotlist'][0]]['start'],
             'frame_nos': frame_nos,
             'count': len(self.playlist_frames),
             'ticks': ticklist,
+            'shotlist': selected_shots['shotlist'],
         })
 
         # Set current to None to refresh widgets
@@ -648,6 +696,8 @@ class Controller_video_editor(Controller_common,
         self.purge_current_frame_cache()
 
         # Set current frame
+
+        frame['task'] = self.current_task
         self.current_frame = frame
         self.current_shot_no = frame['shot_no']
 
@@ -683,7 +733,7 @@ class Controller_video_editor(Controller_common,
 
     def consolidate_preview_options(self):
         # Modify preview settings because some widget have to be disabled
-        verbose = False
+        verbose = True
         log.info("consolidate options")
         options = self.preview_options
 
@@ -751,6 +801,26 @@ class Controller_video_editor(Controller_common,
         if verbose:
             print_lightgreen("\tconsolidated:")
             pprint(self.preview_options)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

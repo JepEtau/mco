@@ -16,6 +16,8 @@
 
 # TODO video editor
 (1)
+- Add luma value in curves
+- Add other rgb filters
 - geometry: add 'minimum crop'
 - stabilize widget: discard
 - stabilize widget: get real frame no if step==sharpen

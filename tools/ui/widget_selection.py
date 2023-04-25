@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
 
 from utils.stylesheet import (
     set_stylesheet,
+    set_widget_stylesheet,
     update_selected_widget_stylesheet,
 )
 
@@ -111,6 +112,11 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
         self.set_enabled(False)
         set_stylesheet(self)
+        set_widget_stylesheet(self.pushButton_replace)
+        set_widget_stylesheet(self.pushButton_stabilize)
+        set_widget_stylesheet(self.pushButton_rgb_curves)
+        set_widget_stylesheet(self.pushButton_geometry)
+
         self.set_selected(False)
         self.adjustSize()
 
@@ -472,7 +478,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         except:
             row_no = 0
         self.initial_shot_no = int(self.tableWidget_shots.item(row_no, 0).text())
-        self.signal_selected_step_changed(self.get_current_step())
+        self.signal_selected_step_changed.emit(self.get_current_step())
 
 
 

@@ -16,9 +16,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QApplication, QComboBox,
-    QFrame, QHBoxLayout, QHeaderView, QRadioButton,
-    QSizePolicy, QSpacerItem, QTableWidget, QTableWidgetItem,
-    QVBoxLayout, QWidget)
+    QFrame, QHBoxLayout, QHeaderView, QPushButton,
+    QRadioButton, QSizePolicy, QSpacerItem, QTableWidget,
+    QTableWidgetItem, QVBoxLayout, QWidget)
 
 from ui.widget_app_controls import Widget_app_controls
 
@@ -26,7 +26,7 @@ class Ui_widget_selection(object):
     def setupUi(self, widget_selection):
         if not widget_selection.objectName():
             widget_selection.setObjectName(u"widget_selection")
-        widget_selection.resize(500, 839)
+        widget_selection.resize(500, 832)
         widget_selection.setMaximumSize(QSize(500, 16777215))
         self.verticalLayout_2 = QVBoxLayout(widget_selection)
         self.verticalLayout_2.setSpacing(0)
@@ -87,6 +87,8 @@ class Ui_widget_selection(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout)
 
+        self.horizontalLayout_2 = QHBoxLayout()
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setSpacing(4)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
@@ -123,7 +125,75 @@ class Ui_widget_selection(object):
         self.verticalLayout_3.addWidget(self.radioButton_task_edition)
 
 
-        self.verticalLayout.addLayout(self.verticalLayout_3)
+        self.horizontalLayout_2.addLayout(self.verticalLayout_3)
+
+        self.horizontalSpacer_2 = QSpacerItem(10, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_2.addItem(self.horizontalSpacer_2)
+
+        self.verticalLayout_5 = QVBoxLayout()
+        self.verticalLayout_5.setSpacing(3)
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.pushButton_replace = QPushButton(self.frame)
+        self.pushButton_replace.setObjectName(u"pushButton_replace")
+        sizePolicy1.setHeightForWidth(self.pushButton_replace.sizePolicy().hasHeightForWidth())
+        self.pushButton_replace.setSizePolicy(sizePolicy1)
+        self.pushButton_replace.setMinimumSize(QSize(120, 0))
+        self.pushButton_replace.setFocusPolicy(Qt.NoFocus)
+        icon = QIcon()
+        icon.addFile(u"tools/icons/grey/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"tools/icons/blue/eye.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_replace.setIcon(icon)
+        self.pushButton_replace.setCheckable(True)
+        self.pushButton_replace.setFlat(True)
+
+        self.verticalLayout_5.addWidget(self.pushButton_replace)
+
+        self.pushButton_stabilize = QPushButton(self.frame)
+        self.pushButton_stabilize.setObjectName(u"pushButton_stabilize")
+        sizePolicy1.setHeightForWidth(self.pushButton_stabilize.sizePolicy().hasHeightForWidth())
+        self.pushButton_stabilize.setSizePolicy(sizePolicy1)
+        self.pushButton_stabilize.setMinimumSize(QSize(120, 0))
+        self.pushButton_stabilize.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_stabilize.setIcon(icon)
+        self.pushButton_stabilize.setCheckable(True)
+        self.pushButton_stabilize.setFlat(True)
+
+        self.verticalLayout_5.addWidget(self.pushButton_stabilize)
+
+        self.pushButton_rgb_curves = QPushButton(self.frame)
+        self.pushButton_rgb_curves.setObjectName(u"pushButton_rgb_curves")
+        sizePolicy1.setHeightForWidth(self.pushButton_rgb_curves.sizePolicy().hasHeightForWidth())
+        self.pushButton_rgb_curves.setSizePolicy(sizePolicy1)
+        self.pushButton_rgb_curves.setMinimumSize(QSize(120, 0))
+        self.pushButton_rgb_curves.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_rgb_curves.setIcon(icon)
+        self.pushButton_rgb_curves.setCheckable(True)
+        self.pushButton_rgb_curves.setFlat(True)
+
+        self.verticalLayout_5.addWidget(self.pushButton_rgb_curves)
+
+        self.pushButton_geometry = QPushButton(self.frame)
+        self.pushButton_geometry.setObjectName(u"pushButton_geometry")
+        sizePolicy1.setHeightForWidth(self.pushButton_geometry.sizePolicy().hasHeightForWidth())
+        self.pushButton_geometry.setSizePolicy(sizePolicy1)
+        self.pushButton_geometry.setMinimumSize(QSize(120, 0))
+        self.pushButton_geometry.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_geometry.setIcon(icon)
+        self.pushButton_geometry.setCheckable(True)
+        self.pushButton_geometry.setFlat(True)
+
+        self.verticalLayout_5.addWidget(self.pushButton_geometry)
+
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+        self.verticalLayout_5.addItem(self.verticalSpacer)
+
+
+        self.horizontalLayout_2.addLayout(self.verticalLayout_5)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout_2)
 
         self.tableWidget_shots = QTableWidget(self.frame)
         if (self.tableWidget_shots.columnCount() < 6):
@@ -217,6 +287,10 @@ class Ui_widget_selection(object):
         self.radioButton_task_upscale.setText(QCoreApplication.translate("widget_selection", u"upscale", None))
         self.radioButton_task_sharpen.setText(QCoreApplication.translate("widget_selection", u"sharpen", None))
         self.radioButton_task_edition.setText(QCoreApplication.translate("widget_selection", u"edition", None))
+        self.pushButton_replace.setText(QCoreApplication.translate("widget_selection", u"Replace", None))
+        self.pushButton_stabilize.setText(QCoreApplication.translate("widget_selection", u"Stabilize", None))
+        self.pushButton_rgb_curves.setText(QCoreApplication.translate("widget_selection", u"RGB curves", None))
+        self.pushButton_geometry.setText(QCoreApplication.translate("widget_selection", u"Geometry", None))
         ___qtablewidgetitem = self.tableWidget_shots.horizontalHeaderItem(0)
         ___qtablewidgetitem.setText(QCoreApplication.translate("widget_selection", u"shot", None));
         ___qtablewidgetitem1 = self.tableWidget_shots.horizontalHeaderItem(1)

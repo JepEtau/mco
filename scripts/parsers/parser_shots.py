@@ -50,7 +50,8 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
             'no': shot_no,
             'start': start,
             'count': count,
-            'filters': 'default',
+            'filters': None,
+            'filters_id': 'default',
             'curves': None,
             'replace': dict(),
         })
@@ -127,7 +128,8 @@ def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
         db_video['shots'] = [{
             'no': 0,
             'start': db_video['start'],
-            'filters': 'default',
+            'filters_id': 'default',
+            'filters': None,
             'count': db_video['count'],
             'curves': None,
             'replace': dict(),

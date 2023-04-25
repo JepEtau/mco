@@ -220,4 +220,4 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
         print_lightcyan("TO")
         pprint(shot)
         print_lightcyan("===============================================================================")
-        sys.exit()
+        # sys.exit()
