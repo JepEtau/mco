@@ -41,7 +41,51 @@ def update_selected_widget_stylesheet(widget, is_selected:bool):
 
 
 def set_widget_stylesheet(widget, widget_type=''):
-    if type(widget) is QCheckBox:
+    if type(widget) is QComboBox:
+        widget.setStyleSheet("""
+            QComboBox {
+                background-color: rgb(60, 60, 60);
+                color: rgb(220, 220, 220);
+                border-radius: 3px;
+                height: 23px;
+            }
+
+            QComboBox::drop-down {
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 15px;
+
+                border-left-width: 1px;
+                border-left-color: rgb(35, 35, 35);
+                border-left-style: solid;           /* just a single line */
+                border-top-right-radius: 3px;       /* same radius as the QComboBox */
+                border-bottom-right-radius: 3px;
+            }
+
+            QComboBox::down-arrow {
+                image: url(./tools/icons/drop_down_arrow_gray.svg);
+                margin: 0px;
+            }
+
+            QComboBox::down-arrow:on {
+                /* shift the arrow when popup is open */
+                top: 2px;
+            }
+
+            QComboBox:on {
+                /* shift the text when the popup opens */
+                padding-top: 1px;
+                padding-left: 1px;
+            }
+
+            QAbstractItemView {
+                background-color: rgb(70, 70, 70);
+                color: rgb(220, 220, 220);
+            }
+
+        """)
+
+    elif type(widget) is QCheckBox:
         widget.setStyleSheet("""
             QCheckBox {
                 background-color: rgb(35, 35, 35);

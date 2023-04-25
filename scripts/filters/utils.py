@@ -63,7 +63,12 @@ def get_filters_from_shot(db, shot):
         if 'filters' not in db[k_ep]['video'][k_ed][k_part].keys():
             sys.exit(print_red(f"Error: {k_ed}:{k_ep}:{k_part}: no available filters"))
 
-        filters = db[k_ep]['video'][k_ed][k_part]['filters']['default']
+        try:
+            filters = db[k_ep]['video'][k_ed][k_part]['filters']['default']
+        except:
+            print_red(f"Error: default filter is not defined but required by {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}")
+            pprint(shot)
+            sys.exit()
 
     elif isinstance(shot['filters_id'], str):
         if verbose:

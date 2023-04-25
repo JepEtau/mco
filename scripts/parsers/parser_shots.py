@@ -64,7 +64,7 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
                 d = p.split('=')
                 if d[0] == 'filters':
                     # custom filter
-                    db_shots[shot_no]['filters'] = d[1]
+                    db_shots[shot_no]['filters_id'] = d[1]
 
                 elif d[0] == 'ed':
                     # edition that will be used to generate this shot

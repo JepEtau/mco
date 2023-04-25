@@ -485,15 +485,10 @@ class Controller_video_editor(Controller_common,
         for shot_no in selected_shots['shotlist']:
             # mmmmh what??? should use self.shot
             frames = self.frames[shot_no]
-            if self.current_task not in ['deinterlace', 'edition']:
-                offset = self.shots[shot_no]['src']['start']
-            else:
-                offset = 0
-
             for index, frame in zip(range(len(frames)), frames):
                 frame['index'] = index
                 self.playlist_frames.append(frame)
-                frame_nos.append(frame['frame_no'] + offset)
+                frame_nos.append(frame['frame_no'])
 
             ticklist.append(ticklist[-1] + len(self.frames[shot_no]))
         gc.collect()

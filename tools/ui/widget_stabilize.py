@@ -302,31 +302,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         # Get new settings
         settings = {
             'enable': self.groupBox_stabilize.isChecked(),
-            'segments' : list()
+            'segments' : self.tableWidget_stabilize.get_content()
         }
-
-        table = self.tableWidget_stabilize
-        for row_no in range(SEGMENTS_MAX_COUNT):
-            try:
-                start = int(table.item(row_no, 0).text())
-            except:
-                continue
-
-            segment = {
-                'start': start,
-                'end': int(table.item(row_no, 1).text()),
-                'ref': table.item(row_no, 2).text(),
-                'alg': 'cv2_deshaker',
-                'mode': {
-                    'vertical': False,
-                    'horizontal': False,
-                    'rotation': False
-                },
-            }
-            mode_list = table.item(row_no, 3).text().split('+')
-            for k in mode_list:
-                segment['mode'][k] = True
-            settings['segments'].append(segment)
         return settings
 
 
@@ -370,7 +347,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         self.tableWidget_stabilize.clear_contents()
         if len(segments) > 0:
-            self.tableWidget_stabilize.update_content(segments)
+            self.tableWidget_stabilize.set_content(segments)
         else:
             row_no = 0
             self.pushButton_stabilize.setEnabled(False)
@@ -413,36 +390,36 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def event_segment_selected(self):
         log.info("segment selected")
-        table = self.tableWidget_stabilize
-        row_no = table.currentRow()
-        try:
-            start = int(table.item(row_no, 0).text())
-        except:
-            return
+        # table = self.tableWidget_stabilize
+        # row_no = table.currentRow()
+        # try:
+        #     start = int(table.item(row_no, 0).text())
+        # except:
+        #     return
 
-        self.clear_inputs()
-        self.lineEdit_start.setText(table.item(row_no, 0).text())
-        self.lineEdit_end.setText(table.item(row_no, 1).text())
-        ref = table.item(row_no, 2).text()
-        try:
-            self.radioButton_ref[ref].setChecked(True)
-        except:
-            self.radioButton_ref['frame_no'].setChecked(True)
-            self.lineEdit_ref_frame_no.setText(ref)
-        mode_list = table.item(row_no, 3).text().split('+')
-        try:
-            for m in mode_list:
-                self.checkBox_mode[m].setChecked(True)
-        except:
-            print_yellow(f"mode_list={','.join(mode_list)}")
-            self.checkBox_mode['vertical'].setChecked(True)
-            pass
+        # self.clear_inputs()
+        # self.lineEdit_start.setText(table.item(row_no, 0).text())
+        # self.lineEdit_end.setText(table.item(row_no, 1).text())
+        # ref = table.item(row_no, 2).text()
+        # try:
+        #     self.radioButton_ref[ref].setChecked(True)
+        # except:
+        #     self.radioButton_ref['frame_no'].setChecked(True)
+        #     self.lineEdit_ref_frame_no.setText(ref)
+        # mode_list = table.item(row_no, 3).text().split('+')
+        # try:
+        #     for m in mode_list:
+        #         self.checkBox_mode[m].setChecked(True)
+        # except:
+        #     print_yellow(f"mode_list={','.join(mode_list)}")
+        #     self.checkBox_mode['vertical'].setChecked(True)
+        #     pass
 
-        self.tableWidget_stabilize.setEnabled(True)
-        self.pushButton_set_end.setEnabled(True)
-        self.pushButton_set_start.setEnabled(True)
-        self.pushButton_set_ref.setEnabled(True)
-        self.pushButton_set_segment.setEnabled(True)
+        # self.tableWidget_stabilize.setEnabled(True)
+        # self.pushButton_set_end.setEnabled(True)
+        # self.pushButton_set_start.setEnabled(True)
+        # self.pushButton_set_ref.setEnabled(True)
+        # self.pushButton_set_segment.setEnabled(True)
 
 
     def event_segment_double_clicked(self, item:QTableWidgetItem):

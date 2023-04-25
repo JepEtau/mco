@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_stabilize.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.5.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -376,10 +376,10 @@ class Ui_widget_stabilize(object):
 
         self.verticalLayout_2.addWidget(self.groupBox_stabilize)
 
-        self.widget = Table_stabilize(self.frame)
-        self.widget.setObjectName(u"widget")
+        self.tableWidget_stabilize = Table_stabilize(self.frame)
+        self.tableWidget_stabilize.setObjectName(u"tableWidget_stabilize")
 
-        self.verticalLayout_2.addWidget(self.widget)
+        self.verticalLayout_2.addWidget(self.tableWidget_stabilize)
 
 
         self.mainLayout.addWidget(self.frame)
