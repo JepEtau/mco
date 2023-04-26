@@ -319,8 +319,6 @@ class Table_stabilize(QTableWidget):
     def select_segment(self):
         row_no = self.currentRow()
         log.info(f"new segment selected: {row_no}")
-        print(f"new segment selected: {row_no}")
-        pprint(self.selectedIndexes())
         selected_rows = list(set([index.row() for index in self.selectedIndexes()]))
         if len(selected_rows) == 0:
             log.info(f"Do not save new selection")
@@ -490,7 +488,6 @@ class Table_stabilize(QTableWidget):
                 row_no = self.currentItem().row() + 1
         else:
             log.info("cannot insert a new segment")
-            print_red("cannot insert a new segment")
 
         self.insertRow(row_no)
         self.setRowHeight(row_no, self.row_height)

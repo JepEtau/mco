@@ -161,6 +161,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
                 self.signal_settings_modified.emit(settings)
             else:
                 log.info("segments have NOT been modified")
+                self.pushButton_discard.setEnabled(False)
+                self.pushButton_save.setEnabled(False)
+
         self.pushButton_save.setEnabled(True)
 
 
@@ -251,6 +254,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         log.info("stabilization is obsolete")
         self.is_obsolete = True
         self.label_message.setText("Obsolete")
+        self.pushButton_save.setEnabled(True)
+        self.pushButton_discard.setEnabled(True)
         self.pushButton_stabilize.setEnabled(True)
 
 
@@ -285,8 +290,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def undo_requested(self):
         self.tableWidget_stabilize.undo()
-        self.edition_started()
-
+        if self.tableWidget_stabilize.is_content_modified():
+            self.edition_started()
+        else:
+            self.pushButton_discard.setEnabled(False)
+            self.pushButton_save.setEnabled(False)
 
 
     def event_stabilize_requested(self):
@@ -298,11 +306,15 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             if self.tableWidget_stabilize.is_content_modified():
                 # Settings have been modified, request to stabilize
                 log.info(f"Request to stabilize")
+                self.pushButton_discard.setEnabled(True)
+                self.pushButton_save.setEnabled(True)
                 settings = self.get_current_settings()
                 self.signal_stabilization_requested.emit(settings)
             else:
                 # Settings have not been modified, just refresh
                 log.info(f"Request to refresh without recalculate")
+                self.pushButton_discard.setEnabled(False)
+                self.pushButton_save.setEnabled(False)
                 self.signal_preview_options_changed.emit()
 
 

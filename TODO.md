@@ -18,16 +18,12 @@
 - curves: Add luma value in curves
 - curves: Add other rgb filters to ajdust levels
 - geometry: add 'minimum crop'
-- stabilize widget: get real frame no if step==sharpen
-- stabilize widget: too complicated
-- stabilize widget: set "save putton' to enabled if segment removed
-- move guidelines to main window
-- Get transformations matrix and save them in frame struct
-- stabilize all selected shots (keep transformation matrix only)
+- stabilize widget: verify if "save putton' to enabled if segment removed
 - add buttons to show/hide widgets
 
 (2)
-- Save when closing the application is not working
+- widgets: set focus is not working
+- save when closing the application is not working
 - stabilize widget: update save button when loading a segment or after modifications: use a signal
 - selection widget: display unsaved shot in selection widget
 - buttons (save, discard, ...) not working for some widgets (which ones?)
@@ -35,6 +31,7 @@
 - when no image loaded, reset all widgets / disable all widgets if images missing
 
 (3)
+- stabilize: when table is disable, set qWidgetItem to disable (text should be grey)
 - change selection widget to a standard widget (common)
 - F5 to refresh current shot only
 - display filters for the shot

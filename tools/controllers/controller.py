@@ -736,7 +736,7 @@ class Controller_video_editor(Controller_common,
 
     def consolidate_preview_options(self):
         # Modify preview settings because some widget have to be disabled
-        verbose = True
+        verbose = False
         log.info("consolidate options")
         options = self.preview_options
 
