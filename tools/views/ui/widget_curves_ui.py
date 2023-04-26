@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_curves.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.5.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -20,8 +20,8 @@ from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QHBoxLayout,
     QRadioButton, QSizePolicy, QSpacerItem, QVBoxLayout,
     QWidget)
 
-from ui.widget_curves_selection import Widget_curves_selection
-from ui.widget_rgb_graph import Widget_rgb_graph
+from views.widget_curves_selection import Widget_curves_selection
+from views.widget_rgb_graph import Widget_rgb_graph
 
 class Ui_widget_curves(object):
     def setupUi(self, widget_curves):

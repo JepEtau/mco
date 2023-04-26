@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_controls.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.5.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
     QLayout, QLineEdit, QPushButton, QSizePolicy,
     QSpacerItem, QVBoxLayout, QWidget)
 
-from ui.widget_custom_qslider import Widget_custom_qslider
+from views.widget_custom_qslider import Widget_custom_qslider
 
 class Ui_widget_controls(object):
     def setupUi(self, widget_controls):

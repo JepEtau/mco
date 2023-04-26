@@ -333,7 +333,7 @@
   <customwidget>
    <class>Table_stabilize</class>
    <extends>QWidget</extends>
-   <header location="global">ui.table_stabilize</header>
+   <header location="global">views.table_stabilize</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

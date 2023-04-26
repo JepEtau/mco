@@ -15,7 +15,7 @@ if os.name == 'nt':
 def main():
     application = QApplication(sys.argv)
 
-    from ui.window_main import Window_main
+    from views.window_main import Window_main
     from controllers.controller import Controller_video_editor
 
     main_model = Controller_video_editor()

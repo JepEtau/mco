@@ -20,8 +20,8 @@ from utils.stylesheet import (
     set_widget_stylesheet
 )
 
-from ui.ui.widget_curves_ui import Ui_widget_curves
-from ui.widget_common import Widget_common
+from views.ui.widget_curves_ui import Ui_widget_curves
+from views.widget_common import Widget_common
 
 
 GRID_COLOR = QColor(110, 110, 110)

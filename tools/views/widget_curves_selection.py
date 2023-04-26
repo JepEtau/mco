@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from ui.ui.widget_curves_selection_ui import Ui_widget_curves_selection
+from views.ui.widget_curves_selection_ui import Ui_widget_curves_selection
 
 
 class Widget_curves_selection(QWidget, Ui_widget_curves_selection):

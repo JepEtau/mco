@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_stabilize.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.5.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (QApplication, QFrame, QGroupBox, QHBoxLayout,
     QLabel, QLayout, QPushButton, QSizePolicy,
     QSpacerItem, QVBoxLayout, QWidget)
 
-from ui.table_stabilize import Table_stabilize
+from views.table_stabilize import Table_stabilize
 
 class Ui_widget_stabilize(object):
     def setupUi(self, widget_stabilize):
@@ -125,8 +125,7 @@ class Ui_widget_stabilize(object):
         self.pushButton_discard.setSizePolicy(sizePolicy2)
         self.pushButton_discard.setFocusPolicy(Qt.NoFocus)
         icon3 = QIcon()
-        icon3.addFile(u"tools/icons/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon3.addFile(u"tools/icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon3.addFile(u"tools/icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_discard.setIcon(icon3)
         self.pushButton_discard.setCheckable(False)
         self.pushButton_discard.setAutoDefault(False)

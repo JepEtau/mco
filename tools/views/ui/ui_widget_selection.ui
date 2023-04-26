@@ -574,7 +574,7 @@
   <customwidget>
    <class>Widget_app_controls</class>
    <extends>QWidget</extends>
-   <header location="global">ui.widget_app_controls</header>
+   <header location="global">views.widget_app_controls</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_selection.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.4.2
+## Created by: Qt User Interface Compiler version 6.5.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (QAbstractItemView, QAbstractScrollArea, QApplicat
     QRadioButton, QSizePolicy, QSpacerItem, QTableWidget,
     QTableWidgetItem, QVBoxLayout, QWidget)
 
-from ui.widget_app_controls import Widget_app_controls
+from views.widget_app_controls import Widget_app_controls
 
 class Ui_widget_selection(object):
     def setupUi(self, widget_selection):

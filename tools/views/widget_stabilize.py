@@ -16,16 +16,16 @@ from PySide6.QtWidgets import (
     QApplication,
     QTableWidgetItem,
 )
-from ui.guidelines import Guidelines
-from ui.table_stabilize import Table_stabilize
+from views.guidelines import Guidelines
+from views.table_stabilize import Table_stabilize
 
 from utils.stylesheet import (
     set_stylesheet,
     set_widget_stylesheet,
 )
 from controllers.controller import Controller_video_editor
-from ui.ui.widget_stabilize_ui import Ui_widget_stabilize
-from ui.widget_common import Widget_common
+from views.ui.widget_stabilize_ui import Ui_widget_stabilize
+from views.widget_common import Widget_common
 from utils.pretty_print import *
 
 
@@ -132,8 +132,6 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         pass
 
 
-
-
     def block_signals(self, enabled:bool):
         self.pushButton_set_preview.blockSignals(enabled)
         self.pushButton_stabilize.blockSignals(enabled)
@@ -153,7 +151,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     def event_settings_enable_toggled(self, is_checked:bool=False):
         log.info(f"changed settings enable to {is_checked}")
         self.tableWidget_stabilize.setEnabled(is_checked)
-        if is_checked:
+        if self.is_enabled_initial != is_checked:
             if self.tableWidget_stabilize.is_content_modified():
                 log.info("segments have been modified")
                 settings = self.get_current_settings()
@@ -185,6 +183,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             return
 
         is_enabled = stabilize_settings['enable']
+        self.is_enabled_initial = is_enabled
         self.groupBox_stabilize.setChecked(is_enabled)
 
         table = self.tableWidget_stabilize
@@ -299,13 +298,18 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def event_stabilize_requested(self):
         log.info(f"Event: stabilize requested")
+        print(f"Event: stabilize requested")
         if not self.pushButton_set_preview.isChecked():
             log.info("preview is not enabled, resquest stabilization=None")
+            print("\tpreview is not enabled, resquest stabilization=None")
             self.signal_stabilization_requested.emit(None)
         else:
-            if self.tableWidget_stabilize.is_content_modified():
+            if (self.tableWidget_stabilize.is_content_modified() or
+                self.groupBox_stabilize.isChecked() != self.is_enabled_initial):
                 # Settings have been modified, request to stabilize
+                # If initial state was disabled, stabilize has not been done
                 log.info(f"Request to stabilize")
+                print(f"\tRequest to stabilize")
                 self.pushButton_discard.setEnabled(True)
                 self.pushButton_save.setEnabled(True)
                 settings = self.get_current_settings()
@@ -313,6 +317,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             else:
                 # Settings have not been modified, just refresh
                 log.info(f"Request to refresh without recalculate")
+                print(f"\tRequest to refresh without recalculate")
                 self.pushButton_discard.setEnabled(False)
                 self.pushButton_save.setEnabled(False)
                 self.signal_preview_options_changed.emit()
@@ -400,7 +405,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         if event.type() == QEvent.KeyPress:
             key = event.key()
             if key == Qt.Key.Key_Space:
-                return super().eventFilter(watched, event)
+                return self.ui.keyPressEvent(event)
         #     modifier = event.modifiers()
         #     if modifier & Qt.ControlModifier and key == Qt.Key_A:
         #         self.tableWidget_stabilize.select_all()

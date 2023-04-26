@@ -32,7 +32,6 @@ A stocker dans les répertoires suivants:
 - Edition 'f': [inputs/f](./inputs/f/README.md)
 - Edition 'k': [inputs/k](./inputs/k/README.md)
 - Edition 's': [inputs/s](./inputs/s/README.md) (ep 1, 2, 11, 12)
-- Edition 's0': [inputs/s0](./inputs/s0/README.md) (ep 1)
 - Edition 'b': [inputs/b](./inputs/b/README.md) (ep 01 audio)
 <br/><br/>
 

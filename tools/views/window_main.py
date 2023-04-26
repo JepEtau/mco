@@ -23,7 +23,8 @@ from PySide6.QtGui import (
     QImage,
     QPen,
 )
-from ui.window_common import (
+
+from views.window_common import (
     Window_common,
     PAINTER_MARGIN_LEFT,
     PAINTER_MARGIN_TOP,
@@ -34,12 +35,12 @@ from filters.utils import (
     FINAL_FRAME_WIDTH,
     get_dimensions_from_crop_values,
 )
-from ui.widget_controls import Widget_controls
-from ui.widget_selection import Widget_selection
-from ui.widget_curves import Widget_curves
-from ui.widget_replace import Widget_replace
-from ui.widget_geometry import Widget_geometry
-from ui.widget_stabilize import Widget_stabilize
+from views.widget_controls import Widget_controls
+from views.widget_selection import Widget_selection
+from views.widget_curves import Widget_curves
+from views.widget_replace import Widget_replace
+from views.widget_geometry import Widget_geometry
+from views.widget_stabilize import Widget_stabilize
 
 from controllers.controller import Controller_video_editor
 
@@ -368,6 +369,11 @@ class Window_main(Window_common):
         key = event.key()
         modifiers = event.modifiers()
         # print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
+
+        if key == Qt.Key.Key_Space:
+            self.widget_controls.event_key_pressed(event)
+            event.accept()
+            return True
 
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_Tab:

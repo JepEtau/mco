@@ -249,7 +249,7 @@ border-color: rgb(145, 65, 172);</string>
   <customwidget>
    <class>Widget_custom_qslider</class>
    <extends>QWidget</extends>
-   <header location="global">ui.widget_custom_qslider</header>
+   <header location="global">views.widget_custom_qslider</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

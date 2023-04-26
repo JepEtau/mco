@@ -38,7 +38,7 @@ class CustomHandler(logging.StreamHandler):
         self._ui = Ui_logger()
         self._ui.setupUi(self._uiDialog)
         if platform.system() == "Windows":
-            self._uiDialog.move(2600, 600)
+            self._uiDialog.move(2600, 500)
         else:
             self._uiDialog.move(2500, 100)
 

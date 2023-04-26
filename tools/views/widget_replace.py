@@ -21,8 +21,8 @@ from PySide6.QtWidgets import (
 from utils.stylesheet import set_stylesheet, update_selected_widget_stylesheet
 
 from controllers.controller import Controller_video_editor
-from ui.ui.widget_replace_ui import Ui_widget_replace
-from ui.widget_common import Widget_common
+from views.ui.widget_replace_ui import Ui_widget_replace
+from views.widget_common import Widget_common
 
 class Widget_replace(Widget_common, Ui_widget_replace):
     signal_replace_modified = Signal(dict)

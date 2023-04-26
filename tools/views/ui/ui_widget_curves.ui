@@ -513,13 +513,13 @@
   <customwidget>
    <class>Widget_rgb_graph</class>
    <extends>QWidget</extends>
-   <header>ui.widget_rgb_graph</header>
+   <header>views.widget_rgb_graph</header>
    <container>1</container>
   </customwidget>
   <customwidget>
    <class>Widget_curves_selection</class>
    <extends>QWidget</extends>
-   <header>ui.widget_curves_selection</header>
+   <header>views.widget_curves_selection</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -305,6 +305,7 @@ class Controller_video_editor(Controller_common,
             and k_step != self.current_task):
             # Reconsolidate shot is mandatory because hash differs
             #  edition is made without deshake/stabilize filters
+            print(f"- reconsolidate")
             do_reconsolidate_shot = True
 
         self.current_task = k_step
@@ -340,8 +341,8 @@ class Controller_video_editor(Controller_common,
                     filepath_tmp = get_frame_list(db, k_ep=k_ep, k_part=k_part, shot=shot)
                 self.filepath.append(filepath_tmp)
 
-            # print_yellow(f"event_selected_step_changed: {k_ep}:{k_part} <- {shot['k_ep']}:{shot['k_part']}:{shot['no']}")
-            # pprint(filepath_tmp)
+            print_yellow(f"event_selected_step_changed: {k_ep}:{k_part} <- {shot['k_ep']}:{shot['k_part']}:{shot['no']}")
+            pprint(filepath_tmp)
 
             # Modify the list of frames for this shot
             for p, i in zip(filepath_tmp, range(len(filepath_tmp))):

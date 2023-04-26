@@ -32,7 +32,7 @@ from utils.stylesheet import (
 )
 
 from utils.common import K_GENERIQUES, K_PARTS, K_ALL_PARTS
-from ui.ui.widget_selection_ui import Ui_widget_selection
+from views.ui.widget_selection_ui import Ui_widget_selection
 
 
 class Widget_selection(QWidget, Ui_widget_selection):
@@ -580,8 +580,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         if self.event_key_pressed(event):
             event.accept()
             return True
-        return False
-    # return self.ui.keyPressEvent(event)
+        return self.ui.keyPressEvent(event)
 
 
     def event_key_pressed(self, event):
