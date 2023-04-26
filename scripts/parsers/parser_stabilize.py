@@ -21,7 +21,6 @@ from utils.common import (
 from shot.utils import get_shot_from_frame_no
 from utils.nested_dict import nested_dict_set
 
-SEGMENTS_MAX_COUNT = 5
 
 # mode, options=
 #   - vertical

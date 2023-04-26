@@ -142,9 +142,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
 
                 else:
                     print_red("\t\t\terror: cannot denoise/sharpen with this GPU")
-                    #
-                # if not get_hashes:
-                #     sys.exit("Goodbye!")
+
             else:
                 xgan = {
                     'name': filter['type'],
@@ -215,34 +213,53 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
         #-----------------------------------------------------------------------
         elif filter['type'] == 'animesr':
             if not torch.cuda.is_available():
-                print_red("\t\t\terror: cannot upscale with this GPU/CPU")
+                if filter['task'] == 'upscale':
+                    print_red("\t\t\terror: cannot upscale with this GPU")
+                    print_orange("\t\t\tfallback: bad quality upscale (CV2: nearest)")
+                    filter_str = "scale=2:nearest"
+                    hash, images = apply_python_filters(
+                        shot,
+                        images=images,
+                        image_list=image_list,
+                        step_no=step_no,
+                        filters_str=filter_str,
+                        input_hash=hash,
+                        do_save=True,
+                        output_folder=output_folder,
+                        get_hash=get_hashes,
+                        do_force=do_force)
+                    if not get_hashes:
+                        print_lightgrey("\t\t\tupscale: returned %d images" % (len(images)))
+                else:
+                    print_red("\t\t\terror: cannot denoise/sharpen with this GPU")
 
-            alg = {
-                'name': filter['type'],
-                'model': '',
-            }
+            else:
+                alg = {
+                    'name': filter['type'],
+                    'model': '',
+                }
 
-            args = filter['str'].split(',')
-            for arg in args:
-                arg_name, arg_value = arg.split('=')
-                alg[arg_name] = arg_value
+                args = filter['str'].split(',')
+                for arg in args:
+                    arg_name, arg_value = arg.split('=')
+                    alg[arg_name] = arg_value
 
-            if alg['model'] == '':
-                sys.exit(print_red("\n(AnimeSR) model name is required"))
-            hash, scale, images = upscale_animesr(
-                shot=shot,
-                images=images,
-                image_list=image_list,
-                scale=2,
-                model_name=alg['model'],
-                directories=db['common']['directories'],
-                input_hash=hash,
-                step_no=step_no,
-                output_folder=output_folder,
-                get_hash=get_hashes,
-                do_force=do_force)
-            # if not get_hashes:
-            #     print("\t\t\tupscale: returned %s" % (hash))
+                if alg['model'] == '':
+                    sys.exit(print_red("\n(AnimeSR) model name is required"))
+                hash, scale, images = upscale_animesr(
+                    shot=shot,
+                    images=images,
+                    image_list=image_list,
+                    scale=2,
+                    model_name=alg['model'],
+                    directories=db['common']['directories'],
+                    input_hash=hash,
+                    step_no=step_no,
+                    output_folder=output_folder,
+                    get_hash=get_hashes,
+                    do_force=do_force)
+                # if not get_hashes:
+                #     print("\t\t\tupscale: returned %s" % (hash))
 
 
 

@@ -94,7 +94,7 @@ class Window_main(Window_common):
             self.widget_stabilize.set_initial_options(p)
             self.widget_stabilize.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'stabilize'))
             self.widget_stabilize.signal_frame_selected[int].connect(self.event_move_to_frame_no)
-            self.widget_stabilize.signal_show_guidelines_changed[bool].connect(self.event_show_guidelines_changed)
+            self.widget_stabilize.signal_show_guidelines_changed.connect(self.event_show_guidelines_changed)
         self.show_guidelines = False
 
         # Player controls
@@ -202,8 +202,7 @@ class Window_main(Window_common):
         # print("\t\t%f" % int(1000 * (time.time() - now)))
 
 
-    def event_show_guidelines_changed(self, enabled):
-        self.show_guidelines = enabled
+    def event_show_guidelines_changed(self):
         self.repaint()
 
 
@@ -273,7 +272,7 @@ class Window_main(Window_common):
                 event.accept()
                 return True
             elif self.current_editor == 'stabilize':
-                line = self.widget_stabilize.grab_guidelines(x, y)
+                line = self.widget_stabilize.guidelines.grab(x, y)
                 if line == 'vertical':
                     self.setCursor(Qt.SplitHCursor)
                 elif line == 'horizontal':
@@ -298,7 +297,7 @@ class Window_main(Window_common):
         x = event.x()
         y = event.y()
         if self.current_editor == 'stabilize':
-            line = self.widget_stabilize.move_guidelines(x, y)
+            line = self.widget_stabilize.guidelines.move(x, y)
             if line is None:
                 self.get_rgb_value(x, y)
                 event.ignore()
@@ -331,7 +330,7 @@ class Window_main(Window_common):
                 self.event_reload_frame()
 
         elif self.current_editor == 'stabilize':
-            line = self.widget_stabilize.guidelines_moved(x, self.mouse_grabX, y, self.mouse_grabY)
+            line = self.widget_stabilize.guidelines.moved(x, self.mouse_grabX, y, self.mouse_grabY)
             if line == 'vertical':
                 self.setCursor(Qt.SplitHCursor)
             elif line == 'horizontal':
@@ -347,7 +346,7 @@ class Window_main(Window_common):
     def mouseReleaseEvent(self, event):
         self.setCursor(Qt.ArrowCursor)
         self.widget_curves.split_line_released(event.x())
-        self.widget_stabilize.guidelines_released(event.x(), event.y())
+        self.widget_stabilize.guidelines.released(event.x(), event.y())
         self.repaint()
 
     def wheelEvent(self, event):
@@ -661,8 +660,9 @@ class Window_main(Window_common):
                     preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top,
                     preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top + max(img_height, FINAL_FRAME_HEIGHT))
 
-            if self.show_guidelines:
-                x, y = self.widget_stabilize.guidelines_coordinates()
+            guidelines = self.widget_stabilize.guidelines
+            if guidelines.is_enabled():
+                x, y = guidelines.coordinates()
 
                 pen = QPen(QColor(255,255,255))
                 pen.setStyle(Qt.SolidLine)

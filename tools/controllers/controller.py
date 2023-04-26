@@ -373,6 +373,12 @@ class Controller_video_editor(Controller_common,
         self.preview_options = self.view.get_preview_options()
         self.consolidate_preview_options()
         self.signal_preview_options_consolidated.emit(self.preview_options)
+
+        if (self.preview_options['stabilize']['enabled']
+            and k_step != 'deinterlace'):
+            print("step has been modified, stabilize is enabled, do stabilize")
+            self.stabilize()
+
         self.signal_ready_to_play.emit(self.playlist_properties)
 
 
@@ -870,8 +876,7 @@ class Controller_video_editor(Controller_common,
             # Geometry has to be consolidated if change enabled/disable
             self.refresh_geometry_for_each_frame(shot=shot)
 
-
-        self.signal_stabilize_settings_refreshed.emit(new_settings)
+        # self.signal_stabilize_settings_refreshed.emit(new_settings)
 
 
     def refresh_stabilize_flag_for_each_frame(self, shot):
@@ -976,9 +981,19 @@ class Controller_video_editor(Controller_common,
 
 
 
-    def event_stabilization_requested(self):
-        # Stabilize current shot
-        self.stabilize(shot=self.current_shot())
+    def event_stabilization_requested(self, settings):
+        if settings == None:
+            log.info("preview is disabled, reload frame to remove stabilization")
+            print_lightcyan("preview is disabled, reload frame to remove stabilization")
+        else:
+            log.info("preview is enabled, stabilize")
+            print_lightcyan("preview is enabled, stabilization is requested")
+
+            # Update model and refresh settings of all frames
+            self.event_stabilize_modified(settings=settings)
+
+            # Stabilize current shot
+            self.stabilize(shot=self.current_shot())
 
         # Consolidate preview
         self.preview_options['stabilize']['enabled'] = True

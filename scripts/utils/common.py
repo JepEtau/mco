@@ -292,7 +292,10 @@ def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int):
     verbose = False
 
     # Returns the part from the frame no.:
-    db_ep = db[k_ep]['video'][k_ed]
+    try:
+        db_ep = db[k_ep]['video'][k_ed]
+    except:
+        return ''
     for k_p in K_ALL_PARTS:
         if verbose:
             print(f"\tget_k_part_from_frame_no: {frame_no} in {k_ed}:{k_ep}:{k_p}")
