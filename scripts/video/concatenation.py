@@ -325,7 +325,7 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, sim
             f"{k_ep_or_g}_video_{db[k_ep_or_g]['target']['video'][k_part]['hash']}{suffix}.mkv")
 
     try:
-        video_frames_count = int(get_video_duration(db['common'], video_filepath, integrity=False) * FPS)
+        video_frames_count = get_video_duration(db['common'], video_filepath, integrity=False)[1]
     except:
         video_frames_count = 0
 
