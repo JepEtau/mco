@@ -14,12 +14,14 @@
 11. [AnimeSR](#AnimeSR)
 12. [Real-CUGAN](#Real-CUGAN)
 13. [ESRGAN](#ESRGAN)
-14. ~~[Real-ESRGAN](#~~Real-ESRGAN~~)~~
-15. [Modèles](#Modèles)
+14. [Modèles](#Modèles)
+<!-- 14. ~~[Real-ESRGAN](#~~Real-ESRGAN~~)~~ -->
 
 <br/><br/>
 
 ## Arborescence
+-----------------------------------------
+
 ```
 D
 ├── mco
@@ -30,7 +32,8 @@ D
 
 ## MCO
 -----------------------------------------
-Depuis un répertoire (nommé 'D' ici):
+- [mco](https://github.com/JepEtau/mco)
+- Depuis un répertoire (nommé 'D' ci-dessus):
 ```bash
 git clone https://github.com/JepEtau/mco.git
 ```
@@ -58,12 +61,12 @@ Depuis le répertoire **`mco`**:
 pip install -r requirements.txt
 ```
 
-TODO: investigate (requirements for dnn_superres)
+<!-- TODO: investigate (requirements for dnn_superres)
 ```
     pip uninstall opencv-python
     pip uninstall opencv-contrib-python
     pip install opencv-python-rolling==4.7.0.20230211
-```
+``` -->
 
 
 <br/>
@@ -76,8 +79,6 @@ TODO: investigate (requirements for dnn_superres)
     * Architecture: x86_64
     * Version: 11
     * Installer Type: exe(local) ou exe(network)
-
-
 
 <br/>
 
@@ -121,6 +122,34 @@ pip3 install torch torchvision torchaudio --index-url https://download.pytorch.o
 ## Filtres et Plugins Avisynth
 -----------------------------------------
 - [AviSynth](http://avisynth.nl/index.php/Main_Page)
+<br/>
+
+**- Si vous n'utilisez pas AviSynth+ par ailleurs:**
+- Avant de lancer l'installation, créer l'arboresence suivante (répertoires):
+```
+mco_3rd_party
+├── avisynth_plugins
+    ├── plugins
+    ├── plugins+
+    ├── plugins64
+    ├── plugins64+
+```
+- Lors de l'installation, cocher l'option 'Customize Plugins Paths'. Puis choisir les répertoires créés ci-dessus
+<br/>
+
+**- Sinon, vous êtes à même de retrouver les répertoires de plugins**
+
+- Mettre dans le répertoire **`plugins64+`** (choisir les versions x64 pour chaque plugin)
+    * ffms2.dll [[FFmpegSource](http://avisynth.nl/index.php/FFmpegSource)]
+    * QTGMC.avsi  [[QTGMC](http://avisynth.nl/index.php/QTGMC)]
+    * masktools2.dll [[MaskTools2](http://avisynth.nl/index.php/MaskTools2)]
+    * DePan.dll, DePanEstimate.dll, mvtools2.dll [[MVTools2](http://avisynth.nl/index.php/MVTools)]
+    * nnedi3.dll [[Nnedi3](http://avisynth.nl/index.php/Nnedi3)] (Release_W7_AVX2)
+    * RgTools.dll [[RgTools](http://avisynth.nl/index.php/RgTools)]
+    * Zs_RF_Shared.avsi [[Zs_RF_Shared](http://avisynth.nl/index.php/Zs_RF_Shared)]
+    * eedi3.dll [[EEDI3](http://avisynth.nl/index.php/Eedi3)]
+    * aWarpsharpMT.dll [[AWarpSharp2](http://avisynth.nl/index.php/AWarpSharp2)]
+    * dfttest.dll [[Dfttest](http://avisynth.nl/index.php/Dfttest)]
 
 <br/>
 
@@ -166,7 +195,7 @@ pip install --user -r requirements.txt
 ```
 
 <br/>
-
+<!--
 ## ~~Real-ESRGAN~~
 -----------------------------------------
 **!!! Inutilisé: il n'est pas nécessaire de l'installer !!!**
@@ -186,7 +215,7 @@ pip install -r requirements.txt
 python setup.py develop
 ```
 
-<br/>
+<br/> -->
 
 
 

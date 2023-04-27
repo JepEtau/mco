@@ -194,7 +194,11 @@ class Widget_common(QWidget):
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         # print("  * eventFilter: widget_%s: " % (self.objectName()), event.type())
-        if event.type() == QEvent.Enter:
+        if event.type() == QEvent.KeyPress:
+            key = event.key()
+            if key == Qt.Key.Key_Space:
+                return self.ui.keyPressEvent(event)
+        elif event.type() == QEvent.Enter:
             # print("         QEvent.Enter")
             self.is_entered = True
             return True
