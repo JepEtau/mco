@@ -2,7 +2,7 @@
 # Exigences
 - Windows 11
 - RAM: minimum 16GB (32GB recommandés)
-- SSD ou HDD: taille des vidéo d'entrée + 300MB par épisode  (génération)
+- SSD ou HDD: taille des vidéo d'entrée + 300GB par épisode (génération)
 - Carte Graphique NVIDIA (CUDA)
 - Editions F, K, S (en partie, voir ci-dessous), B (optionnel)
 - Quelques heures par épisode (selon le CPU et la carte graphique)
