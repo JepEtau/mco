@@ -400,21 +400,28 @@ def calculate_geometry_parameters(shot, img, verbose:bool=False):
     if shot_geometry is None and 'default' in shot['geometry'].keys():
         # Shot geometry may contains the default geometry when using video editor
         shot_geometry = shot['geometry']['default']
+        if verbose:
+            print_lightgrey(f"\t-> use default geometry")
 
     # Crop the image
     # Update the crop values if borders has been added
-    if has_add_border_task(shot):
-        cropped_value = list()
+    if shot['last_task'] != 'deinterlace' or has_add_border_task(shot):
+        # cropped_value = list()
         # cropped_value = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
-        for x in shot_geometry['crop']:
-            cropped_value.append(x + IMG_BORDER_HIGH_RES)
+        cropped_value = [x + IMG_BORDER_HIGH_RES for x in shot_geometry['crop']]
+        if verbose:
+            print_lightgrey(f"\t-> image has borders")
+            print(f"\t{cropped_value}")
     else:
         cropped_value = shot_geometry['crop']
+        if verbose:
+            print_lightgrey(f"\t-> image has no border")
+            print(f"\t{cropped_value}")
 
     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
         width=img_width, height=img_height, crop=cropped_value)
     if verbose:
-        print_lightgrey("\t-> cropped size (%d, %d)" % (cropped_width, cropped_height))
+        print_lightgrey(f"\t-> cropped size ({cropped_width}, {cropped_height}). Crop values: [{crop_top}, {crop_bottom}, {crop_left}, {crop_right}]")
 
     # (1) Crop
 

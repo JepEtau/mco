@@ -106,15 +106,12 @@ def generate_image(frame:dict, preview_options:dict):
     # Final image: function
     #------------------------------------
     if preview_geometry['final_preview']:
+        # Use the functions that will be called by the script
         nested_dict_set(frame['geometry'], {'w': w_final, 'h': h_final}, 'dimensions', 'final')
-        virtual_shot = {'geometry': deepcopy(frame['geometry'])}
-        if frame['k_part'] != 'reportage':
-            try: virtual_shot['geometry']['default']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
-                                                                virtual_shot['geometry']['default']['crop']))
-            except: pass
-            try: virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
-                                                                virtual_shot['geometry']['shot']['crop']))
-            except: pass
+        virtual_shot = {
+            'geometry': frame['geometry'],
+            'last_task': frame['task']
+        }
         geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=img_initial)
         img_finalized = cv2_geometry_filter(img=img_rgb, geometry=geometry_values)
         return (frame['index'], img_finalized)
