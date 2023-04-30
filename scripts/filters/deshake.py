@@ -54,6 +54,7 @@ def verify_stabilize_segments(shot, segments):
 def deshake(shot, images:list, image_list:list,
     step_no:int, input_hash:str,
     get_hash:bool=False, do_force:bool=False):
+    verbose = True
 
     try:
         if shot['deshake']['enable'] == True:
@@ -80,20 +81,6 @@ def deshake(shot, images:list, image_list:list,
         segment['count'] = segment['end'] - segment['start'] + 1
         segment['start'] -= shot['start']
 
-    # Patch segments
-    # if len(segments) == 2:
-    #     # TODO update this
-    #     if segments[1]['start'] == segments[0]['start'] + segments[0]['count']:
-    #         # segment 1 is adjacent to 0
-    #         print_yellow("warning: changed segment 1 ref to end")
-    #         segments[0]['ref'] = 'end'
-    #         segments[0]['count'] = segments[1]['start'] - segments[0]['start'] + 1
-    #         segments[1]['ref'] = 'start'
-    #     else:
-    #         # some frames between these 2 segments
-    #         segments[0]['ref'] = 'end'
-    #         segments[1]['ref'] = 'start'
-
 
     if len(segments) == 1:
         if segments[0]['ref'] == 'auto':
@@ -117,6 +104,9 @@ def deshake(shot, images:list, image_list:list,
     elif len(segments) > 2:
         print_orange("warning: deshake: %d segments" % len(segments))
 
+    if verbose and not get_hash:
+        print_lightgreen("Deshake, segments:")
+        pprint(segments)
 
 
     output_images = list()
@@ -136,7 +126,8 @@ def deshake(shot, images:list, image_list:list,
                     if segment['ref'] == 'start':
                         # No need to apply transformation because ref of this segment is start
                         # i.e. last_transformation=None
-                        print_lightcyan("Append %d images before 1st segment" % (segment['start']))
+                        if verbose:
+                            print_lightcyan(f"\t- append {segment['start']} images before 1st segment")
                         for i in range(segment['start']):
                             output_images.append(images[i])
                         inserted_first_frames = True
@@ -145,9 +136,19 @@ def deshake(shot, images:list, image_list:list,
             else:
                 if start + count < segment['start']:
                     # Between 2 segments, apply the previous transformation
-                    print_lightcyan("Append %d images between 2 segments" % (segment['start'] - (start + count)))
-                    for i in range(start + count, segment['start']):
-                        output_images.append(apply_cv2_transformation(images[i], transformations['end']))
+                    if verbose:
+                        _count = segment['start'] - (start + count)
+                        print_lightcyan(f"\t- append {_count} images between 2 segments:", end=' ')
+                    if transformations['end'] is not None:
+                        if verbose:
+                            print(f"apply transformation")
+                        for i in range(start + count, segment['start']):
+                            output_images.append(apply_cv2_transformation(images[i], transformations['end']))
+                    else:
+                        if verbose:
+                            print(f"no transformation")
+                        for i in range(start + count, segment['start']):
+                            output_images.append(images[i])
 
 
         # Start, nb of frames, initial transformation
@@ -180,6 +181,8 @@ def deshake(shot, images:list, image_list:list,
                 do_force=do_force)
             del deshaker
 
+            print(transformations)
+
         elif algorithm == 'skimage_deshaker':
             deshaker = Skimage_deshaker()
             __output_images, __filter_str = deshaker.stabilize(
@@ -195,24 +198,24 @@ def deshake(shot, images:list, image_list:list,
             del deshaker
         else:
             sys.exit(print_red("error: deshake: algorithm not recognized: %s" % (algorithm)))
-        # To remove from this file and create 'stabilize' function
-        # elif algorithm == 'ffmpeg':
-        #     stabilizer = FFmpeg_stabilizer()
-        #     count, __filter_str = stabilizer.stabilize(
-        #         image_list=images,
-        #         output=output_path,
-        #         input_hash=input_hash,
-        #         do_log=False)
+            # To remove from this file and create 'stabilize' function
+            # elif algorithm == 'ffmpeg':
+            #     stabilizer = FFmpeg_stabilizer()
+            #     count, __filter_str = stabilizer.stabilize(
+            #         image_list=images,
+            #         output=output_path,
+            #         input_hash=input_hash,
+            #         do_log=False)
 
-        # elif algorithm == 'ffmpeg':
-        #     # Bad results:
-        #     homography = Homography()
-        #     count, hash = homography.stabilize(
-        #         image_list=image_list,
-        #         output=os.path.abspath(shot['paths']['stabilized']),
-        #         frame_ref_index=None,
-        #         input_hash=hash,
-        #         do_log=False)
+            # elif algorithm == 'ffmpeg':
+            #     # Bad results:
+            #     homography = Homography()
+            #     count, hash = homography.stabilize(
+            #         image_list=image_list,
+            #         output=os.path.abspath(shot['paths']['stabilized']),
+            #         frame_ref_index=None,
+            #         input_hash=hash,
+            #         do_log=False)
 
         if not get_hash:
             if not inserted_first_frames:
@@ -220,12 +223,14 @@ def deshake(shot, images:list, image_list:list,
                 if segment['ref'] in 'start' or len(output_images) > 0:
                     sys.exit(print_red("bug: deshake!!! segment[ref]=%s, output images: %d" % (segment['ref'], len(output_images))))
 
-                print_lightcyan("Append %d images at the beggining" % (segment['start']))
+                if verbose:
+                    print_lightcyan("\t- append %d images at the beggining" % (segment['start']))
                 for i in range(segment['start']):
                     output_images.append(apply_cv2_transformation(images[i], transformations['start']))
                 inserted_first_frames = True
 
-            print_lightcyan("Append %d stabilized images" % (len(__output_images)))
+            if verbose:
+                print_lightcyan("\t- append %d stabilized images" % (len(__output_images)))
             output_images.extend(__output_images)
 
 
@@ -242,7 +247,8 @@ def deshake(shot, images:list, image_list:list,
     # Append last non-stabilized images
     last_segment_end = segments[-1]['start'] + segments[-1]['count']
     if last_segment_end < shot['count']:
-        print_lightcyan("Append %d images after the last segment" % (shot['count'] - last_segment_end))
+        if verbose:
+            print_lightcyan("- append %d images after the last segment" % (shot['count'] - last_segment_end))
         for i in range(last_segment_end, shot['count']):
             output_images.append(apply_cv2_transformation(images[i], transformations['end']))
 

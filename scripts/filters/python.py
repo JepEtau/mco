@@ -364,7 +364,7 @@ def work_python_filters(frame_no, input_img, filter_list) -> list:
 
         elif function == 'scale':
             img = cv2_scale(img,
-                scale=int(args[0]),
+                scale=float(args[0]),
                 interpolation=args[1])
 
         elif function == 'resize':

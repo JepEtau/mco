@@ -637,24 +637,25 @@ def filter_brightness_contrast(input_img, brightness = 255, contrast = 127):
     # cv2.putText(buf,'B:{},C:{}'.format(brightness,contrast),(10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
     return buf
 
+INTERPOLATIONS = {
+    'bicubic': cv2.INTER_CUBIC,
+    'lanczos': cv2.INTER_LANCZOS4,
+    'lanczos4': cv2.INTER_LANCZOS4,
+    'nearest': cv2.INTER_NEAREST,
+    'linear': cv2.INTER_LINEAR,
+}
 
-def cv2_scale(image, scale, interpolation):
+def cv2_scale(image, scale:float, interpolation:str):
     # print("upscale image to %dx%d, inter=%s" % (width, height, interpolation))
     # startTime = time.time()
-    if interpolation == 'bicubic':
-        cv2_interpolation = cv2.INTER_CUBIC
-    elif interpolation in ['lanczos', 'lanczos4']:
-        cv2_interpolation = cv2.INTER_LANCZOS4
-    elif interpolation == 'nearest':
-        cv2_interpolation = cv2.INTER_NEAREST
-    elif interpolation == 'linear':
-        cv2_interpolation = cv2.INTER_LINEAR
-    else:
+    try:
+        cv2_interpolation = INTERPOLATIONS[interpolation]
+    except:
         sys.exit(print_red("error: cv2_scale: interpolation method not recognized [%s]" % (interpolation)))
 
     # 0.015s
     upscaled_image = cv2.resize(image,
-        (image.shape[1]*scale, image.shape[0]*scale),
+        (int(image.shape[1]*scale), int(image.shape[0]*scale)),
         interpolation=cv2_interpolation)
 
     # print(">> %.04fs" % (time.time() - startTime), flush=True)

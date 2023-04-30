@@ -56,11 +56,13 @@ class CV2_deshaker:
         self.__transformations = list()
 
 
-    def __get_initial_image(self, img, last_transformation):
+    def __get_initial_image(self, img, last_transformation, verbose=False):
         # Apply transformation to the initial image
         if last_transformation is not None:
+            print("\tApply transformation to the initial image:", last_transformation)
             initial_img_stabilized = apply_cv2_transformation(img, last_transformation)
         else:
+            print("\tNo transformation applied to the initial image:")
             initial_img_stabilized = img
 
         img_gray_tmp = cv2.cvtColor(initial_img_stabilized, cv2.COLOR_RGB2GRAY)
@@ -178,7 +180,7 @@ class CV2_deshaker:
         step_no, input_hash, get_hash:bool=False, do_force=False):
         """Stabilize images without smoothing the trajectory
         """
-        verbose=False
+        verbose=True
         transformations = {
             'start': None,
             'end': None,
@@ -261,80 +263,118 @@ class CV2_deshaker:
                     transformations['start'] = transformation
             transformations['end'] = transformation
 
-        else:
+        elif ref == 'start':
             self.__transformations.append(last_transformation)
             output_images = [img_stabilized]
-            start = ref_index + 1
+            start = 1
             end = len(images)
             transformation = None
-            for _ref in ['start', 'end']:
-                for i in range(start, end):
-                    if verbose:
-                        print("frame %d: " % (i), end='')
 
-                    if _ref == 'start':
-                        img_colored = images[i]
-                        if verbose:
-                            print("%s: image=%d" % (_ref, i), end=' ')
-                    elif _ref == 'end':
-                        index = ref_index - 1 - i
-                        img_colored = images[index]
-                        if verbose:
-                            print("%s: image=%d" % (_ref, index), end=' ')
+            print_pink(f"stabilize from {ref}, start={start}, end={end}")
+            for i in range(start, end):
+                if verbose:
+                    print(f"\timage {i}", end=' ')
+
+                img_colored = images[i]
+
+                # compute and get keypoints
+                img_stabilized, transformation = self.__stabilize_image(
+                    img=img_colored,
+                    img_ref_gray=img_ref_gray,
+                    keypoints_ref=keypoints_ref,
+                    mode=mode)
+                if verbose:
+                    print(f"transformation {transformation}")
+
+                # append image
+                output_images.append(img_stabilized)
+                self.__transformations.append(transformation)
+
+                # Current frame is the newest reference
+                img_gray_tmp2 = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_RGB2GRAY)
+                if self.__use_roi:
+                    print_yellow("warning: use ROI: not validated")
+                    img_gray_tmp2 = img_gray_tmp2[
+                        self.__crop_h+self.__pad:self.__pad+img_gray_tmp2.shape[0],
+                        self.__crop_w+self.__pad:self.__pad+img_gray_tmp2.shape[1]]
+                if self.__sobel:
+                    print_yellow("warning: use sobel: not validated")
+                    img_ref_gray = edge_sharpen_sobel_gray(image_gray=img_gray_tmp2, index=self.__index)
+                    self.__index += 1
+                else:
+                    img_ref_gray = img_gray_tmp2
+
+                # Identify new points
+                keypoints_ref = cv2.goodFeaturesToTrack(img_ref_gray,
+                    maxCorners=self.__max_corners,
+                    qualityLevel=self.__quality_level,
+                    minDistance=self.__min_distance,
+                    blockSize=self.__block_size,
+                    mask=self.__mask,
+                    useHarrisDetector=self.__use_harris_detector,
+                    k=self.__k)
+
+            if verbose:
+                print_yellow("Save last transformation, used for the start of next segment", end= '')
+                print(transformation)
+            transformations['start'] = None
+            transformations['end'] = transformation
 
 
-                    # compute and get keypoints
-                    img_stabilized, transformation = self.__stabilize_image(
-                        img=img_colored,
-                        img_ref_gray=img_ref_gray,
-                        keypoints_ref=keypoints_ref,
-                        mode=mode)
 
-                    if _ref == 'start':
-                        output_images.append(img_stabilized)
-                        self.__transformations.append(transformation)
-                        if verbose:
-                            print("append")
-                    elif _ref == 'end':
-                        output_images.insert(0, img_stabilized)
-                        self.__transformations.insert(0, transformation)
-                        if verbose:
-                            print("insert")
+        elif ref == 'end':
+            self.__transformations.append(last_transformation)
+            output_images = [img_stabilized]
+            transformation = None
+            print_pink(f"stabilize from {ref}, start={ref_index}, end={0}")
+            for i in range(ref_index-1, -1, -1):
+                if verbose:
+                    print(f"\timage {i}", end=' ')
+                img_colored = images[i]
 
-                    # Current frame is the newest reference
-                    img_gray_tmp2 = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_RGB2GRAY)
-                    if self.__use_roi:
-                        img_gray_tmp2 = img_gray_tmp2[
-                            self.__crop_h+self.__pad:self.__pad+img_gray_tmp2.shape[0],
-                            self.__crop_w+self.__pad:self.__pad+img_gray_tmp2.shape[1]]
 
-                    if self.__sobel:
-                        img_ref_gray = edge_sharpen_sobel_gray(image_gray=img_gray_tmp2, index=self.__index)
-                        self.__index += 1
-                    else:
-                        img_ref_gray = img_gray_tmp2
+                # compute and get keypoints
+                img_stabilized, transformation = self.__stabilize_image(
+                    img=img_colored,
+                    img_ref_gray=img_ref_gray,
+                    keypoints_ref=keypoints_ref,
+                    mode=mode)
+                if verbose:
+                    print(f"transformation {transformation}")
 
-                    keypoints_ref = cv2.goodFeaturesToTrack(img_ref_gray,
-                        maxCorners=self.__max_corners,
-                        qualityLevel=self.__quality_level,
-                        minDistance=self.__min_distance,
-                        blockSize=self.__block_size,
-                        mask=self.__mask,
-                        useHarrisDetector=self.__use_harris_detector,
-                        k=self.__k)
+                output_images.insert(0, img_stabilized)
+                self.__transformations.insert(0, transformation)
 
-                start = 0
-                end = ref_index
+                # Current frame is the newest reference
+                img_gray_tmp2 = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_RGB2GRAY)
+                if self.__use_roi:
+                    print_yellow("warning: use ROI: not validated")
+                    img_gray_tmp2 = img_gray_tmp2[
+                        self.__crop_h+self.__pad:self.__pad+img_gray_tmp2.shape[0],
+                        self.__crop_w+self.__pad:self.__pad+img_gray_tmp2.shape[1]]
 
-                if _ref == 'start':
-                    print_yellow("ref=start, save transformation as the last ", end= '')
-                    print(transformation)
-                    transformations['end'] = transformation
-                elif _ref == 'end':
-                    print_yellow("ref=end, save transformation as the begin ", end= '')
-                    print(transformation)
-                    transformations['start'] = transformation
-                transformation = None
+                if self.__sobel:
+                    print_yellow("warning: use sobel: not validated")
+                    img_ref_gray = edge_sharpen_sobel_gray(image_gray=img_gray_tmp2, index=self.__index)
+                    self.__index += 1
+                else:
+                    img_ref_gray = img_gray_tmp2
+
+                keypoints_ref = cv2.goodFeaturesToTrack(img_ref_gray,
+                    maxCorners=self.__max_corners,
+                    qualityLevel=self.__quality_level,
+                    minDistance=self.__min_distance,
+                    blockSize=self.__block_size,
+                    mask=self.__mask,
+                    useHarrisDetector=self.__use_harris_detector,
+                    k=self.__k)
+
+
+            print_yellow("ref=end, save transformation", end= '')
+            print(transformation)
+            # Transformation saved for the start of next segment
+            transformations['end'] = None
+            transformations['start'] = transformation
 
         return filters_str, output_images, transformations
 
