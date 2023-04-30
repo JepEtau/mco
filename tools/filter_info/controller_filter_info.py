@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-
+sys.path.append("scripts")
 
 import collections
 import configparser
@@ -159,7 +159,6 @@ class Controller_filter_info(QObject):
 
         # log file
         filepath_hashes = os.path.normpath(os.path.join(
-            "..",
             "hashes",
             "%s_hash.ini" % (file_properties['k_ep'])
         ))
