@@ -157,13 +157,13 @@ class Controller_geometry():
             virtual_shot['geometry']['default']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
                                                         virtual_shot['geometry']['default']['crop']))
         except:
-            print_orange("no geometry/default/crop")
+            # print_orange("no geometry/default/crop")
             pass
         try:
             virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
                                                         virtual_shot['geometry']['shot']['crop']))
         except:
-            print_orange("info: no geometry/shot/crop")
+            # print_orange("info: no geometry/shot/crop")
             pass
 
         # if frame['cache_deshake'] is not None:
