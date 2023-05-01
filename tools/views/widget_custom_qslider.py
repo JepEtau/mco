@@ -8,6 +8,8 @@ class Widget_custom_qslider(QSlider):
     def __init__(self, *args, **kwargs):
         super(Widget_custom_qslider, self).__init__(*args, **kwargs)
         self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.setSingleStep(1)
 
 
     def mousePressEvent(self, e):

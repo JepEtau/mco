@@ -187,7 +187,7 @@ class Model_database(Model_geometry,
 
             # Initialize db for edition
             if k_part != '':
-                self.initialize_db_for_replace(db=self.global_database, k_ep=k_ep, k_part=k_part_g)
+                self.initialize_db_for_replace(db=self.global_database, k_ep=k_ep, k_part=k_part)
                 self.initialize_db_for_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
                 self.initialize_db_for_stabilize(self.global_database, k_ep=k_ep, k_part=k_part)
                 self.initialize_db_for_curves(db=self.global_database, k_ep=k_ep, k_part=k_part)
@@ -241,41 +241,42 @@ class Model_database(Model_geometry,
 
     def is_db_modified(self, type:str=''):
         if type == 'curves':
-            return self.is_curves_db_modified
+            return bool(self.db_curves_library)
         elif type == 'shot_selection':
-            return self.is_curves_selection_db_modified
+            return bool(self.db_curves_selection)
         elif type == 'replace':
-            return self.is_replace_db_modified
+            return bool(self.db_replaced_frames)
         elif type == 'geometry':
-            return self.is_geometry_db_modified
+            return (bool(self.db_target_geometry)
+            or bool(self.db_default_shot_geometry)
+            or bool(self.db_shot_geometry))
         elif type == 'stabilize':
-            return self.is_stabilize_db_modified
+            return bool(self.db_stabilize)
 
-
-        return (self.is_curves_db_modified
-            or self.is_curves_selection_db_modified
-            or self.is_replace_db_modified
-            or self.is_geometry_db_modified
-            or self.is_stabilize_db_modified)
+        print(f"Erro: type {type} is not a vlaid keyword")
+        return False
 
 
     def get_modified_db(self) -> list:
         modified_db = list()
 
-        if self.is_stabilize_db_modified:
+        if self.db_stabilize:
             modified_db.append('stabilize/deshake')
 
-        if self.is_curves_db_modified:
+        if self.db_curves_library:
             modified_db.append('RGB curves')
 
-        if self.is_curves_selection_db_modified:
+        if self.db_curves_selection:
             modified_db.append('RGB curves selection')
 
-        if self.is_replace_db_modified:
+        if self.db_replaced_frames:
             modified_db.append('frames to replace')
 
-        if self.is_geometry_db_modified:
+        if (self.db_target_geometry
+            or self.db_default_shot_geometry
+            or self.db_shot_geometry):
             modified_db.append('geometry')
+
 
         return modified_db
 

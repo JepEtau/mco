@@ -265,6 +265,8 @@ class Table_stabilize(QTableWidget):
             self.setColumnWidth(col_no, col_width)
         self.row_height = 35
         self.initial_str = ""
+
+        self.parent = parent
         # Signals
         # self.currentCellChanged['int','int','int','int'].connect(self.event_current_cell_changed)
 
@@ -309,9 +311,9 @@ class Table_stabilize(QTableWidget):
             'ref': self.cellWidget(row_no, 2).currentText(),
             'alg': 'cv2_deshaker',
             'mode': {
-                'horizontal': self.cellWidget(0, 3).findChild(QCheckBox, 'horizontal').isChecked(),
-                'vertical': self.cellWidget(0, 3).findChild(QCheckBox, 'vertical').isChecked(),
-                'rotation': self.cellWidget(0, 3).findChild(QCheckBox, 'rotation').isChecked()
+                'horizontal': self.cellWidget(row_no, 3).findChild(QCheckBox, 'horizontal').isChecked(),
+                'vertical': self.cellWidget(row_no, 3).findChild(QCheckBox, 'vertical').isChecked(),
+                'rotation': self.cellWidget(row_no, 3).findChild(QCheckBox, 'rotation').isChecked()
             }
         }
         return segment_values
@@ -470,10 +472,7 @@ class Table_stabilize(QTableWidget):
         else:
             segments = list()
             for row_no in sorted(row_nos, reverse=True):
-                segments.append({
-                    'row': row_no,
-                    'values':[self.item(row_no, column_no).text() for column_no in range(self.columnCount())]
-                })
+                segments.append(self.get_segment_values(row_no=row_no))
                 self.removeRow(row_no)
             self.history.add(self.History.Action.remove,
                 {'segments': segments, 'alignment': self.alignment})
@@ -500,8 +499,9 @@ class Table_stabilize(QTableWidget):
         # Frame used as the initial frame to start stabilization
         combobox_reference = QComboBox()
         combobox_reference.addItems(['start', 'middle', 'end'])
-        combobox_reference.setCurrentIndex(0)
+        combobox_reference.setCurrentIndex(1)
         combobox_reference.setFocusPolicy(Qt.NoFocus)
+        combobox_reference['int'].connect(self.event_reference_changed)
         set_widget_stylesheet(combobox_reference)
         self.setCellWidget(row_no, 2, combobox_reference)
 
@@ -512,11 +512,9 @@ class Table_stabilize(QTableWidget):
             w = QCheckBox(widget)
             w.setText(w_name)
             w.setObjectName(w_name)
-            if w_name == "vertical":
-                w.setChecked(True)
-            else:
-                w.setChecked(False)
+            w.setChecked(True)
             w.setFocusPolicy(Qt.NoFocus)
+            w.toggled[bool].connect(self.event_mode_changed)
             set_widget_stylesheet(w)
             horizontalLayout.addWidget(w)
         self.setCellWidget(row_no, 3, widget)
@@ -649,3 +647,9 @@ class Table_stabilize(QTableWidget):
 
     def paste(self):
         self.event_paste()
+
+    def event_reference_changed(self, index:int) -> None:
+        self.parent.edition_started()
+
+    def event_mode_changed(self, state:bool) -> None:
+        self.parent.edition_started()

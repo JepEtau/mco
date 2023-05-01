@@ -17,11 +17,16 @@ from PySide6.QtCore import (
     QSize,
     Qt,
     Signal,
+    QEvent,
+    QObject,
 )
 from PySide6.QtGui import (
     QColor,
     QImage,
     QPen,
+    QPainter,
+    QKeyEvent,
+    QWheelEvent,
 )
 
 from views.window_common import (
@@ -115,6 +120,7 @@ class Window_main(Window_common):
         self.widget_selection.set_initial_options(p)
         self.widget_selection.widget_app_controls.signal_action[str].connect(self.event_editor_action)
         self.widget_selection.signal_selected_shots_changed[dict].connect(self.event_selected_shots_changed)
+        self.widget_selection.signal_widget_selected[str].connect(self.set_current_widget)
 
         # Controller
         self.controller.signal_ready_to_play[dict].connect(self.event_ready_to_play)
@@ -122,14 +128,192 @@ class Window_main(Window_common):
         self.controller.signal_close.connect(self.event_close_without_saving)
         self.controller.signal_preview_options_consolidated.connect(self.event_preview_options_consolidated)
 
-        # Show window/widgets and connect signals
+        # Connect signals
         for w in self.widgets.values():
             w.signal_close.connect(self.event_editor_action)
-            w.show()
+            w.signal_widget_selected[str].connect(self.set_current_widget)
 
         # Set initial values
+        self.is_repainting = False
+
+        # user preferences
         self.set_initial_options(p)
-        self.event_show_fullscreen()
+
+        for w in self.widgets.values():
+            w.blockSignals(True)
+            w.hide()
+            w.blockSignals(False)
+        self.widget_selection.hide()
+        self.hide()
+
+        self.installEventFilter(self)
+
+
+    def show_all(self):
+        # print_lightcyan(f"show_all")
+        self.previous_state = self.windowState()
+        self.show()
+        for w in self.widgets.values():
+            # print(f"show {w.objectName()}")
+            w.blockSignals(True)
+            w.show()
+            # w.activateWindow()
+            w.raise_()
+            w.blockSignals(False)
+        # self.blockSignals(True)
+        # print("window_main: show_fullscreen (required for w11)")
+        # saved_current_widget = self.current_widget
+        # for w in self.widgets.values():
+        #     w.blockSignals(True)
+        #     w.showNormal()
+        #     w.activateWindow()
+        #     # w.blockSignals(False)
+
+        # # print("saved_current_widget", saved_current_widget)
+        # if saved_current_widget == '':
+        #     saved_current_widget = self.controller.get_selectable_widgets()[0]
+        # self.set_current_widget(saved_current_widget)
+
+        # for w in self.widgets.values():
+        #     w.blockSignals(False)
+
+        # self.widgets[saved_current_widget].blockSignals(True)
+        # self.widgets[saved_current_widget].showNormal()
+        # self.widgets[saved_current_widget].activateWindow()
+        # self.widgets[saved_current_widget].blockSignals(False)
+
+        # self.is_activated = True
+        # self.blockSignals(False)
+
+
+
+    def changeEvent(self, event: QEvent) -> None:
+        # print_lightgreen(f"window_main: changeEvent {event.type()}")
+        if event.type() == QEvent.ActivationChange:
+    #         print("* QEvent.ActivationChange", flush=True)
+            print(f"changeEvent: window state:", self.windowState())
+            print(f"\tis active: {self.isActiveWindow()}")
+            if self.isActiveWindow():
+                self.show_all()
+    #         # print("\t is active? ", self.isActiveWindow(), flush=True)
+    #         if self.previous_state != self.windowState():
+
+    #             if self.windowState() == Qt.WindowState().WindowNoState:
+    #                 print("\tWindowNoState -> show fullscreen")
+    #                 self.setWindowState(Qt.WindowActive)
+    #                 # self.show_fullscreen()
+    #                 # print("-------------------------------------")
+    #                 self.previous_state = self.windowState()
+    #                 event.accept()
+    #                 return True
+
+    #             if self.windowState() & Qt.WindowState().WindowActive:
+    #                 print("\tWindowMinimized -> show fullscreen")
+    #                 self.setWindowState(Qt.WindowActive)
+    #                 # self.show_fullscreen()
+    #                 # print("-------------------------------------")
+    #                 self.previous_state = self.windowState()
+    #                 event.accept()
+    #                 return True
+
+    #             if (self.windowState() & Qt.WindowState().WindowMinimized
+    #             and not self.isActiveWindow()):
+    #                 print("\tWindowMinimized -> show fullscreen")
+    #                 self.setWindowState(Qt.WindowActive)
+    #                 # self.show_fullscreen()
+    #                 # print("-------------------------------------")
+    #                 self.previous_state = self.windowState()
+    #                 event.accept()
+    #                 return True
+
+        return super().changeEvent(event)
+
+
+
+    def is_widget_active(self, widget_name):
+        return True if self.current_widget == widget_name else False
+
+
+
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        # print("* eventFilter: widget_%s: " % (self.objectName()), event.type())
+
+        # Filter press/release events
+        if event.type() == QEvent.Type.KeyPress:
+            print(f"keypress: catched in main window {event.key()}")
+            print(f"\tforward to [{self.current_widget}]")
+            if self.current_widget != '':
+                isAccepted = self.widgets[self.current_widget].event_key_pressed(event)
+            else:
+                isAccepted = False
+
+            if not isAccepted:
+                print_orange(f"event not acepted by widget: {event.key()}, send to main")
+                isAccepted = self.event_key_pressed(event)
+
+            if isAccepted:
+                print_green(f"event accepted")
+                event.accept()
+                return True
+            else:
+                print_orange(f"event not acepted: {event.key()}, send to super")
+                # return super().keyPressEvent(event)
+
+        # Filter press/release events
+        if event.type() == QEvent.Type.KeyRelease:
+            print(f"keyrelease: catched in main window {event.key()}")
+            print(f"\tforward to [{self.current_widget}]")
+            if self.current_widget != '':
+                isAccepted = self.widgets[self.current_widget].event_key_released(event)
+            else:
+                isAccepted = False
+
+            if not isAccepted:
+                print_orange(f"event not acepted by widget: {event.key()}, send to main")
+                isAccepted = self.event_key_released(event)
+
+            if isAccepted:
+                print_green(f"event accepted")
+                event.accept()
+                return True
+            else:
+                print_orange(f"event not acepted: {event.key()}, send to super")
+                # return super().keyReleaseEvent(event)
+
+
+        # Filter wheel events
+        elif event.type() == QEvent.Type.Wheel:
+            print(f"wheel event: catched in main window")
+            print(f"\tforward to [{self.current_widget}]")
+            if self.current_widget != '':
+                isAccepted = self.widgets[self.current_widget].event_wheel(event)
+            else:
+                isAccepted = False
+
+            if not isAccepted:
+                print_orange(f"wheel: event not acepted by widget: send to control")
+                isAccepted = self.widget_controls.event_wheel(event)
+
+            if isAccepted:
+                print_green(f"\twheel: event accepted")
+                event.accept()
+                return True
+            else:
+                print_orange(f"\twheel: event not acepted, send to super")
+                # return super().wheelEvent(event)
+
+
+        elif event.type() == QEvent.Type.FocusIn:
+            print("main focus in")
+            self.activateWindow()
+            event.accept()
+            return True
+
+        return super().eventFilter(watched, event)
+
+
+
 
 
 
@@ -156,15 +340,12 @@ class Window_main(Window_common):
         gc.collect()
 
         self.is_grabbing_split_line = False
-        if self.is_repainting:
-            log.error("error: flush while repainting")
-        self.is_repainting = False
 
 
 
     def display_frame(self, frame: dict):
         # now = time.time()
-        # log.info("display frame: %s" % (frame['filepath']))
+        # print_lightcyan("display frame: %s" % (frame['filepath']))
         if frame is None or not os.path.exists(frame['filepath']):
             self.flush_image()
         else:
@@ -257,14 +438,13 @@ class Window_main(Window_common):
                 pass
 
 
-
     def mousePressEvent(self, event):
         x = event.x()
         y = event.y()
 
         if (self.image is not None
         and self.image['cache_initial'] is not None):
-            if self.current_editor == 'curves':
+            if self.current_widget == 'curves':
                 if self.widget_curves.grab_split_line(x):
                     self.setCursor(Qt.SplitHCursor)
                 else:
@@ -272,7 +452,7 @@ class Window_main(Window_common):
                     self.get_rgb_value(x, y)
                 event.accept()
                 return True
-            elif self.current_editor == 'stabilize':
+            elif self.current_widget == 'stabilize':
                 line = self.widget_stabilize.guidelines.grab(x, y)
                 if line == 'vertical':
                     self.setCursor(Qt.SplitHCursor)
@@ -297,7 +477,7 @@ class Window_main(Window_common):
     def mouseMoveEvent(self, event):
         x = event.x()
         y = event.y()
-        if self.current_editor == 'stabilize':
+        if self.current_widget == 'stabilize':
             line = self.widget_stabilize.guidelines.move(x, y)
             if line is None:
                 self.get_rgb_value(x, y)
@@ -314,7 +494,7 @@ class Window_main(Window_common):
                 self.repaint()
 
 
-        elif self.current_editor == 'curves':
+        elif self.current_widget == 'curves':
             if self.widget_curves.move_split_line(x):
                 self.setCursor(Qt.SplitHCursor)
                 event.accept()
@@ -325,12 +505,12 @@ class Window_main(Window_common):
 
 
     def mouseMoved(self, x, y):
-        if self.current_editor == 'curves':
+        if self.current_widget == 'curves':
             if self.widget_curves.split_line_moved(x, self.mouse_grabX):
                 self.setCursor(Qt.SplitHCursor)
                 self.event_reload_frame()
 
-        elif self.current_editor == 'stabilize':
+        elif self.current_widget == 'stabilize':
             line = self.widget_stabilize.guidelines.moved(x, self.mouse_grabX, y, self.mouse_grabY)
             if line == 'vertical':
                 self.setCursor(Qt.SplitHCursor)
@@ -350,82 +530,83 @@ class Window_main(Window_common):
         self.widget_stabilize.guidelines.released(event.x(), event.y())
         self.repaint()
 
-    def wheelEvent(self, event):
-        if self.current_editor == 'geometry':
-            is_accepted = self.widget_geometry.wheelEvent(event)
-            if is_accepted:
-                event.accept()
-                return True
-
-        if self.widget_controls.wheel_event(event):
-            event.accept()
-            return True
-
-        return super().wheelEvent(event)
 
 
-    def keyPressEvent(self, event):
-        # log.info("key event in main window")
+    def event_wheel(self, event: QWheelEvent) -> bool:
+        is_accepted = False
+        if self.current_widget == 'geometry':
+            is_accepted = self.widget_geometry.event_wheel(event)
+
+        if not is_accepted:
+            is_accepted = self.widget_controls.event_wheel(event)
+
+        return is_accepted
+
+
+
+    def event_key_released(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
-        # print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
+        if self.current_widget != '':
+            return self.widgets[self.current_widget].event_key_released(event)
 
+
+    def event_key_pressed(self, event:QKeyEvent) -> bool:
+    #     # log.info("key event in main window")
+        key = event.key()
+        modifiers = event.modifiers()
+        print_lightgreen(f"main.event_key_pressed: {key}, modifiers=", modifiers)
+
+
+        # Controls
         if key == Qt.Key.Key_Space:
-            self.widget_controls.event_key_pressed(event)
-            event.accept()
+            log.info("Space key event detected")
+            self.widget_controls.toggle_play_pause()
             return True
+        if key in [Qt.Key.Key_Home, Qt.Key.Key_End]:
+            return self.widget_controls.event_key_pressed(event)
 
+
+        # Replace
         if modifiers & Qt.ControlModifier:
-            if key == Qt.Key_Tab:
-                self.select_next_editor()
-                event.accept()
-                return True
-        elif modifiers & Qt.AltModifier:
-            if key == Qt.Key_F4:
-                event.accept()
-                return True
-            elif key == Qt.Key_F9:
-                self.showMinimized()
-                event.accept()
-                return True
-            elif key == Qt.Key_S:
-                self.switch_display_side()
-                event.accept()
-                return True
-        else:
-            if key == Qt.Key_F5:
-                log.info("Reload")
-                self.widget_selection.event_episode_changed()
-                event.accept()
-                return True
-
-        for e, w in self.widgets.items():
-            if self.current_editor == e:
-                is_accepted = w.event_key_pressed(event)
-                if is_accepted:
-                    event.accept()
-                    return True
-
-        if self.widget_controls.event_key_pressed(event):
-            # print("forwarded to controls", key)
-            event.accept()
-            return True
-
-        event.accept()
-        return True
+            if key in [Qt.Key.Key_C, Qt.Key.Key_V]:
+                return self.widget_replace.event_key_pressed(event)
 
 
-    def keyReleaseEvent(self, event):
-        # print_yellow(f"keyReleaseEvent: {event.key()}")
-        for w in self.widgets.values():
-            w.event_key_released(event)
 
-        self.widget_controls.event_key_released(event)
-        event.accept()
-        return True
-        # return self.widget_controls.keyReleaseEvent(event)
+        if self.current_widget != '':
+            return self.widgets[self.current_widget].event_key_pressed(event)
+
+    #     if modifiers & Qt.AltModifier:
+    #         if key == Qt.Key_F4:
+    #             event.accept()
+    #             return True
+    #         elif key == Qt.Key_F9:
+    #             self.showMinimized()
+    #             event.accept()
+    #             return True
+    #         elif key == Qt.Key_S:
+    #             self.switch_display_side()
+    #             event.accept()
+    #             return True
+    #     else:
+    #         if key == Qt.Key_F5:
+    #             log.info("Reload")
+    #             self.widget_selection.event_episode_changed()
+    #             event.accept()
+    #             return True
+
+    #     # for e, w in self.widgets.items():
+    #     #     if self.current_widget == e:
+    #     #         is_accepted = w.event_key_pressed(event)
+    #     #         if is_accepted:
+    #     #             event.accept()
+    #     #             return True
+    #     print(f"forward to widget {self.current_widget}")
+    #     return self.widgets[self.current_widget].event_key_pressed(event)
 
 
+        return False
 
 
     def paintEvent(self, event):
@@ -451,7 +632,11 @@ class Window_main(Window_common):
         initial_img_height, initial_img_width, c = self.image['cache_initial'].shape
         # print("paintEvent: initial image = %dx%d" % (initial_img_height, initial_img_width))
         img_height, img_width, c = img.shape
-        q_image = QImage(img.data, img_width, img_height, img_width * 3, QImage.Format_BGR888)
+        try:
+            q_image = QImage(img.data, img_width, img_height, img_width * 3, QImage.Format_BGR888)
+        except:
+            print_red("paintEvent: cannot convert img to qImage")
+            return
 
         # Shot geometry
         geometry = self.image['geometry']
@@ -460,7 +645,10 @@ class Window_main(Window_common):
             shot_geometry = geometry['default']
 
 
+
         self.image['origin'] = [PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y]
+        # print_lightgreen(f"paintEvent: begin, delta: {delta_y}")
+        # print(shot_geometry)
         if self.painter.begin(self):
 
             if preview['geometry']['final_preview']:
@@ -524,7 +712,7 @@ class Window_main(Window_common):
                             FINAL_FRAME_HEIGHT + 1)
 
                     else:
-                        # print("paintEvent: draw rect crop on the original image")
+                    # print("paintEvent: draw rect crop on the original image")
                         # Original
                         x0 = PAINTER_MARGIN_LEFT
                         y0 = PAINTER_MARGIN_TOP - delta_y
@@ -546,8 +734,6 @@ class Window_main(Window_common):
                         # https://doc.qt.io/qt-6/qrect.html, PEN_CROP_SIZE = 1
                         # print("\timg: %dx%d" % (img.data.shape[1], img.data.shape[0]))
                         # print("\trect: (%d;%d) w=%d, h=%d" % (c_l - 1, c_t - delta_y - 1, c_w + 1, c_h + 1))
-
-
 
                         self.painter.drawRect(
                             PAINTER_MARGIN_LEFT + crop_left - 1,
@@ -684,3 +870,5 @@ class Window_main(Window_common):
 
             self.painter.end()
         self.is_repainting = False
+
+        # print("paintEvent: main end")

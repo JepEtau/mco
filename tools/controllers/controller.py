@@ -12,6 +12,7 @@ import multiprocessing
 from multiprocessing import *
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 from pprint import pprint
 from logger import log
@@ -97,6 +98,7 @@ class Controller_video_editor(Controller_common,
         self.current_task = ''
 
     def set_view(self, view):
+        log.info("set view, connect signals")
         self.view = view
 
         self.view.widget_selection.signal_selection_changed[dict].connect(self.selection_changed)
@@ -121,7 +123,8 @@ class Controller_video_editor(Controller_common,
         self.view.widget_curves.widget_curves_selection.signal_discard_curves[str].connect(self.event_discard_rgb_curves_modifications)
 
         self.view.widget_stabilize.signal_settings_modified[dict].connect(self.event_stabilize_modified)
-        self.view.widget_stabilize.signal_save.connect(self.event_stabilize_save_requested)
+        self.view.widget_stabilize.signal_save_settings[dict].connect(self.event_stabilize_save_requested)
+        self.view.widget_stabilize.signal_save.connect(partial(self.event_stabilize_save_requested, None))
         self.view.widget_stabilize.signal_stabilization_requested.connect(self.event_stabilization_requested)
 
 
@@ -378,7 +381,7 @@ class Controller_video_editor(Controller_common,
         if (self.preview_options['stabilize']['enabled']
             and k_step != 'deinterlace'):
             print("step has been modified, stabilize is enabled, do stabilize")
-            self.stabilize()
+            self.stabilize(self.current_shot())
 
         self.signal_ready_to_play.emit(self.playlist_properties)
 
@@ -402,7 +405,7 @@ class Controller_video_editor(Controller_common,
             or (k_ep_selected != '' and k_part_selected == '')):
             log.info(f"no selected episode/part")
             return
-        log.info(f"directory_changed: {k_ep_selected}:{k_part_selected}, {self.current_task}")
+        log.info(f"selection_changed: {k_ep_selected}:{k_part_selected}, {self.current_task}")
 
         self.model_database.consolidate_database(
             k_ep=k_ep_selected,
@@ -436,6 +439,7 @@ class Controller_video_editor(Controller_common,
 
         # Walk through shots
         shots = db_video['shots']
+        log.info(f"consolidate all shots: {k_ep_selected}:{k_part_selected}:{k_step}")
         for shot in shots:
             self.consolidate_shot_for_edition(shot=shot,
             k_ep=k_ep_selected, k_part=k_part_selected, k_step=k_step)
@@ -467,6 +471,7 @@ class Controller_video_editor(Controller_common,
 
 
     def event_selected_shots_changed(self, selected_shots:dict):
+        log.info(f"select {len(selected_shots['shotlist'])} shots, start:{selected_shots['shotlist'][0]}")
         verbose = True
         if verbose:
             print_lightgreen(f"selected shots: {selected_shots['k_ep']}:{selected_shots['k_part']}, %s, step: {selected_shots['k_step']}" % (
@@ -502,7 +507,7 @@ class Controller_video_editor(Controller_common,
 
         # Load images
         if verbose:
-            print_lightgrey("\tload images")
+            print_lightgrey("\tload images:", end=' ')
             start_time = time.time()
         cpu_count = 12
         # image_filepathes = [f['filepath'] for f in self.frames[shot_no]]
@@ -518,7 +523,7 @@ class Controller_video_editor(Controller_common,
                         no, img = future.result()
                         self.frames[shot_no][no]['cache_initial'] = img
         if verbose:
-            print_green("%.02fs" % (time.time() - start_time))
+            print_lightgrey("%.02fs" % (time.time() - start_time))
 
 
         # Update each frame
@@ -534,6 +539,9 @@ class Controller_video_editor(Controller_common,
             # Replace
             self.refresh_replace_for_each_frame(shot=shot)
 
+        print_lightcyan("================================== SHOT =======================================")
+        pprint(self.shots[0])
+        print_lightcyan("-------------------------------------------------------------------------------")
 
 
         self.playlist_properties.update({
@@ -556,6 +564,7 @@ class Controller_video_editor(Controller_common,
         # Replace
         self.refresh_replace_list()
 
+
         # Curves: update the curves db
         if shot['k_part'] in ['g_debut', 'g_fin']:
             curves_library = self.model_database.get_library_curves(shot['k_ed'], shot['k_ep'])
@@ -569,6 +578,10 @@ class Controller_video_editor(Controller_common,
         self.consolidate_preview_options()
 
         if previous_shot_id != new_shot_id:
+            # Reload curves library
+            curves_library = self.model_database.get_library_curves(shot['k_ed'], shot['k_ep'])
+            self.signal_curves_library_modified.emit(curves_library)
+
             # Stabilize current shot
             if (stabilize_settings is not None
                 and stabilize_settings['enable']
@@ -605,14 +618,17 @@ class Controller_video_editor(Controller_common,
         try:
             return self.shots[self.current_shot_no]
         except:
-            print_orange("no shot selected, cannot return current shot")
-            log.warning("no shot selected, cannot return current shot")
+            print_orange("\tget current shot: current shot is None")
+            log.warning("get current shot: current shot is None")
             pass
         # self.shots[self.current_frame['shot_no']]
 
         return None
 
-    def get_current_frame_no(self):
+    def get_current_frame_no(self, initial=False):
+        pprint(self.current_frame)
+        if 'replace' in self.current_frame.keys():
+            return self.current_frame['replace']
         return self.current_frame['frame_no']
 
     def get_index_from_frame_no(self, frame_no):
@@ -897,9 +913,26 @@ class Controller_video_editor(Controller_common,
         self.signal_reload_frame.emit()
 
 
-    def event_stabilize_save_requested(self):
+    def event_stabilize_save_requested(self, settings):
         # Save current shot only
+        log.info(f"received signal to save stabilize segments")
         shot = self.current_shot()
+
+        if settings is not None:
+            # Consolidate segments
+            settings['segments'] = consolidate_stabilize_segments(segments=settings['segments'])
+
+            # Validate settings and reorder segments
+            is_erroneous = verify_stabilize_segments(shot=shot, segments=settings['segments'])
+            if is_erroneous:
+                pprint(settings)
+                # print("Error: event_stabilize_save_requested")
+                # return
+
+            # Set new settings
+            self.model_database.set_shot_stabilize_settings(shot=shot, settings=deepcopy(settings))
+
+        # Save these settings
         self.model_database.save_shot_stabilize_settings(shot)
         self.signal_is_saved.emit('stabilize')
 

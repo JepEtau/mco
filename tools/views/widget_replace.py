@@ -13,6 +13,9 @@ from PySide6.QtCore import (
     Signal,
     QEvent,
 )
+from PySide6.QtGui import(
+    QKeyEvent,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QTableWidgetItem,
@@ -104,10 +107,10 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.pushButton_copy.setEnabled(False)
 
         self.pushButton_set_preview.setChecked(s['widget']['enabled'])
-        self.block_signals(False)
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
+        self.block_signals(False)
         self.adjustSize()
 
 
@@ -159,8 +162,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_replace_selected(self):
-        if not self.is_edition_allowed:
-            return
         log.info("event_replace_selected")
         self.tableWidget_replace.setFocus()
 
@@ -177,8 +178,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_selection_removed(self):
-        if not self.is_edition_allowed:
-            return
         print("event_selection_removed")
         selected_indexes = self.tableWidget_replace.selectedIndexes()
         selected_row_nos = list(set([i.row() for i in selected_indexes]))
@@ -213,8 +212,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_frame_no_copied(self):
-        if not self.is_edition_allowed:
-            return
 
         self.copied_frame_no = int(self.lineEdit_frame_no.text())
         log.info("event: copy %d" % (self.copied_frame_no))
@@ -222,8 +219,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_frame_no_paste(self):
-        if not self.is_edition_allowed:
-            return
 
         log.info("event: paste")
         frame_no = int(self.lineEdit_frame_no.text())
@@ -240,8 +235,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_undo_replace(self):
-        if not self.is_edition_allowed:
-            return
         log.info("event: undo for frame_no: %d")
         self.signal_replace_modified.emit({
             'action': 'undo',
@@ -250,8 +243,6 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
 
     def event_removed(self):
-        if not self.is_edition_allowed:
-            return
         log.info("event: remove")
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
@@ -278,12 +269,11 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.pushButton_save.blockSignals(enabled)
 
 
-    def event_key_pressed(self, event):
-        if not self.is_edition_allowed:
-            return False
 
+    def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
+        print_green(f"widget_replace: event_key_pressed: {key}")
         # print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
 
         if modifiers & Qt.ControlModifier:
@@ -319,35 +309,32 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         return False
 
 
-    def event_key_released(self, event):
-        return False
 
+    # def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+    #     # print("* eventFilter: widget_%s: " % (self.objectName()), event.type())
 
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        # print("* eventFilter: widget_%s: " % (self.objectName()), event.type())
+    #     # Filter press/release events
+    #     if event.type() == QEvent.KeyPress:
+    #         key = event.key()
+    #         modifier = event.modifiers()
+    #         if modifier & Qt.ControlModifier and key == Qt.Key_A:
+    #             self.tableWidget_replace.selectAll()
+    #             event.accept()
+    #             return True
+    #         elif key == Qt.Key_Delete:
+    #             self.event_selection_removed()
+    #             return True
 
-        # Filter press/release events
-        if event.type() == QEvent.KeyPress:
-            key = event.key()
-            modifier = event.modifiers()
-            if modifier & Qt.ControlModifier and key == Qt.Key_A:
-                self.tableWidget_replace.selectAll()
-                event.accept()
-                return True
-            elif key == Qt.Key_Delete:
-                self.event_selection_removed()
-                return True
+    #         return self.ui.keyPressEvent(event)
 
-            return self.ui.keyPressEvent(event)
+    #     # print(event.type())
+    #     if event.type() == QEvent.FocusOut:
+    #         self.tableWidget_replace.clearSelection()
 
-        # print(event.type())
-        if event.type() == QEvent.FocusOut:
-            self.tableWidget_replace.clearSelection()
+    #     elif event.type() == QEvent.Enter:
+    #         self.is_entered = True
+    #     elif event.type() == QEvent.Leave:
+    #         self.is_entered = False
 
-        elif event.type() == QEvent.Enter:
-            self.is_entered = True
-        elif event.type() == QEvent.Leave:
-            self.is_entered = False
-
-        return super().eventFilter(watched, event)
+    #     return super().eventFilter(watched, event)
 

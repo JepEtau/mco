@@ -12,7 +12,10 @@ from PySide6.QtCore import (
     Qt,
     Signal,
 )
-from PySide6.QtGui import QColor
+from PySide6.QtGui import (
+    QColor,
+    QKeyEvent,
+)
 
 from utils.stylesheet import (
     set_curves_radiobutton_stylesheet,
@@ -109,6 +112,8 @@ class Widget_curves(Widget_common, Ui_widget_curves):
                     self.radioButton_select_b_channel,
                     self.radioButton_select_m_channel]):
             set_curves_radiobutton_stylesheet(c, w)
+
+        self.installEventFilter(self)
         self.adjustSize()
 
 
@@ -324,7 +329,8 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         log.info("close button clicked")
 
 
-    def event_key_pressed(self, event):
+
+    def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
 
@@ -371,8 +377,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
         return self.widget_rgb_graph.event_key_pressed(event)
 
+        # return super().keyPressEvent(event)
 
-    def event_key_released(self, event):
-        return False
 
 

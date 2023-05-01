@@ -12,6 +12,10 @@ from PySide6.QtCore import (
     QEvent,
     QObject,
 )
+from PySide6.QtGui import (
+    QKeyEvent,
+    QWheelEvent,
+)
 from PySide6.QtWidgets import (
     QListWidgetItem,
     QWidget,
@@ -269,9 +273,11 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
         self.lineEdit_save.blockSignals(False)
 
         # Get the current selected k_curves for debug only
-        try: k_curves = self.list_curves.currentItem().text()
-        except: k_curves = ''
-        log.info("save selected curves (for debug: %s)" % (k_curves))
+        try:
+            k_curves = self.list_curves.currentItem().text()
+        except:
+            k_curves = ''
+        log.info(f"save {k_curves} as selection")
         self.signal_save_curves_selection_requested.emit()
 
 
@@ -369,7 +375,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
 
 
 
-    def wheelEvent(self, event):
+    def event_wheel(self, event: QWheelEvent) -> bool:
         row_no = self.list_curves.currentRow()
         if event.angleDelta().y() > 0:
             if row_no == 0:
@@ -382,18 +388,18 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
                 self.list_curves.setCurrentRow(0)
             else:
                 self.list_curves.setCurrentRow(row_no + 1)
-        event.accept()
+
         return True
 
 
-    def keyPressEvent(self, event):
-        if self.event_key_pressed(event):
-            event.accept()
-            return True
-        return self.ui.keyPressEvent(event)
+    # def keyPressEvent(self, event):
+    #     if self.event_key_pressed(event):
+    #         event.accept()
+    #         return True
+    #     return self.ui.keyPressEvent(event)
 
 
-    def event_key_pressed(self, event):
+    def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()
         if key == Qt.Key_Escape:
             self.lineEdit_save.clear()
@@ -415,7 +421,7 @@ class Widget_curves_selection(QWidget, Ui_widget_curves_selection):
             event.accept()
             return True
 
-        if event.type() == QEvent.Enter:
+        elif event.type() == QEvent.Enter:
             self.is_widget_active = True
 
         elif event.type() == QEvent.Leave:

@@ -18,8 +18,14 @@ class Controller_replace():
     # Replace frames
     #---------------------------------------------------------------------------
     def refresh_replace_list(self):
+        verbose = True
         # List of frames to replace
         log.info("refresh list")
+        if verbose:
+            print_lightcyan("Refresh replace list")
+            pprint(self.model_database.db_replaced_frames_initial)
+
+
         list_replace = list()
 
         for frame in self.playlist_frames:
@@ -32,8 +38,9 @@ class Controller_replace():
                     'src': frame_no,
                     'dst': frame['frame_no'],
                 })
-        # print_lightcyan("model video editor: refresh_replace_list")
-        # pprint(list_replace)
+        if verbose:
+            pprint(list_replace)
+
         self.signal_replace_list_refreshed.emit(list_replace)
 
 
@@ -90,10 +97,16 @@ class Controller_replace():
 
         if action == 'replace':
             log.info(f"replace: shot no. {shot_no}, frame {frame_no} (index {index}) by {replace['src']}")
+
+            # If the src frame is already replaced, use the src of this frame
+            frame_no_src = self.model_database.get_replace_frame_no(shot, replace['src'])
+            if frame_no_src == -1:
+                frame_no_src = replace['src']
+
             self.model_database.set_replaced_frame(
                 shot=shot,
                 frame_no=frame_no,
-                new_frame_no=replace['src'])
+                new_frame_no=frame_no_src)
 
         elif action == 'remove':
             log.info(f"remove: shot no. {shot_no}, frame {frame_no} (index {index})")

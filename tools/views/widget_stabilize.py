@@ -12,6 +12,9 @@ from PySide6.QtCore import (
     Signal,
     QEvent,
 )
+from PySide6.QtGui import (
+    QKeyEvent,
+)
 from PySide6.QtWidgets import (
     QApplication,
     QTableWidgetItem,
@@ -35,12 +38,12 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     signal_frame_selected = Signal(int)
     signal_stabilization_requested = Signal(dict)
     signal_show_guidelines_changed = Signal(bool)
+    signal_save_settings = Signal(dict)
 
-
-    def __init__(self, ui, controller:Controller_video_editor):
-        super(Widget_stabilize, self).__init__(ui)
+    def __init__(self, parent, controller:Controller_video_editor):
+        super(Widget_stabilize, self).__init__(parent)
         self.controller = controller
-        self.ui = ui
+        self.__parent = parent
         self.setObjectName('stabilize')
 
         # Internal variables
@@ -97,10 +100,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.pushButton_stabilize.setEnabled(False)
         self.is_obsolete = True
 
-        self.block_signals(False)
+
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
+        self.block_signals(False)
         self.adjustSize()
 
 
@@ -177,7 +181,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             # self.pushButton_set_preview.setEnabled(False)
             # self.pushButton_set_preview.setChecked(False)
             # self.previous_preview_state = False
-
+            self.is_enabled_initial = False
             self.block_signals(False)
             self.label_message.setText("")
             return
@@ -277,11 +281,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def event_mode_modified(self, key):
         option = ''
-        if key == Qt.Key_V:
+        if key == Qt.Key.Key_V:
             option = 'vertical'
-        if key == Qt.Key_H:
+        if key == Qt.Key.Key_H:
             option = 'horizontal'
-        if key == Qt.Key_R:
+        if key == Qt.Key.Key_R:
             option = 'rotation'
         self.tableWidget_stabilize.select_mode_option(option)
         self.edition_started()
@@ -348,82 +352,101 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.signal_show_guidelines_changed.emit(state)
 
 
-    def event_key_pressed(self, event):
+    def event_save_modifications(self):
+        if self.pushButton_save.isEnabled():
+            log.info(f"save widget_{self.objectName()}")
+            self.pushButton_save.setEnabled(False)
+            if (self.tableWidget_stabilize.is_content_modified() or
+                self.groupBox_stabilize.isChecked() != self.is_enabled_initial):
+                settings = self.get_current_settings()
+                self.signal_stabilization_requested.emit(settings)
+                self.signal_save_settings.emit(settings)
+            else:
+                self.signal_save_settings.emit(None)
+        else:
+            log.info("cannot save, reason: button is disabled")
+
+
+    def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
         # print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
 
+
         if modifiers & Qt.ControlModifier:
-            if key == Qt.Key_S:
+            if key == Qt.Key.Key_S:
                 self.event_save_modifications()
                 return True
-            elif key == Qt.Key_Z:
+            elif key == Qt.Key.Key_Z:
                 self.undo_requested()
                 return True
 
-        elif key == Qt.Key_F3:
+        elif key == Qt.Key.Key_F3:
             self.pushButton_guidelines.toggle()
             return True
-        elif key == Qt.Key_S:
+        elif key == Qt.Key.Key_S:
             self.event_start_modified()
             return True
-        elif key == Qt.Key_E:
+        elif key == Qt.Key.Key_E:
             self.event_end_modified()
             return True
-        elif key == Qt.Key_I:
+        elif key == Qt.Key.Key_I:
             self.event_ref_modified()
             return True
-        elif key in [Qt.Key_V, Qt.Key_H, Qt.Key_R]:
+        elif key in [Qt.Key.Key_V, Qt.Key.Key_H, Qt.Key.Key_R]:
             self.event_mode_modified(key)
             return True
 
+        elif key == Qt.Key.Key_Insert:
+            self.tableWidget_stabilize.append_segment()
+            return True
 
-        if key == Qt.Key_F2:
+
+        elif key == Qt.Key.Key_F2:
             if self.pushButton_set_preview.isEnabled():
                 self.pushButton_set_preview.toggle()
                 return True
-        if key == Qt.Key_F7:
+        elif key == Qt.Key.Key_F7:
             self.event_stabilize_requested()
             return True
 
         if QApplication.focusObject() is self.tableWidget_stabilize:
-            if key == Qt.Key_Delete:
+            if key == Qt.Key.Key_Delete:
                 log.info("delete segment")
                 return True
 
         return False
 
 
-    def event_key_released(self, event):
-        return False
 
+    # def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+    #     # print("* eventFilter: widget_%s: " % (self.objectName()), event.type())
 
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        # print("* eventFilter: widget_%s: " % (self.objectName()), event.type())
+    #     # Filter press/release events
+    #     if event.type() == QEvent.KeyPress:
+    #         key = event.key()
+    #         if key == Qt.Key.Key_Space:
+    #             return self.__parent.keyPressEvent(event)
+    #         else:
+    #             return super(Widget_stabilize, self).eventFilter(watched, event)
+    #     #     if modifier & Qt.ControlModifier and key == Qt.Key.Key_A:
+    #     #         self.tableWidget_stabilize.select_all()
+    #     #         event.accept()
+    #     #         return True
+    #     #     elif key == Qt.Key.Key_Delete:
+    #     #         self.event_remove_segment_requested()
+    #     #         return True
+    #     #     return self.__parent.keyPressEvent(event)
 
-        # Filter press/release events
-        if event.type() == QEvent.KeyPress:
-            key = event.key()
-            if key == Qt.Key.Key_Space:
-                return self.ui.keyPressEvent(event)
-        #     modifier = event.modifiers()
-        #     if modifier & Qt.ControlModifier and key == Qt.Key_A:
-        #         self.tableWidget_stabilize.select_all()
-        #         event.accept()
-        #         return True
-        #     elif key == Qt.Key_Delete:
-        #         self.event_remove_segment_requested()
-        #         return True
-        #     return self.ui.keyPressEvent(event)
+    # #     # print(event.type())
+    # #     # if event.type() == QEvent.FocusOut:
+    # #     #     self.tableWidget_stabilize.clearSelection()
 
-        # print(event.type())
-        # if event.type() == QEvent.FocusOut:
-        #     self.tableWidget_stabilize.clearSelection()
+    # #     if event.type() == QEvent.Enter:
+    # #         self.is_entered = True
+    # #     elif event.type() == QEvent.Leave:
+    # #         self.is_entered = False
+    #     # return super(Widget_stabilize, self).eventFilter(watched, event)
 
-        if event.type() == QEvent.Enter:
-            self.is_entered = True
-        elif event.type() == QEvent.Leave:
-            self.is_entered = False
-
-        return super().eventFilter(watched, event)
+    #     return super().eventFilter(watched, event)
 

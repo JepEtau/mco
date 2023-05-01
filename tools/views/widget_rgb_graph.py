@@ -19,6 +19,8 @@ from PySide6.QtGui import (
     QPainter,
     QPen,
     QPolygon,
+    QKeyEvent,
+    QMouseEvent,
 )
 from PySide6.QtWidgets import (
     QSizePolicy,
@@ -79,6 +81,7 @@ class Widget_rgb_graph(QWidget):
         self.current_position_rgb = {'r': 0, 'g': 0, 'b': 0, 'm': 0}
 
         self.is_enabled = True
+        self.ui = parent
 
 
     def set_controller(self, controller):
@@ -228,12 +231,14 @@ class Widget_rgb_graph(QWidget):
         self.update()
 
 
-    def mousePressEvent(self, event):
+
+    def mousePressEvent(self, event:QMouseEvent) -> bool:
         if not self.is_enabled:
             return
 
         if not self.ui.was_active():
             # Just changed editor, do not add a new point
+            print("changed editor")
             return
 
         w = float(self.width())
@@ -300,7 +305,8 @@ class Widget_rgb_graph(QWidget):
                 self.signal_graph_modified.emit(self.get_curves_channels())
 
 
-    def mouseMoveEvent(self, event):
+
+    def mouseMoveEvent(self, event:QMouseEvent) -> bool:
         verbose = False
         if not self.is_enabled:
             return
@@ -360,14 +366,8 @@ class Widget_rgb_graph(QWidget):
             self.signal_graph_modified.emit(self.get_curves_channels())
 
 
-    def keyPressEvent(self, event):
-        if self.event_key_pressed(event):
-            event.accept()
-            return True
-        return self.ui.keyPressEvent(event)
 
-
-    def event_key_pressed(self, event):
+    def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()
 
         if key == Qt.Key_Delete or key == Qt.Key_Backspace:
@@ -383,13 +383,14 @@ class Widget_rgb_graph(QWidget):
         return False
 
 
+
     def paintEvent(self, event):
         w = self.width()
         h = self.height()
         x_max = w - 1
         y_max = h - 1
 
-        # print("paintEvent: dimensions = (%d; %d)" % (w, h))
+        # print("paintEvent: RGB graph dimensions = (%d; %d)" % (w, h))
 
         painter = QPainter()
         if painter.begin(self):
@@ -481,3 +482,5 @@ class Widget_rgb_graph(QWidget):
                 painter.drawLine(position_x, 0, position_x, y_max)
 
             painter.end()
+
+        # print("paintEvent: RGB graph end")

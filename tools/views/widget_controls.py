@@ -15,12 +15,15 @@ from PySide6.QtCore import (
 from PySide6.QtGui import (
     QCursor,
     QIcon,
+    QKeyEvent,
+    QWheelEvent,
+    QMouseEvent,
 )
 from PySide6.QtWidgets import (
     QSlider,
     QWidget,
 )
-from utils.pretty_print import print_purple
+from utils.pretty_print import *
 
 from utils.stylesheet import (
     set_stylesheet,
@@ -31,6 +34,7 @@ from controllers.controller import Controller_video_editor
 
 
 class Widget_controls(QWidget, Ui_widget_controls):
+    signal_widget_selected = Signal(str)
     signal_button_pushed = Signal(str)
     signal_slider_moved = Signal(int)
     signal_frame_replaced = Signal(dict)
@@ -38,13 +42,13 @@ class Widget_controls(QWidget, Ui_widget_controls):
     signal_save_modifications = Signal(bool)
     signal_close = Signal()
 
-    def __init__(self, ui, controller:Controller_video_editor):
+    def __init__(self, parent, controller:Controller_video_editor):
         super(Widget_controls, self).__init__()
 
         self.setupUi(self)
         self.controller = controller
-        self.ui = ui
-
+        self.__parent = parent
+        self.setObjectName('controls')
         # Setup and patch ui
         self.setAutoFillBackground(True)
         self.setWindowFlags(Qt.Tool)
@@ -56,6 +60,7 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.slider_frames.setOrientation(Qt.Horizontal)
         self.slider_frames.setTickPosition(QSlider.NoTicks)
         self.slider_frames.setTickInterval(1)
+        self.slider_frames.setFocusPolicy(Qt.NoFocus)
 
         self.set_enabled(False)
 
@@ -92,12 +97,17 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.controller.signal_ready_to_play[dict].connect(self.event_refresh_slider)
 
         self.slider_frames.installEventFilter(self)
+        self.installEventFilter(self)
 
         self.set_selected(False)
         set_stylesheet(self)
         set_widget_stylesheet(self.label_ed_ep_part)
         set_widget_stylesheet(self.label_shot_no)
         self.adjustSize()
+
+
+    def leave_widget(self):
+        pass
 
 
     def closeEvent(self, event):
@@ -289,26 +299,38 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.slider_frames.blockSignals(True)
         self.slider_frames.setValue(0)
         self.slider_frames.blockSignals(False)
-        self.slider_frames.setFocus()
+        # self.slider_frames.setFocus()
         self.signal_button_pushed.emit('stop')
 
+    def toggle_play_pause(self):
+        log.info(f"Toggle play/pause, current status: {self.status}")
+        self.pushButton_play_pause.blockSignals(True)
+        if self.status == 'playing':
+            log.info("playing -> pause")
+            self.refresh_status('paused')
+            self.pushButton_play_pause.setChecked(False)
+            self.pushButton_play_pause.setIcon(self.icon_play)
+            self.pushButton_play_pause.setFocus()
+            self.slider_frames.blockSignals(False)
+            self.signal_button_pushed.emit('pause')
+        else:
+            log.info("pause/stop -> playing")
+            self.refresh_status('playing')
+            self.pushButton_play_pause.setChecked(True)
+            self.pushButton_play_pause.setIcon(self.icon_pause)
+            self.pushButton_play_pause.setFocus()
+            self.slider_frames.blockSignals(True)
+            self.signal_button_pushed.emit('play')
+        self.pushButton_play_pause.blockSignals(False)
 
 
-    def keyPressEvent(self, event):
-        if self.event_key_pressed(event):
-            event.accept()
-            return True
-        return self.ui.keyPressEvent(event)
-
-    def event_key_pressed(self, event):
+    def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
-        # print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
-
         self.current_key_pressed = None
 
         # action
-        if key == Qt.Key_Space:
+        if key == Qt.Key.Key_Space:
             log.info("Space key")
             if self.status == 'playing':
                 log.info("playing -> pause")
@@ -324,39 +346,33 @@ class Widget_controls(QWidget, Ui_widget_controls):
             # Do not test any other keys if the app. is playing
             return False
 
-        elif key == Qt.Key_Shift:
+        elif key == Qt.Key.Key_Shift:
             # log.info("shift key is pressed")
             self.is_shift_key_pressed = True
             return True
 
         # modify slider value
-        elif key in [Qt.Key_Home, Qt.Key_End]:
+        elif key in [Qt.Key.Key_Home, Qt.Key.Key_End]:
             self.slider_frames.keyPressEvent(event)
             return True
-        elif key == Qt.Key_Left:
+        elif key == Qt.Key.Key_Left:
             self.event_previous_frame()
             return True
-        elif key == Qt.Key_Right:
+        elif key == Qt.Key.Key_Right:
             self.event_next_frame()
             return True
-        elif key == Qt.Key_Up or key == Qt.Key_PageUp:
+        elif key == Qt.Key.Key_Up or key == Qt.Key.Key_PageUp:
             self.event_previous_frame(10)
             return True
-        elif key == Qt.Key_Down or key == Qt.Key_PageDown:
+        elif key == Qt.Key.Key_Down or key == Qt.Key.Key_PageDown:
             self.event_next_frame(10)
             return True
-        return False
 
 
 
-    def keyReleaseEvent(self, event):
-        if self.event_key_released(event):
-            return True
-        return False
-
-    def event_key_released(self, event):
+    def event_key_released(self, event:QKeyEvent) -> bool:
         key = event.key()
-        if key == Qt.Key_Shift:
+        if key == Qt.Key.Key_Shift:
             # log.info("shift key is released")
             self.is_shift_key_pressed = False
             self.current_key_pressed = None
@@ -364,21 +380,18 @@ class Widget_controls(QWidget, Ui_widget_controls):
         return False
 
 
-
-    def wheelEvent(self, event):
-        if self.wheel_event(event):
-            event.accept()
-            return True
-        return False
-
-    def wheel_event(self, event):
+    def event_wheel(self, event: QWheelEvent) -> bool:
         if not self.slider_frames.isEnabled():
+            print("\controls: slider is disabled")
             return False
 
-        # Do not accept event if not in paused mode
-        if self.status == 'stopped':
-            self.refresh_status('paused')
-        if self.status != 'paused':
+        # # Do not accept event if not in paused mode
+        # if self.status == 'stopped':
+        #     self.refresh_status('paused')
+        #     return True
+
+        if self.status not in ['paused', 'stopped']:
+            print("\controls: slider is disabled")
             return False
 
         if self.is_shift_key_pressed:
@@ -399,15 +412,9 @@ class Widget_controls(QWidget, Ui_widget_controls):
         return False
 
 
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        # print("  * eventFilter: widget_%s: " % (self.objectName()), event.type())
-        if event.type() == QEvent.Wheel:
-            return self.wheel_event(event)
-        return super().eventFilter(watched, event)
-
-
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event:QMouseEvent) -> bool:
         self.previous_position = QCursor().pos()
+
 
     def mouseMoveEvent(self, event):
         if self.previous_position is not None:
@@ -416,4 +423,41 @@ class Widget_controls(QWidget, Ui_widget_controls):
             self.previous_position = cursor_position
             self.move(self.pos() + delta)
             event.accept()
+
+
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.KeyPress:
+            print_lightcyan(f"eventFilter: widget_{self.objectName()}: keypress {event.key()}")
+            if self.event_key_pressed(event):
+                print(f"\taccepted")
+                event.accept()
+                return True
+            else:
+                print(f"\tforward to parent")
+                return self.__parent.event_key_pressed(event)
+
+        elif event.type() == QEvent.Type.KeyRelease:
+            if self.event_key_released(event):
+                event.accept()
+                return True
+            else:
+                return self.__parent.event_key_released(event)
+
+        elif event.type() == QEvent.Type.Wheel:
+            print_lightcyan(f"eventFilter: widget_controls: wheel")
+            if self.event_wheel(event):
+                print(f"\twheel: accepted")
+                event.accept()
+                return True
+            else:
+                print(f"\twheel: send to parent")
+                return self.__parent.event_wheel(event)
+
+        return super().eventFilter(watched, event)
+    # def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+    #     # print("  * eventFilter: widget_%s: " % (self.objectName()), event.type())
+    #     if event.type() == QEvent.Wheel:
+    #         return self.wheel_event(event)
+    #
 

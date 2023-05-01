@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
     QMenu,
     QMessageBox,
 )
+from utils.pretty_print import *
 
 from utils.stylesheet import set_widget_stylesheet
 from utils.common import FPS
@@ -68,13 +69,11 @@ class Window_common(QMainWindow):
 
         self.image = None
 
-        self.is_repainting = False
         self.is_activated = False
         self.is_closing = False
         self.discard_modifications = False
 
-        self.current_editor = ''
-        self.current_widget = self.current_editor
+        self.current_widget = ''
 
         # This is used  when the screen height is <= 1080 to display
         # the bottom side
@@ -95,7 +94,6 @@ class Window_common(QMainWindow):
         self.controller.signal_shotlist_modified[dict].connect(self.event_shotlist_modified)
 
 
-
     def set_initial_options(self, preferences:dict):
         s = preferences['viewer']
         if True:
@@ -110,42 +108,18 @@ class Window_common(QMainWindow):
                 1800,
                 s['geometry'][3])
         try:
-            log.info("set current editor: %s" % (s['current_editor']))
-            self.set_current_editor(s['current_editor'])
+            log.info("set user preferences, editor: %s" % (s['current_widget']))
+            self.set_current_widget(s['current_widget'])
         except:
             pass
 
 
-    def event_show_fullscreen(self):
-        self.blockSignals(True)
-        # print("window_main: event_show_fullscreen (required for w11)")
-        saved_current_editor = self.current_editor
-        for w in self.widgets.values():
-            w.blockSignals(True)
-            w.showNormal()
-            w.activateWindow()
-            # w.blockSignals(False)
 
-        # print("saved_current_editor", saved_current_editor)
-        if saved_current_editor == '':
-            saved_current_editor = self.controller.get_selectable_widgets()[0]
-        self.set_current_editor(saved_current_editor)
-
-        for w in self.widgets.values():
-            w.blockSignals(False)
-
-        self.widgets[saved_current_editor].blockSignals(True)
-        self.widgets[saved_current_editor].showNormal()
-        self.widgets[saved_current_editor].activateWindow()
-        self.widgets[saved_current_editor].blockSignals(False)
-
-        self.is_activated = True
-        self.blockSignals(False)
 
 
 
     def event_selection_changed(self, selection):
-        log.info("event: selection changed, update preview options")
+        log.info(f"event: selection changed, step:{selection['k_step']}")
         # Disable crop/resize edition if image is not >= HD
         self.current_frame_index = 0
         self.playing_frame_start_no = 0
@@ -154,12 +128,10 @@ class Window_common(QMainWindow):
         #     log.info("selection changed, reset slider position")
         #     self.widget_controls.set_slider_value(0)
 
-
-        if 'geometry' in self.controller.get_widget_list():
-            if selection['k_step'] in ['', 'deinterlace', 'pre_upscale', 'geometry']:
-                self.widget_geometry.set_geometry_edition_enabled(False)
-            else:
-                self.widget_geometry.set_geometry_edition_enabled(True)
+        if selection['k_step'] in ['', 'deinterlace', 'pre_upscale', 'geometry']:
+            self.widget_geometry.set_geometry_edition_enabled(False)
+        else:
+            self.widget_geometry.set_geometry_edition_enabled(True)
         # self.event_preview_options_changed('model')
 
 
@@ -242,7 +214,7 @@ class Window_common(QMainWindow):
             'viewer': {
                 'screen': 0,
                 'geometry': self.geometry().getRect(),
-                'current_editor': self.current_editor,
+                'current_widget': self.current_widget,
             },
         }
         for e, w in self.widgets.items():
@@ -297,46 +269,47 @@ class Window_common(QMainWindow):
 
 
 
-    def select_next_editor(self):
-        # print("\nselect next editor from: %s" % (self.current_editor))
-        selectable_widgets = self.controller.get_selectable_widgets()
-        widget_index = selectable_widgets.index(self.current_editor)
+    # def select_next_editor(self):
+    #     # print("\nselect next editor from: %s" % (self.current_widget))
+    #     selectable_widgets = self.controller.get_selectable_widgets()
+    #     widget_index = selectable_widgets.index(self.current_widget)
 
-        try:
-            new_selected_widget_str = selectable_widgets[widget_index + 1]
-        except:
-            new_selected_widget_str = selectable_widgets[0]
+    #     try:
+    #         new_selected_widget_str = selectable_widgets[widget_index + 1]
+    #     except:
+    #         new_selected_widget_str = selectable_widgets[0]
 
-        self.widgets[new_selected_widget_str].enter()
-        self.widgets[new_selected_widget_str].activateWindow()
+    #     self.widgets[new_selected_widget_str].enter()
+    #     self.widgets[new_selected_widget_str].activateWindow()
 
-        # print("  changed to: %s" % (new_selected_widget_str))
+    #     # print("  changed to: %s" % (new_selected_widget_str))
 
 
 
-    def set_current_editor(self, current_editor):
+
+    def set_current_widget(self, current_widget):
         # Set current widget and editor
-        # print("set_current_editor: change widget from [%s] to [%s], editor from [%s] to [%s]" %
-        #     (self.current_widget, current_editor, self.current_editor, current_editor))
+        # print("set_current_widget: change widget from [%s] to [%s], editor from [%s] to [%s]" %
+        #     (self.current_widget, current_widget, self.current_widget, current_widget))
+        # log.info(f"set current widget: {current_widget}")
 
-        if current_editor == 'selection':
-            # Do not select this widget
-            return
-
-        self.current_widget = current_editor
+        self.current_widget = current_widget
 
         for e, w in self.widgets.items():
-            if self.current_editor == e:
-                w.set_selected(False)
+            if self.current_widget != e:
+                w.leave_widget()
 
-        self.current_editor = current_editor
 
-        # Activate the selected editor widget
+        # # Activate the selected editor widget
+        # for e, w in self.widgets.items():
+        #     if self.current_widget == e:
+        #         w.set_selected(True)
+        #         break
         for e, w in self.widgets.items():
-            if self.current_editor == e:
-                w.set_selected(True)
+            if self.current_widget == e:
+                w.activateWindow()
+                w.activate_widget()
                 break
-
 
     def event_selected_shots_changed(self, selection):
         log.info("selected shot changed")
@@ -424,38 +397,3 @@ class Window_common(QMainWindow):
         action_exit.triggered.connect(self.event_close)
         pop_menu.exec_(cursor_position)
 
-
-
-    def changeEvent(self, event: QEvent) -> None:
-        # print("\nwindow_main: changeEvent", event.type(), flush=True)
-        if event.type() == QEvent.ActivationChange:
-            # print("* QEvent.ActivationChange", flush=True)
-            # print("\twindow state:", self.windowState(), flush=True)
-            # print("\t is active? ", self.isActiveWindow(), flush=True)
-
-            if self.windowState() == Qt.WindowState().WindowNoState:
-                # print("\tWindowNoState -> show fullscreen")
-                self.setWindowState(Qt.WindowActive)
-                self.event_show_fullscreen()
-                # print("-------------------------------------")
-                event.accept()
-                return True
-
-            if self.windowState() & Qt.WindowState().WindowActive:
-                # print("\tWindowMinimized -> show fullscreen")
-                self.setWindowState(Qt.WindowActive)
-                self.event_show_fullscreen()
-                # print("-------------------------------------")
-                event.accept()
-                return True
-
-            if (self.windowState() & Qt.WindowState().WindowMinimized
-            and not self.isActiveWindow()):
-                # print("\tWindowMinimized -> show fullscreen")
-                self.setWindowState(Qt.WindowActive)
-                self.event_show_fullscreen()
-                # print("-------------------------------------")
-                event.accept()
-                return True
-
-        return super().changeEvent(event)

@@ -19,6 +19,8 @@ from PySide6.QtGui import (
     QBrush,
     QColor,
     QCursor,
+    QKeyEvent,
+    QWheelEvent,
 )
 from PySide6.QtWidgets import (
     QTableWidgetItem,
@@ -33,20 +35,22 @@ from utils.stylesheet import (
 
 from utils.common import K_GENERIQUES, K_PARTS, K_ALL_PARTS
 from views.ui.widget_selection_ui import Ui_widget_selection
+from views.widget_common import Widget_common
 
 
 class Widget_selection(QWidget, Ui_widget_selection):
+    signal_widget_selected = Signal(str)
     signal_selection_changed = Signal(dict)
     signal_selected_shots_changed = Signal(dict)
     signal_selected_step_changed = Signal(str)
     signal_close = Signal()
 
 
-    def __init__(self, ui, controller):
+    def __init__(self, parent, controller):
         super(Widget_selection, self).__init__()
         self.setupUi(self)
         self.controller = controller
-        self.ui = ui
+        self.setObjectName('selection')
 
         # Setup and patch ui
         self.setAutoFillBackground(True)
@@ -56,6 +60,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         # Internal variables
+        self.__parent = parent
         self.episodes_and_parts = dict()
         self.comboBox_episode.clear()
         self.comboBox_part.clear()
@@ -117,8 +122,17 @@ class Widget_selection(QWidget, Ui_widget_selection):
         set_widget_stylesheet(self.pushButton_rgb_curves)
         set_widget_stylesheet(self.pushButton_geometry)
 
-        self.set_selected(False)
+        # Install events for this widget
+        self.installEventFilter(self)
+
+        # self.set_selected(False)
         self.adjustSize()
+
+
+
+    def leave_widget(self):
+        update_selected_widget_stylesheet(self.frame, is_selected=False)
+        # self.repaint()
 
 
     def closeEvent(self, event):
@@ -149,8 +163,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
     def set_initial_options(self, preferences:dict):
-        log.info("set_initial_options")
         s = preferences['selection']
+        log.info(f"set_initial_options: {s['episode']}, {s['part']}, {s['step']}")
         # print("%s:set_initial_options: " % (__name__), s)
 
         self.set_enabled(False)
@@ -178,17 +192,17 @@ class Widget_selection(QWidget, Ui_widget_selection):
         # self.comboBox_part.blockSignals(False)
 
         # Step
-        self.comboBox_part.blockSignals(True)
-        index = self.comboBox_part.findText(s['step'])
-        index = 0 if index == -1 else index
-        self.comboBox_part.setCurrentIndex(index)
-        self.comboBox_part.blockSignals(False)
+        for w in self.radioButtons_steps.values():
+            w.blockSignals(True)
+        self.radioButtons_steps[s['step']].setChecked(True)
+        for w in self.radioButtons_steps.values():
+            w.blockSignals(False)
 
         # Shots
         self.tableWidget_shots.blockSignals(True)
         self.tableWidget_shots.clearContents()
         self.tableWidget_shots.setRowCount(0)
-        # self.tableWidget_shots.blockSignals(False)
+        self.tableWidget_shots.blockSignals(False)
 
         # Current shot no
         try:
@@ -200,11 +214,11 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
 
-        self.event_episode_changed()
+        # self.event_episode_changed()
 
 
-    def set_selected(self, is_selected):
-        update_selected_widget_stylesheet(self.frame, is_selected=is_selected)
+    # def set_selected(self, is_selected):
+    #     update_selected_widget_stylesheet(self.frame, is_selected=is_selected)
 
 
     def refresh_modification_status(self, modifications:dict):
@@ -483,7 +497,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
     def event_selection_changed(self, selected):
-        # print("event_selection_changed")
+        print_lightcyan("event_selection_changed")
         selected_indexes = self.tableWidget_shots.selectedIndexes()
         selected_row_no = sorted(list(set([i.row() for i in selected_indexes])))
         if len(selected_row_no) == 0:
@@ -514,6 +528,9 @@ class Widget_selection(QWidget, Ui_widget_selection):
             'k_step': self.get_current_step(),
             'shotlist': selected_shot_nos
         }
+        print("send signal")
+        pprint(selected_shots)
+        log.info(f"send signal: signal_selected_shots_changed")
         self.signal_selected_shots_changed.emit(selected_shots)
 
 
@@ -575,34 +592,39 @@ class Widget_selection(QWidget, Ui_widget_selection):
             event.accept()
 
 
-    def keyPressEvent(self, event):
-        # print("event_key_pressed")
-        if self.event_key_pressed(event):
-            event.accept()
-            return True
-        return self.ui.keyPressEvent(event)
-
-
-    def event_key_pressed(self, event):
+    def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
-        if modifiers & Qt.ControlModifier and key == Qt.Key_A:
-            self.tableWidget_shots.selectAll()
-            event.accept()
-            return True
+        if modifiers & Qt.ControlModifier:
+            if key == Qt.Key.Key_A:
+                self.tableWidget_shots.selectAll()
+                return True
+
         return False
 
-    def keyReleaseEvent(self, event):
-        # print("event_key_released")
-        if self.event_key_released(event):
-            event.accept()
-            return True
+
+    def event_wheel(self, event: QWheelEvent) -> bool:
+        print_lightgreen("\tDefault selection fct")
         return False
-        # return self.ui.keyReleaseEvent(event)
 
 
-    def event_key_released(self, event):
+
+    def event_key_released(self, event:QKeyEvent) -> bool:
         return False
+
+
+
+    # def changeEvent(self, event: QEvent) -> None:
+    #     if event.type() == QEvent.ActivationChange:
+    #         if self.isActiveWindow():
+
+    #             event.accept()
+    #             return True
+    #     return False
+        # super().changeEvent(event)
+    def activate_widget(self):
+        update_selected_widget_stylesheet(self.frame, is_selected=True)
+        self.setFocus()
 
 
 
@@ -610,14 +632,22 @@ class Widget_selection(QWidget, Ui_widget_selection):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         # return super().eventFilter(watched, event)
         # # Filter press/release events
-        if event.type() == QEvent.KeyPress:
-            event.accept()
-            return self.ui.keyPressEvent(event)
-        elif event.type() == QEvent.KeyRelease:
-            event.accept()
-            return self.ui.keyReleaseEvent(event)
+        if event.type() == QEvent.Type.KeyPress:
+            if self.event_key_pressed(event):
+                event.accept()
+                return True
+            else:
+                return self.__parent.event_key_pressed(event)
 
-        if event.type() == QEvent.Wheel:
+
+        if event.type() == QEvent.Type.KeyRelease:
+            if self.event_key_released(event):
+                event.accept()
+                return True
+            else:
+                return self.__parent.event_key_released(event)
+
+        if event.type() == QEvent.Type.Wheel:
             if event.angleDelta().y() > 0:
                 self.select_previous_shot()
             else:
@@ -625,19 +655,25 @@ class Widget_selection(QWidget, Ui_widget_selection):
             event.accept()
             return True
 
+        # elif event.type() == QEvent.Type.FocusIn:
+        #     self.signal_widget_selected.emit(self.objectName())
+        #     event.accept()
+        #     return True
+        # elif event.type() == QEvent.HoverEnter:
+        #     update_selected_widget_stylesheet(self.frame, is_selected=True)
+        #     print_purple(f"selection: HoverEnter")
+        # elif event.type() == QEvent.HoverLeave:
+        #     update_selected_widget_stylesheet(self.frame, is_selected=False)
+        #     print_purple(f"selection: HoverLeave")
+
+        # elif event.type() == QEvent.ActivationChange:
+        #     event.accept()
+        #     self.signal_widget_selected.emit(self.objectName())
+        #     return True
+
+        # elif event.type() == QEvent.Leave:
+        #     update_selected_widget_stylesheet(self.frame, is_selected=False)
+        #     print_purple(f"selection: Leave")
+
         return super().eventFilter(watched, event)
         # return True
-
-
-
-
-    def changeEvent(self, event: QEvent) -> None:
-        if event.type() == QEvent.ActivationChange:
-            if self.isActiveWindow():
-                self.ui.set_current_editor('selection')
-                event.accept()
-                return True
-        return False
-        # super().changeEvent(event)
-
-

@@ -22,7 +22,7 @@ def main():
     main_window = Window_main(main_model)
 
     main_model.set_view(main_window)
-    main_window.show()
+    main_window.show_all()
     sys.exit(application.exec())
 
 

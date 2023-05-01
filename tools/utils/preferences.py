@@ -49,10 +49,10 @@ class Preferences(QObject):
 
         self.preferences['viewer']['geometry'] = [0, 0, screen_width, screen_height]
 
-        if self.settings.contains('viewer/current_editor'):
-            self.preferences['viewer']['current_editor'] = self.settings.value('viewer/current_editor')
+        if self.settings.contains('viewer/current_widget'):
+            self.preferences['viewer']['current_widget'] = self.settings.value('viewer/current_widget')
         else:
-            self.preferences['viewer']['current_editor'] = 'selection'
+            self.preferences['viewer']['current_widget'] = 'selection'
 
         # Selection: use str keys for debug
         self.preferences['selection']['geometry'] = [screen_width-500, 20, 0, 0]
@@ -122,7 +122,7 @@ class Preferences(QObject):
             ':'.join(map(lambda x: "%d" % (x), preferences['viewer']['geometry'])))
         self.settings.setValue('viewer/screen', 0)
 
-        self.settings.setValue('viewer/current_editor', preferences['viewer']['current_editor'])
+        self.settings.setValue('viewer/current_widget', preferences['viewer']['current_widget'])
 
         # (Special) Selection
         self.settings.setValue('selection/geometry',

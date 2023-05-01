@@ -22,7 +22,9 @@ from PySide6.QtWidgets import (
 
 )
 from PySide6.QtGui import (
-    QKeyEvent)
+    QKeyEvent,
+    QWheelEvent,
+)
 
 from utils.common import K_GENERIQUES
 
@@ -117,6 +119,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         self.pushButton_target_discard.setEnabled(False)
         self.pushButton_target_save.setEnabled(False)
+        self.is_edition_allowed = True
 
         self.block_all_signals(False)
 
@@ -128,7 +131,8 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
 
-        self.is_edition_allowed = False
+        # Install events for this widget
+        self.installEventFilter(self)
 
 
     def event_shotlist_modified(self, values:dict):
@@ -499,7 +503,6 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
 
-
     def event_keep_ratio_changed(self, element, is_checked:bool):
         if element == 'default_shot':
             w = self.checkBox_default_shot_fit_to_width
@@ -538,7 +541,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
 
-    def wheelEvent(self, event):
+    def event_wheel(self, event: QWheelEvent) -> bool:
         if self.current_key_pressed is not None:
             modifiers = QApplication.keyboardModifiers()
             # print_lightgrey(f"wheelEvent: key: {self.current_key_pressed}")
@@ -570,7 +573,6 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
             # self.current_key_pressed = None
             if self.is_edition_allowed:
-                event.accept()
                 self.event_is_modified(
                     element=element,
                     event_type='set',
@@ -581,18 +583,20 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         return False
 
 
-
-    def event_key_pressed(self, event:QKeyEvent):
+    def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
-        # print_green(f"event_key_pressed: {key}")
+        print_green(f"widget_geometry: event_key_pressed: {key}")
+
+        if key == Qt.Key.Key_Space:
+            print("main window: keyPressEvent")
+            log.info("Space key event detected")
+            return False
 
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_S:
                 self.event_save_modifications()
                 return True
-            else:
-                return False
 
         # if modifiers & Qt.AltModifier:
         #     if key == Qt.Key_S:
@@ -609,14 +613,16 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                 return True
 
         # Edit crop dimensions
-        if key in [Qt.Key_Q, Qt.Key_D, Qt.Key_W]:
+        elif key in [Qt.Key_Q, Qt.Key_D, Qt.Key_W]:
             self.current_key_pressed = key
             return True
+
         elif key == Qt.Key_Z:
             if key != self.current_key_pressed:
                 self.signal_position_changed.emit('top')
             self.current_key_pressed = key
             return True
+
         elif key == Qt.Key_S:
             if key != self.current_key_pressed:
                 self.signal_position_changed.emit('bottom')
@@ -627,8 +633,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
 
 
-    def event_key_released(self, event):
-        # print_yellow(f"event_key_released: {event.key()}")
+    def event_key_released(self, event:QKeyEvent) -> bool:
         self.current_key_pressed = None
         return False
 
