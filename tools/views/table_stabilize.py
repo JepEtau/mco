@@ -266,7 +266,7 @@ class Table_stabilize(QTableWidget):
         self.row_height = 35
         self.initial_str = ""
 
-        self.parent = parent
+        self.__parent = parent
         # Signals
         # self.currentCellChanged['int','int','int','int'].connect(self.event_current_cell_changed)
 
@@ -280,6 +280,10 @@ class Table_stabilize(QTableWidget):
         self.history = self.History(self)
         set_stylesheet(self)
         self.adjustSize()
+
+
+    def set_parent(self, parent):
+        self.__parent = parent
 
 
     def set_frame_no(self, point, frame_no):
@@ -371,6 +375,7 @@ class Table_stabilize(QTableWidget):
         combobox_reference.setCurrentIndex(index)
         combobox_reference.setFocusPolicy(Qt.NoFocus)
         set_widget_stylesheet(combobox_reference)
+        combobox_reference.currentIndexChanged[int].connect(self.event_reference_changed)
         self.setCellWidget(row_no, 2, combobox_reference)
 
         # Stabilization mode
@@ -383,6 +388,7 @@ class Table_stabilize(QTableWidget):
             w.setChecked(segment['mode'][w_name])
             w.setFocusPolicy(Qt.NoFocus)
             set_widget_stylesheet(w)
+            w.toggled[bool].connect(self.event_mode_changed)
             horizontalLayout.addWidget(w)
         self.setCellWidget(row_no, 3, widget)
 
@@ -501,7 +507,7 @@ class Table_stabilize(QTableWidget):
         combobox_reference.addItems(['start', 'middle', 'end'])
         combobox_reference.setCurrentIndex(1)
         combobox_reference.setFocusPolicy(Qt.NoFocus)
-        combobox_reference['int'].connect(self.event_reference_changed)
+        combobox_reference.currentIndexChanged[int].connect(self.event_reference_changed)
         set_widget_stylesheet(combobox_reference)
         self.setCellWidget(row_no, 2, combobox_reference)
 
@@ -649,7 +655,7 @@ class Table_stabilize(QTableWidget):
         self.event_paste()
 
     def event_reference_changed(self, index:int) -> None:
-        self.parent.edition_started()
+        self.__parent.edition_started()
 
     def event_mode_changed(self, state:bool) -> None:
-        self.parent.edition_started()
+        self.__parent.edition_started()

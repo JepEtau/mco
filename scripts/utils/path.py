@@ -182,6 +182,7 @@ def is_progressive_file_valid(shot, db_common, verbose:bool=False):
             return False
     else:
         # Partial video
+        progressive_count = progressive_frame_count
         if progressive_count < count:
             if verbose:
                 print(f"\tnot valid: {progressive_count}, should be {interlace_count}")

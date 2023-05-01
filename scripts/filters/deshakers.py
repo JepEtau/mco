@@ -328,19 +328,18 @@ class CV2_deshaker:
             transformation = None
             print_pink(f"stabilize from {ref}, start={ref_index}, end={0}")
             for i in range(ref_index-1, -1, -1):
-                # if verbose:
-                #     print(f"\timage {i}", end=' ')
+                if verbose:
+                    print(f"\timage {i}", end=' ')
                 img_colored = images[i]
 
-
-                # compute and get keypoints
+                # Compute and get keypoints
                 img_stabilized, transformation = self.__stabilize_image(
                     img=img_colored,
                     img_ref_gray=img_ref_gray,
                     keypoints_ref=keypoints_ref,
                     mode=mode)
-                # if verbose:
-                #     print(f"transformation {transformation}")
+                if verbose:
+                    print(f"transformation {transformation}")
 
                 output_images.insert(0, img_stabilized)
                 self.__transformations.insert(0, transformation)

@@ -82,28 +82,6 @@ def deshake(shot, images:list, image_list:list,
         segment['start'] -= shot['start']
 
 
-    if len(segments) == 1:
-        if segments[0]['ref'] == 'auto':
-            # Single segment
-            if (segments[0]['start'] == 0
-                and (segments[0]['start'] + segments[0]['count']) == shot['count']):
-                # segment = shot
-                segments[0]['ref'] = 'middle'
-            elif segments[0]['start'] == 0:
-                # segment starts from the beginning of the shot,
-                #  use the last frame of this segment as the first reference
-                segments[0]['ref'] = 'end'
-            elif segments[0]['start'] + segments[0]['count'] == shot['count']:
-                # segment ends to the last frame of the shot,
-                #  use the first frame of this segment as the first reference
-                segments[0]['ref'] = 'start'
-            else:
-                # remaining frames before and after!
-                #  cannot select a reference
-                sys.exit("segment 0 shall start at the beginning or a the end of the shot")
-    elif len(segments) > 2:
-        print_orange("warning: deshake: %d segments" % len(segments))
-
     if verbose and not get_hash:
         print_lightgreen("Deshake, segments:")
         pprint(segments)
@@ -249,8 +227,12 @@ def deshake(shot, images:list, image_list:list,
     if last_segment_end < shot['count']:
         if verbose:
             print_lightcyan("- append %d images after the last segment" % (shot['count'] - last_segment_end))
-        for i in range(last_segment_end, shot['count']):
-            output_images.append(apply_cv2_transformation(images[i], transformations['end']))
+        if transformations['end'] is not None:
+            for i in range(last_segment_end, shot['count']):
+                output_images.append(apply_cv2_transformation(images[i], transformations['end']))
+        else:
+            for i in range(last_segment_end, shot['count']):
+                output_images.append(images[i])
 
 
     # Log hash

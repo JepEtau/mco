@@ -1,10 +1,12 @@
 # TODO script
 (1)
+- use ROI when zooming in/out
+- deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image
+- stabilize: when segments are erroneous, do not stabilize
 
 (2)
 - (?) smooth stabilization: to evaluate (g_fin)
-- create "other filters": replace some images by white images
-- stabilize: when 2 segments are separated by some frames, the first image of the 2nd segment is not aligned with previous frames (g_fin, shot no. 0)
+
 
 (3)
 - effects: verify when replacing shots (asuivre/precedemment)
@@ -14,12 +16,14 @@
 
 # TODO video editor
 (1)
+- reorder .ini files
+- video editor shall never write hash codes
+
 - curves: add loop mode
 - curves: Add luma value in curves
 - curves: Add other rgb filters to ajdust levels
 - geometry: add 'minimum crop'
 - stabilize widget: verify if "save putton' to enabled if segment removed
-- add buttons to show/hide widgets
 
 (2)
 - widgets: set focus is not working
@@ -31,6 +35,7 @@
 - when no image loaded, reset all widgets / disable all widgets if images missing
 
 (3)
+- add buttons to show/hide widgets
 - stabilize: when table is disable, set qWidgetItem to disable (text should be grey)
 - change selection widget to a standard widget (common)
 - F5 to refresh current shot only

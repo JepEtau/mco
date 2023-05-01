@@ -72,6 +72,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.groupBox_stabilize.installEventFilter(self)
         self.groupBox_stabilize.blockSignals(True)
         self.tableWidget_stabilize.installEventFilter(self)
+        self.tableWidget_stabilize.set_parent(self)
         self.installEventFilter(self)
 
         self.controller.signal_stabilize_settings_refreshed[dict].connect(self.event_stabilize_settings_refreshed)
@@ -306,7 +307,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         if not self.pushButton_set_preview.isChecked():
             log.info("preview is not enabled, resquest stabilization=None")
             print("\tpreview is not enabled, resquest stabilization=None")
-            self.signal_stabilization_requested.emit(None)
+            settings = self.get_current_settings()
+            self.signal_stabilization_requested.emit(settings)
         else:
             if (self.tableWidget_stabilize.is_content_modified() or
                 self.groupBox_stabilize.isChecked() != self.is_enabled_initial):
