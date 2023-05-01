@@ -240,12 +240,12 @@ class CV2_deshaker:
             end = len(images)
 
             for i in range(start, end):
-                if verbose:
-                    print("frame %d: " % (i), end='')
+                # if verbose:
+                #     print("frame %d: " % (i), end='')
 
                 img_colored = images[i]
-                if verbose:
-                    print("%s: image=%d" % (ref, i), end=' ')
+                # if verbose:
+                #     print("%s: image=%d" % (ref, i), end=' ')
 
                 # compute and get keypoints
                 img_stabilized, transformation = self.__stabilize_image(
@@ -256,8 +256,8 @@ class CV2_deshaker:
 
                 self.__transformations.append(transformation)
                 output_images.append(img_stabilized)
-                if verbose:
-                    print("append")
+                # if verbose:
+                #     print("append")
 
                 if i == 0:
                     transformations['start'] = transformation
@@ -272,8 +272,8 @@ class CV2_deshaker:
 
             print_pink(f"stabilize from {ref}, start={start}, end={end}")
             for i in range(start, end):
-                if verbose:
-                    print(f"\timage {i}", end=' ')
+                # if verbose:
+                #     print(f"\timage {i}", end=' ')
 
                 img_colored = images[i]
 
@@ -283,8 +283,8 @@ class CV2_deshaker:
                     img_ref_gray=img_ref_gray,
                     keypoints_ref=keypoints_ref,
                     mode=mode)
-                if verbose:
-                    print(f"transformation {transformation}")
+                # if verbose:
+                #     print(f"transformation {transformation}")
 
                 # append image
                 output_images.append(img_stabilized)
@@ -328,8 +328,8 @@ class CV2_deshaker:
             transformation = None
             print_pink(f"stabilize from {ref}, start={ref_index}, end={0}")
             for i in range(ref_index-1, -1, -1):
-                if verbose:
-                    print(f"\timage {i}", end=' ')
+                # if verbose:
+                #     print(f"\timage {i}", end=' ')
                 img_colored = images[i]
 
 
@@ -339,8 +339,8 @@ class CV2_deshaker:
                     img_ref_gray=img_ref_gray,
                     keypoints_ref=keypoints_ref,
                     mode=mode)
-                if verbose:
-                    print(f"transformation {transformation}")
+                # if verbose:
+                #     print(f"transformation {transformation}")
 
                 output_images.insert(0, img_stabilized)
                 self.__transformations.insert(0, transformation)
