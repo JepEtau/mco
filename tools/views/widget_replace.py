@@ -282,6 +282,7 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_S:
+                print_purple("Save replace")
                 self.event_save_modifications()
                 return True
 

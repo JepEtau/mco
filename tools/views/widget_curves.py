@@ -16,6 +16,7 @@ from PySide6.QtGui import (
     QColor,
     QKeyEvent,
 )
+from utils.pretty_print import *
 
 from utils.stylesheet import (
     set_curves_radiobutton_stylesheet,
@@ -340,10 +341,12 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             if key == Qt.Key_S:
                 if self.widget_curves_selection.is_active():
                     log.info("Save RGB curves")
+                    print_purple("Save RGB curves")
                     self.widget_curves_selection.event_save_rgb_curves_as()
                     return True
                 else:
                     log.info("Save selected curves for this shot")
+                    print_purple("Save curves selection")
                     self.widget_curves_selection.event_save_selection()
                     return True
 

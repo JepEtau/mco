@@ -389,3 +389,28 @@ class Curve(object):
         self._selected_point.set_x(x)
         self._selected_point.set_y(y)
 
+
+    def apply_translation(self,  delta_x:np.float32, delta_y:np.float32):
+        print(f"apply_translation: {delta_x}, {delta_y}")
+        pass
+        # for point in self._points:
+        #     print(point)
+
+        #     # Translation
+        #     point[0] += delta_x
+        #     point[1] += delta_y
+
+
+        #     if point[1] == 0:
+        #         # on x axis
+        #         if point[0] + t_x < 0
+
+
+
+
+        #         t_x = (delta_x * 0.707)
+        #         point[0] += t_x
+
+        #     elif point[0] == 0:
+        #         # on y axis
+        #         point[1] += (delta_y * 0.707)

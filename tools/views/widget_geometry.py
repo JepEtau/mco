@@ -597,6 +597,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_S:
+                print_purple("Save geometry")
                 self.event_save_modifications()
                 return True
 

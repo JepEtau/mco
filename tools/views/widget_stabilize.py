@@ -356,6 +356,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def event_save_modifications(self):
         if self.pushButton_save.isEnabled():
+            print_purple("Save stabilize")
             log.info(f"save widget_{self.objectName()}")
             self.pushButton_save.setEnabled(False)
             if (self.tableWidget_stabilize.is_content_modified() or
