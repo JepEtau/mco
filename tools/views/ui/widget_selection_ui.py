@@ -26,8 +26,8 @@ class Ui_widget_selection(object):
     def setupUi(self, widget_selection):
         if not widget_selection.objectName():
             widget_selection.setObjectName(u"widget_selection")
-        widget_selection.resize(500, 832)
-        widget_selection.setMaximumSize(QSize(500, 16777215))
+        widget_selection.resize(514, 820)
+        widget_selection.setMaximumSize(QSize(800, 16777215))
         self.verticalLayout_2 = QVBoxLayout(widget_selection)
         self.verticalLayout_2.setSpacing(0)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
@@ -57,6 +57,7 @@ class Ui_widget_selection(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.comboBox_episode.sizePolicy().hasHeightForWidth())
         self.comboBox_episode.setSizePolicy(sizePolicy)
+        self.comboBox_episode.setMinimumSize(QSize(50, 0))
 
         self.horizontalLayout.addWidget(self.comboBox_episode)
 
@@ -136,6 +137,7 @@ class Ui_widget_selection(object):
         self.verticalLayout_5.setObjectName(u"verticalLayout_5")
         self.pushButton_replace = QPushButton(self.frame)
         self.pushButton_replace.setObjectName(u"pushButton_replace")
+        self.pushButton_replace.setEnabled(False)
         sizePolicy1.setHeightForWidth(self.pushButton_replace.sizePolicy().hasHeightForWidth())
         self.pushButton_replace.setSizePolicy(sizePolicy1)
         self.pushButton_replace.setMinimumSize(QSize(120, 0))
@@ -151,6 +153,7 @@ class Ui_widget_selection(object):
 
         self.pushButton_stabilize = QPushButton(self.frame)
         self.pushButton_stabilize.setObjectName(u"pushButton_stabilize")
+        self.pushButton_stabilize.setEnabled(False)
         sizePolicy1.setHeightForWidth(self.pushButton_stabilize.sizePolicy().hasHeightForWidth())
         self.pushButton_stabilize.setSizePolicy(sizePolicy1)
         self.pushButton_stabilize.setMinimumSize(QSize(120, 0))
@@ -163,6 +166,7 @@ class Ui_widget_selection(object):
 
         self.pushButton_rgb_curves = QPushButton(self.frame)
         self.pushButton_rgb_curves.setObjectName(u"pushButton_rgb_curves")
+        self.pushButton_rgb_curves.setEnabled(False)
         sizePolicy1.setHeightForWidth(self.pushButton_rgb_curves.sizePolicy().hasHeightForWidth())
         self.pushButton_rgb_curves.setSizePolicy(sizePolicy1)
         self.pushButton_rgb_curves.setMinimumSize(QSize(120, 0))
@@ -175,6 +179,7 @@ class Ui_widget_selection(object):
 
         self.pushButton_geometry = QPushButton(self.frame)
         self.pushButton_geometry.setObjectName(u"pushButton_geometry")
+        self.pushButton_geometry.setEnabled(False)
         sizePolicy1.setHeightForWidth(self.pushButton_geometry.sizePolicy().hasHeightForWidth())
         self.pushButton_geometry.setSizePolicy(sizePolicy1)
         self.pushButton_geometry.setMinimumSize(QSize(120, 0))
@@ -196,8 +201,8 @@ class Ui_widget_selection(object):
         self.verticalLayout.addLayout(self.horizontalLayout_2)
 
         self.tableWidget_shots = QTableWidget(self.frame)
-        if (self.tableWidget_shots.columnCount() < 6):
-            self.tableWidget_shots.setColumnCount(6)
+        if (self.tableWidget_shots.columnCount() < 10):
+            self.tableWidget_shots.setColumnCount(10)
         __qtablewidgetitem = QTableWidgetItem()
         self.tableWidget_shots.setHorizontalHeaderItem(0, __qtablewidgetitem)
         __qtablewidgetitem1 = QTableWidgetItem()
@@ -210,21 +215,29 @@ class Ui_widget_selection(object):
         self.tableWidget_shots.setHorizontalHeaderItem(4, __qtablewidgetitem4)
         __qtablewidgetitem5 = QTableWidgetItem()
         self.tableWidget_shots.setHorizontalHeaderItem(5, __qtablewidgetitem5)
+        __qtablewidgetitem6 = QTableWidgetItem()
+        self.tableWidget_shots.setHorizontalHeaderItem(6, __qtablewidgetitem6)
+        __qtablewidgetitem7 = QTableWidgetItem()
+        self.tableWidget_shots.setHorizontalHeaderItem(7, __qtablewidgetitem7)
+        __qtablewidgetitem8 = QTableWidgetItem()
+        self.tableWidget_shots.setHorizontalHeaderItem(8, __qtablewidgetitem8)
+        __qtablewidgetitem9 = QTableWidgetItem()
+        self.tableWidget_shots.setHorizontalHeaderItem(9, __qtablewidgetitem9)
         if (self.tableWidget_shots.rowCount() < 20):
             self.tableWidget_shots.setRowCount(20)
-        __qtablewidgetitem6 = QTableWidgetItem()
-        self.tableWidget_shots.setVerticalHeaderItem(0, __qtablewidgetitem6)
-        __qtablewidgetitem7 = QTableWidgetItem()
-        self.tableWidget_shots.setVerticalHeaderItem(1, __qtablewidgetitem7)
-        __qtablewidgetitem8 = QTableWidgetItem()
-        __qtablewidgetitem8.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled);
-        self.tableWidget_shots.setItem(0, 0, __qtablewidgetitem8)
-        __qtablewidgetitem9 = QTableWidgetItem()
-        self.tableWidget_shots.setItem(0, 1, __qtablewidgetitem9)
         __qtablewidgetitem10 = QTableWidgetItem()
-        self.tableWidget_shots.setItem(1, 0, __qtablewidgetitem10)
+        self.tableWidget_shots.setVerticalHeaderItem(0, __qtablewidgetitem10)
         __qtablewidgetitem11 = QTableWidgetItem()
-        self.tableWidget_shots.setItem(1, 1, __qtablewidgetitem11)
+        self.tableWidget_shots.setVerticalHeaderItem(1, __qtablewidgetitem11)
+        __qtablewidgetitem12 = QTableWidgetItem()
+        __qtablewidgetitem12.setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled);
+        self.tableWidget_shots.setItem(0, 0, __qtablewidgetitem12)
+        __qtablewidgetitem13 = QTableWidgetItem()
+        self.tableWidget_shots.setItem(0, 1, __qtablewidgetitem13)
+        __qtablewidgetitem14 = QTableWidgetItem()
+        self.tableWidget_shots.setItem(1, 0, __qtablewidgetitem14)
+        __qtablewidgetitem15 = QTableWidgetItem()
+        self.tableWidget_shots.setItem(1, 1, __qtablewidgetitem15)
         self.tableWidget_shots.setObjectName(u"tableWidget_shots")
         sizePolicy2 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
         sizePolicy2.setHorizontalStretch(0)
@@ -245,14 +258,14 @@ class Ui_widget_selection(object):
         self.tableWidget_shots.setWordWrap(False)
         self.tableWidget_shots.setCornerButtonEnabled(False)
         self.tableWidget_shots.setRowCount(20)
-        self.tableWidget_shots.setColumnCount(6)
+        self.tableWidget_shots.setColumnCount(10)
         self.tableWidget_shots.horizontalHeader().setVisible(True)
         self.tableWidget_shots.horizontalHeader().setMinimumSectionSize(28)
         self.tableWidget_shots.horizontalHeader().setDefaultSectionSize(40)
         self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
         self.tableWidget_shots.verticalHeader().setVisible(False)
-        self.tableWidget_shots.verticalHeader().setMinimumSectionSize(22)
-        self.tableWidget_shots.verticalHeader().setDefaultSectionSize(22)
+        self.tableWidget_shots.verticalHeader().setMinimumSectionSize(24)
+        self.tableWidget_shots.verticalHeader().setDefaultSectionSize(24)
         self.tableWidget_shots.verticalHeader().setHighlightSections(True)
         self.tableWidget_shots.verticalHeader().setProperty("showSortIndicator", False)
         self.tableWidget_shots.verticalHeader().setStretchLastSection(False)
@@ -302,22 +315,30 @@ class Ui_widget_selection(object):
         ___qtablewidgetitem4 = self.tableWidget_shots.horizontalHeaderItem(4)
         ___qtablewidgetitem4.setText(QCoreApplication.translate("widget_selection", u"curves", None));
         ___qtablewidgetitem5 = self.tableWidget_shots.horizontalHeaderItem(5)
-        ___qtablewidgetitem5.setText(QCoreApplication.translate("widget_selection", u"new_curves", None));
-        ___qtablewidgetitem6 = self.tableWidget_shots.verticalHeaderItem(0)
-        ___qtablewidgetitem6.setText(QCoreApplication.translate("widget_selection", u"001", None));
-        ___qtablewidgetitem7 = self.tableWidget_shots.verticalHeaderItem(1)
-        ___qtablewidgetitem7.setText(QCoreApplication.translate("widget_selection", u"002", None));
+        ___qtablewidgetitem5.setText(QCoreApplication.translate("widget_selection", u"new", None));
+        ___qtablewidgetitem6 = self.tableWidget_shots.horizontalHeaderItem(6)
+        ___qtablewidgetitem6.setText(QCoreApplication.translate("widget_selection", u"stab.", None));
+        ___qtablewidgetitem7 = self.tableWidget_shots.horizontalHeaderItem(7)
+        ___qtablewidgetitem7.setText(QCoreApplication.translate("widget_selection", u"geo.", None));
+        ___qtablewidgetitem8 = self.tableWidget_shots.horizontalHeaderItem(8)
+        ___qtablewidgetitem8.setText(QCoreApplication.translate("widget_selection", u"replace", None));
+        ___qtablewidgetitem9 = self.tableWidget_shots.horizontalHeaderItem(9)
+        ___qtablewidgetitem9.setText(QCoreApplication.translate("widget_selection", u"other", None));
+        ___qtablewidgetitem10 = self.tableWidget_shots.verticalHeaderItem(0)
+        ___qtablewidgetitem10.setText(QCoreApplication.translate("widget_selection", u"001", None));
+        ___qtablewidgetitem11 = self.tableWidget_shots.verticalHeaderItem(1)
+        ___qtablewidgetitem11.setText(QCoreApplication.translate("widget_selection", u"002", None));
 
         __sortingEnabled = self.tableWidget_shots.isSortingEnabled()
         self.tableWidget_shots.setSortingEnabled(False)
-        ___qtablewidgetitem8 = self.tableWidget_shots.item(0, 0)
-        ___qtablewidgetitem8.setText(QCoreApplication.translate("widget_selection", u"001", None));
-        ___qtablewidgetitem9 = self.tableWidget_shots.item(0, 1)
-        ___qtablewidgetitem9.setText(QCoreApplication.translate("widget_selection", u"0", None));
-        ___qtablewidgetitem10 = self.tableWidget_shots.item(1, 0)
-        ___qtablewidgetitem10.setText(QCoreApplication.translate("widget_selection", u"002", None));
-        ___qtablewidgetitem11 = self.tableWidget_shots.item(1, 1)
-        ___qtablewidgetitem11.setText(QCoreApplication.translate("widget_selection", u"920", None));
+        ___qtablewidgetitem12 = self.tableWidget_shots.item(0, 0)
+        ___qtablewidgetitem12.setText(QCoreApplication.translate("widget_selection", u"001", None));
+        ___qtablewidgetitem13 = self.tableWidget_shots.item(0, 1)
+        ___qtablewidgetitem13.setText(QCoreApplication.translate("widget_selection", u"0", None));
+        ___qtablewidgetitem14 = self.tableWidget_shots.item(1, 0)
+        ___qtablewidgetitem14.setText(QCoreApplication.translate("widget_selection", u"002", None));
+        ___qtablewidgetitem15 = self.tableWidget_shots.item(1, 1)
+        ___qtablewidgetitem15.setText(QCoreApplication.translate("widget_selection", u"920", None));
         self.tableWidget_shots.setSortingEnabled(__sortingEnabled)
 
     # retranslateUi

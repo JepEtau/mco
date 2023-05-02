@@ -91,6 +91,9 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         # Signals from model
         self.controller.signal_shotlist_modified[dict].connect(self.event_shotlist_modified)
 
+        self.frame.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.installEventFilter(self)
+
 
     def set_initial_options(self, preferences:dict):
         log.info("%s: set_initial_options" % (self.objectName()))
@@ -131,8 +134,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
 
-        # Install events for this widget
-        self.installEventFilter(self)
+
 
 
     def event_shotlist_modified(self, values:dict):

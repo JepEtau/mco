@@ -235,6 +235,11 @@ def get_initial_default_shot_geometry(db, k_ep, k_part) -> dict:
 
 
 def get_initial_shot_geometry(db, k_ep, k_part) -> dict:
+    verbose = False
+
+    if verbose:
+        print_lightcyan(f"get_initial_shot_geometry: {k_ep}:{k_part}")
+
     shot_geometry = dict()
     if k_part in ['g_debut', 'g_fin']:
         # Get the list of editions and episode that are used by this generique
@@ -258,10 +263,15 @@ def get_initial_shot_geometry(db, k_ep, k_part) -> dict:
                         pass
     else:
         # Get All geometry for all editions ofr this ep/part
+        if verbose:
+            print_lightgrey(f"\t- available editions: {db['editions']['available']}")
+
         for k_ed in db['editions']['available']:
             if k_ed not in db[k_ep]['video'].keys():
                 continue
 
+            if verbose:
+                print_lightgrey(f"\t- parts: {list(db[k_ep]['video'][k_ed].keys())}")
             db_video = db[k_ep]['video'][k_ed][k_part]
             if 'shots' not in db_video.keys():
                 continue
@@ -270,10 +280,9 @@ def get_initial_shot_geometry(db, k_ep, k_part) -> dict:
                 try:
                     nested_dict_set(shot_geometry,
                         shot['geometry']['shot'].copy(),
-                        k_ed, k_ep_tmp, k_part, shot['start'])
+                        k_ed, k_ep, k_part, shot['start'])
                 except:
                     pass
-
 
     return shot_geometry
 

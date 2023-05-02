@@ -452,7 +452,9 @@ class Widget_controls(QWidget, Ui_widget_controls):
                 return True
             else:
                 print(f"\twheel: send to parent")
-                return self.__parent.event_wheel(event)
+                if self.__parent.event_wheel(event):
+                    event.accept()
+                    return
 
         return super().eventFilter(watched, event)
     # def eventFilter(self, watched: QObject, event: QEvent) -> bool:

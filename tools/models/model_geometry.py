@@ -46,6 +46,7 @@ class Model_geometry():
     def initialize_db_for_geometry(self, db, k_ep, k_part):
         # This function is used by the video editor
         # which uses the consolidated shots
+        verbose = False
 
         # Target geometry
         if k_part in ['g_asuivre', 'g_reportage']:
@@ -64,7 +65,7 @@ class Model_geometry():
         self.db_shot_geometry_initial = get_initial_shot_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
         self.db_shot_geometry = dict()
 
-        if False:
+        if verbose:
             self.is_geometry_db_modified = False
             print_cyan("db_target_geometry_initial:")
             pprint(self.db_target_geometry_initial)

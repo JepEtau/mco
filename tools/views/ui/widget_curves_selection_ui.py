@@ -24,7 +24,7 @@ class Ui_widget_curves_selection(object):
     def setupUi(self, widget_curves_selection):
         if not widget_curves_selection.objectName():
             widget_curves_selection.setObjectName(u"widget_curves_selection")
-        widget_curves_selection.resize(165, 482)
+        widget_curves_selection.resize(172, 482)
         self.verticalLayout_3 = QVBoxLayout(widget_curves_selection)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
         self.verticalLayout_3.setContentsMargins(0, 0, 0, 0)
@@ -88,7 +88,7 @@ class Ui_widget_curves_selection(object):
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.list_shots.sizePolicy().hasHeightForWidth())
         self.list_shots.setSizePolicy(sizePolicy3)
-        self.list_shots.setMinimumSize(QSize(0, 300))
+        self.list_shots.setMinimumSize(QSize(60, 300))
         self.list_shots.setMaximumSize(QSize(40, 16777215))
         self.list_shots.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.list_shots.setProperty("showDropIndicator", False)

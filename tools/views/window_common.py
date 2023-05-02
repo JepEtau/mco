@@ -287,29 +287,7 @@ class Window_common(QMainWindow):
 
 
 
-    def set_current_widget(self, current_widget):
-        # Set current widget and editor
-        # print("set_current_widget: change widget from [%s] to [%s], editor from [%s] to [%s]" %
-        #     (self.current_widget, current_widget, self.current_widget, current_widget))
-        # log.info(f"set current widget: {current_widget}")
 
-        self.current_widget = current_widget
-
-        for e, w in self.widgets.items():
-            if self.current_widget != e:
-                w.leave_widget()
-
-
-        # # Activate the selected editor widget
-        # for e, w in self.widgets.items():
-        #     if self.current_widget == e:
-        #         w.set_selected(True)
-        #         break
-        for e, w in self.widgets.items():
-            if self.current_widget == e:
-                w.activateWindow()
-                w.activate_widget()
-                break
 
     def event_selected_shots_changed(self, selection):
         log.info("selected shot changed")

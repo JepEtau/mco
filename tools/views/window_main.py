@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import platform
 import sys
 sys.path.append('scripts')
 
@@ -135,6 +136,7 @@ class Window_main(Window_common):
 
         # Set initial values
         self.is_repainting = False
+        self.current_entered_widget = ''
 
         # user preferences
         self.set_initial_options(p)
@@ -149,6 +151,7 @@ class Window_main(Window_common):
         self.installEventFilter(self)
 
 
+
     def show_all(self):
         # print_lightcyan(f"show_all")
         self.previous_state = self.windowState()
@@ -160,30 +163,6 @@ class Window_main(Window_common):
             # w.activateWindow()
             w.raise_()
             w.blockSignals(False)
-        # self.blockSignals(True)
-        # print("window_main: show_fullscreen (required for w11)")
-        # saved_current_widget = self.current_widget
-        # for w in self.widgets.values():
-        #     w.blockSignals(True)
-        #     w.showNormal()
-        #     w.activateWindow()
-        #     # w.blockSignals(False)
-
-        # # print("saved_current_widget", saved_current_widget)
-        # if saved_current_widget == '':
-        #     saved_current_widget = self.controller.get_selectable_widgets()[0]
-        # self.set_current_widget(saved_current_widget)
-
-        # for w in self.widgets.values():
-        #     w.blockSignals(False)
-
-        # self.widgets[saved_current_widget].blockSignals(True)
-        # self.widgets[saved_current_widget].showNormal()
-        # self.widgets[saved_current_widget].activateWindow()
-        # self.widgets[saved_current_widget].blockSignals(False)
-
-        # self.is_activated = True
-        # self.blockSignals(False)
 
 
 
@@ -229,9 +208,42 @@ class Window_main(Window_common):
         return super().changeEvent(event)
 
 
+    def set_current_widget(self, current_widget):
+        # print_yellow(f"set current widget: {current_widget}")
+        # Set the new current widget
+        self.current_widget = current_widget
+
+        for e, w in self.widgets.items():
+            if self.current_widget != e:
+                # change style of the widget
+                w.leave_widget()
+                try:
+                    w.set_activate_state(False)
+                except:
+                    pass
+
+        for e, w in self.widgets.items():
+            if self.current_widget == e:
+                w.activateWindow()
+                # Change style of the widget
+                w.activate_widget()
+                break
+        # print_yellow(f"set current widget: done")
 
     def is_widget_active(self, widget_name):
+        # Indicates if this widget is currently used to modify something
         return True if self.current_widget == widget_name else False
+
+
+    def event_widget_entered(self, widget_name):
+        # Usefull to save without selecting widget
+        self.current_entered_widget = widget_name
+
+
+    def event_widget_leaved(self, widget_name):
+        if widget_name == self.current_entered_widget:
+            self.current_entered_widget = ''
+
 
 
 
@@ -304,11 +316,12 @@ class Window_main(Window_common):
                 # return super().wheelEvent(event)
 
 
-        elif event.type() == QEvent.Type.FocusIn:
-            print("main focus in")
-            self.activateWindow()
-            event.accept()
-            return True
+        elif platform.system() == "Windows":
+            if event.type() == QEvent.Type.FocusIn:
+                print("main focus in")
+                self.activateWindow()
+                event.accept()
+                return True
 
         return super().eventFilter(watched, event)
 
@@ -558,6 +571,12 @@ class Window_main(Window_common):
         print_lightgreen(f"main.event_key_pressed: {key}, modifiers=", modifiers)
 
 
+        # Save currently enterd widget
+        if self.current_entered_widget !=  '':
+            if modifiers & Qt.KeyboardModifier.ControlModifier and key == Qt.Key.Key_S:
+                    return self.widgets[self.current_widget].event_key_pressed(event)
+
+
         # Controls
         if key == Qt.Key.Key_Space:
             log.info("Space key event detected")
@@ -568,7 +587,7 @@ class Window_main(Window_common):
 
 
         # Replace
-        if modifiers & Qt.ControlModifier:
+        if modifiers & Qt.KeyboardModifier.ControlModifier:
             if key in [Qt.Key.Key_C, Qt.Key.Key_V]:
                 return self.widget_replace.event_key_pressed(event)
 

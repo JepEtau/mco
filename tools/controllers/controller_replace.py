@@ -10,7 +10,7 @@ from pprint import pprint
 from logger import log
 
 class Controller_replace():
-    signal_replace_list_refreshed = Signal(dict)
+    signal_replace_list_refreshed = Signal(list)
 
     def __init__(self):
         super(Controller_replace, self).__init__()
@@ -18,7 +18,7 @@ class Controller_replace():
     # Replace frames
     #---------------------------------------------------------------------------
     def refresh_replace_list(self):
-        verbose = True
+        verbose = False
         # List of frames to replace
         log.info("refresh list")
         if verbose:
@@ -39,6 +39,7 @@ class Controller_replace():
                     'dst': frame['frame_no'],
                 })
         if verbose:
+            print(f"send signal to refresh replace list widget:")
             pprint(list_replace)
 
         self.signal_replace_list_refreshed.emit(list_replace)

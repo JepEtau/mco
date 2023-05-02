@@ -85,7 +85,7 @@ def set_widget_stylesheet(widget, widget_type=''):
 
         """)
 
-    elif type(widget) is QCheckBox:
+    elif type(widget) is QCheckBox and widget_type == '':
         widget.setStyleSheet("""
             QCheckBox {
                 background-color: rgb(35, 35, 35);
@@ -115,6 +115,42 @@ def set_widget_stylesheet(widget, widget_type=''):
                 background-color: rgb(60, 60, 60);
                 width: 13px;
                 height: 13px;
+            }
+            QCheckBox::indicator:disabled {
+                background-color: rgb(60, 60, 60);
+            }
+        """)
+
+    elif type(widget) is QCheckBox and widget_type == 'small':
+        widget.setStyleSheet("""
+            QCheckBox {
+                background-color: rgb(35, 35, 35);
+                color: rgb(220, 220, 220);
+            }
+            QCheckBox:disabled {
+                color: rgb(60, 60, 60);
+            }
+            QCheckBox::indicator {
+                width: 5px;
+                height: 5px;
+                background-color: rgb(60, 60, 60);
+                border: 1px;
+            }
+            QCheckBox::indicator:checked {
+                /* background-color: rgb(170, 170, 170); */
+                background-color: rgb(51, 102, 204);
+                border: 1px solid rgb(60, 60, 60);
+            }
+            QCheckBox::indicator:indeterminate {
+                /* for debug: correct this */
+                background-color: rgb(100, 100, 100);
+                width: 7px;
+                height: 7px;
+            }
+            QCheckBox::indicator:unchecked {
+                background-color: rgb(60, 60, 60);
+                width: 7px;
+                height: 7px;
             }
             QCheckBox::indicator:disabled {
                 background-color: rgb(60, 60, 60);

@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import platform
 import sys
 
 
@@ -25,6 +26,8 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QTableWidgetItem,
     QWidget,
+    QCheckBox,
+    QHBoxLayout,
 )
 
 from utils.stylesheet import (
@@ -90,20 +93,22 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.tableWidget_shots.clearContents()
         self.tableWidget_shots.setRowCount(0)
 
-        self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
-                            Qt.AlignCenter | Qt.AlignVCenter,
-                            Qt.AlignRight | Qt.AlignVCenter,
-                            Qt.AlignCenter | Qt.AlignVCenter,
-                            Qt.AlignLeft | Qt.AlignVCenter,
-                            Qt.AlignLeft | Qt.AlignVCenter]
-        headers = ["shot", "src", "start", "count", "curves", "new curves"]
-        default_col_width = [50, 60, 65, 60, 60, 40]
-        for col_no, header_str, col_width in zip(range(len(headers)),
-                                                    headers,
-                                                    default_col_width):
-            self.tableWidget_shots.horizontalHeaderItem(col_no).setText(header_str)
-            # self.tableWidget_shots.horizontalHeaderItem(col_no).setTextAlignment(align)
-            self.tableWidget_shots.setColumnWidth(col_no, col_width)
+        self.columns = [
+            ['shot',    50, Qt.AlignRight | Qt.AlignVCenter],
+            ['src',     60, Qt.AlignCenter | Qt.AlignVCenter],
+            ['start',   65, Qt.AlignRight | Qt.AlignVCenter],
+            ['count',   60, Qt.AlignCenter | Qt.AlignVCenter],
+            ['curves',  60, Qt.AlignLeft | Qt.AlignVCenter],
+            ['new c.',  60, Qt.AlignLeft | Qt.AlignVCenter],
+            ['stab.',   30, Qt.AlignCenter | Qt.AlignVCenter],
+            ['geo.',    30, Qt.AlignCenter | Qt.AlignVCenter],
+            ['other',   60, Qt.AlignLeft | Qt.AlignVCenter],
+        ]
+        self.tableWidget_shots.setColumnCount(len(self.columns))
+        for column_no, column in zip(range(len(self.columns)), self.columns):
+            self.tableWidget_shots.horizontalHeaderItem(column_no).setText(column[0])
+            self.tableWidget_shots.horizontalHeaderItem(column_no).setTextAlignment(column[2])
+            self.tableWidget_shots.setColumnWidth(column_no, column[1])
 
         self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
 
@@ -221,6 +226,67 @@ class Widget_selection(QWidget, Ui_widget_selection):
     #     update_selected_widget_stylesheet(self.frame, is_selected=is_selected)
 
 
+    def event_current_shot_modified(self, modifications:dict):
+        self.tableWidget_shots.blockSignals(True)
+        row_no = self.tableWidget_shots.currentRow()
+
+        # Curves
+        k_initial_curves = modifications['curves']['initial']
+        k_new_curves = modifications['curves']['new']
+
+        for column, column_no in zip(self.columns, range(len(self.columns))):
+            if column[0] == 'curves':
+                # Initial curves
+                try:
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(k_initial_curves.replace('~', '')))
+                    f = self.tableWidget_shots.item(row_no, column_no).font()
+                    if (k_initial_curves.startswith('~')
+                    or k_new_curves is not None):
+                        f.setStrikeOut(True)
+                    else:
+                        f.setStrikeOut(False)
+                    self.tableWidget_shots.item(row_no, column_no).setFont(f)
+                except:
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(''))
+            elif column[0] == 'new c.':
+                # New curves
+                try:
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(k_new_curves))
+                except:
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(''))
+
+            elif column[0] == 'stab.':
+                try:
+                    self.tableWidget_shots.cellWidget(row_no, column_no).setChecked(modifications['stabilization'])
+                except:
+                    continue
+                    # self.tableWidget_shots.cellWidget(row_no, column_no).setChecked(False)
+
+            elif column[0] == 'geo.':
+                try:
+                    self.tableWidget_shots.cellWidget(row_no, column_no).setChecked(modifications['geometry'])
+                except:
+                    continue
+                    # self.tableWidget_shots.cellWidget(row_no, column_no).setChecked(False)
+
+            elif column[0] == 'other':
+                try:
+                    self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem(modifications['comment']))
+                except:
+                    continue
+                    # self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem(""))
+
+            else:
+                continue
+
+        # Alignment
+        self.tableWidget_shots.item(row_no, column_no).setTextAlignment(self.columns[row_no][column_no])
+        self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+        self.tableWidget_shots.blockSignals(False)
+
+
+
     def refresh_modification_status(self, modifications:dict):
         # Something has been modified, disable selection until saving or discard
         self.is_modified = modifications['status']
@@ -296,38 +362,6 @@ class Widget_selection(QWidget, Ui_widget_selection):
         self.comboBox_episode.blockSignals(False)
 
 
-    def event_current_shot_modified(self, modifications:dict):
-        self.tableWidget_shots.blockSignals(True)
-        row_no = self.tableWidget_shots.currentRow()
-
-        # Curves
-        k_initial_curves = modifications['curves']['initial']
-        k_new_curves = modifications['curves']['new']
-
-        # Initial curves
-        try:
-            self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(k_initial_curves.replace('~', '')))
-            f = self.tableWidget_shots.item(row_no, 4).font()
-            if (k_initial_curves.startswith('~')
-            or k_new_curves is not None):
-                f.setStrikeOut(True)
-            else:
-                f.setStrikeOut(False)
-            self.tableWidget_shots.item(row_no, 4).setFont(f)
-        except:
-            self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(''))
-
-        # New curves
-        try: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(k_new_curves))
-        except: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(''))
-
-
-        for i in [4, 5]:
-            self.tableWidget_shots.item(row_no, i).setTextAlignment(self.alignment[i])
-            self.tableWidget_shots.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-
-
-        self.tableWidget_shots.blockSignals(False)
 
 
 
@@ -378,47 +412,93 @@ class Widget_selection(QWidget, Ui_widget_selection):
         row_no = 0
         for k_shot, shot in shots.items():
             self.tableWidget_shots.insertRow(row_no)
-            self.tableWidget_shots.setItem(row_no, 0, QTableWidgetItem(str(k_shot)))
-            try:
-                src_txt = f"{shot['src']['k_ed']}:{shot['src']['k_ep']}"
-            except:
-                print_red("ERROR: event_refresh_shotlist: k_ed/k_ep shall be defined in shot src. correct this ASAP")
-            self.tableWidget_shots.setItem(row_no, 1, QTableWidgetItem(src_txt))
-
-            self.tableWidget_shots.setItem(row_no, 2, QTableWidgetItem(f"{shot['src']['start']}"))
-            self.tableWidget_shots.setItem(row_no, 3, QTableWidgetItem(f"{shot['src']['count']}"))
 
             # Curves
             k_initial_curves = shot['modifications']['curves']['initial']
             k_new_curves = shot['modifications']['curves']['new']
 
-            # Initial curves
-            try:
-                self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(k_initial_curves.replace('~', '')))
-                f = self.tableWidget_shots.item(row_no, 4).font()
-                if (k_initial_curves.startswith('~')
-                or k_new_curves is not None):
-                    f.setStrikeOut(True)
-                else:
-                    f.setStrikeOut(False)
-                self.tableWidget_shots.item(row_no, 4).setFont(f)
-            except:
-                self.tableWidget_shots.setItem(row_no, 4, QTableWidgetItem(''))
+            for column_no, column in zip(range(len(self.columns)), self.columns):
 
-            # New curves
-            try: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(k_new_curves))
-            except: self.tableWidget_shots.setItem(row_no, 5, QTableWidgetItem(''))
+                if column[0] == 'shot':
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(str(k_shot)))
+                elif column[0] == 'src':
+                    try:
+                        src_txt = f"{shot['src']['k_ed']}:{shot['src']['k_ep']}"
+                    except:
+                        print_red("ERROR: event_refresh_shotlist: k_ed/k_ep shall be defined in shot src. correct this ASAP")
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(src_txt))
+                    self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+                elif column[0] == 'start':
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(f"{shot['src']['start']}"))
+                    self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
+                elif column[0] == 'count':
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(f"{shot['src']['count']}"))
+                    self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
-            for i in range(len(self.alignment)):
-                self.tableWidget_shots.item(row_no, i).setTextAlignment(self.alignment[i])
-                self.tableWidget_shots.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+                elif column[0] == 'curves':
+                    # Initial curves
+                    try:
+                        self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(k_initial_curves.replace('~', '')))
+                        f = self.tableWidget_shots.item(row_no, column_no).font()
+                        if (k_initial_curves.startswith('~')
+                        or k_new_curves is not None):
+                            f.setStrikeOut(True)
+                        else:
+                            f.setStrikeOut(False)
+                        self.tableWidget_shots.item(row_no, column_no).setFont(f)
+                    except:
+                        self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(''))
+
+                    self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+                elif column[0] == 'new c.':
+                    # New curves
+                    try: self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(k_new_curves))
+                    except: self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(''))
+
+                    self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+                elif column[0] == 'stab.':
+                    widget = QWidget()
+                    __layout = QHBoxLayout(widget)
+                    w = QCheckBox(widget)
+                    w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                    set_widget_stylesheet(w, 'small')
+                    __layout.addWidget(w)
+                    self.tableWidget_shots.setCellWidget(row_no, column_no, widget)
+                    self.tableWidget_shots.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                elif column[0] == 'geo.':
+                    widget = QWidget()
+                    __layout = QHBoxLayout(widget)
+                    w = QCheckBox(widget)
+                    w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                    set_widget_stylesheet(w, 'small')
+                    __layout.addWidget(w)
+                    self.tableWidget_shots.setCellWidget(row_no, column_no, widget)
+                    self.tableWidget_shots.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+                elif column[0] == 'other':
+                    widget = QWidget()
+                    __layout = QHBoxLayout(widget)
+                    w = QCheckBox(widget)
+                    w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                    set_widget_stylesheet(w, 'small')
+                    __layout.addWidget(w)
+                    self.tableWidget_shots.setCellWidget(row_no, column_no, widget)
+                    self.tableWidget_shots.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
 
             if not shot['is_valid']:
                 # If true, it means that all pictures are present in the folder
                 # Bug: this does not work
                 self.tableWidget_shots.item(row_no, 0).setData(Qt.FontRole, QColor(Qt.red))
             row_no += 1
+
 
         self.tableWidget_shots.selectionModel().clearSelection()
         self.tableWidget_shots.blockSignals(False)
@@ -582,6 +662,10 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def mousePressEvent(self, event):
         self.previous_position = QCursor().pos()
+        if platform.system() != "Windows":
+            if not self.is_activated():
+                self.set_activate_state(True)
+                self.signal_widget_selected.emit(self.objectName())
 
     def mouseMoveEvent(self, event):
         if self.previous_position is not None:

@@ -113,8 +113,10 @@ class Widget_curves(Widget_common, Ui_widget_curves):
                     self.radioButton_select_m_channel]):
             set_curves_radiobutton_stylesheet(c, w)
 
-        self.installEventFilter(self)
         self.adjustSize()
+
+        self.frame.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        self.installEventFilter(self)
 
 
     def event_curves_selection_changed(self, k_curves):
@@ -377,7 +379,6 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
         return self.widget_rgb_graph.event_key_pressed(event)
 
-        # return super().keyPressEvent(event)
 
 
 

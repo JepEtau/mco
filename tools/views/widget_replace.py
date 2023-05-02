@@ -79,10 +79,12 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.tableWidget_replace.itemDoubleClicked[QTableWidgetItem].connect(self.event_move_to_frame_no)
         self.tableWidget_replace.installEventFilter(self)
 
-        self.controller.signal_replace_list_refreshed[dict].connect(self.event_replace_list_refreshed)
+        self.controller.signal_replace_list_refreshed[list].connect(self.event_replace_list_refreshed)
         self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
         self.installEventFilter(self)
+
+        self.frame.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
         set_stylesheet(self)
         self.adjustSize()
@@ -140,8 +142,10 @@ class Widget_replace(Widget_common, Ui_widget_replace):
         self.pushButton_set_preview.blockSignals(False)
 
 
-    def event_replace_list_refreshed(self, values:dict):
+    def event_replace_list_refreshed(self, values:list):
         log.info("refresh list of frames to replace")
+        # print_lightgreen("refresh list of frames to replace")
+        # pprint(values)
         self.tableWidget_replace.blockSignals(True)
 
         self.tableWidget_replace.clearContents()
@@ -308,33 +312,4 @@ class Widget_replace(Widget_common, Ui_widget_replace):
 
         return False
 
-
-
-    # def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-    #     # print("* eventFilter: widget_%s: " % (self.objectName()), event.type())
-
-    #     # Filter press/release events
-    #     if event.type() == QEvent.KeyPress:
-    #         key = event.key()
-    #         modifier = event.modifiers()
-    #         if modifier & Qt.ControlModifier and key == Qt.Key_A:
-    #             self.tableWidget_replace.selectAll()
-    #             event.accept()
-    #             return True
-    #         elif key == Qt.Key_Delete:
-    #             self.event_selection_removed()
-    #             return True
-
-    #         return self.ui.keyPressEvent(event)
-
-    #     # print(event.type())
-    #     if event.type() == QEvent.FocusOut:
-    #         self.tableWidget_replace.clearSelection()
-
-    #     elif event.type() == QEvent.Enter:
-    #         self.is_entered = True
-    #     elif event.type() == QEvent.Leave:
-    #         self.is_entered = False
-
-    #     return super().eventFilter(watched, event)
 

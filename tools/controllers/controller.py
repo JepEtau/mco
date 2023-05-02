@@ -539,9 +539,10 @@ class Controller_video_editor(Controller_common,
             # Replace
             self.refresh_replace_for_each_frame(shot=shot)
 
-        print_lightcyan("================================== SHOT =======================================")
-        pprint(self.shots[0])
-        print_lightcyan("-------------------------------------------------------------------------------")
+        if verbose and False:
+            print_lightcyan("================================== SHOT =======================================")
+            pprint(self.shots[0])
+            print_lightcyan("-------------------------------------------------------------------------------")
 
 
         self.playlist_properties.update({
@@ -590,6 +591,10 @@ class Controller_video_editor(Controller_common,
 
                 # Refresh UI
                 self.signal_stabilization_done.emit()
+
+
+            # Refresh geometry widget
+            self.refresh_geometry_for_each_frame(shot=shot)
 
             # Consolidate preview
             self.signal_preview_options_consolidated.emit(self.preview_options)

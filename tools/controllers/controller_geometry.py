@@ -143,7 +143,7 @@ class Controller_geometry():
         shot_geometry = self.model_database.get_shot_geometry(shot=shot)
 
         stabilize_settings = self.model_database.get_shot_stabilize_settings(shot=shot)
-        # TODO what to di if is erroneous?
+        # TODO what to do if is erroneous?
         try:
             is_stabilize_enabled = stabilize_settings['enable']
         except:

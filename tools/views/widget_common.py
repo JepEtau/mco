@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-
+import platform
 import sys
-
 
 from logger import log
 from pprint import pprint
@@ -67,6 +66,8 @@ class Widget_common(QWidget):
         self.previous_position = None
         self.__parent = parent
 
+        self.set_activate_state(False)
+
         # # Set stylesheet,  adjust size
         # set_stylesheet(self)
         # self.set_selected(False)
@@ -75,6 +76,11 @@ class Widget_common(QWidget):
         # # Install events for this widget
         # self.installEventFilter(self)
 
+    def set_activate_state(self, state:bool):
+        self.__is_activated = state
+
+    def is_activated(self):
+        return self.__is_activated
 
     def leave_widget(self):
         update_selected_widget_stylesheet(self.frame, is_selected=False)
@@ -187,6 +193,10 @@ class Widget_common(QWidget):
 
     def mousePressEvent(self, event):
         self.previous_position = QCursor().pos()
+        if platform.system() != "Windows":
+            if not self.is_activated():
+                self.set_activate_state(True)
+                self.signal_widget_selected.emit(self.objectName())
 
 
     def mouseMoveEvent(self, event):
@@ -226,7 +236,7 @@ class Widget_common(QWidget):
                 print(f"\tsend to parent")
                 return self.__parent.event_key_pressed(event)
 
-        if event.type() == QEvent.Type.KeyRelease:
+        elif event.type() == QEvent.Type.KeyRelease:
             print_lightcyan(f"eventFilter: widget_{self.objectName()}: keyrelease {event.key()}")
             if self.event_key_released(event):
                 print(f"\taccepted")
@@ -236,7 +246,7 @@ class Widget_common(QWidget):
                 print(f"\tsend to parent")
                 return self.__parent.event_key_released(event)
 
-        if event.type() == QEvent.Type.Wheel:
+        elif event.type() == QEvent.Type.Wheel:
             print_lightcyan(f"eventFilter: widget_{self.objectName()}: wheel ")
             if self.event_wheel(event):
                 print(f"\taccepted")
@@ -247,14 +257,59 @@ class Widget_common(QWidget):
                 return self.__parent.event_wheel(event)
 
 
-        elif event.type() == QEvent.Type.FocusIn:
-            self.signal_widget_selected.emit(self.objectName())
-            event.accept()
-            return True
-        #     # print("         QEvent.Enter")
-        # elif event.type() == QEvent.Leave:
-        #     # print("         QEvent.Leave")
+        elif watched.objectName() == self.objectName():
+            # print_yellow(f"eventFilter: widget_{self.objectName()}: {event.type()}, {watched.objectName()}")
+
+            # print(watched)
+            if platform.system() == "Windows":
+                if event.type() == QEvent.Type.FocusIn:
+                    # print_lightcyan(f"eventFilter: widget_{self.objectName()}: FocusIn")
+                    self.signal_widget_selected.emit(self.objectName())
+                    event.accept()
+                    return True
+            #     # print("         QEvent.Enter")
+            elif event.type() == QEvent.Type.Enter:
+                # print_lightcyan(f"eventFilter: widget_{self.objectName()}: Enter")
+                self.__parent.event_widget_entered(self.objectName())
+                event.accept()
+                return True
+            elif event.type() == QEvent.Type.Leave:
+                # print_lightcyan(f"eventFilter: widget_{self.objectName()}: Leave")
+                self.__parent.event_widget_leaved(self.objectName())
+                event.accept()
+                return True
+
+            # elif event.type() == QEvent.Type.WindowActivate:
+            #     # print_lightgreen(f"eventFilter: widget_{self.objectName()}: ActivationChange")
+            #     if not self.is_activated():
+            #         self.set_activate_state(True)
+            #         print_lightgreen(f"eventFilter: widget_{self.objectName()}: activate")
+            #         self.signal_widget_selected.emit(self.objectName())
+            #         event.accept()
+            #         return True
+
+            # elif event.type() == QEvent.Type.WindowDeactivate:
+            #     self.set_activate_state(False)
+            # else:
+            #     print_lightgreen(f"eventFilter: widget_{self.objectName()}: {event.type()}, {watched.objectName()}")
+
+                    # print("         QEvent.Leave")
         #     self.is_entered = False
+
+            # eventFilter: widget_geometry: 24, geometry    WindowActivate
+            # eventFilter: widget_geometry: 99, geometry
+            # eventFilter: widget_geometry: 77, geometry
+            # eventFilter: widget_geometry: 12, geometry
+            # eventFilter: widget_geometry: 12, geometry
+            # eventFilter: widget_geometry: 2, geometry
+            # eventFilter: widget_geometry: 3, geometry
+            # eventFilter: widget_geometry: 25, geometry
+            # eventFilter: widget_geometry: 99, geometry
+            # eventFilter: widget_geometry: 77, geometry
+            # eventFilter: widget_geometry: 12, geometry
+            # eventFilter: widget_geometry: 12, geometry
+
+
 
 
         # if event.type() == QEvent.ActivationChange:

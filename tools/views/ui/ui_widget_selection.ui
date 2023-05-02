@@ -6,13 +6,13 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>500</width>
-    <height>832</height>
+    <width>514</width>
+    <height>820</height>
    </rect>
   </property>
   <property name="maximumSize">
    <size>
-    <width>500</width>
+    <width>800</width>
     <height>16777215</height>
    </size>
   </property>
@@ -74,6 +74,12 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
+          </property>
+          <property name="minimumSize">
+           <size>
+            <width>50</width>
+            <height>0</height>
+           </size>
           </property>
           <item>
            <property name="text">
@@ -249,6 +255,9 @@
           </property>
           <item>
            <widget class="QPushButton" name="pushButton_replace">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -282,6 +291,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="pushButton_stabilize">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -315,6 +327,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="pushButton_rgb_curves">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -348,6 +363,9 @@
           </item>
           <item>
            <widget class="QPushButton" name="pushButton_geometry">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
             <property name="sizePolicy">
              <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -450,7 +468,7 @@
          <number>20</number>
         </property>
         <property name="columnCount">
-         <number>6</number>
+         <number>10</number>
         </property>
         <attribute name="horizontalHeaderVisible">
          <bool>true</bool>
@@ -468,10 +486,10 @@
          <bool>false</bool>
         </attribute>
         <attribute name="verticalHeaderMinimumSectionSize">
-         <number>22</number>
+         <number>24</number>
         </attribute>
         <attribute name="verticalHeaderDefaultSectionSize">
-         <number>22</number>
+         <number>24</number>
         </attribute>
         <attribute name="verticalHeaderHighlightSections">
          <bool>true</bool>
@@ -537,7 +555,27 @@
         </column>
         <column>
          <property name="text">
-          <string>new_curves</string>
+          <string>new</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>stab.</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>geo.</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>replace</string>
+         </property>
+        </column>
+        <column>
+         <property name="text">
+          <string>other</string>
          </property>
         </column>
         <item row="0" column="0">

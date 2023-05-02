@@ -81,7 +81,7 @@ def parse_replace_configurations(db, k_ep_or_g:str):
 def get_replaced_frames(db, k_ep, k_part) -> dict:
     """ Returns a dict of frames to replace
     """
-    verbose = True
+    verbose = False
     if verbose:
         print_lightgreen(f"get_replaced_frames: {k_ep}:{k_part}")
     replace = dict()

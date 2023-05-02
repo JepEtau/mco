@@ -30,7 +30,6 @@ class Model_replace():
 
 
     def initialize_db_for_replace(self, db, k_ep, k_part):
-        print(f"Model_replace: get initial geometry: {k_ep}:{k_part}")
         # This function is used by the video editor
         # which uses the consolidated shots
         self.db_replaced_frames_initial = get_replaced_frames(db, k_ep=k_ep, k_part=k_part)

@@ -380,7 +380,7 @@ class Table_stabilize(QTableWidget):
 
         # Stabilization mode
         widget = QWidget()
-        horizontalLayout = QHBoxLayout(widget)
+        __layout = QHBoxLayout(widget)
         for w_name in ["vertical", "horizontal", "rotation"]:
             w = QCheckBox(widget)
             w.setText(w_name)
@@ -389,7 +389,7 @@ class Table_stabilize(QTableWidget):
             w.setFocusPolicy(Qt.NoFocus)
             set_widget_stylesheet(w)
             w.toggled[bool].connect(self.event_mode_changed)
-            horizontalLayout.addWidget(w)
+            __layout.addWidget(w)
         self.setCellWidget(row_no, 3, widget)
 
 
@@ -513,7 +513,7 @@ class Table_stabilize(QTableWidget):
 
         # Stabilization mode
         widget = QWidget()
-        horizontalLayout = QHBoxLayout(widget)
+        __layout = QHBoxLayout(widget)
         for w_name in ["vertical", "horizontal", "rotation"]:
             w = QCheckBox(widget)
             w.setText(w_name)
@@ -522,7 +522,7 @@ class Table_stabilize(QTableWidget):
             w.setFocusPolicy(Qt.NoFocus)
             w.toggled[bool].connect(self.event_mode_changed)
             set_widget_stylesheet(w)
-            horizontalLayout.addWidget(w)
+            __layout.addWidget(w)
         self.setCellWidget(row_no, 3, widget)
         self.history.add(self.History.Action.insert,
             {'rows': [row_no], 'alignement': self.alignment})
