@@ -26,7 +26,6 @@
 - stabilize widget: verify if "save putton' to enabled if segment removed
 
 (2)
-- widgets: set focus is not working
 - save when closing the application is not working
 - stabilize widget: update save button when loading a segment or after modifications: use a signal
 - selection widget: display unsaved shot in selection widget
@@ -46,6 +45,39 @@
 # TODO other
 - create a script to remove previous images
 - list models that are already tested
+- list python modules (to clean the environment)
+    AnimeSR
+        basicsr
+        facexlib
+        ffmpeg-python
+        numpy
+        opencv-python
+        pillow
+        psutil
+        torch
+        torchvision
+        tqdm
+    ESRGAN
+        opencv_python
+        numpy
+        torch
+        rich
+        typer
+    Real-ESRGAN
+        basicsr>=1.4.2
+        facexlib>=0.2.5
+        gfpgan>=1.3.5
+        numpy
+        opencv-python
+        Pillow
+        torch>=1.7
+        torchvision
+        tqdm
+    Real-CUGAN
+        torch>=1.0.0
+        numpy
+        opencv-python
+        ~~moviepy~~                 <-- no needed
 
 
 # Known issues, but won't correct
