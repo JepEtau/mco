@@ -1,12 +1,11 @@
 # TODO script
 (1)
-- use ROI when zooming in/out
+- Get statistics about max dimensions for each shot: detect if crop is not correct
 - deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image
-- stabilize: when segments are erroneous, do not stabilize
 
 (2)
+- (?) use ROI when zooming in/out
 - (?) smooth stabilization: to evaluate (g_fin)
-
 
 (3)
 - effects: verify when replacing shots (asuivre/precedemment)
@@ -16,13 +15,13 @@
 
 # TODO video editor
 (1)
-- reorder .ini files
-- video editor shall never write hash codes
+- to verify: video editor shall never write hash codes
 
-- curves: add loop mode
 - curves: Add luma value in curves
-- curves: Add other rgb filters to ajdust levels
-- geometry: add 'minimum crop'
+- curves: Add shift or alt button to move line
+
+- Add loop mode
+- geometry: add 'minimum crop': statistic (after stabilization) and frame_no
 - stabilize widget: verify if "save putton' to enabled if segment removed
 
 (2)
@@ -34,6 +33,7 @@
 - when no image loaded, reset all widgets / disable all widgets if images missing
 
 (3)
+- reorder options in .ini files
 - add buttons to show/hide widgets
 - stabilize: when table is disable, set qWidgetItem to disable (text should be grey)
 - change selection widget to a standard widget (common)

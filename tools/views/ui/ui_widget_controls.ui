@@ -41,6 +41,27 @@
       <number>0</number>
      </property>
      <item>
+      <widget class="QPushButton" name="pushButton_loop">
+       <property name="focusPolicy">
+        <enum>Qt::NoFocus</enum>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="icon">
+        <iconset>
+         <normaloff>tools/icons/blue/play.svg</normaloff>
+         <normalon>../../icons/blue/repeat.svg</normalon>tools/icons/blue/play.svg</iconset>
+       </property>
+       <property name="checkable">
+        <bool>true</bool>
+       </property>
+       <property name="flat">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="Widget_custom_qslider" name="slider_frames" native="true">
        <property name="sizePolicy">
         <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">

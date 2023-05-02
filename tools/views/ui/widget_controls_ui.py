@@ -35,6 +35,18 @@ class Ui_widget_controls(object):
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setSizeConstraint(QLayout.SetMaximumSize)
         self.horizontalLayout_2.setContentsMargins(-1, -1, -1, 0)
+        self.pushButton_loop = QPushButton(widget_controls)
+        self.pushButton_loop.setObjectName(u"pushButton_loop")
+        self.pushButton_loop.setFocusPolicy(Qt.NoFocus)
+        icon = QIcon()
+        icon.addFile(u"tools/icons/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"./icons/blue/repeat.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_loop.setIcon(icon)
+        self.pushButton_loop.setCheckable(True)
+        self.pushButton_loop.setFlat(True)
+
+        self.horizontalLayout_2.addWidget(self.pushButton_loop)
+
         self.slider_frames = Widget_custom_qslider(widget_controls)
         self.slider_frames.setObjectName(u"slider_frames")
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
@@ -51,9 +63,9 @@ class Ui_widget_controls(object):
         self.pushButton_play_pause = QPushButton(widget_controls)
         self.pushButton_play_pause.setObjectName(u"pushButton_play_pause")
         self.pushButton_play_pause.setFocusPolicy(Qt.NoFocus)
-        icon = QIcon()
-        icon.addFile(u"tools/icons/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_play_pause.setIcon(icon)
+        icon1 = QIcon()
+        icon1.addFile(u"tools/icons/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.pushButton_play_pause.setIcon(icon1)
         self.pushButton_play_pause.setCheckable(True)
         self.pushButton_play_pause.setFlat(True)
 
@@ -135,6 +147,7 @@ class Ui_widget_controls(object):
 
     def retranslateUi(self, widget_controls):
         widget_controls.setWindowTitle(QCoreApplication.translate("widget_controls", u"Form", None))
+        self.pushButton_loop.setText("")
         self.pushButton_play_pause.setText("")
         self.label_ed_ep_part.setText(QCoreApplication.translate("widget_controls", u"s:ep11:g_reportage", None))
         self.label_shot_no.setText(QCoreApplication.translate("widget_controls", u"130", None))
