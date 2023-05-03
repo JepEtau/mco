@@ -662,10 +662,10 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def mousePressEvent(self, event):
         self.previous_position = QCursor().pos()
-        if platform.system() != "Windows":
-            if not self.is_activated():
-                self.set_activate_state(True)
-                self.signal_widget_selected.emit(self.objectName())
+        # if platform.system() != "Windows":
+        if not self.is_activated():
+            self.set_activate_state(True)
+            self.signal_widget_selected.emit(self.objectName())
 
     def mouseMoveEvent(self, event):
         if self.previous_position is not None:

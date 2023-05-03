@@ -332,6 +332,9 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         log.info("close button clicked")
 
 
+    def event_key_released(self, event:QKeyEvent) -> bool:
+        return self.widget_rgb_graph.event_key_released(event)
+
 
     def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()

@@ -16,9 +16,8 @@
 # TODO video editor
 (1)
 - to verify: video editor shall never write hash codes
-
+- curves: mouseclick on graph creates a point if another widget is selected
 - curves: Add luma value in curves
-- curves: Add shift or alt button to move line
 
 - Add loop mode
 - geometry: add 'minimum crop': statistic (after stabilization) and frame_no

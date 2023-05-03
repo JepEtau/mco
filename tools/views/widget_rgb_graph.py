@@ -22,6 +22,7 @@ from PySide6.QtGui import (
     QPolygon,
     QKeyEvent,
     QMouseEvent,
+    QCursor,
 )
 from PySide6.QtWidgets import (
     QSizePolicy,
@@ -240,9 +241,18 @@ class Widget_rgb_graph(QWidget):
         if not self.is_enabled:
             return
 
+        if self.shift_key_pressed and event.button() == Qt.LeftButton:
+            print("save position of event")
+            self.shift_key_pressed = True
+            self.saved_position = self.get_event_coordinates(event)
+            print(f"saved position: ({self.saved_position[0]:02f}, {self.saved_position[1]:02f})")
+            return
+        else:
+            self.saved_position = None
+
         if not self.ui.was_active():
             # Just changed editor, do not add a new point
-            print("changed editor")
+            print("curves: changed editor")
             return
 
         w = float(self.width())
@@ -261,43 +271,39 @@ class Widget_rgb_graph(QWidget):
         curve = self.channels[self.k_selected]['curve']
         if event.button() == Qt.LeftButton:
             # print("mousePressEvent: (%d; %d) in (%d;%d) -> (%f; %f)" % (x, y, x_max, y_max, xf, yf))
-            if self.shift_key_pressed:
-                self.saved_position = [xf, yf]
-                print(f"detected a translation from [{xf},{yf}]")
+            is_selected = curve.select_point(xf, yf)
+            if is_selected:
+                self.update()
+                selected_point = curve.selected_point()
+                self.m_grab_offset_x_f = selected_point.x() - xf
+                self.m_grab_offset_y_f = selected_point.y() - yf
+
+                self.signal_point_selected.emit(self.point_to_coordinates(selected_point))
+
             else:
-                is_selected = curve.select_point(xf, yf)
-                if is_selected:
-                    self.update()
-                    selected_point = curve.selected_point()
-                    self.m_grab_offset_x_f = selected_point.x() - xf
-                    self.m_grab_offset_y_f = selected_point.y() - yf
+                x = float(event.pos().x() + (3))
+                y = h - event.pos().y() - (3 + 2)
 
-                    self.signal_point_selected.emit(self.point_to_coordinates(selected_point))
-
-                else:
-                    x = float(event.pos().x() + (3))
-                    y = h - event.pos().y() - (3 + 2)
-
-                    # x(px) -> xf [0;1.0]
-                    # y(px) -> yf [0;1.0]
-                    xf = np.float32(x) / x_max
-                    yf = np.float32(y) / y_max
+                # x(px) -> xf [0;1.0]
+                # y(px) -> yf [0;1.0]
+                xf = np.float32(x) / x_max
+                yf = np.float32(y) / y_max
 
 
-                    if curve.add_point(xf, yf):
-                        if curve.select_point(xf, yf):
-                            selected_point = curve.selected_point()
-                            self.m_grab_offset_x_f = selected_point.x() - xf
-                            self.m_grab_offset_y_f = selected_point.y() - yf
+                if curve.add_point(xf, yf):
+                    if curve.select_point(xf, yf):
+                        selected_point = curve.selected_point()
+                        self.m_grab_offset_x_f = selected_point.x() - xf
+                        self.m_grab_offset_y_f = selected_point.y() - yf
 
-                            self.flush_polypoints()
-                            self.update()
-                            self.signal_point_selected.emit(self.point_to_coordinates(selected_point))
-                            self.signal_graph_modified.emit(self.get_curves_channels())
-                        else:
-                            print("\terror: cannot select new added point @(%f, %f)" % (xf, yf))
+                        self.flush_polypoints()
+                        self.update()
+                        self.signal_point_selected.emit(self.point_to_coordinates(selected_point))
+                        self.signal_graph_modified.emit(self.get_curves_channels())
                     else:
-                        print("\terror: creation failed @(%f, %f)" % (xf, yf))
+                        print("\terror: cannot select new added point @(%f, %f)" % (xf, yf))
+                else:
+                    print("\terror: creation failed @(%f, %f)" % (xf, yf))
 
         elif event.button() == Qt.RightButton:
             is_selected = curve.select_point(xf, yf)
@@ -335,12 +341,19 @@ class Widget_rgb_graph(QWidget):
         curve = self.channels[self.k_selected]['curve']
 
 
-        if self.shift_key_pressed:
-            print(f"apply a translation to [{xf},{yf}]")
+        if self.shift_key_pressed and self.saved_position is not None:
+            xf, yf = self.get_event_coordinates(event)
+            # print(f"apply a translation from ({self.saved_position[0]:02f}, {self.saved_position[1]:02f})",
+            #         f"-> ({xf:02f}, {yf:02f})")
             delta_x = xf - self.saved_position[0]
             delta_y = yf - self.saved_position[1]
-            curve.apply_translation(delta_x, delta_y)
-
+            # print(f"\t{delta_x:.04f}, {delta_y:.04f}")
+            is_moved = curve.apply_translation(delta_x, delta_y)
+            if is_moved:
+                self.saved_position = [xf, yf]
+                self.signal_graph_modified.emit(self.get_curves_channels())
+                self.flush_polypoints()
+                self.update()
             return
 
 
@@ -386,14 +399,24 @@ class Widget_rgb_graph(QWidget):
             self.signal_graph_modified.emit(self.get_curves_channels())
 
 
+    def get_event_coordinates(self, event:QMouseEvent) -> list:
+        x_max = np.float32(self.width()) - 1
+        y_max = np.float32(self.height()) - 1
+        x = np.float32(event.pos().x())
+        y = np.float32(self.height() - event.pos().y())
+        xf = np.float32(x / x_max)
+        yf = np.float32(y / y_max)
+        return (xf, yf)
+
 
     def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
 
         if modifiers == Qt.KeyboardModifier.ShiftModifier:
+            print("curves: detected shift key")
             self.shift_key_pressed = True
-            self.saved_position = None
+            return True
 
         if key == Qt.Key.Key_Delete or key == Qt.Key.Key_Backspace:
             curve = self.channels[self.k_selected]['curve']
@@ -409,7 +432,9 @@ class Widget_rgb_graph(QWidget):
 
 
     def event_key_released(self, event:QKeyEvent) -> bool:
+        print(f"rgb_curves: release key {event.key()}")
         self.shift_key_pressed = False
+        self.saved_position = None
         return True
 
 

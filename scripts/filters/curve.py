@@ -23,6 +23,8 @@
 import numpy as np
 from pprint import pprint
 
+from utils.pretty_print import print_purple, print_yellow
+
 EPSILON = 1e-6
 
 class Curve_point(object):
@@ -34,6 +36,11 @@ class Curve_point(object):
         self._x = np.round(np.clip(x, 0.0, 1.0, dtype=np.float32), decimals=6)
 
     def set_y(self, y:np.float32):
+        self._y = np.round(np.clip(y, 0.0, 1.0, dtype=np.float32), decimals=6)
+
+
+    def set_x_y(self, x:np.float32, y:np.float32):
+        self._x = np.round(np.clip(x, 0.0, 1.0, dtype=np.float32), decimals=6)
         self._y = np.round(np.clip(y, 0.0, 1.0, dtype=np.float32), decimals=6)
 
     def x(self):
@@ -390,27 +397,101 @@ class Curve(object):
         self._selected_point.set_y(y)
 
 
-    def apply_translation(self,  delta_x:np.float32, delta_y:np.float32):
-        print(f"apply_translation: {delta_x}, {delta_y}")
-        pass
-        # for point in self._points:
-        #     print(point)
+    def apply_translation(self,  delta_x:np.float32, delta_y:np.float32, sample_count=256):
 
-        #     # Translation
-        #     point[0] += delta_x
-        #     point[1] += delta_y
+        if ((delta_x < 0 and delta_y < 0)
+            or (delta_x > 0 and delta_y > 0)):
+            return True
+
+        delta_abs = np.sqrt(delta_x**2 + delta_y**2)
+        shift = delta_abs * np.cos(45)
+        if (delta_x < 0 and delta_y > 0):
+            delta = -1 * delta_abs
+            shift *= -1
+        else:
+            delta = delta_abs
+
+        if delta_abs < 1/sample_count:
+            return False
+
+        # print_yellow(f"delta: {delta_x:.04f}")
+
+        for point in self._points:
+            x = point.x()
+            y = point.y()
+            # print(f"\tpoint: [{x:.04f}, {y:.04f}]", end='')
+
+            if x == 0 and y == 0:
+                if delta < 0:
+                    point.set_y(delta_abs)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (move from origin, delta < 0)")
+                else:
+                    point.set_x(delta_abs)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (move from origin), delta > 0")
+                continue
+
+            # on x_min axis
+            elif y == 0:
+                if x < delta_abs and delta < 0:
+                    # x_min axis -> y_min axis
+                    point.set_x(0)
+                    point.set_y(delta_abs - x)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (x_min axis -> y_min axis)")
+                else:
+                    # stay on x_min axis
+                    point.set_x(x + delta)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (stay on x_min axis)")
+                continue
+
+            # on y_min axis
+            elif x == 0:
+                if y < delta_abs and delta > 0:
+                    # y_min axis -> x_min axis
+                    point.set_x(delta_abs - y)
+                    point.set_y(0)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (y_min axis -> x_min axis)")
+                else:
+                    # stay on y_min axis
+                    point.set_y(y - delta)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (stay on y_min axis)")
+                continue
 
 
-        #     if point[1] == 0:
-        #         # on x axis
-        #         if point[0] + t_x < 0
+            if x == 1 and y == 1:
+                if delta < 0:
+                    point.set_x(1 - delta_abs)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (move from origin, delta < 0)")
+                else:
+                    point.set_y(1 - delta_abs)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (move from origin), delta > 0")
+                continue
 
+            # on x_max axis
+            elif y == 1:
+                if x + delta_abs > 1 and delta > 0:
+                    point.set_x(1)
+                    point.set_y(2 - (x + delta_abs))
+                    # print_purple(f" -> [{point.x():.04f}, {point.y():.04f}] (x_max axis -> y_max axis)")
+                else:
+                    # stay on x_max axis
+                    point.set_x(x + delta)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (stay on x_min axis)")
+                continue
 
+            # on y_max axis
+            elif x == 1:
+                if y + delta_abs > 1 and delta < 0:
+                    point.set_x(2 - (y + delta_abs))
+                    point.set_y(1)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (y_max axis -> x_max axis)")
+                else:
+                    # stay on y_max axis
+                    point.set_y(y - delta)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (stay on y_max axis)")
+                continue
 
+            point.set_x_y(x + shift, y - shift)
+            # print(f" ({shift:.04} -> [{x + shift:.04f}, {y - shift:.04f}] (normal)")
 
-        #         t_x = (delta_x * 0.707)
-        #         point[0] += t_x
+        return True
 
-        #     elif point[0] == 0:
-        #         # on y axis
-        #         point[1] += (delta_y * 0.707)

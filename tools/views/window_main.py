@@ -316,12 +316,12 @@ class Window_main(Window_common):
                 # return super().wheelEvent(event)
 
 
-        elif platform.system() != "Windows":
-            if event.type() == QEvent.Type.FocusIn:
-                print("main focus in")
-                self.activateWindow()
-                event.accept()
-                return True
+        # elif platform.system() != "Windows":
+        elif event.type() == QEvent.Type.FocusIn:
+            print("main focus in")
+            self.activateWindow()
+            event.accept()
+            return True
 
         return super().eventFilter(watched, event)
 
