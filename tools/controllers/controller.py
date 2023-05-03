@@ -141,7 +141,7 @@ class Controller_video_editor(Controller_common,
         })
 
 
-    def consolidate_shot_for_edition(self, shot, k_ep, k_part, k_step):
+    def consolidate_shot_for_video_editor(self, shot, k_ep, k_part, k_step):
         db = self.model_database.database()
 
         p_missing_frame = os.path.join('tools', 'icons', 'missing.png')
@@ -229,7 +229,7 @@ class Controller_video_editor(Controller_common,
         shot_geometry = self.model_database.get_shot_geometry(shot=shot)
         if shot_geometry is None and default_shot_geometry is None:
             if shot['k_part'] in ['g_asuivre', 'g_reportage']:
-                print_yellow("\t\t\tNo shot geometry defined, create a shot geometry")
+                print_yellow(f"\t\t\tNo shot geometry defined, create a shot geometry {shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}")
                 # Not geometry define, create a new one
                 self.model_database.set_shot_geometry(shot=shot, geometry={
                     'crop': [0] * 4,
@@ -253,7 +253,7 @@ class Controller_video_editor(Controller_common,
                 default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
 
         if False:
-            print_yellow(f"consolidate_shot_for_edition: {k_ep}:{k_part} <- {shot['k_ep']}:{shot['k_part']}:{shot['no']}")
+            print_yellow(f"consolidate_shot_for_video_editor: {k_ep}:{k_part} <- {shot['k_ep']}:{shot['k_part']}:{shot['no']}")
             pprint(filepath_tmp)
 
         # Create a list of frames for this shot
@@ -345,7 +345,7 @@ class Controller_video_editor(Controller_common,
                 self.filepath.append(filepath_tmp)
 
             print_yellow(f"event_selected_step_changed: {k_ep}:{k_part} <- {shot['k_ep']}:{shot['k_part']}:{shot['no']}")
-            pprint(filepath_tmp)
+            # pprint(filepath_tmp)
 
             # Modify the list of frames for this shot
             for p, i in zip(filepath_tmp, range(len(filepath_tmp))):
@@ -441,7 +441,7 @@ class Controller_video_editor(Controller_common,
         shots = db_video['shots']
         log.info(f"consolidate all shots: {k_ep_selected}:{k_part_selected}:{k_step}")
         for shot in shots:
-            self.consolidate_shot_for_edition(shot=shot,
+            self.consolidate_shot_for_video_editor(shot=shot,
             k_ep=k_ep_selected, k_part=k_part_selected, k_step=k_step)
 
         # Create a dict to update the "browser" part of the editor widget

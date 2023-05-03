@@ -34,7 +34,7 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
     if shot['geometry']['target'] is None:
         print_red("\t\t\terror: no target geometry defined for %s:%s:%s" % (
             shot['k_ed'], shot['k_ep'], shot['k_part']))
-        sys.exit()
+        # sys.exit()
         shot['geometry']['target'] = {'w': shot['geometry']['dimensions']['final']['w']}
 
     if shot['geometry']['shot'] is None:

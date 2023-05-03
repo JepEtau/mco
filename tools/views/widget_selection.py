@@ -135,6 +135,12 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
 
 
+    def set_activate_state(self, state:bool):
+        self.__is_activated = state
+
+    def is_activated(self):
+        return self.__is_activated
+
     def leave_widget(self):
         update_selected_widget_stylesheet(self.frame, is_selected=False)
         # self.repaint()

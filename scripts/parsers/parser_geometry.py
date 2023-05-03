@@ -191,12 +191,12 @@ def get_initial_target_geometry(db, k_ep, k_part) -> dict:
 def get_initial_default_shot_geometry(db, k_ep, k_part) -> dict:
     """ Returns a list of crops/resize per part for each edition
     """
-    verbose = False
+    verbose = True
     if verbose:
         print_lightgreen("get_initial_default_shot_geometry for %s:%s" % (k_ep, k_part))
     default_shot_geometry = dict()
 
-    if k_part in K_GENERIQUES:
+    if k_part in ['g_debut', 'g_fin']:
         # Get the list of editions and episode that are used by this generique
         dependencies = get_dependencies_for_generique(db, k_part_g=k_part)
 
@@ -204,7 +204,8 @@ def get_initial_default_shot_geometry(db, k_ep, k_part) -> dict:
         for k_ed in dependencies.keys():
             for k_ep_tmp in dependencies[k_ed]:
                 db_video = db[k_ep_tmp]['video'][k_ed][k_part]
-                # print("get_initial_default_shot_geometry: %s:%s:%s" % (k_ed,k_ep_src,k_part))
+                if verbose:
+                    print(f"get_initial_default_shot_geometry for {k_part}: {k_ed}:{k_ep_tmp}:{k_part}")
                 # pprint(db[k_ep_src][k_ed][k_part])
                 try:
                     nested_dict_set(default_shot_geometry,
@@ -229,7 +230,7 @@ def get_initial_default_shot_geometry(db, k_ep, k_part) -> dict:
 
     if verbose:
         pprint(default_shot_geometry)
-        sys.exit()
+        # sys.exit()
     return default_shot_geometry
 
 

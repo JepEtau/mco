@@ -30,7 +30,8 @@ def verify_stabilize_segments(shot, segments):
     if (previous_segment['start'] < shot['start']
         or previous_segment['end'] >= shot['start'] + shot['count']):
         # Segment shall fit in shot
-       return False
+        print_red(f"Error: segment [{previous_segment['start']}..{previous_segment['end']}]is not a part of the shot [{shot['start']}..{shot['start'] + shot['count']}]")
+        return False
 
     if len(segments) == 1:
         # Single segment

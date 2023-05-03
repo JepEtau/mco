@@ -48,7 +48,6 @@ def generate_image(frame:dict, preview_options:dict):
         img_initial = frame['cache_initial']
     img_height, img_width, c = img_initial.shape
 
-
     # Final width and height
     w_final = geometry_values['final']['w']
     h_final = geometry_values['final']['h']
