@@ -2,8 +2,8 @@
 (1)
 
 (2)
+- stats: geometry: list deshake shots whose crop is not correct (black frame). used only if sharpen images exist
 - deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image
-- Get statistics about max dimensions for each shot: detect if crop is not correct
 - (?) use ROI when zooming in/out
 - (?) smooth stabilization: to evaluate (g_fin)
 
@@ -20,7 +20,6 @@
 
 (2)
 - curves: bug: mouseclick on graph creates a point if another widget is selected
-- geometry: add 'minimum crop': statistic (after stabilization) and frame_no
 - save when closing the application is not working
 - selection widget: display unsaved shot in selection widget
 - buttons (save, discard, ...) not working for some widgets (which ones?)
@@ -38,7 +37,8 @@
 
 
 # TODO other
-- create a script to remove previous images
+- create a script to remove previous unused images
+
 - list models that are already tested
 - list python modules (to clean the environment)
     AnimeSR
@@ -72,9 +72,10 @@
         torch>=1.0.0
         numpy
         opencv-python
-        ~~moviepy~~                 <-- no needed
+        ~~moviepy~~                 <-- not needed
 
 
 # Known issues, but won't correct
 - add_borders is inserted at the wrong place if using s0
+- initial image dimensions is declared as constants: stats are erroneous with s0
 - when saving/discarding, the widget automatically disable save/discard buttons without validation from the controller (i.e. assume saving is done and correct)

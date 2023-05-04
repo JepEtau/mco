@@ -45,7 +45,7 @@ def generate_video(db, k_ed:str, k_ep:str,
     create_folder_for_video(db, k_ep)
 
 
-    # List video files for each
+    # List video files for each part
     video_files = dict()
     for k in K_ALL_PARTS:
         video_files[k] = {

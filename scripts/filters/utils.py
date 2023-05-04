@@ -6,6 +6,9 @@ from copy import deepcopy
 import platform
 
 
+INITIAL_FRAME_WIDTH = 720
+INITIAL_FRAME_HEIGHT = 576
+
 FINAL_FRAME_WIDTH = 1440
 FINAL_FRAME_HEIGHT = 1080
 STEP_INC = 1

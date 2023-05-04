@@ -160,7 +160,7 @@ def deshake(shot, images:list, image_list:list,
                 do_force=do_force)
             del deshaker
 
-            print(transformations)
+            # print(transformations)
 
         elif algorithm == 'skimage_deshaker':
             deshaker = Skimage_deshaker()

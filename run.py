@@ -24,6 +24,7 @@ from utils.common import (
     get_database_size,
 )
 from utils.frames import copy_frames_for_study
+from utils.stats import display_stats
 from video.concatenation import (
     merge_audio_and_video_tracks,
     concatenate_all_clips,
@@ -116,6 +117,12 @@ def main():
         action="store_true",
         required=False,
         help="debug: analyse les fichiers de configuration")
+
+    parser.add_argument("--stats",
+        action="store_true",
+        required=False,
+        help="debug: affiche les avancées/stats")
+
 
     parser.add_argument("--regenerate",
         action="store_true",
@@ -238,6 +245,16 @@ def main():
 
     gc.collect()
     print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
+
+
+    # Collect statistics
+    #-------------------------------------------------
+    if arguments.stats:
+        display_stats(
+            db=g_database,
+            k_ep=k_episode,
+            k_part=arguments.part)
+        return
 
     # Audio
     #-------------------------------------------------
