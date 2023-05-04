@@ -16,8 +16,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
-    QLayout, QLineEdit, QPushButton, QSizePolicy,
-    QSpacerItem, QVBoxLayout, QWidget)
+    QLineEdit, QPushButton, QSizePolicy, QSpacerItem,
+    QVBoxLayout, QWidget)
 
 from views.widget_custom_qslider import Widget_custom_qslider
 
@@ -25,28 +25,11 @@ class Ui_widget_controls(object):
     def setupUi(self, widget_controls):
         if not widget_controls.objectName():
             widget_controls.setObjectName(u"widget_controls")
-        widget_controls.resize(869, 85)
+        widget_controls.resize(762, 88)
         self.verticalLayout = QVBoxLayout(widget_controls)
         self.verticalLayout.setSpacing(3)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(6, 6, 6, 21)
-        self.horizontalLayout_2 = QHBoxLayout()
-        self.horizontalLayout_2.setSpacing(4)
-        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
-        self.horizontalLayout_2.setSizeConstraint(QLayout.SetMaximumSize)
-        self.horizontalLayout_2.setContentsMargins(-1, -1, -1, 0)
-        self.pushButton_loop = QPushButton(widget_controls)
-        self.pushButton_loop.setObjectName(u"pushButton_loop")
-        self.pushButton_loop.setFocusPolicy(Qt.NoFocus)
-        icon = QIcon()
-        icon.addFile(u"tools/icons/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon.addFile(u"./icons/blue/repeat.svg", QSize(), QIcon.Normal, QIcon.On)
-        self.pushButton_loop.setIcon(icon)
-        self.pushButton_loop.setCheckable(True)
-        self.pushButton_loop.setFlat(True)
-
-        self.horizontalLayout_2.addWidget(self.pushButton_loop)
-
         self.slider_frames = Widget_custom_qslider(widget_controls)
         self.slider_frames.setObjectName(u"slider_frames")
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
@@ -56,48 +39,48 @@ class Ui_widget_controls(object):
         self.slider_frames.setSizePolicy(sizePolicy)
         self.slider_frames.setMinimumSize(QSize(750, 30))
 
-        self.horizontalLayout_2.addWidget(self.slider_frames)
+        self.verticalLayout.addWidget(self.slider_frames)
 
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setSpacing(12)
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.pushButton_play_pause = QPushButton(widget_controls)
         self.pushButton_play_pause.setObjectName(u"pushButton_play_pause")
         self.pushButton_play_pause.setFocusPolicy(Qt.NoFocus)
-        icon1 = QIcon()
-        icon1.addFile(u"tools/icons/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_play_pause.setIcon(icon1)
+        icon = QIcon()
+        icon.addFile(u"./tools/icons/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.pushButton_play_pause.setIcon(icon)
         self.pushButton_play_pause.setCheckable(True)
         self.pushButton_play_pause.setFlat(True)
 
         self.horizontalLayout.addWidget(self.pushButton_play_pause)
 
+        self.pushButton_loop = QPushButton(widget_controls)
+        self.pushButton_loop.setObjectName(u"pushButton_loop")
+        self.pushButton_loop.setFocusPolicy(Qt.NoFocus)
+        icon1 = QIcon()
+        icon1.addFile(u"./tools/icons/grey/repeat.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u"./tools/icons/blue/repeat.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_loop.setIcon(icon1)
+        self.pushButton_loop.setCheckable(True)
+        self.pushButton_loop.setFlat(True)
 
-        self.horizontalLayout_2.addLayout(self.horizontalLayout)
+        self.horizontalLayout.addWidget(self.pushButton_loop)
 
 
-        self.verticalLayout.addLayout(self.horizontalLayout_2)
+        self.horizontalLayout_3.addLayout(self.horizontalLayout)
 
-        self.horizontalLayout_3 = QHBoxLayout()
-        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.label_ed_ep_part = QLabel(widget_controls)
         self.label_ed_ep_part.setObjectName(u"label_ed_ep_part")
-        self.label_ed_ep_part.setMinimumSize(QSize(140, 0))
-        self.label_ed_ep_part.setMaximumSize(QSize(140, 16777215))
+        self.label_ed_ep_part.setMinimumSize(QSize(170, 0))
+        self.label_ed_ep_part.setMaximumSize(QSize(180, 16777215))
         self.label_ed_ep_part.setFrameShape(QFrame.Panel)
         self.label_ed_ep_part.setFrameShadow(QFrame.Plain)
         self.label_ed_ep_part.setLineWidth(1)
 
         self.horizontalLayout_3.addWidget(self.label_ed_ep_part)
-
-        self.label_shot_no = QLabel(widget_controls)
-        self.label_shot_no.setObjectName(u"label_shot_no")
-        self.label_shot_no.setMinimumSize(QSize(40, 0))
-        self.label_shot_no.setMaximumSize(QSize(40, 16777215))
-        self.label_shot_no.setStyleSheet(u"gridline-color: rgb(38, 162, 105);\n"
-"border-color: rgb(145, 65, 172);")
-        self.label_shot_no.setFrameShape(QFrame.Panel)
-
-        self.horizontalLayout_3.addWidget(self.label_shot_no)
 
         self.horizontalSpacer_2 = QSpacerItem(10, 20, QSizePolicy.Fixed, QSizePolicy.Minimum)
 
@@ -147,10 +130,9 @@ class Ui_widget_controls(object):
 
     def retranslateUi(self, widget_controls):
         widget_controls.setWindowTitle(QCoreApplication.translate("widget_controls", u"Form", None))
-        self.pushButton_loop.setText("")
         self.pushButton_play_pause.setText("")
-        self.label_ed_ep_part.setText(QCoreApplication.translate("widget_controls", u"s:ep11:g_reportage", None))
-        self.label_shot_no.setText(QCoreApplication.translate("widget_controls", u"130", None))
+        self.pushButton_loop.setText("")
+        self.label_ed_ep_part.setText(QCoreApplication.translate("widget_controls", u"s:ep11:g_reportage:999", None))
         self.lineEdit_frame_no.setText(QCoreApplication.translate("widget_controls", u"123456", None))
         self.lineEdit_frame_index.setText(QCoreApplication.translate("widget_controls", u"123456", None))
     # retranslateUi

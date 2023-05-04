@@ -403,7 +403,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         elif key == Qt.Key.Key_Insert:
             self.tableWidget_stabilize.append_segment()
             return True
-
+        elif key == Qt.Key.Key_Delete:
+            self.tableWidget_stabilize.remove_segment()
+            return True
 
         elif key == Qt.Key.Key_F2:
             if self.pushButton_set_preview.isEnabled():

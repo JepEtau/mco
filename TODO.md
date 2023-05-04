@@ -19,11 +19,9 @@
 - curves: mouseclick on graph creates a point if another widget is selected
 - curves: Add luma value in curves
 
-- Add loop mode
-- geometry: add 'minimum crop': statistic (after stabilization) and frame_no
-- stabilize widget: verify if "save putton' to enabled if segment removed
 
 (2)
+- geometry: add 'minimum crop': statistic (after stabilization) and frame_no
 - save when closing the application is not working
 - stabilize widget: update save button when loading a segment or after modifications: use a signal
 - selection widget: display unsaved shot in selection widget

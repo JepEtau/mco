@@ -469,7 +469,7 @@ class Table_stabilize(QTableWidget):
                 {'segments': segments, 'alignment': self.alignment})
         self.clearContents()
         self.setRowCount(0)
-
+        self.__parent.edition_started()
 
     def remove_segment(self):
         row_nos = list(set([index.row() for index in self.selectedIndexes()]))
@@ -482,7 +482,7 @@ class Table_stabilize(QTableWidget):
                 self.removeRow(row_no)
             self.history.add(self.History.Action.remove,
                 {'segments': segments, 'alignment': self.alignment})
-
+        self.__parent.edition_started()
 
     def insert_segment(self, row_no=None):
         self.sortByColumn(-1, Qt.AscendingOrder)
@@ -605,6 +605,7 @@ class Table_stabilize(QTableWidget):
                 'segments': segments,
                 'alignment': self.alignment})
 
+        self.__parent.edition_started()
         self.clearSelection()
         self.setCurrentItem(self.item(-1, -1))
         clipboard = QApplication.clipboard()

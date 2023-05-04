@@ -72,9 +72,7 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.icon_pause.addFile("tools/icons/blue/pause.svg", QSize(), QIcon.Normal, QIcon.Off)
         # self.pushButton_play_pause.setIcon(self.icon_pause)
 
-
         self.label_ed_ep_part.clear()
-        self.label_shot_no.clear()
         self.lineEdit_frame_no.clear()
         self.lineEdit_frame_index.clear()
 
@@ -92,6 +90,7 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
         # Signals
         self.pushButton_play_pause.toggled.connect(self.event_play_pause)
+        self.pushButton_loop.toggled.connect(self.event_loop_toggled)
         self.slider_frames.valueChanged.connect(self.event_slider_moved)
 
         self.controller.signal_ready_to_play[dict].connect(self.event_refresh_slider)
@@ -102,7 +101,6 @@ class Widget_controls(QWidget, Ui_widget_controls):
         self.set_selected(False)
         set_stylesheet(self)
         set_widget_stylesheet(self.label_ed_ep_part)
-        set_widget_stylesheet(self.label_shot_no)
         self.adjustSize()
 
 
@@ -124,7 +122,9 @@ class Widget_controls(QWidget, Ui_widget_controls):
     def get_preferences(self):
         preferences = {
             'geometry': self.geometry().getRect(),
-            'widget': dict(),
+            'widget': {
+                'loop': self.pushButton_loop.isChecked()
+            },
         }
         return preferences
 
@@ -132,11 +132,16 @@ class Widget_controls(QWidget, Ui_widget_controls):
     def set_initial_options(self, preferences:dict):
         log.info("set_initial_options")
         s = preferences['controls']
-        # for w in [
-        #     self.spinBox_speed]:
-        #     w.blockSignals(True)
 
-        # self.spinBox_speed.setValue(s['speed'])
+        self.pushButton_loop.blockSignals(True)
+        try:
+            w = preferences[self.objectName()]['widget']
+            self.pushButton_loop.setChecked(w['loop']['enabled'])
+        except:
+            self.pushButton_loop.setChecked(False)
+        self.pushButton_loop.blockSignals(False)
+
+
         self.adjustSize()
 
         # Geometry
@@ -155,8 +160,7 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
 
     def refresh_values(self, frame:dict):
-        self.label_ed_ep_part.setText(f"{frame['k_ed']}:{frame['k_ep']}:{frame['k_part']}")
-        self.label_shot_no.setText(f"{frame['shot_no']}")
+        self.label_ed_ep_part.setText(f"{frame['k_ed']}:{frame['k_ep']}:{frame['k_part']}:{frame['shot_no']:03d}")
         self.lineEdit_frame_no.setText(f"{frame['frame_no']}")
         self.lineEdit_frame_index.setText(f"{frame['index']}")
 
@@ -323,6 +327,12 @@ class Widget_controls(QWidget, Ui_widget_controls):
             self.signal_button_pushed.emit('play')
         self.pushButton_play_pause.blockSignals(False)
 
+
+    def event_loop_toggled(self, checked):
+        pass
+
+    def is_loop_enabled(self):
+        return self.pushButton_loop.isChecked()
 
     def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()

@@ -821,29 +821,14 @@ class Window_main(Window_common):
                     and preview_shot_geometry['crop_edition']
                     and preview_shot_geometry['resize_preview']):
 
-                    # Image is resized, add the recalculated crop
-                    crop = shot_geometry['crop']
-                    if not preview['geometry']['add_borders']:
-                        crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
-
-                    crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                            width=initial_img_width, height=initial_img_height, crop=crop)
-                    w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
-                    pad_left = int(((FINAL_FRAME_WIDTH - w_tmp) / 2) + 0.5)
-                    # print("\t-> w=%d, c_w=%d, w_tmp=%d, pad: %d" % (w, c_w, w_tmp, pad_left))
-
-                    crop_left = int((crop_left * FINAL_FRAME_HEIGHT) / float(cropped_height))
-                    crop_top = int((crop_top * FINAL_FRAME_HEIGHT) / float(cropped_height))
-
-                    final_pad = self.image['geometry_values']['pad']
-
                     # Add the target rect
+                    pad_left = ((FINAL_FRAME_WIDTH - geometry['target']['w']) / 2) + 0.5
                     pen = QPen(COLOR_PART_CROP_RECT)
                     pen.setWidth(PEN_CROP_SIZE)
                     pen.setStyle(Qt.SolidLine)
                     self.painter.setPen(pen)
                     self.painter.drawRect(
-                        PAINTER_MARGIN_LEFT + final_pad['left'] - 1,
+                        PAINTER_MARGIN_LEFT + pad_left - 1,
                         PAINTER_MARGIN_LEFT - delta_y - 1,
                         geometry['target']['w'] + 1,
                         FINAL_FRAME_HEIGHT + 1)

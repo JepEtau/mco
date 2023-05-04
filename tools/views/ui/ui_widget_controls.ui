@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>869</width>
-    <height>85</height>
+    <width>762</width>
+    <height>88</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -30,53 +30,26 @@
     <number>21</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <widget class="Widget_custom_qslider" name="slider_frames" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>750</width>
+       <height>30</height>
+      </size>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayout_3">
      <property name="spacing">
-      <number>4</number>
+      <number>12</number>
      </property>
-     <property name="sizeConstraint">
-      <enum>QLayout::SetMaximumSize</enum>
-     </property>
-     <property name="bottomMargin">
-      <number>0</number>
-     </property>
-     <item>
-      <widget class="QPushButton" name="pushButton_loop">
-       <property name="focusPolicy">
-        <enum>Qt::NoFocus</enum>
-       </property>
-       <property name="text">
-        <string/>
-       </property>
-       <property name="icon">
-        <iconset>
-         <normaloff>tools/icons/blue/play.svg</normaloff>
-         <normalon>../../icons/blue/repeat.svg</normalon>tools/icons/blue/play.svg</iconset>
-       </property>
-       <property name="checkable">
-        <bool>true</bool>
-       </property>
-       <property name="flat">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="Widget_custom_qslider" name="slider_frames" native="true">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Maximum">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>750</width>
-         <height>30</height>
-        </size>
-       </property>
-      </widget>
-     </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
@@ -89,7 +62,28 @@
          </property>
          <property name="icon">
           <iconset>
-           <normaloff>tools/icons/blue/play.svg</normaloff>tools/icons/blue/play.svg</iconset>
+           <normaloff>../../icons/blue/play.svg</normaloff>../../icons/blue/play.svg</iconset>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButton_loop">
+         <property name="focusPolicy">
+          <enum>Qt::NoFocus</enum>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset>
+           <normaloff>../../icons/grey/repeat.svg</normaloff>
+           <normalon>../../icons/blue/repeat.svg</normalon>../../icons/grey/repeat.svg</iconset>
          </property>
          <property name="checkable">
           <bool>true</bool>
@@ -101,21 +95,17 @@
        </item>
       </layout>
      </item>
-    </layout>
-   </item>
-   <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_3">
      <item>
       <widget class="QLabel" name="label_ed_ep_part">
        <property name="minimumSize">
         <size>
-         <width>140</width>
+         <width>170</width>
          <height>0</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>140</width>
+         <width>180</width>
          <height>16777215</height>
         </size>
        </property>
@@ -129,33 +119,7 @@
         <number>1</number>
        </property>
        <property name="text">
-        <string>s:ep11:g_reportage</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="label_shot_no">
-       <property name="minimumSize">
-        <size>
-         <width>40</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>40</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="styleSheet">
-        <string notr="true">gridline-color: rgb(38, 162, 105);
-border-color: rgb(145, 65, 172);</string>
-       </property>
-       <property name="frameShape">
-        <enum>QFrame::Panel</enum>
-       </property>
-       <property name="text">
-        <string>130</string>
+        <string>s:ep11:g_reportage:999</string>
        </property>
       </widget>
      </item>

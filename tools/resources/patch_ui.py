@@ -18,7 +18,7 @@ def main():
 
     for line in fileinput.input(arguments.file, inplace=True):
         search_expression = "../../icons/"
-        replace_expression = "./icons/"
+        replace_expression = "./tools/icons/"
         if search_expression in line:
             line = line.replace(search_expression, replace_expression)
         sys.stdout.write(line)

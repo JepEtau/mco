@@ -359,8 +359,15 @@ class Window_common(QMainWindow):
 
         self.current_frame_index += 1
         if self.current_frame_index >= self.playing_frame_count:
-            self.timer.stop()
-            self.widget_controls.event_stop()
+            if self.widget_controls.is_loop_enabled():
+                # in loop mode restart from beginning
+                self.current_frame_index = 0
+                self.widget_controls.set_playing_frame_properties(self.current_frame_index)
+                f = self.controller.get_frame_at_index(self.current_frame_index)
+                self.display_frame(f)
+            else:
+                self.timer.stop()
+                self.widget_controls.event_stop()
         else:
             self.widget_controls.set_playing_frame_properties(self.current_frame_index)
             f = self.controller.get_frame_at_index(self.current_frame_index)
