@@ -193,20 +193,21 @@ def display_stats(db, k_ep:str, k_part:str=''):
         if geometry_crop_count > 0:
             print_lightcyan("crop area:")
             for k in ['top', 'bottom', 'left', 'right']:
-                print(f"    {k}:\tmin: {min(geometry_crop[k])},\tmax: {max(geometry_crop[k])}")
+                print(lightgrey(f"    {k}:\tmin:"), f"{min(geometry_crop[k])}",
+                      lightgrey(f",\tmax:"), f"{max(geometry_crop[k])}")
 
             print_lightcyan("cropped image:")
-            print(f"    width:")
-            print(f"        min: {geometry_crop['width']['min']['value']}, shot no. {geometry_crop['width']['min']['shot_no']} ({geometry_crop['width']['min']['shot_start']})")
-            print(f"        max: {geometry_crop['width']['max']['value']}, shot no. {geometry_crop['width']['max']['shot_no']} ({geometry_crop['width']['max']['shot_start']})")
-            print(f"    height:")
-            print(f"        min: {geometry_crop['height']['min']['value']}, shot no. {geometry_crop['height']['min']['shot_no']} ({geometry_crop['height']['min']['shot_start']})")
-            print(f"        max: {geometry_crop['height']['max']['value']}, shot no. {geometry_crop['height']['max']['shot_no']} ({geometry_crop['height']['max']['shot_start']})")
+            for k in ['width', 'height']:
+                print(f"    {k}:")
+                for m in ['min', 'max']:
+                    print(lightgrey(f"        {m}:"), f"{geometry_crop[k][m]['value']}",
+                        lightgrey(f"shot no."), f"{geometry_crop[k][m]['shot_no']} ({geometry_crop[k][m]['shot_start']})")
 
             print_lightcyan("resized image (fit to width ignored), width:")
-            print(f"    target: {geometry_resized_width['target']}")
-            print(f"    min: {geometry_resized_width['min']['value']}, shot no. {geometry_resized_width['min']['shot_no']} ({geometry_resized_width['min']['shot_start']})")
-            print(f"    max: {geometry_resized_width['max']['value']}, shot no. {geometry_resized_width['max']['shot_no']} ({geometry_resized_width['max']['shot_start']})")
+            print(lightgrey(f"    target:"), f"{geometry_resized_width['target']}")
+            for m in ['min', 'max']:
+                print(lightgrey(f"    {m}:"), f"{geometry_resized_width[m]['value']}",
+                      lightgrey(f"shot no."), f"{geometry_resized_width[m]['shot_no']} ({geometry_resized_width[m]['shot_start']})")
 
             print_lightcyan(f"shots without geometry settings ({len(geometry_crop['undefined'])}):")
             print("    ", geometry_crop['undefined'])

@@ -5,6 +5,8 @@ from utils.common import K_PARTS_ORDERED
 from utils.time_conversions import ms_to_frames
 
 
+
+
 def print_red(*values: object,
             sep: str | None = " ",
             end: str | None = "\n",
@@ -47,6 +49,8 @@ def print_cyan(*values: object,
     print("\033[36m{}\033[00m" .format(values[0]), sep=sep, end=end, flush=flush)
 
 
+def lightgrey(*values: object) -> str:
+    return "\033[37m{}\033[00m" .format(values[0])
 def print_lightgrey(*values: object,
             sep: str | None = " ",
             end: str | None = "\n",
