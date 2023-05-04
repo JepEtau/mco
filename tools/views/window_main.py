@@ -1,14 +1,15 @@
 # -*- coding: utf-8 -*-
 import platform
 import sys
-sys.path.append('scripts')
 
+sys.path.append('scripts')
 from utils.pretty_print import *
 
 from functools import partial
 import gc
 import time
 import os
+import numpy as np
 
 from pprint import pprint
 from logger import log
@@ -681,26 +682,33 @@ class Window_main(Window_common):
                 preview_shot_geometry = preview['geometry']['shot']
 
                 if preview_shot_geometry['crop_edition'] and not preview_shot_geometry['crop_preview']:
-                    # Crop editon: rectangle but no preview
+                    # Add a red rectangle to the image
 
                     if preview_shot_geometry['resize_preview']:
-                        # Crop editon: rectangle + resize
-                        # Draw rect on the resized image
+                        # Resize the image (i.e. draw rect on the resized image)
                         x0 = PAINTER_MARGIN_LEFT
                         y0 = PAINTER_MARGIN_TOP - delta_y
 
                         # Patch the crop value if displaying deshaked shot
-                        crop = shot_geometry['crop']
-                        if not preview['geometry']['add_borders']:
-                            crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
+                        # crop = shot_geometry['crop']
+                        # if not preview['geometry']['add_borders']:
+                        #     crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
 
-                        # Image is resized, add the recalculated crop
-                        crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                            width=initial_img_width, height=initial_img_height, crop=crop)
-                        w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
-                        pad_left = int(((FINAL_FRAME_WIDTH - w_tmp) / 2)+0.5)
-                        crop_left = int((crop_left * FINAL_FRAME_HEIGHT) / float(cropped_height))
-                        crop_top = int((crop_top * FINAL_FRAME_HEIGHT) / float(cropped_height))
+                        # # Image is resized, add the recalculated crop
+                        # crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
+                        #     width=initial_img_width, height=initial_img_height, crop=crop)
+                        # w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
+                        pprint(self.image['geometry_values'])
+                        crop_left = self.image['geometry_values']['crop'][2]
+                        crop_top = self.image['geometry_values']['crop'][0]
+                        cropped_height = self.image['geometry_values']['initial']['h'] - (self.image['geometry_values']['crop'][0] + self.image['geometry_values']['crop'][1])
+
+                        w_tmp = self.image['geometry_values']['resize']['w']
+                        pad_left = int(((FINAL_FRAME_WIDTH - w_tmp) / 2))
+
+                        ratio = np.float32(cropped_height) / FINAL_FRAME_HEIGHT
+                        crop_left = int(crop_left / ratio)
+                        crop_top = int(crop_top / ratio)
 
                         # print("\t-> w=%d, c_w=%d, w_tmp=%d, pad: %d" % (w, c_w, w_tmp, pad_left))
                         # print("\t-> crop_left=%d, crop_top=%d" % (c_l, crop_top))
@@ -764,15 +772,19 @@ class Window_main(Window_common):
                             cropped_height + 1)
 
                 elif preview_shot_geometry['crop_preview']:
-                    if preview_shot_geometry['resize_preview']:
-                        # print("paintEvent: draw cropped image and resized")
-                        if not preview['geometry']['add_borders']:
-                            crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                                width=initial_img_width, height=initial_img_height, crop=shot_geometry['crop'])
+                    # Image is cropped
 
-                        w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
-                        pad_left = int(((FINAL_FRAME_WIDTH - img_width) / 2) + 0.5)
-                        # print("paintEvent: pad=%d" % (pad_left))
+                    if preview_shot_geometry['resize_preview']:
+                        # Image is also resized
+
+                        # if not preview['geometry']['add_borders']:
+                        #     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
+                        #         width=initial_img_width, height=initial_img_height, crop=shot_geometry['crop'])
+
+                        # w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
+                        # pad_left = int(((FINAL_FRAME_WIDTH - img_width) / 2) + 0.5)
+                        pad_left = (self.image['geometry_values']['pad']['left']
+                                    + self.image['geometry_values']['pad_error'][2])
 
                         self.image['origin'] = [
                             PAINTER_MARGIN_LEFT + pad_left,

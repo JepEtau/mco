@@ -18,16 +18,16 @@ from filters.filters import (
     cv2_geometry_filter,
     filter_rgb,
     get_mean_luma)
-from filters.utils import get_dimensions_from_crop_values
+from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
 
 
 def generate_image(frame:dict, preview_options:dict):
-    verbose = False
+    verbose = True
 
     if verbose:
         log.info("generate single image")
         print_purple(f"Generate image: {frame['k_ed']}:{frame['k_ep']}:{frame['k_part']}:{frame['shot_no']:03}:{frame['frame_no']}")
-        pprint(frame)
+        # pprint(frame)
 
     # geometry_values are the calculated dimensions, crop, pad etc.
     geometry_values = deepcopy(frame['geometry_values'])
@@ -49,9 +49,11 @@ def generate_image(frame:dict, preview_options:dict):
         img_initial = frame['cache_initial']
     img_height, img_width, c = img_initial.shape
 
+
     # Final width and height
-    w_final = geometry_values['final']['w']
-    h_final = geometry_values['final']['h']
+    w_final = FINAL_FRAME_WIDTH
+    h_final = FINAL_FRAME_HEIGHT
+
 
     # Shot geometry
     shot_geometry = frame['geometry']['shot']
@@ -63,8 +65,10 @@ def generate_image(frame:dict, preview_options:dict):
         print_lightcyan("\t- geometry used for this shot:", end=' ')
         print(shot_geometry)
 
+
     preview_geometry = preview_options['geometry']
     preview_shot_geometry = preview_options['geometry']['shot']
+
 
     # Cropped dimensions
     if preview_options['geometry']['add_borders']:
@@ -154,6 +158,7 @@ def generate_image(frame:dict, preview_options:dict):
             pprint(frame['geometry'])
             print("Error: generate_image: resize not possible because no crop preview selected")
 
+
     # Resize the image
     #------------------------------------
     target_width = frame['geometry']['target']['w']
@@ -166,7 +171,7 @@ def generate_image(frame:dict, preview_options:dict):
         if preview_shot_geometry['crop_preview']:
             # Resize the cropped image
             if verbose:
-                print("\t-> Resize the cropped image")
+                print(f"\t-> Resize the cropped image to {geometry_values['resize']['w']}x{geometry_values['resize']['h']}")
 
             img_resized = cv2.resize(src=img_cropped,
                 dsize=(geometry_values['resize']['w'], geometry_values['resize']['h']),
@@ -199,7 +204,8 @@ def generate_image(frame:dict, preview_options:dict):
         # Error case
         pad_error = geometry_values['pad_error']
         if pad_error is not None:
-            # print_red("Error: add padding but should not")
+            if verbose:
+                print("\t-> Add padding used to identify error")
             img_resized_consolidated = cv2.copyMakeBorder(src=img_resized_cropped,
             top=pad_error[0], bottom=pad_error[1],
             left=pad_error[2], right=pad_error[3],

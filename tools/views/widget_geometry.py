@@ -223,12 +223,16 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         # Select shot/default
         self.groupBox_default_shot_geometry.blockSignals(True)
         self.groupBox_shot_geometry.blockSignals(True)
+
         if geometry['shot'] is None:
+            # Use default geometry
             self.groupBox_default_shot_geometry.setChecked(True)
             self.groupBox_shot_geometry.setChecked(False)
         else:
+            # Use custom geometry
             self.groupBox_default_shot_geometry.setChecked(False)
             self.groupBox_shot_geometry.setChecked(True)
+
         self.groupBox_default_shot_geometry.blockSignals(False)
         self.groupBox_shot_geometry.blockSignals(False)
 
@@ -469,6 +473,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
                 self.groupBox_default_shot_geometry.blockSignals(False)
                 self.groupBox_shot_geometry.blockSignals(False)
                 return
+
         elif selected == 'shot':
             state = self.groupBox_default_shot_geometry.isChecked()
             self.groupBox_shot_geometry.setChecked(True)

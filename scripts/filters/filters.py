@@ -30,7 +30,7 @@ from skimage import restoration
 from filters.ffmpeg_utils import clean_ffmpeg_filter
 from filters import IMG_BORDER_HIGH_RES
 
-from filters.utils import FINAL_FRAME_WIDTH, get_dimensions_from_crop_values, has_add_border_task
+from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_from_crop_values, has_add_border_task
 from utils.pretty_print import *
 
 
@@ -328,8 +328,8 @@ def stabilize_image(frame, img):
 
 
 def cv2_geometry_filter(img, geometry):
-    # print_green("cv2_geometry_filter")
-    # pprint(geometry)
+    print_green("cv2_geometry_filter")
+    pprint(geometry)
 
     # geometry = {
     #     'initial': {'h': img_height, 'w': img_width},
@@ -396,8 +396,8 @@ def calculate_geometry_parameters(shot, img, verbose:bool=False):
         print_lightgrey(f"\t-> image shape ({img_width}, {img_height})")
 
     # Final width and height
-    w_final = shot['geometry']['dimensions']['final']['w']
-    h_final = shot['geometry']['dimensions']['final']['h']
+    w_final = FINAL_FRAME_WIDTH
+    h_final = FINAL_FRAME_HEIGHT
 
     # Shot geometry
     shot_geometry = shot['geometry']['shot']

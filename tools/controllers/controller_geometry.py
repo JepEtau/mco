@@ -109,6 +109,7 @@ class Controller_geometry():
                     geometry['crop'][3] = max(crop_min, min(c_right + value, 400))
 
             elif parameter in ['keep_ratio', 'fit_to_width']:
+                print_purple(f"\n\n\nparameter: {parameter}, element={element}")
                 nested_dict_set(geometry, value, parameter)
             else:
                 sys.exit(print_red("event_geometry_modified: error : unrecognized parameter [%s]" % (parameter)))
@@ -149,43 +150,36 @@ class Controller_geometry():
         except:
             is_stabilize_enabled = False
 
-        virtual_shot = {'geometry': deepcopy(shot['geometry'])}
-        virtual_shot['geometry']['target'] = target_geometry
+        virtual_shot = {
+            'geometry': {
+                'shot': deepcopy(shot_geometry) if shot_geometry is not None else None,
+                'default': deepcopy(default_shot_geometry) if default_shot_geometry is not None else None,
+                'target': target_geometry,
+            },
+            'last_task': shot['last_task'],
+        }
+        # virtual_shot['geometry']['target'] = target_geometry
+
+        # try:
+        #     virtual_shot['geometry']['default']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
+        #                                                 virtual_shot['geometry']['default']['crop']))
+        # except:
+        #     # print_orange("no geometry/default/crop")
+        #     pass
+        # try:
+        #     virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
+        #                                                 virtual_shot['geometry']['shot']['crop']))
+        # except:
+        #     # print_orange("info: no geometry/shot/crop")
+        #     pass
+
+        print_purple("virtual_shot")
+        pprint(virtual_shot)
+
         frame = self.frames[shot['no']][0]
-
-        try:
-            virtual_shot['geometry']['default']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
-                                                        virtual_shot['geometry']['default']['crop']))
-        except:
-            # print_orange("no geometry/default/crop")
-            pass
-        try:
-            virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
-                                                        virtual_shot['geometry']['shot']['crop']))
-        except:
-            # print_orange("info: no geometry/shot/crop")
-            pass
-
-        # if frame['cache_deshake'] is not None:
-        #     shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_deshake'])
-        # else:
-            # Deshake has not been done, use initial frame geometry and path stabilize_enable flag
-        #     print_orange("no deshake img cached while trying to update geometry")
-        #     shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_initial'])
-        #     is_stabilize_enabled = False
-        # else:
-        shot_geometry_values = calculate_geometry_parameters(shot=shot, img=frame['cache_initial'])
+        shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_initial'])
         is_geometry_erroneous = False if shot_geometry_values['pad_error'] is None else True
-
-        # if target_geometry['w'] == -1:
-        #     print_lightcyan("calculate target geometry %s:%s" % (frame['k_ep'], frame['k_part']))
-        #     # Calculate width:
-        #     # TODO BUG won't work if deshake is enabled
-        #     geometry = calculate_geometry_parameters(shot=shot, img=frame['cache_initial'])
-        #     target_geometry['w'] = geometry['resize']['w']
-        #     self.model_database.set_target_geometry(
-        #         k_ep=frame['k_ep'], k_part=frame['k_part'],
-        #         geometry=target_geometry)
+        pprint(shot_geometry_values)
 
         for frame in self.frames[shot['no']]:
             # if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage']:
