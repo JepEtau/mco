@@ -55,16 +55,8 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.is_moving_split_line = False
         self.show_split_line = False
 
-        # Disable focus
-        self.radioButton_select_b_channel.setFocusPolicy(Qt.NoFocus)
-        self.radioButton_select_g_channel.setFocusPolicy(Qt.NoFocus)
-        self.radioButton_select_r_channel.setFocusPolicy(Qt.NoFocus)
-        self.radioButton_select_m_channel.setFocusPolicy(Qt.NoFocus)
-        self.lineEdit_coordinates.setFocusPolicy(Qt.NoFocus)
-        self.lineEdit_rgb_values.setFocusPolicy(Qt.NoFocus)
-        self.lineEdit_rgb_values_new.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_reset_current_channel.setFocusPolicy(Qt.NoFocus)
-        self.pushButton_reset_all_channels.setFocusPolicy(Qt.NoFocus)
+        self.lineEdit_luma_initial.clear()
+        self.lineEdit_luma_modified.clear()
 
         self.lineEdit_coordinates.clear()
         self.lineEdit_rgb_values.clear()
@@ -146,6 +138,8 @@ class Widget_curves(Widget_common, Ui_widget_curves):
 
 
     def refresh_values(self, frame:dict):
+        # print("refresh_value")
+        # pprint(frame)
         if ('dst' in frame.keys()
             and frame['k_part'] not in ['g_debut', 'g_fin']
             and frame['k_ep'] != frame['dst']['k_ep']):
@@ -169,6 +163,18 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             self.pushButton_reset_current_channel.setEnabled(True)
             self.pushButton_reset_all_channels.setEnabled(True)
             self.label_message.clear()
+
+        try:
+            self.lineEdit_luma_initial.setText(f"{frame['stats']['luma']['initial']:.02f}")
+        except:
+            self.lineEdit_luma_initial.clear()
+
+        try:
+            self.lineEdit_luma_modified.setText(f"{frame['stats']['luma']['modified']:.02f}")
+        except:
+            self.lineEdit_luma_modified.clear()
+
+        # Forward to children widget
         self.widget_curves_selection.refresh_values(frame)
 
 

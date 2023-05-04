@@ -34,6 +34,10 @@ from filters.utils import FINAL_FRAME_WIDTH, get_dimensions_from_crop_values, ha
 from utils.pretty_print import *
 
 
+def get_mean_luma(img):
+    # return brightness (x100)
+    h, s, v = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
+    return 100 * np.mean(v / np.max(v))
 
 
 def crop(img, geometry=[0,0,0,0]):

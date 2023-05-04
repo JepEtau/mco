@@ -112,7 +112,7 @@ class Curve(object):
         # This function uses a cubic bezier curve for the individual segments and
         # calculates the necessary intermediate control points depending on the
         # neighbor curve control points.
-        indexMax = sample_count - 1
+        index_max = sample_count - 1
 
         # the outer control points for the bezier curve.
         x0 = self._points[p2].x()
@@ -194,7 +194,7 @@ class Curve(object):
         # finally calculate the y(t) values for the given bezier values. We can
         # use homogeneously distributed values for t, since x(t) increases linearly.
         array_i = np.arange(0, x_count, dtype=np.float32)
-        array_t = array_i / (dx * indexMax)
+        array_t = array_i / (dx * index_max)
         array_1_t = 1 - array_t
         array_y = np.clip(( y0 * array_1_t * array_1_t * array_1_t +
                 3 * y1 * array_1_t * array_1_t * array_t   +
@@ -219,13 +219,15 @@ class Curve(object):
 
 
     def calculate(self, sample_count=256, depth=1.0, verbose=False):
+        # if sample_count == 256:
+        #     verbose = True
         if verbose:
-            print("calculate: sample_count=%d, depth=%f" % (sample_count, depth))
+            print(f"calculate: sample_count:{sample_count}, depth:{depth:.01f}")
         if len(self._points) == 1:
             p_x0 = self._points[0].x()
             p_y0 = depth * self._points[0].y()
             if verbose:
-                print("\thorizontal line: (%d;%d)" % (p_x0, p_y0))
+                print(f"\thorizontal line: ({p_x0}, {p_y0})")
             lut = np.array([p_y0] * sample_count, dtype=np.float32)
 
         elif len(self._points) == 2:
@@ -236,27 +238,28 @@ class Curve(object):
             p_y1 = depth * self._points[1].y()
 
             if verbose:
-                print("\taffine: (%d;%d) -> (%d; %d)" % (p_x0, p_y0, p_x1, p_y1))
+                print(f"\taffine: ({p_x0}, {p_y0}) -> ({p_x1}, {p_y1})")
 
             lut_0_sample_count = int(sample_count * p_x0)
             lut_2_sample_count = int(sample_count - (sample_count * p_x1))
             lut_1_sample_count = sample_count - (lut_2_sample_count + lut_0_sample_count)
             if verbose:
-                print("\tlut(%d) + lut(%d) + lut(%d)" % (lut_0_sample_count, lut_1_sample_count, lut_2_sample_count))
+                print(f"\tconcatenate luts: lut[{lut_0_sample_count}] + lut[{lut_1_sample_count}] + lut[{lut_2_sample_count}]")
 
             lut_0 = np.array([p_y0] * lut_0_sample_count, dtype=np.float32)
             lut_1 = np.arange(0, lut_1_sample_count, dtype=np.float32)
-            lut_1 = p_y0 + lut_1 * (p_y1 - p_y0) / lut_1_sample_count
+            lut_1 = p_y0 + lut_1 * (p_y1 - p_y0) / (lut_1_sample_count - 1)
             lut_2 = np.array([p_y1] * lut_2_sample_count, dtype=np.float32)
 
             if verbose:
-                print("\t merge: %d %d %d" % (len(lut_0), len(lut_1), len(lut_2)))
+                print(f"\tGenerated luts: {len(lut_0)}, {len(lut_1)}, {len(lut_2)}")
 
+            # COncatenate LUTs
             lut = np.concatenate((lut_0, lut_1, lut_2))
             lut = np.clip(lut, 0.0, depth)
 
             if verbose:
-                print("\tlut (%d)" % (len(lut)))
+                print(f"\tLUT: size={len(lut)}")
                 pprint(lut)
                 # for i, v in zip(range(len(lut_1)), lut_1):
                 #     print("\tf(%d) = %.f" % (i, v))
@@ -304,7 +307,9 @@ class Curve(object):
 
         # ensure that the control points are defined correclty
         for p in self._points:
-            # print("\t(%f-> %f;%f)" % (p.x(), int((sample_count-1)*p.x()+0.5), p.y()))
+            if verbose:
+                print("points:")
+                print(f"\t(%f-> %f;%f)" % (p.x(), int((sample_count-1)*p.x()+0.5), p.y()))
             lut[int((sample_count-1)*p.x()+0.5)] = depth * p.y()
 
         return lut

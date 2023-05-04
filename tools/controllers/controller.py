@@ -15,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 from pprint import pprint
+from filters.filters import get_mean_luma
 from logger import log
 from utils.hash import get_hash_from_last_task
 from utils.pretty_print import *
@@ -373,6 +374,8 @@ class Controller_video_editor(Controller_common,
                 for future in concurrent.futures.as_completed(work_result):
                     no, img = future.result()
                     self.frames[shot_no][no]['cache_initial'] = img
+                    luma = get_mean_luma(img)
+                    nested_dict_set(self.frames[shot_no][no], luma, 'stats', 'luma', 'initial')
 
         self.preview_options = self.view.get_preview_options()
         self.consolidate_preview_options()
@@ -734,6 +737,9 @@ class Controller_video_editor(Controller_common,
                 if frame['cache_initial'] is None:
                     # The original has not yet been loaded
                     frame['cache_initial'] = cv2.imread(frame['filepath'], cv2.IMREAD_COLOR)
+                    brightness = get_mean_luma(frame['cache_initial'])
+                    nested_dict_set(frame, brightness,'stats', 'brightness', 'initial')
+                    print(f"brightness: {brightness}")
             except:
                 frame['cache_initial'] = None
                 return None

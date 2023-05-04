@@ -43,7 +43,7 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
         None
 
     """
-    verbose = True
+    verbose = False
     if verbose:
         print_lightgreen("Consolidate shot:")
         print_lightcyan("================================== SHOT =======================================")

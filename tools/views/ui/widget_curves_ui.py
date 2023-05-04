@@ -144,6 +144,7 @@ class Ui_widget_curves(object):
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.radioButton_select_m_channel = QRadioButton(self.frame)
         self.radioButton_select_m_channel.setObjectName(u"radioButton_select_m_channel")
+        self.radioButton_select_m_channel.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalLayout_2.addWidget(self.radioButton_select_m_channel)
 
@@ -153,16 +154,19 @@ class Ui_widget_curves(object):
 
         self.radioButton_select_r_channel = QRadioButton(self.frame)
         self.radioButton_select_r_channel.setObjectName(u"radioButton_select_r_channel")
+        self.radioButton_select_r_channel.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalLayout_2.addWidget(self.radioButton_select_r_channel)
 
         self.radioButton_select_g_channel = QRadioButton(self.frame)
         self.radioButton_select_g_channel.setObjectName(u"radioButton_select_g_channel")
+        self.radioButton_select_g_channel.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalLayout_2.addWidget(self.radioButton_select_g_channel)
 
         self.radioButton_select_b_channel = QRadioButton(self.frame)
         self.radioButton_select_b_channel.setObjectName(u"radioButton_select_b_channel")
+        self.radioButton_select_b_channel.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalLayout_2.addWidget(self.radioButton_select_b_channel)
 
@@ -178,6 +182,7 @@ class Ui_widget_curves(object):
         sizePolicy1.setHeightForWidth(self.lineEdit_coordinates.sizePolicy().hasHeightForWidth())
         self.lineEdit_coordinates.setSizePolicy(sizePolicy1)
         self.lineEdit_coordinates.setMaximumSize(QSize(100, 16777215))
+        self.lineEdit_coordinates.setFocusPolicy(Qt.NoFocus)
         self.lineEdit_coordinates.setFrame(False)
         self.lineEdit_coordinates.setAlignment(Qt.AlignCenter)
         self.lineEdit_coordinates.setReadOnly(True)
@@ -208,6 +213,7 @@ class Ui_widget_curves(object):
         sizePolicy3.setHeightForWidth(self.pushButton_reset_current_channel.sizePolicy().hasHeightForWidth())
         self.pushButton_reset_current_channel.setSizePolicy(sizePolicy3)
         self.pushButton_reset_current_channel.setMaximumSize(QSize(70, 16777215))
+        self.pushButton_reset_current_channel.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalLayout_2.addWidget(self.pushButton_reset_current_channel)
 
@@ -217,6 +223,7 @@ class Ui_widget_curves(object):
         sizePolicy3.setHeightForWidth(self.pushButton_reset_all_channels.sizePolicy().hasHeightForWidth())
         self.pushButton_reset_all_channels.setSizePolicy(sizePolicy3)
         self.pushButton_reset_all_channels.setMaximumSize(QSize(50, 16777215))
+        self.pushButton_reset_all_channels.setFocusPolicy(Qt.NoFocus)
 
         self.horizontalLayout_2.addWidget(self.pushButton_reset_all_channels)
 
@@ -237,6 +244,7 @@ class Ui_widget_curves(object):
         sizePolicy4.setVerticalStretch(0)
         sizePolicy4.setHeightForWidth(self.lineEdit_rgb_values.sizePolicy().hasHeightForWidth())
         self.lineEdit_rgb_values.setSizePolicy(sizePolicy4)
+        self.lineEdit_rgb_values.setFocusPolicy(Qt.NoFocus)
         self.lineEdit_rgb_values.setFrame(False)
         self.lineEdit_rgb_values.setAlignment(Qt.AlignCenter)
         self.lineEdit_rgb_values.setReadOnly(True)
@@ -247,6 +255,7 @@ class Ui_widget_curves(object):
         self.lineEdit_rgb_values_new.setObjectName(u"lineEdit_rgb_values_new")
         sizePolicy4.setHeightForWidth(self.lineEdit_rgb_values_new.sizePolicy().hasHeightForWidth())
         self.lineEdit_rgb_values_new.setSizePolicy(sizePolicy4)
+        self.lineEdit_rgb_values_new.setFocusPolicy(Qt.NoFocus)
         self.lineEdit_rgb_values_new.setFrame(False)
         self.lineEdit_rgb_values_new.setAlignment(Qt.AlignCenter)
         self.lineEdit_rgb_values_new.setReadOnly(True)
@@ -268,6 +277,49 @@ class Ui_widget_curves(object):
 
 
         self.verticalLayout.addLayout(self.layout_in_out)
+
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.label_3 = QLabel(self.frame)
+        self.label_3.setObjectName(u"label_3")
+
+        self.horizontalLayout_4.addWidget(self.label_3)
+
+        self.lineEdit_luma_initial = QLineEdit(self.frame)
+        self.lineEdit_luma_initial.setObjectName(u"lineEdit_luma_initial")
+        sizePolicy1.setHeightForWidth(self.lineEdit_luma_initial.sizePolicy().hasHeightForWidth())
+        self.lineEdit_luma_initial.setSizePolicy(sizePolicy1)
+        self.lineEdit_luma_initial.setMaximumSize(QSize(60, 16777215))
+        self.lineEdit_luma_initial.setFocusPolicy(Qt.NoFocus)
+        self.lineEdit_luma_initial.setFrame(False)
+        self.lineEdit_luma_initial.setAlignment(Qt.AlignCenter)
+        self.lineEdit_luma_initial.setReadOnly(True)
+
+        self.horizontalLayout_4.addWidget(self.lineEdit_luma_initial)
+
+        self.label_2 = QLabel(self.frame)
+        self.label_2.setObjectName(u"label_2")
+
+        self.horizontalLayout_4.addWidget(self.label_2)
+
+        self.lineEdit_luma_modified = QLineEdit(self.frame)
+        self.lineEdit_luma_modified.setObjectName(u"lineEdit_luma_modified")
+        sizePolicy1.setHeightForWidth(self.lineEdit_luma_modified.sizePolicy().hasHeightForWidth())
+        self.lineEdit_luma_modified.setSizePolicy(sizePolicy1)
+        self.lineEdit_luma_modified.setMaximumSize(QSize(60, 16777215))
+        self.lineEdit_luma_modified.setFocusPolicy(Qt.NoFocus)
+        self.lineEdit_luma_modified.setFrame(False)
+        self.lineEdit_luma_modified.setAlignment(Qt.AlignCenter)
+        self.lineEdit_luma_modified.setReadOnly(True)
+
+        self.horizontalLayout_4.addWidget(self.lineEdit_luma_modified)
+
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_4.addItem(self.horizontalSpacer_3)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout_4)
 
 
         self.horizontalLayout_3.addLayout(self.verticalLayout)
@@ -308,6 +360,10 @@ class Ui_widget_curves(object):
         self.lineEdit_rgb_values_new.setText(QCoreApplication.translate("widget_curves", u"(255, 255, 255)", None))
         self.label_in.setText(QCoreApplication.translate("widget_curves", u"(R, G, B):", None))
         self.label.setText(QCoreApplication.translate("widget_curves", u" --> ", None))
+        self.label_3.setText(QCoreApplication.translate("widget_curves", u"Luma(mean, x100)", None))
+        self.lineEdit_luma_initial.setText(QCoreApplication.translate("widget_curves", u"60.12", None))
+        self.label_2.setText(QCoreApplication.translate("widget_curves", u" --> ", None))
+        self.lineEdit_luma_modified.setText(QCoreApplication.translate("widget_curves", u"54.34", None))
         pass
     # retranslateUi
 

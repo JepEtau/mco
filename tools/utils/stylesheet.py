@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from PySide6.QtCore import Qt
+from PySide6.QtGui import (
+    QColor,
+)
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -16,6 +19,7 @@ from PySide6.QtWidgets import (
     QScrollBar,
     QSpinBox,
     QTableWidget,
+    QTableWidgetItem,
 )
 
 # icons:
@@ -23,7 +27,11 @@ from PySide6.QtWidgets import (
 #   dark grey:                      #BABABA
 #   light grey  rgb(60, 60, 60)
 #   dark-grey:  rgb(35, 35, 35)     #3C3C3C
-#   purple:
+#   purple:     rgb(140, 80, 160)   #8c50a0
+
+COLOR_PURPLE = QColor(140, 80, 160)
+COLOR_TEXT = QColor(220, 220, 220)
+
 
 def update_selected_widget_stylesheet(widget, is_selected:bool):
     if is_selected:

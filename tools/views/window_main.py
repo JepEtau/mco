@@ -102,6 +102,7 @@ class Window_main(Window_common):
             self.widget_stabilize.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'stabilize'))
             self.widget_stabilize.signal_frame_selected[int].connect(self.event_move_to_frame_no)
             self.widget_stabilize.signal_show_guidelines_changed.connect(self.event_show_guidelines_changed)
+            self.widget_stabilize.signal_edition_started.connect(self.event_edition_started)
         self.show_guidelines = False
 
         # Player controls
@@ -164,6 +165,8 @@ class Window_main(Window_common):
             w.raise_()
             w.blockSignals(False)
 
+    def event_edition_started(self):
+        self.widget_selection.edition_started(True)
 
 
     def changeEvent(self, event: QEvent) -> None:

@@ -262,6 +262,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.pushButton_discard.setEnabled(True)
         self.pushButton_stabilize.setEnabled(True)
 
+        # Send a signal to inform that the edition started
+        self.signal_edition_started.emit()
 
     def event_start_modified(self):
         frame_no = self.controller.get_current_frame_no()

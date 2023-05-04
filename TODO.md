@@ -1,9 +1,9 @@
 # TODO script
 (1)
-- Get statistics about max dimensions for each shot: detect if crop is not correct
-- deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image
 
 (2)
+- deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image
+- Get statistics about max dimensions for each shot: detect if crop is not correct
 - (?) use ROI when zooming in/out
 - (?) smooth stabilization: to evaluate (g_fin)
 
@@ -16,14 +16,12 @@
 # TODO video editor
 (1)
 - to verify: video editor shall never write hash codes
-- curves: mouseclick on graph creates a point if another widget is selected
-- curves: Add luma value in curves
 
 
 (2)
+- curves: bug: mouseclick on graph creates a point if another widget is selected
 - geometry: add 'minimum crop': statistic (after stabilization) and frame_no
 - save when closing the application is not working
-- stabilize widget: update save button when loading a segment or after modifications: use a signal
 - selection widget: display unsaved shot in selection widget
 - buttons (save, discard, ...) not working for some widgets (which ones?)
 - edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db

@@ -31,6 +31,8 @@ from PySide6.QtWidgets import (
 )
 
 from utils.stylesheet import (
+    COLOR_PURPLE,
+    COLOR_TEXT,
     set_stylesheet,
     set_widget_stylesheet,
     update_selected_widget_stylesheet,
@@ -254,12 +256,17 @@ class Widget_selection(QWidget, Ui_widget_selection):
                     self.tableWidget_shots.item(row_no, column_no).setFont(f)
                 except:
                     self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(''))
+                self.tableWidget_shots.item(row_no, column_no).setTextAlignment(self.columns[column_no][2])
+                self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
             elif column[0] == 'new c.':
                 # New curves
                 try:
                     self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(k_new_curves))
                 except:
                     self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(''))
+                self.tableWidget_shots.item(row_no, column_no).setTextAlignment(self.columns[column_no][2])
+                self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
             elif column[0] == 'stab.':
                 try:
@@ -285,12 +292,19 @@ class Widget_selection(QWidget, Ui_widget_selection):
             else:
                 continue
 
-        # Alignment
-        self.tableWidget_shots.item(row_no, column_no).setTextAlignment(self.columns[row_no][column_no])
-        self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
 
         self.tableWidget_shots.blockSignals(False)
 
+
+    def edition_started(self, is_started):
+        row_no = self.tableWidget_shots.currentRow()
+        print(f"edition_started: {row_no} is_started: {is_started}")
+        item = self.tableWidget_shots.item(row_no, 0)
+        if is_started:
+            self.tableWidget_shots.item(row_no, 0).setForeground(QBrush(COLOR_PURPLE))
+        else:
+            self.tableWidget_shots.item(row_no, 0).setForeground(QBrush(COLOR_TEXT))
 
 
     def refresh_modification_status(self, modifications:dict):

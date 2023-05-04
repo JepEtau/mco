@@ -31,6 +31,7 @@ class Widget_common(QWidget):
     signal_discard = Signal()
     signal_preview_options_changed = Signal()
     signal_close = Signal()
+    signal_edition_started = Signal()
 
     def __init__(self, parent):
         super(Widget_common, self).__init__()
