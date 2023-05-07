@@ -143,4 +143,5 @@ scripts/archive.bat
 archive.sh
 archive.bat
 tools/log
-batch.bat
+batch_sharpen.bat
+batch_edition.bat

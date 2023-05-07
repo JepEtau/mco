@@ -1,35 +1,7 @@
 cls
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 10
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 18
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 22
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 30
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 32
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 31
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 62
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 66
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 83
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 90
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 98
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 104
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 111
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 141
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 147
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 152
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 155
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 156
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 173
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 181
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 186
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 187
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 196
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 203
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 204
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 205
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 208
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 218
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 227
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 254
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 262
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 264
-python run.py  --episode 1 --part episode --vfilter sharpen --shot 265
+python run.py  --episode 1 --part episode --vfilter edition --shot 161
+python run.py  --episode 1 --part episode --vfilter edition --shot 167
+python run.py  --episode 1 --part episode --vfilter edition --shot 186
+python run.py  --episode 1 --part episode --vfilter edition --shot 193
+
 

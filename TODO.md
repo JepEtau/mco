@@ -17,10 +17,9 @@
 
 # TODO video editor
 (1)
+- when switching from/to editin, shot shall be consolidated
 - Video editor shall never write hash codes (deshake)
-- déplacement manuel sur certaines frames (au moment des deshake)
 - F5 on selection widget to reload  images
-
 
 
 (2)
