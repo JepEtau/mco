@@ -221,7 +221,7 @@ class Controller_filter_info(QObject):
         # Other filters
         for no in range(1, len(filters)):
             filter_str = filters[no]['filter_str']
-            filter_str = filter_str.replace(',', ',\n')
+            filter_str = filter_str.replace(',', ',\n                ')
             filters[no]['filter_str'] = filter_str
 
         return filters

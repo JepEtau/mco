@@ -54,7 +54,8 @@ def verify_stabilize_segments(shot, segments):
 
 def deshake(shot, images:list, image_list:list,
     step_no:int, input_hash:str,
-    get_hash:bool=False, do_force:bool=False):
+    get_hash:bool=False, do_log:bool=True,
+    do_force:bool=False):
     verbose = True
 
     try:
@@ -80,6 +81,7 @@ def deshake(shot, images:list, image_list:list,
     # Convert to indexes
     for segment in segments:
         segment['count'] = segment['end'] - segment['start'] + 1
+        segment['start_saved'] = shot['start']
         segment['start'] -= shot['start']
 
 
@@ -106,7 +108,7 @@ def deshake(shot, images:list, image_list:list,
                         # No need to apply transformation because ref of this segment is start
                         # i.e. last_transformation=None
                         if verbose:
-                            print_lightcyan(f"\t- append {segment['start']} images before 1st segment")
+                            print_lightcyan(f"\t- append {segment['start']} images before 1st segment (not modified)")
                         for i in range(segment['start']):
                             output_images.append(images[i])
                         inserted_first_frames = True
@@ -203,7 +205,7 @@ def deshake(shot, images:list, image_list:list,
                     sys.exit(print_red("bug: deshake!!! segment[ref]=%s, output images: %d" % (segment['ref'], len(output_images))))
 
                 if verbose:
-                    print_lightcyan("\t- append %d images at the beggining" % (segment['start']))
+                    print_lightcyan("\t- append %d images at the beggining (modified)" % (segment['start']))
                 for i in range(segment['start']):
                     output_images.append(apply_cv2_transformation(images[i], transformations['start']))
                 inserted_first_frames = True
@@ -226,18 +228,23 @@ def deshake(shot, images:list, image_list:list,
     # Append last non-stabilized images
     last_segment_end = segments[-1]['start'] + segments[-1]['count']
     if last_segment_end < shot['count']:
-        if verbose:
-            print_lightcyan("- append %d images after the last segment" % (shot['count'] - last_segment_end))
         if transformations['end'] is not None:
+            if verbose:
+                print_lightcyan("- append %d images after the last segment (modified)" % (shot['count'] - last_segment_end))
             for i in range(last_segment_end, shot['count']):
                 output_images.append(apply_cv2_transformation(images[i], transformations['end']))
         else:
+            if verbose:
+                print_lightcyan("- append %d images after the last segment (not modified)" % (shot['count'] - last_segment_end))
             for i in range(last_segment_end, shot['count']):
                 output_images.append(images[i])
 
 
     # Log hash
-    hash = log_filter(filter_str, shot['hash_log_file'])
+    if do_log:
+        hash = log_filter(filter_str, shot['hash_log_file'])
+    else:
+        hash = calculate_hash(filter_str=filter_str)
     print("\t\t\tdeshake, output hash= %s" % (hash))
 
     return hash, output_images

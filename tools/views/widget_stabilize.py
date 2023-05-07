@@ -414,7 +414,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
                 self.pushButton_set_preview.toggle()
                 return True
         elif key == Qt.Key.Key_F7:
-            self.event_stabilize_requested()
+            # Force stabilization
+            settings = self.get_current_settings()
+            self.signal_stabilization_requested.emit(settings)
             return True
 
         if QApplication.focusObject() is self.tableWidget_stabilize:

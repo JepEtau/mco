@@ -128,7 +128,7 @@ def generate_video(db, k_ed:str, k_ep:str,
             if not simulation:
                 process_shot(db,
                     shot=shot,
-                    cpu_count=cpu_count)
+                    force=force)
             else:
                 consolidate_shot(db, shot=shot)
 

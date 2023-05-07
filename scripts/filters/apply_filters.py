@@ -37,12 +37,12 @@ def load_image(i, filepath):
     return i, cv2.imread(filepath, cv2.IMREAD_COLOR)
 
 
-def apply_filters(db, shot, step_no_start=0, get_hashes=False):
+def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False) -> None:
 
     image_list = list()
     images = list()
     hashes = list()
-    do_force = False
+    do_force = force
 
     # Initialize variables depending on starting step no.
     step_no = step_no_start

@@ -22,7 +22,7 @@ from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_
 
 
 def generate_image(frame:dict, preview_options:dict):
-    verbose = True
+    verbose = False
 
     if verbose:
         log.info("generate single image")

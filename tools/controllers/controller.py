@@ -542,7 +542,7 @@ class Controller_video_editor(Controller_common,
             # Replace
             self.refresh_replace_for_each_frame(shot=shot)
 
-        if verbose and False:
+        if verbose and True:
             print_lightcyan("================================== SHOT =======================================")
             pprint(self.shots[0])
             print_lightcyan("-------------------------------------------------------------------------------")
@@ -586,14 +586,16 @@ class Controller_video_editor(Controller_common,
             curves_library = self.model_database.get_library_curves(shot['k_ed'], shot['k_ep'])
             self.signal_curves_library_modified.emit(curves_library)
 
-            # Stabilize current shot
-            if (stabilize_settings is not None
-                and stabilize_settings['enable']
-                and self.preview_options['stabilize']['enabled']):
-                self.stabilize(shot=self.current_shot())
+            if self.current_task != 'sharpen':
+                # Stabilize current shot
+                pprint(stabilize_settings)
+                if (stabilize_settings is not None
+                    and stabilize_settings['enable']
+                    and self.preview_options['stabilize']['enabled']):
+                    self.stabilize(shot=self.current_shot())
 
-                # Refresh UI
-                self.signal_stabilization_done.emit()
+                    # Refresh UI
+                    self.signal_stabilization_done.emit()
 
 
             # Refresh geometry widget
@@ -794,13 +796,14 @@ class Controller_video_editor(Controller_common,
         else:
             options['geometry']['allowed'] = False
 
-        if False:
-            if self.current_task == 'edition':
-                options['stabilize']['allowed'] = True
-            else:
+        if True:
+            if self.current_task == 'sharpen':
                 options['stabilize']['allowed'] = False
-                # Stabilize is disable if not in edition mode
                 options['stabilize']['enabled'] = False
+            else:
+                options['stabilize']['allowed'] = True
+                # Stabilize is disable if not in edition mode
+                options['stabilize']['enabled'] = True
         else:
             # Force enabled to fasten edition
             options['stabilize']['allowed'] = True
@@ -858,7 +861,7 @@ class Controller_video_editor(Controller_common,
     # Deshake/stabilize
     #---------------------------------------------------------------------------
     def event_stabilize_modified(self, settings):
-        print_lightcyan("event_stabilize_modified")
+        print_purple("event_stabilize_modified")
         pprint(settings)
         shot = self.current_shot()
 
@@ -870,13 +873,20 @@ class Controller_video_editor(Controller_common,
             shot=shot, segments=settings['segments'])
 
         # Get current settings
-        current_settings = self.model_database.get_shot_stabilize_settings(shot=shot)
+        current_settings = deepcopy(self.model_database.get_shot_stabilize_settings(shot=shot))
+
+        print_lightcyan("current settings:")
+        pprint(current_settings)
 
         # Set new settings
         self.model_database.set_shot_stabilize_settings(shot=shot, settings=deepcopy(settings))
 
         # Return consolidated segments
         new_settings = deepcopy(self.model_database.get_shot_stabilize_settings(shot=shot))
+
+        print_lightcyan("new settings:")
+        pprint(new_settings)
+
         if (current_settings is None
             and settings['enable']
             and len(settings['segments']) == 0):
@@ -962,6 +972,7 @@ class Controller_video_editor(Controller_common,
             is_valid = False
         if not is_valid:
             print_red("Segments are not valid")
+            pprint(settings)
             return
 
         # Get all images
@@ -1011,7 +1022,7 @@ class Controller_video_editor(Controller_common,
             image_list=image_list,
             step_no=shot['last_step']['step_no'],
             input_hash=shot['filters'][shot['last_step']['step_no'] - 1],
-            get_hash=False,
+            get_hash=False, do_log=False,
             do_force=False)
 
         print_lightgrey("\tended")

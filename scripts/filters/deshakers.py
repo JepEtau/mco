@@ -21,6 +21,7 @@ from utils.pretty_print import *
 
 
 def apply_cv2_transformation(img, x_y_theta:list):
+    print(f"\tapply last transformation:", ', '.join([f"{t:.02f}" for t in x_y_theta]))
     t_x, t_y, t_theta = x_y_theta
     transformation_matrix = np.array(
         [[np.cos(t_theta), -np.sin(t_theta), t_x],

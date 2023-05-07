@@ -18,7 +18,7 @@ from utils.pretty_print import *
 
 
 
-def process_shot(db, shot, cpu_count=0):
+def process_shot(db, shot, force:bool=False):
     start_time = time.time()
 
     # Consolidate shot
@@ -31,12 +31,15 @@ def process_shot(db, shot, cpu_count=0):
         # sys.exit()
 
     # Simplify anf get starting step no.
-    step_no = optimize_tasks(db=db, shot=shot)
+    if force:
+        step_no = 0
+    else:
+        step_no = optimize_tasks(db=db, shot=shot)
 
     if step_no != -1:
 
         # Apply filters to all frames of this shot
-        apply_filters(db=db, shot=shot, step_no_start=step_no)
+        apply_filters(db=db, shot=shot, step_no_start=step_no, force=force)
         spent_time = time.time() - start_time
         print_green("(%.01fs -> %0.2fs/f)" % (spent_time, spent_time/shot['count']))
 

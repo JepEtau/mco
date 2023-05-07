@@ -455,9 +455,9 @@ class Widget_controls(QWidget, Ui_widget_controls):
                 return self.__parent.event_key_released(event)
 
         elif event.type() == QEvent.Type.Wheel:
-            print_lightcyan(f"eventFilter: widget_controls: wheel")
+            # print_lightcyan(f"eventFilter: widget_controls: wheel")
             if self.event_wheel(event):
-                print(f"\twheel: accepted")
+                # print(f"\twheel: accepted")
                 event.accept()
                 return True
             else:

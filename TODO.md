@@ -1,5 +1,7 @@
 # TODO script
 (1)
+- déplacement manuel sur certaines frames (au moment des deshake)
+- list of shots with deshake enabled/disabled
 
 (2)
 - stats: geometry: list deshake shots whose crop is not correct (black frame). used only if sharpen images exist
@@ -15,7 +17,10 @@
 
 # TODO video editor
 (1)
-- to verify: video editor shall never write hash codes
+- Video editor shall never write hash codes (deshake)
+- déplacement manuel sur certaines frames (au moment des deshake)
+- F5 on selection widget to reload  images
+
 
 
 (2)
