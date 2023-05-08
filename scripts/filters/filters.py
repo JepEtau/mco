@@ -328,8 +328,8 @@ def stabilize_image(frame, img):
 
 
 def cv2_geometry_filter(img, geometry):
-    print_green("cv2_geometry_filter")
-    pprint(geometry)
+    # print_green("cv2_geometry_filter")
+    # pprint(geometry)
 
     # geometry = {
     #     'initial': {'h': img_height, 'w': img_width},

@@ -2,6 +2,7 @@
 (1)
 - déplacement manuel sur certaines frames (au moment des deshake)
 - list of shots with deshake enabled/disabled
+- stats: report errors of geometry!
 
 (2)
 - stats: geometry: list deshake shots whose crop is not correct (black frame). used only if sharpen images exist
@@ -17,9 +18,13 @@
 
 # TODO video editor
 (1)
+- Undo on geometry
+- Ctrl+S on geometry should save both target and geometry
 - when switching from/to editin, shot shall be consolidated
 - Video editor shall never write hash codes (deshake)
 - F5 on selection widget to reload  images
+- Fit to width does not work correctly
+- Add geometry error/fit_to_width in selection
 
 
 (2)

@@ -336,12 +336,14 @@ class Controller_video_editor(Controller_common,
 
             if shot['last_step']['step_no'] is None:
                 # Step not found
+                print_red(f"Error: step no. not found: {shot['last_step']['step_no']}")
                 filepath_tmp = [""] * shot['count']
             else:
                 # Get a list of path for each frame  for this shot
                 if k_part in ['g_asuivre', 'g_reportage']:
                     filepath_tmp = get_frame_list_single(db, k_ep=k_ep, k_part=k_part, shot=shot)
                 else:
+                    print(f"- get new frame list for step no. {shot['last_step']['step_no']}")
                     filepath_tmp = get_frame_list(db, k_ep=k_ep, k_part=k_part, shot=shot)
                 self.filepath.append(filepath_tmp)
 

@@ -102,9 +102,9 @@ class Widget_selection(QWidget, Ui_widget_selection):
             ['count',   60, Qt.AlignCenter | Qt.AlignVCenter],
             ['curves',  60, Qt.AlignLeft | Qt.AlignVCenter],
             ['new c.',  60, Qt.AlignLeft | Qt.AlignVCenter],
-            ['stab.',   30, Qt.AlignCenter | Qt.AlignVCenter],
-            ['geo.',    30, Qt.AlignCenter | Qt.AlignVCenter],
-            ['other',   60, Qt.AlignLeft | Qt.AlignVCenter],
+            # ['stab.',   30, Qt.AlignCenter | Qt.AlignVCenter],
+            # ['geo.',    30, Qt.AlignCenter | Qt.AlignVCenter],
+            # ['other',   60, Qt.AlignLeft | Qt.AlignVCenter],
         ]
         self.tableWidget_shots.setColumnCount(len(self.columns))
         for column_no, column in zip(range(len(self.columns)), self.columns):
