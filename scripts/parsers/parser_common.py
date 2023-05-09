@@ -191,16 +191,6 @@ def parse_common_configuration(db, config_path):
     #===========================================================================
     db_common['process'] = get_process_cfg()
 
-    # Dimensions
-    #===========================================================================
-    db_common['dimensions'] = {
-        'final': {
-            'w': int(db_common['dimensions']['width_final']),
-            'h': int(db_common['dimensions']['height_final'])
-        }
-    }
-
-
 
     # Others
     #===========================================================================

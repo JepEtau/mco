@@ -21,6 +21,7 @@ from parsers.parser_parts import parse_part_sections
 from parsers.parser_shots import (
     consolidate_parsed_shots,
     parse_shotlist,
+    parse_shotlist_new,
     parse_target_shotlist,
 )
 from utils.common import (
@@ -195,7 +196,7 @@ def parse_episode(db, k_ed, k_ep):
         elif k_section == 'parts':
             parse_part_sections(db_video, config, verbose=False)
 
-        # Parts: shots and other properties
+        # Parts: shots and other properties (previous format)
         #----------------------------------------------------
         elif k_section in K_ALL_PARTS:
             k_part = k_section
@@ -222,6 +223,17 @@ def parse_episode(db, k_ed, k_ep):
                         # TODO rework as the function/parameteres are the same!
                         parse_shotlist(db_video_part['shots'],
                             k_ep, k_part, value_str)
+
+
+        # Parts: shots (new format)
+        #----------------------------------------------------
+        elif k_section.startswith('shots_'):
+            k_part = k_section[len('shots_'):]
+            if k_part not in K_ALL_PARTS:
+                continue
+            nested_dict_set(db_video, list(), k_part, 'shots')
+            parse_shotlist_new(db_video[k_part]['shots'],
+                config, k_section, verbose=False)
 
 
     # Set dimensions

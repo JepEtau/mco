@@ -11,6 +11,7 @@
 (3)
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
+- remove final 'dimensions' from shot structure, let's use a constant
 - deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image. This may have an impact if smooth stabilisation is implemented
 - (?) manual offsets to deshake
 - clean filters.py

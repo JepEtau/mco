@@ -10,7 +10,10 @@ import platform
 from pprint import pprint
 
 from filters import IMG_BORDER_HIGH_RES, IMG_BORDER_LOW_RES, IMG_LOW_RES_HEIGHT
-from filters.utils import MAX_FRAMES_COUNT
+from filters.utils import (
+    FINAL_FRAME_WIDTH,
+    MAX_FRAMES_COUNT,
+)
 from utils.pretty_print import *
 from utils.hash import (
     calculate_hash,
@@ -36,7 +39,7 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
         print_red("\t\t\terror: no target geometry defined for %s:%s:%s" % (
             shot['k_ed'], shot['k_ep'], shot['k_part']))
         # sys.exit()
-        shot['geometry']['target'] = {'w': shot['geometry']['dimensions']['final']['w']}
+        shot['geometry']['target'] = {'w': FINAL_FRAME_WIDTH}
 
     if shot['geometry']['shot'] is None:
         # Neither part nor shot section in database

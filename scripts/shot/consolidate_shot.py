@@ -140,11 +140,6 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
             try: shot['geometry']['shot']['is_default'] = True
             except: pass
 
-    nested_dict_set(shot,
-        db['common']['dimensions']['final'],
-        'geometry', 'dimensions', 'final')
-
-
 
     # RGB correction: calculate the lut from the curves
     #---------------------------------------------------------------------------
