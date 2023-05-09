@@ -1,14 +1,16 @@
 # TODO script
 (1)
+- rework avsync precedemment
 - use ROI for deshake
-- stats: list unused curves. reason: clean the db
 - add shot no. in ini files
 - Try removing stab before upscale when there is rainfall
 - (?) Try SwinIR, model: https://github.com/Bubblemint864/AI-Models
 
 (2)
+- stats: list unused curves. reason: clean the db
 - (?) use ROI when zooming in/out
 - (?) smooth stabilization: to evaluate (g_fin)
+- av_sync is working in ep01 just because it uses the first shot from ed 'k'
 
 (3)
 - effects: verify when replacing shots (asuivre/precedemment)

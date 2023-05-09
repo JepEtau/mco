@@ -27,7 +27,7 @@ import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 
 
-TEMPLATE_IMG = "^ep\d{2}_\d{5}__[a-z0]*__\d{2}_([a-z0-9]{7}).*"
+TEMPLATE_IMG = "^ep\d{2}_\d{5}__[a-z0]*__\d{2}_([a-z0-9]{7}.*).png"
 
 def main():
     db = dict()

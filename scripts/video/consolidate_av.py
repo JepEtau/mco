@@ -124,13 +124,42 @@ def calculate_av_sync(db, k_ep):
     # precedemment
     k_part = 'precedemment'
     if k_part in db_audio.keys() and db_audio[k_part]['duration'] != 0:
+        # edition used as the src for the audio track
+        print_lightgreen(f"calculate av_sync")
+
+        k_ed_src = db_audio['src']['k_ed']
+        print_lightcyan(f"db_audio[{k_part}]:")
+        pprint(db_audio[k_part])
+        print_lightcyan(f"db_video[{k_part}]:")
+        pprint(db[k_ep]['video'][k_ed_src][k_part])
+
+        # Compare video count from audio_src and target
+        precedemment_video_count = (db[k_ep]['video'][k_ed_src]['episode']['shots'][1]['start']
+                        - db[k_ep]['video'][k_ed_src]['precedemment']['shots'][1]['start'])
+        precedemment_target_video_count = (db_video_target['episode']['shots'][1]['start']
+                        - db_video_target['precedemment']['shots'][1]['start'])
+        print_lightcyan(f"precedemment to episode:")
+        print(f"\tvideo count from audio_src: {precedemment_video_count}")
+        print(f"\tvideo count of target: {precedemment_target_video_count}")
+
+        if precedemment_video_count != precedemment_target_video_count:
+            print_red("error: erroneous frame count between video_audio src and video_target")
+
         # precedemment
-        avsync_ms = frames_to_ms(db_video[k_part]['start']) - db_audio[k_part]['start']
+
+        # Use the 2nd shot
+        # video_diff = (db_video_target[k_part]['shots'][1]['start']
+        #                 - db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start'])
+        part_video_start = (db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start']
+                            - db_video_target[k_part]['shots'][0]['count'])
+
+        avsync_ms = (frames_to_ms(part_video_start) - db_audio[k_part]['start'])
         db_video[k_part]['avsync'] = ms_to_frames(avsync_ms) if avsync_ms > 0 else 0
         db_audio[k_part].update({
             'avsync': avsync_ms if avsync_ms < 0 else 0,
             'count': ms_to_frames(db_audio[k_part]['end'] - db_audio[k_part]['start']),
         })
+
 
         # episode
         k_part = 'episode'
@@ -141,13 +170,20 @@ def calculate_av_sync(db, k_ep):
             'count': ms_to_frames(db_audio[k_part]['end'] - db_audio[k_part]['start'])
         })
 
-        video_avsync = (db_video[k_part]['start']
-                        - (db_video['precedemment']['start'] + db_video['precedemment']['count']))
+
+        # Use the 2nd shot
+        # video_diff = (db_video_target[k_part]['shots'][1]['start']
+        #                 - db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start'])
+        part_video_start = (db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start']
+                            - db_video_target[k_part]['shots'][0]['count'])
+        video_avsync = (part_video_start
+                        - (db_video['precedemment']['shots'][0]['start'] + db_video['precedemment']['count']))
         db_video[k_part]['avsync'] = video_avsync
 
-        if db_video['episode']['start'] != db_video['episode']['shots'][0]['start']:
-            sys.exit("calculate_av_sync: error: start of episode (%d) != start of 1st shot (%d)" % (
-                db_video['episode']['start'], db_video[k_part]['shots'][0]['start']))
+        # if db_video['episode']['start'] != db_video['episode']['shots'][0]['start']:
+        #     sys.exit("calculate_av_sync: error: start of episode (%d) != start of 1st shot (%d)" % (
+        #         db_video['episode']['start'], db_video[k_part]['shots'][0]['start']))
+
     else:
         # precedemment does not exist
         db[k_ep]['audio']['precedemment'].update({

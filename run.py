@@ -170,11 +170,7 @@ def main():
 
     if arguments.parse_only:
         # Parse database
-        parse_database(g_database,
-            k_ed=k_ed,
-            k_ep=k_episode,
-            verbose=verbose,
-            study_mode=arguments.frames)
+        parse_database(g_database, k_ep=k_episode)
         gc.collect()
         print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
 
