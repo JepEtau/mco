@@ -309,7 +309,7 @@ class Controller_video_editor(Controller_common,
             and k_step != self.current_task):
             # Reconsolidate shot is mandatory because hash differs
             #  edition is made without deshake/stabilize filters
-            print(f"- reconsolidate")
+            print(f"- reconsolidate: {self.current_task} -> {k_step}")
             do_reconsolidate_shot = True
 
         self.current_task = k_step
@@ -327,7 +327,9 @@ class Controller_video_editor(Controller_common,
 
 
             if do_reconsolidate_shot:
-                consolidate_shot(db, shot=shot, edition_mode=True)
+                self.consolidate_shot_for_video_editor(shot=shot,
+                k_ep=k_ep, k_part=k_part, k_step=k_step)
+                # consolidate_shot(db, shot=shot, edition_mode=True)
             else:
                 shot['last_step'].update({
                     'hash': get_hash_from_last_task(shot),

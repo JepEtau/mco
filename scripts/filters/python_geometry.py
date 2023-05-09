@@ -29,7 +29,8 @@ from filters.filters import (
 def apply_python_geometry_filter(shot, images:list, image_list:list,
     step_no, filters_str:str, input_hash:str,
     do_save:bool, output_folder:str,
-    get_hash:bool=False, do_force:bool=False):
+    get_hash:bool=False, do_log:bool=True,
+    do_force:bool=False):
 
     if shot['geometry']['target'] is None:
         print_red("\t\t\terror: no target geometry defined for %s:%s:%s" % (
@@ -54,7 +55,10 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
     if get_hash:
         hash = calculate_hash(filter_str=filter_str)
         return hash, None
-    hash = log_filter(filter_str, shot['hash_log_file'])
+    if do_log:
+        hash = log_filter(filter_str, shot['hash_log_file'])
+    else:
+        hash = calculate_hash(filter_str=filter_str)
 
     # multiprocessing
     if platform.system() == "Windows":

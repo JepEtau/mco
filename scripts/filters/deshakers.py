@@ -178,7 +178,9 @@ class CV2_deshaker:
 
     def stabilize(self, shot, images,
         ref, mode, last_transformation,
-        step_no, input_hash, get_hash:bool=False, do_force=False):
+        step_no, input_hash,
+        get_hash:bool=False, do_log:bool=True,
+        do_force=False):
         """Stabilize images without smoothing the trajectory
         """
         verbose=True
@@ -220,7 +222,10 @@ class CV2_deshaker:
         if get_hash:
             hash = calculate_hash(filter_str=filter_str)
             return filters_str, None, transformations
-        hash = log_filter(filter_str, shot['hash_log_file'])
+        if do_log:
+            hash = log_filter(filter_str, shot['hash_log_file'])
+        else:
+            hash = calculate_hash(filter_str=filter_str)
         print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, ref_index:%d" % (len(images), ref_index))
 
         # Reset transformation
@@ -409,7 +414,8 @@ class Skimage_deshaker:
 
     def stabilize(self, shot, images, image_list, ref,
         step_no, input_hash, mode,
-        get_hash:bool=False, do_force=False, verbose=False):
+        get_hash:bool=False, do_log:bool=True,
+        do_force=False, verbose=False):
         """Stabilize images without smoothing the trajectory
         """
         use_static_ref = False
@@ -443,7 +449,10 @@ class Skimage_deshaker:
         if get_hash:
             hash = calculate_hash(filter_str=filter_str)
             return filters_str, None, None
-        hash = log_filter(filter_str, shot['hash_log_file'])
+        if do_log:
+            hash = log_filter(filter_str, shot['hash_log_file'])
+        else:
+            hash = calculate_hash(filter_str=filter_str)
         print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, ref_index:%d" % (len(images), ref_index))
 
         # Generate and log hash
@@ -451,7 +460,10 @@ class Skimage_deshaker:
         if get_hash:
             hash = calculate_hash(filter_str=filters_str)
             return None, hash
-        hash = log_filter(filters_str, shot['hash_log_file'])
+        if do_log:
+            hash = log_filter(filter_str, shot['hash_log_file'])
+        else:
+            hash = calculate_hash(filter_str=filter_str)
         print_lightcyan("\t\t\t(skimage) deshaker, output hash= %s" % (step_no, hash))
 
         # img_stabilized, img_ref_gray, keypoints_ref = self.__get_initial_image(

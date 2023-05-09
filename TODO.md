@@ -1,47 +1,42 @@
 # TODO script
 (1)
-- déplacement manuel sur certaines frames (au moment des deshake)
-- list of shots with deshake enabled/disabled
-- stats: report errors of geometry!
+- use ROI for deshake
+- stats: list unused curves. reason: clean the db
+- add shot no. in ini files
 
 (2)
-- stats: geometry: list deshake shots whose crop is not correct (black frame). used only if sharpen images exist
-- deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image
 - (?) use ROI when zooming in/out
 - (?) smooth stabilization: to evaluate (g_fin)
 
 (3)
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
+- deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image. This may have an impact if smooth stabilisation is implemented
+- (?) manual offsets to deshake
 - clean filters.py
 
 
 # TODO video editor
 (1)
 - Undo on geometry
-- Ctrl+S on geometry should save both target and geometry
-- when switching from/to editin, shot shall be consolidated
-- Video editor shall never write hash codes (deshake)
-- F5 on selection widget to reload  images
-- Fit to width does not work correctly
-- Add geometry error/fit_to_width in selection
+- Add geometry error/fit_to_width in selection widget
 
 
 (2)
+- F5 to refresh current shot only
+- (?) Fit to width does not work correctly
 - curves: bug: mouseclick on graph creates a point if another widget is selected
 - save when closing the application is not working
 - selection widget: display unsaved shot in selection widget
 - buttons (save, discard, ...) not working for some widgets (which ones?)
 - edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db
-- when no image loaded, reset all widgets / disable all widgets if images missing
 
 (3)
-- reorder options in .ini files
+- (?) reorder options in .ini files
+- when no image loaded, reset all widgets / disable all widgets if images missing
 - add buttons to show/hide widgets
 - stabilize: when table is disable, set qWidgetItem to disable (text should be grey)
 - change selection widget to a standard widget (common)
-- F5 to refresh current shot only
-- display filters for the shot
 - (?)Replace not allowed when multiple shot selected
 
 

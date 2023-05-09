@@ -28,9 +28,16 @@ from pprint import pprint
 from skimage import color
 from skimage import restoration
 from filters.ffmpeg_utils import clean_ffmpeg_filter
-from filters import IMG_BORDER_HIGH_RES
+from filters import IMG_BORDER_HIGH_RES, IMG_BORDER_LOW_RES
 
-from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_from_crop_values, has_add_border_task
+from filters.utils import (
+    INITIAL_FRAME_HEIGHT,
+    INITIAL_FRAME_WIDTH,
+    FINAL_FRAME_HEIGHT,
+    FINAL_FRAME_WIDTH,
+    get_dimensions_from_crop_values,
+    has_add_border_task,
+)
 from utils.pretty_print import *
 
 
@@ -384,14 +391,23 @@ def cv2_geometry_filter(img, geometry):
 
 
 
-def calculate_geometry_parameters(shot, img, verbose:bool=False):
+def calculate_geometry_parameters(shot, img, simulate:bool=False, verbose:bool=False):
     # Returns the values which will be used when resizing/cropping/padding an image
     verbose = False
     if verbose:
         print_cyan("\ncalculate_geometry_parameters\n------------------------------")
         pprint(shot['geometry'])
 
-    img_height, img_width, c = img.shape
+    if simulate:
+        # Used for stats
+        img_height, img_width = INITIAL_FRAME_HEIGHT, INITIAL_FRAME_WIDTH
+        if has_add_border_task(shot=shot):
+            img_height += 2*IMG_BORDER_LOW_RES
+            img_width += 2*IMG_BORDER_LOW_RES
+        img_height *= 2
+        img_width *= 2
+    else:
+        img_height, img_width, c = img.shape
     if verbose:
         print_lightgrey(f"\t-> image shape ({img_width}, {img_height})")
 
@@ -410,8 +426,6 @@ def calculate_geometry_parameters(shot, img, verbose:bool=False):
     # Crop the image
     # Update the crop values if borders has been added
     if shot['last_task'] != 'deinterlace' or has_add_border_task(shot):
-        # cropped_value = list()
-        # cropped_value = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
         cropped_value = [x + IMG_BORDER_HIGH_RES for x in shot_geometry['crop']]
         if verbose:
             print_lightgrey(f"\t-> image has borders")
@@ -448,7 +462,7 @@ def calculate_geometry_parameters(shot, img, verbose:bool=False):
         if verbose:
             print_green("\tKeep ratio, fit to part width (%d)" % (target_width))
         resized_width = target_width
-        resized_height = int(((cropped_height * target_width) / float(cropped_width)))
+        resized_height = int((np.float64(cropped_height * target_width) / np.float64(cropped_width)))
         if verbose:
             print_lightgrey("\t-> resized (%d, %d)" % (resized_width, resized_height))
 

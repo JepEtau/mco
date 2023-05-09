@@ -257,7 +257,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
                 except:
                     self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(''))
                 self.tableWidget_shots.item(row_no, column_no).setTextAlignment(self.columns[column_no][2])
-                self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+                self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled)
 
             elif column[0] == 'new c.':
                 # New curves
@@ -266,7 +266,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
                 except:
                     self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(''))
                 self.tableWidget_shots.item(row_no, column_no).setTextAlignment(self.columns[column_no][2])
-                self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+                self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled)
 
             elif column[0] == 'stab.':
                 try:
@@ -441,6 +441,8 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
                 if column[0] == 'shot':
                     self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(str(k_shot)))
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
                 elif column[0] == 'src':
                     try:
                         src_txt = f"{shot['src']['k_ed']}:{shot['src']['k_ep']}"
@@ -448,16 +450,19 @@ class Widget_selection(QWidget, Ui_widget_selection):
                         print_red("ERROR: event_refresh_shotlist: k_ed/k_ep shall be defined in shot src. correct this ASAP")
                     self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(src_txt))
                     self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
                 elif column[0] == 'start':
                     self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(f"{shot['src']['start']}"))
                     self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
                 elif column[0] == 'count':
                     self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(f"{shot['src']['count']}"))
                     self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
                 elif column[0] == 'curves':
                     # Initial curves
@@ -474,14 +479,17 @@ class Widget_selection(QWidget, Ui_widget_selection):
                         self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(''))
 
                     self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
                 elif column[0] == 'new c.':
                     # New curves
                     try: self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(k_new_curves))
                     except: self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(''))
 
                     self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
                 elif column[0] == 'stab.':
                     widget = QWidget()
