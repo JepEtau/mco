@@ -20,7 +20,7 @@ from utils.pretty_print import *
 TEMPLATE_SHOT_EPISODE = "^(ep\d{2})_([a-z_]+)_(\d{3})__([a-z0]*)__([a-z0-9]{7}).*"
 TEMPLATE_SHOT_G_DEBUT_FIN = "^(g_[a-z]+)_(\d{3})__([a-z0]*)_(ep\d{2})__([a-z0-9]{7}).*"
 TEMPLATE_SHOT_G = "^(ep\d{2})_(g_[a-z]+)_(\d{3})__([a-z0]*)_(ep\d{2})__([a-z0-9]{7}).*"
-TEMPLATE_IMG = "^(ep\d{2})_(\d{5})__([a-z0]*)__(\d{2})_([a-z0-9]{7})$"
+TEMPLATE_IMG = "^(ep\d{2})_(\d{5})__([a-z0]*)__(\d{2})_([a-z0-9]{7}).*"
 
 
 class Controller_filter_info(QObject):

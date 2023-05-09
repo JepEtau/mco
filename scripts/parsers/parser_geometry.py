@@ -112,7 +112,8 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                     shot = get_shot_from_frame_no(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
                 except:
                     # Shots not defined or unused
-                    print_orange(f"\t\t\twarning: {k_ep}:{k_ed}:{k_part}: shot is not defined ({frame_no})")
+                    if verbose:
+                        print_orange(f"\t\t\twarning: {k_ep}:{k_ed}:{k_part}: shot is not defined ({frame_no})")
                     continue
 
                 if frame_no != shot['start']:

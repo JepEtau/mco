@@ -11,20 +11,20 @@ from utils.time_conversions import frames_to_ms
 PATH_DATABASE = "./database"
 
 
-def create_folder_for_video(db, k_ep):
+def create_folder_for_video(db, k_ep_or_g):
     """ Create the directory that shall contains all video stream
         that will be concatenated
 
         Returns
             Path of the created folder
     """
-    if k_ep in ['ep00', 'ep40']:
+    if k_ep_or_g in ['ep00', 'ep40']:
         return
 
-    if k_ep in['g_debut', 'g_fin']:
-        video_directory = os.path.join(db[k_ep]['cache_path'], 'video')
+    if k_ep_or_g in['g_debut', 'g_fin']:
+        video_directory = os.path.join(db[k_ep_or_g]['cache_path'], 'video')
     else:
-        video_directory = os.path.join(db[k_ep]['cache_path'], 'video')
+        video_directory = os.path.join(db[k_ep_or_g]['cache_path'], 'video')
 
     if not os.path.exists(video_directory):
         os.makedirs(video_directory)
