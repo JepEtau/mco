@@ -102,7 +102,12 @@ class Widget_selection(QWidget, Ui_widget_selection):
             ['count',   60, Qt.AlignCenter | Qt.AlignVCenter],
             ['curves',  60, Qt.AlignLeft | Qt.AlignVCenter],
             ['new c.',  60, Qt.AlignLeft | Qt.AlignVCenter],
-            # ['stab.',   30, Qt.AlignCenter | Qt.AlignVCenter],
+            ['st.',  30, Qt.AlignCenter | Qt.AlignVCenter],
+            ['g_d',  30, Qt.AlignCenter | Qt.AlignVCenter],
+            ['fit',  30, Qt.AlignCenter | Qt.AlignVCenter],
+            ['g_r',  30, Qt.AlignCenter | Qt.AlignVCenter],
+            ['err.',  30, Qt.AlignCenter | Qt.AlignVCenter],
+            # ['st.',   30, Qt.AlignCenter | Qt.AlignVCenter],
             # ['geo.',    30, Qt.AlignCenter | Qt.AlignVCenter],
             # ['other',   60, Qt.AlignLeft | Qt.AlignVCenter],
         ]
@@ -112,14 +117,14 @@ class Widget_selection(QWidget, Ui_widget_selection):
             self.tableWidget_shots.horizontalHeaderItem(column_no).setTextAlignment(column[2])
             self.tableWidget_shots.setColumnWidth(column_no, column[1])
 
-        self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
+        # self.tableWidget_shots.horizontalHeader().setStretchLastSection(True)
 
         # Connect signals and filter events
         self.tableWidget_shots.selectionModel().selectionChanged.connect(self.event_selection_changed)
         self.tableWidget_shots.installEventFilter(self)
 
         self.controller.signal_shotlist_modified[dict].connect(self.event_refresh_shotlist)
-        self.controller.signal_is_modified[dict].connect(self.refresh_modification_status)
+        self.controller.signal_shot_modified[dict].connect(self.refresh_modification_status)
         self.controller.signal_current_shot_modified[dict].connect(self.event_current_shot_modified)
 
         self.set_enabled(False)
@@ -168,7 +173,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         preferences = {
             'geometry': self.geometry().getRect(),
             'episode': k_ep,
-            'shot_no': int(self.tableWidget_shots.item(row_no, 0).text()),
+            'shot_no': int(self.tableWidget_shots.item(row_no, 0).text().replace('*', '')),
             'part': self.comboBox_part.currentText(),
             'step': self.get_current_step(),
         }
@@ -268,7 +273,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
                 self.tableWidget_shots.item(row_no, column_no).setTextAlignment(self.columns[column_no][2])
                 self.tableWidget_shots.item(row_no, column_no).setFlags(Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled)
 
-            elif column[0] == 'stab.':
+            elif column[0] == 'st.':
                 try:
                     self.tableWidget_shots.cellWidget(row_no, column_no).setChecked(modifications['stabilization'])
                 except:
@@ -309,19 +314,20 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def refresh_modification_status(self, modifications:dict):
         # Something has been modified, disable selection until saving or discard
-        self.is_modified = modifications['status']
-        if self.is_modified:
+        row_no = modifications['shot_no']
+        shot_str = self.tableWidget_shots.item(row_no, 0).text().replace('*', '')
+        if len(modifications['modifications']) > 0:
             self.set_enabled(False)
             self.widget_app_controls.set_save_discard_enabled(True)
+            self.tableWidget_shots.item(row_no, 0).setText(f"{shot_str}*")
+            log.info("shot no. %d has been modified" % (modifications['shot_no']))
         else:
             self.set_enabled(True)
             self.widget_app_controls.set_save_discard_enabled(False)
+            self.tableWidget_shots.item(row_no, 0).setText(shot_str)
+            log.info("shot no. %d is not modified" % (modifications['shot_no']))
 
-        if 'geometry' in modifications.keys():
-            self.set_crop_coordinates(modifications['geometry'])
 
-        if modifications['shot_no'] is not None:
-            log.info("shot no. %d has been modified" % (modifications['shot_no']))
 
 
     def refresh_browsing_folder(self, episodes_and_parts:dict):
@@ -452,6 +458,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
                     self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
                     self.tableWidget_shots.item(row_no, column_no).setFlags(
                         Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
                 elif column[0] == 'start':
                     self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(f"{shot['src']['start']}"))
                     self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
@@ -482,6 +489,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
                     self.tableWidget_shots.item(row_no, column_no).setFlags(
                         Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
+
                 elif column[0] == 'new c.':
                     # New curves
                     try: self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(k_new_curves))
@@ -491,34 +499,67 @@ class Widget_selection(QWidget, Ui_widget_selection):
                     self.tableWidget_shots.item(row_no, column_no).setFlags(
                         Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
-                elif column[0] == 'stab.':
-                    widget = QWidget()
-                    __layout = QHBoxLayout(widget)
-                    w = QCheckBox(widget)
-                    w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                    set_widget_stylesheet(w, 'small')
-                    __layout.addWidget(w)
-                    self.tableWidget_shots.setCellWidget(row_no, column_no, widget)
-                    self.tableWidget_shots.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                elif column[0] == 'geo.':
-                    widget = QWidget()
-                    __layout = QHBoxLayout(widget)
-                    w = QCheckBox(widget)
-                    w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                    set_widget_stylesheet(w, 'small')
-                    __layout.addWidget(w)
-                    self.tableWidget_shots.setCellWidget(row_no, column_no, widget)
-                    self.tableWidget_shots.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-                elif column[0] == 'other':
-                    widget = QWidget()
-                    __layout = QHBoxLayout(widget)
-                    w = QCheckBox(widget)
-                    w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                    set_widget_stylesheet(w, 'small')
-                    __layout.addWidget(w)
-                    self.tableWidget_shots.setCellWidget(row_no, column_no, widget)
-                    self.tableWidget_shots.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                elif column[0] == 'st.':
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(f""))
+                    self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+
+                elif column[0] == 'g_d':
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(f""))
+                    self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                elif column[0] == 'fit':
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(f""))
+                    self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                elif column[0] == 'r':
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(f""))
+                    self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                elif column[0] == 'err.':
+                    self.tableWidget_shots.setItem(row_no, column_no, QTableWidgetItem(f""))
+                    self.tableWidget_shots.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_shots.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                # elif column[0] == 'st.':
+                #     widget = QWidget()
+                #     __layout = QHBoxLayout(widget)
+                #     w = QCheckBox(widget)
+                #     w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                #     set_widget_stylesheet(w, 'small')
+                #     __layout.addWidget(w)
+                #     self.tableWidget_shots.setCellWidget(row_no, column_no, widget)
+                #     self.tableWidget_shots.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+                # elif column[0] == 'geo.':
+                #     widget = QWidget()
+                #     __layout = QHBoxLayout(widget)
+                #     w = QCheckBox(widget)
+                #     w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                #     set_widget_stylesheet(w, 'small')
+                #     __layout.addWidget(w)
+                #     self.tableWidget_shots.setCellWidget(row_no, column_no, widget)
+                #     self.tableWidget_shots.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+                # elif column[0] == 'other':
+                #     widget = QWidget()
+                #     __layout = QHBoxLayout(widget)
+                #     w = QCheckBox(widget)
+                #     w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                #     set_widget_stylesheet(w, 'small')
+                #     __layout.addWidget(w)
+                #     self.tableWidget_shots.setCellWidget(row_no, column_no, widget)
+                #     self.tableWidget_shots.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
 
             if not shot['is_valid']:
@@ -599,7 +640,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
             row_no = list(set([i.row() for i in selected_indexes]))[0]
         except:
             row_no = 0
-        self.initial_shot_no = int(self.tableWidget_shots.item(row_no, 0).text())
+        self.initial_shot_no = int(self.tableWidget_shots.item(row_no, 0).text().replace('*', ''))
         self.signal_selected_step_changed.emit(self.get_current_step())
 
 

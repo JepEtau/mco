@@ -116,6 +116,10 @@ class Controller_replace():
 
         self.current_frame['replaced_by'] = self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no)
 
+        shot['modifications'].append('replace')
+        self.signal_shot_modified({'shot_no': shot['no'], 'modifications': shot['modifications']})
+
+
         self.refresh_replace_list()
         self.signal_reload_frame.emit()
 
@@ -124,10 +128,12 @@ class Controller_replace():
         log.info("discard modifications requested")
         self.model_database.discard_replace_modifications()
         self.refresh_replace_list()
+        self.set_modification_status('replace', False)
         self.signal_reload_frame.emit()
 
 
     def event_replace_save_requested(self):
         self.model_database.save_replace_database()
         self.signal_is_saved.emit('replace')
+        self.set_modification_status('replace', False)
 

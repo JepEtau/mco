@@ -253,7 +253,30 @@ class Model_database(Model_geometry,
         elif type == 'stabilize':
             return bool(self.db_stabilize)
 
-        print(f"Erro: type {type} is not a vlaid keyword")
+        print_lightgreen('curves')
+        pprint(self.db_curves_library)
+        print_lightgreen('curves selection')
+        pprint(self.db_curves_selection)
+        print_lightgreen('replace')
+        pprint(self.db_replaced_frames)
+        print_lightgreen('geometry: target')
+        pprint(self.db_target_geometry)
+        print_lightgreen('geometry: default shot geometry')
+        pprint(self.db_default_shot_geometry)
+        print_lightgreen('geometry: shot geometry')
+        pprint(self.db_shot_geometry)
+        print_lightgreen('stabilize')
+        pprint(self.db_stabilize)
+
+        if (bool(self.db_curves_library)
+            or bool(self.db_curves_selection)
+            or bool(self.db_replaced_frames)
+            or bool(self.db_target_geometry)
+            or bool(self.db_default_shot_geometry)
+            or bool(self.db_shot_geometry)
+            or bool(self.db_stabilize)):
+            return True
+
         return False
 
 

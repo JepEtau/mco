@@ -156,16 +156,14 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     def event_settings_enable_toggled(self, is_checked:bool=False):
         log.info(f"changed settings enable to {is_checked}")
         self.tableWidget_stabilize.setEnabled(is_checked)
+
         if self.is_enabled_initial != is_checked:
-            if self.tableWidget_stabilize.is_content_modified():
-                log.info("segments have been modified")
-                settings = self.get_current_settings()
-                self.edition_started()
-                self.signal_settings_modified.emit(settings)
-            else:
-                log.info("segments have NOT been modified")
-                self.pushButton_discard.setEnabled(False)
-                self.pushButton_save.setEnabled(False)
+            self.pushButton_discard.setEnabled(True)
+            self.pushButton_save.setEnabled(True)
+
+            settings = self.get_current_settings()
+            self.edition_started()
+            self.signal_settings_modified.emit(settings)
 
         self.pushButton_save.setEnabled(True)
 
@@ -353,6 +351,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def guidelines_state_changed(self, state):
         self.guidelines.set_enabled(state)
+
+        if state and not self.__parent.is_widget_active():
+            # Enter this widget if not already active, otherwise, cannot move guidelines
+            self.__parent.event_widget_entered(self.objectName())
+
         self.signal_show_guidelines_changed.emit(state)
 
 

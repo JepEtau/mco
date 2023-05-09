@@ -55,7 +55,6 @@ class Controller_video_editor(Controller_common,
                                 Controller_geometry):
     signal_current_shot_modified = Signal(dict)
     signal_ready_to_play = Signal(dict)
-    signal_is_modified = Signal(dict)
     signal_reload_frame = Signal()
     signal_is_saved = Signal(str)
 
@@ -126,6 +125,7 @@ class Controller_video_editor(Controller_common,
         self.view.widget_stabilize.signal_settings_modified[dict].connect(self.event_stabilize_modified)
         self.view.widget_stabilize.signal_save_settings[dict].connect(self.event_stabilize_save_requested)
         self.view.widget_stabilize.signal_save.connect(partial(self.event_stabilize_save_requested, None))
+        self.view.widget_stabilize.signal_discard.connect(self.event_stabilize_discard_requested)
         self.view.widget_stabilize.signal_stabilization_requested.connect(self.event_stabilization_requested)
 
 
@@ -194,15 +194,13 @@ class Controller_video_editor(Controller_common,
         shot.update({
             'is_valid': True,
 
-            # Frame no. ... for what?
-            'frame_nos': list(),
-
             # Structure to display the modifications in the selection widget
             'modifications': {
                 'curves' : {
                     'initial': k_curves,
                     'new': None,
                 },
+                'list': list()
             },
         })
 
@@ -627,22 +625,6 @@ class Controller_video_editor(Controller_common,
         return self.model_database.get_modified_db()
 
 
-    def current_shot(self):
-        try:
-            return self.shots[self.current_shot_no]
-        except:
-            print_orange("\tget current shot: current shot is None")
-            log.warning("get current shot: current shot is None")
-            pass
-        # self.shots[self.current_frame['shot_no']]
-
-        return None
-
-    def get_current_frame_no(self, initial=False):
-        pprint(self.current_frame)
-        if 'replace' in self.current_frame.keys():
-            return self.current_frame['replace']
-        return self.current_frame['frame_no']
 
     def get_index_from_frame_no(self, frame_no):
         # log.info(f"get index for frame no. {frame_no}")
@@ -918,6 +900,7 @@ class Controller_video_editor(Controller_common,
             self.refresh_geometry_for_each_frame(shot=shot)
 
         # self.signal_stabilize_settings_refreshed.emit(new_settings)
+        self.set_modification_status('stabilize', True)
 
 
     def refresh_stabilize_flag_for_each_frame(self, shot):
@@ -932,8 +915,14 @@ class Controller_video_editor(Controller_common,
     def event_stabilize_discard_requested(self):
         log.info("discard modifications requested")
         shot = self.current_shot()
-        self.model_database.discard_shot_stabilize_settings(
-            k_ep=shot['k_ep'], k_part=shot['k_part'])
+        self.model_database.discard_shot_stabilize_settings(shot=shot)
+        self.set_modification_status('stabilize', False)
+
+        # Refresh stabilize: shot and frames
+        settings = self.model_database.get_shot_stabilize_settings(shot=shot)
+        self.signal_stabilize_settings_refreshed.emit(settings)
+        self.refresh_geometry_for_each_frame(shot=shot)
+
         self.signal_reload_frame.emit()
 
 
@@ -959,6 +948,7 @@ class Controller_video_editor(Controller_common,
         # Save these settings
         self.model_database.save_shot_stabilize_settings(shot)
         self.signal_is_saved.emit('stabilize')
+        self.set_modification_status('stabilize', False)
 
 
 

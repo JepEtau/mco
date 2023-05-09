@@ -60,7 +60,7 @@ class Controller_geometry():
                 # Use custom geometry, copy from default
                 self.model_database.set_shot_geometry(shot=shot,
                     geometry=deepcopy(self.model_database.get_default_shot_geometry(shot)))
-
+            self.set_modification_status('geometry', True)
 
         # Modify target width
         if element == 'target' and parameter == 'width':
@@ -118,6 +118,7 @@ class Controller_geometry():
                 self.model_database.set_shot_geometry(shot=shot, geometry=geometry)
             else:
                 self.model_database.set_default_shot_geometry(shot=shot, geometry=geometry)
+            self.set_modification_status('geometry', True)
 
         # Refresh all frames of this shot
         self.refresh_geometry_for_each_frame(shot=shot)
@@ -158,21 +159,6 @@ class Controller_geometry():
             },
             'last_task': shot['last_task'],
         }
-        # virtual_shot['geometry']['target'] = target_geometry
-
-        # try:
-        #     virtual_shot['geometry']['default']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
-        #                                                 virtual_shot['geometry']['default']['crop']))
-        # except:
-        #     # print_orange("no geometry/default/crop")
-        #     pass
-        # try:
-        #     virtual_shot['geometry']['shot']['crop'] = list(map(lambda x: x + IMG_BORDER_HIGH_RES,
-        #                                                 virtual_shot['geometry']['shot']['crop']))
-        # except:
-        #     # print_orange("info: no geometry/shot/crop")
-        #     pass
-
         print_purple("virtual_shot")
         pprint(virtual_shot)
 
@@ -209,6 +195,7 @@ class Controller_geometry():
         self.model_database.discard_shot_geometry_modifications(shot)
         self.refresh_geometry_for_each_frame(shot=shot)
         self.signal_reload_frame.emit()
+        self.set_modification_status('geometry', False)
 
 
     def event_geometry_save_requested(self):
@@ -225,6 +212,7 @@ class Controller_geometry():
 
         self.model_database.save_shot_geometry_database(k_ep=k_ep, k_part=k_part)
         self.signal_is_saved.emit('geometry')
+        self.set_modification_status('geometry', False)
 
 
 

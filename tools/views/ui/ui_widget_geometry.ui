@@ -146,8 +146,7 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>tools/icons/grey/undo.svg</normaloff>
-            <normalon>tools/icons/purple/undo.svg</normalon>tools/icons/grey/undo.svg</iconset>
+            <normaloff>tools/icons/purple/undo.svg</normaloff>tools/icons/grey/undo.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>

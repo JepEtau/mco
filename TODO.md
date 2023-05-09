@@ -3,6 +3,8 @@
 - use ROI for deshake
 - stats: list unused curves. reason: clean the db
 - add shot no. in ini files
+- Try removing stab before upscale when there is rainfall
+- (?) Try SwinIR, model: https://github.com/Bubblemint864/AI-Models
 
 (2)
 - (?) use ROI when zooming in/out
@@ -11,7 +13,6 @@
 (3)
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
-- remove final 'dimensions' from shot structure, let's use a constant
 - deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image. This may have an impact if smooth stabilisation is implemented
 - (?) manual offsets to deshake
 - clean filters.py
@@ -19,25 +20,19 @@
 
 # TODO video editor
 (1)
-- Undo on geometry
 - Add geometry error/fit_to_width in selection widget
 
 
 (2)
 - F5 to refresh current shot only
-- (?) Fit to width does not work correctly
 - curves: bug: mouseclick on graph creates a point if another widget is selected
-- save when closing the application is not working
-- selection widget: display unsaved shot in selection widget
-- buttons (save, discard, ...) not working for some widgets (which ones?)
 - edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db
 
 (3)
 - (?) reorder options in .ini files
 - when no image loaded, reset all widgets / disable all widgets if images missing
 - add buttons to show/hide widgets
-- stabilize: when table is disable, set qWidgetItem to disable (text should be grey)
-- change selection widget to a standard widget (common)
+- stabilize: when table is disable, set qWidgetItem to disable (text should be gray)
 - (?)Replace not allowed when multiple shot selected
 
 

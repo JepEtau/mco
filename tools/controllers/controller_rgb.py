@@ -54,6 +54,7 @@ class Controller_rgb():
         self.signal_shot_per_curves_modified.emit(shot_list)
 
         self.signal_current_shot_modified.emit(shot['modifications'])
+        self.set_modification_status('curves', True)
         self.signal_load_curves.emit(curves)
         self.signal_reload_frame.emit()
 
@@ -119,4 +120,5 @@ class Controller_rgb():
             'new': None,
         }
         self.signal_current_shot_modified.emit(shot['modifications'])
+        self.set_modification_status('curves', False)
         self.signal_is_saved.emit('curves_selection')

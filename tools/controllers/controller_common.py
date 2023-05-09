@@ -19,6 +19,7 @@ from utils.common import (
     K_GENERIQUES,
     K_PARTS,
 )
+from utils.pretty_print import *
 
 
 
@@ -26,6 +27,7 @@ class Controller_common(QObject):
     signal_close = Signal()
     signal_shotlist_modified = Signal(dict)
 
+    signal_shot_modified = Signal(dict)
 
     def __init__(self):
         super(Controller_common, self).__init__()
@@ -146,3 +148,31 @@ class Controller_common(QObject):
 
 
 
+    def current_shot(self):
+        try:
+            return self.shots[self.current_shot_no]
+        except:
+            print_orange("\tget current shot: current shot is None")
+            log.warning("get current shot: current shot is None")
+            pass
+        # self.shots[self.current_frame['shot_no']]
+        return None
+
+
+    def get_current_frame_no(self, initial=False):
+        pprint(self.current_frame)
+        if 'replace' in self.current_frame.keys():
+            return self.current_frame['replace']
+        return self.current_frame['frame_no']
+
+
+    def set_modification_status(self, modification_type, is_modified:bool=False):
+        shot = self.current_shot()
+        try: shot['modifications']['list'].remove(modification_type)
+        except: pass
+        if is_modified:
+            shot['modifications']['list'].append(modification_type)
+        self.signal_shot_modified.emit({
+            'shot_no': shot['no'],
+            'modifications': shot['modifications']['list']
+        })
