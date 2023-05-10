@@ -187,5 +187,5 @@ def parse_editions(database, cfg_foldername, verbose=False):
             # Create a simple link (do not copy)
             edition['dimensions'] = db_common['dimensions']
 
-        db_editions['available'] .append(k_ed)
+        db_editions['available'].append(k_ed)
 

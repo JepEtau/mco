@@ -24,7 +24,7 @@ def process_shot(db, shot, force:bool=False):
     # Consolidate shot
     consolidate_shot(db, shot)
 
-    if True:
+    if False:
         print_lightcyan("================================== SHOT =======================================")
         pprint(shot)
         print_lightcyan("===============================================================================")
@@ -58,7 +58,7 @@ def process_shot(db, shot, force:bool=False):
     # Effects
     if 'effects' in shot.keys():
         effect = shot['effects'][0]
-        print("<<<<<<<<<<<<<<<<<<<<< EFFECTS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        print_lightcyan("Effects:")
         # print("APPLY effect", shot['effects'])
         # pprint(shot)
         if effect == 'loop_and_fadeout':
@@ -66,6 +66,9 @@ def process_shot(db, shot, force:bool=False):
 
         elif effect == 'fadeout':
             effect_fadeout(db, shot)
+
+        else:
+            print_green("\tuse concatenation files")
 
 
     # sys.exit(print_red("\n終わり\n"))

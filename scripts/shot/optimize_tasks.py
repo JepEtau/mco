@@ -22,7 +22,7 @@ def optimize_tasks(db, shot) -> int:
         hash = filter['hash']
         if hash == '':
             # no hash, not saved or null filter continue
-            print_yellow("\t* step no. %d is empty or not saved" % (step_no))
+            print_yellow("\t\t\t* step no. %d is empty or not saved" % (step_no))
             continue
 
         output_folder = os.path.join(shot['cache'], "%02d" %  (step_no))
@@ -33,9 +33,9 @@ def optimize_tasks(db, shot) -> int:
                 hash=hash)
         else:
             if shot['dst']['k_part'] in ['g_debut', 'g_fin']:
-                print_yellow("\treplace output folder from %s to " % (output_folder), end='')
+                print_lightgrey("\t\treplace output folder from %s to " % (output_folder), end='')
                 output_folder_dst = output_folder.replace(shot['k_ep'],shot['dst']['k_ep'])
-                print_yellow("%s" % (output_folder_dst))
+                print_lightgrey(f"{output_folder_dst}")
             else:
                 output_folder_dst = output_folder
             image_list = get_image_list(shot,
@@ -49,16 +49,17 @@ def optimize_tasks(db, shot) -> int:
                 do_process = True
                 break
         if not do_process:
-            print_green("\t* step no. %d already done" % (step_no))
+            print(f"\t\t\t* step no. {step_no} already done")
             step_no += STEP_INC
             break
         else:
-            print_red("\t* process step no. %d" % (step_no))
+            print_red("\t\t\t* process step no. %d" % (step_no))
 
     if step_no > step_no_max:
         # Files already exist
         step_no = -1
 
-    print_orange("\trestart from step no. %d" % (step_no))
+    if step_no != -1:
+        print_orange("\t\trestart from step no. %d" % (step_no))
 
     return step_no

@@ -291,6 +291,9 @@ def get_database_size(obj, seen=None):
 def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int):
     verbose = False
 
+    if k_ed in db['common']['editions']['discard']:
+        return ''
+
     # Returns the part from the frame no.:
     try:
         db_ep = db[k_ep]['video'][k_ed]

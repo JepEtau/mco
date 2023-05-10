@@ -110,9 +110,13 @@ def get_video_duration(db_common, filename='', integrity=True):
 
 
 
-def execute_ffmpeg_command(db, command=None, filename='', print_msg=False):
+def execute_ffmpeg_command(db, command=None, filename='', print_msg=False, simulation:bool=False):
     if command is None:
         sys.exit(print_red("Error: FFmpeg command is empty"))
+
+    if simulation:
+        print_lightgrey(' '.join(command))
+        return ''
 
     if print_msg:
         now = datetime.datetime.now()

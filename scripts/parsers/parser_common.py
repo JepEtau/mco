@@ -197,7 +197,7 @@ def parse_common_configuration(db, config_path):
 
     # Discard editions
     try:
-        editions_to_discard = list(db_common['editions']['discard'].split(',').replace(' ', ''))
+        editions_to_discard = list(db_common['editions']['discard'].replace(' ', '').split(','))
     except:
         editions_to_discard = list()
         pass

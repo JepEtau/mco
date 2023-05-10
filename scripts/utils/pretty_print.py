@@ -72,6 +72,8 @@ def print_lightred(*values: object,
     print("\033[91m{}\033[00m" .format(values[0]), sep=sep, end=end, flush=flush)
 
 
+def lightgreen(*values: object) -> str:
+    return "\033[92m{}\033[00m" .format(values[0])
 def print_lightgreen(*values: object,
             sep: str | None = " ",
             end: str | None = "\n",
@@ -100,6 +102,9 @@ def print_pink(*values: object,
     print("\033[95m{}\033[00m" .format(values[0]), sep=sep, end=end, flush=flush)
 
 
+
+def lightcyan(*values: object) -> str:
+    return "\033[96m{}\033[00m" .format(values[0])
 def print_lightcyan(*values: object,
             sep: str | None = " ",
             end: str | None = "\n",

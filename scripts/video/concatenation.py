@@ -31,8 +31,8 @@ from utils.time_conversions import (
 
 
 def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_filepath=''):
-    print_lightgreen(f"Create concatenation file: ", end='')
-    print_lightcyan(f"{k_ep}, {k_part}, shot no. {shot['no']}: ", end='')
+    print_lightgrey(f"\tcreate concatenation file: ", end='')
+    print_lightcyan(f"{k_ep}, {k_part}, shot no. {shot['no']}")
     # Use a single concatenation file for
     #   - g_asuivre, g_reportage
     if k_part in ['g_asuivre', 'g_reportage']:
@@ -76,7 +76,7 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
         sys.exit(print_red("(TODO: deprecate) Use previous concatenation file: %s" % (previous_concatenation_filepath)))
         concatenation_file = open(previous_concatenation_filepath, 'a')
 
-    print(f"{concatenation_filepath}")
+    # print(f"{concatenation_filepath}")
 
     # Frame duration
     duration_str = "duration %.02f\n" % (1/FPS)
@@ -191,13 +191,13 @@ def create_concatenation_file_video(db, k_ep, k_part, video_files:dict):
         else:
             for k_p in K_PARTS:
                 try:
-                    for filepath in video_files[k_p][k_p]:
+                    for filepath in video_files[k_p]['files']:
                         p = filepath.replace('concatenation', 'video')
                         concatenation_file.write("file \'%s\' \n" % (p))
                 except:
                     if k_p in K_GENERIQUES:
                         for shot in video_files[k_p]['shotlist']:
-                            p = shot['path'].replace('.txt', f"_{shot['hash']}.mkv")
+                            p = shot['path'].replace('.txt', f"_{shot['hash']}_{shot['last_task']}.mkv")
                             p = p.replace('concatenation', 'video')
                             concatenation_file.write("file \'%s\' \n" % (p))
         concatenation_file.close()
@@ -217,7 +217,7 @@ def create_concatenation_file_silence(db, k_ep):
         if ('silence' in db[k_ep]['audio'][k_p].keys()
                 and db[k_ep]['audio'][k_p]['silence'] > 0):
 
-            print_lightcyan(f"Create silence after {k_p}")
+            print_lightgrey(f"\t- {k_p}")
 
             # Convert silence duration in nb of frames
             # print(db[k_ep]['audio'][k_p]['silence'])
@@ -253,12 +253,15 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
 
     input_filename = video_shot['path']
     shot_filepath = input_filename.replace("concatenation", "video")
-    suffix = "_%s" % (video_shot['hash'])
+    suffix = ''
+    if video_shot['hash'] != '':
+        suffix += "_%s" % (video_shot['hash'])
     if video_shot['last_task'] != '':
         suffix += "_%s" % (video_shot['last_task'])
     shot_filepath = shot_filepath.replace('.txt', '%s.mkv' % (suffix))
 
-    print_lightgreen(f"Combine images into video: ", end='')
+    # print_lightgreen(f"Combine images into video: ", end='')
+    print_lightgrey(f"\tcombine images into video: ", end='')
     print_lightcyan(f"{k_part}: ", end='')
     print(f"{shot_filepath}")
 
@@ -300,13 +303,13 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
             except:
                 pass
 
-    return None
+    return shot_filepath
 
 
 
 def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, simulation:bool=False):
     # Output filepath
-    print_lightgreen(f"Merge audio and video tracks: {k_ep_or_g}")
+    print(lightgreen(f"Merge audio and video tracks:"), lightcyan(f"{k_ep_or_g}"))
     if k_ep_or_g in ['g_debut', 'g_fin']:
         cache_path = db[k_ep_or_g]['cache_path']
         audio_video_filepath = os.path.join(cache_path, "%s.mkv" % (k_ep_or_g))
@@ -358,19 +361,20 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, sim
         "-shortest",
         "-y", audio_video_filepath
     ])
-    if simulation:
-        print_lightgrey(' '.join(ffmpeg_command))
-    else:
-        std = execute_ffmpeg_command(db, command=ffmpeg_command, filename=audio_video_filepath)
-        if len(std) > 0:
-            print(std)
+
+    std = execute_ffmpeg_command(db,
+        command=ffmpeg_command,
+        filename=audio_video_filepath,
+        simulation=simulation)
+    if len(std) > 0:
+        print(std)
 
 
 
 def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict,
                       force:bool=False, simulation:bool=False):
     verbose=False
-    print_lightcyan(f"Concatenate shots: {k_ep}:{k_part}")
+    print_lightcyan(f"\nConcatenate shots: {k_ep}:{k_part}")
     if verbose:
         pprint(video_files)
 
@@ -398,8 +402,6 @@ def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict,
     # Output video file
     output_filepath = concatenation_filepath.replace('concatenation', 'video')
     output_filepath = output_filepath.replace('.txt', '.mkv')
-    if os.path.exists(output_filepath) and not force:
-        return
 
     # Create concatenation file
     concatenation_file = open(concatenation_filepath, "w")
@@ -411,10 +413,9 @@ def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict,
         concatenation_file.write("file \'%s\' \n" % (p))
     concatenation_file.close()
 
-    # Patch the list of files
-    video_files[k_part] = [concatenation_filepath]
-
-    print("%s %s: concatenate shots into a single clip: %s" % (current_datetime_str(), k_part, output_filepath))
+    if verbose:
+        print("%s %s: concatenate shots into a single clip: %s" % (current_datetime_str(), k_part, output_filepath))
+    print(f"\t{output_filepath}")
     # Concatenate shots into a single video
     ffmpeg_command = [db['common']['tools']['ffmpeg']]
     ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
@@ -425,16 +426,20 @@ def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict,
         "-c", "copy",
         "-y", output_filepath
     ])
-    if simulation:
+    if os.path.exists(output_filepath) and not force:
         print_lightgrey(' '.join(ffmpeg_command))
     else:
-        std = execute_ffmpeg_command(db, command=ffmpeg_command, filename=output_filepath)
+        std = execute_ffmpeg_command(db,
+            command=ffmpeg_command,
+            filename=output_filepath,
+            simulation=simulation)
         print(std)
 
+    return concatenation_filepath, output_filepath
 
 
 def concatenate_all_clips(db, k_ep:str, force=False, simulation:bool=False) -> None:
-    print_lightgreen(f"Concatenation all A/V clips: {k_ep}")
+    print(lightgreen(f"Concatenate all A/V clips:"), lightcyan(f"{k_ep}"))
 
     cache_directory = db[k_ep]['cache_path']
     output_filename = f"{k_ep}_no_chapters.mkv"
@@ -471,12 +476,13 @@ def concatenate_all_clips(db, k_ep:str, force=False, simulation:bool=False) -> N
         "-c", "copy",
         "-y", output_filepath
     ])
-    if simulation:
-        print_lightgrey(' '.join(ffmpeg_command))
-    else:
-        std = execute_ffmpeg_command(db, command=ffmpeg_command, filename=output_filename)
-        if len(std) > 0:
-            print(std)
+
+    std = execute_ffmpeg_command(db,
+        command=ffmpeg_command,
+        filename=output_filename,
+        simulation=simulation)
+    if len(std) > 0:
+        print(std)
 
 
 
@@ -493,7 +499,7 @@ def add_chapters(db, k_ep:str, simulation:bool=False) -> None:
     final_filename = "%s.mkv" % (k_ep)
     final_filepath = os.path.join(output_directory, final_filename)
 
-    print_lightgreen(f"Add chapters: {k_ep}")
+    print(lightgreen(f"Add chapters:"), lightcyan(f"{k_ep}"))
     print(f"\tFinal file: {final_filepath}")
 
     # Create file for chapters
@@ -568,12 +574,15 @@ def add_chapters(db, k_ep:str, simulation:bool=False) -> None:
 
     mkvmerge_command = [db['common']['tools']['mkvmerge']]
     mkvmerge_command.extend([
-                    "--chapters", chapters_filepath,
-                    "-o", final_filepath,
+                    '--quiet',
+                    '--chapters', chapters_filepath,
+                    '--output', final_filepath,
                     input_filepath])
-    if simulation:
-        print_lightgrey(' '.join(mkvmerge_command))
-    else:
-        std = execute_ffmpeg_command(db, command=mkvmerge_command, filename=final_filepath)
-        if len(std) > 0:
-            print(std)
+
+    std = execute_ffmpeg_command(db,
+        command=mkvmerge_command,
+        filename=final_filepath,
+        simulation=simulation)
+    if len(std) > 0:
+        print(std)
+
