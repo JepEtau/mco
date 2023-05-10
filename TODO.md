@@ -1,8 +1,6 @@
 # TODO script
 (1)
-- rework avsync precedemment
 - use ROI for deshake
-- add shot no. in ini files
 - Try removing stab before upscale when there is rainfall
 - (?) Try SwinIR, model: https://github.com/Bubblemint864/AI-Models
 
@@ -10,7 +8,6 @@
 - stats: list unused curves. reason: clean the db
 - (?) use ROI when zooming in/out
 - (?) smooth stabilization: to evaluate (g_fin)
-- av_sync is working in ep01 just because it uses the first shot from ed 'k'
 
 (3)
 - effects: verify when replacing shots (asuivre/precedemment)
@@ -23,7 +20,6 @@
 # TODO video editor
 (1)
 - Add geometry error/fit_to_width in selection widget
-
 
 (2)
 - F5 to refresh current shot only
@@ -39,7 +35,6 @@
 
 
 # TODO other
-- create a script to remove previous unused images
 
 - list models that are already tested
 - list python modules (to clean the environment)
@@ -80,4 +75,3 @@
 # Known issues, but won't correct
 - add_borders is inserted at the wrong place if using s0
 - initial image dimensions is declared as constants: stats are erroneous with s0
-- when saving/discarding, the widget automatically disable save/discard buttons without validation from the controller (i.e. assume saving is done and correct)
