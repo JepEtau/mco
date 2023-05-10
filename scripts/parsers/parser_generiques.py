@@ -82,10 +82,6 @@ def parse_generiques_target(db):
                             }, 'video', 'src')
                         continue
 
-                    if k_option == 'ed_ref':
-                        # Not supported
-                        continue
-
                     # Walk through values
                     properties = value_str.split(',')
                     # print("\t%s, properties:," % (k_part_g), properties)

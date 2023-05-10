@@ -111,7 +111,7 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
 
 
 def calculate_av_sync(db, k_ep):
-    K_EP_DEBUG = ''
+    verbose = False
 
     if ('audio' not in db[k_ep].keys()
         or 'video' not in db[k_ep].keys()):
@@ -121,38 +121,41 @@ def calculate_av_sync(db, k_ep):
     db_video_target = db[k_ep]['video']['target']
     db_audio = db[k_ep]['audio']
 
+    if verbose:
+        print_lightcyan(f"Calculate AV sync.")
+
     # precedemment
     k_part = 'precedemment'
     if k_part in db_audio.keys() and db_audio[k_part]['duration'] != 0:
         # edition used as the src for the audio track
-        print_lightgreen(f"calculate av_sync")
 
         k_ed_src = db_audio['src']['k_ed']
-        print_lightcyan(f"db_audio[{k_part}]:")
-        pprint(db_audio[k_part])
-        print_lightcyan(f"db_video[{k_part}]:")
-        pprint(db[k_ep]['video'][k_ed_src][k_part])
+        if verbose:
+            print_lightcyan(f"db_audio[{k_part}]:")
+            pprint(db_audio[k_part])
+            print_lightcyan(f"db_video {k_ed_src}:{k_part}:")
+            pprint(db[k_ep]['video'][k_ed_src][k_part])
+            print_lightcyan(f"db_video target:{k_part}:")
+            pprint(db[k_ep]['video']['target'][k_part])
 
         # Compare video count from audio_src and target
         precedemment_video_count = (db[k_ep]['video'][k_ed_src]['episode']['shots'][1]['start']
                         - db[k_ep]['video'][k_ed_src]['precedemment']['shots'][1]['start'])
         precedemment_target_video_count = (db_video_target['episode']['shots'][1]['start']
                         - db_video_target['precedemment']['shots'][1]['start'])
-        print_lightcyan(f"precedemment to episode:")
-        print(f"\tvideo count from audio_src: {precedemment_video_count}")
-        print(f"\tvideo count of target: {precedemment_target_video_count}")
-
+        if verbose:
+            print_lightgrey(f"\tprecedemment to episode:")
+            print_lightgrey(f"\t\tvideo count ({k_ed_src}): {precedemment_video_count}")
+            print_lightgrey(f"\t\tvideo count (target): {precedemment_target_video_count}")
         if precedemment_video_count != precedemment_target_video_count:
-            print_red("error: erroneous frame count between video_audio src and video_target")
+            print_red(f"error: precedemment to episode: erroneous frame count between {k_ed_src} and target")
 
         # precedemment
 
-        # Use the 2nd shot
-        # video_diff = (db_video_target[k_part]['shots'][1]['start']
-        #                 - db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start'])
-        part_video_start = (db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start']
-                            - db_video_target[k_part]['shots'][0]['count'])
-
+        # Use the 2nd shot to calculate diff between editions
+        part_video_start = (db_video_target[k_part]['shots'][0]['start']
+            + (db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start']
+                - db_video_target[k_part]['shots'][1]['start']))
         avsync_ms = (frames_to_ms(part_video_start) - db_audio[k_part]['start'])
         db_video[k_part]['avsync'] = ms_to_frames(avsync_ms) if avsync_ms > 0 else 0
         db_audio[k_part].update({
@@ -169,15 +172,20 @@ def calculate_av_sync(db, k_ep):
             'avsync': audio_avsync_ms,
             'count': ms_to_frames(db_audio[k_part]['end'] - db_audio[k_part]['start'])
         })
+        if audio_avsync_ms != 0:
+            print_red(f"error: gap between precedemment and episode  is not null: {audio_avsync_ms}ms")
 
-
+        if verbose:
+            print_lightgrey(f"\tgap between precedemment and episode:")
+            print_lightgrey(f"\t\taudio: {audio_avsync_ms} ms")
         # Use the 2nd shot
         # video_diff = (db_video_target[k_part]['shots'][1]['start']
         #                 - db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start'])
-        part_video_start = (db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start']
-                            - db_video_target[k_part]['shots'][0]['count'])
-        video_avsync = (part_video_start
-                        - (db_video['precedemment']['shots'][0]['start'] + db_video['precedemment']['count']))
+        video_avsync = (db_video_target[k_part]['shots'][0]['start']
+            - (db_video_target['precedemment']['shots'][0]['start']+ db_video_target['precedemment']['count']))
+        if verbose:
+            print_lightgrey(f"\t\tvideo: {video_avsync}")
+
         db_video[k_part]['avsync'] = video_avsync
 
         # if db_video['episode']['start'] != db_video['episode']['shots'][0]['start']:
@@ -259,14 +267,6 @@ def calculate_av_sync(db, k_ep):
         # 'count': ms_to_frames(db_audio[k_part]['duration'])
     })
 
-    if k_ep == K_EP_DEBUG:
-        print("<<<<<<<<<<<<<<<< calculate_av_sync ep=%s >>>>>>>>>>>>>>>>" % (k_ep))
-        print(db_target.keys())
-        print("<<<<<<<<<<<<<<<< VIDEO >>>>>>>>>>>>>>>>")
-        pprint_video(db_video, ignore='shots', first_indent=4)
-        print("<<<<<<<<<<<<<<<< AUDIO >>>>>>>>>>>>>>>>")
-        pprint_audio(db_audio, first_indent=4)
-        print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
 
 
 

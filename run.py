@@ -21,7 +21,6 @@ from parsers.parser_database import (
 from utils.common import (
     K_ALL_PARTS,
     K_GENERIQUES,
-    get_database_size,
 )
 from utils.frames import copy_frames_for_study
 from utils.stats import display_stats
@@ -172,7 +171,6 @@ def main():
         # Parse database
         parse_database(g_database, k_ep=k_episode)
         gc.collect()
-        print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
 
         if arguments.part in K_GENERIQUES:
             print("\t\t- %s: " % (arguments.part))
@@ -184,10 +182,10 @@ def main():
             print("\t\t- precedemment, episode, g_asuivre, asuivre, g_reportage, reportage: ")
             pprint(g_database[k_episode]['video']['f'].keys())
             pprint(g_database[k_episode]['video']['f'][arguments.part]['filters'])
-        else:
-            print("\t\t- all: ", end='')
         print()
-        # pprint(g_database)
+
+        # pprint(g_database[k_episode]['audio'])
+        # pprint(g_database[k_episode]['video']['target'])
         sys.exit()
 
     if arguments.afilter != '' and arguments.shot == -1:
@@ -240,7 +238,6 @@ def main():
         parse_database(g_database, k_ep=k_episode)
 
     gc.collect()
-    print("database: %0.1fkB" % (get_database_size(g_database)/1000.0))
 
 
     # Collect statistics

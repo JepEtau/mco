@@ -153,7 +153,7 @@ def pprint_episode(db, k_ep):
     print_lightcyan("total(A)".rjust(12), end='')
     print_lightcyan("avsync(A)".rjust(12), end='')
     print_lightcyan("silence(A)".rjust(12), end='')
-    print_lightcyan("->extra(A)".rjust(12), end='')
+    print_lightcyan("+adjust(A)".rjust(12), end='')
     print_lightcyan("1st shot".rjust(12), end='')
     print_lightcyan("frames".rjust(10), end='')
     print_lightcyan("loop".rjust(8), end='')
@@ -187,13 +187,16 @@ def pprint_episode(db, k_ep):
 
         audio_duration = 0
         audio_duration +=  db_audio['avsync']
+        audio_silence_padding = 0
         for segment in db_audio['segments']:
             if 'duration' in segment.keys():
                 audio_duration += segment['duration']
             if 'silence' in segment.keys():
                 audio_duration += segment['silence']
-        if 'silence' in db_audio.keys():
-            audio_duration += db_audio['silence']
+                audio_silence_padding += segment['silence']
+
+        # if 'silence' in db_audio.keys():
+        #     audio_duration += db_audio['silence']
 
         # total frames count
         tmp_str = "%d" % db_video['count']
@@ -212,7 +215,7 @@ def pprint_episode(db, k_ep):
         print("%s" % (tmp_str.rjust(12)), end='')
 
         # -> padded (A)
-        extra_str = "%d" % ms_to_frames(db_audio['avsync'] + db_audio['silence'])
+        extra_str = "%d" % ms_to_frames(db_audio['avsync'] + audio_silence_padding)
         print("%s" % (extra_str.rjust(12)), end='')
 
 
