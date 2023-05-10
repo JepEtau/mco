@@ -85,7 +85,7 @@ def parse_common_configuration(db, config_path):
     for d in ['config',
                 '3rd_party',
                 'inputs',
-                'output',
+                'outputs',
                 'cache',
                 'cache_progressive',
                 'cache_progressive_default',
@@ -143,11 +143,11 @@ def parse_common_configuration(db, config_path):
                             db_common['tools'][tool])))
 
         tool = 'mkvmerge'
-        db_common['tools']['mkvmerge'] = os.path.abspath(os.path.normpath(os.path.join(
-                        db_common['directories']['3rd_party'],
-                        db_common['directories']['%s_win' % (tool)],
-                        db_common['tools'][tool])))
-
+        if platform.system() == "Windows":
+            db_common['tools']['mkvmerge'] = os.path.abspath(os.path.normpath(os.path.join(
+                db_common['directories'][f"{tool}_win"], tool)))
+        else:
+            db_common['tools']['mkvmerge'] = tool
 
         for d in ['ffmpeg', 'ffmpeg_win',
                     'mkvmerge', 'mkvmerge_win']:

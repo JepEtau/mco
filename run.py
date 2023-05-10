@@ -254,7 +254,7 @@ def main():
 
     # Audio
     #-------------------------------------------------
-    if arguments.shot == -1:
+    if arguments.shot == -1 and not arguments.simulate:
         if arguments.afilter != '':
             if arguments.part in K_GENERIQUES:
                 # Generiques
@@ -351,22 +351,37 @@ def main():
         if do_av_merge:
             if arguments.part in ['g_debut', 'g_fin']:
                 # Part is specified, merge audio and video files
-                merge_audio_and_video_tracks(g_database, k_ep_or_g=arguments.part, last_task=video_filter, force=arguments.force, simulation=arguments.simulate)
+                merge_audio_and_video_tracks(g_database,
+                    k_ep_or_g=arguments.part,
+                    last_task=video_filter,
+                    force=arguments.force,
+                    simulation=arguments.simulate)
 
-            elif arguments.part == '' and not arguments.simulate:
+            elif arguments.part == '':
                 # Merge all video and audio tracks
                 for k in ['g_debut', 'g_fin']:
-                    merge_audio_and_video_tracks(g_database, k_ep_or_g=k, last_task=video_filter, force=arguments.force|arguments.regenerate)
+                    merge_audio_and_video_tracks(g_database,
+                        k_ep_or_g=k,
+                        last_task=video_filter,
+                        force=arguments.force|arguments.regenerate,
+                        simulation=arguments.simulate)
 
                 # Merge video and audio stream from all parts (except g_debut and g_fin)
-                merge_audio_and_video_tracks(g_database, k_ep_or_g=k_episode, last_task=video_filter, force=arguments.force|arguments.regenerate)
+                merge_audio_and_video_tracks(g_database,
+                    k_ep_or_g=k_episode,
+                    last_task=video_filter,
+                    force=arguments.force|arguments.regenerate,
+                    simulation=arguments.simulate)
 
                 # Concatenate all parts
-                concatenate_all_clips(g_database, k_episode, force=arguments.force|arguments.regenerate)
+                concatenate_all_clips(g_database,
+                    k_ep=k_episode,
+                    force=arguments.force|arguments.regenerate,
+                    simulation=arguments.simulate)
 
-                # Add chapters to the video file
+                # Add chapters to the video file and write into output folder
                 if k_episode != 'ep00':
-                    add_chapters(g_database, k_episode)
+                    add_chapters(g_database, k_ep=k_episode, simulation=arguments.simulate)
 
 
 if __name__ == "__main__":

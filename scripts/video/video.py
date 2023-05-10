@@ -228,14 +228,22 @@ def generate_video(db, k_ed:str, k_ep:str,
     if k_part == '':
         # Only if a full generation is asked
         video_files_tmp = create_concatenation_file_silence(db, k_ep=k_ep)
+        # pprint(video_files)
+        # pprint(video_files_tmp)
+
         for k_p, filepaths in video_files_tmp.items():
-            video_files[k_p] += filepaths
+            # print_lightgreen(f"combine images to video: {k_p}")
+            # pprint(filepaths)
+            if len(filepaths) == 0:
+                continue
+            video_files[k_p][k_p] += filepaths
             for f in filepaths:
                 # print("%s: %s" % (k_p, f))
-                print_purple("TODO: clean this! combine images to mkv")
-                combine_images_into_video(db['common'],
+                virtual_video_shot = {'path': f, 'last_task': '', 'hash': ''}
+                combine_images_into_video(
+                    db_common=db['common'],
                     k_part=k_p,
-                    input_filename=f,
+                    video_shot=virtual_video_shot,
                     force=force,
                     simulation=simulation)
 
@@ -247,25 +255,27 @@ def generate_video(db, k_ed:str, k_ep:str,
             k_ep=k_ep, k_part=k_part, video_files=video_files)
 
         # Concatenate video clips
-        episode_video_filepath = os.path.join(db[k_ep]['cache_path'],
-            "video", "%s_video_%s.mkv" % (k_ep, db_video['hash']))
-        if not os.path.exists(episode_video_filepath) or force or do_regenerate:
-            print("%s concatenate video clips to %s" % (current_datetime_str(), episode_video_filepath))
-            ffmpeg_command = [db['common']['settings']['ffmpeg_exe']]
-            ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
-            ffmpeg_command.extend([
-                "-f", "concat",
-                "-safe", "0",
-                "-i", concatenation_filepath,
-                "-c", "copy",
-                "-y", episode_video_filepath
-            ])
-            if simulation:
-                print_lightgrey(' '.join(ffmpeg_command))
-            else:
-                std = execute_ffmpeg_command(db, command=ffmpeg_command, filename=episode_video_filepath)
-                if len(std) > 0:
-                    print(std)
+        episode_video_filepath = os.path.join(db[k_ep]['cache_path'], "video",
+            f"{k_ep}_video.mkv")
+
+        # Force concatenation
+        # if not os.path.exists(episode_video_filepath) or force or do_regenerate:
+        print("%s concatenate video clips to %s" % (current_datetime_str(), episode_video_filepath))
+        ffmpeg_command = [db['common']['tools']['ffmpeg']]
+        ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
+        ffmpeg_command.extend([
+            "-f", "concat",
+            "-safe", "0",
+            "-i", concatenation_filepath,
+            "-c", "copy",
+            "-y", episode_video_filepath
+        ])
+        if simulation:
+            print_lightgrey(' '.join(ffmpeg_command))
+        else:
+            std = execute_ffmpeg_command(db, command=ffmpeg_command, filename=episode_video_filepath)
+            if len(std) > 0:
+                print(std)
 
 
 
