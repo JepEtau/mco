@@ -70,7 +70,7 @@
         numpy
         opencv-python
         ~~moviepy~~                 <-- not needed
-
+- https://superfastpython.com/multithreaded-file-loading/
 
 # Known issues, but won't correct
 - add_borders is inserted at the wrong place if using s0

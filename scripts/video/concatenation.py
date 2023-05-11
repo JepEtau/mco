@@ -388,52 +388,57 @@ def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict,
     # Folder used to store concatenation file
     create_folder_for_concatenation(db, k_ep, k_part)
 
-
     # Last task is the suffix
     last_task = video_files['shotlist'][0]['last_task']
     last_task_str = '' if last_task == '' else f"_{last_task}"
 
-    # Open concatenation file
-    cache_directory = db[k_ep_or_g]['cache_path']
-    concatenation_filepath = os.path.join(cache_directory,
-        "concatenation", f"{suffix}_{video_files['hash']}{last_task_str}.txt")
-    concatenation_file = open(concatenation_filepath, "w")
+    concatenation_filepath = ''
 
-    # Output video file
-    output_filepath = concatenation_filepath.replace('concatenation', 'video')
-    output_filepath = output_filepath.replace('.txt', '.mkv')
+    if len(video_files['shotlist']) > 1:
+        # Create concatenation file
+        cache_directory = db[k_ep_or_g]['cache_path']
+        concatenation_filepath = os.path.join(cache_directory,
+            "concatenation",
+            f"{suffix}_{video_files['hash']}{last_task_str}.txt")
+        concatenation_file = open(concatenation_filepath, "w")
+        for shot in video_files['shotlist']:
+            filepath = shot['path']
+            hash = shot['hash']
+            p = filepath.replace('.txt', f"_{hash}{last_task_str}.mkv")
+            p = p.replace('concatenation', 'video')
+            concatenation_file.write("file \'%s\' \n" % (p))
+        concatenation_file.close()
 
-    # Create concatenation file
-    concatenation_file = open(concatenation_filepath, "w")
-    for shot in video_files['shotlist']:
-        filepath = shot['path']
-        hash = shot['hash']
-        p = filepath.replace('.txt', f"_{hash}{last_task_str}.mkv")
-        p = p.replace('concatenation', 'video')
-        concatenation_file.write("file \'%s\' \n" % (p))
-    concatenation_file.close()
+        # Output video file
+        output_filepath = os.path.join(cache_directory,
+            "video",
+            f"{suffix}_{video_files['hash']}{last_task_str}.mkv")
 
-    if verbose:
-        print("%s %s: concatenate shots into a single clip: %s" % (current_datetime_str(), k_part, output_filepath))
-    print(f"\t{output_filepath}")
-    # Concatenate shots into a single video
-    ffmpeg_command = [db['common']['tools']['ffmpeg']]
-    ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
-    ffmpeg_command.extend([
-        "-f", "concat",
-        "-safe", "0",
-        "-i", concatenation_filepath,
-        "-c", "copy",
-        "-y", output_filepath
-    ])
-    if os.path.exists(output_filepath) and not force:
-        print_lightgrey(' '.join(ffmpeg_command))
+        if verbose:
+            print("%s %s: concatenate shots into a single clip: %s" % (current_datetime_str(), k_part, output_filepath))
+        print(f"\t{output_filepath}")
+        # Concatenate shots into a single video
+        ffmpeg_command = [db['common']['tools']['ffmpeg']]
+        ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
+        ffmpeg_command.extend([
+            "-f", "concat",
+            "-safe", "0",
+            "-i", concatenation_filepath,
+            "-c", "copy",
+            "-y", output_filepath
+        ])
+        if os.path.exists(output_filepath) and not force:
+            print_lightgrey(' '.join(ffmpeg_command))
+        else:
+            std = execute_ffmpeg_command(db,
+                command=ffmpeg_command,
+                filename=output_filepath,
+                simulation=simulation)
+            print(std)
     else:
-        std = execute_ffmpeg_command(db,
-            command=ffmpeg_command,
-            filename=output_filepath,
-            simulation=simulation)
-        print(std)
+        concatenation_filepath = video_files['shotlist'][0]['path']
+        output_filepath = concatenation_filepath.replace('concatenation', 'video')
+        output_filepath = output_filepath.replace('.txt', f"_{video_files['shotlist'][0]['hash']}{last_task_str}.mkv")
 
     return concatenation_filepath, output_filepath
 

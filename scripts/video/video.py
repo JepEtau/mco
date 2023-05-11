@@ -22,6 +22,7 @@ from utils.common import (
 from utils.hash import calculate_hash
 from shot.consolidate_shot import consolidate_shot
 from filters.ffmpeg_utils import execute_ffmpeg_command
+from utils.nested_dict import nested_dict_set
 from utils.path import create_folder_for_video
 from utils.time_conversions import convert_s_to_m_s_ms, current_datetime_str
 from utils.pretty_print import *
@@ -197,12 +198,12 @@ def generate_video(db, k_ed:str, k_ep:str,
 
     # For each part, concatenate shots in a single clip
     for k_p, v in video_files.items():
-        if len(v['shotlist']) > 1:
+        if len(v['shotlist']) > 0:
             concatenation_filepath, output_filepath = concatenate_shots(db,
                 k_ep=k_ep, k_part=k_p, video_files=v, force=force, simulation=simulation)
             video_files[k_p]['files'] = [output_filepath]
 
-    verbose = False
+    verbose = True
     if verbose:
         print_lightgreen(f"video_files")
         pprint(video_files)
@@ -231,7 +232,10 @@ def generate_video(db, k_ed:str, k_ep:str,
                     video_shot=virtual_video_shot,
                     force=force,
                     simulation=simulation)
-                video_files[k_p]['files'].append(output_filepath)
+                try:
+                    video_files[k_p]['files'].append(output_filepath)
+                except:
+                    nested_dict_set(video_files[k_p], [output_filepath], 'files')
 
     if verbose:
         print_lightgreen(f"video files used to concatenate all clips")
