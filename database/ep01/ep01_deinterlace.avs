@@ -8,6 +8,6 @@ QTGMC(preset="Slower", TR0=2, TR1=2, \
     Denoiser="dfttest", \
     EdiThreads=2)
 SelectEven()
-aWarpSharp2()
+# aWarpSharp2()
 ConvertToRGB24()
 Prefetch(2)
