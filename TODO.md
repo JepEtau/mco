@@ -2,7 +2,6 @@
 (1)
 - use ROI for deshake
 - Try removing stab before upscale when there is rainfall
-- (?) Try SwinIR, model: https://github.com/Bubblemint864/AI-Models
 
 (2)
 - stats: list unused curves. reason: clean the db
@@ -34,9 +33,37 @@
 - (?)Replace not allowed when multiple shot selected
 
 
-# TODO other
+# Models/Algo
+* Cartoons:
+    1x_GainRESV4_128
+    4x-AnimeSharp-lite
+    Fatality_DeBlur
+    Focus + Focus_Moderate https://u.pcloud.link/publink/show?code=kZS4XhVZ1GKsTtkjdULdYn6z9pTHs7fdLvR7
+    1x_Bandage-Smooth-[64]_105000_G (Debanding)
+    CelFrames 1.0
+    DigitalFrames 2.5
+    1x_DeInterPaint (Deinterlacing)
 
-- list models that are already tested
+* Realistic:
+    omnisr
+    4xNomos8kSC
+    2xParimgCompact
+    4xLSDIRCompactC3
+    4xLSDIRCompactN
+    4x_rybu
+    4x-MultiUpscale-C3/C4/C5/T1 (and DetailScale)
+
+* Temporal denoising
+    https://github.com/JingyunLiang/VRT
+    https://github.com/m-tassano/fastdvdnet
+    TempFormer: https://www.youtube.com/watch?v=LA747HTukTQ
+    https://dasongli1.github.io/publication/grouped-shift-net/
+    https://github.com/JingyunLiang/RVRT
+
+* SR
+    https://github.com/IceClear/StableSR.git
+
+# TODO other
 - list python modules (to clean the environment)
     AnimeSR
         basicsr
@@ -70,7 +97,7 @@
         numpy
         opencv-python
         ~~moviepy~~                 <-- not needed
-- https://superfastpython.com/multithreaded-file-loading/
+
 
 # Known issues, but won't correct
 - add_borders is inserted at the wrong place if using s0

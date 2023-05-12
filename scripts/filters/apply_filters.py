@@ -4,7 +4,6 @@ from multiprocessing import *
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 import os
-import platform
 import cv2
 import gc
 import sys
@@ -28,13 +27,12 @@ from utils.get_image_list import (
     get_image_list,
     STEP_INC,
 )
+from utils.load_images import load_images
 
 from utils.pretty_print import *
 
 
 
-def load_image(i, filepath):
-    return i, cv2.imread(filepath, cv2.IMREAD_COLOR)
 
 
 def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False) -> None:
@@ -74,11 +72,6 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
             # shot['last_step']['shape'] = img.shape
             # return hashes
 
-    if platform.system() == "Windows":
-        cpu_count = int(multiprocessing.cpu_count() * (3/4))
-    else:
-        cpu_count = 2
-
 
     # walk through filters
     for filter in filters:
@@ -96,14 +89,15 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
             if step_no > 0 and shot['count'] < MAX_FRAMES_COUNT and len(images) != shot['count']:
                 print_lightgrey("\t\t\tLoading %d images in memory, from %s" % (shot['count'], image_list[0]), flush=True)
 
-                # images = [cv2.imread(f_input, cv2.IMREAD_COLOR) for f_input in image_list]
-                images = [None] * shot['count']
-                nos = list(range(shot['count']))
-                with ThreadPoolExecutor(max_workers=min(cpu_count, shot['count'])) as executor:
-                    work_result = {executor.submit(load_image, i, fp): list for i, fp in zip(nos, image_list)}
-                    for future in concurrent.futures.as_completed(work_result):
-                        i, img = future.result()
-                        images[i] = img
+                # images = [None] * shot['count']
+                # nos = list(range(shot['count']))
+                # with ThreadPoolExecutor(max_workers=min(cpu_count, shot['count'])) as executor:
+                #     work_result = {executor.submit(load_image, i, fp): list for i, fp in zip(nos, image_list)}
+                #     for future in concurrent.futures.as_completed(work_result):
+                #         i, img = future.result()
+                #         images[i] = img
+
+                images = load_images(shot['count'], image_list)
 
                 shot['last_step']['shape'] = images[0].shape
 
