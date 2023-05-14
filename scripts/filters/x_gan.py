@@ -97,7 +97,7 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
         start_time = time.time()
         torch.cuda.empty_cache()
 
-        print("\t%s -> %s" % (image_list[f_no], f_output))
+        # print("\t%s -> %s" % (image_list[f_no], f_output))
 
         # Continue if the output file already exists
         if not do_force and os.path.exists(f_output):
@@ -266,8 +266,10 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
 
     # Walk through images
     count = shot['count']
+    i = 0
     for f_no, f_output in zip(range(count), output_image_list):
         start_time = time.time()
+        i += 1
 
         # Continue if the output file already exists
         if not do_force and os.path.exists(f_output):
@@ -298,8 +300,10 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
             print("Error: failed to upscale %s" % (image_list[f_no]))
             print(e)
         else:
-            print("\tinfo: upscaled in %.02fs" % (time.time() - start_time))
+            print(f"\t\t({i}/{count}) upscaled in %.02fs" % (time.time() - start_time), end='\r')
 
+    # print(f"{''.join([' ']*20)}")
+    print("")
     return hash, netscale, output_images
 
 
@@ -418,10 +422,12 @@ def upscale_esrgan(shot, images:list, image_list:list,
 
     # Walk through images
     count = shot['count']
+    i = 0
     for f_no, f_output in zip(range(count), output_image_list):
         start_time = time.time()
+        i += 1
 
-        print("\t%s -> %s" % (image_list[f_no], f_output))
+        # print("\t%s -> %s" % (image_list[f_no], f_output))
 
         # Continue if the output file already exists
         if not do_force and os.path.exists(f_output):
@@ -451,7 +457,8 @@ def upscale_esrgan(shot, images:list, image_list:list,
             print("Error: failed to upscale %s" % (image_list[f_no]))
             print(e)
         else:
-            print("\tinfo: upscaled in %.02fs" % (time.time() - start_time))
+            print(f"\t\t({i}/{count}) upscaled in %.02fs" % (time.time() - start_time), end='\r')
 
-
+    # print(f"{''.join([' ']*20)}")
+    print("")
     return hash, scale, output_images

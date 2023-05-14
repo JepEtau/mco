@@ -59,7 +59,7 @@ def load_images(count, image_filepaths):
 
     elapsed_time = time.time() - start_time
     print(f"loaded {count} images in {elapsed_time:.02f}s (cpu count={cpu_count})")
-    sys.exit()
+    # sys.exit()
 
     return loaded_images
 

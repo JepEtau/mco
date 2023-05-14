@@ -41,6 +41,102 @@ def create_black_frame(db, shot):
 
 
 
+def effect_fadein(db, shot):
+    # Validate with:
+    #   - ep02: episode
+
+    # Start and count of frames for the loop
+    fadein_count = shot['effects'][2]
+    print_green(f"\tloop and fadein: loop: start={fadein_count}, fadein: count={fadein_count}")
+
+
+    # Get hash to set the suffix
+    hash = shot['last_step']['hash']
+    step_no = shot['last_step']['step_no']
+    if hash == '':
+        # Last filter is null, use previous hash
+        previous_filter = shot['filters'][step_no - STEP_INC]
+        hash = previous_filter['hash']
+        input_filepath = get_input_path_from_shot(db=db,
+            shot=shot, task=previous_filter['task'])
+    else:
+        input_filepath = get_input_path_from_shot(db=db,
+            shot=shot, task=shot['last_task'])
+    suffix = "_%s" % (hash)
+
+    # Input directory
+    print_lightgrey("\tinput_filepath: %s" % (input_filepath))
+
+    # Output directory
+    k_ep_dst = shot['dst']['k_ep']
+    k_part_dst = shot['dst']['k_part']
+    if k_part_dst in ['g_debut', 'g_fin']:
+        output_filepath = os.path.join(db[k_part_dst]['cache_path'])
+    else:
+        output_filepath = os.path.join(db[k_ep_dst]['cache_path'], k_part_dst)
+    output_filepath = os.path.join(output_filepath,
+        '%03d' % (shot['no']),
+        '%02d' % (step_no))
+    if not os.path.exists(output_filepath):
+        os.makedirs(output_filepath)
+    print_lightgrey("\toutput_filepath: %s" % (output_filepath))
+
+
+    # Input image list
+    if shot['last_task'] == 'edition':
+        image_list = get_image_list_pre_replace(shot=shot,
+            folder=input_filepath,
+            step_no=step_no,
+            hash=hash)
+    elif shot['last_step']['step_no'] == shot['last_step']['step_edition']:
+        image_list = get_new_image_list(shot=shot,
+            step_no=step_no,
+            hash=shot['filters'][step_no - STEP_INC]['hash'])
+    else:
+        image_list = get_image_list(shot=shot,
+            folder=input_filepath,
+            step_no=step_no,
+            hash=hash)
+    img_input = image_list[fadein_count]
+
+    # Output image list
+    filename_template = FILENAME_TEMPLATE % (
+        shot['k_ep'], shot['k_ed'], step_no, suffix)
+    if shot['last_task'] == 'deinterlace':
+        start = shot['start'] + shot['count']
+        end = start + fadein_count
+    else:
+        start = shot['count']
+        end = start + fadein_count
+    output_image_list = list([os.path.join(output_filepath, filename_template % (f_no))
+        for f_no in range(end-1, start-1, -1)])
+
+    print_lightgrey("\toutput image count: %d" % (len(output_image_list)))
+    # pprint(output_image_list)
+
+    (height, width, channel_count) = shot['last_step']['shape']
+
+    # Create a  black image for fadeout
+    img_black = np.zeros([height, width, channel_count], dtype=np.uint8)
+
+    cache_strlen = len(db['common']['directories']['cache']) + 1
+    img_src = cv2.imread(img_input, cv2.IMREAD_COLOR)
+    print_lightgrey("\tinput image filepath: %s" % (img_input))
+    for count, img_output in zip(range(fadein_count), output_image_list):
+        # Calculate coefficient: last frame is not completely black because there is always
+        # a silence after this (i.e. black frames)
+        coef = float(count) / fadein_count
+        # keep print for debug until end of validation
+        print(f"\t{count:02d}: {img_input[cache_strlen:]} -> {img_output[cache_strlen:]}, coef={coef:.02f}")
+
+        # Mix images
+        img_dst = cv2.addWeighted(img_src, 1 - coef, img_black, coef, 0)
+        img_src = img_dst
+
+        cv2.imwrite(img_output, img_dst)
+
+
+
 def effect_loop_and_fadeout(db, shot):
     # Validate with:
     #   - ep01: episode

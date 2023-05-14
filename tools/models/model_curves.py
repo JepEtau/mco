@@ -386,6 +386,8 @@ class Model_curves():
             'shots': []
         }, k_ed, k_ep, k_curves)
 
+        nested_dict_clean(self.db_curves_library)
+
 
 
     def save_shot_curves_selection(self, db, shot):

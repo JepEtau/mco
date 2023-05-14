@@ -459,12 +459,11 @@ class Table_stabilize(QTableWidget):
     def remove_all_segments(self):
         if self.rowCount()>0:
             log.info("remove all")
-            segments = []
-            for _row in range(self.rowCount()):
-                _variable = []
-                for _column in range(5):
-                    _variable.append(self.item(_row, _column).text())
-                segments.append(_variable)
+            segments = list()
+            row_nos = list(range(self.rowCount()))
+            for row_no in sorted(row_nos, reverse=True):
+                segments.append(self.get_segment_values(row_no=row_no))
+                self.removeRow(row_no)
             self.history.add(self.History.Action.clear,
                 {'segments': segments, 'alignment': self.alignment})
         self.clearContents()

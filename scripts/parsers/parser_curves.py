@@ -158,7 +158,11 @@ def get_initial_curves_selection(db, k_ep, k_part) -> dict:
             if k_ep == '':
                 continue
 
-            db_video = db[k_ep]['video'][k_ed_src][k_part]
+            try:
+                db_video = db[k_ep]['video'][k_ed_src][k_part]
+            except:
+                continue
+
             if 'shots' not in db_video.keys():
                 continue
 

@@ -235,7 +235,7 @@ class Controller_video_editor(Controller_common,
                     'keep_ratio': True,
                     'fit_to_width': False})
                 shot_geometry = self.model_database.get_shot_geometry(shot=shot)
-            elif has_add_border_task(shot):
+            elif has_add_border_task(shot) and self.current_task != 'edition':
                 # Not geometry define, create a new one
                 print_yellow("\t\t\tNo shot geometry defined, stabilize filter detected, associate a shot geometry")
                 self.model_database.set_shot_geometry(shot=shot, geometry={
@@ -991,15 +991,17 @@ class Controller_video_editor(Controller_common,
         frames = self.frames[shot_no]
         images = list()
         image_list = list()
+        has_fade_in = True if 'effects' in shot.keys() and shot['effects'][0] == 'fadein' else False
         for frame in frames:
             frame_no = frame['frame_no']
             new_frame_no = self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no)
             if new_frame_no != -1:
                 print(f"{frame_no} replaced by {new_frame_no}")
                 frame_index = new_frame_no - shot['start']
+            elif has_fade_in:
+                frame_index = frame_no - shot['start'] - shot['effects'][1]
             else:
                 frame_index = frame_no - shot['start']
-
             images.append(frames[frame_index]['cache_initial'])
             image_list.append(frames[frame_index]['filepath'])
 

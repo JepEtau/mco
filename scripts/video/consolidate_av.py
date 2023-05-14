@@ -34,14 +34,14 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
     shots = db_video['shots']
     if len(shots) == 1:
         if db_video['count'] != shots[0]['count']:
-            sys.exit("%s.align_audio_video_durations_g_debut_fin : %s:%s todo: correct and remove this as this shall not occur: end" % (__name__, k_ep, k_part_g))
+            sys.exit("align_audio_video_durations_g_debut_fin : %s:%s todo: correct and remove this as this shall not occur: end" % (__name__, k_ep, k_part_g))
 
     # Get nb of frames for the video track
     video_count = 0
     for s in shots:
         video_count += s['count']
     if db_video['count'] != video_count:
-        sys.exit("%s.align_audio_video_durations_g_debut_fin : error: %s:%s consolidate has not been done before: why?" % (__name__, k_ep, k_part_g))
+        sys.exit("align_audio_video_durations_g_debut_fin : error: %s:%s consolidate has not been done before: why?" % (__name__, k_ep, k_part_g))
 
     # Align video track to a multiple of seconds
     db_video['count'] = int(FPS * int(1 + db_video['count'] / FPS))
@@ -55,13 +55,13 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
         audio_duration += db_audio['avsync']
     if 'silence' in db_audio.keys():
         audio_duration += db_audio['silence']
-    # print("audio duration: %.03fs" % (audio_duration/1000))
-    # print("audio count: %d" % (ms_to_frames(audio_duration)))
+    # print(f"audio duration: %.03fs" % (audio_duration/1000))
+    # print(f"audio count: %d" % (ms_to_frames(audio_duration)))
 
     # Align audio track to a multiple of seconds
     rounded_audio_duration = 1000 * int(1 + float(audio_duration)/1000)
     audio_count = ms_to_frames(rounded_audio_duration)
-    # print("rounded audio count: %d" % (audio_count))
+    # print(f"rounded audio count: %d" % (audio_count))
     if frames_to_ms(audio_count) != audio_duration:
         db_audio['segments'].append({
             'start': 0,
@@ -74,11 +74,11 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
     db_audio['duration'] = frames_to_ms(audio_count)
 
 
-    # print("----------------- align_audio_video_durations_g_debut_fin: AUDIO ------------------")
-    # print("\tk_part_g=%s" % (k_part_g))
-    # print("\t- audio_count=%d" % (db_audio['count']))
-    # print("\t- audio_duration=%d" % (db_audio['duration']))
-    # print("\t- video_count=%d" % (db_video['count']))
+    # print(f"----------------- align_audio_video_durations_g_debut_fin: AUDIO ------------------")
+    # print(f"\tk_part_g=%s" % (k_part_g))
+    # print(f"\t- audio_count=%d" % (db_audio['count']))
+    # print(f"\t- audio_duration=%d" % (db_audio['duration']))
+    # print(f"\t- video_count=%d" % (db_video['count']))
 
     # Align audio and video duration
     video_count = db_video['count']
@@ -86,14 +86,14 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
         # Frames shall be added: use the loop effect for this
         last_shot = shots[-1]
         frame_no = last_shot['start'] + last_shot['count'] - 1
-        # print("info: align_audio_video_durations_g_debut_fin: %s: add video frames, video(%d) < audio (%d)" % (k_part_g, video_count, audio_count))
+        # print(f"info: align_audio_video_durations_g_debut_fin: %s: add video frames, video(%d) < audio (%d)" % (k_part_g, video_count, audio_count))
         loop_count = audio_count - video_count
         last_shot.update({'effects': ['loop_and_fadeout', frame_no, loop_count, min(loop_count, 25)]})
         db_video['count'] += loop_count
 
     elif video_count > audio_count:
         # Add silence to the audio track by adding a new segment
-        # print("info: align_audio_video_durations_g_debut_fin: %s: video(%d) > audio (%d)" % (k_part_g, video_count, audio_count))
+        # print(f"info: align_audio_video_durations_g_debut_fin: %s: video(%d) > audio (%d)" % (k_part_g, video_count, audio_count))
         video_duration = frames_to_ms(video_count)
         audio_duration = db_audio['duration']
         silence_duration = video_duration - audio_duration
@@ -106,7 +106,7 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
         db_audio['duration'] += silence_duration
 
     # elif video_count == audio_count:
-    #     print("info: align_audio_video_durations_g_debut_fin: %s: video(%d) = audio (%d)" % (k_part_g, video_count, audio_count))
+    #     print(f"info: align_audio_video_durations_g_debut_fin: %s: video(%d) = audio (%d)" % (k_part_g, video_count, audio_count))
 
 
 
@@ -115,7 +115,7 @@ def calculate_av_sync(db, k_ep):
 
     if ('audio' not in db[k_ep].keys()
         or 'video' not in db[k_ep].keys()):
-        sys.exit("%s.calculate_av_sync: error, audio or video does not exist in %s:common" % (__name__, k_ep))
+        sys.exit("calculate_av_sync: error, audio or video does not exist in %s:common" % (__name__, k_ep))
         return
     db_video = db[k_ep]['video']['target']
     db_video_target = db[k_ep]['video']['target']
@@ -276,10 +276,10 @@ def align_audio_video_durations(db, k_ep):
         db_video = db[k_ep]['video']['target']
         db_audio = db[k_ep]['audio']
     except:
-        sys.exit("%s.align_audio_video_durations: error, audio or video does not exist in %s:common" % (__name__, k_ep))
+        sys.exit(f"align_audio_video_durations: error, audio or video does not exist in {k_ep}:common")
 
     if k_ep == K_EP_DEBUG:
-        print("%s.align_audio_video_durations: %s:common" % (__name__, k_ep))
+        print(f"align_audio_video_durations:{k_ep}:common")
         pprint(db_audio)
 
     # g_asuivre
@@ -293,7 +293,7 @@ def align_audio_video_durations(db, k_ep):
         last_shot['start'] + last_shot['count'] - 1,
         db_video[k_part_g]['count'] - last_shot['count']]
     if k_ep == K_EP_DEBUG:
-        print("\ndb_video: %s:\n--------------------------------------" % (k_part_g))
+        print(f"\ndb_video: %s:\n--------------------------------------" % (k_part_g))
         pprint(db_video[k_part_g])
 
 
@@ -307,24 +307,24 @@ def align_audio_video_durations(db, k_ep):
         # Use last frame
         loop_start = last_shot['start'] + last_shot['count'] - 1
         loop_count = db_audio[k_part_g]['count'] - db_video[k_part_g]['count']
-        # print("%s: loop, last frame=%d, %d frames" % (k_part_g, loop_start, loop_count))
+        # print(f"%s: loop, last frame=%d, %d frames" % (k_part_g, loop_start, loop_count))
         last_shot['effects'] = ['loop', loop_start, loop_count]
 
     elif db_video[k_part_g]['count'] > db_audio[k_part_g]['count']:
         # remove some frames
-        # print("%s: remove %d frames" % (k_part_g, db_video[k_part_g]['count'] - db_audio[k_part_g]['count']))
+        # print(f"%s: remove %d frames" % (k_part_g, db_video[k_part_g]['count'] - db_audio[k_part_g]['count']))
         last_shot['count'] -= db_video[k_part_g]['count'] - db_audio[k_part_g]['count']
 
     db_video[k_part_g]['count'] = db_audio[k_part_g]['count']
     if k_ep == K_EP_DEBUG:
-        print("\ndb_video: %s:\n--------------------------------------" % (k_part_g))
+        print(f"\ndb_video: %s:\n--------------------------------------" % (k_part_g))
         pprint(db_video[k_part_g])
 
     # precedemment+episode, asuivre, reportage
     #---------------------------------------------------------------------------
     for k_part in ['episode', 'asuivre', 'reportage']:
         if k_ep == K_EP_DEBUG and k_part != 'episode':
-            print("\ndb_video: %s:\n--------------------------------------" % (k_part))
+            print(f"\ndb_video: %s:\n--------------------------------------" % (k_part))
             pprint(db_video[k_part])
 
         # Calculate audio duration
@@ -338,11 +338,11 @@ def align_audio_video_durations(db, k_ep):
         audio_count = ms_to_frames(audio_duration)
         audio_count_rounded = float(int((audio_duration * FPS / 1000) + 0.5))
         audio_count_float = (audio_duration * FPS / 1000)
-        # print("%s:" % (k_part))
-        # print("\taudio_count_rounded=%f" % (audio_count_rounded))
-        # print("\taudio_count_float=%f" % (audio_count_float))
+        # print(f"%s:" % (k_part))
+        # print(f"\taudio_count_rounded=%f" % (audio_count_rounded))
+        # print(f"\taudio_count_float=%f" % (audio_count_float))
         if audio_count_float != audio_count_rounded:
-            sys.exit("%s.align_audio_video_durations: correct or remove this (add an audio segment), %s:%" % (k_ep, k_part))
+            sys.exit("align_audio_video_durations: correct or remove this (add an audio segment), %s:%" % (k_ep, k_part))
             # Add silence to the latest segment
             s = db_audio[k_part]['segments'][-1]
             silence = int(((audio_count_rounded - audio_count_float) * 1000 / FPS) + 0.5)
@@ -361,7 +361,7 @@ def align_audio_video_durations(db, k_ep):
         # Modify the real audio count to this new duration
         if k_part == 'episode':
             # this is a special case for episode: precedemment+episode
-            # print("   rounded audio count episode+precedemment: %d" % (audio_count))
+            # print(f"   rounded audio count episode+precedemment: %d" % (audio_count))
             db_audio[k_part]['count'] = audio_count - ms_to_frames(db_audio['precedemment']['duration'])
             video_count = (db_video['precedemment']['count'] + db_video['precedemment']['avsync']
                             + db_video[k_part]['count'] + db_video[k_part]['avsync'])
@@ -369,12 +369,12 @@ def align_audio_video_durations(db, k_ep):
             db_audio[k_part]['count'] = audio_count
             video_count = db_video[k_part]['count'] + db_video[k_part]['avsync']
 
-        # print("info: %s:align_audio_video_durations: %s:%s: video=%d, audio=%d" % (__name__, k_ep, k_part, video_count, audio_count))
+        # print(f"info: %s:align_audio_video_durations: %s:%s: video=%d, audio=%d" % (__name__, k_ep, k_part, video_count, audio_count))
         last_shot = db_video[k_part]['shots'][-1]
 
         if audio_count > video_count:
             # Frames shall be added: use the loop (and fadeout) effect for this
-            # print("info: %s:align_audio_video_durations: %s:%s: add video frames, video(%d) < audio (%d)" % (__name__, k_ep, k_part, video_count, audio_count))
+            # print(f"info: %s:align_audio_video_durations: %s:%s: add video frames, video(%d) < audio (%d)" % (__name__, k_ep, k_part, video_count, audio_count))
 
             frame_no = last_shot['start'] + last_shot['count'] - 1
             loop_count = audio_count - video_count
@@ -391,7 +391,7 @@ def align_audio_video_durations(db, k_ep):
 
         elif audio_count < video_count:
             # Add silence to the audio track by adding a new segment
-            # print("info: %s:align_audio_video_durations:  %s:%s: add audio, video(%d) > audio (%d)" % (__name__, k_ep, k_part, video_count, audio_count))
+            # print(f"info: %s:align_audio_video_durations:  %s:%s: add audio, video(%d) > audio (%d)" % (__name__, k_ep, k_part, video_count, audio_count))
 
             video_duration = int(video_count * 1000 / FPS)
             audio_duration = db_audio[k_part]['duration']
@@ -401,44 +401,55 @@ def align_audio_video_durations(db, k_ep):
                 'silence': video_duration - audio_duration,
             })
             db_audio[k_part]['count'] = db_video[k_part]['count']
-            # print("-> added silence at the end")
+            # print(f"-> added silence at the end")
 
         if k_ep == K_EP_DEBUG:
-            print("\ndb_video: %s:\n--------------------------------------" % (k_part))
+            print(f"\ndb_video: %s:\n--------------------------------------" % (k_part))
             pprint(db_video[k_part])
 
 
-    # Add/modify effect of the last shot
+    # Add/modify effect of the first/last shot
     #---------------------------------------------------------------------------
     verbose = False
     for k_part in ['episode', 'asuivre', 'reportage']:
         db_video_part = db_video[k_part]
+        first_shot = db_video_part['shots'][0]
         last_shot = db_video_part['shots'][-1]
 
         if 'effects' in db_video_part.keys():
             if verbose:
-                print_green("\teffects detected in %s:%s" % (k_ep, k_part))
-                print("\t", db_video_part['effects'])
+                print_green(f"\teffects detected in {k_ep}:{k_part}")
+                print(f"\t", db_video_part['effects'])
 
             if db_video_part['effects']['fadein'] != 0:
-                sys.exit("%s.align_audio_video_durations: Error: TODO: %s:%s fadein effect in db_video!!!!" % (__name__, k_ep, k_part))
-
-            if db_video_part['effects']['fadeout'] != 0:
+                fadein_count = db_video_part['effects']['fadein']
                 if verbose:
-                    print("%s.align_audio_video_durations: %s:%s modify fadeout effect in db_video!" % (__name__, k_ep, k_part))
+                    print(f"align_audio_video_durations: {k_ep}:{k_part}, patch the first shot -> fadein: add effects")
+                    # pprint(db_video_part)
+                first_shot['src']['start'] += fadein_count
+                first_shot['src']['count'] -= fadein_count
+                nested_dict_set(first_shot,
+                    ['fadein', fadein_count, fadein_count], 'effects')
+                if verbose:
+                    pprint(first_shot)
+                    sys.exit()
+
+            elif db_video_part['effects']['fadeout'] != 0:
+                if verbose:
+                    print(f"align_audio_video_durations: {k_ep}:{k_part} modify fadeout effect in db_video!")
 
                 fadeout_count = db_video_part['effects']['fadeout']
                 if 'effects' in last_shot.keys():
                     # Patch the fadeout/loop_and_fadeout duration
                     if last_shot['effects'][0] == 'fadeout':
                         if verbose:
-                            print("%s.align_audio_video_durations: %s:%s, patch the last shot -> fadeout: modify" % (__name__, k_ep, k_part))
+                            print(f"align_audio_video_durations: {k_ep}:{k_part}, patch the last shot -> fadeout: modify")
                         last_shot['effects'][2] = fadeout_count
 
                     elif last_shot['effects'][0] == 'loop_and_fadeout':
                         if verbose:
-                            print("%s.align_audio_video_durations: %s:%s, patch the last shot -> loop_and_fadeout: modify" % (__name__, k_ep, k_part))
-                            print("\t%d vs %d" % (last_shot['effects'][3], fadeout_count))
+                            print(f"align_audio_video_durations: {k_ep}:{k_part}, patch the last shot -> loop_and_fadeout: modify")
+                            print(f"\t%d vs %d" % (last_shot['effects'][3], fadeout_count))
                             pprint(last_shot)
 
                         if fadeout_count < last_shot['count']:
@@ -447,19 +458,15 @@ def align_audio_video_durations(db, k_ep):
 
                         if verbose:
                             last_shot['effects'][2] = fadeout_count - last_shot['effects'][2]
-                            print("->")
+                            print(f"->")
                             pprint(last_shot)
 
                 else:
                     # Patch the last shot, add 'fadeout' effect
                     if verbose:
-                        print("\talign_audio_video_durations: %s:%s, patch the last shot -> fadeout: add effects" % (k_ep, k_part))
+                        print(f"\talign_audio_video_durations: {k_ep}:{k_part}, patch the last shot -> fadeout: add effects")
                         pprint(db_video_part)
                     last_shot_src = last_shot['src']
                     frame_no = last_shot_src['start'] + last_shot_src['count'] - 1
                     nested_dict_set(last_shot,
                         ['fadeout', frame_no - fadeout_count + 1, fadeout_count], 'effects')
-
-
-
-

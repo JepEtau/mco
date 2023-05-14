@@ -666,7 +666,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
         selected_shot_nos = list()
         for row_no in selected_row_no:
             shot_no_str = self.tableWidget_shots.item(row_no, 0).text()
-            selected_shot_nos.append(int(shot_no_str))
+            selected_shot_nos.append(int(shot_no_str.replace('*', '')))
 
         k_ep = ''
         if self.comboBox_episode.currentText() not in ['', ' ']:

@@ -188,7 +188,6 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
                 image_list.append(filepath)
                 # print("\t\t\t+ fadeout: %s" % (p))
 
-
         elif effect == 'fadeout':
             # print("\n%s.get_frame_list (%s:%s)" % (__name__, k_ep, k_part))
             # pprint(shot)
@@ -228,6 +227,40 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
                 image_list.append(filepath)
 
                 # print("\t\t\t+ fadeout: %s" % (p))
+
+        elif effect == 'fadein':
+            # print_lightcyan(f"\nget_frame_list {k_ep}:{k_part})"
+            # pprint(shot)
+            # fadein_start = shot['effects'][1]
+            fadein_count = shot['effects'][2]
+            print_lightgrey(f"\tfadeout start={shot['start']}, count={fadein_count}")
+
+            # Output folder
+            k_ep_dst = shot['dst']['k_ep']
+            k_part_dst = shot['dst']['k_part']
+            if k_part_dst in ['g_debut', 'g_fin']:
+                output_folder = os.path.join(db[k_part_dst]['cache_path'])
+            else:
+                output_folder = os.path.join(db[k_ep_dst]['cache_path'], k_part_dst)
+            output_folder = os.path.join(output_folder,
+                '%03d' % (shot['no']),
+                '%02d' % (step_no))
+
+            # Fade in
+            shot_src_start = shot['start']
+            shot_src_count = shot['count']
+            filename_template = FILENAME_TEMPLATE % (k_ep_src, k_ed, step_no, suffix)
+            if shot['last_task'] not in ['deinterlace', 'edition']:
+                shot_src_start = 0
+
+            image_list = list()
+            for f_no in range(shot_src_start + shot_src_count,
+                                shot_src_start + shot_src_count + fadein_count):
+                image_list.append(os.path.join(output_folder, filename_template % (f_no)))
+
+            # List of images and remove the 1st 'fadein_count' images
+            image_list += get_frame_file_paths_until_effects(db,
+                k_part=k_part, shot=shot, suffix=suffix)
 
     else:
         image_list += get_frame_file_paths_until_effects(db,

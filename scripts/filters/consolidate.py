@@ -74,11 +74,11 @@ def consolidate_filters(shot):
             filter['task'] = 'deinterlace'
 
         # Upscale
-        elif ('scale' in filter['str']
-            or 'dnn_superres' in filter['str']):
-            filter['task'] = 'upscale'
-            if previous_filter['task'] == '':
-                previous_filter['task'] = 'pre_upscale'
+        # elif ('scale' in filter['str']
+        #     or 'dnn_superres' in filter['str']):
+        #     filter['task'] = 'upscale'
+        #     if previous_filter['task'] == '':
+        #         previous_filter['task'] = 'pre_upscale'
 
         elif filter['type'] in ['real_cugan', 'real_esrgan', 'esrgan', 'animesr']:
             if '1x' in filter['str']:

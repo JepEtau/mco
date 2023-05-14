@@ -9,6 +9,7 @@ from filters.apply_filters import apply_filters
 from filters.utils import STEP_INC
 from filters.effects import (
     create_black_frame,
+    effect_fadein,
     effect_loop_and_fadeout,
     effect_fadeout,
 )
@@ -66,6 +67,10 @@ def process_shot(db, shot, force:bool=False):
 
         elif effect == 'fadeout':
             effect_fadeout(db, shot)
+
+        elif effect == 'fadein':
+            # TODO rename fadein into loop_and_fadein?
+            effect_fadein(db, shot)
 
         else:
             print_green("\tuse concatenation files")

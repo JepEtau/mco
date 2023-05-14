@@ -116,8 +116,8 @@ class Controller_replace():
 
         self.current_frame['replaced_by'] = self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no)
 
-        shot['modifications'].append('replace')
-        self.signal_shot_modified({'shot_no': shot['no'], 'modifications': shot['modifications']})
+        self.set_modification_status('replace', True)
+        self.signal_shot_modified.emit({'shot_no': shot['no'], 'modifications': shot['modifications']})
 
 
         self.refresh_replace_list()

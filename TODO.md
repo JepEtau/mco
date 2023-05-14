@@ -2,6 +2,7 @@
 (1)
 - use ROI for deshake
 - Try removing stab before upscale when there is rainfall
+- Fade In
 
 (2)
 - stats: list unused curves. reason: clean the db
@@ -102,3 +103,6 @@
 # Known issues, but won't correct
 - add_borders is inserted at the wrong place if using s0
 - initial image dimensions is declared as constants: stats are erroneous with s0
+- fadein: if stabilize, segment shall use 'middle' of shot as the ref. frame
+- fadein: fadein on a fixed image
+
