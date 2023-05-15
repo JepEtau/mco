@@ -104,11 +104,3 @@
 - fadein: if stabilize, segment shall use 'middle' of shot as the ref. frame
 - fadein: fadein on a fixed image
 
-
-
-# Save
-22676_deshake = """enable=true;
-	cv2_deshaker:start=22676:end=22754:ref=end:mode=vertical;
-	cv2_deshaker:start=22783:end=22805:ref=start:mode=horizontal+rotation+vertical;
-	cv2_deshaker:start=22813:end=22871:ref=start:mode=rotation+vertical;
-	"""

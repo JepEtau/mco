@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 import sys
 from enum import IntEnum
 
@@ -8,7 +9,7 @@ from logger import log
 from PySide6.QtCore import (
     Qt,
     QPoint,
-
+    QSize,
 )
 from PySide6.QtGui import (
     QCursor
@@ -206,6 +207,7 @@ class Widget_segments(QWidget):
         self.mainLayout.setSpacing(0)
         self.mainLayout.setObjectName(u"mainLayout")
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
+        self.mainLayout.setSpacing(6)
 
 
         # Table of segments
@@ -216,22 +218,22 @@ class Widget_segments(QWidget):
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         ]
         headers = ["Start", "End", "From", "Mode"]
-        default_col_width = [60, 60, 85, 310]
+        default_col_width = [60, 60, 75, 300]
 
 
         self.table_segments = QTableWidget()
-
         self.table_segments.setColumnCount(len(self.table_segments_alignment))
-        for column_no in range(4):
+        for column_no in range(len(self.table_segments_alignment)):
             self.table_segments.setHorizontalHeaderItem(column_no, QTableWidgetItem())
-
         self.table_segments.setVerticalHeaderItem(0, QTableWidgetItem())
 
-        sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
-        sizePolicy3.setHorizontalStretch(0)
-        sizePolicy3.setVerticalStretch(0)
-        sizePolicy3.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
-        self.table_segments.setSizePolicy(sizePolicy3)
+        size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        size_policy.setHeightForWidth(self.table_segments.sizePolicy().hasHeightForWidth())
+        self.table_segments.setSizePolicy(size_policy)
+        self.table_segments.setMinimumSize(QSize(530, 300))
+
         self.table_segments.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.table_segments.setFrameShape(QFrame.StyledPanel)
         self.table_segments.setFrameShadow(QFrame.Sunken)
@@ -255,37 +257,93 @@ class Widget_segments(QWidget):
         self.table_segments.verticalHeader().setDefaultSectionSize(25)
         self.table_segments.verticalHeader().setSortIndicatorShown(False)
         self.table_segments.verticalHeader().setStretchLastSection(False)
-
         self.table_segments.setSortingEnabled(True)
-
         self.table_segments.setFocusPolicy(Qt.NoFocus)
         self.table_segments.clearContents()
         self.table_segments.setRowCount(6)
         for col_no, header_str, col_width in zip(range(len(headers)), headers, default_col_width):
             self.table_segments.horizontalHeaderItem(col_no).setText(header_str)
             self.table_segments.setColumnWidth(col_no, col_width)
-        self.row_height = 35
-        self.initial_str = ""
-
         self.table_segments.adjustSize()
         # Signals
-        # self.currentCellChanged['int','int','int','int'].connect(self.event_current_cell_changed)
-
         self.table_segments.verticalHeader().customContextMenuRequested[QPoint].connect(self.event_segments_right_click)
         self.table_segments.verticalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
-
         self.table_segments.customContextMenuRequested[QPoint].connect(self.event_segments_right_click)
         self.table_segments.setContextMenuPolicy(Qt.CustomContextMenu)
-
         self.table_segments.clearContents()
-        self.history = self.History(self)
-        set_stylesheet(self)
-
-        self.size().setHeight(300)
 
         self.mainLayout.addWidget(self.table_segments)
 
+
+        # Table of ROI for each segment
+        self.table_roi_alignment = [
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        ]
+        headers = ["enabled", "inside", "coordinates"]
+        default_col_width = [30, 30, 30]
+        self.table_roi = QTableWidget()
+        self.table_roi.setColumnCount(len(self.table_roi_alignment))
+        for column_no in range(len(self.table_roi_alignment)):
+            self.table_roi.setHorizontalHeaderItem(column_no, QTableWidgetItem())
+        self.table_roi.setVerticalHeaderItem(0, QTableWidgetItem())
+
+        size_policy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Expanding)
+        size_policy.setHorizontalStretch(0)
+        size_policy.setVerticalStretch(0)
+        size_policy.setHeightForWidth(self.table_roi.sizePolicy().hasHeightForWidth())
+        self.table_roi.setSizePolicy(size_policy)
+        self.table_roi.setMaximumSize(QSize(120, 800))
+
+        self.table_roi.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.table_roi.setFrameShape(QFrame.StyledPanel)
+        self.table_roi.setFrameShadow(QFrame.Sunken)
+        self.table_roi.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.table_roi.setSizeAdjustPolicy(QAbstractScrollArea.AdjustIgnored)
+        self.table_roi.setEditTriggers(QAbstractItemView.SelectedClicked)
+        self.table_roi.setProperty("showDropIndicator", False)
+        self.table_roi.setDragDropOverwriteMode(False)
+        self.table_roi.setAlternatingRowColors(True)
+        self.table_roi.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.table_roi.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table_roi.setWordWrap(False)
+        self.table_roi.setCornerButtonEnabled(False)
+        self.table_roi.setMinimumHeight(200)
+
+        self.table_roi.horizontalHeader().setCascadingSectionResizes(False)
+        self.table_roi.horizontalHeader().setDefaultSectionSize(90)
+        self.table_roi.horizontalHeader().setHighlightSections(True)
+        self.table_roi.horizontalHeader().setSortIndicatorShown(True)
+        self.table_roi.horizontalHeader().setStretchLastSection(False)
+        self.table_roi.verticalHeader().setDefaultSectionSize(25)
+        self.table_roi.verticalHeader().setSortIndicatorShown(False)
+        self.table_roi.verticalHeader().setStretchLastSection(False)
+        self.table_roi.setSortingEnabled(True)
+        self.table_roi.setFocusPolicy(Qt.NoFocus)
+        self.table_roi.clearContents()
+        self.table_roi.setRowCount(6)
+        for col_no, header_str, col_width in zip(range(len(headers)), headers, default_col_width):
+            self.table_roi.horizontalHeaderItem(col_no).setText(header_str)
+            self.table_roi.setColumnWidth(col_no, col_width)
+        self.table_segments.adjustSize()
+        # Signals
+        self.table_roi.verticalHeader().customContextMenuRequested[QPoint].connect(self.event_roi_right_click)
+        self.table_roi.verticalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table_roi.customContextMenuRequested[QPoint].connect(self.event_roi_right_click)
+        self.table_roi.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table_roi.clearContents()
+
+        self.mainLayout.addWidget(self.table_roi)
+
+        self.row_height = 35
+        self.row_roi_height = 25
+        self.initial_str = ""
+        self.__roi_list = list()
+        self.history = self.History(self)
+        set_stylesheet(self)
         self.__parent = parent
+        self.adjustSize()
 
 
 
@@ -325,7 +383,8 @@ class Widget_segments(QWidget):
                 'horizontal': self.table_segments.cellWidget(row_no, 3).findChild(QCheckBox, 'horizontal').isChecked(),
                 'vertical': self.table_segments.cellWidget(row_no, 3).findChild(QCheckBox, 'vertical').isChecked(),
                 'rotation': self.table_segments.cellWidget(row_no, 3).findChild(QCheckBox, 'rotation').isChecked()
-            }
+            },
+            'roi': self.get_roi_values(row_no),
         }
         return segment_values
 
@@ -338,11 +397,14 @@ class Widget_segments(QWidget):
             self.table_segments.selectionModel().blockSignals(True)
             self.blockSignals(True)
             self.table_segments.selectRow(row_no)
+            # Update table of ROI
+            self.set_roi_table_content(row_no)
             self.blockSignals(False)
             self.table_segments.selectionModel().blockSignals(False)
         else:
             log.info(f"new segment selected: {row_no}")
             segment_values = self.get_segment_values(row_no=row_no)
+            self.set_roi_table_content(row_no)
             self.history.save_current_segment_values(segment_values)
 
     def event_current_cell_changed(self, row_no, column_no, previous_row_no, previous_column_no):
@@ -354,12 +416,17 @@ class Widget_segments(QWidget):
     def clear_contents(self):
         self.table_segments.clearContents()
         self.table_segments.setRowCount(0)
+        self.table_roi.clearContents()
+        self.table_roi.setRowCount(0)
+
 
     def is_content_modified(self):
         # Convert segments to str
         new_str = self.convert_to_str(selected_rows=list(range(self.table_segments.rowCount())))
         if new_str != self.initial_str:
             return True
+
+        # Add Table of ROI
         return False
 
 
@@ -399,6 +466,10 @@ class Widget_segments(QWidget):
             __layout.addWidget(w)
         self.table_segments.setCellWidget(row_no, 3, widget)
 
+        # Update ROI table
+
+
+
 
     def set_content(self, segments):
         log.info(f"set content")
@@ -413,10 +484,16 @@ class Widget_segments(QWidget):
             self.table_segments.setRowHeight(row_no, self.row_height)
             self.set_segment_values(row_no=row_no, segment=segment)
 
+        # Set internal values for ROI
+        self.__roi_list = list([s['roi'] for s in segments])
+
         # Select first segment
         self.table_segments.selectionModel().blockSignals(True)
         self.blockSignals(True)
         self.table_segments.selectRow(0)
+        self.set_roi_table_content(segment_no=0)
+
+
         self.blockSignals(False)
         self.table_segments.selectionModel().blockSignals(False)
 
@@ -545,7 +622,7 @@ class Widget_segments(QWidget):
         cursor_position = self.mapFromGlobal(QCursor.pos())
         item_position_x = cursor_position.x() + 5
         item_position_y = cursor_position.y() - self.table_segments.horizontalHeader().size().height() * 2 + 5
-        item = self.itemAt(item_position_x, item_position_y)
+        item = self.table_segments.itemAt(item_position_x, item_position_y)
         if item is not None:
             self.table_segments.clearSelection()
             self.table_segments.setCurrentItem(item)
@@ -666,3 +743,128 @@ class Widget_segments(QWidget):
 
     def event_mode_changed(self, state:bool) -> None:
         self.__parent.edition_started()
+
+
+
+    # Table of ROI
+
+    def event_roi_right_click(self, qpoint):
+        cursor_position = QCursor.pos()
+        self.popMenu = QMenu(self)
+        append_action = self.popMenu.addAction('Append')
+        append_action.triggered.connect(self.append_roi)
+        if len(self.table_roi.selectedIndexes()) > 0:
+            remove_action = self.popMenu.addAction('Remove')
+            remove_action.triggered.connect(self.remove_roi)
+        self.popMenu.exec_(cursor_position)
+
+
+    def append_roi(self):
+        # ["enabled", "inside", "coordinates"]
+        self.table_roi.sortByColumn(-1, Qt.AscendingOrder)
+        row_no = self.table_roi.rowCount()
+        self.table_roi.insertRow(row_no)
+        self.table_roi.setRowHeight(row_no, self.row_height)
+        self.table_roi.setItem(row_no, 2, QTableWidgetItem(""))
+        self.table_roi.item(row_no, 2).setTextAlignment(self.table_roi_alignment[i])
+        self.table_roi.item(row_no, 2).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+        # modes
+        for i, w_name in zip(range(2), ["enabled", "inside"]):
+            w = QCheckBox()
+            w.setObjectName(w_name)
+            w.setChecked(True)
+            w.setFocusPolicy(Qt.NoFocus)
+            w.toggled[bool].connect(self.event_roi_mode_changed)
+            set_widget_stylesheet(w)
+            self.table_roi.setCellWidget(row_no, i, w)
+        self.table_roi.selectRow(row_no)
+
+
+    def event_roi_mode_changed(self, state:bool) -> None:
+        self.__parent.edition_started()
+
+
+    def remove_roi(self):
+        row_nos = list(set([index.row() for index in self.table_roi.selectedIndexes()]))
+        if len(row_nos) == self.table_roi.rowCount():
+            self.remove_all_roi()
+        else:
+            for row_no in sorted(row_nos, reverse=True):
+                self.table_roi.removeRow(row_no)
+        self.__parent.edition_started()
+
+    def remove_all_roi(self):
+        if self.table_roi.rowCount() > 0:
+            log.info("remove all")
+            row_nos = list(range(self.table_roi.rowCount()))
+            for row_no in sorted(row_nos, reverse=True):
+                self.table_roi.removeRow(row_no)
+        self.table_roi.clearContents()
+        self.table_roi.setRowCount(0)
+        self.__parent.edition_started()
+
+
+    def convert_roi_to_str(self, selected_rows:list) -> str:
+        data_str = ""
+        for row_no in selected_rows:
+            roi_values = self.get_roi_values(row_no=row_no)
+            data_str += str(roi_values) + '\n'
+        data_str = data_str[:-1]
+        return data_str
+
+    def append_empty_roi(self, count):
+        row_count = self.table_roi.rowCount()
+        for row_no in range(row_count, row_count + count):
+            self.table_roi.insertRow(row_no)
+            self.table_roi.setRowHeight(row_no, self.row_height)
+
+    def get_roi_content(self):
+        # segments = list()
+        # for row_no in range(self.table_segments.rowCount()):
+        #     segments.append(self.get_segment_values(row_no=row_no))
+
+        # # Modify settings as start and end are str
+        # for segment in segments:
+        #     segment['start'] = int(segment['start'])
+        #     segment['end'] = int(segment['end'])
+
+        # return segments
+
+    # def get_roi_values(self, row_no:int):
+    #     # row_no is the segment no
+    #     self.__segment_roi[row_no]
+        return ""
+
+
+    def set_roi_table_content(self, segment_no:int):
+        pprint(self.__roi_list)
+        self.table_roi.clearContents()
+        row_count = len(self.__roi_list[segment_no])
+        if row_count > 0:
+            for row_no, roi in zip(range(row_count), self.__roi_list[segment_no]):
+                self.table_roi.insertRow(row_no)
+                self.table_roi.setRowHeight(row_no, self.row_roi_height)
+
+                # Modes
+                for i, w_name in zip(range(2), ["enabled", "inside"]):
+                    w = QCheckBox()
+                    w.setObjectName(w_name)
+                    w.setChecked(True)
+                    w.setFocusPolicy(Qt.NoFocus)
+                    w.toggled[bool].connect(self.event_roi_mode_changed)
+                    set_widget_stylesheet(w)
+                    self.table_roi.setCellWidget(row_no, i, w)
+
+                # Points
+                self.table_roi.setItem(row_no, 2, QTableWidgetItem(""))
+                self.table_roi.item(row_no, 2).setTextAlignment(self.table_roi_alignment[2])
+                self.table_roi.item(row_no, 2).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+                self.table_roi.selectRow(row_no)
+
+
+
+
+    def get_roi_values(self, segment_no:int):
+        return list()

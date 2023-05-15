@@ -122,7 +122,8 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
                         'vertical': False,
                         'horizontal': False,
                         'rotation': False
-                    }
+                    },
+                    'roi': list(),
                 }
                 for parameter in parameters[1:]:
                     # print_orange("\t%s" % (parameter))
@@ -134,6 +135,8 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
                         for option in options:
                             if option in STABILIZE_MODES:
                                 segment_dict['mode'][option] = True
+                    elif k == 'roi':
+                        segment_dict['roi'].append(parse_roi_value(v))
                     else:
                         nested_dict_set(segment_dict, v, k)
 
@@ -156,6 +159,23 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
                 pprint(shot['deshake'])
                 # if k_ed == 'f' and shot['no'] == 23:
                 #     sys.exit()
+
+def parse_roi_value(roi_list_str:str):
+    roi = {
+        'enable': False,
+        'mode': 'in',
+        'points': list()
+    }
+    for v in roi_list_str.split(','):
+        if v == 'enable':
+            roi['enable'] = True
+        elif v in ['in', 'ex']:
+            roi['mode'] = v
+        else:
+            point_list = re.findall(re.compile("\((\d+)\.(\d+)\)"), v)
+            for point in point_list:
+                roi['points'].append([int(point[0]), int(point[1])])
+    return roi
 
 
 def get_initial_shot_stabilize_settings(db, k_ep, k_part) -> dict:
