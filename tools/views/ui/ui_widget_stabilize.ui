@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>552</width>
-    <height>93</height>
+    <width>629</width>
+    <height>373</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -295,7 +295,7 @@
         <property name="checkable">
          <bool>true</bool>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_4">
+        <layout class="QHBoxLayout" name="horizontalLayout_2">
          <property name="spacing">
           <number>3</number>
          </property>
@@ -312,7 +312,7 @@
           <number>3</number>
          </property>
          <item>
-          <widget class="Table_stabilize" name="tableWidget_stabilize" native="true">
+          <widget class="Widget_segments" name="widget_segments" native="true">
            <property name="minimumSize">
             <size>
              <width>520</width>
@@ -331,9 +331,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Table_stabilize</class>
+   <class>Widget_segments</class>
    <extends>QWidget</extends>
-   <header location="global">views.table_stabilize</header>
+   <header location="global">views.widget_segments</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

@@ -20,7 +20,7 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
 )
 from views.guidelines import Guidelines
-from views.table_stabilize import Table_stabilize
+from views.widget_segments import Widget_segments
 
 from utils.stylesheet import (
     set_stylesheet,
@@ -59,8 +59,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.guidelines = Guidelines()
 
         # Table
-        self.tableWidget_stabilize.selectionModel().selectionChanged.connect(self.event_segment_selected)
-        self.tableWidget_stabilize.itemDoubleClicked[QTableWidgetItem].connect(self.event_segment_double_clicked)
+        self.widget_segments.table_segments.selectionModel().selectionChanged.connect(self.event_segment_selected)
+        self.widget_segments.table_segments.itemDoubleClicked[QTableWidgetItem].connect(self.event_segment_double_clicked)
 
         # Buttons, etc.
         self.groupBox_stabilize.clicked.connect(self.event_settings_enable_toggled)
@@ -71,8 +71,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.pushButton_guidelines.toggled[bool].connect(self.guidelines_state_changed)
         self.groupBox_stabilize.installEventFilter(self)
         self.groupBox_stabilize.blockSignals(True)
-        self.tableWidget_stabilize.installEventFilter(self)
-        self.tableWidget_stabilize.set_parent(self)
+        self.widget_segments.table_segments.installEventFilter(self)
+        self.widget_segments.set_parent(self)
         self.installEventFilter(self)
 
         self.controller.signal_stabilize_settings_refreshed[dict].connect(self.event_stabilize_settings_refreshed)
@@ -91,7 +91,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.block_signals(True)
 
         self.groupBox_stabilize.setChecked(False)
-        self.tableWidget_stabilize.clear_contents()
+        self.widget_segments.clear_contents()
 
         # Push button is used to calculate then display
         self.pushButton_set_preview.setEnabled(s['widget']['allowed'])
@@ -141,21 +141,21 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.pushButton_set_preview.blockSignals(enabled)
         self.pushButton_stabilize.blockSignals(enabled)
         self.groupBox_stabilize.blockSignals(enabled)
-        self.tableWidget_stabilize.blockSignals(enabled)
+        self.widget_segments.blockSignals(enabled)
 
 
     def get_current_settings(self) -> dict:
         # Get new settings
         settings = {
             'enable': self.groupBox_stabilize.isChecked(),
-            'segments' : self.tableWidget_stabilize.get_content()
+            'segments' : self.widget_segments.get_content()
         }
         return settings
 
 
     def event_settings_enable_toggled(self, is_checked:bool=False):
         log.info(f"changed settings enable to {is_checked}")
-        self.tableWidget_stabilize.setEnabled(is_checked)
+        self.widget_segments.setEnabled(is_checked)
 
         if self.is_enabled_initial != is_checked:
             self.pushButton_discard.setEnabled(True)
@@ -175,8 +175,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         if stabilize_settings is None or len(stabilize_settings) == 0:
             self.groupBox_stabilize.setChecked(False)
-            self.tableWidget_stabilize.clear_contents()
-            self.tableWidget_stabilize.setEnabled(False)
+            self.widget_segments.clear_contents()
+            self.widget_segments.setEnabled(False)
             # self.pushButton_set_preview.setEnabled(False)
             # self.pushButton_set_preview.setChecked(False)
             # self.previous_preview_state = False
@@ -189,21 +189,20 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.is_enabled_initial = is_enabled
         self.groupBox_stabilize.setChecked(is_enabled)
 
-        table = self.tableWidget_stabilize
         segments = stabilize_settings['segments']
 
-        self.tableWidget_stabilize.clear_contents()
+        self.widget_segments.clear_contents()
         if len(segments) > 0:
-            self.tableWidget_stabilize.set_content(segments)
+            self.widget_segments.set_content(segments)
         else:
             row_no = 0
             self.pushButton_stabilize.setEnabled(False)
             self.is_obsolete = True
             # self.pushButton_set_preview.setEnabled(False)
 
-        self.tableWidget_stabilize.setEnabled(is_enabled)
+        self.widget_segments.setEnabled(is_enabled)
         if is_enabled:
-            table.selectRow(0)
+            self.widget_segments.table_segments.selectRow(0)
 
         if 'error' in stabilize_settings.keys() and stabilize_settings['error']:
             self.label_message.setText("ERROR!")
@@ -231,7 +230,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def event_segment_selected(self):
         log.info("segment selected")
-        self.tableWidget_stabilize.select_segment()
+        self.widget_segments.select_segment()
 
 
     def event_segment_double_clicked(self, item:QTableWidgetItem):
@@ -240,11 +239,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         log.info(f"selected frame at row={row_no}, col={col_no}")
         if col_no == 1:
             # Select end of the selected segment
-            try: frame_no = int(self.tableWidget_stabilize.item(row_no, col_no).text())
+            try: frame_no = int(self.widget_segments.table_segments.item(row_no, col_no).text())
             except: return
         else:
             # Select start of the selected segment
-            try: frame_no = int(self.tableWidget_stabilize.item(row_no, 0).text())
+            try: frame_no = int(self.widget_segments.table_segments.item(row_no, 0).text())
             except: return
         log.info(f"signal_frame_selected: {frame_no}")
         self.signal_frame_selected.emit(frame_no)
@@ -265,18 +264,18 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def event_start_modified(self):
         frame_no = self.controller.get_current_frame_no()
-        self.tableWidget_stabilize.set_frame_no('start', frame_no)
+        self.widget_segments.set_frame_no('start', frame_no)
         self.edition_started()
 
 
     def event_end_modified(self):
         frame_no = self.controller.get_current_frame_no()
-        self.tableWidget_stabilize.set_frame_no('end', frame_no)
+        self.widget_segments.set_frame_no('end', frame_no)
         self.edition_started()
 
 
     def event_ref_modified(self):
-        self.tableWidget_stabilize.select_next_reference()
+        self.widget_segments.select_next_reference()
         self.edition_started()
 
 
@@ -288,13 +287,13 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             option = 'horizontal'
         if key == Qt.Key.Key_R:
             option = 'rotation'
-        self.tableWidget_stabilize.select_mode_option(option)
+        self.widget_segments.select_mode_option(option)
         self.edition_started()
 
 
     def undo_requested(self):
-        self.tableWidget_stabilize.undo()
-        if self.tableWidget_stabilize.is_content_modified():
+        self.widget_segments.undo()
+        if self.widget_segments.is_content_modified():
             self.edition_started()
         else:
             self.pushButton_discard.setEnabled(False)
@@ -310,7 +309,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             settings = self.get_current_settings()
             self.signal_stabilization_requested.emit(settings)
         else:
-            if (self.tableWidget_stabilize.is_content_modified() or
+            if (self.widget_segments.is_content_modified() or
                 self.groupBox_stabilize.isChecked() != self.is_enabled_initial):
                 # Settings have been modified, request to stabilize
                 # If initial state was disabled, stabilize has not been done
@@ -364,7 +363,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             print_purple("Save stabilize")
             log.info(f"save widget_{self.objectName()}")
             self.pushButton_save.setEnabled(False)
-            if (self.tableWidget_stabilize.is_content_modified() or
+            if (self.widget_segments.is_content_modified() or
                 self.groupBox_stabilize.isChecked() != self.is_enabled_initial):
                 settings = self.get_current_settings()
                 self.signal_stabilization_requested.emit(settings)
@@ -406,10 +405,10 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             return True
 
         elif key == Qt.Key.Key_Insert:
-            self.tableWidget_stabilize.append_segment()
+            self.widget_segments.append_segment()
             return True
         elif key == Qt.Key.Key_Delete:
-            self.tableWidget_stabilize.remove_segment()
+            self.widget_segments.remove_segment()
             return True
 
         elif key == Qt.Key.Key_F2:
@@ -422,7 +421,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             self.signal_stabilization_requested.emit(settings)
             return True
 
-        if QApplication.focusObject() is self.tableWidget_stabilize:
+        if QApplication.focusObject() is self.widget_segments:
             if key == Qt.Key.Key_Delete:
                 log.info("delete segment")
                 return True
@@ -442,7 +441,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     #         else:
     #             return super(Widget_stabilize, self).eventFilter(watched, event)
     #     #     if modifier & Qt.ControlModifier and key == Qt.Key.Key_A:
-    #     #         self.tableWidget_stabilize.select_all()
+    #     #         self.widget_segments.select_all()
     #     #         event.accept()
     #     #         return True
     #     #     elif key == Qt.Key.Key_Delete:
@@ -452,7 +451,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     # #     # print(event.type())
     # #     # if event.type() == QEvent.FocusOut:
-    # #     #     self.tableWidget_stabilize.clearSelection()
+    # #     #     self.widget_segments.clearSelection()
 
     # #     if event.type() == QEvent.Enter:
     # #         self.is_entered = True

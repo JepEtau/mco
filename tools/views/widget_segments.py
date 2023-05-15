@@ -26,7 +26,9 @@ from PySide6.QtWidgets import (
     QRadioButton,
     QWidget,
     QCheckBox,
-    QHBoxLayout
+    QHBoxLayout,
+    QLayout,
+    QVBoxLayout,
 )
 from utils.pretty_print import *
 
@@ -35,7 +37,7 @@ from utils.stylesheet import (
     set_widget_stylesheet
 )
 
-class Table_stabilize(QTableWidget):
+class Widget_segments(QWidget):
 
 
     class History(object):
@@ -48,7 +50,7 @@ class Table_stabilize(QTableWidget):
             clear = 6
 
         def __init__(self, parent=None, depth=20):
-            super(Table_stabilize.History, self).__init__()
+            super(Widget_segments.History, self).__init__()
             self.table = parent
             self.actions = []
             self.redo = []
@@ -197,90 +199,94 @@ class Table_stabilize(QTableWidget):
 
 
     def __init__(self, parent):
-        super(Table_stabilize, self).__init__(parent)
+        super(Widget_segments, self).__init__(parent)
 
 
-        if (self.columnCount() < 4):
-            self.setColumnCount(4)
-        __qtablewidgetitem = QTableWidgetItem()
-        self.setHorizontalHeaderItem(0, __qtablewidgetitem)
-        __qtablewidgetitem1 = QTableWidgetItem()
-        self.setHorizontalHeaderItem(1, __qtablewidgetitem1)
-        __qtablewidgetitem2 = QTableWidgetItem()
-        self.setHorizontalHeaderItem(2, __qtablewidgetitem2)
-        __qtablewidgetitem3 = QTableWidgetItem()
-        self.setHorizontalHeaderItem(3, __qtablewidgetitem3)
+        self.mainLayout = QHBoxLayout(self)
+        self.mainLayout.setSpacing(0)
+        self.mainLayout.setObjectName(u"mainLayout")
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
 
 
-        __qtablewidgetitem4 = QTableWidgetItem()
-        self.setVerticalHeaderItem(0, __qtablewidgetitem4)
+        # Table of segments
+        self.table_segments_alignment = [
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+            Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter,
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
+        ]
+        headers = ["Start", "End", "From", "Mode"]
+        default_col_width = [60, 60, 85, 310]
+
+
+        self.table_segments = QTableWidget()
+
+        self.table_segments.setColumnCount(len(self.table_segments_alignment))
+        for column_no in range(4):
+            self.table_segments.setHorizontalHeaderItem(column_no, QTableWidgetItem())
+
+        self.table_segments.setVerticalHeaderItem(0, QTableWidgetItem())
 
         sizePolicy3 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
-        self.setSizePolicy(sizePolicy3)
-        self.setFocusPolicy(Qt.NoFocus)
-        self.setFrameShape(QFrame.StyledPanel)
-        self.setFrameShadow(QFrame.Sunken)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.setSizeAdjustPolicy(QAbstractScrollArea.AdjustIgnored)
-        self.setEditTriggers(QAbstractItemView.SelectedClicked)
-        self.setProperty("showDropIndicator", False)
-        self.setDragDropOverwriteMode(False)
-        self.setAlternatingRowColors(True)
-        self.setSelectionMode(QAbstractItemView.SingleSelection)
-        self.setSelectionBehavior(QAbstractItemView.SelectRows)
-        self.setWordWrap(False)
-        self.setCornerButtonEnabled(False)
-        self.setMinimumHeight(305)
+        self.table_segments.setSizePolicy(sizePolicy3)
+        self.table_segments.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.table_segments.setFrameShape(QFrame.StyledPanel)
+        self.table_segments.setFrameShadow(QFrame.Sunken)
+        self.table_segments.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.table_segments.setSizeAdjustPolicy(QAbstractScrollArea.AdjustIgnored)
+        self.table_segments.setEditTriggers(QAbstractItemView.SelectedClicked)
+        self.table_segments.setProperty("showDropIndicator", False)
+        self.table_segments.setDragDropOverwriteMode(False)
+        self.table_segments.setAlternatingRowColors(True)
+        self.table_segments.setSelectionMode(QAbstractItemView.SingleSelection)
+        self.table_segments.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table_segments.setWordWrap(False)
+        self.table_segments.setCornerButtonEnabled(False)
+        self.table_segments.setMinimumHeight(305)
 
+        self.table_segments.horizontalHeader().setCascadingSectionResizes(False)
+        self.table_segments.horizontalHeader().setDefaultSectionSize(90)
+        self.table_segments.horizontalHeader().setHighlightSections(True)
+        self.table_segments.horizontalHeader().setSortIndicatorShown(True)
+        self.table_segments.horizontalHeader().setStretchLastSection(True)
+        self.table_segments.verticalHeader().setDefaultSectionSize(25)
+        self.table_segments.verticalHeader().setSortIndicatorShown(False)
+        self.table_segments.verticalHeader().setStretchLastSection(False)
 
-        self.horizontalHeader().setCascadingSectionResizes(False)
-        self.horizontalHeader().setDefaultSectionSize(90)
-        self.horizontalHeader().setHighlightSections(True)
-        self.horizontalHeader().setSortIndicatorShown(True)
-        self.horizontalHeader().setStretchLastSection(True)
-        self.verticalHeader().setDefaultSectionSize(25)
-        self.verticalHeader().setSortIndicatorShown(False)
-        self.verticalHeader().setStretchLastSection(False)
+        self.table_segments.setSortingEnabled(True)
 
-
-        self.setSortingEnabled(True)
-
-
-        self.setFocusPolicy(Qt.NoFocus)
-        self.clearContents()
-        self.setRowCount(6)
-        self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
-                            Qt.AlignRight | Qt.AlignVCenter,
-                            Qt.AlignCenter | Qt.AlignVCenter,
-                            Qt.AlignLeft | Qt.AlignVCenter]
-        headers = ["Start", "End", "From", "Mode"]
-        default_col_width = [60, 60, 85, 310]
-        for col_no, header_str, col_width in zip(range(len(headers)),
-                                                    headers,
-                                                    default_col_width):
-            self.horizontalHeaderItem(col_no).setText(header_str)
-            self.setColumnWidth(col_no, col_width)
+        self.table_segments.setFocusPolicy(Qt.NoFocus)
+        self.table_segments.clearContents()
+        self.table_segments.setRowCount(6)
+        for col_no, header_str, col_width in zip(range(len(headers)), headers, default_col_width):
+            self.table_segments.horizontalHeaderItem(col_no).setText(header_str)
+            self.table_segments.setColumnWidth(col_no, col_width)
         self.row_height = 35
         self.initial_str = ""
 
-        self.__parent = parent
-        self.adjustSize()
+        self.table_segments.adjustSize()
         # Signals
         # self.currentCellChanged['int','int','int','int'].connect(self.event_current_cell_changed)
 
-        self.verticalHeader().customContextMenuRequested[QPoint].connect(self.event_right_click)
-        self.verticalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table_segments.verticalHeader().customContextMenuRequested[QPoint].connect(self.event_segments_right_click)
+        self.table_segments.verticalHeader().setContextMenuPolicy(Qt.CustomContextMenu)
 
-        self.customContextMenuRequested[QPoint].connect(self.event_right_click)
-        self.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.table_segments.customContextMenuRequested[QPoint].connect(self.event_segments_right_click)
+        self.table_segments.setContextMenuPolicy(Qt.CustomContextMenu)
 
-        self.clearContents()
+        self.table_segments.clearContents()
         self.history = self.History(self)
         set_stylesheet(self)
+
         self.size().setHeight(300)
+
+        self.mainLayout.addWidget(self.table_segments)
+
+        self.__parent = parent
+
 
 
     def set_parent(self, parent):
@@ -289,14 +295,14 @@ class Table_stabilize(QTableWidget):
 
     def set_frame_no(self, point, frame_no):
         column_no = 0 if point == 'start' else 1
-        previous_item = self.item(self.currentRow(), column_no)
+        previous_item = self.table_segments.item(self.table_segments.currentRow(), column_no)
         previous_value = previous_item.text()
         new_value = f"{frame_no}"
         if new_value != previous_value:
             log.info(f"detected modification: {frame_no} -> {point}")
-            self.item(self.currentRow(), column_no).setText(f"{frame_no}")
+            self.table_segments.item(self.table_segments.currentRow(), column_no).setText(f"{frame_no}")
             self.history.add(self.History.Action.modify, {
-                'row': self.currentRow(),
+                'row': self.table_segments.currentRow(),
                 'column': column_no,
                 'old': previous_value,
                 'new': new_value,
@@ -306,34 +312,34 @@ class Table_stabilize(QTableWidget):
 
 
     def get_current_segment_values(self):
-        return self.get_segment_values(self.currentRow())
+        return self.get_segment_values(self.table_segments.currentRow())
 
 
     def get_segment_values(self, row_no):
         segment_values = {
-            'start': self.item(row_no, 0).text(),
-            'end': self.item(row_no, 1).text(),
-            'ref': self.cellWidget(row_no, 2).currentText(),
+            'start': self.table_segments.item(row_no, 0).text(),
+            'end': self.table_segments.item(row_no, 1).text(),
+            'ref': self.table_segments.cellWidget(row_no, 2).currentText(),
             'alg': 'cv2_deshaker',
             'mode': {
-                'horizontal': self.cellWidget(row_no, 3).findChild(QCheckBox, 'horizontal').isChecked(),
-                'vertical': self.cellWidget(row_no, 3).findChild(QCheckBox, 'vertical').isChecked(),
-                'rotation': self.cellWidget(row_no, 3).findChild(QCheckBox, 'rotation').isChecked()
+                'horizontal': self.table_segments.cellWidget(row_no, 3).findChild(QCheckBox, 'horizontal').isChecked(),
+                'vertical': self.table_segments.cellWidget(row_no, 3).findChild(QCheckBox, 'vertical').isChecked(),
+                'rotation': self.table_segments.cellWidget(row_no, 3).findChild(QCheckBox, 'rotation').isChecked()
             }
         }
         return segment_values
 
     def select_segment(self):
-        row_no = self.currentRow()
+        row_no = self.table_segments.currentRow()
         log.info(f"new segment selected: {row_no}")
-        selected_rows = list(set([index.row() for index in self.selectedIndexes()]))
+        selected_rows = list(set([index.row() for index in self.table_segments.selectedIndexes()]))
         if len(selected_rows) == 0:
             log.info(f"Do not save new selection")
-            self.selectionModel().blockSignals(True)
+            self.table_segments.selectionModel().blockSignals(True)
             self.blockSignals(True)
-            self.selectRow(row_no)
+            self.table_segments.selectRow(row_no)
             self.blockSignals(False)
-            self.selectionModel().blockSignals(False)
+            self.table_segments.selectionModel().blockSignals(False)
         else:
             log.info(f"new segment selected: {row_no}")
             segment_values = self.get_segment_values(row_no=row_no)
@@ -346,12 +352,12 @@ class Table_stabilize(QTableWidget):
 
 
     def clear_contents(self):
-        self.clearContents()
-        self.setRowCount(0)
+        self.table_segments.clearContents()
+        self.table_segments.setRowCount(0)
 
     def is_content_modified(self):
         # Convert segments to str
-        new_str = self.convert_to_str(selected_rows=list(range(self.rowCount())))
+        new_str = self.convert_to_str(selected_rows=list(range(self.table_segments.rowCount())))
         if new_str != self.initial_str:
             return True
         return False
@@ -362,11 +368,11 @@ class Table_stabilize(QTableWidget):
         print_lightcyan(f"set single segmentat row no. {row_no}")
         pprint(segment)
 
-        self.setItem(row_no, 0, QTableWidgetItem(f"{segment['start']}"))
-        self.setItem(row_no, 1, QTableWidgetItem(f"{segment['end']}"))
+        self.table_segments.setItem(row_no, 0, QTableWidgetItem(f"{segment['start']}"))
+        self.table_segments.setItem(row_no, 1, QTableWidgetItem(f"{segment['end']}"))
         for i in range(2):
-            self.item(row_no, i).setTextAlignment(self.alignment[i])
-            self.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+            self.table_segments.item(row_no, i).setTextAlignment(self.table_segments_alignment[i])
+            self.table_segments.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
         # Frame used as the initial frame to start stabilization
         combobox_reference = QComboBox()
@@ -377,7 +383,7 @@ class Table_stabilize(QTableWidget):
         combobox_reference.setFocusPolicy(Qt.NoFocus)
         set_widget_stylesheet(combobox_reference)
         combobox_reference.currentIndexChanged[int].connect(self.event_reference_changed)
-        self.setCellWidget(row_no, 2, combobox_reference)
+        self.table_segments.setCellWidget(row_no, 2, combobox_reference)
 
         # Stabilization mode
         widget = QWidget()
@@ -391,28 +397,28 @@ class Table_stabilize(QTableWidget):
             set_widget_stylesheet(w)
             w.toggled[bool].connect(self.event_mode_changed)
             __layout.addWidget(w)
-        self.setCellWidget(row_no, 3, widget)
+        self.table_segments.setCellWidget(row_no, 3, widget)
 
 
     def set_content(self, segments):
         log.info(f"set content")
         print_lightcyan(f"set content")
         pprint(segments)
-        self.clearContents()
-        self.sortByColumn(-1, Qt.AscendingOrder)
-        self.setRowCount(0)
+        self.table_segments.clearContents()
+        self.table_segments.sortByColumn(-1, Qt.AscendingOrder)
+        self.table_segments.setRowCount(0)
 
         for row_no, segment in zip(range(len(segments)), segments):
-            self.insertRow(row_no)
-            self.setRowHeight(row_no, self.row_height)
+            self.table_segments.insertRow(row_no)
+            self.table_segments.setRowHeight(row_no, self.row_height)
             self.set_segment_values(row_no=row_no, segment=segment)
 
         # Select first segment
-        self.selectionModel().blockSignals(True)
+        self.table_segments.selectionModel().blockSignals(True)
         self.blockSignals(True)
-        self.selectRow(0)
+        self.table_segments.selectRow(0)
         self.blockSignals(False)
-        self.selectionModel().blockSignals(False)
+        self.table_segments.selectionModel().blockSignals(False)
 
         # When calling this function, history is cleared
         self.history.flush()
@@ -422,24 +428,24 @@ class Table_stabilize(QTableWidget):
 
 
     def select_next_reference(self):
-        combobox = self.cellWidget(self.currentRow(), 2)
+        combobox = self.table_segments.cellWidget(self.table_segments.currentRow(), 2)
         current_index = combobox.currentIndex()
         new_index = current_index+1 if current_index < combobox.count()-1 else 0
-        self.cellWidget(self.currentRow(), 2).setCurrentIndex(new_index)
+        self.table_segments.cellWidget(self.table_segments.currentRow(), 2).setCurrentIndex(new_index)
 
 
     def select_mode_option(self, option):
-        current_row = self.currentRow()
+        current_row = self.table_segments.currentRow()
         segment_values = self.get_segment_values(row_no=current_row)
-        self.cellWidget(current_row, 3).findChild(QCheckBox, option).toggle()
+        self.table_segments.cellWidget(current_row, 3).findChild(QCheckBox, option).toggle()
         self.history.add(self.History.Action.modify, {
             'row': current_row,
             'segment': segment_values,
-            'alignment': self.alignment})
+            'alignment': self.table_segments_alignment})
 
     def get_content(self):
         segments = list()
-        for row_no in range(self.rowCount()):
+        for row_no in range(self.table_segments.rowCount()):
             segments.append(self.get_segment_values(row_no=row_no))
 
         # Modify settings as start and end are str
@@ -451,56 +457,56 @@ class Table_stabilize(QTableWidget):
 
 
     def append_empty_segments(self, count):
-        row_count = self.rowCount()
+        row_count = self.table_segments.rowCount()
         for row_no in range(row_count, row_count + count):
-            self.insertRow(row_no)
-            self.setRowHeight(row_no, self.row_height)
+            self.table_segments.insertRow(row_no)
+            self.table_segments.setRowHeight(row_no, self.row_height)
 
 
     def remove_all_segments(self):
-        if self.rowCount()>0:
+        if self.table_segments.rowCount()>0:
             log.info("remove all")
             segments = list()
-            row_nos = list(range(self.rowCount()))
+            row_nos = list(range(self.table_segments.rowCount()))
             for row_no in sorted(row_nos, reverse=True):
                 segments.append(self.get_segment_values(row_no=row_no))
-                self.removeRow(row_no)
+                self.table_segments.removeRow(row_no)
             self.history.add(self.History.Action.clear,
-                {'segments': segments, 'alignment': self.alignment})
-        self.clearContents()
-        self.setRowCount(0)
+                {'segments': segments, 'alignment': self.table_segments_alignment})
+        self.table_segments.clearContents()
+        self.table_segments.setRowCount(0)
         self.__parent.edition_started()
 
     def remove_segment(self):
-        row_nos = list(set([index.row() for index in self.selectedIndexes()]))
-        if len(row_nos) == self.rowCount():
+        row_nos = list(set([index.row() for index in self.table_segments.selectedIndexes()]))
+        if len(row_nos) == self.table_segments.rowCount():
             self.remove_all_segments()
         else:
             segments = list()
             for row_no in sorted(row_nos, reverse=True):
                 segments.append(self.get_segment_values(row_no=row_no))
-                self.removeRow(row_no)
+                self.table_segments.removeRow(row_no)
             self.history.add(self.History.Action.remove,
-                {'segments': segments, 'alignment': self.alignment})
+                {'segments': segments, 'alignment': self.table_segments_alignment})
         self.__parent.edition_started()
 
     def insert_segment(self, row_no=None):
-        self.sortByColumn(-1, Qt.AscendingOrder)
-        row_no = self.rowCount()
-        if row_no is None and self.currentItem() is not None:
-            row_no = self.currentItem().row()
-        elif self.currentItem() is not None:
-                row_no = self.currentItem().row() + 1
+        self.table_segments.sortByColumn(-1, Qt.AscendingOrder)
+        row_no = self.table_segments.rowCount()
+        if row_no is None and self.table_segments.currentItem() is not None:
+            row_no = self.table_segments.currentItem().row()
+        elif self.table_segments.currentItem() is not None:
+                row_no = self.table_segments.currentItem().row() + 1
         else:
             log.info("cannot insert a new segment")
 
-        self.insertRow(row_no)
-        self.setRowHeight(row_no, self.row_height)
-        self.setItem(row_no, 0, QTableWidgetItem(""))
-        self.setItem(row_no, 1, QTableWidgetItem(""))
+        self.table_segments.insertRow(row_no)
+        self.table_segments.setRowHeight(row_no, self.row_height)
+        self.table_segments.setItem(row_no, 0, QTableWidgetItem(""))
+        self.table_segments.setItem(row_no, 1, QTableWidgetItem(""))
         for i in range(2):
-            self.item(row_no, i).setTextAlignment(self.alignment[i])
-            self.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+            self.table_segments.item(row_no, i).setTextAlignment(self.table_segments_alignment[i])
+            self.table_segments.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
 
         # Frame used as the initial frame to start stabilization
         combobox_reference = QComboBox()
@@ -509,7 +515,7 @@ class Table_stabilize(QTableWidget):
         combobox_reference.setFocusPolicy(Qt.NoFocus)
         combobox_reference.currentIndexChanged[int].connect(self.event_reference_changed)
         set_widget_stylesheet(combobox_reference)
-        self.setCellWidget(row_no, 2, combobox_reference)
+        self.table_segments.setCellWidget(row_no, 2, combobox_reference)
 
         # Stabilization mode
         widget = QWidget()
@@ -523,14 +529,14 @@ class Table_stabilize(QTableWidget):
             w.toggled[bool].connect(self.event_mode_changed)
             set_widget_stylesheet(w)
             __layout.addWidget(w)
-        self.setCellWidget(row_no, 3, widget)
+        self.table_segments.setCellWidget(row_no, 3, widget)
         self.history.add(self.History.Action.insert,
-            {'rows': [row_no], 'alignement': self.alignment})
-        self.selectRow(row_no)
+            {'rows': [row_no], 'alignement': self.table_segments_alignment})
+        self.table_segments.selectRow(row_no)
 
 
     def append_segment(self):
-        self.sortByColumn(-1, Qt.AscendingOrder)
+        self.table_segments.sortByColumn(-1, Qt.AscendingOrder)
         # APpend, i.e. set row_no to None, not clean but not time to refactor
         self.insert_segment(row_no=None)
 
@@ -538,26 +544,26 @@ class Table_stabilize(QTableWidget):
     def insert_segment_at(self):
         cursor_position = self.mapFromGlobal(QCursor.pos())
         item_position_x = cursor_position.x() + 5
-        item_position_y = cursor_position.y() - self.horizontalHeader().size().height() * 2 + 5
+        item_position_y = cursor_position.y() - self.table_segments.horizontalHeader().size().height() * 2 + 5
         item = self.itemAt(item_position_x, item_position_y)
         if item is not None:
-            self.clearSelection()
-            self.setCurrentItem(item)
+            self.table_segments.clearSelection()
+            self.table_segments.setCurrentItem(item)
             self.insert_segment(item.row())
-            self.clearSelection()
-            self.setCurrentItem(self.item(-1, -1))
+            self.table_segments.clearSelection()
+            self.table_segments.setCurrentItem(self.table_segments.item(-1, -1))
         else:
-            self.setCurrentItem(None)
+            self.table_segments.setCurrentItem(None)
             self.insert_segment(None)
 
 
 
-    def event_right_click(self, qpoint):
+    def event_segments_right_click(self, qpoint):
         cursor_position = QCursor.pos()
         self.popMenu = QMenu(self)
         insert_action = self.popMenu.addAction('Insert')
         insert_action.triggered.connect(self.insert_segment_at)
-        if len(self.selectedIndexes()) > 0:
+        if len(self.table_segments.selectedIndexes()) > 0:
             remove_action = self.popMenu.addAction('Remove')
             remove_action.triggered.connect(self.remove_segment)
         self.popMenu.exec_(cursor_position)
@@ -572,12 +578,12 @@ class Table_stabilize(QTableWidget):
         return data_str
 
     def event_copy(self):
-        indexes = list(set([index.row() for index in self.selectedIndexes()]))
+        indexes = list(set([index.row() for index in self.table_segments.selectedIndexes()]))
 
-        if len(self.selectedIndexes())>0:
+        if len(self.table_segments.selectedIndexes())>0:
             previous_row_no = -1
             data_str = ""
-            for item in self.selectedIndexes():
+            for item in self.table_segments.selectedIndexes():
                 self.get_segment_values(row_no=item.row())
                 previous_row_no = item.row()
             clipboard = QApplication.clipboard()
@@ -586,7 +592,7 @@ class Table_stabilize(QTableWidget):
 
     def event_cut(self):
         previous_row_no = -1
-        indexes = list(set([index.row() for index in self.selectedIndexes()]))
+        indexes = list(set([index.row() for index in self.table_segments.selectedIndexes()]))
 
         segments = list()
         # Convert dict into a str
@@ -596,18 +602,18 @@ class Table_stabilize(QTableWidget):
             segments.append(self.get_segment_values(row_no=row_no))
             previous_row_no = row_no
 
-        if len(indexes) == self.rowCount():
+        if len(indexes) == self.table_segments.rowCount():
             self.remove_all_segments()
         else:
             for row_no in sorted(indexes, reverse=True):
-                self.removeRow(row_no)
+                self.table_segments.removeRow(row_no)
             self.history.add(self.History.Action.remove, {
                 'segments': segments,
-                'alignment': self.alignment})
+                'alignment': self.table_segments_alignment})
 
         self.__parent.edition_started()
-        self.clearSelection()
-        self.setCurrentItem(self.item(-1, -1))
+        self.table_segments.clearSelection()
+        self.table_segments.setCurrentItem(self.table_segments.item(-1, -1))
         clipboard = QApplication.clipboard()
         clipboard.setText(data_str)
 
@@ -620,21 +626,21 @@ class Table_stabilize(QTableWidget):
 
             segment_count = len(segments)
             if segment_count > 0:
-                if self.currentRow() == -1:
-                    row_no = self.rowCount()
-                elif self.currentItem().isSelected():
-                    row_no = self.currentItem().row()
+                if self.table_segments.currentRow() == -1:
+                    row_no = self.table_segments.rowCount()
+                elif self.table_segments.currentItem().isSelected():
+                    row_no = self.table_segments.currentItem().row()
                 else:
-                    row_no = self.rowCount()
+                    row_no = self.table_segments.rowCount()
 
                 self.set_content(segments=segments)
 
                 self.history.add(self.History.Action.insert, {
                     'rows': list(row_no),
                     'segments': segments,
-                    'alignment': self.alignment})
+                    'alignment': self.table_segments_alignment})
 
-                self.setSortingEnabled(True)
+                self.table_segments.setSortingEnabled(True)
         else:
             log.info("cannot paste, not a plain text")
 

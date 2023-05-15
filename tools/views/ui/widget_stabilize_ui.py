@@ -19,13 +19,13 @@ from PySide6.QtWidgets import (QApplication, QFrame, QGroupBox, QHBoxLayout,
     QLabel, QLayout, QPushButton, QSizePolicy,
     QSpacerItem, QVBoxLayout, QWidget)
 
-from views.table_stabilize import Table_stabilize
+from views.widget_segments import Widget_segments
 
 class Ui_widget_stabilize(object):
     def setupUi(self, widget_stabilize):
         if not widget_stabilize.objectName():
             widget_stabilize.setObjectName(u"widget_stabilize")
-        widget_stabilize.resize(552, 93)
+        widget_stabilize.resize(629, 373)
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -169,15 +169,15 @@ class Ui_widget_stabilize(object):
         self.groupBox_stabilize.setObjectName(u"groupBox_stabilize")
         self.groupBox_stabilize.setFocusPolicy(Qt.NoFocus)
         self.groupBox_stabilize.setCheckable(True)
-        self.verticalLayout_4 = QVBoxLayout(self.groupBox_stabilize)
-        self.verticalLayout_4.setSpacing(3)
-        self.verticalLayout_4.setObjectName(u"verticalLayout_4")
-        self.verticalLayout_4.setContentsMargins(9, 12, 3, 3)
-        self.tableWidget_stabilize = Table_stabilize(self.groupBox_stabilize)
-        self.tableWidget_stabilize.setObjectName(u"tableWidget_stabilize")
-        self.tableWidget_stabilize.setMinimumSize(QSize(520, 0))
+        self.horizontalLayout_2 = QHBoxLayout(self.groupBox_stabilize)
+        self.horizontalLayout_2.setSpacing(3)
+        self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
+        self.horizontalLayout_2.setContentsMargins(9, 12, 3, 3)
+        self.widget_segments = Widget_segments(self.groupBox_stabilize)
+        self.widget_segments.setObjectName(u"widget_segments")
+        self.widget_segments.setMinimumSize(QSize(520, 0))
 
-        self.verticalLayout_4.addWidget(self.tableWidget_stabilize)
+        self.horizontalLayout_2.addWidget(self.widget_segments)
 
 
         self.verticalLayout_2.addWidget(self.groupBox_stabilize)
