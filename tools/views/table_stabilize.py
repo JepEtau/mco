@@ -233,7 +233,7 @@ class Table_stabilize(QTableWidget):
         self.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.setWordWrap(False)
         self.setCornerButtonEnabled(False)
-        self.setRowCount(0)
+        self.setMinimumHeight(305)
 
 
         self.horizontalHeader().setCascadingSectionResizes(False)
@@ -251,13 +251,13 @@ class Table_stabilize(QTableWidget):
 
         self.setFocusPolicy(Qt.NoFocus)
         self.clearContents()
-        self.setRowCount(0)
+        self.setRowCount(6)
         self.alignment = [Qt.AlignRight | Qt.AlignVCenter,
                             Qt.AlignRight | Qt.AlignVCenter,
                             Qt.AlignCenter | Qt.AlignVCenter,
                             Qt.AlignLeft | Qt.AlignVCenter]
-        headers = ["Start", "End", "Initial frame", "Mode"]
-        default_col_width = [50, 50, 80, 300]
+        headers = ["Start", "End", "From", "Mode"]
+        default_col_width = [60, 60, 85, 310]
         for col_no, header_str, col_width in zip(range(len(headers)),
                                                     headers,
                                                     default_col_width):
@@ -267,6 +267,7 @@ class Table_stabilize(QTableWidget):
         self.initial_str = ""
 
         self.__parent = parent
+        self.adjustSize()
         # Signals
         # self.currentCellChanged['int','int','int','int'].connect(self.event_current_cell_changed)
 
@@ -279,7 +280,7 @@ class Table_stabilize(QTableWidget):
         self.clearContents()
         self.history = self.History(self)
         set_stylesheet(self)
-        self.adjustSize()
+        self.size().setHeight(300)
 
 
     def set_parent(self, parent):

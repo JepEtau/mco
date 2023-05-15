@@ -25,7 +25,7 @@ class Ui_widget_stabilize(object):
     def setupUi(self, widget_stabilize):
         if not widget_stabilize.objectName():
             widget_stabilize.setObjectName(u"widget_stabilize")
-        widget_stabilize.resize(412, 370)
+        widget_stabilize.resize(552, 93)
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -175,7 +175,7 @@ class Ui_widget_stabilize(object):
         self.verticalLayout_4.setContentsMargins(9, 12, 3, 3)
         self.tableWidget_stabilize = Table_stabilize(self.groupBox_stabilize)
         self.tableWidget_stabilize.setObjectName(u"tableWidget_stabilize")
-        self.tableWidget_stabilize.setMinimumSize(QSize(480, 0))
+        self.tableWidget_stabilize.setMinimumSize(QSize(520, 0))
 
         self.verticalLayout_4.addWidget(self.tableWidget_stabilize)
 

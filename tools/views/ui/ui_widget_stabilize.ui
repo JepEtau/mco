@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>412</width>
-    <height>370</height>
+    <width>552</width>
+    <height>93</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -315,7 +315,7 @@
           <widget class="Table_stabilize" name="tableWidget_stabilize" native="true">
            <property name="minimumSize">
             <size>
-             <width>480</width>
+             <width>520</width>
              <height>0</height>
             </size>
            </property>

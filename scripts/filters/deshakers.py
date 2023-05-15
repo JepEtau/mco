@@ -188,18 +188,16 @@ class CV2_deshaker:
             'start': None,
             'end': None,
         }
-        use_static_ref = False
 
         if ref == 'start':
             # Start from first frame
-            ref_index = 0
-            use_static_ref = False
+            start_index = 0
         elif ref == 'end':
             # Start from last frame
-            ref_index = len(images) - 1
+            start_index = len(images) - 1
         elif ref == 'middle':
-            ref_index = int(len(images) / 2 - 1)
-            use_static_ref = True
+            # STart from middle of the segment
+            start_index = int(len(images) / 2 - 1)
         else:
             sys.exit(print_red("CV2_deshaker.stabilize: error: ref=%s" % (ref)))
 
@@ -226,32 +224,27 @@ class CV2_deshaker:
             hash = log_filter(filter_str, shot['hash_log_file'])
         else:
             hash = calculate_hash(filter_str=filter_str)
-        print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, ref_index:%d" % (len(images), ref_index))
+        print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, start_index:%d" % (len(images), start_index))
 
         # Reset transformation
         self.__transformations.clear()
 
 
-        if last_transformation is not None and ref_index != 0:
-            print_red("error: stabilize, last transformation will be ignored")
+        if last_transformation is not None and ref == 'middle':
+            print_red("Error: stabilize, previous transformation will be ignored, correct the stabilization segments!")
             last_transformation = None
         img_stabilized, img_ref_gray, keypoints_ref = self.__get_initial_image(
-            img=images[ref_index],
+            img=images[start_index],
             last_transformation=last_transformation)
         self._height, self._width, self._channels = img_stabilized.shape
 
         if ref == 'middle':
             output_images = list()
-            start = 0
+            # from ref to end of segment
+            start = start_index + 1
             end = len(images)
-
             for i in range(start, end):
-                # if verbose:
-                #     print("frame %d: " % (i), end='')
-
                 img_colored = images[i]
-                # if verbose:
-                #     print("%s: image=%d" % (ref, i), end=' ')
 
                 # compute and get keypoints
                 img_stabilized, transformation = self.__stabilize_image(
@@ -260,14 +253,88 @@ class CV2_deshaker:
                     keypoints_ref=keypoints_ref,
                     mode=mode)
 
-                self.__transformations.append(transformation)
+                # append image
                 output_images.append(img_stabilized)
-                # if verbose:
-                #     print("append")
+                self.__transformations.append(transformation)
 
-                if i == 0:
-                    transformations['start'] = transformation
+                # current frame is the newest reference
+                img_gray_tmp2 = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_RGB2GRAY)
+                if self.__use_roi:
+                    print_yellow("warning: use ROI: not validated")
+                    img_gray_tmp2 = img_gray_tmp2[
+                        self.__crop_h+self.__pad:self.__pad+img_gray_tmp2.shape[0],
+                        self.__crop_w+self.__pad:self.__pad+img_gray_tmp2.shape[1]]
+                if self.__sobel:
+                    print_yellow("warning: use sobel: not validated")
+                    img_ref_gray = edge_sharpen_sobel_gray(image_gray=img_gray_tmp2, index=self.__index)
+                    self.__index += 1
+                else:
+                    img_ref_gray = img_gray_tmp2
+
+                # identify new points
+                keypoints_ref = cv2.goodFeaturesToTrack(img_ref_gray,
+                    maxCorners=self.__max_corners,
+                    qualityLevel=self.__quality_level,
+                    minDistance=self.__min_distance,
+                    blockSize=self.__block_size,
+                    mask=self.__mask,
+                    useHarrisDetector=self.__use_harris_detector,
+                    k=self.__k)
+
+            if verbose:
+                print_yellow("Save last transformation, used for the start of next segment", end= '')
+                print(transformation)
             transformations['end'] = transformation
+
+
+            # From ref to 0
+            img_stabilized, img_ref_gray, keypoints_ref = self.__get_initial_image(
+                img=images[start_index], last_transformation=last_transformation)
+            start = start_index - 1
+            end = 0
+            for i in range(start, end-1, -1):
+                img_colored = images[i]
+
+                # compute and get keypoints
+                img_stabilized, transformation = self.__stabilize_image(
+                    img=img_colored,
+                    img_ref_gray=img_ref_gray,
+                    keypoints_ref=keypoints_ref,
+                    mode=mode)
+
+                # insert image
+                output_images.insert(0, img_stabilized)
+                self.__transformations.insert(0, transformation)
+
+                # current frame is the newest reference
+                img_gray_tmp2 = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_RGB2GRAY)
+                if self.__use_roi:
+                    print_yellow("warning: use ROI: not validated")
+                    img_gray_tmp2 = img_gray_tmp2[
+                        self.__crop_h+self.__pad:self.__pad+img_gray_tmp2.shape[0],
+                        self.__crop_w+self.__pad:self.__pad+img_gray_tmp2.shape[1]]
+                if self.__sobel:
+                    print_yellow("warning: use sobel: not validated")
+                    img_ref_gray = edge_sharpen_sobel_gray(image_gray=img_gray_tmp2, index=self.__index)
+                    self.__index += 1
+                else:
+                    img_ref_gray = img_gray_tmp2
+
+                # identify new points
+                keypoints_ref = cv2.goodFeaturesToTrack(img_ref_gray,
+                    maxCorners=self.__max_corners,
+                    qualityLevel=self.__quality_level,
+                    minDistance=self.__min_distance,
+                    blockSize=self.__block_size,
+                    mask=self.__mask,
+                    useHarrisDetector=self.__use_harris_detector,
+                    k=self.__k)
+
+            if verbose:
+                print_yellow("Save last transformation, used for the start of next segment", end= '')
+                print(transformation)
+            transformations['start'] = transformation
+
 
         elif ref == 'start':
             self.__transformations.append(last_transformation)
@@ -327,13 +394,12 @@ class CV2_deshaker:
             transformations['end'] = transformation
 
 
-
         elif ref == 'end':
             self.__transformations.append(last_transformation)
             output_images = [img_stabilized]
             transformation = None
-            print_pink(f"stabilize from {ref}, start={ref_index}, end={0}")
-            for i in range(ref_index-1, -1, -1):
+            print_pink(f"stabilize from {ref}, start={start_index}, end={0}")
+            for i in range(start_index-1, -1, -1):
                 if verbose:
                     print(f"\timage {i}", end=' ')
                 img_colored = images[i]
@@ -422,12 +488,12 @@ class Skimage_deshaker:
         count = len(images)
 
         if ref == 'start':
-            ref_index = 0
+            start_index = 0
             use_static_ref = False
         elif ref == 'end':
-            ref_index = len(images) - 1
+            start_index = len(images) - 1
         elif ref == 'middle':
-            ref_index = int(len(images) / 2 - 1)
+            start_index = int(len(images) / 2 - 1)
             use_static_ref = True
 
 
@@ -453,7 +519,7 @@ class Skimage_deshaker:
             hash = log_filter(filter_str, shot['hash_log_file'])
         else:
             hash = calculate_hash(filter_str=filter_str)
-        print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, ref_index:%d" % (len(images), ref_index))
+        print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, start_index:%d" % (len(images), start_index))
 
         # Generate and log hash
         filters_str = "%s,stab=%s" % (input_hash, filters_str)
@@ -467,7 +533,7 @@ class Skimage_deshaker:
         print_lightcyan("\t\t\t(skimage) deshaker, output hash= %s" % (step_no, hash))
 
         # img_stabilized, img_ref_gray, keypoints_ref = self.__get_initial_image(
-        #     img=images[ref_index])
+        #     img=images[start_index])
         # self._height, self._width, self._channels = img_stabilized.shape
 
         img_ref = images[0]
