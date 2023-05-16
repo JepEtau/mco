@@ -14,7 +14,7 @@ from utils.hash import (
 from utils.pretty_print import *
 
 
-DEBUG_DESHAKE = True
+DEBUG_DESHAKE = False
 # No improvments, sometime worst
 # ROI_MIN_L = 17
 # ROI_MIN_R = 14
@@ -155,7 +155,7 @@ class CV2_deshaker:
         try:
             # Estimate transformation matrix
             transformation = cv2.estimateAffinePartial2D(
-                keypoints_ref, keypoints[status==1])[0]
+                keypoints_ref[status==1], keypoints[status==1])[0]
 
             if transformation is not None:
                 t_x = transformation[0][2]
@@ -179,7 +179,7 @@ class CV2_deshaker:
             t_x, t_y, t_theta = self.__last_transformation
             t_theta = 0
 
-            if False:
+            if True:
                 # draw the tracks
                 for new in keypoints_ref:
                     a, b = new.ravel()
@@ -262,13 +262,10 @@ class CV2_deshaker:
         else:
             sys.exit(print_red("CV2_deshaker.stabilize: error: ref=%s" % (ref)))
 
+        indice = 4
+
         # Define a filter str
-        filters_str = "%03d:%0.2f:%.1f:%d:%0.2f" % (
-                    self.__max_corners,
-                    self.__quality_level,
-                    self.__min_distance,
-                    self.__block_size,
-                    self.__k)
+        filters_str = f"{self.__max_corners}:{self.__quality_level:0.2f}:{self.__min_distance:.1f}:{self.__block_size}:{indice}"
 
         # Generate and log hash
         filter_str = f"{input_hash},stab={filters_str}"
@@ -317,12 +314,16 @@ class CV2_deshaker:
         # cv2.imwrite("/home/adg/mco/cache/ep01/asuivre/004/07/img_for_tracking.png", img_for_tracking)
 
         if ref == 'middle':
+            verbose = True
+
             output_images = [img_stabilized]
             # from ref to end of segment
             start = start_index + 1
             end = len(images)
             for i in range(start, end):
                 img_colored = images[i]
+                if verbose:
+                    print(f"\timage {i}")
 
                 # compute and get keypoints
                 img_stabilized, transformation = self.__stabilize_image(

@@ -32,13 +32,9 @@
 
 # Models/Algo
 * Cartoons:
-    1x_GainRESV4_128
-    4x-AnimeSharp-lite
     Fatality_DeBlur
     Focus + Focus_Moderate https://u.pcloud.link/publink/show?code=kZS4XhVZ1GKsTtkjdULdYn6z9pTHs7fdLvR7
-    1x_Bandage-Smooth-[64]_105000_G (Debanding)
     CelFrames 1.0
-    DigitalFrames 2.5
     1x_DeInterPaint (Deinterlacing)
 
 * Realistic:

@@ -224,6 +224,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
 
 
     # Initialize module
+    scale = netscale
     if model_name == 'realesr-animevideov3':
         # x4 VGG-style model (XS size)
         model = SRVGGNetCompact(
@@ -236,7 +237,6 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     elif model_name == 'RealESRGAN_x4plus_anime_6B':
         # x4 RRDBNet model with 6 blocks
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4)
-        tile = 320
     elif model_name == '2x_LD-Anime_Compact_330k_net_g':
         model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=2, act_type='prelu')
     elif model_name == '2x_Futsuu_Anime_Compact_130k_net_g':
@@ -267,6 +267,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     # Walk through images
     count = shot['count']
     i = 0
+    print(f"upscale factor: {scale}")
     for f_no, f_output in zip(range(count), output_image_list):
         start_time = time.time()
         i += 1
