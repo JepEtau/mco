@@ -99,34 +99,16 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
 
     # Create a list of works for multiprocessing
     count = shot['count']
-    worklist = list()
-    output_images = [None] * shot['count']
     if use_memory:
-        if do_save and not do_force:
-            for frame_no, f_output in zip(range(count), output_image_list):
-                if not os.path.exists(f_output):
-                    worklist.append([frame_no, images[frame_no]])
-                else:
-                    output_images[frame_no] = cv2.imread(f_output, cv2.IMREAD_COLOR)
-        else:
-            for frame_no in range(count):
-                worklist.append([frame_no, images[frame_no]])
+        worklist = list([[frame_no, images[frame_no]] for frame_no in range(count)])
     else:
-        # Do not load images in memeory
-        if not do_force:
-            for frame_no, f_output in zip(range(count), output_image_list):
-                if not os.path.exists(f_output):
-                    worklist.append([frame_no, image_list[frame_no]])
-        else:
-            for frame_no in range(count):
-                worklist.append([frame_no, image_list[frame_no]])
-
-
+        worklist = list([[frame_no, image_list[frame_no]] for frame_no in range(count)])
     if len(worklist) == 0:
         sys.exit(print_red("error: apply_python_geometry_filter: worklist is empty, debug this!!!"))
 
 
     # Execute the pool of works
+    output_images = [None] * shot['count']
     if cpu_count > 1:
         no = 0
         with ThreadPoolExecutor(max_workers=min(cpu_count, len(worklist))) as executor:

@@ -1,5 +1,6 @@
 import os
 import os.path
+from filters.deshaker_cv2 import DEBUG_DESHAKE
 from filters.utils import STEP_INC
 
 from utils.pretty_print import *
@@ -43,12 +44,16 @@ def optimize_tasks(db, shot) -> int:
                 step_no=step_no,
                 hash=hash)
 
+        if filter['str'] == 'deshake' and DEBUG_DESHAKE:
+            step_no -= STEP_INC
+            break
+
         do_process = False
         for f in image_list:
             if not os.path.exists(f):
                 do_process = True
                 break
-        if not do_process:
+        if not do_process and not DEBUG_DESHAKE:
             print(f"\t\t\t* step no. {step_no} already done")
             step_no += STEP_INC
             break

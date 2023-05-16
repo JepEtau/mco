@@ -4,7 +4,6 @@
 
 (2)
 - stats: list unused curves. reason: clean the db
-- (?) use ROI when zooming in/out
 - (?) smooth stabilization: to evaluate (g_fin)
 
 (3)
@@ -20,15 +19,14 @@
 - Add geometry error/fit_to_width in selection widget
 
 (2)
-- F5 to refresh current shot only
 - curves: bug: mouseclick on graph creates a point if another widget is selected
 - edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db
+- F5 to refresh current shot only
+- when no image loaded, reset all widgets / disable all widgets if images missing
 
 (3)
 - (?) reorder options in .ini files
-- when no image loaded, reset all widgets / disable all widgets if images missing
 - add buttons to show/hide widgets
-- stabilize: when table is disable, set qWidgetItem to disable (text should be gray)
 - (?)Replace not allowed when multiple shot selected
 
 
@@ -102,5 +100,6 @@
 - add_borders is inserted at the wrong place if using s0
 - initial image dimensions is declared as constants: stats are erroneous with s0
 - fadein: if stabilize, segment shall use 'middle' of shot as the ref. frame
-- fadein: fadein on a fixed image
+- fadein: fadein is always done on a the same image. No need for someting else.
+- stabilize: when table is disable, set qWidgetItem to disable (text should be gray)
 

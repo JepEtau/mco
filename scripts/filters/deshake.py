@@ -3,10 +3,12 @@ import cv2
 import sys
 from pprint import pprint
 from copy import deepcopy
-from filters.deshakers import (
+from filters.deshaker_cv2 import (
     CV2_deshaker,
-    Skimage_deshaker,
     apply_cv2_transformation,
+)
+from filters.deshaker_sk import (
+    Skimage_deshaker,
 )
 from utils.hash import (
     calculate_hash,
@@ -155,6 +157,7 @@ def deshake(shot, images:list, image_list:list,
                 images=images[start:start+count],
                 ref=segment['ref'],
                 mode=segment['mode'],
+                roi=segment['roi'],
                 last_transformation=previous_transformation,
                 step_no=step_no,
                 input_hash=input_hash,

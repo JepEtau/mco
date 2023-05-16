@@ -4,6 +4,7 @@ import os
 from pprint import pprint
 
 from audio.utils import read_audio_file
+from filters.deshaker_cv2 import DEBUG_DESHAKE
 from utils.common import (
     FPS,
     K_ALL_PARTS,
@@ -265,7 +266,7 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
     print_lightcyan(f"{k_part}: ", end='')
     print(f"{shot_filepath}")
 
-    if not os.path.exists(shot_filepath) or force:
+    if not os.path.exists(shot_filepath) or force or DEBUG_DESHAKE:
         db_settings = db_common['settings']
 
         ffmpeg_command = [db_common['tools']['ffmpeg']]

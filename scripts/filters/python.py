@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 import platform
 
 from pprint import pprint
+from filters.deshaker_cv2 import DEBUG_DESHAKE
 from filters.dnn_superres import upscale_cv2_dnn_superres
 from filters.ffmpeg_utils import clean_ffmpeg_filter
 
@@ -119,7 +120,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
             if not do_force:
                 do_extract = False
                 for f in output_image_list:
-                    if not os.path.exists(f):
+                    if not os.path.exists(f) or DEBUG_DESHAKE:
                         do_extract = True
                         break
                 if not do_extract:
@@ -207,7 +208,8 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
             input_hash=input_hash,
             get_hash=get_hash,
             do_save=do_save,
-            output_folder=output_folder)
+            output_folder=output_folder,
+            do_force=DEBUG_DESHAKE)
 
 
 

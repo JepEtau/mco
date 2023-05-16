@@ -25,7 +25,7 @@ def process_shot(db, shot, force:bool=False):
     # Consolidate shot
     consolidate_shot(db, shot)
 
-    if False:
+    if True:
         print_lightcyan("================================== SHOT =======================================")
         pprint(shot)
         print_lightcyan("===============================================================================")

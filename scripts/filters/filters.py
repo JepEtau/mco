@@ -149,13 +149,13 @@ def edge_sharpen_sobel_gray(image_gray, index, k_size=3, blend_factor=0.2):
     grad_y = cv2.Sobel(image_gray2, ddepth, 0, 1, ksize=k_size, scale=scale, delta=delta, borderType=cv2.BORDER_DEFAULT)
     abs_grad_x = cv2.convertScaleAbs(grad_x)
     abs_grad_y = cv2.convertScaleAbs(grad_y)
-    abs_grad_xy = cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
+    abs_grad_xy = cv2.addWeighted(abs_grad_x, 1-blend_factor, abs_grad_y, blend_factor, 0)
 
     kernel = np.ones((3, 3), np.uint8)
     img_output2 =  cv2.erode(abs_grad_xy, kernel, iterations=1)
 
     # img_output2 = abs_grad_xy
-    cv2.imwrite(filename="frames_23_sobel/f_%05d_1.png" % (index), img=img_output2)
+    # cv2.imwrite(filename="frames_23_sobel/f_%05d_1.png" % (index), img=img_output2)
     return img_output2
 
 
