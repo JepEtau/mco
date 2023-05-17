@@ -16,8 +16,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QGroupBox, QHBoxLayout,
-    QLabel, QLayout, QPushButton, QSizePolicy,
-    QSpacerItem, QVBoxLayout, QWidget)
+    QLabel, QLayout, QLineEdit, QPushButton,
+    QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
 from views.widget_segments import Widget_segments
 
@@ -25,7 +25,7 @@ class Ui_widget_stabilize(object):
     def setupUi(self, widget_stabilize):
         if not widget_stabilize.objectName():
             widget_stabilize.setObjectName(u"widget_stabilize")
-        widget_stabilize.resize(629, 373)
+        widget_stabilize.resize(552, 141)
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -182,6 +182,26 @@ class Ui_widget_stabilize(object):
 
         self.verticalLayout_2.addWidget(self.groupBox_stabilize)
 
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
+        self.lineEdit_coordinates = QLineEdit(self.frame)
+        self.lineEdit_coordinates.setObjectName(u"lineEdit_coordinates")
+        self.lineEdit_coordinates.setMaximumSize(QSize(100, 16777215))
+        self.lineEdit_coordinates.setFocusPolicy(Qt.NoFocus)
+        self.lineEdit_coordinates.setFrame(False)
+        self.lineEdit_coordinates.setAlignment(Qt.AlignCenter)
+        self.lineEdit_coordinates.setReadOnly(True)
+        self.lineEdit_coordinates.setClearButtonEnabled(False)
+
+        self.horizontalLayout_3.addWidget(self.lineEdit_coordinates)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer_2)
+
+
+        self.verticalLayout_2.addLayout(self.horizontalLayout_3)
+
 
         self.mainLayout.addWidget(self.frame)
 
@@ -200,6 +220,7 @@ class Ui_widget_stabilize(object):
         self.pushButton_save.setText("")
         self.pushButton_close.setText("")
         self.groupBox_stabilize.setTitle(QCoreApplication.translate("widget_stabilize", u"Stabilize/deshake", None))
+        self.lineEdit_coordinates.setText(QCoreApplication.translate("widget_stabilize", u"(1200, 1400)", None))
         pass
     # retranslateUi
 

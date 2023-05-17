@@ -458,6 +458,7 @@ class Window_main(Window_common):
     def mousePressEvent(self, event):
         x = event.x()
         y = event.y()
+        self.widget_stabilize.update_coordinates(event.position().toPoint())
 
         if (self.image is not None
         and self.image['cache_initial'] is not None):
@@ -494,6 +495,7 @@ class Window_main(Window_common):
     def mouseMoveEvent(self, event):
         x = event.x()
         y = event.y()
+        self.widget_stabilize.update_coordinates(event.position().toPoint())
         if self.current_widget == 'stabilize':
             line = self.widget_stabilize.guidelines.move(x, y)
             if line is None:
@@ -519,6 +521,7 @@ class Window_main(Window_common):
             else:
                 self.get_rgb_value(x, y)
                 event.ignore()
+
 
 
     def mouseMoved(self, x, y):

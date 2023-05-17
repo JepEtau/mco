@@ -11,6 +11,7 @@ from PySide6.QtCore import (
     Qt,
     Signal,
     QEvent,
+    QPoint,
 )
 from PySide6.QtGui import (
     QKeyEvent,
@@ -65,6 +66,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         # Buttons, etc.
         self.groupBox_stabilize.clicked.connect(self.event_settings_enable_toggled)
         self.label_message.clear()
+        self.lineEdit_coordinates.clear()
 
         # Signals
         self.pushButton_stabilize.clicked.connect(self.event_stabilize_requested)
@@ -116,10 +118,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         self.pushButton_set_preview.blockSignals(True)
         self.pushButton_set_preview.setEnabled(self.is_edition_allowed)
-        self.pushButton_set_preview.setChecked(enabled)
+        # self.pushButton_set_preview.setChecked(enabled)
         # self.previous_preview_state = enabled
+        is_checked = self.pushButton_set_preview.isChecked()
         self.pushButton_set_preview.blockSignals(False)
-        log.info(f"enable: {enabled}, allowed: {self.is_edition_allowed}")
+        log.info(f"enable: {is_checked}, allowed: {self.is_edition_allowed}")
 
 
     def get_preview_options(self):
@@ -310,7 +313,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             self.signal_stabilization_requested.emit(settings)
         else:
             if (self.widget_segments.is_content_modified() or
-                self.groupBox_stabilize.isChecked() != self.is_enabled_initial):
+                self.groupBox_stabilize.isChecked() != self.is_enabled_initial
+                or self.is_obsolete):
+                print(f"{self.widget_segments.is_content_modified()},"
+                      f"{self.groupBox_stabilize.isChecked()} != {self.is_enabled_initial}",
+                      f"{self.is_obsolete}")
                 # Settings have been modified, request to stabilize
                 # If initial state was disabled, stabilize has not been done
                 log.info(f"Request to stabilize")
@@ -351,9 +358,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     def guidelines_state_changed(self, state):
         self.guidelines.set_enabled(state)
 
-        if state and not self.__parent.is_widget_active():
+        if state and not self.__parent.is_widget_active(self.objectName()):
             # Enter this widget if not already active, otherwise, cannot move guidelines
-            self.__parent.event_widget_entered(self.objectName())
+            self.__parent.set_current_widget(self.objectName())
 
         self.signal_show_guidelines_changed.emit(state)
 
@@ -373,6 +380,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         else:
             log.info("cannot save, reason: button is disabled")
 
+
+    def update_coordinates(self, position:QPoint):
+        self.lineEdit_coordinates.setText(f"({position.x()}, {position.y()})")
 
     def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()

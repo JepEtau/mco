@@ -316,6 +316,11 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.signal_save_rgb_curves_as.emit(curves)
 
 
+    def enter_widget(self):
+        # RGB graph informs that we entered
+        if not self.ui.is_widget_active(self.objectName()):
+            self.ui.set_current_widget(self.objectName())
+
 
     def event_is_saved(self, editor):
         # Override fuction because the key is differs from this widget name: ???
@@ -389,7 +394,11 @@ class Widget_curves(Widget_common, Ui_widget_curves):
             if self.widget_curves_selection.event_key_pressed(event):
                 return True
 
-        return self.widget_rgb_graph.event_key_pressed(event)
+        is_accepted = self.widget_rgb_graph.event_key_pressed(event)
+        if is_accepted and not self.ui.is_widget_active(self.objectName()):
+                self.ui.set_current_widget(self.objectName())
+
+        return is_accepted
 
 
 

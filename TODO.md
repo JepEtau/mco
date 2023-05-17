@@ -16,6 +16,7 @@
 
 # TODO video editor
 (1)
+- Update model each time the segments are modified
 - Add geometry error/fit_to_width in selection widget
 
 (2)

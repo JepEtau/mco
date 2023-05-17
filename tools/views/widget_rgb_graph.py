@@ -246,6 +246,7 @@ class Widget_rgb_graph(QWidget):
             self.shift_key_pressed = True
             self.saved_position = self.get_event_coordinates(event)
             print(f"saved position: ({self.saved_position[0]:02f}, {self.saved_position[1]:02f})")
+            self.ui.enter_widget()
             return
         else:
             self.saved_position = None

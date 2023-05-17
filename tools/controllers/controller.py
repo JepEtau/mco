@@ -783,12 +783,12 @@ class Controller_video_editor(Controller_common,
 
         if True:
             if self.current_task == 'sharpen':
+                # Stabilize is disable if not in edition mode
                 options['stabilize']['allowed'] = False
                 options['stabilize']['enabled'] = False
             else:
                 options['stabilize']['allowed'] = True
-                # Stabilize is disable if not in edition mode
-                options['stabilize']['enabled'] = True
+                # options['stabilize']['enabled'] = True
         else:
             # Force enabled to fasten edition
             options['stabilize']['allowed'] = True

@@ -137,7 +137,7 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
 
 
 def upscale_real_esrgan(shot, images:list, image_list:list,
-    scale:int, model_name:str, directories:str, input_hash:str, step_no, output_folder:str,
+    model_name:str, directories:str, input_hash:str, step_no, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
     module_path = os.path.join(directories['3rd_party'], directories['real_esrgan'])
@@ -267,7 +267,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     # Walk through images
     count = shot['count']
     i = 0
-    print(f"upscale factor: {scale}")
+    print(f"upscale factor: {netscale}")
     for f_no, f_output in zip(range(count), output_image_list):
         start_time = time.time()
         i += 1
@@ -287,9 +287,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
 
             # Upscale
             output_img, _ = upscaler.enhance(
-                img=img,
-                outscale=scale,
-                alpha_upsampler='realesrgan')
+                img=img, alpha_upsampler='realesrgan')
 
             if use_memory:
                 output_images.append(output_img)
@@ -310,7 +308,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
 
 
 def upscale_esrgan(shot, images:list, image_list:list,
-    scale:int, model_name:str, directories:str, input_hash, step_no, output_folder:str,
+    model_name:str, directories:str, input_hash, step_no, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
     module_path = os.path.join(directories['3rd_party'], directories['esrgan'])

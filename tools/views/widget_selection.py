@@ -304,7 +304,7 @@ class Widget_selection(QWidget, Ui_widget_selection):
 
     def edition_started(self, is_started):
         row_no = self.tableWidget_shots.currentRow()
-        print(f"edition_started: {row_no} is_started: {is_started}")
+        # print(f"edition_started: {row_no} is_started: {is_started}")
         item = self.tableWidget_shots.item(row_no, 0)
         if is_started:
             self.tableWidget_shots.item(row_no, 0).setForeground(QBrush(COLOR_PURPLE))

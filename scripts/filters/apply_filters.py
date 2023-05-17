@@ -118,8 +118,8 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
             if not torch.cuda.is_available():
                 if filter['task'] == 'upscale':
                     print_red("\t\t\terror: cannot upscale with this GPU")
-                    print_orange("\t\t\tfallback: bad quality upscale (CV2: nearest)")
-                    filter_str = "scale=2:nearest"
+                    print_orange("\t\t\tfallback: bad quality upscale (CV2: bicubic)")
+                    filter_str = "scale=2:bicubic"
                     hash, images = apply_python_filters(
                         shot,
                         images=images,
@@ -175,7 +175,6 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
                         shot=shot,
                         images=images,
                         image_list=image_list,
-                        scale=2,
                         model_name=xgan['model'],
                         directories=db['common']['directories'],
                         input_hash=hash,
@@ -193,7 +192,6 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
                         shot=shot,
                         images=images,
                         image_list=image_list,
-                        scale=2,
                         model_name=xgan['model'],
                         directories=db['common']['directories'],
                         input_hash=hash,
@@ -210,7 +208,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
                 if filter['task'] == 'upscale':
                     print_red("\t\t\terror: cannot upscale with this GPU")
                     print_orange("\t\t\tfallback: bad quality upscale (CV2: nearest)")
-                    filter_str = "scale=2:nearest"
+                    filter_str = "scale=4:bicubic"
                     hash, images = apply_python_filters(
                         shot,
                         images=images,
@@ -244,11 +242,11 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
                     shot=shot,
                     images=images,
                     image_list=image_list,
-                    scale=2,
                     model_name=alg['model'],
                     directories=db['common']['directories'],
                     input_hash=hash,
                     step_no=step_no,
+                    do_save=filter['save'],
                     output_folder=output_folder,
                     get_hash=get_hashes,
                     do_force=do_force)
