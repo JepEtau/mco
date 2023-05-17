@@ -425,12 +425,7 @@ def calculate_geometry_parameters(shot, img, simulate:bool=False, verbose:bool=F
 
     # Crop the image
     # Update the crop values if borders has been added
-    if shot['last_task'] == 'deinterlace':
-        cropped_value = shot_geometry['crop']
-        if verbose:
-            print_lightgrey(f"\t-> image has no border")
-            print(f"\t{cropped_value}")
-    elif has_add_border_task(shot):
+    if shot['last_task'] != 'deinterlace' or has_add_border_task(shot):
         cropped_value = [x + IMG_BORDER_HIGH_RES for x in shot_geometry['crop']]
         if verbose:
             print_lightgrey(f"\t-> image has borders")

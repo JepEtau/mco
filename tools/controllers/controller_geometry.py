@@ -158,6 +158,7 @@ class Controller_geometry():
                 'target': target_geometry,
             },
             'last_task': shot['last_task'],
+            'filters': shot['filters'],
         }
         print_purple("virtual_shot")
         pprint(virtual_shot)
