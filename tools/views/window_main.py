@@ -54,6 +54,7 @@ from views.widget_replace import Widget_replace
 from views.widget_geometry import Widget_geometry
 from views.widget_stabilize import Widget_stabilize
 from views.widget_painter import Widget_painter
+from views.widget_graphics_view import Widget_graphics_view
 
 from controllers.controller import Controller_video_editor
 
@@ -147,14 +148,18 @@ class Window_main(Window_common):
         self.layout_window = QVBoxLayout(self.widget_window_main)
         self.layout_window.setSpacing(0)
         self.layout_window.setObjectName(u"layout_window")
-        self.layout_window.setContentsMargins(0,0,0,0)
-        self.widget_painter = Widget_painter(self.widget_window_main, self)
-        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.widget_painter.sizePolicy().hasHeightForWidth())
-        self.widget_painter.setSizePolicy(sizePolicy)
-        self.widget_painter.setMinimumSize(QSize(800, 600))
+        self.layout_window.setContentsMargins(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP, 0, 0)
+        # self.widget_painter = Widget_painter(self.widget_window_main, self)
+
+        self.widget_painter = Widget_graphics_view(self.widget_window_main, self)
+
+
+        # sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        # sizePolicy.setHorizontalStretch(0)
+        # sizePolicy.setVerticalStretch(0)
+        # sizePolicy.setHeightForWidth(self.widget_painter.sizePolicy().hasHeightForWidth())
+        # self.widget_painter.setSizePolicy(sizePolicy)
+        # self.widget_painter.setMinimumSize(QSize(800, 600))
 
         self.layout_window.addWidget(self.widget_painter)
         self.setCentralWidget(self.widget_window_main)
