@@ -30,6 +30,11 @@ from PySide6.QtGui import (
     QKeyEvent,
     QWheelEvent,
 )
+from PySide6.QtWidgets import (
+    QVBoxLayout,
+    QWidget,
+    QSizePolicy,
+)
 
 from views.window_common import (
     Window_common,
@@ -48,6 +53,7 @@ from views.widget_curves import Widget_curves
 from views.widget_replace import Widget_replace
 from views.widget_geometry import Widget_geometry
 from views.widget_stabilize import Widget_stabilize
+from views.widget_painter import Widget_painter
 
 from controllers.controller import Controller_video_editor
 
@@ -135,6 +141,24 @@ class Window_main(Window_common):
         for w in self.widgets.values():
             w.signal_close.connect(self.event_editor_action)
             w.signal_widget_selected[str].connect(self.set_current_widget)
+
+        # Qpainter widget
+        self.widget_window_main = QWidget(self)
+        self.layout_window = QVBoxLayout(self.widget_window_main)
+        self.layout_window.setSpacing(0)
+        self.layout_window.setObjectName(u"layout_window")
+        self.layout_window.setContentsMargins(0,0,0,0)
+        self.widget_painter = Widget_painter(self.widget_window_main, self)
+        sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.widget_painter.sizePolicy().hasHeightForWidth())
+        self.widget_painter.setSizePolicy(sizePolicy)
+        self.widget_painter.setMinimumSize(QSize(800, 600))
+
+        self.layout_window.addWidget(self.widget_painter)
+        self.setCentralWidget(self.widget_window_main)
+
 
         # Set initial values
         self.is_repainting = False
@@ -343,7 +367,7 @@ class Window_main(Window_common):
 
 
     def event_preview_options_consolidated(self, new_preview_settings):
-        log.info("preview options have been consolidated, refresh widgets")
+        # log.info("preview options have been consolidated, refresh widgets")
         self.widget_replace.refresh_preview_options(new_preview_settings)
         self.widget_stabilize.refresh_preview_options(new_preview_settings)
         self.widget_geometry.refresh_preview_options(new_preview_settings)
@@ -397,12 +421,13 @@ class Window_main(Window_common):
             for e, w in self.widgets.items():
                 w.refresh_values(frame)
 
-        self.repaint()
+        self.widget_painter.show_image(self.image)
+        # self.repaint()
         # print("\t\t%f" % int(1000 * (time.time() - now)))
 
 
     def event_show_guidelines_changed(self):
-        self.repaint()
+        self.widget_painter.repaint_frame()
 
 
     def get_rgb_value(self, xr, yr):
@@ -427,10 +452,10 @@ class Window_main(Window_common):
                     #     bgr[2], bgr[1], bgr[0]))
 
                     self.widget_curves.set_color_values(bgr)
-                    self.setCursor(Qt.CrossCursor)
+                    self.widget_painter.setCursor(Qt.CrossCursor)
                 else:
                     self.widget_curves.set_color_values(None)
-                    self.setCursor(Qt.ArrowCursor)
+                    self.widget_painter.setCursor(Qt.ArrowCursor)
             except:
                 # print("error!")
                 pass
@@ -446,10 +471,10 @@ class Window_main(Window_common):
                                             xr-self.image['origin'][0] + PAINTER_MARGIN_LEFT]
 
                     self.widget_curves.set_color_values(bgr)
-                    self.setCursor(Qt.CrossCursor)
+                    self.widget_painter.setCursor(Qt.CrossCursor)
                 else:
                     self.widget_curves.set_color_values(None)
-                    self.setCursor(Qt.ArrowCursor)
+                    self.widget_painter.setCursor(Qt.ArrowCursor)
             except:
                 # print("error!")
                 pass
@@ -464,7 +489,7 @@ class Window_main(Window_common):
         and self.image['cache_initial'] is not None):
             if self.current_widget == 'curves':
                 if self.widget_curves.grab_split_line(x):
-                    self.setCursor(Qt.SplitHCursor)
+                    self.widget_painter.setCursor(Qt.SplitHCursor)
                 else:
                     print("\t-> cache_initial: ", self.image['cache_initial'].shape)
                     self.get_rgb_value(x, y)
@@ -473,15 +498,15 @@ class Window_main(Window_common):
             elif self.current_widget == 'stabilize':
                 line = self.widget_stabilize.guidelines.grab(x, y)
                 if line == 'vertical':
-                    self.setCursor(Qt.SplitHCursor)
+                    self.widget_painter.setCursor(Qt.SplitHCursor)
                 elif line == 'horizontal':
-                    self.setCursor(Qt.SplitVCursor)
+                    self.widget_painter.setCursor(Qt.SplitVCursor)
                 elif line == "both":
-                    self.setCursor(Qt.SizeAllCursor)
+                    self.widget_painter.setCursor(Qt.SizeAllCursor)
                 else:
                     self.get_rgb_value(x, y)
                 if line is not None:
-                    self.repaint()
+                    self.widget_painter.repaint_frame()
                 event.accept()
                 return True
             else:
@@ -503,19 +528,19 @@ class Window_main(Window_common):
                 event.ignore()
                 return
             if line == 'vertical':
-                self.setCursor(Qt.SplitHCursor)
+                self.widget_painter.setCursor(Qt.SplitHCursor)
             elif line == 'horizontal':
-                self.setCursor(Qt.SplitVCursor)
+                self.widget_painter.setCursor(Qt.SplitVCursor)
             elif line == "both":
-                self.setCursor(Qt.SizeAllCursor)
+                self.widget_painter.setCursor(Qt.SizeAllCursor)
             event.accept()
             if line is not None:
-                self.repaint()
+                self.widget_painter.repaint_frame()
 
 
         elif self.current_widget == 'curves':
             if self.widget_curves.move_split_line(x):
-                self.setCursor(Qt.SplitHCursor)
+                self.widget_painter.setCursor(Qt.SplitHCursor)
                 event.accept()
                 self.event_reload_frame()
             else:
@@ -527,28 +552,28 @@ class Window_main(Window_common):
     def mouseMoved(self, x, y):
         if self.current_widget == 'curves':
             if self.widget_curves.split_line_moved(x, self.mouse_grabX):
-                self.setCursor(Qt.SplitHCursor)
+                self.widget_painter.setCursor(Qt.SplitHCursor)
                 self.event_reload_frame()
 
         elif self.current_widget == 'stabilize':
             line = self.widget_stabilize.guidelines.moved(x, self.mouse_grabX, y, self.mouse_grabY)
             if line == 'vertical':
-                self.setCursor(Qt.SplitHCursor)
+                self.widget_painter.setCursor(Qt.SplitHCursor)
             elif line == 'horizontal':
-                self.setCursor(Qt.SplitVCursor)
+                self.widget_painter.setCursor(Qt.SplitVCursor)
             elif line == "both":
-                self.setCursor(Qt.SizeAllCursor)
+                self.widget_painter.setCursor(Qt.SizeAllCursor)
             else:
                 self.get_rgb_value(x, y)
             if line is not None:
-                self.repaint()
+                self.widget_painter.repaint_frame()
 
 
     def mouseReleaseEvent(self, event):
-        self.setCursor(Qt.ArrowCursor)
+        self.widget_painter.setCursor(Qt.ArrowCursor)
         self.widget_curves.split_line_released(event.x())
         self.widget_stabilize.guidelines.released(event.x(), event.y())
-        self.repaint()
+        self.widget_painter.repaint_frame()
 
 
 
@@ -635,262 +660,263 @@ class Window_main(Window_common):
         return False
 
 
-    def paintEvent(self, event):
-        if self.image is None:
-            log.info("no image loaded")
-            return
+    # def paintEvent(self, event):
+    #     if self.image is None:
+    #         log.info("no image loaded")
+    #         return
 
-        img = self.image['cache']
-        if img is None:
-            return
-        if self.image['cache_initial'] is None:
-            return
+    #     img = self.image['cache']
+    #     if img is None:
+    #         return
+    #     if self.image['cache_initial'] is None:
+    #         return
 
-        if self.is_repainting:
-            log.error("error: self.is_repainting is True!!")
-            return
-        self.is_repainting = True
-        delta_y = self.display_position_y
+    #     if self.is_repainting:
+    #         log.error("error: self.is_repainting is True!!")
+    #         return
+    #     self.is_repainting = True
+    #     delta_y = self.display_position_y
 
-        preview = self.image['preview_options']
-        # print_lightgreen("paintEvent: preview")
-        # pprint(preview)
-        initial_img_height, initial_img_width, c = self.image['cache_initial'].shape
-        # print("paintEvent: initial image = %dx%d" % (initial_img_height, initial_img_width))
-        img_height, img_width, c = img.shape
-        try:
-            q_image = QImage(img.data, img_width, img_height, img_width * 3, QImage.Format_BGR888)
-        except:
-            print_red("paintEvent: cannot convert img to qImage")
-            return
+    #     preview = self.image['preview_options']
+    #     # print_lightgreen("paintEvent: preview")
+    #     # pprint(preview)
+    #     initial_img_height, initial_img_width, c = self.image['cache_initial'].shape
+    #     # print("paintEvent: initial image = %dx%d" % (initial_img_height, initial_img_width))
+    #     img_height, img_width, c = img.shape
+    #     try:
+    #         q_image = QImage(img.data, img_width, img_height, img_width * 3, QImage.Format_BGR888)
+    #     except:
+    #         print_red("paintEvent: cannot convert img to qImage")
+    #         return
 
-        # Shot geometry
-        geometry = self.image['geometry']
-        shot_geometry = geometry['shot']
-        if shot_geometry is None and 'default' in geometry.keys():
-            shot_geometry = geometry['default']
-
-
-
-        self.image['origin'] = [PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y]
-        # print_lightgreen(f"paintEvent: begin, delta: {delta_y}")
-        # print(shot_geometry)
-        if self.painter.begin(self):
-
-            if preview['geometry']['final_preview']:
-                # print("paintEvent: display final_preview")
-                self.painter.drawImage(
-                    QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
-            else:
-                preview_shot_geometry = preview['geometry']['shot']
-
-                if preview_shot_geometry['crop_edition'] and not preview_shot_geometry['crop_preview']:
-                    # Add a red rectangle to the image
-
-                    if preview_shot_geometry['resize_preview']:
-                        # Resize the image (i.e. draw rect on the resized image)
-                        x0 = PAINTER_MARGIN_LEFT
-                        y0 = PAINTER_MARGIN_TOP - delta_y
-
-                        # Patch the crop value if displaying deshaked shot
-                        # crop = shot_geometry['crop']
-                        # if not preview['geometry']['add_borders']:
-                        #     crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
-
-                        # # Image is resized, add the recalculated crop
-                        # crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                        #     width=initial_img_width, height=initial_img_height, crop=crop)
-                        # w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
-                        pprint(self.image['geometry_values'])
-                        crop_left = self.image['geometry_values']['crop'][2]
-                        crop_top = self.image['geometry_values']['crop'][0]
-                        cropped_height = self.image['geometry_values']['initial']['h'] - (self.image['geometry_values']['crop'][0] + self.image['geometry_values']['crop'][1])
-
-                        w_tmp = self.image['geometry_values']['resize']['w']
-                        pad_left = int(((FINAL_FRAME_WIDTH - w_tmp) / 2))
-
-                        ratio = np.float32(cropped_height) / FINAL_FRAME_HEIGHT
-                        crop_left = int(crop_left / ratio)
-                        crop_top = int(crop_top / ratio)
-
-                        # print("\t-> w=%d, c_w=%d, w_tmp=%d, pad: %d" % (w, c_w, w_tmp, pad_left))
-                        # print("\t-> crop_left=%d, crop_top=%d" % (c_l, crop_top))
-
-                        self.image['origin'] = [x0 + pad_left - crop_left, y0 - crop_top]
-
-                        self.painter.drawImage(
-                            QPoint(x0 + pad_left - crop_left, y0 - crop_top),
-                            q_image)
-
-                        # Add the cropped resized rect
-                        pen = QPen(COLOR_CROP_RECT)
-                        pen.setWidth(PEN_CROP_SIZE)
-                        pen.setStyle(Qt.SolidLine)
-                        self.painter.setPen(pen)
-                        self.painter.drawRect(
-                            PAINTER_MARGIN_LEFT + pad_left - 1,
-                            PAINTER_MARGIN_LEFT - delta_y - 1,
-                            w_tmp + 1,
-                            FINAL_FRAME_HEIGHT + 1)
-
-                        # Add the final 1080p rect
-                        pen = QPen(COLOR_DISPLAY_RECT)
-                        pen.setWidth(PEN_CROP_SIZE)
-                        pen.setStyle(Qt.SolidLine)
-                        self.painter.setPen(pen)
-                        self.painter.drawRect(
-                            PAINTER_MARGIN_LEFT - 1,
-                            PAINTER_MARGIN_LEFT - delta_y - 1,
-                            FINAL_FRAME_WIDTH + 1,
-                            FINAL_FRAME_HEIGHT + 1)
-
-                    else:
-                    # print("paintEvent: draw rect crop on the original image")
-                        # Original
-                        x0 = PAINTER_MARGIN_LEFT
-                        y0 = PAINTER_MARGIN_TOP - delta_y
-                        crop = shot_geometry['crop']
-                        if not preview['geometry']['add_borders']:
-                            crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
-                        self.painter.drawImage(QPoint(x0, y0), q_image)
-
-                        # Add a red rect for the crop
-                        crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                            width=initial_img_width, height=initial_img_height, crop=crop)
-
-                        # print(f"({crop_left}, {crop_top}) -> ({cropped_width},{cropped_height})")
-
-                        pen = QPen(COLOR_CROP_RECT)
-                        pen.setWidth(PEN_CROP_SIZE)
-                        pen.setStyle(Qt.SolidLine)
-                        self.painter.setPen(pen)
-                        # https://doc.qt.io/qt-6/qrect.html, PEN_CROP_SIZE = 1
-                        # print("\timg: %dx%d" % (img.data.shape[1], img.data.shape[0]))
-                        # print("\trect: (%d;%d) w=%d, h=%d" % (c_l - 1, c_t - delta_y - 1, c_w + 1, c_h + 1))
-
-                        self.painter.drawRect(
-                            PAINTER_MARGIN_LEFT + crop_left - 1,
-                            PAINTER_MARGIN_LEFT + crop_top - delta_y - 1,
-                            cropped_width + 1,
-                            cropped_height + 1)
-
-                elif preview_shot_geometry['crop_preview']:
-                    # Image is cropped
-
-                    if preview_shot_geometry['resize_preview']:
-                        # Image is also resized
-
-                        # if not preview['geometry']['add_borders']:
-                        #     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                        #         width=initial_img_width, height=initial_img_height, crop=shot_geometry['crop'])
-
-                        # w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
-                        # pad_left = int(((FINAL_FRAME_WIDTH - img_width) / 2) + 0.5)
-                        pad_left = (self.image['geometry_values']['pad']['left']
-                                    + self.image['geometry_values']['pad_error'][2])
-
-                        self.image['origin'] = [
-                            PAINTER_MARGIN_LEFT + pad_left,
-                            PAINTER_MARGIN_TOP - delta_y]
-                        self.painter.drawImage(
-                            QPoint(
-                                PAINTER_MARGIN_LEFT + pad_left,
-                                PAINTER_MARGIN_TOP - delta_y),
-                            q_image)
-
-                        # Add the final 1080p rect
-                        pen = QPen(COLOR_DISPLAY_RECT)
-                        pen.setWidth(PEN_CROP_SIZE)
-                        pen.setStyle(Qt.SolidLine)
-                        self.painter.setPen(pen)
-                        self.painter.drawRect(
-                            PAINTER_MARGIN_LEFT - 1,
-                            PAINTER_MARGIN_LEFT - delta_y - 1,
-                            FINAL_FRAME_WIDTH + 1,
-                            FINAL_FRAME_HEIGHT + 1)
-                    else:
-                        # print("paintEvent: draw cropped image on the original image")
-                        # Crop and no rect
-                        crop = shot_geometry['crop']
-                        if not preview['geometry']['add_borders']:
-                            crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
-                        crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
-                            width=initial_img_width, height=initial_img_height, crop=crop)
-
-                        self.painter.drawImage(
-                            QPoint(PAINTER_MARGIN_LEFT + crop_left,
-                                PAINTER_MARGIN_TOP + crop_top - delta_y),
-                            q_image)
-
-                else:
-                    # original
-                    # print("paintEvent: draw original image")
-
-                    if preview['geometry']['add_borders']:
-                        self.painter.drawImage(
-                            QPoint(PAINTER_MARGIN_LEFT+IMG_BORDER_HIGH_RES, PAINTER_MARGIN_TOP+IMG_BORDER_HIGH_RES - delta_y),
-                            q_image.scaled(q_image.width()*2, q_image.height()*2, aspectMode=Qt.KeepAspectRatio))
-
-                    else:
-                        self.painter.drawImage(
-                            QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
-
-                if (preview['geometry']['target']['width_edition']
-                    and preview_shot_geometry['crop_edition']
-                    and preview_shot_geometry['resize_preview']):
-
-                    # Add the target rect
-                    pad_left = ((FINAL_FRAME_WIDTH - geometry['target']['w']) / 2) + 0.5
-                    pen = QPen(COLOR_PART_CROP_RECT)
-                    pen.setWidth(PEN_CROP_SIZE)
-                    pen.setStyle(Qt.SolidLine)
-                    self.painter.setPen(pen)
-                    self.painter.drawRect(
-                        PAINTER_MARGIN_LEFT + pad_left - 1,
-                        PAINTER_MARGIN_LEFT - delta_y - 1,
-                        geometry['target']['w'] + 1,
-                        FINAL_FRAME_HEIGHT + 1)
-
-                    # Add the final 1080p rect
-                    pen = QPen(COLOR_DISPLAY_RECT)
-                    pen.setWidth(PEN_CROP_SIZE)
-                    pen.setStyle(Qt.SolidLine)
-                    self.painter.setPen(pen)
-                    self.painter.drawRect(
-                        PAINTER_MARGIN_LEFT - 1,
-                        PAINTER_MARGIN_LEFT - delta_y - 1,
-                        FINAL_FRAME_WIDTH + 1,
-                        FINAL_FRAME_HEIGHT + 1)
+    #     # Shot geometry
+    #     geometry = self.image['geometry']
+    #     shot_geometry = geometry['shot']
+    #     if shot_geometry is None and 'default' in geometry.keys():
+    #         shot_geometry = geometry['default']
 
 
 
-            if preview['curves']['split']:
-                try: crop_top = 0 if preview_shot_geometry['resize_preview'] else (-1*crop_top)
-                except:  crop_top = 0
-                pen = QPen(QColor(255,255,255))
-                pen.setStyle(Qt.DashLine)
-                self.painter.setPen(pen)
-                self.painter.drawLine(
-                    preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top,
-                    preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top + max(img_height, FINAL_FRAME_HEIGHT))
+    #     self.image['origin'] = [PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y]
+    #     # print_lightgreen(f"paintEvent: begin, delta: {delta_y}")
+    #     # print(shot_geometry)
+    #     if self.painter.begin(self):
 
-            guidelines = self.widget_stabilize.guidelines
-            if guidelines.is_enabled():
-                x, y = guidelines.coordinates()
+    #         if preview['geometry']['final_preview']:
+    #             # print("paintEvent: display final_preview")
+    #             self.painter.drawImage(
+    #                 QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
+    #         else:
+    #             preview_shot_geometry = preview['geometry']['shot']
 
-                pen = QPen(QColor(255,255,255))
-                pen.setStyle(Qt.SolidLine)
-                self.painter.setPen(pen)
-                self.painter.drawLine(
-                    x, 10,
-                    x, 10 + max(img_height, FINAL_FRAME_HEIGHT + PAINTER_MARGIN_TOP + IMG_BORDER_HIGH_RES))
+    #             if preview_shot_geometry['crop_edition'] and not preview_shot_geometry['crop_preview']:
+    #                 # Add a red rectangle to the image
 
-                self.painter.drawLine(
-                    10, y,
-                    10 + max(img_width, FINAL_FRAME_WIDTH + PAINTER_MARGIN_LEFT + IMG_BORDER_HIGH_RES), y)
+    #                 if preview_shot_geometry['resize_preview']:
+    #                     # Resize the image (i.e. draw rect on the resized image)
+    #                     x0 = PAINTER_MARGIN_LEFT
+    #                     y0 = PAINTER_MARGIN_TOP - delta_y
+
+    #                     # Patch the crop value if displaying deshaked shot
+    #                     # crop = shot_geometry['crop']
+    #                     # if not preview['geometry']['add_borders']:
+    #                     #     crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
+
+    #                     # # Image is resized, add the recalculated crop
+    #                     # crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
+    #                     #     width=initial_img_width, height=initial_img_height, crop=crop)
+    #                     # w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
+    #                     pprint(self.image['geometry_values'])
+    #                     crop_left = self.image['geometry_values']['crop'][2]
+    #                     crop_top = self.image['geometry_values']['crop'][0]
+    #                     cropped_height = self.image['geometry_values']['initial']['h'] - (self.image['geometry_values']['crop'][0] + self.image['geometry_values']['crop'][1])
+
+    #                     w_tmp = self.image['geometry_values']['resize']['w']
+    #                     pad_left = int(((FINAL_FRAME_WIDTH - w_tmp) / 2))
+
+    #                     ratio = np.float32(cropped_height) / FINAL_FRAME_HEIGHT
+    #                     crop_left = int(crop_left / ratio)
+    #                     crop_top = int(crop_top / ratio)
+
+    #                     # print("\t-> w=%d, c_w=%d, w_tmp=%d, pad: %d" % (w, c_w, w_tmp, pad_left))
+    #                     # print("\t-> crop_left=%d, crop_top=%d" % (c_l, crop_top))
+
+    #                     self.image['origin'] = [x0 + pad_left - crop_left, y0 - crop_top]
+
+    #                     self.painter.drawImage(
+    #                         QPoint(x0 + pad_left - crop_left, y0 - crop_top),
+    #                         q_image)
+
+    #                     # Add the cropped resized rect
+    #                     pen = QPen(COLOR_CROP_RECT)
+    #                     pen.setWidth(PEN_CROP_SIZE)
+    #                     pen.setStyle(Qt.SolidLine)
+    #                     self.painter.setPen(pen)
+    #                     self.painter.drawRect(
+    #                         PAINTER_MARGIN_LEFT + pad_left - 1,
+    #                         PAINTER_MARGIN_LEFT - delta_y - 1,
+    #                         w_tmp + 1,
+    #                         FINAL_FRAME_HEIGHT + 1)
+
+    #                     # Add the final 1080p rect
+    #                     pen = QPen(COLOR_DISPLAY_RECT)
+    #                     pen.setWidth(PEN_CROP_SIZE)
+    #                     pen.setStyle(Qt.SolidLine)
+    #                     self.painter.setPen(pen)
+    #                     self.painter.drawRect(
+    #                         PAINTER_MARGIN_LEFT - 1,
+    #                         PAINTER_MARGIN_LEFT - delta_y - 1,
+    #                         FINAL_FRAME_WIDTH + 1,
+    #                         FINAL_FRAME_HEIGHT + 1)
+
+    #                 else:
+    #                 # print("paintEvent: draw rect crop on the original image")
+    #                     # Original
+    #                     x0 = PAINTER_MARGIN_LEFT
+    #                     y0 = PAINTER_MARGIN_TOP - delta_y
+    #                     crop = shot_geometry['crop']
+    #                     if not preview['geometry']['add_borders']:
+    #                         crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
+    #                     self.painter.drawImage(QPoint(x0, y0), q_image)
+
+    #                     # Add a red rect for the crop
+    #                     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
+    #                         width=initial_img_width, height=initial_img_height, crop=crop)
+
+    #                     # print(f"({crop_left}, {crop_top}) -> ({cropped_width},{cropped_height})")
+
+    #                     pen = QPen(COLOR_CROP_RECT)
+    #                     pen.setWidth(PEN_CROP_SIZE)
+    #                     pen.setStyle(Qt.SolidLine)
+    #                     self.painter.setPen(pen)
+    #                     # https://doc.qt.io/qt-6/qrect.html, PEN_CROP_SIZE = 1
+    #                     # print("\timg: %dx%d" % (img.data.shape[1], img.data.shape[0]))
+    #                     # print("\trect: (%d;%d) w=%d, h=%d" % (c_l - 1, c_t - delta_y - 1, c_w + 1, c_h + 1))
+
+    #                     self.painter.drawRect(
+    #                         PAINTER_MARGIN_LEFT + crop_left - 1,
+    #                         PAINTER_MARGIN_LEFT + crop_top - delta_y - 1,
+    #                         cropped_width + 1,
+    #                         cropped_height + 1)
+
+    #             elif preview_shot_geometry['crop_preview']:
+    #                 # Image is cropped
+
+    #                 if preview_shot_geometry['resize_preview']:
+    #                     # Image is also resized
+
+    #                     # if not preview['geometry']['add_borders']:
+    #                     #     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
+    #                     #         width=initial_img_width, height=initial_img_height, crop=shot_geometry['crop'])
+
+    #                     # w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
+    #                     # pad_left = int(((FINAL_FRAME_WIDTH - img_width) / 2) + 0.5)
+    #                     pad_left = (self.image['geometry_values']['pad']['left']
+    #                                 + self.image['geometry_values']['pad_error'][2])
+
+    #                     self.image['origin'] = [
+    #                         PAINTER_MARGIN_LEFT + pad_left,
+    #                         PAINTER_MARGIN_TOP - delta_y]
+    #                     self.painter.drawImage(
+    #                         QPoint(
+    #                             PAINTER_MARGIN_LEFT + pad_left,
+    #                             PAINTER_MARGIN_TOP - delta_y),
+    #                         q_image)
+
+    #                     # Add the final 1080p rect
+    #                     pen = QPen(COLOR_DISPLAY_RECT)
+    #                     pen.setWidth(PEN_CROP_SIZE)
+    #                     pen.setStyle(Qt.SolidLine)
+    #                     self.painter.setPen(pen)
+    #                     self.painter.drawRect(
+    #                         PAINTER_MARGIN_LEFT - 1,
+    #                         PAINTER_MARGIN_LEFT - delta_y - 1,
+    #                         FINAL_FRAME_WIDTH + 1,
+    #                         FINAL_FRAME_HEIGHT + 1)
+    #                 else:
+    #                     # print("paintEvent: draw cropped image on the original image")
+    #                     # Crop and no rect
+    #                     crop = shot_geometry['crop']
+    #                     if not preview['geometry']['add_borders']:
+    #                         crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
+    #                     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
+    #                         width=initial_img_width, height=initial_img_height, crop=crop)
+
+    #                     self.painter.drawImage(
+    #                         QPoint(PAINTER_MARGIN_LEFT + crop_left,
+    #                             PAINTER_MARGIN_TOP + crop_top - delta_y),
+    #                         q_image)
+
+    #             else:
+    #                 # original
+    #                 # print("paintEvent: draw original image")
+
+    #                 if preview['geometry']['add_borders']:
+    #                     self.painter.drawImage(
+    #                         QPoint(PAINTER_MARGIN_LEFT+IMG_BORDER_HIGH_RES, PAINTER_MARGIN_TOP+IMG_BORDER_HIGH_RES - delta_y),
+    #                         q_image.scaled(q_image.width()*2, q_image.height()*2, aspectMode=Qt.KeepAspectRatio))
+
+    #                 else:
+    #                     self.painter.drawImage(
+    #                         QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y), q_image)
+
+    #             if (preview['geometry']['target']['width_edition']
+    #                 and preview_shot_geometry['crop_edition']
+    #                 and preview_shot_geometry['resize_preview']):
+
+    #                 # Add the target rect
+    #                 pad_left = ((FINAL_FRAME_WIDTH - geometry['target']['w']) / 2) + 0.5
+    #                 pen = QPen(COLOR_PART_CROP_RECT)
+    #                 pen.setWidth(PEN_CROP_SIZE)
+    #                 pen.setStyle(Qt.SolidLine)
+    #                 self.painter.setPen(pen)
+    #                 self.painter.drawRect(
+    #                     PAINTER_MARGIN_LEFT + pad_left - 1,
+    #                     PAINTER_MARGIN_LEFT - delta_y - 1,
+    #                     geometry['target']['w'] + 1,
+    #                     FINAL_FRAME_HEIGHT + 1)
+
+    #                 # Add the final 1080p rect
+    #                 pen = QPen(COLOR_DISPLAY_RECT)
+    #                 pen.setWidth(PEN_CROP_SIZE)
+    #                 pen.setStyle(Qt.SolidLine)
+    #                 self.painter.setPen(pen)
+    #                 self.painter.drawRect(
+    #                     PAINTER_MARGIN_LEFT - 1,
+    #                     PAINTER_MARGIN_LEFT - delta_y - 1,
+    #                     FINAL_FRAME_WIDTH + 1,
+    #                     FINAL_FRAME_HEIGHT + 1)
 
 
-            self.painter.end()
-        self.is_repainting = False
 
-        # print("paintEvent: main end")
+    #         if preview['curves']['split']:
+    #             try: crop_top = 0 if preview_shot_geometry['resize_preview'] else (-1*crop_top)
+    #             except:  crop_top = 0
+    #             pen = QPen(QColor(255,255,255))
+    #             pen.setStyle(Qt.DashLine)
+    #             self.painter.setPen(pen)
+    #             self.painter.drawLine(
+    #                 preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top,
+    #                 preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top + max(img_height, FINAL_FRAME_HEIGHT))
+
+    #         guidelines = self.widget_stabilize.guidelines
+    #         if guidelines.is_enabled():
+    #             x, y = guidelines.coordinates()
+
+    #             pen = QPen(QColor(255,255,255))
+    #             pen.setStyle(Qt.SolidLine)
+    #             self.painter.setPen(pen)
+    #             self.painter.drawLine(
+    #                 x, 10,
+    #                 x, 10 + max(img_height, FINAL_FRAME_HEIGHT + PAINTER_MARGIN_TOP + IMG_BORDER_HIGH_RES))
+
+    #             self.painter.drawLine(
+    #                 10, y,
+    #                 10 + max(img_width, FINAL_FRAME_WIDTH + PAINTER_MARGIN_LEFT + IMG_BORDER_HIGH_RES), y)
+
+
+    #         self.painter.end()
+    #     self.is_repainting = False
+
+    #     # print("paintEvent: main end")
+

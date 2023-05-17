@@ -247,7 +247,7 @@ class Window_common(QMainWindow):
         if self.display_height > FINAL_FRAME_HEIGHT:
             return
         self.event_screen_position_changed('switch')
-        self.repaint()
+        self.widget_painter.repaint()
 
 
     def event_screen_position_changed(self, side):
@@ -261,7 +261,7 @@ class Window_common(QMainWindow):
             self.display_position_y = 1152 - FINAL_FRAME_HEIGHT + 2*PAINTER_MARGIN_TOP
         else:
             self.display_position_y = 0
-        self.repaint()
+        self.widget_painter.repaint()
 
 
     def get_current_widget(self):
@@ -295,7 +295,7 @@ class Window_common(QMainWindow):
 
 
     def event_preview_options_changed(self, widget):
-        log.info("change preview: editor: %s" % (widget))
+        # log.info("change preview: editor: %s" % (widget))
         preview_options = dict()
         for e, w in self.widgets.items():
             preview_options.update({e: w.get_preview_options()})

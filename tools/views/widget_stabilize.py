@@ -122,11 +122,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         # self.previous_preview_state = enabled
         is_checked = self.pushButton_set_preview.isChecked()
         self.pushButton_set_preview.blockSignals(False)
-        log.info(f"enable: {is_checked}, allowed: {self.is_edition_allowed}")
+        # log.info(f"enable: {is_checked}, allowed: {self.is_edition_allowed}")
 
 
     def get_preview_options(self):
-        log.info(f"{self.objectName()}: get_preview_options")
+        # log.info(f"{self.objectName()}: get_preview_options")
         preview_options = {
             'allowed': self.is_edition_allowed,
             'enabled': self.pushButton_set_preview.isChecked(),

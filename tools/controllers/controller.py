@@ -741,7 +741,7 @@ class Controller_video_editor(Controller_common,
 
 
     def event_preview_options_changed(self, preview_options):
-        log.info("preview options changed")
+        # log.info("preview options changed")
         self.preview_options = preview_options
         self.consolidate_preview_options()
         self.signal_preview_options_consolidated.emit(self.preview_options)
@@ -752,7 +752,7 @@ class Controller_video_editor(Controller_common,
     def consolidate_preview_options(self):
         # Modify preview settings because some widget have to be disabled
         verbose = False
-        log.info("consolidate options")
+        # log.info("consolidate options")
         options = self.preview_options
 
         if verbose:
