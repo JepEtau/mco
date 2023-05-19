@@ -160,8 +160,8 @@ class Controller_geometry():
             'last_task': shot['last_task'],
             'filters': shot['filters'],
         }
-        print_purple("virtual_shot")
-        pprint(virtual_shot)
+        # print_purple("virtual_shot")
+        # pprint(virtual_shot)
 
         frame = self.frames[shot['no']][0]
         shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_initial'])

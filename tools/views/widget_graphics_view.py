@@ -19,6 +19,7 @@ from PySide6.QtCore import (
     QRectF,
     QPointF,
     QRect,
+    QLine,
 )
 from PySide6.QtGui import (
     QColor,
@@ -78,6 +79,7 @@ class Widget_graphics_view(QGraphicsView):
         self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setFrameShape(QFrame.Shape.Panel)
         self.setFrameShadow(QFrame.Shadow.Plain)
+        self.setFrameStyle(0)
 
         self.__scene = QGraphicsScene(self)
         self.setScene(self.__scene)
@@ -94,13 +96,23 @@ class Widget_graphics_view(QGraphicsView):
         self.selected_corner = None
         self.poly_points = [] # points that are stored when resizing (You could instead reuse points_lst)
 
+        # Rect, guidelines
+        self.__lines = {
+            'crop_rect': None,
+            'final_rect': None,
+            'final_rect2': None,
+            'width_rect': None,
+            'split': None,
+            'stab_vline': None,
+            'stab_hline': None,
+        }
 
         # Debug
-        self.points_lst.append(QPointF(50,50))
-        self.points_lst.append(QPointF(50,389))
-        self.points_lst.append(QPointF(400,400))
-        self.points_lst.append(QPointF(400,123))
-        self.draw_polygon()
+        # self.points_lst.append(QPointF(50,50))
+        # self.points_lst.append(QPointF(50,389))
+        # self.points_lst.append(QPointF(400,400))
+        # self.points_lst.append(QPointF(400,123))
+        # self.draw_polygon()
 
         self.control_key_pressed = False
 
@@ -115,6 +127,8 @@ class Widget_graphics_view(QGraphicsView):
         # self.setBackgroundBrush(QBrush(QColor("grey")))
         # self.__scene.setBackgroundBrush(QBrush(QColor("blue")))
 
+        self.__is_editing_roi = False
+
 
     def show_image(self, image):
         self.image = image
@@ -128,6 +142,10 @@ class Widget_graphics_view(QGraphicsView):
 
 
     def draw_image(self):
+        # print("viewport geometry:", self.viewport().geometry())
+        # print("sceneRect geometry:", self.sceneRect())
+        self.setSceneRect(0,0,self.viewport().geometry().width(), self.viewport().geometry().height())
+
         verbose = False
         # pprint(self.__scene.items())
         # print(self.__scene.sceneRect())
@@ -188,28 +206,12 @@ class Widget_graphics_view(QGraphicsView):
         # self.image['origin'] = [PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - delta_y]
         # print_lightgreen(f"paintEvent: begin, delta: {delta_y}")
         # print(shot_geometry)
-
-        try:
-            if self.__crop_rect is not None:
-                self.__scene.removeItem(self.__crop_rect)
-            self.__crop_rect = None
-        except: pass
-        try:
-            if self.__final_rect is not None:
-                self.__scene.removeItem(self.__final_rect)
-            self.__final_rect = None
-        except: pass
-        try:
-            if self.__width_rect is not None:
-                self.__scene.removeItem(self.__width_rect)
-            self.__width_rect = None
-        except: pass
-        try:
-            if self.__final_rect_2 is not None:
-                self.__scene.removeItem(self.__final_rect_2)
-            self.__final_rect_2 = None
-        except: pass
-
+        for k in self.__lines.keys():
+            try:
+                if self.__lines[k] is not None:
+                    self.__scene.removeItem(self.__lines[k])
+                self.__lines[k] = None
+            except: pass
 
         if preview['geometry']['final_preview']:
             if verbose:
@@ -264,7 +266,7 @@ class Widget_graphics_view(QGraphicsView):
                     pen = QPen(COLOR_CROP_RECT)
                     pen.setWidth(PEN_CROP_SIZE)
                     pen.setStyle(Qt.SolidLine)
-                    self.__crop_rect = self.__scene.addRect(QRect(
+                    self.__lines['crop_rect'] = self.__scene.addRect(QRect(
                         pad_left - 1,
                         - delta_y - 1,
                         w_tmp + 1,
@@ -274,7 +276,7 @@ class Widget_graphics_view(QGraphicsView):
                     pen = QPen(COLOR_DISPLAY_RECT)
                     pen.setWidth(PEN_CROP_SIZE)
                     pen.setStyle(Qt.SolidLine)
-                    self.__final_rect = self.__scene.addRect(QRect(
+                    self.__lines['final_rect'] = self.__scene.addRect(QRect(
                         - 1,
                         - delta_y - 1,
                         FINAL_FRAME_WIDTH + 1,
@@ -284,8 +286,8 @@ class Widget_graphics_view(QGraphicsView):
                     if verbose:
                         print_purple("draw_image: draw rect crop on the original image")
                     # Original
-                    x0 = PAINTER_MARGIN_LEFT
-                    y0 = PAINTER_MARGIN_TOP - delta_y
+                    x0 = 0
+                    y0 = - delta_y
                     crop = shot_geometry['crop']
                     if not preview['geometry']['add_borders']:
                         crop = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
@@ -307,7 +309,7 @@ class Widget_graphics_view(QGraphicsView):
                     # https://doc.qt.io/qt-6/qrect.html, PEN_CROP_SIZE = 1
                     # print("\timg: %dx%d" % (img.data.shape[1], img.data.shape[0]))
                     # print("\trect: (%d;%d) w=%d, h=%d" % (c_l - 1, c_t - delta_y - 1, c_w + 1, c_h + 1))
-                    self.__crop_rect = self.__scene.addRect(QRect(
+                    self.__lines['crop_rect'] = self.__scene.addRect(QRect(
                         crop_left - 1,
                         crop_top - delta_y - 1,
                         cropped_width + 1,
@@ -333,8 +335,8 @@ class Widget_graphics_view(QGraphicsView):
                         pad_left += self.image['geometry_values']['pad_error'][2]
 
                     self.image['origin'] = [
-                        PAINTER_MARGIN_LEFT + pad_left,
-                        PAINTER_MARGIN_TOP - delta_y]
+                        pad_left,
+                        - delta_y]
                     self._pixmap_item.setPixmap(QPixmap.fromImage(q_image))
                     self._pixmap_item.setPos(pad_left, - delta_y)
 
@@ -342,7 +344,7 @@ class Widget_graphics_view(QGraphicsView):
                     pen = QPen(COLOR_DISPLAY_RECT)
                     pen.setWidth(PEN_CROP_SIZE)
                     pen.setStyle(Qt.SolidLine)
-                    self.__crop_rect = self.__scene.addRect(QRect(
+                    self.__lines['crop_rect'] = self.__scene.addRect(QRect(
                         - 1,
                         - delta_y - 1,
                         FINAL_FRAME_WIDTH + 1,
@@ -390,7 +392,7 @@ class Widget_graphics_view(QGraphicsView):
                 pen = QPen(COLOR_PART_CROP_RECT)
                 pen.setWidth(PEN_CROP_SIZE)
                 pen.setStyle(Qt.SolidLine)
-                self.__width_rect = self.__scene.addRect(QRect(
+                self.__lines['width_rect'] = self.__scene.addRect(QRect(
                     pad_left - 1,
                     - delta_y - 1,
                     geometry['target']['w'] + 1,
@@ -400,7 +402,7 @@ class Widget_graphics_view(QGraphicsView):
                 pen = QPen(COLOR_DISPLAY_RECT)
                 pen.setWidth(PEN_CROP_SIZE)
                 pen.setStyle(Qt.SolidLine)
-                self.__final_rect_2 = self.__scene.addRect(QRect(
+                self.__lines['final_rect2'] = self.__scene.addRect(QRect(
                     - 1,
                     - delta_y - 1,
                     FINAL_FRAME_WIDTH + 1,
@@ -412,6 +414,11 @@ class Widget_graphics_view(QGraphicsView):
             except:  crop_top = 0
             pen = QPen(QColor(255,255,255))
             pen.setStyle(Qt.DashLine)
+            self.__lines['split'] = self.__scene.addLine(QLine(
+                preview['curves']['split_x'], - crop_top,
+                preview['curves']['split_x'], - crop_top + max(img_height, FINAL_FRAME_HEIGHT)),
+                pen=pen)
+
             # painter.setPen(pen)
             # painter.drawLine(
             #     preview['curves']['split_x'] + PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP - crop_top,
@@ -420,17 +427,19 @@ class Widget_graphics_view(QGraphicsView):
         guidelines = self.__parent.widget_stabilize.guidelines
         if guidelines.is_enabled():
             x, y = guidelines.coordinates()
+            # print_lightcyan(f"(x, y) = ({x}, {y})")
+            # print_lightgrey(f"img_height: {img_height}, FINAL_FRAME_HEIGHT={FINAL_FRAME_HEIGHT}")
 
-            pen = QPen(QColor(255,255,255))
+            pen = QPen(QColor(240, 240, 240))
             pen.setStyle(Qt.SolidLine)
-            # painter.setPen(pen)
-            # painter.drawLine(
-            #     x, 10,
-            #     x, 10 + max(img_height, FINAL_FRAME_HEIGHT + PAINTER_MARGIN_TOP + IMG_BORDER_HIGH_RES))
-
-            # painter.drawLine(
-            #     10, y,
-            #     10 + max(img_width, FINAL_FRAME_WIDTH + PAINTER_MARGIN_LEFT + IMG_BORDER_HIGH_RES), y)
+            self.__lines['stab_hline'] = self.__scene.addLine(QLine(
+                x, 10,
+                x, 10 + max(img_height, FINAL_FRAME_HEIGHT + IMG_BORDER_HIGH_RES)),
+                pen)
+            self.__lines['stab_vline'] = self.__scene.addLine(QLine(
+                10, y,
+                10 + max(img_width, FINAL_FRAME_WIDTH + IMG_BORDER_HIGH_RES), y),
+                pen)
 
         self.is_repainting = False
 
@@ -469,6 +478,9 @@ class Widget_graphics_view(QGraphicsView):
         self.corner_points = []
 
     def mousePressEvent(self, event):
+        if not self.__is_editing_roi:
+            return self.__parent.mousePressEvent(event)
+
         # super(CustomGraphicsScene, self).mousePressEvent(event)
         cursor_position = self.mapToScene(event.position().toPoint())
         print("cursor positon:", cursor_position)
@@ -550,6 +562,9 @@ class Widget_graphics_view(QGraphicsView):
 
 
     def mouseMoveEvent(self, event) -> None:
+        if not self.__is_editing_roi:
+            return self.__parent.mouseMoveEvent(event)
+
         super(Widget_graphics_view, self).mouseMoveEvent(event)
         cursor_position = self.mapToScene(event.position().toPoint())
         if cursor_position.x() < 0:
@@ -584,6 +599,9 @@ class Widget_graphics_view(QGraphicsView):
 
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
+        if not self.__is_editing_roi:
+            return self.__parent.keyPressEvent(event)
+
         print("key_pressed")
         key = event.key()
         if key in [Qt.Key.Key_Enter, Qt.Key.Key_Return]:
@@ -603,5 +621,8 @@ class Widget_graphics_view(QGraphicsView):
             self.control_key_pressed = False
 
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        if not self.__is_editing_roi:
+            return self.__parent.keyReleaseEvent(event)
+
         print("released")
         self.control_key_pressed = False

@@ -51,7 +51,6 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         # Internal variables
         self.split_x = 800
         self.split_x_gap = 0
-        self.main_window_margin = 0
         self.is_moving_split_line = False
         self.show_split_line = False
 
@@ -191,7 +190,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         preview_options = {
             'enabled': self.pushButton_set_preview.isChecked(),
             'split': self.show_split_line,
-            'split_x': self.split_x - self.main_window_margin,
+            'split_x': self.split_x,
         }
         return preview_options
 
@@ -232,11 +231,6 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.widget_rgb_graph.refresh_rgb_value(bgr)
 
 
-    def set_main_window_margin(self, margin):
-        # This margin corresponds to the main window margin and is used
-        # when splitting the screen
-        self.main_window_margin = margin
-
 
     def event_split_line_toggled(self, is_checked:bool=False):
         if is_checked and self.pushButton_set_preview.isChecked():
@@ -257,7 +251,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         # log.info("x=%d, split_x=%d" % (x, self.split_x))
         if (self.pushButton_set_preview.isChecked()
         and self.show_split_line):
-            if (self.split_x - 30) <= x <= (self.split_x + 30):
+            if (self.split_x - 10) <= x <= (self.split_x + 10):
                 self.split_x_gap = self.split_x - x
                 self.is_moving_split_line = True
                 self.event_preview_changed(is_checked=True)
@@ -270,8 +264,8 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         if not self.show_split_line:
             return False
         # log.info("move_split_line: x=%d, split_x=%d" % (x, self.split_x))
-        if ( (x + self.split_x_gap) < self.main_window_margin
-        or (x + self.split_x_gap) > self.main_window_margin + FINAL_FRAME_WIDTH):
+        if ( (x + self.split_x_gap) < 0
+        or (x + self.split_x_gap) > FINAL_FRAME_WIDTH):
             return False
         if (self.pushButton_set_preview.isChecked()
             and self.is_moving_split_line):

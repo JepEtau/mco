@@ -5,6 +5,6 @@ QTGMC(preset="Slower", TR0=2, TR1=2, \
     EdiMode="EEDI3+NNEDI3", \
     Denoiser="dfttest")
 SelectEven()
-aWarpSharp2()
+# aWarpSharp2()
 ConvertToRGB24()
 

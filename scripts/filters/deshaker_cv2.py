@@ -87,6 +87,13 @@ class CV2_deshaker:
     def get_keypoints(self, img_gray):
         img_improved = self.improve_ref(img_gray)
         keypoints = cv2.goodFeaturesToTrack(img_improved, **self.__gftt)
+        # if keypoints is None:
+        #     cv2.imshow("get_keypoints", img_improved)
+        #     cv2.waitKey()
+        #     cv2.destroyAllWindows()
+
+        if keypoints is not None:
+            print_lightgrey(f"Nb of keypoints: {len(keypoints)}")
 
         if not self.__has_roi_defined:
             return (keypoints, img_improved)
@@ -95,7 +102,6 @@ class CV2_deshaker:
         # display point
         do_show = False
 
-        print(len(keypoints))
         for kp in keypoints:
             __kp = kp[0]
             # print(f"{__kp[0]}, {__kp[1]}")
@@ -130,9 +136,11 @@ class CV2_deshaker:
         if last_transformation is not None:
             print("\tApply transformation to the initial image:", last_transformation)
             initial_img_stabilized = apply_cv2_transformation(img, last_transformation)
+            self.__last_transformation = last_transformation
         else:
             print("\tNo transformation applied to the initial image:")
             initial_img_stabilized = img
+            self.__last_transformation = [0, 0, 0]
 
         img_gray = cv2.cvtColor(initial_img_stabilized, cv2.COLOR_RGB2GRAY)
         (keypoints, img_for_tracking) = self.get_keypoints(img_gray=img_gray)
@@ -145,14 +153,16 @@ class CV2_deshaker:
         img_for_tracking = self.improve_ref(img_gray)
         # img_for_tracking = cv2.bitwise_and(img_improved, img_improved, mask=self.img_mask)
         # Calculate optical flow (i.e. track feature points)
-        keypoints, status, err = cv2.calcOpticalFlowPyrLK(
-            prevImg=img_for_tracking,
-            nextImg=img_ref_gray,
-            prevPts=keypoints_ref,
-            nextPts=None,
-            **self.__lk_params)
 
+        keypoints = None
         try:
+            keypoints, status, err = cv2.calcOpticalFlowPyrLK(
+                prevImg=img_for_tracking,
+                nextImg=img_ref_gray,
+                prevPts=keypoints_ref,
+                nextPts=None,
+                **self.__lk_params)
+
             # Estimate transformation matrix
             transformation = cv2.estimateAffinePartial2D(
                 keypoints_ref[status==1], keypoints[status==1])[0]
@@ -174,29 +184,70 @@ class CV2_deshaker:
                 t_x = t_y = t_theta = 0
         except:
             print_red(f"exception: __stabilize_image: transformation not found, use previous")
-            print_yellow(f"\tkeypoints_ref: {len(keypoints_ref)}, new: {len(keypoints[status==1])}")
+            # print_yellow(f"\tkeypoints_ref: {len(keypoints_ref)}, new: {len(keypoints[status==1])}")
             print(f"\t{self.__last_transformation}")
             t_x, t_y, t_theta = self.__last_transformation
             t_theta = 0
 
-            if True:
+            if False:
                 # draw the tracks
-                for new in keypoints_ref:
-                    a, b = new.ravel()
-                    frame = cv2.circle(img_ref_gray, (int(a), int(b)), 5, [255,255,255], 1)
-                cv2.imshow("ref", frame)
-                cv2.waitKey()
+                if keypoints_ref is not None:
+                    for new in keypoints_ref:
+                        a, b = new.ravel()
+                        frame = cv2.circle(img_ref_gray, (int(a), int(b)), 5, [255,255,255], 1)
+                    cv2.imshow("ref", frame)
+                    cv2.waitKey()
+                else:
+                    print_red("no keypointsref for image")
+                    cv2.imshow("ref", img_ref_gray)
 
                 if keypoints is not None:
                     good_new = keypoints[status==1]
 
-                # draw the tracks
-                for new in good_new:
-                    a, b = new.ravel()
-                    frame2 = cv2.circle(img_for_tracking, (int(a), int(b)), 5, [255,255,255], 1)
-                cv2.imshow("ref", frame2)
-                cv2.waitKey()
+                    # draw the tracks
+                    for new in good_new:
+                        a, b = new.ravel()
+                        frame2 = cv2.circle(img_for_tracking, (int(a), int(b)), 5, [255,255,255], 1)
+                    cv2.imshow("ref", frame2)
+                    cv2.waitKey()
+                else:
+                    print_red("no keypoints for image to track")
+                    cv2.imshow("ref", img_for_tracking)
                 # cv2.destroyAllWindows()
+
+        if abs(t_x) > IMG_BORDER_HIGH_RES or abs(t_y) > IMG_BORDER_HIGH_RES:
+            print("erroneous calcOpticalFlowPyrLK")
+            # print(f"{len(keypoints_ref[status == 1])} points, {len(keypoints[status == 1])} points")
+            # cv2.imshow("erroneous calcOpticalFlowPyrLK", img_for_tracking)
+            # cv2.waitKey()
+            # cv2.destroyAllWindows()
+
+            if False:
+                # draw the tracks
+                if keypoints_ref is not None:
+                    for new in keypoints_ref:
+                        a, b = new.ravel()
+                        frame = cv2.circle(img_ref_gray, (int(a), int(b)), 5, [255,255,255], 1)
+                    cv2.imshow("ref", frame)
+                    cv2.waitKey()
+                else:
+                    print_red("no keypointsref for image")
+                    cv2.imshow("ref", img_ref_gray)
+
+                if keypoints is not None:
+                    good_new = keypoints[status==1]
+
+                    # draw the tracks
+                    for new in good_new:
+                        a, b = new.ravel()
+                        frame2 = cv2.circle(img_for_tracking, (int(a), int(b)), 5, [255,255,255], 1)
+                    cv2.imshow("ref", frame2)
+                    cv2.waitKey()
+                else:
+                    print_red("no keypoints for image to track")
+                    cv2.imshow("ref", img_for_tracking)
+
+                [t_x, t_y, t_theta] = [0,0,0]
 
 
         if not mode['vertical']:
@@ -445,10 +496,10 @@ class CV2_deshaker:
 
 
             print_yellow("ref=end, save transformation", end= '')
-            print(transformation)
             # Transformation saved for the start of next segment
             transformations['end'] = None
             transformations['start'] = transformation
+            pprint(transformations)
 
         return filters_str, output_images, transformations
 
@@ -487,21 +538,21 @@ def draw_roi(img, roi:list):
 
 
 def improve_ref_img(img, gamma_lut:list=list()):
-    img_improved = img
+    # img_improved = img
 
     # img_improved = cv2.normalize(img, img, 0, 255, cv2.NORM_MINMAX)
 
     # img_improved = cv2_bilateral_filter(img, 11, 13, 13)
 
-    tmp = img_as_float(img_improved)
-    tmp = unsharp_mask(tmp, 2, 0.5, preserve_range=False)
-    img_improved = img_as_ubyte(tmp)
+    # tmp = img_as_float(img_improved)
+    # tmp = unsharp_mask(tmp, 2, 0.5, preserve_range=False)
+    # img_improved = img_as_ubyte(tmp)
 
     # Gamma correction: pas d'amélioration notable
     # img_improved = cv2.LUT(img_improved, gamma_lut)
 
     # Increase contrast
-    img_improved = cv2.convertScaleAbs(img_improved, alpha=1.3, beta=0)
+    img_improved = cv2.convertScaleAbs(img, alpha=1.3, beta=0)
 
     return img_improved
 

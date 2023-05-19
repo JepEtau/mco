@@ -217,7 +217,7 @@ class Widget_common(QWidget):
 
 
     def event_wheel(self, event: QWheelEvent) -> bool:
-        print_lightgreen("\tDefault wheel fct")
+        # print_lightgreen("\tDefault wheel fct")
         return False
 
 
