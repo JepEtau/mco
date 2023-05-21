@@ -165,8 +165,8 @@ def generate_video(db, k_ed:str, k_ep:str,
             previous_concatenation_filepath = tmp
 
 
-            if (do_generate_shot_video
-                and shot['last_task'] not in ['edition']):
+            # if do_generate_shot_video and shot['last_task'] not in ['edition']:
+            if do_generate_shot_video:
                 # print_purple("\tcombine images to video (shot): k_p=%s, shot no. %d" % (k_p, shot['no']))
                 combine_images_into_video(db['common'],
                     k_p,

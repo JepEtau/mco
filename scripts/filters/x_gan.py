@@ -93,7 +93,9 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
 
     # Walk through images
     count = shot['count']
+    i = 0
     for f_no, f_output in zip(range(count), output_image_list):
+        i += 1
         start_time = time.time()
         torch.cuda.empty_cache()
 
@@ -130,7 +132,10 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
             print("Error: failed to upscale %s" % (image_list[f_no]))
             print(e)
         else:
-            print("\tinfo: upscaled in %.02fs" % (time.time() - start_time))
+            print(f"\t\t({i}/{count}) upscaled in %.02fs" % (time.time() - start_time), end='\r')
+
+    # print(f"{''.join([' ']*20)}")
+    print("")
 
     return hash, scale, output_images
 
@@ -193,8 +198,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     hash += "_" + suffix
 
 
-    print_cyan("(REAL_ESRGAN)\tstep no. %d, upscaling with model %s, input hash= %s, output hash= %s, suffix= %s" % (
-        step_no, model_name, input_hash, hash, suffix))
+    print_cyan(f"(REAL_ESRGAN)\tstep no. {step_no}, ({netscale}x) upscaling, model {model_name}, input hash={input_hash}, output hash={hash}, suffix={suffix}")
 
     # Default values for upscaler
     dni_weight = None
@@ -248,6 +252,8 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     elif model_name == 'RealESRGAN_x2plus':
         # x2 RRDBNet model
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
+    elif 'compact' in model_name.lower():
+        model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=netscale, act_type='prelu')
     else:
         sys.exit(print_red("error: model %s is not initialized" % (model_name)))
 
@@ -326,53 +332,45 @@ def upscale_esrgan(shot, images:list, image_list:list,
     # Default values for upscaler
     suffix = f"{model_name}_{input_hash}"
     seamless = None
-    if model_name == '2x_LD-Anime_Skr_v1.0':
+    if model_name == 'realesr-animevideov3':
+        suffix = model_name
+        scale = 4
+    elif model_name == 'RealESRGAN_x4plus_anime_6B':
+        suffix = model_name
+        scale = 4
+    elif model_name == '2x_LD-Anime_Skr_v1.0':
         suffix = "skr"
-        scale = 2
     elif model_name == '1x_SSAntiAlias9x':
         suffix = "ssaa"
-        scale = 1
     elif model_name == '4x-AnimeSharp':
         suffix = "AnimeSharp"
-        scale = 4
         seamless = SeamlessOptions.TILE
     elif model_name == '2x_AnimeClassics_UltraLite_510K':
         suffix = "AnimeClassics"
-        scale = 2
     elif model_name == '4x-UniScaleNR-Balanced':
         suffix = "4x-UniScaleNR-Balanced"
-        scale = 4
     elif model_name == '4x-UniScaleNR-Strong':
         suffix = "4x-UniScaleNR-Strong"
-        scale = 4
     elif model_name == '4x_DigitalFrames_2.1_Final':
         suffix = "4x_DigitalFrames"
-        scale = 4
     elif model_name == '4x-AnimeSharp':
         suffix = "4x-AnimeSharp"
-        scale = 4
     elif model_name == '4x_OLDIES_290000_G_FINAL_interp_03':
         suffix = "4x_OLDIES_290000"
-        scale = 4
     elif model_name == '2x-UniScale_CartoonRestore-lite':
         suffix = "2x-UniScale_CartoonRestore-lite"
-        scale = 2
     elif model_name == '2X_KcjpunkAnime_2.0_Lite_196496_G':
         suffix = "2X_KcjpunkAnime"
-        scale = 2
     elif model_name == '4xFSDedither_Manga':
         suffix = '4xFSDedither_Manga'
-        scale = 4
     elif model_name == '1x_ReFocus_V3_140000_G':
         suffix = '1x_ReFocus_V3_140000_G'
-        scale = 1
     elif model_name == '1x_BeaverIt.pth':
         suffix = '1x_BeaverIt.pth'
-        scale = 1
     else:
         suffix = model_name
 
-    match = re.match("^([\d]{1})[xX]{1}_.*", model_name)
+    match = re.match("^([\d]{1})[x]{1}.*", model_name.lower())
     if match is not None:
         scale = int(match.group(1))
 
@@ -387,8 +385,7 @@ def upscale_esrgan(shot, images:list, image_list:list,
 
 
 
-    print_cyan("(ESRGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
-        step_no, model_name, input_hash, hash, suffix))
+    print_cyan(f"(ESRGAN)\tstep no. {step_no}, ({scale}x) upscaling, model {model_name}, input hash={input_hash}, output hash={hash}, suffix={suffix}")
 
 
     # Generate a list of output images

@@ -9,6 +9,7 @@ from logger import log
 from pprint import pprint
 
 from PySide6.QtCore import (
+    QPoint,
     Qt,
     Signal,
 )
@@ -247,8 +248,9 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         self.event_preview_changed(is_checked=is_checked)
 
 
-    def grab_split_line(self, x):
+    def grab_split_line(self, cursor_position:QPoint):
         # log.info("x=%d, split_x=%d" % (x, self.split_x))
+        x = cursor_position.x()
         if (self.pushButton_set_preview.isChecked()
         and self.show_split_line):
             if (self.split_x - 10) <= x <= (self.split_x + 10):
@@ -260,7 +262,8 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         return False
 
 
-    def move_split_line(self, x):
+    def move_split_line(self, cursor_position:QPoint):
+        x = cursor_position.x()
         if not self.show_split_line:
             return False
         # log.info("move_split_line: x=%d, split_x=%d" % (x, self.split_x))
@@ -346,7 +349,7 @@ class Widget_curves(Widget_common, Ui_widget_curves):
         modifiers = event.modifiers()
 
         if modifiers & Qt.ControlModifier:
-            if key == Qt.Key_S:
+            if key == Qt.Key.Key_S:
                 if self.widget_curves_selection.is_active():
                     log.info("Save RGB curves")
                     print_purple("Save RGB curves")
@@ -358,28 +361,28 @@ class Widget_curves(Widget_common, Ui_widget_curves):
                     self.widget_curves_selection.event_save_selection()
                     return True
 
-        if key == Qt.Key_F2:
+        if key == Qt.Key.Key_F2:
             if self.pushButton_set_preview.isEnabled():
                 self.pushButton_set_preview.toggle()
                 return True
 
-        if key == Qt.Key_R:
+        if key == Qt.Key.Key_R:
             self.radioButton_select_r_channel.click()
             return True
 
-        if key == Qt.Key_G:
+        if key == Qt.Key.Key_G:
             self.radioButton_select_g_channel.click()
             return True
 
-        if key == Qt.Key_B:
+        if key == Qt.Key.Key_B:
             self.radioButton_select_b_channel.click()
             return True
 
-        if key == Qt.Key_A or key == Qt.Key_M:
+        if key == Qt.Key.Key_A or key == Qt.Key.Key_M:
             self.radioButton_select_m_channel.click()
             return True
 
-        if key == Qt.Key_F3:
+        if key == Qt.Key.Key_F3:
             # Display/Hide split line
             self.event_split_line_toggled(not self.pushButton_split_line.isChecked())
             return True

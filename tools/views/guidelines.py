@@ -4,6 +4,7 @@ import sys
 
 from PySide6.QtCore import (
     Signal,
+    QPoint,
 )
 from PySide6.QtWidgets import (
     QWidget,
@@ -38,9 +39,10 @@ class Guidelines(QWidget):
         return self.show_guidelines
 
 
-    def grab(self, x, y):
+    def grab(self, cursor_position: QPoint):
         # print(f"x={x}, Vline={self.vertical_line_x}")
         # print(f"y={y}, Hline={self.horizontal_line_y}")
+        x, y = cursor_position.x(), cursor_position.y()
         if not self.show_guidelines:
             return None
 
@@ -73,7 +75,8 @@ class Guidelines(QWidget):
 
 
 
-    def move(self, x, y):
+    def move(self, cursor_position:QPoint):
+        x, y = cursor_position.x(), cursor_position.y()
         if not self.is_moving_guidelines or not self.show_guidelines:
             return None
 

@@ -413,6 +413,7 @@ class Window_main(Window_common):
                     'lut': None
                 },
                 'preview_options': options,
+                'origin': [0, 0],
             }
 
             if options['stabilize']['enabled'] and frame['stabilize']['enable']:
@@ -434,32 +435,34 @@ class Window_main(Window_common):
         self.widget_painter.repaint_frame()
 
 
-    def get_rgb_value(self, xr, yr):
+    def get_rgb_value(self, cursor_position:QPoint):
         if self.image is None:
             # No frame loaded
             return
+
+        x, y = cursor_position.x(), cursor_position.y()
 
         pick_initial_value = True
         if pick_initial_value:
             try:
                 # print("get_color from (%d, %d)" % (xr, yr))
                 h, w, c = self.image['cache'].shape
-                if (0 <= xr < self.width()
-                    and 0 <= yr < self.height()
-                    and xr < w and yr < h):
+                if (0 <= x < self.width()
+                    and 0 <= y < self.height()
+                    and x < w and y < h):
 
                     # TODO: correct this!
-                    bgr = self.image['cache_initial'][yr-self.image['origin'][1], xr-self.image['origin'][0]]
+                    bgr = self.image['cache_initial'][y-self.image['origin'][1], x-self.image['origin'][0]]
                     # print("\t(%d, %d) -> (%d, %d, %d)" % (
                     #     xr-self.image['origin'][0],
                     #     yr-self.image['origin'][1],
                     #     bgr[2], bgr[1], bgr[0]))
 
                     self.widget_curves.set_color_values(bgr)
-                    self.widget_painter.setCursor(Qt.CrossCursor)
+                    self.widget_painter.setCursor(Qt.CursorShape.CrossCursor)
                 else:
                     self.widget_curves.set_color_values(None)
-                    self.widget_painter.setCursor(Qt.ArrowCursor)
+                    self.widget_painter.setCursor(Qt.CursorShape.ArrowCursor)
             except:
                 # print("error!")
                 pass
@@ -467,88 +470,86 @@ class Window_main(Window_common):
             try:
                 # print("get_color from (%d, %d)" % (xr, yr))
                 h, w, c = self.image['cache'].shape
-                if (0 <= xr < self.width()
-                    and 0 <= yr < self.height()
-                    and xr < w and yr < h):
+                if (0 <= x < self.width()
+                    and 0 <= y < self.height()
+                    and x < w and y < h):
 
-                    bgr = self.image['cache'][yr-self.image['origin'][1],
-                                            xr-self.image['origin'][0]]
+                    bgr = self.image['cache'][y-self.image['origin'][1],
+                                            x-self.image['origin'][0]]
 
                     self.widget_curves.set_color_values(bgr)
-                    self.widget_painter.setCursor(Qt.CrossCursor)
+                    self.widget_painter.setCursor(Qt.CursorShape.CrossCursor)
                 else:
                     self.widget_curves.set_color_values(None)
-                    self.widget_painter.setCursor(Qt.ArrowCursor)
+                    self.widget_painter.setCursor(Qt.CursorShape.ArrowCursor)
             except:
                 # print("error!")
                 pass
 
 
     def mousePressEvent(self, event):
-        x = event.x()
-        y = event.y()
-        self.widget_stabilize.update_coordinates(event.position().toPoint())
+        cursor_position = event.position().toPoint() - QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP)
+        self.widget_stabilize.update_coordinates(cursor_position)
 
         if (self.image is not None
         and self.image['cache_initial'] is not None):
             if self.current_widget == 'curves':
-                if self.widget_curves.grab_split_line(x):
-                    self.widget_painter.setCursor(Qt.SplitHCursor)
+                if self.widget_curves.grab_split_line(cursor_position):
+                    self.widget_painter.setCursor(Qt.CursorShape.SplitHCursor)
                 else:
                     print("\t-> cache_initial: ", self.image['cache_initial'].shape)
-                    self.get_rgb_value(x, y)
+                    self.get_rgb_value(cursor_position=cursor_position)
                 event.accept()
                 return True
             elif self.current_widget == 'stabilize':
-                line = self.widget_stabilize.guidelines.grab(x, y)
+                line = self.widget_stabilize.guidelines.grab(cursor_position=cursor_position)
                 if line == 'vertical':
-                    self.widget_painter.setCursor(Qt.SplitHCursor)
+                    self.widget_painter.setCursor(Qt.CursorShape.SplitHCursor)
                 elif line == 'horizontal':
-                    self.widget_painter.setCursor(Qt.SplitVCursor)
+                    self.widget_painter.setCursor(Qt.CursorShape.SplitVCursor)
                 elif line == "both":
-                    self.widget_painter.setCursor(Qt.SizeAllCursor)
+                    self.widget_painter.setCursor(Qt.CursorShape.SizeAllCursor)
                 else:
-                    self.get_rgb_value(x, y)
+                    self.get_rgb_value(cursor_position=cursor_position)
                 if line is not None:
                     self.widget_painter.repaint_frame()
                 event.accept()
                 return True
             else:
                 print("\t-> cache_initial: ", self.image['cache_initial'].shape)
-                self.get_rgb_value(x, y)
+                self.get_rgb_value(cursor_position=cursor_position)
             event.accept()
         else:
             event.ignore()
 
 
     def mouseMoveEvent(self, event):
-        x = event.x()
-        y = event.y()
-        self.widget_stabilize.update_coordinates(event.position().toPoint())
+        cursor_position = event.position().toPoint() - QPoint(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP)
+        self.widget_stabilize.update_coordinates(cursor_position)
         if self.current_widget == 'stabilize':
-            line = self.widget_stabilize.guidelines.move(x, y)
+            line = self.widget_stabilize.guidelines.move(cursor_position)
             if line is None:
-                self.get_rgb_value(x, y)
+                self.get_rgb_value(cursor_position)
                 event.ignore()
                 return
             if line == 'vertical':
-                self.widget_painter.setCursor(Qt.SplitHCursor)
+                self.widget_painter.setCursor(Qt.CursorShape.SplitHCursor)
             elif line == 'horizontal':
-                self.widget_painter.setCursor(Qt.SplitVCursor)
+                self.widget_painter.setCursor(Qt.CursorShape.SplitVCursor)
             elif line == "both":
-                self.widget_painter.setCursor(Qt.SizeAllCursor)
+                self.widget_painter.setCursor(Qt.CursorShape.SizeAllCursor)
             event.accept()
             if line is not None:
                 self.widget_painter.repaint_frame()
 
 
         elif self.current_widget == 'curves':
-            if self.widget_curves.move_split_line(x):
-                self.widget_painter.setCursor(Qt.SplitHCursor)
+            if self.widget_curves.move_split_line(cursor_position):
+                self.widget_painter.setCursor(Qt.CursorShape.SplitHCursor)
                 event.accept()
                 self.event_reload_frame()
             else:
-                self.get_rgb_value(x, y)
+                self.get_rgb_value(cursor_position)
                 event.ignore()
 
 
@@ -556,17 +557,17 @@ class Window_main(Window_common):
     def mouseMoved(self, x, y):
         if self.current_widget == 'curves':
             if self.widget_curves.split_line_moved(x, self.mouse_grabX):
-                self.widget_painter.setCursor(Qt.SplitHCursor)
+                self.widget_painter.setCursor(Qt.CursorShape.SplitHCursor)
                 self.event_reload_frame()
 
         elif self.current_widget == 'stabilize':
             line = self.widget_stabilize.guidelines.moved(x, self.mouse_grabX, y, self.mouse_grabY)
             if line == 'vertical':
-                self.widget_painter.setCursor(Qt.SplitHCursor)
+                self.widget_painter.setCursor(Qt.CursorShape.SplitHCursor)
             elif line == 'horizontal':
-                self.widget_painter.setCursor(Qt.SplitVCursor)
+                self.widget_painter.setCursor(Qt.CursorShape.SplitVCursor)
             elif line == "both":
-                self.widget_painter.setCursor(Qt.SizeAllCursor)
+                self.widget_painter.setCursor(Qt.CursorShape.SizeAllCursor)
             else:
                 self.get_rgb_value(x, y)
             if line is not None:
