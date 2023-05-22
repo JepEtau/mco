@@ -268,11 +268,23 @@ class Model_database(Model_geometry,
         print_lightgreen('stabilize')
         pprint(self.db_stabilize)
 
+        # is_default_geometry_modified = bool(self.db_default_shot_geometry)
+        is_default_geometry_modified = False
+        for _k_ed in self.db_default_shot_geometry.keys():
+            for _k_ep in self.db_default_shot_geometry[_k_ed].keys():
+                for _k_part in self.db_default_shot_geometry[_k_ed][_k_ep].keys():
+                    crop = self.db_default_shot_geometry[_k_ed][_k_ep][_k_part]['crop']
+                    for v in crop:
+                        if v != 0:
+                            is_default_geometry_modified = True
+                            break
+
+
         if (bool(self.db_curves_library)
             or bool(self.db_curves_selection)
             or bool(self.db_replaced_frames)
             or bool(self.db_target_geometry)
-            or bool(self.db_default_shot_geometry)
+            or is_default_geometry_modified
             or bool(self.db_shot_geometry)
             or bool(self.db_stabilize)):
             return True

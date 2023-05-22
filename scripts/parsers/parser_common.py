@@ -99,7 +99,7 @@ def parse_common_configuration(db, config_path):
         db_common['directories'][d] = os.path.normpath(os.path.abspath(v))
 
 
-    for d in ['real_cugan', 'real_esrgan', 'esrgan', 'animesr']:
+    for d in ['real_cugan', 'real_esrgan', 'esrgan', 'animesr', 'pytorch']:
         v = db_common['directories'][d]
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')

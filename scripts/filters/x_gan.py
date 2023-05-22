@@ -313,12 +313,14 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
 
 
 
-def upscale_esrgan(shot, images:list, image_list:list,
+def upscale_pytorch(shot, images:list, image_list:list,
     model_name:str, directories:str, input_hash, step_no, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
     module_path = os.path.join(directories['3rd_party'], directories['esrgan'])
-    model_filepath = os.path.join(directories['3rd_party'], "models", 'esrgan', "%s.pth" % (model_name))
+    model_filepath = os.path.join(directories['3rd_party'],
+        "models", 'pytorch',
+        f"{model_name}{'.pth' if not model_name.endswith('.pth') else ''}")
     if not os.path.isfile(model_filepath):
         sys.exit(print_red("Error: model file %s does not exist" % (model_filepath)))
 
@@ -340,33 +342,9 @@ def upscale_esrgan(shot, images:list, image_list:list,
         scale = 4
     elif model_name == '2x_LD-Anime_Skr_v1.0':
         suffix = "skr"
-    elif model_name == '1x_SSAntiAlias9x':
-        suffix = "ssaa"
     elif model_name == '4x-AnimeSharp':
         suffix = "AnimeSharp"
         seamless = SeamlessOptions.TILE
-    elif model_name == '2x_AnimeClassics_UltraLite_510K':
-        suffix = "AnimeClassics"
-    elif model_name == '4x-UniScaleNR-Balanced':
-        suffix = "4x-UniScaleNR-Balanced"
-    elif model_name == '4x-UniScaleNR-Strong':
-        suffix = "4x-UniScaleNR-Strong"
-    elif model_name == '4x_DigitalFrames_2.1_Final':
-        suffix = "4x_DigitalFrames"
-    elif model_name == '4x-AnimeSharp':
-        suffix = "4x-AnimeSharp"
-    elif model_name == '4x_OLDIES_290000_G_FINAL_interp_03':
-        suffix = "4x_OLDIES_290000"
-    elif model_name == '2x-UniScale_CartoonRestore-lite':
-        suffix = "2x-UniScale_CartoonRestore-lite"
-    elif model_name == '2X_KcjpunkAnime_2.0_Lite_196496_G':
-        suffix = "2X_KcjpunkAnime"
-    elif model_name == '4xFSDedither_Manga':
-        suffix = '4xFSDedither_Manga'
-    elif model_name == '1x_ReFocus_V3_140000_G':
-        suffix = '1x_ReFocus_V3_140000_G'
-    elif model_name == '1x_BeaverIt.pth':
-        suffix = '1x_BeaverIt.pth'
     else:
         suffix = model_name
 
@@ -385,7 +363,7 @@ def upscale_esrgan(shot, images:list, image_list:list,
 
 
 
-    print_cyan(f"(ESRGAN)\tstep no. {step_no}, ({scale}x) upscaling, model {model_name}, input hash={input_hash}, output hash={hash}, suffix={suffix}")
+    print_cyan(f"(PyTorch)\tstep no. {step_no}, ({scale}x) upscaling, model {model_name}, input hash={input_hash}, output hash={hash}, suffix={suffix}")
 
 
     # Generate a list of output images
@@ -408,6 +386,10 @@ def upscale_esrgan(shot, images:list, image_list:list,
         print_orange("Warning: using CPU")
 
 
+    # Output images in memory
+    use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
+
+
     # Load model
     esrgan_upscale = Esrgan_upscale(
         seamless=seamless,
@@ -415,6 +397,7 @@ def upscale_esrgan(shot, images:list, image_list:list,
         device_id=device_id,
         fp16=fp16)
     esrgan_upscale.load_model(model_filepath)
+
 
     # Walk through images
     count = shot['count']

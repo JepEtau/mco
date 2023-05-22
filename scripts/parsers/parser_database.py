@@ -112,6 +112,9 @@ def parse_database(database, k_ep):
         for k_ed_tmp in database['editions']['available']:
             print_lightgrey("  - parse %s:%s" % (k_ed_tmp, k_ep))
             parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep)
+            parse_replace_configurations(database, k_ep_or_g=k_ep)
+            parse_stabilize_configurations(database, k_ep_or_g=k_ep)
+            parse_curve_configurations(database, k_ep_or_g=k_ep)
 
         # Get dependencies for this episode
         dependencies_tmp = parse_get_dependencies_for_episodes(database, k_ep)
@@ -138,7 +141,7 @@ def parse_database(database, k_ep):
             if k_ep_tmp == k_ep:
                 # Do not parse this episode another time
                 continue
-            print_lightgrey("  - parse %s:%s" % (k_ed_tmp, k_ep_tmp))
+            print_lightgrey(f"  - parse dependency: {k_ed_tmp}:{k_ep_tmp}")
             parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep_tmp)
 
     # Parse other config files for each dependency

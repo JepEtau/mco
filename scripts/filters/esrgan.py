@@ -347,7 +347,7 @@ class Esrgan_upscale():
                 self.scale = self.model.scale
 
         else:
-            print(type(model))
+            # print(type(model))
             if type(model) is RealESRGANv2:
                 self.in_nc = model.num_in_ch
                 self.out_nc = model.num_out_ch
@@ -378,10 +378,10 @@ class Esrgan_upscale():
             model.supports_fp16 = False  # type: ignore
         should_use_fp16 = self.fp16
         if should_use_fp16:
-            print_lightgrey("use fp16")
+            # print_lightgrey("use fp16")
             self.model = model.half()
         else:
-            print_lightgrey("use float")
+            # print_lightgrey("use float")
             self.model = model.float()
 
 

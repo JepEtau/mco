@@ -19,9 +19,8 @@ from filters.python_replace import (
 from filters.utils import MAX_FRAMES_COUNT
 from filters.animesr import upscale_animesr
 from filters.x_gan import (
-    upscale_esrgan,
+    upscale_pytorch,
     upscale_real_cugan,
-    upscale_real_esrgan,
 )
 from utils.get_image_list import (
     get_image_list,
@@ -110,11 +109,35 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
             images = [None] * shot['count']
 
 
-
-
-        # xGAN
+        # PyTorch
         #-----------------------------------------------------------------------
-        if filter['type'] in ['real_cugan', 'real_esrgan', 'esrgan']:
+        if filter['type'] == 'pytorch':
+            if not torch.cuda.is_available():
+                print_red("\t\t\terror: cannot denoise/sharpen with this GPU")
+
+            xgan = {
+                'name': filter['type'],
+                'model': filter['str'],
+            }
+
+            if xgan['model'] == '':
+                sys.exit(print_red("\n(PyTorch) model name is required"))
+            hash, scale, images = upscale_pytorch(
+                shot=shot,
+                images=images,
+                image_list=image_list,
+                model_name=xgan['model'],
+                directories=db['common']['directories'],
+                input_hash=hash,
+                step_no=step_no,
+                output_folder=output_folder,
+                get_hash=get_hashes,
+                do_force=do_force)
+
+
+        # Real CUGAN
+        #-----------------------------------------------------------------------
+        elif filter['type'] == 'real_cugan':
             if not torch.cuda.is_available():
                 if filter['task'] == 'upscale':
                     print_red("\t\t\terror: cannot upscale with this GPU")
@@ -167,38 +190,6 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
                         do_force=do_force)
                     # if not get_hashes:
                     #     print("\t\t\tupscale: returned %s" % (hash))
-
-                elif xgan['name'] == 'real_esrgan':
-                    if xgan['model'] == '':
-                        sys.exit(print_red("\n(Real-ESRGAN) model name is required"))
-                    hash, scale, images = upscale_real_esrgan(
-                        shot=shot,
-                        images=images,
-                        image_list=image_list,
-                        model_name=xgan['model'],
-                        directories=db['common']['directories'],
-                        input_hash=hash,
-                        step_no=step_no,
-                        output_folder=output_folder,
-                        get_hash=get_hashes,
-                        do_force=do_force)
-                    # if not get_hashes:
-                    #     print("\t\t\tupscale: returned %s" % (hash))
-
-                elif xgan['name'] == 'esrgan':
-                    if xgan['model'] == '':
-                        sys.exit(print_red("\n(ESRGAN) model name is required"))
-                    hash, scale, images = upscale_esrgan(
-                        shot=shot,
-                        images=images,
-                        image_list=image_list,
-                        model_name=xgan['model'],
-                        directories=db['common']['directories'],
-                        input_hash=hash,
-                        step_no=step_no,
-                        output_folder=output_folder,
-                        get_hash=get_hashes,
-                        do_force=do_force)
 
 
         # AnimeSR

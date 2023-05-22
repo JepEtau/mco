@@ -282,7 +282,7 @@ def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int):
         # pprint(db_ep[k_p])
         try:
             if 'start' not in db_ep[k_p].keys():
-                print("warning: todo: missing part in database: %s:%s:%s" % (k_ed, k_ep, k_p))
+                # print("warning: todo: missing part in database: %s:%s:%s" % (k_ed, k_ep, k_p))
                 continue
         except:
             print(f"\twarning: get_k_part_from_frame_no: part not found for frame {frame_no} in %s:%s:%s" % (k_ed, k_ep, k_p))

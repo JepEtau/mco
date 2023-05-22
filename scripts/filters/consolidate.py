@@ -80,7 +80,7 @@ def consolidate_filters(shot):
         #     if previous_filter['task'] == '':
         #         previous_filter['task'] = 'pre_upscale'
 
-        elif filter['type'] in ['real_cugan', 'real_esrgan', 'esrgan', 'animesr']:
+        elif filter['type'] in ['real_cugan', 'pytorch', 'animesr']:
             if '1x' in filter['str']:
                 # denoise/sharpen/other
                 filter['task'] = ''

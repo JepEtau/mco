@@ -229,9 +229,8 @@ mco_3rd_party
 ├── models
     ├── animesr
     ├── dnn_superres
-    ├── esrgan
+    ├── pytorch
     ├── real_cugan
-    ├── real_esrgan
 ```
 
 - Dans le répertoire `animesr`
@@ -245,10 +244,12 @@ mco_3rd_party
 
 <br/>
 
-- Dans le répertoire `esrgan`
+- Dans le répertoire `pytorch`, depuis [OpenModelDB/](https://openmodeldb.info/)
     * 2x_LD-Anime_Skr_v1.0.pth [[Model Database](https://upscale.wiki/wiki/Model_Database#Anime_and_Cartoons)]
-    * 1x_BeaverIt.pth [[Discord](https://discord.com/channels/547949405949657098/579685650824036387/1023981170045747280)]
+    * 1x_HurrDeblur_SuperUltraCompact_nf24-nc8_244k_net_g.pth
     * 2xESRGAN.pth [[Model Database](https://upscale.wiki/wiki/Model_Database#Pretrained_Models)]
+    * realesr-animevideov3.pth
+
 
 <br/>
 
@@ -262,7 +263,6 @@ mco_3rd_party
 <br/>
 
 - ~~Dans le répertoire `real_esrgan`~~
-    * ~~realesr-animevideov3.pth~~
 
 
 
