@@ -147,10 +147,10 @@ class Widget_segments(QTableWidget):
                 'vertical': self.cellWidget(row_no, 3).findChild(QCheckBox, 'vertical').isChecked(),
                 'rotation': self.cellWidget(row_no, 3).findChild(QCheckBox, 'rotation').isChecked()
             },
-            'roi': {
+            'tracker': {
                 'enable': self.cellWidget(row_no, 4).findChild(QCheckBox, 'enable').isChecked(),
                 'inside': self.cellWidget(row_no, 4).findChild(QCheckBox, 'inside').isChecked(),
-                'regions': self.__trackers[row_no],
+                'regions': self.__trackers[row_no]['regions'],
             }
         }
         return segment_values

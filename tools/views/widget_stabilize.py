@@ -68,6 +68,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.groupBox_stabilize.clicked.connect(self.event_settings_enable_toggled)
         self.label_message.clear()
         self.lineEdit_coordinates.clear()
+        self.pushButton_show_tracker.toggled[bool].connect(self.event_show_tracker_toggled)
+
 
         # Signals
         self.pushButton_stabilize.clicked.connect(self.event_stabilize_requested)
@@ -97,14 +99,23 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.widget_segments.clear_contents()
 
         # Push button is used to calculate then display
-        self.pushButton_set_preview.setEnabled(s['widget']['allowed'])
-        self.pushButton_set_preview.setChecked(s['widget']['enabled'])
-        self.previous_preview_state = s['widget']['enabled']
-        self.initial_preview_state = s['widget']['enabled']
-        self.pushButton_stabilize.setEnabled(False)
         self.is_obsolete = True
+        try:
+            self.pushButton_set_preview.setEnabled(s['widget']['allowed'])
+            self.pushButton_set_preview.setChecked(s['widget']['enabled'])
+            self.previous_preview_state = s['widget']['enabled']
+            self.initial_preview_state = s['widget']['enabled']
+            self.pushButton_show_tracker.setChecked(s['widget']['show_tracker'])
+            self.pushButton_show_tracker.setEnabled(s['widget']['allowed'])
+        except:
+            self.pushButton_set_preview.setEnabled(False)
+            self.pushButton_set_preview.setChecked(False)
+            self.previous_preview_state = False
+            self.initial_preview_state = False
+            self.pushButton_show_tracker.setChecked(False)
+            self.pushButton_show_tracker.setEnabled(False)
 
-
+        self.pushButton_stabilize.setEnabled(False)
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
@@ -119,6 +130,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         self.pushButton_set_preview.blockSignals(True)
         self.pushButton_set_preview.setEnabled(self.is_edition_allowed)
+        self.pushButton_show_tracker.setEnabled(self.is_edition_allowed)
         # self.pushButton_set_preview.setChecked(enabled)
         # self.previous_preview_state = enabled
         is_checked = self.pushButton_set_preview.isChecked()
@@ -131,6 +143,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         preview_options = {
             'allowed': self.is_edition_allowed,
             'enabled': self.pushButton_set_preview.isChecked(),
+            'show_tracker': self.pushButton_show_tracker.isChecked(),
         }
         return preview_options
 
@@ -330,6 +343,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
                 self.pushButton_discard.setEnabled(False)
                 self.pushButton_save.setEnabled(False)
                 self.signal_preview_options_changed.emit()
+
+
+    def event_show_tracker_toggled(self, is_checked:bool=False):
+        self.signal_preview_options_changed.emit()
+
 
 
     def event_stabilization_done(self):

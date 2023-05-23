@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>585</width>
+    <width>715</width>
     <height>172</height>
    </rect>
   </property>
@@ -324,7 +324,7 @@
          <item>
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
-            <widget class="QPushButton" name="pushButton_roi_edition">
+            <widget class="QPushButton" name="pushButton_show_tracker">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
                <horstretch>0</horstretch>
@@ -339,7 +339,8 @@
              </property>
              <property name="icon">
               <iconset>
-               <normaloff>../../icons/blue/box-select.svg</normaloff>../../icons/blue/box-select.svg</iconset>
+               <normaloff>../../icons/grey/box-select.svg</normaloff>
+               <normalon>../../icons/blue/box-select.svg</normalon>../../icons/grey/box-select.svg</iconset>
              </property>
              <property name="checkable">
               <bool>true</bool>

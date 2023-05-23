@@ -25,7 +25,7 @@ class Ui_widget_stabilize(object):
     def setupUi(self, widget_stabilize):
         if not widget_stabilize.objectName():
             widget_stabilize.setObjectName(u"widget_stabilize")
-        widget_stabilize.resize(585, 172)
+        widget_stabilize.resize(715, 172)
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -181,18 +181,19 @@ class Ui_widget_stabilize(object):
 
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.pushButton_roi_edition = QPushButton(self.groupBox_stabilize)
-        self.pushButton_roi_edition.setObjectName(u"pushButton_roi_edition")
-        sizePolicy2.setHeightForWidth(self.pushButton_roi_edition.sizePolicy().hasHeightForWidth())
-        self.pushButton_roi_edition.setSizePolicy(sizePolicy2)
-        self.pushButton_roi_edition.setFocusPolicy(Qt.NoFocus)
+        self.pushButton_show_tracker = QPushButton(self.groupBox_stabilize)
+        self.pushButton_show_tracker.setObjectName(u"pushButton_show_tracker")
+        sizePolicy2.setHeightForWidth(self.pushButton_show_tracker.sizePolicy().hasHeightForWidth())
+        self.pushButton_show_tracker.setSizePolicy(sizePolicy2)
+        self.pushButton_show_tracker.setFocusPolicy(Qt.NoFocus)
         icon6 = QIcon()
-        icon6.addFile(u"./tools/icons/blue/box-select.svg", QSize(), QIcon.Normal, QIcon.Off)
-        self.pushButton_roi_edition.setIcon(icon6)
-        self.pushButton_roi_edition.setCheckable(True)
-        self.pushButton_roi_edition.setFlat(True)
+        icon6.addFile(u"./tools/icons/grey/box-select.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon6.addFile(u"./tools/icons/blue/box-select.svg", QSize(), QIcon.Normal, QIcon.On)
+        self.pushButton_show_tracker.setIcon(icon6)
+        self.pushButton_show_tracker.setCheckable(True)
+        self.pushButton_show_tracker.setFlat(True)
 
-        self.verticalLayout_3.addWidget(self.pushButton_roi_edition)
+        self.verticalLayout_3.addWidget(self.pushButton_show_tracker)
 
         self.verticalSpacer = QSpacerItem(20, 10, QSizePolicy.Minimum, QSizePolicy.Expanding)
 
@@ -255,7 +256,7 @@ class Ui_widget_stabilize(object):
         self.pushButton_save.setText("")
         self.pushButton_close.setText("")
         self.groupBox_stabilize.setTitle(QCoreApplication.translate("widget_stabilize", u"Stabilize/deshake", None))
-        self.pushButton_roi_edition.setText("")
+        self.pushButton_show_tracker.setText("")
         self.pushButton_roi_remove.setText("")
         self.lineEdit_coordinates.setText(QCoreApplication.translate("widget_stabilize", u"(1200, 1400)", None))
         pass

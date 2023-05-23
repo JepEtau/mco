@@ -70,7 +70,6 @@ class CV2_deshaker:
 
         self.__improve_ref = True
         self.__img_contour = None
-        self.__has_roi_defined = False
 
         self.__gamma_lut = np.empty((1,256), np.uint8)
         for i in range(256):
@@ -95,7 +94,7 @@ class CV2_deshaker:
         if keypoints is not None:
             print_lightgrey(f"Nb of keypoints: {len(keypoints)}")
 
-        if not self.__has_roi_defined:
+        if not self.__is_tracker_enabled:
             return (keypoints, img_improved)
 
         filtered_keypoints = list()
@@ -114,8 +113,7 @@ class CV2_deshaker:
             #     # i.e. on the border of the src img, bad quality
             #     # print("\tdiscard")
             #     continue
-
-            if is_point_inside(__kp, self.__roi):
+            if is_point_inside(__kp, self.__tracker_contours, self.__tracker_is_inside):
                 filtered_keypoints.append(kp)
 
         if do_show:
@@ -288,9 +286,8 @@ class CV2_deshaker:
 
 
     def stabilize(self, shot, images,
-        ref, mode, last_transformation,
+        segment, last_transformation,
         step_no, input_hash,
-        roi:list=list(),
         get_hash:bool=False, do_log:bool=True,
         do_force=False):
         """Stabilize images without smoothing the trajectory
@@ -300,6 +297,16 @@ class CV2_deshaker:
             'start': None,
             'end': None,
         }
+
+        ref = segment['ref']
+        mode = segment['mode']
+
+        self.__is_tracker_enabled = segment['tracker']['enable']
+        if self.__is_tracker_enabled:
+            self.__tracker_contours = list()
+            for region in segment['tracker']['regions']:
+                self.__tracker_contours.append(np.array(region, np.float32).reshape((-1,1,2)))
+            self.__tracker_is_inside = segment['tracker']['inside']
 
         if ref == 'start':
             # Start from first frame
@@ -330,25 +337,16 @@ class CV2_deshaker:
         print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, start_index:%d" % (len(images), start_index))
 
 
-        # Create a mask from roi coordinates
-        self.img_mask = create_roi_mask(roi, images[0])
-        self.__roi = roi
-        h, w, _ = images[0].shape
-        upscale_factor = int(h/(INITIAL_FRAME_HEIGHT + IMG_BORDER_LOW_RES))
-        self.__img_contour = [
-            upscale_factor * (ROI_MIN_T + IMG_BORDER_LOW_RES),
-            h - upscale_factor * (ROI_MIN_B + IMG_BORDER_LOW_RES),
-            upscale_factor * (ROI_MIN_L + IMG_BORDER_LOW_RES),
-            w - upscale_factor * (ROI_MIN_R + IMG_BORDER_LOW_RES),
-        ]
+        # If using contour
+        # h, w, _ = images[0].shape
+        # upscale_factor = int(h/(INITIAL_FRAME_HEIGHT + IMG_BORDER_LOW_RES))
+        # self.__img_contour = [
+        #     upscale_factor * (ROI_MIN_T + IMG_BORDER_LOW_RES),
+        #     h - upscale_factor * (ROI_MIN_B + IMG_BORDER_LOW_RES),
+        #     upscale_factor * (ROI_MIN_L + IMG_BORDER_LOW_RES),
+        #     w - upscale_factor * (ROI_MIN_R + IMG_BORDER_LOW_RES),
+        # ]
         # print(self.__img_contour)
-
-        # Determine if this segment contains ROI
-        roi_count = 0
-        for area in roi:
-            if area['enable'] and len(area['points']) >= 3:
-                roi_count += 1
-        self.__has_roi_defined = True if roi_count > 0 else False
 
 
         # Reset transformation
@@ -518,7 +516,7 @@ def create_roi_mask(roi, img):
     white_image = np.ones([height, width, 1], dtype=np.uint8) * 255
     black_image = np.zeros([height, width, 1], dtype=np.uint8)
     img_mask = draw_roi(black_image, roi)
-    cv2.imwrite("/home/adg/mco/cache/mask.png", img_mask)
+    cv2.imwrite("../../mask.png", img_mask)
     return img_mask
 
 
@@ -557,16 +555,11 @@ def improve_ref_img(img, gamma_lut:list=list()):
     return img_improved
 
 
-def is_point_inside(point, roi):
-    for area in roi:
-        if not area['enable'] or len(area['points']) < 3:
-            continue
-
-        contour = np.array(area['points'], np.float32).reshape((-1,1,2))
+def is_point_inside(point, contours, inside:bool=False):
+    for contour in contours:
         result = cv2.pointPolygonTest(contour, point, False)
         if result >= 0:
-            return True
-
-    return False
-
+            # Point is inside or on the contour
+            return True if inside else False
+    return False if inside else True
 
