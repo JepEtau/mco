@@ -16,7 +16,6 @@
 
 # TODO video editor
 (1)
-- Update model each time the segments are modified
 - Add geometry error/fit_to_width in selection widget
 
 (2)
@@ -29,6 +28,23 @@
 - (?) reorder options in .ini files
 - add buttons to show/hide widgets
 - (?)Replace not allowed when multiple shot selected
+
+
+22676_deshake = """enable=true;
+	cv2_deshaker:start=22676:end=22754:ref=end:mode=horizontal+rotation+vertical:
+		tracker=enable, inside,
+		(0.0)(0.1199)(173.1199)(450.0),
+		(1124.0)(1487.0)(1487.1199)(1124.1199);
+	cv2_deshaker:start=22783:end=22805:ref=start:mode=horizontal+rotation+vertical;
+	cv2_deshaker:start=22813:end=22871:ref=start:mode=rotation+vertical;
+	"""
+
+33966_deshake = """enable=true;
+	cv2_deshaker:start=33966:end=33995:ref=middle:mode=horizontal+rotation+vertical:
+		tracker=enable, inside,
+		(0.0)(0.550)(232.500)(232.0),
+		(650.0)(650.485)(1032.280)(1440.280)(1440.0);
+	"""
 
 
 # Models/Algo

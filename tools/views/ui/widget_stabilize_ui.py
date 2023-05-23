@@ -25,7 +25,7 @@ class Ui_widget_stabilize(object):
     def setupUi(self, widget_stabilize):
         if not widget_stabilize.objectName():
             widget_stabilize.setObjectName(u"widget_stabilize")
-        widget_stabilize.resize(552, 141)
+        widget_stabilize.resize(585, 172)
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -175,9 +175,44 @@ class Ui_widget_stabilize(object):
         self.horizontalLayout_2.setContentsMargins(9, 12, 3, 3)
         self.widget_segments = Widget_segments(self.groupBox_stabilize)
         self.widget_segments.setObjectName(u"widget_segments")
-        self.widget_segments.setMinimumSize(QSize(520, 0))
+        self.widget_segments.setMinimumSize(QSize(650, 0))
 
         self.horizontalLayout_2.addWidget(self.widget_segments)
+
+        self.verticalLayout_3 = QVBoxLayout()
+        self.verticalLayout_3.setObjectName(u"verticalLayout_3")
+        self.pushButton_roi_edition = QPushButton(self.groupBox_stabilize)
+        self.pushButton_roi_edition.setObjectName(u"pushButton_roi_edition")
+        sizePolicy2.setHeightForWidth(self.pushButton_roi_edition.sizePolicy().hasHeightForWidth())
+        self.pushButton_roi_edition.setSizePolicy(sizePolicy2)
+        self.pushButton_roi_edition.setFocusPolicy(Qt.NoFocus)
+        icon6 = QIcon()
+        icon6.addFile(u"./tools/icons/blue/box-select.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.pushButton_roi_edition.setIcon(icon6)
+        self.pushButton_roi_edition.setCheckable(True)
+        self.pushButton_roi_edition.setFlat(True)
+
+        self.verticalLayout_3.addWidget(self.pushButton_roi_edition)
+
+        self.verticalSpacer = QSpacerItem(20, 10, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+        self.verticalLayout_3.addItem(self.verticalSpacer)
+
+        self.pushButton_roi_remove = QPushButton(self.groupBox_stabilize)
+        self.pushButton_roi_remove.setObjectName(u"pushButton_roi_remove")
+        sizePolicy2.setHeightForWidth(self.pushButton_roi_remove.sizePolicy().hasHeightForWidth())
+        self.pushButton_roi_remove.setSizePolicy(sizePolicy2)
+        self.pushButton_roi_remove.setFocusPolicy(Qt.NoFocus)
+        icon7 = QIcon()
+        icon7.addFile(u"./tools/icons/blue/eraser.svg", QSize(), QIcon.Normal, QIcon.Off)
+        self.pushButton_roi_remove.setIcon(icon7)
+        self.pushButton_roi_remove.setCheckable(False)
+        self.pushButton_roi_remove.setFlat(True)
+
+        self.verticalLayout_3.addWidget(self.pushButton_roi_remove)
+
+
+        self.horizontalLayout_2.addLayout(self.verticalLayout_3)
 
 
         self.verticalLayout_2.addWidget(self.groupBox_stabilize)
@@ -220,6 +255,8 @@ class Ui_widget_stabilize(object):
         self.pushButton_save.setText("")
         self.pushButton_close.setText("")
         self.groupBox_stabilize.setTitle(QCoreApplication.translate("widget_stabilize", u"Stabilize/deshake", None))
+        self.pushButton_roi_edition.setText("")
+        self.pushButton_roi_remove.setText("")
         self.lineEdit_coordinates.setText(QCoreApplication.translate("widget_stabilize", u"(1200, 1400)", None))
         pass
     # retranslateUi

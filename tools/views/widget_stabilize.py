@@ -60,8 +60,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.guidelines = Guidelines()
 
         # Table
-        self.widget_segments.table_segments.selectionModel().selectionChanged.connect(self.event_segment_selected)
-        self.widget_segments.table_segments.itemDoubleClicked[QTableWidgetItem].connect(self.event_segment_double_clicked)
+        self.widget_segments.selectionModel().selectionChanged.connect(self.event_segment_selected)
+        self.widget_segments.itemDoubleClicked[QTableWidgetItem].connect(self.event_segment_double_clicked)
+        self.widget_segments.signal_segment_modified[int].connect(self.event_segment_modified)
 
         # Buttons, etc.
         self.groupBox_stabilize.clicked.connect(self.event_settings_enable_toggled)
@@ -73,7 +74,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.pushButton_guidelines.toggled[bool].connect(self.guidelines_state_changed)
         self.groupBox_stabilize.installEventFilter(self)
         self.groupBox_stabilize.blockSignals(True)
-        self.widget_segments.table_segments.installEventFilter(self)
+        self.widget_segments.installEventFilter(self)
         self.widget_segments.set_parent(self)
         self.installEventFilter(self)
 
@@ -163,10 +164,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         if self.is_enabled_initial != is_checked:
             self.pushButton_discard.setEnabled(True)
             self.pushButton_save.setEnabled(True)
-
-            settings = self.get_current_settings()
-            self.edition_started()
-            self.signal_settings_modified.emit(settings)
+            self.event_segment_modified(segment_no=-1)
 
         self.pushButton_save.setEnabled(True)
 
@@ -205,7 +203,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         self.widget_segments.setEnabled(is_enabled)
         if is_enabled:
-            self.widget_segments.table_segments.selectRow(0)
+            self.widget_segments.selectRow(0)
 
         if 'error' in stabilize_settings.keys() and stabilize_settings['error']:
             self.label_message.setText("ERROR!")
@@ -216,7 +214,10 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             self.previous_preview_state = False
             log.info('disable preview')
         elif self.is_obsolete:
-            self.edition_started()
+            self.label_message.setText("Obsolete")
+            self.pushButton_save.setEnabled(True)
+            self.pushButton_discard.setEnabled(True)
+            self.pushButton_stabilize.setEnabled(True)
         else:
             log.info('disable stabilize button')
             self.label_message.clear()
@@ -242,16 +243,25 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         log.info(f"selected frame at row={row_no}, col={col_no}")
         if col_no == 1:
             # Select end of the selected segment
-            try: frame_no = int(self.widget_segments.table_segments.item(row_no, col_no).text())
+            try: frame_no = int(self.widget_segments.item(row_no, col_no).text())
             except: return
         else:
             # Select start of the selected segment
-            try: frame_no = int(self.widget_segments.table_segments.item(row_no, 0).text())
+            try: frame_no = int(self.widget_segments.item(row_no, 0).text())
             except: return
         log.info(f"signal_frame_selected: {frame_no}")
         self.signal_frame_selected.emit(frame_no)
 
 
+    def event_segment_modified(self, segment_no:int):
+        # if segment_no == -1:
+        #     # All table has been modified, get all table values
+        #     print_lightcyan(f"Table is completely modified")
+        # else:
+        #     # Get only the modified segment
+        self.signal_edition_started.emit()
+        settings = self.get_current_settings()
+        self.signal_settings_modified.emit(settings)
 
 
     def edition_started(self):
@@ -268,18 +278,15 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
     def event_start_modified(self):
         frame_no = self.controller.get_current_frame_no()
         self.widget_segments.set_frame_no('start', frame_no)
-        self.edition_started()
 
 
     def event_end_modified(self):
         frame_no = self.controller.get_current_frame_no()
         self.widget_segments.set_frame_no('end', frame_no)
-        self.edition_started()
 
 
     def event_ref_modified(self):
         self.widget_segments.select_next_reference()
-        self.edition_started()
 
 
     def event_mode_modified(self, key):
@@ -291,16 +298,6 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         if key == Qt.Key.Key_R:
             option = 'rotation'
         self.widget_segments.select_mode_option(option)
-        self.edition_started()
-
-
-    def undo_requested(self):
-        self.widget_segments.undo()
-        if self.widget_segments.is_content_modified():
-            self.edition_started()
-        else:
-            self.pushButton_discard.setEnabled(False)
-            self.pushButton_save.setEnabled(False)
 
 
     def event_stabilize_requested(self):
@@ -394,9 +391,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             if key == Qt.Key.Key_S:
                 self.event_save_modifications()
                 return True
-            elif key == Qt.Key.Key_Z:
-                self.undo_requested()
-                return True
+
 
         elif key == Qt.Key.Key_F3:
             self.pushButton_guidelines.toggle()

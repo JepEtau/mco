@@ -850,6 +850,15 @@ class Controller_video_editor(Controller_common,
         pprint(settings)
         shot = self.current_shot()
 
+        # Set new settings
+        self.model_database.set_shot_stabilize_settings(shot=shot, settings=deepcopy(settings))
+
+        self.set_modification_status('stabilize', True)
+
+
+    def consolidate_shot_stabilization_settings(self, settings):
+        shot = self.current_shot()
+
         # Consolidate segments
         settings['segments'] = consolidate_stabilize_segments(segments=settings['segments'])
 
