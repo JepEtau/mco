@@ -85,7 +85,7 @@ def deshake(shot, images:list, image_list:list,
         segment['count'] = segment['end'] - segment['start'] + 1
         segment['start_saved'] = shot['start']
         segment['start'] -= shot['start']
-        segment['ref'] -= shot['ref']
+        segment['ref'] -= shot['start']
 
 
     if verbose and not get_hash:
@@ -158,6 +158,7 @@ def deshake(shot, images:list, image_list:list,
                 step_no=step_no,
                 input_hash=input_hash,
                 get_hash=get_hash,
+                do_log=do_log,
                 do_force=do_force)
             del deshaker
 

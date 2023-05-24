@@ -890,7 +890,8 @@ class Controller_video_editor(Controller_common,
                 'alg': 'cv2_deshaker',
                 'start': shot['start'],
                 'end':  shot['start'] + shot['count'] - 1,
-                'ref': 'start',
+                'from': 'start',
+                'ref': -1,
                 'mode': {
                     'vertical': True,
                     'horizontal': True,
@@ -968,6 +969,9 @@ class Controller_video_editor(Controller_common,
 
         # Get stabilization parameters
         settings = self.model_database.get_shot_stabilize_settings(shot=shot)
+
+        # Consolidate segments and verify
+        settings['segments'] = consolidate_stabilize_segments(segments=settings['segments'])
         try:
             is_valid = verify_stabilize_segments(shot=shot, segments=settings['segments'])
         except:

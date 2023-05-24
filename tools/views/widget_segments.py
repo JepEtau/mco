@@ -82,7 +82,7 @@ class Widget_segments(QTableWidget):
                 'id': 'tracker',
                 'title': 'Tracker',
                 'alignment': Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-                'width': 150,
+                'width': 220,
             },
         ]
 
@@ -207,6 +207,9 @@ class Widget_segments(QTableWidget):
 
 
     def get_segment_values(self, row_no):
+        if row_no == -1:
+            return
+        log.info("get_segment_values")
         segment_values = {
             'start': self.item(row_no, self._column_dict['start']['no']).text(),
             'end': self.item(row_no, self._column_dict['end']['no']).text(),
@@ -221,7 +224,7 @@ class Widget_segments(QTableWidget):
             'tracker': {
                 'enable': self.cellWidget(row_no, self._column_dict['tracker']['no']).findChild(QCheckBox, 'enable').isChecked(),
                 'inside': self.cellWidget(row_no, self._column_dict['tracker']['no']).findChild(QCheckBox, 'inside').isChecked(),
-                'regions': self.__trackers[row_no]['regions'],
+                'regions': self.cellWidget(row_no, self._column_dict['tracker']['no']).property('regions')
             }
         }
         return segment_values
@@ -340,15 +343,20 @@ class Widget_segments(QTableWidget):
                 set_widget_stylesheet(w)
                 __layout.addWidget(w)
 
+                widget.setProperty('regions', segment['tracker']['regions'])
+
                 self.setCellWidget(row_no, col_no, widget)
 
+
         ref_col_no = self._column_dict['ref']['no']
+        self.blockSignals(True)
         if self.cellWidget(row_no, self._column_dict['from']['no']).currentText() == 'frame':
             self.item(row_no, ref_col_no).setFlags((Qt.ItemIsSelectable|Qt.ItemIsEnabled))
             self.item(row_no, ref_col_no).setSelected(True)
         else:
             self.item(row_no, ref_col_no).setFlags(~(Qt.ItemIsSelectable|Qt.ItemIsEnabled))
             self.item(row_no, ref_col_no).setSelected(False)
+        self.blockSignals(False)
 
 
     def set_content(self, segments):
@@ -389,12 +397,13 @@ class Widget_segments(QTableWidget):
         self.cellWidget(row_no, col_no).setCurrentIndex(new_index)
 
         ref_col_no = self._column_dict['ref']['no']
+        self.blockSignals(True)
         if self.cellWidget(row_no, col_no).currentText() == 'frame':
             self.item(row_no, ref_col_no).setFlags((Qt.ItemIsSelectable|Qt.ItemIsEnabled))
         else:
             self.item(row_no, ref_col_no).setFlags(~(Qt.ItemIsSelectable|Qt.ItemIsEnabled))
             self.item(row_no, ref_col_no).setSelected(False)
-
+        self.blockSignals(False)
         self.signal_segment_modified.emit(row_no)
 
 
@@ -415,7 +424,10 @@ class Widget_segments(QTableWidget):
         for segment in segments:
             segment['start'] = int(segment['start'])
             segment['end'] = int(segment['end'])
-
+            try:
+                segment['ref'] = int(segment['ref'])
+            except:
+                segment['ref'] = -1
         return segments
 
 
@@ -489,7 +501,7 @@ class Widget_segments(QTableWidget):
 
     def append_segment(self):
         self.sortByColumn(-1, Qt.AscendingOrder)
-        # APpend, i.e. set row_no to None, not clean but not time to refactor
+        # Append, i.e. set row_no to None, not clean but not time to refactor
         self.insert_segment(row_no=None)
 
 
