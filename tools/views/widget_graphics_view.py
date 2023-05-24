@@ -31,7 +31,6 @@ from PySide6.QtGui import (
     QKeyEvent,
     QPaintEvent,
     QWheelEvent,
-    QPolygonF,
     QColor,
 )
 from PySide6.QtWidgets import (
@@ -47,6 +46,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QPushButton,
     QFrame,
+    QStyle,
 )
 
 
@@ -68,6 +68,12 @@ COLOR_FINAL_RECT = QColor(0, 255, 0)
 COLOR_DISPLAY_RECT = QColor(255, 255, 255)
 # PEN_CROP_SIZE must be equal to 1 or 2
 PEN_CROP_SIZE = 1
+
+class QPolygonCustom(QGraphicsPolygonItem):
+    def paint(self, painter, option, widget):
+        option.state &= ~ QStyle.StateFlag.State_Selected
+        super(QPolygonCustom, self).paint(painter, option, widget)
+
 
 
 class Widget_graphics_view(QGraphicsView):
@@ -96,8 +102,8 @@ class Widget_graphics_view(QGraphicsView):
         self.__current_polygon = None  # the selected polygon
         self.new_polygon_points = []  # points that are stored when recording
         self.__current_polygon_points = list()
-        self.__selected_point = None
-        self.poly_points = [] # points that are stored when resizing (You could instead reuse points_lst)
+        self.__control_points = list()
+        self.__selected_control_point = None
 
         # Rect, guidelines
         self.__lines = {
@@ -491,72 +497,82 @@ class Widget_graphics_view(QGraphicsView):
         self.is_repainting = False
 
 
-
     def event_region_modified(self):
         log.info("region modified")
-        print_lightgrey("region modified")
+        print_lightcyan("region modified")
         regions = list()
         for item in self.__scene.items():
-            if type(item) == QGraphicsPolygonItem:
+            if type(item) == QPolygonCustom:
                 points = list([item.mapToScene(x) for x in item.polygon()])
                 regions.append(list([[int(point.x()), int(point.y())] for point in points]))
+        pprint(regions)
         self.signal_regions_modified.emit(regions)
+
 
     def erase_tracker_regions(self):
         print(f"erase_tracker_region")
         self.remove_control_points()
         for item in self.__scene.items():
-            if type(item) == QGraphicsPolygonItem:
+            if type(item) == QPolygonCustom:
                 self.__scene.removeItem(item)
+
 
     def record(self):
         print("record")
         self.__is_drawing_polygon = True
 
-    def delete(self):
-        if self.__selected_point:
+
+    def remove_selected_item(self):
+        if self.__selected_control_point is not None:
             print(f"delete corner: {self.__current_polygon.polygon().count()}")
             if self.__current_polygon.polygon().count() > 3:
                 print("delete corner")
+                index = self.__selected_control_point[1]
                 self.remove_control_points()
                 polygon = self.__current_polygon.polygon()
-                polygon.remove(self.__selected_point[1])
+                polygon.remove(index)
                 self.__current_polygon.setPolygon(polygon)
-                self.__selected_point = None
+                self.show_control_points()
 
-        elif self.selected is not None:
-            print("delete current")
-            pprint(self.__current_polygon_points)
-            for point, _ in self.__current_polygon_points:
-                self.__scene.removeItem(point)
-            self.__scene.removeItem(self.selected)
-            self.selected = None
+                self.event_region_modified()
+                self.__is_modifying = False
 
+        elif self.__current_polygon is not None:
+            print("delete selected polygon")
+            # polygon_points = [self.__current_polygon.mapToScene(x) for x in self.__current_polygon.polygon()]
+            # for point in polygon_points:
+            #     self.__scene.removeItem(point).
+            self.remove_control_points()
+            self.__current_polygon_points.clear()
+            self.__scene.removeItem(self.__current_polygon)
+            self.__current_polygon = None
+
+            self.event_region_modified()
+            self.__is_modifying = False
 
 
     def remove_control_points(self):
         """ removes the control points (i,e the ellipse)"""
         print("remove_control_points")
-        for item in self.__scene.items():
-            if type(item) == QGraphicsEllipseItem:
-                self.__scene.removeItem(item)
-        self.__current_polygon_points.clear()
-
-        for ellipse, _ in self.__current_polygon_points:
+        for ellipse, _ in self.__control_points:
             self.__scene.removeItem(ellipse)
-        self.__current_polygon_points.clear()
+        self.__control_points.clear()
+        self.__selected_control_point = None
 
 
     def show_control_points(self):
-        if self.__current_polygon is not None:
-            points = [self.__current_polygon.mapToScene(x) for x in self.__current_polygon.polygon()]
-            for index, point in enumerate(points):
-                x, y = point.x(), point.y()
-                ellipse = self.__scene.addEllipse(QRectF(x - 4, y - 4, 7, 7),
-                                                    pen=QPen(QColor("red")))
-                    # brush=QBrush(QColor("red")))
-                ellipse.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
-                self.__current_polygon_points.append((ellipse, index))
+        # save polygon points
+        self.__current_polygon_points = [self.__current_polygon.mapToScene(x) for x in self.__current_polygon.polygon()]
+
+        self.__control_points.clear()
+        for index, point in enumerate(self.__current_polygon_points):
+            x, y = point.x(), point.y()
+            ellipse = self.__scene.addEllipse(QRectF(x - 4, y - 4, 7, 7),
+                                                pen=QPen(QColor("red")))
+                # brush=QBrush(QColor("red")))
+            ellipse.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
+            self.__control_points.append((ellipse, index))
+        self.__selected_control_point = None
 
 
     def mousePressEvent(self, event):
@@ -565,7 +581,6 @@ class Widget_graphics_view(QGraphicsView):
 
         super(Widget_graphics_view, self).mousePressEvent(event)
         cursor_position = self.mapToScene(event.position().toPoint())
-        print("cursor positon:", cursor_position)
 
         if (event.button() == Qt.MouseButton.LeftButton
             and self.control_key_pressed
@@ -575,6 +590,7 @@ class Widget_graphics_view(QGraphicsView):
                 x, y = cursor_position.x(), cursor_position.y()
                 # ellipse = self.__scene.addEllipse(QRectF(x - 3, y - 3, 5, 5),
                 #     brush=QBrush(QColor("yellow")))
+                self.remove_control_points()
 
                 # print(self.__current_polygon)
                 points_list = self.__current_polygon.polygon().toVector()
@@ -593,15 +609,15 @@ class Widget_graphics_view(QGraphicsView):
                 else:
                     index = max(distances[0][1], distances[1][1])
                     points.insert(index, cursor_position)
-                self.__current_polygon.setPolygon(QPolygonF(points))
+                self.__current_polygon.setPolygon(points)
+                self.show_control_points()
                 # self.control_key_pressed = False
-
                 # self.event_region_modified()
                 self.__is_modifying = True
 
-
         if self.__is_drawing_polygon:
-            self.__selected_point = None
+            print_lightcyan(f"drawing polygon")
+            self.__selected_control_point = None
             if event.button() == Qt.MouseButton.RightButton:
                 self.draw_polygon()
             elif event.button() == Qt.MouseButton.LeftButton:
@@ -610,28 +626,32 @@ class Widget_graphics_view(QGraphicsView):
             return
 
         if event.button() == Qt.MouseButton.RightButton:
-            self.__selected_point = None
+            self.__selected_control_point = None
             return
 
         # self.__scene.mousePressEvent(event)
         super(Widget_graphics_view, self).mousePressEvent(event)
 
+        if self.__selected_control_point is not None:
+            self.__selected_control_point[0].setBrush(QBrush(Qt.BrushStyle.NoBrush))
+
         # Check if a point is selecteds
-        for point in self.__current_polygon_points:
+        for point in self.__control_points:
             if point[0].contains(cursor_position):
-                print("point selected")
-                self.__selected_point = point
+                self.__selected_control_point = point
+                self.__selected_control_point[0].setBrush(QBrush(QColor("red")))
                 return
+
         # Check if a polygon is selected
+        self.remove_control_points()
         if self.__scene.selectedItems():
-            print("items selected:", end ='')
-            self.remove_control_points()
             self.__current_polygon = self.__scene.selectedItems()[0]
+            print(f"items selected:", self.__current_polygon)
             self.show_control_points()
         else:
+            # elsewhere
             self.__current_polygon = None
-            self.remove_control_points()
-            self.__selected_point = None
+
 
 
     def mouseMoveEvent(self, event) -> None:
@@ -650,10 +670,11 @@ class Widget_graphics_view(QGraphicsView):
             cursor_position.setY(self.size().height())
         # print("move:", cursor_position)
 
-        if self.__selected_point:
-            self.__current_polygon_points[self.__selected_point[1]] = QPointF(cursor_position)
-            self.__current_polygon.setPolygon(QPolygonF(self.__current_polygon_points))
+        if self.__selected_control_point:
+            self.__current_polygon_points[self.__selected_control_point[1]] = QPointF(cursor_position)
+            self.__current_polygon.setPolygon(self.__current_polygon_points)
             self.__is_modifying = True
+
 
     def mouseReleaseEvent(self, event) -> None:
         if not self.__is_editing_tracker:
@@ -670,9 +691,10 @@ class Widget_graphics_view(QGraphicsView):
         self.__is_drawing_polygon = False
 
         if len(self.new_polygon_points) > 2:
-            polygon = self.__scene.addPolygon(QPolygonF(self.new_polygon_points))
+            polygon = QPolygonCustom(self.new_polygon_points)
             polygon.setPen(QPen(Qt.red, 1, Qt.SolidLine))
             polygon.setFlags(QGraphicsItem.ItemIsSelectable)
+            self.__scene.addItem(polygon)
             self.__current_polygon = polygon
 
         self.new_polygon_points = []
@@ -692,8 +714,8 @@ class Widget_graphics_view(QGraphicsView):
             self.record()
 
         elif key == Qt.Key.Key_Delete:
-            print("delete a selected polygon")
-            self.delete()
+            print("remove a selected polygon/corner")
+            self.remove_selected_item()
 
         if key == Qt.Key.Key_Control:
             self.control_key_pressed = True

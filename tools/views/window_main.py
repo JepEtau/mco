@@ -156,12 +156,6 @@ class Window_main(Window_common):
         self.widget_stabilize.signal_segment_selected[dict].connect(self.widget_painter.event_segment_selected)
         self.widget_painter.signal_regions_modified[list].connect(self.widget_stabilize.event_region_modified)
 
-        # sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        # sizePolicy.setHorizontalStretch(0)
-        # sizePolicy.setVerticalStretch(0)
-        # sizePolicy.setHeightForWidth(self.widget_painter.sizePolicy().hasHeightForWidth())
-        # self.widget_painter.setSizePolicy(sizePolicy)
-        # self.widget_painter.setMinimumSize(QSize(800, 600))
 
         self.layout_window.addWidget(self.widget_painter)
         self.setCentralWidget(self.widget_window_main)

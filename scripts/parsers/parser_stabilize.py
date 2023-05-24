@@ -128,7 +128,7 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
                     'tracker': {
                         'enable': False,
                         'inside': True,
-                        'list': list(),
+                        'regions': list(),
                     },
                 }
                 for parameter in parameters[1:]:

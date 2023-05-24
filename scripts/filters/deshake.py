@@ -212,7 +212,7 @@ def deshake(shot, images:list, image_list:list,
         if not get_hash:
             if not inserted_first_frames:
                 # frames have not been inserted because we were waiting for the first transformation
-                if segment['ref'] in 'start' or len(output_images) > 0:
+                if segment['from'] == 'start' or len(output_images) > 0:
                     sys.exit(print_red("bug: deshake!!! segment[ref]=%s, output images: %d" % (segment['ref'], len(output_images))))
 
                 if verbose:

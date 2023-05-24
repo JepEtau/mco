@@ -148,7 +148,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
             regions = list()
         self.widget_segments.update_regions(regions)
         settings = self.get_current_settings()
-        self.signal_edition_started.emit()
+        self.edition_started()
         self.signal_settings_modified.emit(settings)
 
 
@@ -279,7 +279,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         # else:
         #     # Get only the modified segment
         settings = self.get_current_settings()
-        self.signal_edition_started.emit()
+        self.edition_started()
         self.signal_settings_modified.emit(settings)
 
 
