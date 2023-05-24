@@ -1,6 +1,8 @@
 # TODO script
 (1)
 - use ROI for deshake
+- use ref frame no. to avoid 2 segments and avoid jump
+- append regions to the hash value
 
 (2)
 - stats: list unused curves. reason: clean the db

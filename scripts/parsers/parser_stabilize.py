@@ -117,7 +117,9 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
             for segment in segments[1:]:
                 parameters = segment.split(':')
                 segment_dict = {
+                    'ref': -1,
                     'alg': parameters[0],
+                    'from': 'middle',
                     'mode': {
                         'vertical': False,
                         'horizontal': False,
@@ -132,7 +134,7 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
                 for parameter in parameters[1:]:
                     # print_orange("\t%s" % (parameter))
                     k, v = parameter.split('=')
-                    if k in ['start', 'end']:
+                    if k in ['start', 'end', 'ref']:
                         nested_dict_set(segment_dict, int(v), k)
                     elif k == 'mode':
                         options = v.split('+')

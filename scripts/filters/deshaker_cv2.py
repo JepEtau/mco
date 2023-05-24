@@ -298,7 +298,8 @@ class CV2_deshaker:
             'end': None,
         }
 
-        ref = segment['ref']
+        start_from = segment['from']
+        start_frame_no = segment['ref']
         mode = segment['mode']
 
         self.__is_tracker_enabled = segment['tracker']['enable']
@@ -308,19 +309,22 @@ class CV2_deshaker:
                 self.__tracker_contours.append(np.array(region, np.float32).reshape((-1,1,2)))
             self.__tracker_is_inside = segment['tracker']['inside']
 
-        if ref == 'start':
+        if start_from == 'start':
             # Start from first frame
             start_index = 0
-        elif ref == 'end':
+        elif start_from == 'end':
             # Start from last frame
             start_index = len(images) - 1
-        elif ref == 'middle':
+        elif start_from == 'middle':
             # Start from middle of the segment
             start_index = int(len(images) / 2 - 1)
+        elif start_from == 'frame':
+            # Start from specified frame no.
+            start_index = start_frame_no
         else:
-            sys.exit(print_red("CV2_deshaker.stabilize: error: ref=%s" % (ref)))
+            sys.exit(print_red(f"CV2_deshaker.stabilize: error: ref={start_frame_no}"))
 
-        indice = 4
+        indice = 0
 
         # Define a filter str
         filters_str = f"{self.__max_corners}:{self.__quality_level:0.2f}:{self.__min_distance:.1f}:{self.__block_size}:{indice}"
@@ -352,7 +356,7 @@ class CV2_deshaker:
         # Reset transformation
         self.__transformations.clear()
 
-        if last_transformation is not None and ref == 'middle':
+        if last_transformation is not None and start_from == 'middle':
             print_red("Error: stabilize, previous transformation will be ignored, correct the stabilization segments!")
             last_transformation = None
         img_stabilized, img_for_tracking, keypoints_ref = self.__get_initial_image(
@@ -362,7 +366,7 @@ class CV2_deshaker:
 
         # cv2.imwrite("/home/adg/mco/cache/ep01/asuivre/004/07/img_for_tracking.png", img_for_tracking)
 
-        if ref == 'middle':
+        if start_from in ['middle', 'frame']:
             verbose = True
 
             output_images = [img_stabilized]
@@ -426,14 +430,14 @@ class CV2_deshaker:
             transformations['start'] = transformation
 
 
-        elif ref == 'start':
+        elif start_from == 'start':
             self.__transformations.append(last_transformation)
             output_images = [img_stabilized]
             start = 1
             end = len(images)
             transformation = None
 
-            print_pink(f"stabilize from {ref}, start={start}, end={end}")
+            print_pink(f"stabilize from {start_from}, start={start}, end={end}")
             for i in range(start, end):
                 # if verbose:
                 #     print(f"\timage {i}", end=' ')
@@ -465,11 +469,11 @@ class CV2_deshaker:
             transformations['end'] = transformation
 
 
-        elif ref == 'end':
+        elif start_from == 'end':
             self.__transformations.append(last_transformation)
             output_images = [img_stabilized]
             transformation = None
-            print_pink(f"stabilize from {ref}, start={start_index}, end={0}")
+            print_pink(f"stabilize from {start_from}, start={start_index}, end={0}")
             for i in range(start_index-1, -1, -1):
                 if verbose:
                     print(f"\timage {i}", end=' ')

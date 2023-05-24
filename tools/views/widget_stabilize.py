@@ -77,7 +77,6 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.groupBox_stabilize.installEventFilter(self)
         self.groupBox_stabilize.blockSignals(True)
         self.widget_segments.installEventFilter(self)
-        self.widget_segments.set_parent(self)
         self.installEventFilter(self)
 
         self.controller.signal_stabilize_settings_refreshed[dict].connect(self.event_stabilize_settings_refreshed)
@@ -251,19 +250,10 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
 
     def event_segment_double_clicked(self, item:QTableWidgetItem):
-        row_no = item.row()
-        col_no = item.column()
-        log.info(f"selected frame at row={row_no}, col={col_no}")
-        if col_no == 1:
-            # Select end of the selected segment
-            try: frame_no = int(self.widget_segments.item(row_no, col_no).text())
-            except: return
-        else:
-            # Select start of the selected segment
-            try: frame_no = int(self.widget_segments.item(row_no, 0).text())
-            except: return
-        log.info(f"signal_frame_selected: {frame_no}")
-        self.signal_frame_selected.emit(frame_no)
+        frame_no = self.widget_segments.get_frame_no(item)
+        if frame_no != -1:
+            log.info(f"signal_frame_selected: {frame_no}")
+            self.signal_frame_selected.emit(frame_no)
 
 
     def event_segment_modified(self, segment_no:int):
@@ -272,8 +262,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         #     print_lightcyan(f"Table is completely modified")
         # else:
         #     # Get only the modified segment
-        self.signal_edition_started.emit()
         settings = self.get_current_settings()
+        self.signal_edition_started.emit()
         self.signal_settings_modified.emit(settings)
 
 
@@ -298,8 +288,12 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.widget_segments.set_frame_no('end', frame_no)
 
 
-    def event_ref_modified(self):
+    def event_from_modified(self):
         self.widget_segments.select_next_reference()
+
+    def event_ref_modified(self):
+        frame_no = self.controller.get_current_frame_no()
+        self.widget_segments.set_frame_no('ref', frame_no)
 
 
     def event_mode_modified(self, key):
@@ -420,7 +414,10 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         elif key == Qt.Key.Key_E:
             self.event_end_modified()
             return True
-        elif key == Qt.Key.Key_I:
+        elif key == Qt.Key.Key_F:
+            self.event_from_modified()
+            return True
+        elif key == Qt.Key.Key_N:
             self.event_ref_modified()
             return True
         elif key in [Qt.Key.Key_V, Qt.Key.Key_H, Qt.Key.Key_R]:

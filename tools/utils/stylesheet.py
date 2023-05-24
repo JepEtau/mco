@@ -470,6 +470,10 @@ def set_stylesheet(widget):
                 background-color: rgb(51, 102, 204);
                 color: rgb(220, 220, 220);
             }
+            QTableWidget::item:disabled {
+                background-color: rgb(35, 35, 35);
+                color: rgb(60, 60, 60);
+            }
 
         """)
 

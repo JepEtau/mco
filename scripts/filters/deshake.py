@@ -85,6 +85,7 @@ def deshake(shot, images:list, image_list:list,
         segment['count'] = segment['end'] - segment['start'] + 1
         segment['start_saved'] = shot['start']
         segment['start'] -= shot['start']
+        segment['ref'] -= shot['ref']
 
 
     if verbose and not get_hash:
@@ -140,10 +141,7 @@ def deshake(shot, images:list, image_list:list,
         previous_transformation = transformations['end']
 
         # Create a filter
-        filter_str += "deshake=%s:%d:%d:%s:%s" % (
-                segment['alg'], start, count,
-                segment['ref'] if segment['ref'] is not None else 'none',
-                segment['mode'])
+        filter_str += f"deshake={segment['alg']}:{start}:{count}:{segment['from']}:{segment['ref']}:{segment['mode']}"
 
         if not get_hash:
             print("\t\t\t%s" % (filter_str))
