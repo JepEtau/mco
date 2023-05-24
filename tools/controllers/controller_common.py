@@ -160,7 +160,7 @@ class Controller_common(QObject):
 
 
     def get_current_frame_no(self, initial=False):
-        pprint(self.current_frame)
+        # pprint(self.current_frame)
         if 'replace' in self.current_frame.keys():
             return self.current_frame['replace']
         return self.current_frame['frame_no']

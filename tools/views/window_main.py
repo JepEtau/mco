@@ -150,8 +150,11 @@ class Window_main(Window_common):
         self.layout_window.setContentsMargins(PAINTER_MARGIN_LEFT, PAINTER_MARGIN_TOP, 0, 0)
         # self.widget_painter = Widget_painter(self.widget_window_main, self)
 
-        self.widget_painter = Widget_graphics_view(self.widget_window_main, self)
+        self.widget_painter = Widget_graphics_view(self.widget_window_main, self, self.controller)
 
+        # Connect signals between widgets
+        self.widget_stabilize.signal_segment_selected[dict].connect(self.widget_painter.event_segment_selected)
+        self.widget_painter.signal_regions_modified[list].connect(self.widget_stabilize.event_region_modified)
 
         # sizePolicy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         # sizePolicy.setHorizontalStretch(0)
@@ -194,18 +197,31 @@ class Window_main(Window_common):
             w.raise_()
             w.blockSignals(False)
 
+        w = self.widget_painter
+        if w.is_modifying_tracking_regions():
+            w.blockSignals(True)
+            w.show()
+            w.activateWindow()
+            w.raise_()
+            w.blockSignals(False)
+
+
+
     def event_edition_started(self):
         self.widget_selection.edition_started(True)
 
 
     def changeEvent(self, event: QEvent) -> None:
+        verbose = False
         # print_lightgreen(f"window_main: changeEvent {event.type()}")
         if event.type() == QEvent.ActivationChange:
     #         print("* QEvent.ActivationChange", flush=True)
-            print(f"changeEvent: window state:", self.windowState())
-            print(f"\tis active: {self.isActiveWindow()}")
+            if verbose:
+                print(f"changeEvent: window state:", self.windowState())
+                print(f"\tis active: {self.isActiveWindow()}")
             if self.isActiveWindow():
                 self.show_all()
+
     #         # print("\t is active? ", self.isActiveWindow(), flush=True)
     #         if self.previous_state != self.windowState():
 
@@ -375,7 +391,7 @@ class Window_main(Window_common):
         self.widget_replace.refresh_preview_options(new_preview_settings)
         self.widget_stabilize.refresh_preview_options(new_preview_settings)
         self.widget_geometry.refresh_preview_options(new_preview_settings)
-
+        self.widget_painter.refresh_preview_options(new_preview_settings)
 
 
     def flush_image(self):

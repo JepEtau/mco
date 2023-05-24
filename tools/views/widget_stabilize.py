@@ -99,19 +99,18 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         # Push button is used to calculate then display
         self.is_obsolete = True
+        self.pushButton_show_tracker.setChecked(False)
         try:
             self.pushButton_set_preview.setEnabled(s['widget']['allowed'])
             self.pushButton_set_preview.setChecked(s['widget']['enabled'])
             self.previous_preview_state = s['widget']['enabled']
             self.initial_preview_state = s['widget']['enabled']
-            self.pushButton_show_tracker.setChecked(s['widget']['show_tracker'])
             self.pushButton_show_tracker.setEnabled(s['widget']['allowed'])
         except:
             self.pushButton_set_preview.setEnabled(False)
             self.pushButton_set_preview.setChecked(False)
             self.previous_preview_state = False
             self.initial_preview_state = False
-            self.pushButton_show_tracker.setChecked(False)
             self.pushButton_show_tracker.setEnabled(False)
 
         self.pushButton_stabilize.setEnabled(False)
@@ -124,17 +123,33 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
 
     def refresh_preview_options(self, new_preview_settings):
+        print_lightcyan("refresh_preview_options: stabilize")
+        pprint(new_preview_settings)
         self.is_edition_allowed = new_preview_settings['stabilize']['allowed']
         enabled = new_preview_settings['stabilize']['enabled']
 
         self.pushButton_set_preview.blockSignals(True)
         self.pushButton_set_preview.setEnabled(self.is_edition_allowed)
+        # is_checked = self.pushButton_set_preview.isChecked()
+        self.pushButton_set_preview.blockSignals(False)
+
+        self.pushButton_show_tracker.blockSignals(True)
         self.pushButton_show_tracker.setEnabled(self.is_edition_allowed)
+        self.pushButton_show_tracker.setChecked(new_preview_settings['stabilize']['show_tracker'])
+        self.pushButton_show_tracker.blockSignals(False)
+
         # self.pushButton_set_preview.setChecked(enabled)
         # self.previous_preview_state = enabled
-        is_checked = self.pushButton_set_preview.isChecked()
-        self.pushButton_set_preview.blockSignals(False)
+
         # log.info(f"enable: {is_checked}, allowed: {self.is_edition_allowed}")
+
+    def event_region_modified(self, regions:list):
+        if regions is None:
+            regions = list()
+        self.widget_segments.update_regions(regions)
+        settings = self.get_current_settings()
+        self.signal_edition_started.emit()
+        self.signal_settings_modified.emit(settings)
 
 
     def get_preview_options(self):
@@ -246,7 +261,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
     def event_segment_selected(self):
         log.info("segment selected")
-        self.widget_segments.select_segment()
+        segment_values = self.widget_segments.select_segment()
+        self.signal_segment_selected.emit(segment_values)
 
 
     def event_segment_double_clicked(self, item:QTableWidgetItem):
@@ -340,6 +356,9 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
 
     def event_show_tracker_toggled(self, is_checked:bool=False):
+        log.info(f"show tracker: {'true' if is_checked else 'false'}")
+        if is_checked:
+            self.event_segment_selected()
         self.signal_preview_options_changed.emit()
 
 

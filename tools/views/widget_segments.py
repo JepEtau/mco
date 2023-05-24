@@ -234,8 +234,8 @@ class Widget_segments(QTableWidget):
 
     def select_segment(self):
         row_no = self.currentRow()
-        log.info(f"new segment selected: {row_no}")
         selected_rows = list(set([index.row() for index in self.selectedIndexes()]))
+        segment_values = None
         if len(selected_rows) == 0:
             log.info(f"Do not save new selection")
             self.selectionModel().blockSignals(True)
@@ -247,7 +247,7 @@ class Widget_segments(QTableWidget):
         else:
             log.info(f"new segment selected: {row_no}")
             segment_values = self.get_segment_values(row_no=row_no)
-
+        return segment_values
 
     def event_current_cell_changed(self, row_no, column_no, previous_row_no, previous_column_no):
         log.info(f"new cell selected: {row_no}, {column_no}")
@@ -551,6 +551,14 @@ class Widget_segments(QTableWidget):
 
     def event_tracker_changed(self, state:bool) -> None:
         self.signal_segment_modified.emit(self.currentRow())
+
+    def update_regions(self, regions:list) -> None:
+        pprint(regions)
+        row_no = self.currentRow()
+        col_no = self._column_dict['tracker']['no']
+        widget = self.cellWidget(row_no, col_no)
+        widget.setProperty('regions', regions)
+        widget.findChild(QLineEdit, 'count').setText(f"{len(regions)}")
 
 
 

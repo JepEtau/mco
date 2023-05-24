@@ -97,6 +97,9 @@ class Controller_video_editor(Controller_common,
         self.filepath = list()
         self.current_task = ''
 
+        self.__is_tracker_toggled = False
+
+
     def set_view(self, view):
         log.info("set view, connect signals")
         self.view = view
@@ -700,10 +703,6 @@ class Controller_video_editor(Controller_common,
                 self.signal_shot_per_curves_modified.emit(None)
 
 
-        # Remove this
-        # elif self.current_frame is None:
-        #     self.signal_load_curves.emit(None)
-
         # Get geometry: already done each time a modification is done
         # Stabilize settings: already loaded
 
@@ -744,6 +743,12 @@ class Controller_video_editor(Controller_common,
         # log.info("preview options changed")
         self.preview_options = preview_options
         self.consolidate_preview_options()
+
+        # if self.__is_tracker_toggled:
+        #     self.signal_
+        #     self.__is_tracker_toggled = False
+
+
         self.signal_preview_options_consolidated.emit(self.preview_options)
         self.signal_reload_frame.emit()
 
@@ -815,30 +820,22 @@ class Controller_video_editor(Controller_common,
 
             options['geometry']['shot']['is_default'] = tmp
 
+
+        if options['stabilize']['show_tracker']:
+            if not options['stabilize']['allowed'] or not options['stabilize']['enabled']:
+                options['stabilize']['show_tracker'] = False
+
+            if not self.preview_options['stabilize']['show_tracker']:
+                # Just enabled, disable geometry preview:
+                options['geometry']['resize_preview'] = False
+                options['geometry']['final_preview'] = False
+                self.__is_tracker_toggled = True
+
         self.preview_options = options
 
         if verbose:
             print_lightgreen("\tconsolidated:")
             pprint(self.preview_options)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

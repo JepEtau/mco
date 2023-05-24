@@ -28,20 +28,31 @@ def verify_stabilize_segments(shot, segments):
         return True
 
     # 1st segment
-    previous_segment = segments[0]
-    if (previous_segment['start'] < shot['start']
-        or previous_segment['end'] >= shot['start'] + shot['count']):
+    segment = segments[0]
+    if (segment['start'] < shot['start']
+        or segment['end'] >= shot['start'] + shot['count']):
         # Segment shall fit in shot
-        print_red(f"Error: segment [{previous_segment['start']}..{previous_segment['end']}]is not a part of the shot [{shot['start']}..{shot['start'] + shot['count']}]")
+        print_red(f"Error: segment [{segment['start']}..{segment['end']}]is not a part of the shot [{shot['start']}..{shot['start'] + shot['count']}]")
+        return False
+
+    if (segment['from'] == 'frame'
+        and not (segment['start'] <= segment['ref'] <= segment['end'])):
+        # ref shall be inside segment
         return False
 
     if len(segments) == 1:
         # Single segment
         return True
 
+    previous_segment = segments[0]
     for segment in segments [1:]:
         if segment['end'] >= shot['start'] + shot['count']:
             # Segment shall fit in shot
+            return False
+
+        if (segment['from'] == 'frame'
+            and not (segment['start'] <= segment['ref'] <= segment['end'])):
+            # ref shall be inside segment
             return False
 
         if previous_segment['start'] <= segment['start'] <= previous_segment['end']:
