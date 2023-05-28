@@ -118,7 +118,7 @@ def deshake(shot, images:list, image_list:list,
             # Append images until start of next segment
             if not inserted_first_frames:
                 if segment['start'] > 0:
-                    if segment['ref'] == 'start':
+                    if segment['from'] == 'start':
                         # No need to apply transformation because ref of this segment is start
                         # i.e. last_transformation=None
                         if verbose:
@@ -175,19 +175,19 @@ def deshake(shot, images:list, image_list:list,
 
             # print(transformations)
 
-        elif algorithm == 'skimage_deshaker':
-            deshaker = Skimage_deshaker()
-            __output_images, __filter_str = deshaker.stabilize(
-                shot=shot,
-                images=images[start:start+count],
-                image_list=image_list[start:start+count],
-                ref=segment['ref'],
-                step_no=step_no,
-                input_hash=input_hash,
-                mode=segment['mode'],
-                get_hash=get_hash,
-                do_force=do_force)
-            del deshaker
+        # elif algorithm == 'skimage_deshaker':
+        #     deshaker = Skimage_deshaker()
+        #     __output_images, __filter_str = deshaker.stabilize(
+        #         shot=shot,
+        #         images=images[start:start+count],
+        #         image_list=image_list[start:start+count],
+        #         ref=segment['ref'],
+        #         step_no=step_no,
+        #         input_hash=input_hash,
+        #         mode=segment['mode'],
+        #         get_hash=get_hash,
+        #         do_force=do_force)
+        #     del deshaker
         else:
             sys.exit(print_red("error: deshake: algorithm not recognized: %s" % (algorithm)))
             # To remove from this file and create 'stabilize' function
@@ -212,11 +212,12 @@ def deshake(shot, images:list, image_list:list,
         if not get_hash:
             if not inserted_first_frames:
                 # frames have not been inserted because we were waiting for the first transformation
-                if segment['from'] == 'start' or len(output_images) > 0:
-                    sys.exit(print_red("bug: deshake!!! segment[ref]=%s, output images: %d" % (segment['ref'], len(output_images))))
+                # if segment['from'] == 'start' or len(output_images) > 0:
+                #     sys.exit(print_red("bug: deshake!!! segment[ref]=%s, output images: %d" % (segment['ref'], len(output_images))))
 
                 if verbose:
-                    print_lightcyan("\t- append %d images at the beggining (modified)" % (segment['start']))
+                    print_lightcyan(f"\t- append {segment['start']} images at the beginning (modified):")
+                    print("\t", transformations)
                 for i in range(segment['start']):
                     output_images.append(apply_cv2_transformation(images[i], transformations['start']))
                 inserted_first_frames = True
