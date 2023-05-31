@@ -265,38 +265,28 @@ def pprint_audio(db_audio, first_indent:int=0, ignore=list()):
     print("%s}" % (first_indent_str))
 
 
-
-def get_database_size(obj, seen=None):
-    """Recursively finds size of objects"""
-    size = sys.getsizeof(obj)
-    if seen is None:
-        seen = set()
-    obj_id = id(obj)
-    if obj_id in seen:
-        return 0
-    # Important mark as seen *before* entering recursion to gracefully handle
-    # self-referential objects
-    seen.add(obj_id)
-    if isinstance(obj, dict):
-        size += sum([get_database_size(v, seen) for v in obj.values()])
-        size += sum([get_database_size(k, seen) for k in obj.keys()])
-    elif hasattr(obj, '__dict__'):
-        size += get_database_size(obj.__dict__, seen)
-    elif hasattr(obj, '__iter__') and not isinstance(obj, (str, bytes, bytearray)):
-        size += sum([get_database_size(i, seen) for i in obj])
-    return size
-
-
-
 def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int):
+    verbose = False
+
+    if k_ed in db['common']['editions']['discard']:
+        return ''
+
     # Returns the part from the frame no.:
-    db_ep = db[k_ep]['video'][k_ed]
+    try:
+        db_ep = db[k_ep]['video'][k_ed]
+    except:
+        return ''
     for k_p in K_ALL_PARTS:
-        # print("%s.get_k_part_from_frame_no: %d in %s:%s:%s ?" % (__name__, frame_no, k_ed, k_ep, k_p))
+        if verbose:
+            print(f"\tget_k_part_from_frame_no: {frame_no} in {k_ed}:{k_ep}:{k_p}")
         # pprint(db_ep[k_p])
-        if 'start' not in db_ep[k_p].keys():
-            print("warning: todo: missing part in database: %s:%s:%s" % (k_ed, k_ep, k_p))
-            continue
+        try:
+            if 'start' not in db_ep[k_p].keys():
+                # print("warning: todo: missing part in database: %s:%s:%s" % (k_ed, k_ep, k_p))
+                continue
+        except:
+            print(f"\twarning: get_k_part_from_frame_no: part not found for frame {frame_no} in %s:%s:%s" % (k_ed, k_ep, k_p))
+            return ''
         start = db_ep[k_p]['start']
         count = db_ep[k_p]['count']
         if start <= frame_no < (start + count):

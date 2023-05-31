@@ -83,7 +83,7 @@ def get_replaced_frames(db, k_ep, k_part) -> dict:
     """
     verbose = False
     if verbose:
-        print_lightgreen("get_replaced_frames: %s:%s" % (k_ep, k_part))
+        print_lightgreen(f"get_replaced_frames: {k_ep}:{k_part}")
     replace = dict()
 
     # Get the list of editions and episode that are used by this ep/part

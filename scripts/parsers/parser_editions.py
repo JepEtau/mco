@@ -169,7 +169,7 @@ def parse_editions(database, cfg_foldername, verbose=False):
 
         if len(edition['inputs']['video']) == 0 and len(edition['inputs']['audio']) == 0:
             del db_editions[k_ed]
-            print("warning: %s: remove edition [%s]" % (__name__, k_ed))
+            # print(f"warning: {__name__}: remove edition {k_ed}")
             continue
 
         # Consolidate dimensions
@@ -187,5 +187,5 @@ def parse_editions(database, cfg_foldername, verbose=False):
             # Create a simple link (do not copy)
             edition['dimensions'] = db_common['dimensions']
 
-        db_editions['available'] .append(k_ed)
+        db_editions['available'].append(k_ed)
 

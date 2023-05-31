@@ -21,7 +21,6 @@ from utils.common import (
 from shot.utils import get_shot_from_frame_no
 from utils.nested_dict import nested_dict_set
 
-SEGMENTS_MAX_COUNT = 5
 
 # mode, options=
 #   - vertical
@@ -118,23 +117,32 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
             for segment in segments[1:]:
                 parameters = segment.split(':')
                 segment_dict = {
+                    'ref': -1,
                     'alg': parameters[0],
+                    'from': 'middle',
                     'mode': {
                         'vertical': False,
                         'horizontal': False,
                         'rotation': False
-                    }
+                    },
+                    'tracker': {
+                        'enable': False,
+                        'inside': True,
+                        'regions': list(),
+                    },
                 }
                 for parameter in parameters[1:]:
                     # print_orange("\t%s" % (parameter))
                     k, v = parameter.split('=')
-                    if k in ['start', 'end']:
+                    if k in ['start', 'end', 'ref']:
                         nested_dict_set(segment_dict, int(v), k)
                     elif k == 'mode':
                         options = v.split('+')
                         for option in options:
                             if option in STABILIZE_MODES:
                                 segment_dict['mode'][option] = True
+                    elif k == 'tracker':
+                        nested_dict_set(segment_dict, parse_tracker(v), 'tracker')
                     else:
                         nested_dict_set(segment_dict, v, k)
 
@@ -157,6 +165,27 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
                 pprint(shot['deshake'])
                 # if k_ed == 'f' and shot['no'] == 23:
                 #     sys.exit()
+
+
+def parse_tracker(tracker_str:str):
+    tracker = {
+        'enable': False,
+        'inside': True,
+        'regions': list(),
+    }
+    for v in tracker_str.split(','):
+        if v == 'enable':
+            tracker['enable'] = True
+        elif v == 'inside':
+            tracker['inside'] = True
+        elif v == 'outside':
+            tracker['inside'] = False
+        else:
+            point_list = re.findall(re.compile("\((\d+)\.(\d+)\)"), v)
+            tracker['regions'].append(list([int(point[0]), int(point[1])] for point in point_list))
+    return tracker
+
+
 
 
 def get_initial_shot_stabilize_settings(db, k_ep, k_part) -> dict:

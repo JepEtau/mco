@@ -75,7 +75,7 @@ def ffmpeg_filter(shot, images:list, image_list:list,
 
     do_use_ffv1 = False
     if not platform.system() == "Windows":
-        # for fucking linux
+        # Linux, creation of FFv1 fails: process does not return.
         use_memory = False
         do_use_ffv1 = False
 
@@ -125,11 +125,11 @@ def ffmpeg_filter(shot, images:list, image_list:list,
             print_lightgrey("\t\t\tImages have not been saved")
 
 
-        if are_already_been_saved and not do_use_ffv1:
+        if not do_use_ffv1:
             print_lightgrey("\t\t\tUse FFmpeg concatenate filter")
 
-            if not do_use_ffv1:
-                input_folder = os.path.dirname(image_list[0])
+            input_folder = os.path.dirname(image_list[0])
+            if not are_already_been_saved:
                 if not os.path.exists(input_folder):
                     os.makedirs(input_folder)
                 for img, filepath in zip(images, image_list):
@@ -182,6 +182,9 @@ def ffmpeg_filter(shot, images:list, image_list:list,
             # Remove temporary file
             try: os.remove(ffv1_filepath)
             except:pass
+
+            if not os.path.exists(output_folder):
+                os.makedirs(output_folder)
 
             # Create a FFV1 file
             ffv1_filepath = os.path.join(output_folder, 'tmp.mkv')

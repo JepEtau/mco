@@ -6,6 +6,9 @@ from copy import deepcopy
 import platform
 
 
+INITIAL_FRAME_WIDTH = 720
+INITIAL_FRAME_HEIGHT = 576
+
 FINAL_FRAME_WIDTH = 1440
 FINAL_FRAME_HEIGHT = 1080
 STEP_INC = 1
@@ -54,7 +57,7 @@ def get_filters_from_shot(db, shot):
     if verbose:
         print_lightgreen(f"get filters from shot: {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}, start: {shot['start']}")
 
-    if shot['filters'] == 'default':
+    if shot['filters_id'] == 'default':
         if verbose:
             print_lightgrey(f"\tdefault filter")
             pprint(db[k_ep]['video'][k_ed][k_part]['filters'])
@@ -63,21 +66,25 @@ def get_filters_from_shot(db, shot):
         if 'filters' not in db[k_ep]['video'][k_ed][k_part].keys():
             sys.exit(print_red(f"Error: {k_ed}:{k_ep}:{k_part}: no available filters"))
 
-        filters = db[k_ep]['video'][k_ed][k_part]['filters']['default']
+        try:
+            filters = db[k_ep]['video'][k_ed][k_part]['filters']['default']
+        except:
+            print_red(f"Error: default filter is not defined but required by {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}")
+            pprint(shot)
+            sys.exit()
 
-    elif isinstance(shot['filters'], str):
+    elif isinstance(shot['filters_id'], str):
         if verbose:
             print_lightgrey(f"\tcustom filter: {shot['filters']}")
 
         # This shot uses a custom filter defined in the 'filters' struct in this part
         try:
-            filters = db[k_ep]['video'][k_ed][k_part]['filters'][shot['filters']]
+            filters = db[k_ep]['video'][k_ed][k_part]['filters'][shot['filters_id']]
         except:
             print_red(f"Error: {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}, filter {shot['filters']} not found")
             print_red(f"\tdefined filters: {list(db[k_ep]['video'][k_ed][k_part]['filters'].keys())}")
             print_orange(f"\tfallback: using default")
             filters = db[k_ep]['video'][k_ed][k_part]['filters']['default']
-
     else:
         # This shot may default filters, but to be validated
         print_red(f"Error: no filters defined for {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}")

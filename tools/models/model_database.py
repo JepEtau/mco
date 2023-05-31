@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append('../scripts')
+
 
 
 from copy import deepcopy
@@ -47,12 +47,11 @@ from video.consolidate_av import (
 )
 from parsers.parser_shots import consolidate_target_shots, consolidate_target_shots_g
 
-from models.model_geometry import Model_geometry
-from models.model_curves import Model_curves
-from models.model_replace import Model_replace
-from models.model_stabilize import Model_stabilize
-
-
+from .model_geometry import *
+from .model_curves import *
+from .model_replace import *
+from .model_database import *
+from .model_stabilize import *
 
 class Model_database(Model_geometry,
                     Model_curves,
@@ -70,7 +69,7 @@ class Model_database(Model_geometry,
         # Variables
         self.global_database = None
         self.initial_database = dict()
-        database_path = os.path.join("..", PATH_DATABASE)
+        database_path = os.path.join(PATH_DATABASE)
 
         parse_common_configuration(self.initial_database, database_path)
 
@@ -188,7 +187,7 @@ class Model_database(Model_geometry,
 
             # Initialize db for edition
             if k_part != '':
-                self.initialize_db_for_replace(db=self.global_database, k_ep=k_ep, k_part=k_part_g)
+                self.initialize_db_for_replace(db=self.global_database, k_ep=k_ep, k_part=k_part)
                 self.initialize_db_for_geometry(self.global_database, k_ep=k_ep, k_part=k_part)
                 self.initialize_db_for_stabilize(self.global_database, k_ep=k_ep, k_part=k_part)
                 self.initialize_db_for_curves(db=self.global_database, k_ep=k_ep, k_part=k_part)
@@ -242,41 +241,77 @@ class Model_database(Model_geometry,
 
     def is_db_modified(self, type:str=''):
         if type == 'curves':
-            return self.is_curves_db_modified
+            return bool(self.db_curves_library)
         elif type == 'shot_selection':
-            return self.is_curves_selection_db_modified
+            return bool(self.db_curves_selection)
         elif type == 'replace':
-            return self.is_replace_db_modified
+            return bool(self.db_replaced_frames)
         elif type == 'geometry':
-            return self.is_geometry_db_modified
+            return (bool(self.db_target_geometry)
+            or bool(self.db_default_shot_geometry)
+            or bool(self.db_shot_geometry))
         elif type == 'stabilize':
-            return self.is_stabilize_db_modified
+            return bool(self.db_stabilize)
+
+        print_lightgreen('curves')
+        pprint(self.db_curves_library)
+        print_lightgreen('curves selection')
+        pprint(self.db_curves_selection)
+        print_lightgreen('replace')
+        pprint(self.db_replaced_frames)
+        print_lightgreen('geometry: target')
+        pprint(self.db_target_geometry)
+        print_lightgreen('geometry: default shot geometry')
+        pprint(self.db_default_shot_geometry)
+        print_lightgreen('geometry: shot geometry')
+        pprint(self.db_shot_geometry)
+        print_lightgreen('stabilize')
+        pprint(self.db_stabilize)
+
+        # is_default_geometry_modified = bool(self.db_default_shot_geometry)
+        is_default_geometry_modified = False
+        for _k_ed in self.db_default_shot_geometry.keys():
+            for _k_ep in self.db_default_shot_geometry[_k_ed].keys():
+                for _k_part in self.db_default_shot_geometry[_k_ed][_k_ep].keys():
+                    crop = self.db_default_shot_geometry[_k_ed][_k_ep][_k_part]['crop']
+                    for v in crop:
+                        if v != 0:
+                            is_default_geometry_modified = True
+                            break
 
 
-        return (self.is_curves_db_modified
-            or self.is_curves_selection_db_modified
-            or self.is_replace_db_modified
-            or self.is_geometry_db_modified
-            or self.is_stabilize_db_modified)
+        if (bool(self.db_curves_library)
+            or bool(self.db_curves_selection)
+            or bool(self.db_replaced_frames)
+            or bool(self.db_target_geometry)
+            or is_default_geometry_modified
+            or bool(self.db_shot_geometry)
+            or bool(self.db_stabilize)):
+            return True
+
+        return False
 
 
     def get_modified_db(self) -> list:
         modified_db = list()
 
-        if self.is_stabilize_db_modified:
+        if self.db_stabilize:
             modified_db.append('stabilize/deshake')
 
-        if self.is_curves_db_modified:
+        if self.db_curves_library:
             modified_db.append('RGB curves')
 
-        if self.is_curves_selection_db_modified:
+        if self.db_curves_selection:
             modified_db.append('RGB curves selection')
 
-        if self.is_replace_db_modified:
+        if self.db_replaced_frames:
             modified_db.append('frames to replace')
 
-        if self.is_geometry_db_modified:
+        if (self.db_target_geometry
+            or self.db_default_shot_geometry
+            or self.db_shot_geometry):
             modified_db.append('geometry')
+
 
         return modified_db
 

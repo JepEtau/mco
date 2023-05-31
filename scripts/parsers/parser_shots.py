@@ -50,7 +50,8 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
             'no': shot_no,
             'start': start,
             'count': count,
-            'filters': 'default',
+            'filters': None,
+            'filters_id': 'default',
             'curves': None,
             'replace': dict(),
         })
@@ -63,7 +64,7 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
                 d = p.split('=')
                 if d[0] == 'filters':
                     # custom filter
-                    db_shots[shot_no]['filters'] = d[1]
+                    db_shots[shot_no]['filters_id'] = d[1]
 
                 elif d[0] == 'ed':
                     # edition that will be used to generate this shot
@@ -108,6 +109,97 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
 
 
 
+
+def parse_shotlist_new(db_shots, config, k_section, verbose=False) -> None:
+    for k_option in config.options(k_section):
+        value_str = config.get(k_section, k_option)
+        value_str = value_str.replace(' ','')
+
+        shot_no = int(k_option)
+        shot_properties = value_str.split(',')
+
+
+        # Shot may specify start or start:end
+        if ':' in shot_properties[0]:
+            start_end = shot_properties[0].split(':')
+            # first field is the start and end of the shot
+            start = int(start_end[0])
+            if len(start_end) > 1:
+                end = int(start_end[1])
+            else:
+                end = start
+            count = end - start
+        else:
+            start = int(shot_properties[0])
+            count = 0
+
+        # Append this shot to the list of shots
+        db_shots.append({
+            'no': shot_no,
+            'start': start,
+            'count': count,
+            'filters': None,
+            'filters_id': 'default',
+            'curves': None,
+            'replace': dict(),
+        })
+        # print(shot_properties)
+        # print(db_shots[-1])
+
+        # This shot may contains other customized properties
+        if len(shot_properties) > 1:
+            for p in shot_properties:
+                d = p.split('=')
+                if d[0] == 'filters':
+                    # custom filter
+                    db_shots[shot_no]['filters_id'] = d[1]
+
+#                 elif d[0] == 'ed':
+#                     # edition that will be used to generate this shot
+#                     if 'src' not in db_shots[shot_no].keys():
+#                         db_shots[shot_no]['src'] = dict()
+#                     db_shots[shot_no]['src'].update({'k_ed': d[1]})
+
+#                 elif d[0] == 'ep' or d[0] == 'src':
+#                     # episode that will be used to generate this shot
+#                     if 'src' not in db_shots[shot_no].keys():
+#                         db_shots[shot_no]['src'] = dict()
+#                     src = d[1].split(':')
+#                     if len(src) == 3:
+#                         db_shots[shot_no]['src'].update({
+#                             'k_ep': 'ep%02d' % (int(src[0])),
+#                             'start': int(src[1]),
+#                             'count': int(src[2]),
+#                         })
+#                     elif len(src) == 2:
+#                         db_shots[shot_no]['src'].update({
+#                             'k_ep': 'ep%02d' % (int(src[0])),
+#                             'start': int(src[1]),
+# # 2022-11-13: replacement does not work: to verify
+#                             'count': -1
+#                         })
+#                     else:
+#                         db_shots[shot_no]['src'].update({
+#                             'k_ep': 'ep%02d' % (int(src[0])),
+#                             'start': start,
+# # 2022-11-13: replacement does not work: to verify
+#                             'count': -1
+#                         })
+
+#                 elif d[0] == 'replace':
+#                     # Replace this shot by the source
+#                     if 'src' not in db_shots[shot_no].keys():
+#                         db_shots[shot_no]['src'] = dict()
+#                     db_shots[shot_no]['src'].update({'use': True if d[1]=='y' else False})
+
+#                 elif d[0] == 'effects':
+#                     db_shots[shot_no]['effects'] = d[1].split(',')
+
+
+
+
+
+
 def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
     """This procedure is used to consolidate the parsed shots
     It updates the total duration (in frames of the video for a part
@@ -127,7 +219,8 @@ def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
         db_video['shots'] = [{
             'no': 0,
             'start': db_video['start'],
-            'filters': 'default',
+            'filters_id': 'default',
+            'filters': None,
             'count': db_video['count'],
             'curves': None,
             'replace': dict(),

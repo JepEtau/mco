@@ -23,6 +23,8 @@
 import numpy as np
 from pprint import pprint
 
+from utils.pretty_print import print_purple, print_yellow
+
 EPSILON = 1e-6
 
 class Curve_point(object):
@@ -34,6 +36,11 @@ class Curve_point(object):
         self._x = np.round(np.clip(x, 0.0, 1.0, dtype=np.float32), decimals=6)
 
     def set_y(self, y:np.float32):
+        self._y = np.round(np.clip(y, 0.0, 1.0, dtype=np.float32), decimals=6)
+
+
+    def set_x_y(self, x:np.float32, y:np.float32):
+        self._x = np.round(np.clip(x, 0.0, 1.0, dtype=np.float32), decimals=6)
         self._y = np.round(np.clip(y, 0.0, 1.0, dtype=np.float32), decimals=6)
 
     def x(self):
@@ -105,7 +112,7 @@ class Curve(object):
         # This function uses a cubic bezier curve for the individual segments and
         # calculates the necessary intermediate control points depending on the
         # neighbor curve control points.
-        indexMax = sample_count - 1
+        index_max = sample_count - 1
 
         # the outer control points for the bezier curve.
         x0 = self._points[p2].x()
@@ -187,7 +194,7 @@ class Curve(object):
         # finally calculate the y(t) values for the given bezier values. We can
         # use homogeneously distributed values for t, since x(t) increases linearly.
         array_i = np.arange(0, x_count, dtype=np.float32)
-        array_t = array_i / (dx * indexMax)
+        array_t = array_i / (dx * index_max)
         array_1_t = 1 - array_t
         array_y = np.clip(( y0 * array_1_t * array_1_t * array_1_t +
                 3 * y1 * array_1_t * array_1_t * array_t   +
@@ -212,13 +219,15 @@ class Curve(object):
 
 
     def calculate(self, sample_count=256, depth=1.0, verbose=False):
+        # if sample_count == 256:
+        #     verbose = True
         if verbose:
-            print("calculate: sample_count=%d, depth=%f" % (sample_count, depth))
+            print(f"calculate: sample_count:{sample_count}, depth:{depth:.01f}")
         if len(self._points) == 1:
             p_x0 = self._points[0].x()
             p_y0 = depth * self._points[0].y()
             if verbose:
-                print("\thorizontal line: (%d;%d)" % (p_x0, p_y0))
+                print(f"\thorizontal line: ({p_x0}, {p_y0})")
             lut = np.array([p_y0] * sample_count, dtype=np.float32)
 
         elif len(self._points) == 2:
@@ -229,27 +238,28 @@ class Curve(object):
             p_y1 = depth * self._points[1].y()
 
             if verbose:
-                print("\taffine: (%d;%d) -> (%d; %d)" % (p_x0, p_y0, p_x1, p_y1))
+                print(f"\taffine: ({p_x0}, {p_y0}) -> ({p_x1}, {p_y1})")
 
             lut_0_sample_count = int(sample_count * p_x0)
             lut_2_sample_count = int(sample_count - (sample_count * p_x1))
             lut_1_sample_count = sample_count - (lut_2_sample_count + lut_0_sample_count)
             if verbose:
-                print("\tlut(%d) + lut(%d) + lut(%d)" % (lut_0_sample_count, lut_1_sample_count, lut_2_sample_count))
+                print(f"\tconcatenate luts: lut[{lut_0_sample_count}] + lut[{lut_1_sample_count}] + lut[{lut_2_sample_count}]")
 
             lut_0 = np.array([p_y0] * lut_0_sample_count, dtype=np.float32)
             lut_1 = np.arange(0, lut_1_sample_count, dtype=np.float32)
-            lut_1 = p_y0 + lut_1 * (p_y1 - p_y0) / lut_1_sample_count
+            lut_1 = p_y0 + lut_1 * (p_y1 - p_y0) / (lut_1_sample_count - 1)
             lut_2 = np.array([p_y1] * lut_2_sample_count, dtype=np.float32)
 
             if verbose:
-                print("\t merge: %d %d %d" % (len(lut_0), len(lut_1), len(lut_2)))
+                print(f"\tGenerated luts: {len(lut_0)}, {len(lut_1)}, {len(lut_2)}")
 
+            # COncatenate LUTs
             lut = np.concatenate((lut_0, lut_1, lut_2))
             lut = np.clip(lut, 0.0, depth)
 
             if verbose:
-                print("\tlut (%d)" % (len(lut)))
+                print(f"\tLUT: size={len(lut)}")
                 pprint(lut)
                 # for i, v in zip(range(len(lut_1)), lut_1):
                 #     print("\tf(%d) = %.f" % (i, v))
@@ -297,7 +307,9 @@ class Curve(object):
 
         # ensure that the control points are defined correclty
         for p in self._points:
-            # print("\t(%f-> %f;%f)" % (p.x(), int((sample_count-1)*p.x()+0.5), p.y()))
+            if verbose:
+                print("points:")
+                print(f"\t(%f-> %f;%f)" % (p.x(), int((sample_count-1)*p.x()+0.5), p.y()))
             lut[int((sample_count-1)*p.x()+0.5)] = depth * p.y()
 
         return lut
@@ -388,4 +400,103 @@ class Curve(object):
         # print("move selected point (%d: %f) -> (%f: %f)" % (self._selected_point.x(), self._selected_point.y(), x, y))
         self._selected_point.set_x(x)
         self._selected_point.set_y(y)
+
+
+    def apply_translation(self,  delta_x:np.float32, delta_y:np.float32, sample_count=256):
+
+        if ((delta_x < 0 and delta_y < 0)
+            or (delta_x > 0 and delta_y > 0)):
+            return True
+
+        delta_abs = np.sqrt(delta_x**2 + delta_y**2)
+        shift = delta_abs * np.cos(45)
+        if (delta_x < 0 and delta_y > 0):
+            delta = -1 * delta_abs
+            shift *= -1
+        else:
+            delta = delta_abs
+
+        if delta_abs < 1/sample_count:
+            return False
+
+        # print_yellow(f"delta: {delta_x:.04f}")
+
+        for point in self._points:
+            x = point.x()
+            y = point.y()
+            # print(f"\tpoint: [{x:.04f}, {y:.04f}]", end='')
+
+            if x == 0 and y == 0:
+                if delta < 0:
+                    point.set_y(delta_abs)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (move from origin, delta < 0)")
+                else:
+                    point.set_x(delta_abs)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (move from origin), delta > 0")
+                continue
+
+            # on x_min axis
+            elif y == 0:
+                if x < delta_abs and delta < 0:
+                    # x_min axis -> y_min axis
+                    point.set_x(0)
+                    point.set_y(delta_abs - x)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (x_min axis -> y_min axis)")
+                else:
+                    # stay on x_min axis
+                    point.set_x(x + delta)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (stay on x_min axis)")
+                continue
+
+            # on y_min axis
+            elif x == 0:
+                if y < delta_abs and delta > 0:
+                    # y_min axis -> x_min axis
+                    point.set_x(delta_abs - y)
+                    point.set_y(0)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (y_min axis -> x_min axis)")
+                else:
+                    # stay on y_min axis
+                    point.set_y(y - delta)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (stay on y_min axis)")
+                continue
+
+
+            if x == 1 and y == 1:
+                if delta < 0:
+                    point.set_x(1 - delta_abs)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (move from origin, delta < 0)")
+                else:
+                    point.set_y(1 - delta_abs)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (move from origin), delta > 0")
+                continue
+
+            # on x_max axis
+            elif y == 1:
+                if x + delta_abs > 1 and delta > 0:
+                    point.set_x(1)
+                    point.set_y(2 - (x + delta_abs))
+                    # print_purple(f" -> [{point.x():.04f}, {point.y():.04f}] (x_max axis -> y_max axis)")
+                else:
+                    # stay on x_max axis
+                    point.set_x(x + delta)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (stay on x_min axis)")
+                continue
+
+            # on y_max axis
+            elif x == 1:
+                if y + delta_abs > 1 and delta < 0:
+                    point.set_x(2 - (y + delta_abs))
+                    point.set_y(1)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (y_max axis -> x_max axis)")
+                else:
+                    # stay on y_max axis
+                    point.set_y(y - delta)
+                    # print(f" -> [{point.x():.04f}, {point.y():.04f}] (stay on y_max axis)")
+                continue
+
+            point.set_x_y(x + shift, y - shift)
+            # print(f" ({shift:.04} -> [{x + shift:.04f}, {y - shift:.04f}] (normal)")
+
+        return True
 

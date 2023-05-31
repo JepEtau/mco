@@ -1,13 +1,9 @@
-
-SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
 FFMPEGSource2("A:\mco\inputs\k\k_ep17.mkv", cache=false, overwrite=true)
 trim(34469, -1)
-
-AssumeTFF()
-QTGMC(preset="Slower", EdiThreads=2)
+QTGMC(preset="Slower", \
+    TR0=2, TR1=2, \
+    EdiMode="EEDI3+NNEDI3", \
+    Denoiser="dfttest")
 SelectEven()
-
-aWarpSharp2()
-
+# aWarpSharp2()
 ConvertToRGB24()
-Prefetch(2)

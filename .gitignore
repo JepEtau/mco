@@ -140,4 +140,8 @@ frames/
 *.bak
 scripts/archive.sh
 scripts/archive.bat
+archive.sh
+archive.bat
 tools/log
+batch_sharpen.bat
+batch_edition.bat

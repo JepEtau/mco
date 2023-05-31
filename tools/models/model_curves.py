@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append('../scripts')
+
 
 from copy import deepcopy
 import os
@@ -139,6 +139,7 @@ class Model_curves():
         nested_dict_set(self.db_curves_selection, curves, k_ed, k_ep, k_part, shot_start)
 
         # Refresh the list of shots for each curves
+        # pprint(self.shots_per_curves)
         for shotlist in self.shots_per_curves.values():
             try:
                 shotlist.remove(shot_no)
@@ -384,6 +385,8 @@ class Model_curves():
             'lut': None,
             'shots': []
         }, k_ed, k_ep, k_curves)
+
+        nested_dict_clean(self.db_curves_library)
 
 
 

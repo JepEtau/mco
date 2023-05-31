@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append('../scripts')
+
 
 
 import collections
@@ -94,7 +94,7 @@ class Model_stabilize():
 
 
     def save_shot_stabilize_settings(self, shot):
-        verbose = False
+        verbose = True
         if not self.is_stabilize_db_modified:
             return True
 
@@ -166,17 +166,25 @@ class Model_stabilize():
                 for k, v in segment['mode'].items():
                     mode_str += f"+{k}" if v else ''
 
-                segments_str += "\n%s:start=%d:end=%d:ref=%s:mode=%s;" % (
-                    segment['alg'],
-                    segment['start'],
-                    segment['end'],
-                    segment['ref'],
-                    mode_str[1:])
+                segments_str += f"\n{segment['alg']}"
+                segments_str += f":start={segment['start']}"
+                segments_str += f":end={segment['end']}"
+                segments_str += f":from={segment['from']}"
+                segments_str += f":ref={segment['ref']}"
+                segments_str += f":mode={mode_str[1:]}"
 
-            if len(stabilize_settings['segments']) > 1:
-                stabilize_settings_str = f"\"\"\"{enable_str}{segments_str}\n\"\"\""
-            else:
-                stabilize_settings_str = f"\"{enable_str}{segments_str[1:]}\""
+                if len(segment['tracker']['regions']) > 0:
+                    segments_str += f":"
+                    segments_str += f"\ntracker={'enable' if segment['tracker']['enable'] else 'disable'},"
+                    segments_str += f"{'inside' if segment['tracker']['inside'] else 'outside'}"
+                    for region in segment['tracker']['regions']:
+                        segments_str += f",\n\t"
+                        for point in region:
+                            segments_str += f"({point[0]}.{point[1]})"
+
+                segments_str += ";"
+
+            stabilize_settings_str = f"\"\"\"{enable_str}{segments_str}\n\"\"\""
 
             # Set the new option
             try:

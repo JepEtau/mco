@@ -93,11 +93,13 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
 
     # Walk through images
     count = shot['count']
+    i = 0
     for f_no, f_output in zip(range(count), output_image_list):
+        i += 1
         start_time = time.time()
         torch.cuda.empty_cache()
 
-        print("\t%s -> %s" % (image_list[f_no], f_output))
+        # print("\t%s -> %s" % (image_list[f_no], f_output))
 
         # Continue if the output file already exists
         if not do_force and os.path.exists(f_output):
@@ -130,14 +132,17 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
             print("Error: failed to upscale %s" % (image_list[f_no]))
             print(e)
         else:
-            print("\tinfo: upscaled in %.02fs" % (time.time() - start_time))
+            print(f"\t\t({i}/{count}) upscaled in %.02fs" % (time.time() - start_time), end='\r')
+
+    # print(f"{''.join([' ']*20)}")
+    print("")
 
     return hash, scale, output_images
 
 
 
 def upscale_real_esrgan(shot, images:list, image_list:list,
-    scale:int, model_name:str, directories:str, input_hash:str, step_no, output_folder:str,
+    model_name:str, directories:str, input_hash:str, step_no, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
     module_path = os.path.join(directories['3rd_party'], directories['real_esrgan'])
@@ -193,8 +198,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     hash += "_" + suffix
 
 
-    print_cyan("(REAL_ESRGAN)\tstep no. %d, upscaling with model %s, input hash= %s, output hash= %s, suffix= %s" % (
-        step_no, model_name, input_hash, hash, suffix))
+    print_cyan(f"(REAL_ESRGAN)\tstep no. {step_no}, ({netscale}x) upscaling, model {model_name}, input hash={input_hash}, output hash={hash}, suffix={suffix}")
 
     # Default values for upscaler
     dni_weight = None
@@ -224,6 +228,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
 
 
     # Initialize module
+    scale = netscale
     if model_name == 'realesr-animevideov3':
         # x4 VGG-style model (XS size)
         model = SRVGGNetCompact(
@@ -236,7 +241,6 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     elif model_name == 'RealESRGAN_x4plus_anime_6B':
         # x4 RRDBNet model with 6 blocks
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=6, num_grow_ch=32, scale=4)
-        tile = 320
     elif model_name == '2x_LD-Anime_Compact_330k_net_g':
         model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=2, act_type='prelu')
     elif model_name == '2x_Futsuu_Anime_Compact_130k_net_g':
@@ -248,6 +252,8 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     elif model_name == 'RealESRGAN_x2plus':
         # x2 RRDBNet model
         model = RRDBNet(num_in_ch=3, num_out_ch=3, num_feat=64, num_block=23, num_grow_ch=32, scale=2)
+    elif 'compact' in model_name.lower():
+        model = SRVGGNetCompact(num_in_ch=3, num_out_ch=3, num_feat=64, num_conv=16, upscale=netscale, act_type='prelu')
     else:
         sys.exit(print_red("error: model %s is not initialized" % (model_name)))
 
@@ -266,8 +272,11 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
 
     # Walk through images
     count = shot['count']
+    i = 0
+    print(f"upscale factor: {netscale}")
     for f_no, f_output in zip(range(count), output_image_list):
         start_time = time.time()
+        i += 1
 
         # Continue if the output file already exists
         if not do_force and os.path.exists(f_output):
@@ -284,9 +293,7 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
 
             # Upscale
             output_img, _ = upscaler.enhance(
-                img=img,
-                outscale=scale,
-                alpha_upsampler='realesrgan')
+                img=img, alpha_upsampler='realesrgan')
 
             if use_memory:
                 output_images.append(output_img)
@@ -298,18 +305,22 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
             print("Error: failed to upscale %s" % (image_list[f_no]))
             print(e)
         else:
-            print("\tinfo: upscaled in %.02fs" % (time.time() - start_time))
+            print(f"\t\t({i}/{count}) upscaled in %.02fs" % (time.time() - start_time), end='\r')
 
+    # print(f"{''.join([' ']*20)}")
+    print("")
     return hash, netscale, output_images
 
 
 
-def upscale_esrgan(shot, images:list, image_list:list,
-    scale:int, model_name:str, directories:str, input_hash, step_no, output_folder:str,
+def upscale_pytorch(shot, images:list, image_list:list,
+    model_name:str, directories:str, input_hash, step_no, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
     module_path = os.path.join(directories['3rd_party'], directories['esrgan'])
-    model_filepath = os.path.join(directories['3rd_party'], "models", 'esrgan', "%s.pth" % (model_name))
+    model_filepath = os.path.join(directories['3rd_party'],
+        "models", 'pytorch',
+        f"{model_name}{'.pth' if not model_name.endswith('.pth') else ''}")
     if not os.path.isfile(model_filepath):
         sys.exit(print_red("Error: model file %s does not exist" % (model_filepath)))
 
@@ -323,56 +334,29 @@ def upscale_esrgan(shot, images:list, image_list:list,
     # Default values for upscaler
     suffix = f"{model_name}_{input_hash}"
     seamless = None
-    if model_name == '2x_LD-Anime_Skr_v1.0':
+    if model_name == 'realesr-animevideov3':
+        suffix = model_name
+        scale = 4
+    elif model_name == 'RealESRGAN_x4plus_anime_6B':
+        suffix = model_name
+        scale = 4
+    elif model_name == '2x_LD-Anime_Skr_v1.0':
         suffix = "skr"
-        scale = 2
-    elif model_name == '1x_SSAntiAlias9x':
-        suffix = "ssaa"
-        scale = 1
     elif model_name == '4x-AnimeSharp':
         suffix = "AnimeSharp"
-        scale = 4
         seamless = SeamlessOptions.TILE
-    elif model_name == '2x_AnimeClassics_UltraLite_510K':
-        suffix = "AnimeClassics"
-        scale = 2
-    elif model_name == '4x-UniScaleNR-Balanced':
-        suffix = "4x-UniScaleNR-Balanced"
-        scale = 4
-    elif model_name == '4x-UniScaleNR-Strong':
-        suffix = "4x-UniScaleNR-Strong"
-        scale = 4
-    elif model_name == '4x_DigitalFrames_2.1_Final':
-        suffix = "4x_DigitalFrames"
-        scale = 4
-    elif model_name == '4x-AnimeSharp':
-        suffix = "4x-AnimeSharp"
-        scale = 4
-    elif model_name == '4x_OLDIES_290000_G_FINAL_interp_03':
-        suffix = "4x_OLDIES_290000"
-        scale = 4
-    elif model_name == '2x-UniScale_CartoonRestore-lite':
-        suffix = "2x-UniScale_CartoonRestore-lite"
-        scale = 2
-    elif model_name == '2X_KcjpunkAnime_2.0_Lite_196496_G':
-        suffix = "2X_KcjpunkAnime"
-        scale = 2
-    elif model_name == '4xFSDedither_Manga':
-        suffix = '4xFSDedither_Manga'
-        scale = 4
-    elif model_name == '1x_ReFocus_V3_140000_G':
-        suffix = '1x_ReFocus_V3_140000_G'
-        scale = 1
-    elif model_name == '1x_BeaverIt.pth':
-        suffix = '1x_BeaverIt.pth'
-        scale = 1
     else:
         suffix = model_name
 
-    match = re.match("^([\d]{1})[xX]{1}_.*", model_name)
+    match = re.match("^([\d]{1})[x]{1}.*", model_name.lower())
     if match is not None:
         scale = int(match.group(1))
-
+    else:
+        match = re.match(".*x([\d]{1}).*", model_name.lower())
+        if match is not None:
+            scale = int(match.group(1))
+        else:
+            scale = 2
     # Hash
     filter_str = f"{input_hash},{suffix}"
     if get_hash:
@@ -384,8 +368,7 @@ def upscale_esrgan(shot, images:list, image_list:list,
 
 
 
-    print_cyan("(ESRGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
-        step_no, model_name, input_hash, hash, suffix))
+    print_cyan(f"(PyTorch)\tstep no. {step_no}, ({scale}x) upscaling, model {model_name}, input hash={input_hash}, output hash={hash}, suffix={suffix}")
 
 
     # Generate a list of output images
@@ -408,6 +391,10 @@ def upscale_esrgan(shot, images:list, image_list:list,
         print_orange("Warning: using CPU")
 
 
+    # Output images in memory
+    use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
+
+
     # Load model
     esrgan_upscale = Esrgan_upscale(
         seamless=seamless,
@@ -416,12 +403,15 @@ def upscale_esrgan(shot, images:list, image_list:list,
         fp16=fp16)
     esrgan_upscale.load_model(model_filepath)
 
+
     # Walk through images
     count = shot['count']
+    i = 0
     for f_no, f_output in zip(range(count), output_image_list):
         start_time = time.time()
+        i += 1
 
-        print("\t%s -> %s" % (image_list[f_no], f_output))
+        # print("\t%s -> %s" % (image_list[f_no], f_output))
 
         # Continue if the output file already exists
         if not do_force and os.path.exists(f_output):
@@ -451,7 +441,8 @@ def upscale_esrgan(shot, images:list, image_list:list,
             print("Error: failed to upscale %s" % (image_list[f_no]))
             print(e)
         else:
-            print("\tinfo: upscaled in %.02fs" % (time.time() - start_time))
+            print(f"\t\t({i}/{count}) upscaled in %.02fs" % (time.time() - start_time), end='\r')
 
-
+    # print(f"{''.join([' ']*20)}")
+    print("")
     return hash, scale, output_images

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append('../scripts')
+
 from pprint import pprint
 
 from PySide6.QtCore import (
@@ -35,13 +35,13 @@ class Window_main(QMainWindow, Ui_MainWindow):
         self.setupUi(self)
 
         window_icon = QIcon()
-        window_icon.addFile("icons/icon_16.png", QSize(16,16))
-        window_icon.addFile("icons/icon_24.png", QSize(24,24))
-        window_icon.addFile("icons/icon_32.png", QSize(32,32))
-        window_icon.addFile("icons/icon_48.png", QSize(48,48))
-        window_icon.addFile("icons/icon_64.png", QSize(64,64))
-        window_icon.addFile("icons/icon_128.png", QSize(128,128))
-        window_icon.addFile("icons/icon_256.png", QSize(256,256))
+        window_icon.addFile("tools/icons/icon_16.png", QSize(16,16))
+        window_icon.addFile("tools/icons/icon_24.png", QSize(24,24))
+        window_icon.addFile("tools/icons/icon_32.png", QSize(32,32))
+        window_icon.addFile("tools/icons/icon_48.png", QSize(48,48))
+        window_icon.addFile("tools/icons/icon_64.png", QSize(64,64))
+        window_icon.addFile("tools/icons/icon_128.png", QSize(128,128))
+        window_icon.addFile("tools/icons/icon_256.png", QSize(256,256))
         self.setWindowIcon(window_icon)
         self.setWindowFlags(Qt.Window)
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -79,9 +79,13 @@ class Window_main(QMainWindow, Ui_MainWindow):
         self.controller.signal_refresh_filters[dict].connect(self.event_refresh_filters)
 
 
-    def set_initial_options(self, preferences:dict):
-        s = preferences['main_window']
-        self.move(s['geometry'][0],s['geometry'][1])
+    def set_initial_options(self, user_preferences:dict):
+        s = user_preferences['main_window']
+        self.setGeometry(s['geometry'][0],
+            s['geometry'][1],
+            s['geometry'][2],
+            s['geometry'][3])
+
 
     def get_preferences(self) -> dict:
         preferences = {
@@ -98,7 +102,7 @@ class Window_main(QMainWindow, Ui_MainWindow):
         self.tableWidget_filters.setRowCount(0)
         self.tableWidget_filters_columns = [
             {'name': 'Hash', 'width': 90, 'alignment': Qt.AlignCenter | Qt.AlignTop},
-            {'name': 'Filter', 'width': 200, 'alignment': Qt.AlignLeft | Qt.AlignTop },
+            {'name': 'Filter', 'width': 400, 'alignment': Qt.AlignLeft | Qt.AlignTop },
         ]
         column_count = len(self.tableWidget_filters_columns)
 
@@ -155,15 +159,16 @@ class Window_main(QMainWindow, Ui_MainWindow):
             column_count = len(self.tableWidget_filters_columns)
             for row_no in range(len(filters)):
                 for column_no in range(column_count):
-                    self.tableWidget_filters.item(row_no, column_no).setTextAlignment(
-                        self.tableWidget_filters_columns[column_no]['alignment'])
+                    properties = self.tableWidget_filters_columns[column_no]
+                    self.tableWidget_filters.item(row_no, column_no).setTextAlignment(properties['alignment'])
+                    self.tableWidget_filters.setColumnWidth(column_no, properties['width'])
 
             self.tableWidget_filters.setEnabled(True)
 
         else:
             self.tableWidget_filters.setEnabled(False)
 
-        self.tableWidget_filters.resizeColumnsToContents()
+        # self.tableWidget_filters.resizeColumnsToContents()
         self.tableWidget_filters.resizeRowsToContents()
         self.adjustSize()
 

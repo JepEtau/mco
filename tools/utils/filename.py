@@ -4,7 +4,7 @@ import os
 import os.path
 import re
 import sys
-sys.path.append('../scripts')
+
 
 from pprint import pprint
 

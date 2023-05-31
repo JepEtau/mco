@@ -10,7 +10,10 @@ import platform
 from pprint import pprint
 
 from filters import IMG_BORDER_HIGH_RES, IMG_BORDER_LOW_RES, IMG_LOW_RES_HEIGHT
-from filters.utils import MAX_FRAMES_COUNT
+from filters.utils import (
+    FINAL_FRAME_WIDTH,
+    MAX_FRAMES_COUNT,
+)
 from utils.pretty_print import *
 from utils.hash import (
     calculate_hash,
@@ -29,13 +32,14 @@ from filters.filters import (
 def apply_python_geometry_filter(shot, images:list, image_list:list,
     step_no, filters_str:str, input_hash:str,
     do_save:bool, output_folder:str,
-    get_hash:bool=False, do_force:bool=False):
+    get_hash:bool=False, do_log:bool=True,
+    do_force:bool=False):
 
     if shot['geometry']['target'] is None:
         print_red("\t\t\terror: no target geometry defined for %s:%s:%s" % (
             shot['k_ed'], shot['k_ep'], shot['k_part']))
-        sys.exit()
-        shot['geometry']['target'] = {'w': shot['geometry']['dimensions']['final']['w']}
+        # sys.exit()
+        shot['geometry']['target'] = {'w': FINAL_FRAME_WIDTH}
 
     if shot['geometry']['shot'] is None:
         # Neither part nor shot section in database
@@ -54,7 +58,10 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
     if get_hash:
         hash = calculate_hash(filter_str=filter_str)
         return hash, None
-    hash = log_filter(filter_str, shot['hash_log_file'])
+    if do_log:
+        hash = log_filter(filter_str, shot['hash_log_file'])
+    else:
+        hash = calculate_hash(filter_str=filter_str)
 
     # multiprocessing
     if platform.system() == "Windows":
@@ -92,34 +99,16 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
 
     # Create a list of works for multiprocessing
     count = shot['count']
-    worklist = list()
-    output_images = [None] * shot['count']
     if use_memory:
-        if do_save and not do_force:
-            for frame_no, f_output in zip(range(count), output_image_list):
-                if not os.path.exists(f_output):
-                    worklist.append([frame_no, images[frame_no]])
-                else:
-                    output_images[frame_no] = cv2.imread(f_output, cv2.IMREAD_COLOR)
-        else:
-            for frame_no in range(count):
-                worklist.append([frame_no, images[frame_no]])
+        worklist = list([[frame_no, images[frame_no]] for frame_no in range(count)])
     else:
-        # Do not load images in memeory
-        if not do_force:
-            for frame_no, f_output in zip(range(count), output_image_list):
-                if not os.path.exists(f_output):
-                    worklist.append([frame_no, image_list[frame_no]])
-        else:
-            for frame_no in range(count):
-                worklist.append([frame_no, image_list[frame_no]])
-
-
+        worklist = list([[frame_no, image_list[frame_no]] for frame_no in range(count)])
     if len(worklist) == 0:
         sys.exit(print_red("error: apply_python_geometry_filter: worklist is empty, debug this!!!"))
 
 
     # Execute the pool of works
+    output_images = [None] * shot['count']
     if cpu_count > 1:
         no = 0
         with ThreadPoolExecutor(max_workers=min(cpu_count, len(worklist))) as executor:

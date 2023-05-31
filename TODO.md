@@ -1,52 +1,92 @@
 # TODO script
 (1)
+- append regions to the hash value
 
 (2)
+- stats: list unused curves. reason: clean the db
 - (?) smooth stabilization: to evaluate (g_fin)
-- create "other filters": replace some images by white images
-- stabilize: when 2 segments are separated by some frames, the first image of the 2nd segment is not aligned with previous frames (g_fin, shot no. 0)
 
 (3)
-- add_borders is inserted at the wrong place if using s0
-- verify negative values for crop values when deshake is disable
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
+- deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image. This may have an impact if smooth stabilisation is implemented
+- (?) manual offsets to deshake
 - clean filters.py
 
 
 # TODO video editor
 (1)
-- geometry: add 'minimum crop'
-- stabilize widget: discard
-- stabilize widget: get real frame no if step==sharpen
-- stabilize widget: too complicated
-- stabilize widget: set "save putton' to enabled if segment removed
-- move guidelines to main window
-- Get transformations matrix and save them in frame struct
-- stabilize all selected shots (keep transformation matrix only)
-- add buttons to show/hide widgets
-- add save 'target' in geometry widget
+- draw tracking region only if frame no in segment
+- Add geometry error/fit_to_width in selection widget
 
 (2)
-- Save when closing is not working
-- parse single shot only if database already been parsed
-- add loop mode
-- disable all widgets if images missing
-- update save button when loading a segment or after modifications: use a signal
-- display unsaved shot in selection widget
-- buttons (save, discard, ...) not working
+- curves: bug: mouseclick on graph creates a point if another widget is selected
 - edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db
-- when no image loaded, reset all widgets
+- F5 to refresh current shot only
+- when no image loaded, reset all widgets / disable all widgets if images missing
 
 (3)
-- if no progressive images saved, use ffv1 file to fill buffer of images
-- change selection widget to a standard widget (common)
-- F5 to refresh current shot only
-- Ctrl+F5 to refresh all shots
-- display filters for the shot
+- (?) reorder options in .ini files
+- add buttons to show/hide widgets
 - (?)Replace not allowed when multiple shot selected
 
 
+# Models/Algo
+* Cartoons:
+    Fatality_DeBlur
+    Focus + Focus_Moderate https://u.pcloud.link/publink/show?code=kZS4XhVZ1GKsTtkjdULdYn6z9pTHs7fdLvR7
+    CelFrames 1.0
+    1x_DeInterPaint (Deinterlacing)
+
+* Realistic:
+    omnisr
+    4xNomos8kSC
+    2xParimgCompact
+    4xLSDIRCompactC3
+    4xLSDIRCompactN
+    4x_rybu
+    4x-MultiUpscale-C3/C4/C5/T1 (and DetailScale)
+
+* Temporal denoising
+    https://github.com/JingyunLiang/VRT
+    https://github.com/m-tassano/fastdvdnet
+    TempFormer: https://www.youtube.com/watch?v=LA747HTukTQ
+    https://dasongli1.github.io/publication/grouped-shift-net/
+    https://github.com/JingyunLiang/RVRT
+
+* SR
+    https://github.com/IceClear/StableSR.git
+
 # TODO other
-- create a script to remove previous images
-- list models that are already tested
+- list python modules (to clean the environment)
+    AnimeSR
+        basicsr
+        facexlib
+        ffmpeg-python
+        numpy
+        opencv-python
+        pillow
+        psutil
+        torch
+        torchvision
+        tqdm
+    ESRGAN
+        opencv_python
+        numpy
+        torch
+        rich
+        typer
+    Real-CUGAN
+        torch>=1.0.0
+        numpy
+        opencv-python
+        ~~moviepy~~                 <-- not needed
+
+
+# Known issues, but won't correct
+- add_borders is inserted at the wrong place if using s0
+- initial image dimensions is declared as constants: stats are erroneous with s0
+- fadein: if stabilize, segment shall use 'middle' of shot as the ref. frame
+- fadein: fadein is always done on a the same image. No need for someting else.
+- stabilize: when table is disable, set qWidgetItem to disable (text should be gray)
+

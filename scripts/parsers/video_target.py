@@ -10,18 +10,20 @@ from utils.common import (
     K_NON_GENERIQUE_PARTS,
     K_PARTS,
 )
+from utils.pretty_print import *
 
 
 
 def parse_video_section(db_video, config, k_ep, verbose=False):
-
+    verbose = False
     k_section = 'video'
 
     k_ed_src = None
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option)
         value_str = value_str.replace(' ','')
-        # print("%s, %s => [%s]" % (k_section, k_option, value_str))
+        if verbose:
+            print(f"{k_section}, {k_option} => [{value_str}]")
 
         if k_option == 'source':
             k_ed_src = value_str
@@ -51,7 +53,7 @@ def parse_video_section(db_video, config, k_ep, verbose=False):
 
             search_fadein = re.search(re.compile("fadein=([0-9.]+)"), property)
             if search_fadein is not None:
-                search_fadein = int(float(search_fadein.group(1)) * FPS)
+                part_fadein = int(float(search_fadein.group(1)) * FPS)
                 continue
 
             search_fadeout = re.search(re.compile("fadeout=([0-9.]+)"), property)
@@ -78,6 +80,10 @@ def parse_video_section(db_video, config, k_ep, verbose=False):
             'count': (end - start) if end > 0 else -1,
             'k_ed_src': k_part_ed_src,
         }
+        if verbose and part_fadein != 0:
+            print_lightcyan(f"fadein != 0: {k_part}")
+            print(db_video[k_part])
+            # sys.exit()
 
     if k_ed_src is None:
         sys.exit("error: parse_video_section: missing key \'source\' in target file %s_target.ini" % (k_ep))
@@ -102,7 +108,7 @@ def parse_video_section(db_video, config, k_ep, verbose=False):
         if db_video[k_part]['k_ed_src'] is None:
             sys.exit("Errror: parse_video_section: edition shall be defined for %s:%s" % (k_ep, k_part))
 
-    if k_part == 'g_fin':
+    if k_part == 'g_fin' and verbose:
         pprint(db_video[k_part])
         sys.exit()
 

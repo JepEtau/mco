@@ -9,6 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 import platform
 
 from pprint import pprint
+from filters.deshaker_cv2 import DEBUG_DESHAKE
 from filters.dnn_superres import upscale_cv2_dnn_superres
 from filters.ffmpeg_utils import clean_ffmpeg_filter
 
@@ -119,7 +120,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
             if not do_force:
                 do_extract = False
                 for f in output_image_list:
-                    if not os.path.exists(f):
+                    if not os.path.exists(f) or DEBUG_DESHAKE:
                         do_extract = True
                         break
                 if not do_extract:
@@ -207,7 +208,8 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
             input_hash=input_hash,
             get_hash=get_hash,
             do_save=do_save,
-            output_folder=output_folder)
+            output_folder=output_folder,
+            do_force=DEBUG_DESHAKE)
 
 
 
@@ -269,7 +271,10 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
 
 
     if len(worklist) == 0:
-        sys.exit(print_red("error: apply_python_filters: worklist is empty"))
+        # Maybe the upscale function
+        if filters_str.startswith("scale="):
+            return hash, output_images
+        sys.exit(print_red(f"error: apply_python_filters: worklist is empty, filters={filters_str}"))
 
     # Execute the pool of works
     if cpu_count > 1:
@@ -361,7 +366,7 @@ def work_python_filters(frame_no, input_img, filter_list) -> list:
 
         elif function == 'scale':
             img = cv2_scale(img,
-                scale=int(args[0]),
+                scale=float(args[0]),
                 interpolation=args[1])
 
         elif function == 'resize':

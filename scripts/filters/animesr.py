@@ -27,7 +27,8 @@ from utils.get_image_list import (
 
 @torch.no_grad()
 def upscale_animesr(shot, images:list, image_list:list,
-    scale:int, model_name:str, directories:str, input_hash, step_no, output_folder:str,
+    model_name:str, directories:str, input_hash, step_no,
+    do_save:bool, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
     module_path = os.path.join(directories['3rd_party'], directories['animesr'])
@@ -37,6 +38,9 @@ def upscale_animesr(shot, images:list, image_list:list,
 
     from animesr.archs.vsr_arch import MSRSWVSR
 
+    # released models are all x4 models
+    netscale = 4
+
     suffix = f"{model_name}_{input_hash}"
 
     # Hash
@@ -44,7 +48,7 @@ def upscale_animesr(shot, images:list, image_list:list,
     if get_hash:
         hash = calculate_hash(filter_str=filter_str)
         hash += "_" + suffix
-        return hash, scale, None
+        return hash, netscale, None
     hash = log_filter(filter_str, shot['hash_log_file'])
     hash += "_" + suffix
 
@@ -62,15 +66,6 @@ def upscale_animesr(shot, images:list, image_list:list,
         fp16 = False
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    # released models are all x4 models
-    netscale = 4
-
-    # the scale used for mod crop, since AnimeSR use a multi-scale arch,
-    # so the edge should be divisible by 4
-    mod_scale = 4
-
-    # Output image scale
-    outscale = scale
 
     # Generate a list of output images
     output_image_list = get_image_list(
@@ -98,7 +93,7 @@ def upscale_animesr(shot, images:list, image_list:list,
 
     # Load 1st images
     height, width = images[0].shape[:2]
-    out_height, out_width = int(height * outscale), int(width * outscale)
+    # out_height, out_width = int(height * netscale), int(width * netscale)
 
     previous_image = get_frame(images[0], device, fp16)
     current_image = previous_image
@@ -109,6 +104,11 @@ def upscale_animesr(shot, images:list, image_list:list,
 
     for f_no, f_output in zip(range(count), output_image_list):
         start_time = time.time()
+        if not do_force and os.path.exists(f_output):
+            if use_memory:
+                output_images.append(cv2.imread(f_output, cv2.IMREAD_COLOR))
+            continue
+
         print("\t%s -> %s" % (image_list[f_no], output_image_list[f_no]))
 
         torch.cuda.synchronize(device=device)
@@ -117,14 +117,15 @@ def upscale_animesr(shot, images:list, image_list:list,
 
         torch.cuda.synchronize(device=device)
         output_img = tensor2img(output, rgb2bgr=False)
-        if outscale != netscale:
-            output_img_scaled = cv2.resize(output_img,
-                (out_width, out_height), interpolation=cv2.INTER_LANCZOS4)
-        else:
-            output_img_scaled = output_img
-
-        output_images.append(output_img_scaled)
-        cv2.imwrite(f_output, output_img_scaled)
+        # if outscale != netscale:
+        #     output_img_scaled = cv2.resize(output_img,
+        #         (out_width, out_height), interpolation=cv2.INTER_LANCZOS4)
+        # else:
+        #     output_img_scaled = output_img
+        if use_memory:
+            output_images.append(output_img)
+        if do_save:
+            cv2.imwrite(f_output, output_img)
 
         previous_image = current_image
         current_image = next_image
@@ -136,7 +137,7 @@ def upscale_animesr(shot, images:list, image_list:list,
 
     print_lightgreen(f"returned {len(output_images)} images")
 
-    return hash, scale, output_images
+    return hash, netscale, output_images
 
 
 

@@ -85,7 +85,7 @@ def parse_common_configuration(db, config_path):
     for d in ['config',
                 '3rd_party',
                 'inputs',
-                'output',
+                'outputs',
                 'cache',
                 'cache_progressive',
                 'cache_progressive_default',
@@ -99,7 +99,7 @@ def parse_common_configuration(db, config_path):
         db_common['directories'][d] = os.path.normpath(os.path.abspath(v))
 
 
-    for d in ['real_cugan', 'real_esrgan', 'esrgan', 'animesr']:
+    for d in ['real_cugan', 'real_esrgan', 'esrgan', 'animesr', 'pytorch']:
         v = db_common['directories'][d]
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')
@@ -143,11 +143,11 @@ def parse_common_configuration(db, config_path):
                             db_common['tools'][tool])))
 
         tool = 'mkvmerge'
-        db_common['tools']['mkvmerge'] = os.path.abspath(os.path.normpath(os.path.join(
-                        db_common['directories']['3rd_party'],
-                        db_common['directories']['%s_win' % (tool)],
-                        db_common['tools'][tool])))
-
+        if platform.system() == "Windows":
+            db_common['tools']['mkvmerge'] = os.path.abspath(os.path.normpath(os.path.join(
+                db_common['directories'][f"{tool}_win"], tool)))
+        else:
+            db_common['tools']['mkvmerge'] = tool
 
         for d in ['ffmpeg', 'ffmpeg_win',
                     'mkvmerge', 'mkvmerge_win']:
@@ -191,35 +191,13 @@ def parse_common_configuration(db, config_path):
     #===========================================================================
     db_common['process'] = get_process_cfg()
 
-    # Dimensions
-    #===========================================================================
-    db_common['dimensions'] = {
-        'initial': {
-            'w': int(db_common['dimensions']['width_initial']),
-            'h': int(db_common['dimensions']['height_initial'])
-        },
-        'deinterlace': {
-            'w': int(db_common['dimensions']['width_deinterlace']),
-            'h': int(db_common['dimensions']['height_deinterlace'])
-        },
-        'upscale': {
-            'w': int(db_common['dimensions']['width_upscale']),
-            'h': int(db_common['dimensions']['height_upscale'])
-        },
-        'final': {
-            'w': int(db_common['dimensions']['width_final']),
-            'h': int(db_common['dimensions']['height_final'])
-        }
-    }
-
-
 
     # Others
     #===========================================================================
 
     # Discard editions
     try:
-        editions_to_discard = list(db_common['editions']['discard'].split(',').replace(' ', ''))
+        editions_to_discard = list(db_common['editions']['discard'].replace(' ', '').split(','))
     except:
         editions_to_discard = list()
         pass

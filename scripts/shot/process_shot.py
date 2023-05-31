@@ -9,6 +9,7 @@ from filters.apply_filters import apply_filters
 from filters.utils import STEP_INC
 from filters.effects import (
     create_black_frame,
+    effect_fadein,
     effect_loop_and_fadeout,
     effect_fadeout,
 )
@@ -18,7 +19,7 @@ from utils.pretty_print import *
 
 
 
-def process_shot(db, shot, cpu_count=0):
+def process_shot(db, shot, force:bool=False):
     start_time = time.time()
 
     # Consolidate shot
@@ -31,12 +32,15 @@ def process_shot(db, shot, cpu_count=0):
         # sys.exit()
 
     # Simplify anf get starting step no.
-    step_no = optimize_tasks(db=db, shot=shot)
+    if force:
+        step_no = 0
+    else:
+        step_no = optimize_tasks(db=db, shot=shot)
 
     if step_no != -1:
 
         # Apply filters to all frames of this shot
-        apply_filters(db=db, shot=shot, step_no_start=step_no)
+        apply_filters(db=db, shot=shot, step_no_start=step_no, force=force)
         spent_time = time.time() - start_time
         print_green("(%.01fs -> %0.2fs/f)" % (spent_time, spent_time/shot['count']))
 
@@ -55,7 +59,7 @@ def process_shot(db, shot, cpu_count=0):
     # Effects
     if 'effects' in shot.keys():
         effect = shot['effects'][0]
-        print("<<<<<<<<<<<<<<<<<<<<< EFFECTS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        print_lightcyan("Effects:")
         # print("APPLY effect", shot['effects'])
         # pprint(shot)
         if effect == 'loop_and_fadeout':
@@ -63,6 +67,13 @@ def process_shot(db, shot, cpu_count=0):
 
         elif effect == 'fadeout':
             effect_fadeout(db, shot)
+
+        elif effect == 'fadein':
+            # TODO rename fadein into loop_and_fadein?
+            effect_fadein(db, shot)
+
+        else:
+            print_green("\tuse concatenation files")
 
 
     # sys.exit(print_red("\n終わり\n"))

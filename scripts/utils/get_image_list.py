@@ -12,7 +12,7 @@ def get_first_image_filepath(shot, folder, step_no, hash=''):
 
     if step_no == 0 or shot['last_task'] == 'edition':
         # Deinterlace or edition uses the original frame no.
-        print("\t\t\tget_first_image_filepath: deinterlaced")
+        # print("\t\tget_first_image_filepath: deinterlaced")
         new_frame_no = shot['start']
     else:
         new_frame_no = 0

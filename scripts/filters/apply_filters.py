@@ -4,7 +4,6 @@ from multiprocessing import *
 import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 import os
-import platform
 import cv2
 import gc
 import sys
@@ -20,29 +19,27 @@ from filters.python_replace import (
 from filters.utils import MAX_FRAMES_COUNT
 from filters.animesr import upscale_animesr
 from filters.x_gan import (
-    upscale_esrgan,
+    upscale_pytorch,
     upscale_real_cugan,
-    upscale_real_esrgan,
 )
 from utils.get_image_list import (
     get_image_list,
     STEP_INC,
 )
+from utils.load_images import load_images
 
 from utils.pretty_print import *
 
 
 
-def load_image(i, filepath):
-    return i, cv2.imread(filepath, cv2.IMREAD_COLOR)
 
 
-def apply_filters(db, shot, step_no_start=0, get_hashes=False):
+def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False) -> None:
 
     image_list = list()
     images = list()
     hashes = list()
-    do_force = False
+    do_force = force
 
     # Initialize variables depending on starting step no.
     step_no = step_no_start
@@ -74,11 +71,6 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
             # shot['last_step']['shape'] = img.shape
             # return hashes
 
-    if platform.system() == "Windows":
-        cpu_count = int(multiprocessing.cpu_count() * (3/4))
-    else:
-        cpu_count = 2
-
 
     # walk through filters
     for filter in filters:
@@ -96,14 +88,15 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
             if step_no > 0 and shot['count'] < MAX_FRAMES_COUNT and len(images) != shot['count']:
                 print_lightgrey("\t\t\tLoading %d images in memory, from %s" % (shot['count'], image_list[0]), flush=True)
 
-                # images = [cv2.imread(f_input, cv2.IMREAD_COLOR) for f_input in image_list]
-                images = [None] * shot['count']
-                nos = list(range(shot['count']))
-                with ThreadPoolExecutor(max_workers=min(cpu_count, shot['count'])) as executor:
-                    work_result = {executor.submit(load_image, i, fp): list for i, fp in zip(nos, image_list)}
-                    for future in concurrent.futures.as_completed(work_result):
-                        i, img = future.result()
-                        images[i] = img
+                # images = [None] * shot['count']
+                # nos = list(range(shot['count']))
+                # with ThreadPoolExecutor(max_workers=min(cpu_count, shot['count'])) as executor:
+                #     work_result = {executor.submit(load_image, i, fp): list for i, fp in zip(nos, image_list)}
+                #     for future in concurrent.futures.as_completed(work_result):
+                #         i, img = future.result()
+                #         images[i] = img
+
+                images = load_images(shot['count'], image_list)
 
                 shot['last_step']['shape'] = images[0].shape
 
@@ -116,128 +109,140 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False):
             images = [None] * shot['count']
 
 
-
-
-        # xGAN
+        # PyTorch
         #-----------------------------------------------------------------------
-        if filter['type'] in ['real_cugan', 'real_esrgan', 'esrgan']:
+        if filter['type'] == 'pytorch':
             if not torch.cuda.is_available():
-                print_red("\t\t\terror: cannot upscale with this GPU/CPU")
-                # print_orange("\t\t\tfallback: bad quality upscale (CV2: nearest)")
-                # filter_str = "scale=2:nearest"
-                # hash, images = apply_python_filters(
-                #     shot,
-                #     images=images,
-                #     image_list=image_list,
-                #     step_no=step_no,
-                #     filters_str=filter_str,
-                #     input_hash=hash,
-                #     do_save=filter['save'],
-                #     output_folder=output_folder,
-                #     get_hash=get_hashes,
-                #     do_force=do_force)
-                # if not get_hashes:
-                #     print_lightgrey("\t\t\tupscale: returned %d images" % (len(images)))
-                if not get_hashes:
-                    sys.exit("Goodbye!")
+                print_red("\t\t\terror: cannot denoise/sharpen with this GPU")
 
             xgan = {
                 'name': filter['type'],
-                'model': '',
+                'model': filter['str'],
             }
 
-            args = filter['str'].split(',')
-            for arg in args:
-                arg_name, arg_value = arg.split('=')
-                xgan[arg_name] = arg_value
-
-            # Model name is required
-            if xgan['name'] == 'real_cugan':
-                if 'n' not in xgan.keys():
-                    sys.exit(print_red("\n(Real-CUGAN): denoise value is required"))
-                # print("\n\t\t\t(Real-CUGAN) scale: %d, denoise: %d" % (int(xgan['s']), int(xgan['n'])))
-                hash, scale, images = upscale_real_cugan(
-                    shot=shot,
-                    images=images,
-                    image_list=image_list,
-                    scale=int(xgan['s']),
-                    denoise=int(xgan['n']),
-                    directories=db['common']['directories'],
-                    input_hash=hash,
-                    step_no=step_no,
-                    output_folder=output_folder,
-                    get_hash=get_hashes,
-                    do_force=do_force)
-                # if not get_hashes:
-                #     print("\t\t\tupscale: returned %s" % (hash))
-
-            elif xgan['name'] == 'real_esrgan':
-                if xgan['model'] == '':
-                    sys.exit(print_red("\n(Real-ESRGAN) model name is required"))
-                hash, scale, images = upscale_real_esrgan(
-                    shot=shot,
-                    images=images,
-                    image_list=image_list,
-                    scale=2,
-                    model_name=xgan['model'],
-                    directories=db['common']['directories'],
-                    input_hash=hash,
-                    step_no=step_no,
-                    output_folder=output_folder,
-                    get_hash=get_hashes,
-                    do_force=do_force)
-                # if not get_hashes:
-                #     print("\t\t\tupscale: returned %s" % (hash))
-
-            elif xgan['name'] == 'esrgan':
-                if xgan['model'] == '':
-                    sys.exit(print_red("\n(ESRGAN) model name is required"))
-                hash, scale, images = upscale_esrgan(
-                    shot=shot,
-                    images=images,
-                    image_list=image_list,
-                    scale=2,
-                    model_name=xgan['model'],
-                    directories=db['common']['directories'],
-                    input_hash=hash,
-                    step_no=step_no,
-                    output_folder=output_folder,
-                    get_hash=get_hashes,
-                    do_force=do_force)
-
-
-        # AnimeSR
-        #-----------------------------------------------------------------------
-        elif filter['type'] == 'animesr':
-            if not torch.cuda.is_available():
-                print_red("\t\t\terror: cannot upscale with this GPU/CPU")
-
-            alg = {
-                'name': filter['type'],
-                'model': '',
-            }
-
-            args = filter['str'].split(',')
-            for arg in args:
-                arg_name, arg_value = arg.split('=')
-                alg[arg_name] = arg_value
-
-            if alg['model'] == '':
-                sys.exit(print_red("\n(AnimeSR) model name is required"))
-            hash, scale, images = upscale_animesr(
+            if xgan['model'] == '':
+                sys.exit(print_red("\n(PyTorch) model name is required"))
+            hash, scale, images = upscale_pytorch(
                 shot=shot,
                 images=images,
                 image_list=image_list,
-                scale=2,
-                model_name=alg['model'],
+                model_name=xgan['model'],
                 directories=db['common']['directories'],
                 input_hash=hash,
                 step_no=step_no,
                 output_folder=output_folder,
                 get_hash=get_hashes,
                 do_force=do_force)
-            # if not get_hashes:
-            #     print("\t\t\tupscale: returned %s" % (hash))
+
+
+        # Real CUGAN
+        #-----------------------------------------------------------------------
+        elif filter['type'] == 'real_cugan':
+            if not torch.cuda.is_available():
+                if filter['task'] == 'upscale':
+                    print_red("\t\t\terror: cannot upscale with this GPU")
+                    print_orange("\t\t\tfallback: bad quality upscale (CV2: bicubic)")
+                    filter_str = "scale=2:bicubic"
+                    hash, images = apply_python_filters(
+                        shot,
+                        images=images,
+                        image_list=image_list,
+                        step_no=step_no,
+                        filters_str=filter_str,
+                        input_hash=hash,
+                        do_save=True,
+                        output_folder=output_folder,
+                        get_hash=get_hashes,
+                        do_force=do_force)
+                    if not get_hashes:
+                        print_lightgrey("\t\t\tupscale: returned %d images" % (len(images)))
+
+                else:
+                    print_red("\t\t\terror: cannot denoise/sharpen with this GPU")
+
+            else:
+                xgan = {
+                    'name': filter['type'],
+                    'model': '',
+                }
+
+                args = filter['str'].split(',')
+                for arg in args:
+                    arg_name, arg_value = arg.split('=')
+                    xgan[arg_name] = arg_value
+
+                # Model name is required
+                if xgan['name'] == 'real_cugan':
+                    if 'n' not in xgan.keys():
+                        sys.exit(print_red("\n(Real-CUGAN): denoise value is required"))
+                    # print("\n\t\t\t(Real-CUGAN) scale: %d, denoise: %d" % (int(xgan['s']), int(xgan['n'])))
+                    hash, scale, images = upscale_real_cugan(
+                        shot=shot,
+                        images=images,
+                        image_list=image_list,
+                        scale=int(xgan['s']),
+                        denoise=int(xgan['n']),
+                        directories=db['common']['directories'],
+                        input_hash=hash,
+                        step_no=step_no,
+                        output_folder=output_folder,
+                        get_hash=get_hashes,
+                        do_force=do_force)
+                    # if not get_hashes:
+                    #     print("\t\t\tupscale: returned %s" % (hash))
+
+
+        # AnimeSR
+        #-----------------------------------------------------------------------
+        elif filter['type'] == 'animesr':
+            if not torch.cuda.is_available():
+                if filter['task'] == 'upscale':
+                    print_red("\t\t\terror: cannot upscale with this GPU")
+                    print_orange("\t\t\tfallback: bad quality upscale (CV2: nearest)")
+                    filter_str = "scale=4:bicubic"
+                    hash, images = apply_python_filters(
+                        shot,
+                        images=images,
+                        image_list=image_list,
+                        step_no=step_no,
+                        filters_str=filter_str,
+                        input_hash=hash,
+                        do_save=True,
+                        output_folder=output_folder,
+                        get_hash=get_hashes,
+                        do_force=do_force)
+                    if not get_hashes:
+                        print_lightgrey("\t\t\tupscale: returned %d images" % (len(images)))
+                else:
+                    print_red("\t\t\terror: cannot denoise/sharpen with this GPU")
+
+            else:
+                alg = {
+                    'name': filter['type'],
+                    'model': '',
+                }
+
+                args = filter['str'].split(',')
+                for arg in args:
+                    arg_name, arg_value = arg.split('=')
+                    alg[arg_name] = arg_value
+
+                if alg['model'] == '':
+                    sys.exit(print_red("\n(AnimeSR) model name is required"))
+                hash, scale, images = upscale_animesr(
+                    shot=shot,
+                    images=images,
+                    image_list=image_list,
+                    model_name=alg['model'],
+                    directories=db['common']['directories'],
+                    input_hash=hash,
+                    step_no=step_no,
+                    do_save=filter['save'],
+                    output_folder=output_folder,
+                    get_hash=get_hashes,
+                    do_force=do_force)
+                # if not get_hashes:
+                #     print("\t\t\tupscale: returned %s" % (hash))
 
 
 

@@ -28,12 +28,23 @@ from pprint import pprint
 from skimage import color
 from skimage import restoration
 from filters.ffmpeg_utils import clean_ffmpeg_filter
-from filters import IMG_BORDER_HIGH_RES
+from filters import IMG_BORDER_HIGH_RES, IMG_BORDER_LOW_RES
 
-from filters.utils import FINAL_FRAME_WIDTH, get_dimensions_from_crop_values, has_add_border_task
+from filters.utils import (
+    INITIAL_FRAME_HEIGHT,
+    INITIAL_FRAME_WIDTH,
+    FINAL_FRAME_HEIGHT,
+    FINAL_FRAME_WIDTH,
+    get_dimensions_from_crop_values,
+    has_add_border_task,
+)
 from utils.pretty_print import *
 
 
+def get_mean_luma(img):
+    # return brightness (x100)
+    h, s, v = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
+    return 100 * np.mean(v / np.max(v))
 
 
 def crop(img, geometry=[0,0,0,0]):
@@ -138,13 +149,13 @@ def edge_sharpen_sobel_gray(image_gray, index, k_size=3, blend_factor=0.2):
     grad_y = cv2.Sobel(image_gray2, ddepth, 0, 1, ksize=k_size, scale=scale, delta=delta, borderType=cv2.BORDER_DEFAULT)
     abs_grad_x = cv2.convertScaleAbs(grad_x)
     abs_grad_y = cv2.convertScaleAbs(grad_y)
-    abs_grad_xy = cv2.addWeighted(abs_grad_x, 0.5, abs_grad_y, 0.5, 0)
+    abs_grad_xy = cv2.addWeighted(abs_grad_x, 1-blend_factor, abs_grad_y, blend_factor, 0)
 
     kernel = np.ones((3, 3), np.uint8)
     img_output2 =  cv2.erode(abs_grad_xy, kernel, iterations=1)
 
     # img_output2 = abs_grad_xy
-    cv2.imwrite(filename="frames_23_sobel/f_%05d_1.png" % (index), img=img_output2)
+    # cv2.imwrite(filename="frames_23_sobel/f_%05d_1.png" % (index), img=img_output2)
     return img_output2
 
 
@@ -380,41 +391,56 @@ def cv2_geometry_filter(img, geometry):
 
 
 
-def calculate_geometry_parameters(shot, img, verbose:bool=False):
+def calculate_geometry_parameters(shot, img, simulate:bool=False, verbose:bool=False):
     # Returns the values which will be used when resizing/cropping/padding an image
-    verbose = True
+    verbose = False
     if verbose:
         print_cyan("\ncalculate_geometry_parameters\n------------------------------")
         pprint(shot['geometry'])
 
-    img_height, img_width, c = img.shape
+    if simulate:
+        # Used for stats
+        img_height, img_width = INITIAL_FRAME_HEIGHT, INITIAL_FRAME_WIDTH
+        if has_add_border_task(shot=shot):
+            img_height += 2*IMG_BORDER_LOW_RES
+            img_width += 2*IMG_BORDER_LOW_RES
+        img_height *= 2
+        img_width *= 2
+    else:
+        img_height, img_width, c = img.shape
     if verbose:
         print_lightgrey(f"\t-> image shape ({img_width}, {img_height})")
 
     # Final width and height
-    w_final = shot['geometry']['dimensions']['final']['w']
-    h_final = shot['geometry']['dimensions']['final']['h']
+    w_final = FINAL_FRAME_WIDTH
+    h_final = FINAL_FRAME_HEIGHT
 
     # Shot geometry
     shot_geometry = shot['geometry']['shot']
     if shot_geometry is None and 'default' in shot['geometry'].keys():
         # Shot geometry may contains the default geometry when using video editor
         shot_geometry = shot['geometry']['default']
+        if verbose:
+            print_lightgrey(f"\t-> use default geometry")
 
     # Crop the image
     # Update the crop values if borders has been added
-    if has_add_border_task(shot):
-        cropped_value = list()
-        # cropped_value = list(map(lambda x: x + IMG_BORDER_HIGH_RES, shot_geometry['crop']))
-        for x in shot_geometry['crop']:
-            cropped_value.append(x + IMG_BORDER_HIGH_RES)
+    if shot['last_task'] != 'deinterlace' or has_add_border_task(shot):
+        cropped_value = [x + IMG_BORDER_HIGH_RES for x in shot_geometry['crop']]
+        if verbose:
+            print_lightgrey(f"\t-> image has borders")
+            print(f"\t{cropped_value}")
     else:
         cropped_value = shot_geometry['crop']
+        if verbose:
+            print_lightgrey(f"\t-> image has no border")
+            print(f"\t{cropped_value}")
+
 
     crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
         width=img_width, height=img_height, crop=cropped_value)
     if verbose:
-        print_lightgrey("\t-> cropped size (%d, %d)" % (cropped_width, cropped_height))
+        print_lightgrey(f"\t-> cropped size ({cropped_width}, {cropped_height}). Crop values: [{crop_top}, {crop_bottom}, {crop_left}, {crop_right}]")
 
     # (1) Crop
 
@@ -437,7 +463,7 @@ def calculate_geometry_parameters(shot, img, verbose:bool=False):
         if verbose:
             print_green("\tKeep ratio, fit to part width (%d)" % (target_width))
         resized_width = target_width
-        resized_height = int(((cropped_height * target_width) / float(cropped_width)))
+        resized_height = int((np.float64(cropped_height * target_width) / np.float64(cropped_width)))
         if verbose:
             print_lightgrey("\t-> resized (%d, %d)" % (resized_width, resized_height))
 
@@ -630,24 +656,25 @@ def filter_brightness_contrast(input_img, brightness = 255, contrast = 127):
     # cv2.putText(buf,'B:{},C:{}'.format(brightness,contrast),(10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
     return buf
 
+INTERPOLATIONS = {
+    'bicubic': cv2.INTER_CUBIC,
+    'lanczos': cv2.INTER_LANCZOS4,
+    'lanczos4': cv2.INTER_LANCZOS4,
+    'nearest': cv2.INTER_NEAREST,
+    'linear': cv2.INTER_LINEAR,
+}
 
-def cv2_scale(image, scale, interpolation):
+def cv2_scale(image, scale:float, interpolation:str):
     # print("upscale image to %dx%d, inter=%s" % (width, height, interpolation))
     # startTime = time.time()
-    if interpolation == 'bicubic':
-        cv2_interpolation = cv2.INTER_CUBIC
-    elif interpolation in ['lanczos', 'lanczos4']:
-        cv2_interpolation = cv2.INTER_LANCZOS4
-    elif interpolation == 'nearest':
-        cv2_interpolation = cv2.INTER_NEAREST
-    elif interpolation == 'linear':
-        cv2_interpolation = cv2.INTER_LINEAR
-    else:
+    try:
+        cv2_interpolation = INTERPOLATIONS[interpolation]
+    except:
         sys.exit(print_red("error: cv2_scale: interpolation method not recognized [%s]" % (interpolation)))
 
     # 0.015s
     upscaled_image = cv2.resize(image,
-        (image.shape[1]*scale, image.shape[0]*scale),
+        (int(image.shape[1]*scale), int(image.shape[0]*scale)),
         interpolation=cv2_interpolation)
 
     # print(">> %.04fs" % (time.time() - startTime), flush=True)

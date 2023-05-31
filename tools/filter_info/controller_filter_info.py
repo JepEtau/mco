@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import sys
-sys.path.append('../scripts')
+sys.path.append("scripts")
 
 import collections
 import configparser
@@ -20,7 +20,7 @@ from utils.pretty_print import *
 TEMPLATE_SHOT_EPISODE = "^(ep\d{2})_([a-z_]+)_(\d{3})__([a-z0]*)__([a-z0-9]{7}).*"
 TEMPLATE_SHOT_G_DEBUT_FIN = "^(g_[a-z]+)_(\d{3})__([a-z0]*)_(ep\d{2})__([a-z0-9]{7}).*"
 TEMPLATE_SHOT_G = "^(ep\d{2})_(g_[a-z]+)_(\d{3})__([a-z0]*)_(ep\d{2})__([a-z0-9]{7}).*"
-TEMPLATE_IMG = "^(ep\d{2})_(\d{5})__([a-z0]*)__(\d{2})_([a-z0-9]{7})$"
+TEMPLATE_IMG = "^(ep\d{2})_(\d{5})__([a-z0]*)__(\d{2})_([a-z0-9]{7}).*"
 
 
 class Controller_filter_info(QObject):
@@ -159,7 +159,6 @@ class Controller_filter_info(QObject):
 
         # log file
         filepath_hashes = os.path.normpath(os.path.join(
-            "..",
             "hashes",
             "%s_hash.ini" % (file_properties['k_ep'])
         ))
@@ -222,7 +221,7 @@ class Controller_filter_info(QObject):
         # Other filters
         for no in range(1, len(filters)):
             filter_str = filters[no]['filter_str']
-            filter_str = filter_str.replace(',', ',\n')
+            filter_str = filter_str.replace(',', ',\n                ')
             filters[no]['filter_str'] = filter_str
 
         return filters

@@ -11,20 +11,20 @@ from utils.time_conversions import frames_to_ms
 PATH_DATABASE = "./database"
 
 
-def create_folder_for_video(db, k_ep):
+def create_folder_for_video(db, k_ep_or_g):
     """ Create the directory that shall contains all video stream
         that will be concatenated
 
         Returns
             Path of the created folder
     """
-    if k_ep in ['ep00', 'ep40']:
+    if k_ep_or_g in ['ep00', 'ep40']:
         return
 
-    if k_ep in['g_debut', 'g_fin']:
-        video_directory = os.path.join(db[k_ep]['cache_path'], 'video')
+    if k_ep_or_g in['g_debut', 'g_fin']:
+        video_directory = os.path.join(db[k_ep_or_g]['cache_path'], 'video')
     else:
-        video_directory = os.path.join(db[k_ep]['cache_path'], 'video')
+        video_directory = os.path.join(db[k_ep_or_g]['cache_path'], 'video')
 
     if not os.path.exists(video_directory):
         os.makedirs(video_directory)
@@ -146,10 +146,10 @@ def is_progressive_file_valid(shot, db_common, verbose:bool=False):
             print(f"progressive filepath: {progressive_filepath}")
         return False
 
-    progressive_duration = get_video_duration(db_common,
+    progressive_duration, progressive_frame_count = get_video_duration(db_common,
         progressive_filepath,
         integrity=False)
-    interlaced_duration = get_video_duration(
+    interlaced_duration, interlaced_frame_count = get_video_duration(
         db_common,
         shot['inputs']['interlaced']['filepath'],
         integrity=False)
@@ -172,17 +172,22 @@ def is_progressive_file_valid(shot, db_common, verbose:bool=False):
 
     elif count == -1:
         # Partial video from start to end of video file
-        interlaced_duration -= (frames_to_ms(start) / 1000)
-        if progressive_duration != interlaced_duration:
+        interlace_count = interlaced_frame_count - start
+        progressive_count = progressive_frame_count
+
+        if progressive_count < interlace_count:
             if verbose:
-                print("\tnot valid: %.02fs, should be %.02fs" % (progressive_duration, interlaced_duration))
+                print(f"\tnot valid: {progressive_count}, should be {interlace_count}")
+            sys.exit()
             return False
     else:
         # Partial video
-        if progressive_duration != (count / FPS):
+        progressive_count = progressive_frame_count
+        if progressive_count < count:
             if verbose:
-                print("\tnot valid: %.02fs, should be %.02fs" % (progressive_duration, count / FPS))
+                print(f"\tnot valid: {progressive_count}, should be {interlace_count}")
                 sys.exit(print_yellow(f"verify this!"))
+            sys.exit()
             return False
 
     if verbose:

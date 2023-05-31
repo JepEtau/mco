@@ -8,6 +8,7 @@ import subprocess
 import time
 
 from pprint import pprint
+from utils.common import FPS
 from utils.pretty_print import *
 from utils.process import create_process
 from utils.time_conversions import timestamp2sexagesimal
@@ -84,6 +85,7 @@ def get_video_duration(db_common, filename='', integrity=True):
     stdout, stderr = process.communicate()
 
     duration = 0
+    frame_count = 0
     if stderr is not None:
         line = stderr.decode(encoding='UTF-8')
         line += stdout.decode(encoding='UTF-8')
@@ -98,18 +100,23 @@ def get_video_duration(db_common, filename='', integrity=True):
             duration = (duration + int(result[2])) * 60
             duration = (duration + int(result[3])) * 100
             duration += int(result[4])
+            frame_count = int(duration * FPS / 100)
         else:
             return 0.0
     else:
         return 0.0
 
-    return float(duration)/100.0
+    return (float(duration)/100.0, frame_count)
 
 
 
-def execute_ffmpeg_command(db, command=None, filename='', print_msg=False):
+def execute_ffmpeg_command(db, command=None, filename='', print_msg=False, simulation:bool=False):
     if command is None:
         sys.exit(print_red("Error: FFmpeg command is empty"))
+
+    if simulation:
+        print_lightgrey(' '.join(command))
+        return ''
 
     if print_msg:
         now = datetime.datetime.now()
