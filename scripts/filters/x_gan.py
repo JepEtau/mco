@@ -351,7 +351,12 @@ def upscale_pytorch(shot, images:list, image_list:list,
     match = re.match("^([\d]{1})[x]{1}.*", model_name.lower())
     if match is not None:
         scale = int(match.group(1))
-
+    else:
+        match = re.match(".*x([\d]{1}).*", model_name.lower())
+        if match is not None:
+            scale = int(match.group(1))
+        else:
+            scale = 2
     # Hash
     filter_str = f"{input_hash},{suffix}"
     if get_hash:
