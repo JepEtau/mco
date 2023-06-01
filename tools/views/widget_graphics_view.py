@@ -144,6 +144,8 @@ class Widget_graphics_view(QGraphicsView):
         self.poly_points = list()
         self.__is_drawing_polygon = False
 
+        self.installEventFilter(self)
+
 
     def show_image(self, image):
         self.image = image
@@ -700,31 +702,103 @@ class Widget_graphics_view(QGraphicsView):
         self.new_polygon_points = []
 
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
+
+    def event_key_pressed(self, event:QKeyEvent) -> bool:
+        key = event.key()
+        modifiers = event.modifiers()
+        print_green(f"widget_geometry: event_key_pressed: {key}")
+
         if not self.__is_editing_tracker:
-            return self.__parent.keyPressEvent(event)
+            return False
 
         print("key_pressed")
         key = event.key()
         if key in [Qt.Key.Key_Enter, Qt.Key.Key_Return]:
             self.draw_polygon()
+            return True
 
-        elif key == Qt.Key.Key_Insert:
+        elif key == Qt.Key.Key_T:
             print("create a new polygon")
             self.record()
+            return True
 
         elif key == Qt.Key.Key_Delete:
             print("remove a selected polygon/corner")
             self.remove_selected_item()
+            return True
 
         if key == Qt.Key.Key_Control:
             self.control_key_pressed = True
+            return True
         else:
             self.control_key_pressed = False
 
-    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        return False
+
+
+    # def keyPressEvent(self, event: QKeyEvent) -> None:
+    #     if not self.__is_editing_tracker:
+    #         return self.__parent.keyPressEvent(event)
+
+    #     print("key_pressed")
+    #     key = event.key()
+    #     if key in [Qt.Key.Key_Enter, Qt.Key.Key_Return]:
+    #         self.draw_polygon()
+
+    #     elif key == Qt.Key.Key_Insert:
+    #         print("create a new polygon")
+    #         self.record()
+
+    #     elif key == Qt.Key.Key_Delete:
+    #         print("remove a selected polygon/corner")
+    #         self.remove_selected_item()
+
+    #     if key == Qt.Key.Key_Control:
+    #         self.control_key_pressed = True
+    #     else:
+    #         self.control_key_pressed = False
+
+
+    def event_key_released(self, event:QKeyEvent) -> bool:
+        key = event.key()
+        modifiers = event.modifiers()
         if not self.__is_editing_tracker:
             return self.__parent.keyReleaseEvent(event)
 
         print("released")
         self.control_key_pressed = False
+
+
+    # def keyReleaseEvent(self, event: QKeyEvent) -> None:
+    #     if not self.__is_editing_tracker:
+    #         return self.__parent.keyReleaseEvent(event)
+
+    #     print("released")
+    #     self.control_key_pressed = False
+
+
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.KeyPress:
+            print_lightcyan(f"eventFilter: widget_{self.objectName()}: keypress {event.key()}")
+            if self.event_key_pressed(event):
+                print(f"\taccepted")
+                event.accept()
+                return True
+            else:
+                print(f"\tsend to parent")
+                return self.__parent.event_key_pressed(event)
+
+
+        elif event.type() == QEvent.Type.KeyRelease:
+            print_lightcyan(f"eventFilter: widget_{self.objectName()}: keyrelease {event.key()}")
+            if self.event_key_released(event):
+                print(f"\taccepted")
+                event.accept()
+                return True
+            else:
+                print(f"\tsend to parent")
+                return self.__parent.event_key_released(event)
+
+
+        return super().eventFilter(watched, event)

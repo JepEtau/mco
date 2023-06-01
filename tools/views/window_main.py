@@ -607,6 +607,7 @@ class Window_main(Window_common):
     def event_key_released(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
+        self.widget_painter.event_key_released(event=event)
         if self.current_widget != '':
             return self.widgets[self.current_widget].event_key_released(event)
 
@@ -638,6 +639,8 @@ class Window_main(Window_common):
             if key in [Qt.Key.Key_C, Qt.Key.Key_V]:
                 return self.widget_replace.event_key_pressed(event)
 
+        if self.widget_painter.event_key_pressed(event=event):
+            return True
 
 
         if self.current_widget != '':
