@@ -104,8 +104,8 @@ class CV2_deshaker:
         for kp in keypoints:
             __kp = kp[0]
             # print(f"{__kp[0]}, {__kp[1]}")
-            if do_show:
-                cv2.circle(img_improved, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 1)
+            # if do_show:
+            #     cv2.circle(img_improved, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 1)
 
             # if not (self.__img_contour[2] < __kp[0] < self.__img_contour[3]
             #     and self.__img_contour[0] < __kp[1] < self.__img_contour[1]):
@@ -116,14 +116,21 @@ class CV2_deshaker:
             if is_point_inside(__kp, self.__tracker_contours, self.__tracker_is_inside):
                 filtered_keypoints.append(kp)
 
+        filtered_keypoints = np.array(filtered_keypoints, dtype=keypoints.dtype)
+        for kp in filtered_keypoints:
+            __kp = kp[0]
+            if do_show:
+                cv2.circle(img_improved, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 1)
+
+
         if do_show:
             cv2.imshow("get_keypoints", img_improved)
             cv2.waitKey()
 
 
-        print(lightcyan(f"filtered kp: "), f"{len(filtered_keypoints)}")
+        print(lightcyan(f"ROI tracker: filtered kp: "), f"{len(filtered_keypoints)}")
         # print_lightcyan(f"{len(filtered_keypoints)}")
-        filtered_keypoints = np.array(filtered_keypoints, dtype=keypoints.dtype)
+
 
         return (filtered_keypoints, img_improved)
 
