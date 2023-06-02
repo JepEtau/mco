@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>735</width>
+    <width>785</width>
     <height>182</height>
    </rect>
   </property>
@@ -314,14 +314,14 @@
          <item>
           <widget class="Widget_segments" name="widget_segments" native="true">
            <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+            <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
              <horstretch>0</horstretch>
              <verstretch>0</verstretch>
             </sizepolicy>
            </property>
            <property name="minimumSize">
             <size>
-             <width>670</width>
+             <width>720</width>
              <height>0</height>
             </size>
            </property>

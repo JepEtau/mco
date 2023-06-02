@@ -154,6 +154,8 @@ class Window_main(Window_common):
 
         # Connect signals between widgets
         self.widget_stabilize.signal_segment_selected[dict].connect(self.widget_painter.event_segment_selected)
+        self.controller.signal_segment_selected[dict].connect(self.widget_painter.event_segment_selected)
+
         self.widget_painter.signal_regions_modified[list].connect(self.widget_stabilize.event_region_modified)
 
 

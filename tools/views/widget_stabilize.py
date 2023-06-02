@@ -118,13 +118,13 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
         self.block_signals(False)
-        self.adjustSize()
+        # self.adjustSize()
 
 
 
     def refresh_preview_options(self, new_preview_settings):
-        print_lightcyan("refresh_preview_options: stabilize")
-        pprint(new_preview_settings)
+        # print_lightcyan("refresh_preview_options: stabilize")
+        # pprint(new_preview_settings)
         self.is_edition_allowed = new_preview_settings['stabilize']['allowed']
         enabled = new_preview_settings['stabilize']['enabled']
 
@@ -427,6 +427,12 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         elif key == Qt.Key.Key_F3:
             self.pushButton_guidelines.toggle()
             return True
+
+        elif key == Qt.Key.Key_F4:
+            if self.pushButton_show_tracker.isEnabled():
+                self.pushButton_show_tracker.toggle()
+            return True
+
         elif key == Qt.Key.Key_S:
             self.event_start_modified()
             return True

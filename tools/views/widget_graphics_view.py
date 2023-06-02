@@ -158,7 +158,6 @@ class Widget_graphics_view(QGraphicsView):
 
     def refresh_preview_options(self, options):
         if options['stabilize']['show_tracker'] and not self.__is_editing_tracker:
-            print_yellow("TODO: get regions")
             self.__is_editing_tracker = True
             self.draw_tracker_regions()
 
@@ -169,9 +168,13 @@ class Widget_graphics_view(QGraphicsView):
 
 
     def event_segment_selected(self, segment):
-        log.info("segment has been select, store segment tracking regions")
-        print_purple(f"graphics_view: event_segment_selected")
-        # pprint(segment)
+        verbose = False
+
+        if verbose:
+            log.info("segment has been select, store segment tracking regions")
+            print_purple(f"graphics_view: event_segment_selected")
+            # pprint(segment)
+        self.erase_tracker_regions()
         try:
             self.__tracker = segment['tracker']
         except:
@@ -736,29 +739,6 @@ class Widget_graphics_view(QGraphicsView):
         return False
 
 
-    # def keyPressEvent(self, event: QKeyEvent) -> None:
-    #     if not self.__is_editing_tracker:
-    #         return self.__parent.keyPressEvent(event)
-
-    #     print("key_pressed")
-    #     key = event.key()
-    #     if key in [Qt.Key.Key_Enter, Qt.Key.Key_Return]:
-    #         self.draw_polygon()
-
-    #     elif key == Qt.Key.Key_Insert:
-    #         print("create a new polygon")
-    #         self.record()
-
-    #     elif key == Qt.Key.Key_Delete:
-    #         print("remove a selected polygon/corner")
-    #         self.remove_selected_item()
-
-    #     if key == Qt.Key.Key_Control:
-    #         self.control_key_pressed = True
-    #     else:
-    #         self.control_key_pressed = False
-
-
     def event_key_released(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
@@ -767,14 +747,6 @@ class Widget_graphics_view(QGraphicsView):
 
         print("released")
         self.control_key_pressed = False
-
-
-    # def keyReleaseEvent(self, event: QKeyEvent) -> None:
-    #     if not self.__is_editing_tracker:
-    #         return self.__parent.keyReleaseEvent(event)
-
-    #     print("released")
-    #     self.control_key_pressed = False
 
 
 

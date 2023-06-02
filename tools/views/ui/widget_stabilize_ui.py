@@ -25,7 +25,7 @@ class Ui_widget_stabilize(object):
     def setupUi(self, widget_stabilize):
         if not widget_stabilize.objectName():
             widget_stabilize.setObjectName(u"widget_stabilize")
-        widget_stabilize.resize(735, 182)
+        widget_stabilize.resize(785, 182)
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -175,12 +175,12 @@ class Ui_widget_stabilize(object):
         self.horizontalLayout_2.setContentsMargins(9, 12, 3, 3)
         self.widget_segments = Widget_segments(self.groupBox_stabilize)
         self.widget_segments.setObjectName(u"widget_segments")
-        sizePolicy4 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
+        sizePolicy4 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Preferred)
         sizePolicy4.setHorizontalStretch(0)
         sizePolicy4.setVerticalStretch(0)
         sizePolicy4.setHeightForWidth(self.widget_segments.sizePolicy().hasHeightForWidth())
         self.widget_segments.setSizePolicy(sizePolicy4)
-        self.widget_segments.setMinimumSize(QSize(670, 0))
+        self.widget_segments.setMinimumSize(QSize(720, 0))
 
         self.horizontalLayout_2.addWidget(self.widget_segments)
 

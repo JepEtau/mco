@@ -107,6 +107,12 @@ class Preferences(QObject):
                     self.settings.value('%s/geometry' % (editor)).split(':')))
                 if self.preferences[editor]['geometry'][0] > screen_width and screens_count < 2:
                     self.preferences[editor]['geometry'][0] -= screen_width
+
+                if self.preferences[editor]['geometry'][0] < 0:
+                    self.preferences[editor]['geometry'][0] = 0
+                if self.preferences[editor]['geometry'][1] < 0:
+                    self.preferences[editor]['geometry'][1] = 0
+
                 self.preferences[editor]['widget'] =  self.settings.value('%s/widget' % (editor))
             except:
                 print("preferences for widget [%s]cannot be loaded" % (editor))

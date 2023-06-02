@@ -226,6 +226,19 @@ def set_widget_stylesheet(widget, widget_type=''):
             }
         """)
 
+    elif type(widget) is QLineEdit:
+        widget.setStyleSheet("""
+            QLineEdit {
+                background-color: rgb(60, 60, 60);
+                color: rgb(220, 220, 220);
+                border: 1px solid rgb(60, 60, 60);
+            }
+            QLineEdit:disabled {
+                color: rgb(60, 60, 60);
+            }
+        """)
+
+
 
 def set_stylesheet(widget):
     # Widget

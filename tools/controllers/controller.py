@@ -58,6 +58,7 @@ class Controller_video_editor(Controller_common,
     signal_reload_frame = Signal()
     signal_is_saved = Signal(str)
 
+    signal_segment_selected = Signal(dict)
     signal_stabilize_settings_refreshed = Signal(dict)
     signal_stabilization_done = Signal()
 
@@ -704,7 +705,6 @@ class Controller_video_editor(Controller_common,
 
 
         # Get geometry: already done each time a modification is done
-        # Stabilize settings: already loaded
 
         # Purge image from the previous frame
         self.purge_current_frame_cache()
@@ -714,6 +714,16 @@ class Controller_video_editor(Controller_common,
         frame['task'] = self.current_task
         self.current_frame = frame
         self.current_shot_no = frame['shot_no']
+
+        # Stabilize settings: already loaded
+
+        # Stabilize: segment
+        if (self.preview_options['stabilize']['enabled']
+            and self.preview_options['stabilize']['show_tracker']):
+            # print_lightcyan(f"get_frame_at_index {index}, refresh trackers")
+            segment = self.get_current_stabilize_segment(frame_no=frame['frame_no'])
+            if segment is not None:
+                self.signal_segment_selected.emit(segment)
 
         # Generate the image for this frame
         # now = time.time()
@@ -1064,6 +1074,16 @@ class Controller_video_editor(Controller_common,
         self.signal_preview_options_consolidated.emit(self.preview_options)
         self.signal_reload_frame.emit()
         self.signal_stabilization_done.emit()
+
+
+    def get_current_stabilize_segment(self, frame_no:int):
+        shot = self.current_shot()
+        print_lightcyan(f"get_current_stabilize_segment")
+        shot_stabilize = self.model_database.get_shot_stabilize_settings(shot=shot)
+        for segment in shot_stabilize['segments']:
+            if segment['start'] <= frame_no <= segment['end']:
+                return segment
+        return None
 
 
 def load_image(i, f):

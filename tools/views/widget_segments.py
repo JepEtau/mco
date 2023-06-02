@@ -82,7 +82,7 @@ class Widget_segments(QTableWidget):
                 'id': 'tracker',
                 'title': 'Tracker',
                 'alignment': Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-                'width': 220,
+                'width': 200,
             },
         ]
 
@@ -106,7 +106,7 @@ class Widget_segments(QTableWidget):
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setFrameShape(QFrame.StyledPanel)
         self.setFrameShadow(QFrame.Sunken)
-        self.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.setSizeAdjustPolicy(QAbstractScrollArea.AdjustIgnored)
         self.setEditTriggers(QAbstractItemView.SelectedClicked)
         self.setProperty("showDropIndicator", False)
@@ -145,8 +145,8 @@ class Widget_segments(QTableWidget):
         self.row_height = 35
         self.initial_str = ""
         set_stylesheet(self)
-        self.setMinimumSize(QSize(670, 310))
-        self.adjustSize()
+        self.setMinimumSize(QSize(650, 310))
+
 
 
 
@@ -338,6 +338,10 @@ class Widget_segments(QTableWidget):
                 w = QLineEdit()
                 w.setObjectName(w_name)
                 w.setText(f"{len(segment['tracker']['regions'])}")
+                w.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed))
+                w.setFixedWidth(20)
+                # w.setMaximumSize(QSize(20, 16777215))
+                w.setAlignment(Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignVCenter)
                 w.setReadOnly(True)
                 w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                 set_widget_stylesheet(w)
