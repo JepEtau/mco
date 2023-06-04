@@ -163,6 +163,7 @@ def ffmpeg_filter(shot, images:list, image_list:list,
                 "-vcodec", "rawvideo",
                 "-"
             ])
+            print(ffmpeg_command)
             process = create_process(ffmpeg_command, db_common['process'])
 
             # Save images

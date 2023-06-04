@@ -1,6 +1,8 @@
 # TODO script
 (1)
 - append regions to the hash value
+- add overlay: shot no.
+- avisynth to upscale reportage
 
 (2)
 - stats: list unused curves. reason: clean the db

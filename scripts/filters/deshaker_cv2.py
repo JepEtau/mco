@@ -3,7 +3,7 @@ import sys
 import cv2
 import numpy as np
 from statistics import mean
-
+from skimage.filters import sobel
 
 
 from filters.filters import *
@@ -40,11 +40,11 @@ def apply_cv2_transformation(img, x_y_theta:list):
 
 class CV2_deshaker:
     def __init__(self) -> None:
-        self.__max_corners = 1000
+        self.__max_corners = 300
         self.__quality_level = 0.01
-        self.__min_distance = 10.0
+        self.__min_distance = 30.0
         self.__block_size = 3
-        self.__use_harris_detector = False
+        self.__use_harris_detector = True
         self.__k = 0.04
 
         self.__gftt = dict(
@@ -71,6 +71,9 @@ class CV2_deshaker:
         self.__improve_ref = True
         self.__img_contour = None
 
+        self.feature_extractor = 'gftt'
+        # self.feature_extractor = 'gftt'
+
         self.__gamma_lut = np.empty((1,256), np.uint8)
         for i in range(256):
             self.__gamma_lut[0, i] = np.clip(pow(i / 255.0, 0.6) * 255.0, 0, 255)
@@ -85,7 +88,25 @@ class CV2_deshaker:
 
     def get_keypoints(self, img_gray):
         img_improved = self.improve_ref(img_gray)
-        keypoints = cv2.goodFeaturesToTrack(img_improved, **self.__gftt)
+
+        if self.feature_extractor == 'sift':
+            descriptor = cv2.SIFT_create()
+            kpts, features = descriptor.detectAndCompute(img_improved, None)
+            keypoints = list()
+            for kp in kpts:
+                keypoints.append(kp.pt)
+            keypoints = np.array(keypoints, dtype=np.float32)
+
+        elif self.feature_extractor == 'brisk':
+            descriptor = cv2.BRISK_create()
+            kpts, features = descriptor.detectAndCompute(img_improved, None)
+            keypoints = list()
+            for kp in kpts:
+                keypoints.append(kp.pt)
+            keypoints = np.array(keypoints, dtype=np.float32)
+
+        elif self.feature_extractor =='gftt':
+            keypoints = cv2.goodFeaturesToTrack(img_improved, **self.__gftt)
         # if keypoints is None:
         #     cv2.imshow("get_keypoints", img_improved)
         #     cv2.waitKey()
@@ -99,13 +120,26 @@ class CV2_deshaker:
 
         filtered_keypoints = list()
         # display point
-        do_show = False
+        do_show = True
 
         for kp in keypoints:
-            __kp = kp[0]
+            if self.feature_extractor =='gftt':
+                __kp = kp[0]
+            else:
+                __kp = kp
+            if do_show:
+                img_improved_copy = img_improved.copy()
+                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [128,128,128], 1)
+
+
+        for kp in keypoints:
+            if self.feature_extractor =='gftt':
+                __kp = kp[0]
+            else:
+                __kp = kp
             # print(f"{__kp[0]}, {__kp[1]}")
             # if do_show:
-            #     cv2.circle(img_improved, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 1)
+            #     cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 1)
 
             # if not (self.__img_contour[2] < __kp[0] < self.__img_contour[3]
             #     and self.__img_contour[0] < __kp[1] < self.__img_contour[1]):
@@ -116,15 +150,18 @@ class CV2_deshaker:
             if is_point_inside(__kp, self.__tracker_contours, self.__tracker_is_inside):
                 filtered_keypoints.append(kp)
 
-        filtered_keypoints = np.array(filtered_keypoints, dtype=keypoints.dtype)
+        filtered_keypoints = np.array(filtered_keypoints, dtype=np.float32)
         for kp in filtered_keypoints:
-            __kp = kp[0]
+            if self.feature_extractor =='gftt':
+                __kp = kp[0]
+            else:
+                __kp = kp
             if do_show:
-                cv2.circle(img_improved, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 1)
+                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [0,0,0], 1)
 
 
         if do_show:
-            cv2.imshow("get_keypoints", img_improved)
+            cv2.imshow(f"get_keypoints", img_improved_copy)
             cv2.waitKey()
 
 
@@ -220,13 +257,9 @@ class CV2_deshaker:
                     cv2.imshow("ref", img_for_tracking)
                 # cv2.destroyAllWindows()
 
-        if abs(t_x) > IMG_BORDER_HIGH_RES or abs(t_y) > IMG_BORDER_HIGH_RES:
-            print("erroneous calcOpticalFlowPyrLK")
-            # print(f"{len(keypoints_ref[status == 1])} points, {len(keypoints[status == 1])} points")
-            # cv2.imshow("erroneous calcOpticalFlowPyrLK", img_for_tracking)
-            # cv2.waitKey()
-            # cv2.destroyAllWindows()
-
+        if abs(t_x) > 2*IMG_BORDER_HIGH_RES or abs(t_y) > 2*IMG_BORDER_HIGH_RES:
+            print(f"erroneous calcOpticalFlowPyrLK: t_x={t_x}, t_y={t_y}")
+            print(f"{len(keypoints_ref[status == 1])} points, {len(keypoints[status == 1])} points")
             if False:
                 # draw the tracks
                 if keypoints_ref is not None:
@@ -253,7 +286,7 @@ class CV2_deshaker:
                     cv2.imshow("ref", img_for_tracking)
 
                 [t_x, t_y, t_theta] = [0,0,0]
-
+            t_x, t_y, t_theta = self.__last_transformation
 
         if not mode['vertical']:
             t_y = 0
@@ -549,7 +582,7 @@ def draw_roi(img, roi:list):
 def improve_ref_img(img, gamma_lut:list=list()):
     # img_improved = img
 
-    # img_improved = cv2.normalize(img, img, 0, 255, cv2.NORM_MINMAX)
+   # img_norm = cv2.normalize(img, img, 0, 255, cv2.NORM_MINMAX)
 
     # img_improved = cv2_bilateral_filter(img, 11, 13, 13)
 
@@ -561,8 +594,24 @@ def improve_ref_img(img, gamma_lut:list=list()):
     # img_improved = cv2.LUT(img_improved, gamma_lut)
 
     # Increase contrast
-    img_improved = cv2.convertScaleAbs(img, alpha=1.3, beta=0)
+    img_improved = cv2.convertScaleAbs(img, alpha=1.3, beta=0.3)
 
+
+    # img_sobel = sobel(img_as_float(img))
+    # img_improved = img_as_ubyte(img_sobel)
+
+    # img_improved= cv2.bitwise_not(img_improved)
+
+    # tmp = img_as_float(blackAndWhiteImage)
+    # tmp = unsharp_mask(tmp, 3, 0.5, preserve_range=False)
+    # img_improved = img_as_ubyte(tmp)
+    # threshold , blackAndWhiteImage= cv2.threshold(img_improved, 240 , 255, cv2.THRESH_BINARY)
+    # img_improved = cv2.normalize(img_improved, img_improved, 0, 255, cv2.NORM_MINMAX)
+
+    # cv2.imshow('Output',blackAndWhiteImage)
+    # cv2.waitKey()
+    # cv2.destroyAllWindows()
+    # return blackAndWhiteImage
     return img_improved
 
 

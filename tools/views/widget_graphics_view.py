@@ -718,6 +718,8 @@ class Widget_graphics_view(QGraphicsView):
         key = event.key()
         if key in [Qt.Key.Key_Enter, Qt.Key.Key_Return]:
             self.draw_polygon()
+            self.event_region_modified()
+            self.__is_modifying = False
             return True
 
         elif key == Qt.Key.Key_T:
