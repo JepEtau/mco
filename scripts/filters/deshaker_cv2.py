@@ -71,7 +71,7 @@ class CV2_deshaker:
         self.__improve_ref = True
         self.__img_contour = None
 
-        self.feature_extractor = 'gftt'
+        self.feature_extractor = 'sift'
         # self.feature_extractor = 'gftt'
 
         self.__gamma_lut = np.empty((1,256), np.uint8)
@@ -91,31 +91,28 @@ class CV2_deshaker:
 
         if self.feature_extractor == 'sift':
             descriptor = cv2.SIFT_create()
-            kpts, features = descriptor.detectAndCompute(img_improved, None)
-            keypoints = list()
-            for kp in kpts:
-                keypoints.append(kp.pt)
-            keypoints = np.array(keypoints, dtype=np.float32)
 
         elif self.feature_extractor == 'brisk':
             descriptor = cv2.BRISK_create()
-            kpts, features = descriptor.detectAndCompute(img_improved, None)
-            keypoints = list()
-            for kp in kpts:
-                keypoints.append(kp.pt)
-            keypoints = np.array(keypoints, dtype=np.float32)
 
-        elif self.feature_extractor =='gftt':
+
+
+        if self.feature_extractor =='gftt':
             keypoints = cv2.goodFeaturesToTrack(img_improved, **self.__gftt)
         # if keypoints is None:
         #     cv2.imshow("get_keypoints", img_improved)
         #     cv2.waitKey()
         #     cv2.destroyAllWindows()
+        else:
+            kpts, features = descriptor.detectAndCompute(img_improved, None)
+            keypoints = np.array([kp.pt for kp in kpts], dtype='float32').reshape(-1, 1, 2)
+
 
         if keypoints is not None:
-            print_lightgrey(f"Nb of keypoints: {len(keypoints)}")
+            print_lightgrey(f"kp: {len(keypoints)}", end ='')
 
         if not self.__is_tracker_enabled:
+            print()
             return (keypoints, img_improved)
 
         filtered_keypoints = list()
@@ -123,20 +120,14 @@ class CV2_deshaker:
         do_show = True
 
         for kp in keypoints:
-            if self.feature_extractor =='gftt':
-                __kp = kp[0]
-            else:
-                __kp = kp
+            __kp = kp[0]
             if do_show:
                 img_improved_copy = img_improved.copy()
-                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [128,128,128], 1)
+                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [0,0,0], 1)
 
 
         for kp in keypoints:
-            if self.feature_extractor =='gftt':
-                __kp = kp[0]
-            else:
-                __kp = kp
+            __kp = kp[0]
             # print(f"{__kp[0]}, {__kp[1]}")
             # if do_show:
             #     cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 1)
@@ -152,12 +143,9 @@ class CV2_deshaker:
 
         filtered_keypoints = np.array(filtered_keypoints, dtype=np.float32)
         for kp in filtered_keypoints:
-            if self.feature_extractor =='gftt':
-                __kp = kp[0]
-            else:
-                __kp = kp
+            __kp = kp[0]
             if do_show:
-                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [0,0,0], 1)
+                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 1)
 
 
         if do_show:
@@ -165,9 +153,8 @@ class CV2_deshaker:
             cv2.waitKey()
 
 
-        print(lightcyan(f"ROI tracker: filtered kp: "), f"{len(filtered_keypoints)}")
+        print(f" -> {len(filtered_keypoints)}")
         # print_lightcyan(f"{len(filtered_keypoints)}")
-
 
         return (filtered_keypoints, img_improved)
 
@@ -205,9 +192,13 @@ class CV2_deshaker:
                 nextPts=None,
                 **self.__lk_params)
 
+            if status is None:
+                keypoints_from, keypoints_to = list(), list()
+            else:
+                keypoints_from, keypoints_to = keypoints_ref[status==1], keypoints[status==1]
+
             # Estimate transformation matrix
-            transformation = cv2.estimateAffinePartial2D(
-                keypoints_ref[status==1], keypoints[status==1])[0]
+            transformation = cv2.estimateAffinePartial2D(keypoints_from, keypoints_to)[0]
 
             if transformation is not None:
                 t_x = transformation[0][2]
@@ -367,7 +358,10 @@ class CV2_deshaker:
         indice = 0
 
         # Define a filter str
-        filters_str = f"{self.__max_corners}:{self.__quality_level:0.2f}:{self.__min_distance:.1f}:{self.__block_size}:{indice}"
+        if self.feature_extractor == 'gfft':
+            filters_str = f"{self.__max_corners}:{self.__quality_level:0.2f}:{self.__min_distance:.1f}:{self.__block_size}:{indice}"
+        else:
+            filters_str = self.feature_extractor
 
         # Generate and log hash
         filter_str = f"{input_hash},stab={filters_str}"
@@ -378,7 +372,7 @@ class CV2_deshaker:
             hash = log_filter(filter_str, shot['hash_log_file'])
         else:
             hash = calculate_hash(filter_str=filter_str)
-        print_lightcyan("\t\t\t(cv2) CV2_deshaker, images count:%d, start_index:%d" % (len(images), start_index))
+        print_lightcyan(f"\t\t\t(cv2) CV2_deshaker, images count:{len(images)}, start_index:{start_index}")
 
 
         # If using contour
@@ -516,7 +510,7 @@ class CV2_deshaker:
             print_pink(f"stabilize from {start_from}, start={start_index}, end={0}")
             for i in range(start_index-1, -1, -1):
                 if verbose:
-                    print(f"\timage {i}", end=' ')
+                    print(f"\timage {i}, ", end=' ')
                 img_colored = images[i]
 
                 # Compute and get keypoints
@@ -526,14 +520,14 @@ class CV2_deshaker:
                     keypoints_ref=keypoints_ref,
                     mode=mode)
                 if verbose:
-                    print(f"transformation {transformation}")
+                    print(f"{transformation}")
 
                 output_images.insert(0, img_stabilized)
                 self.__transformations.insert(0, transformation)
 
                 # Current frame is the newest reference
                 # Identify new points to track
-                img_gray = cv2.cvtColor(img_stabilized, cv2.COLOR_RGB2GRAY)
+                img_gray = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_RGB2GRAY)
                 (keypoints_ref, img_for_tracking) = self.get_keypoints(img_gray=img_gray)
 
 
@@ -542,13 +536,9 @@ class CV2_deshaker:
             transformations['end'] = None
             transformations['start'] = transformation
             pprint(transformations)
+            print(f"{len(output_images)}")
 
         return filters_str, output_images, transformations
-
-
-    def get_transformations(self):
-        return self.__transformations
-
 
 
 

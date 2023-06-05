@@ -65,7 +65,7 @@ def ffmpeg_stabilize(input_filepath):
     # ])
     ffmpeg_command = command_ffmpeg_common + [
         "-i", f"{input_filepath}",
-        "-vf", f"vidstabdetect=shakiness={shakiness}:accuracy={accuracy}:result={transforms_filepath}:stepsize={stepsize}:mincontrast={mincontrast}:tripod={tripod}:show=1",
+        "-vf", f"vidstabdetect=shakiness={shakiness}:accuracy={accuracy}:result={transforms_filepath}:stepsize={stepsize}:mincontrast={mincontrast}:tripod={tripod}:show=2",
         "-y", f"{folder}/a_dummy.mkv"
     ]
 
@@ -85,7 +85,7 @@ def ffmpeg_stabilize(input_filepath):
     ffmpeg_command = command_ffmpeg_common + [
         "-i", f"{input_filepath}",
         # "-vf", f"vidstabtransform=input={transforms_filepath}:smoothing={smoothing}:interpol=bicubic:crop=keep:optzoom=0:zoomspeed=0",
-        "-vf", f"vidstabtransform=input={transforms_filepath}:smoothing={smoothing}:interpol=bicubic:tripod={1 if tripod!=0 else 0}:crop=keep:optzoom=0:zoomspeed=0",
+        "-vf", f"vidstabtransform=input={transforms_filepath}:optalgo=avg:maxangle=0:relative=1:smoothing={smoothing}:interpol=bicubic:tripod={1 if tripod!=0 else 0}:crop=keep:optzoom=0:zoomspeed=0",
     ]
     ffmpeg_command.extend(["-y", os.path.join(folder, f"patati.mkv")])
 

@@ -111,7 +111,7 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
 
 
 def calculate_av_sync(db, k_ep):
-    verbose = True
+    verbose = False
 
     if ('audio' not in db[k_ep].keys()
         or 'video' not in db[k_ep].keys()):

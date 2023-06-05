@@ -203,7 +203,7 @@ def generate_video(db, k_ed:str, k_ep:str,
                 k_ep=k_ep, k_part=k_p, video_files=v, force=force, simulation=simulation)
             video_files[k_p]['files'] = [output_filepath]
 
-    verbose = True
+    verbose = False
     if verbose:
         print_lightgreen(f"video_files")
         pprint(video_files)

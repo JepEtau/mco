@@ -155,7 +155,7 @@ def generate_image(frame:dict, preview_options:dict):
         img_cropped = img_rgb
 
         if preview_shot_geometry['resize_preview']:
-            pprint(frame['geometry'])
+            # pprint(frame['geometry'])
             print("Error: generate_image: resize not possible because no crop preview selected")
 
 

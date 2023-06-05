@@ -97,7 +97,7 @@ class CustomGraphicsView(QGraphicsView):
 
     def remove_control_points(self):
         """ removes the control points (i,e the ellipse)"""
-        print("remove_control_points")
+        # print("remove_control_points")
         for ellipse, _ in self.corner_points:
             self.__scene.removeItem(ellipse)
         self.corner_points = []

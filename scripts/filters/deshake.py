@@ -223,15 +223,15 @@ def deshake(shot, images:list, image_list:list,
                 inserted_first_frames = True
 
             if verbose:
-                print_lightcyan("\t- append %d stabilized images" % (len(__output_images)))
+                print_lightcyan(f"\t- append {len(__output_images)} stabilized images")
             output_images.extend(__output_images)
 
 
-        filter_str += "%s," % (__filter_str)
+        filter_str += f"{__filter_str},"
 
 
     # Calculate hash
-    filter_str = "%s,%s" % (input_hash, filter_str[:-1])
+    filter_str = f"{input_hash},{filter_str[:-1]}"
     if get_hash:
         hash = calculate_hash(filter_str=filter_str)
         return hash, None

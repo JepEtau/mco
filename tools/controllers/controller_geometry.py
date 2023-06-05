@@ -166,7 +166,7 @@ class Controller_geometry():
         frame = self.frames[shot['no']][0]
         shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_initial'])
         is_geometry_erroneous = False if shot_geometry_values['pad_error'] is None else True
-        pprint(shot_geometry_values)
+        # pprint(shot_geometry_values)
 
         for frame in self.frames[shot['no']]:
             # if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage']:

@@ -270,9 +270,9 @@ class Widget_segments(QTableWidget):
 
 
     def set_segment_values(self, row_no, segment):
-        log.info(f"set single segment at row no. {row_no}")
-        print_lightcyan(f"set single segment at row no. {row_no}")
-        pprint(segment)
+        # log.info(f"set single segment at row no. {row_no}")
+        # print_lightcyan(f"set single segment at row no. {row_no}")
+        # pprint(segment)
 
         for col_no, column in zip(range(len(self.columns)), self.columns):
             if column['id'] == 'start':
@@ -364,9 +364,9 @@ class Widget_segments(QTableWidget):
 
 
     def set_content(self, segments):
-        log.info(f"set content")
-        print_lightcyan(f"set content")
-        pprint(segments)
+        # log.info(f"set content")
+        # print_lightcyan(f"set content")
+        # pprint(segments)
         self.clearContents()
         self.sortByColumn(-1, Qt.AscendingOrder)
         self.setRowCount(0)
@@ -557,7 +557,7 @@ class Widget_segments(QTableWidget):
         self.signal_segment_modified.emit(self.currentRow())
 
     def update_regions(self, regions:list) -> None:
-        pprint(regions)
+        # pprint(regions)
         row_no = self.currentRow()
         col_no = self._column_dict['tracker']['no']
         widget = self.cellWidget(row_no, col_no)

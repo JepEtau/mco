@@ -94,7 +94,7 @@ class Model_stabilize():
 
 
     def save_shot_stabilize_settings(self, shot):
-        verbose = True
+        verbose = False
         if not self.is_stabilize_db_modified:
             return True
 

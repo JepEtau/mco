@@ -515,7 +515,7 @@ class Widget_graphics_view(QGraphicsView):
 
 
     def erase_tracker_regions(self):
-        print(f"erase_tracker_region")
+        # print(f"erase_tracker_region")
         self.remove_control_points()
         for item in self.__scene.items():
             if type(item) == QPolygonCustom:
@@ -558,7 +558,7 @@ class Widget_graphics_view(QGraphicsView):
 
     def remove_control_points(self):
         """ removes the control points (i,e the ellipse)"""
-        print("remove_control_points")
+        # print("remove_control_points")
         for ellipse, _ in self.__control_points:
             self.__scene.removeItem(ellipse)
         self.__control_points.clear()
@@ -692,7 +692,7 @@ class Widget_graphics_view(QGraphicsView):
 
 
     def draw_polygon(self):  # adds the polygon to the scene
-        print("draw polygon")
+        # print("draw polygon")
         self.__is_drawing_polygon = False
 
         if len(self.new_polygon_points) > 2:
@@ -753,10 +753,13 @@ class Widget_graphics_view(QGraphicsView):
 
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        verbose = False
         if event.type() == QEvent.Type.KeyPress:
-            print_lightcyan(f"eventFilter: widget_{self.objectName()}: keypress {event.key()}")
+            if verbose:
+                print_lightcyan(f"eventFilter: widget_{self.objectName()}: keypress {event.key()}")
             if self.event_key_pressed(event):
-                print(f"\taccepted")
+                if verbose:
+                    print(f"\taccepted")
                 event.accept()
                 return True
             else:
@@ -765,13 +768,16 @@ class Widget_graphics_view(QGraphicsView):
 
 
         elif event.type() == QEvent.Type.KeyRelease:
-            print_lightcyan(f"eventFilter: widget_{self.objectName()}: keyrelease {event.key()}")
+            if verbose:
+                print_lightcyan(f"eventFilter: widget_{self.objectName()}: keyrelease {event.key()}")
             if self.event_key_released(event):
-                print(f"\taccepted")
+                if verbose:
+                    print(f"\taccepted")
                 event.accept()
                 return True
             else:
-                print(f"\tsend to parent")
+                if verbose:
+                    print(f"\tsend to parent")
                 return self.__parent.event_key_released(event)
 
 
