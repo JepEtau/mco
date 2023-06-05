@@ -102,9 +102,11 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
         self.pushButton_show_tracker.setChecked(False)
         try:
             self.pushButton_set_preview.setEnabled(s['widget']['allowed'])
-            self.pushButton_set_preview.setChecked(s['widget']['enabled'])
-            self.previous_preview_state = s['widget']['enabled']
-            self.initial_preview_state = s['widget']['enabled']
+            self.pushButton_set_preview.setChecked(False)
+            self.previous_preview_state = False
+            self.initial_preview_state = False
+            # self.previous_preview_state = s['widget']['enabled']
+            # self.initial_preview_state = s['widget']['enabled']
             self.pushButton_show_tracker.setEnabled(s['widget']['allowed'])
         except:
             self.pushButton_set_preview.setEnabled(False)

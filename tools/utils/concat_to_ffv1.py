@@ -47,7 +47,7 @@ def concatenate_images_to_video(image_list, output_path, suffix='', fps=FPS, int
     ffmpeg_verbose="-hide_banner -loglevel warning"
     ffmpeg_verbose = ''
     if sys.platform == 'win32':
-        ffmpeg_command = [os.path.abspath("ffmpeg.exe")]
+        ffmpeg_command = [os.path.abspath("../mco_3rd_party/ffmpeg-5.1/bin/ffmpeg.exe")]
     else:
         ffmpeg_command = [os.path.abspath("../mco_3rd_party/ffmpeg-5.1/ffmpeg")]
     # ffmpeg_command.extend(ffmpeg_verbose.split(' '))
@@ -74,8 +74,8 @@ def concatenate_images_to_video(image_list, output_path, suffix='', fps=FPS, int
         "-safe", "0",
         "-i", concatenation_filepath,
 
-        "-filter_complex", f"[0:v]scale=iw*0.5:-1:sws_flags=bicubic[outv]",
-        "-map", "[outv]"
+        # "-filter_complex", f"[0:v]scale=iw*0.5:-1:sws_flags=bicubic[outv]",
+        # "-map", "[outv]"
     ])
 
     if sys.platform == 'win32':

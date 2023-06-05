@@ -709,12 +709,15 @@ class Widget_graphics_view(QGraphicsView):
     def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
-        print_green(f"widget_geometry: event_key_pressed: {key}")
+        verbose = False
+        if verbose:
+            print_green(f"widget_geometry: event_key_pressed: {key}")
 
         if not self.__is_editing_tracker:
             return False
 
-        print("key_pressed")
+        if verbose:
+            print("key_pressed")
         key = event.key()
         if key in [Qt.Key.Key_Enter, Qt.Key.Key_Return]:
             self.draw_polygon()
@@ -723,12 +726,14 @@ class Widget_graphics_view(QGraphicsView):
             return True
 
         elif key == Qt.Key.Key_T:
-            print("create a new polygon")
+            if verbose:
+                print("create a new polygon")
             self.record()
             return True
 
         elif key == Qt.Key.Key_Delete:
-            print("remove a selected polygon/corner")
+            if verbose:
+                print("remove a selected polygon/corner")
             self.remove_selected_item()
             return True
 
@@ -742,12 +747,14 @@ class Widget_graphics_view(QGraphicsView):
 
 
     def event_key_released(self, event:QKeyEvent) -> bool:
+        verbose = False
         key = event.key()
         modifiers = event.modifiers()
         if not self.__is_editing_tracker:
             return self.__parent.keyReleaseEvent(event)
 
-        print("released")
+        if verbose:
+            print("released")
         self.control_key_pressed = False
 
 

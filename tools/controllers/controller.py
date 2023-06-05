@@ -584,6 +584,7 @@ class Controller_video_editor(Controller_common,
 
         # Get preview options
         self.preview_options = self.view.get_preview_options()
+        self.preview_options['stabilize']['enabled'] = False
         self.consolidate_preview_options()
 
         if previous_shot_id != new_shot_id:
@@ -1078,7 +1079,7 @@ class Controller_video_editor(Controller_common,
 
     def get_current_stabilize_segment(self, frame_no:int):
         shot = self.current_shot()
-        print_lightcyan(f"get_current_stabilize_segment")
+        # print_lightcyan(f"get_current_stabilize_segment")
         shot_stabilize = self.model_database.get_shot_stabilize_settings(shot=shot)
         for segment in shot_stabilize['segments']:
             if segment['start'] <= frame_no <= segment['end']:

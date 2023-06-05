@@ -72,7 +72,7 @@ class CV2_deshaker:
         self.__img_contour = None
 
         self.feature_extractor = 'sift'
-        # self.feature_extractor = 'gftt'
+        self.feature_extractor = 'gftt'
 
         self.__gamma_lut = np.empty((1,256), np.uint8)
         for i in range(256):
@@ -117,13 +117,13 @@ class CV2_deshaker:
 
         filtered_keypoints = list()
         # display point
-        do_show = True
+        do_show = False
 
-        for kp in keypoints:
-            __kp = kp[0]
-            if do_show:
-                img_improved_copy = img_improved.copy()
-                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [0,0,0], 1)
+        if do_show:
+            img_improved_copy = img_improved.copy()
+            for kp in keypoints:
+                __kp = kp[0]
+                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 5, [128,128,128], 1)
 
 
         for kp in keypoints:
@@ -138,14 +138,14 @@ class CV2_deshaker:
             #     # i.e. on the border of the src img, bad quality
             #     # print("\tdiscard")
             #     continue
-            if is_point_inside(__kp, self.__tracker_contours, self.__tracker_is_inside):
+            if is_point_valid(__kp, self.__tracker_contours, self.__tracker_is_inside):
                 filtered_keypoints.append(kp)
 
         filtered_keypoints = np.array(filtered_keypoints, dtype=np.float32)
         for kp in filtered_keypoints:
             __kp = kp[0]
             if do_show:
-                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 1)
+                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 2)
 
 
         if do_show:
@@ -177,29 +177,44 @@ class CV2_deshaker:
         return initial_img_stabilized, img_for_tracking, keypoints
 
 
-    def __stabilize_image(self, img, img_ref_gray, keypoints_ref, mode, verbose=False):
-        img_gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
-        img_for_tracking = self.improve_ref(img_gray)
+    def __stabilize_image(self, img_to, img_from_gray, keypoints_from, mode, verbose=False):
+        img_to_gray = cv2.cvtColor(img_to, cv2.COLOR_RGB2GRAY)
+        img_to_gray = self.improve_ref(img_to_gray)
         # img_for_tracking = cv2.bitwise_and(img_improved, img_improved, mask=self.img_mask)
         # Calculate optical flow (i.e. track feature points)
 
-        keypoints = None
+        keypoints_to = None
+        is_erroneous = False
         try:
-            keypoints, status, err = cv2.calcOpticalFlowPyrLK(
-                prevImg=img_for_tracking,
-                nextImg=img_ref_gray,
-                prevPts=keypoints_ref,
+            keypoints_to, status, err = cv2.calcOpticalFlowPyrLK(
+            # optical_flow = cv2.calcOpticalFlowPyrLK(
+                prevImg=img_from_gray,
+                nextImg=img_to_gray,
+                prevPts=keypoints_from,
                 nextPts=None,
                 **self.__lk_params)
+        except:
+            print_red(f"exception: calcOpticalFlowPyrLK: erroneous")
+            is_erroneous = True
 
+
+        if not is_erroneous:
             if status is None:
-                keypoints_from, keypoints_to = list(), list()
+                valid_keypoints_from, valid_keypoints_to = list(), list()
             else:
-                keypoints_from, keypoints_to = keypoints_ref[status==1], keypoints[status==1]
+                valid_keypoints_from, valid_keypoints_to = keypoints_from[status==1], keypoints_to[status==1]
+                # pprint(valid_keypoints_from)
+                # pprint(valid_keypoints_to)
+            # valid_keypoints_to, valid_keypoints_from = self.match_keypoints(optical_flow, keypoints_from)
 
             # Estimate transformation matrix
-            transformation = cv2.estimateAffinePartial2D(keypoints_from, keypoints_to)[0]
+            transformation = cv2.estimateAffinePartial2D(
+                valid_keypoints_to,
+                valid_keypoints_from,
+                method=cv2.RANSAC,
+                ransacReprojThreshold=4)[0]
 
+        try:
             if transformation is not None:
                 t_x = transformation[0][2]
                 t_y = transformation[1][2]
@@ -210,8 +225,8 @@ class CV2_deshaker:
                 # print("\t", t_theta)
                 # t_theta = np.arctan2(transformation[1][0], transformation[0][0])
                 # print("\t", t_theta)
-                if verbose:
-                    print("%d points, %d points" % (len(keypoints_ref[status == 1]), len(keypoints[status == 1])))
+                # if verbose:
+                print("%d points, %d points" % (len(valid_keypoints_from), len(valid_keypoints_to)))
             else:
                 print("\ttransformation not found")
                 t_x = t_y = t_theta = 0
@@ -250,7 +265,7 @@ class CV2_deshaker:
 
         if abs(t_x) > 2*IMG_BORDER_HIGH_RES or abs(t_y) > 2*IMG_BORDER_HIGH_RES:
             print(f"erroneous calcOpticalFlowPyrLK: t_x={t_x}, t_y={t_y}")
-            print(f"{len(keypoints_ref[status == 1])} points, {len(keypoints[status == 1])} points")
+            print(f"{len(valid_keypoints_from)} points, {len(valid_keypoints_to)} points")
             if False:
                 # draw the tracks
                 if keypoints_ref is not None:
@@ -303,15 +318,16 @@ class CV2_deshaker:
                 good_new = keypoints_ref[status==1]
 
             # draw the tracks
+            img_for_tracking_copy = img_for_tracking.copy()
             for new in good_new:
                 a, b = new.ravel()
-                frame = cv2.circle(img_for_tracking, (int(a), int(b)), 5, [255,255,255], 1)
-            cv2.imshow("Stabilize", frame)
+                cv2.circle(img_for_tracking_copy, (int(a), int(b)), 5, [255,255,255], 1)
+            cv2.imshow("Stabilize", img_for_tracking_copy)
             cv2.waitKey()
 
         # Apply transformation
-        img_stabilized = cv2.warpAffine(img,
-            transformation_matrix, (img.shape[1], img.shape[0]))
+        img_stabilized = cv2.warpAffine(img_to,
+            transformation_matrix, (img_to.shape[1], img_to.shape[0]))
 
         return img_stabilized, last_transformation
 
@@ -324,6 +340,9 @@ class CV2_deshaker:
         """Stabilize images without smoothing the trajectory
         """
         verbose=True
+
+        static = False
+
         transformations = {
             'start': None,
             'end': None,
@@ -393,7 +412,7 @@ class CV2_deshaker:
         if last_transformation is not None and start_from == 'middle':
             print_red("Error: stabilize, previous transformation will be ignored, correct the stabilization segments!")
             last_transformation = None
-        img_stabilized, img_for_tracking, keypoints_ref = self.__get_initial_image(
+        img_stabilized, img_from_gray, keypoints_from = self.__get_initial_image(
             img=images[start_index],
             last_transformation=last_transformation)
         self._height, self._width, self._channels = img_stabilized.shape
@@ -414,9 +433,9 @@ class CV2_deshaker:
 
                 # compute and get keypoints
                 img_stabilized, transformation = self.__stabilize_image(
-                    img=img_colored,
-                    img_ref_gray=img_for_tracking,
-                    keypoints_ref=keypoints_ref,
+                    img_to=img_colored,
+                    img_from_gray=img_from_gray,
+                    keypoints_from=keypoints_from,
                     mode=mode)
 
                 # append image
@@ -426,7 +445,7 @@ class CV2_deshaker:
                 # current frame is the newest reference
                 # identify new points
                 img_gray = cv2.cvtColor(img_stabilized, cv2.COLOR_RGB2GRAY)
-                (keypoints_ref, img_for_tracking) = self.get_keypoints(img_gray=img_gray)
+                (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
 
             if verbose:
                 print_yellow("Save last transformation, used for the start of next segment", end= '')
@@ -435,7 +454,7 @@ class CV2_deshaker:
 
 
             # From ref to 0
-            img_stabilized, img_for_tracking, keypoints_ref = self.__get_initial_image(
+            img_stabilized, img_from_gray, keypoints_from = self.__get_initial_image(
                 img=images[start_index], last_transformation=last_transformation)
             start = start_index - 1
             end = 0
@@ -444,9 +463,9 @@ class CV2_deshaker:
 
                 # compute and get keypoints
                 img_stabilized, transformation = self.__stabilize_image(
-                    img=img_colored,
-                    img_ref_gray=img_for_tracking,
-                    keypoints_ref=keypoints_ref,
+                    img_to=img_colored,
+                    img_from_gray=img_from_gray,
+                    keypoints_from=keypoints_from,
                     mode=mode)
 
                 # insert image
@@ -456,7 +475,7 @@ class CV2_deshaker:
                 # current frame is the newest reference
                 img_gray = cv2.cvtColor(img_stabilized, cv2.COLOR_RGB2GRAY)
                 # identify new points
-                (keypoints_ref, img_for_tracking) = self.get_keypoints(img_gray=img_gray)
+                (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
 
             if verbose:
                 print_yellow("Save last transformation, used for the start of next segment", end= '')
@@ -480,9 +499,9 @@ class CV2_deshaker:
 
                 # compute and get keypoints
                 img_stabilized, transformation = self.__stabilize_image(
-                    img=img_colored,
-                    img_ref_gray=img_for_tracking,
-                    keypoints_ref=keypoints_ref,
+                    img_to=img_colored,
+                    img_from_gray=img_from_gray,
+                    keypoints_from=keypoints_from,
                     mode=mode)
                 # if verbose:
                 #     print(f"transformation {transformation}")
@@ -494,7 +513,9 @@ class CV2_deshaker:
                 # Current frame is the newest reference
                 # Identify new points
                 img_gray = cv2.cvtColor(img_stabilized, cv2.COLOR_RGB2GRAY)
-                (keypoints_ref, img_for_tracking) = self.get_keypoints(img_gray=img_gray)
+                del keypoints_from
+                del img_from_gray
+                (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
 
             if verbose:
                 print_yellow("Save last transformation, used for the start of next segment", end= '')
@@ -515,9 +536,9 @@ class CV2_deshaker:
 
                 # Compute and get keypoints
                 img_stabilized, transformation = self.__stabilize_image(
-                    img=img_colored,
-                    img_ref_gray=img_for_tracking,
-                    keypoints_ref=keypoints_ref,
+                    img_to=img_colored,
+                    img_from_gray=img_from_gray,
+                    keypoints_from=keypoints_from,
                     mode=mode)
                 if verbose:
                     print(f"{transformation}")
@@ -525,10 +546,13 @@ class CV2_deshaker:
                 output_images.insert(0, img_stabilized)
                 self.__transformations.insert(0, transformation)
 
-                # Current frame is the newest reference
-                # Identify new points to track
-                img_gray = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_RGB2GRAY)
-                (keypoints_ref, img_for_tracking) = self.get_keypoints(img_gray=img_gray)
+                if not static:
+                    # Current frame is the newest reference
+                    # Identify new points to track
+                    img_gray = cv2.cvtColor(output_images[0].copy(), cv2.COLOR_RGB2GRAY)
+                    del keypoints_from
+                    del img_from_gray
+                    (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
 
 
             print_yellow("ref=end, save transformation", end= '')
@@ -572,7 +596,7 @@ def draw_roi(img, roi:list):
 def improve_ref_img(img, gamma_lut:list=list()):
     # img_improved = img
 
-   # img_norm = cv2.normalize(img, img, 0, 255, cv2.NORM_MINMAX)
+    # img_norm = cv2.normalize(img, img, 0, 255, cv2.NORM_MINMAX)
 
     # img_improved = cv2_bilateral_filter(img, 11, 13, 13)
 
@@ -605,11 +629,11 @@ def improve_ref_img(img, gamma_lut:list=list()):
     return img_improved
 
 
-def is_point_inside(point, contours, inside:bool=False):
+def is_point_valid(point, contours, inside:bool=False):
     for contour in contours:
         result = cv2.pointPolygonTest(contour, point, False)
         if result >= 0:
             # Point is inside or on the contour
-            return True if inside else False
-    return False if inside else True
+            return inside
+    return not inside
 

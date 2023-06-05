@@ -593,16 +593,20 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
     def event_key_pressed(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
-        print_green(f"widget_geometry: event_key_pressed: {key}")
+        verbose = False
+        if verbose:
+            print_green(f"widget_geometry: event_key_pressed: {key}")
 
         if key == Qt.Key.Key_Space:
-            print("main window: keyPressEvent")
-            log.info("Space key event detected")
+            if verbose:
+                print("main window: keyPressEvent")
+                log.info("Space key event detected")
             return False
 
         if modifiers & Qt.ControlModifier:
             if key == Qt.Key_S:
-                print_purple("Save geometry")
+                if verbose:
+                    print_purple("Save geometry")
                 self.event_save_modifications()
                 return True
 
