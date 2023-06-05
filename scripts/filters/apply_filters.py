@@ -138,7 +138,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
         # Real CUGAN
         #-----------------------------------------------------------------------
         elif filter['type'] == 'real_cugan':
-            if not torch.cuda.is_available():
+            if not torch.cuda.is_available() and not get_hashes:
                 if filter['task'] == 'upscale':
                     print_red("\t\t\terror: cannot upscale with this GPU")
                     print_orange("\t\t\tfallback: bad quality upscale (CV2: bicubic)")
@@ -195,7 +195,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
         # AnimeSR
         #-----------------------------------------------------------------------
         elif filter['type'] == 'animesr':
-            if not torch.cuda.is_available():
+            if not torch.cuda.is_available() and not get_hashes:
                 if filter['task'] == 'upscale':
                     print_red("\t\t\terror: cannot upscale with this GPU")
                     print_orange("\t\t\tfallback: bad quality upscale (CV2: nearest)")
@@ -338,7 +338,8 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
         # Avisynth+
         #-----------------------------------------------------------------------
         elif filter['type'] == 'avisynth':
-            if filter['task'] == 'deinterlace':
+            if step_no == 0:
+                # Deinterlace or deinterlace + denoise/sharpen
                 hash, images = avisynth_deinterlace(
                     shot=shot,
                     image_list=image_list,

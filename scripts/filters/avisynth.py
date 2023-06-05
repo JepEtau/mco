@@ -48,7 +48,7 @@ def avisynth_deinterlace(shot, image_list,
     # Use a script template
     script_filepath =os.path.abspath(os.path.join(
         db_common['directories']['config'],
-        shot['k_ep'], "%s_%s.avs" % (shot['k_ep'], filters_str)))
+        shot['k_ep'], f"{shot['k_ep']}_{filters_str}.avs"))
 
     # Parse and modify this script
     (filter_str, lines) = avisynth_generate_avs_script(shot, script_filepath)
