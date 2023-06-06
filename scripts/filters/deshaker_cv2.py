@@ -4,7 +4,9 @@ import cv2
 import numpy as np
 from statistics import mean
 from skimage.filters import sobel
-
+from matplotlib import pyplot as plt
+from skimage.registration import phase_cross_correlation
+from skimage import transform
 
 from filters.filters import *
 from utils.hash import (
@@ -40,11 +42,11 @@ def apply_cv2_transformation(img, x_y_theta:list):
 
 class CV2_deshaker:
     def __init__(self) -> None:
-        self.__max_corners = 300
+        self.__max_corners = 500
         self.__quality_level = 0.01
-        self.__min_distance = 30.0
+        self.__min_distance = 10
         self.__block_size = 3
-        self.__use_harris_detector = True
+        self.__use_harris_detector = False
         self.__k = 0.04
 
         self.__gftt = dict(
@@ -56,11 +58,11 @@ class CV2_deshaker:
             k=self.__k)
 
         # Parameters for lucas kanade optical flow
-        # self.__lk_params = dict(
-        #     winSize = (15, 15),
-        #     maxLevel = 2,
-        #     criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
-        #                 10, 0.03))
+        self.__lk_params = dict(
+            winSize = (15, 15),
+            maxLevel = 2,
+            criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
+                        10, 0.03))
         self.__lk_params = dict()
 
         self._height, self._width, self._channels = 0, 0, 0
@@ -74,44 +76,39 @@ class CV2_deshaker:
         self.feature_extractor = 'sift'
         self.feature_extractor = 'gftt'
 
-        self.__gamma_lut = np.empty((1,256), np.uint8)
-        for i in range(256):
-            self.__gamma_lut[0, i] = np.clip(pow(i / 255.0, 0.6) * 255.0, 0, 255)
+        if self.feature_extractor == 'sift':
+            # contrastThreshold=0.05
+            self.__descriptor = cv2.SIFT_create()
+        elif self.feature_extractor == 'brisk':
+            self.__descriptor = cv2.BRISK_create()
 
 
     def improve_ref(self, img):
         if self.__improve_ref:
-            return improve_ref_img(img,
-                gamma_lut=self.__gamma_lut)
+            return improve_ref_img(img)
         return img
 
 
     def get_keypoints(self, img_gray):
         img_improved = self.improve_ref(img_gray)
 
-        if self.feature_extractor == 'sift':
-            descriptor = cv2.SIFT_create()
-
-        elif self.feature_extractor == 'brisk':
-            descriptor = cv2.BRISK_create()
-
-
-
         if self.feature_extractor =='gftt':
-            keypoints = cv2.goodFeaturesToTrack(img_improved, **self.__gftt)
-        # if keypoints is None:
-        #     cv2.imshow("get_keypoints", img_improved)
-        #     cv2.waitKey()
-        #     cv2.destroyAllWindows()
+            keypoints = cv2.goodFeaturesToTrack(image=img_improved, **self.__gftt)
         else:
-            kpts, features = descriptor.detectAndCompute(img_improved, None)
+            if self.img_mask is not None:
+                img_improved = cv2.bitwise_and(img_improved, img_improved,
+                                               mask=self.img_mask * 255)
+                # cv2.imshow('img_improved',img_improved)
+                # cv2.waitKey()
+                # cv2.destroyAllWindows()
+            kpts, features = self.__descriptor.detectAndCompute(img_improved, None)
             keypoints = np.array([kp.pt for kp in kpts], dtype='float32').reshape(-1, 1, 2)
 
 
         if keypoints is not None:
             print_lightgrey(f"kp: {len(keypoints)}", end ='')
 
-        if not self.__is_tracker_enabled:
+        if not self.__is_tracker_enabled or True:
             print()
             return (keypoints, img_improved)
 
@@ -171,23 +168,20 @@ class CV2_deshaker:
             initial_img_stabilized = img
             self.__last_transformation = [0, 0, 0]
 
-        img_gray = cv2.cvtColor(initial_img_stabilized, cv2.COLOR_RGB2GRAY)
+        img_gray = cv2.cvtColor(initial_img_stabilized, cv2.COLOR_BGR2GRAY)
         (keypoints, img_for_tracking) = self.get_keypoints(img_gray=img_gray)
 
         return initial_img_stabilized, img_for_tracking, keypoints
 
 
-    def __stabilize_image(self, img_to, img_from_gray, keypoints_from, mode, verbose=False):
-        img_to_gray = cv2.cvtColor(img_to, cv2.COLOR_RGB2GRAY)
+    def __stabilize_image_default(self, img_to, img_from_gray, keypoints_from, mode, verbose=False):
+        img_to_gray = cv2.cvtColor(img_to, cv2.COLOR_BGR2GRAY)
         img_to_gray = self.improve_ref(img_to_gray)
-        # img_for_tracking = cv2.bitwise_and(img_improved, img_improved, mask=self.img_mask)
-        # Calculate optical flow (i.e. track feature points)
 
         keypoints_to = None
         is_erroneous = False
         try:
             keypoints_to, status, err = cv2.calcOpticalFlowPyrLK(
-            # optical_flow = cv2.calcOpticalFlowPyrLK(
                 prevImg=img_from_gray,
                 nextImg=img_to_gray,
                 prevPts=keypoints_from,
@@ -207,12 +201,31 @@ class CV2_deshaker:
                 # pprint(valid_keypoints_to)
             # valid_keypoints_to, valid_keypoints_from = self.match_keypoints(optical_flow, keypoints_from)
 
+            #drawing the tracks
+            if False:
+                resultingvectorcolor = np.random.randint(0, 255, (600, 3))
+                resmask = np.zeros_like(img_to)
+                second_frame = img_to.copy()
+                for i, first, second in zip(range(len(valid_keypoints_to)), valid_keypoints_to, valid_keypoints_from):
+                    # A, B = second.ravel()
+                    # C, D = first.ravel()
+                    # pprint(first)
+                    # pprint(second)
+                    A, B = np.array(second, dtype=int)
+                    C, D = np.array(first, dtype=int)
+                    color = resultingvectorcolor[i].tolist()
+                    resmask = cv2.line(resmask, (A, B), (C, D), color, 1)
+                    # second_frame = cv2.circle(second_frame, (A, B), 3, color, 1)
+                    resvideo = cv2.add(second_frame, resmask)
+                cv2.imshow('Result', resvideo)
+                cv2.waitKey()
+
+
             # Estimate transformation matrix
             transformation = cv2.estimateAffinePartial2D(
-                valid_keypoints_to,
-                valid_keypoints_from,
-                method=cv2.RANSAC,
-                ransacReprojThreshold=4)[0]
+                valid_keypoints_from, valid_keypoints_to)[0]
+
+            transformation = cv2.invertAffineTransform(transformation)
 
         try:
             if transformation is not None:
@@ -326,10 +339,43 @@ class CV2_deshaker:
             cv2.waitKey()
 
         # Apply transformation
-        img_stabilized = cv2.warpAffine(img_to,
+        img_stabilized = cv2.warpAffine(img_to.copy(),
             transformation_matrix, (img_to.shape[1], img_to.shape[0]))
 
         return img_stabilized, last_transformation
+
+
+    def get_translation(self, flow, step=30):
+        return (np.median(flow[:,:,0].T), flow[:, :, 0].T)
+
+    def __stabilize_image(self, img_to, img_from_gray, keypoints_from, mode, verbose=False):
+        if False:
+            # Testing purpose
+            img_to_gray = cv2.cvtColor(img_to, cv2.COLOR_BGR2GRAY)
+            img_to_gray = self.improve_ref(img_to_gray)
+
+            # flow = cv2.calcOpticalFlowFarneback(img_from_gray, img_to_gray, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+            # translation, pixel_direction = self.get_translation(flow)
+            # pprint(translation)
+            # pprint(pixel_direction)
+            # img_stabilized = img_to
+            # return img_stabilized, [0,0,0]
+
+
+            shift, error, diffphase = phase_cross_correlation(
+                img_as_float(img_from_gray),
+                img_as_float(img_to_gray),
+                upsample_factor=100)
+            (shift_y, shift_x) = shift
+            # print(shift)
+            # print(diffphase)
+            tf_shift = transform.SimilarityTransform(translation=[-shift_x, -shift_y])
+            img_stabilized = img_as_ubyte(transform.warp(img_as_float(img_to), tf_shift))
+            return img_stabilized, [shift_x, shift_y, 0]
+
+        else:
+            return self.__stabilize_image_default(img_to, img_from_gray, keypoints_from, mode, verbose=verbose)
+
 
 
     def stabilize(self, shot, images,
@@ -405,6 +451,9 @@ class CV2_deshaker:
         # ]
         # print(self.__img_contour)
 
+        self.img_mask = create_roi_mask(segment['tracker'], images[0].shape)
+        if self.img_mask is not None:
+            self.__gftt['mask'] = self.img_mask
 
         # Reset transformation
         self.__transformations.clear()
@@ -444,7 +493,7 @@ class CV2_deshaker:
 
                 # current frame is the newest reference
                 # identify new points
-                img_gray = cv2.cvtColor(img_stabilized, cv2.COLOR_RGB2GRAY)
+                img_gray = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_BGR2GRAY)
                 (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
 
             if verbose:
@@ -473,7 +522,7 @@ class CV2_deshaker:
                 self.__transformations.insert(0, transformation)
 
                 # current frame is the newest reference
-                img_gray = cv2.cvtColor(img_stabilized, cv2.COLOR_RGB2GRAY)
+                img_gray = cv2.cvtColor(img_stabilized, cv2.COLOR_BGR2GRAY)
                 # identify new points
                 (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
 
@@ -484,35 +533,42 @@ class CV2_deshaker:
 
 
         elif start_from == 'start':
+            __debug = False
+
             self.__transformations.append(last_transformation)
             output_images = [img_stabilized]
             start = 1
             end = len(images)
             transformation = None
 
+            if __debug:
+                cv2.imwrite(f"/home/adg/mco/cache/ep02/episode/032/08/{0:05d}.png", img_stabilized)
+
+
             print_pink(f"stabilize from {start_from}, start={start}, end={end}")
             for i in range(start, end):
-                # if verbose:
-                #     print(f"\timage {i}", end=' ')
-
-                img_colored = images[i]
+                if verbose:
+                    print(f"\timage {i}", end=' ')
 
                 # compute and get keypoints
                 img_stabilized, transformation = self.__stabilize_image(
-                    img_to=img_colored,
+                    img_to=images[i],
                     img_from_gray=img_from_gray,
                     keypoints_from=keypoints_from,
                     mode=mode)
-                # if verbose:
-                #     print(f"transformation {transformation}")
+                if verbose:
+                    print(f"{transformation}")
 
                 # append image
                 output_images.append(img_stabilized)
                 self.__transformations.append(transformation)
 
+                if __debug:
+                    cv2.imwrite(f"/home/adg/mco/cache/ep02/episode/032/08/{i:05d}.png", img_stabilized)
+
                 # Current frame is the newest reference
                 # Identify new points
-                img_gray = cv2.cvtColor(img_stabilized, cv2.COLOR_RGB2GRAY)
+                img_gray = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_RGB2GRAY)
                 del keypoints_from
                 del img_from_gray
                 (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
@@ -568,34 +624,70 @@ class CV2_deshaker:
 
 
 
-def create_roi_mask(roi, img):
-    height, width, c = img.shape
+def create_roi_mask(tracker, img_shape):
+    if not tracker['enable']:
+        return None
 
-    white_image = np.ones([height, width, 1], dtype=np.uint8) * 255
-    black_image = np.zeros([height, width, 1], dtype=np.uint8)
-    img_mask = draw_roi(black_image, roi)
-    cv2.imwrite("../../mask.png", img_mask)
+    height, width, c = img_shape
+
+    if tracker['inside']:
+        img_mask = np.zeros([height, width, 1], dtype=np.uint8)
+        fill_color = 1
+    else:
+        img_mask = np.ones([height, width, 1], dtype=np.uint8)
+        fill_color = 0
+
+    for region in tracker['regions']:
+        points = np.array(region, np.int32)
+        points = points.reshape((-1,1,2))
+        cv2.fillPoly(img_mask, [points], fill_color)
+
+    # cv2.imwrite("mask.png", img_mask)
     return img_mask
 
 
-def draw_roi(img, roi:list):
-    for area in roi:
-        points = np.array(area['points'], np.int32)
-        if not area['enable'] or len(points) < 3:
-            continue
-        points = points.reshape((-1,1,2))
-        if area['mode'] != 'in':
-            cv2.fillPoly(img, [points], 0)
-        else:
-            cv2.fillPoly(img, [points], 255)
+def automatic_brightness_and_contrast(image, clip_hist_percent=25):
+    gray = image
 
-    return img
+    # Calculate grayscale histogram
+    hist = cv2.calcHist([gray],[0],None,[256],[0,256])
+    hist_size = len(hist)
+
+    # Calculate cumulative distribution from the histogram
+    accumulator = []
+    accumulator.append(float(hist[0]))
+    for index in range(1, hist_size):
+        accumulator.append(accumulator[index -1] + float(hist[index]))
+
+    # Locate points to clip
+    maximum = accumulator[-1]
+    clip_hist_percent *= (maximum/100.0)
+    clip_hist_percent /= 2.0
+
+    # Locate left cut
+    minimum_gray = 0
+    while accumulator[minimum_gray] < clip_hist_percent:
+        minimum_gray += 1
+
+    # Locate right cut
+    maximum_gray = hist_size -1
+    while accumulator[maximum_gray] >= (maximum - clip_hist_percent):
+        maximum_gray -= 1
+
+    # Calculate alpha and beta values
+    alpha = 255 / (maximum_gray - minimum_gray)
+    beta = -minimum_gray * alpha
+
+    auto_result = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
+
+    return (auto_result, alpha, beta)
 
 
-
-def improve_ref_img(img, gamma_lut:list=list()):
+def improve_ref_img(img):
     # img_improved = img
 
+    # hist = cv2.calcHist([img], [0], None, [256], [0, 256])
+    # hist /= hist.sum()
     # img_norm = cv2.normalize(img, img, 0, 255, cv2.NORM_MINMAX)
 
     # img_improved = cv2_bilateral_filter(img, 11, 13, 13)
@@ -608,24 +700,49 @@ def improve_ref_img(img, gamma_lut:list=list()):
     # img_improved = cv2.LUT(img_improved, gamma_lut)
 
     # Increase contrast
-    img_improved = cv2.convertScaleAbs(img, alpha=1.3, beta=0.3)
+    # img_improved = cv2.convertScaleAbs(img, alpha=0, beta=100)
+    # ret,thresh = cv2.threshold(img,50,255,cv2.THRESH_BINARY)
+    # img_improved = cv2.normalize(thresh, None, 0, 255, cv2.NORM_MINMAX)
+    # if img_mask is not None and False:
+    #     img_improved = cv2.bitwise_and(img, img, mask=img_mask)
+    # else:
+    #     img_improved = img
 
+    img_improved = cv2.convertScaleAbs(img, alpha=1.3, beta=0)
+    # img_improved = cv2.normalize(img_improved, img_improved, 0, 255, cv2.NORM_MINMAX)
+
+    # brightness = 100
+    # contrast = 30
+    # img = np.int16(img)
+    # img = img * (contrast/127+1)  - contrast + brightness
+    # img = np.clip(img, 0, 255)
+    # img_improved = np.uint8(img)
+    # img_improved = cv2.normalize(img_improved, img_improved, 0, 255, cv2.NORM_MINMAX)
 
     # img_sobel = sobel(img_as_float(img))
     # img_improved = img_as_ubyte(img_sobel)
 
-    # img_improved= cv2.bitwise_not(img_improved)
+    # img= cv2.bitwise_not(img)
 
     # tmp = img_as_float(blackAndWhiteImage)
     # tmp = unsharp_mask(tmp, 3, 0.5, preserve_range=False)
     # img_improved = img_as_ubyte(tmp)
-    # threshold , blackAndWhiteImage= cv2.threshold(img_improved, 240 , 255, cv2.THRESH_BINARY)
+    # threshold , blackAndWhiteImage= cv2.threshold(img, 20  , 255, cv2.THRESH_BINARY)
     # img_improved = cv2.normalize(img_improved, img_improved, 0, 255, cv2.NORM_MINMAX)
 
-    # cv2.imshow('Output',blackAndWhiteImage)
+
+    # blurred = cv2.GaussianBlur(img, (3, 3), 0)
+    # img_improved = cv2.Canny(blurred, 20, 200)
+
+    # if img_mask is not None:
+    #     img = cv2.bitwise_and(img, img, mask=img_mask)
+    # (img_improved, alpha, beta) = automatic_brightness_and_contrast(img)
+    img_improved = cv2.normalize(img_improved, img_improved, 0, 255, cv2.NORM_MINMAX)
+
+    # cv2.imshow('Output',img_improved)
     # cv2.waitKey()
     # cv2.destroyAllWindows()
-    # return blackAndWhiteImage
+
     return img_improved
 
 

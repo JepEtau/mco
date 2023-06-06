@@ -7,9 +7,6 @@ from filters.deshaker_cv2 import (
     CV2_deshaker,
     apply_cv2_transformation,
 )
-from filters.deshaker_sk import (
-    Skimage_deshaker,
-)
 from utils.hash import (
     calculate_hash,
     log_filter
@@ -173,21 +170,6 @@ def deshake(shot, images:list, image_list:list,
                 do_force=do_force)
             del deshaker
 
-            # print(transformations)
-
-        # elif algorithm == 'skimage_deshaker':
-        #     deshaker = Skimage_deshaker()
-        #     __output_images, __filter_str = deshaker.stabilize(
-        #         shot=shot,
-        #         images=images[start:start+count],
-        #         image_list=image_list[start:start+count],
-        #         ref=segment['ref'],
-        #         step_no=step_no,
-        #         input_hash=input_hash,
-        #         mode=segment['mode'],
-        #         get_hash=get_hash,
-        #         do_force=do_force)
-        #     del deshaker
         else:
             sys.exit(print_red("error: deshake: algorithm not recognized: %s" % (algorithm)))
             # To remove from this file and create 'stabilize' function

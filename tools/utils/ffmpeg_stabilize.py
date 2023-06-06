@@ -28,7 +28,7 @@ shakiness = 10
 accuracy = 15
 smoothing = 0
 stepsize = 3
-mincontrast = 0.2
+mincontrast = 0.1
 tripod = 0
 
 
