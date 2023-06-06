@@ -833,14 +833,14 @@ class Controller_video_editor(Controller_common,
 
 
         if options['stabilize']['show_tracker']:
-            if not options['stabilize']['allowed'] or not options['stabilize']['enabled']:
+            if not options['stabilize']['allowed']:
+                # or not options['stabilize']['enabled']
                 options['stabilize']['show_tracker'] = False
 
             if not self.preview_options['stabilize']['show_tracker']:
                 # Just enabled, disable geometry preview:
                 options['geometry']['resize_preview'] = False
                 options['geometry']['final_preview'] = False
-                self.__is_tracker_toggled = True
 
         self.preview_options = options
 

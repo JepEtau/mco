@@ -36,6 +36,7 @@ def ffmpeg_stabilize(input_filepath):
     start_time = time.time()
 
     folder = os.path.dirname(input_filepath)
+    cache_directory = 'cache'
 
     filters_str="vidstabdetect=shakiness=%d:accuracy=%d:result=%s/transforms.trf" % (
         shakiness, accuracy, folder)
@@ -46,14 +47,17 @@ def ffmpeg_stabilize(input_filepath):
     ffmpeg_verbose="-hide_banner -loglevel warning"
     ffmpeg_verbose = ''
     if sys.platform == 'win32':
-        command_ffmpeg_common = [os.path.abspath("ffmpeg.exe")]
+        command_ffmpeg_common = [os.path.abspath("../mco_3rd_party/ffmpeg-5.1/bin/ffmpeg.exe")]
     else:
         command_ffmpeg_common = [os.path.abspath("../mco_3rd_party/ffmpeg-5.1/ffmpeg")]
 
 
-    transforms_filepath = os.path.join(folder, "ffmpeg_transforms.trf")
+    transforms_filepath = os.path.join(cache_directory, "ffmpeg_transforms.trf")
     if os.path.exists(transforms_filepath):
         os.remove(transforms_filepath)
+    transforms_filepath = transforms_filepath.replace('\\', '/')
+
+    dummy_file = os.path.join("cache", "ffmpeg_dummy.mkv")
 
     # ffmpeg_command.extend([
     #     "-i", f"{input_filepath}",
@@ -66,7 +70,7 @@ def ffmpeg_stabilize(input_filepath):
     ffmpeg_command = command_ffmpeg_common + [
         "-i", f"{input_filepath}",
         "-vf", f"vidstabdetect=shakiness={shakiness}:accuracy={accuracy}:result={transforms_filepath}:stepsize={stepsize}:mincontrast={mincontrast}:tripod={tripod}:show=2",
-        "-y", f"{folder}/a_dummy.mkv"
+        "-y", f"{dummy_file}"
     ]
 
     # ffmpeg_command.extend(["-y", os.path.join(folder, f"patati.mkv")])

@@ -1,10 +1,15 @@
 # TODO script
 (1)
 - append regions to the hash value
-- add overlay: shot no.
 - avisynth to upscale reportage
+- Add 'static' option
+- Add 'auto brightness'
+- Add 'sift'/'gftt'
+ep02: shot 7/10/22/30/32
 
 (2)
+- Add FFmpeg stab
+- add overlay: shot no.
 - stats: list unused curves. reason: clean the db
 - (?) smooth stabilization: to evaluate (g_fin)
 
@@ -56,8 +61,6 @@
     https://dasongli1.github.io/publication/grouped-shift-net/
     https://github.com/JingyunLiang/RVRT
 
-* SR
-    https://github.com/IceClear/StableSR.git
 
 # TODO other
 - list python modules (to clean the environment)

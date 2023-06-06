@@ -223,9 +223,7 @@ class CV2_deshaker:
 
             # Estimate transformation matrix
             transformation = cv2.estimateAffinePartial2D(
-                valid_keypoints_from, valid_keypoints_to)[0]
-
-            transformation = cv2.invertAffineTransform(transformation)
+                valid_keypoints_to, valid_keypoints_from)[0]
 
         try:
             if transformation is not None:
@@ -408,12 +406,20 @@ class CV2_deshaker:
         if start_from == 'start':
             # Start from first frame
             start_index = 0
+
+
+            static = False
+
+
         elif start_from == 'end':
             # Start from last frame
             start_index = len(images) - 1
         elif start_from == 'middle':
             # Start from middle of the segment
             start_index = int(len(images) / 2 - 1)
+
+            static = True
+
         elif start_from == 'frame':
             # Start from specified frame no.
             start_index = start_frame_no
@@ -423,7 +429,7 @@ class CV2_deshaker:
         indice = 0
 
         # Define a filter str
-        if self.feature_extractor == 'gfft':
+        if self.feature_extractor == 'gftt':
             filters_str = f"{self.__max_corners}:{self.__quality_level:0.2f}:{self.__min_distance:.1f}:{self.__block_size}:{indice}"
         else:
             filters_str = self.feature_extractor
@@ -491,10 +497,11 @@ class CV2_deshaker:
                 output_images.append(img_stabilized)
                 self.__transformations.append(transformation)
 
-                # current frame is the newest reference
-                # identify new points
-                img_gray = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_BGR2GRAY)
-                (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
+                if not static:
+                    # current frame is the newest reference
+                    # identify new points
+                    img_gray = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_BGR2GRAY)
+                    (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
 
             if verbose:
                 print_yellow("Save last transformation, used for the start of next segment", end= '')
@@ -521,10 +528,11 @@ class CV2_deshaker:
                 output_images.insert(0, img_stabilized)
                 self.__transformations.insert(0, transformation)
 
-                # current frame is the newest reference
-                img_gray = cv2.cvtColor(img_stabilized, cv2.COLOR_BGR2GRAY)
-                # identify new points
-                (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
+                if not static:
+                    # current frame is the newest reference
+                    img_gray = cv2.cvtColor(img_stabilized, cv2.COLOR_BGR2GRAY)
+                    # identify new points
+                    (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
 
             if verbose:
                 print_yellow("Save last transformation, used for the start of next segment", end= '')
@@ -540,10 +548,6 @@ class CV2_deshaker:
             start = 1
             end = len(images)
             transformation = None
-
-            if __debug:
-                cv2.imwrite(f"/home/adg/mco/cache/ep02/episode/032/08/{0:05d}.png", img_stabilized)
-
 
             print_pink(f"stabilize from {start_from}, start={start}, end={end}")
             for i in range(start, end):
@@ -563,15 +567,13 @@ class CV2_deshaker:
                 output_images.append(img_stabilized)
                 self.__transformations.append(transformation)
 
-                if __debug:
-                    cv2.imwrite(f"/home/adg/mco/cache/ep02/episode/032/08/{i:05d}.png", img_stabilized)
-
-                # Current frame is the newest reference
-                # Identify new points
-                img_gray = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_RGB2GRAY)
-                del keypoints_from
-                del img_from_gray
-                (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
+                if not static:
+                    # Current frame is the newest reference
+                    # Identify new points
+                    img_gray = cv2.cvtColor(img_stabilized.copy(), cv2.COLOR_RGB2GRAY)
+                    del keypoints_from
+                    del img_from_gray
+                    (keypoints_from, img_from_gray) = self.get_keypoints(img_gray=img_gray)
 
             if verbose:
                 print_yellow("Save last transformation, used for the start of next segment", end= '')
@@ -708,7 +710,6 @@ def improve_ref_img(img):
     # else:
     #     img_improved = img
 
-    img_improved = cv2.convertScaleAbs(img, alpha=1.3, beta=0)
     # img_improved = cv2.normalize(img_improved, img_improved, 0, 255, cv2.NORM_MINMAX)
 
     # brightness = 100
@@ -736,8 +737,11 @@ def improve_ref_img(img):
 
     # if img_mask is not None:
     #     img = cv2.bitwise_and(img, img, mask=img_mask)
-    # (img_improved, alpha, beta) = automatic_brightness_and_contrast(img)
-    img_improved = cv2.normalize(img_improved, img_improved, 0, 255, cv2.NORM_MINMAX)
+    if False:
+        (img_improved, alpha, beta) = automatic_brightness_and_contrast(img)
+    else:
+        img_improved = cv2.convertScaleAbs(img, alpha=1.3, beta=0)
+        img_improved = cv2.normalize(img_improved, img_improved, 0, 255, cv2.NORM_MINMAX)
 
     # cv2.imshow('Output',img_improved)
     # cv2.waitKey()
