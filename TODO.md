@@ -7,6 +7,7 @@ ep02: shot 7/10/22/30/32
 (2)
 - use multiple stab alg in the same shot: currently not working
 - use previous stabilized frame as the reference for the new segment to avoid an artifact
+- add filter info as watermark
 - stats: list unused curves. reason: clean the db
 - (?) smooth stabilization: to evaluate (g_fin)
 
@@ -42,15 +43,6 @@ ep02: shot 7/10/22/30/32
     Focus + Focus_Moderate https://u.pcloud.link/publink/show?code=kZS4XhVZ1GKsTtkjdULdYn6z9pTHs7fdLvR7
     CelFrames 1.0
     1x_DeInterPaint (Deinterlacing)
-
-* Realistic:
-    omnisr
-    4xNomos8kSC
-    2xParimgCompact
-    4xLSDIRCompactC3
-    4xLSDIRCompactN
-    4x_rybu
-    4x-MultiUpscale-C3/C4/C5/T1 (and DetailScale)
 
 * Temporal denoising
     https://github.com/JingyunLiang/VRT
@@ -91,5 +83,5 @@ ep02: shot 7/10/22/30/32
 - initial image dimensions is declared as constants: stats are erroneous with s0
 - fadein: if stabilize, segment shall use 'middle' of shot as the ref. frame
 - fadein: fadein is always done on a the same image. No need for someting else.
-- stabilize: when table is disable, set qWidgetItem to disable (text should be gray)
+- stabilize: when table is disable, set qWidgetItem to disabled (text should be gray)
 
