@@ -177,7 +177,7 @@ class Table_segments(QTableWidget):
         self.initial_str = ""
         set_stylesheet(self)
 
-        self.setMinimumSize(QSize(self.get_width()+30, 310))
+        self.setMinimumSize(QSize(self.get_width()+30, 500))
 
 
     def get_width(self):

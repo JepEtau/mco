@@ -21,8 +21,9 @@ ep02: shot 7/10/22/30/32
 
 # TODO video editor
 (1)
-- add button to show the enhanced grey image used to stabilize
+- add button to show the enhanced grey image
 - stabilize: add options when changing stab algo
+- do not parse all shots when starting, reparse shot when selecting
 
 (2)
 - Add geometry error/fit_to_width in selection widget

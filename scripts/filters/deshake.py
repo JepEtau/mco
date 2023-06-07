@@ -208,7 +208,7 @@ def deshake(shot, images:list, image_list:list,
 
                 if verbose:
                     print_lightcyan(f"\t- append {segment['start']} images at the beginning (modified):")
-                    print(f"\tapply last transformation:", ', '.join([f"{t:.02f}" for t in transformations]))
+                    print(f"\tapply last transformation:", ', '.join([f"{t:.02f}" for t in transformations['start']]))
                 for i in range(segment['start']):
                     output_images.append(apply_cv2_transformation(images[i], transformations['start']))
                 inserted_first_frames = True
