@@ -17,6 +17,7 @@ from functools import partial
 from pprint import pprint
 from filters.filters import get_mean_luma
 from logger import log
+from parsers.parser_stabilize import DEFAULT_SEGMENT_VALUES
 from utils.hash import get_hash_from_last_task
 from utils.pretty_print import *
 from utils.nested_dict import nested_dict_set
@@ -40,7 +41,10 @@ from filters.deshake import (
     verify_stabilize_segments
 )
 from filters.python_geometry import IMG_BORDER_HIGH_RES
-from filters.utils import get_step_no_from_last_task, has_add_border_task
+from filters.utils import (
+    get_step_no_from_last_task,
+    has_add_border_task,
+)
 from utils.common import K_GENERIQUES
 from utils.get_frame_list import (
     get_frame_list,
@@ -894,18 +898,17 @@ class Controller_video_editor(Controller_common,
             and len(settings['segments']) == 0):
             # Not already defined, define a new one
             new_settings['error'] = False
-            new_settings['segments'] = [{
-                'alg': 'cv2_deshaker',
-                'start': shot['start'],
-                'end':  shot['start'] + shot['count'] - 1,
-                'from': 'start',
-                'ref': -1,
+            new_settings['segments'] = deepcopy(DEFAULT_SEGMENT_VALUES)
+            new_settings['segments'].update({
+                'start' : shot['start'],
+                'end' : shot['start'] + shot['count'] - 1,
+                'from' : 'start',
                 'mode': {
                     'vertical': True,
                     'horizontal': True,
-                    'rotation': False,
+                    'rotation': True,
                 }
-            }]
+            })
 
         if not new_settings['error']:
             # Flush images

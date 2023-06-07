@@ -149,14 +149,14 @@ def deshake(shot, images:list, image_list:list,
         previous_transformation = transformations['end']
 
         # Create a filter
-        filter_str += f"deshake={segment['alg']}:{start}:{count}:{segment['from']}:{segment['ref']}:{segment['mode']}"
+        filter_str += f"deshake={segment['stab']}:{start}:{count}:{segment['from']}:{segment['ref']}:{segment['mode']}"
 
         if not get_hash:
             print("\t\t\t%s" % (filter_str))
 
         # Deshake
-        algorithm = segment['alg']
-        if algorithm == 'cv2_deshaker':
+        algorithm = segment['stab']
+        if algorithm in ['cv2', 'sk']:
             deshaker = Python_deshaker()
             __filter_str, __output_images, transformations = deshaker.stabilize(
                 shot=shot,

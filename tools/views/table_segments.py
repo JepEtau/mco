@@ -33,7 +33,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QLineEdit,
 )
-from parsers.parser_stabilize import DEFAULT_SEGMENT_VALUES
+from parsers.parser_stabilize import DEFAULT_SEGMENT_VALUES, STABILIZE_ENHANCEMENTS, STABILIZE_FROM, STABILIZERS
 from utils.pretty_print import *
 
 from utils.stylesheet import (
@@ -69,7 +69,7 @@ class Table_segments(QTableWidget):
             },
             {
                 'id': 'ref',
-                'title': 'no.',
+                'title': 'No',
                 'alignment': Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
                 'width': 60,
             },
@@ -83,13 +83,25 @@ class Table_segments(QTableWidget):
                 'id': 'mode',
                 'title': 'Mode',
                 'alignment': Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-                'width': 150,
+                'width': 130,
             },
             {
                 'id': 'tracker',
                 'title': 'Tracker',
                 'alignment': Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-                'width': 150,
+                'width': 130,
+            },
+            {
+                'id': 'enhance',
+                'title': 'Enhance',
+                'alignment': Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter,
+                'width': 90,
+            },
+            {
+                'id': 'stab',
+                'title': 'Stab.',
+                'alignment': Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter,
+                'width': 75,
             },
         ]
 
@@ -139,12 +151,12 @@ class Table_segments(QTableWidget):
         self.horizontalHeader().setDefaultSectionSize(90)
         self.horizontalHeader().setHighlightSections(True)
         self.horizontalHeader().setSortIndicatorShown(True)
-        self.horizontalHeader().setStretchLastSection(True)
+        self.horizontalHeader().setStretchLastSection(False)
         self.verticalHeader().setDefaultSectionSize(25)
         self.verticalHeader().setSortIndicatorShown(False)
         self.verticalHeader().setStretchLastSection(False)
         self.setSortingEnabled(True)
-        self.setFocusPolicy(Qt.NoFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.clearContents()
         self.setRowCount(1)
 
@@ -164,15 +176,11 @@ class Table_segments(QTableWidget):
         self.initial_str = ""
         set_stylesheet(self)
 
-        # width = 0
-        # for v in self.columns.values():
-        #     width += v['width']
-
-        width = sum([v['width'] for v in self.columns])
-        print_red(width)
-        self.setMinimumSize(QSize(width+30, 310))
+        self.setMinimumSize(QSize(self.get_width()+30, 310))
 
 
+    def get_width(self):
+        return sum([v['width'] for v in self.columns])
 
 
 
@@ -196,7 +204,7 @@ class Table_segments(QTableWidget):
                 # Frame used as the initial frame to start stabilization
                 combobox_reference = QComboBox()
                 combobox_reference.clear()
-                combobox_reference.addItems(['start', 'middle', 'end', 'frame'])
+                combobox_reference.addItems(STABILIZE_FROM)
                 index = combobox_reference.findText(segment['from'])
                 combobox_reference.setCurrentIndex(index)
                 combobox_reference.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -214,15 +222,18 @@ class Table_segments(QTableWidget):
 
             elif column['id'] == 'static':
                 # Use the same frame to detect keypoints
+                widget = QWidget()
+                __layout = QHBoxLayout(widget)
                 w_name = 'static'
-                w = QCheckBox()
+                w = QCheckBox('')
                 w.setObjectName(w_name)
                 w.setChecked(segment[w_name])
                 w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                 w.setMaximumWidth(25)
                 set_widget_stylesheet(w)
                 w.toggled[bool].connect(self.event_static_changed)
-                self.setCellWidget(row_no, col_no, w)
+                __layout.addWidget(w)
+                self.setCellWidget(row_no, col_no, widget)
 
             elif column['id'] == 'mode':
                 # Stabilization mode
@@ -270,6 +281,34 @@ class Table_segments(QTableWidget):
 
                 self.setCellWidget(row_no, col_no, widget)
 
+            elif column['id'] == 'enhance':
+                # Frame used as the initial frame to start stabilization
+                w = QComboBox()
+                w.clear()
+                w.addItems(STABILIZE_ENHANCEMENTS)
+                index = w.findText(segment['enhance'])
+                w.setCurrentIndex(index)
+                w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                set_widget_stylesheet(w)
+                w.currentIndexChanged[int].connect(self.event_enhance_changed)
+                self.setCellWidget(row_no, col_no, w)
+
+            elif column['id'] == 'stab':
+                # Frame used as the initial frame to start stabilization
+                w = QComboBox()
+                w.clear()
+                w.addItems(STABILIZERS)
+                index = w.findText(segment['stab'])
+                w.setCurrentIndex(index)
+                w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                set_widget_stylesheet(w)
+                w.currentIndexChanged[int].connect(self.event_stabilizer_changed)
+                self.setCellWidget(row_no, col_no, w)
+
+        self.blockSignals(True)
+        for row_no in range(self.rowCount()):
+            self.set_options_enabled(row_no)
+        self.blockSignals(False)
 
         ref_col_no = self._column_dict['ref']['no']
         self.blockSignals(True)
@@ -288,9 +327,10 @@ class Table_segments(QTableWidget):
             return
         log.info("get_segment_values")
         segment_values = {
+            'stab': self.cellWidget(row_no, self._column_dict['stab']['no']).currentText(),
             'from': self.cellWidget(row_no, self._column_dict['from']['no']).currentText(),
-            'alg': 'cv2_deshaker',
             'mode': dict(),
+            'enhance': self.cellWidget(row_no, self._column_dict['enhance']['no']).currentText(),
             'tracker': {
                 'regions': self.cellWidget(row_no, self._column_dict['tracker']['no']).property('regions')
             }
@@ -298,7 +338,7 @@ class Table_segments(QTableWidget):
 
         for k in ['start', 'end', 'ref']:
             column_no = self._column_dict[k]['no']
-            segment_values[k] = self.item(row_no, column_no).text(),
+            segment_values[k] = self.item(row_no, column_no).text()
 
         column_no = self._column_dict['mode']['no']
         for m in ['horizontal', 'vertical', 'rotation']:
@@ -306,14 +346,29 @@ class Table_segments(QTableWidget):
 
         column_no = self._column_dict['tracker']['no']
         for m in ['enable', 'inside']:
-            segment_values['mode'][m] = self.cellWidget(row_no, column_no).findChild(QCheckBox, m).isChecked()
+            segment_values['tracker'][m] = self.cellWidget(row_no, column_no).findChild(QCheckBox, m).isChecked()
 
         m = 'static'
         column_no = self._column_dict[m]['no']
         segment_values[m] = self.cellWidget(row_no, column_no).findChild(QCheckBox, m).isChecked()
 
-
         return segment_values
+
+
+    def set_options_enabled(self, row_no):
+        stab_name = self.cellWidget(row_no, self._column_dict['stab']['no']).currentText()
+
+        column_no = self._column_dict['mode']['no']
+        if stab_name == 'ffmpeg':
+            self.cellWidget(row_no, column_no).setEnabled(False)
+        elif stab_name == 'cv2':
+            self.cellWidget(row_no, column_no).setEnabled(True)
+
+        # column_no = self._column_dict['mode']['no']
+        # if stab_name == 'ffmpeg':
+        #     self.cellWidget(row_no, column_no).setEnabled(False)
+        # elif stab_name == 'cv2':
+        #     self.cellWidget(row_no, column_no).setEnabled(True)
 
 
 
@@ -589,6 +644,15 @@ class Table_segments(QTableWidget):
     def event_mode_changed(self, state:bool) -> None:
         self.signal_segment_modified.emit(self.currentRow())
 
+    def event_enhance_changed(self, index:int) -> None:
+        self.signal_segment_modified.emit(self.currentRow())
+
+    def event_stabilizer_changed(self, index:int) -> None:
+        row_no = self.currentRow()
+        self.set_options_enabled(row_no=row_no)
+        self.signal_segment_modified.emit(row_no)
+
+
     def event_tracker_changed(self, state:bool) -> None:
         self.signal_segment_modified.emit(self.currentRow())
 
@@ -599,7 +663,6 @@ class Table_segments(QTableWidget):
         widget = self.cellWidget(row_no, col_no)
         widget.setProperty('regions', regions)
         widget.findChild(QLineEdit, 'count').setText(f"{len(regions)}")
-
 
 
     def convert_roi_to_str(self, selected_rows:list) -> str:

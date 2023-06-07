@@ -29,19 +29,19 @@ from utils.nested_dict import nested_dict_set
 #   - rotation
 STABILIZE_MODES = ['vertical', 'horizontal', 'rotation']
 STABILIZE_ENHANCEMENTS = ['contrast', 'auto', 'none']
-STABILIZE_FROM = ['start', 'end', 'middle', 'frame']
+STABILIZE_FROM = ['middle', 'start', 'end', 'frame']
 STABILIZERS = [
     'cv2',
-    # 'scikit',      not yet implemented, use the same class as cv2
-    'ffmpeg',      # not yet implemented
+    # 'sk',      not yet implemented, use the same class as cv2
+    'ffmpeg',       # not yet implemented
     # 'topaz',      not yet implemented
 ]
 
 DEFAULT_SEGMENT_VALUES = {
     # 'start': -1,
     # 'end': -1,
-    'alg': STABILIZERS[0],
-    'from': STABILIZE_FROM[2],  # Start the deshake from the specified frame
+    'stab': STABILIZERS[0],
+    'from': STABILIZE_FROM[0],  # Start the deshake from the specified frame
     'ref': -1,                  # The initial frame no when starting to deshake
     'static': False,            # If set to True, use the same image to get the initial keypoints for each frame
     'enhance': STABILIZE_ENHANCEMENTS[0],   # Enhance the gray image to identify and compute keypoints
@@ -188,21 +188,30 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
 
 
 def parse_tracker(tracker_str:str):
+    verbose = False
+    if verbose:
+        print(lightcyan("parse_tracker:"), tracker_str)
     tracker = {
         'enable': False,
         'inside': True,
         'regions': list(),
     }
     for v in tracker_str.split(','):
+        if len(v) == 0:
+            continue
+
         if v == 'enable':
             tracker['enable'] = True
         elif v == 'inside':
             tracker['inside'] = True
         elif v == 'outside':
             tracker['inside'] = False
-        else:
+        elif v.startswith('('):
             point_list = re.findall(re.compile("\((\d+)\.(\d+)\)"), v)
             tracker['regions'].append(list([int(point[0]), int(point[1])] for point in point_list))
+
+    if verbose:
+        pprint(tracker)
     return tracker
 
 

@@ -166,11 +166,14 @@ class Model_stabilize():
                 for k, v in segment['mode'].items():
                     mode_str += f"+{k}" if v else ''
 
-                segments_str += f"\n{segment['alg']}"
+                segments_str += f"\n{segment['stab']}"
                 segments_str += f":start={segment['start']}"
                 segments_str += f":end={segment['end']}"
                 segments_str += f":from={segment['from']}"
                 segments_str += f":ref={segment['ref']}"
+                segments_str += f":static={'true' if segment['static'] else 'false'}"
+                segments_str += f":enhance={segment['enhance']}"
+
                 segments_str += f":mode={mode_str[1:]}"
 
                 if len(segment['tracker']['regions']) > 0:
