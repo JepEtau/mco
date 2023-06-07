@@ -128,6 +128,12 @@ def main():
         required=False,
         help="debug: regénère les fichier vidéo. NON VERIFIE")
 
+
+    parser.add_argument("--watermark",
+        action="store_true",
+        required=False,
+        help="debug: ajoute le numéro du plan sur chaque trame")
+
     arguments = parser.parse_args()
 
     # Edition
@@ -329,7 +335,8 @@ def main():
             force=arguments.force,
             simulation=arguments.simulate,
             shot_min=shot_min, shot_max=shot_max,
-            do_regenerate=arguments.regenerate)
+            do_regenerate=arguments.regenerate,
+            watermark=arguments.watermark)
 
         if shot_min != 0 or shot_max != 999999:
             do_av_merge = False

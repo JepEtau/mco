@@ -249,8 +249,8 @@ def create_concatenation_file_silence(db, k_ep):
 
 
 
-def combine_images_into_video(db_common, k_part, video_shot, force=False, simulation:bool=False):
-    verbose = False
+def combine_images_into_video(db_common, k_part, video_shot, force=False, simulation:bool=False, watermark:str=None):
+    verbose = True
 
     input_filename = video_shot['path']
     shot_filepath = input_filename.replace("concatenation", "video")
@@ -282,6 +282,13 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
             "-color_trc:v", "bt709",
             "-color_range:v", "tv"
         ])
+
+        if watermark is not None:
+            watermark_argument = f"drawtext=text=\'{watermark}\':fontcolor=green:fontsize=24:x=10:y=h-th-10"
+
+            ffmpeg_command.extend([
+                "-vf", watermark_argument
+            ])
 
         ffmpeg_command.extend(db_settings['video_quality'].split(' '))
 

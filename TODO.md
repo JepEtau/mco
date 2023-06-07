@@ -7,7 +7,6 @@ ep02: shot 7/10/22/30/32
 (2)
 - use multiple stab alg in the same shot: currently not working
 - use previous stabilized frame as the reference for the new segment to avoid an artifact
-- add overlay: shot no. requires a new argument...
 - stats: list unused curves. reason: clean the db
 - (?) smooth stabilization: to evaluate (g_fin)
 
