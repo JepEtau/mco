@@ -312,7 +312,7 @@
           <number>3</number>
          </property>
          <item>
-          <widget class="Widget_segments" name="widget_segments" native="true">
+          <widget class="Table_segments" name="table_segments" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="MinimumExpanding" vsizetype="Preferred">
              <horstretch>0</horstretch>
@@ -452,9 +452,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>Widget_segments</class>
+   <class>Table_segments</class>
    <extends>QWidget</extends>
-   <header location="global">views.widget_segments</header>
+   <header location="global">views.table_segments</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

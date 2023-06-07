@@ -4,7 +4,7 @@ import os
 from pprint import pprint
 
 from audio.utils import read_audio_file
-from filters.deshaker_cv2 import DEBUG_DESHAKE
+from filters.python_deshaker import DEBUG_DESHAKE
 from utils.common import (
     FPS,
     K_ALL_PARTS,

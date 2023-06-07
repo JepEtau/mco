@@ -18,8 +18,7 @@ from utils.get_image_list import (
 from utils.pretty_print import *
 
 # pip uninstall opencv-python
-# pip uninstall opencv-contrib-python
-# pip install opencv-python-rolling==4.7.0.20230211
+# pip install opencv-contrib-python
 
 
 def upscale_cv2_dnn_superres(shot, images:list, image_list:list,

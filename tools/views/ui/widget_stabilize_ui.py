@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (QApplication, QFrame, QGroupBox, QHBoxLayout,
     QLabel, QLayout, QLineEdit, QPushButton,
     QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
-from views.widget_segments import Widget_segments
+from views.table_segments import Table_segments
 
 class Ui_widget_stabilize(object):
     def setupUi(self, widget_stabilize):
@@ -173,16 +173,16 @@ class Ui_widget_stabilize(object):
         self.horizontalLayout_2.setSpacing(3)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setContentsMargins(9, 12, 3, 3)
-        self.widget_segments = Widget_segments(self.groupBox_stabilize)
-        self.widget_segments.setObjectName(u"widget_segments")
+        self.table_segments = Table_segments(self.groupBox_stabilize)
+        self.table_segments.setObjectName(u"table_segments")
         sizePolicy4 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Preferred)
         sizePolicy4.setHorizontalStretch(0)
         sizePolicy4.setVerticalStretch(0)
-        sizePolicy4.setHeightForWidth(self.widget_segments.sizePolicy().hasHeightForWidth())
-        self.widget_segments.setSizePolicy(sizePolicy4)
-        self.widget_segments.setMinimumSize(QSize(720, 0))
+        sizePolicy4.setHeightForWidth(self.table_segments.sizePolicy().hasHeightForWidth())
+        self.table_segments.setSizePolicy(sizePolicy4)
+        self.table_segments.setMinimumSize(QSize(720, 0))
 
-        self.horizontalLayout_2.addWidget(self.widget_segments)
+        self.horizontalLayout_2.addWidget(self.table_segments)
 
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")

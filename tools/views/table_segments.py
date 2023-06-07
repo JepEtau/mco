@@ -33,6 +33,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QLineEdit,
 )
+from parsers.parser_stabilize import DEFAULT_SEGMENT_VALUES
 from utils.pretty_print import *
 
 from utils.stylesheet import (
@@ -40,11 +41,11 @@ from utils.stylesheet import (
     set_widget_stylesheet
 )
 
-class Widget_segments(QTableWidget):
+class Table_segments(QTableWidget):
     signal_segment_modified = Signal(int)
 
     def __init__(self, parent):
-        super(Widget_segments, self).__init__(parent)
+        super(Table_segments, self).__init__(parent)
 
         # Table of segments
         self.columns = [
@@ -73,18 +74,35 @@ class Widget_segments(QTableWidget):
                 'width': 60,
             },
             {
+                'id': 'static',
+                'title': 'Static',
+                'alignment': Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+                'width': 50,
+            },
+            {
                 'id': 'mode',
                 'title': 'Mode',
                 'alignment': Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-                'width': 260,
+                'width': 150,
             },
             {
                 'id': 'tracker',
                 'title': 'Tracker',
                 'alignment': Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
-                'width': 200,
+                'width': 150,
             },
         ]
+
+        self.button_labels = {
+            'horizontal': 'H',
+            'vertical': 'V',
+            'rotation': 'R',
+
+            'enable': 'en',
+            'inside': 'in',
+
+            # 'static': 's'
+        }
 
         # Define a dict of columns to ease access
         for col_no, column in zip(range(len(self.columns)), self.columns):
@@ -145,7 +163,157 @@ class Widget_segments(QTableWidget):
         self.row_height = 35
         self.initial_str = ""
         set_stylesheet(self)
-        self.setMinimumSize(QSize(650, 310))
+
+        # width = 0
+        # for v in self.columns.values():
+        #     width += v['width']
+
+        width = sum([v['width'] for v in self.columns])
+        print_red(width)
+        self.setMinimumSize(QSize(width+30, 310))
+
+
+
+
+
+    def set_segment_values(self, row_no, segment):
+        # log.info(f"set single segment at row no. {row_no}")
+        # print_lightcyan(f"set single segment at row no. {row_no}")
+        # pprint(segment)
+
+        for col_no, column in zip(range(len(self.columns)), self.columns):
+            if column['id'] == 'start':
+                self.setItem(row_no, col_no, QTableWidgetItem(f"{segment['start']}"))
+                self.item(row_no, col_no).setTextAlignment(column['alignment'])
+                self.item(row_no, col_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+            elif column['id'] == 'end':
+                self.setItem(row_no, col_no, QTableWidgetItem(f"{segment['end']}"))
+                self.item(row_no, col_no).setTextAlignment(column['alignment'])
+                self.item(row_no, col_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+
+            elif column['id'] == 'from':
+                # Frame used as the initial frame to start stabilization
+                combobox_reference = QComboBox()
+                combobox_reference.clear()
+                combobox_reference.addItems(['start', 'middle', 'end', 'frame'])
+                index = combobox_reference.findText(segment['from'])
+                combobox_reference.setCurrentIndex(index)
+                combobox_reference.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                set_widget_stylesheet(combobox_reference)
+                combobox_reference.currentIndexChanged[int].connect(self.event_reference_changed)
+                self.setCellWidget(row_no, col_no, combobox_reference)
+
+            elif column['id'] == 'ref':
+                if segment['ref'] != -1:
+                    self.setItem(row_no, col_no, QTableWidgetItem(f"{segment['ref']}"))
+                else:
+                    self.setItem(row_no, col_no, QTableWidgetItem())
+                self.item(row_no, col_no).setTextAlignment(column['alignment'])
+
+
+            elif column['id'] == 'static':
+                # Use the same frame to detect keypoints
+                w_name = 'static'
+                w = QCheckBox()
+                w.setObjectName(w_name)
+                w.setChecked(segment[w_name])
+                w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                w.setMaximumWidth(25)
+                set_widget_stylesheet(w)
+                w.toggled[bool].connect(self.event_static_changed)
+                self.setCellWidget(row_no, col_no, w)
+
+            elif column['id'] == 'mode':
+                # Stabilization mode
+                widget = QWidget()
+                __layout = QHBoxLayout(widget)
+                for w_name in ['vertical', 'horizontal', 'rotation']:
+                    w = QCheckBox(widget)
+                    w.setText(self.button_labels[w_name])
+                    w.setObjectName(w_name)
+                    w.setChecked(segment['mode'][w_name])
+                    w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                    set_widget_stylesheet(w)
+                    w.toggled[bool].connect(self.event_mode_changed)
+                    __layout.addWidget(w)
+                self.setCellWidget(row_no, col_no, widget)
+
+            elif column['id'] == 'tracker':
+                # Tracking regions
+                widget = QWidget()
+                __layout = QHBoxLayout(widget)
+                for w_name in ['enable', 'inside']:
+                    w = QCheckBox(widget)
+                    w.setText(self.button_labels[w_name])
+                    w.setObjectName(w_name)
+                    w.setChecked(segment['tracker'][w_name])
+                    w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                    w.toggled[bool].connect(self.event_tracker_changed)
+                    set_widget_stylesheet(w)
+                    __layout.addWidget(w)
+
+                w_name = 'count'
+                w = QLineEdit()
+                w.setObjectName(w_name)
+                w.setText(f"{len(segment['tracker']['regions'])}")
+                w.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed))
+                w.setFixedWidth(20)
+                # w.setMaximumSize(QSize(20, 16777215))
+                w.setAlignment(Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignVCenter)
+                w.setReadOnly(True)
+                w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                set_widget_stylesheet(w)
+                __layout.addWidget(w)
+
+                widget.setProperty('regions', segment['tracker']['regions'])
+
+                self.setCellWidget(row_no, col_no, widget)
+
+
+        ref_col_no = self._column_dict['ref']['no']
+        self.blockSignals(True)
+        if self.cellWidget(row_no, self._column_dict['from']['no']).currentText() == 'frame':
+            self.item(row_no, ref_col_no).setFlags((Qt.ItemIsSelectable|Qt.ItemIsEnabled))
+            self.item(row_no, ref_col_no).setSelected(True)
+        else:
+            self.item(row_no, ref_col_no).setFlags(~(Qt.ItemIsSelectable|Qt.ItemIsEnabled))
+            self.item(row_no, ref_col_no).setSelected(False)
+        self.blockSignals(False)
+
+
+
+    def get_segment_values(self, row_no):
+        if row_no == -1:
+            return
+        log.info("get_segment_values")
+        segment_values = {
+            'from': self.cellWidget(row_no, self._column_dict['from']['no']).currentText(),
+            'alg': 'cv2_deshaker',
+            'mode': dict(),
+            'tracker': {
+                'regions': self.cellWidget(row_no, self._column_dict['tracker']['no']).property('regions')
+            }
+        }
+
+        for k in ['start', 'end', 'ref']:
+            column_no = self._column_dict[k]['no']
+            segment_values[k] = self.item(row_no, column_no).text(),
+
+        column_no = self._column_dict['mode']['no']
+        for m in ['horizontal', 'vertical', 'rotation']:
+            segment_values['mode'][m] = self.cellWidget(row_no, column_no).findChild(QCheckBox, m).isChecked()
+
+        column_no = self._column_dict['tracker']['no']
+        for m in ['enable', 'inside']:
+            segment_values['mode'][m] = self.cellWidget(row_no, column_no).findChild(QCheckBox, m).isChecked()
+
+        m = 'static'
+        column_no = self._column_dict[m]['no']
+        segment_values[m] = self.cellWidget(row_no, column_no).findChild(QCheckBox, m).isChecked()
+
+
+        return segment_values
 
 
 
@@ -206,31 +374,6 @@ class Widget_segments(QTableWidget):
 
 
 
-    def get_segment_values(self, row_no):
-        if row_no == -1:
-            return
-        log.info("get_segment_values")
-        segment_values = {
-            'start': self.item(row_no, self._column_dict['start']['no']).text(),
-            'end': self.item(row_no, self._column_dict['end']['no']).text(),
-            'from': self.cellWidget(row_no, self._column_dict['from']['no']).currentText(),
-            'ref': self.item(row_no, self._column_dict['ref']['no']).text(),
-            'alg': 'cv2_deshaker',
-            'mode': {
-                'horizontal': self.cellWidget(row_no, self._column_dict['mode']['no']).findChild(QCheckBox, 'horizontal').isChecked(),
-                'vertical': self.cellWidget(row_no, self._column_dict['mode']['no']).findChild(QCheckBox, 'vertical').isChecked(),
-                'rotation': self.cellWidget(row_no, self._column_dict['mode']['no']).findChild(QCheckBox, 'rotation').isChecked()
-            },
-            'tracker': {
-                'enable': self.cellWidget(row_no, self._column_dict['tracker']['no']).findChild(QCheckBox, 'enable').isChecked(),
-                'inside': self.cellWidget(row_no, self._column_dict['tracker']['no']).findChild(QCheckBox, 'inside').isChecked(),
-                'regions': self.cellWidget(row_no, self._column_dict['tracker']['no']).property('regions')
-            }
-        }
-        return segment_values
-
-
-
 
     def select_segment(self):
         row_no = self.currentRow()
@@ -267,100 +410,6 @@ class Widget_segments(QTableWidget):
 
         # Add Table of ROI
         return False
-
-
-    def set_segment_values(self, row_no, segment):
-        # log.info(f"set single segment at row no. {row_no}")
-        # print_lightcyan(f"set single segment at row no. {row_no}")
-        # pprint(segment)
-
-        for col_no, column in zip(range(len(self.columns)), self.columns):
-            if column['id'] == 'start':
-                self.setItem(row_no, col_no, QTableWidgetItem(f"{segment['start']}"))
-                self.item(row_no, col_no).setTextAlignment(column['alignment'])
-                self.item(row_no, col_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-
-            elif column['id'] == 'end':
-                self.setItem(row_no, col_no, QTableWidgetItem(f"{segment['end']}"))
-                self.item(row_no, col_no).setTextAlignment(column['alignment'])
-                self.item(row_no, col_no).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
-
-            elif column['id'] == 'from':
-                # Frame used as the initial frame to start stabilization
-                combobox_reference = QComboBox()
-                combobox_reference.clear()
-                combobox_reference.addItems(['start', 'middle', 'end', 'frame'])
-                index = combobox_reference.findText(segment['from'])
-                combobox_reference.setCurrentIndex(index)
-                combobox_reference.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                set_widget_stylesheet(combobox_reference)
-                combobox_reference.currentIndexChanged[int].connect(self.event_reference_changed)
-                self.setCellWidget(row_no, col_no, combobox_reference)
-
-            elif column['id'] == 'ref':
-                if segment['ref'] != -1:
-                    self.setItem(row_no, col_no, QTableWidgetItem(f"{segment['ref']}"))
-                else:
-                    self.setItem(row_no, col_no, QTableWidgetItem())
-                self.item(row_no, col_no).setTextAlignment(column['alignment'])
-
-
-            elif column['id'] == 'mode':
-                # Stabilization mode
-                widget = QWidget()
-                __layout = QHBoxLayout(widget)
-                for w_name in ["vertical", "horizontal", "rotation"]:
-                    w = QCheckBox(widget)
-                    w.setText(w_name)
-                    w.setObjectName(w_name)
-                    w.setChecked(segment['mode'][w_name])
-                    w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                    set_widget_stylesheet(w)
-                    w.toggled[bool].connect(self.event_mode_changed)
-                    __layout.addWidget(w)
-                self.setCellWidget(row_no, col_no, widget)
-
-            elif column['id'] == 'tracker':
-                # Tracking regions
-                widget = QWidget()
-                __layout = QHBoxLayout(widget)
-                for w_name in ['enable', 'inside']:
-                    w = QCheckBox(widget)
-                    w.setText(w_name)
-                    w.setObjectName(w_name)
-                    w.setChecked(segment['tracker'][w_name])
-                    w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                    w.toggled[bool].connect(self.event_tracker_changed)
-                    set_widget_stylesheet(w)
-                    __layout.addWidget(w)
-
-                w_name = 'count'
-                w = QLineEdit()
-                w.setObjectName(w_name)
-                w.setText(f"{len(segment['tracker']['regions'])}")
-                w.setSizePolicy(QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed))
-                w.setFixedWidth(20)
-                # w.setMaximumSize(QSize(20, 16777215))
-                w.setAlignment(Qt.AlignmentFlag.AlignHCenter|Qt.AlignmentFlag.AlignVCenter)
-                w.setReadOnly(True)
-                w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                set_widget_stylesheet(w)
-                __layout.addWidget(w)
-
-                widget.setProperty('regions', segment['tracker']['regions'])
-
-                self.setCellWidget(row_no, col_no, widget)
-
-
-        ref_col_no = self._column_dict['ref']['no']
-        self.blockSignals(True)
-        if self.cellWidget(row_no, self._column_dict['from']['no']).currentText() == 'frame':
-            self.item(row_no, ref_col_no).setFlags((Qt.ItemIsSelectable|Qt.ItemIsEnabled))
-            self.item(row_no, ref_col_no).setSelected(True)
-        else:
-            self.item(row_no, ref_col_no).setFlags(~(Qt.ItemIsSelectable|Qt.ItemIsEnabled))
-            self.item(row_no, ref_col_no).setSelected(False)
-        self.blockSignals(False)
 
 
     def set_content(self, segments):
@@ -481,23 +530,7 @@ class Widget_segments(QTableWidget):
         self.insertRow(row_no)
         self.setRowHeight(row_no, self.row_height)
 
-        __segment = {
-            'start': '',
-            'end': '',
-            'from': 'middle',
-            'ref': '',
-            'alg': 'cv2_deshaker',
-            'mode': {
-                'horizontal': True,
-                'vertical': True,
-                'rotation': True,
-            },
-            'tracker': {
-                'enable': False,
-                'inside': True,
-                'regions': list(),
-            }
-        }
+        __segment = deepcopy(DEFAULT_SEGMENT_VALUES)
         self.set_segment_values(row_no=row_no, segment=__segment)
         self.selectRow(row_no)
 
@@ -546,6 +579,9 @@ class Widget_segments(QTableWidget):
         data_str = data_str[:-1]
         return data_str
 
+
+    def event_static_changed(self, state:bool) -> None:
+        self.signal_segment_modified.emit(self.currentRow())
 
     def event_reference_changed(self, index:int) -> None:
         self.signal_segment_modified.emit(self.currentRow())

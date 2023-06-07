@@ -3,8 +3,8 @@ import cv2
 import sys
 from pprint import pprint
 from copy import deepcopy
-from filters.deshaker_cv2 import (
-    CV2_deshaker,
+from filters.python_deshaker import (
+    Python_deshaker,
     apply_cv2_transformation,
 )
 from utils.hash import (
@@ -157,7 +157,7 @@ def deshake(shot, images:list, image_list:list,
         # Deshake
         algorithm = segment['alg']
         if algorithm == 'cv2_deshaker':
-            deshaker = CV2_deshaker()
+            deshaker = Python_deshaker()
             __filter_str, __output_images, transformations = deshaker.stabilize(
                 shot=shot,
                 images=images[start:start+count],

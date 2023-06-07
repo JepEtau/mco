@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 import platform
 
 from pprint import pprint
-from filters.deshaker_cv2 import DEBUG_DESHAKE
+from filters.python_deshaker import DEBUG_DESHAKE
 from filters.dnn_superres import upscale_cv2_dnn_superres
 from filters.ffmpeg_utils import clean_ffmpeg_filter
 
@@ -30,7 +30,6 @@ from utils.get_image_list import (
 )
 
 from filters.filters import (
-    calculate_geometry_parameters,
     cv2_bilateral_filter,
     cv2_fastNlMeansDenoisingColored,
     cv2_gaussianBlur,

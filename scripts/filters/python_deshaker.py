@@ -40,7 +40,9 @@ def apply_cv2_transformation(img, x_y_theta:list):
     return output_img
 
 
-class CV2_deshaker:
+class Python_deshaker:
+    # May be cv2 or scikit-image
+
     def __init__(self) -> None:
         self.__max_corners = 500
         self.__quality_level = 0.01

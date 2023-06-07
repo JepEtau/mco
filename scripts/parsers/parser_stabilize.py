@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 import sys
 
 import configparser
@@ -27,6 +28,34 @@ from utils.nested_dict import nested_dict_set
 #   - horizontal
 #   - rotation
 STABILIZE_MODES = ['vertical', 'horizontal', 'rotation']
+STABILIZE_ENHANCEMENTS = ['contrast', 'auto', 'none']
+STABILIZE_FROM = ['start', 'end', 'middle', 'frame']
+STABILIZERS = [
+    'cv2',
+    # 'scikit',      not yet implemented, use the same class as cv2
+    'ffmpeg',      # not yet implemented
+    # 'topaz',      not yet implemented
+]
+
+DEFAULT_SEGMENT_VALUES = {
+    # 'start': -1,
+    # 'end': -1,
+    'alg': STABILIZERS[0],
+    'from': STABILIZE_FROM[2],  # Start the deshake from the specified frame
+    'ref': -1,                  # The initial frame no when starting to deshake
+    'static': False,            # If set to True, use the same image to get the initial keypoints for each frame
+    'enhance': STABILIZE_ENHANCEMENTS[0],   # Enhance the gray image to identify and compute keypoints
+    'mode': {                   # Translation/rotation applied to the image
+        'vertical': False,
+        'horizontal': False,
+        'rotation': False,
+    },
+    'tracker': {                # Define the regions to identify and compute keypoints
+        'enable': False,
+        'inside': True,
+        'regions': list(),
+    },
+}
 
 
 def parse_stabilize_configurations(db, k_ep_or_g:str):
@@ -116,21 +145,7 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
 
             for segment in segments[1:]:
                 parameters = segment.split(':')
-                segment_dict = {
-                    'ref': -1,
-                    'alg': parameters[0],
-                    'from': 'middle',
-                    'mode': {
-                        'vertical': False,
-                        'horizontal': False,
-                        'rotation': False
-                    },
-                    'tracker': {
-                        'enable': False,
-                        'inside': True,
-                        'regions': list(),
-                    },
-                }
+                segment_dict = deepcopy(DEFAULT_SEGMENT_VALUES)
                 for parameter in parameters[1:]:
                     # print_orange("\t%s" % (parameter))
                     k, v = parameter.split('=')
@@ -143,6 +158,11 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
                                 segment_dict['mode'][option] = True
                     elif k == 'tracker':
                         nested_dict_set(segment_dict, parse_tracker(v), 'tracker')
+                    elif k == 'static':
+                        nested_dict_set(segment_dict, True if v.lower() == 'true' else False, k)
+                    elif k == 'enhance':
+                        if v in STABILIZE_ENHANCEMENTS:
+                            nested_dict_set(segment_dict, v, k)
                     else:
                         nested_dict_set(segment_dict, v, k)
 
