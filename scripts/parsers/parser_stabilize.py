@@ -30,17 +30,41 @@ from utils.nested_dict import nested_dict_set
 STABILIZE_MODES = ['vertical', 'horizontal', 'rotation']
 STABILIZE_ENHANCEMENTS = ['contrast', 'auto', 'none']
 STABILIZE_FROM = ['middle', 'start', 'end', 'frame']
+STABILIZE_CV2_FEATURES_EXTRACTORS = ['gftt', 'sift']
 STABILIZERS = [
-    'cv2',
+    'cv2_gftt',
+    'cv2_sift',
     # 'sk',      not yet implemented, use the same class as cv2
     'ffmpeg',       # not yet implemented
     # 'topaz',      not yet implemented
 ]
 
 DEFAULT_SEGMENT_VALUES = {
+    'start': -1,
+    'end': -1,
+    'stab': STABILIZERS[0].split('_')[0],
+    'from': STABILIZE_FROM[0],  # Start the deshake from the specified frame
+    'ref': -1,                  # The initial frame no when starting to deshake
+    'static': False,            # If set to True, use the same image to get the initial keypoints for each frame
+    'enhance': STABILIZE_ENHANCEMENTS[0],   # Enhance the gray image to identify and compute keypoints
+    'mode': {                   # Translation/rotation applied to the image
+        'vertical': True,
+        'horizontal': True,
+        'rotation': True,
+    },
+    'tracker': {                # Define the regions to identify and compute keypoints
+        'enable': False,
+        'inside': True,
+        'regions': list(),
+    },
+    'cv2': {'feature_extractor': 'gftt'},
+}
+
+
+EMPTY_SEGMENT_VALUES = {
     # 'start': -1,
     # 'end': -1,
-    'stab': STABILIZERS[0],
+    'stab': STABILIZERS[0].split('_')[0],
     'from': STABILIZE_FROM[0],  # Start the deshake from the specified frame
     'ref': -1,                  # The initial frame no when starting to deshake
     'static': False,            # If set to True, use the same image to get the initial keypoints for each frame
@@ -145,7 +169,14 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
 
             for segment in segments[1:]:
                 parameters = segment.split(':')
-                segment_dict = deepcopy(DEFAULT_SEGMENT_VALUES)
+                segment_dict = deepcopy(EMPTY_SEGMENT_VALUES)
+
+                stab, stab_parameters = parse_stab_parameters(parameters[0])
+                segment_dict.update({
+                    'stab': stab,
+                    stab: stab_parameters,
+                })
+
                 for parameter in parameters[1:]:
                     # print_orange("\t%s" % (parameter))
                     k, v = parameter.split('=')
@@ -185,6 +216,42 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
                 pprint(shot['deshake'])
                 # if k_ed == 'f' and shot['no'] == 23:
                 #     sys.exit()
+
+
+def parse_stab_parameters(stab_parameters_str:str):
+    verbose = False
+    if verbose:
+        print(lightcyan("parse_stab_parameters:"), stab_parameters_str)
+
+    stab_parameters_list = stab_parameters_str.split('=')
+    stab = stab_parameters_list[0]
+
+    parameters_dict = dict()
+    if stab == 'cv2':
+        try:
+            parameters = stab_parameters_list[1].split(',')
+            feature_extractor = parameters[0]
+        except:
+            feature_extractor = 'gftt'
+
+        parameters_dict['feature_extractor'] = feature_extractor
+        # if parameters[0] == 'gftt':
+        #     # todo: add custom settings:
+        #     #   max_corners
+        #     #   quality_level
+        #     #   min_distance
+        #     #   block_size
+        # elif parameters[0] == 'sirf':
+        #     # todo: add custom settings:
+        #     #   contrast_threshold
+        #     #   edge_threshold
+
+    if verbose:
+        pprint(parameters_dict)
+
+    return stab, parameters_dict
+
+
 
 
 def parse_tracker(tracker_str:str):

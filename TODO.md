@@ -1,15 +1,13 @@
 # TODO script
 (1)
-- append regions to the hash value
 - avisynth to upscale reportage
-- Add 'static' option
-- Add 'auto brightness'
-- Add 'sift'/'gftt'
+- Add FFmpeg stab
 ep02: shot 7/10/22/30/32
 
 (2)
-- Add FFmpeg stab
-- add overlay: shot no.
+- use multiple stab alg in the same shot: currently not working
+- use previous stabilized frame as the reference for the new segment to avoid an artifact
+- add overlay: shot no. requires a new argument...
 - stats: list unused curves. reason: clean the db
 - (?) smooth stabilization: to evaluate (g_fin)
 
@@ -23,10 +21,11 @@ ep02: shot 7/10/22/30/32
 
 # TODO video editor
 (1)
-- draw tracking region only if frame no in segment
-- Add geometry error/fit_to_width in selection widget
+- add button to show the enhanced grey image used to stabilize
+- stabilize: add options when changing stab algo
 
 (2)
+- Add geometry error/fit_to_width in selection widget
 - curves: bug: mouseclick on graph creates a point if another widget is selected
 - edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db
 - F5 to refresh current shot only

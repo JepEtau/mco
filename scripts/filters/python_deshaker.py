@@ -28,7 +28,6 @@ ROI_MIN_T = 0
 ROI_MIN_B = 0
 
 def apply_cv2_transformation(img, x_y_theta:list):
-    print(f"\tapply last transformation:", ', '.join([f"{t:.02f}" for t in x_y_theta]))
     t_x, t_y, t_theta = x_y_theta
     transformation_matrix = np.array(
         [[np.cos(t_theta), -np.sin(t_theta), t_x],
@@ -51,6 +50,11 @@ class Python_deshaker:
         self.__use_harris_detector = False
         self.__k = 0.04
 
+
+        self.__sift_contrast_hreshold = 0.04
+        self.__sift_edge_threshold = 10
+
+
         self.__gftt = dict(
             maxCorners = self.__max_corners,
             qualityLevel = self.__quality_level,
@@ -60,41 +64,57 @@ class Python_deshaker:
             k=self.__k)
 
         # Parameters for lucas kanade optical flow
-        self.__lk_params = dict(
-            winSize = (15, 15),
-            maxLevel = 2,
-            criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
-                        10, 0.03))
+        # self.__lk_params = dict(
+        #     winSize = (15, 15),
+        #     maxLevel = 2,
+        #     criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT,
+        #                 10, 0.03))
         self.__lk_params = dict()
 
         self._height, self._width, self._channels = 0, 0, 0
-
         self.__transformations = list()
         self.img_mask = None
-
-        self.__improve_ref = True
         self.__img_contour = None
 
-        self.feature_extractor = 'sift'
-        self.feature_extractor = 'gftt'
+    def generate_filter_str(self, segment):
+        filter_str = f"{segment['stab']}"
+        if segment['stab'] == 'cv2':
+            filter_str += f":{segment['cv2']['feature_extractor']}"
 
-        if self.feature_extractor == 'sift':
-            # contrastThreshold=0.05
-            self.__descriptor = cv2.SIFT_create()
-        elif self.feature_extractor == 'brisk':
-            self.__descriptor = cv2.BRISK_create()
+            if segment['cv2']['feature_extractor'] == 'gftt':
+                filter_str += f":{self.__max_corners}"
+                filter_str += f":{self.__quality_level:0.2f}"
+                filter_str += f":{self.__min_distance:.1f}"
+                filter_str += f":{self.__block_size}"
+
+            elif segment['cv2']['feature_extractor'] == 'sift':
+                try:
+                    filter_str += f":{segment['cv2']['contrast_threshold']}"
+                except:
+                    filter_str += f":{self.__sift_contrast_hreshold}"
+                try:
+                    filter_str += f":{segment['cv2']['edge_threshold']}"
+                except:
+                    filter_str += f":{self.__sift_edge_threshold}"
+
+        if segment['tracker']['enable']:
+            filter_str += f":{'in' if segment['tracker']['inside'] else 'out'}"
+            hash = calculate_hash(','.join([str(x) for x in np.array(segment['tracker']['regions']).reshape(-1).tolist()]))
+            filter_str += f":{hash}"
+
+        return filter_str
 
 
     def improve_ref(self, img):
-        if self.__improve_ref:
-            return improve_ref_img(img)
+        if self.__enhance != 'none':
+            return enhance_gray_img(img, self.__enhance)
         return img
 
 
     def get_keypoints(self, img_gray):
         img_improved = self.improve_ref(img_gray)
 
-        if self.feature_extractor =='gftt':
+        if self.__descriptor is None:
             keypoints = cv2.goodFeaturesToTrack(image=img_improved, **self.__gftt)
         else:
             if self.img_mask is not None:
@@ -106,63 +126,54 @@ class Python_deshaker:
             kpts, features = self.__descriptor.detectAndCompute(img_improved, None)
             keypoints = np.array([kp.pt for kp in kpts], dtype='float32').reshape(-1, 1, 2)
 
+        return (keypoints, img_improved)
 
-        if keypoints is not None:
-            print_lightgrey(f"kp: {len(keypoints)}", end ='')
+        # filtered_keypoints = list()
+        # # display point
+        # do_show = False
+        #
+        # if do_show:
+        #     img_improved_copy = img_improved.copy()
+        #     for kp in keypoints:
+        #         __kp = kp[0]
+        #         cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 5, [128,128,128], 1)
+        #
+        # for kp in keypoints:
+        #     __kp = kp[0]
+        #     # print(f"{__kp[0]}, {__kp[1]}")
+        #     # if do_show:
+        #     #     cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 1)
 
-        if not self.__is_tracker_enabled or True:
-            print()
-            return (keypoints, img_improved)
-
-        filtered_keypoints = list()
-        # display point
-        do_show = False
-
-        if do_show:
-            img_improved_copy = img_improved.copy()
-            for kp in keypoints:
-                __kp = kp[0]
-                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 5, [128,128,128], 1)
-
-
-        for kp in keypoints:
-            __kp = kp[0]
-            # print(f"{__kp[0]}, {__kp[1]}")
-            # if do_show:
-            #     cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 1)
-
-            # if not (self.__img_contour[2] < __kp[0] < self.__img_contour[3]
-            #     and self.__img_contour[0] < __kp[1] < self.__img_contour[1]):
-            #     # Not inside a cropped area of the image
-            #     # i.e. on the border of the src img, bad quality
-            #     # print("\tdiscard")
-            #     continue
-            if is_point_valid(__kp, self.__tracker_contours, self.__tracker_is_inside):
-                filtered_keypoints.append(kp)
-
-        filtered_keypoints = np.array(filtered_keypoints, dtype=np.float32)
-        for kp in filtered_keypoints:
-            __kp = kp[0]
-            if do_show:
-                cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 2)
-
-
-        if do_show:
-            cv2.imshow(f"get_keypoints", img_improved_copy)
-            cv2.waitKey()
-
-
-        print(f" -> {len(filtered_keypoints)}")
-        # print_lightcyan(f"{len(filtered_keypoints)}")
-
-        return (filtered_keypoints, img_improved)
+        #     # if not (self.__img_contour[2] < __kp[0] < self.__img_contour[3]
+        #     #     and self.__img_contour[0] < __kp[1] < self.__img_contour[1]):
+        #     #     # Not inside a cropped area of the image
+        #     #     # i.e. on the border of the src img, bad quality
+        #     #     # print("\tdiscard")
+        #     #     continue
+        #     if is_point_valid(__kp, self.__tracker_contours, self.__tracker_is_inside):
+        #         filtered_keypoints.append(kp)
+        #
+        # filtered_keypoints = np.array(filtered_keypoints, dtype=np.float32)
+        # for kp in filtered_keypoints:
+        #     __kp = kp[0]
+        #     if do_show:
+        #         cv2.circle(img_improved_copy, (int(__kp[0]), int(__kp[1])), 3, [255,255,255], 2)
+        #
+        # if do_show:
+        #     cv2.imshow(f"get_keypoints", img_improved_copy)
+        #     cv2.waitKey()
+        #
+        # print(f" -> {len(filtered_keypoints)}")
+        # # print_lightcyan(f"{len(filtered_keypoints)}")
+        #
+        # return (filtered_keypoints, img_improved)
 
 
 
     def __get_initial_image(self, img, last_transformation, verbose=False):
         # Apply transformation to the initial image
         if last_transformation is not None:
-            print("\tApply transformation to the initial image:", last_transformation)
+            print(f"\t\t\tapply last transformation to the initial img:", ', '.join([f"{t:.02f}" for t in last_transformation]))
             initial_img_stabilized = apply_cv2_transformation(img, last_transformation)
             self.__last_transformation = last_transformation
         else:
@@ -176,7 +187,7 @@ class Python_deshaker:
         return initial_img_stabilized, img_for_tracking, keypoints
 
 
-    def __stabilize_image_default(self, img_to, img_from_gray, keypoints_from, mode, verbose=False):
+    def __stabilize_image_cv2(self, img_to, img_from_gray, keypoints_from, mode, verbose=False):
         img_to_gray = cv2.cvtColor(img_to, cv2.COLOR_BGR2GRAY)
         img_to_gray = self.improve_ref(img_to_gray)
 
@@ -238,8 +249,8 @@ class Python_deshaker:
                 # print("\t", t_theta)
                 # t_theta = np.arctan2(transformation[1][0], transformation[0][0])
                 # print("\t", t_theta)
-                # if verbose:
-                print("%d points, %d points" % (len(valid_keypoints_from), len(valid_keypoints_to)))
+                if verbose:
+                    print_lightgrey(f"-> {len(valid_keypoints_to)} kps", end=' ')
             else:
                 print("\ttransformation not found")
                 t_x = t_y = t_theta = 0
@@ -314,9 +325,6 @@ class Python_deshaker:
         if not mode['rotation']:
             t_theta = 0
 
-        if verbose:
-            print([t_x, t_y, t_theta])
-
         self.__last_transformation = last_transformation = [t_x, t_y, t_theta]
 
         # Transformation contains scale, discard it
@@ -374,7 +382,7 @@ class Python_deshaker:
             return img_stabilized, [shift_x, shift_y, 0]
 
         else:
-            return self.__stabilize_image_default(img_to, img_from_gray, keypoints_from, mode, verbose=verbose)
+            return self.__stabilize_image_cv2(img_to, img_from_gray, keypoints_from, mode, verbose=verbose)
 
 
 
@@ -387,7 +395,6 @@ class Python_deshaker:
         """
         verbose=True
 
-        static = False
 
         transformations = {
             'start': None,
@@ -397,6 +404,8 @@ class Python_deshaker:
         start_from = segment['from']
         start_frame_no = segment['ref']
         mode = segment['mode']
+        static = segment['static']
+        self.__enhance = segment['enhance']
 
         self.__is_tracker_enabled = segment['tracker']['enable']
         if self.__is_tracker_enabled:
@@ -408,44 +417,51 @@ class Python_deshaker:
         if start_from == 'start':
             # Start from first frame
             start_index = 0
-
-
-            static = False
-
-
         elif start_from == 'end':
             # Start from last frame
             start_index = len(images) - 1
         elif start_from == 'middle':
             # Start from middle of the segment
             start_index = int(len(images) / 2 - 1)
-
-            static = True
-
         elif start_from == 'frame':
             # Start from specified frame no.
             start_index = start_frame_no
         else:
             sys.exit(print_red(f"CV2_deshaker.stabilize: error: ref={start_frame_no}"))
 
-        indice = 0
-
-        # Define a filter str
-        if self.feature_extractor == 'gftt':
-            filters_str = f"{self.__max_corners}:{self.__quality_level:0.2f}:{self.__min_distance:.1f}:{self.__block_size}:{indice}"
-        else:
-            filters_str = self.feature_extractor
+        stab_filter_str = self.generate_filter_str(segment=segment)
 
         # Generate and log hash
-        filter_str = f"{input_hash},stab={filters_str}"
+        filter_str = f"{input_hash},stab={stab_filter_str}"
         if get_hash:
             hash = calculate_hash(filter_str=filter_str)
-            return filters_str, None, transformations
+            return stab_filter_str, None, transformations
         if do_log:
             hash = log_filter(filter_str, shot['hash_log_file'])
         else:
             hash = calculate_hash(filter_str=filter_str)
         print_lightcyan(f"\t\t\t(cv2) CV2_deshaker, images count:{len(images)}, start_index:{start_index}")
+
+
+        self.__descriptor = None
+        if segment['stab'] == 'cv2':
+            if segment['cv2']['feature_extractor'] == 'sift':
+                try:
+                    contrast_threshold = segment['cv2']['contrast_threshold']
+                    edge_threshold = segment['cv2']['edge_threshold']
+                    self.__descriptor = cv2.SIFT_create(
+                        contrastThreshold=contrast_threshold,
+                        edgeThreshold=edge_threshold)
+                except:
+                    try:
+                        contrast_threshold = segment['cv2']['contrast_threshold']
+                        self.__descriptor = cv2.SIFT_create(
+                            contrastThreshold=contrast_threshold)
+                    except:
+                        self.__descriptor = cv2.SIFT_create()
+
+            elif segment['cv2']['feature_extractor'] == 'brisk':
+                self.__descriptor = cv2.BRISK_create()
 
 
         # If using contour
@@ -493,7 +509,10 @@ class Python_deshaker:
                     img_to=img_colored,
                     img_from_gray=img_from_gray,
                     keypoints_from=keypoints_from,
-                    mode=mode)
+                    mode=mode,
+                    verbose=verbose)
+                if verbose:
+                    print_lightgrey(f"{transformation}")
 
                 # append image
                 output_images.append(img_stabilized)
@@ -524,7 +543,10 @@ class Python_deshaker:
                     img_to=img_colored,
                     img_from_gray=img_from_gray,
                     keypoints_from=keypoints_from,
-                    mode=mode)
+                    mode=mode,
+                    verbose=verbose)
+                if verbose:
+                    print_lightgrey(f"{transformation}")
 
                 # insert image
                 output_images.insert(0, img_stabilized)
@@ -561,9 +583,10 @@ class Python_deshaker:
                     img_to=images[i],
                     img_from_gray=img_from_gray,
                     keypoints_from=keypoints_from,
-                    mode=mode)
+                    mode=mode,
+                    verbose=verbose)
                 if verbose:
-                    print(f"{transformation}")
+                    print_lightgrey(f"{transformation}")
 
                 # append image
                 output_images.append(img_stabilized)
@@ -599,9 +622,10 @@ class Python_deshaker:
                     img_to=img_colored,
                     img_from_gray=img_from_gray,
                     keypoints_from=keypoints_from,
-                    mode=mode)
+                    mode=mode,
+                    verbose=verbose)
                 if verbose:
-                    print(f"{transformation}")
+                    print_lightgrey(f"{transformation}")
 
                 output_images.insert(0, img_stabilized)
                 self.__transformations.insert(0, transformation)
@@ -622,7 +646,7 @@ class Python_deshaker:
             pprint(transformations)
             print(f"{len(output_images)}")
 
-        return filters_str, output_images, transformations
+        return stab_filter_str, output_images, transformations
 
 
 
@@ -651,14 +675,14 @@ def create_roi_mask(tracker, img_shape):
 
 
 def automatic_brightness_and_contrast(image, clip_hist_percent=25):
-    gray = image
+    # source: https://stackoverflow.com/questions/56905592/automatic-contrast-and-brightness-adjustment-of-a-color-photo-of-a-sheet-of-pape
 
     # Calculate grayscale histogram
-    hist = cv2.calcHist([gray],[0],None,[256],[0,256])
+    hist = cv2.calcHist([image],[0],None,[256],[0,256])
     hist_size = len(hist)
 
     # Calculate cumulative distribution from the histogram
-    accumulator = []
+    accumulator = list()
     accumulator.append(float(hist[0]))
     for index in range(1, hist_size):
         accumulator.append(accumulator[index -1] + float(hist[index]))
@@ -687,8 +711,17 @@ def automatic_brightness_and_contrast(image, clip_hist_percent=25):
     return (auto_result, alpha, beta)
 
 
-def improve_ref_img(img):
-    # img_improved = img
+def enhance_gray_img(img, enhance:str):
+    if enhance == 'auto':
+        (img_improved, alpha, beta) = automatic_brightness_and_contrast(img)
+
+    elif enhance == 'contrast':
+        # Increase contrast
+        img_improved = cv2.convertScaleAbs(img, alpha=1.3, beta=0)
+        img_improved = cv2.normalize(img_improved, img_improved, 0, 255, cv2.NORM_MINMAX)
+
+    else:
+        img_improved = img
 
     # hist = cv2.calcHist([img], [0], None, [256], [0, 256])
     # hist /= hist.sum()
@@ -733,17 +766,11 @@ def improve_ref_img(img):
     # threshold , blackAndWhiteImage= cv2.threshold(img, 20  , 255, cv2.THRESH_BINARY)
     # img_improved = cv2.normalize(img_improved, img_improved, 0, 255, cv2.NORM_MINMAX)
 
-
     # blurred = cv2.GaussianBlur(img, (3, 3), 0)
     # img_improved = cv2.Canny(blurred, 20, 200)
 
     # if img_mask is not None:
     #     img = cv2.bitwise_and(img, img, mask=img_mask)
-    if False:
-        (img_improved, alpha, beta) = automatic_brightness_and_contrast(img)
-    else:
-        img_improved = cv2.convertScaleAbs(img, alpha=1.3, beta=0)
-        img_improved = cv2.normalize(img_improved, img_improved, 0, 255, cv2.NORM_MINMAX)
 
     # cv2.imshow('Output',img_improved)
     # cv2.waitKey()

@@ -166,7 +166,12 @@ class Model_stabilize():
                 for k, v in segment['mode'].items():
                     mode_str += f"+{k}" if v else ''
 
+                stab = segment['stab']
                 segments_str += f"\n{segment['stab']}"
+                if stab == 'cv2':
+                    segments_str += f"={segment[stab]['feature_extractor']}"
+                # todo: add parameters and other alg
+
                 segments_str += f":start={segment['start']}"
                 segments_str += f":end={segment['end']}"
                 segments_str += f":from={segment['from']}"

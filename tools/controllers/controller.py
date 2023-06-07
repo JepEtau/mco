@@ -902,12 +902,6 @@ class Controller_video_editor(Controller_common,
             new_settings['segments'].update({
                 'start' : shot['start'],
                 'end' : shot['start'] + shot['count'] - 1,
-                'from' : 'start',
-                'mode': {
-                    'vertical': True,
-                    'horizontal': True,
-                    'rotation': True,
-                }
             })
 
         if not new_settings['error']:

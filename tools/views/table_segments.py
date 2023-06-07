@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
 )
 from parsers.parser_stabilize import DEFAULT_SEGMENT_VALUES, STABILIZE_ENHANCEMENTS, STABILIZE_FROM, STABILIZERS
+from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 
 from utils.stylesheet import (
@@ -101,7 +102,7 @@ class Table_segments(QTableWidget):
                 'id': 'stab',
                 'title': 'Stab.',
                 'alignment': Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter,
-                'width': 75,
+                'width': 90,
             },
         ]
 
@@ -295,10 +296,15 @@ class Table_segments(QTableWidget):
 
             elif column['id'] == 'stab':
                 # Frame used as the initial frame to start stabilization
+                stab = segment['stab']
+                try:
+                    stab += f"_{segment[stab]['feature_extractor']}"
+                except:
+                    pass
                 w = QComboBox()
                 w.clear()
                 w.addItems(STABILIZERS)
-                index = w.findText(segment['stab'])
+                index = w.findText(stab)
                 w.setCurrentIndex(index)
                 w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                 set_widget_stylesheet(w)
@@ -325,9 +331,15 @@ class Table_segments(QTableWidget):
     def get_segment_values(self, row_no):
         if row_no == -1:
             return
-        log.info("get_segment_values")
+        # log.info("get_segment_values")
+        stab_str = self.cellWidget(row_no, self._column_dict['stab']['no']).currentText()
+        try:
+            stab, feature_extractor = stab_str.split('_')
+        except:
+            stab = stab_str
+
         segment_values = {
-            'stab': self.cellWidget(row_no, self._column_dict['stab']['no']).currentText(),
+            'stab': stab,
             'from': self.cellWidget(row_no, self._column_dict['from']['no']).currentText(),
             'mode': dict(),
             'enhance': self.cellWidget(row_no, self._column_dict['enhance']['no']).currentText(),
@@ -335,6 +347,11 @@ class Table_segments(QTableWidget):
                 'regions': self.cellWidget(row_no, self._column_dict['tracker']['no']).property('regions')
             }
         }
+
+        try:
+            nested_dict_set(segment_values, feature_extractor, stab, 'feature_extractor')
+        except:
+            pass
 
         for k in ['start', 'end', 'ref']:
             column_no = self._column_dict[k]['no']
@@ -586,6 +603,11 @@ class Table_segments(QTableWidget):
         self.setRowHeight(row_no, self.row_height)
 
         __segment = deepcopy(DEFAULT_SEGMENT_VALUES)
+        __segment.update({
+            'start': '',
+            'end': '',
+        })
+
         self.set_segment_values(row_no=row_no, segment=__segment)
         self.selectRow(row_no)
 

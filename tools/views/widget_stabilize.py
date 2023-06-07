@@ -85,7 +85,8 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
         set_stylesheet(self)
         set_widget_stylesheet(self.label_message, 'message')
-        self.adjustSize()
+        self.groupBox_stabilize.setMinimumWidth(self.table_segments.get_width())
+        # self.adjustSize()
 
 
 
@@ -286,7 +287,7 @@ class Widget_stabilize(Widget_common, Ui_widget_stabilize):
 
 
     def edition_started(self):
-        log.info("stabilization is obsolete")
+        # log.info("stabilization is obsolete")
         self.is_obsolete = True
         self.label_message.setText("Obsolete")
         self.pushButton_save.setEnabled(True)

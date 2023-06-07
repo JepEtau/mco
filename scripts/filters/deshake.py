@@ -133,7 +133,7 @@ def deshake(shot, images:list, image_list:list,
                         print_lightcyan(f"\t- append {_count} images between 2 segments:", end=' ')
                     if transformations['end'] is not None:
                         if verbose:
-                            print(f"apply transformation")
+                            print(f"apply transformation", ', '.join([f"{t:.02f}" for t in transformations['end']]))
                         for i in range(start + count, segment['start']):
                             output_images.append(apply_cv2_transformation(images[i], transformations['end']))
                     else:
@@ -149,7 +149,16 @@ def deshake(shot, images:list, image_list:list,
         previous_transformation = transformations['end']
 
         # Create a filter
-        filter_str += f"deshake={segment['stab']}:{start}:{count}:{segment['from']}:{segment['ref']}:{segment['mode']}"
+        filter_str += f"deshake={start}:{count}"
+        filter_str += f":{segment['from']}"
+        if segment['from'] == 'frame':
+            filter_str += f":{segment['ref']}"
+        filter_str += f"{':static' if segment['static'] else ''}"
+        filter_str += f":{segment['enhance']}"
+        filter_str += f":"
+        for k, v in segment['mode'].items():
+            filter_str += f"{k[0]}+" if v else ''
+        filter_str = filter_str[:-1] + ','
 
         if not get_hash:
             print("\t\t\t%s" % (filter_str))
@@ -199,7 +208,7 @@ def deshake(shot, images:list, image_list:list,
 
                 if verbose:
                     print_lightcyan(f"\t- append {segment['start']} images at the beginning (modified):")
-                    print("\t", transformations)
+                    print(f"\tapply last transformation:", ', '.join([f"{t:.02f}" for t in transformations]))
                 for i in range(segment['start']):
                     output_images.append(apply_cv2_transformation(images[i], transformations['start']))
                 inserted_first_frames = True
