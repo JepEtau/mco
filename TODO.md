@@ -52,8 +52,20 @@ ep02: shot 7/10/22/30/32
     https://dasongli1.github.io/publication/grouped-shift-net/
     https://github.com/JingyunLiang/RVRT
 
+- BSVD ?
+- ScuNET
+- LDSR
+
 
 # TODO other
+- experiment script to identify the same frames of a shot:
+    * will it work before stabilization?
+    * how to verify that it gives good result?
+        - small changes ep01 shot no. 157
+        - raining: e01 shot no. 23/27/120/121
+        - small artifacts: ep 046
+        - image is distorted:  ep01 046
+    * not replacing is better than wrong replacement
 - list python modules (to clean the environment)
     AnimeSR
         basicsr
