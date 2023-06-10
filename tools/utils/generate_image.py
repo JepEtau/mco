@@ -16,6 +16,7 @@ from utils.pretty_print import *
 from filters.filters import (
     calculate_geometry_parameters,
     cv2_geometry_filter,
+    cv2_rgb_filter,
     filter_rgb,
     get_mean_luma)
 from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
@@ -92,7 +93,7 @@ def generate_image(frame:dict, preview_options:dict):
     nested_dict_set(frame, luma, 'stats', 'luma', 'initial')
     if preview_options['curves']['enabled'] and frame['curves'] is not None:
         try:
-            img_rgb = filter_rgb(frame, img_initial)
+            img_rgb = cv2_rgb_filter(img=img_initial, lut=frame['curves']['lut'])
 
             # Calculate mean value of luma channel
             luma = get_mean_luma(img_rgb)

@@ -53,7 +53,6 @@ Utilisation possible d'Anaconda, pyenv, ou directement sans environnement virtue
 -----------------------------------------
 - numpy
 - opencv-python
-- scikit_image
 - pysoundfile
 <br/><br/>
 Depuis le répertoire **`mco`**:

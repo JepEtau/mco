@@ -246,7 +246,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
 
 
 
-        # Python: opencv2/scikit
+        # Python: opencv2
         #-----------------------------------------------------------------------
         elif filter['type'] == 'python':
             previous_hash = hash

@@ -54,7 +54,6 @@ Se référer au paragraphe 11 et 12 de la licence attachée au projet (GPL v2). 
 * [Qt Group](https://www.qt.io), [PySide 6](https://pypi.org/project/PySide6)
 * [Real-CUGAN](https://github.com/bilibili/ailab)
 * [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN)
-* [Scikit-image](https://scikit-image.org/)
 * [Visual Studio Code](https://code.visualstudio.com/)
 * [xxxGAN models](https://upscale.wiki/wiki/Model_Database): Skr, kim2091, xinntao
 

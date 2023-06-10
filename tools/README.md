@@ -6,7 +6,6 @@
 - Modules python
     * numpy
     * opencv-python
-    * scikit-image
     * PySide6
 
     ```sh

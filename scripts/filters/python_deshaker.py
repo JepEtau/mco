@@ -3,10 +3,7 @@ import sys
 import cv2
 import numpy as np
 from statistics import mean
-from skimage.filters import sobel
 from matplotlib import pyplot as plt
-from skimage.registration import phase_cross_correlation
-from skimage import transform
 
 from filters.filters import *
 from utils.hash import (
@@ -40,7 +37,6 @@ def apply_cv2_transformation(img, x_y_theta:list):
 
 
 class Python_deshaker:
-    # May be cv2 or scikit-image
 
     def __init__(self) -> None:
         self.__max_corners = 500

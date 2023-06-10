@@ -36,7 +36,7 @@ from filters.filters import (
     cv2_geometry_filter,
     cv2_resize,
     cv2_scale,
-    sk_unsharp_mask,
+    cv2_unsharp,
     cv2_edge_sharpen_sobel,
     cv2_morphology_ex
 )
@@ -51,7 +51,7 @@ def apply_python_filters(shot:dict, images:list, image_list:list,
     filters_str = clean_ffmpeg_filter(filters_str)
 
     if not get_hash:
-        print_cyan("(cv2, skimage)\tstep no. %d, filter=[%s], input_hash= %s" % (step_no, filters_str, input_hash))
+        print_cyan("(cv2)\tstep no. %d, filter=[%s], input_hash= %s" % (step_no, filters_str, input_hash))
 
     # Get filter names and arguments
     filter_list = list()
@@ -329,8 +329,8 @@ def work_python_filters(frame_no, input_img, filter_list) -> list:
     for function, args in filter_list:
 
         if function == 'unsharp_mask':
-            img = sk_unsharp_mask(img,
-                radius=int(args[0]),
+            img = cv2_unsharp(img,
+                radius=float(args[0]),
                 amount=float(args[1]))
 
         elif function == 'bilateralFilter':
@@ -352,6 +352,7 @@ def work_python_filters(frame_no, input_img, filter_list) -> list:
                 sigma=float(args[1]))
 
         elif function =='edge_sharpen_sobel':
+            # not working because it requires complex nodes
             img = cv2_edge_sharpen_sobel(img,
                 denoised_image=initial_image,
                 k_size=int(args[0]),

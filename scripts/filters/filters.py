@@ -4,30 +4,8 @@ from copy import deepcopy
 import cv2
 import numpy as np
 import os.path
-import platform
-import time
 
-from skimage.filters import unsharp_mask
-from skimage.util import img_as_ubyte
-from skimage.util import img_as_float
-# from skimage.io import imshow, imread
-# from skimage.color import rgb2yuv, rgb2hsv, rgb2gray, yuv2rgb, hsv2rgb
-# from skimage.restoration import denoise_tv_bregman
-from skimage.restoration import (
-    calibrate_denoiser,
-    denoise_wavelet,
-    denoise_tv_chambolle,
-    denoise_nl_means,
-    denoise_bilateral,
-    estimate_sigma)
-from skimage.morphology import (
-    remove_small_holes,
-)
-# from functools import partial
 from pprint import pprint
-from skimage import color
-from skimage import restoration
-from filters.ffmpeg_utils import clean_ffmpeg_filter
 from filters import IMG_BORDER_HIGH_RES, IMG_BORDER_LOW_RES
 
 from filters.utils import (
@@ -65,38 +43,14 @@ def crop(img, geometry=[0,0,0,0]):
     return cropped_img
 
 
-def sk_unsharp_mask(image, radius, amount):
-    tmp = img_as_float(image)
-    tmp = unsharp_mask(tmp,
-        radius,
-        amount,
-        preserve_range=False,
-        channel_axis=2)
-    return img_as_ubyte(tmp)
 
+def cv2_unsharp(img: np.ndarray, radius: float, amount: float) -> np.ndarray:
+    if radius == 0 or amount == 0:
+        return img
 
+    blurred = cv2.GaussianBlur(img, (0, 0), radius)
+    return cv2.addWeighted(img, amount + 1, blurred, -amount, 0)
 
-def filter_remove_small_holes(in_img, area_threshold=64, connectivity=1):
-    tmp = remove_small_holes(in_img, area_threshold, connectivity)
-    img_out = img_as_ubyte(tmp)
-    return img_out
-
-
-def filter_nlmeans(img):
-    # psf = np.ones((5, 5)) / 25
-    # tmp = restoration.wiener(img,psf,1100)
-
-    # sigma_est = estimate_sigma(img, channel_axis=-1, average_sigmas=True)
-    # tmp = denoise_wavelet(img, channel_axis=-1)
-
-    sigma = 0.05
-    tmp = restoration.denoise_nl_means(img,
-        3, 3, 0.2,
-        fast_mode=True,
-        channel_axis=-1,
-        sigma=sigma)
-    img_out = img_as_ubyte(tmp)
-    return img_out
 
 
 
@@ -205,71 +159,6 @@ def filter_remove_contours(in_img, thresh, maxval):
 
 
 
-
-def filter_pre_upscale(frame, img):
-    print("\t\tpre_upscale: %s -> %s" % (os.path.split(frame['filepath']['deinterlace'])[1], os.path.split(frame['filepath']['pre_upscale'])[1]))
-    if 'pre_upscale' not in frame['filters']['opencv'].keys():
-        print("Warning: no pre_upscale filter defined")
-        return None
-
-    if frame['filters']['opencv']['pre_upscale'] is not None:
-        return filter_opencv(img, frame['filters']['opencv']['pre_upscale'], multi=False)
-
-    return None
-
-
-
-
-def filter_denoise(frame, img):
-    # print("denoise: %s -> %s" % (frame['filepath']['upscale'], frame['filepath']['denoise']))
-
-
-
-    if 'denoise' not in frame['filters']['opencv'].keys():
-        print("Warning: no denoise filter defined")
-        return None
-
-    if frame['filters']['opencv']['denoise'] is not None:
-        return filter_opencv(img, frame['filters']['opencv']['denoise'], multi=False)
-
-
-    # elif frame['filters']['ffmpeg']['denoise'] is not None:
-    #     print("Error: FFMPEG denoise filter shall be implemented before this function call")
-    # else:
-    #     print("warning: no denoise filter defined")
-    return None
-
-
-
-def filter_sharpen(frame, img):
-    # print("sharpen: %s -> %s" % (frame['filepath']['denoise'], frame['filepath']['sharpen']))
-    if frame['filters']['opencv']['sharpen'] is not None:
-        imgTmp = filter_opencv(img, frame['filters']['opencv']['sharpen'], multi=False)
-        return imgTmp
-    # else:
-    #     print("warning: no sharpen filter defined")
-    return None
-
-
-
-
-def filter_upscale(frame, img):
-    # print("upscale: %s -> %s" % (frame['filepath']['pre_upscale'], frame['filepath']['upscale']))
-    filter_array = frame['filters']['opencv']['upscale']
-    if filter_array is not None:
-        width = frame['dimensions']['upscale']['w']
-        height = frame['dimensions']['upscale']['h']
-        for i in range(len(filter_array)):
-            filter_array[i] = filter_array[i].replace("height_upscale", "%d" % (height))
-            filter_array[i] = filter_array[i].replace("width_upscale", "%d" % (width))
-        imgTmp = filter_opencv(img, filter_array, multi=False)
-        return imgTmp
-    else:
-        raise Exception("error: opencv: no upscale filter defined to generate %s" % (frame['filepath']['upscale']))
-    return None
-
-
-
 def cv2_rgb_filter(img, lut):
     b, g, r = cv2.split(img)
 
@@ -285,53 +174,6 @@ def cv2_rgb_filter(img, lut):
     img_rgb = cv2.merge((bbp, ggp, rrp))
     return img_rgb
 
-
-def filter_rgb(frame, img):
-    # print("rgb: %s -> %s" % (frame['filepath']['sharpen'], frame['filepath']['rgb']))
-    b, g, r = cv2.split(img)
-
-    matrix_r = frame['curves']['lut']['r']
-    matrix_g = frame['curves']['lut']['g']
-    matrix_b = frame['curves']['lut']['b']
-
-    rrp = matrix_r[r.flat].reshape(r.shape)
-    ggp = matrix_g[g.flat].reshape(g.shape)
-    bbp = matrix_b[b.flat].reshape(b.shape)
-
-    img_rgb = cv2.merge((bbp, ggp, rrp))
-    return img_rgb
-
-
-def stabilize_image(frame, img):
-    img_stabilized = img
-    if frame['stabilize']['dx_dy'] is not None:
-        if frame['stabilize']['dx_dy'][1] >= 1:
-            # Add padding
-            dy = abs(int(frame['stabilize']['dx_dy'][1]))
-
-            img_tmp = img[
-                0:img.shape[0] - dy,
-                0:img.shape[1]
-            ]
-            img_stabilized = cv2.copyMakeBorder(img_tmp,
-                top=dy, bottom=0,
-                left=0, right=0,
-                borderType=cv2.BORDER_CONSTANT,
-                value=[0, 0, 0])
-        elif frame['stabilize']['dx_dy'][1] <= -1:
-            dy = abs(int(frame['stabilize']['dx_dy'][1]))
-            # Remove
-            img_tmp = img[
-                dy:img.shape[0],
-                0:img.shape[1]
-            ]
-            img_stabilized = cv2.copyMakeBorder(img_tmp,
-                top = 0, bottom=dy,
-                left=0, right=0,
-                borderType=cv2.BORDER_CONSTANT,
-                value=[0, 0, 0])
-
-    return img_stabilized
 
 
 def cv2_geometry_filter(img, geometry):
@@ -587,44 +429,6 @@ def calculate_geometry_parameters(shot, img, simulate:bool=False, verbose:bool=F
 
 
 
-def filter_richardson_lucy(img, psf=None, num_iter=30):
-    if psf is None:
-        psf = np.ones((5, 5)) / 25
-    # data = convolve2d(img, psf, 'auto')
-    # tmp = cv2.cvtColor(input_img, cv2.COLOR_BGR2GRAY)
-    # tmp2 = img_as_float(tmp)
-    tmp = restoration.richardson_lucy(img, psf)
-    img_out = img_as_ubyte(tmp)
-    return img_out
-
-
-def filter_nlmeans(img):
-    # psf = np.ones((5, 5)) / 25
-    # tmp = restoration.wiener(img,psf,1100)
-
-    # sigma_est = estimate_sigma(img, channel_axis=-1, average_sigmas=True)
-    # tmp = denoise_wavelet(img, channel_axis=-1)
-
-    sigma = 0.05
-    tmp = restoration.denoise_nl_means(img,
-        3, 3, 0.2,
-        fast_mode=True,
-        channel_axis=-1,
-        sigma=sigma)
-    img_out = img_as_ubyte(tmp)
-    return img_out
-
-
-def filter_bilateral_sk(img, sigma_color, sigma_spatial):
-    # Too long compared to opencv
-    # img_float = img_as_float(img)
-    tmp = denoise_bilateral(img,
-        sigma_color=sigma_color if sigma_color != 0 else None,
-        sigma_spatial=sigma_spatial,
-        channel_axis=2)
-    img_out = img_as_ubyte(tmp)
-    return img_out
-
 
 def cv2_bilateral_filter(img, diameter, sigmaColor, sigmaSpace):
     return cv2.bilateralFilter(src=img,
@@ -656,7 +460,7 @@ def filter_brightness_contrast(input_img, brightness = 255, contrast = 127):
     # cv2.putText(buf,'B:{},C:{}'.format(brightness,contrast),(10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
     return buf
 
-INTERPOLATIONS = {
+INTERPOLATION_METHODS = {
     'bicubic': cv2.INTER_CUBIC,
     'lanczos': cv2.INTER_LANCZOS4,
     'lanczos4': cv2.INTER_LANCZOS4,
@@ -668,7 +472,7 @@ def cv2_scale(image, scale:float, interpolation:str):
     # print("upscale image to %dx%d, inter=%s" % (width, height, interpolation))
     # startTime = time.time()
     try:
-        cv2_interpolation = INTERPOLATIONS[interpolation]
+        cv2_interpolation = INTERPOLATION_METHODS[interpolation]
     except:
         sys.exit(print_red("error: cv2_scale: interpolation method not recognized [%s]" % (interpolation)))
 
@@ -692,10 +496,6 @@ def cv2_resize(image, width, height, interpolation):
         cv2_interpolation = cv2.INTER_NEAREST
     elif interpolation == 'linear':
         cv2_interpolation = cv2.INTER_LINEAR
-    elif interpolation == 'superres':
-        upscaled_image = filter_scale_superres(image, width, height)
-        # print(">> %.04fs" % (time.time() - startTime), flush=True)
-        return upscaled_image
     else:
         sys.exit(print_red("error: cv2_resize: interpolation method not recognized [%s]" % (interpolation)))
 
@@ -704,23 +504,6 @@ def cv2_resize(image, width, height, interpolation):
 
     # print(">> %.04fs" % (time.time() - startTime), flush=True)
     return upscaled_image
-
-
-
-def mco_unsharp_mask(image, kernel_size=(5, 5), sigma=1.0, amount=1.0, threshold=0):
-    """Return a sharpened version of the image, using an unsharp mask."""
-    # For details on unsharp masking, see:
-    # https://en.wikipedia.org/wiki/Unsharp_masking
-    # https://homepages.inf.ed.ac.uk/rbf/HIPR2/unsharp.htm
-    blurred = cv2.GaussianBlur(image, kernel_size, sigma)
-    sharpened = float(amount + 1) * image - float(amount) * blurred
-    sharpened = np.maximum(sharpened, np.zeros(sharpened.shape))
-    sharpened = np.minimum(sharpened, 255 * np.ones(sharpened.shape))
-    sharpened = sharpened.round().astype(np.uint8)
-    if threshold > 0:
-        low_contrast_mask = np.absolute(image - blurred) < threshold
-        np.copyto(sharpened, image, where=low_contrast_mask)
-    return sharpened
 
 
 
@@ -751,127 +534,6 @@ def filter_brightnessAndContrast(input_img, brightness = 255, contrast = 127):
     # cv2.putText(buf,'B:{},C:{}'.format(brightness,contrast),(10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
     return buf
 
-
-
-def filter_opencv(images, filters, multi=True):
-    if not multi:
-        if type(images) is list:
-            image = images[0]
-        else:
-            image = images
-    initial_image = deepcopy(images)
-
-    for f in filters:
-        if f == '':
-            continue
-        args = f.split('=')
-        function = args[0]
-        try:
-            args = args[1].split(':')
-        except:
-            pass
-        if function == 'remove_contours':
-            image = filter_remove_contours(image,
-                thresh=int(args[0]),
-                maxval=int(args[1]))
-
-        elif function == 'fastNlMeansDenoisingColored':
-            image = cv2_fastNlMeansDenoisingColored(image,
-                h=int(args[0]),
-                hColor=int(args[1]),
-                templateWindowSize=int(args[2]),
-                searchWindowSize=int(args[3]))
-
-        elif function == 'fastNlMeansDenoisingColoredMulti':
-            if not multi:
-                print("Error, multiples/single images in filter_opencv")
-                sys.exit()
-            image = filter_fastNlMeansDenoisingColoredMulti(images,
-                imgToDenoiseIndex=1,
-                temporalWindowSize=3,
-                h=int(args[0]),
-                hColor=int(args[1]),
-                templateWindowSize=int(args[2]),
-                searchWindowSize=int(args[3]))
-
-        elif function == 'gaussianBlur':
-            image = filter_gaussianBlur(image,
-                radius=int(args[0]),
-                sigma=float(args[1]))
-
-        elif function == 'unsharp_mask':
-            image = filter_unsharp_mask(image,
-                radius=int(args[0]),
-                amount=float(args[1]))
-
-        elif function == 'bilateralFilter':
-            image = filter_bilateralFilter(image,
-                diameter=int(args[0]),
-                sigmaColor=float(args[1]),
-                sigmaSpace=float(args[2]))
-
-        elif function == 'bilateral_sk':
-            image = filter_bilateral_sk(image,
-                sigma_color=float(args[0]),
-                sigma_spatial=float(args[1]))
-
-        elif function == 'morphologyEx':
-            image = filter_morphologyEx(image,
-                type=args[0],
-                radius=int(args[1]),
-                iterations=int(args[2]))
-
-        elif function == 'dilate':
-            image = filter_dilate(image,
-                radius=int(args[0]))
-
-        elif function == 'erode':
-            image = filter_erode(image,
-                radius=int(args[0]))
-
-        elif function == 'addGaussNoise':
-            image = filter_addGaussNoise(image,
-                mean=float(args[0]),
-                var=float(args[1]),
-                sigma=float(args[2]))
-
-        elif function == 'brightness_contrast':
-            image = filter_brightness_contrast(image,
-                brightness=int(args[0]),
-                contrast=int(args[1]))
-
-        elif function == 'richardson_lucy':
-            image = filter_richardson_lucy(image,
-                num_iter=int(args[0]))
-
-        elif function =='nl_means':
-            image = filter_nlmeans(image)
-        # elif function == 'denoise_tv_bregman':
-        #     image = filter_denoise_tv_bregman(image,
-        #         weight=float(args[0]),
-        #         eps=float(args[1]),
-        #         max_iter=int(args[2]))
-
-        # elif function == 'wavelet':
-        #     image = filter_wavelet(image)
-
-        elif function == 'scale':
-            image = filter_scale_opencv(image,
-                width=int(args[0]),
-                height=int(args[1]),
-                interpolation=args[2])
-
-        elif function =='edge_sharpen_sobel':
-            image = filter_edge_sharpen_sobel(image,
-                denoised_image=initial_image,
-                k_size=int(args[0]),
-                blend_factor=float(args[1]))
-        elif function == 'remove_small_holes':
-            filter_remove_small_holes(image,
-                area_threshold=int(args[0]),
-                connectivity=int(args[1]))
-
-    return image
 
 
 
@@ -911,47 +573,6 @@ def filter_edge_sharpen_sobel(image, denoised_image, k_size=3, blend_factor=0.15
     return img_output
 
 
-# def filter_bm3d(image, sigma):
-#     tmp = img_as_float(image)
-#     tmp2 = bm3d.bm3d_rgb(tmp, sigma)
-#     return img_as_ubyte(tmp2)
-
-
-
-# def filter_wavelet(image):
-#     tmp = img_as_float(image)
-
-#     _denoise_wavelet = partial(denoise_wavelet, rescale_sigma=True)
-#     parameter_ranges = {'sigma': np.arange(0.1, 0.3, 0.02),
-#                         'wavelet': ['db1', 'db2'],
-#                         'convert2ycbcr': [True, False],
-#                         'multichannel': [True]}
-
-#     # Calibrate denoiser
-#     calibrated_denoiser = calibrate_denoiser(tmp,
-#                                             _denoise_wavelet,
-#                                             denoise_parameters=parameter_ranges
-#                                             )
-
-#     # Denoised image using calibrated denoiser
-#     tmp = calibrated_denoiser(tmp)
-#     tmp = np.clip(tmp, 0.0, 1.0)
-#     return img_as_ubyte(tmp)
-
-
-
-
-# def filter_denoise_tv_bregman(image, weight, eps, max_iter):
-#     tmp = img_as_float(image)
-#     tmp = denoise_tv_bregman(tmp,
-#         weight=weight,
-#         max_iter=max_iter,
-#         eps=eps,
-#         isotropic=True,
-#         multichannel=True)
-#     tmp = np.clip(tmp, 0.0, 1.0)
-#     return img_as_ubyte(tmp)
-
 
 def cv2_gaussianBlur(image, radius, sigma):
     return cv2.GaussianBlur(image, (radius, radius), sigma)
@@ -979,16 +600,6 @@ def cv2_fastNlMeansDenoisingColored(image, h, hColor, templateWindowSize, search
                                 searchWindowSize)
 
 
-def filter_unsharp_mask(image, radius, amount):
-    tmp = img_as_float(image)
-    tmp = unsharp_mask(tmp,
-        radius,
-        amount,
-        preserve_range=False,
-        channel_axis=2)
-    return img_as_ubyte(tmp)
-
-
 def  filter_morphologyEx(image, type, radius, iterations):
     if type == 'MORPH_RECT':
         kernelType = cv2.MORPH_RECT
@@ -1006,39 +617,6 @@ def  filter_morphologyEx(image, type, radius, iterations):
         iterations)
 
 
-def filter_bilateralFilter(img, diameter, sigmaColor, sigmaSpace):
-    return cv2.bilateralFilter(img, diameter, sigmaColor, sigmaSpace)
-
-def filter_gaussianBlur(image, radius, sigma):
-    return cv2.GaussianBlur(image, (radius, radius), sigma)
-
-def filter_dilate(image, radius):
-    kernel = np.ones((radius, radius), np.uint8)
-    return cv2.dilate(image, kernel, iterations=1)
-
-def filter_erode(image, radius):
-    kernel = np.ones((radius, radius), np.uint8)
-    return cv2.erode(image, kernel, iterations=1)
-
-
-
-
-def filter_addGaussNoise(image, mean, var, sigma):
-    gaussian = np.random.normal(mean, var**sigma, image.shape).astype(np.float)
-    gaussian_img = gaussian + img_as_float(image)
-    gaussian_img = np.clip(gaussian_img, 0.0, 1.0)
-    return img_as_ubyte(gaussian_img)
-
-
-def gaussian_kernel(size, size_y=None):
-    size = int(size)
-    if not size_y:
-        size_y = size
-    else:
-        size_y = int(size_y)
-    x, y = np.mgrid[-size:size+1, -size_y:size_y+1]
-    g = np.exp(-(x**2/float(size)+y**2/float(size_y)))
-    return g / g.sum()
 
 
 def auto_canny(image, sigma=0.33):
