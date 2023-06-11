@@ -115,12 +115,12 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
                 img = cv2.imread(image_list[f_no], cv2.IMREAD_COLOR)[:, :, [2, 1, 0]]
 
             # Upscale
-            img_upscaled = upscaler(
+            upscaled_img = upscaler(
                 frame=img,
                 tile_mode=0,
                 cache_mode=3,
                 alpha=1)
-            output_img = img_upscaled[:, :, ::-1]
+            output_img = upscaled_img[:, :, ::-1]
 
             if use_memory:
                 output_images.append(output_img)
@@ -389,10 +389,6 @@ def upscale_pytorch(shot, images:list, image_list:list,
         fp16 = True
     else:
         print_orange("Warning: using CPU")
-
-
-    # Output images in memory
-    use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
 
 
     # Load model

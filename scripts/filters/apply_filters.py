@@ -16,6 +16,7 @@ from filters.python_replace import (
     python_replace,
     python_edition,
 )
+from filters.scunet import upscale_scunet
 from filters.utils import MAX_FRAMES_COUNT
 from filters.animesr import upscale_animesr
 from filters.x_gan import (
@@ -123,6 +124,32 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
             if xgan['model'] == '':
                 sys.exit(print_red("\n(PyTorch) model name is required"))
             hash, scale, images = upscale_pytorch(
+                shot=shot,
+                images=images,
+                image_list=image_list,
+                model_name=xgan['model'],
+                directories=db['common']['directories'],
+                input_hash=hash,
+                step_no=step_no,
+                output_folder=output_folder,
+                get_hash=get_hashes,
+                do_force=do_force)
+
+
+        # SCUNet
+        #-----------------------------------------------------------------------
+        elif filter['type'] == 'scunet':
+            if not torch.cuda.is_available():
+                print_red("\t\t\terror: cannot upscale with this GPU")
+
+            xgan = {
+                'name': filter['type'],
+                'model': filter['str'],
+            }
+
+            if xgan['model'] == '':
+                sys.exit(print_red("\n(SCUNet) model name is required"))
+            hash, scale, images = upscale_scunet(
                 shot=shot,
                 images=images,
                 image_list=image_list,
@@ -246,7 +273,7 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
 
 
 
-        # Python: opencv2
+        # Python: numpy, opencv2
         #-----------------------------------------------------------------------
         elif filter['type'] == 'python':
             previous_hash = hash

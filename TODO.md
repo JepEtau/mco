@@ -1,5 +1,6 @@
 # TODO script
 (1)
+- Add SCUnet
 - avisynth to upscale reportage
 - Add FFmpeg stab
 ep02: shot 7/10/22/30/32
@@ -17,6 +18,10 @@ ep02: shot 7/10/22/30/32
 - deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image. This may have an impact if smooth stabilisation is implemented
 - (?) manual offsets to deshake
 - clean filters.py
+
+- Modify install.md for scunet:
+    https://github.com/cszn/KAIR/releases/download/v1.0/scunet_color_real_gan.pth
+    https://github.com/cszn/KAIR/releases/download/v1.0/scunet_color_real_psnr.pth
 
 
 # TODO video editor
@@ -39,22 +44,11 @@ ep02: shot 7/10/22/30/32
 
 
 # Models/Algo
-* Cartoons:
-    Fatality_DeBlur
-    Focus + Focus_Moderate https://u.pcloud.link/publink/show?code=kZS4XhVZ1GKsTtkjdULdYn6z9pTHs7fdLvR7
-    CelFrames 1.0
-    1x_DeInterPaint (Deinterlacing)
-
 * Temporal denoising
     https://github.com/JingyunLiang/VRT
     https://github.com/m-tassano/fastdvdnet
-    TempFormer: https://www.youtube.com/watch?v=LA747HTukTQ
-    https://dasongli1.github.io/publication/grouped-shift-net/
     https://github.com/JingyunLiang/RVRT
 
-- BSVD ?
-- ScuNET
-- LDSR
 
 
 # TODO other
@@ -68,7 +62,7 @@ ep02: shot 7/10/22/30/32
     * not replacing is better than wrong replacement
 - list python modules (to clean the environment)
     AnimeSR
-        basicsr
+        basicsr         <- required
         facexlib
         ffmpeg-python
         numpy

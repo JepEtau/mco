@@ -102,40 +102,49 @@ def upscale_animesr(shot, images:list, image_list:list,
     state = previous_image.new_zeros(1, 64, height, width)
     output = previous_image.new_zeros(1, 3, height * netscale, width * netscale)
 
+    count = shot['count']
+    i = 0
     for f_no, f_output in zip(range(count), output_image_list):
         start_time = time.time()
+        i += 1
+
         if not do_force and os.path.exists(f_output):
             if use_memory:
                 output_images.append(cv2.imread(f_output, cv2.IMREAD_COLOR))
             continue
 
-        print("\t%s -> %s" % (image_list[f_no], output_image_list[f_no]))
+        # print("\t%s -> %s" % (image_list[f_no], output_image_list[f_no]))
+        try:
+            torch.cuda.synchronize(device=device)
+            output, state = model.cell(torch.cat((previous_image, current_image, next_image), dim=1),
+                output, state)
 
-        torch.cuda.synchronize(device=device)
-        output, state = model.cell(torch.cat((previous_image, current_image, next_image), dim=1),
-            output, state)
+            torch.cuda.synchronize(device=device)
+            output_img = tensor2img(output, rgb2bgr=False)
+            # if outscale != netscale:
+            #     output_img_scaled = cv2.resize(output_img,
+            #         (out_width, out_height), interpolation=cv2.INTER_LANCZOS4)
+            # else:
+            #     output_img_scaled = output_img
+            if use_memory:
+                output_images.append(output_img)
+            if do_save:
+                cv2.imwrite(f_output, output_img)
 
-        torch.cuda.synchronize(device=device)
-        output_img = tensor2img(output, rgb2bgr=False)
-        # if outscale != netscale:
-        #     output_img_scaled = cv2.resize(output_img,
-        #         (out_width, out_height), interpolation=cv2.INTER_LANCZOS4)
-        # else:
-        #     output_img_scaled = output_img
-        if use_memory:
-            output_images.append(output_img)
-        if do_save:
-            cv2.imwrite(f_output, output_img)
+            previous_image = current_image
+            current_image = next_image
 
-        previous_image = current_image
-        current_image = next_image
+            torch.cuda.synchronize(device=device)
+            next_image = get_frame(images[min(f_no + 2, count - 1)], device, fp16)
 
-        torch.cuda.synchronize(device=device)
-        next_image = get_frame(images[min(f_no + 2, count - 1)], device, fp16)
+        except RuntimeError as e:
+            print("Error: failed to upscale %s" % (image_list[f_no]))
+            print(e)
+        else:
+            print(f"\t\t({i}/{count}) upscaled in %.02fs" % (time.time() - start_time), end='\r')
 
-        print("\tinfo: upscaled in %.02fs" % (time.time() - start_time))
-
-    print_lightgreen(f"returned {len(output_images)} images")
+    # print(f"{''.join([' ']*20)}")
+    print("")
 
     return hash, netscale, output_images
 
