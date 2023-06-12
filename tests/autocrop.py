@@ -13,6 +13,9 @@ threshold = 236
 # https://stackoverflow.com/questions/21410449/how-do-i-crop-to-largest-interior-bounding-box-in-opencv
 # https://stackoverflow.com/questions/56263917/how-to-auto-crop-the-white-part-of-this-picture-that-is-inside-the-grey
 # https://stackoverflow.com/questions/64795711/removing-border-from-the-image
+# https://subscription.packtpub.com/book/data/9781788474443/3/ch03lvl1sec39/finding-external-and-internal-contours-in-a-binary-image
+# https://docs.opencv.org/2.4/modules/imgproc/doc/structural_analysis_and_shape_descriptors.html?highlight=findcontours#findcontours
+
 
 def main():
 
