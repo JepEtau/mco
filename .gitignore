@@ -138,6 +138,9 @@ frames/
 *.mov
 *.ffindex
 *.bak
+**/*.png
+**/*.mkv
+**/*.mp4
 scripts/archive.sh
 scripts/archive.bat
 archive.sh

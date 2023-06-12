@@ -44,12 +44,18 @@ ep02: shot 7/10/22/30/32
 
 
 # Models/Algo
+* stabilize:
+- Add stitching before stabilize?
+
 * Temporal denoising
     https://github.com/JingyunLiang/VRT
     https://github.com/m-tassano/fastdvdnet
     https://github.com/JingyunLiang/RVRT
+* Removing moving objects
+    https://github.com/zllrunning/video-object-removal
 
-
+*Upscale
+    https://github.com/hyw-dev/SpatiotemporalResampling
 
 # TODO other
 - experiment script to identify the same frames of a shot:
@@ -83,6 +89,9 @@ ep02: shot 7/10/22/30/32
         numpy
         opencv-python
         ~~moviepy~~                 <-- not needed
+
+- https://github.com/Kiyamou/VapourSynth-RealCUGAN-ncnn-Vulkan, try syncgap
+- https://forum.videohelp.com/threads/409432-Best-%28not-super-slow%29-upscalers-for-1995-2010-Animes-%28Like-Naruto-etc%29/page3
 
 
 # Known issues, but won't correct
