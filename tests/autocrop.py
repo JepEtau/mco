@@ -22,6 +22,9 @@ threshold = 230
 # https://stackoverflow.com/questions/14296051/auto-crop-black-borders-from-a-scanned-image-by-making-stats-about-gray-values
 # https://stackoverflow.com/questions/13538748/crop-black-edges-with-opencv
 # https://stackoverflow.com/questions/16702966/rotate-image-and-crop-out-black-borders
+# https://stackoverflow.com/questions/56905592/automatic-contrast-and-brightness-adjustment-of-a-color-photo-of-a-sheet-of-pape/56909036
+# https://stackoverflow.com/questions/60145395/crop-exact-document-paper-from-image-by-removing-black-border-from-photos-in-jav
+
 
 def show_image(img, img_name:str=''):
     window_name = 'image' if img_name == '' else img_name
