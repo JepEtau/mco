@@ -4,7 +4,8 @@ from typing_extensions import Literal
 from utils.common import K_PARTS_ORDERED
 from utils.time_conversions import ms_to_frames
 
-
+def p_red(*values: object) -> str:
+    return "\033[31m{}\033[00m" .format(values[0])
 
 
 def print_red(*values: object,
@@ -19,6 +20,10 @@ def print_green(*values: object,
             end: str | None = "\n",
             flush: Literal[False] = False):
     print("\033[32m{}\033[00m" .format(values[0]), sep=sep, end=end, flush=flush)
+
+
+def p_orange(*values: object) -> str:
+    return "\033[33m{}\033[00m".format(values[0])
 
 
 def print_orange(*values: object,

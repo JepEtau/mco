@@ -3,7 +3,7 @@ import sys
 import cv2
 import numpy as np
 from statistics import mean
-from matplotlib import pyplot as plt
+# from matplotlib import pyplot as plt
 
 from filters.filters import *
 from utils.hash import (
@@ -95,7 +95,7 @@ class Python_deshaker:
 
         if segment['tracker']['enable']:
             filter_str += f":{'in' if segment['tracker']['inside'] else 'out'}"
-            hash = calculate_hash(','.join([str(x) for x in np.array(segment['tracker']['regions']).reshape(-1).tolist()]))
+            hash = calculate_hash(','.join([str(x) for x in np.array(segment['tracker']['regions'], dtype=list).reshape(-1).tolist()]))
             filter_str += f":{hash}"
 
         return filter_str
@@ -670,46 +670,9 @@ def create_roi_mask(tracker, img_shape):
     return img_mask
 
 
-def automatic_brightness_and_contrast(image, clip_hist_percent=25):
-    # source: https://stackoverflow.com/questions/56905592/automatic-contrast-and-brightness-adjustment-of-a-color-photo-of-a-sheet-of-pape
-
-    # Calculate grayscale histogram
-    hist = cv2.calcHist([image],[0],None,[256],[0,256])
-    hist_size = len(hist)
-
-    # Calculate cumulative distribution from the histogram
-    accumulator = list()
-    accumulator.append(float(hist[0]))
-    for index in range(1, hist_size):
-        accumulator.append(accumulator[index -1] + float(hist[index]))
-
-    # Locate points to clip
-    maximum = accumulator[-1]
-    clip_hist_percent *= (maximum/100.0)
-    clip_hist_percent /= 2.0
-
-    # Locate left cut
-    minimum_gray = 0
-    while accumulator[minimum_gray] < clip_hist_percent:
-        minimum_gray += 1
-
-    # Locate right cut
-    maximum_gray = hist_size -1
-    while accumulator[maximum_gray] >= (maximum - clip_hist_percent):
-        maximum_gray -= 1
-
-    # Calculate alpha and beta values
-    alpha = 255 / (maximum_gray - minimum_gray)
-    beta = -minimum_gray * alpha
-
-    auto_result = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
-
-    return (auto_result, alpha, beta)
-
-
 def enhance_gray_img(img, enhance:str):
     if enhance == 'auto':
-        (img_improved, alpha, beta) = automatic_brightness_and_contrast(img)
+        (img_improved, alpha, beta) = automatic_brightness_and_contrast_gray(img)
 
     elif enhance == 'contrast':
         # Increase contrast

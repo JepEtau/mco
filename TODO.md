@@ -1,18 +1,18 @@
 # TODO script
 (1)
-- Add SCUnet
 - avisynth to upscale reportage
-- Add FFmpeg stab
-ep02: shot 7/10/22/30/32
+- Add FFmpeg stab. test on ep02: shot 7/10/22/30/32
+- Add day no in the filename to improve sorting in explorer: WARNING, this breaks compatibility!!!
+- Add english language
+- Use TypedDict and documentation to improve readibility/understanding
 
 (2)
-- use multiple stab alg in the same shot: currently not working
+- use multiple stab software (cv2, ffmpeg) alg in the same shot: currently not implemented. Is this really needed?
 - use previous stabilized frame as the reference for the new segment to avoid an artifact
-- add filter info as watermark
-- stats: list unused curves. reason: clean the db
-- (?) smooth stabilization: to evaluate (g_fin)
 
 (3)
+- (?) smooth stabilization: to evaluate (g_fin)
+- stats: list unused curves. reason: clean the db
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
 - deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image. This may have an impact if smooth stabilisation is implemented
@@ -26,11 +26,12 @@ ep02: shot 7/10/22/30/32
 
 # TODO video editor
 (1)
-- add button to show the enhanced grey image
-- stabilize: add options when changing stab algo
+- add button to show the enhanced grey image used to stabilize
+- add button to autocrop
 - do not parse all shots when starting, reparse shot when selecting
 
 (2)
+- stabilize: add options to select stab algo
 - Add geometry error/fit_to_width in selection widget
 - curves: bug: mouseclick on graph creates a point if another widget is selected
 - edit the curves library: remove/inspect curves without changing the curve selection. Reason: clean the db

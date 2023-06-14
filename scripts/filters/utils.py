@@ -4,6 +4,7 @@ from pprint import pprint
 from utils.pretty_print import *
 from copy import deepcopy
 import platform
+import cv2
 
 
 INITIAL_FRAME_WIDTH = 720
@@ -126,3 +127,14 @@ def is_stabilize_task_enabled(shot):
             return True
 
     return False
+
+
+def show_image(img, img_name:str=''):
+    ratio = 0.75
+    window_name = 'image' if img_name == '' else img_name
+    cv2.namedWindow(window_name)
+    _img = cv2.resize(img.copy(), (0, 0), fx=ratio,fy=ratio) if img.shape[0] > 800 else img.copy()
+    cv2.moveWindow(window_name, 40, 30)
+    cv2.imshow(window_name, _img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()

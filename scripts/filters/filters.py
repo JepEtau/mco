@@ -44,13 +44,6 @@ def crop(img, geometry=[0,0,0,0]):
 
 
 
-def cv2_unsharp(img: np.ndarray, radius: float, amount: float) -> np.ndarray:
-    if radius == 0 or amount == 0:
-        return img
-
-    blurred = cv2.GaussianBlur(img, (0, 0), radius)
-    return cv2.addWeighted(img, amount + 1, blurred, -amount, 0)
-
 
 
 
@@ -437,29 +430,6 @@ def cv2_bilateral_filter(img, diameter, sigmaColor, sigmaSpace):
         sigmaSpace=sigmaSpace)
 
 
-def filter_brightness_contrast(input_img, brightness = 255, contrast = 127):
-    brightness = map(brightness, 0, 510, -255, 255)
-    contrast = map(contrast, 0, 254, -127, 127)
-    if brightness != 0:
-        if brightness > 0:
-            shadow = brightness
-            highlight = 255
-        else:
-            shadow = 0
-            highlight = 255 + brightness
-        alpha_b = (highlight - shadow)/255
-        gamma_b = shadow
-        buf = cv2.addWeighted(input_img, alpha_b, input_img, 0, gamma_b)
-    else:
-        buf = input_img.copy()
-    if contrast != 0:
-        f = float(131 * (contrast + 127)) / (127 * (131 - contrast))
-        alpha_c = f
-        gamma_c = 127*(1-f)
-        buf = cv2.addWeighted(buf, alpha_c, buf, 0, gamma_c)
-    # cv2.putText(buf,'B:{},C:{}'.format(brightness,contrast),(10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-    return buf
-
 INTERPOLATION_METHODS = {
     'bicubic': cv2.INTER_CUBIC,
     'lanczos': cv2.INTER_LANCZOS4,
@@ -510,29 +480,6 @@ def cv2_resize(image, width, height, interpolation):
 def map(x, in_min, in_max, out_min, out_max):
     return int((x-in_min) * (out_max-out_min) / (in_max-in_min) + out_min)
 
-
-def filter_brightnessAndContrast(input_img, brightness = 255, contrast = 127):
-    brightness = map(brightness, 0, 510, -255, 255)
-    contrast = map(contrast, 0, 254, -127, 127)
-    if brightness != 0:
-        if brightness > 0:
-            shadow = brightness
-            highlight = 255
-        else:
-            shadow = 0
-            highlight = 255 + brightness
-        alpha_b = (highlight - shadow)/255
-        gamma_b = shadow
-        buf = cv2.addWeighted(input_img, alpha_b, input_img, 0, gamma_b)
-    else:
-        buf = input_img.copy()
-    if contrast != 0:
-        f = float(131 * (contrast + 127)) / (127 * (131 - contrast))
-        alpha_c = f
-        gamma_c = 127*(1-f)
-        buf = cv2.addWeighted(buf, alpha_c, buf, 0, gamma_c)
-    # cv2.putText(buf,'B:{},C:{}'.format(brightness,contrast),(10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-    return buf
 
 
 
@@ -617,8 +564,6 @@ def  filter_morphologyEx(image, type, radius, iterations):
         iterations)
 
 
-
-
 def auto_canny(image, sigma=0.33):
 	# compute the median of the single channel pixel intensities
 	v = np.median(image)
@@ -662,3 +607,181 @@ def improve_edges(input_filepath, output_filepath):
 
     cv2.imwrite(output_filepath, img_output)
 
+
+
+def convertScale(img, alpha, beta):
+    """Add bias and gain to an image with saturation arithmetics. Unlike
+    cv2.convertScaleAbs, it does not take an absolute value, which would lead to
+    nonsensical results (e.g., a pixel at 44 with alpha = 3 and beta = -210
+    becomes 78 with OpenCV, when in fact it should become 0).
+    """
+
+    new_img = img * alpha + beta
+    new_img[new_img < 0] = 0
+    new_img[new_img > 255] = 255
+    return new_img.astype(np.uint8)
+
+
+def automatic_brightness_and_contrast_gray(gray_img: np.ndarray, clip_hist_percent:int=25):
+    # source: https://stackoverflow.com/questions/56905592/automatic-contrast-and-brightness-adjustment-of-a-color-photo-of-a-sheet-of-pape
+    # Calculate grayscale histogram
+    hist = cv2.calcHist([gray_img],[0],None,[256],[0,256])
+    hist_size = len(hist)
+
+    # Calculate cumulative distribution from the histogram
+    accumulator = []
+    accumulator.append(float(hist[0]))
+    for index in range(1, hist_size):
+        accumulator.append(accumulator[index -1] + float(hist[index]))
+
+    # Locate points to clip
+    maximum = accumulator[-1]
+    clip_hist_percent *= (maximum/100.0)
+    clip_hist_percent /= 2.0
+
+    # Locate left cut
+    minimum_gray = 0
+    while accumulator[minimum_gray] < clip_hist_percent:
+        minimum_gray += 1
+
+    # Locate right cut
+    maximum_gray = hist_size -1
+    while accumulator[maximum_gray] >= (maximum - clip_hist_percent):
+        maximum_gray -= 1
+
+    # Calculate alpha and beta values
+    alpha = 255 / (maximum_gray - minimum_gray)
+    beta = -minimum_gray * alpha
+
+    '''
+    # Calculate new histogram with desired range and show histogram
+    from matplotlib import pyplot as plt
+    new_hist = cv2.calcHist([gray_img],[0],None,[256],[minimum_gray,maximum_gray])
+    plt.plot(hist)
+    plt.plot(new_hist)
+    plt.xlim([0,256])
+    plt.show()
+    '''
+
+    auto_result = convertScale(gray_img, alpha=alpha, beta=beta)
+    return (auto_result, alpha, beta)
+
+
+
+
+
+
+# From chaiNNer
+# --------------------------------------------------------------
+def normalize(img: np.ndarray) -> np.ndarray:
+    if img.dtype != np.float32:
+        try:
+            # Get min/max values
+            info = np.iinfo(img.dtype)
+            img = img.astype(np.float32)
+
+            if info is not None:
+                img /= info.max
+                if info.min == 0:
+                    # we don't need to clip
+                    return img
+        except:
+            pass
+        # we own `img`, so it's okay to write to it
+        return np.clip(img, 0, 1, out=img)
+
+    return np.clip(img, 0, 1)
+
+
+def to_uint8(
+    img: np.ndarray,
+    normalized:bool=False,
+    dither:bool=False,
+) -> np.ndarray:
+    """
+    Returns a new uint8 image with the given image data.
+
+    If `normalized` is `False`, then the image will be normalized before being converted to uint8.
+
+    If `dither` is `True`, then dithering will be used to minimize the quantization error.
+    """
+    if img.dtype == np.uint8:
+        return img.copy()
+
+    if not normalized or img.dtype != np.float32:
+        img = normalize(img)
+
+    if not dither:
+        return (img * 255).round().astype(np.uint8)
+
+    # random dithering
+    truth = img * 255
+    quant = truth.round()
+
+    err = truth - quant
+    r = np.random.default_rng(0).uniform(0, 1, img.shape).astype(np.float32)
+    quant += np.sign(err) * (np.abs(err) > r)
+
+    return quant.astype(np.uint8)
+
+def canny_edge_detection(
+    img: np.ndarray,
+    t_lower: int,
+    t_upper: int,
+) -> np.ndarray:
+    return cv2.Canny(to_uint8(img, normalized=True), t_lower, t_upper)
+
+
+
+def cv2_unsharp(img: np.ndarray, radius: float, amount: float) -> np.ndarray:
+    if radius == 0 or amount == 0:
+        return img
+
+    blurred = cv2.GaussianBlur(img, (0, 0), radius)
+    return cv2.addWeighted(img, amount + 1, blurred, -amount, 0)
+
+
+
+def brightness_and_contrast(
+    img: np.ndarray, brightness: float, contrast: float
+) -> np.ndarray:
+    """Adjusts the brightness and contrast of an image"""
+
+    brightness /= 100
+    contrast /= 100
+
+    if brightness == 0 and contrast == 0:
+        return img
+
+    # Contrast correction factor
+    max_c = 259 / 255
+    factor: float = (max_c * (contrast + 1)) / (max_c - contrast)
+    add: float = factor * brightness + 0.5 * (1 - factor)
+
+    img = factor * img + add
+
+    return img
+
+
+def high_pass_filter_node(
+    img: np.ndarray,
+    radius: float,
+    contrast: float,
+) -> np.ndarray:
+    alpha = None
+    try:
+        if img.shape[2] > 3:
+            alpha = img[:, :, 3]
+            img = img[:, :, :3]
+    except:
+        pass
+
+    if radius == 0 or contrast == 0:
+        img = img * 0 + 0.5
+    else:
+        img = contrast * (img - cv2.GaussianBlur(img, (0, 0), radius)) + 0.5
+
+    if alpha is not None:
+        img = np.dstack((img, alpha))
+
+    return img

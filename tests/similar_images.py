@@ -11,29 +11,6 @@ from pprint import pprint
 import os
 
 from filters.filters import *
-from filters.python_autocrop import calculate_crop_values
-
-input_path = 'tests'
-debug = True
-if not debug:
-    input_path = 'ep02_episode_000'
-    suffix = 'out'
-    output_path = 'outputs'
-    # (30, 22, 56, 45)
-    # [1387 1148]
-
-
-
-# https://stackoverflow.com/questions/21410449/how-do-i-crop-to-largest-interior-bounding-box-in-opencv
-# https://stackoverflow.com/questions/64795711/removing-border-from-the-image
-# https://subscription.packtpub.com/book/data/9781788474443/3/ch03lvl1sec39/finding-external-and-internal-contours-in-a-binary-image
-# https://docs.opencv.org/2.4/modules/imgproc/doc/structural_analysis_and_shape_descriptors.html?highlight=findcontours#findcontours
-# https://stackoverflow.com/questions/14296051/auto-crop-black-borders-from-a-scanned-image-by-making-stats-about-gray-values
-# https://stackoverflow.com/questions/13538748/crop-black-edges-with-opencv
-# https://stackoverflow.com/questions/16702966/rotate-image-and-crop-out-black-borders
-# https://stackoverflow.com/questions/56905592/automatic-contrast-and-brightness-adjustment-of-a-color-photo-of-a-sheet-of-pape/56909036
-# https://stackoverflow.com/questions/60145395/crop-exact-document-paper-from-image-by-removing-black-border-from-photos-in-jav
-
 
 def show_image(img, img_name:str=''):
     window_name = 'image' if img_name == '' else img_name
@@ -45,8 +22,13 @@ def show_image(img, img_name:str=''):
     cv2.destroyAllWindows()
 
 
+input_path = 'ep02_episode_000'
 
 def main():
+
+
+
+
     image_list = list()
     for f in os.listdir(input_path):
         if f.endswith(".png") and not f.endswith("_cropped.png"):
@@ -60,17 +42,13 @@ def main():
 
     crop_values, img_dimensions = calculate_crop_values(
         images=images,
-        threshold_min=5,
-        do_add_borders=False,
+        do_add_borders=True,
         additional_crop=0,
-        erode_kernel_size=3
     )
 
     print(crop_values)
     print(img_dimensions)
 
-    # (30, 22, 56, 45)
-    # [1387 1148]
 
     images = list()
     for filepath in image_list:
@@ -82,16 +60,8 @@ def main():
                             l : w-r,
                             ]
 
-
-
         outpout_filepath = filepath.replace('.png', '_cropped.png')
-        if not debug:
-            output_folder = f"{input_path}_{suffix}"
-            if not os.path.exists(output_folder):
-                os.makedirs(output_folder)
-
-            outpout_filepath = outpout_filepath.replace(input_path, output_folder)
-
+        outpout_filepath = outpout_filepath.replace(input_path, output_path)
         try:
             cv2.imwrite(outpout_filepath, cropped_img)
         except:
@@ -100,7 +70,7 @@ def main():
 
         if (cropped_img.shape[0] != img_dimensions[1]
             or cropped_img.shape[1] != img_dimensions[0]):
-            print(p_red(f"ERRRRRORRRRRR!!!! {img_dimensions[0]}, {img_dimensions[1]}, {cropped_img.shape}"))
+            print(p_red("ERRRRRORRRRRR!!!!"))
 
     return
 

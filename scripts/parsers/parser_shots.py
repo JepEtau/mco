@@ -10,9 +10,10 @@ from utils.common import (
 from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 from utils.time_conversions import ms_to_frames
+from utils.types import Shot
 
 
-def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
+def parse_shotlist(db_shots:list[Shot], k_ep, k_part, shotlist_str) -> None:
     """This procedure parse a string wich contains the list of shots
         and update the structure of the db.
         Used for 'épisodes' and 'reportage'
@@ -46,7 +47,7 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
             count = 0
 
         # Append this shot to the list of shots
-        db_shots.append({
+        new_shot: Shot = {
             'no': shot_no,
             'start': start,
             'count': count,
@@ -54,7 +55,8 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
             'filters_id': 'default',
             'curves': None,
             'replace': dict(),
-        })
+        }
+        db_shots.append(new_shot)
         # print(shot_properties)
         # print(db_shots[-1])
 
@@ -216,19 +218,20 @@ def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
     if 'shots' not in db_video.keys():
         if 'count' not in db_video.keys() or db_video['count'] == 0:
             return
-        db_video['shots'] = [{
-            'no': 0,
-            'start': db_video['start'],
-            'filters_id': 'default',
-            'filters': None,
-            'count': db_video['count'],
-            'curves': None,
-            'replace': dict(),
-            'dst':{
-                'k_ep': k_ep,
-                'k_part': k_part,
-            }
-        }]
+        db_video['shots'] = [Shot(
+            no = 0,
+            start = db_video['start'],
+            filters_id = 'default',
+            filters = None,
+            count = db_video['count'],
+            curves = None,
+            replace = dict(),
+            dst = dict(
+                k_ep = k_ep,
+                k_part = k_part
+            )
+        )]
+
         return
 
     # Update each shot durations
