@@ -129,11 +129,13 @@ def is_stabilize_task_enabled(shot):
     return False
 
 
-def show_image(img, img_name:str=''):
-    ratio = 0.75
+def show_image(img, img_name:str='', ratio:float=1.0):
     window_name = 'image' if img_name == '' else img_name
     cv2.namedWindow(window_name)
-    _img = cv2.resize(img.copy(), (0, 0), fx=ratio,fy=ratio) if img.shape[0] > 800 else img.copy()
+    if ratio != 1:
+        _img = cv2.resize(img.copy(), (0, 0), fx=ratio,fy=ratio) if img.shape[0] > 800 else img.copy()
+    else:
+        _img = img.copy()
     cv2.moveWindow(window_name, 100, 100)
     cv2.imshow(window_name, _img)
     cv2.waitKey(0)

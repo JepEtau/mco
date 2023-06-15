@@ -77,18 +77,93 @@ def calculate_crop_values(
 
 
         # continue
+        # gray_img = 255 - gray_img
+        contours, hierarchy  = cv2.findContours(gray_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
 
-        contours, hierarchy  = cv2.findContours(gray_img,
-            cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        # pprint(hierarchy)
+        # pprint(contours)
+        if False:
+            hierarchy = hierarchy[0]
+            for component in zip(contours, hierarchy):
+                currentContour = component[0]
+                currentHierarchy = component[1]
+                x,y,w,h = cv2.boundingRect(currentContour)
+
+                cv2.rectangle(img_debug,
+                    (x, y ),
+                    (x + w , y + h),
+                    (0, 0, 255), 2)
+
+                # Has inner contours which means it is unfilled
+                if currentHierarchy[3] > 0:
+                    cv2.putText(img_debug, 'Unfilled', (x,y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (36,255,12), 1)
+                # No child which means it is filled
+                elif currentHierarchy[2] == -1:
+                    cv2.putText(img_debug, 'Filled', (x,y-5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (36,255,12), 1)
+
+        # show_image(img_debug, f"{i}")
+        # sys.exit()
 
         img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
         outer_contour = None
         for hierarchy_values, contour in zip(hierarchy[0], contours):
-            x, y, w, h = cv2.boundingRect(contour)
+            box = np.int0(cv2.boxPoints(cv2.minAreaRect(contour)))
+            cv2.drawContours(img_debug,[box],0,(255,0,0),2)
+            print(box.shape)
+            print(box)
+
+            x_coords = box[:, 0:1]
+            print(f"x_coords")
+            print(x_coords)
+            x_min = min(box[0, :])
+            x_max = max(box[0, :])
+            x_threshold = int((x_max - x_min)/2)
+            print(f"x_threshold: {x_threshold}")
+            x_mins = x_coords[x_coords < x_threshold]
+            x_maxs = x_coords[x_coords > x_threshold]
+            x0 = max(x_mins)
+            x1 = min(x_maxs)
+
+
+
+            y_coords = box[:, 1:]
+            print(f"y_coords")
+            print(y_coords)
+            y_min = min(box[0, :])
+            y_max = max(box[0, :])
+            y_threshold = int((y_max - y_min)/2)
+            print(f"y_threshold: {y_threshold}")
+            y_mins = y_coords[y_coords < y_threshold]
+            y_maxs = y_coords[y_coords > y_threshold]
+            y1 = max(y_mins)
+            y0 = min(y_maxs)
+
             cv2.rectangle(img_debug,
-                (x + additional_crop, y +additional_crop ),
-                (x + w -additional_crop , y + h -additional_crop ),
+                (x0, y0), (x1, y1),
                 (0, 0, 255), 1)
+
+            print(f"rect: x0, y0, x1, y1: [{x0}, {y0}, {x1}, {y1}]")
+
+            # sys.exit()
+            # min
+
+            # Draw contour
+            # cv2.drawContours(img_debug,[box],0,(0,0,255),2)
+
+            # Draw contour
+            # x, y, w, h = cv2.boxPoints(cv2.minAreaRect(contour))
+            # cv2.rectangle(img_debug,
+            #     (x + additional_crop, y +additional_crop ),
+            #     (x + w -additional_crop , y + h -additional_crop ),
+            #     (0, 0, 255), 1)
+
+            # Draw points:
+            contour = contour.reshape(len(contour),2)
+            for (_x, _y) in contour:
+                cv2.rectangle(img_debug, (_x-1, _y-1), (_x+1, _y+1), (0,255,0), 1)
+
+
             if hierarchy_values[0] == -1 and hierarchy_values[3] == -1:
                 # shot_contours.append(cv2.boundingRect(contour))
                 outer_contour = contour
@@ -98,23 +173,95 @@ def calculate_crop_values(
         if outer_contour is not None:
             # Get all the points of the contour
             contour = outer_contour.reshape(len(outer_contour),2)
-            # pprint(contour)
+            pprint(contour)
 
-            x0, y0 = np.max(contour, axis=0)
-            x1, y1 = np.min(contour, axis=0)
+            x1, y1 = np.max(contour, axis=0)
+            x0, y0 = np.min(contour, axis=0)
+
+            # array([[  45,   25],
+            #         [  45,   30],
+            #         [  46,  129],
+            #         [  45,  257],
+            #         ...
+            #         [ 210, 1176],
+            #         [ 362, 1177],
+            #         ...
+            #         [1436,  178],
+            #         [1437,  177],
+            #         ...
+            #         [ 224,   26],
+            #         [ 223,   27]
+            #         ...], dtype=int32)
+
+
             if verbose:
                 print(f"{x0}, {y0}, {x1}, {y1}")
+            cv2.rectangle(img_debug,
+                (x0, y0),
+                (x1, y1),
+                (0, 255,0), 1)
 
-            x0 += additional_crop
-            y0 += additional_crop
-            x1 -=  additional_crop
-            y1 -=  additional_crop
+            show_image(img_debug, f"{i}")
 
-            img_debug = bgr_img.copy()
-            cv2.rectangle(img_debug, (x0, y0), (x1, y1), (0,255,0), 1)
+            # x0 += additional_crop
+            # y0 += additional_crop
+            # x1 -=  additional_crop
+            # y1 -=  additional_crop
+
+            if False:
+                img_debug = bgr_img.copy()
+                cv2.rectangle(img_debug, (x0, y1), (x1, y0), (0,255,0), 1)
+                show_image(img_debug, "Is that rectangle ok?")
+
+            #     shot_contours.append([x0, y0, x1, y1])
+
+            percentage = 0.05
+
+            h_grey, w_grey = gray_img.shape
+
+            y_t_min = max(0, y0 - int(percentage * h_grey))
+            y_t_max = y0+ int(percentage * h_grey)
+            print(f"[{y_t_min}:{y_t_max}, {x1}:{x0}]")
+            print(f"{gray_img.shape}")
+            top_img = gray_img[y_t_min:y_t_max, x0:x1]
+            top_img = cv2.flip(top_img, 0)
+            top_img = cv2.bitwise_not(top_img)
+            top_img = cv2.copyMakeBorder(top_img,
+                top=2, bottom=2, left=2, right=2,
+                borderType=cv2.BORDER_CONSTANT,
+                value=[0]*3)
+            contours, hierarchy  = cv2.findContours(top_img,
+                cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+            img_debug = cv2.cvtColor(top_img.copy(), cv2.COLOR_GRAY2BGR)
+            for hierarchy_values, contour in zip(hierarchy[0], contours):
+                x, y, w, h = cv2.boundingRect(contour)
+                cv2.rectangle(img_debug,
+                    (x + additional_crop, y +additional_crop ),
+                    (x + w -additional_crop , y + h -additional_crop ),
+                    (0, 0, 255), 1)
+
+                if hierarchy_values[0] == -1 and hierarchy_values[3] == -1:
+                    outer_contour = contour
+                    break
             show_image(img_debug, "Is that rectangle ok?")
+            # contour = outer_contour.reshape(len(outer_contour),2)
+            # x1_t, y1_t = np.max(contour, axis=0)
+            # x0_t, y0_t = np.min(contour, axis=0)
+            # cv2.rectangle(img_debug, (x0_t, y0_t), (x1_t, y1_t), (0,255,0), 1)
 
-            shot_contours.append([x0, y0, x1, y1])
+            # shot_contours.append([x0, y0, x1, y1])
+
+
+            # show_image(img_debug, f"{i}")
+
+
+            # show_image(top_img, 'top_img')
+
+
+
+
+            sys.exit()
 
 
         if False:
