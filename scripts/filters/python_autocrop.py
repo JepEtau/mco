@@ -44,19 +44,18 @@ def calculate_crop_values(
                 value=[0, 0, 0])
 
         gray_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
-        try:
-            gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
-        except:
-            print(p_orange(f"Warning:cannot apply automatic brightness&contrast"))
-            continue
+        # try:
+        #     gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
+        # except:
+        #     print(p_orange(f"Warning:cannot apply automatic brightness&contrast"))
+        #     continue
         _, gray_img = cv2.threshold(gray_img, threshold_min, 255, cv2.THRESH_BINARY)
 
-        show_image(gray_img, f"{i}")
+        # show_image(gray_img, f"{i}")
 
-        # gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_OPEN, morph_kernel)
-        # gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_CLOSE, morph_kernel)
+        gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_OPEN, morph_kernel)
+        gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_CLOSE, morph_kernel)
         # gray_img = cv2.erode(gray_img, erode_kernel, iterations=erode_iterations)
-        # gray_img = 255 - gray_img
 
         # show_image(gray_img, f"{i}")
 
@@ -79,12 +78,10 @@ def calculate_crop_values(
 
         # continue
 
-
-
         contours, hierarchy  = cv2.findContours(gray_img,
             cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        img_debug = bgr_img.copy()
+        img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
         outer_contour = None
         for hierarchy_values, contour in zip(hierarchy[0], contours):
             x, y, w, h = cv2.boundingRect(contour)
@@ -95,8 +92,8 @@ def calculate_crop_values(
             if hierarchy_values[0] == -1 and hierarchy_values[3] == -1:
                 # shot_contours.append(cv2.boundingRect(contour))
                 outer_contour = contour
-                # break
-        # show_image(img_debug, f"{i}")
+                break
+        show_image(img_debug, f"{i}")
 
         if outer_contour is not None:
             # Get all the points of the contour

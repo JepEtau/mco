@@ -60,8 +60,8 @@ def main():
 
     crop_values, img_dimensions = calculate_crop_values(
         images=images,
-        threshold_min=5,
-        do_add_borders=False,
+        threshold_min=15,
+        do_add_borders=True,
         additional_crop=0,
         erode_kernel_size=3
     )
