@@ -81,6 +81,58 @@ def calculate_crop_values(
         contours, hierarchy  = cv2.findContours(gray_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
 
+
+        cnt = contours[0]
+        area = cv2.contourArea(cnt)
+        print(f"area: {area}")
+        epsilon = 0.1*cv2.arcLength(cnt,True)
+        approx = cv2.approxPolyDP(cnt,epsilon,True)
+
+        # cv2.drawContours(img_debug, [approx], -1, (0, 255, 0), 1)
+
+        contour = approx.reshape(len(approx),2)
+        print(f"approx DP:")
+        pprint(contour)
+
+        x_coords = contour[:, 0:1]
+        print(f"x_coords")
+        print(x_coords)
+        x_min = min(x_coords)
+        x_max = max(x_coords)
+        x_threshold = int((x_max - x_min)/2)
+        print(f"x_threshold: {x_threshold}")
+        x_mins = x_coords[x_coords < x_threshold]
+        x_maxs = x_coords[x_coords > x_threshold]
+        x0 = max(x_mins)
+        x1 = min(x_maxs)
+
+
+
+        y_coords = contour[:, 1:]
+        print(f"y_coords")
+        print(y_coords)
+        y_min = min(y_coords)
+        y_max = max(y_coords)
+        y_threshold = int((y_max - y_min)/2)
+        print(f"y_threshold: {y_threshold}")
+        y_mins = y_coords[y_coords < y_threshold]
+        y_maxs = y_coords[y_coords > y_threshold]
+        y1 = max(y_mins)
+        y0 = min(y_maxs)
+
+        print(f"rect: x0, y0, x1, y1: [{x0}, {y0}, {x1}, {y1}]")
+
+        cv2.rectangle(img_debug, (x0 +1, y1+1), (x1-1, y0-1), (0,0,255), 2)
+        cv2.imwrite("mask.png", img_debug)
+
+        show_image(img_debug, f"{i}")
+        sys.exit()
+# rect: x0, y0, x1, y1: [41, 1174, 1425, 21]
+# 0.2 array([[  41,   21],
+#        [1425, 1174]], dtype=int32)
+# 0.1 array([[  41,   21],
+#        [1425, 1174]], dtype=int32)
+
         # pprint(hierarchy)
         # pprint(contours)
         if False:
@@ -108,8 +160,18 @@ def calculate_crop_values(
         img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
         outer_contour = None
         for hierarchy_values, contour in zip(hierarchy[0], contours):
+
+            # red
+            x, y, w, h = cv2.boundingRect(contour)
+            cv2.rectangle(img_debug,
+                (x + additional_crop, y +additional_crop ),
+                (x + w -additional_crop , y + h -additional_crop ),
+                (0, 0, 255), 1)
+
+
+            # Blue
             box = np.int0(cv2.boxPoints(cv2.minAreaRect(contour)))
-            cv2.drawContours(img_debug,[box],0,(255,0,0),2)
+            cv2.drawContours(img_debug,[box],0,(255,0,0),1)
             print(box.shape)
             print(box)
 
@@ -130,8 +192,8 @@ def calculate_crop_values(
             y_coords = box[:, 1:]
             print(f"y_coords")
             print(y_coords)
-            y_min = min(box[0, :])
-            y_max = max(box[0, :])
+            y_min = min(box[:, 1:])
+            y_max = max(box[:, 1:])
             y_threshold = int((y_max - y_min)/2)
             print(f"y_threshold: {y_threshold}")
             y_mins = y_coords[y_coords < y_threshold]
@@ -139,9 +201,10 @@ def calculate_crop_values(
             y1 = max(y_mins)
             y0 = min(y_maxs)
 
-            cv2.rectangle(img_debug,
-                (x0, y0), (x1, y1),
-                (0, 0, 255), 1)
+            # Blue
+            # cv2.rectangle(img_debug,
+            #     (x0, y0), (x1, y1),
+            #     (255, 0, 0), 1)
 
             print(f"rect: x0, y0, x1, y1: [{x0}, {y0}, {x1}, {y1}]")
 
@@ -159,6 +222,7 @@ def calculate_crop_values(
             #     (0, 0, 255), 1)
 
             # Draw points:
+            # green
             contour = contour.reshape(len(contour),2)
             for (_x, _y) in contour:
                 cv2.rectangle(img_debug, (_x-1, _y-1), (_x+1, _y+1), (0,255,0), 1)
@@ -168,7 +232,12 @@ def calculate_crop_values(
                 # shot_contours.append(cv2.boundingRect(contour))
                 outer_contour = contour
                 break
+        cv2.imwrite("mask.png", img_debug)
+
         show_image(img_debug, f"{i}")
+
+
+
 
         if outer_contour is not None:
             # Get all the points of the contour
