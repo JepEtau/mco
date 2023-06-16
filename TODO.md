@@ -1,14 +1,15 @@
 # TODO script
 (1)
 - avisynth to upscale reportage
-- Add FFmpeg stab. test on ep02: shot 7/10/22/30/32
-- Add day no in the filename to improve sorting in explorer: WARNING, this breaks compatibility!!!
+- what about autocrop: use it in the chain or as a tool (video editor)?
+- Add FFmpeg stab. test on ep02: try on shots 7/10/22/30/32
 - Add english language
-- Use TypedDict and documentation to improve readibility/understanding
 
 (2)
-- use multiple stab software (cv2, ffmpeg) alg in the same shot: currently not implemented. Is this really needed?
-- use previous stabilized frame as the reference for the new segment to avoid an artifact
+- stab: use multiple software (cv2, ffmpeg) alg in the same shot: currently not implemented. Is this really needed?
+- stab: use previous stabilized frame as the reference for the new segment to avoid an artifact
+- stab: get mean/contrast to choos correct algo rather than selecting between auto/contrast?
+- Use TypedDict and documentation to improve readibility/understanding
 
 (3)
 - (?) smooth stabilization: to evaluate (g_fin)
@@ -46,7 +47,7 @@
 
 # Models/Algo
 * stabilize:
-- Add stitching before stabilize?
+- Add homography before stabilize?
 
 * Temporal denoising
     https://github.com/JingyunLiang/VRT
