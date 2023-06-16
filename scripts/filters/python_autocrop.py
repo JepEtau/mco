@@ -12,120 +12,199 @@ from utils.pretty_print import *
 from filters.utils import show_image
 
 
+def __get_coordinates(coordinates:np.array) -> list:
+    threshold = int((max(coordinates) - min(coordinates))/2)
+    return (max(coordinates[coordinates < threshold]),
+            min(coordinates[coordinates > threshold]))
+
+
 
 def calculate_crop_values(
         images:list[np.ndarray],
-        threshold_min:int=5,
+        threshold_min:int=10,
         additional_crop:int=0,
         morph_kernel_size:int=3,
-        erode_kernel_size:int=3,
+        erode_kernel_size:int=0,
         do_add_borders:bool=False
         ) -> list[list, list]:
     # Calculate the max crop values for a list of images
     # returns a list of crop values and img dimensions
     # images shall be BGR
-    verbose = True
+    verbose = False
+    debug = False
 
     border_size = 2 if do_add_borders else 0
     morph_kernel = np.ones((morph_kernel_size, morph_kernel_size), np.uint8)
-    erode_kernel = np.ones((erode_kernel_size, erode_kernel_size), np.uint8)
-    erode_iterations = 2
+    if erode_kernel_size != 0:
+        erode_kernel = np.ones((erode_kernel_size, erode_kernel_size), np.uint8)
+        erode_iterations = 2
 
     h_img, w_img, _ = images[0].shape
 
     shot_contours = list()
     for i, bgr_img in enumerate(images):
-
         if do_add_borders:
             # Do add border to correctly detect the outer limits
+            # Do it before conversion to facilitate debug. TODO: do this after conversion
+            #   once validated and correct all coordinates used for debug
             bgr_img = cv2.copyMakeBorder(bgr_img,
                 top=border_size, bottom=border_size, left=border_size, right=border_size,
                 borderType=cv2.BORDER_CONSTANT,
                 value=[0, 0, 0])
 
         gray_img = cv2.cvtColor(bgr_img, cv2.COLOR_BGR2GRAY)
-        # try:
-        #     gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
-        # except:
-        #     print(p_orange(f"Warning:cannot apply automatic brightness&contrast"))
-        #     continue
+
+        brightness_estimation = int(cv2.mean(gray_img)[0])
+        contrast_estimation = int(gray_img.std())
+        print(p_yellow(f"\tmean: {brightness_estimation}\tcontrast: {contrast_estimation}"))
+
+        if brightness_estimation < 25:
+            try:
+                gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
+                brightness_estimation = int(cv2.mean(gray_img)[0])
+                contrast_estimation = int(gray_img.std())
+                print(p_orange(f"\tcorrected, mean: {brightness_estimation}\tcontrast: {contrast_estimation}"))
+            except:
+                print(p_orange(f"Warning:cannot apply automatic brightness&contrast"))
+                shot_contours.append([0, 0, gray_img.shape[1], gray_img.shape[0]])
+                continue
         _, gray_img = cv2.threshold(gray_img, threshold_min, 255, cv2.THRESH_BINARY)
 
         # show_image(gray_img, f"{i}")
 
         gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_OPEN, morph_kernel)
         gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_CLOSE, morph_kernel)
-        # gray_img = cv2.erode(gray_img, erode_kernel, iterations=erode_iterations)
+
+        if erode_kernel_size != 0:
+            gray_img = cv2.erode(gray_img, erode_kernel, iterations=erode_iterations)
 
         # show_image(gray_img, f"{i}")
 
-        # continue
-
-        # #left limit
-        # for i in range(w_img):
-        #     if np.sum(gray_img[:,i],) > 0:
-        #         break
-
-        # #right limit
-        # for j in range(w_img-1,0,-1):
-        #     if np.sum(gray_img[:,j,]) > 0:
-        #         break
-
-        # cropped = bgr_img[:,i:j+1,:].copy()
-
-        # show_image(cropped)
+        if debug:
+            img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
 
 
-        # continue
-        # gray_img = 255 - gray_img
-        contours, hierarchy  = cv2.findContours(gray_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
+        contours, hierarchy  = cv2.findContours(gray_img,
+                                                cv2.RETR_EXTERNAL,
+                                                cv2.CHAIN_APPROX_SIMPLE)
+        outer_contour = None
+        for hierarchy_values, contour in zip(hierarchy[0], contours):
+            if hierarchy_values[0] == -1 and hierarchy_values[3] == -1:
+                # shot_contours.append(cv2.boundingRect(contour))
+                outer_contour = contour
+
+                if False:
+                    img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
+                    x,y,w,h = cv2.boundingRect(contour)
+                    cv2.rectangle(img_debug,
+                        (x, y ),
+                        (x + w , y + h),
+                        (0, 0, 255), 1)
+                    cv2.putText(img_debug,
+                        f"{hierarchy_values}",
+                        (x, y+10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                        (255,30,12), 2)
+                    show_image(img_debug, f"{i}")
 
 
-        cnt = contours[0]
-        area = cv2.contourArea(cnt)
-        print(f"area: {area}")
-        epsilon = 0.1*cv2.arcLength(cnt,True)
-        approx = cv2.approxPolyDP(cnt,epsilon,True)
-
-        # cv2.drawContours(img_debug, [approx], -1, (0, 255, 0), 1)
-
-        contour = approx.reshape(len(approx),2)
-        print(f"approx DP:")
-        pprint(contour)
-
-        x_coords = contour[:, 0:1]
-        print(f"x_coords")
-        print(x_coords)
-        x_min = min(x_coords)
-        x_max = max(x_coords)
-        x_threshold = int((x_max - x_min)/2)
-        print(f"x_threshold: {x_threshold}")
-        x_mins = x_coords[x_coords < x_threshold]
-        x_maxs = x_coords[x_coords > x_threshold]
-        x0 = max(x_mins)
-        x1 = min(x_maxs)
+                break
 
 
+        # if debug:
+        #     print("hierarchy")
+        #     pprint(hierarchy)
+        #     print("contours")
+        #     pprint(contours)
+        # print("outer contour")
+        # pprint(outer_contour)
 
-        y_coords = contour[:, 1:]
-        print(f"y_coords")
-        print(y_coords)
-        y_min = min(y_coords)
-        y_max = max(y_coords)
-        y_threshold = int((y_max - y_min)/2)
-        print(f"y_threshold: {y_threshold}")
-        y_mins = y_coords[y_coords < y_threshold]
-        y_maxs = y_coords[y_coords > y_threshold]
-        y1 = max(y_mins)
-        y0 = min(y_maxs)
+        # area = cv2.contourArea(outer_contour)
+        epsilon = 0.1 * cv2.arcLength(outer_contour, True)
+        polygon = cv2.approxPolyDP(outer_contour, epsilon, True)
 
-        print(f"rect: x0, y0, x1, y1: [{x0}, {y0}, {x1}, {y1}]")
+        if debug:
+            cv2.drawContours(img_debug, [polygon], -1, (0, 255, 0), 1)
+            cv2.imwrite("mask.png", img_debug)
+            show_image(img_debug, f"{i}")
 
-        cv2.rectangle(img_debug, (x0 +1, y1+1), (x1-1, y0-1), (0,0,255), 2)
-        cv2.imwrite("mask.png", img_debug)
+        if polygon.shape[0] < 4:
+            print(p_orange(f"Polygon not found"))
+            print(print_darkgrey(f"\tshape:{polygon.shape}"))
+            # print("hierarchy")
+            # pprint(hierarchy)
+            # print("contours")
+            # pprint(contours)
 
-        show_image(img_debug, f"{i}")
+            img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
+            if True:
+                # show all points
+                contour = outer_contour.reshape(len(outer_contour),2)
+                for (_x, _y) in contour:
+                    cv2.rectangle(img_debug, (_x-1, _y-1), (_x+1, _y+1), (0,255,0), 1)
+                show_image(img_debug, f"{i}")
+
+            if False:
+                # Show all contours
+                for hierarchy_values, contour in zip(hierarchy[0], contours):
+                    x, y, w, h = cv2.boundingRect(contour)
+                    cv2.rectangle(img_debug,
+                        (x, y ), (x + w , y + h),
+                        (0, 0, 255), 1)
+                    cv2.putText(img_debug,
+                        f"{hierarchy_values}",
+                        (x, y+10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                        (255,30,12), 2)
+                show_image(img_debug, f"{i}")
+
+        contour = polygon.reshape(len(polygon), 2)
+        x0, x1 = __get_coordinates(contour[:, 0:1])
+        y0, y1 = __get_coordinates(contour[:, 1:])
+        if verbose:
+            print(f"rect: x0, y0, x1, y1: [{x0}, {y0}, {x1}, {y1}]")
+
+        if debug:
+            cv2.rectangle(img_debug, (x0 +1, y1+1), (x1-1, y0-1), (0,0,255), 2)
+            cv2.imwrite("mask_final.png", img_debug)
+            show_image(img_debug, f"{i}")
+
+        shot_contours.append([x0+1, y0+1, x1-1, y1-1])
+
+
+
+    if len(shot_contours) == 0:
+        print(p_red("Error: cannot find contour for this shot"))
+        return ([0]*4, (w_img, h_img))
+
+    elif len(shot_contours) < len(images):
+        print(p_orange(f"Warning: found {len(shot_contours)}/{len(images)}"))
+
+    if verbose:
+        print(p_lightcyan("all images parsed, shot_contours:"))
+        pprint(shot_contours)
+
+    # Find the minimum area
+    l, t = np.max(shot_contours, axis=0)[:2] - border_size + additional_crop
+    rectangle_x1_y1 = np.min(shot_contours, axis=0)[2:] - border_size - additional_crop
+    b = h_img - rectangle_x1_y1[1]
+    r = w_img - rectangle_x1_y1[0]
+    w, h = (w_img - (r + l), h_img - (t+b))
+
+    if verbose:
+        print(f"crop: t, b, l, r: [{t}, {b}, {l}, {r}] -> {w}x{h}")
+
+
+    return ((t, b, l, r), (w, h))
+
+
+
+
+
+
+def __archive():
+
+
         sys.exit()
 # rect: x0, y0, x1, y1: [41, 1174, 1425, 21]
 # 0.2 array([[  41,   21],
@@ -400,32 +479,4 @@ def calculate_crop_values(
 
             else:
                 print("No rectangle found")
-
-
-
-
-    if len(shot_contours) == 0:
-        print(p_red("Error: cannot find contour for this shot"))
-        return ([0]*4, (w, h))
-
-    elif len(shot_contours) < len(images):
-        print(p_orange(f"Warning: found {len(shot_contours)}/{len(images)}"))
-    if verbose:
-        print("shot_contours:")
-        pprint(shot_contours)
-
-    # Find the minimum area
-    l, t = np.max(shot_contours, axis=0)[:2] - border_size + additional_crop
-
-    rectangle_w_h = np.min(shot_contours, axis=0)[2:] - 2*additional_crop
-    # b = h_img - rectangle_w_h[1] - t
-    # r = w_img - rectangle_w_h[0] - l
-    b = h_img - rectangle_w_h[1]
-    r = w_img - rectangle_w_h[0]
-
-    if verbose:
-        print(f"crop: t, b, l, r: [{t}, {b}, {l}, {r}]")
-
-
-    return ((t, b, l, r), rectangle_w_h)
 

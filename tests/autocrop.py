@@ -14,11 +14,14 @@ from filters.filters import *
 from filters.python_autocrop import calculate_crop_values
 
 input_path = 'tests'
-debug = True
-if not debug:
+debug = False
+if debug:
+    is_shot = False
+else:
     input_path = 'ep02_episode_000'
     suffix = 'out'
     output_path = 'outputs'
+    is_shot = True
     # (30, 22, 56, 45)
     # [1387 1148]
 
@@ -53,54 +56,84 @@ def main():
             image_list.append(os.path.join(input_path, f))
     image_list = sorted(image_list)
 
-    images = list()
-    for filepath in image_list:
-        images.append(cv2.imread(filepath))
+    if is_shot:
+        images = list()
+        for filepath in image_list:
+            images.append(cv2.imread(filepath))
 
 
-    crop_values, img_dimensions = calculate_crop_values(
-        images=images,
-        threshold_min=15,
-        do_add_borders=True,
-        additional_crop=0,
-        erode_kernel_size=3
-    )
+        crop_values, img_dimensions = calculate_crop_values(
+            images=images,
+            threshold_min=10,
+            do_add_borders=True,
+            additional_crop=0,
+            erode_kernel_size=0
+        )
 
-    print(crop_values)
-    print(img_dimensions)
+        print("returned min crop values")
+        print(crop_values)
+        print(img_dimensions)
 
-    # (30, 22, 56, 45)
-    # [1387 1148]
+        # (30, 22, 56, 45)
+        # [1387 1148]
 
-    images = list()
-    for filepath in image_list:
-        bgr_img = cv2.imread(filepath)
+        images = list()
+        for filepath in image_list:
+            bgr_img = cv2.imread(filepath)
 
-        h, w, _ = bgr_img.shape
-        t, b, l, r = crop_values
-        cropped_img = bgr_img[t : h-b,
-                            l : w-r,
-                            ]
+            h, w, _ = bgr_img.shape
+            t, b, l, r = crop_values
+            cropped_img = bgr_img[t : h-b, l : w-r,]
+
+            outpout_filepath = filepath.replace('.png', '_cropped.png')
+            if not debug:
+                output_folder = f"{input_path}_{suffix}"
+                if not os.path.exists(output_folder):
+                    os.makedirs(output_folder)
+
+                outpout_filepath = outpout_filepath.replace(input_path, output_folder)
+
+            try:
+                cv2.imwrite(outpout_filepath, cropped_img)
+            except:
+                print(f"failed: {outpout_filepath}")
+                pass
+
+            if (cropped_img.shape[0] != img_dimensions[1]
+                or cropped_img.shape[1] != img_dimensions[0]):
+                print(p_red(f"ERRRRRORRRRRR!!!! {img_dimensions[0]}, {img_dimensions[1]}, {cropped_img.shape}"))
+    else:
+        print(p_lightcyan("DEBUG MODE"))
+
+        for filepath in image_list:
+            print(lightgreen(f"\n{filepath}"))
+            bgr_img = cv2.imread(filepath)
+
+            crop_values, img_dimensions = calculate_crop_values(
+                images=[bgr_img],
+                threshold_min=10,
+                do_add_borders=True,
+                additional_crop=0,
+                erode_kernel_size=0
+            )
+
+            print(f"returned: crop:{crop_values}, {img_dimensions[0]}x{img_dimensions[1]}")
+
+            h, w, _ = bgr_img.shape
+            t, b, l, r = crop_values
+            cropped_img = bgr_img[t : h-b, l : w-r,]
 
 
+            outpout_filepath = filepath.replace('.png', '_cropped.png')
+            try:
+                cv2.imwrite(outpout_filepath, cropped_img)
+            except:
+                print(f"failed: {outpout_filepath}")
+                pass
 
-        outpout_filepath = filepath.replace('.png', '_cropped.png')
-        if not debug:
-            output_folder = f"{input_path}_{suffix}"
-            if not os.path.exists(output_folder):
-                os.makedirs(output_folder)
-
-            outpout_filepath = outpout_filepath.replace(input_path, output_folder)
-
-        try:
-            cv2.imwrite(outpout_filepath, cropped_img)
-        except:
-            print(f"failed: {outpout_filepath}")
-            pass
-
-        if (cropped_img.shape[0] != img_dimensions[1]
-            or cropped_img.shape[1] != img_dimensions[0]):
-            print(p_red(f"ERRRRRORRRRRR!!!! {img_dimensions[0]}, {img_dimensions[1]}, {cropped_img.shape}"))
+            if (cropped_img.shape[0] != img_dimensions[1]
+                or cropped_img.shape[1] != img_dimensions[0]):
+                print(p_red(f"ERRRRRORRRRRR!!!! {img_dimensions[0]}, {img_dimensions[1]}, {cropped_img.shape}"))
 
     return
 
