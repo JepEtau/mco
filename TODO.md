@@ -4,6 +4,7 @@
 - what about autocrop: use it in the chain or as a tool (video editor)?
 - Add FFmpeg stab. test on ep02: try on shots 7/10/22/30/32
 - Add english language
+- Add  speckle noise
 
 (2)
 - stab: use multiple software (cv2, ffmpeg) alg in the same shot: currently not implemented. Is this really needed?
@@ -30,6 +31,7 @@
 - add button to show the enhanced grey image used to stabilize
 - add button to autocrop
 - do not parse all shots when starting, reparse shot when selecting
+- stab: gray image enhancement only after having applied the mask
 
 (2)
 - stabilize: add options to select stab algo
