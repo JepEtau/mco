@@ -19,8 +19,10 @@ from filters.python_replace import (
 from filters.scunet import upscale_scunet
 from filters.utils import MAX_FRAMES_COUNT
 from filters.animesr import upscale_animesr
-from filters.x_gan import (
+from filters.pytorch import (
     upscale_pytorch,
+)
+from filters.real_cugan import (
     upscale_real_cugan,
 )
 from utils.get_image_list import (

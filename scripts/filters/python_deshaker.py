@@ -39,12 +39,23 @@ def apply_cv2_transformation(img, x_y_theta:list):
 class Python_deshaker:
 
     def __init__(self) -> None:
-        self.__max_corners = 500
-        self.__quality_level = 0.01
-        self.__min_distance = 10
-        self.__block_size = 3
-        self.__use_harris_detector = False
-        self.__k = 0.04
+
+        if False:
+            self.__max_corners = 500
+            self.__quality_level = 0.01
+            self.__min_distance = 10
+            self.__block_size = 3
+            self.__use_harris_detector = False
+            self.__k = 0.04
+        else:
+            # Previously
+            self.__max_corners = 300
+            self.__quality_level = 0.01
+            self.__min_distance = 30.0
+            self.__block_size = 3
+            self.__use_harris_detector = True
+            self.__k = 0.04
+
 
 
         self.__sift_contrast_hreshold = 0.04
@@ -284,7 +295,7 @@ class Python_deshaker:
                 # cv2.destroyAllWindows()
 
         if abs(t_x) > 2*IMG_BORDER_HIGH_RES or abs(t_y) > 2*IMG_BORDER_HIGH_RES:
-            print(f"erroneous calcOpticalFlowPyrLK: t_x={t_x}, t_y={t_y}")
+            print(p_red(f"erroneous calcOpticalFlowPyrLK: t_x={t_x}, t_y={t_y}"))
             print(f"{len(valid_keypoints_from)} points, {len(valid_keypoints_to)} points")
             if False:
                 # draw the tracks
@@ -672,7 +683,7 @@ def create_roi_mask(tracker, img_shape):
 
 def enhance_gray_img(img, enhance:str):
     if enhance == 'auto':
-        (img_improved, alpha, beta) = automatic_brightness_and_contrast_gray(img)
+        (img_improved, alpha, beta) = automatic_brightness_and_contrast_gray_deshake(img)
 
     elif enhance == 'contrast':
         # Increase contrast

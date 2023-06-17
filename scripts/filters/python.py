@@ -36,12 +36,13 @@ from filters.filters import (
     cv2_geometry_filter,
     cv2_resize,
     cv2_scale,
-    cv2_unsharp,
     cv2_edge_sharpen_sobel,
     cv2_morphology_ex
 )
 from filters.python_rgb import apply_python_rgb_filter
-
+from filters.chainner import (
+    cv2_unsharp,
+)
 
 def apply_python_filters(shot:dict, images:list, image_list:list,
     step_no, filters_str:str, input_hash:str,

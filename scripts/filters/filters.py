@@ -670,118 +670,40 @@ def automatic_brightness_and_contrast_gray(gray_img: np.ndarray, clip_hist_perce
 
 
 
+def automatic_brightness_and_contrast_gray_deshake(image, clip_hist_percent=25):
+    # used by deshaker... do not break something which was working
 
-# From chaiNNer
-# --------------------------------------------------------------
-def normalize(img: np.ndarray) -> np.ndarray:
-    if img.dtype != np.float32:
-        try:
-            # Get min/max values
-            info = np.iinfo(img.dtype)
-            img = img.astype(np.float32)
+    # source: https://stackoverflow.com/questions/56905592/automatic-contrast-and-brightness-adjustment-of-a-color-photo-of-a-sheet-of-pape
 
-            if info is not None:
-                img /= info.max
-                if info.min == 0:
-                    # we don't need to clip
-                    return img
-        except:
-            pass
-        # we own `img`, so it's okay to write to it
-        return np.clip(img, 0, 1, out=img)
+    # Calculate grayscale histogram
+    hist = cv2.calcHist([image],[0],None,[256],[0,256])
+    hist_size = len(hist)
 
-    return np.clip(img, 0, 1)
+    # Calculate cumulative distribution from the histogram
+    accumulator = list()
+    accumulator.append(float(hist[0]))
+    for index in range(1, hist_size):
+        accumulator.append(accumulator[index -1] + float(hist[index]))
 
+    # Locate points to clip
+    maximum = accumulator[-1]
+    clip_hist_percent *= (maximum/100.0)
+    clip_hist_percent /= 2.0
 
-def to_uint8(
-    img: np.ndarray,
-    normalized:bool=False,
-    dither:bool=False,
-) -> np.ndarray:
-    """
-    Returns a new uint8 image with the given image data.
+    # Locate left cut
+    minimum_gray = 0
+    while accumulator[minimum_gray] < clip_hist_percent:
+        minimum_gray += 1
 
-    If `normalized` is `False`, then the image will be normalized before being converted to uint8.
+    # Locate right cut
+    maximum_gray = hist_size -1
+    while accumulator[maximum_gray] >= (maximum - clip_hist_percent):
+        maximum_gray -= 1
 
-    If `dither` is `True`, then dithering will be used to minimize the quantization error.
-    """
-    if img.dtype == np.uint8:
-        return img.copy()
+    # Calculate alpha and beta values
+    alpha = 255 / (maximum_gray - minimum_gray)
+    beta = -minimum_gray * alpha
 
-    if not normalized or img.dtype != np.float32:
-        img = normalize(img)
+    auto_result = cv2.convertScaleAbs(image, alpha=alpha, beta=beta)
 
-    if not dither:
-        return (img * 255).round().astype(np.uint8)
-
-    # random dithering
-    truth = img * 255
-    quant = truth.round()
-
-    err = truth - quant
-    r = np.random.default_rng(0).uniform(0, 1, img.shape).astype(np.float32)
-    quant += np.sign(err) * (np.abs(err) > r)
-
-    return quant.astype(np.uint8)
-
-def canny_edge_detection(
-    img: np.ndarray,
-    t_lower: int,
-    t_upper: int,
-) -> np.ndarray:
-    return cv2.Canny(to_uint8(img, normalized=True), t_lower, t_upper)
-
-
-
-def cv2_unsharp(img: np.ndarray, radius: float, amount: float) -> np.ndarray:
-    if radius == 0 or amount == 0:
-        return img
-
-    blurred = cv2.GaussianBlur(img, (0, 0), radius)
-    return cv2.addWeighted(img, amount + 1, blurred, -amount, 0)
-
-
-
-def brightness_and_contrast(
-    img: np.ndarray, brightness: float, contrast: float
-) -> np.ndarray:
-    """Adjusts the brightness and contrast of an image"""
-
-    brightness /= 100
-    contrast /= 100
-
-    if brightness == 0 and contrast == 0:
-        return img
-
-    # Contrast correction factor
-    max_c = 259 / 255
-    factor: float = (max_c * (contrast + 1)) / (max_c - contrast)
-    add: float = factor * brightness + 0.5 * (1 - factor)
-
-    img = factor * img + add
-
-    return img
-
-
-def high_pass_filter_node(
-    img: np.ndarray,
-    radius: float,
-    contrast: float,
-) -> np.ndarray:
-    alpha = None
-    try:
-        if img.shape[2] > 3:
-            alpha = img[:, :, 3]
-            img = img[:, :, :3]
-    except:
-        pass
-
-    if radius == 0 or contrast == 0:
-        img = img * 0 + 0.5
-    else:
-        img = contrast * (img - cv2.GaussianBlur(img, (0, 0), radius)) + 0.5
-
-    if alpha is not None:
-        img = np.dstack((img, alpha))
-
-    return img
+    return (auto_result, alpha, beta)

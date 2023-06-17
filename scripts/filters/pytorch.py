@@ -18,39 +18,50 @@ from utils.get_image_list import (
     get_image_list,
 )
 
+def upscale_pytorch(shot, images:list, image_list:list,
+    model_name:str, directories:str, input_hash, step_no, output_folder:str,
+    get_hash:bool=False, do_force:bool=False):
 
-
-def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:int,
-    directories:str, input_hash, step_no, output_folder:str, get_hash:bool=False, do_force:bool=False):
-
-    module_path = os.path.join(directories['3rd_party'], directories['real_cugan'])
-    sys.path.append(module_path)
-    from upcunet_v3 import RealWaifuUpScaler
-
-    if denoise < 4:
-        denoise_to_model = {
-            -1: 'conservative',
-            0: 'no-denoise',
-            1: 'denoise1x',
-            2: 'denoise2x',
-            3: 'denoise3x',
-        }
-        model_name = f"up{scale}x-latest-{denoise_to_model[denoise]}.pth"
-
-    # else:
-    #     if denoise == 5:
-    #         model_name = ""
-
-    model_filepath = os.path.join(directories['3rd_party'], "models", 'real_cugan', model_name)
+    module_path = os.path.join(directories['3rd_party'], directories['esrgan'])
+    model_filepath = os.path.join(directories['3rd_party'],
+        "models", 'pytorch',
+        f"{model_name}{'.pth' if not model_name.endswith('.pth') else ''}")
     if not os.path.isfile(model_filepath):
-        raise Exception("Error: model file %s does not exist" % (model_filepath))
+        sys.exit(print_red("Error: model file %s does not exist" % (model_filepath)))
 
-    # ModelName="up2x-latest-no-denoise.pth"
-    # ModelName="up2x-latest-denoise1x.pth"
-    #{0,1,2,3,4,auto}; the larger the number, the smaller the memory consumption
-    # Tile=4
-    suffix = f"s{scale}_n{denoise}"
+    sys.path.append(module_path)
+    from upscale import (
+        AlphaOptions,
+        SeamlessOptions
+    )
+    from filters.esrgan import Esrgan_upscale
 
+    # Default values for upscaler
+    suffix = f"{model_name}_{input_hash}"
+    seamless = None
+    if model_name == 'realesr-animevideov3':
+        suffix = model_name
+        scale = 4
+    elif model_name == 'RealESRGAN_x4plus_anime_6B':
+        suffix = model_name
+        scale = 4
+    elif model_name == '2x_LD-Anime_Skr_v1.0':
+        suffix = "skr"
+    elif model_name == '4x-AnimeSharp':
+        suffix = "AnimeSharp"
+        seamless = SeamlessOptions.TILE
+    else:
+        suffix = model_name
+
+    match = re.match("^([\d]{1})[x]{1}.*", model_name.lower())
+    if match is not None:
+        scale = int(match.group(1))
+    else:
+        match = re.match(".*x([\d]{1}).*", model_name.lower())
+        if match is not None:
+            scale = int(match.group(1))
+        else:
+            scale = 2
     # Hash
     filter_str = f"{input_hash},{suffix}"
     if get_hash:
@@ -61,8 +72,8 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
     hash += "_" + suffix
 
 
-    print_cyan("(REAL_CUGAN)\tstep no. %d, model= %s, input hash= %s, output hash= %s, suffix= %s" % (
-        step_no, model_name, input_hash, hash, suffix))
+
+    print_cyan(f"(PyTorch)\tstep no. {step_no}, ({scale}x) upscaling, model {model_name}, input hash={input_hash}, output hash={hash}, suffix={suffix}")
 
 
     # Generate a list of output images
@@ -76,28 +87,30 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
     # Output images in memory
     use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
 
-
     # Verify that a compatible GPU is available (CUDA)
     if torch.cuda.is_available():
-        half=True
-        device="cuda:0"
+        device_id = 0
+        cpu = False
+        fp16 = True
     else:
-        sys.exit(print_red("Error: CUDA is mandatory"))
+        print_orange("Warning: using CPU")
+
 
     # Load model
-    upscaler = RealWaifuUpScaler(
-        scale=scale,
-        weight_path=model_filepath,
-        half=half,
-        device=device)
+    esrgan_upscale = Esrgan_upscale(
+        seamless=seamless,
+        cpu=cpu,
+        device_id=device_id,
+        fp16=fp16)
+    esrgan_upscale.load_model(model_filepath)
+
 
     # Walk through images
     count = shot['count']
     i = 0
     for f_no, f_output in zip(range(count), output_image_list):
-        i += 1
         start_time = time.time()
-        torch.cuda.empty_cache()
+        i += 1
 
         # print("\t%s -> %s" % (image_list[f_no], f_output))
 
@@ -110,17 +123,14 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
         try:
             # Load image
             if use_memory:
-                img = images[f_no][:, :, [2, 1, 0]]
+                img = images[f_no]
             else:
-                img = cv2.imread(image_list[f_no], cv2.IMREAD_COLOR)[:, :, [2, 1, 0]]
+                img = cv2.imread(image_list[f_no], cv2.IMREAD_COLOR)
 
             # Upscale
-            upscaled_img = upscaler(
-                frame=img,
-                tile_mode=0,
-                cache_mode=3,
-                alpha=1)
-            output_img = upscaled_img[:, :, ::-1]
+            output_img = esrgan_upscale.run(
+                img=img,
+                scale=scale)
 
             if use_memory:
                 output_images.append(output_img)
@@ -136,8 +146,8 @@ def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:in
 
     # print(f"{''.join([' ']*20)}")
     print("")
-
     return hash, scale, output_images
+
 
 
 
@@ -312,133 +322,3 @@ def upscale_real_esrgan(shot, images:list, image_list:list,
     return hash, netscale, output_images
 
 
-
-def upscale_pytorch(shot, images:list, image_list:list,
-    model_name:str, directories:str, input_hash, step_no, output_folder:str,
-    get_hash:bool=False, do_force:bool=False):
-
-    module_path = os.path.join(directories['3rd_party'], directories['esrgan'])
-    model_filepath = os.path.join(directories['3rd_party'],
-        "models", 'pytorch',
-        f"{model_name}{'.pth' if not model_name.endswith('.pth') else ''}")
-    if not os.path.isfile(model_filepath):
-        sys.exit(print_red("Error: model file %s does not exist" % (model_filepath)))
-
-    sys.path.append(module_path)
-    from upscale import (
-        AlphaOptions,
-        SeamlessOptions
-    )
-    from filters.esrgan import Esrgan_upscale
-
-    # Default values for upscaler
-    suffix = f"{model_name}_{input_hash}"
-    seamless = None
-    if model_name == 'realesr-animevideov3':
-        suffix = model_name
-        scale = 4
-    elif model_name == 'RealESRGAN_x4plus_anime_6B':
-        suffix = model_name
-        scale = 4
-    elif model_name == '2x_LD-Anime_Skr_v1.0':
-        suffix = "skr"
-    elif model_name == '4x-AnimeSharp':
-        suffix = "AnimeSharp"
-        seamless = SeamlessOptions.TILE
-    else:
-        suffix = model_name
-
-    match = re.match("^([\d]{1})[x]{1}.*", model_name.lower())
-    if match is not None:
-        scale = int(match.group(1))
-    else:
-        match = re.match(".*x([\d]{1}).*", model_name.lower())
-        if match is not None:
-            scale = int(match.group(1))
-        else:
-            scale = 2
-    # Hash
-    filter_str = f"{input_hash},{suffix}"
-    if get_hash:
-        hash = calculate_hash(filter_str=filter_str)
-        hash += "_" + suffix
-        return hash, scale, None
-    hash = log_filter(filter_str, shot['hash_log_file'])
-    hash += "_" + suffix
-
-
-
-    print_cyan(f"(PyTorch)\tstep no. {step_no}, ({scale}x) upscaling, model {model_name}, input hash={input_hash}, output hash={hash}, suffix={suffix}")
-
-
-    # Generate a list of output images
-    output_image_list = get_image_list(
-        shot=shot,
-        folder=output_folder,
-        step_no=step_no,
-        hash=hash)
-    output_images = list()
-
-    # Output images in memory
-    use_memory = True if shot['count'] <= MAX_FRAMES_COUNT else False
-
-    # Verify that a compatible GPU is available (CUDA)
-    if torch.cuda.is_available():
-        device_id = 0
-        cpu = False
-        fp16 = True
-    else:
-        print_orange("Warning: using CPU")
-
-
-    # Load model
-    esrgan_upscale = Esrgan_upscale(
-        seamless=seamless,
-        cpu=cpu,
-        device_id=device_id,
-        fp16=fp16)
-    esrgan_upscale.load_model(model_filepath)
-
-
-    # Walk through images
-    count = shot['count']
-    i = 0
-    for f_no, f_output in zip(range(count), output_image_list):
-        start_time = time.time()
-        i += 1
-
-        # print("\t%s -> %s" % (image_list[f_no], f_output))
-
-        # Continue if the output file already exists
-        if not do_force and os.path.exists(f_output):
-            if use_memory:
-                output_images.append(cv2.imread(f_output, cv2.IMREAD_COLOR))
-            continue
-
-        try:
-            # Load image
-            if use_memory:
-                img = images[f_no]
-            else:
-                img = cv2.imread(image_list[f_no], cv2.IMREAD_COLOR)
-
-            # Upscale
-            output_img = esrgan_upscale.run(
-                img=img,
-                scale=scale)
-
-            if use_memory:
-                output_images.append(output_img)
-
-            # Always save on SSD because this process is time consuming
-            cv2.imwrite(f_output, output_img)
-
-        except RuntimeError as e:
-            print("Error: failed to upscale %s" % (image_list[f_no]))
-            print(e)
-        else:
-            print(f"\t\t({i}/{count}) upscaled in %.02fs" % (time.time() - start_time), end='\r')
-
-    # print(f"{''.join([' ']*20)}")
-    print("")
-    return hash, scale, output_images
