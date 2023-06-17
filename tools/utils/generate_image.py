@@ -17,7 +17,6 @@ from filters.filters import (
     calculate_geometry_parameters,
     cv2_geometry_filter,
     cv2_rgb_filter,
-    filter_rgb,
     get_mean_luma)
 from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
 
