@@ -53,8 +53,7 @@ def upscale_animesr(shot, images:list, image_list:list,
     hash += "_" + suffix
 
 
-    print_cyan("(ANimeSR)\tstep no. %d, upscaling with model %s, input hash= %s, output hash= %s, suffix= %s" % (
-        step_no, model_name, input_hash, hash, suffix))
+    print_cyan(f"(ANimeSR)\tstep no. {step_no}, {model_name}, input hash:{input_hash}, output hash:{hash}, suffix={suffix}")
 
     # Verify that a compatible GPU is available (CUDA)
     if torch.cuda.is_available():

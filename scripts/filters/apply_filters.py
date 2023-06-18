@@ -248,13 +248,8 @@ def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
             else:
                 alg = {
                     'name': filter['type'],
-                    'model': '',
+                    'model': filter['str'],
                 }
-
-                args = filter['str'].split(',')
-                for arg in args:
-                    arg_name, arg_value = arg.split('=')
-                    alg[arg_name] = arg_value
 
                 if alg['model'] == '':
                     sys.exit(print_red("\n(AnimeSR) model name is required"))

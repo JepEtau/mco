@@ -1,10 +1,13 @@
 # TODO script
 (1)
+- Add color fix!
+- Add speckle noise
+- stab: !!! ROI does not work for lowres img !!!
 - avisynth to upscale reportage
 - what about autocrop: use it in the chain or as a tool (video editor)?
 - Add FFmpeg stab. test on ep02: try on shots 7/10/22/30/32
 - Add english language
-- Add  speckle noise
+
 
 (2)
 - stab: use multiple software (cv2, ffmpeg) alg in the same shot: currently not implemented. Is this really needed?
