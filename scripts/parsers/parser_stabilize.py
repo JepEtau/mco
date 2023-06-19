@@ -55,6 +55,7 @@ DEFAULT_SEGMENT_VALUES = {
     'tracker': {                # Define the regions to identify and compute keypoints
         'enable': False,
         'inside': True,
+        'is_hr': True,          # Indicates if coordinates were defined with a highres or lowres image
         'regions': list(),
     },
     'cv2': {'feature_extractor': 'gftt'},
@@ -77,6 +78,7 @@ EMPTY_SEGMENT_VALUES = {
     'tracker': {                # Define the regions to identify and compute keypoints
         'enable': False,
         'inside': True,
+        'is_hr': True,          # Indicates if coordinates were defined with a highres or lowres image
         'regions': list(),
     },
 }
@@ -259,6 +261,7 @@ def parse_tracker(tracker_str:str):
     if verbose:
         print(p_lightcyan("parse_tracker:"), tracker_str)
     tracker = {
+        'is_hr': True,
         'enable': False,
         'inside': True,
         'regions': list(),
@@ -269,6 +272,10 @@ def parse_tracker(tracker_str:str):
 
         if v == 'enable':
             tracker['enable'] = True
+        elif v == 'lr':
+            tracker['is_hr'] = False
+        elif v == 'hr':
+            tracker['is_hr'] = True
         elif v == 'inside':
             tracker['inside'] = True
         elif v == 'outside':

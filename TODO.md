@@ -2,7 +2,12 @@
 (1)
 - Add color fix!
 - Add speckle noise
+
 - stab: !!! ROI does not work for lowres img !!!
+    -> modified, to validate
+- stab: !!! is ROI mask really works with gftt !!!
+    -> to investigate
+
 - avisynth to upscale reportage
 - what about autocrop: use it in the chain or as a tool (video editor)?
 - Add FFmpeg stab. test on ep02: try on shots 7/10/22/30/32

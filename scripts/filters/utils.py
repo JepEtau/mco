@@ -33,7 +33,17 @@ FILTER_TAGS = [
 ]
 
 
+def is_lowres_img(img):
+    # dirty function to indicate if an image is low res
+    return True if img.shape[0] < (INITIAL_FRAME_WIDTH*3/2) else False
 
+def is_lowres_height(height):
+    # dirty function to indicate if an image is low res
+    return True if height < (INITIAL_FRAME_WIDTH*3/2) else False
+
+def is_highres_height(height):
+    # dirty function to indicate if an image is low res
+    return True if height > (INITIAL_FRAME_WIDTH*3/2) else False
 
 def get_step_no_from_task(shot, task):
     __task = 'geometry' if task == 'final' else task

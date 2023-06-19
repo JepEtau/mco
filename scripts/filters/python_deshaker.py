@@ -6,6 +6,7 @@ from statistics import mean
 # from matplotlib import pyplot as plt
 
 from filters.filters import *
+from filters.utils import is_highres_height, is_lowres_height
 from utils.hash import (
     calculate_hash,
     log_filter
@@ -675,6 +676,10 @@ def create_roi_mask(tracker, img_shape):
     for region in tracker['regions']:
         points = np.array(region, np.int32)
         points = points.reshape((-1,1,2))
+        if tracker['is_hr'] and is_lowres_height(height):
+            points /= 2
+        elif not tracker['is_hr'] and is_highres_height(height):
+            points *= 2
         cv2.fillPoly(img_mask, [points], fill_color)
 
     # cv2.imwrite("mask.png", img_mask)

@@ -185,6 +185,7 @@ class Model_stabilize():
                     segments_str += f":"
                     segments_str += f"\ntracker={'enable' if segment['tracker']['enable'] else 'disable'},"
                     segments_str += f"{'inside' if segment['tracker']['inside'] else 'outside'}"
+                    segments_str += f"{'hr' if segment['tracker']['is_hr'] else 'lr'}"
                     for region in segment['tracker']['regions']:
                         segments_str += f",\n\t"
                         for point in region:
