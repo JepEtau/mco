@@ -20,7 +20,10 @@ def read_audio_file(filepath, verbose=False):
     else:
         # Stéréo, 24 bits
         channels_count = audio_buffer.shape[1]
-        audio_buffer_32b = audio_buffer
+        if audio_buffer.dtype == np.int16:
+            audio_buffer_32b = audio_buffer.astype(np.int32) * 65536
+        else:
+            audio_buffer_32b = audio_buffer
     duration = audio_buffer_32b.shape[0] / sample_rate
 
     if verbose:

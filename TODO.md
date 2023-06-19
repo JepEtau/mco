@@ -1,5 +1,6 @@
 # TODO script
 (1)
+- When generating a 'deinterlaced' episode, the concatenation shall use the deinterlaced g_debut/g_fin
 - Add color fix!
 - Add speckle noise
 
@@ -11,7 +12,22 @@
 - avisynth to upscale reportage
 - what about autocrop: use it in the chain or as a tool (video editor)?
 - Add FFmpeg stab. test on ep02: try on shots 7/10/22/30/32
-- Add english language
+
+- Add english language:
+    * audio source shall be defined in ep##_target.ini
+    * what to do with audio data currently ep##_target because it contains src and target info
+    -> let's simplify:
+    (OK) * 2 sections: [audio.fr] and [audio.en]
+    * how to choose:
+    (OK)- default is fr.
+        - if language=en in cli (priority:1) or a file named 'en' in database (priority:2) or in common.ini (priority:3) -> select 'en' otherwise 'fr'
+    * for shots in ##_target.ini, 2 solutions:
+        - use a selector for each shot (e.g. "000= ep=1, ed=f, lang=en ...") very complicated
+        - define a key specific to language (e.g. "000_en= ep=1, ed=f")
+    * we assume that the output video does not specify language
+    * g_fin: shots are not the same... missing part of a shot in 'f' <- good way to try different implementations
+
+
 
 
 (2)

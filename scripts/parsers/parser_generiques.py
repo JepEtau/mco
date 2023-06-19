@@ -28,7 +28,7 @@ from utils.pretty_print import *
 #   Parse the common episode file for all editions
 #
 #===========================================================================
-def parse_generiques_target(db):
+def parse_generiques_target(db, lang:str='fr'):
     verbose = False
 
     for k_part_g in K_GENERIQUES:
@@ -60,8 +60,20 @@ def parse_generiques_target(db):
 
             # Audio
             #----------------------------------------------------
-            if k_section == 'audio':
-                parse_audio_section_generique(db[k_part_g]['audio'], config)
+            if k_section.startswith('audio'):
+                try:
+                    _, language = k_section.split('.')
+                except:
+                    print_yellow(f"{filepath}: audio section naming to be reworked, default=fr")
+                    language = 'fr'
+
+                if language == lang:
+                    # for selected language
+                    parse_audio_section_generique(db[k_part_g]['audio'], config, k_section)
+                    db[k_part_g]['audio']['lang'] = language
+                else:
+                    # debug
+                    print(f"ignore language: {language}")
 
             # Video
             #----------------------------------------------------

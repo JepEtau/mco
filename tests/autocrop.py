@@ -106,7 +106,7 @@ def main():
         print(p_lightcyan("DEBUG MODE"))
 
         for filepath in image_list:
-            print(lightgreen(f"\n{filepath}"))
+            print(p_lightgreen(f"\n{filepath}"))
             bgr_img = cv2.imread(filepath)
 
             crop_values, img_dimensions = calculate_crop_values(

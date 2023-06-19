@@ -35,6 +35,8 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False):
         None
 
     """
+    verbose = True
+    db_audio = db[k_ep_or_g]['audio']
 
     # Create the audio directory
     output_directory = os.path.join(db[k_ep_or_g]['cache_path'], "audio")
@@ -42,7 +44,8 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False):
         os.makedirs(output_directory)
 
     # Output filename
-    output_filename = "%s_audio.%s" % (k_ep_or_g, db['common']['settings']['audio_format'])
+    suffix = f"_{db_audio['lang']}" if db_audio['lang'] != 'fr' else ''
+    output_filename = f"{k_ep_or_g}_audio{suffix}.{db['common']['settings']['audio_format']}"
     output_filepath = os.path.join(output_directory, output_filename)
     if os.path.exists(output_filepath) and not force:
         print("%s generate audio: %s, already exists, skip" % (current_datetime_str(), k_ep_or_g))
@@ -58,7 +61,6 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False):
         return
 
     # Source
-    db_audio = db[k_ep_or_g]['audio']
     k_ed = db_audio['src']['k_ed']
     k_ep = k_ep_or_g
 
@@ -209,6 +211,11 @@ def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbos
     sample_rate = int(sample_rate / 1000)
 
     print("%s generate audio: %s from %s" % (current_datetime_str(), k_part_g, k_ep), flush=True)
+    if verbose:
+        print(f"sample rate: {sample_rate}")
+        print(f"in_track: {in_track}")
+        print(f"duration: {duration}")
+        print(f"channels: {channels_count}")
 
     # Generate an output buffer
     out_left_channel = np.empty((0,0), dtype=np.int32)

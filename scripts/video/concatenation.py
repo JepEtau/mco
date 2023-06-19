@@ -317,7 +317,7 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
 
 def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, simulation:bool=False):
     # Output filepath
-    print(lightgreen(f"Merge audio and video tracks:"), lightcyan(f"{k_ep_or_g}"))
+    print(p_lightgreen(f"Merge audio and video tracks:"), p_lightcyan(f"{k_ep_or_g}"))
     if k_ep_or_g in ['g_debut', 'g_fin']:
         cache_path = db[k_ep_or_g]['cache_path']
         audio_video_filepath = os.path.join(cache_path, "%s.mkv" % (k_ep_or_g))
@@ -452,7 +452,7 @@ def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict,
 
 
 def concatenate_all_clips(db, k_ep:str, force=False, simulation:bool=False) -> None:
-    print(lightgreen(f"Concatenate all A/V clips:"), lightcyan(f"{k_ep}"))
+    print(p_lightgreen(f"Concatenate all A/V clips:"), p_lightcyan(f"{k_ep}"))
 
     cache_directory = db[k_ep]['cache_path']
     output_filename = f"{k_ep}_no_chapters.mkv"
@@ -512,7 +512,7 @@ def add_chapters(db, k_ep:str, simulation:bool=False) -> None:
     final_filename = "%s.mkv" % (k_ep)
     final_filepath = os.path.join(output_directory, final_filename)
 
-    print(lightgreen(f"Add chapters:"), lightcyan(f"{k_ep}"))
+    print(p_lightgreen(f"Add chapters:"), p_lightcyan(f"{k_ep}"))
     print(f"\tFinal file: {final_filepath}")
 
     # Create file for chapters

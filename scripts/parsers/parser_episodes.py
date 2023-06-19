@@ -75,7 +75,7 @@ def db_init_episodes(db, k_ed, ep_min:int=1, ep_max:int=39):
 #   Parse the common episode file for all editions
 #
 #===========================================================================
-def parse_episodes_target(db, ep_min=1, ep_max:int=39):
+def parse_episodes_target(db, ep_min=1, ep_max:int=39, lang:str='fr'):
     # ep_maxCount is the maximum nb of episodes: used for debug
 
     for i in range(ep_min, min(40, ep_max+1)):
@@ -102,9 +102,21 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39):
 
             # Audio
             #----------------------------------------------------
-            if k_section == 'audio':
+            if k_section.startswith('audio'):
                 nested_dict_set(db, dict(), k_ep, 'audio')
-                parse_audio_section(db[k_ep]['audio'], config, verbose=False)
+                try:
+                    _, language = k_section.split('.')
+                except:
+                    print_yellow(f"{filepath}: audio section naming to be reworked, default=fr")
+                    language = 'fr'
+
+                if language == lang:
+                    # for selected language
+                    parse_audio_section(db[k_ep]['audio'], config, k_section)
+                    db[k_ep]['audio']['lang'] = language
+                else:
+                    # debug
+                    print(f"ignore language: {language}")
 
             # Video
             #----------------------------------------------------

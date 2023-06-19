@@ -193,11 +193,11 @@ def generate_video(db, k_ed:str, k_ep:str,
     # print("=> processed shots in %d:%02d" % (minutes, seconds), flush=True)
 
     # Remove g_debut, g_fin
-    for k_p in ['g_debut', 'g_fin']:
-        try:
-            del video_files[k_p]
-        except:
-            pass
+    # for k_p in ['g_debut', 'g_fin']:
+    #     try:
+    #         del video_files[k_p]
+    #     except:
+    #         pass
 
     # For each part, concatenate shots in a single clip
     for k_p, v in video_files.items():
@@ -257,7 +257,7 @@ def generate_video(db, k_ed:str, k_ep:str,
 
         # Force concatenation
         # if not os.path.exists(episode_video_filepath) or force or do_regenerate:
-        print(lightgreen(f"\nConcatenate video clips:\n"), f"\t{episode_video_filepath}\n")
+        print(p_lightgreen(f"\nConcatenate video clips:\n"), f"\t{episode_video_filepath}\n")
         ffmpeg_command = [db['common']['tools']['ffmpeg']]
         ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
         ffmpeg_command.extend([

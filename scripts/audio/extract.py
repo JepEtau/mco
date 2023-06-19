@@ -21,30 +21,33 @@ def extract_audio(db, k_ep:str, k_ed, force=False) -> str:
     verbose = False
 
     # print("%s.extract_audio: %s:%s" % (__name__, k_ed, k_ep_or_g))
-    print("%s extract_audio from %s:%s" % (current_datetime_str(), k_ed, k_ep))
-    # if k_ep_or_g in ['g_debut', 'g_fin']:
-    #     k_ep = db[k_ep_or_g]['audio']['src']['k_ep']
-    # else:
-    #     k_ep = k_ep_or_g
+
     if k_ed == '':
         k_ed = db[k_ep]['audio']['src']['k_ed']
 
+    if k_ep in ['g_debut', 'g_fin']:
+        k_ep_src = db[k_ep]['audio']['src']['k_ep']
+    else:
+        k_ep_src = k_ep
+
+    print("%s extract_audio from %s:%s" % (current_datetime_str(), k_ed, k_ep_src))
+
     # Input audio file
-    input_filepath = db['editions'][k_ed]['inputs']['audio'][k_ep]
+    input_filepath = db['editions'][k_ed]['inputs']['audio'][k_ep_src]
     if force or verbose:
-        print("%s extract audio stream: %s:%s from %s" % (current_datetime_str(), k_ed, k_ep, input_filepath))
+        print("%s extract audio stream: %s:%s from %s" % (current_datetime_str(), k_ed, k_ep_src, input_filepath))
 
     if not os.path.exists(input_filepath):
         sys.exit("Erreur: le fichier d'entrée est manquant pour l'édition %s" % (k_ed))
 
 
     # Output audio file
-    output_directory = os.path.join(db[k_ep]['cache_path'], "audio")
+    output_directory = os.path.join(db[k_ep_src]['cache_path'], "audio")
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
 
 
-    output_filename = "%s_%s_audio_extract.%s" % (k_ep, k_ed, db['common']['settings']['audio_format'])
+    output_filename = "%s_%s_audio_extract.%s" % (k_ep_src, k_ed, db['common']['settings']['audio_format'])
     output_filepath = os.path.join(output_directory, output_filename)
 
     if os.path.exists(output_filepath):

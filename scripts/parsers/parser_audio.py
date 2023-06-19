@@ -19,8 +19,7 @@ from utils.time_conversions import (
 )
 
 
-def parse_audio_section_generique(db_audio, config, verbose=False):
-    k_section = 'audio'
+def parse_audio_section_generique(db_audio, config, k_section, verbose=False):
 
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option)
@@ -113,9 +112,7 @@ def parse_audio_section_generique(db_audio, config, verbose=False):
         sys.exit("Error: missing source option in audio section for a generique")
 
 
-def parse_audio_section(db_audio, config, verbose=False):
-    k_section = 'audio'
-
+def parse_audio_section(db_audio, config, k_section, verbose=False):
 
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option)

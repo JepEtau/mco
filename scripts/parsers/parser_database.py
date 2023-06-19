@@ -42,7 +42,7 @@ from utils.path import PATH_DATABASE
 
 
 
-def parse_database(database, k_ep):
+def parse_database(database, k_ep, lang:str='fr'):
     """
         database: global database
         k_ep: episode to generate
@@ -86,7 +86,7 @@ def parse_database(database, k_ep):
 
 
     # Parse database file which contains common settings for all episodes
-    parse_episodes_target(database)
+    parse_episodes_target(database, lang=lang)
     if False:
         print("parse_episodes_target")
         print("-------------- %s ------------------" % (k_ep))
@@ -96,7 +96,7 @@ def parse_database(database, k_ep):
 
 
     # Parse database file used for the target
-    parse_generiques_target(database)
+    parse_generiques_target(database, lang=lang)
 
     # Create a dict of dependencies for generiques
     dependencies = dict()
