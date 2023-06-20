@@ -41,7 +41,7 @@ from filters.filters import (
 )
 from filters.python_rgb import apply_python_rgb_filter
 from filters.chainner import (
-    cv2_unsharp,
+    sharpen_node,
 )
 
 def apply_python_filters(shot:dict, images:list, image_list:list,
@@ -330,7 +330,7 @@ def work_python_filters(frame_no, input_img, filter_list) -> list:
     for function, args in filter_list:
 
         if function == 'unsharp_mask':
-            img = cv2_unsharp(img,
+            img = sharpen_node(img,
                 radius=float(args[0]),
                 amount=float(args[1]))
 
