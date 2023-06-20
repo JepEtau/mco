@@ -308,7 +308,7 @@ def main():
                         k_ep_or_g=k_episode,
                         verbose=True if arguments.force else False,
                         force=arguments.force|arguments.regenerate)
-        return
+            return
 
     # Video
     #-------------------------------------------------

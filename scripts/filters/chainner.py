@@ -549,8 +549,8 @@ def color_transfer(
         a_clip_min, a_clip_max = (0, 100)
         b_clip_min, b_clip_max = (-127, 127)
         c_clip_min, c_clip_max = (-127, 127)
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
-        ref_img = cv2.cvtColor(ref_img, cv2.COLOR_BGR2LAB)
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2LAB).astype("float32")
+        ref_img = cv2.cvtColor(ref_img, cv2.COLOR_BGR2LAB).astype("float32")
     elif colorspace == TransferColorSpace.RGB:
         a_clip_min, a_clip_max = (0, 1)
         b_clip_min, b_clip_max = (0, 1)
@@ -610,7 +610,7 @@ def color_transfer(
     # space if necessary
     transfer = cv2.merge([channel_a, channel_b, channel_c])
     if colorspace == TransferColorSpace.LAB:
-        transfer = cv2.cvtColor(transfer, cv2.COLOR_LAB2BGR)
+        transfer = cv2.cvtColor(transfer.astype("uint8"), cv2.COLOR_LAB2BGR)
 
     # Return the color transferred image
     return transfer

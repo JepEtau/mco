@@ -35,7 +35,7 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False):
         None
 
     """
-    verbose = True
+    verbose = False
     db_audio = db[k_ep_or_g]['audio']
 
     # Create the audio directory

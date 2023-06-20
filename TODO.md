@@ -1,8 +1,9 @@
 # TODO script
 (1)
 - When generating a 'deinterlaced' episode, the concatenation shall use the deinterlaced g_debut/g_fin
-- Add color fix!
-- Add speckle noise
+
+- Integrate color fix/speckle noise
+- add pccm method from https://github.com/dstein64/colortrans
 
 - stab: !!! ROI does not work for lowres img !!!
     -> modified, to validate
