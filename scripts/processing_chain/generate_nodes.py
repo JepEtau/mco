@@ -28,6 +28,8 @@ from utils.pretty_print import *
 
 
 def set_input_dependencies(nodes:dict):
+    node_id_regex = "([a-z0-9-]+)[,:]"
+
     for node in nodes.values():
         node['in'] = list()
 
@@ -37,16 +39,24 @@ def set_input_dependencies(nodes:dict):
                         'pytorch',
                         'ffmpeg']:
             # single input
-            result = re.search(re.compile("in=([a-z0-9-]+),"), node['str'])
+            result = re.search(re.compile(f"in={node_id_regex}"), node['str'])
             if result is not None:
                 node['in'].append(result.group(1))
 
         elif node['type'] == 'python':
-            result = re.search(re.compile("in=([a-z0-9-]+),"), node['str'])
+            result = re.search(re.compile(f"in={node_id_regex}"), node['str'])
             if result is not None:
                 node['in'].append(result.group(1))
 
-            result = re.search(re.compile("ref=([a-z0-9-]+),"), node['str'])
+            result = re.search(re.compile(f"ref={node_id_regex}"), node['str'])
+            if result is not None:
+                node['in'].append(result.group(1))
+
+            result = re.search(re.compile(f"lower={node_id_regex}"), node['str'])
+            if result is not None:
+                node['in'].append(result.group(1))
+
+            result = re.search(re.compile(f"top={node_id_regex}"), node['str'])
             if result is not None:
                 node['in'].append(result.group(1))
 
@@ -68,12 +78,17 @@ def set_output_dependencies(nodes:dict):
 
 
 def verify_correctness(nodes:dict) -> bool:
-    for node in nodes:
-        if len(node['in']) == 0 and 'begin' not in nodes.keys():
+    for node in nodes.values():
+        if len(node['in']) == 0 and 'begin' not in node.keys():
             print(p_red("Error: node has not input"))
+            return False
 
-        if len(node['out']) == 0 and 'end' not in nodes.keys():
+        if len(node['out']) == 0 and 'end' not in node.keys():
             print(p_red("Error: node has not output"))
+            print(node)
+            return False
+
+    return True
 
 
 if __name__ == "__main__":
@@ -121,7 +136,8 @@ if __name__ == "__main__":
 
     set_input_dependencies(nodes)
     set_output_dependencies(nodes)
-    if not verify_correctness():
+
+    if not verify_correctness(nodes):
         sys.exit()
 
     pprint(nodes)
