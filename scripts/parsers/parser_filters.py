@@ -29,7 +29,7 @@ def __clean_filter(a_string):
 
 
 def parse_filters(db_video, config, k_section):
-    verbose = False
+    verbose = True
     if verbose:
         print_lightcyan("Parse_filters: ")
         print_green(f"\tsection: {k_section}")
