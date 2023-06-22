@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from copy import deepcopy
+from random import randint
+from random import choice
 import sys
 sys.path.append('scripts')
 import re
@@ -120,13 +122,22 @@ if __name__ == "__main__":
         'save': False,
         'str': 'color_fix,in=7,ref=4,scale=12.5',
         'type': 'python'},
-        {'id': '9', 'save': False, 'str': 'geometry', 'type': 'python'},
-        {'id': '10', 'save': False, 'str': 'rgb', 'type': 'python'}
     ]
 
-
-
     node_list = deepcopy(filters)
+
+    # Add missing nodes
+    node_ids = [item['id'] for item in filters]
+    node_str = [item['str'] for item in filters]
+    for filter_name in ['rgb', 'geometry']:
+        if filter_name not in node_str:
+            id = choice([i for i in range(0, 100) if str(i) not in node_ids])
+            node_list.append({
+                'id': id,
+                'type': 'python',
+                'str': filter_name,
+                'save': False,
+            })
 
     # Just to remember
     node_list[0]['begin'] = True
@@ -147,23 +158,22 @@ if __name__ == "__main__":
     if not verify_correctness(nodes):
         sys.exit()
 
-    pprint(nodes)
 
     # Add missing nodes
-    node
 
     # Prepare nodes for execution
     for node in nodes.values():
         node.update({
             'state': 'idle',
-            'images': list(np.ndarray),
+            'images': list(),
             'hash': '',
             'filepaths': list(),
             'output_folder': "",
-
-
-
         })
 
+
+
+
+    pprint(nodes)
 
 
