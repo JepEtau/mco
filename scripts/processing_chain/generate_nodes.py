@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
+from copy import deepcopy
 import sys
 sys.path.append('scripts')
 import re
 from utils.pretty_print import *
-
+import numpy as np
 
 # Dirty, dirty, dirty for quick evaluation puprose
 
@@ -96,7 +97,7 @@ if __name__ == "__main__":
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    node_list = [
+    filters = [
         {'id': '0', 'save': False, 'str': 'deinterlace', 'type': 'avisynth'},
         {'id': '1', 'save': False, 'str': 'replace', 'type': 'python'},
         {'id': '2', 'save': False, 'str': 'gan', 'type': 'scunet'},
@@ -118,8 +119,14 @@ if __name__ == "__main__":
         {'id': '8',
         'save': False,
         'str': 'color_fix,in=7,ref=4,scale=12.5',
-        'type': 'python'}
+        'type': 'python'},
+        {'id': '9', 'save': False, 'str': 'geometry', 'type': 'python'},
+        {'id': '10', 'save': False, 'str': 'rgb', 'type': 'python'}
     ]
+
+
+
+    node_list = deepcopy(filters)
 
     # Just to remember
     node_list[0]['begin'] = True
@@ -131,7 +138,7 @@ if __name__ == "__main__":
         node['__prev_node_id'] = prev_node_id
         prev_node_id = node['id']
 
-    # COnvert list into dict
+    # Convert list into dict
     nodes = {item['id']:item for item in node_list}
 
     set_input_dependencies(nodes)
@@ -141,3 +148,22 @@ if __name__ == "__main__":
         sys.exit()
 
     pprint(nodes)
+
+    # Add missing nodes
+    node
+
+    # Prepare nodes for execution
+    for node in nodes.values():
+        node.update({
+            'state': 'idle',
+            'images': list(np.ndarray),
+            'hash': '',
+            'filepaths': list(),
+            'output_folder': "",
+
+
+
+        })
+
+
+
