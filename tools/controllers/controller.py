@@ -15,7 +15,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 from pprint import pprint
-from filters.filters import get_mean_luma
+from img_toolbox.filters import get_mean_luma
 from logger import log
 from parsers.parser_stabilize import DEFAULT_SEGMENT_VALUES
 from utils.hash import get_hash_from_last_task
@@ -35,13 +35,13 @@ from controllers.controller_replace import Controller_replace
 from controllers.controller_geometry import Controller_geometry
 from shot.consolidate_shot import consolidate_shot
 
-from filters.deshake import (
+from img_toolbox.deshake import (
     consolidate_stabilize_segments,
     deshake,
     verify_stabilize_segments
 )
-from filters.python_geometry import IMG_BORDER_HIGH_RES
-from filters.utils import (
+from img_toolbox.python_geometry import IMG_BORDER_HIGH_RES
+from img_toolbox.utils import (
     get_step_no_from_last_task,
     has_add_border_task,
 )

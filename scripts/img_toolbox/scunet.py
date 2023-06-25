@@ -8,9 +8,9 @@ import time
 import torch
 from pprint import pprint
 
-from filters.scunet_model_arch import WMSA
-from filters.scunet_model_arch import SCUNet as net
-from filters.utils import MAX_FRAMES_COUNT
+from img_toolbox.scunet_model_arch import WMSA
+from img_toolbox.scunet_model_arch import SCUNet as net
+from img_toolbox.utils import MAX_FRAMES_COUNT
 from utils.pretty_print import *
 from utils.hash import (
     calculate_hash,

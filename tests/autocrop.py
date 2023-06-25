@@ -10,8 +10,8 @@ import signal
 from pprint import pprint
 import os
 
-from filters.filters import *
-from filters.python_autocrop import calculate_crop_values
+from img_toolbox.filters import *
+from img_toolbox.python_autocrop import calculate_crop_values
 
 input_path = 'tests'
 debug = False

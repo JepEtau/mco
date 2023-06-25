@@ -1,7 +1,7 @@
 import os
 import os.path
-from filters.python_deshaker import DEBUG_DESHAKE
-from filters.utils import STEP_INC
+from img_toolbox.python_deshaker import DEBUG_DESHAKE
+from img_toolbox.utils import STEP_INC
 
 from utils.pretty_print import *
 from utils.get_image_list import (

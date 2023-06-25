@@ -17,7 +17,7 @@ from utils.process import (
     create_process,
     get_process_cfg,
 )
-from filters.ffmpeg_utils import (
+from img_toolbox.ffmpeg_utils import (
     execute_simple_ffmpeg_command
 )
 

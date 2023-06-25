@@ -4,10 +4,10 @@ import os
 from copy import deepcopy
 from pprint import pprint
 
-from filters.apply_filters import apply_filters
-from filters.consolidate import consolidate_filters
+from img_toolbox.process_chain import process_chain
+from img_toolbox.processing_chain import consolidate_tasks
 from filters import IMG_BORDER_HIGH_RES
-from filters.utils import (
+from img_toolbox.utils import (
     get_filters_from_shot,
     get_step_no_from_last_task,
     has_add_border_task,
@@ -158,13 +158,13 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
     shot['filters'] = get_filters_from_shot(db, shot)
 
     # Consolidate filters: add rgb/geometry, identify tasks
-    consolidate_filters(shot)
+    consolidate_tasks(shot)
 
     # Update filters: add hash for each filter
     hash_log_file = create_hash_file(db, shot['k_ep'])
     shot['hash_log_file'] = hash_log_file
 
-    hashes = apply_filters(db=db, shot=shot, get_hashes=True)
+    hashes = process_chain(db=db, shot=shot, get_hashes=True)
     for hash, filter in zip(hashes, shot['filters']):
         filter['hash'] = hash[1]
 

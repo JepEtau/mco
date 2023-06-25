@@ -24,7 +24,7 @@ from parsers.parser_geometry import (
     get_initial_default_shot_geometry,
     get_initial_shot_geometry,
 )
-from filters.utils import FINAL_FRAME_WIDTH
+from img_toolbox.utils import FINAL_FRAME_WIDTH
 
 class Model_geometry():
 

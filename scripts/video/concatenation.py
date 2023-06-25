@@ -4,14 +4,14 @@ import os
 from pprint import pprint
 
 from audio.utils import read_audio_file
-from filters.python_deshaker import DEBUG_DESHAKE
+from img_toolbox.python_deshaker import DEBUG_DESHAKE
 from utils.common import (
     FPS,
     K_ALL_PARTS,
     K_GENERIQUES,
     K_PARTS,
 )
-from filters.ffmpeg_utils import (
+from img_toolbox.ffmpeg_utils import (
     execute_simple_ffmpeg_command,
     execute_ffmpeg_command,
     get_video_duration,

@@ -12,7 +12,7 @@ from utils.pretty_print import *
 
 from audio.extract import extract_audio
 from audio.generate import generate_audio
-from filters.utils import FILTER_TAGS
+from img_toolbox.utils import FILTER_TAGS
 
 from parsers.parser_database import (
     parse_database,

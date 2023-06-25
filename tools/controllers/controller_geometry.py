@@ -2,8 +2,8 @@
 import sys
 
 
-from filters.python_geometry import IMG_BORDER_HIGH_RES
-from filters.filters import calculate_geometry_parameters
+from img_toolbox.python_geometry import IMG_BORDER_HIGH_RES
+from img_toolbox.filters import calculate_geometry_parameters
 from copy import deepcopy
 
 from pprint import pprint
@@ -14,7 +14,7 @@ from PySide6.QtCore import (
     Signal,
 )
 
-from filters.utils import FINAL_FRAME_WIDTH
+from img_toolbox.utils import FINAL_FRAME_WIDTH
 from utils.nested_dict import nested_dict_set
 
 

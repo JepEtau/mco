@@ -4,7 +4,7 @@ import sys
 
 import time
 
-from filters.python_geometry import IMG_BORDER_HIGH_RES
+from img_toolbox.python_geometry import IMG_BORDER_HIGH_RES
 from utils.nested_dict import nested_dict_set
 import cv2
 import numpy as np
@@ -13,12 +13,12 @@ from pprint import pprint
 from logger import log
 from utils.pretty_print import *
 
-from filters.filters import (
+from img_toolbox.filters import (
     calculate_geometry_parameters,
     cv2_geometry_filter,
     cv2_rgb_filter,
     get_mean_luma)
-from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
+from img_toolbox.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
 
 
 def generate_image(frame:dict, preview_options:dict):

@@ -2,8 +2,8 @@
 import os
 from pprint import pprint
 import sys
-from filters.ffmpeg_utils import get_video_duration
-from filters.utils import get_step_no_from_task
+from img_toolbox.ffmpeg_utils import get_video_duration
+from img_toolbox.utils import get_step_no_from_task
 from utils.common import FPS
 from utils.pretty_print import *
 from utils.time_conversions import frames_to_ms

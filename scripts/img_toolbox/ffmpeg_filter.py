@@ -8,8 +8,8 @@ import platform
 from pprint import pprint
 import signal
 
-from filters.ffmpeg_utils import clean_ffmpeg_filter
-from filters.utils import MAX_FRAMES_COUNT
+from img_toolbox.ffmpeg_utils import clean_ffmpeg_filter
+from img_toolbox.utils import MAX_FRAMES_COUNT
 from utils.common import FPS
 from utils.pretty_print import *
 from utils.get_image_list import (

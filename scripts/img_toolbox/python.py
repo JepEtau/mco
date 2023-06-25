@@ -9,17 +9,17 @@ from concurrent.futures import ThreadPoolExecutor
 import platform
 
 from pprint import pprint
-from filters.python_deshaker import DEBUG_DESHAKE
-from filters.dnn_superres import upscale_cv2_dnn_superres
-from filters.ffmpeg_utils import clean_ffmpeg_filter
+from img_toolbox.python_deshaker import DEBUG_DESHAKE
+from img_toolbox.dnn_superres import upscale_cv2_dnn_superres
+from img_toolbox.ffmpeg_utils import clean_ffmpeg_filter
 
-from filters.homography import Homography
-from filters.deshake import deshake
-from filters.python_geometry import (
+from img_toolbox.homography import Homography
+from img_toolbox.deshake import deshake
+from img_toolbox.python_geometry import (
     add_borders,
     apply_python_geometry_filter,
 )
-from filters.utils import MAX_FRAMES_COUNT
+from img_toolbox.utils import MAX_FRAMES_COUNT
 from utils.pretty_print import *
 from utils.hash import (
     calculate_hash,
@@ -29,7 +29,7 @@ from utils.get_image_list import (
     get_image_list,
 )
 
-from filters.filters import (
+from img_toolbox.filters import (
     cv2_bilateral_filter,
     cv2_fastNlMeansDenoisingColored,
     cv2_gaussianBlur,
@@ -39,8 +39,8 @@ from filters.filters import (
     cv2_edge_sharpen_sobel,
     cv2_morphology_ex
 )
-from filters.python_rgb import apply_python_rgb_filter
-from filters.chainner import (
+from img_toolbox.python_rgb import apply_python_rgb_filter
+from img_toolbox.chainner import (
     sharpen_node,
 )
 

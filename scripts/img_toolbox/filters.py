@@ -8,7 +8,7 @@ import os.path
 from pprint import pprint
 from filters import IMG_BORDER_HIGH_RES, IMG_BORDER_LOW_RES
 
-from filters.utils import (
+from img_toolbox.utils import (
     INITIAL_FRAME_HEIGHT,
     INITIAL_FRAME_WIDTH,
     FINAL_FRAME_HEIGHT,

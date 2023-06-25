@@ -13,7 +13,7 @@ from basicsr.utils.img_util import (
     tensor2img,
 )
 
-from filters.utils import MAX_FRAMES_COUNT
+from img_toolbox.utils import MAX_FRAMES_COUNT
 from utils.pretty_print import *
 
 from utils.hash import (

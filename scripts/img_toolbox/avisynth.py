@@ -8,8 +8,8 @@ import cv2
 import numpy as np
 import platform
 
-from filters.ffmpeg_deinterlace import ffmpeg_deinterlace
-from filters.ffmpeg_utils import (
+from img_toolbox.ffmpeg_deinterlace import ffmpeg_deinterlace
+from img_toolbox.ffmpeg_utils import (
     execute_simple_ffmpeg_command,
     get_video_resolution
 )

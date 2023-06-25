@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import os
-from filters.utils import STEP_INC
+from img_toolbox.utils import STEP_INC
 from utils.pretty_print import *
 
 FILENAME_TEMPLATE = "%s_%%05d__%s__%02d%s.png"

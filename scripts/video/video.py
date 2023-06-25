@@ -21,7 +21,7 @@ from utils.common import (
 )
 from utils.hash import calculate_hash
 from shot.consolidate_shot import consolidate_shot
-from filters.ffmpeg_utils import execute_ffmpeg_command
+from img_toolbox.ffmpeg_utils import execute_ffmpeg_command
 from utils.nested_dict import nested_dict_set
 from utils.path import create_folder_for_video
 from utils.time_conversions import convert_s_to_m_s_ms, current_datetime_str

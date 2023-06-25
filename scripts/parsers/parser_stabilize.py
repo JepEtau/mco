@@ -11,7 +11,7 @@ from pathlib import (
 )
 import re
 from pprint import pprint
-from filters.deshake import verify_stabilize_segments
+from img_toolbox.deshake import verify_stabilize_segments
 from parsers.parser_generiques import get_dependencies_for_generique
 from utils.pretty_print import *
 

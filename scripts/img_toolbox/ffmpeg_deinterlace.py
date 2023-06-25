@@ -6,12 +6,12 @@ import os
 from pprint import pprint
 
 
-from filters.ffmpeg_utils import (
+from img_toolbox.ffmpeg_utils import (
     clean_ffmpeg_filter,
     get_ffmpeg_filter,
     get_video_resolution
 )
-from filters.utils import MAX_FRAMES_COUNT
+from img_toolbox.utils import MAX_FRAMES_COUNT
 from utils.get_image_list import (
     FILENAME_TEMPLATE
 )

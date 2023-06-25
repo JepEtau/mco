@@ -8,7 +8,7 @@ import torch
 import numpy as np
 from pprint import pprint
 from utils.pretty_print import *
-from filters.utils import MAX_FRAMES_COUNT
+from img_toolbox.utils import MAX_FRAMES_COUNT
 
 from utils.hash import (
     calculate_hash,
@@ -34,7 +34,7 @@ def upscale_pytorch(shot, images:list, image_list:list,
         AlphaOptions,
         SeamlessOptions
     )
-    from filters.esrgan import Esrgan_upscale
+    from img_toolbox.esrgan import Esrgan_upscale
 
     # Default values for upscaler
     suffix = f"{model_name}_{input_hash}"

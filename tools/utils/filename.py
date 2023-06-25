@@ -8,7 +8,7 @@ import sys
 
 from pprint import pprint
 
-from filters.utils import FILTER_BASE_NO
+from img_toolbox.utils import FILTER_BASE_NO
 
 
 def filter_filenames_by(filenames:list, k_edition:str='', k_step:str='', filter_id:int=-1, verbose=False):

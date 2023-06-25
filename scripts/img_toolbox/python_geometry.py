@@ -10,7 +10,7 @@ import platform
 from pprint import pprint
 
 from filters import IMG_BORDER_HIGH_RES, IMG_BORDER_LOW_RES, IMG_LOW_RES_HEIGHT
-from filters.utils import (
+from img_toolbox.utils import (
     FINAL_FRAME_WIDTH,
     MAX_FRAMES_COUNT,
 )
@@ -23,7 +23,7 @@ from utils.get_image_list import (
     get_image_list,
 )
 
-from filters.filters import (
+from img_toolbox.filters import (
     calculate_geometry_parameters,
     cv2_geometry_filter,
 )

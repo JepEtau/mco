@@ -5,8 +5,8 @@ import numpy as np
 from statistics import mean
 # from matplotlib import pyplot as plt
 
-from filters.filters import *
-from filters.utils import is_highres_height, is_lowres_height
+from img_toolbox.filters import *
+from img_toolbox.utils import is_highres_height, is_lowres_height
 from utils.hash import (
     calculate_hash,
     log_filter

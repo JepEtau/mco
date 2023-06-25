@@ -8,7 +8,7 @@ import torch
 import numpy as np
 from pprint import pprint
 from utils.pretty_print import *
-from filters.utils import MAX_FRAMES_COUNT
+from img_toolbox.utils import MAX_FRAMES_COUNT
 
 from utils.hash import (
     calculate_hash,

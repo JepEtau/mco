@@ -10,7 +10,7 @@ import platform
 from pprint import pprint
 
 
-from filters.utils import MAX_FRAMES_COUNT
+from img_toolbox.utils import MAX_FRAMES_COUNT
 from utils.pretty_print import *
 from utils.hash import (
     calculate_hash,
@@ -20,7 +20,7 @@ from utils.get_image_list import (
     get_image_list,
 )
 
-from filters.filters import (
+from img_toolbox.filters import (
     cv2_rgb_filter,
 )
 

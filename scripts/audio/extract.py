@@ -10,7 +10,7 @@ from utils.common import (
     K_AUDIO_PARTS,
     K_GENERIQUES,
 )
-from filters.ffmpeg_utils import execute_simple_ffmpeg_command
+from img_toolbox.ffmpeg_utils import execute_simple_ffmpeg_command
 from utils.time_conversions import (
     current_datetime_str,
 )

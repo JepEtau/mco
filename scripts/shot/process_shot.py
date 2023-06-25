@@ -5,15 +5,15 @@ import gc
 import time
 from pprint import pprint
 
-from filters.apply_filters import apply_filters
-from filters.utils import STEP_INC
-from filters.effects import (
+from img_toolbox.process_chain import process_chain
+from img_toolbox.utils import STEP_INC
+from img_toolbox.effects import (
     create_black_frame,
     effect_fadein,
     effect_loop_and_fadeout,
     effect_fadeout,
 )
-from shot.optimize_tasks import optimize_tasks
+from processing_chain.optimize_tasks import optimize_tasks
 from shot.consolidate_shot import consolidate_shot
 from utils.pretty_print import *
 
@@ -40,7 +40,7 @@ def process_shot(db, shot, force:bool=False):
     if step_no != -1:
 
         # Apply filters to all frames of this shot
-        apply_filters(db=db, shot=shot, step_no_start=step_no, force=force)
+        process_chain(db=db, shot=shot, step_no_start=step_no, force=force)
         spent_time = time.time() - start_time
         print_green("(%.01fs -> %0.2fs/f)" % (spent_time, spent_time/shot['count']))
 

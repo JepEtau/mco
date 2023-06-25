@@ -12,7 +12,7 @@ from pathlib import (
 )
 from pprint import pprint
 
-from filters.curve import Curve
+from img_toolbox.curve import Curve
 from utils.common import (
     K_GENERIQUES,
 )

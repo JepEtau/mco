@@ -3,7 +3,7 @@ import cv2
 import sys
 from pprint import pprint
 from copy import deepcopy
-from filters.python_deshaker import (
+from img_toolbox.python_deshaker import (
     Python_deshaker,
     apply_cv2_transformation,
 )

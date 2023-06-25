@@ -14,7 +14,7 @@ from PySide6.QtCore import (
 )
 
 
-from filters.utils import FILTER_TAGS
+from img_toolbox.utils import FILTER_TAGS
 from utils.common import (
     K_GENERIQUES,
     K_PARTS,

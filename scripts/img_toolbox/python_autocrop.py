@@ -5,11 +5,11 @@ import numpy as np
 from pprint import pprint
 from PIL import Image, ImageChops
 
-from filters.filters import (
+from img_toolbox.filters import (
     automatic_brightness_and_contrast_gray
 )
 from utils.pretty_print import *
-from filters.utils import show_image
+from img_toolbox.utils import show_image
 
 
 def __get_coordinates(coordinates:np.array) -> list:
@@ -23,8 +23,8 @@ def calculate_crop_values(
         images:list[np.ndarray],
         threshold_min:int=10,
         additional_crop:int=0,
-        morph_kernel_size:int=3,
-        erode_kernel_size:int=0,
+        morph_kernel_radius:int=3,
+        erode_kernel_radius:int=0,
         do_add_borders:bool=False
         ) -> list[list, list]:
     # Calculate the max crop values for a list of images
@@ -34,9 +34,9 @@ def calculate_crop_values(
     debug = False
 
     border_size = 2 if do_add_borders else 0
-    morph_kernel = np.ones((morph_kernel_size, morph_kernel_size), np.uint8)
-    if erode_kernel_size != 0:
-        erode_kernel = np.ones((erode_kernel_size, erode_kernel_size), np.uint8)
+    morph_kernel = np.ones((morph_kernel_radius, morph_kernel_radius), np.uint8)
+    if erode_kernel_radius != 0:
+        erode_kernel = np.ones((erode_kernel_radius, erode_kernel_radius), np.uint8)
         erode_iterations = 2
 
     h_img, w_img, _ = images[0].shape
@@ -75,7 +75,7 @@ def calculate_crop_values(
         gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_OPEN, morph_kernel)
         gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_CLOSE, morph_kernel)
 
-        if erode_kernel_size != 0:
+        if erode_kernel_radius != 0:
             gray_img = cv2.erode(gray_img, erode_kernel, iterations=erode_iterations)
 
         # show_image(gray_img, f"{i}")

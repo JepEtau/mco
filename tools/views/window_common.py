@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
-from filters.utils import FINAL_FRAME_HEIGHT
+from img_toolbox.utils import FINAL_FRAME_HEIGHT
 
 
 import time

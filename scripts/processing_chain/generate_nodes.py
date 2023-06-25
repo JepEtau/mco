@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+
 from copy import deepcopy
 from random import randint
 from random import choice
@@ -7,26 +8,8 @@ sys.path.append('scripts')
 import re
 from utils.pretty_print import *
 import numpy as np
-
+from pprint import pprint
 # Dirty, dirty, dirty for quick evaluation puprose
-
-
-# Create nodes from the filter list
-# def generate_nodes_from_list(filter_list:list[dict]):
-
-#     for f in filter_list:
-#         if node['id'] is None:
-#             print(p_yellow("Not a filter with nodes"))
-
-
-
-
-#         node['in'] = list()
-
-#         if node['str'].startswith('in='):
-#             # depenancies
-#             node['dep'].append()
-
 
 
 
@@ -71,7 +54,6 @@ def set_input_dependencies(nodes:dict):
         del node['__prev_node_id']
 
 
-
 def set_output_dependencies(nodes:dict):
     for node in nodes.values():
         node['out'] = list()
@@ -94,12 +76,66 @@ def verify_correctness(nodes:dict) -> bool:
     return True
 
 
+
+def convert_tasks_to_nodes(tasks:list[dict]) -> dict:
+    node_list = deepcopy(tasks)
+
+    # Add missing nodes
+    node_ids = [item['id'] for item in tasks]
+    node_str = [item['str'] for item in tasks]
+    for t in ['rgb', 'geometry']:
+        if t not in node_str:
+            node_id = choice([i for i in range(0, 100) if str(i) not in node_ids])
+            node_list.append({
+                'id': node_id,
+                'type': 'python',
+                'str': t,
+                'save': False,
+            })
+
+    # Just to remember
+    node_list[0]['begin'] = True
+    node_list[-1]['end'] = True
+
+    # keep track of previous node id in list
+    prev_node_id = None
+    for node in node_list:
+        node['__prev_node_id'] = prev_node_id
+        prev_node_id = node['id']
+
+    # Convert list into dict
+    nodes = {item['id']:item for item in node_list}
+
+    set_input_dependencies(nodes)
+    set_output_dependencies(nodes)
+
+    if not verify_correctness(nodes):
+        raise ValueError("something wrong in the chain")
+        return None
+
+
+    # Add missing nodes
+
+    # Prepare nodes for execution
+    for node in nodes.values():
+        node.update({
+            'state': 'idle',
+            'images': list(),
+            'hash': '',
+            'filepaths': list(),
+            'output_folder': "",
+        })
+
+    return nodes
+
+
 if __name__ == "__main__":
+
     import signal
 
     signal.signal(signal.SIGINT, signal.SIG_DFL)
 
-    filters = [
+    tasks = [
         {'id': '0', 'save': False, 'str': 'deinterlace', 'type': 'avisynth'},
         {'id': '1', 'save': False, 'str': 'replace', 'type': 'python'},
         {'id': '2', 'save': False, 'str': 'gan', 'type': 'scunet'},
@@ -124,53 +160,8 @@ if __name__ == "__main__":
         'type': 'python'},
     ]
 
-    node_list = deepcopy(filters)
 
-    # Add missing nodes
-    node_ids = [item['id'] for item in filters]
-    node_str = [item['str'] for item in filters]
-    for filter_name in ['rgb', 'geometry']:
-        if filter_name not in node_str:
-            id = choice([i for i in range(0, 100) if str(i) not in node_ids])
-            node_list.append({
-                'id': id,
-                'type': 'python',
-                'str': filter_name,
-                'save': False,
-            })
-
-    # Just to remember
-    node_list[0]['begin'] = True
-    node_list[-1]['end'] = True
-
-    # keep track of previous node id in list
-    prev_node_id = None
-    for node in node_list:
-        node['__prev_node_id'] = prev_node_id
-        prev_node_id = node['id']
-
-    # Convert list into dict
-    nodes = {item['id']:item for item in node_list}
-
-    set_input_dependencies(nodes)
-    set_output_dependencies(nodes)
-
-    if not verify_correctness(nodes):
-        sys.exit()
-
-
-    # Add missing nodes
-
-    # Prepare nodes for execution
-    for node in nodes.values():
-        node.update({
-            'state': 'idle',
-            'images': list(),
-            'hash': '',
-            'filepaths': list(),
-            'output_folder': "",
-        })
-
+    nodes = convert_tasks_to_nodes(tasks)
 
 
 

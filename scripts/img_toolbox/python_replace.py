@@ -2,7 +2,7 @@
 from pprint import pprint
 import cv2
 import sys
-from filters.utils import STEP_INC
+from img_toolbox.utils import STEP_INC
 
 from utils.pretty_print import *
 from utils.hash import (

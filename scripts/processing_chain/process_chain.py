@@ -8,21 +8,21 @@ import cv2
 import gc
 import sys
 import torch
-from filters.avisynth import avisynth_deinterlace
-from filters.ffmpeg_deinterlace import ffmpeg_deinterlace
-from filters.ffmpeg_filter import ffmpeg_filter
-from filters.python import apply_python_filters
-from filters.python_replace import (
+from img_toolbox.avisynth import avisynth_deinterlace
+from img_toolbox.ffmpeg_deinterlace import ffmpeg_deinterlace
+from img_toolbox.ffmpeg_filter import ffmpeg_filter
+from img_toolbox.python import apply_python_filters
+from img_toolbox.python_replace import (
     python_replace,
     python_edition,
 )
-from filters.scunet import upscale_scunet
-from filters.utils import MAX_FRAMES_COUNT
-from filters.animesr import upscale_animesr
-from filters.pytorch import (
+from img_toolbox.scunet import upscale_scunet
+from img_toolbox.utils import MAX_FRAMES_COUNT
+from img_toolbox.animesr import upscale_animesr
+from img_toolbox.pytorch import (
     upscale_pytorch,
 )
-from filters.real_cugan import (
+from img_toolbox.real_cugan import (
     upscale_real_cugan,
 )
 from utils.get_image_list import (
@@ -37,7 +37,7 @@ from utils.pretty_print import *
 
 
 
-def apply_filters(db, shot, step_no_start=0, get_hashes=False, force:bool=False) -> None:
+def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False) -> None:
 
     image_list = list()
     images = list()

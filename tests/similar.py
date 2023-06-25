@@ -10,7 +10,7 @@ import signal
 from pprint import pprint
 import os
 
-from filters.filters import *
+from img_toolbox.filters import *
 import torch
 import piqa
 

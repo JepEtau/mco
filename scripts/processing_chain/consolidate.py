@@ -2,14 +2,14 @@
 import sys
 from pprint import pprint
 from utils.pretty_print import *
-from filters.utils import (
+from img_toolbox.utils import (
     MAX_FRAMES_COUNT,
     STEP_INC
 )
 
 
 
-def consolidate_filters(shot):
+def consolidate_tasks(shot):
     # Deshake & stabilization: do not add pad if more than 1 time
 
     # Add borders even if no deshake/stabilize to simplify
