@@ -265,8 +265,10 @@ def pprint_audio(db_audio, first_indent:int=0, ignore=list()):
     print("%s}" % (first_indent_str))
 
 
-def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int):
+def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int) -> str:
     verbose = False
+    if verbose:
+        print(f"get_k_part_from_frame_no: {frame_no} in {k_ed}:{k_ep}")
 
     if k_ed in db['common']['editions']['discard']:
         return ''
@@ -276,6 +278,7 @@ def get_k_part_from_frame_no(db, k_ed:str, k_ep:str, frame_no:int):
         db_ep = db[k_ep]['video'][k_ed]
     except:
         return ''
+
     for k_p in K_ALL_PARTS:
         if verbose:
             print(f"\tget_k_part_from_frame_no: {frame_no} in {k_ed}:{k_ep}:{k_p}")

@@ -119,11 +119,8 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39, language:str='fr'):
                     pass
 
                 if lang == db_audio_target['lang']:
-                    # for selected language
                     parse_audio_section(db_audio_target, config, k_section)
-                else:
-                    # debug
-                    print(f"ignore language: {lang}")
+
 
             # Video
             #----------------------------------------------------
@@ -135,11 +132,8 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39, language:str='fr'):
                     pass
 
                 if lang == db_audio_target['lang'] or k_section == 'video':
-                    # for selected language
                     parse_video_section(db_video_target, config, k_section, k_ep)
-                else:
-                    # debug
-                    print(f"ignore language: {language}")
+
 
             # Shots
             #----------------------------------------------------

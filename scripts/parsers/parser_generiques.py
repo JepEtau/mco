@@ -56,9 +56,6 @@ def parse_generiques_target(db, language:str='fr'):
         db_audio_target = db[k_part_g]['audio']
         db_audio_target['lang'] = language
 
-
-        print(p_red(f"parse_generiques_target: {k_part_g}"))
-
         # Parse configuration
         config = configparser.ConfigParser()
         config.read(filepath)
@@ -74,12 +71,8 @@ def parse_generiques_target(db, language:str='fr'):
                     print_yellow(f"{filepath}: audio section naming to be reworked, default=fr")
 
                 if lang == db_audio_target['lang']:
-                    # for selected language
                     parse_audio_section_generique(db[k_part_g]['audio'],
                         config, k_section)
-                else:
-                    # debug
-                    print(f"ignore language: {lang}")
 
 
             # Video
@@ -92,11 +85,7 @@ def parse_generiques_target(db, language:str='fr'):
                     pass
 
                 if lang == db_audio_target['lang'] or k_section == 'video':
-                    # for selected language
                     parse_video_section_g(db_video_target, config, k_section)
-                else:
-                    # debug
-                    print(f"ignore language: {lang}")
 
 
             # Shots

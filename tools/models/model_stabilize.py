@@ -14,14 +14,10 @@ from pathlib import PosixPath
 from pprint import pprint
 from logger import log
 
-from utils.common import (
-    K_GENERIQUES,
-    get_k_part_from_frame_no,
-)
+from utils.common import K_GENERIQUES
 from utils.nested_dict import nested_dict_clean, nested_dict_set
 from utils.pretty_print import *
 
-from shot.utils import get_shot_from_frame_no
 from parsers.parser_stabilize import (
     get_initial_shot_stabilize_settings,
 )

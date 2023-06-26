@@ -99,7 +99,7 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
     config = configparser.ConfigParser()
     config.read(filepath)
     if verbose:
-        print_lightgreen("%s.parse_stabilize_configurations: %s" % (__name__, k_ep_or_g))
+        print_lightgreen(f"parse_stabilize_configurations: {k_ep_or_g}")
     for k_section in config.sections():
         if '.' not in k_section:
             sys.exit("parse_stabilize_configurations: error, no edition,ep,part specified")
@@ -107,12 +107,12 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
 
         for frame_no_str in config.options(k_section):
             if verbose:
-                print_lightblue("\t%s:%s:%s: %s" % (k_ed, k_ep, k_part, frame_no_str))
+                print_lightblue(f"\t{k_ed}:{k_ep}:{k_part}:{frame_no_str}")
 
             # get frame_no and type(deshake or smooth stabilize)
             frame_no_type = re.search(re.compile("(\d+)_(deshake|stabilize)"), frame_no_str)
             if frame_no_type is None:
-                sys.exit(print_red("error: frame no. not recognized in file %s, section: %s" % (filepath, k_section)))
+                sys.exit(p_red(f"error: frame no. not recognized in file {filepath}, section: {k_section}"))
             frame_no = int(frame_no_type.group(1))
             type_str = frame_no_type.group(2)
 

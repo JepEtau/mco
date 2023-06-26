@@ -51,7 +51,7 @@ def parse_database(database, k_ep, lang:str='fr'):
     if k_ep == 'ep00':
         print_lightcyan(f"parse database")
     else:
-        print_lightcyan(f"parse database for: {k_ep}")
+        print_lightcyan(f"parse database, target: {k_ep}")
 
 
     # Parse and merge dictionaries -> common configuration
@@ -112,9 +112,6 @@ def parse_database(database, k_ep, lang:str='fr'):
         for k_ed_tmp in database['editions']['available']:
             print_lightgrey("  - parse %s:%s" % (k_ed_tmp, k_ep))
             parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep)
-            parse_replace_configurations(database, k_ep_or_g=k_ep)
-            parse_stabilize_configurations(database, k_ep_or_g=k_ep)
-            parse_curve_configurations(database, k_ep_or_g=k_ep)
 
         # Get dependencies for this episode
         dependencies_tmp = parse_get_dependencies_for_episodes(database, k_ep)
@@ -144,13 +141,17 @@ def parse_database(database, k_ep, lang:str='fr'):
             print_lightgrey(f"  - parse dependency: {k_ed_tmp}:{k_ep_tmp}")
             parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep_tmp)
 
+
     # Parse other config files for each dependency
+    already_parsed = list()
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in dependencies[k_ed_tmp]:
-            parse_replace_configurations(database, k_ep_or_g=k_ep_tmp)
-            parse_stabilize_configurations(database, k_ep_or_g=k_ep_tmp)
-            parse_curve_configurations(database, k_ep_or_g=k_ep_tmp)
-        break
+            if k_ep_tmp not in already_parsed:
+                parse_replace_configurations(database, k_ep_or_g=k_ep_tmp)
+                parse_stabilize_configurations(database, k_ep_or_g=k_ep_tmp)
+                parse_curve_configurations(database, k_ep_or_g=k_ep_tmp)
+                already_parsed.append(k_ep_tmp)
+
 
     # Parse the geometry for the target episode only
     # Otherwise it is overwritten by the following episodes
