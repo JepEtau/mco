@@ -90,10 +90,16 @@ def parse_generiques_target(db, language:str='fr'):
 
             # Shots
             #----------------------------------------------------
-            elif k_section == 'shots':
-                nested_dict_set(db_video_target, list(), 'shots')
-                parse_target_shotlist(db_video_target['shots'],
-                    config, k_section, verbose=False)
+            elif k_section.startswith('shots'):
+                lang = 'fr'
+                try:
+                    _, lang = k_section.split('.')
+                except:
+                    pass
+
+                if lang == db_audio_target['lang'] or k_section == 'video':
+                    parse_target_shotlist(db_video_target['shots'],
+                        config, k_section, verbose=False)
 
 
         # Source must be defined before consolidating

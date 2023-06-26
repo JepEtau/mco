@@ -169,7 +169,7 @@ def main():
         or arguments.part == ''):
 
             print("\t- force processing audio and video")
-            arguments.afilter = 'final'
+            afilter = 'final'
             if video_filter == '':
                 video_filter = 'geometry'
             do_av_merge = True
@@ -201,6 +201,7 @@ def main():
         sys.exit()
 
     if arguments.afilter != '' and arguments.shot == -1:
+        afilter = arguments.afilter
         print("\t- audio:")
         if arguments.part in K_GENERIQUES:
             print("\t\t- %s: " % (arguments.part), end='')
@@ -264,14 +265,14 @@ def main():
     # Audio
     #-------------------------------------------------
     if arguments.shot == -1 and not arguments.simulate:
-        if arguments.afilter != '':
+        if afilter != '':
             if arguments.part in K_GENERIQUES:
                 # Generiques
                 # 2023-06-18: does not work anymore
                 k_part_g = arguments.part
-                if arguments.afilter == 'extract':
+                if afilter == 'extract':
                     extract_audio(g_database, k_ep=k_part_g, k_ed=k_ed, force=arguments.force)
-                elif arguments.afilter == 'final':
+                elif afilter == 'final':
                     if k_ed != g_database[k_part_g]['audio']['src']['k_ed']:
                         print_orange("Warning: audio: discard specified edition, use final edition: g_database[k_part_g]['audio']['src']['k_ed']")
                     generate_audio(g_database,
@@ -281,9 +282,9 @@ def main():
 
             elif arguments.part != '':
                 # precedemment, episode, g_asuivre, asuivre, g_reportage, reportage
-                if arguments.afilter == 'extract':
+                if afilter == 'extract':
                     extract_audio(g_database, k_ep=k_episode, k_ed=k_ed, force=arguments.force)
-                elif arguments.afilter == 'final':
+                elif afilter == 'final':
                     generate_audio(g_database,
                         k_ep_or_g=k_episode,
                         verbose=True,
@@ -291,12 +292,12 @@ def main():
 
             else:
                 # All
-                if arguments.afilter == 'extract':
+                if afilter == 'extract':
                     for k_part_g in ['g_debut', 'g_fin']:
                         extract_audio(g_database, k_ep=k_part_g, k_ed=k_ed, force=arguments.force)
                     extract_audio(g_database, k_ep=k_episode, k_ed=k_ed, force=arguments.force)
 
-                elif arguments.afilter == 'final':
+                elif afilter == 'final':
                     for k_part_g in ['g_debut', 'g_fin']:
                         if k_ed != g_database[k_part_g]['audio']['src']['k_ed']:
                             print_orange(f"Warning: audio: discard specified edition, use final edition: {g_database[k_part_g]['audio']['src']['k_ed']}")
@@ -308,6 +309,8 @@ def main():
                         k_ep_or_g=k_episode,
                         verbose=True if arguments.force else False,
                         force=arguments.force|arguments.regenerate)
+
+        if arguments.afilter != '':
             return
 
     # Video

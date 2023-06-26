@@ -318,12 +318,15 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
 def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, simulation:bool=False):
     # Output filepath
     print(p_lightgreen(f"Merge audio and video tracks:"), p_lightcyan(f"{k_ep_or_g}"))
+    cache_path = db[k_ep_or_g]['cache_path']
+
     if k_ep_or_g in ['g_debut', 'g_fin']:
-        cache_path = db[k_ep_or_g]['cache_path']
-        audio_video_filepath = os.path.join(cache_path, "%s.mkv" % (k_ep_or_g))
+        language = db[k_ep_or_g]['audio']['lang']
+        lang_str = '' if language == 'fr' else f"_{language}"
+        audio_video_filepath = os.path.join(cache_path, f"{k_ep_or_g}{lang_str}.mkv")
+
     else:
-        cache_path = db[k_ep_or_g]['cache_path']
-        audio_video_filepath = os.path.join(cache_path, "%s_av.mkv" % (k_ep_or_g))
+        audio_video_filepath = os.path.join(cache_path, f"{k_ep_or_g}_av.mkv")
 
     if os.path.exists(audio_video_filepath) and not force and not simulation:
         return
@@ -334,6 +337,7 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, sim
     if k_ep_or_g in ['g_debut', 'g_fin']:
         video_filepath = os.path.join(cache_path, "video",
             f"{k_ep_or_g}_video_{db[k_ep_or_g]['video']['hash']}{suffix}.mkv")
+
     else:
         video_filepath = os.path.join(cache_path, "video", f"{k_ep_or_g}_video.mkv")
 
@@ -343,7 +347,7 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, sim
         video_frames_count = 0
 
     # Get equivalent nb of frames from audio stream
-    audio_filepath = os.path.join(cache_path, "audio", "%s_audio.%s" % (k_ep_or_g, db['common']['settings']['audio_format']))
+    audio_filepath = os.path.join(cache_path, "audio", f"{k_ep_or_g}_audio{lang_str}.{db['common']['settings']['audio_format']}")
     try:
         channels_count, sample_rate, in_track, duration = read_audio_file(audio_filepath)
     except:

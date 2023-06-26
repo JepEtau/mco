@@ -217,6 +217,8 @@ def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbos
         print(f"duration: {duration}")
         print(f"channels: {channels_count}")
 
+        pprint(db_audio)
+
     # Generate an output buffer
     out_left_channel = np.empty((0,0), dtype=np.int32)
     if channels_count == 2:
@@ -300,4 +302,6 @@ def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbos
             out_left_channel.astype(np.int16))).transpose())
 
     # Save audio file as wav
+    if verbose:
+        print(f"output track: {type(out_track_stereo)}, shape: {out_track_stereo.shape}")
     write_track_to_audio_file(output_filepath, out_track_stereo, sample_rate=sample_rate*1000)
