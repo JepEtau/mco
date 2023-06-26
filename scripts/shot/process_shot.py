@@ -41,7 +41,7 @@ def process_shot(db, shot:Shot, force:bool=False):
     if step_no != -1:
 
         # Execute the list of tasks (simple chain)
-        process_chain_list(db=db, shot=shot, step_no_start=step_no, force=force)
+        process_chain_list(db=db, shot=shot, start_task_no=step_no, force=force)
 
         spent_time = time.time() - start_time
         print_green("(%.01fs -> %0.2fs/f)" % (spent_time, spent_time/shot['count']))

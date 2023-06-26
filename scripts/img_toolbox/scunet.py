@@ -29,14 +29,10 @@ def scunet_executor(shot, images:list, image_list:list,
         "models", 'scunet',
         f"scunet_color_real_{model_name}.pth" if model_name in ['psnr', 'gan'] else f"{model_name}.pth")
 
-    if not os.path.isfile(model_filepath):
-        sys.exit(print_red("Error: model file %s does not exist" % (model_filepath)))
 
-    # Default values for upscaler
+    # Default values
     suffix = f"{model_name}_{input_hash}"
-
-    scale = 2
-
+    scale = 1
 
     # Hash
     filter_str = f"{input_hash},{suffix}"
@@ -47,8 +43,10 @@ def scunet_executor(shot, images:list, image_list:list,
     hash = log_filter(filter_str, shot['hash_log_file'])
     hash += "_" + suffix
 
+    if not os.path.isfile(model_filepath):
+        sys.exit(print_red("Error: model file %s does not exist" % (model_filepath)))
 
-    print_cyan(f"(PyTorch)\tstep no. {step_no}, ({scale}x) upscaling, model {model_name}, input hash={input_hash}, output hash={hash}, suffix={suffix}")
+    print_cyan(f"(SCUnet)\tstep no. {step_no}, ({scale}x), model {model_name}, input hash={input_hash}, output hash={hash}, suffix={suffix}")
 
 
     # Generate a list of output images
