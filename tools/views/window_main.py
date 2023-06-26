@@ -41,7 +41,6 @@ from views.window_common import (
     PAINTER_MARGIN_LEFT,
     PAINTER_MARGIN_TOP,
 )
-from img_toolbox.python_geometry import IMG_BORDER_HIGH_RES
 from img_toolbox.utils import (
     FINAL_FRAME_HEIGHT,
     FINAL_FRAME_WIDTH,

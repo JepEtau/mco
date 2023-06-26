@@ -86,7 +86,7 @@ def parse_database(database, k_ep, lang:str='fr'):
 
 
     # Parse database file which contains common settings for all episodes
-    parse_episodes_target(database, lang=lang)
+    parse_episodes_target(database, language=lang)
     if False:
         print("parse_episodes_target")
         print("-------------- %s ------------------" % (k_ep))
@@ -96,7 +96,7 @@ def parse_database(database, k_ep, lang:str='fr'):
 
 
     # Parse database file used for the target
-    parse_generiques_target(database, lang=lang)
+    parse_generiques_target(database, language=lang)
 
     # Create a dict of dependencies for generiques
     dependencies = dict()

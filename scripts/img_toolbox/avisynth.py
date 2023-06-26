@@ -31,6 +31,22 @@ from utils.time_conversions import convert_s_to_m_s_ms, frame_no_to_sexagesimal
 # Extract more frames to verify frames no for each shot
 AVISYNTH_ADD_FRAMES = 0
 
+
+def avisynth_executor(shot, image_list,
+    step_no, filters_str,
+    do_save:bool, output_folder:str,
+    db_common, get_hash:bool=False):
+
+    if filters_str == 'deinterlace':
+        return avisynth_deinterlace(shot, image_list,
+        step_no, filters_str,
+        do_save, output_folder,
+        db_common, get_hash)
+
+    else:
+        raise ValueError(f"filter [{filters_str}] is not supported")
+
+
 def avisynth_deinterlace(shot, image_list,
     step_no, filters_str,
     do_save:bool, output_folder:str,

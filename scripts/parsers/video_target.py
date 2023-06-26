@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
-import sys
-
-import re
+from configparser import ConfigParser
 from pprint import pprint
+import re
+import sys
 
 from utils.common import (
     FPS,
@@ -14,9 +14,8 @@ from utils.pretty_print import *
 
 
 
-def parse_video_section(db_video, config, k_ep, verbose=False):
+def parse_video_section(db_video, config:ConfigParser, k_section, k_ep):
     verbose = False
-    k_section = 'video'
 
     k_ed_src = None
     for k_option in config.options(k_section):
@@ -108,8 +107,36 @@ def parse_video_section(db_video, config, k_ep, verbose=False):
         if db_video[k_part]['k_ed_src'] is None:
             sys.exit("Errror: parse_video_section: edition shall be defined for %s:%s" % (k_ep, k_part))
 
-    if k_part == 'g_fin' and verbose:
-        pprint(db_video[k_part])
-        sys.exit()
 
 
+
+
+def parse_video_section_g(db_video, config:ConfigParser, k_section):
+
+    for k_option in config.options(k_section):
+        value_str = config.get(k_section, k_option)
+        value_str = value_str.replace(' ','')
+        # print("%s:%s=" % (k_section, k_option), value_str)
+
+        if k_option == 'source':
+            tmp = re.match(re.compile("([a-z_0-9]+):(ep[0-9]{2})"), value_str)
+            if tmp is None:
+                sys.exit("Error: wrong value for %s:%s [%s]" % (k_section, k_option, value_str))
+            db_video['src'] = {
+                'k_ed': tmp.group(1),
+                'k_ep': tmp.group(2),
+            }
+            continue
+
+        # Walk through values
+        properties = value_str.split(',')
+
+        part_fadeout = 0
+        for property in properties:
+            search_fadeout = re.search(re.compile("fadeout=([0-9.]+)"), property)
+            if search_fadeout is not None:
+                part_fadeout = int(float(search_fadeout.group(1)) * FPS)
+
+                db_video['effects'] = {
+                    'fadeout': part_fadeout,
+                }

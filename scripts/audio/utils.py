@@ -9,7 +9,7 @@ from pprint import pprint
 from utils.time_conversions import current_datetime_str
 
 
-def read_audio_file(filepath, verbose=False):
+def read_audio_file(filepath, verbose=False) -> tuple[int, int, np.ndarray, float]:
     # print("read_audio_file: %s" % (filepath))
     sample_rate, audio_buffer = wavfile.read(filepath)
     if len(audio_buffer.shape) == 1:
@@ -35,7 +35,7 @@ def read_audio_file(filepath, verbose=False):
     return channels_count, sample_rate, audio_buffer_32b, duration
 
 
-def write_track_to_audio_file(filepath, stereo_channels, sample_rate=48000) -> None:
+def write_track_to_audio_file(filepath, stereo_channels:np.ndarray, sample_rate=48000) -> None:
     # print("write_track_to_audio_file: %sHz" % (sample_rate))
     sf.write(
         file=filepath,

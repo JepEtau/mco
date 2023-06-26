@@ -21,7 +21,7 @@ from utils.get_image_list import (
 )
 
 
-def upscale_scunet(shot, images:list, image_list:list,
+def scunet_executor(shot, images:list, image_list:list,
     model_name:str, directories:str, input_hash, step_no, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 

@@ -75,16 +75,24 @@ def db_init_episodes(db, k_ed, ep_min:int=1, ep_max:int=39):
 #   Parse the common episode file for all editions
 #
 #===========================================================================
-def parse_episodes_target(db, ep_min=1, ep_max:int=39, lang:str='fr'):
+def parse_episodes_target(db, ep_min=1, ep_max:int=39, language:str='fr'):
     # ep_maxCount is the maximum nb of episodes: used for debug
 
-    for i in range(ep_min, min(40, ep_max+1)):
-        k_ep = 'ep%02d' % i
+    for no in range(ep_min, min(40, ep_max+1)):
+        k_ep = f'ep{no:02d}'
+
         nested_dict_set(db, dict(), k_ep, 'video', 'common')
         db_ep_common = db[k_ep]['video']['common']
 
+        # Define a video target struct
         nested_dict_set(db, dict(), k_ep, 'video', 'target')
-        db_ep_target = db[k_ep]['video']['target']
+        db_video_target = db[k_ep]['video']['target']
+
+        # Audio target: there is no audio src, use the 'audio'
+        # struct as the target
+        nested_dict_set(db, dict(), k_ep, 'audio')
+        db_audio_target = db[k_ep]['audio']
+        db_audio_target['lang'] = language
 
 
         # Open configuration file
@@ -103,32 +111,42 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39, lang:str='fr'):
             # Audio
             #----------------------------------------------------
             if k_section.startswith('audio'):
-                nested_dict_set(db, dict(), k_ep, 'audio')
+                lang = 'fr'
                 try:
-                    _, language = k_section.split('.')
+                    _, lang = k_section.split('.')
                 except:
                     print_yellow(f"{filepath}: audio section naming to be reworked, default=fr")
-                    language = 'fr'
+                    pass
 
-                if language == lang:
+                if lang == db_audio_target['lang']:
                     # for selected language
-                    parse_audio_section(db[k_ep]['audio'], config, k_section)
-                    db[k_ep]['audio']['lang'] = language
+                    parse_audio_section(db_audio_target, config, k_section)
                 else:
                     # debug
-                    print(f"ignore language: {language}")
+                    print(f"ignore language: {lang}")
 
             # Video
             #----------------------------------------------------
-            elif k_section == 'video':
-                parse_video_section(db_ep_target, config, k_ep, verbose=False)
+            elif k_section.startswith('video'):
+                lang = 'fr'
+                try:
+                    _, lang = k_section.split('.')
+                except:
+                    pass
+
+                if lang == db_audio_target['lang'] or k_section == 'video':
+                    # for selected language
+                    parse_video_section(db_video_target, config, k_section, k_ep)
+                else:
+                    # debug
+                    print(f"ignore language: {language}")
 
             # Shots
             #----------------------------------------------------
             elif k_section.startswith('shots_'):
                 k_part = k_section[len('shots_'):]
-                nested_dict_set(db_ep_target, list(), k_part, 'shots')
-                parse_target_shotlist(db_ep_target[k_part]['shots'],
+                nested_dict_set(db_video_target, list(), k_part, 'shots')
+                parse_target_shotlist(db_video_target[k_part]['shots'],
                     config, k_section, verbose=False)
 
 

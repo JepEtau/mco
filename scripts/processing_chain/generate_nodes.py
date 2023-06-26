@@ -1,14 +1,20 @@
 # -*- coding: utf-8 -*-
+import sys
+sys.path.append('scripts')
 
 from copy import deepcopy
 from random import randint
 from random import choice
-import sys
-sys.path.append('scripts')
 import re
 from utils.pretty_print import *
 import numpy as np
 from pprint import pprint
+
+from processing_chain.executors import EXECUTORS
+
+
+
+
 # Dirty, dirty, dirty for quick evaluation puprose
 
 
@@ -113,9 +119,6 @@ def convert_tasks_to_nodes(tasks:list[dict]) -> dict:
         raise ValueError("something wrong in the chain")
         return None
 
-
-    # Add missing nodes
-
     # Prepare nodes for execution
     for node in nodes.values():
         node.update({
@@ -126,7 +129,18 @@ def convert_tasks_to_nodes(tasks:list[dict]) -> dict:
             'output_folder': "",
         })
 
+        # Set executor
+        try:
+            node['executor'] = EXECUTORS[node['type']]
+        except:
+            raise ValueError(f"Executor for [{node['type']}] not found")
+
+        # Create queues
+        # TODO in some months/years
+
+
     return nodes
+
 
 
 if __name__ == "__main__":

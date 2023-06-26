@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from typing import TypedDict
+from typing import Literal, TypedDict, Union
 
 # Common to all types:
 # k_ed: key: editon. 1 letter format in [k, s, f, ..]
@@ -10,6 +10,9 @@ from typing import TypedDict
 # start: start frame form 0 to ..
 # count: frame count of a part/shot/segment
 
+class GenericSrc(TypedDict):
+    k_ed: str
+    k_ep: str
 
 class Geometry(TypedDict):
     keep_ratio: bool
@@ -18,7 +21,7 @@ class Geometry(TypedDict):
     is_default: bool
 
 
-class Src_shot(TypedDict):
+class ShotSrc(TypedDict):
     k_ed: str
     k_ep: str
     k_part: str
@@ -61,7 +64,7 @@ class Shot(TypedDict):
     # This struct defines the src shot uses to generate this one.
     # When processing this shot, it uses the k_ed:k_episode:k_part:shot specified by this variable
     # e.g. we can use a shot from another edition if not available in this one
-    src: Src_shot
+    src: ShotSrc
 
     # RGB curves: name, points and LUT table
     curves: dict
@@ -115,12 +118,12 @@ class Curves(TypedDict):
     #   'b': list
     #   'a': list
 
-class Dst_shot(TypedDict):
+class DstShot(TypedDict):
     k_ep: str
     k_part: str
 
 
-class Part(TypedDict):
+class VideoPart(TypedDict):
     start: int
     end: int # Attention, this is in fact the end+1 frame no.
     count: int
@@ -138,4 +141,36 @@ class Part(TypedDict):
 
 
 
-# Global struct
+
+# unless specified, timestamps and duration are in ms
+class AudioSrc(TypedDict):
+    k_ed: str
+    k_ep: str
+
+
+class AudioSegment(TypedDict):
+    start: int
+    end: int
+    duration: int
+
+    avsync: int
+    gain: int
+    silence: int
+
+
+class Audio(TypedDict):
+    start: int
+    end: int
+    duration: int
+
+    avsync: int
+    silence: int
+
+    fadein: int
+    fadeout: int
+    fade_alg: Literal['sin', 'cos']
+
+    segments: list[AudioSegment]
+
+    src: AudioSrc
+    lang: Literal['fr', 'en']

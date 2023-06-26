@@ -26,7 +26,7 @@ from utils.get_image_list import (
 
 
 @torch.no_grad()
-def upscale_animesr(shot, images:list, image_list:list,
+def animesr_executor(shot, images:list, image_list:list,
     model_name:str, directories:str, input_hash, step_no,
     do_save:bool, output_folder:str,
     get_hash:bool=False, do_force:bool=False):

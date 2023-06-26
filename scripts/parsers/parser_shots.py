@@ -269,6 +269,9 @@ def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
 
 
 def parse_target_shotlist(db_shots, config, k_section, verbose=False) -> None:
+    # TODO: add language
+
+
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option)
         value_str = value_str.replace(' ','')
@@ -598,7 +601,12 @@ def consolidate_target_shots_g(db, k_ep, k_part_g) -> None:
     # Get the default source: edition:episode
     k_ed_src = db[k_part_g]['video']['src']['k_ed']
     k_ep_src = db[k_part_g]['video']['src']['k_ep']
-    db_video_src = db[k_ep_src]['video'][k_ed_src][k_part_g]
+    try:
+        db_video_src = db[k_ep_src]['video'][k_ed_src][k_part_g]
+    except:
+        pprint(db[k_part_g])
+        raise KeyError(f"Error: missing file from edition {k_ed_src}",
+                       f"cannot use {k_ep_src}:{k_part_g}")
 
     if k_part_g in ['g_debut', 'g_fin']:
         db_video_target = db[k_part_g]['video']

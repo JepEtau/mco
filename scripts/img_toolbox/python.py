@@ -44,7 +44,7 @@ from img_toolbox.chainner import (
     sharpen_node,
 )
 
-def apply_python_filters(shot:dict, images:list, image_list:list,
+def python_executor(shot:dict, images:list, image_list:list,
     step_no, filters_str:str, input_hash:str,
     do_save:bool, output_folder:str,
     get_hash:bool=False, do_force:bool=False):

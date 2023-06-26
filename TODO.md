@@ -7,7 +7,7 @@
 
 - stab: !!! ROI does not work for lowres img !!!
     -> modified, to validate
-- stab: !!! is ROI mask really works with gftt !!!
+- stab: !!! is ROI mask really works with gftt? !!!
     -> to investigate
 
 - avisynth to upscale reportage

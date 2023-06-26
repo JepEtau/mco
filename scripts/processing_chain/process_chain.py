@@ -8,23 +8,19 @@ import cv2
 import gc
 import sys
 import torch
-from img_toolbox.avisynth import avisynth_deinterlace
+from img_toolbox.avisynth import avisynth_executor
 from img_toolbox.ffmpeg_deinterlace import ffmpeg_deinterlace
-from img_toolbox.ffmpeg_filter import ffmpeg_filter
-from img_toolbox.python import apply_python_filters
+from img_toolbox.ffmpeg import ffmpeg_executor
+from img_toolbox.python import python_executor
 from img_toolbox.python_replace import (
     python_replace,
     python_edition,
 )
-from img_toolbox.scunet import upscale_scunet
+from img_toolbox.scunet import scunet_executor
 from img_toolbox.utils import MAX_FRAMES_COUNT
-from img_toolbox.animesr import upscale_animesr
-from img_toolbox.pytorch import (
-    upscale_pytorch,
-)
-from img_toolbox.real_cugan import (
-    upscale_real_cugan,
-)
+from img_toolbox.animesr import animesr_executor
+from img_toolbox.pytorch import pytorch_executor
+from img_toolbox.real_cugan import real_cugan_executor
 from utils.get_image_list import (
     get_image_list,
     STEP_INC,
@@ -32,12 +28,17 @@ from utils.get_image_list import (
 from utils.load_images import load_images
 
 from utils.pretty_print import *
+from utils.types import Shot
 
 
 
 
 
-def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False) -> None:
+def process_chain_list(db,
+    shot:Shot,
+    start_task_no=0,
+    get_hashes=False,
+    force:bool=False)-> None:
 
     image_list = list()
     images = list()
@@ -45,8 +46,8 @@ def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
     do_force = force
 
     # Initialize variables depending on starting step no.
-    step_no = step_no_start
-    if get_hashes or step_no_start == 0:
+    step_no = start_task_no
+    if get_hashes or start_task_no == 0:
         # Start from 0
         filters = shot['filters']
         hash = ''
@@ -125,7 +126,7 @@ def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
 
             if xgan['model'] == '':
                 sys.exit(print_red("\n(PyTorch) model name is required"))
-            hash, scale, images = upscale_pytorch(
+            hash, scale, images = pytorch_executor(
                 shot=shot,
                 images=images,
                 image_list=image_list,
@@ -151,7 +152,7 @@ def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
 
             if xgan['model'] == '':
                 sys.exit(print_red("\n(SCUNet) model name is required"))
-            hash, scale, images = upscale_scunet(
+            hash, scale, images = scunet_executor(
                 shot=shot,
                 images=images,
                 image_list=image_list,
@@ -172,7 +173,7 @@ def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
                     print_red("\t\t\terror: cannot upscale with this GPU")
                     print_orange("\t\t\tfallback: bad quality upscale (CV2: bicubic)")
                     filter_str = "scale=2:bicubic"
-                    hash, images = apply_python_filters(
+                    hash, images = python_executor(
                         shot,
                         images=images,
                         image_list=image_list,
@@ -205,7 +206,7 @@ def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
                     if 'n' not in xgan.keys():
                         sys.exit(print_red("\n(Real-CUGAN): denoise value is required"))
                     # print("\n\t\t\t(Real-CUGAN) scale: %d, denoise: %d" % (int(xgan['s']), int(xgan['n'])))
-                    hash, scale, images = upscale_real_cugan(
+                    hash, scale, images = real_cugan_executor(
                         shot=shot,
                         images=images,
                         image_list=image_list,
@@ -229,7 +230,7 @@ def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
                     print_red("\t\t\terror: cannot upscale with this GPU")
                     print_orange("\t\t\tfallback: bad quality upscale (CV2: nearest)")
                     filter_str = "scale=4:bicubic"
-                    hash, images = apply_python_filters(
+                    hash, images = python_executor(
                         shot,
                         images=images,
                         image_list=image_list,
@@ -253,7 +254,7 @@ def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
 
                 if alg['model'] == '':
                     sys.exit(print_red("\n(AnimeSR) model name is required"))
-                hash, scale, images = upscale_animesr(
+                hash, scale, images = animesr_executor(
                     shot=shot,
                     images=images,
                     image_list=image_list,
@@ -297,7 +298,7 @@ def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
                     output_folder=output_folder,
                     get_hash=get_hashes)
             else:
-                hash, images = apply_python_filters(
+                hash, images = python_executor(
                     shot,
                     images=images,
                     step_no=step_no,
@@ -346,7 +347,7 @@ def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
 
             else:
                 # Other filters
-                hash, images = ffmpeg_filter(
+                hash, images = ffmpeg_executor(
                     shot=shot,
                     images=images,
                     image_list=image_list,
@@ -362,24 +363,15 @@ def process_chain(db, shot, step_no_start=0, get_hashes=False, force:bool=False)
         # Avisynth+
         #-----------------------------------------------------------------------
         elif filter['type'] == 'avisynth':
-            if step_no == 0:
-                # Deinterlace or deinterlace + denoise/sharpen
-                hash, images = avisynth_deinterlace(
-                    shot=shot,
-                    image_list=image_list,
-                    step_no=step_no,
-                    filters_str=filter['str'],
-                    do_save=filter['save'],
-                    output_folder=output_folder,
-                    db_common=db['common'],
-                    get_hash=get_hashes)
-
-            else:
-                print_red("Error: avisynth filters are not supported")
-                pprint(filter)
-                sys.exit()
-
-
+            hash, images = avisynth_executor(
+                shot=shot,
+                image_list=image_list,
+                step_no=step_no,
+                filters_str=filter['str'],
+                do_save=filter['save'],
+                output_folder=output_folder,
+                db_common=db['common'],
+                get_hash=get_hashes)
 
         # Null
         #-----------------------------------------------------------------------

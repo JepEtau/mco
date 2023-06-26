@@ -27,7 +27,7 @@ from utils.process import (
 
 
 
-def ffmpeg_filter(shot, images:list, image_list:list,
+def ffmpeg_executor(shot, images:list, image_list:list,
     step_no, input_hash, filter_str, do_save:bool, output_folder, db_common,
     get_hash:bool=False, do_force:bool=False):
 

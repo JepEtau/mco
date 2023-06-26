@@ -9,7 +9,7 @@ from concurrent.futures import ThreadPoolExecutor
 import platform
 from pprint import pprint
 
-from filters import IMG_BORDER_HIGH_RES, IMG_BORDER_LOW_RES, IMG_LOW_RES_HEIGHT
+from img_toolbox import IMG_BORDER_HIGH_RES, IMG_BORDER_LOW_RES, IMG_LOW_RES_HEIGHT
 from img_toolbox.utils import (
     FINAL_FRAME_WIDTH,
     MAX_FRAMES_COUNT,

@@ -30,15 +30,15 @@ def extract_audio(db, k_ep:str, k_ed, force=False) -> str:
     else:
         k_ep_src = k_ep
 
-    print("%s extract_audio from %s:%s" % (current_datetime_str(), k_ed, k_ep_src))
+    print(f"{current_datetime_str()} extract_audio from {k_ed}:{k_ep_src}")
 
     # Input audio file
     input_filepath = db['editions'][k_ed]['inputs']['audio'][k_ep_src]
     if force or verbose:
-        print("%s extract audio stream: %s:%s from %s" % (current_datetime_str(), k_ed, k_ep_src, input_filepath))
+        print(f"%s extract audio stream: %s:%s from %s" % (current_datetime_str(), k_ed, k_ep_src, input_filepath))
 
     if not os.path.exists(input_filepath):
-        sys.exit("Erreur: le fichier d'entrée est manquant pour l'édition %s" % (k_ed))
+        sys.exit(f"Error: audio: input file is missing, edition: {k_ed}")
 
 
     # Output audio file
@@ -47,7 +47,7 @@ def extract_audio(db, k_ep:str, k_ed, force=False) -> str:
         os.makedirs(output_directory)
 
 
-    output_filename = "%s_%s_audio_extract.%s" % (k_ep_src, k_ed, db['common']['settings']['audio_format'])
+    output_filename = f"{k_ep_src}_{k_ed}_audio_extract.{db['common']['settings']['audio_format']}"
     output_filepath = os.path.join(output_directory, output_filename)
 
     if os.path.exists(output_filepath):
@@ -61,12 +61,7 @@ def extract_audio(db, k_ep:str, k_ed, force=False) -> str:
         print("\tuse file: %s" % (input_filepath))
         return input_filepath
     else:
-        print("\t%s -> %s" % (input_filepath, output_filepath))
-        # Create complex filter
-        filter_complex_str = ""
-        filter_complex_str = filter_complex_str + "[outa]"
-        # print("filter_complex_str = %s" % (filter_complex_str))
-
+        print(f"\t{input_filepath} -> {output_filepath}")
 
         # FFmpeg command
         ffmpeg_command = [db['common']['tools']['ffmpeg']]
@@ -83,6 +78,7 @@ def extract_audio(db, k_ep:str, k_ed, force=False) -> str:
             ffmpeg_command.extend(["-c:a", "copy"])
 
         ffmpeg_command.extend(["-y", output_filepath])
+
         execute_simple_ffmpeg_command(ffmpeg_command)
 
         return output_filepath

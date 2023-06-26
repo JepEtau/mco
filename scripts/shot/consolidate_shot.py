@@ -4,13 +4,12 @@ import os
 from copy import deepcopy
 from pprint import pprint
 
-from img_toolbox.process_chain import process_chain
-from img_toolbox.processing_chain import consolidate_tasks
-from filters import IMG_BORDER_HIGH_RES
+from processing_chain.process_chain import process_chain_list
+from processing_chain.consolidate import consolidate_tasks
+
 from img_toolbox.utils import (
-    get_filters_from_shot,
+    get_processing_chain,
     get_step_no_from_last_task,
-    has_add_border_task,
 )
 from utils.hash import (
     calculate_hash,
@@ -24,11 +23,10 @@ from utils.nested_dict import nested_dict_set
 from utils.get_curves import get_lut_from_curves
 from utils.path import get_cache_path
 from utils.pretty_print import *
+from utils.types import Shot
 
 
-
-
-def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
+def consolidate_shot(db, shot:Shot, edition_mode:bool=False) -> None:
     """This procedure is used to simplify a single shot and add
     properties to process it: removes unecessary property, add
     paths to input/output files, update frames no. depending on edition, etc.
@@ -155,7 +153,7 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
     #---------------------------------------------------------------------------
 
     # Get filters used by this shot
-    shot['filters'] = get_filters_from_shot(db, shot)
+    shot['filters'] = get_processing_chain(db, shot)
 
     # Consolidate filters: add rgb/geometry, identify tasks
     consolidate_tasks(shot)
@@ -164,7 +162,7 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
     hash_log_file = create_hash_file(db, shot['k_ep'])
     shot['hash_log_file'] = hash_log_file
 
-    hashes = process_chain(db=db, shot=shot, get_hashes=True)
+    hashes = process_chain_list(db=db, shot=shot, get_hashes=True)
     for hash, filter in zip(hashes, shot['filters']):
         filter['hash'] = hash[1]
 

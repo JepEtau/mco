@@ -6,6 +6,8 @@ from copy import deepcopy
 import platform
 import cv2
 
+from utils.types import Shot
+
 
 INITIAL_FRAME_WIDTH = 720
 INITIAL_FRAME_HEIGHT = 576
@@ -45,7 +47,7 @@ def is_highres_height(height):
     # dirty function to indicate if an image is low res
     return True if height > (INITIAL_FRAME_WIDTH*3/2) else False
 
-def get_step_no_from_task(shot, task):
+def get_step_no_from_task(shot:Shot, task):
     __task = 'geometry' if task == 'final' else task
     for f, i in zip(shot['filters'], range(len(shot['filters']))):
         if __task == f['task']:
@@ -60,7 +62,7 @@ def get_step_no_from_last_task(shot):
 
 
 
-def get_filters_from_shot(db, shot):
+def get_processing_chain(db, shot:Shot):
     verbose = False
     k_ed = shot['k_ed']
     k_ep = shot['k_ep']
@@ -113,7 +115,7 @@ def get_dimensions_from_crop_values(width, height, crop) -> list:
 
 
 
-def has_add_border_task(shot):
+def has_add_border_task(shot:Shot):
     # Returns true if borders have been added
     for f in shot['filters'][STEP_INC:]:
         if f['str'] == 'add_borders':
@@ -122,7 +124,7 @@ def has_add_border_task(shot):
 
 
 
-def is_stabilize_task_enabled(shot):
+def is_stabilize_task_enabled(shot:Shot):
     # Returns true if deshake/stabilize task is enabled, False otherwise
 
     # No deshake parameters or disabled

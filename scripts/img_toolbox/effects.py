@@ -26,7 +26,7 @@ def create_black_frame(db, shot):
         db['common']['directories']['cache'], 'black.png')
 
     if 'shape' not in shot['last_step'].keys():
-        # The shot was already been generated
+        # The shot has already been generated
         output_folder = get_output_path_from_shot(db, shot, task=shot['last_task'])
         img_filepath = get_first_image_filepath(shot,
             folder=output_folder,

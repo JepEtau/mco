@@ -19,8 +19,15 @@ from utils.get_image_list import (
 )
 
 
-def upscale_real_cugan(shot, images:list, image_list:list, scale:int, denoise:int,
-    directories:str, input_hash, step_no, output_folder:str, get_hash:bool=False, do_force:bool=False):
+def real_cugan_executor(
+        shot,
+        images:list, image_list:list,
+        scale:int, denoise:int,
+        directories:str,
+        input_hash, step_no,
+        output_folder:str,
+        get_hash:bool=False,
+        do_force:bool=False):
 
     module_path = os.path.join(directories['3rd_party'], directories['real_cugan'])
     sys.path.append(module_path)

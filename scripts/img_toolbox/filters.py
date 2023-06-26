@@ -6,7 +6,7 @@ import numpy as np
 import os.path
 
 from pprint import pprint
-from filters import IMG_BORDER_HIGH_RES, IMG_BORDER_LOW_RES
+from img_toolbox import IMG_BORDER_HIGH_RES, IMG_BORDER_LOW_RES
 
 from img_toolbox.utils import (
     INITIAL_FRAME_HEIGHT,

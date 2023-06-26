@@ -20,9 +20,10 @@ from audio.utils import (
     read_audio_file,
     write_track_to_audio_file,
 )
+from utils.types import Audio
 
 
-def generate_audio(db, k_ep_or_g:str, force=False, verbose=False):
+def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
     """Create an audio file for a specified episode. This will be merged
     with video of this episode (generiques are excluded)
     db_audio contains properties to process and create the audio file
@@ -36,7 +37,7 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False):
 
     """
     verbose = False
-    db_audio = db[k_ep_or_g]['audio']
+    db_audio:Audio = db[k_ep_or_g]['audio']
 
     # Create the audio directory
     output_directory = os.path.join(db[k_ep_or_g]['cache_path'], "audio")
@@ -64,7 +65,6 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False):
     k_ed = db_audio['src']['k_ed']
     k_ep = k_ep_or_g
 
-
     # Extract audio file if needed
     input_filepath = extract_audio(db, k_ep, k_ed, force=force)
 
@@ -72,10 +72,10 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False):
     channels_count, sample_rate, in_track, duration = read_audio_file(input_filepath, verbose=True)
     sample_rate = int(sample_rate / 1000)
 
-    print("%s generate audio: %s" % (current_datetime_str(), k_ep), flush=True)
+    print(f"{current_datetime_str()} generate audio: {k_ep}")
 
     if channels_count != 1:
-        sys.exit("error: generate_audio: only mono is supported for %s" % (k_ep))
+        sys.exit(f"error: generate_audio: only mono is supported for {k_ep}")
 
     # Generate an output buffer
     out_left_channel = np.empty((0,0), dtype=np.int32)
@@ -184,7 +184,7 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False):
 
 
 
-def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbose=False):
+def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbose=False) -> None:
     """Create the audio file for the 'generique'
 
     Args:

@@ -18,7 +18,7 @@ from utils.get_image_list import (
     get_image_list,
 )
 
-def upscale_pytorch(shot, images:list, image_list:list,
+def pytorch_executor(shot, images:list, image_list:list,
     model_name:str, directories:str, input_hash, step_no, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 

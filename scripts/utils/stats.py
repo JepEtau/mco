@@ -2,7 +2,7 @@
 
 from pprint import pprint
 import sys
-from filters import IMG_BORDER_LOW_RES
+from img_toolbox import IMG_BORDER_LOW_RES
 from img_toolbox.filters import calculate_geometry_parameters
 from img_toolbox.utils import (
     FINAL_FRAME_HEIGHT,

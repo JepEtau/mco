@@ -5,7 +5,7 @@ import gc
 import time
 from pprint import pprint
 
-from img_toolbox.process_chain import process_chain
+from processing_chain.process_chain import process_chain_list
 from img_toolbox.utils import STEP_INC
 from img_toolbox.effects import (
     create_black_frame,
@@ -16,10 +16,11 @@ from img_toolbox.effects import (
 from processing_chain.optimize_tasks import optimize_tasks
 from shot.consolidate_shot import consolidate_shot
 from utils.pretty_print import *
+from utils.types import Shot
 
 
 
-def process_shot(db, shot, force:bool=False):
+def process_shot(db, shot:Shot, force:bool=False):
     start_time = time.time()
 
     # Consolidate shot
@@ -39,13 +40,14 @@ def process_shot(db, shot, force:bool=False):
 
     if step_no != -1:
 
-        # Apply filters to all frames of this shot
-        process_chain(db=db, shot=shot, step_no_start=step_no, force=force)
+        # Execute the list of tasks (simple chain)
+        process_chain_list(db=db, shot=shot, step_no_start=step_no, force=force)
+
         spent_time = time.time() - start_time
         print_green("(%.01fs -> %0.2fs/f)" % (spent_time, spent_time/shot['count']))
 
 
-    # Create a black frame used for silences
+    # Create a black frame used for silences/effects
     create_black_frame(db, shot)
 
     # Clean
@@ -60,8 +62,7 @@ def process_shot(db, shot, force:bool=False):
     if 'effects' in shot.keys():
         effect = shot['effects'][0]
         print_lightcyan("Effects:")
-        # print("APPLY effect", shot['effects'])
-        # pprint(shot)
+
         if effect == 'loop_and_fadeout':
             effect_loop_and_fadeout(db, shot)
 
