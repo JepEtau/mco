@@ -1,9 +1,9 @@
-FFMPEGSource2("A:\mco\inputs\k\k_ep01.mkv", cache=false)
-AssumeTFF()
+FFMPEGSource2("A:\mco\cache\progressive\k_ep01_3e2c47c.mkv", cache=false)
 trim(0, -1)
-QTGMC(preset="Slower", TR0=2, TR1=2, \
-    EdiMode="EEDI3+NNEDI3", \
-    Denoiser="dfttest")
-SelectEven()
-# aWarpSharp2()
+ConvertToYUV420()
+
+spline36resize(Width*2, Height*2)
+aWarpSharp2()
+
+
 ConvertToRGB24()

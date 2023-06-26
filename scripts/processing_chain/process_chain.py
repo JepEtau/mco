@@ -366,6 +366,7 @@ def process_chain_list(db,
             hash, images = avisynth_executor(
                 shot=shot,
                 image_list=image_list,
+                input_hash=hash,
                 step_no=step_no,
                 filters_str=filter['str'],
                 do_save=filter['save'],
