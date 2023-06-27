@@ -446,6 +446,8 @@ def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict,
         if os.path.exists(output_filepath) and not force:
             print_lightgrey(' '.join(ffmpeg_command))
         else:
+            if verbose:
+                print_lightgrey(' '.join(ffmpeg_command))
             std = execute_ffmpeg_command(db,
                 command=ffmpeg_command,
                 filename=output_filepath,

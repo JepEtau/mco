@@ -1,17 +1,17 @@
 # TODO script
 (1)
-- bug: DAR is not correct in deinterlaced video file
 - bug: audio track is longer than video and silence is added: do a video fadeout
 - bug: stab: !!! ROI does not work for lowres img !!!
     -> modified, to validate
 - bug: stab: !!! does ROI mask really work with gftt? !!!
     -> to investigate
-- bug: chapters are not corrects in english version
+- bug: chapters are not corrects in english version: silence is not added to g_debut, why?
 
 - enhancement: avisynth to upscale/sharpen reportage: implemented. To be validated
 - enhancement: integrate color fix/speckle noise
 - enhancement: add pccm method from https://github.com/dstein64/colortrans
 - enhancement: When generating a 'deinterlaced' episode, the concatenation function shall use the deinterlaced g_debut/g_fin
+- enhancement: find the old editor for histogram equalization. Will be used for the FR version.
 
 - enhancement: what about autocrop: use it in the chain or as a tool (video editor)?
 - enhancement: Add FFmpeg stab. test on ep02: try on shots 7/10/22/30/32
@@ -123,4 +123,4 @@
 - fadein: if stabilize, segment shall use 'middle' of shot as the ref. frame
 - fadein: fadein is always done on a the same image. No need for someting else.
 - stabilize: when table is disable, set qWidgetItem to disabled (text should be gray)
-
+- fade_in/shot duration is not tracked in the hash code, this means that the generated shot video used by both fr/en has to be deleted when switch fr/en (will not impact any end user except me!)

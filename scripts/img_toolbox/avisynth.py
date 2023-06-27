@@ -185,6 +185,7 @@ def avisynth_deinterlace(shot, image_list,
         ffmpeg_command = ffmpeg_command_common + [
             "-i", os.path.abspath(script_filepath),
             "-r", str(25),
+            "-vf", "setdar=dar=4:3",
             '-pixel_format', 'bgr24',
             "-threads", "4",
             "-vcodec", "ffv1",
