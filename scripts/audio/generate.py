@@ -69,21 +69,32 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
     input_filepath = extract_audio(db, k_ep, k_ed, force=force)
 
     # Read the input audio file
-    channels_count, sample_rate, in_track, duration = read_audio_file(input_filepath, verbose=True)
+    channel_count, sample_rate, in_track, duration = read_audio_file(input_filepath, verbose=True)
     sample_rate = int(sample_rate / 1000)
 
     print(f"{current_datetime_str()} generate audio: {k_ep}")
 
-    if channels_count != 1:
-        sys.exit(f"error: generate_audio: only mono is supported for {k_ep}")
+    if verbose:
+        print(f"sample rate: {sample_rate}")
+        print(f"in_track: {in_track}")
+        print(f"duration: {duration}")
+        print(f"channels: {channel_count}")
 
-    # Generate an output buffer
+        pprint(db_audio)
+
+    # Create output buffers
     out_left_channel = np.empty((0,0), dtype=np.int32)
-    in_left_channel = in_track
+    out_right_channel = np.empty((0,0), dtype=np.int32)
+    if channel_count > 1:
+        in_left_channel = in_track[:, 0]
+        in_right_channel = in_track[:, 1]
+    else:
+        in_left_channel = in_track
     in_track_dtype = in_left_channel.dtype
 
     # Generate an output file
-    out_left_channel = np.empty((0,0), dtype=in_track_dtype)
+    ext = db['common']['settings']['audio_format']
+
     frames_count_prev = 0
     for k in K_AUDIO_PARTS:
         if db_audio[k]['duration'] == 0:
@@ -97,41 +108,69 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
             if verbose:
                 print("\t\tavsync: %d ((%.1ff))" % (samples_count, ms_to_frames(samples_count/sample_rate)))
             out_left_channel = np.append(out_left_channel, np.full(abs(samples_count), 0, dtype=in_track_dtype))
+            if channel_count > 1:
+                out_right_channel = np.append(out_right_channel, np.full(abs(samples_count), 0, dtype=in_track_dtype))
 
         # Concatenate segments
         for s in db_audio[k]['segments']:
+            start = int(s['start'] * sample_rate)
+            end = int(s['end'] * sample_rate)
+
             if 'k_ep' in s.keys():
                 # Import this segment from another episode
                 print("info: generate_audio: import from other episode")
                 k_ep_src = s['k_ep']
                 input_directory = os.path.join(db[k_ep_src]['target']['cache_path'], "audio")
-                tmp_filename = "%s_%s_audio_extract.%s" % (k_ep_src, k_ed, db['common']['settings']['audio_format'])
+                tmp_filename = f"{k_ep_src}_{k_ed}_audio_extract.{ext}"
                 tmp_filepath = os.path.join(input_directory, tmp_filename)
                 if not os.path.exists(tmp_filepath):
                     tmp_filepath = extract_audio(db, k_ep_src, k_ed, force=force, verbose=verbose)
+                if verbose:
+                    print(f"use file from another episode")
+                    print(f"\tsample rate: {sample_rate}")
+                    print(f"\tin_track: {in_track}")
+                    print(f"\tduration: {duration}")
+                    print(f"\tchannels: {channel_count}")
 
-                channels_count, sample_rate_src, in_left_channel_tmp, duration = read_audio_file(tmp_filepath)
+                channel_count, sample_rate_src, in_track, duration = read_audio_file(tmp_filepath)
+                if channel_count > 1:
+                    in_left_channel_tmp = in_track[:, 0]
+                    in_right_channel_tmp = in_track[:, 1]
+                else:
+                    in_left_channel_tmp = in_track
+
                 sample_rate_src = int(sample_rate_src / 1000)
                 start = int(s['start'] * sample_rate_src)
                 end = int(s['end'] * sample_rate_src)
                 if verbose:
-                    print("\t\t[%d ... %d] (%d) ([(%.1ff) ... (%.1ff)] (%.1ff))" % (start, end, end-start,
+                    print(f"\t\t[{start} ... {end}] ({end-start}) ([%.1ff ... %.1ff] (%.1ff))" % (
                         ms_to_frames(start/sample_rate_src), ms_to_frames(end/sample_rate_src), ms_to_frames((end-start)/sample_rate_src)))
                 out_left_channel = np.append(out_left_channel, in_left_channel_tmp[start:end])
+                if channel_count > 1:
+                    out_right_channel = np.append(out_right_channel, in_right_channel_tmp[start:end])
+
                 continue
+            else:
+                tmp_left = np.array(in_left_channel[start:end])
+                if channel_count > 1:
+                    tmp_right = np.array(in_right_channel[start:end])
+
 
             if 'silence' in s.keys():
                 samples_count = frames_to_ms(ms_to_frames(int(s['silence'])) * sample_rate)
                 if verbose:
                     print("\t\tsilence: %d ms" % (samples_count / sample_rate))
                 out_left_channel = np.append(out_left_channel, np.full(samples_count, 0, dtype=in_track_dtype))
+                if channel_count > 1:
+                    out_right_channel = np.append(out_right_channel, np.full(samples_count, 0, dtype=in_track_dtype))
             else:
-                start = int(s['start'] * sample_rate)
-                end = int(s['end'] * sample_rate)
+                # Append segment
                 if verbose:
                     print("\t\t[%d ... %d] (%d) ([(%.1ff) ... (%.1ff)] (%.1ff))" % (start, end, end-start,
                         ms_to_frames(start/sample_rate), ms_to_frames(end/sample_rate), ms_to_frames((end-start)/sample_rate)))
-                out_left_channel = np.append(out_left_channel, in_left_channel[start:end])
+                out_left_channel = np.append(out_left_channel, tmp_left.astype(in_track.dtype))
+                if channel_count > 1:
+                    out_right_channel = np.append(out_right_channel, tmp_right.astype(in_track.dtype))
 
         # Apply fadeout at the end of this part
         if db_audio[k]['fadeout'] != 0:
@@ -151,7 +190,12 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
                 fade_curve = np.power(0.1, fade_curve * 5)
 
             out_len = len(out_left_channel)
+            if verbose:
+                print(f"\tout_len(L): {out_len}")
+                print(f"\tout_len(R): {len(out_right_channel)}")
             out_left_channel[out_len - samples_count:] = out_left_channel[out_len - samples_count:] * fade_curve
+            if channel_count > 1:
+                out_right_channel[out_len - samples_count:] = out_right_channel[out_len - samples_count:] * fade_curve
 
 
 
@@ -164,6 +208,8 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
             if verbose:
                 print("\t\tsilence: %d (%.1ff)" % (samples_count, ms_to_frames(samples_count/sample_rate)))
             out_left_channel = np.append(out_left_channel, np.full(samples_count, 0, dtype=in_track_dtype))
+            if channel_count > 1:
+                out_right_channel = np.append(out_right_channel, np.full(samples_count, 0, dtype=in_track_dtype))
 
         frames_count = ms_to_frames(len(out_left_channel)/sample_rate)
         if verbose:
@@ -174,10 +220,14 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
     if verbose:
         print("\t->%s" % (output_filepath))
 
-    # Create a stereo buffer (16bit)
-    out_track_stereo = np.ascontiguousarray(
-        np.vstack((out_left_channel.astype(np.int16),
-        out_left_channel.astype(np.int16))).transpose())
+    if channel_count > 1:
+        out_track_stereo = np.ascontiguousarray(np.vstack((out_left_channel, out_right_channel)).transpose())
+    else:
+        # Create a stereo buffer (16bit)
+        out_track_stereo = np.ascontiguousarray(
+            np.vstack((out_left_channel.astype(np.int16),
+            out_left_channel.astype(np.int16))).transpose())
+
 
     write_track_to_audio_file(output_filepath, out_track_stereo, sample_rate=sample_rate*1000)
 
@@ -207,7 +257,7 @@ def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbos
     input_filepath = extract_audio(db, k_ep, k_ed, force=force)
 
     # Read the input audio file
-    channels_count, sample_rate, in_track, duration = read_audio_file(input_filepath, verbose=True)
+    channel_count, sample_rate, in_track, duration = read_audio_file(input_filepath, verbose=True)
     sample_rate = int(sample_rate / 1000)
 
     print("%s generate audio: %s from %s" % (current_datetime_str(), k_part_g, k_ep), flush=True)
@@ -215,13 +265,13 @@ def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbos
         print(f"sample rate: {sample_rate}")
         print(f"in_track: {in_track}")
         print(f"duration: {duration}")
-        print(f"channels: {channels_count}")
+        print(f"channels: {channel_count}")
 
         pprint(db_audio)
 
     # Generate an output buffer
     out_left_channel = np.empty((0,0), dtype=np.int32)
-    if channels_count == 2:
+    if channel_count > 1:
         in_left_channel = in_track[:, 0]
         in_right_channel = in_track[:, 1]
         out_right_channel = np.empty((0,0), dtype=np.int32)
@@ -239,7 +289,7 @@ def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbos
         if verbose:
             print("\t\tavsync: (%d)" % (samples_count))
         out_left_channel = np.append(out_left_channel, np.full(abs(samples_count), 0, dtype=in_track_dtype))
-        if channels_count == 2:
+        if channel_count > 1:
             out_right_channel = np.append(out_right_channel, np.full(abs(samples_count), 0, dtype=in_track_dtype))
 
     # Concatenate segments
@@ -248,14 +298,14 @@ def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbos
         end = int(s['end'] * sample_rate)
 
         tmp_left = np.array(in_left_channel[start:end])
-        if channels_count == 2:
+        if channel_count > 1:
             tmp_right = np.array(in_right_channel[start:end])
 
         if 'gain' in s.keys():
             # Apply gain
             gain = 10**(s['gain']/10.0)
             tmp_left = gain * np.array(tmp_left)
-            if channels_count == 2:
+            if channel_count > 1:
                 tmp_right = gain * np.array(tmp_right)
             if verbose:
                 print("\t\t[%d ... %d], gain=%.1fdB (%.02f)\t(%d)" % (start, end, s['gain'], gain, end-start))
@@ -268,7 +318,7 @@ def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbos
         # Append segment
         if (end-start) > 0:
             out_left_channel = np.append(out_left_channel, tmp_left.astype(in_track.dtype))
-            if channels_count == 2:
+            if channel_count > 1:
                 out_right_channel = np.append(out_right_channel, tmp_right.astype(in_track.dtype))
 
         if 'silence' in s.keys():
@@ -277,7 +327,7 @@ def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbos
             if verbose:
                 print("\t\tsilence: (%d)" % (samples_count))
             out_left_channel = np.append(out_left_channel, np.full(samples_count, 0, dtype=in_track_dtype))
-            if channels_count == 2:
+            if channel_count > 1:
                 out_right_channel = np.append(out_right_channel, np.full(samples_count, 0, dtype=in_track_dtype))
 
 
@@ -287,14 +337,14 @@ def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbos
         if verbose:
             print("\tsilence: (%d)" % (samples_count))
         out_left_channel = np.append(out_left_channel, np.full(samples_count, 0, dtype=in_track_dtype))
-        if channels_count == 2:
+        if channel_count > 1:
             out_right_channel = np.append(out_right_channel, np.full(samples_count, 0, dtype=in_track_dtype))
 
     if verbose:
         print("\t->%s" % (output_filepath))
 
     # Create a stereo buffer (16bit)
-    if channels_count == 2:
+    if channel_count > 1:
         out_track_stereo = np.ascontiguousarray(np.vstack((out_left_channel, out_right_channel)).transpose())
     else:
         out_track_stereo = np.ascontiguousarray(

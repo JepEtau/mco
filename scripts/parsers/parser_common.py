@@ -14,7 +14,7 @@ from utils.pretty_print import *
 from utils.process import get_process_cfg
 
 
-def parse_common_configuration(db, config_path):
+def parse_common_configuration(db, config_path, language:str=''):
     verbose = False
 
     if verbose:
@@ -72,7 +72,7 @@ def parse_common_configuration(db, config_path):
     # Clean settings
     #=============================================================================
     for k, v in db_common['settings'].items():
-        for c in ['\"', '\r', '\n']:
+        for c in ['\"', '\'','\r', '\n']:
             v = v.replace(c, '')
         db_common['settings'][k] = v
 
@@ -206,5 +206,20 @@ def parse_common_configuration(db, config_path):
     if verbose:
         pprint(db)
         sys.exit()
+
+
+    # Language
+    #===========================================================================
+    # lower priority: common.ini
+    if 'language' not in db_common['settings'].keys():
+        db_common['settings']['language'] = 'fr'
+
+    # middle priority: 'en' file stored in database folder
+    if os.path.exists(os.path.normpath(os.path.abspath(os.path.join(config_path, 'en')))):
+        db_common['settings']['language'] = 'en'
+
+    # highest priority: argument
+    if language != '':
+        db_common['settings']['language'] = language
 
 

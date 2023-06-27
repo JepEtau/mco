@@ -251,9 +251,13 @@ def generate_video(db, k_ed:str, k_ep:str,
         concatenation_filepath = create_concatenation_file_video(db,
             k_ep=k_ep, k_part=k_part, video_files=video_files)
 
+        # Get language
+        language = db[k_ep]['audio']['lang']
+        lang_str = '' if language == 'fr' else f"_{language}"
+
         # Concatenate video clips
         episode_video_filepath = os.path.join(db[k_ep]['cache_path'], "video",
-            f"{k_ep}_video.mkv")
+            f"{k_ep}_video{lang_str}.mkv")
 
         # Force concatenation
         # if not os.path.exists(episode_video_filepath) or force or do_regenerate:

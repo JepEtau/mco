@@ -1,27 +1,25 @@
 # TODO script
 (1)
-- When generating a 'deinterlaced' episode, the concatenation shall use the deinterlaced g_debut/g_fin
-
-- Integrate color fix/speckle noise
-- add pccm method from https://github.com/dstein64/colortrans
-
-- stab: !!! ROI does not work for lowres img !!!
+- bug: DAR is not correct in deinterlaced video file
+- bug: audio track is longer than video and silence is added: do a video fadeout
+- bug: stab: !!! ROI does not work for lowres img !!!
     -> modified, to validate
-- stab: !!! is ROI mask really works with gftt? !!!
+- bug: stab: !!! does ROI mask really work with gftt? !!!
     -> to investigate
+- bug: chapters are not corrects in english version
 
-- avisynth to upscale reportage: implemented. To be validated
+- enhancement: avisynth to upscale/sharpen reportage: implemented. To be validated
+- enhancement: integrate color fix/speckle noise
+- enhancement: add pccm method from https://github.com/dstein64/colortrans
+- enhancement: When generating a 'deinterlaced' episode, the concatenation function shall use the deinterlaced g_debut/g_fin
 
-- what about autocrop: use it in the chain or as a tool (video editor)?
-- Add FFmpeg stab. test on ep02: try on shots 7/10/22/30/32
+- enhancement: what about autocrop: use it in the chain or as a tool (video editor)?
+- enhancement: Add FFmpeg stab. test on ep02: try on shots 7/10/22/30/32
 
-- Add english language:
-    * how to choose:
-    (OK)- default is fr.
-        - if language=en in cli (priority:1) or a file named 'en' in database (priority:2) or in common.ini (priority:3) -> select 'en' otherwise 'fr'
-    * for shots in ##_target.ini:
-        - [video.<lang>], [shots.<lang>]
-        - "000_<lang>" define a key specific to language (e.g. "000_en= ep=1, ed=f")
+- enhancement: Add english language:
+    * shots in ##_target.ini:
+        - [video.<lang>], [shots.<lang>] <- ok
+        - "000_<lang>" define a key specific to language (e.g. "000_en= ep=1, ed=f") <- ?
     * g_fin: shots are not the same... missing part of a shot in 'f' <- good way to try different implementations
 
 
@@ -30,8 +28,10 @@
 - stab: use previous stabilized frame as the reference for the new segment to avoid an artifact
 - stab: get mean/contrast to choos correct algo rather than selecting between auto/contrast?
 - Use TypedDict and documentation to improve readibility/understanding
+- enhancement: remove '_en' suffix when generating the final video file
 
 (3)
+- refactoring of audio/generate.py: merge the 2 functions
 - (?) smooth stabilization: to evaluate (g_fin)
 - stats: list unused curves. reason: clean the db
 - effects: verify when replacing shots (asuivre/precedemment)

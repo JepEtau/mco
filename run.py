@@ -54,7 +54,7 @@ def main():
         help="Numéro d'épisode de 1 à 39. Ignoré pour la génération des génériques.")
 
     parser.add_argument("--lang",
-        default='fr',
+        default='',
         required=False,
         choices=['fr', 'en'],
         help="Language and video edition")
@@ -158,6 +158,7 @@ def main():
     print("Episode: %d" % (episode_no))
     if arguments.part != '':
         print("Part: %s" % (arguments.part))
+    print(f"Language: {arguments.lang if arguments.lang != '' else 'auto'}")
     print("Tasks:")
     print("\t- parse database")
     print("\t- consolidate generiques")
@@ -183,6 +184,7 @@ def main():
         # Parse database
         parse_database(g_database, k_ep=k_episode, lang=arguments.lang)
         gc.collect()
+        print(p_lightcyan(f"Language: {g_database['common']['settings']['language']}"))
 
         if arguments.part in K_GENERIQUES:
             print("\t\t- %s: " % (arguments.part))
@@ -192,28 +194,36 @@ def main():
 
         elif arguments.part != '':
             print("\t\t- precedemment, episode, g_asuivre, asuivre, g_reportage, reportage: ")
-            pprint(g_database[k_episode]['video']['f'].keys())
-            pprint(g_database[k_episode]['video']['f'][arguments.part]['filters'])
+
+            # debugging purpose, modify this
+            # pprint(g_database[k_episode]['video']['f'].keys())
+            # pprint(g_database[k_episode]['video']['f'][arguments.part]['filters'])
+            # pprint(g_database[k_episode]['video']['f'][arguments.part])
+            print(p_lightcyan(f"--------------------------- target -------------------------------"))
+            pprint(g_database[k_episode]['video']['target'][arguments.part])
         print()
 
         # pprint(g_database[k_episode]['audio'])
         # pprint(g_database[k_episode]['video']['target'])
         sys.exit()
 
+    afilter = 'final'
+    print("\t- audio: ", end='')
     if arguments.afilter != '' and arguments.shot == -1:
         afilter = arguments.afilter
-        print("\t- audio:")
         if arguments.part in K_GENERIQUES:
-            print("\t\t- %s: " % (arguments.part), end='')
+            print("\n\t\t- %s: " % (arguments.part), end='')
         elif arguments.part != '':
-            print("\t\t- precedemment, episode, g_asuivre, asuivre, g_reportage, reportage: ", end='')
+            print("\n\t\t- precedemment, episode, g_asuivre, asuivre, g_reportage, reportage: ", end='')
         else:
-            print("\t\t- all: ", end='')
+            print("\n\t\t- all: ", end='')
 
-        if arguments.afilter == 'extract':
-            print("extract only")
-        elif arguments.afilter == 'final':
-            print("final")
+    if afilter == 'extract':
+        print("extract only")
+    elif afilter == 'final':
+        print("final")
+    else:
+        print("not processed")
 
     if arguments.frames and video_filter == '':
         # Force to final if vfilter is not specified

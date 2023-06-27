@@ -84,7 +84,7 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
 
     # Write into the concatenation file
     for p in images_filepath:
-        concatenation_file.write("file \'%s\' \n" % (p))
+        concatenation_file.write(f"file \'{p}\' \n")
         concatenation_file.write(duration_str)
     concatenation_file.close()
 
@@ -136,7 +136,7 @@ def create_single_concatenation_file(db, k_ep, k_part, shot, previous_concatenat
 
     # Write into the concatenation file
     for p in images_filepath:
-        concatenation_file.write("file \'%s\' \n" % (p))
+        concatenation_file.write(f"file \'{p}\' \n")
         concatenation_file.write(duration_str)
     concatenation_file.close()
 
@@ -161,11 +161,15 @@ def create_concatenation_file_video(db, k_ep, k_part, video_files:dict):
         print_lightcyan("create_concatenation_file_video %s:%s" % (k_ep, k_part))
         pprint(video_files)
 
+    # Assume language is same for k_ep and start/end/to_follow/documentary credits
+    language = db[k_ep]['audio']['lang']
+    lang_str = '' if language == 'fr' else f"_{language}"
+
     for k_ep_or_g in [k_ep, 'g_debut', 'g_fin']:
 
         if k_ep_or_g in ['g_debut', 'g_fin']:
             k_part = k_ep_or_g
-            suffix = "%s" % (k_part)
+            suffix = f"{k_part}"
         else:
             suffix = f"_{k_part}" if k_part != '' else ''
             suffix = f"{k_ep}{suffix}_video"
@@ -178,29 +182,29 @@ def create_concatenation_file_video(db, k_ep, k_part, video_files:dict):
         concatenation_filepath = os.path.join(
             db[k_ep_or_g]['cache_path'],
             "concatenation",
-            f"{suffix}.txt")
+            f"{suffix}{lang_str}.txt")
         concatenation_file = open(concatenation_filepath, "w")
         if verbose:
-            print_green("create_concatenation_file_video: %s" % (concatenation_filepath))
+            print_green(f"create_concatenation_file_video: {concatenation_filepath}")
 
         if k_part in ['g_debut', 'g_fin']:
             for k_p in K_PARTS:
                 for shot in video_files[k_p]:
-                    p = shot['path'].replace('.txt', f"_{shot['hash']}_{shot['last_task']}.mkv")
+                    p = shot['path'].replace('.txt', f"_{shot['hash']}_{shot['last_task']}{lang_str}.mkv")
                     p = p.replace('concatenation', 'video')
-                    concatenation_file.write("file \'%s\' \n" % (p))
+                    concatenation_file.write(f"file \'{p}\' \n")
         else:
             for k_p in K_PARTS:
                 try:
                     for filepath in video_files[k_p]['files']:
                         p = filepath.replace('concatenation', 'video')
-                        concatenation_file.write("file \'%s\' \n" % (p))
+                        concatenation_file.write(f"file \'{p}\' \n")
                 except:
                     if k_p in K_GENERIQUES:
                         for shot in video_files[k_p]['shotlist']:
-                            p = shot['path'].replace('.txt', f"_{shot['hash']}_{shot['last_task']}.mkv")
+                            p = shot['path'].replace('.txt', f"_{shot['hash']}_{shot['last_task']}{lang_str}.mkv")
                             p = p.replace('concatenation', 'video')
-                            concatenation_file.write("file \'%s\' \n" % (p))
+                            concatenation_file.write(f"file \'{p}\' \n")
         concatenation_file.close()
         return concatenation_filepath
 
@@ -259,12 +263,9 @@ def combine_images_into_video(db_common, k_part, video_shot, force=False, simula
         suffix += "_%s" % (video_shot['hash'])
     if video_shot['last_task'] != '':
         suffix += "_%s" % (video_shot['last_task'])
-    shot_filepath = shot_filepath.replace('.txt', '%s.mkv' % (suffix))
+    shot_filepath = shot_filepath.replace('.txt', f'{suffix}.mkv')
 
-    # print_lightgreen(f"Combine images into video: ", end='')
-    print_lightgrey(f"\tcombine images into video: ", end='')
-    print_lightcyan(f"{k_part}: ", end='')
-    print(f"{shot_filepath}")
+    print(lightgrey(f"\tcombine images into video:"), p_lightcyan(f"{k_part}:"), f"{shot_filepath}")
 
     if not os.path.exists(shot_filepath) or force or DEBUG_DESHAKE:
         db_settings = db_common['settings']
@@ -320,13 +321,12 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, sim
     print(p_lightgreen(f"Merge audio and video tracks:"), p_lightcyan(f"{k_ep_or_g}"))
     cache_path = db[k_ep_or_g]['cache_path']
 
+    language = db[k_ep_or_g]['audio']['lang']
+    lang_str = '' if language == 'fr' else f"_{language}"
     if k_ep_or_g in ['g_debut', 'g_fin']:
-        language = db[k_ep_or_g]['audio']['lang']
-        lang_str = '' if language == 'fr' else f"_{language}"
         audio_video_filepath = os.path.join(cache_path, f"{k_ep_or_g}{lang_str}.mkv")
-
     else:
-        audio_video_filepath = os.path.join(cache_path, f"{k_ep_or_g}_av.mkv")
+        audio_video_filepath = os.path.join(cache_path, f"{k_ep_or_g}_av{lang_str}.mkv")
 
     if os.path.exists(audio_video_filepath) and not force and not simulation:
         return
@@ -336,10 +336,10 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, sim
     # Get nb of frames from video stream
     if k_ep_or_g in ['g_debut', 'g_fin']:
         video_filepath = os.path.join(cache_path, "video",
-            f"{k_ep_or_g}_video_{db[k_ep_or_g]['video']['hash']}{suffix}.mkv")
+            f"{k_ep_or_g}_video_{db[k_ep_or_g]['video']['hash']}{suffix}{lang_str}.mkv")
 
     else:
-        video_filepath = os.path.join(cache_path, "video", f"{k_ep_or_g}_video.mkv")
+        video_filepath = os.path.join(cache_path, "video", f"{k_ep_or_g}_video{lang_str}.mkv")
 
     try:
         video_frames_count = get_video_duration(db['common'], video_filepath, integrity=False)[1]
@@ -385,17 +385,20 @@ def merge_audio_and_video_tracks(db, k_ep_or_g, last_task, force:bool=False, sim
 
 def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict,
                       force:bool=False, simulation:bool=False):
-    verbose=False
+    verbose = False
     print_lightcyan(f"\nConcatenate shots: {k_ep}:{k_part}")
     if verbose:
         pprint(video_files)
 
     if k_part in ['g_debut', 'g_fin']:
-        suffix = "%s_video" % (k_part)
+        suffix = f"{k_part}_video"
         k_ep_or_g = k_part
     else:
-        suffix = "%s_%s" % (k_ep, k_part)
+        suffix = f"{k_ep}_{k_part}"
         k_ep_or_g = k_ep
+
+    language = db[k_ep_or_g]['audio']['lang']
+    lang_str = '' if language == 'fr' else f"_{language}"
 
     # Folder used to store concatenation file
     create_folder_for_concatenation(db, k_ep, k_part)
@@ -412,19 +415,20 @@ def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict,
         concatenation_filepath = os.path.join(cache_directory,
             "concatenation",
             f"{suffix}_{video_files['hash']}{last_task_str}.txt")
+
         concatenation_file = open(concatenation_filepath, "w")
         for shot in video_files['shotlist']:
             filepath = shot['path']
             hash = shot['hash']
             p = filepath.replace('.txt', f"_{hash}{last_task_str}.mkv")
             p = p.replace('concatenation', 'video')
-            concatenation_file.write("file \'%s\' \n" % (p))
+            concatenation_file.write(f"file \'{p}\' \n")
         concatenation_file.close()
 
         # Output video file
         output_filepath = os.path.join(cache_directory,
             "video",
-            f"{suffix}_{video_files['hash']}{last_task_str}.mkv")
+            f"{suffix}_{video_files['hash']}{last_task_str}{lang_str}.mkv")
 
         if verbose:
             print("%s %s: concatenate shots into a single clip: %s" % (current_datetime_str(), k_part, output_filepath))
@@ -455,11 +459,15 @@ def concatenate_shots(db, k_ep:str, k_part:str, video_files:dict,
     return concatenation_filepath, output_filepath
 
 
+
 def concatenate_all_clips(db, k_ep:str, force=False, simulation:bool=False) -> None:
     print(p_lightgreen(f"Concatenate all A/V clips:"), p_lightcyan(f"{k_ep}"))
 
+    language = db[k_ep]['audio']['lang']
+    lang_str = '' if language == 'fr' else f"_{language}"
+
     cache_directory = db[k_ep]['cache_path']
-    output_filename = f"{k_ep}_no_chapters.mkv"
+    output_filename = f"{k_ep}_no_chapters{lang_str}.mkv"
     output_filepath = os.path.join(cache_directory, output_filename)
     print(f"\tA/V file (no chapters): {output_filepath}")
 
@@ -468,18 +476,18 @@ def concatenate_all_clips(db, k_ep:str, force=False, simulation:bool=False) -> N
 
     # Create concatenation file
     create_folder_for_concatenation(db, k_ep=k_ep, k_part='')
-    concatenation_filepath = os.path.join(cache_directory, "concatenation", "%s.txt" % (k_ep))
+    concatenation_filepath = os.path.join(cache_directory, "concatenation", f"{k_ep}.txt")
     concatenation_filepath = os.path.normpath(os.path.join(os.getcwd(), concatenation_filepath))
     concatenation_file = open(concatenation_filepath, "w")
 
-    p = os.path.join(db['g_debut']['cache_path'], "g_debut.mkv")
-    concatenation_file.write("file \'%s\' \n" % (p))
+    p = os.path.join(db['g_debut']['cache_path'], f"g_debut{lang_str}.mkv")
+    concatenation_file.write(f"file \'{p}\' \n")
 
-    p = os.path.join(cache_directory, "%s_av.mkv" % (k_ep))
-    concatenation_file.write("file \'%s\' \n" % (p))
+    p = os.path.join(cache_directory, f"{k_ep}_av{lang_str}.mkv")
+    concatenation_file.write(f"file \'{p}\' \n")
 
-    p = os.path.join(db['g_fin']['cache_path'], "g_fin.mkv")
-    concatenation_file.write("file \'%s\' \n" % (p))
+    p = os.path.join(db['g_fin']['cache_path'], f"g_fin{lang_str}.mkv")
+    concatenation_file.write(f"file \'{p}\' \n")
 
     concatenation_file.close()
 
@@ -505,22 +513,24 @@ def concatenate_all_clips(db, k_ep:str, force=False, simulation:bool=False) -> N
 
 def add_chapters(db, k_ep:str, simulation:bool=False) -> None:
     # Merge chapters to the video file
+    language = db[k_ep]['audio']['lang']
+    lang_str = '' if language == 'fr' else f"_{language}"
 
     cache_directory = db[k_ep]['cache_path']
-    input_filename = f"{k_ep}_no_chapters.mkv" % ()
+    input_filename = f"{k_ep}_no_chapters{lang_str}.mkv"
     input_filepath = os.path.join(cache_directory, input_filename)
 
     output_directory = db['common']['directories']['outputs']
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
-    final_filename = "%s.mkv" % (k_ep)
+    final_filename = f"{k_ep}{lang_str}.mkv"
     final_filepath = os.path.join(output_directory, final_filename)
 
     print(p_lightgreen(f"Add chapters:"), p_lightcyan(f"{k_ep}"))
     print(f"\tFinal file: {final_filepath}")
 
     # Create file for chapters
-    chapters_filepath = os.path.join(cache_directory, "concatenation", "%s_chapters.txt" % (k_ep))
+    chapters_filepath = os.path.join(cache_directory, "concatenation", f"{k_ep}_chapters{lang_str}.txt")
     chapters_filepath = os.path.normpath(os.path.join(os.getcwd(), chapters_filepath))
     chapters_file = open(chapters_filepath, "w")
 

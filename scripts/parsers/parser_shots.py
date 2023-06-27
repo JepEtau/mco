@@ -114,8 +114,7 @@ def parse_shotlist(db_shots:list[Shot], k_ep, k_part, shotlist_str) -> None:
 
 def parse_shotlist_new(db_shots, config, k_section, verbose=False) -> None:
     for k_option in config.options(k_section):
-        value_str = config.get(k_section, k_option)
-        value_str = value_str.replace(' ','')
+        value_str = config.get(k_section, k_option).replace(' ','')
 
         shot_no = int(k_option)
         shot_properties = value_str.split(',')

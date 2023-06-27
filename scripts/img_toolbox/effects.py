@@ -125,7 +125,7 @@ def effect_fadein(db, shot):
     for count, img_output in zip(range(fadein_count), output_image_list):
         # Calculate coefficient: last frame is not completely black because there is always
         # a silence after this (i.e. black frames)
-        coef = float(count) / fadein_count
+        coef = 1 - np.power(0.07, (float(count) / fadein_count))
         # keep print for debug until end of validation
         print(f"\t{count:02d}: {img_input[cache_strlen:]} -> {img_output[cache_strlen:]}, coef={coef:.02f}")
 

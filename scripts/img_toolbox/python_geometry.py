@@ -14,6 +14,7 @@ from img_toolbox.utils import (
     FINAL_FRAME_WIDTH,
     MAX_FRAMES_COUNT,
 )
+from utils.common import K_GENERIQUES
 from utils.pretty_print import *
 from utils.hash import (
     calculate_hash,
@@ -75,7 +76,7 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
     # Output image list
     if do_save:
         # Specific to generiques
-        if shot['dst']['k_part'].startswith('g_'):
+        if shot['dst']['k_part'] in K_GENERIQUES:
             output_folder_dst = output_folder.replace(shot['k_ep'],shot['dst']['k_ep'])
         else:
             output_folder_dst = output_folder

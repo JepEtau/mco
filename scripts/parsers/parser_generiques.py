@@ -29,8 +29,10 @@ from utils.pretty_print import *
 #   Parse the common episode file for all editions
 #
 #===========================================================================
-def parse_generiques_target(db, language:str='fr'):
+def parse_generiques_target(db):
     verbose = False
+
+    language = db['common']['settings']['language']
 
     for k_part_g in K_GENERIQUES:
 
@@ -108,7 +110,9 @@ def parse_generiques_target(db, language:str='fr'):
             k_ep_src = db[k_part_g]['video']['src']['k_ep']
         except:
             pprint(db[k_part_g])
-            sys.exit(f"Error: {k_part_g}: k_ed:k_ep must be defined, missing \'source\' option")
+            sys.exit(f"Error: {k_part_g}: k_ed:k_ep must be defined, "
+                     + f"missing \'source\' option in {filepath}, "
+                     + f"lang: {db_audio_target['lang']}")
 
 
 
