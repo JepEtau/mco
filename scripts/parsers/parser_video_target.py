@@ -10,6 +10,7 @@ from utils.common import (
     K_NON_GENERIQUE_PARTS,
     K_PARTS,
 )
+from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 
 
@@ -69,7 +70,8 @@ def parse_video_target_section(db_video, config:ConfigParser, k_section, k_ep):
         # if start is None:
         #     sys.exit("Error: parse_video_target_section: start and end values are required for %s:%s in target file" % (k_ep, k_part))
 
-        db_video[k_part] = {
+        nested_dict_set(db_video, dict(), k_part)
+        db_video[k_part].update({
             'effects': {
                 'fadein': part_fadein,
                 'fadeout': part_fadeout,
@@ -78,7 +80,7 @@ def parse_video_target_section(db_video, config:ConfigParser, k_section, k_ep):
             'end': end,
             'count': (end - start) if end > 0 else -1,
             'k_ed_src': k_part_ed_src,
-        }
+        })
         if verbose and part_fadein != 0:
             print_lightcyan(f"fadein != 0: {k_part}")
             print(db_video[k_part])

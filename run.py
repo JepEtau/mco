@@ -371,7 +371,7 @@ def main():
     if k_ed == '':
         # Create final video only if edition is not specified
         if do_av_merge:
-            if arguments.part in ['g_debut', 'g_fin']:
+            if arguments.part in ['g_debut', 'g_fin'] and arguments.shot == -1:
                 # Part is specified, merge audio and video files
                 combine_av_tracks(g_database,
                     k_ep_or_g=arguments.part,
@@ -403,7 +403,10 @@ def main():
 
                 # Add chapters to the video file and write into output folder
                 if k_episode != 'ep00':
-                    add_chapters(g_database, k_ep=k_episode, simulation=arguments.simulate)
+                    add_chapters(g_database,
+                        k_ep=k_episode,
+                        is_final=True if arguments.vfilter in ['', 'final'] else False,
+                        simulation=arguments.simulate)
 
 
 if __name__ == "__main__":

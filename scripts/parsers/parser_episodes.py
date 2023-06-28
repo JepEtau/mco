@@ -138,11 +138,22 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39):
 
             # Shots
             #----------------------------------------------------
-            elif k_section.startswith('shots_'):
-                k_part = k_section[len('shots_'):]
+            elif k_section.startswith('shots'):
+                lang = 'fr'
+                try:
+                    k_section_part, lang = k_section.split('.')
+                except:
+                    k_section_part = k_section
+
+                try:
+                    _, k_part = k_section_part.split('_')
+                except:
+                    continue
+
                 nested_dict_set(db_video_target, list(), k_part, 'shots')
-                parse_target_shotlist(db_video_target[k_part]['shots'],
-                    config, k_section, verbose=False)
+                if lang == db_audio_target['lang']:
+                    parse_target_shotlist(db_video_target[k_part]['shots'],
+                        config, k_section, lang)
 
 
 #===========================================================================

@@ -180,7 +180,6 @@ def parse_database(database, k_ep, lang:str=''):
         # if k_part_g == 'g_fin':
         #     sys.exit()
 
-
     # Consolidate database for the episode ONLY
     if k_ep != 'ep00':
         for k_p in K_NON_GENERIQUE_PARTS:
@@ -200,9 +199,6 @@ def parse_database(database, k_ep, lang:str=''):
         pprint_episode(database, k_ep=k_ep)
     else:
         pprint_g_debut_fin(database)
-
-    # pprint_video(database[k_ep]['common']['video'])
-
 
 
 

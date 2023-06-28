@@ -1,35 +1,28 @@
 # TODO script
 (1)
-- bug: audio track is longer than video and silence is added: do a video fadeout
 - bug: stab: !!! ROI does not work for lowres img !!!
     -> modified, to validate
 - bug: stab: !!! does ROI mask really work with gftt? !!!
     -> to investigate
 
 - enhancement: avisynth to upscale/sharpen documentaire: implemented. To be validated
-- enhancement: integrate color fix/speckle noise
+- enhancement: integrate color fix
+- enhancement: integrate speckle noise
 - enhancement: add pccm method from https://github.com/dstein64/colortrans
-- enhancement: When generating a 'deinterlaced' episode, the concatenation function shall use the deinterlaced g_debut/g_fin
 - enhancement: find the old editor for histogram equalization. Will be used for the FR version.
 
 - enhancement: what about autocrop: use it in the chain or as a tool (video editor)?
 - enhancement: Add FFmpeg stab. test on ep02: try on shots 7/10/22/30/32
 
-- enhancement: Add english language:
-    * shots in ##_target.ini:
-        - [video.<lang>], [shots.<lang>] <- ok
-        - "000_<lang>" define a key specific to language (e.g. "000_en= ep=1, ed=f") <- ?
-    * g_fin: shots are not the same... missing part of a shot in 'f' <- good way to try different implementations
-
 
 (2)
 - stab: use multiple software (cv2, ffmpeg) alg in the same shot: currently not implemented. Is this really needed?
-- stab: use previous stabilized frame as the reference for the new segment to avoid an artifact
-- stab: get mean/contrast to choos correct algo rather than selecting between auto/contrast?
-- Use TypedDict and documentation to improve readibility/understanding
-- enhancement: remove '_en' suffix when generating the final video file
+- stab: use previous stabilized frame as the reference for the new segment to avoid possible artifact
+- enhancement: append 'deinterlace' to g_debut/g_fin
 
 (3)
+- enhancement: stab: get mean/contrast to choose an algo rather than selecting between auto/contrast?
+- bug: if audio track is longer than video and silence is added: do a video fadeout. Currently not an issue
 - refactoring of audio/generate.py: merge the 2 functions
 - (?) smooth stabilization: to evaluate (g_fin)
 - stats: list unused curves. reason: clean the db

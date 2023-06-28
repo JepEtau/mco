@@ -33,10 +33,10 @@ CHAPTER_NAMES = {
 
 
 
-def add_chapters(db, k_ep:str, simulation:bool=False) -> None:
-    # Merge chapters to the video file
+def add_chapters(db, k_ep:str, is_final:bool, simulation:bool=False) -> None:
+    # Add chapters to the video file
     language = db[k_ep]['audio']['lang']
-    lang_str = '' if language == 'fr' else f"_{language}"
+    lang_str = '' if language == 'fr' or is_final else f"_{language}"
 
     cache_directory = db[k_ep]['cache_path']
     input_filename = f"{k_ep}_no_chapters{lang_str}.mkv"

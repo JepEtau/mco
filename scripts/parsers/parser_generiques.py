@@ -101,7 +101,7 @@ def parse_generiques_target(db):
 
                 if lang == db_audio_target['lang'] or k_section == 'video':
                     parse_target_shotlist(db_video_target['shots'],
-                        config, k_section, verbose=False)
+                        config, k_section)
 
 
         # Source must be defined before consolidating

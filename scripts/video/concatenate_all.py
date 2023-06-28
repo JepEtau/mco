@@ -19,8 +19,8 @@ def concatenate_all(db, k_ep:str, force=False, simulation:bool=False) -> None:
     output_filepath = os.path.join(cache_directory, output_filename)
     print(f"\tA/V file (without chapters): {output_filepath}")
 
-    if os.path.exists(output_filepath) and not force:
-        return
+    # if os.path.exists(output_filepath) and not force:
+    #     return
 
     # Create concatenation file
     create_folder_for_concatenation(db, k_ep=k_ep, k_part='')

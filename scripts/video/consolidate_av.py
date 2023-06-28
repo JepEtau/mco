@@ -107,7 +107,7 @@ def align_audio_video_durations_g_debut_fin(db, k_ep, k_part_g):
 
 
 def calculate_av_sync(db, k_ep):
-    verbose = True
+    verbose = False
 
     if ('audio' not in db[k_ep].keys()
         or 'video' not in db[k_ep].keys()):
@@ -214,9 +214,10 @@ def calculate_av_sync(db, k_ep):
             # missing video frames, use fade_in
             nested_dict_set(db_video[k_part], ms_to_frames(abs(avsync_ms)), 'effects', 'fadein')
 
-            db_video[k_part].update({
-                'avsync': 0
-            })
+        db_video[k_part].update({
+            'avsync': 0
+        })
+
 
         db_audio[k_part].update({
             'avsync': avsync_ms if avsync_ms > 0 else 0,
@@ -275,7 +276,9 @@ def calculate_av_sync(db, k_ep):
 
 
 def align_audio_video_durations(db, k_ep):
-    K_EP_DEBUG = ''
+    K_EP_DEBUG, K_PART_DEBUG = [''] *2
+    # K_EP_DEBUG = 'ep01'
+    # K_PART_DEBUG = 'asuivre'
     try:
         db_video = db[k_ep]['video']['target']
         db_audio = db[k_ep]['audio']
@@ -327,7 +330,7 @@ def align_audio_video_durations(db, k_ep):
     # precedemment+episode, asuivre, documentaire
     #---------------------------------------------------------------------------
     for k_part in ['episode', 'asuivre', 'documentaire']:
-        if k_ep == K_EP_DEBUG and k_part == 'documentaire' and True:
+        if k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
             print(f"\ndb_video: %s:\n--------------------------------------" % (k_part))
             pprint(db_video[k_part])
 
@@ -366,9 +369,9 @@ def align_audio_video_durations(db, k_ep):
         if k_part == 'episode':
             # this is a special case for episode: precedemment+episode
             # print(f"   rounded audio count episode+precedemment: %d" % (audio_count))
-            db_audio[k_part]['count'] = audio_count - ms_to_frames(db_audio['precedemment']['duration'])
+            db_audio['episode']['count'] = audio_count - ms_to_frames(db_audio['precedemment']['duration'])
             video_count = (db_video['precedemment']['count'] + db_video['precedemment']['avsync']
-                            + db_video[k_part]['count'] + db_video[k_part]['avsync'])
+                            + db_video['episode']['count'] + db_video['episode']['avsync'])
         else:
             db_audio[k_part]['count'] = audio_count
             video_count = db_video[k_part]['count'] + db_video[k_part]['avsync']
@@ -415,8 +418,8 @@ def align_audio_video_durations(db, k_ep):
             db_audio[k_part]['count'] = db_video[k_part]['count']
             # print(f"-> added silence at the end")
 
-        if k_ep == K_EP_DEBUG:
-            print(f"\ndb_video: %s:\n--------------------------------------" % (k_part))
+        if k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
+            print(f"\ndb_video: {k_part}:\n--------------------------------------")
             pprint(db_video[k_part])
 
 
