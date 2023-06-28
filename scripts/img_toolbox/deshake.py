@@ -7,7 +7,7 @@ from img_toolbox.python_deshaker import (
     Python_deshaker,
     apply_cv2_transformation,
 )
-from utils.hash import (
+from processing_chain.hash import (
     calculate_hash,
     log_filter
 )

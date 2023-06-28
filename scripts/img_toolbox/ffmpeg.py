@@ -12,11 +12,11 @@ from img_toolbox.ffmpeg_utils import clean_ffmpeg_filter
 from img_toolbox.utils import MAX_FRAMES_COUNT
 from utils.common import FPS
 from utils.pretty_print import *
-from utils.get_image_list import (
+from processing_chain.get_image_list import (
     FILENAME_TEMPLATE,
     get_image_list,
 )
-from utils.hash import (
+from processing_chain.hash import (
     calculate_hash,
     log_filter
 )

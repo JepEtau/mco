@@ -4,7 +4,7 @@ from img_toolbox.python_deshaker import DEBUG_DESHAKE
 from img_toolbox.utils import STEP_INC
 
 from utils.pretty_print import *
-from utils.get_image_list import (
+from processing_chain.get_image_list import (
     get_image_list_pre_replace,
     get_image_list,
 )

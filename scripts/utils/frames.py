@@ -7,7 +7,7 @@ from utils.pretty_print import *
 
 from shot.consolidate_shot import consolidate_shot
 from shot.utils import get_shot_from_frame_no
-from utils.get_image_list import FILENAME_TEMPLATE
+from processing_chain.get_image_list import FILENAME_TEMPLATE
 from utils.common import K_GENERIQUES
 
 

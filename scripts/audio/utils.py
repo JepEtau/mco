@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys
-
 import numpy as np
 import soundfile as sf
 from scipy.io import wavfile

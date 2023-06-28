@@ -4,13 +4,9 @@ import sys
 import numpy as np
 import os
 from pprint import pprint
-from audio.extract import extract_audio
+from audio.extract_audio_track import extract_audio_track
 
-from utils.common import (
-    K_AUDIO_PARTS,
-    K_GENERIQUES,
-    pprint_audio,
-)
+from utils.common import K_AUDIO_PARTS
 from utils.time_conversions import (
     current_datetime_str,
     ms_to_frames,
@@ -23,7 +19,7 @@ from audio.utils import (
 from utils.types import Audio
 
 
-def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
+def generate_audio_track(db, k_ep_or_g:str, force=False, verbose=False) -> None:
     """Create an audio file for a specified episode. This will be merged
     with video of this episode (generiques are excluded)
     db_audio contains properties to process and create the audio file
@@ -36,7 +32,7 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
         None
 
     """
-    verbose = False
+    verbose = True
     db_audio:Audio = db[k_ep_or_g]['audio']
 
     # Create the audio directory
@@ -54,7 +50,7 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
 
     # Use a specific function
     if k_ep_or_g in ['g_debut', 'g_fin']:
-        _generate_audio_generique(db,
+        _generate_audio_track_g(db,
             k_part_g=k_ep_or_g,
             output_filepath=output_filepath,
             force=force,
@@ -66,7 +62,7 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
     k_ep = k_ep_or_g
 
     # Extract audio file if needed
-    input_filepath = extract_audio(db, k_ep, k_ed, force=force)
+    input_filepath = extract_audio_track(db, k_ep, k_ed, force=force)
 
     # Read the input audio file
     channel_count, sample_rate, in_track, duration = read_audio_file(input_filepath, verbose=True)
@@ -118,13 +114,13 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
 
             if 'k_ep' in s.keys():
                 # Import this segment from another episode
-                print("info: generate_audio: import from other episode")
+                print("info: generate_audio_track: import from other episode")
                 k_ep_src = s['k_ep']
                 input_directory = os.path.join(db[k_ep_src]['target']['cache_path'], "audio")
                 tmp_filename = f"{k_ep_src}_{k_ed}_audio_extract.{ext}"
                 tmp_filepath = os.path.join(input_directory, tmp_filename)
                 if not os.path.exists(tmp_filepath):
-                    tmp_filepath = extract_audio(db, k_ep_src, k_ed, force=force, verbose=verbose)
+                    tmp_filepath = extract_audio_track(db, k_ep_src, k_ed, force=force, verbose=verbose)
                 if verbose:
                     print(f"use file from another episode")
                     print(f"\tsample rate: {sample_rate}")
@@ -234,7 +230,7 @@ def generate_audio(db, k_ep_or_g:str, force=False, verbose=False) -> None:
 
 
 
-def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbose=False) -> None:
+def _generate_audio_track_g(db, k_part_g, output_filepath, force=False, verbose=False) -> None:
     """Create the audio file for the 'generique'
 
     Args:
@@ -254,7 +250,7 @@ def _generate_audio_generique(db, k_part_g, output_filepath, force=False, verbos
     k_ep = db_audio['src']['k_ep']
 
     # Extract audio file if needed
-    input_filepath = extract_audio(db, k_ep, k_ed, force=force)
+    input_filepath = extract_audio_track(db, k_ep, k_ed, force=force)
 
     # Read the input audio file
     channel_count, sample_rate, in_track, duration = read_audio_file(input_filepath, verbose=True)

@@ -1,11 +1,11 @@
 # TODO script
 (1)
+- rename 'reportage' to 'documentaire'
 - bug: audio track is longer than video and silence is added: do a video fadeout
 - bug: stab: !!! ROI does not work for lowres img !!!
     -> modified, to validate
 - bug: stab: !!! does ROI mask really work with gftt? !!!
     -> to investigate
-- bug: chapters are not corrects in english version: silence is not added to g_debut, why?
 
 - enhancement: avisynth to upscale/sharpen reportage: implemented. To be validated
 - enhancement: integrate color fix/speckle noise
@@ -38,7 +38,7 @@
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
 - deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image. This may have an impact if smooth stabilisation is implemented
 - (?) manual offsets to deshake
-- clean filters.py
+- refactoring of filters.py
 
 - Modify install.md for scunet:
     https://github.com/cszn/KAIR/releases/download/v1.0/scunet_color_real_gan.pth

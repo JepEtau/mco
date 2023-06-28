@@ -18,7 +18,7 @@ from pprint import pprint
 from img_toolbox.filters import get_mean_luma
 from logger import log
 from parsers.parser_stabilize import DEFAULT_SEGMENT_VALUES
-from utils.hash import get_hash_from_last_task
+from processing_chain.hash import get_hash_from_last_task
 from utils.pretty_print import *
 from utils.nested_dict import nested_dict_set
 
@@ -46,7 +46,7 @@ from img_toolbox.utils import (
     has_add_border_task,
 )
 from utils.common import K_GENERIQUES
-from utils.get_frame_list import (
+from processing_chain.get_frame_list import (
     get_frame_list,
     get_frame_list_single
 )

@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 
 from utils.pretty_print import *
-from utils.hash import log_filter
+from processing_chain.hash import log_filter
 from matplotlib import pyplot as plt
 
 

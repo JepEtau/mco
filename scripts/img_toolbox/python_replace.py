@@ -5,12 +5,12 @@ import sys
 from img_toolbox.utils import STEP_INC
 
 from utils.pretty_print import *
-from utils.hash import (
+from processing_chain.hash import (
     calculate_hash,
     calculate_hash_for_replace,
     log_filter,
 )
-from utils.get_image_list import (
+from processing_chain.get_image_list import (
     FILENAME_TEMPLATE,
     get_new_image_list,
     get_image_list_pre_replace

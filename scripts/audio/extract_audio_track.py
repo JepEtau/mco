@@ -16,11 +16,11 @@ from utils.time_conversions import (
 )
 
 
-def extract_audio(db, k_ep:str, k_ed, force=False) -> str:
+def extract_audio_track(db, k_ep:str, k_ed, force=False) -> str:
     # Returns the extracted filepath
     verbose = False
 
-    # print("%s.extract_audio: %s:%s" % (__name__, k_ed, k_ep_or_g))
+    # print("%s.extract_audio_track: %s:%s" % (__name__, k_ed, k_ep_or_g))
 
     if k_ed == '':
         k_ed = db[k_ep]['audio']['src']['k_ed']
@@ -30,7 +30,7 @@ def extract_audio(db, k_ep:str, k_ed, force=False) -> str:
     else:
         k_ep_src = k_ep
 
-    print(f"{current_datetime_str()} extract_audio from {k_ed}:{k_ep_src}")
+    print(f"{current_datetime_str()} extract_audio_track from {k_ed}:{k_ep_src}")
 
     # Input audio file
     input_filepath = db['editions'][k_ed]['inputs']['audio'][k_ep_src]

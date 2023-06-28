@@ -10,11 +10,11 @@ from pprint import pprint
 from utils.pretty_print import *
 from img_toolbox.utils import MAX_FRAMES_COUNT
 
-from utils.hash import (
+from processing_chain.hash import (
     calculate_hash,
     log_filter,
 )
-from utils.get_image_list import (
+from processing_chain.get_image_list import (
     get_image_list,
 )
 

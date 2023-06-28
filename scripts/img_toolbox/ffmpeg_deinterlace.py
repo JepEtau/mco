@@ -12,10 +12,8 @@ from img_toolbox.ffmpeg_utils import (
     get_video_resolution
 )
 from img_toolbox.utils import MAX_FRAMES_COUNT
-from utils.get_image_list import (
-    FILENAME_TEMPLATE
-)
-from utils.hash import calculate_hash, log_filter
+from processing_chain.get_image_list import FILENAME_TEMPLATE
+from processing_chain.hash import calculate_hash, log_filter
 from utils.pretty_print import *
 from utils.time_conversions import *
 from utils.process import create_process

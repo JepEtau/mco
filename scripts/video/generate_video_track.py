@@ -19,24 +19,25 @@ from utils.common import (
     K_ALL_PARTS,
     K_ALL_PARTS_ORDERED,
 )
-from utils.hash import calculate_hash
 from shot.consolidate_shot import consolidate_shot
 from img_toolbox.ffmpeg_utils import execute_ffmpeg_command
+from processing_chain.hash import calculate_hash
 from utils.nested_dict import nested_dict_set
-from utils.path import create_folder_for_video
 from utils.time_conversions import convert_s_to_m_s_ms, current_datetime_str
 from utils.pretty_print import *
-from video.concatenation import (
-    combine_images_into_video,
-    concatenate_shots,
+
+from video.concatenation_files import (
     create_concatenation_file,
     create_concatenation_file_silence,
     create_concatenation_file_video,
 )
+from video.utils import create_folder_for_video
+from video.concatenate_shots import concatenate_shots
+from video.combine_images_into_video import combine_images_into_video
 from shot.process_shot import process_shot
 
 
-def generate_video(db, k_ed:str, k_ep:str,
+def generate_video_track(db, k_ed:str, k_ep:str,
                     last_task:str, cpu_count=0, k_part:str='',
                     force:bool=False, simulation:bool=False,
                     shot_min:int=0, shot_max:int=999999,

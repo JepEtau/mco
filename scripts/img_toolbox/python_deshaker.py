@@ -7,7 +7,7 @@ from statistics import mean
 
 from img_toolbox.filters import *
 from img_toolbox.utils import is_highres_height, is_lowres_height
-from utils.hash import (
+from processing_chain.hash import (
     calculate_hash,
     log_filter
 )

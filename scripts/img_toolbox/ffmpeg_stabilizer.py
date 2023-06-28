@@ -9,7 +9,7 @@ import subprocess
 from img_toolbox.ffmpeg_utils import clean_ffmpeg_filter, ffmpeg_execute_command
 
 from utils.pretty_print import *
-from utils.hash import (
+from processing_chain.hash import (
     log_filter
 )
 from utils.common import (

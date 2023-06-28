@@ -3,7 +3,7 @@ import sys
 import os
 from pprint import pprint
 
-from utils.get_image_list import (
+from processing_chain.get_image_list import (
     FILENAME_TEMPLATE,
     STEP_INC,
     get_image_list_pre_replace,

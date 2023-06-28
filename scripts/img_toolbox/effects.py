@@ -7,7 +7,7 @@ import cv2
 from pprint import pprint
 
 from img_toolbox.utils import STEP_INC
-from utils.get_image_list import (
+from processing_chain.get_image_list import (
     FILENAME_TEMPLATE,
     get_first_image_filepath,
     get_image_list,

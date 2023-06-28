@@ -6,7 +6,7 @@ import sys
 sys.path.append('scripts')
 
 from shot.consolidate_shot import consolidate_shot
-from utils.hash import calculate_hash
+from processing_chain.hash import calculate_hash
 
 from parsers.parser_database import parse_database
 from utils.common import (

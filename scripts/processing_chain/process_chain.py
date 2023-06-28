@@ -21,14 +21,14 @@ from img_toolbox.utils import MAX_FRAMES_COUNT
 from img_toolbox.animesr import animesr_executor
 from img_toolbox.pytorch import pytorch_executor
 from img_toolbox.real_cugan import real_cugan_executor
-from utils.get_image_list import (
-    get_image_list,
-    STEP_INC,
-)
-from utils.load_images import load_images
+from processing_chain.load_images import load_images
 
 from utils.pretty_print import *
 from utils.types import Shot
+from processing_chain.get_image_list import (
+    get_image_list,
+    STEP_INC,
+)
 
 
 

@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
+import os
 import sys
 from pprint import pprint
-from utils.pretty_print import *
 from copy import deepcopy
 import platform
 import cv2
 
 from utils.types import Shot
+from utils.pretty_print import *
+
+from img_toolbox.ffmpeg_utils import get_video_duration
+
 
 
 INITIAL_FRAME_WIDTH = 720
@@ -139,6 +143,69 @@ def is_stabilize_task_enabled(shot:Shot):
             return True
 
     return False
+
+
+
+
+
+def is_progressive_file_valid(shot, db_common, verbose:bool=False):
+    verbose = True
+
+    if verbose:
+        print_lightgreen("is_progressive_file_valid")
+    progressive_filepath = shot['inputs']['progressive']['filepath']
+    if not os.path.exists(progressive_filepath):
+        if verbose:
+            print(f"progressive filepath: {progressive_filepath}")
+        return False
+
+    progressive_duration, progressive_frame_count = get_video_duration(db_common,
+        progressive_filepath,
+        integrity=False)
+    interlaced_duration, interlaced_frame_count = get_video_duration(
+        db_common,
+        shot['inputs']['interlaced']['filepath'],
+        integrity=False)
+
+    start = shot['inputs']['progressive']['start']
+    count = shot['inputs']['progressive']['count']
+
+    if verbose:
+        print("\tfile: %s" % (progressive_filepath))
+        print_lightgrey("\tinterlaced: %.02fs" % (interlaced_duration))
+        print_lightgrey("\tprogressive: %.02fs" % (progressive_duration))
+        print_lightgrey("\tstart: %d, count: %d" % (start, count))
+
+    if start == 0 and count == -1:
+        # Full video
+        if interlaced_duration != progressive_duration:
+            if verbose:
+                print("\tnot valid: interlaced != progressive")
+            return False
+
+    elif count == -1:
+        # Partial video from start to end of video file
+        interlace_count = interlaced_frame_count - start
+        progressive_count = progressive_frame_count
+
+        if progressive_count < interlace_count:
+            if verbose:
+                print(f"\tnot valid: {progressive_count}, should be {interlace_count}")
+            sys.exit()
+            return False
+    else:
+        # Partial video
+        progressive_count = progressive_frame_count
+        if progressive_count < count:
+            if verbose:
+                print(f"\tnot valid: {progressive_count}, should be {interlace_count}")
+                sys.exit(print_yellow(f"verify this!"))
+            sys.exit()
+            return False
+
+    if verbose:
+        print("\tvalid")
+    return True
 
 
 def show_image(img, img_name:str='', ratio:float=1.0):

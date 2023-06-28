@@ -14,7 +14,7 @@ from pprint import pprint
 
 from parsers.parser_audio import parse_audio_section_generique
 from parsers.parser_shots import parse_target_shotlist
-from parsers.video_target import parse_video_section_g
+from parsers.parser_video_target import parse_video_target_section_g
 from utils.common import (
     FPS,
     K_GENERIQUES
@@ -87,7 +87,7 @@ def parse_generiques_target(db):
                     pass
 
                 if lang == db_audio_target['lang'] or k_section == 'video':
-                    parse_video_section_g(db_video_target, config, k_section)
+                    parse_video_target_section_g(db_video_target, config, k_section)
 
 
             # Shots

@@ -14,7 +14,7 @@ from utils.pretty_print import *
 
 
 
-def parse_video_section(db_video, config:ConfigParser, k_section, k_ep):
+def parse_video_target_section(db_video, config:ConfigParser, k_section, k_ep):
     verbose = False
 
     k_ed_src = None
@@ -67,7 +67,7 @@ def parse_video_section(db_video, config:ConfigParser, k_section, k_ep):
                 continue
 
         # if start is None:
-        #     sys.exit("Error: parse_video_section: start and end values are required for %s:%s in target file" % (k_ep, k_part))
+        #     sys.exit("Error: parse_video_target_section: start and end values are required for %s:%s in target file" % (k_ep, k_part))
 
         db_video[k_part] = {
             'effects': {
@@ -85,7 +85,7 @@ def parse_video_section(db_video, config:ConfigParser, k_section, k_ep):
             # sys.exit()
 
     if k_ed_src is None:
-        sys.exit("error: parse_video_section: missing key \'source\' in target file %s_target.ini" % (k_ep))
+        sys.exit("error: parse_video_target_section: missing key \'source\' in target file %s_target.ini" % (k_ep))
 
     for k_part in K_NON_GENERIQUE_PARTS:
         try:
@@ -105,13 +105,13 @@ def parse_video_section(db_video, config:ConfigParser, k_section, k_ep):
 
     for k_part in K_NON_GENERIQUE_PARTS:
         if db_video[k_part]['k_ed_src'] is None:
-            sys.exit("Errror: parse_video_section: edition shall be defined for %s:%s" % (k_ep, k_part))
+            sys.exit("Errror: parse_video_target_section: edition shall be defined for %s:%s" % (k_ep, k_part))
 
 
 
 
 
-def parse_video_section_g(db_video, config:ConfigParser, k_section):
+def parse_video_target_section_g(db_video, config:ConfigParser, k_section):
 
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option)

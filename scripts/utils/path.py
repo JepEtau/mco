@@ -1,46 +1,14 @@
 # -*- coding: utf-8 -*-
 import os
 from pprint import pprint
-import sys
-from img_toolbox.ffmpeg_utils import get_video_duration
 from img_toolbox.utils import get_step_no_from_task
-from utils.common import FPS
 from utils.pretty_print import *
-from utils.time_conversions import frames_to_ms
+from utils.types import Shot
 
 PATH_DATABASE = "./database"
 
 
-def create_folder_for_video(db, k_ep_or_g):
-    """ Create the directory that shall contains all video stream
-        that will be concatenated
-
-        Returns
-            Path of the created folder
-    """
-    if k_ep_or_g in ['ep00', 'ep40']:
-        return
-
-    if k_ep_or_g in['g_debut', 'g_fin']:
-        video_directory = os.path.join(db[k_ep_or_g]['cache_path'], 'video')
-    else:
-        video_directory = os.path.join(db[k_ep_or_g]['cache_path'], 'video')
-
-    if not os.path.exists(video_directory):
-        os.makedirs(video_directory)
-    return video_directory
-
-
-def create_folder_for_concatenation(db, k_ep, k_part):
-    k_ep_or_g = k_part if k_part in ['g_debut', 'g_fin'] else k_ep
-
-    concatenation_directory = os.path.join(db[k_ep_or_g]['cache_path'], "concatenation")
-    if not os.path.exists(concatenation_directory):
-        os.makedirs(concatenation_directory)
-
-
-
-def get_input_path_from_shot(db, shot, task):
+def get_input_path_from_shot(db, shot:Shot, task):
     step_no = get_step_no_from_task(shot, task)
 
     if shot['k_part'] in ['g_debut', 'g_fin']:
@@ -68,7 +36,7 @@ def get_input_path_from_shot(db, shot, task):
     return output_path
 
 
-def get_output_path_from_shot(db, shot, task):
+def get_output_path_from_shot(db, shot:Shot, task):
     step_no = get_step_no_from_task(shot, task)
 
     if shot['k_part'] in ['g_debut', 'g_fin']:
@@ -96,8 +64,7 @@ def get_output_path_from_shot(db, shot, task):
     return output_path
 
 
-
-def get_cache_path(db, shot):
+def get_cache_path(db, shot:Shot):
     if shot['k_part'] in ['g_debut', 'g_fin']:
         # Put all images in a single folder for 'génériques'
         return os.path.normpath(os.path.join(
@@ -124,7 +91,6 @@ def get_cache_path(db, shot):
     return output_path
 
 
-
 def get_input_filepath(database, frame):
     k_ed = frame['k_ed']
     if frame['k_ep'] != 0:
@@ -133,63 +99,3 @@ def get_input_filepath(database, frame):
         return database['editions'][k_ed]['inputs']['video'][frame['k_ep']]
 
 
-
-
-def is_progressive_file_valid(shot, db_common, verbose:bool=False):
-    verbose = True
-
-    if verbose:
-        print_lightgreen("is_progressive_file_valid")
-    progressive_filepath = shot['inputs']['progressive']['filepath']
-    if not os.path.exists(progressive_filepath):
-        if verbose:
-            print(f"progressive filepath: {progressive_filepath}")
-        return False
-
-    progressive_duration, progressive_frame_count = get_video_duration(db_common,
-        progressive_filepath,
-        integrity=False)
-    interlaced_duration, interlaced_frame_count = get_video_duration(
-        db_common,
-        shot['inputs']['interlaced']['filepath'],
-        integrity=False)
-
-    start = shot['inputs']['progressive']['start']
-    count = shot['inputs']['progressive']['count']
-
-    if verbose:
-        print("\tfile: %s" % (progressive_filepath))
-        print_lightgrey("\tinterlaced: %.02fs" % (interlaced_duration))
-        print_lightgrey("\tprogressive: %.02fs" % (progressive_duration))
-        print_lightgrey("\tstart: %d, count: %d" % (start, count))
-
-    if start == 0 and count == -1:
-        # Full video
-        if interlaced_duration != progressive_duration:
-            if verbose:
-                print("\tnot valid: interlaced != progressive")
-            return False
-
-    elif count == -1:
-        # Partial video from start to end of video file
-        interlace_count = interlaced_frame_count - start
-        progressive_count = progressive_frame_count
-
-        if progressive_count < interlace_count:
-            if verbose:
-                print(f"\tnot valid: {progressive_count}, should be {interlace_count}")
-            sys.exit()
-            return False
-    else:
-        # Partial video
-        progressive_count = progressive_frame_count
-        if progressive_count < count:
-            if verbose:
-                print(f"\tnot valid: {progressive_count}, should be {interlace_count}")
-                sys.exit(print_yellow(f"verify this!"))
-            sys.exit()
-            return False
-
-    if verbose:
-        print("\tvalid")
-    return True

@@ -11,7 +11,7 @@ from img_toolbox.utils import (
     get_processing_chain,
     get_step_no_from_last_task,
 )
-from utils.hash import (
+from processing_chain.hash import (
     calculate_hash,
     create_hash_file,
     get_hash_from_last_task,
@@ -20,7 +20,7 @@ from utils.common import (
     K_GENERIQUES,
 )
 from utils.nested_dict import nested_dict_set
-from utils.get_curves import get_lut_from_curves
+from img_toolbox.get_curves import get_lut_from_curves
 from utils.path import get_cache_path
 from utils.pretty_print import *
 from utils.types import Shot
