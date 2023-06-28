@@ -149,7 +149,7 @@ def is_stabilize_task_enabled(shot:Shot):
 
 
 def is_progressive_file_valid(shot, db_common, verbose:bool=False):
-    verbose = True
+    verbose = False
 
     if verbose:
         print_lightgreen("is_progressive_file_valid")
