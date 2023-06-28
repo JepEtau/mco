@@ -33,19 +33,21 @@ CHAPTER_NAMES = {
 
 
 
-def add_chapters(db, k_ep:str, is_final:bool, simulation:bool=False) -> None:
+def add_chapters(db, k_ep:str, last_task:str, simulation:bool=False) -> None:
     # Add chapters to the video file
     language = db[k_ep]['audio']['lang']
-    lang_str = '' if language == 'fr' or is_final else f"_{language}"
+    lang_str = '' if language == 'fr' or last_task=='final' else f"_{language}"
+
+    suffix = '' if last_task == '' or last_task == 'final' else f"_{last_task}"
 
     cache_directory = db[k_ep]['cache_path']
-    input_filename = f"{k_ep}_no_chapters{lang_str}.mkv"
+    input_filename = f"{k_ep}_no_chapters{suffix}{lang_str}.mkv"
     input_filepath = os.path.join(cache_directory, input_filename)
 
     output_directory = db['common']['directories']['outputs']
     if not os.path.exists(output_directory):
         os.makedirs(output_directory)
-    final_filename = f"{k_ep}{lang_str}.mkv"
+    final_filename = f"{k_ep}{suffix}{lang_str}.mkv"
     final_filepath = os.path.join(output_directory, final_filename)
 
     print(p_lightgreen(f"Add chapters:"), p_lightcyan(f"{k_ep}"))

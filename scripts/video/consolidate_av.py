@@ -126,13 +126,13 @@ def calculate_av_sync(db, k_ep):
         # edition used as the src for the audio track
 
         k_ed_src = db_audio['src']['k_ed']
-        if verbose:
-            print_lightcyan(f"db_audio[{k_part}]:")
-            pprint(db_audio[k_part])
-            print_lightcyan(f"db_video {k_ed_src}:{k_part}:")
-            pprint(db[k_ep]['video'][k_ed_src][k_part])
-            print_lightcyan(f"db_video target:{k_part}:")
-            pprint(db[k_ep]['video']['target'][k_part])
+        # if verbose:
+        #     print_lightcyan(f"db_audio[{k_part}]:")
+        #     pprint(db_audio[k_part])
+        #     print_lightcyan(f"db_video {k_ed_src}:{k_part}:")
+        #     pprint(db[k_ep]['video'][k_ed_src][k_part])
+        #     print_lightcyan(f"db_video target:{k_part}:")
+        #     pprint(db[k_ep]['video']['target'][k_part])
 
         # Compare video count from audio_src and target
         precedemment_video_count = (db[k_ep]['video'][k_ed_src]['episode']['shots'][1]['start']
@@ -155,7 +155,7 @@ def calculate_av_sync(db, k_ep):
         avsync_ms = (frames_to_ms(part_video_start) - db_audio[k_part]['start'])
         db_video[k_part]['avsync'] = ms_to_frames(avsync_ms) if avsync_ms > 0 else 0
         db_audio[k_part].update({
-            'avsync': avsync_ms if avsync_ms < 0 else 0,
+            'avsync': abs(avsync_ms) if avsync_ms < 0 else 0,
             'count': ms_to_frames(db_audio[k_part]['end'] - db_audio[k_part]['start']),
         })
 
@@ -403,10 +403,9 @@ def align_audio_video_durations(db, k_ep):
                   f"{k_ep}:{k_part}: video({video_count}) > audio ({audio_count})")
             if True:
                 print(p_yellow("warning: this has been patched (now, remove video frames) for documentaire, verify elsewhere"))
-                audio_count = ms_to_frames(db_audio[k_part]['duration'])
                 last_shot:Shot = db_video[k_part]['shots'][-1]
                 last_shot['count'] -= video_count - audio_count
-
+                db_video[k_part]['count'] = db_audio[k_part]['count']
             else:
                 video_duration = int(video_count * 1000 / FPS)
                 audio_duration = db_audio[k_part]['duration']

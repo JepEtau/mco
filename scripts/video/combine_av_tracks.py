@@ -20,15 +20,16 @@ def combine_av_tracks(db, k_ep_or_g, last_task, force:bool=False, simulation:boo
 
     language = db[k_ep_or_g]['audio']['lang']
     lang_str = '' if language == 'fr' else f"_{language}"
+
+    suffix = '' if last_task == '' or last_task == 'final' else f"_{last_task}"
+
     if k_ep_or_g in ['g_debut', 'g_fin']:
-        audio_video_filepath = os.path.join(cache_path, f"{k_ep_or_g}{lang_str}.mkv")
+        audio_video_filepath = os.path.join(cache_path, f"{k_ep_or_g}{suffix}{lang_str}.mkv")
     else:
-        audio_video_filepath = os.path.join(cache_path, f"{k_ep_or_g}_av{lang_str}.mkv")
+        audio_video_filepath = os.path.join(cache_path, f"{k_ep_or_g}_av{suffix}{lang_str}.mkv")
 
     if os.path.exists(audio_video_filepath) and not force and not simulation:
         return
-
-    suffix = '' if last_task == '' or last_task == 'final' else f"_{last_task}"
 
     # Get nb of frames from video stream
     if k_ep_or_g in ['g_debut', 'g_fin']:

@@ -42,12 +42,10 @@ class Hist(QObject):
 
 
         self.db_hist_curves_initial = dict()
-        self.db_hist_curves = dict()
-
         self.db_hist_curves = parse_stitching_curves_database()
 
 
-        self.k_curves = 's001'
+        self.k_curves = 's000'
         self.current_curves = self.get_stitching_curves(self.k_curves)
         pprint(self.current_curves)
 
@@ -234,19 +232,22 @@ class Hist(QObject):
 
 
     def get_stitching_curves(self, k_curves):
-        # Return a dict of k_curves and (Curve, lut) for each channel
-        if (k_curves not in self.db_hist_curves_initial.keys()
-            and k_curves not in self.db_hist_curves.keys()):
-            print("get_stitching_curves: [%s] is not in modified/initial db" % (k_curves))
+        if k_curves is not None:
+            # Return a dict of k_curves and (Curve, lut) for each channel
+            if (k_curves not in self.db_hist_curves_initial.keys()
+                and k_curves not in self.db_hist_curves.keys()):
+                print("get_stitching_curves: [%s] is not in modified/initial db" % (k_curves))
+                return self.STITCHING_CURVES_DEFAULT
+
+            if k_curves in self.db_hist_curves.keys():
+                print("get_stitching_curves: %s: modified" % (k_curves))
+                curves = self.db_hist_curves[k_curves]
+
+            elif k_curves in self.db_hist_curves_initial.keys():
+                print("get_stitching_curves: %s: initial" % (k_curves))
+                curves = self.db_hist_curves_initial[k_curves]
+        else:
             return self.STITCHING_CURVES_DEFAULT
-
-        if k_curves in self.db_hist_curves.keys():
-            print("get_stitching_curves: %s: modified" % (k_curves))
-            curves = self.db_hist_curves[k_curves]
-
-        elif k_curves in self.db_hist_curves_initial.keys():
-            print("get_stitching_curves: %s: initial" % (k_curves))
-            curves = self.db_hist_curves_initial[k_curves]
 
         if curves['lut'] is None:
             # Calculate lut from channels

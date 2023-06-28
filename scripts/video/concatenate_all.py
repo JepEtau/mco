@@ -8,14 +8,16 @@ from utils.pretty_print import *
 
 
 
-def concatenate_all(db, k_ep:str, force=False, simulation:bool=False) -> None:
+def concatenate_all(db, k_ep:str, last_task:str, force=False, simulation:bool=False) -> None:
     print(p_lightgreen(f"Concatenate all A/V files:"), p_lightcyan(f"{k_ep}"))
 
     language = db[k_ep]['audio']['lang']
     lang_str = '' if language == 'fr' else f"_{language}"
 
+    suffix = '' if last_task == '' or last_task == 'final' else f"_{last_task}"
+
     cache_directory = db[k_ep]['cache_path']
-    output_filename = f"{k_ep}_no_chapters{lang_str}.mkv"
+    output_filename = f"{k_ep}_no_chapters{suffix}{lang_str}.mkv"
     output_filepath = os.path.join(cache_directory, output_filename)
     print(f"\tA/V file (without chapters): {output_filepath}")
 
@@ -28,13 +30,13 @@ def concatenate_all(db, k_ep:str, force=False, simulation:bool=False) -> None:
     concatenation_filepath = os.path.normpath(os.path.join(os.getcwd(), concatenation_filepath))
     concatenation_file = open(concatenation_filepath, "w")
 
-    p = os.path.join(db['g_debut']['cache_path'], f"g_debut{lang_str}.mkv")
+    p = os.path.join(db['g_debut']['cache_path'], f"g_debut{suffix}{lang_str}.mkv")
     concatenation_file.write(f"file \'{p}\' \n")
 
-    p = os.path.join(cache_directory, f"{k_ep}_av{lang_str}.mkv")
+    p = os.path.join(cache_directory, f"{k_ep}_av{suffix}{lang_str}.mkv")
     concatenation_file.write(f"file \'{p}\' \n")
 
-    p = os.path.join(db['g_fin']['cache_path'], f"g_fin{lang_str}.mkv")
+    p = os.path.join(db['g_fin']['cache_path'], f"g_fin{suffix}{lang_str}.mkv")
     concatenation_file.write(f"file \'{p}\' \n")
 
     concatenation_file.close()

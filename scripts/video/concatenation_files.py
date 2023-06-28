@@ -61,7 +61,16 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
         concatenation_file = open(concatenation_filepath, "w")
 
     else:
-        sys.exit(print_red("(TODO: deprecate) Use previous concatenation file: %s" % (previous_concatenation_filepath)))
+        print(f"{previous_concatenation_filepath}")
+        print(f"{len(images_filepath)}")
+        pprint(shot)
+        # print("-------------------------------------")
+        # for k, v in db[k_ep]['video']['target'][k_part].items():
+        #     if k == 'shots':
+        #         continue
+        #     print(f"{k}:")
+        #     pprint(v)
+        sys.exit(print_red("Error or (TODO: deprecate) Use previous concatenation file: %s ?" % (previous_concatenation_filepath)))
         concatenation_file = open(previous_concatenation_filepath, 'a')
 
     # print(f"{concatenation_filepath}")

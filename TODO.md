@@ -8,8 +8,7 @@
 - enhancement: avisynth to upscale/sharpen documentaire: implemented. To be validated
 - enhancement: integrate color fix
 - enhancement: integrate speckle noise
-- enhancement: add pccm method from https://github.com/dstein64/colortrans
-- enhancement: find the old editor for histogram equalization. Will be used for the FR version.
+- enhancement: (?) add lhm method from https://github.com/dstein64/colortrans
 
 - enhancement: what about autocrop: use it in the chain or as a tool (video editor)?
 - enhancement: Add FFmpeg stab. test on ep02: try on shots 7/10/22/30/32
@@ -18,7 +17,6 @@
 (2)
 - stab: use multiple software (cv2, ffmpeg) alg in the same shot: currently not implemented. Is this really needed?
 - stab: use previous stabilized frame as the reference for the new segment to avoid possible artifact
-- enhancement: append 'deinterlace' to g_debut/g_fin
 
 (3)
 - enhancement: stab: get mean/contrast to choose an algo rather than selecting between auto/contrast?
@@ -112,7 +110,8 @@
 # Known issues, but won't correct
 - add_borders is inserted at the wrong place if using s0
 - initial image dimensions is declared as constants: stats are erroneous with s0
-- fadein: if stabilize, segment shall use 'middle' of shot as the ref. frame
-- fadein: fadein is always done on a the same image. No need for someting else.
+- fadein: if stabilize, segment shall use 'middle' of shot as the ref. frame no
+- fadein: fadein is always done on a the same image (= loop and fade-in). No need for someting else.
 - stabilize: when table is disable, set qWidgetItem to disabled (text should be gray)
 - fade_in/shot duration is not tracked in the hash code, this means that the generated shot video used by both fr/en has to be deleted when switch fr/en (will not impact any end user except me!)
+- Multi-language: erroneous video shots when switching en<->fr. Because the same shot is used for both but duration may differ (constrained by the audio track). These shots are the first/last shot of each part. No one except those who switches the language will be impacted.

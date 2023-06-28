@@ -398,6 +398,7 @@ def main():
                 # Concatenate all parts
                 concatenate_all(g_database,
                     k_ep=k_episode,
+                    last_task=video_filter,
                     force=arguments.force|arguments.regenerate,
                     simulation=arguments.simulate)
 
@@ -405,7 +406,7 @@ def main():
                 if k_episode != 'ep00':
                     add_chapters(g_database,
                         k_ep=k_episode,
-                        is_final=True if arguments.vfilter in ['', 'final'] else False,
+                        last_task=video_filter,
                         simulation=arguments.simulate)
 
 
