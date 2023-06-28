@@ -13,7 +13,7 @@ K_GENERIQUES = [
     'g_debut',
     'g_fin',
     'g_asuivre',
-    'g_reportage',
+    'g_documentaire',
 ]
 
 K_PARTS_ORDERED = [
@@ -21,8 +21,8 @@ K_PARTS_ORDERED = [
     'episode',
     'g_asuivre',
     'asuivre',
-    'g_reportage',
-    'reportage',
+    'g_documentaire',
+    'documentaire',
 ]
 
 K_ALL_PARTS = [
@@ -31,8 +31,8 @@ K_ALL_PARTS = [
     'episode',
     'g_asuivre',
     'asuivre',
-    'g_reportage',
-    'reportage',
+    'g_documentaire',
+    'documentaire',
     'g_fin',
 ]
 
@@ -40,7 +40,7 @@ K_NON_GENERIQUE_PARTS = [
     'precedemment',
     'episode',
     'asuivre',
-    'reportage',
+    'documentaire',
 ]
 
 K_AUDIO_PARTS = K_PARTS_ORDERED
@@ -53,8 +53,8 @@ K_ALL_PARTS_ORDERED = [
     'episode',
     'g_asuivre',
     'asuivre',
-    'g_reportage',
-    'reportage',
+    'g_documentaire',
+    'documentaire',
     'g_fin',
 ]
 

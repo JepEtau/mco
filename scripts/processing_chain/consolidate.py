@@ -13,8 +13,8 @@ def consolidate_tasks(shot):
     # Deshake & stabilization: do not add pad if more than 1 time
 
     # Add borders even if no deshake/stabilize to simplify
-    # !!! Except for reportage
-    if shot['k_part'] != 'reportage':
+    # !!! Except for documentaire
+    if shot['k_part'] != 'documentaire':
         add_borders_filter = {
             'type': 'python',
             'save': False,
@@ -35,7 +35,7 @@ def consolidate_tasks(shot):
 
     # Insert 'replace' at the best place
     # just after add borders if deshake/temporal filtering or animeSR upscaling
-    # in general, always after add_borders except for reportage
+    # in general, always after add_borders except for documentaire
     is_inserted = False
     replace_filter = {
         'type': 'python',

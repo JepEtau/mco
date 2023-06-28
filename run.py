@@ -192,7 +192,7 @@ def main():
             # pprint(g_database['ep01']['k']['g_debut'])
 
         elif arguments.part != '':
-            print("\t\t- precedemment, episode, g_asuivre, asuivre, g_reportage, reportage: ")
+            print("\t\t- precedemment, episode, g_asuivre, asuivre, g_documentaire, documentaire: ")
 
             # debugging purpose, modify this
             # pprint(g_database[k_episode]['video']['f'].keys())
@@ -213,7 +213,7 @@ def main():
         if arguments.part in K_GENERIQUES:
             print("\n\t\t- %s: " % (arguments.part), end='')
         elif arguments.part != '':
-            print("\n\t\t- precedemment, episode, g_asuivre, asuivre, g_reportage, reportage: ", end='')
+            print("\n\t\t- precedemment, episode, g_asuivre, asuivre, g_documentaire, documentaire: ", end='')
         else:
             print("\n\t\t- all: ", end='')
 
@@ -289,7 +289,7 @@ def main():
                         force=arguments.force|arguments.regenerate)
 
             elif arguments.part != '':
-                # precedemment, episode, g_asuivre, asuivre, g_reportage, reportage
+                # precedemment, episode, g_asuivre, asuivre, g_documentaire, documentaire
                 if afilter == 'extract':
                     extract_audio_track(g_database, k_ep=k_episode, k_ed=k_ed, force=arguments.force)
                 elif afilter == 'final':

@@ -2,7 +2,7 @@
 
 ```
 $  python run.py --help
-usage: run.py [-h] [--episode EPISODE] [--part {g_debut,precedemment,episode,g_asuivre,asuivre,g_reportage,reportage,g_fin}] [--shot SHOT] [--shot_min SHOT_MIN]
+usage: run.py [-h] [--episode EPISODE] [--part {g_debut,precedemment,episode,g_asuivre,asuivre,g_documentaire,documentaire,g_fin}] [--shot SHOT] [--shot_min SHOT_MIN]
               [--shot_max SHOT_MAX] [--vfilter {deinterlace,pre_upscale,upscale,sharpen,rgb,geometry,final}] [--afilter {extract,final}] [--study] [--frames]
               [--edition {s0,s,k,a,f,b,c}] [--force] [--simulate] [--parse_only] [--regenerate]
 
@@ -11,7 +11,7 @@ Main tool
 options:
   -h, --help            show this help message and exit
   --episode EPISODE     Numéro d'épisode de 1 à 39. Ignoré pour la génération des génériques.
-  --part {g_debut,precedemment,episode,g_asuivre,asuivre,g_reportage,reportage,g_fin}
+  --part {g_debut,precedemment,episode,g_asuivre,asuivre,g_documentaire,documentaire,g_fin}
                         Partie à générer
   --shot SHOT           debug: numéro du plan à générer
   --shot_min SHOT_MIN   debug: plans à générer: début. NON VERIFIE

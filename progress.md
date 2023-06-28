@@ -18,7 +18,7 @@
     * [ ] générique: géométrie
     * [ ] courbes RVB
     * [ ] frame replacement
-- **Reportage**
+- **documentaire**
     * [ ] filtres
     * [ ] géométrie
     * [-] courbes RVB
@@ -53,7 +53,7 @@
     * [ ] générique: géométrie
     * [ ] courbes RVB
     * [ ] frame replacement
-- **Reportage**
+- **documentaire**
     * [ ] filtres
     * [ ] géométrie
     * [ ] courbes RVB
@@ -88,7 +88,7 @@
     * [ ] générique: géométrie
     * [ ] courbes RVB
     * [ ] frame replacement
-- **Reportage**
+- **documentaire**
     * [ ] filtres
     * [ ] géométrie
     * [ ] courbes RVB
@@ -123,7 +123,7 @@
     * [ ] générique: géométrie
     * [ ] courbes RVB
     * [ ] frame replacement
-- **Reportage**
+- **documentaire**
     * [ ] filtres
     * [ ] géométrie
     * [ ] courbes RVB
@@ -158,7 +158,7 @@
     * [ ] générique: géométrie
     * [ ] courbes RVB
     * [ ] frame replacement
-- **Reportage**
+- **documentaire**
     * [ ] filtres
     * [ ] géométrie
     * [ ] courbes RVB
@@ -203,7 +203,7 @@
 <br/><br/>
 
 
-# Générique reportage
+# Générique documentaire
 * [x] édition, épisode: k:ep17
 * [x] shots
 * [ ] filtres

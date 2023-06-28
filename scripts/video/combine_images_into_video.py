@@ -51,7 +51,7 @@ def combine_images_into_video(db_common, k_part, video_shot,
 
         ffmpeg_command.extend(db_settings['video_quality'].split(' '))
 
-        if 'reportage' in k_part:
+        if 'documentaire' in k_part:
             ffmpeg_command.extend(db_settings['video_film_tune'].split(' '))
         else:
             ffmpeg_command.extend(db_settings['video_tune'].split(' '))

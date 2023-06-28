@@ -173,7 +173,7 @@ def get_initial_target_geometry(db, k_ep, k_part) -> dict:
     if k_part in ['g_debut', 'g_fin']:
         db_video = db[k_part]['video']
         k_ep_target = 'ep00'
-    elif k_part in ['g_asuivre', 'g_reportage']:
+    elif k_part in ['g_asuivre', 'g_documentaire']:
         db_video = db[k_ep]['video']['target'][k_part[2:]]
         k_ep_target = k_ep
     else:

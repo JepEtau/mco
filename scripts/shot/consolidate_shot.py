@@ -71,7 +71,7 @@ def consolidate_shot(db, shot:Shot, edition_mode:bool=False) -> None:
 
     # Geometry
     #---------------------------------------------------------------------------
-    if k_part in ['g_asuivre', 'g_reportage']:
+    if k_part in ['g_asuivre', 'g_documentaire']:
         # print("\t\t\tconsolidate_shot: get geometry from %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
         k_ep_dst = shot['dst']['k_ep']
         try:

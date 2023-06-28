@@ -173,7 +173,7 @@ class Controller_video_editor(Controller_common,
         # are different from the final generation
 
         # Get a list of path for each frame  for this shot
-        if k_part in ['g_asuivre', 'g_reportage']:
+        if k_part in ['g_asuivre', 'g_documentaire']:
             filepath_tmp = get_frame_list_single(db, k_ep=k_ep, k_part=k_part, shot=shot)
         else:
             filepath_tmp = get_frame_list(db, k_ep=k_ep, k_part=k_part, shot=shot)
@@ -222,7 +222,7 @@ class Controller_video_editor(Controller_common,
             target_geometry = self.model_database.get_target_geometry(
                     k_ep='ep00',
                     k_part=k_part)
-        elif k_part in ['g_asuivre', 'g_reportage']:
+        elif k_part in ['g_asuivre', 'g_documentaire']:
             # Use the following part to get the geometry for this part
             target_geometry = self.model_database.get_target_geometry(
                 k_ep=k_ep, k_part=k_part[2:])
@@ -235,7 +235,7 @@ class Controller_video_editor(Controller_common,
         default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
         shot_geometry = self.model_database.get_shot_geometry(shot=shot)
         if shot_geometry is None and default_shot_geometry is None:
-            if shot['k_part'] in ['g_asuivre', 'g_reportage']:
+            if shot['k_part'] in ['g_asuivre', 'g_documentaire']:
                 print_yellow(f"\t\t\tNo shot geometry defined, create a shot geometry {shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}")
                 # Not geometry define, create a new one
                 self.model_database.set_shot_geometry(shot=shot, geometry={
@@ -347,7 +347,7 @@ class Controller_video_editor(Controller_common,
                 filepath_tmp = [""] * shot['count']
             else:
                 # Get a list of path for each frame  for this shot
-                if k_part in ['g_asuivre', 'g_reportage']:
+                if k_part in ['g_asuivre', 'g_documentaire']:
                     filepath_tmp = get_frame_list_single(db, k_ep=k_ep, k_part=k_part, shot=shot)
                 else:
                     print(f"- get new frame list for step no. {shot['last_step']['step_no']}")

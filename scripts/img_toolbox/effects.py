@@ -248,7 +248,7 @@ def effect_loop_and_fadeout(db, shot):
 
 def effect_fadeout(db, shot):
     # verified:
-    #   - ep01: reportage
+    #   - ep01: documentaire
     fadeout_start = shot['effects'][1]
     fadeout_count = shot['effects'][2]
     print_green(f"\tfadeout: start={fadeout_start}, count={fadeout_count}")

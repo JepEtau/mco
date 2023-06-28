@@ -16,7 +16,7 @@ from utils.types import Shot
 def parse_shotlist(db_shots:list[Shot], k_ep, k_part, shotlist_str) -> None:
     """This procedure parse a string wich contains the list of shots
         and update the structure of the db.
-        Used for 'épisodes' and 'reportage'
+        Used for 'épisodes' and 'documentaire'
 
     Args:
         db_shots: the structure where to store the shots
@@ -634,8 +634,8 @@ def consolidate_target_shots_g(db, k_ep, k_part_g) -> None:
         }
         db_video_target = db[k_ep]['video']['target'][k_part_g]
 
-    elif k_part_g == 'g_reportage':
-        # Create the g_reportage structure:
+    elif k_part_g == 'g_documentaire':
+        # Create the g_documentaire structure:
         #   this part was not yet defined because it depends on audio start/duration
         db_audio = db[k_ep]['audio'][k_part_g]
         audio_count = ms_to_frames(db_audio['duration'])

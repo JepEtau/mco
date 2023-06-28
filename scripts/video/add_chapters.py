@@ -98,7 +98,7 @@ def add_chapters(db, k_ep:str, simulation:bool=False) -> None:
         audio_duration += db[k_ep]['audio'][k_part]['silence']
         count += ms_to_frames(audio_duration)
 
-    k_part = 'reportage'
+    k_part = 'documentaire'
     # print(f"{k_part}: {count}")
     index += 1
     chapters_file.write(f"CHAPTER0{index}={frame2sexagesimal(count)}0\n")

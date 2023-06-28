@@ -100,9 +100,9 @@ class Controller_common(QObject):
                         if os.path.exists(os.path.join(path_cache, k_ep, k_part)):
                             episode_and_parts[k_ep].append(k_part)
 
-                    # g_asuivre, g_reportage
+                    # g_asuivre, g_documentaire
                     episode_and_parts[k_ep].append('g_asuivre')
-                    episode_and_parts[k_ep].append('g_reportage')
+                    episode_and_parts[k_ep].append('g_documentaire')
 
             episode_and_parts[' '] = list()
             for k_part_g in K_GENERIQUES:

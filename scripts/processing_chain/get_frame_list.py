@@ -85,7 +85,7 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
     to create concatenation files or by tools for video editing
     It is used for the following parts:
       - episode
-      - reportage
+      - documentaire
       - g_debut, g_fin
     """
     verbose = False
@@ -286,7 +286,7 @@ def get_frame_list_single(db, k_ep, k_part, shot) -> list:
         - precedemment
         - g_asuivre
         - asuivre
-        - g_reportage
+        - g_documentaire
     """
     verbose = False
     image_list = list()

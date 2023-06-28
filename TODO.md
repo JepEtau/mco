@@ -1,13 +1,12 @@
 # TODO script
 (1)
-- rename 'reportage' to 'documentaire'
 - bug: audio track is longer than video and silence is added: do a video fadeout
 - bug: stab: !!! ROI does not work for lowres img !!!
     -> modified, to validate
 - bug: stab: !!! does ROI mask really work with gftt? !!!
     -> to investigate
 
-- enhancement: avisynth to upscale/sharpen reportage: implemented. To be validated
+- enhancement: avisynth to upscale/sharpen documentaire: implemented. To be validated
 - enhancement: integrate color fix/speckle noise
 - enhancement: add pccm method from https://github.com/dstein64/colortrans
 - enhancement: When generating a 'deinterlaced' episode, the concatenation function shall use the deinterlaced g_debut/g_fin

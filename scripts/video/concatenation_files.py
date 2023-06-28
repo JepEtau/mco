@@ -22,15 +22,15 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
     print_lightgrey(f"\tcreate concatenation file: ", end='')
     print_lightcyan(f"{k_ep}, {k_part}, shot no. {shot['no']}")
     # Use a single concatenation file for
-    #   - g_asuivre, g_reportage
-    if k_part in ['g_asuivre', 'g_reportage']:
+    #   - g_asuivre, g_documentaire
+    if k_part in ['g_asuivre', 'g_documentaire']:
         return create_single_concatenation_file(db,
             k_ep=k_ep, k_part=k_part, shot=shot,
             previous_concatenation_filepath=previous_concatenation_filepath)
 
     # This function is used for the following parts:
     #   - episode
-    #   - reportage
+    #   - documentaire
 
     # Get the list of images
     images_filepath = get_frame_list(db=db,
@@ -83,7 +83,7 @@ def create_single_concatenation_file(db, k_ep, k_part, shot, previous_concatenat
         - precedemment
         - g_asuivre
         - asuivre
-        - g_reportage
+        - g_documentaire
     """
     # print("%s._create_concatenation_file" % (__name__))
     # pprint(shot)
@@ -136,8 +136,8 @@ def create_concatenation_file_video(db, k_ep, k_part, video_files:dict):
         - episode
         - g_asuivre
         - asuivre
-        - g_reportage
-        - reportage
+        - g_documentaire
+        - documentaire
 
         Returns:
           Concatenation file path

@@ -64,7 +64,7 @@ class Controller_geometry():
 
         # Modify target width
         if element == 'target' and parameter == 'width':
-            if k_part in ['g_asuivre', 'g_reportage']:
+            if k_part in ['g_asuivre', 'g_documentaire']:
                 sys.exit(print_red("bug: target width shall never be modified when editing %s" % (k_part)))
 
             if event_type == 'set':
@@ -135,7 +135,7 @@ class Controller_geometry():
             print_orange(f"refresh geometry: no frames. {shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}")
             return
 
-        if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage']:
+        if shot['dst']['k_part'] in ['g_asuivre', 'g_documentaire']:
             k_part_src = shot['dst']['k_part'][2:]
         else:
             k_part_src = shot['dst']['k_part']
@@ -169,7 +169,7 @@ class Controller_geometry():
         # pprint(shot_geometry_values)
 
         for frame in self.frames[shot['no']]:
-            # if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage']:
+            # if shot['dst']['k_part'] in ['g_asuivre', 'g_documentaire']:
             #     k_part_src = shot['dst']['k_part'][2:]
             # else:
             #     k_part_src = shot['dst']['k_part']

@@ -186,7 +186,7 @@ def parse_database(database, k_ep, lang:str=''):
         for k_p in K_NON_GENERIQUE_PARTS:
             consolidate_target_shots(database, k_ep=k_ep, k_part=k_p)
 
-        for k_part_g in ['g_asuivre', 'g_reportage']:
+        for k_part_g in ['g_asuivre', 'g_documentaire']:
             parse_replace_configurations(database, k_ep_or_g=k_part_g)
             parse_stabilize_configurations(database, k_ep_or_g=k_part_g)
             parse_curve_configurations(database, k_ep_or_g=k_part_g)

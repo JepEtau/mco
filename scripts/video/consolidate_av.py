@@ -251,8 +251,8 @@ def calculate_av_sync(db, k_ep):
         db_audio[k_part]['count'] = 0
 
 
-    # g_reportage
-    k_part_g = 'g_reportage'
+    # g_documentaire
+    k_part_g = 'g_documentaire'
     audio_count = ms_to_frames(db_audio[k_part_g]['duration'])
     db_audio[k_part_g].update({
         'count': audio_count,
@@ -264,8 +264,8 @@ def calculate_av_sync(db, k_ep):
         'avsync': 0
     })
 
-    # reportage
-    k_part = 'reportage'
+    # documentaire
+    k_part = 'documentaire'
     db_video[k_part]['avsync'] = 0
     db_audio[k_part].update({
         'avsync': 0,
@@ -301,10 +301,10 @@ def align_audio_video_durations(db, k_ep):
         pprint(db_video[k_part_g])
 
 
-    # g_reportage
+    # g_documentaire
     #---------------------------------------------------------------------------
     # Update the shot with the duration that is calculated in the audio structure
-    k_part_g = 'g_reportage'
+    k_part_g = 'g_documentaire'
 
     last_shot = db_video[k_part_g]['shots'][-1]
     if db_audio[k_part_g]['count'] > db_video[k_part_g]['count']:
@@ -324,10 +324,10 @@ def align_audio_video_durations(db, k_ep):
         print(f"\ndb_video: %s:\n--------------------------------------" % (k_part_g))
         pprint(db_video[k_part_g])
 
-    # precedemment+episode, asuivre, reportage
+    # precedemment+episode, asuivre, documentaire
     #---------------------------------------------------------------------------
-    for k_part in ['episode', 'asuivre', 'reportage']:
-        if k_ep == K_EP_DEBUG and k_part == 'reportage' and True:
+    for k_part in ['episode', 'asuivre', 'documentaire']:
+        if k_ep == K_EP_DEBUG and k_part == 'documentaire' and True:
             print(f"\ndb_video: %s:\n--------------------------------------" % (k_part))
             pprint(db_video[k_part])
 
@@ -399,7 +399,7 @@ def align_audio_video_durations(db, k_ep):
             print(f"info: align_audio_video_durations:",
                   f"{k_ep}:{k_part}: video({video_count}) > audio ({audio_count})")
             if True:
-                print(p_yellow("warning: this has been patched (now, remove video frames) for reportage, verify elsewhere"))
+                print(p_yellow("warning: this has been patched (now, remove video frames) for documentaire, verify elsewhere"))
                 audio_count = ms_to_frames(db_audio[k_part]['duration'])
                 last_shot:Shot = db_video[k_part]['shots'][-1]
                 last_shot['count'] -= video_count - audio_count
@@ -423,7 +423,7 @@ def align_audio_video_durations(db, k_ep):
     # Add/modify effect of the first/last shot
     #---------------------------------------------------------------------------
     verbose = False
-    for k_part in ['episode', 'asuivre', 'reportage']:
+    for k_part in ['episode', 'asuivre', 'documentaire']:
         db_video_part = db_video[k_part]
         first_shot:Shot = db_video_part['shots'][0]
         last_shot:Shot = db_video_part['shots'][-1]

@@ -234,11 +234,11 @@ def parse_episode(db, k_ed, k_ep):
                 db_video_part['shots'] = list()
                 if k_option == 'shots':
                     if k_section in ['episode',
-                                    'reportage',
+                                    'documentaire',
                                     'g_debut',
                                     'g_fin',
                                     'g_asuivre',
-                                    'g_reportage']:
+                                    'g_documentaire']:
                         parse_shotlist(db_video_part['shots'],
                             k_ep, k_part, value_str)
 

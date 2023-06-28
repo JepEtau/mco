@@ -139,11 +139,11 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
 
     def event_shotlist_modified(self, values:dict):
         # Disable modification of shot geometry if there is only one shot
-        # if (values['k_part'] in ['g_asuivre', 'g_reportage']
+        # if (values['k_part'] in ['g_asuivre', 'g_documentaire']
         #     or len(values['shots']) == 1):
         #     self.groupBox_shot_geometry.setEnabled(False)
         # else:
-        # Enable custom only if more than 1 shot and not g_asuivre/g_reportage
+        # Enable custom only if more than 1 shot and not g_asuivre/g_documentaire
         self.groupBox_shot_geometry.setEnabled(True)
 
 
@@ -160,7 +160,7 @@ class Widget_geometry(Widget_common, Ui_widget_geometry):
         # Width before padding
         self.lineEdit_target_width.setText(str(geometry['target']['w']))
 
-        if frame['k_part'] in ['g_asuivre', 'g_reportage']:
+        if frame['k_part'] in ['g_asuivre', 'g_documentaire']:
         #     self.groupBox_shot_geometry.setEnabled(False)
         #     # self.pushButton_target_width_copy_from_shot.setEnabled(False)
             self.is_target_disabled = True
