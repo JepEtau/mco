@@ -14,11 +14,16 @@ class GenericSrc(TypedDict):
     k_ed: str
     k_ep: str
 
+
+class ShotGeometry(TypedDict):
+    is_default: bool
+
 class Geometry(TypedDict):
     keep_ratio: bool
     fit_to_width: bool
     crop: list[int]
     is_default: bool
+    shot: ShotGeometry
 
 
 class ShotSrc(TypedDict):

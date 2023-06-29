@@ -2,7 +2,6 @@
 import sys
 import cv2
 import os
-import psutil
 import time
 import torch
 import numpy as np
@@ -27,7 +26,7 @@ from processing_chain.get_image_list import (
 
 @torch.no_grad()
 def animesr_executor(shot, images:list, image_list:list,
-    model_name:str, directories:str, input_hash, step_no,
+    model_name:str, directories, input_hash, step_no,
     do_save:bool, output_folder:str,
     get_hash:bool=False, do_force:bool=False):
 
@@ -36,6 +35,7 @@ def animesr_executor(shot, images:list, image_list:list,
     if not os.path.isfile(model_filepath):
         sys.exit(print_red("Error: model file %s does not exist" % (model_filepath)))
 
+    sys.path.append(module_path)
     from animesr.archs.vsr_arch import MSRSWVSR
 
     # released models are all x4 models

@@ -5,7 +5,6 @@ import numpy as np
 
 from utils.pretty_print import *
 from processing_chain.hash import log_filter
-from matplotlib import pyplot as plt
 
 
 # TODO This class cannot be used anymore: rework this!

@@ -1,4 +1,4 @@
-# Differences between French and english version
+# Differences between French and English version
 
 
 * Start credit: none

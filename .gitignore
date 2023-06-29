@@ -129,23 +129,19 @@ dmypy.json
 .pyre/
 
 # Specific to this poject
-cache/
-frames/
-.vscode/
-*.mkv
-*.wav
-*.mp4
-*.mov
-*.ffindex
-*.bak
+**/*.mkv
+**/*.wav
+**/*.mp4
+**/*.mov
+**/*.ffindex
+**/*.bak
 **/*.png
 **/*.mkv
 **/*.mp4
+
+cache/
+frames/
 scripts/archive.sh
 scripts/archive.bat
-archive.sh
-archive.bat
 tools/log
-batch_sharpen.bat
-batch_edition.bat
 database/en

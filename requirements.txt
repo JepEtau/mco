@@ -1,3 +1,6 @@
-numpy>=1.24.0
-opencv-python>=4.7.0.68
-pysoundfile>=0.9.0
+numpy
+opencv-python
+pysoundfile
+scipy
+einops
+timm
