@@ -1,7 +1,7 @@
 # Differences between French and English version
 
 
-* Start credit: none
+* Start credit: same
 * End credit:
     - longer video shot (no. 9)
 
@@ -9,32 +9,32 @@
     - episode: shot no. 0 is longer
     - documentary: additional shot
 
-* Episode 2: none
-* Episode 3: none
-* Episode 4: none
-* Episode 5: none
-* Episode 6: none
-* Episode 7: none
-* Episode 8: none
-* Episode 9: none
-* Episode 10: none
-* Episode 11:
-* Episode 12:
-* Episode 13:
-* Episode 14:
-* Episode 15:
-* Episode 16:
-* Episode 17:
-* Episode 18:
-* Episode 19:
-* Episode 20:
-* Episode 21:
-* Episode 22:
-* Episode 23:
-* Episode 24:
-* Episode 25:
-* Episode 26:
-* Episode 27:
+* Episode 2: same
+* Episode 3: same
+* Episode 4: same
+* Episode 5: same
+* Episode 6: same
+* Episode 7: same
+* Episode 8: same
+* Episode 9: same
+* Episode 10: same
+* Episode 11: same
+* Episode 12: same
+* Episode 13: same
+* Episode 14: same
+* Episode 15: same
+* Episode 16: same (except frame shift on "previously", avsync to be set)
+* Episode 17: same
+* Episode 18: same
+* Episode 19: same
+* Episode 20: same
+* Episode 21: same
+* Episode 22: same (frame shift from "to_follow" to the end)
+* Episode 23: same
+* Episode 24: same (!!! k has wider shots)
+* Episode 25: same
+* Episode 26: nearly the same: (ivtc in 'en' version?)
+* Episode 27: same
 * Episode 28:
 * Episode 29:
 * Episode 30:
