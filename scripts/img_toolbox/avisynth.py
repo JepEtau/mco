@@ -185,7 +185,6 @@ def avisynth_deinterlace(shot, image_list,
         ffmpeg_command = ffmpeg_command_common + [
             "-i", os.path.abspath(script_filepath),
             "-r", str(25),
-            "-vf", "setdar=dar=4:3",
             '-pixel_format', 'bgr24',
             "-threads", "4",
             "-vcodec", "ffv1",
@@ -496,13 +495,14 @@ def avisynth_patch_deinterlace_script(shot:Shot, script_filepath, input_filepath
     for i, line in zip(range(len(lines)), lines):
 
         # Replace input file
-        input_search = re.search(re.compile(r"^FFMPEGSource2\(\"(.+)\""), line)
-        if input_search is not None:
-            line = line.replace(input_search.group(1), input_filepath)
+        if (search := re.search(re.compile("FFMPEGSource2\(\"(.+)\""), line)):
+            line = line.replace(search.group(1), input_filepath)
+
+        if (search := re.search(re.compile("FFVideoSource\(\"(.+)\""), line)):
+            line = line.replace(search.group(1), input_filepath)
 
         # Trim
-        input_file_search = re.search(re.compile("trim\(([^\)]+)"), line)
-        if input_file_search is not None:
+        if (search := re.search(re.compile("trim\(([^\)]+)"), line)):
             line = trim_line
 
         # Line has been patched
@@ -526,14 +526,13 @@ def avisynth_patch_deinterlace_script(shot:Shot, script_filepath, input_filepath
         if line.startswith('#') or len(stripped_line) == 0:
             continue
 
-        input_file_search = re.search(re.compile("FFMPEGSource2\(([^,]+)"), stripped_line)
-        if input_file_search is not None:
-            stripped_line = stripped_line.replace(input_file_search.group(1), 'source')
-        else:
-            # trim shall never be written on the same line
-            input_file_search = re.search(re.compile("trim\(([^\)]+)"), stripped_line)
-            if input_file_search is not None:
-                stripped_line = stripped_line.replace(input_file_search.group(1), "first_frame,last_frame")
+        if (search := re.search(re.compile("FFMPEGSource2\(([^,]+)"), stripped_line)):
+            stripped_line = stripped_line.replace(search.group(1), 'source')
+        if (search := re.search(re.compile("FFVideoSource\(([^,]+)"), stripped_line)):
+            stripped_line = stripped_line.replace(search.group(1), 'source')
+
+        if (search := re.search(re.compile("trim\(([^\)]+)"), stripped_line)):
+            stripped_line = stripped_line.replace(search.group(1), "first_frame,last_frame")
 
         # Do not append lines which contains multiprocessing keywords,
         # otherwise frame no. will be erroneous

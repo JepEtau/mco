@@ -280,7 +280,7 @@ def main():
                 k_part_g = arguments.part
                 if afilter == 'extract':
                     extract_audio_track(g_database, k_ep=k_part_g, k_ed=k_ed, force=arguments.force)
-                elif afilter == 'final':
+                elif afilter == 'final' and k_part_g in ['g_debut', 'g_fin']:
                     if k_ed != g_database[k_part_g]['audio']['src']['k_ed']:
                         print_orange(f"Warning: audio: discard specified edition, use final edition: {g_database[k_part_g]['audio']['src']['k_ed']}")
                     generate_audio_track(g_database,

@@ -636,7 +636,10 @@ def consolidate_target_shots_g(db, k_ep, k_part_g) -> None:
         # Create the g_sauivre structure:
         #   this part was not yet defined because it depends on audio start/duration
         # print("create_target_shots_g;: %s:%s:%s" % ('', k_ep, k_part_g))
-        db_audio = db[k_ep]['audio'][k_part_g]
+        try:
+            db_audio = db[k_ep]['audio'][k_part_g]
+        except:
+            sys.exit(f"error: {k_ep}:{k_part_g}: audio is not defined or erroneous")
         db_audio['avsync'] = 0
         db[k_ep]['video']['target'][k_part_g] = {
             'start': 0,
@@ -653,6 +656,10 @@ def consolidate_target_shots_g(db, k_ep, k_part_g) -> None:
         # Create the g_documentaire structure:
         #   this part was not yet defined because it depends on audio start/duration
         db_audio = db[k_ep]['audio'][k_part_g]
+        try:
+            db_audio = db[k_ep]['audio'][k_part_g]
+        except:
+            sys.exit(f"error: {k_ep}:{k_part_g}: audio is not defined or erroneous")
         audio_count = ms_to_frames(db_audio['duration'])
         db_audio.update({
             'count': audio_count,

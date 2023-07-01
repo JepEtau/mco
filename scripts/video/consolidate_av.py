@@ -135,10 +135,13 @@ def calculate_av_sync(db, k_ep):
         #     pprint(db[k_ep]['video']['target'][k_part])
 
         # Compare video count from audio_src and target
-        precedemment_video_count = (db[k_ep]['video'][k_ed_src]['episode']['shots'][1]['start']
-                        - db[k_ep]['video'][k_ed_src]['precedemment']['shots'][1]['start'])
-        precedemment_target_video_count = (db_video_target['episode']['shots'][1]['start']
-                        - db_video_target['precedemment']['shots'][1]['start'])
+        try:
+            precedemment_video_count = (db[k_ep]['video'][k_ed_src]['episode']['shots'][1]['start']
+                            - db[k_ep]['video'][k_ed_src]['precedemment']['shots'][1]['start'])
+            precedemment_target_video_count = (db_video_target['episode']['shots'][1]['start']
+                            - db_video_target['precedemment']['shots'][1]['start'])
+        except:
+            sys.exit(f"{k_ep}:{k_part}: video shots are not defined. They are required to calculate AV sync values.")
         if verbose:
             print_lightgrey(f"\tprecedemment to episode:")
             print_lightgrey(f"\t\tvideo count ({k_ed_src}): {precedemment_video_count}")
