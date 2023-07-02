@@ -222,6 +222,7 @@ class Esrgan_upscale():
     def load_state_dict(self, state_dict) -> PyTorchModel:
 
         state_dict_keys = list(state_dict.keys())
+        pprint(state_dict_keys)
 
         if "params_ema" in state_dict_keys:
             state_dict = state_dict["params_ema"]
@@ -240,6 +241,11 @@ class Esrgan_upscale():
         elif "f_HR_conv1.0.weight" in state_dict:
             print_lightcyan(f"SPSR")
             model = SPSR(state_dict)
+
+
+        elif ("m_head.0.weight" in state_dict
+            and"m_tail.0.weight" in state_dict):
+            print_lightcyan(f"SCUnet")
 
         # # Swift-SRGAN
         # elif (

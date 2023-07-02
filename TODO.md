@@ -1,5 +1,7 @@
 # TODO script
 (1)
+- regression: stabilization does not work on lr images. g_debut, shot no.3
+- to verify: target.ini, audio: is sart of g_asuivre uses the src video g_asuivre?
 - bug: stab: !!! ROI does not work for lowres img !!!
     -> modified, to validate
 - bug: stab: !!! does ROI mask really work with gftt? !!!
@@ -20,19 +22,12 @@
 
 (3)
 - enhancement: stab: get mean/contrast to choose an algo rather than selecting between auto/contrast?
-- bug: if audio track is longer than video and silence is added: do a video fadeout. Currently not an issue
 - refactoring of audio/generate.py: merge the 2 functions
 - (?) smooth stabilization: to evaluate (g_fin)
 - stats: list unused curves. reason: clean the db
 - effects: verify when replacing shots (asuivre/precedemment)
 - geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
 - deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image. This may have an impact if smooth stabilisation is implemented
-- (?) manual offsets to deshake
-- refactoring of filters.py
-
-- Modify install.md for scunet:
-    https://github.com/cszn/KAIR/releases/download/v1.0/scunet_color_real_gan.pth
-    https://github.com/cszn/KAIR/releases/download/v1.0/scunet_color_real_psnr.pth
 
 
 # TODO video editor

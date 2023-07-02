@@ -352,7 +352,7 @@ def align_audio_video_durations(db, k_ep):
         # print(f"\taudio_count_rounded=%f" % (audio_count_rounded))
         # print(f"\taudio_count_float=%f" % (audio_count_float))
         if audio_count_float != audio_count_rounded:
-            sys.exit("align_audio_video_durations: correct or remove this (add an audio segment), %s:%" % (k_ep, k_part))
+            sys.exit(f"align_audio_video_durations: correct or remove this (add an audio segment), {k_ep}:{k_part}")
             # Add silence to the latest segment
             s = db_audio[k_part]['segments'][-1]
             silence = int(((audio_count_rounded - audio_count_float) * 1000 / FPS) + 0.5)

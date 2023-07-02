@@ -74,8 +74,10 @@ def scunet_executor(shot, images:list, image_list:list,
 
     # Load model
     torch.cuda.empty_cache()
+    state_dict = torch.load(model_filepath)
+
     model = net(in_nc=channel_count, config=[4, 4, 4, 4, 4, 4, 4], dim=64)
-    model.load_state_dict(torch.load(model_filepath), strict=True)
+    model.load_state_dict(state_dict, strict=True)
     model.eval()
     for _, v in model.named_parameters():
         v.requires_grad = False
