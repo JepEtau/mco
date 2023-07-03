@@ -1,7 +1,7 @@
 # TODO script
 (1)
-- regression: stabilization does not work on lr images. g_debut, shot no.3
-- to verify: target.ini, audio: is sart of g_asuivre uses the src video g_asuivre?
+- regression: stabilization does not work on lr images. g_debut, shot no.3: default mode is not static
+- to verify: target.ini, audio: start of g_asuivre?
 - bug: stab: !!! ROI does not work for lowres img !!!
     -> modified, to validate
 - bug: stab: !!! does ROI mask really work with gftt? !!!
