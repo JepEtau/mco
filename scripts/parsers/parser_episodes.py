@@ -339,10 +339,11 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
     # Edition used as the default source
     for k_part in K_PARTS:
         k_ed_src = db[k_ep]['video']['target'][k_part]['k_ed_src']
-        if k_part not in db[k_ep]['video'][k_ed_src].keys():
-            continue
 
-        db_video = db[k_ep]['video'][k_ed_src][k_part]
+        try:
+            db_video = db[k_ep]['video'][k_ed_src][k_part]
+        except:
+            sys.exit(p_red(f"error: {k_ed_src}:{k_ep}: it seems that the input file is missing"))
         if 'shots' in db_video.keys():
             shots = db_video['shots']
             for shot in shots:
@@ -356,6 +357,18 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
                     if k_ed_dep not in dependencies.keys():
                         dependencies[k_ed_dep] = list()
                     dependencies[k_ed_dep].append(shot['src']['k_ep'])
+
+        k_ed_dep = db[k_ep]['audio']['src']['k_ed']
+        try:
+            db_audio = db[k_ep]['audio'][k_part]
+        except:
+            sys.exit(p_red(f"error: {k_ed_src}:{k_ep}: it seems that the input file is missing"))
+
+        for segment in db_audio['segments']:
+            if 'k_ep' in segment.keys() and segment['k_ep'] != k_ep:
+                if k_ed_dep not in dependencies.keys():
+                    dependencies[k_ed_dep] = list()
+                dependencies[k_ed_dep].append(segment['k_ep'])
 
     for k_ed in dependencies.keys():
         dependencies[k_ed] = list(set(dependencies[k_ed]))

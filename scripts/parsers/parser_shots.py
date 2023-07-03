@@ -254,9 +254,7 @@ def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
                 sys.exit("%s: add loop duration" % (__name__))
 
         if shots[i]['count'] <= 0 and i < len(shots)-1:
-            print("Error: %s:%s:%s: shot start=%d, shot length (%d) < 0 " % (k_ed, k_ep, k_part, shots[i]['start'], shots[i]['count']))
-            # pprint(shots)
-            sys.exit()
+            sys.exit(p_red(f"Error: {k_ed}:{k_ep}:{k_part}: shot no. {shots[i]['no']:03d}, length (shots[i]['count']) < 0"))
 
         frames_count += shots[i]['count']
 

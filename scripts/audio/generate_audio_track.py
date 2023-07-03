@@ -116,7 +116,7 @@ def generate_audio_track(db, k_ep_or_g:str, force=False, verbose=False) -> None:
                 # Import this segment from another episode
                 print("info: generate_audio_track: import from other episode")
                 k_ep_src = s['k_ep']
-                input_directory = os.path.join(db[k_ep_src]['target']['cache_path'], "audio")
+                input_directory = os.path.join(db[k_ep_src]['cache_path'], "audio")
                 tmp_filename = f"{k_ep_src}_{k_ed}_audio_extract.{ext}"
                 tmp_filepath = os.path.join(input_directory, tmp_filename)
                 if not os.path.exists(tmp_filepath):
