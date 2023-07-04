@@ -8,6 +8,7 @@ import concurrent.futures
 from concurrent.futures import ThreadPoolExecutor
 import platform
 from pprint import pprint
+from img_toolbox.filters import color_fix
 
 
 from img_toolbox.utils import MAX_FRAMES_COUNT
@@ -18,10 +19,6 @@ from processing_chain.hash import (
 )
 from processing_chain.get_image_list import (
     get_image_list,
-)
-
-from img_toolbox.filters import (
-    cv2_rgb_curves,
 )
 
 
@@ -101,7 +98,7 @@ def rgb_curves_node(shot, images:list, image_list:list,
     if cpu_count > 1:
         no = 0
         with ThreadPoolExecutor(max_workers=min(cpu_count, len(worklist))) as executor:
-            work_result = {executor.submit(work_cv2_rgb_curves, work[0], work[1], shot['curves']['lut']): list
+            work_result = {executor.submit(work_color_fix, work[0], work[1], shot['curves']['lut']): list
                             for work in worklist}
             for future in concurrent.futures.as_completed(work_result):
                 frame_no, img = future.result()
@@ -114,7 +111,7 @@ def rgb_curves_node(shot, images:list, image_list:list,
     else:
         no = 0
         for work in worklist:
-            frame_no, img = work_cv2_rgb_curves(work[0], work[1], shot['curves']['lut'])
+            frame_no, img = work_color_fix(work[0], work[1], shot['curves']['lut'])
             if use_memory:
                 output_images[frame_no] = img
             if do_save:
@@ -130,13 +127,14 @@ def rgb_curves_node(shot, images:list, image_list:list,
 
 
 
-def work_cv2_rgb_curves(frame_no, input_img, lut) -> list:
+def work_color_fix(frame_no, input_img, ref_img, parameters) -> list:
     # For large shot, img is provided as the filepath
     if type(input_img) is str:
         img = cv2.imread(input_img, cv2.IMREAD_COLOR)
     else:
         img = input_img
 
-    output_img = cv2_rgb_curves(img, lut)
+    output_img = color_fix(img, ref_img, parameters)
     return (frame_no, output_img)
+
 

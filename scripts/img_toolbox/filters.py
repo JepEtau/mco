@@ -19,6 +19,26 @@ from img_toolbox.utils import (
 from utils.pretty_print import *
 
 
+
+
+
+
+
+def color_fix(img, ref_img, parameters):
+    algo = parameters['algo']
+
+    if algo == 'average':
+        average_color_fix_node(input_img=img, ref_img: np.ndarray, scale_factor: float
+) -> np.ndarray:
+
+
+
+
+
+
+
+
+
 def get_mean_luma(img):
     # return brightness (x100)
     h, s, v = cv2.split(cv2.cvtColor(img, cv2.COLOR_BGR2HSV))
@@ -152,7 +172,7 @@ def filter_remove_contours(in_img, thresh, maxval):
 
 
 
-def cv2_rgb_filter(img, lut):
+def cv2_rgb_curves(img, lut):
     b, g, r = cv2.split(img)
 
     matrix_r = lut['r']

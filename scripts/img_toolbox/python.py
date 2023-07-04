@@ -17,7 +17,7 @@ from img_toolbox.homography import Homography
 from img_toolbox.deshake import deshake
 from img_toolbox.python_geometry import (
     add_borders,
-    apply_python_geometry_filter,
+    geometry_node,
 )
 from img_toolbox.utils import MAX_FRAMES_COUNT
 from utils.pretty_print import *
@@ -39,7 +39,7 @@ from img_toolbox.filters import (
     cv2_edge_sharpen_sobel,
     cv2_morphology_ex
 )
-from img_toolbox.python_rgb import apply_python_rgb_filter
+from img_toolbox.python_rgb import rgb_curves_node
 from img_toolbox.chainner import (
     sharpen_node,
 )
@@ -179,8 +179,21 @@ def python_executor(shot:dict, images:list, image_list:list,
         return hash, output_images
 
 
+    elif filter_name == 'deshake':
+        return fix_color_node(
+            shot=shot,
+            images=images,
+            image_list=image_list,
+            step_no=step_no,
+            filters_str=filters_str,
+            input_hash=input_hash,
+            get_hash=get_hash,
+            do_save=do_save,
+            output_folder=output_folder)
+
+
     elif filter_name == 'rgb':
-        return apply_python_rgb_filter(
+        return rgb_curves_node(
             shot=shot,
             images=images,
             image_list=image_list,
@@ -199,7 +212,7 @@ def python_executor(shot:dict, images:list, image_list:list,
             hash = ''
             return hash, None
 
-        return apply_python_geometry_filter(
+        return geometry_node(
             shot=shot,
             images=images,
             image_list=image_list,

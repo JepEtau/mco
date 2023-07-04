@@ -111,6 +111,15 @@ def consolidate_tasks(shot):
         previous_filter['task'] = 'sharpen'
 
 
+    # Append color fix
+    shot['filters'].append({
+        'type': 'python',
+        'save': True,
+        'str': 'color_fix',
+        'task': 'color_fix'
+    })
+
+
     # Append RGB curves
     shot['filters'].append({
         'type': 'python',

@@ -20,9 +20,6 @@ EXECUTORS = {
     'python': python_executor,
     'ffmpeg': ffmpeg_executor,
     'avisynth': avisynth_executor,
-
-    # Use filters from chainner (not a chainner project)
-    'chainner': python_executor,
 }
 
 

@@ -30,7 +30,7 @@ from img_toolbox.filters import (
 )
 
 
-def apply_python_geometry_filter(shot, images:list, image_list:list,
+def geometry_node(shot, images:list, image_list:list,
     step_no, filters_str:str, input_hash:str,
     do_save:bool, output_folder:str,
     get_hash:bool=False, do_log:bool=True,
@@ -105,7 +105,7 @@ def apply_python_geometry_filter(shot, images:list, image_list:list,
     else:
         worklist = list([[frame_no, image_list[frame_no]] for frame_no in range(count)])
     if len(worklist) == 0:
-        sys.exit(print_red("error: apply_python_geometry_filter: worklist is empty, debug this!!!"))
+        sys.exit(print_red("error: geometry_node: worklist is empty, debug this!!!"))
 
 
     # Execute the pool of works
