@@ -33,18 +33,25 @@
 * Episode 23: same
 * Episode 24: same (!!! k has wider shots)
 * Episode 25: same
-* Episode 26: nearly the same: (ivtc in 'en' version?)
+* Episode 26: same (frame shift, ivtc in 'en' version?)
 * Episode 27: same
-* Episode 28:
-* Episode 29:
-* Episode 30:
-* Episode 31:
+* Episode 28: same
+* Episode 29: same
+* Episode 30: same
+* Episode 31: same
 * Episode 32:
+    - en: shot from 29662 is shorter (k: ~29628)
+    - en: missing shot: k:29776-29859
+    - en: missing shot: k:30255-30423
 * Episode 33:
-* Episode 34:
-* Episode 35:
-* Episode 36:
-* Episode 37:
-* Episode 38:
-* Episode 39:
+    - fr: shot @~10382 is shorter
+    - fr: shot @~14900 is shorter
+    - fr: shot @~15130 is different
+    - fr: some others are shorter
+* Episode 34: same
+* Episode 35: same
+* Episode 36: same
+* Episode 37: same
+* Episode 38: same
+* Episode 39: same
 

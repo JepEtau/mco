@@ -39,7 +39,7 @@ from img_toolbox.filters import (
     cv2_edge_sharpen_sobel,
     cv2_morphology_ex
 )
-from img_toolbox.python_rgb import rgb_curves_node
+from img_toolbox.rgb_curves_node import rgb_curves_node
 from img_toolbox.chainner import (
     sharpen_node,
 )

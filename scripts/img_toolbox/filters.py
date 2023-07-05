@@ -27,9 +27,10 @@ from utils.pretty_print import *
 def color_fix(img, ref_img, parameters):
     algo = parameters['algo']
 
-    if algo == 'average':
-        average_color_fix_node(input_img=img, ref_img: np.ndarray, scale_factor: float
-) -> np.ndarray:
+#     if algo == 'average':
+#         average_color_fix_node(input_img=img, ref_img: np.ndarray, scale_factor: float
+# ) -> np.ndarray:
+    return img
 
 
 
