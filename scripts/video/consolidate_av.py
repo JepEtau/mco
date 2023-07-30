@@ -280,8 +280,8 @@ def calculate_av_sync(db, k_ep):
 
 def align_audio_video_durations(db, k_ep):
     K_EP_DEBUG, K_PART_DEBUG = [''] *2
-    # K_EP_DEBUG = 'ep01'
-    # K_PART_DEBUG = 'asuivre'
+    K_EP_DEBUG = 'ep02'
+    K_PART_DEBUG = 'documentaire'
     try:
         db_video = db[k_ep]['video']['target']
         db_audio = db[k_ep]['audio']
@@ -409,6 +409,7 @@ def align_audio_video_durations(db, k_ep):
                 last_shot:Shot = db_video[k_part]['shots'][-1]
                 last_shot['count'] -= video_count - audio_count
                 db_video[k_part]['count'] = db_audio[k_part]['count']
+                last_shot['dst']['count'] = last_shot['count']
             else:
                 video_duration = int(video_count * 1000 / FPS)
                 audio_duration = db_audio[k_part]['duration']
@@ -449,7 +450,7 @@ def align_audio_video_durations(db, k_ep):
                     ['fadein', fadein_count, fadein_count], 'effects')
                 if verbose:
                     pprint(first_shot)
-                    sys.exit()
+                    # sys.exit()
 
             if ('fadeout' in db_video_part['effects'].keys()
                 and db_video_part['effects']['fadeout'] != 0):
@@ -484,7 +485,6 @@ def align_audio_video_durations(db, k_ep):
                     if verbose:
                         print(f"\talign_audio_video_durations: {k_ep}:{k_part}, patch the last shot -> fadeout: add effects")
                         pprint(db_video_part)
-                    last_shot_src = last_shot['src']
-                    frame_no = last_shot_src['start'] + last_shot_src['count'] - 1
+                    frame_no = last_shot['start'] + last_shot['count'] - 1
                     nested_dict_set(last_shot,
                         ['fadeout', frame_no - fadeout_count + 1, fadeout_count], 'effects')

@@ -1,5 +1,5 @@
 
-# Exigences
+# Requirements
 - Windows 11
 - RAM: minimum 16GB (32GB recommandés)
 - SSD ou HDD: taille des vidéo d'entrée + 300GB par épisode (génération)
@@ -8,12 +8,12 @@
 - Quelques heures par épisode (selon le CPU et la carte graphique)
 <br/><br/>
 
-# Installations
+# Install
 [Etapes](./INSTALL.md)
 <br/><br/>
 
 
-# Fichiers video d'entrée
+# Input video files
 A stocker dans les répertoires suivants:
 - Edition 'f': [inputs/f](./inputs/f/README.md)
 - Edition 'k': [inputs/k](./inputs/k/README.md)
@@ -24,7 +24,7 @@ EN: for the english version, 'f' is the only required edition
 <br/><br/>
 
 
-# Utilisation
+# Usage
 Une fois les installations et les fichiers d'entrée ajoutés à ce projet, exécuter la commande suivante pour tester l'installation des modules python:
 ```bash
 # FR

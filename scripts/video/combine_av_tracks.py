@@ -68,7 +68,6 @@ def combine_av_tracks(db, k_ep_or_g, last_task, force:bool=False, simulation:boo
         "-i", audio_filepath,
         "-c:v", "copy",
         "-c:a", "copy",
-        "-shortest",
         "-y", audio_video_filepath
     ])
 

@@ -249,6 +249,7 @@ def effect_loop_and_fadeout(db, shot):
 def effect_fadeout(db, shot):
     # verified:
     #   - ep01: documentaire
+    # warning: ep02, 'en' version
     fadeout_start = shot['effects'][1]
     fadeout_count = shot['effects'][2]
     print_green(f"\tfadeout: start={fadeout_start}, count={fadeout_count}")
@@ -307,9 +308,11 @@ def effect_fadeout(db, shot):
     filename_template = FILENAME_TEMPLATE % (
         shot['k_ep'], shot['k_ed'], step_no, suffix)
     if shot['last_task'] == 'deinterlace':
-        start = shot['start'] + shot['count']
+        start = shot['src']['start'] + shot['src']['count']
         end = start + fadeout_count
     else:
+        # TODO: validate this!
+        print_yellow("effect_fadeout: validate this case!")
         start = shot['count']
         end = start + fadeout_count
     output_image_list = list([os.path.join(output_filepath, filename_template % (f_no))
