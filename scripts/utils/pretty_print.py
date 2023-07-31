@@ -149,7 +149,7 @@ def pprint_episode(db, k_ep):
     if False:
         # print last shot of every part
         for k_p in K_PARTS_ORDERED:
-            print("%s" % (k_p))
+            print(f"{k_p}")
             db_video = db[k_ep]['target']['video'][k_p]
             if db_video['count'] == 0:
                 continue
@@ -206,41 +206,41 @@ def pprint_episode(db, k_ep):
         #     audio_duration += db_audio['silence']
 
         # total frames count
-        tmp_str = "%d" % db_video['count']
-        print("%s" % (tmp_str.rjust(12)), end='')
+        tmp_str = f"{db_video['count']}"
+        print(f"{tmp_str.rjust(12)}", end='')
 
         # total audio count
-        tmp_str = "%d" % db_audio['count']
-        print("%s" % (tmp_str.rjust(12)), end='')
+        tmp_str = f"{db_audio['count']}"
+        print(f"{tmp_str.rjust(12)}", end='')
 
         # avsync audio
-        tmp_str = "%d" % ms_to_frames(db_audio['avsync'])
-        print("%s" % (tmp_str.rjust(8)), end='')
+        tmp_str = f"{ms_to_frames(db_audio['avsync'])}"
+        print(f"{tmp_str.rjust(8)}", end='')
 
         # silence audio
         tmp_str = "%.02f" % (db_audio['silence']/1000)
-        print("%s" % (tmp_str.rjust(12)), end='')
+        print(f"{tmp_str.rjust(12)}", end='')
 
         # -> padded (A)
-        extra_str = "%d" % ms_to_frames(db_audio['avsync'] + audio_silence_padding)
-        print("%s" % (extra_str.rjust(12)), end='')
+        extra_str = f"{ms_to_frames(db_audio['avsync'] + audio_silence_padding)}"
+        print(f"{extra_str.rjust(12)}", end='')
 
 
         # start of 1st shot
-        start_str = "%d" % first_shot['start']
-        print("%s" % (start_str.rjust(12)), end='')
+        start_str = f"{first_shot['start']}"
+        print(f"{start_str.rjust(12)}", end='')
 
         # frames count (sum of shots only)
-        tmp_str = "%d" % frames_count
-        print("%s" % (tmp_str.rjust(12)), end='')
+        tmp_str = f"{frames_count}"
+        print(f"{tmp_str.rjust(12)}", end='')
 
         # loop
-        tmp_str = "%d" % loop_count
-        print("%s" % (tmp_str.rjust(12)), end='')
+        tmp_str = f"{loop_count}"
+        print(f"{tmp_str.rjust(12)}", end='')
 
         # avsync
-        tmp_str = "%d" % db_video['avsync']
-        print("%s" % (tmp_str.rjust(12)), end='')
+        tmp_str = f"{db_video['avsync']}"
+        print(f"{tmp_str.rjust(12)}", end='')
 
 
         print("")
@@ -267,13 +267,15 @@ def pprint_episode(db, k_ep):
     print_green("")
 
 
+    pprint(db[k_ep]['video']['target']['episode']['avsync'])
+
 
 def pprint_g_debut_fin(db):
 
     if False:
         # print last shot of every part
         for k_part_g in ['g_debut', 'g_fin']:
-            print("%s" % (k_part_g))
+            print(f"{k_part_g}")
             db_video = db[k_part_g]['target']['video']
             if db_video['count'] == 0:
                 continue
@@ -298,7 +300,7 @@ def pprint_g_debut_fin(db):
         frames_count = 0
 
         if db_video['count'] == 0:
-            print("%s" % (k_part_g.ljust(16)), end='')
+            print(f"{k_part_g.ljust(16)}", end='')
             print("\t(0)")
             continue
 
@@ -326,44 +328,44 @@ def pprint_g_debut_fin(db):
         if 'silence' in db_audio.keys():
             audio_duration += db_audio['silence']
 
-        print("%s" % (k_part_g.ljust(8)), end='')
+        print(f"{k_part_g.ljust(8)}", end='')
 
         # total frames count
         tmp_str = "%d" % db_video['count']
-        print("%s" % (tmp_str.rjust(12)), end='')
+        print(f"{tmp_str.rjust(12)}", end='')
 
         # total audio count
         tmp_str = "%d" % db_audio['count']
-        print("%s" % (tmp_str.rjust(12)), end='')
+        print(f"{tmp_str.rjust(12)}", end='')
 
 
         # avsync audio
         tmp_str = "%.02f" % (db_audio['avsync']/1000)
-        print("%s" % (tmp_str.rjust(12)), end='')
+        print(f"{tmp_str.rjust(12)}", end='')
 
         # silence audio
         tmp_str = "%.02f" % (db_audio['silence']/1000)
-        print("%s" % (tmp_str.rjust(12)), end='')
+        print(f"{tmp_str.rjust(12)}", end='')
 
         # -> padded (A)
         extra_str = "%d" % ms_to_frames(db_audio['avsync'] + db_audio['silence'])
-        print("%s" % (extra_str.rjust(12)), end='')
+        print(f"{extra_str.rjust(12)}", end='')
 
         # start of 1st shot
         start_str = "%d" % first_shot['start']
-        print("%s" % (start_str.rjust(14)), end='')
+        print(f"{start_str.rjust(14)}", end='')
 
         # frames count (sum of shots only)
         tmp_str = "%d" % frames_count
-        print("%s" % (tmp_str.rjust(10)), end='')
+        print(f"{tmp_str.rjust(10)}", end='')
 
         # loop
         tmp_str = "%d" % loop_count
-        print("%s" % (tmp_str.rjust(8)), end='')
+        print(f"{tmp_str.rjust(8)}", end='')
 
         # avsync
         tmp_str = "%d" % db_video['avsync']
-        print("%s" % (tmp_str.rjust(8)), end='')
+        print(f"{tmp_str.rjust(8)}", end='')
 
         print("")
 
