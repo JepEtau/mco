@@ -50,7 +50,7 @@ def parser_edition_common(db_common, filename, verbose=False):
 #   Get editions from folder
 #
 #===========================================================================
-def parse_editions(database, cfg_foldername, verbose=False):
+def parse_editions(database, cfg_foldername, verbose=False, force:bool=False):
     db_common = database['common']
     verbose = False
 
@@ -96,7 +96,7 @@ def parse_editions(database, cfg_foldername, verbose=False):
                 if verbose:
                     print("\tfilename= %s" % (filename))
                 filepath = os.path.join(db_common['directories']['inputs'], folder, filename)
-                if os.path.isfile(filepath):
+                if os.path.isfile(filepath) or force:
                     if verbose:
                         print("\tsearch ep no. from %s" % (filename))
                     tmp = None

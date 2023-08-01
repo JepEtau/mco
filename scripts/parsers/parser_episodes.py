@@ -38,18 +38,19 @@ from utils.pretty_print import *
 #   Initialize configuration for all episodes
 #
 #===========================================================================
-def db_init_episodes(db, k_ed, ep_min:int=1, ep_max:int=39):
+def db_init_episodes(db, k_ed, ep_min:int=1, ep_max:int=39, force:bool=False):
     # ep_maxCount is the maximum nb of episodes for debug purpose
     db_common = db['common']
 
     for i in range(ep_min, min(40, ep_max+1)):
-        k_ep = 'ep%02d' % i
+        k_ep = f'ep{i:02d}'
 
-        # Do not create section if input file does not exist
-        if (k_ep not in db['editions'][k_ed]['inputs']['video'].keys()
-            and k_ep not in db['editions'][k_ed]['inputs']['audio'].keys()):
-            # print("warning: input file for episode no. %d does not exist" % (i))
-            continue
+        if not force:
+            # Do not create section if input file does not exist
+            if (k_ep not in db['editions'][k_ed]['inputs']['video'].keys()
+                and k_ep not in db['editions'][k_ed]['inputs']['audio'].keys()):
+                # print("warning: input file for episode no. %d does not exist" % (i))
+                continue
 
         # Create structure for this episode/edition
 
@@ -175,7 +176,7 @@ def parse_episode(db, k_ed, k_ep):
     # If the input video file has not been found, do not parse the config file
     if k_ed not in db[k_ep]['video'].keys():
         if verbose:
-            print_orange("\ttwarning: %s:%s: missing file %s, ignoring" % (k_ed, k_ep, filepath))
+            print_orange("\twarning: %s:%s: missing file %s, ignoring" % (k_ed, k_ep, filepath))
         return
 
     # Video db for this edition
@@ -183,10 +184,15 @@ def parse_episode(db, k_ed, k_ep):
 
 
     # Create default dict for inputs
+    input_filepath =  ''
+    try:
+        input_filepath = db['editions'][k_ed]['inputs']['video'][k_ep]
+    except:
+        pass
     for k_part in K_ALL_PARTS:
         nested_dict_set(db_video, {
             'interlaced': {
-                'filepath': db['editions'][k_ed]['inputs']['video'][k_ep],
+                'filepath': input_filepath,
             },
             'progressive': {
                 'enable': False,

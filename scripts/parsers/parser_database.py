@@ -59,15 +59,15 @@ def parse_database(database, k_ep, lang:str=''):
 
 
     # Parse editions: folders, files and additional settings: dimension
-    parse_editions(database, cfg_foldername=PATH_DATABASE)
+    parse_editions(database, cfg_foldername=PATH_DATABASE, force=True)
 
     # Initialize dictionary for episodes per edition
     for k_ed_tmp in database['editions']['available']:
-        db_init_episodes(database, k_ed=k_ed_tmp)
+        db_init_episodes(database, k_ed=k_ed_tmp, force=True)
     if False:
         print("db_init_episodes")
         print("------------------------------------")
-        pprint(database[k_ep])
+        pprint(database[k_ep]['video'].keys())
         print("------------------------------------")
         sys.exit()
 
@@ -90,7 +90,7 @@ def parse_database(database, k_ep, lang:str=''):
     if False:
         print("parse_episodes_target")
         print("-------------- %s ------------------" % (k_ep))
-        pprint(database[k_ep])
+        pprint(database[k_ep]['video'].keys())
         print("------------------------------------")
         sys.exit()
 
@@ -119,7 +119,7 @@ def parse_database(database, k_ep, lang:str=''):
     if False:
         print("parse_episode")
         print("------------------------------------")
-        pprint(database[k_ep])
+        pprint(database[k_ep]['video'].keys())
         print("------------------------------------")
         sys.exit()
 
