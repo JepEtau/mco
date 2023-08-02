@@ -150,6 +150,14 @@ def calculate_av_sync(db, k_ep):
         if precedemment_video_count != precedemment_target_video_count:
             print_red(f"error: precedemment to episode: erroneous frame count between {k_ed_src} and target")
 
+
+        # Detect if silence has to be added between precedemment and episode
+        pprint(db_video_target)
+        precedemment_end = db_video_target['precedemment']['shots'][0]['start'] + db_video_target['precedemment']['count']
+        episode_start = db_video_target['episode']['shots'][0]['start']
+        do_add_silence = True if episode_start != precedemment_end else False
+
+
         # precedemment
 
         # Use the 2nd shot to calculate diff between editions
@@ -195,6 +203,14 @@ def calculate_av_sync(db, k_ep):
         db_video[k_part]['avsync'] = abs(avsync) if avsync < 0 else 0
         db_video[k_part]['count'] += db_video[k_part]['avsync']
         db_audio[k_part]['avsync'] = frames_to_ms(avsync) if avsync > 0 else 0
+
+
+        if do_add_silence:
+            silence_frame_count = episode_start - precedemment_end
+            sys.exit(p_red(f"add silence between precedemment and silence: {silence_frame_count}"))
+
+
+
 
 
         if False:

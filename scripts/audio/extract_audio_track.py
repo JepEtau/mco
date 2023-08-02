@@ -5,7 +5,7 @@ import numpy as np
 import os
 
 from pprint import pprint
-
+from utils.pretty_print import *
 from utils.common import (
     K_AUDIO_PARTS,
     K_GENERIQUES,
@@ -33,7 +33,10 @@ def extract_audio_track(db, k_ep:str, k_ed, force=False) -> str:
     print(f"{current_datetime_str()} extract_audio_track from {k_ed}:{k_ep_src}")
 
     # Input audio file
-    input_filepath = db['editions'][k_ed]['inputs']['audio'][k_ep_src]
+    try:
+        input_filepath = db['editions'][k_ed]['inputs']['audio'][k_ep_src]
+    except:
+        sys.exit(p_red(f"Missing input file: edition {k_ed}, epiosde {k_ep_src[2:]}"))
     if force or verbose:
         print(f"%s extract audio stream: %s:%s from %s" % (current_datetime_str(), k_ed, k_ep_src, input_filepath))
 

@@ -164,6 +164,17 @@ def generate_video_track(db, k_ed:str, k_ep:str,
                     'last_task': shot['last_task'] if shot['last_task'] != 'final' else ''
                 })
                 do_generate_shot_video = True
+            else:
+                # This shot has not enough frames to generate a video shot,
+                # append images to the previous shot and regenerate it
+                watermark_str = f"{shot['no'] - 1}" if watermark else None
+                combine_images_into_video(db['common'],
+                    k_p,
+                    video_shot=video_files[k_p]['shotlist'][-1],
+                    force=True,
+                    simulation=simulation,
+                    watermark=watermark_str)
+
             previous_concatenation_filepath = tmp
 
 
@@ -173,7 +184,7 @@ def generate_video_track(db, k_ed:str, k_ep:str,
                 watermark_str = f"{shot['no']}" if watermark else None
                 combine_images_into_video(db['common'],
                     k_p,
-                    video_shot= video_files[k_p]['shotlist'][-1],
+                    video_shot=video_files[k_p]['shotlist'][-1],
                     force=force,
                     simulation=simulation,
                     watermark=watermark_str)

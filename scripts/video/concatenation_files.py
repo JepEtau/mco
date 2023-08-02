@@ -242,5 +242,8 @@ def create_concatenation_file_silence(db, k_ep):
 
             concatenation_file.close()
 
+    # Add silence between precedemment and episode
+
+
     return files
 

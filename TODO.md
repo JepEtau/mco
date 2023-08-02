@@ -1,7 +1,11 @@
 # TODO script
 (1)
+- bug: when start of 1st shot of episode != end of precedemment:
+    * insert black frames as silence
+    * if avsync (precedemment) > 0, reduce the silence
+    * if avsync is still > 0, remove video frames
+
 - regression: stabilization does not work on lr images. g_debut, shot no.3: default mode is not static
-- to verify: target.ini, audio: start of g_asuivre?
 - bug: stab: !!! ROI does not work for lowres img !!!
     -> modified, to validate
 - bug: stab: !!! does ROI mask really work with gftt? !!!
