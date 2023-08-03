@@ -161,6 +161,7 @@ def pprint_episode(db, k_ep):
     print_lightcyan("avsync(A)".rjust(12), end='')
     print_lightcyan("silence(A)".rjust(12), end='')
     print_lightcyan("+adjust(A)".rjust(12), end='')
+    print_lightcyan("silence(V)".rjust(12), end='')
     print_lightcyan("1st shot".rjust(12), end='')
     print_lightcyan("frames".rjust(10), end='')
     print_lightcyan("loop".rjust(8), end='')
@@ -197,6 +198,13 @@ def pprint_episode(db, k_ep):
                 pass
         part_frame_count += frame_count + loop_count
 
+        video_silence = 0
+        try:
+            video_silence = db_video['silence']
+        except:
+            pass
+        part_frame_count += video_silence
+
         audio_duration = 0
         audio_duration +=  db_audio['avsync']
         audio_silence_padding = 0
@@ -230,6 +238,8 @@ def pprint_episode(db, k_ep):
         extra_str = f"{ms_to_frames(db_audio['avsync'] + audio_silence_padding)}"
         print(f"{extra_str.rjust(12)}", end='')
 
+        # video: append silence
+        print(f"{str(video_silence).rjust(12)}", end='')
 
         # start of 1st shot
         start_str = f"{first_shot['start']}"

@@ -12,6 +12,7 @@ from processing_chain.get_frame_list import (
     get_frame_list,
     get_frame_list_single,
 )
+from utils.types import Audio, VideoPart
 from video.utils import create_folder_for_concatenation
 from utils.pretty_print import *
 
@@ -203,7 +204,7 @@ def create_concatenation_file_video(db, k_ep, k_part, video_files:dict):
         return concatenation_filepath
 
 
-def create_concatenation_file_silence(db, k_ep):
+def create_concatenation_file_silence(db, k_ep) -> dict:
     # Create a concatenation file for silence
     files = dict()
     for k_p in K_PARTS:
@@ -212,17 +213,17 @@ def create_concatenation_file_silence(db, k_ep):
         if k_p not in db[k_ep]['audio'].keys():
             continue
 
-        if ('silence' in db[k_ep]['audio'][k_p].keys()
-                and db[k_ep]['audio'][k_p]['silence'] > 0):
+        db_audio: Audio = db[k_ep]['audio'][k_p]
+
+        if 'silence' in db_audio.keys() and db_audio['silence'] > 0:
 
             print_lightgrey(f"\t- {k_p}")
 
             # Convert silence duration in nb of frames
-            # print(db[k_ep]['audio'][k_p]['silence'])
-            silence_count = int(db[k_ep]['audio'][k_p]['silence'] * FPS / 1000)
+            silence_count = ms_to_frames(db_audio['silence'])
             # print("silence = %d frames" % (silence_count))
 
-            # Frame duration
+            # Duration
             black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
             duration_str = "duration %.02f\n" % (1/FPS)
 
@@ -241,9 +242,6 @@ def create_concatenation_file_silence(db, k_ep):
             files[k_p].append(concatenation_filepath)
 
             concatenation_file.close()
-
-    # Add silence between precedemment and episode
-
 
     return files
 

@@ -226,20 +226,19 @@ def generate_video_track(db, k_ed:str, k_ep:str,
     # Create concatenation files and video files for silences
     if k_part == '':
         print_lightgreen(f"\nCreate silences after:")
-        video_files_tmp = create_concatenation_file_silence(db, k_ep=k_ep)
+        silences = create_concatenation_file_silence(db, k_ep=k_ep)
         if verbose:
-            print_lightgreen(f"video_files_tmp")
-            pprint(video_files_tmp)
+            print_lightgreen(f"silences:")
+            pprint(silences)
 
-        for k_p, filepaths in video_files_tmp.items():
+        for k_p, filepaths in silences.items():
             if verbose:
                 print_lightgreen(f"combine images to video: {k_p}")
                 pprint(filepaths)
-            if len(filepaths) == 0:
-                continue
 
             for f in filepaths:
-                # print("%s: %s" % (k_p, f))
+                if verbose:
+                    print(f"{k_p}: {f}")
                 virtual_video_shot = {'path': f, 'last_task': '', 'hash': ''}
                 output_filepath = combine_images_into_video(
                     db_common=db['common'],

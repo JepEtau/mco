@@ -266,8 +266,8 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
         image_list += get_frame_file_paths_until_effects(db,
             k_part=k_part, shot=shot, suffix=suffix)
 
-    if k_part in ['g_debut', 'g_fin']:
-    # Append silence to these parts
+    if k_part in ['g_debut', 'g_fin', 'precedemment']:
+        # Append silence to these parts
         if ('silence' in db_video.keys()
             and shot['no'] == (len(db_video['shots']) - 1)):
             # Add black frames to the files

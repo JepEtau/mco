@@ -130,7 +130,7 @@ class DstShot(TypedDict):
 
 class VideoPart(TypedDict):
     start: int
-    end: int # Attention, this is in fact the end+1 frame no.
+    end: int # Attention, this is the end+1 frame no.
     count: int
 
     shots: list[Shot]
@@ -142,6 +142,8 @@ class VideoPart(TypedDict):
     # used to sync audio and video: nb of frames to add before this part
     avsync: int
 
+    # Add black frames after this part
+    silence: int
 
 
 
