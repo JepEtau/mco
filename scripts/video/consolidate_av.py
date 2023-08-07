@@ -131,7 +131,7 @@ def calculate_av_sync(db, k_ep):
     if k_part in db_audio.keys() and db_audio[k_part]['duration'] != 0:
         # edition used as the src for the audio track
 
-        k_ed_src = db_audio['src']['k_ed']
+        k_ed_audio_src = db_audio['src']['k_ed']
         # if verbose:
         #     print_lightcyan(f"db_audio[{k_part}]:")
         #     pprint(db_audio[k_part])
@@ -142,8 +142,8 @@ def calculate_av_sync(db, k_ep):
 
         # Compare video count from audio_src and target
         try:
-            precedemment_video_count = (db[k_ep]['video'][k_ed_src]['episode']['shots'][1]['start']
-                            - db[k_ep]['video'][k_ed_src]['precedemment']['shots'][1]['start'])
+            precedemment_video_count = (db[k_ep]['video'][k_ed_audio_src]['episode']['shots'][1]['start']
+                            - db[k_ep]['video'][k_ed_audio_src]['precedemment']['shots'][1]['start'])
             precedemment_target_video_count = (db_video_target['episode']['shots'][1]['start']
                             - db_video_target['precedemment']['shots'][1]['start'])
         except:
@@ -151,7 +151,7 @@ def calculate_av_sync(db, k_ep):
             sys.exit(f"{k_ep}:{k_part}: video shots are not defined. They are required to calculate AV sync values.")
         if verbose:
             print_lightgrey(f"\tprecedemment to episode:")
-            print_lightgrey(f"\t\tvideo count ({k_ed_src}): {precedemment_video_count}")
+            print_lightgrey(f"\t\tvideo count ({k_ed_audio_src}): {precedemment_video_count}")
             print_lightgrey(f"\t\tvideo count (target): {precedemment_target_video_count}")
         if precedemment_video_count != precedemment_target_video_count:
             print(p_yellow(f"\twarning: precedemment to episode: erroneous frame count between {k_ed_src} and target"))
@@ -159,10 +159,18 @@ def calculate_av_sync(db, k_ep):
 
         # synchronize episode, use the 2nd video shot
 
-        # Offset to convert frame no from src to target
-        offset = (db_video_target['episode']['shots'][1]['start'] -
-                db[k_ep]['video'][k_ed_src]['episode']['shots'][1]['start'])
-        print(f"offset: add {offset} to {k_ed_src} to get target frame no.")
+        # offset: target -> audio
+        offset = (db[k_ep]['video'][k_ed_audio_src]['episode']['shots'][1]['start']
+                  - db_video_target['episode']['shots'][1]['start'])
+        print(f"offset: {offset}")
+
+        # start of precedemment converted to audio src frame numbering
+        target_precedemment_start = db_video_target['precedemment']['start'] + offset
+        print(f"target_precedemment_start: {target_precedemment_start} -> {target_precedemment_start}")
+        print(f"target_precedemment_start: {target_precedemment_start}")
+
+
+        avsync = db_video_target['precedemment']['start'] -
 
 
         precedemment_audio_start = ms_to_frames(db_audio['precedemment']['start']) + offset
