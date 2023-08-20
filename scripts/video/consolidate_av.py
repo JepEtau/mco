@@ -159,10 +159,57 @@ def calculate_av_sync(db, k_ep):
 
         # synchronize episode, use the 2nd video shot
 
-        # offset: target -> audio
+        # offset: target -> src (use audio track)
+        # offset = src - target
         offset = (db[k_ep]['video'][k_ed_audio_src]['episode']['shots'][1]['start']
                   - db_video_target['episode']['shots'][1]['start'])
         print(f"offset: {offset}")
+
+        # start of shot[0] translated to audio track
+        # src = target + offset
+
+        # episode
+        first_shot_start_v = db_video_target['episode']['shots'][0]['start']
+        first_shot_start_a = first_shot_start_v + offset
+
+        # precedemment
+        first_shot_start_v = db_video_target['precedemment']['start']
+        first_shot_start_a = first_shot_start_v + offset
+
+
+        # video silence between precedemment and episode:
+        video_silence = (db_video_target['episode']['shots'][0]['start']
+            - (db_video_target['precedemment']['shots'][-1]['start'] + db_video_target['precedemment']['shots'][-1]['count']))
+
+
+
+
+
+        precedemment_audio_start = ms_to_frames(db_audio['precedemment']['start'])
+        avysnc = first_shot_start_a
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         # start of precedemment converted to audio src frame numbering
         target_precedemment_start = db_video_target['precedemment']['start'] + offset
