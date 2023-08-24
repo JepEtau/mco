@@ -1,5 +1,20 @@
 # TODO script
 (1)
+- audio/video synchro
+    * episode 1: audio synchro: 26
+    * episode 2: no silence between p&e, no synchro
+    * episode 19: remove 16 frames -> to implement
+
+
+
+
+
+
+
+
+
+
+
 - bug: when start of 1st shot of episode != end of precedemment:
     * insert black frames as silence
     * if avsync (precedemment) > 0, reduce the silence
@@ -14,7 +29,7 @@
 - enhancement: avisynth to upscale/sharpen documentaire: implemented. To be validated
 - enhancement: integrate color fix
 - enhancement: integrate speckle noise
-- enhancement: (?) add lhm method from https://github.com/dstein64/colortrans
+- enhancement: (?) add lhm method from chaiNNer
 
 - enhancement: what about autocrop: use it in the chain or as a tool (video editor)?
 - enhancement: Add FFmpeg stab. test on ep02: try on shots 7/10/22/30/32

@@ -116,10 +116,12 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
                         print_orange(f"\t\t\twarning: {k_ep}:{k_ed}:{k_part}: shot is not defined ({frame_no})")
                     continue
 
-                if frame_no != shot['start']:
+                if shot is not None and  frame_no != shot['start']:
                     print_orange(f"warning: parse geometry configuration:", end=' ')
                     print(f"{frame_no} is not the start of {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}, {shot['start']}")
-
+                elif shot is None:
+                    print_orange(f"\t\t\twarning: {k_ep}:{k_ed}:{k_part}: shot is not defined ({frame_no})")
+                    continue
 
                 properties = config.get(k_section, k_str)
                 nested_dict_set(shot,

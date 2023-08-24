@@ -184,16 +184,18 @@ def pprint_episode(db, k_ep):
         first_shot = db_video['shots'][0]
 
         for shot in db_video['shots']:
-            frame_count += shot['count']
+            frame_count += shot['dst']['count']
         last_shot = db_video['shots'][-1]
 
         loop_count = 0
         if 'effects' in last_shot:
+            # print(f"\teffect:{last_shot['effects']}")
             if 'loop' in last_shot['effects'][0]:
                 loop_count = last_shot['effects'][2]
             try:
                 if 'fadein' in db_video['shots'][0]['effects'][0]:
                     print("todo: add fadein")
+                    print(db_video['shots'][0]['effects'])
             except:
                 pass
         part_frame_count += frame_count + loop_count
