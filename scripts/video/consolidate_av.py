@@ -164,81 +164,67 @@ def calculate_av_sync(db, k_ep):
         offset_src_to_target = (db_video_target['episode']['shots'][1]['start']
             - db[k_ep]['video'][k_ed_audio_src]['episode']['shots'][1]['start'])
 
-
-
         # audio start in target referentiel
         precedemment_audio_start = ms_to_frames(db_audio['precedemment']['start']) + offset_src_to_target
 
-
-        # Let's set the 1st frame of video aligned with the audio
+        # Precedemment: let's set the 1st frame of video aligned with the audio start
         db_video_target['precedemment']['avsync'] = 0
 
-        # We move the precedemment part, calculate new silence
+        # We moved the precedemment part, calculate new silence between precedemment and episode
         precedemment_video_count = db_video_target['precedemment']['count']
-
-
         episode_video_start = db_video_target['episode']['shots'][0]['start']
         video_silence = (episode_video_start
             - (precedemment_audio_start + precedemment_video_count))
+
+        precedemment_audio_count = ms_to_frames(db_audio['precedemment']['duration'])
 
         print(f"\toffset: {offset_src_to_target}")
         print(f"\tprecedemment_audio_start: {precedemment_audio_start}")
         print(f"\tprecedemment_video_count: {precedemment_video_count}")
         print(f"\tepisode_video_start: {episode_video_start}")
+        print(f"\tprecedemment, audio_count: {precedemment_audio_count}")
+
         print(f"\tvideo_silence: {video_silence}")
 
-
-        # precedemment_video_start = db_video_target['episode']['shots'][0]['start']
-
-
-
-        # # episode: start frame_no
-        # src_episode_audio_start = ms_to_frames(db_audio['episode']['start'])
-        # src_episode_video_start = db[k_ep]['video'][k_ed_audio_src]['episode']['shots'][0]['start']
-
-
-        # # precedemment: start frame_no
-        # src_precedemment_audio_start = ms_to_frames(db_audio['precedemment']['start'])
-        # src_precedemment_video_start = db[k_ep]['video'][k_ed_audio_src]['precedemment']['shots'][0]['start']
-
-        # # start of shot[0] translated to audio track
-        # # src = target + offset
-
-        # # episode
-        # episode_first_shot_start_v = db_video_target['episode']['shots'][0]['start']
-        # first_shot_start_a = episode_first_shot_start_v + offset_target_to_src
-
-        # # precedemment
-        # first_shot_start_v = db_video_target['precedemment']['shots'][0]['start']
-        # first_shot_start_a = first_shot_start_v + offset_target_to_src
-
-
-
-        # # video silence between precedemment and episode
-        # video_silence = (db_video_target['episode']['shots'][0]['start']
-        #     - (db_video_target['precedemment']['shots'][-1]['start'] + db_video_target['precedemment']['shots'][-1]['count']))
-        # print(f"\tvideo_silence: {video_silence}")
-
-
-
-        # print(f"\tfirst_shot_start_v: {episode_first_shot_start_v}")
-        # print(f"\tfirst_shot_start_a: {first_shot_start_a}")
-        # print(f"\toffset_target_to_src: {offset_target_to_src}")
-        # print(f"\tprecedemment_video_count: {precedemment_video_count}")
-
-        # precedemment_to_episode_silence = (episode_first_shot_start_v
-        #     - ((first_shot_start_a - offset_target_to_src) + precedemment_video_count)
-        # )
-
         if video_silence < 0:
-            # overlap between precedemment and episode
-            print(f"precedemment to episode: remove {abs(video_silence)} frames")
+            # overlap
+            print(p_lightgreen(f"precedemment to episode: remove {abs(video_silence)} frames"))
+
+            if precedemment_audio_count > precedemment_video_count:
+                # Remove frames from episode
+                # fr: ep no. 19
+                # 26 (99 frames)?????
+                print(f"\tepisode: remove {abs(video_silence)} frames")
+                db_video_target['episode']['shots'][0]['start'] += video_silence
+                db_video_target['episode']['shots'][0]['count'] -= video_silence
+                db_video_target['episode']['shots'][0]['dst']['count'] -= video_silence
+                db_video_target['episode']['count'] -= video_silence
+            else:
+                # Remove frames from precedemment
+                # fr: ep no. 3, 14, 36
+                print(f"\tprecedemment: remove {abs(video_silence)} frames")
+                db_video_target['precedemment']['shots'][-1]['count'] -= video_silence
+                db_video_target['precedemment']['shots'][-1]['dst']['count'] -= video_silence
+                db_video_target['precedemment']['count'] -= video_silence
+
         elif video_silence > 0:
             # Add silence between precedemment and episode
-            print(f"precedemment to episode: add video silence: {abs(video_silence)} frames")
+            print(p_lightgreen(f"precedemment to episode: add video silence: {abs(video_silence)} frames"))
 
+            if precedemment_audio_count > precedemment_video_count:
+                # fr: ep no. 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18,
+                #               20, 21, 22, 23, 24, 25, 27, 28, 29,
+                #               30, 31, 32, 34, 35, 37, 39
+                print(f"\tTODO: precedemment: loop and fadeout")
+            else:
+                # fr: ep no. 38
+                print(f"\tTODO: episode: loop and fadein")
 
-
+        else:
+            # No modifications
+            # fr: ep no. 2
+            # validated (2023-08-25): 02
+            print(p_lightgreen(f"precedemment to episode: no modification"))
 
 
         if False:
@@ -682,7 +668,7 @@ def align_audio_video_durations(db, k_ep):
 
         if audio_count > video_count:
             # Frames shall be added: use the loop (and fadeout) effect for this
-            print(f"info: align_audio_video_durations: {k_ep}:{k_part}, ",
+            print(f"{k_ep}:{k_part}: align_audio_video_durations, ",
                   f"video({video_count}) < audio ({audio_count}): add video frames, ")
 
             frame_no = last_shot['start'] + last_shot['count'] - 1
@@ -700,8 +686,8 @@ def align_audio_video_durations(db, k_ep):
 
         elif audio_count < video_count:
             # Add silence to the audio track by adding a new segment
-            print(f"info: align_audio_video_durations:",
-                  f"{k_ep}:{k_part}: video({video_count}) > audio ({audio_count})")
+            print(f"{k_ep}:{k_part}: align_audio_video_durations, ",
+                  f"video({video_count}) > audio ({audio_count})")
             if True:
                 print(p_yellow("warning: this has been patched (now, remove video frames) for documentaire, verify elsewhere"))
                 last_shot:Shot = db_video[k_part]['shots'][-1]
