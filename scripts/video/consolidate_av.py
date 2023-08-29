@@ -178,6 +178,7 @@ def calculate_av_sync(db, k_ep):
 
         precedemment_audio_count = ms_to_frames(db_audio['precedemment']['duration'])
 
+        print(f"k_ed_audio_src: {k_ed_audio_src}")
         print(f"\toffset: {offset_src_to_target}")
         print(f"\tprecedemment_audio_start: {precedemment_audio_start}")
         print(f"\tprecedemment_video_count: {precedemment_video_count}")
@@ -186,25 +187,33 @@ def calculate_av_sync(db, k_ep):
 
         print(f"\tvideo_silence: {video_silence}")
 
+
+        last_shot_precedemment:Shot = db_video_target['precedemment']['shots'][-1]
+        first_shot_episode:Shot = db_video_target['episode']['shots'][0]
         if video_silence < 0:
             # overlap
             print(p_lightgreen(f"precedemment to episode: remove {abs(video_silence)} frames"))
+            video_silence = abs(video_silence)
 
             if precedemment_audio_count > precedemment_video_count:
                 # Remove frames from episode
                 # fr: ep no. 19
-                # 26 (99 frames)?????
+                # fadein to do
+                # ep26 (99 frames)?????
+                # validated (2023-08-28): 19
                 print(f"\tepisode: remove {abs(video_silence)} frames")
-                db_video_target['episode']['shots'][0]['start'] += video_silence
-                db_video_target['episode']['shots'][0]['count'] -= video_silence
-                db_video_target['episode']['shots'][0]['dst']['count'] -= video_silence
+                first_shot_episode['start'] += video_silence
+                first_shot_episode['count'] -= video_silence
+                first_shot_episode['dst']['count'] -= video_silence
                 db_video_target['episode']['count'] -= video_silence
             else:
                 # Remove frames from precedemment
                 # fr: ep no. 3, 14, 36
+                # validated (2023-08-26): 03, 14, 36
+                # TODO: Improve: ep14, use fadeout
                 print(f"\tprecedemment: remove {abs(video_silence)} frames")
-                db_video_target['precedemment']['shots'][-1]['count'] -= video_silence
-                db_video_target['precedemment']['shots'][-1]['dst']['count'] -= video_silence
+                last_shot_precedemment['count'] -= video_silence
+                last_shot_precedemment['dst']['count'] -= video_silence
                 db_video_target['precedemment']['count'] -= video_silence
 
         elif video_silence > 0:
@@ -213,12 +222,25 @@ def calculate_av_sync(db, k_ep):
 
             if precedemment_audio_count > precedemment_video_count:
                 # fr: ep no. 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18,
-                #               20, 21, 22, 23, 24, 25, 27, 28, 29,
-                #               30, 31, 32, 34, 35, 37, 39
-                print(f"\tTODO: precedemment: loop and fadeout")
+                #               20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+                #               30, 31, 32, 34, 35, 37, 38, 39
+                # validated (2023-08-29): 38
+                print(f"\tprecedemment: loop and fadeout")
+                print(f"\tav_diff : {precedemment_audio_count - precedemment_video_count}")
+                loop_count = precedemment_audio_count - precedemment_video_count
+                loop_start = (last_shot_precedemment['start']
+                    + last_shot_precedemment['count'] - 1)
+                last_shot_precedemment.update({
+                    'effects': ['loop_and_fadeout', loop_start, loop_count, loop_count]})
+                db_video_target['precedemment']['count'] += loop_count
+
+                if loop_count < video_silence:
+                    # Add silence at the beginning of the episode or fade_in
+                    nested_dict_set(db_video['episode'], (video_silence - loop_count), 'effects', 'fadein')
+
             else:
-                # fr: ep no. 38
                 print(f"\tTODO: episode: loop and fadein")
+                sys.exit()
 
         else:
             # No modifications
@@ -645,6 +667,7 @@ def align_audio_video_durations(db, k_ep):
         if k_part == 'episode':
             # this is a special case for episode: precedemment+episode
             # print(f"   rounded audio count episode+precedemment: %d" % (audio_count))
+
             db_audio['episode']['count'] = audio_count - db_audio['precedemment']['count']
             video_count = (db_video['precedemment']['avsync'] + db_video['precedemment']['count']
                 + db_video['episode']['avsync'] + db_video['episode']['count'])
@@ -652,9 +675,11 @@ def align_audio_video_durations(db, k_ep):
 
             # db_video[k_part]['count'] += db_video[k_part]['avsync']
         else:
-            print(f"{k_part}")
+            print_red(f"{k_part}")
             db_audio[k_part]['count'] = audio_count
             video_count = db_video[k_part]['count'] + db_video[k_part]['avsync']
+            print(f"\taudio: {db_audio[k_part]['count']}")
+            print(f"\tvideo: {video_count}")
 
         # Append added duration to audio track
         audio_count += ms_to_frames(db_audio[k_part]['avsync'])

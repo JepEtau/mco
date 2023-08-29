@@ -27,14 +27,9 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
 
 
     # Append images
-    try:
-        # Only a part of the src shot
-        index_start = shot['src']['start'] - shot['start']
-        index_end = index_start + shot['src']['count']
-    except:
-        # Full shot
-        index_start = 0
-        index_end = shot['count']
+    index_start = max(0, shot['src']['start'] - shot['start'])
+    index_end = index_start + shot['count']
+    print(f"{index_start} -> {index_end}")
 
     step_no = shot['last_step']['step_no']
     hash = shot['last_step']['hash']
@@ -88,7 +83,6 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
       - documentaire
       - g_debut, g_fin
     """
-    verbose = False
     image_list = list()
 
     k_ed = shot['k_ed']
