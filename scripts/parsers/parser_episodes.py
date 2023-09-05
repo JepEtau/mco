@@ -12,7 +12,7 @@ import sys
 from pprint import pprint
 
 from parsers.parser_audio import parse_audio_section
-from parsers.video_target import parse_video_section
+from parsers.parser_video_target import parse_video_target_section
 
 from parsers.parser_filters import (
     parse_filters,
@@ -38,18 +38,19 @@ from utils.pretty_print import *
 #   Initialize configuration for all episodes
 #
 #===========================================================================
-def db_init_episodes(db, k_ed, ep_min:int=1, ep_max:int=39):
+def db_init_episodes(db, k_ed, ep_min:int=1, ep_max:int=39, force:bool=False):
     # ep_maxCount is the maximum nb of episodes for debug purpose
     db_common = db['common']
 
     for i in range(ep_min, min(40, ep_max+1)):
-        k_ep = 'ep%02d' % i
+        k_ep = f'ep{i:02d}'
 
-        # Do not create section if input file does not exist
-        if (k_ep not in db['editions'][k_ed]['inputs']['video'].keys()
-            and k_ep not in db['editions'][k_ed]['inputs']['audio'].keys()):
-            # print("warning: input file for episode no. %d does not exist" % (i))
-            continue
+        if not force:
+            # Do not create section if input file does not exist
+            if (k_ep not in db['editions'][k_ed]['inputs']['video'].keys()
+                and k_ep not in db['editions'][k_ed]['inputs']['audio'].keys()):
+                # print("warning: input file for episode no. %d does not exist" % (i))
+                continue
 
         # Create structure for this episode/edition
 
@@ -77,14 +78,23 @@ def db_init_episodes(db, k_ed, ep_min:int=1, ep_max:int=39):
 #===========================================================================
 def parse_episodes_target(db, ep_min=1, ep_max:int=39):
     # ep_maxCount is the maximum nb of episodes: used for debug
+    language = db['common']['settings']['language']
 
-    for i in range(ep_min, min(40, ep_max+1)):
-        k_ep = 'ep%02d' % i
+    for no in range(ep_min, min(40, ep_max+1)):
+        k_ep = f'ep{no:02d}'
+
         nested_dict_set(db, dict(), k_ep, 'video', 'common')
         db_ep_common = db[k_ep]['video']['common']
 
+        # Define a video target struct
         nested_dict_set(db, dict(), k_ep, 'video', 'target')
-        db_ep_target = db[k_ep]['video']['target']
+        db_video_target = db[k_ep]['video']['target']
+
+        # Audio target: there is no audio src, use the 'audio'
+        # struct as the target
+        nested_dict_set(db, dict(), k_ep, 'audio')
+        db_audio_target = db[k_ep]['audio']
+        db_audio_target['lang'] = language
 
 
         # Open configuration file
@@ -102,22 +112,49 @@ def parse_episodes_target(db, ep_min=1, ep_max:int=39):
 
             # Audio
             #----------------------------------------------------
-            if k_section == 'audio':
-                nested_dict_set(db, dict(), k_ep, 'audio')
-                parse_audio_section(db[k_ep]['audio'], config, verbose=False)
+            if k_section.startswith('audio'):
+                lang = 'fr'
+                try:
+                    _, lang = k_section.split('.')
+                except:
+                    print_yellow(f"{filepath}: audio section naming to be reworked, default=fr")
+                    pass
+
+                if lang == db_audio_target['lang']:
+                    parse_audio_section(db_audio_target, config, k_section)
+
 
             # Video
             #----------------------------------------------------
-            elif k_section == 'video':
-                parse_video_section(db_ep_target, config, k_ep, verbose=False)
+            elif k_section.startswith('video'):
+                lang = 'fr'
+                try:
+                    _, lang = k_section.split('.')
+                except:
+                    pass
+
+                if lang == db_audio_target['lang'] or k_section == 'video':
+                    parse_video_target_section(db_video_target, config, k_section, k_ep)
+
 
             # Shots
             #----------------------------------------------------
-            elif k_section.startswith('shots_'):
-                k_part = k_section[len('shots_'):]
-                nested_dict_set(db_ep_target, list(), k_part, 'shots')
-                parse_target_shotlist(db_ep_target[k_part]['shots'],
-                    config, k_section, verbose=False)
+            elif k_section.startswith('shots'):
+                lang = 'fr'
+                try:
+                    k_section_part, lang = k_section.split('.')
+                except:
+                    k_section_part = k_section
+
+                try:
+                    _, k_part = k_section_part.split('_')
+                except:
+                    continue
+
+                nested_dict_set(db_video_target, list(), k_part, 'shots')
+                if lang == db_audio_target['lang']:
+                    parse_target_shotlist(db_video_target[k_part]['shots'],
+                        config, k_section, lang)
 
 
 #===========================================================================
@@ -139,7 +176,7 @@ def parse_episode(db, k_ed, k_ep):
     # If the input video file has not been found, do not parse the config file
     if k_ed not in db[k_ep]['video'].keys():
         if verbose:
-            print_orange("\ttwarning: %s:%s: missing file %s, ignoring" % (k_ed, k_ep, filepath))
+            print_orange("\twarning: %s:%s: missing file %s, ignoring" % (k_ed, k_ep, filepath))
         return
 
     # Video db for this edition
@@ -147,10 +184,15 @@ def parse_episode(db, k_ed, k_ep):
 
 
     # Create default dict for inputs
+    input_filepath =  ''
+    try:
+        input_filepath = db['editions'][k_ed]['inputs']['video'][k_ep]
+    except:
+        pass
     for k_part in K_ALL_PARTS:
         nested_dict_set(db_video, {
             'interlaced': {
-                'filepath': db['editions'][k_ed]['inputs']['video'][k_ep],
+                'filepath': input_filepath,
             },
             'progressive': {
                 'enable': False,
@@ -176,7 +218,7 @@ def parse_episode(db, k_ed, k_ep):
                 if verbose:
                     print("\t\t%s=%s" % (k_option, value_str))
 
-                if k_option == 'ffv1' and value_str == 'yes':
+                if k_option == 'ffv1' and value_str in ['yes', 'true']:
                     # Use ffv1 generated by avisynth (progressive video)
                     for k_part in K_ALL_PARTS:
                         db_video[k_part]['inputs']['progressive']['enable'] = True
@@ -209,11 +251,11 @@ def parse_episode(db, k_ed, k_ep):
                 db_video_part['shots'] = list()
                 if k_option == 'shots':
                     if k_section in ['episode',
-                                    'reportage',
+                                    'documentaire',
                                     'g_debut',
                                     'g_fin',
                                     'g_asuivre',
-                                    'g_reportage']:
+                                    'g_documentaire']:
                         parse_shotlist(db_video_part['shots'],
                             k_ep, k_part, value_str)
 
@@ -303,10 +345,11 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
     # Edition used as the default source
     for k_part in K_PARTS:
         k_ed_src = db[k_ep]['video']['target'][k_part]['k_ed_src']
-        if k_part not in db[k_ep]['video'][k_ed_src].keys():
-            continue
 
-        db_video = db[k_ep]['video'][k_ed_src][k_part]
+        try:
+            db_video = db[k_ep]['video'][k_ed_src][k_part]
+        except:
+            sys.exit(p_red(f"error: {k_ed_src}:{k_ep}: it seems that the input file is missing"))
         if 'shots' in db_video.keys():
             shots = db_video['shots']
             for shot in shots:
@@ -320,6 +363,18 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
                     if k_ed_dep not in dependencies.keys():
                         dependencies[k_ed_dep] = list()
                     dependencies[k_ed_dep].append(shot['src']['k_ep'])
+
+        k_ed_dep = db[k_ep]['audio']['src']['k_ed']
+        try:
+            db_audio = db[k_ep]['audio'][k_part]
+        except:
+            sys.exit(p_red(f"error: {k_ed_src}:{k_ep}: it seems that the input file is missing"))
+
+        for segment in db_audio['segments']:
+            if 'k_ep' in segment.keys() and segment['k_ep'] != k_ep:
+                if k_ed_dep not in dependencies.keys():
+                    dependencies[k_ed_dep] = list()
+                dependencies[k_ed_dep].append(segment['k_ep'])
 
     for k_ed in dependencies.keys():
         dependencies[k_ed] = list(set(dependencies[k_ed]))

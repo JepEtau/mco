@@ -4,15 +4,14 @@ import os
 from copy import deepcopy
 from pprint import pprint
 
-from filters.apply_filters import apply_filters
-from filters.consolidate import consolidate_filters
-from filters import IMG_BORDER_HIGH_RES
-from filters.utils import (
-    get_filters_from_shot,
+from processing_chain.process_chain import process_chain_list
+from processing_chain.consolidate import consolidate_tasks
+
+from img_toolbox.utils import (
+    get_processing_chain,
     get_step_no_from_last_task,
-    has_add_border_task,
 )
-from utils.hash import (
+from processing_chain.hash import (
     calculate_hash,
     create_hash_file,
     get_hash_from_last_task,
@@ -21,14 +20,13 @@ from utils.common import (
     K_GENERIQUES,
 )
 from utils.nested_dict import nested_dict_set
-from utils.get_curves import get_lut_from_curves
+from img_toolbox.get_curves import get_lut_from_curves
 from utils.path import get_cache_path
 from utils.pretty_print import *
+from utils.types import Shot
 
 
-
-
-def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
+def consolidate_shot(db, shot:Shot, edition_mode:bool=False) -> None:
     """This procedure is used to simplify a single shot and add
     properties to process it: removes unecessary property, add
     paths to input/output files, update frames no. depending on edition, etc.
@@ -73,7 +71,7 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
 
     # Geometry
     #---------------------------------------------------------------------------
-    if k_part in ['g_asuivre', 'g_reportage']:
+    if k_part in ['g_asuivre', 'g_documentaire']:
         # print("\t\t\tconsolidate_shot: get geometry from %s:%s:%s" % (k_ed, k_ep, k_part[2:]))
         k_ep_dst = shot['dst']['k_ep']
         try:
@@ -155,16 +153,16 @@ def consolidate_shot(db, shot, edition_mode:bool=False) -> None:
     #---------------------------------------------------------------------------
 
     # Get filters used by this shot
-    shot['filters'] = get_filters_from_shot(db, shot)
+    shot['filters'] = get_processing_chain(db, shot)
 
     # Consolidate filters: add rgb/geometry, identify tasks
-    consolidate_filters(shot)
+    consolidate_tasks(shot)
 
     # Update filters: add hash for each filter
     hash_log_file = create_hash_file(db, shot['k_ep'])
     shot['hash_log_file'] = hash_log_file
 
-    hashes = apply_filters(db=db, shot=shot, get_hashes=True)
+    hashes = process_chain_list(db=db, shot=shot, get_hashes=True)
     for hash, filter in zip(hashes, shot['filters']):
         filter['hash'] = hash[1]
 

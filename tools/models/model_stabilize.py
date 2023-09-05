@@ -14,14 +14,10 @@ from pathlib import PosixPath
 from pprint import pprint
 from logger import log
 
-from utils.common import (
-    K_GENERIQUES,
-    get_k_part_from_frame_no,
-)
+from utils.common import K_GENERIQUES
 from utils.nested_dict import nested_dict_clean, nested_dict_set
 from utils.pretty_print import *
 
-from shot.utils import get_shot_from_frame_no
 from parsers.parser_stabilize import (
     get_initial_shot_stabilize_settings,
 )
@@ -94,7 +90,7 @@ class Model_stabilize():
 
 
     def save_shot_stabilize_settings(self, shot):
-        verbose = True
+        verbose = False
         if not self.is_stabilize_db_modified:
             return True
 
@@ -166,17 +162,26 @@ class Model_stabilize():
                 for k, v in segment['mode'].items():
                     mode_str += f"+{k}" if v else ''
 
-                segments_str += f"\n{segment['alg']}"
+                stab = segment['stab']
+                segments_str += f"\n{segment['stab']}"
+                if stab == 'cv2':
+                    segments_str += f"={segment[stab]['feature_extractor']}"
+                # todo: add parameters and other alg
+
                 segments_str += f":start={segment['start']}"
                 segments_str += f":end={segment['end']}"
                 segments_str += f":from={segment['from']}"
                 segments_str += f":ref={segment['ref']}"
+                segments_str += f":static={'true' if segment['static'] else 'false'}"
+                segments_str += f":enhance={segment['enhance']}"
+
                 segments_str += f":mode={mode_str[1:]}"
 
                 if len(segment['tracker']['regions']) > 0:
                     segments_str += f":"
                     segments_str += f"\ntracker={'enable' if segment['tracker']['enable'] else 'disable'},"
                     segments_str += f"{'inside' if segment['tracker']['inside'] else 'outside'}"
+                    segments_str += f"{'hr' if segment['tracker']['is_hr'] else 'lr'}"
                     for region in segment['tracker']['regions']:
                         segments_str += f",\n\t"
                         for point in region:

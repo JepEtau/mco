@@ -42,7 +42,7 @@ from utils.path import PATH_DATABASE
 
 
 
-def parse_database(database, k_ep):
+def parse_database(database, k_ep, lang:str=''):
     """
         database: global database
         k_ep: episode to generate
@@ -51,23 +51,23 @@ def parse_database(database, k_ep):
     if k_ep == 'ep00':
         print_lightcyan(f"parse database")
     else:
-        print_lightcyan(f"parse database for: {k_ep}")
+        print_lightcyan(f"parse database, target: {k_ep}")
 
 
     # Parse and merge dictionaries -> common configuration
-    parse_common_configuration(database, PATH_DATABASE)
+    parse_common_configuration(database, PATH_DATABASE, language=lang)
 
 
     # Parse editions: folders, files and additional settings: dimension
-    parse_editions(database, cfg_foldername=PATH_DATABASE)
+    parse_editions(database, cfg_foldername=PATH_DATABASE, force=True)
 
     # Initialize dictionary for episodes per edition
     for k_ed_tmp in database['editions']['available']:
-        db_init_episodes(database, k_ed=k_ed_tmp)
+        db_init_episodes(database, k_ed=k_ed_tmp, force=True)
     if False:
         print("db_init_episodes")
         print("------------------------------------")
-        pprint(database[k_ep])
+        pprint(database[k_ep]['video'].keys())
         print("------------------------------------")
         sys.exit()
 
@@ -90,7 +90,7 @@ def parse_database(database, k_ep):
     if False:
         print("parse_episodes_target")
         print("-------------- %s ------------------" % (k_ep))
-        pprint(database[k_ep])
+        pprint(database[k_ep]['video'].keys())
         print("------------------------------------")
         sys.exit()
 
@@ -112,9 +112,6 @@ def parse_database(database, k_ep):
         for k_ed_tmp in database['editions']['available']:
             print_lightgrey("  - parse %s:%s" % (k_ed_tmp, k_ep))
             parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep)
-            parse_replace_configurations(database, k_ep_or_g=k_ep)
-            parse_stabilize_configurations(database, k_ep_or_g=k_ep)
-            parse_curve_configurations(database, k_ep_or_g=k_ep)
 
         # Get dependencies for this episode
         dependencies_tmp = parse_get_dependencies_for_episodes(database, k_ep)
@@ -122,7 +119,7 @@ def parse_database(database, k_ep):
     if False:
         print("parse_episode")
         print("------------------------------------")
-        pprint(database[k_ep])
+        pprint(database[k_ep]['video'].keys())
         print("------------------------------------")
         sys.exit()
 
@@ -144,13 +141,17 @@ def parse_database(database, k_ep):
             print_lightgrey(f"  - parse dependency: {k_ed_tmp}:{k_ep_tmp}")
             parse_episode(database, k_ed=k_ed_tmp, k_ep=k_ep_tmp)
 
+
     # Parse other config files for each dependency
+    already_parsed = list()
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in dependencies[k_ed_tmp]:
-            parse_replace_configurations(database, k_ep_or_g=k_ep_tmp)
-            parse_stabilize_configurations(database, k_ep_or_g=k_ep_tmp)
-            parse_curve_configurations(database, k_ep_or_g=k_ep_tmp)
-        break
+            if k_ep_tmp not in already_parsed:
+                parse_replace_configurations(database, k_ep_or_g=k_ep_tmp)
+                parse_stabilize_configurations(database, k_ep_or_g=k_ep_tmp)
+                parse_curve_configurations(database, k_ep_or_g=k_ep_tmp)
+                already_parsed.append(k_ep_tmp)
+
 
     # Parse the geometry for the target episode only
     # Otherwise it is overwritten by the following episodes
@@ -179,13 +180,12 @@ def parse_database(database, k_ep):
         # if k_part_g == 'g_fin':
         #     sys.exit()
 
-
     # Consolidate database for the episode ONLY
     if k_ep != 'ep00':
         for k_p in K_NON_GENERIQUE_PARTS:
             consolidate_target_shots(database, k_ep=k_ep, k_part=k_p)
 
-        for k_part_g in ['g_asuivre', 'g_reportage']:
+        for k_part_g in ['g_asuivre', 'g_documentaire']:
             parse_replace_configurations(database, k_ep_or_g=k_part_g)
             parse_stabilize_configurations(database, k_ep_or_g=k_part_g)
             parse_curve_configurations(database, k_ep_or_g=k_part_g)
@@ -199,9 +199,6 @@ def parse_database(database, k_ep):
         pprint_episode(database, k_ep=k_ep)
     else:
         pprint_g_debut_fin(database)
-
-    # pprint_video(database[k_ep]['common']['video'])
-
 
 
 

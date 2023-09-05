@@ -65,11 +65,23 @@ def parse_filters(db_video, config, k_section):
         filters = list()
         for step_str in step_list:
             step_dict = {
-                'save': False
+                'save': False,
+                'id': None,
             }
+
+            # Save images after this filter
             if step_str.startswith('*'):
                 step_str = step_str[1:]
                 step_dict['save'] = True
+
+            # Get the node id
+            if step_str.startswith('id:'):
+                result = re.match(re.compile("id:([a-z0-9_-]+),(.+)$"), step_str)
+                if result is not None:
+                    step_dict['id'] = result.group(1)
+                    step_str = result.group(2)
+                else:
+                    sys.exit(p_red(f"Error parsing filters: [{step_str}]"))
 
             result = re.match(re.compile("^([a-z_]+):(.+)$"), step_str)
             if result is not None:
@@ -86,6 +98,11 @@ def parse_filters(db_video, config, k_section):
                     filters.append(step_dict)
 
         nested_dict_set(db_video, filters, k_part, 'filters', k_option)
+
+        if verbose and k_option == '999':
+            # used to debug complex processing chains
+            pprint(filters)
+            sys.exit()
 
     if verbose:
         print_green(f"\tfinally: section {k_section}")

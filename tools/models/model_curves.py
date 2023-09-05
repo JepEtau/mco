@@ -14,7 +14,7 @@ import collections
 from pprint import pprint
 from logger import log
 
-from utils.get_curves import calculate_channel_lut
+from img_toolbox.get_curves import calculate_channel_lut
 from utils.common import (
     K_GENERIQUES,
 )

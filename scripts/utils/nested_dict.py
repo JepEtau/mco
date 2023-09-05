@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 
 
-def nested_dict_set(d:dict, o:object, *keys):
+# def nested_dict_set(d:dict, o:object, *keys):
+def nested_dict_set(d, o:object, *keys):
     nested_d = d
     for k in keys:
         if k == keys[-1]:

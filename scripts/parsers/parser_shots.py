@@ -10,12 +10,13 @@ from utils.common import (
 from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 from utils.time_conversions import ms_to_frames
+from utils.types import Shot, VideoPart
 
 
-def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
+def parse_shotlist(db_shots:list[Shot], k_ep, k_part, shotlist_str) -> None:
     """This procedure parse a string wich contains the list of shots
         and update the structure of the db.
-        Used for 'épisodes' and 'reportage'
+        Used for 'épisodes' and 'documentaire'
 
     Args:
         db_shots: the structure where to store the shots
@@ -46,7 +47,7 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
             count = 0
 
         # Append this shot to the list of shots
-        db_shots.append({
+        new_shot: Shot = {
             'no': shot_no,
             'start': start,
             'count': count,
@@ -54,7 +55,8 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
             'filters_id': 'default',
             'curves': None,
             'replace': dict(),
-        })
+        }
+        db_shots.append(new_shot)
         # print(shot_properties)
         # print(db_shots[-1])
 
@@ -112,8 +114,7 @@ def parse_shotlist(db_shots, k_ep, k_part, shotlist_str) -> None:
 
 def parse_shotlist_new(db_shots, config, k_section, verbose=False) -> None:
     for k_option in config.options(k_section):
-        value_str = config.get(k_section, k_option)
-        value_str = value_str.replace(' ','')
+        value_str = config.get(k_section, k_option).replace(' ','')
 
         shot_no = int(k_option)
         shot_properties = value_str.split(',')
@@ -216,19 +217,20 @@ def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
     if 'shots' not in db_video.keys():
         if 'count' not in db_video.keys() or db_video['count'] == 0:
             return
-        db_video['shots'] = [{
-            'no': 0,
-            'start': db_video['start'],
-            'filters_id': 'default',
-            'filters': None,
-            'count': db_video['count'],
-            'curves': None,
-            'replace': dict(),
-            'dst':{
-                'k_ep': k_ep,
-                'k_part': k_part,
-            }
-        }]
+        db_video['shots'] = [Shot(
+            no = 0,
+            start = db_video['start'],
+            filters_id = 'default',
+            filters = None,
+            count = db_video['count'],
+            curves = None,
+            replace = dict(),
+            dst = dict(
+                k_ep = k_ep,
+                k_part = k_part
+            )
+        )]
+
         return
 
     # Update each shot durations
@@ -252,9 +254,7 @@ def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
                 sys.exit("%s: add loop duration" % (__name__))
 
         if shots[i]['count'] <= 0 and i < len(shots)-1:
-            print("Error: %s:%s:%s: shot start=%d, shot length (%d) < 0 " % (k_ed, k_ep, k_part, shots[i]['start'], shots[i]['count']))
-            # pprint(shots)
-            sys.exit()
+            sys.exit(p_red(f"Error: {k_ed}:{k_ep}:{k_part}: shot no. {shots[i]['no']:03d}, length (shots[i]['count']) < 0"))
 
         frames_count += shots[i]['count']
 
@@ -265,12 +265,25 @@ def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
 
 
 
-def parse_target_shotlist(db_shots, config, k_section, verbose=False) -> None:
-    for k_option in config.options(k_section):
-        value_str = config.get(k_section, k_option)
-        value_str = value_str.replace(' ','')
+def parse_target_shotlist(db_shots, config, k_section, language:str='fr') -> None:
+    # TODO: add language
 
-        shot_no = int(k_option)
+
+    for k_option in config.options(k_section):
+        value_str = config.get(k_section, k_option).replace(' ','')
+
+        lang = language
+        try:
+            shot_no = int(k_option)
+        except:
+            try:
+                shot_no, lang = k_option.split('_')
+                shot_no = int(shot_no)
+                if lang != language:
+                    continue
+            except:
+                sys.exit(f"erroneous option {k_option} in section [{k_section}]")
+
         shot_properties = value_str.split(',')
 
         # Parse properties
@@ -326,10 +339,15 @@ def consolidate_target_shots(db, k_ep, k_part):
         None
 
     """
-    K_EP_DEBUG = ''
-    K_PART_DEBUG = 'episode'
+    K_EP_DEBUG, K_PART_DEBUG = ['']*2
+    # K_EP_DEBUG, K_PART_DEBUG = 'ep01', 'episode'
 
-    db_video_target = db[k_ep]['video']['target'][k_part]
+    db_video_target:VideoPart = db[k_ep]['video']['target'][k_part]
+
+    # if k_part == 'episode':
+    #     print_yellow("consolidate_target_shots:start")
+    #     pprint(db['ep01']['video']['target'])
+
     k_ed_src = db_video_target['k_ed_src']
     db_video_src = db[k_ep]['video'][k_ed_src][k_part]
 
@@ -337,11 +355,11 @@ def consolidate_target_shots(db, k_ep, k_part):
     if ('shots' not in db_video_target.keys()
         and 'shots' not in db_video_src.keys()):
         # Cannot consolidate because no shots are defined
-        sys.exit("error: %s.create_target_shots: no shots in src/dst %s:%s" % (__name__, k_ep, k_part))
+        sys.exit(f"error: consolidate_target_shots: no shots in {k_ep}:{k_part}")
 
     if k_ep==K_EP_DEBUG and k_part == K_PART_DEBUG:
         pprint(db_video_target)
-        print("\ncreate_target_shots: %s:%s:%s" % (k_ed_src, k_ep, k_part))
+        print(f"\ncreate_target_shots: {k_ed_src}:{k_ep}:{k_part}")
 
     # List the shot no which are defined in target
     if 'shots' in db_video_target.keys():
@@ -410,7 +428,7 @@ def consolidate_target_shots(db, k_ep, k_part):
             _k_ep_src = shot['src']['k_ep']
             _k_part_src = shot['src']['k_part']
             _shot_no_src = shot['src']['no']
-            _shot_src = db[_k_ep_src]['video'][_k_ed_src][_k_part_src]['shots'][_shot_no_src]
+            _shot_src:Shot = db[_k_ep_src]['video'][_k_ed_src][_k_part_src]['shots'][_shot_no_src]
             for k in _shot_src.keys():
                 if k not in shot.keys():
                     shot[k] = deepcopy(_shot_src[k])
@@ -595,7 +613,12 @@ def consolidate_target_shots_g(db, k_ep, k_part_g) -> None:
     # Get the default source: edition:episode
     k_ed_src = db[k_part_g]['video']['src']['k_ed']
     k_ep_src = db[k_part_g]['video']['src']['k_ep']
-    db_video_src = db[k_ep_src]['video'][k_ed_src][k_part_g]
+    try:
+        db_video_src = db[k_ep_src]['video'][k_ed_src][k_part_g]
+    except:
+        pprint(db[k_part_g])
+        raise KeyError(f"Error: missing file from edition {k_ed_src}",
+                       f"cannot use {k_ep_src}:{k_part_g}")
 
     if k_part_g in ['g_debut', 'g_fin']:
         db_video_target = db[k_part_g]['video']
@@ -611,7 +634,10 @@ def consolidate_target_shots_g(db, k_ep, k_part_g) -> None:
         # Create the g_sauivre structure:
         #   this part was not yet defined because it depends on audio start/duration
         # print("create_target_shots_g;: %s:%s:%s" % ('', k_ep, k_part_g))
-        db_audio = db[k_ep]['audio'][k_part_g]
+        try:
+            db_audio = db[k_ep]['audio'][k_part_g]
+        except:
+            sys.exit(f"error: {k_ep}:{k_part_g}: audio is not defined or erroneous")
         db_audio['avsync'] = 0
         db[k_ep]['video']['target'][k_part_g] = {
             'start': 0,
@@ -624,10 +650,14 @@ def consolidate_target_shots_g(db, k_ep, k_part_g) -> None:
         }
         db_video_target = db[k_ep]['video']['target'][k_part_g]
 
-    elif k_part_g == 'g_reportage':
-        # Create the g_reportage structure:
+    elif k_part_g == 'g_documentaire':
+        # Create the g_documentaire structure:
         #   this part was not yet defined because it depends on audio start/duration
         db_audio = db[k_ep]['audio'][k_part_g]
+        try:
+            db_audio = db[k_ep]['audio'][k_part_g]
+        except:
+            sys.exit(f"error: {k_ep}:{k_part_g}: audio is not defined or erroneous")
         audio_count = ms_to_frames(db_audio['duration'])
         db_audio.update({
             'count': audio_count,

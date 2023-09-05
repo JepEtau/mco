@@ -1,31 +1,22 @@
 # -*- coding: utf-8 -*-
+from configparser import ConfigParser
+from pprint import pprint
+import re
 import sys
 
-import re
-from pprint import pprint
-
-from utils.common import (
-    FPS,
-    K_ALL_PARTS,
-    K_NON_GENERIQUE_PARTS,
-    K_PARTS,
-    pprint_audio,
-    pprint_video,
-)
+from utils.common import K_PARTS
 from utils.nested_dict import nested_dict_set
-from utils.time_conversions import (
-    frames_to_ms,
-    ms_to_frames,
-)
+from utils.time_conversions import frames_to_ms
+from utils.types import Audio
 
 
-def parse_audio_section_generique(db_audio, config, verbose=False):
-    k_section = 'audio'
+# TODO: refactoring, what are the differences between generique and other parts ?
+
+def parse_audio_section_generique(db_audio:Audio, config:ConfigParser, k_section) -> None:
+    # This function modifies the db_audio variable
 
     for k_option in config.options(k_section):
-        value_str = config.get(k_section, k_option)
-        value_str = value_str.replace(' ','')
-        # print("%s, %s, %s => [%s]" % (k_section, part, k, value_str))
+        value_str = config.get(k_section, k_option).replace(' ','')
 
         # Source: edition and episode for the audio track
         if k_option == 'source':
@@ -42,9 +33,7 @@ def parse_audio_section_generique(db_audio, config, verbose=False):
         if k_option not in ['g_debut', 'g_fin']:
             continue
 
-        db_audio.update( {
-            'segments': list()
-        })
+        db_audio['segments'] = list()
         duration = 0
         avsync = 0
         part_silence = 0
@@ -113,14 +102,12 @@ def parse_audio_section_generique(db_audio, config, verbose=False):
         sys.exit("Error: missing source option in audio section for a generique")
 
 
-def parse_audio_section(db_audio, config, verbose=False):
-    k_section = 'audio'
 
+def parse_audio_section(db_audio, config:ConfigParser, k_section) -> None:
+    # This function modifies the db_audio variable
 
     for k_option in config.options(k_section):
-        value_str = config.get(k_section, k_option)
-        value_str = value_str.replace(' ','')
-        # print("%s, %s, %s => [%s]" % (k_section, part, k, value_str))
+        value_str = config.get(k_section, k_option).replace(' ','')
 
         if k_option == 'source':
             nested_dict_set(db_audio, value_str, 'src', 'k_ed')
@@ -207,7 +194,4 @@ def parse_audio_section(db_audio, config, verbose=False):
             'end': db_audio[k_part]['segments'][0]['start'] + d,
             'avsync': 0
         })
-
-    # if db_audio['src']['k_ed'] == 's':
-    #     print("detected another source")
 

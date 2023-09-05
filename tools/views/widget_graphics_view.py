@@ -55,8 +55,8 @@ from views.window_common import (
     PAINTER_MARGIN_LEFT,
     PAINTER_MARGIN_TOP,
 )
-from filters.python_geometry import IMG_BORDER_HIGH_RES
-from filters.utils import (
+from img_toolbox.python_geometry import IMG_BORDER_HIGH_RES
+from img_toolbox.utils import (
     FINAL_FRAME_HEIGHT,
     FINAL_FRAME_WIDTH,
     get_dimensions_from_crop_values,
@@ -144,6 +144,8 @@ class Widget_graphics_view(QGraphicsView):
         self.poly_points = list()
         self.__is_drawing_polygon = False
 
+        self.installEventFilter(self)
+
 
     def show_image(self, image):
         self.image = image
@@ -156,7 +158,6 @@ class Widget_graphics_view(QGraphicsView):
 
     def refresh_preview_options(self, options):
         if options['stabilize']['show_tracker'] and not self.__is_editing_tracker:
-            print_yellow("TODO: get regions")
             self.__is_editing_tracker = True
             self.draw_tracker_regions()
 
@@ -167,9 +168,13 @@ class Widget_graphics_view(QGraphicsView):
 
 
     def event_segment_selected(self, segment):
-        log.info("segment has been select, store segment tracking regions")
-        print_purple(f"graphics_view: event_segment_selected")
-        # pprint(segment)
+        verbose = False
+
+        if verbose:
+            log.info("segment has been select, store segment tracking regions")
+            print_purple(f"graphics_view: event_segment_selected")
+            # pprint(segment)
+        self.erase_tracker_regions()
         try:
             self.__tracker = segment['tracker']
         except:
@@ -510,7 +515,7 @@ class Widget_graphics_view(QGraphicsView):
 
 
     def erase_tracker_regions(self):
-        print(f"erase_tracker_region")
+        # print(f"erase_tracker_region")
         self.remove_control_points()
         for item in self.__scene.items():
             if type(item) == QPolygonCustom:
@@ -553,7 +558,7 @@ class Widget_graphics_view(QGraphicsView):
 
     def remove_control_points(self):
         """ removes the control points (i,e the ellipse)"""
-        print("remove_control_points")
+        # print("remove_control_points")
         for ellipse, _ in self.__control_points:
             self.__scene.removeItem(ellipse)
         self.__control_points.clear()
@@ -687,7 +692,7 @@ class Widget_graphics_view(QGraphicsView):
 
 
     def draw_polygon(self):  # adds the polygon to the scene
-        print("draw polygon")
+        # print("draw polygon")
         self.__is_drawing_polygon = False
 
         if len(self.new_polygon_points) > 2:
@@ -700,31 +705,87 @@ class Widget_graphics_view(QGraphicsView):
         self.new_polygon_points = []
 
 
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        if not self.__is_editing_tracker:
-            return self.__parent.keyPressEvent(event)
 
-        print("key_pressed")
+    def event_key_pressed(self, event:QKeyEvent) -> bool:
+        key = event.key()
+        modifiers = event.modifiers()
+        verbose = False
+        if verbose:
+            print_green(f"widget_geometry: event_key_pressed: {key}")
+
+        if not self.__is_editing_tracker:
+            return False
+
+        if verbose:
+            print("key_pressed")
         key = event.key()
         if key in [Qt.Key.Key_Enter, Qt.Key.Key_Return]:
             self.draw_polygon()
+            self.event_region_modified()
+            self.__is_modifying = False
+            return True
 
-        elif key == Qt.Key.Key_Insert:
-            print("create a new polygon")
+        elif key == Qt.Key.Key_T:
+            if verbose:
+                print("create a new polygon")
             self.record()
+            return True
 
         elif key == Qt.Key.Key_Delete:
-            print("remove a selected polygon/corner")
+            if verbose:
+                print("remove a selected polygon/corner")
             self.remove_selected_item()
+            return True
 
         if key == Qt.Key.Key_Control:
             self.control_key_pressed = True
+            return True
         else:
             self.control_key_pressed = False
 
-    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        return False
+
+
+    def event_key_released(self, event:QKeyEvent) -> bool:
+        verbose = False
+        key = event.key()
+        modifiers = event.modifiers()
         if not self.__is_editing_tracker:
             return self.__parent.keyReleaseEvent(event)
 
-        print("released")
+        if verbose:
+            print("released")
         self.control_key_pressed = False
+
+
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        verbose = False
+        if event.type() == QEvent.Type.KeyPress:
+            if verbose:
+                print_lightcyan(f"eventFilter: widget_{self.objectName()}: keypress {event.key()}")
+            if self.event_key_pressed(event):
+                if verbose:
+                    print(f"\taccepted")
+                event.accept()
+                return True
+            else:
+                print(f"\tsend to parent")
+                return self.__parent.event_key_pressed(event)
+
+
+        elif event.type() == QEvent.Type.KeyRelease:
+            if verbose:
+                print_lightcyan(f"eventFilter: widget_{self.objectName()}: keyrelease {event.key()}")
+            if self.event_key_released(event):
+                if verbose:
+                    print(f"\taccepted")
+                event.accept()
+                return True
+            else:
+                if verbose:
+                    print(f"\tsend to parent")
+                return self.__parent.event_key_released(event)
+
+
+        return super().eventFilter(watched, event)

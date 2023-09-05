@@ -437,14 +437,18 @@ class Widget_controls(QWidget, Ui_widget_controls):
 
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        verbose = False
         if event.type() == QEvent.Type.KeyPress:
-            print_lightcyan(f"eventFilter: widget_{self.objectName()}: keypress {event.key()}")
+            if verbose:
+                print_lightcyan(f"eventFilter: widget_{self.objectName()}: keypress {event.key()}")
             if self.event_key_pressed(event):
-                print(f"\taccepted")
+                if verbose:
+                    print(f"\taccepted")
                 event.accept()
                 return True
             else:
-                print(f"\tforward to parent")
+                if verbose:
+                    print(f"\tforward to parent")
                 return self.__parent.event_key_pressed(event)
 
         elif event.type() == QEvent.Type.KeyRelease:
@@ -461,7 +465,8 @@ class Widget_controls(QWidget, Ui_widget_controls):
                 event.accept()
                 return True
             else:
-                print(f"\twheel: send to parent")
+                if verbose:
+                    print(f"\twheel: send to parent")
                 if self.__parent.event_wheel(event):
                     event.accept()
                     return

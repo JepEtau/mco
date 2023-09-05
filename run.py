@@ -10,9 +10,9 @@ import signal
 from pprint import pprint
 from utils.pretty_print import *
 
-from audio.extract import extract_audio
-from audio.generate import generate_audio
-from filters.utils import FILTER_TAGS
+from audio.extract_audio_track import extract_audio_track
+from audio.generate_audio_track import generate_audio_track
+from img_toolbox.utils import FILTER_TAGS
 
 from parsers.parser_database import (
     parse_database,
@@ -24,12 +24,11 @@ from utils.common import (
 )
 from utils.frames import copy_frames_for_study
 from utils.stats import display_stats
-from video.concatenation import (
-    merge_audio_and_video_tracks,
-    concatenate_all_clips,
-    add_chapters,
-)
-from video.video import generate_video
+
+from video.combine_av_tracks import combine_av_tracks
+from video.concatenate_all import concatenate_all
+from video.add_chapters import add_chapters
+from video.generate_video_track import generate_video_track
 
 
 g_database = dict()
@@ -52,6 +51,12 @@ def main():
         default=0,
         required=False,
         help="Numéro d'épisode de 1 à 39. Ignoré pour la génération des génériques.")
+
+    parser.add_argument("--lang",
+        default='',
+        required=False,
+        choices=['fr', 'en'],
+        help="Language and video edition")
 
     parser.add_argument("--part",
         default='',
@@ -128,6 +133,12 @@ def main():
         required=False,
         help="debug: regénère les fichier vidéo. NON VERIFIE")
 
+
+    parser.add_argument("--watermark",
+        action="store_true",
+        required=False,
+        help="debug: ajoute le numéro du plan sur chaque trame")
+
     arguments = parser.parse_args()
 
     # Edition
@@ -146,6 +157,7 @@ def main():
     print("Episode: %d" % (episode_no))
     if arguments.part != '':
         print("Part: %s" % (arguments.part))
+    print(f"Language: {arguments.lang if arguments.lang != '' else 'auto'}")
     print("Tasks:")
     print("\t- parse database")
     print("\t- consolidate generiques")
@@ -157,7 +169,7 @@ def main():
         or arguments.part == ''):
 
             print("\t- force processing audio and video")
-            arguments.afilter = 'final'
+            afilter = 'final'
             if video_filter == '':
                 video_filter = 'geometry'
             do_av_merge = True
@@ -169,8 +181,9 @@ def main():
 
     if arguments.parse_only:
         # Parse database
-        parse_database(g_database, k_ep=k_episode)
+        parse_database(g_database, k_ep=k_episode, lang=arguments.lang)
         gc.collect()
+        print(p_lightcyan(f"Language: {g_database['common']['settings']['language']}"))
 
         if arguments.part in K_GENERIQUES:
             print("\t\t- %s: " % (arguments.part))
@@ -179,28 +192,37 @@ def main():
             # pprint(g_database['ep01']['k']['g_debut'])
 
         elif arguments.part != '':
-            print("\t\t- precedemment, episode, g_asuivre, asuivre, g_reportage, reportage: ")
-            pprint(g_database[k_episode]['video']['f'].keys())
-            pprint(g_database[k_episode]['video']['f'][arguments.part]['filters'])
+            print("\t\t- precedemment, episode, g_asuivre, asuivre, g_documentaire, documentaire: ")
+
+            # debugging purpose, modify this
+            # pprint(g_database[k_episode]['video']['f'].keys())
+            # pprint(g_database[k_episode]['video']['f'][arguments.part]['filters'])
+            # pprint(g_database[k_episode]['video']['f'][arguments.part])
+            print(p_lightcyan(f"--------------------------- target -------------------------------"))
+            pprint(g_database[k_episode]['video']['target'][arguments.part])
         print()
 
         # pprint(g_database[k_episode]['audio'])
         # pprint(g_database[k_episode]['video']['target'])
         sys.exit()
 
+    afilter = 'final'
+    print("\t- audio: ", end='')
     if arguments.afilter != '' and arguments.shot == -1:
-        print("\t- audio:")
+        afilter = arguments.afilter
         if arguments.part in K_GENERIQUES:
-            print("\t\t- %s: " % (arguments.part), end='')
+            print("\n\t\t- %s: " % (arguments.part), end='')
         elif arguments.part != '':
-            print("\t\t- precedemment, episode, g_asuivre, asuivre, g_reportage, reportage: ", end='')
+            print("\n\t\t- precedemment, episode, g_asuivre, asuivre, g_documentaire, documentaire: ", end='')
         else:
-            print("\t\t- all: ", end='')
+            print("\n\t\t- all: ", end='')
 
-        if arguments.afilter == 'extract':
-            print("extract only")
-        elif arguments.afilter == 'final':
-            print("final")
+    if afilter == 'extract':
+        print("extract only")
+    elif afilter == 'final':
+        print("final")
+    else:
+        print("not processed")
 
     if arguments.frames and video_filter == '':
         # Force to final if vfilter is not specified
@@ -235,7 +257,7 @@ def main():
 
         parse_database_for_study(g_database, k_ed=k_ed, k_ep=k_episode, k_part=arguments.part)
     else:
-        parse_database(g_database, k_ep=k_episode)
+        parse_database(g_database, k_ep=k_episode, lang=arguments.lang)
 
     gc.collect()
 
@@ -252,50 +274,52 @@ def main():
     # Audio
     #-------------------------------------------------
     if arguments.shot == -1 and not arguments.simulate:
-        if arguments.afilter != '':
+        if afilter != '':
             if arguments.part in K_GENERIQUES:
                 # Generiques
                 k_part_g = arguments.part
-                if arguments.afilter == 'extract':
-                    extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=k_ed, verbose=True, force=arguments.force)
-                elif arguments.afilter == 'final':
+                if afilter == 'extract':
+                    extract_audio_track(g_database, k_ep=k_part_g, k_ed=k_ed, force=arguments.force)
+                elif afilter == 'final' and k_part_g in ['g_debut', 'g_fin']:
                     if k_ed != g_database[k_part_g]['audio']['src']['k_ed']:
-                        print_orange("Warning: audio: discard specified edition, use final edition: g_database[k_part_g]['audio']['src']['k_ed']")
-                    generate_audio(g_database,
+                        print_orange(f"Warning: audio: discard specified edition, use final edition: {g_database[k_part_g]['audio']['src']['k_ed']}")
+                    generate_audio_track(g_database,
                         k_ep_or_g=k_part_g,
                         verbose=True,
                         force=arguments.force|arguments.regenerate)
 
             elif arguments.part != '':
-                # precedemment, episode, g_asuivre, asuivre, g_reportage, reportage
-                if arguments.afilter == 'extract':
-                    extract_audio(g_database, k_ep_or_g=k_episode, k_ed=k_ed, verbose=True, force=arguments.force)
-                elif arguments.afilter == 'final':
-                    generate_audio(g_database,
+                # precedemment, episode, g_asuivre, asuivre, g_documentaire, documentaire
+                if afilter == 'extract':
+                    extract_audio_track(g_database, k_ep=k_episode, k_ed=k_ed, force=arguments.force)
+                elif afilter == 'final':
+                    generate_audio_track(g_database,
                         k_ep_or_g=k_episode,
                         verbose=True,
                         force=arguments.force|arguments.regenerate)
 
             else:
                 # All
-                if arguments.afilter == 'extract':
+                if afilter == 'extract':
                     for k_part_g in ['g_debut', 'g_fin']:
-                        extract_audio(g_database, k_ep_or_g=k_part_g, k_ed=k_ed, force=arguments.force)
-                    extract_audio(g_database, k_ep_or_g=k_episode, k_ed=k_ed, force=arguments.force)
+                        extract_audio_track(g_database, k_ep=k_part_g, k_ed=k_ed, force=arguments.force)
+                    extract_audio_track(g_database, k_ep=k_episode, k_ed=k_ed, force=arguments.force)
 
-                elif arguments.afilter == 'final':
+                elif afilter == 'final':
                     for k_part_g in ['g_debut', 'g_fin']:
                         if k_ed != g_database[k_part_g]['audio']['src']['k_ed']:
                             print_orange(f"Warning: audio: discard specified edition, use final edition: {g_database[k_part_g]['audio']['src']['k_ed']}")
-                        generate_audio(g_database,
+                        generate_audio_track(g_database,
                             k_ep_or_g=k_part_g,
                             force=arguments.force)
 
-                    generate_audio(g_database,
+                    generate_audio_track(g_database,
                         k_ep_or_g=k_episode,
                         verbose=True if arguments.force else False,
                         force=arguments.force|arguments.regenerate)
 
+        if arguments.afilter != '':
+            return
 
     # Video
     #-------------------------------------------------
@@ -320,7 +344,7 @@ def main():
             last_task=video_filter)
     else:
         # Generate the video
-        generate_video(
+        generate_video_track(
             db=g_database,
             k_ed=k_ed,
             k_ep=k_episode,
@@ -329,7 +353,8 @@ def main():
             force=arguments.force,
             simulation=arguments.simulate,
             shot_min=shot_min, shot_max=shot_max,
-            do_regenerate=arguments.regenerate)
+            do_regenerate=arguments.regenerate,
+            watermark=arguments.watermark)
 
         if shot_min != 0 or shot_max != 999999:
             do_av_merge = False
@@ -346,9 +371,9 @@ def main():
     if k_ed == '':
         # Create final video only if edition is not specified
         if do_av_merge:
-            if arguments.part in ['g_debut', 'g_fin']:
+            if arguments.part in ['g_debut', 'g_fin'] and arguments.shot == -1:
                 # Part is specified, merge audio and video files
-                merge_audio_and_video_tracks(g_database,
+                combine_av_tracks(g_database,
                     k_ep_or_g=arguments.part,
                     last_task=video_filter,
                     force=arguments.force,
@@ -357,28 +382,32 @@ def main():
             elif arguments.part == '':
                 # Merge all video and audio tracks
                 for k in ['g_debut', 'g_fin']:
-                    merge_audio_and_video_tracks(g_database,
+                    combine_av_tracks(g_database,
                         k_ep_or_g=k,
                         last_task=video_filter,
                         force=arguments.force|arguments.regenerate,
                         simulation=arguments.simulate)
 
                 # Merge video and audio stream from all parts (except g_debut and g_fin)
-                merge_audio_and_video_tracks(g_database,
+                combine_av_tracks(g_database,
                     k_ep_or_g=k_episode,
                     last_task=video_filter,
                     force=arguments.force|arguments.regenerate,
                     simulation=arguments.simulate)
 
                 # Concatenate all parts
-                concatenate_all_clips(g_database,
+                concatenate_all(g_database,
                     k_ep=k_episode,
+                    last_task=video_filter,
                     force=arguments.force|arguments.regenerate,
                     simulation=arguments.simulate)
 
                 # Add chapters to the video file and write into output folder
                 if k_episode != 'ep00':
-                    add_chapters(g_database, k_ep=k_episode, simulation=arguments.simulate)
+                    add_chapters(g_database,
+                        k_ep=k_episode,
+                        last_task=video_filter,
+                        simulation=arguments.simulate)
 
 
 if __name__ == "__main__":

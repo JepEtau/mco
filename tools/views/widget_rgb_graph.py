@@ -29,7 +29,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from filters.curve import (
+from img_toolbox.curve import (
     Curve,
     Curve_point,
 )

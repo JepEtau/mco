@@ -1,10 +1,19 @@
-FFMPEGSource2("A:\mco\inputs\f\f_ep02.mkv", cache=false)
+SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
+SetFilterMTMode("FFVideoSource", MT_SERIALIZED)
+SetFilterMTMode ("QTGMC", MT_MULTI_INSTANCE)
+
+FFVideoSource("A:\mco\inputs\f\f_ep02.mkv", cache=false)
+
 AssumeTFF()
 trim(0, -1)
-QTGMC(preset="Slower", TR0=2, TR1=2, \
+
+QTGMC(preset="Slower", \
+    TR0=2, TR1=2, \
     EdiMode="EEDI3+NNEDI3", \
-    Denoiser="dfttest")
+    Denoiser="dfttest", \
+    EdiThreads=4)
+
 SelectEven()
-# aWarpSharp2()
 ConvertToRGB24()
 
+Prefetch(4)

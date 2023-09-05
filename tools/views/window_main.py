@@ -41,8 +41,7 @@ from views.window_common import (
     PAINTER_MARGIN_LEFT,
     PAINTER_MARGIN_TOP,
 )
-from filters.python_geometry import IMG_BORDER_HIGH_RES
-from filters.utils import (
+from img_toolbox.utils import (
     FINAL_FRAME_HEIGHT,
     FINAL_FRAME_WIDTH,
     get_dimensions_from_crop_values,
@@ -154,6 +153,8 @@ class Window_main(Window_common):
 
         # Connect signals between widgets
         self.widget_stabilize.signal_segment_selected[dict].connect(self.widget_painter.event_segment_selected)
+        self.controller.signal_segment_selected[dict].connect(self.widget_painter.event_segment_selected)
+
         self.widget_painter.signal_regions_modified[list].connect(self.widget_stabilize.event_region_modified)
 
 
@@ -607,6 +608,7 @@ class Window_main(Window_common):
     def event_key_released(self, event:QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
+        self.widget_painter.event_key_released(event=event)
         if self.current_widget != '':
             return self.widgets[self.current_widget].event_key_released(event)
 
@@ -638,6 +640,8 @@ class Window_main(Window_common):
             if key in [Qt.Key.Key_C, Qt.Key.Key_V]:
                 return self.widget_replace.event_key_pressed(event)
 
+        if self.widget_painter.event_key_pressed(event=event):
+            return True
 
 
         if self.current_widget != '':

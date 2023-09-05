@@ -15,9 +15,10 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import partial
 
 from pprint import pprint
-from filters.filters import get_mean_luma
+from img_toolbox.filters import get_mean_luma
 from logger import log
-from utils.hash import get_hash_from_last_task
+from parsers.parser_stabilize import DEFAULT_SEGMENT_VALUES
+from processing_chain.hash import get_hash_from_last_task
 from utils.pretty_print import *
 from utils.nested_dict import nested_dict_set
 
@@ -34,15 +35,18 @@ from controllers.controller_replace import Controller_replace
 from controllers.controller_geometry import Controller_geometry
 from shot.consolidate_shot import consolidate_shot
 
-from filters.deshake import (
+from img_toolbox.deshake import (
     consolidate_stabilize_segments,
     deshake,
     verify_stabilize_segments
 )
-from filters.python_geometry import IMG_BORDER_HIGH_RES
-from filters.utils import get_step_no_from_last_task, has_add_border_task
+from img_toolbox.python_geometry import IMG_BORDER_HIGH_RES
+from img_toolbox.utils import (
+    get_step_no_from_last_task,
+    has_add_border_task,
+)
 from utils.common import K_GENERIQUES
-from utils.get_frame_list import (
+from processing_chain.get_frame_list import (
     get_frame_list,
     get_frame_list_single
 )
@@ -58,6 +62,7 @@ class Controller_video_editor(Controller_common,
     signal_reload_frame = Signal()
     signal_is_saved = Signal(str)
 
+    signal_segment_selected = Signal(dict)
     signal_stabilize_settings_refreshed = Signal(dict)
     signal_stabilization_done = Signal()
 
@@ -168,7 +173,7 @@ class Controller_video_editor(Controller_common,
         # are different from the final generation
 
         # Get a list of path for each frame  for this shot
-        if k_part in ['g_asuivre', 'g_reportage']:
+        if k_part in ['g_asuivre', 'g_documentaire']:
             filepath_tmp = get_frame_list_single(db, k_ep=k_ep, k_part=k_part, shot=shot)
         else:
             filepath_tmp = get_frame_list(db, k_ep=k_ep, k_part=k_part, shot=shot)
@@ -217,7 +222,7 @@ class Controller_video_editor(Controller_common,
             target_geometry = self.model_database.get_target_geometry(
                     k_ep='ep00',
                     k_part=k_part)
-        elif k_part in ['g_asuivre', 'g_reportage']:
+        elif k_part in ['g_asuivre', 'g_documentaire']:
             # Use the following part to get the geometry for this part
             target_geometry = self.model_database.get_target_geometry(
                 k_ep=k_ep, k_part=k_part[2:])
@@ -230,7 +235,7 @@ class Controller_video_editor(Controller_common,
         default_shot_geometry = self.model_database.get_default_shot_geometry(shot=shot)
         shot_geometry = self.model_database.get_shot_geometry(shot=shot)
         if shot_geometry is None and default_shot_geometry is None:
-            if shot['k_part'] in ['g_asuivre', 'g_reportage']:
+            if shot['k_part'] in ['g_asuivre', 'g_documentaire']:
                 print_yellow(f"\t\t\tNo shot geometry defined, create a shot geometry {shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}")
                 # Not geometry define, create a new one
                 self.model_database.set_shot_geometry(shot=shot, geometry={
@@ -342,7 +347,7 @@ class Controller_video_editor(Controller_common,
                 filepath_tmp = [""] * shot['count']
             else:
                 # Get a list of path for each frame  for this shot
-                if k_part in ['g_asuivre', 'g_reportage']:
+                if k_part in ['g_asuivre', 'g_documentaire']:
                     filepath_tmp = get_frame_list_single(db, k_ep=k_ep, k_part=k_part, shot=shot)
                 else:
                     print(f"- get new frame list for step no. {shot['last_step']['step_no']}")
@@ -583,6 +588,7 @@ class Controller_video_editor(Controller_common,
 
         # Get preview options
         self.preview_options = self.view.get_preview_options()
+        self.preview_options['stabilize']['enabled'] = False
         self.consolidate_preview_options()
 
         if previous_shot_id != new_shot_id:
@@ -704,7 +710,6 @@ class Controller_video_editor(Controller_common,
 
 
         # Get geometry: already done each time a modification is done
-        # Stabilize settings: already loaded
 
         # Purge image from the previous frame
         self.purge_current_frame_cache()
@@ -714,6 +719,16 @@ class Controller_video_editor(Controller_common,
         frame['task'] = self.current_task
         self.current_frame = frame
         self.current_shot_no = frame['shot_no']
+
+        # Stabilize settings: already loaded
+
+        # Stabilize: segment
+        if (self.preview_options['stabilize']['enabled']
+            and self.preview_options['stabilize']['show_tracker']):
+            # print_lightcyan(f"get_frame_at_index {index}, refresh trackers")
+            segment = self.get_current_stabilize_segment(frame_no=frame['frame_no'])
+            if segment is not None:
+                self.signal_segment_selected.emit(segment)
 
         # Generate the image for this frame
         # now = time.time()
@@ -822,14 +837,14 @@ class Controller_video_editor(Controller_common,
 
 
         if options['stabilize']['show_tracker']:
-            if not options['stabilize']['allowed'] or not options['stabilize']['enabled']:
+            if not options['stabilize']['allowed']:
+                # or not options['stabilize']['enabled']
                 options['stabilize']['show_tracker'] = False
 
             if not self.preview_options['stabilize']['show_tracker']:
                 # Just enabled, disable geometry preview:
                 options['geometry']['resize_preview'] = False
                 options['geometry']['final_preview'] = False
-                self.__is_tracker_toggled = True
 
         self.preview_options = options
 
@@ -883,18 +898,11 @@ class Controller_video_editor(Controller_common,
             and len(settings['segments']) == 0):
             # Not already defined, define a new one
             new_settings['error'] = False
-            new_settings['segments'] = [{
-                'alg': 'cv2_deshaker',
-                'start': shot['start'],
-                'end':  shot['start'] + shot['count'] - 1,
-                'from': 'start',
-                'ref': -1,
-                'mode': {
-                    'vertical': True,
-                    'horizontal': True,
-                    'rotation': False,
-                }
-            }]
+            new_settings['segments'] = deepcopy(DEFAULT_SEGMENT_VALUES)
+            new_settings['segments'].update({
+                'start' : shot['start'],
+                'end' : shot['start'] + shot['count'] - 1,
+            })
 
         if not new_settings['error']:
             # Flush images
@@ -1064,6 +1072,16 @@ class Controller_video_editor(Controller_common,
         self.signal_preview_options_consolidated.emit(self.preview_options)
         self.signal_reload_frame.emit()
         self.signal_stabilization_done.emit()
+
+
+    def get_current_stabilize_segment(self, frame_no:int):
+        shot = self.current_shot()
+        # print_lightcyan(f"get_current_stabilize_segment")
+        shot_stabilize = self.model_database.get_shot_stabilize_settings(shot=shot)
+        for segment in shot_stabilize['segments']:
+            if segment['start'] <= frame_no <= segment['end']:
+                return segment
+        return None
 
 
 def load_image(i, f):

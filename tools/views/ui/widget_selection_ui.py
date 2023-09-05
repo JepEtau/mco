@@ -293,8 +293,8 @@ class Ui_widget_selection(object):
         self.comboBox_part.setItemText(2, QCoreApplication.translate("widget_selection", u"episode", None))
         self.comboBox_part.setItemText(3, QCoreApplication.translate("widget_selection", u"g_asuivre", None))
         self.comboBox_part.setItemText(4, QCoreApplication.translate("widget_selection", u"asuivre", None))
-        self.comboBox_part.setItemText(5, QCoreApplication.translate("widget_selection", u"g_reportage", None))
-        self.comboBox_part.setItemText(6, QCoreApplication.translate("widget_selection", u"reportage", None))
+        self.comboBox_part.setItemText(5, QCoreApplication.translate("widget_selection", u"g_documentaire", None))
+        self.comboBox_part.setItemText(6, QCoreApplication.translate("widget_selection", u"documentaire", None))
         self.comboBox_part.setItemText(7, QCoreApplication.translate("widget_selection", u"g_fin", None))
 
         self.radioButton_task_deinterlace.setText(QCoreApplication.translate("widget_selection", u"deinterlace", None))

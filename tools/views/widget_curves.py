@@ -2,7 +2,7 @@
 import sys
 
 
-from filters.utils import FINAL_FRAME_WIDTH
+from img_toolbox.utils import FINAL_FRAME_WIDTH
 from functools import partial
 
 from logger import log

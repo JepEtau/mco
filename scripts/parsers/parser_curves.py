@@ -12,7 +12,7 @@ from pathlib import (
 )
 from pprint import pprint
 
-from filters.curve import Curve
+from img_toolbox.curve import Curve
 from utils.common import (
     K_GENERIQUES,
 )
@@ -53,6 +53,10 @@ def parse_curve_configurations(db, k_ep_or_g:str):
     for k_section in config.sections():
         if verbose:
             print("\tsection:%s" % (k_section))
+
+        if k_section not in db['editions']['available']:
+            continue
+
         if '.' not in k_section:
             sys.exit("__parse_curve_configurations: error, no edition,ep,part specified")
         k_ed, k_ep, k_part = k_section.split('.')

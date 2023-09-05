@@ -35,8 +35,8 @@ from views.window_common import (
     PAINTER_MARGIN_LEFT,
     PAINTER_MARGIN_TOP,
 )
-from filters.python_geometry import IMG_BORDER_HIGH_RES
-from filters.utils import (
+from img_toolbox.python_geometry import IMG_BORDER_HIGH_RES
+from img_toolbox.utils import (
     FINAL_FRAME_HEIGHT,
     FINAL_FRAME_WIDTH,
     get_dimensions_from_crop_values,
@@ -139,7 +139,7 @@ class Widget_painter(QWidget):
                         # crop_top, crop_bottom, crop_left, crop_right, cropped_width, cropped_height = get_dimensions_from_crop_values(
                         #     width=initial_img_width, height=initial_img_height, crop=crop)
                         # w_tmp = int((cropped_width * FINAL_FRAME_HEIGHT) / float(cropped_height))
-                        pprint(self.image['geometry_values'])
+                        # pprint(self.image['geometry_values'])
                         crop_left = self.image['geometry_values']['crop'][2]
                         crop_top = self.image['geometry_values']['crop'][0]
                         cropped_height = self.image['geometry_values']['initial']['h'] - (self.image['geometry_values']['crop'][0] + self.image['geometry_values']['crop'][1])

@@ -4,7 +4,7 @@ import sys
 
 import time
 
-from filters.python_geometry import IMG_BORDER_HIGH_RES
+from img_toolbox.python_geometry import IMG_BORDER_HIGH_RES
 from utils.nested_dict import nested_dict_set
 import cv2
 import numpy as np
@@ -13,12 +13,12 @@ from pprint import pprint
 from logger import log
 from utils.pretty_print import *
 
-from filters.filters import (
+from img_toolbox.filters import (
     calculate_geometry_parameters,
     cv2_geometry_filter,
-    filter_rgb,
+    cv2_rgb_curves,
     get_mean_luma)
-from filters.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
+from img_toolbox.utils import FINAL_FRAME_HEIGHT, FINAL_FRAME_WIDTH, get_dimensions_from_crop_values
 
 
 def generate_image(frame:dict, preview_options:dict):
@@ -92,7 +92,7 @@ def generate_image(frame:dict, preview_options:dict):
     nested_dict_set(frame, luma, 'stats', 'luma', 'initial')
     if preview_options['curves']['enabled'] and frame['curves'] is not None:
         try:
-            img_rgb = filter_rgb(frame, img_initial)
+            img_rgb = cv2_rgb_curves(img=img_initial, lut=frame['curves']['lut'])
 
             # Calculate mean value of luma channel
             luma = get_mean_luma(img_rgb)
@@ -155,7 +155,7 @@ def generate_image(frame:dict, preview_options:dict):
         img_cropped = img_rgb
 
         if preview_shot_geometry['resize_preview']:
-            pprint(frame['geometry'])
+            # pprint(frame['geometry'])
             print("Error: generate_image: resize not possible because no crop preview selected")
 
 

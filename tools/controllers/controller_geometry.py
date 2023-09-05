@@ -2,8 +2,8 @@
 import sys
 
 
-from filters.python_geometry import IMG_BORDER_HIGH_RES
-from filters.filters import calculate_geometry_parameters
+from img_toolbox.python_geometry import IMG_BORDER_HIGH_RES
+from img_toolbox.filters import calculate_geometry_parameters
 from copy import deepcopy
 
 from pprint import pprint
@@ -14,7 +14,7 @@ from PySide6.QtCore import (
     Signal,
 )
 
-from filters.utils import FINAL_FRAME_WIDTH
+from img_toolbox.utils import FINAL_FRAME_WIDTH
 from utils.nested_dict import nested_dict_set
 
 
@@ -64,7 +64,7 @@ class Controller_geometry():
 
         # Modify target width
         if element == 'target' and parameter == 'width':
-            if k_part in ['g_asuivre', 'g_reportage']:
+            if k_part in ['g_asuivre', 'g_documentaire']:
                 sys.exit(print_red("bug: target width shall never be modified when editing %s" % (k_part)))
 
             if event_type == 'set':
@@ -135,7 +135,7 @@ class Controller_geometry():
             print_orange(f"refresh geometry: no frames. {shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}")
             return
 
-        if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage']:
+        if shot['dst']['k_part'] in ['g_asuivre', 'g_documentaire']:
             k_part_src = shot['dst']['k_part'][2:]
         else:
             k_part_src = shot['dst']['k_part']
@@ -166,10 +166,10 @@ class Controller_geometry():
         frame = self.frames[shot['no']][0]
         shot_geometry_values = calculate_geometry_parameters(shot=virtual_shot, img=frame['cache_initial'])
         is_geometry_erroneous = False if shot_geometry_values['pad_error'] is None else True
-        pprint(shot_geometry_values)
+        # pprint(shot_geometry_values)
 
         for frame in self.frames[shot['no']]:
-            # if shot['dst']['k_part'] in ['g_asuivre', 'g_reportage']:
+            # if shot['dst']['k_part'] in ['g_asuivre', 'g_documentaire']:
             #     k_part_src = shot['dst']['k_part'][2:]
             # else:
             #     k_part_src = shot['dst']['k_part']

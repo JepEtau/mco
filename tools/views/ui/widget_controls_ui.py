@@ -132,7 +132,7 @@ class Ui_widget_controls(object):
         widget_controls.setWindowTitle(QCoreApplication.translate("widget_controls", u"Form", None))
         self.pushButton_play_pause.setText("")
         self.pushButton_loop.setText("")
-        self.label_ed_ep_part.setText(QCoreApplication.translate("widget_controls", u"s:ep11:g_reportage:999", None))
+        self.label_ed_ep_part.setText(QCoreApplication.translate("widget_controls", u"s:ep11:g_documentaire:999", None))
         self.lineEdit_frame_no.setText(QCoreApplication.translate("widget_controls", u"123456", None))
         self.lineEdit_frame_index.setText(QCoreApplication.translate("widget_controls", u"123456", None))
     # retranslateUi

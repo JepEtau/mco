@@ -24,7 +24,7 @@ from parsers.parser_geometry import (
     get_initial_default_shot_geometry,
     get_initial_shot_geometry,
 )
-from filters.utils import FINAL_FRAME_WIDTH
+from img_toolbox.utils import FINAL_FRAME_WIDTH
 
 class Model_geometry():
 
@@ -49,7 +49,7 @@ class Model_geometry():
         verbose = False
 
         # Target geometry
-        if k_part in ['g_asuivre', 'g_reportage']:
+        if k_part in ['g_asuivre', 'g_documentaire']:
             self.db_target_geometry_initial = get_initial_target_geometry(self.global_database,
                 k_ep=k_ep, k_part=k_part[2:])
         else:

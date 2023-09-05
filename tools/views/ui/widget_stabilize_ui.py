@@ -19,13 +19,13 @@ from PySide6.QtWidgets import (QApplication, QFrame, QGroupBox, QHBoxLayout,
     QLabel, QLayout, QLineEdit, QPushButton,
     QSizePolicy, QSpacerItem, QVBoxLayout, QWidget)
 
-from views.widget_segments import Widget_segments
+from views.table_segments import Table_segments
 
 class Ui_widget_stabilize(object):
     def setupUi(self, widget_stabilize):
         if not widget_stabilize.objectName():
             widget_stabilize.setObjectName(u"widget_stabilize")
-        widget_stabilize.resize(735, 182)
+        widget_stabilize.resize(865, 247)
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -37,7 +37,7 @@ class Ui_widget_stabilize(object):
         self.mainLayout.setContentsMargins(0, 0, 0, 0)
         self.frame = QFrame(widget_stabilize)
         self.frame.setObjectName(u"frame")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
+        sizePolicy1 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Preferred)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
@@ -167,22 +167,21 @@ class Ui_widget_stabilize(object):
 
         self.groupBox_stabilize = QGroupBox(self.frame)
         self.groupBox_stabilize.setObjectName(u"groupBox_stabilize")
+        sizePolicy1.setHeightForWidth(self.groupBox_stabilize.sizePolicy().hasHeightForWidth())
+        self.groupBox_stabilize.setSizePolicy(sizePolicy1)
         self.groupBox_stabilize.setFocusPolicy(Qt.NoFocus)
         self.groupBox_stabilize.setCheckable(True)
         self.horizontalLayout_2 = QHBoxLayout(self.groupBox_stabilize)
         self.horizontalLayout_2.setSpacing(3)
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setContentsMargins(9, 12, 3, 3)
-        self.widget_segments = Widget_segments(self.groupBox_stabilize)
-        self.widget_segments.setObjectName(u"widget_segments")
-        sizePolicy4 = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
-        sizePolicy4.setHorizontalStretch(0)
-        sizePolicy4.setVerticalStretch(0)
-        sizePolicy4.setHeightForWidth(self.widget_segments.sizePolicy().hasHeightForWidth())
-        self.widget_segments.setSizePolicy(sizePolicy4)
-        self.widget_segments.setMinimumSize(QSize(670, 0))
+        self.table_segments = Table_segments(self.groupBox_stabilize)
+        self.table_segments.setObjectName(u"table_segments")
+        sizePolicy1.setHeightForWidth(self.table_segments.sizePolicy().hasHeightForWidth())
+        self.table_segments.setSizePolicy(sizePolicy1)
+        self.table_segments.setMinimumSize(QSize(800, 0))
 
-        self.horizontalLayout_2.addWidget(self.widget_segments)
+        self.horizontalLayout_2.addWidget(self.table_segments)
 
         self.verticalLayout_3 = QVBoxLayout()
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")

@@ -1,19 +1,15 @@
 # -*- coding: utf-8 -*-
 import sys
-from copy import deepcopy
 from pprint import pprint
 
-from utils.common import (
-    FPS,
-    pprint_audio,
-    pprint_video
-)
+from utils.common import FPS
 from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 from utils.time_conversions import (
     frames_to_ms,
     ms_to_frames,
 )
+from utils.types import Shot, VideoPart
 
 
 
@@ -122,71 +118,360 @@ def calculate_av_sync(db, k_ep):
     db_audio = db[k_ep]['audio']
 
     if verbose:
-        print_lightcyan(f"Calculate AV sync.")
+        print_lightcyan(f"Calculate AV sync")
+
 
     # precedemment
     k_part = 'precedemment'
+    db_audio['precedemment']['avsync'] = 0
+    db_audio['episode']['avsync'] = 0
+    db_video_target['precedemment']['avsync'] = 0
+    db_video_target['episode']['avsync'] = 0
+
     if k_part in db_audio.keys() and db_audio[k_part]['duration'] != 0:
         # edition used as the src for the audio track
 
-        k_ed_src = db_audio['src']['k_ed']
-        if verbose:
-            print_lightcyan(f"db_audio[{k_part}]:")
-            pprint(db_audio[k_part])
-            print_lightcyan(f"db_video {k_ed_src}:{k_part}:")
-            pprint(db[k_ep]['video'][k_ed_src][k_part])
-            print_lightcyan(f"db_video target:{k_part}:")
-            pprint(db[k_ep]['video']['target'][k_part])
+        k_ed_audio_src = db_audio['src']['k_ed']
+        # if verbose:
+        #     print_lightcyan(f"db_audio[{k_part}]:")
+        #     pprint(db_audio[k_part])
+        #     print_lightcyan(f"db_video {k_ed_src}:{k_part}:")
+        #     pprint(db[k_ep]['video'][k_ed_src][k_part])
+        #     print_lightcyan(f"db_video target:{k_part}:")
+        #     pprint(db[k_ep]['video']['target'][k_part])
 
         # Compare video count from audio_src and target
-        precedemment_video_count = (db[k_ep]['video'][k_ed_src]['episode']['shots'][1]['start']
-                        - db[k_ep]['video'][k_ed_src]['precedemment']['shots'][1]['start'])
-        precedemment_target_video_count = (db_video_target['episode']['shots'][1]['start']
-                        - db_video_target['precedemment']['shots'][1]['start'])
+        try:
+            precedemment_video_count = (db[k_ep]['video'][k_ed_audio_src]['episode']['shots'][1]['start']
+                            - db[k_ep]['video'][k_ed_audio_src]['precedemment']['shots'][1]['start'])
+            precedemment_target_video_count = (db_video_target['episode']['shots'][1]['start']
+                            - db_video_target['precedemment']['shots'][1]['start'])
+        except:
+            pprint(db[k_ep]['video'].keys())
+            sys.exit(f"{k_ep}:{k_part}: video shots are not defined. They are required to calculate AV sync values.")
         if verbose:
             print_lightgrey(f"\tprecedemment to episode:")
-            print_lightgrey(f"\t\tvideo count ({k_ed_src}): {precedemment_video_count}")
+            print_lightgrey(f"\t\tvideo count ({k_ed_audio_src}): {precedemment_video_count}")
             print_lightgrey(f"\t\tvideo count (target): {precedemment_target_video_count}")
         if precedemment_video_count != precedemment_target_video_count:
-            print_red(f"error: precedemment to episode: erroneous frame count between {k_ed_src} and target")
-
-        # precedemment
-
-        # Use the 2nd shot to calculate diff between editions
-        part_video_start = (db_video_target[k_part]['shots'][0]['start']
-            + (db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start']
-                - db_video_target[k_part]['shots'][1]['start']))
-        avsync_ms = (frames_to_ms(part_video_start) - db_audio[k_part]['start'])
-        db_video[k_part]['avsync'] = ms_to_frames(avsync_ms) if avsync_ms > 0 else 0
-        db_audio[k_part].update({
-            'avsync': avsync_ms if avsync_ms < 0 else 0,
-            'count': ms_to_frames(db_audio[k_part]['end'] - db_audio[k_part]['start']),
-        })
+            print(p_yellow(f"\twarning: precedemment to episode: erroneous frame count between {k_ed_audio_src} and target"))
 
 
-        # episode
-        k_part = 'episode'
-        audio_avsync_ms = (db_audio[k_part]['start']
-            - (db_audio['precedemment']['start'] + db_audio['precedemment']['duration']))
-        db_audio[k_part].update({
-            'avsync': audio_avsync_ms,
-            'count': ms_to_frames(db_audio[k_part]['end'] - db_audio[k_part]['start'])
-        })
-        if audio_avsync_ms != 0:
-            print_red(f"error: gap between precedemment and episode  is not null: {audio_avsync_ms}ms")
+        # synchronize episode, use the 2nd video shot
 
-        if verbose:
-            print_lightgrey(f"\tgap between precedemment and episode:")
-            print_lightgrey(f"\t\taudio: {audio_avsync_ms} ms")
-        # Use the 2nd shot
-        # video_diff = (db_video_target[k_part]['shots'][1]['start']
-        #                 - db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start'])
-        video_avsync = (db_video_target[k_part]['shots'][0]['start']
-            - (db_video_target['precedemment']['shots'][0]['start']+ db_video_target['precedemment']['count']))
-        if verbose:
-            print_lightgrey(f"\t\tvideo: {video_avsync}")
+        # offset: target -> src (use audio track)
+        # offset = src - target
+        offset_src_to_target = (db_video_target['episode']['shots'][1]['start']
+            - db[k_ep]['video'][k_ed_audio_src]['episode']['shots'][1]['start'])
 
-        db_video[k_part]['avsync'] = video_avsync
+        # audio start in target referentiel
+        precedemment_audio_start = ms_to_frames(db_audio['precedemment']['start']) + offset_src_to_target
+
+        # Precedemment: let's set the 1st frame of video aligned with the audio start
+        db_video_target['precedemment']['avsync'] = 0
+
+        # We moved the precedemment part, calculate new silence between precedemment and episode
+        precedemment_video_count = db_video_target['precedemment']['count']
+        episode_video_start = db_video_target['episode']['shots'][0]['start']
+        video_silence = (episode_video_start
+            - (precedemment_audio_start + precedemment_video_count))
+
+        precedemment_audio_count = ms_to_frames(db_audio['precedemment']['duration'])
+
+        print(f"k_ed_audio_src: {k_ed_audio_src}")
+        print(f"\toffset: {offset_src_to_target}")
+        print(f"\tprecedemment_audio_start: {precedemment_audio_start}")
+        print(f"\tprecedemment_video_count: {precedemment_video_count}")
+        print(f"\tepisode_video_start: {episode_video_start}")
+        print(f"\tprecedemment, audio_count: {precedemment_audio_count}")
+
+        print(f"\tvideo_silence: {video_silence}")
+
+
+        last_shot_precedemment:Shot = db_video_target['precedemment']['shots'][-1]
+        first_shot_episode:Shot = db_video_target['episode']['shots'][0]
+        if video_silence < 0:
+            # overlap
+            print(p_lightgreen(f"precedemment to episode: remove {abs(video_silence)} frames"))
+            video_silence = abs(video_silence)
+
+            if precedemment_audio_count > precedemment_video_count:
+                # Remove frames from episode
+                # fr: ep no. 19
+                # fadein to do
+                # ep26 (99 frames)?????
+                # validated (2023-08-28): 19
+                print(f"\tepisode: remove {abs(video_silence)} frames")
+                first_shot_episode['start'] += video_silence
+                first_shot_episode['count'] -= video_silence
+                first_shot_episode['dst']['count'] -= video_silence
+                db_video_target['episode']['count'] -= video_silence
+            else:
+                # Remove frames from precedemment
+                # fr: ep no. 3, 14, 36
+                # validated (2023-08-26): 03, 14, 36
+                # TODO: Improve: ep14, use fadeout
+                print(f"\tprecedemment: remove {abs(video_silence)} frames")
+                last_shot_precedemment['count'] -= video_silence
+                last_shot_precedemment['dst']['count'] -= video_silence
+                db_video_target['precedemment']['count'] -= video_silence
+
+        elif video_silence > 0:
+            # Add silence between precedemment and episode
+            print(p_lightgreen(f"precedemment to episode: add video silence: {abs(video_silence)} frames"))
+
+            if precedemment_audio_count > precedemment_video_count:
+                # fr: ep no. 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18,
+                #               20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+                #               30, 31, 32, 34, 35, 37, 38, 39
+                # validated (2023-08-29): 38
+                print(f"\tprecedemment: loop and fadeout")
+                print(f"\tav_diff : {precedemment_audio_count - precedemment_video_count}")
+                loop_count = precedemment_audio_count - precedemment_video_count
+                loop_start = (last_shot_precedemment['start']
+                    + last_shot_precedemment['count'] - 1)
+                last_shot_precedemment.update({
+                    'effects': ['loop_and_fadeout', loop_start, loop_count, loop_count]})
+                db_video_target['precedemment']['count'] += loop_count
+
+                if loop_count < video_silence:
+                    # Add silence at the beginning of the episode or fade_in
+                    nested_dict_set(db_video['episode'], (video_silence - loop_count), 'effects', 'fadein')
+
+            else:
+                print(f"\tTODO: episode: loop and fadein")
+                sys.exit()
+
+        else:
+            # No modifications
+            # fr: ep no. 2
+            # validated (2023-08-25): 02
+            print(p_lightgreen(f"precedemment to episode: no modification"))
+
+
+        if False:
+
+
+
+
+
+
+
+
+
+            # start of precedemment converted to audio src frame numbering
+            target_precedemment_start = db_video_target['precedemment']['start'] + offset
+            print(f"target_precedemment_start: {target_precedemment_start} -> {target_precedemment_start}")
+            print(f"target_precedemment_start: {target_precedemment_start}")
+
+
+            avsync = db_video_target['precedemment']['start']
+
+
+            precedemment_audio_start = ms_to_frames(db_audio['precedemment']['start']) + offset
+            print(f"precedemment, audio start: {precedemment_audio_start}")
+
+            avsync_precedemment = precedemment_audio_start - db_video_target['precedemment']['shots'][0]['start']
+            print(f"avsync_precedemment: {avsync_precedemment}")
+
+            # precedemment_audio_start
+
+            # db[k_ep]['video'][k_ed_src]['precedemment']['start']
+
+
+
+            episode_start = (db_video_target['episode']['shots'][0]['start']
+                                + db_video_target['episode']['avsync'])
+
+
+        if False:
+            if True:
+                # avsync for episode or precedemment
+                avsync = precedemment_target_video_count - precedemment_video_count
+                if avsync >= 0:
+                    # target is > source, add audio silence before precedemment
+                    print(f"\t\tadd {avsync} frames to audio")
+                    db_audio['precedemment']['avsync'] = frames_to_ms(avsync)
+                else:
+                    # target is < source, add video silence before episode
+                    print(f"\t\tadd {avsync} frames to video")
+                    db_video_target['episode']['avsync'] = abs(avsync)
+
+
+            # Detect if silence has to be added between precedemment and episode
+            # TODO: This is wrong if the last shot of 'precedemment' or if the 1st shot of 'episode' is replaced
+            precedemment_end = (db_video_target['precedemment']['shots'][0]['start']
+                                + db_video_target['precedemment']['count'])
+
+            episode_start = (db_video_target['episode']['shots'][0]['start']
+                                + db_video_target['episode']['avsync'])
+            silence_count = episode_start - precedemment_end
+            if silence_count < 0:
+                sys.exit(p_red(f"TODO: correct avsync between precedemment and episode because silence < 0 ({silence_count})"))
+            print(f"silence between precedemment and episode: {silence_count}")
+            do_add_silence = True if silence_count > 0 else False
+
+            # Offset to convert frame no from src to target
+            offset = (db_video_target['episode']['shots'][1]['start'] -
+                    db[k_ep]['video'][k_ed_src]['episode']['shots'][1]['start'])
+            print(f"offset: add {offset} to {k_ed_src} to get target frame no.")
+
+            # precedemment
+
+
+            # precedemment:
+            # video start of this part = target_video_shot[1] - src_audio_shot_count[0]
+            #       = target_video_shot[1] - (src_video_shot[1] - src_audio_shot_start[0])
+            #       = src_audio_shot_start[0] + (target_video_shot[1] - src_video_shot[1])
+            k_part = 'precedemment'
+            part_audio_start = ms_to_frames(db_audio['precedemment']['start'] - db_audio['precedemment']['avsync'])
+            # convert it into target reference
+            part_audio_start += offset
+            print(f"part_audio_start: {part_audio_start}")
+
+            avsync = part_audio_start - db_video_target['precedemment']['shots'][0]['start']
+
+            # offset = (db_video_target[k_part]['shots'][1]['start']
+            #     - db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start'])
+            # print(f"{k_part}: offset: {offset}")
+            # part_audio_start = ms_to_frames(db_audio[k_part]['start']) + offset
+
+            print(f"precedemment: avsync: {avsync}")
+
+            # print(f"{k_part}: audio start: {part_audio_start}")
+
+            # part_video_start = (ms_to_frames(db_audio[k_part]['start'])
+            #                     + db_video_target[k_part]['shots'][1]['start']
+            #                     - db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start'])
+            # print(f"part_video_start: {part_video_start}")
+
+            db_video[k_part]['avsync'] = avsync if avsync >= 0 else 0
+            db_audio[k_part]['avsync'] = frames_to_ms(abs(avsync)) if avsync < 0 else 0
+
+            print("before:")
+            print(f"\tprecedemment:video:avsync = {db_video['precedemment']['avsync']}")
+            print(f"\tprecedemment:video:count = {db_video['precedemment']['count']}")
+            print(f"\tprecedemment:audio:avsync = {ms_to_frames(db_audio['precedemment']['avsync'])}")
+            print(f"\tprecedemment:audio:count = {ms_to_frames(db_audio['precedemment']['duration'])}")
+            print("-")
+            print(f"\tepisode:video:avsync = {db_video['episode']['avsync']}")
+            print(f"\tepisode:video:count = {db_video['episode']['count']}")
+            print(f"\tepisode:audio:avsync = {ms_to_frames(db_audio['episode']['avsync'])}")
+            print(f"\tepisode:audio:count = {ms_to_frames(db_audio['episode']['duration'])}")
+
+
+
+
+            # episode
+            k_part = 'episode'
+            # src duration between episode:shot[1] and precedemment:shot[-1]
+            src_frame_count = (db[k_ep]['video'][k_ed_src]['episode']['shots'][1]['start']
+                - db[k_ep]['video'][k_ed_src]['precedemment']['shots'][1]['start'])
+
+            target_frame_count = (db[k_ep]['video']['target']['episode']['shots'][1]['start']
+                - db[k_ep]['video']['target']['precedemment']['shots'][1]['start'])
+
+            avsync = src_frame_count - target_frame_count
+            print(f"{k_part}, avsync={avsync}")
+
+            db_video[k_part]['avsync'] = abs(avsync) if avsync < 0 else 0
+            db_video[k_part]['count'] += db_video[k_part]['avsync']
+            db_audio[k_part]['avsync'] = frames_to_ms(avsync) if avsync > 0 else 0
+
+            print("before:")
+            print(f"\tprecedemment:video:avsync = {db_video['precedemment']['avsync']}")
+            print(f"\tprecedemment:video:count = {db_video['precedemment']['count']}")
+            print(f"\tprecedemment:audio:avsync = {ms_to_frames(db_audio['precedemment']['avsync'])}")
+            print(f"\tprecedemment:audio:count = {ms_to_frames(db_audio['precedemment']['duration'])}")
+            print("-")
+            print(f"\tepisode:video:avsync = {db_video['episode']['avsync']}")
+            print(f"\tepisode:video:count = {db_video['episode']['count']}")
+            print(f"\tepisode:audio:avsync = {ms_to_frames(db_audio['episode']['avsync'])}")
+            print(f"\tepisode:audio:count = {ms_to_frames(db_audio['episode']['duration'])}")
+
+
+            if do_add_silence:
+                silence_duration = frames_to_ms(episode_start - precedemment_end)
+                print(p_yellow(f"add silence between precedemment and silence: {ms_to_frames(silence_duration)}"))
+
+                avsync_precedemment = db_audio['precedemment']['avsync']
+                minimum_silence = frames_to_ms(ms_to_frames(0.5))
+                if avsync_precedemment > 0:
+                    print(f"\tdb_audio[precedemment][avsync]: {avsync_precedemment}")
+                    # This part is moveable
+
+                    if (silence_duration - minimum_silence) >= avsync_precedemment:
+                        # We can move the start of the video track to the start of the audio track
+                        db_audio['precedemment']['avsync'] = 0
+                        silence_duration -= avsync_precedemment
+                    else:
+                        # We can move the video track but not completely
+                        db_audio['precedemment']['avsync'] -= (silence_duration - minimum_silence)
+                        silence_duration = minimum_silence
+
+                if silence_duration > 0:
+                    # db_video_target['precedemment']['silence'] = ms_to_frames(silence_duration)
+                    db_video_target['episode']['avsync'] = ms_to_frames(silence_duration)
+
+                avsync_precedemment = ms_to_frames(db_audio['precedemment']['avsync'])
+                if avsync_precedemment > 0:
+                    # still some video frames at the beginning before audio
+                    # remove them
+                    db_audio['precedemment']['avsync'] = 0
+                    first_shot:Shot = db_video_target['precedemment']['shots'][0]
+                    first_shot['start'] += avsync_precedemment
+                    first_shot['count'] -= avsync_precedemment
+                    first_shot['src']['start'] += avsync_precedemment
+                    first_shot['src']['count'] -= avsync_precedemment
+                    first_shot['dst']['count'] -= avsync_precedemment
+                    db_video_target['precedemment']['count'] -= avsync_precedemment
+
+                print(p_red(f"\tdb_audio[precedemment][avsync]: {db_audio['precedemment']['avsync']}"))
+                # print(p_red(f"db_video_target['precedemment']:"))
+                # pprint(db_video_target['precedemment'])
+                # sys.exit()
+
+                print("finally:")
+                print(f"\tprecedemment:video:avsync = {db_video['precedemment']['avsync']}")
+                print(f"\tprecedemment:video:count = {db_video['precedemment']['count']}")
+                print(f"\tprecedemment:audio:avsync = {ms_to_frames(db_audio['precedemment']['avsync'])}")
+                print(f"\tprecedemment:audio:count = {ms_to_frames(db_audio['precedemment']['duration'])}")
+                print("-")
+                print(f"\tepisode:video:avsync = {db_video['episode']['avsync']}")
+                print(f"\tepisode:video:count = {db_video['episode']['count']}")
+                print(f"\tepisode:audio:avsync = {ms_to_frames(db_audio['episode']['avsync'])}")
+                print(f"\tepisode:audio:count = {ms_to_frames(db_audio['episode']['duration'])}")
+                print("-")
+                try:
+                    print(f"silence between precedemment and episode: {db_video_target['precedemment']['silence']}")
+                except:
+                    pass
+
+        if False:
+            audio_avsync_ms = (db_audio[k_part]['start']
+                - (db_audio['precedemment']['start'] + db_audio['precedemment']['duration']))
+
+
+
+            db_audio[k_part].update({
+                'avsync': audio_avsync_ms,
+                'count': ms_to_frames(db_audio[k_part]['end'] - db_audio[k_part]['start'])
+            })
+            if audio_avsync_ms != 0:
+                print_red(f"error: gap between precedemment and episode  is not null: {audio_avsync_ms}ms")
+
+            if verbose:
+                print_lightgrey(f"\tgap between precedemment and episode:")
+                print_lightgrey(f"\t\taudio: {audio_avsync_ms} ms")
+            # Use the 2nd shot
+            # video_diff = (db_video_target[k_part]['shots'][1]['start']
+            #                 - db[k_ep]['video'][k_ed_src][k_part]['shots'][1]['start'])
+            video_avsync = (db_video_target[k_part]['shots'][0]['start']
+                - (db_video_target['precedemment']['shots'][0]['start']+ db_video_target['precedemment']['count']))
+            if verbose:
+                print_lightgrey(f"\t\tvideo: {video_avsync}")
+
+            db_video[k_part]['avsync'] = video_avsync
 
         # if db_video['episode']['start'] != db_video['episode']['shots'][0]['start']:
         #     sys.exit("calculate_av_sync: error: start of episode (%d) != start of 1st shot (%d)" % (
@@ -194,10 +479,7 @@ def calculate_av_sync(db, k_ep):
 
     else:
         # precedemment does not exist
-        db[k_ep]['audio']['precedemment'].update({
-            'avsync': 0,
-            'count': 0,
-        })
+        db_audio['precedemment']['avsync'] = 0
         db_video_target['precedemment'].update({
             'avsync': 0,
             'count': 0,
@@ -211,12 +493,15 @@ def calculate_av_sync(db, k_ep):
         video_start = db[k_ep]['video'][k_ed_src][k_part]['start']
 
         avsync_ms = db_audio[k_part]['start'] - frames_to_ms(video_start)
-        db_video[k_part].update({
-            'avsync': ms_to_frames(avsync_ms) if avsync_ms < 0 else 0
-        })
-        db_audio[k_part].update({
-            'avsync': avsync_ms if avsync_ms > 0 else 0,
-        })
+        # db_video[k_part].update({
+        #     'avsync': ms_to_frames(abs(avsync_ms)) if avsync_ms < 0 else 0
+        # })
+        if avsync_ms < 0:
+            # missing video frames, use fade_in
+            nested_dict_set(db_video[k_part], ms_to_frames(abs(avsync_ms)), 'effects', 'fadein')
+
+        db_video[k_part]['avsync'] = 0
+        db_audio[k_part]['avsync'] = avsync_ms if avsync_ms > 0 else 0
 
     k_part = 'asuivre'
     if k_part in db_audio.keys() and db_audio[k_part]['duration'] != 0:
@@ -242,12 +527,26 @@ def calculate_av_sync(db, k_ep):
             'count': audio_count
         })
     else:
-        db_video[k_part]['count'] = 0
-        db_audio[k_part]['count'] = 0
+        db_video_target['g_asuivre'].update({
+            'avsync': 0,
+            'count': 0,
+        })
+        db_video_target[k_part].update({
+            'avsync': 0,
+            'count': 0,
+        })
 
+        db_audio['g_asuivre'].update({
+            'avsync': 0,
+            'count': 0,
+        })
+        db_audio[k_part].update({
+            'avsync': 0,
+            'count': 0,
+        })
 
-    # g_reportage
-    k_part_g = 'g_reportage'
+    # g_documentaire
+    k_part_g = 'g_documentaire'
     audio_count = ms_to_frames(db_audio[k_part_g]['duration'])
     db_audio[k_part_g].update({
         'count': audio_count,
@@ -259,8 +558,8 @@ def calculate_av_sync(db, k_ep):
         'avsync': 0
     })
 
-    # reportage
-    k_part = 'reportage'
+    # documentaire
+    k_part = 'documentaire'
     db_video[k_part]['avsync'] = 0
     db_audio[k_part].update({
         'avsync': 0,
@@ -269,9 +568,11 @@ def calculate_av_sync(db, k_ep):
 
 
 
-
 def align_audio_video_durations(db, k_ep):
-    K_EP_DEBUG = ''
+    print(p_red("align_audio_video_durations:"), f"{k_ep}")
+    K_EP_DEBUG, K_PART_DEBUG = [''] *2
+    # K_EP_DEBUG = 'ep05'
+    # K_PART_DEBUG = 'precedemment'
     try:
         db_video = db[k_ep]['video']['target']
         db_audio = db[k_ep]['audio']
@@ -279,51 +580,53 @@ def align_audio_video_durations(db, k_ep):
         sys.exit(f"align_audio_video_durations: error, audio or video does not exist in {k_ep}:common")
 
     if k_ep == K_EP_DEBUG:
-        print(f"align_audio_video_durations:{k_ep}:common")
+        print(f"align_audio_video_durations: {k_ep}, db_audio:")
         pprint(db_audio)
 
     # g_asuivre
     #---------------------------------------------------------------------------
-    # Update the shot with the duration that is calculated in the audio structure
-    k_part_g = 'g_asuivre'
-    db_video[k_part_g]['count'] = db_audio[k_part_g]['count']
-    last_shot = db_video[k_part_g]['shots'][-1]
-    last_shot['effects'] = [
-        'loop',
-        last_shot['start'] + last_shot['count'] - 1,
-        db_video[k_part_g]['count'] - last_shot['count']]
-    if k_ep == K_EP_DEBUG:
-        print(f"\ndb_video: %s:\n--------------------------------------" % (k_part_g))
-        pprint(db_video[k_part_g])
+    if db_video['asuivre']['count'] != 0:
+        # Update the shot with the duration that is calculated in the audio structure
+        k_part_g = 'g_asuivre'
+        db_video[k_part_g]['count'] = db_audio[k_part_g]['count']
+        last_shot = db_video[k_part_g]['shots'][-1]
+        last_shot['effects'] = [
+            'loop',
+            last_shot['start'] + last_shot['count'] - 1,
+            db_video[k_part_g]['count'] - last_shot['count']]
+        if k_ep == K_EP_DEBUG:
+            print(f"\ndb_video: %s:\n--------------------------------------" % (k_part_g))
+            pprint(db_video[k_part_g])
 
 
-    # g_reportage
+    # g_documentaire
     #---------------------------------------------------------------------------
     # Update the shot with the duration that is calculated in the audio structure
-    k_part_g = 'g_reportage'
+    k_part_g = 'g_documentaire'
 
     last_shot = db_video[k_part_g]['shots'][-1]
     if db_audio[k_part_g]['count'] > db_video[k_part_g]['count']:
         # Use last frame
         loop_start = last_shot['start'] + last_shot['count'] - 1
         loop_count = db_audio[k_part_g]['count'] - db_video[k_part_g]['count']
-        # print(f"%s: loop, last frame=%d, %d frames" % (k_part_g, loop_start, loop_count))
+        print(f"{k_part_g}: loop, last frame={loop_start}, {loop_count} frames")
         last_shot['effects'] = ['loop', loop_start, loop_count]
 
     elif db_video[k_part_g]['count'] > db_audio[k_part_g]['count']:
         # remove some frames
-        # print(f"%s: remove %d frames" % (k_part_g, db_video[k_part_g]['count'] - db_audio[k_part_g]['count']))
+        print(f"{k_part_g}: remove {db_video[k_part_g]['count']- db_audio[k_part_g]['count']} frames")
         last_shot['count'] -= db_video[k_part_g]['count'] - db_audio[k_part_g]['count']
+        last_shot['dst']['count'] = last_shot['count']
 
     db_video[k_part_g]['count'] = db_audio[k_part_g]['count']
     if k_ep == K_EP_DEBUG:
         print(f"\ndb_video: %s:\n--------------------------------------" % (k_part_g))
         pprint(db_video[k_part_g])
 
-    # precedemment+episode, asuivre, reportage
+    # asuivre, documentaire
     #---------------------------------------------------------------------------
-    for k_part in ['episode', 'asuivre', 'reportage']:
-        if k_ep == K_EP_DEBUG and k_part != 'episode':
+    for k_part in ['precedemment', 'episode', 'asuivre', 'documentaire']:
+        if k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
             print(f"\ndb_video: %s:\n--------------------------------------" % (k_part))
             pprint(db_video[k_part])
 
@@ -332,7 +635,9 @@ def align_audio_video_durations(db, k_ep):
 
         if k_part == 'episode':
             # Add precedemment
-            audio_duration += (db_audio['precedemment']['avsync'] + db_audio['precedemment']['duration'])
+            audio_duration = (db_audio['precedemment']['avsync']
+                + db_audio['precedemment']['duration']
+                + db_audio['episode']['duration'])
 
         # Round audio count to a multiple of 1000/FPS ms
         audio_count = ms_to_frames(audio_duration)
@@ -342,7 +647,7 @@ def align_audio_video_durations(db, k_ep):
         # print(f"\taudio_count_rounded=%f" % (audio_count_rounded))
         # print(f"\taudio_count_float=%f" % (audio_count_float))
         if audio_count_float != audio_count_rounded:
-            sys.exit("align_audio_video_durations: correct or remove this (add an audio segment), %s:%" % (k_ep, k_part))
+            sys.exit(f"align_audio_video_durations: correct or remove this (add an audio segment), {k_ep}:{k_part}")
             # Add silence to the latest segment
             s = db_audio[k_part]['segments'][-1]
             silence = int(((audio_count_rounded - audio_count_float) * 1000 / FPS) + 0.5)
@@ -362,19 +667,34 @@ def align_audio_video_durations(db, k_ep):
         if k_part == 'episode':
             # this is a special case for episode: precedemment+episode
             # print(f"   rounded audio count episode+precedemment: %d" % (audio_count))
-            db_audio[k_part]['count'] = audio_count - ms_to_frames(db_audio['precedemment']['duration'])
-            video_count = (db_video['precedemment']['count'] + db_video['precedemment']['avsync']
-                            + db_video[k_part]['count'] + db_video[k_part]['avsync'])
+
+            db_audio['episode']['count'] = audio_count - db_audio['precedemment']['count']
+            video_count = (db_video['precedemment']['avsync'] + db_video['precedemment']['count']
+                + db_video['episode']['avsync'] + db_video['episode']['count'])
+
+
+            # db_video[k_part]['count'] += db_video[k_part]['avsync']
         else:
+            print_red(f"{k_part}")
             db_audio[k_part]['count'] = audio_count
             video_count = db_video[k_part]['count'] + db_video[k_part]['avsync']
+            print(f"\taudio: {db_audio[k_part]['count']}")
+            print(f"\tvideo: {video_count}")
+
+        # Append added duration to audio track
+        audio_count += ms_to_frames(db_audio[k_part]['avsync'])
+
+        if k_part == 'precedemment':
+            continue
+        # video_count = db_video[k_part]['count']
 
         # print(f"info: %s:align_audio_video_durations: %s:%s: video=%d, audio=%d" % (__name__, k_ep, k_part, video_count, audio_count))
         last_shot = db_video[k_part]['shots'][-1]
 
         if audio_count > video_count:
             # Frames shall be added: use the loop (and fadeout) effect for this
-            # print(f"info: %s:align_audio_video_durations: %s:%s: add video frames, video(%d) < audio (%d)" % (__name__, k_ep, k_part, video_count, audio_count))
+            print(f"{k_ep}:{k_part}: align_audio_video_durations, ",
+                  f"video({video_count}) < audio ({audio_count}): add video frames, ")
 
             frame_no = last_shot['start'] + last_shot['count'] - 1
             loop_count = audio_count - video_count
@@ -391,30 +711,37 @@ def align_audio_video_durations(db, k_ep):
 
         elif audio_count < video_count:
             # Add silence to the audio track by adding a new segment
-            # print(f"info: %s:align_audio_video_durations:  %s:%s: add audio, video(%d) > audio (%d)" % (__name__, k_ep, k_part, video_count, audio_count))
-
-            video_duration = int(video_count * 1000 / FPS)
-            audio_duration = db_audio[k_part]['duration']
-            db_audio[k_part]['segments'].append({
-                'start': 0,
-                'end': 0,
-                'silence': video_duration - audio_duration,
-            })
+            print(f"{k_ep}:{k_part}: align_audio_video_durations, ",
+                  f"video({video_count}) > audio ({audio_count})")
+            if True:
+                print(p_yellow("warning: this has been patched (now, remove video frames) for documentaire, verify elsewhere"))
+                last_shot:Shot = db_video[k_part]['shots'][-1]
+                last_shot['count'] -= video_count - audio_count
+                db_video[k_part]['count'] = db_audio[k_part]['count']
+                last_shot['dst']['count'] = last_shot['count']
+            else:
+                video_duration = int(video_count * 1000 / FPS)
+                audio_duration = db_audio[k_part]['duration']
+                db_audio[k_part]['segments'].append({
+                    'start': 0,
+                    'end': 0,
+                    'silence': video_duration - audio_duration,
+                })
             db_audio[k_part]['count'] = db_video[k_part]['count']
             # print(f"-> added silence at the end")
 
-        if k_ep == K_EP_DEBUG:
-            print(f"\ndb_video: %s:\n--------------------------------------" % (k_part))
+        if k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
+            print(f"\ndb_video: {k_part}:\n--------------------------------------")
             pprint(db_video[k_part])
 
 
     # Add/modify effect of the first/last shot
     #---------------------------------------------------------------------------
     verbose = False
-    for k_part in ['episode', 'asuivre', 'reportage']:
+    for k_part in ['episode', 'asuivre', 'documentaire']:
         db_video_part = db_video[k_part]
-        first_shot = db_video_part['shots'][0]
-        last_shot = db_video_part['shots'][-1]
+        first_shot:Shot = db_video_part['shots'][0]
+        last_shot:Shot = db_video_part['shots'][-1]
 
         if 'effects' in db_video_part.keys():
             if verbose:
@@ -432,9 +759,10 @@ def align_audio_video_durations(db, k_ep):
                     ['fadein', fadein_count, fadein_count], 'effects')
                 if verbose:
                     pprint(first_shot)
-                    sys.exit()
+                    # sys.exit()
 
-            elif db_video_part['effects']['fadeout'] != 0:
+            if ('fadeout' in db_video_part['effects'].keys()
+                and db_video_part['effects']['fadeout'] != 0):
                 if verbose:
                     print(f"align_audio_video_durations: {k_ep}:{k_part} modify fadeout effect in db_video!")
 
@@ -466,7 +794,6 @@ def align_audio_video_durations(db, k_ep):
                     if verbose:
                         print(f"\talign_audio_video_durations: {k_ep}:{k_part}, patch the last shot -> fadeout: add effects")
                         pprint(db_video_part)
-                    last_shot_src = last_shot['src']
-                    frame_no = last_shot_src['start'] + last_shot_src['count'] - 1
+                    frame_no = last_shot['start'] + last_shot['count'] - 1
                     nested_dict_set(last_shot,
                         ['fadeout', frame_no - fadeout_count + 1, fadeout_count], 'effects')

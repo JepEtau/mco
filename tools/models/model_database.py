@@ -122,7 +122,7 @@ class Model_database(Model_geometry,
         if k_ep.startswith('ep'):
             # Create a dict of dependencies for generiques
             dependencies = dict()
-            for k_part_g in ['g_asuivre', 'g_reportage']:
+            for k_part_g in ['g_asuivre', 'g_documentaire']:
                 dependencies_tmp = get_dependencies_for_generique(self.global_database, k_part_g=k_part_g)
                 for k,v in dependencies_tmp.items():
                     if k not in dependencies.keys():
@@ -172,7 +172,7 @@ class Model_database(Model_geometry,
             for k_p in K_NON_GENERIQUE_PARTS:
                 consolidate_target_shots(self.global_database, k_ep=k_ep, k_part=k_p)
 
-            for k_part_g in ['g_asuivre', 'g_reportage']:
+            for k_part_g in ['g_asuivre', 'g_documentaire']:
                 parse_curve_configurations(self.global_database, k_ep_or_g=k_part_g)
                 parse_replace_configurations(self.global_database, k_ep_or_g=k_part_g)
                 parse_geometry_configurations(self.global_database, k_ep_or_g=k_part_g)

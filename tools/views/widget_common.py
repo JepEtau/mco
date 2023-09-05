@@ -222,15 +222,18 @@ class Widget_common(QWidget):
 
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        verbose = False
         # print(f"  * eventFilter: widget_{self.objectName()}:", event.type())
         # if event.type() == QEvent.Type.KeyPress:
         #     key = event.key()
         #     if key == Qt.Key.Key_Space:
         #         return self.__parent.keyPressEvent(event)
         if event.type() == QEvent.Type.KeyPress:
-            print_lightcyan(f"eventFilter: widget_{self.objectName()}: keypress {event.key()}")
+            if verbose:
+                print_lightcyan(f"eventFilter: widget_{self.objectName()}: keypress {event.key()}")
             if self.event_key_pressed(event):
-                print(f"\taccepted")
+                if verbose:
+                    print(f"\taccepted")
                 event.accept()
                 return True
             else:
@@ -238,23 +241,29 @@ class Widget_common(QWidget):
                 return self.__parent.event_key_pressed(event)
 
         elif event.type() == QEvent.Type.KeyRelease:
-            print_lightcyan(f"eventFilter: widget_{self.objectName()}: keyrelease {event.key()}")
+            if verbose:
+                print_lightcyan(f"eventFilter: widget_{self.objectName()}: keyrelease {event.key()}")
             if self.event_key_released(event):
-                print(f"\taccepted")
+                if verbose:
+                    print(f"\taccepted")
                 event.accept()
                 return True
             else:
-                print(f"\tsend to parent")
+                if verbose:
+                    print(f"\tsend to parent")
                 return self.__parent.event_key_released(event)
 
         elif event.type() == QEvent.Type.Wheel:
-            print_lightcyan(f"eventFilter: widget_{self.objectName()}: wheel ")
+            if verbose:
+                print_lightcyan(f"eventFilter: widget_{self.objectName()}: wheel ")
             if self.event_wheel(event):
-                print(f"\taccepted")
+                if verbose:
+                    print(f"\taccepted")
                 event.accept()
                 return True
             else:
-                print(f"\tsend to parent")
+                if verbose:
+                    print(f"\tsend to parent")
                 return self.__parent.event_wheel(event)
 
 

@@ -14,6 +14,7 @@ from pprint import pprint
 
 from parsers.parser_audio import parse_audio_section_generique
 from parsers.parser_shots import parse_target_shotlist
+from parsers.parser_video_target import parse_video_target_section_g
 from utils.common import (
     FPS,
     K_GENERIQUES
@@ -30,6 +31,8 @@ from utils.pretty_print import *
 #===========================================================================
 def parse_generiques_target(db):
     verbose = False
+
+    language = db['common']['settings']['language']
 
     for k_part_g in K_GENERIQUES:
 
@@ -50,8 +53,10 @@ def parse_generiques_target(db):
             'audio': dict(),
             'cache_path': os.path.join(db['common']['directories']['cache'], k_part_g),
         }
-        db_video = db[k_part_g]['video']
 
+        db_video_target = db[k_part_g]['video']
+        db_audio_target = db[k_part_g]['audio']
+        db_audio_target['lang'] = language
 
         # Parse configuration
         config = configparser.ConfigParser()
@@ -60,48 +65,43 @@ def parse_generiques_target(db):
 
             # Audio
             #----------------------------------------------------
-            if k_section == 'audio':
-                parse_audio_section_generique(db[k_part_g]['audio'], config)
+            if k_section.startswith('audio'):
+                lang = 'fr'
+                try:
+                    _, lang = k_section.split('.')
+                except:
+                    print_yellow(f"{filepath}: audio section naming to be reworked, default=fr")
+
+                if lang == db_audio_target['lang']:
+                    parse_audio_section_generique(db[k_part_g]['audio'],
+                        config, k_section)
+
 
             # Video
             #----------------------------------------------------
-            elif k_section == 'video':
+            elif k_section.startswith('video'):
+                lang = 'fr'
+                try:
+                    _, lang = k_section.split('.')
+                except:
+                    pass
 
-                for k_option in config.options(k_section):
-                    value_str = config.get(k_section, k_option)
-                    value_str = value_str.replace(' ','')
-                    # print("%s:%s=" % (k_section, k_option), value_str)
+                if lang == db_audio_target['lang'] or k_section == 'video':
+                    parse_video_target_section_g(db_video_target, config, k_section)
 
-                    if k_option == 'source':
-                        tmp = re.match(re.compile("([a-z_0-9]+):(ep[0-9]{2})"), value_str)
-                        if tmp is None:
-                            sys.exit("Error: wrong value for %s:%s [%s]" % (k_section, k_option, value_str))
-                        nested_dict_set(db[k_part_g], {
-                                'k_ed': tmp.group(1),
-                                'k_ep': tmp.group(2),
-                            }, 'video', 'src')
-                        continue
-
-                    # Walk through values
-                    properties = value_str.split(',')
-                    # print("\t%s, properties:," % (k_part_g), properties)
-                    part_fadeout = 0
-                    for property in properties:
-                        search_fadeout = re.search(re.compile("fadeout=([0-9.]+)"), property)
-                        if search_fadeout is not None:
-                            part_fadeout = int(float(search_fadeout.group(1)) * FPS)
-
-                            nested_dict_set(db[k_part_g], {
-                                    'fadeout': part_fadeout,
-                                }, 'video', 'effects')
 
             # Shots
             #----------------------------------------------------
-            elif k_section == 'shots':
-                k_part = k_section[len('shots_'):]
-                nested_dict_set(db_video, list(), 'shots')
-                parse_target_shotlist(db_video['shots'],
-                    config, k_section, verbose=False)
+            elif k_section.startswith('shots'):
+                lang = 'fr'
+                try:
+                    _, lang = k_section.split('.')
+                except:
+                    pass
+
+                if lang == db_audio_target['lang'] or k_section == 'video':
+                    parse_target_shotlist(db_video_target['shots'],
+                        config, k_section)
 
 
         # Source must be defined before consolidating
@@ -109,7 +109,10 @@ def parse_generiques_target(db):
             k_ed_src = db[k_part_g]['video']['src']['k_ed']
             k_ep_src = db[k_part_g]['video']['src']['k_ep']
         except:
-            sys.exit("Error: k_ed:k_ep must be defined in source options for [%s] " % (k_part_g))
+            pprint(db[k_part_g])
+            sys.exit(f"Error: {k_part_g}: k_ed:k_ep must be defined, "
+                     + f"missing \'source\' option in {filepath}, "
+                     + f"lang: {db_audio_target['lang']}")
 
 
 
