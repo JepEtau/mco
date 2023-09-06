@@ -9,7 +9,7 @@ from processing_chain.process_chain import process_chain_list
 from img_toolbox.utils import STEP_INC
 from img_toolbox.effects import (
     create_black_frame,
-    effect_fadein,
+    effect_loop_and_fadein,
     effect_loop_and_fadeout,
     effect_fadeout,
 )
@@ -69,9 +69,8 @@ def process_shot(db, shot:Shot, force:bool=False):
         elif effect == 'fadeout':
             effect_fadeout(db, shot)
 
-        elif effect == 'fadein':
-            # TODO rename fadein into loop_and_fadein?
-            effect_fadein(db, shot)
+        elif effect == 'loop_and_fadein':
+            effect_loop_and_fadein(db, shot)
 
         else:
             print_green("\tuse concatenation files")

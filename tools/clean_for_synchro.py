@@ -48,8 +48,21 @@ def main():
         required=False,
         help="this filter only")
 
+    parser.add_argument("--av_sync",
+        action="store_true",
+        default=True,
+        required=False,
+        help="remove files impacted by avsync")
+
+    parser.add_argument("--fade",
+        action="store_true",
+        default=False,
+        required=False,
+        help="remove all files generated with fadein/fadeout")
+
     parser.add_argument("--verbose",
         action="store_true",
+        default=False,
         required=False,
         help="verbose")
 
@@ -58,16 +71,13 @@ def main():
     episode_no = arguments.episode
     k_ep = f'ep{episode_no:02}'
     step = arguments.vfilter
-    verbose = arguments
-
+    verbose = arguments.verbose
+    av_sync = arguments.av_sync
+    fade = arguments.fade
     if episode_no == 0:
         sys.exit("Error: épisode non spécifié")
 
     parse_database(db, k_ep=k_ep)
-
-    pprint(db['common'])
-
-
 
     files = list()
     folders = list()
@@ -87,19 +97,45 @@ def main():
             files.append(os.path.join(output_dir, f))
 
     output_dir = os.path.join(db['common']['directories']['cache'], k_ep, 'video')
-    files.append(os.path.join(output_dir, f"{k_ep}_video.mkv"))
+    for lang in ['', '_en']:
+        f = os.path.join(output_dir, f"{k_ep}_video{lang}.mkv")
+        if os.path.exists(f):
+            files.append(f)
 
-    # file_paths: List[str] = sorted(os.listdir(output_dir))
-    # for f in file_paths:
-    #     for k_part in ['precedemment', 'episode', 'asuivre', 'documentaire']:
-    #         if (f.startswith(f"{k_ep}_")
-    #             and f.endswith()):
-    #         files.append(os.path.join(output_dir, f"{k_ep}_video.mkv"))
+    file_paths: List[str] = sorted(os.listdir(output_dir))
+    for f in file_paths:
 
+        if (match := re.match(re.compile("(ep\d{2})_([a-z]+)_[a-z0-9]+_([a-z]+)"), f)):
+            # video of a part
+            k_part = match.group(2)
+            if (match.group(1) == k_ep and match.group(3) == step):
+                if ((fade and k_part in ['precedemment', 'episode', 'asuivre', 'documentaire'])
+                    or (av_sync and k_part in ['precedemment', 'episode'])):
+                    files.append(os.path.join(output_dir, f))
+            continue
+
+        if (match := re.match(re.compile("(ep\d{2})_([a-z]+)_(\d{3})__[a-z]{1}__[a-z0-9]+_([a-z]+)"), f)):
+            # find 1st and latest shot
+            k_part = match.group(2)
+            if (match.group(1) == k_ep and match.group(4) == step):
+                shot_no = int(match.group(3))
+
+                if shot_no == 0:
+                    if k_part in ['precedemment', 'episode']:
+                        files.append(os.path.join(output_dir, f))
+                        continue
+
+                if shot_no == db[k_ep]['video']['target'][k_part]['shots'][-1]['no']:
+                    # Last shot
+                    if ((av_sync and k_part in ['precedemment', 'episode'])
+                        or (fade and k_part in ['precedemment', 'episode', 'asuivre', 'documentaire'])):
+                        files.append(os.path.join(output_dir, f))
+                continue
 
     filesize = 0
     for f in files:
-        filesize += os.stat(f).st_size
+        try: filesize += os.stat(f).st_size
+        except: pass
     filesize = int(filesize/ (1024 * 1024))
 
 
@@ -110,171 +146,40 @@ def main():
         pprint(files)
         print_lightcyan(f"- remove {len(folders)} folder(s)")
         print_lightcyan(f"- remove {len(files)} files: {filesize} MB")
-        return
-    return
 
 
-    k_parts = K_ALL_PARTS_ORDERED if k_part == '' else [k_part]
-    for k_p in ['precedemment']:
-        hashes = list()
-        hashes_str = ''
-
-        if k_p in ['g_debut', 'g_fin']:
-            db_video = db[k_p]['video']
-        elif k_ep == 'ep00':
-            sys.exit("Erreur: le numéro de l'épisode est manquant")
-        else:
-            db_video = db[k_ep]['video']['target'][k_p]
-
-
-        if True:
-            # Walk through target shots
-            shots = db_video['shots']
-            for shot in shots:
-
-                # Use the final task
-                shot['last_task'] = ''
-                consolidate_shot(db, shot=shot)
-                for f in shot['filters']:
-                    if f['save'] and f['hash'] != '':
-                        hashes.append(f['hash'])
+    cpu_count = int(multiprocessing.cpu_count() * (3/4))
+    folder_count = len(folders)
+    if folder_count > 0:
+        print_lightcyan(f"- remove {folder_count} folder(s)")
+        no = 0
+        with ThreadPoolExecutor(max_workers=min(cpu_count, folder_count)) as executor:
+            work_result = {executor.submit(remove_folder, folder): list for folder in folders}
+            for future in concurrent.futures.as_completed(work_result):
+                success = future.result()
+                no += 1
+                print_yellow(f"{int((100.0 * no)/folder_count)}%%", flush=True, end='\r')
+        print(f"          ", end='\r')
+        print(f"\tdone")
 
 
-                # Calculate hash for the video
-                shot_hash = shot['last_step']['hash']
-                shot_hash = shot['last_task'] if shot_hash == '' else shot_hash
-                hashes_str += '%s:' % (shot_hash)
+    file_count = len(files)
+    if file_count > 0:
+        print_lightcyan(f"- remove {file_count} files: {filesize} MB")
+        no = 0
+        with ThreadPoolExecutor(max_workers=min(cpu_count, file_count)) as executor:
+            work_result = {executor.submit(delete_file, file): list for file in files}
+            for future in concurrent.futures.as_completed(work_result):
+                success = future.result()
+                no += 1
+                print_yellow(f"{int((100.0 * no)/file_count)}%%", flush=True, end='\r')
+        print(f"          ", end='\r')
+        print(f"\tdone")
+
+    if file_count == 0 and folder_count == 0:
+        print(f"Nothing to remove")
 
 
-                # Remove images used for edition
-                if arguments.vfilter != 'edition':
-                    # so keep images if not in edition mode
-                    shot['last_task'] = 'edition'
-                    consolidate_shot(db, shot=shot)
-                    for f in shot['filters']:
-                        if f['save'] and f['hash'] != '':
-                            hashes.append(f['hash'])
-
-            # For video: not yet supported
-            # hashes_str = hashes_str[:-1]
-            # db_video['hash'] = calculate_hash(hashes_str)
-
-            # All hashes have been listed
-            hashes = list(set(hashes))
-            print(hashes)
-
-        # Get cache directory
-        if k_p in['g_debut', 'g_fin']:
-            cache_directory = os.path.join(db[k_part]['cache_path'])
-        else:
-            cache_directory = os.path.join(db[k_ep]['cache_path'], k_p)
-
-
-        directories = sorted(os.listdir(cache_directory))
-        for directory in directories:
-            shot_path = os.path.join(cache_directory, directory)
-            try:
-                shot_no = int(directory)
-            except:
-                if directory == 'concatenation':
-                    # Remove concatenation folder
-                    folders.append(shot_path)
-                elif os.path.isfile(shot_path):
-                    files.append(step_path)
-                else:
-                    print_lightgrey(f"discard {shot_path}")
-                continue
-
-
-            if verbose:
-                print(f"parse shot: {shot_path}")
-
-            step_directories = sorted(os.listdir(shot_path))
-            for step_directory in step_directories:
-                step_path = os.path.join(shot_path, step_directory)
-                if verbose:
-                    print(f"\tparse step: {step_path}")
-
-                if os.path.isfile(step_path):
-                    files.append(step_path)
-                    continue
-
-                filepathes = sorted(os.listdir(step_path))
-                for filepath in filepathes:
-                    # Remove folders
-                    absolute_filepath = os.path.join(step_path, filepath)
-                    if os.path.isdir(absolute_filepath):
-                        folders.append(absolute_filepath)
-                        continue
-
-                    properties = re.match(re.compile(TEMPLATE_IMG), filepath)
-                    if properties is None:
-                        # Not a valid image name
-                        files.append(absolute_filepath)
-                        continue
-
-                    hash = properties.group(1)
-                    if hash in hashes:
-                        # is used
-                        continue
-                    files.append(absolute_filepath)
-        # Stat
-        # foldersize = 0
-        # for f in folders:
-        #     foldersize += shutil.disk_usage(f)[1]
-        # foldersize = int(foldersize/ (1024 * 1024))
-
-        filesize = 0
-        for f in files:
-            filesize += os.stat(f).st_size
-        filesize = int(filesize/ (1024 * 1024))
-
-
-
-        if verbose:
-            print_lightgreen(f"folders to remove")
-            pprint(folders)
-            print_lightgreen(f"files to remove")
-            pprint(files)
-            print_lightcyan(f"- remove {folder_count} folder(s)")
-            print_lightcyan(f"- remove {file_count} files: {filesize} MB")
-            return
-
-
-        cpu_count = int(multiprocessing.cpu_count() * (3/4))
-        folder_count = len(folders)
-        if folder_count > 0:
-            print_lightcyan(f"- remove {folder_count} folder(s)")
-            no = 0
-            with ThreadPoolExecutor(max_workers=min(cpu_count, folder_count)) as executor:
-                work_result = {executor.submit(remove_folder, folder): list for folder in folders}
-                for future in concurrent.futures.as_completed(work_result):
-                    success = future.result()
-                    no += 1
-                    print_yellow(f"{int((100.0 * no)/folder_count)}%%", flush=True, end='\r')
-            print(f"          ", end='\r')
-            print(f"\tdone")
-
-
-        file_count = len(files)
-        if file_count > 0:
-            print_lightcyan(f"- remove {file_count} files: {filesize} MB")
-            no = 0
-            with ThreadPoolExecutor(max_workers=min(cpu_count, file_count)) as executor:
-                work_result = {executor.submit(delete_file, file): list for file in files}
-                for future in concurrent.futures.as_completed(work_result):
-                    success = future.result()
-                    no += 1
-                    print_yellow(f"{int((100.0 * no)/file_count)}%%", flush=True, end='\r')
-            print(f"          ", end='\r')
-            print(f"\tdone")
-
-        if file_count == 0 and folder_count == 0:
-            print(f"Nothing to remove")
-
-
-    # Remove empty directories
-    remove_empty_folders(cache_directory)
 
 
 

@@ -75,6 +75,7 @@ def parse_video_target_section(db_video, config:ConfigParser, k_section, k_ep):
             'effects': {
                 'fadein': part_fadein,
                 'fadeout': part_fadeout,
+                'loop_and_fadein': 0,
             },
             'start': start,
             'end': end,

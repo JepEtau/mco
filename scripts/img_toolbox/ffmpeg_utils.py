@@ -12,6 +12,9 @@ from utils.common import FPS
 from utils.pretty_print import *
 from utils.process import create_process
 from utils.time_conversions import timestamp2sexagesimal
+from typing import (
+    Tuple
+)
 
 def clean_ffmpeg_filter(a_string):
     for c in ['\"', '\r', '\n', ' ']:
@@ -75,7 +78,7 @@ def get_video_resolution(video_filepath, db_common):
 
 
 
-def get_video_duration(db_common, filename='', integrity=True):
+def get_video_duration(db_common, filename='', integrity=True) -> Tuple[float, int]:
     ffprobe_command = [db_common['tools']['ffprobe'], "-hide_banner"]
     if integrity:
         ffprobe_command.extend(["-count_frames"])
@@ -92,7 +95,7 @@ def get_video_duration(db_common, filename='', integrity=True):
         if integrity:
             result= re.search(r"(File ended prematurely)", line)
             if result is not None:
-                return 0.0
+                return (0.0, 0)
 
         result = re.search(r"Duration: ([0-9]{2}):([0-9]{2}):([0-9]{2}).([0-9]{2}),", line)
         if result:
@@ -102,9 +105,9 @@ def get_video_duration(db_common, filename='', integrity=True):
             duration += int(result[4])
             frame_count = int(duration * FPS / 100)
         else:
-            return 0.0
+            return (0.0, 0)
     else:
-        return 0.0
+        return (0.0, 0)
 
     return (float(duration)/100.0, frame_count)
 

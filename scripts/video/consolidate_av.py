@@ -236,7 +236,7 @@ def calculate_av_sync(db, k_ep):
 
                 if loop_count < video_silence:
                     # Add silence at the beginning of the episode or fade_in
-                    nested_dict_set(db_video['episode'], (video_silence - loop_count), 'effects', 'fadein')
+                    nested_dict_set(db_video['episode'], (video_silence - loop_count), 'effects', 'loop_and_fadein')
 
             else:
                 print(f"\tTODO: episode: loop and fadein")
@@ -496,12 +496,17 @@ def calculate_av_sync(db, k_ep):
         # db_video[k_part].update({
         #     'avsync': ms_to_frames(abs(avsync_ms)) if avsync_ms < 0 else 0
         # })
-        if avsync_ms < 0:
+        if avsync_ms > 0:
+            db_video[k_part]['avsync'] = 0
+            db_audio[k_part]['avsync'] = abs(avsync_ms)
+        else:
             # missing video frames, use fade_in
-            nested_dict_set(db_video[k_part], ms_to_frames(abs(avsync_ms)), 'effects', 'fadein')
+            loop_count = ms_to_frames(abs(avsync_ms))
+            nested_dict_set(db_video[k_part], loop_count, 'effects', 'loop_and_fadein')
+            db_video[k_part]['count'] += loop_count
 
-        db_video[k_part]['avsync'] = 0
-        db_audio[k_part]['avsync'] = avsync_ms if avsync_ms > 0 else 0
+        print("calculate_av_sync:")
+        print(f"\tavsync_ms: {avsync_ms}")
 
     k_part = 'asuivre'
     if k_part in db_audio.keys() and db_audio[k_part]['duration'] != 0:
@@ -668,6 +673,10 @@ def align_audio_video_durations(db, k_ep):
             # this is a special case for episode: precedemment+episode
             # print(f"   rounded audio count episode+precedemment: %d" % (audio_count))
 
+            # print(f"episode: align_audio_video_durations:")
+            # print(f"\tvideo avsync: {db_video['episode']['avsync']}")
+            # print(f"\taudio avsync: {db_audio['episode']['avsync']}")
+
             db_audio['episode']['count'] = audio_count - db_audio['precedemment']['count']
             video_count = (db_video['precedemment']['avsync'] + db_video['precedemment']['count']
                 + db_video['episode']['avsync'] + db_video['episode']['count'])
@@ -681,6 +690,13 @@ def align_audio_video_durations(db, k_ep):
             print(f"\taudio: {db_audio[k_part]['count']}")
             print(f"\tvideo: {video_count}")
 
+        # Add loop_and_fade_in
+        try:
+            video_count += db_video[k_part]['shots'][0]['effects'][1]
+        except:
+            pass
+
+
         # Append added duration to audio track
         audio_count += ms_to_frames(db_audio[k_part]['avsync'])
 
@@ -689,7 +705,7 @@ def align_audio_video_durations(db, k_ep):
         # video_count = db_video[k_part]['count']
 
         # print(f"info: %s:align_audio_video_durations: %s:%s: video=%d, audio=%d" % (__name__, k_ep, k_part, video_count, audio_count))
-        last_shot = db_video[k_part]['shots'][-1]
+        last_shot: Shot = db_video[k_part]['shots'][-1]
 
         if audio_count > video_count:
             # Frames shall be added: use the loop (and fadeout) effect for this
@@ -748,15 +764,15 @@ def align_audio_video_durations(db, k_ep):
                 print_green(f"\teffects detected in {k_ep}:{k_part}")
                 print(f"\t", db_video_part['effects'])
 
-            if db_video_part['effects']['fadein'] != 0:
-                fadein_count = db_video_part['effects']['fadein']
+            if db_video_part['effects']['loop_and_fadein'] != 0:
+                fadein_count = db_video_part['effects']['loop_and_fadein']
                 if verbose:
                     print(f"align_audio_video_durations: {k_ep}:{k_part}, patch the first shot -> fadein: add effects")
                     # pprint(db_video_part)
-                first_shot['src']['start'] += fadein_count
-                first_shot['src']['count'] -= fadein_count
+                # first_shot['src']['start'] += fadein_count
+                # first_shot['src']['count'] -= fadein_count
                 nested_dict_set(first_shot,
-                    ['fadein', fadein_count, fadein_count], 'effects')
+                    ['loop_and_fadein', fadein_count, fadein_count], 'effects')
                 if verbose:
                     pprint(first_shot)
                     # sys.exit()
@@ -780,12 +796,15 @@ def align_audio_video_durations(db, k_ep):
                             print(f"\t%d vs %d" % (last_shot['effects'][3], fadeout_count))
                             pprint(last_shot)
 
-                        if fadeout_count < last_shot['count']:
+                        last_shot_count = (last_shot['count'] +  last_shot['effects'][2])
+                        if fadeout_count > last_shot_count:
                             # Modify it because shot duration > fadeout duration
+                            last_shot['effects'][3] = last_shot_count
+                        else:
                             last_shot['effects'][3] = fadeout_count
 
                         if verbose:
-                            last_shot['effects'][2] = fadeout_count - last_shot['effects'][2]
+                            # last_shot['effects'][2] = fadeout_count - last_shot['effects'][2]
                             print(f"->")
                             pprint(last_shot)
 
@@ -795,5 +814,6 @@ def align_audio_video_durations(db, k_ep):
                         print(f"\talign_audio_video_durations: {k_ep}:{k_part}, patch the last shot -> fadeout: add effects")
                         pprint(db_video_part)
                     frame_no = last_shot['start'] + last_shot['count'] - 1
+                    frame_loop_start = frame_no - fadeout_count + 1
                     nested_dict_set(last_shot,
-                        ['fadeout', frame_no - fadeout_count + 1, fadeout_count], 'effects')
+                        ['fadeout', frame_loop_start, fadeout_count], 'effects')

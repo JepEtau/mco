@@ -204,9 +204,7 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
                 output_folder = os.path.join(db[k_part_dst]['cache_path'])
             else:
                 output_folder = os.path.join(db[k_ep_dst]['cache_path'], k_part_dst)
-            output_folder = os.path.join(output_folder,
-                '%03d' % (shot['no']),
-                '%02d' % (step_no))
+            output_folder = os.path.join(output_folder, f"{shot['no']:03}", f"{step_no:02}")
 
             # Append images to the list
             shot_src_start = shot['src']['start']
@@ -222,12 +220,10 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
 
                 # print("\t\t\t+ fadeout: %s" % (p))
 
-        elif effect == 'fadein':
-            # print_lightcyan(f"\nget_frame_list {k_ep}:{k_part})"
-            # pprint(shot)
+        elif effect == 'loop_and_fadein':
             # fadein_start = shot['effects'][1]
             fadein_count = shot['effects'][2]
-            print_lightgrey(f"\tfadeout start={shot['start']}, count={fadein_count}")
+            print_lightgrey(f"\tloop and fade in start={shot['start']}, count={fadein_count}")
 
             # Output folder
             k_ep_dst = shot['dst']['k_ep']
@@ -236,9 +232,7 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
                 output_folder = os.path.join(db[k_part_dst]['cache_path'])
             else:
                 output_folder = os.path.join(db[k_ep_dst]['cache_path'], k_part_dst)
-            output_folder = os.path.join(output_folder,
-                '%03d' % (shot['no']),
-                '%02d' % (step_no))
+            output_folder = os.path.join(output_folder, f"{shot['no']:03}", f"{step_no:02}")
 
             # Fade in
             shot_src_start = shot['start']

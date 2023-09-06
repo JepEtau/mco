@@ -1009,7 +1009,7 @@ class Controller_video_editor(Controller_common,
         frames = self.frames[shot_no]
         images = list()
         image_list = list()
-        has_fade_in = True if 'effects' in shot.keys() and shot['effects'][0] == 'fadein' else False
+        has_fade_in = True if 'effects' in shot.keys() and shot['effects'][0] == 'loop_and_fadein' else False
         for frame in frames:
             frame_no = frame['frame_no']
             new_frame_no = self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no)

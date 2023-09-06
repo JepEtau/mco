@@ -1,10 +1,7 @@
 # TODO script
 (1)
-- bug: loop and fadeout on asuivre. when fadeout specified in target, it is not used. (ep01)
-
 
 - audio/video synchro
-    * episode 1: audio synchro: 26
     * episode 2: no silence between p&e, no synchro
     * episode 19: remove 16 frames -> to implement
 

@@ -148,7 +148,7 @@ def is_stabilize_task_enabled(shot:Shot):
 
 
 
-def is_progressive_file_valid(shot, db_common, verbose:bool=False):
+def is_progressive_file_valid(shot, db_common, verbose:bool=False) -> bool:
     verbose = True
 
     if verbose:
@@ -156,7 +156,13 @@ def is_progressive_file_valid(shot, db_common, verbose:bool=False):
     progressive_filepath = shot['inputs']['progressive']['filepath']
     if not os.path.exists(progressive_filepath):
         if verbose:
-            print(f"progressive filepath: {progressive_filepath}")
+            print(f"Missing file: {progressive_filepath}")
+        return False
+
+    interlaced_filepath = shot['inputs']['interlaced']['filepath']
+    if not os.path.exists(interlaced_filepath):
+        print(f"Error: missing input file")
+        sys.exit()
         return False
 
     progressive_duration, progressive_frame_count = get_video_duration(db_common,
@@ -175,6 +181,11 @@ def is_progressive_file_valid(shot, db_common, verbose:bool=False):
         print_lightgrey("\tinterlaced: %.02fs" % (interlaced_duration))
         print_lightgrey("\tprogressive: %.02fs" % (progressive_duration))
         print_lightgrey("\tstart: %d, count: %d" % (start, count))
+
+    if progressive_frame_count == 0 or interlaced_frame_count == 0:
+        print(f"\tinpout file is missing: {progressive_filepath}")
+        sys.exit(print_yellow(f"verify this!"))
+        return False
 
     if start == 0 and count == -1:
         # Full video
