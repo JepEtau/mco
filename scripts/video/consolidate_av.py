@@ -252,12 +252,16 @@ def calculate_av_sync(db, k_ep):
                         db_video_target['episode']['count'] += loop_count
                 else:
                     # Add loop_and_fadeout to precedemment up to end of audio
-                    loop_count = video_silence - av_diff
+                    # fr: ep no. 6, 7, 8
+
+                    loop_count = video_silence
                     loop_start = (last_shot_precedemment['start']
                         + last_shot_precedemment['count'] - 1)
                     last_shot_precedemment.update({
                         'effects': ['loop_and_fadeout', loop_start, loop_count, loop_count]})
                     db_video_target['precedemment']['count'] += loop_count
+
+                    print_purple(f"loop_count: {loop_count}")
 
                     # # If the amount of added frames were not enough
                     # if loop_count < video_silence:
@@ -269,7 +273,7 @@ def calculate_av_sync(db, k_ep):
 
                     print_yellow("warning: silence is not enough")
 
-
+                    # sys.exit()
 
 
             else:

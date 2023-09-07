@@ -4,3 +4,4 @@ pysoundfile
 scipy
 einops
 timm
+basicsr

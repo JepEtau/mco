@@ -7,10 +7,9 @@
     ep03: fr, en
     ep04: fr, en
     ep05: fr, en
-    ep06: (fr, en=avsync ko)
-    ep07: en, (fr=avsync=ko)
-    ep08: fr,
-
+    ep06: fr, en
+    ep07: fr, en
+    ep08:
 
 
 
