@@ -2,14 +2,14 @@
 (1)
 
 - audio/video synchro
-    * episode 2: no silence between p&e, no synchro
-    * episode 19: remove 16 frames -> to implement
-
-
-
-
-
-
+    ep01: fr, en
+    ep02: fr, en
+    ep03: fr, en
+    ep04: fr, en
+    ep05: fr, en
+    ep06: (fr, en=avsync ko)
+    ep07: en, (fr=avsync=ko)
+    ep08: fr,
 
 
 

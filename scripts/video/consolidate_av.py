@@ -190,6 +190,9 @@ def calculate_av_sync(db, k_ep):
 
         last_shot_precedemment:Shot = db_video_target['precedemment']['shots'][-1]
         first_shot_episode:Shot = db_video_target['episode']['shots'][0]
+        print(f"\tlast_shot_precedemment: end: {last_shot_precedemment['start'] + last_shot_precedemment['dst']['count']}")
+        print(f"\tfirst_shot_episode: start: {first_shot_episode['start']}")
+
         if video_silence < 0:
             # overlap
             print(p_lightgreen(f"precedemment to episode: remove {abs(video_silence)} frames"))
@@ -208,9 +211,10 @@ def calculate_av_sync(db, k_ep):
                 db_video_target['episode']['count'] -= video_silence
             else:
                 # Remove frames from precedemment
-                # fr: ep no. 3, 14, 36
-                # validated (2023-08-26): 03, 14, 36
+                # fr: ep no. 14, 36
+                # validated (2023-08-26): 14, 36
                 # TODO: Improve: ep14, use fadeout
+                # validated (2023-09-07): 3,
                 print(f"\tprecedemment: remove {abs(video_silence)} frames")
                 last_shot_precedemment['count'] -= video_silence
                 last_shot_precedemment['dst']['count'] -= video_silence
@@ -221,22 +225,52 @@ def calculate_av_sync(db, k_ep):
             print(p_lightgreen(f"precedemment to episode: add video silence: {abs(video_silence)} frames"))
 
             if precedemment_audio_count > precedemment_video_count:
-                # fr: ep no. 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18,
+                # fr: ep no. 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18,
                 #               20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
                 #               30, 31, 32, 34, 35, 37, 38, 39
-                # validated (2023-08-29): 38
+                # validated (2023-09-07): 4, 5,
                 print(f"\tprecedemment: loop and fadeout")
-                print(f"\tav_diff : {precedemment_audio_count - precedemment_video_count}")
-                loop_count = precedemment_audio_count - precedemment_video_count
-                loop_start = (last_shot_precedemment['start']
-                    + last_shot_precedemment['count'] - 1)
-                last_shot_precedemment.update({
-                    'effects': ['loop_and_fadeout', loop_start, loop_count, loop_count]})
-                db_video_target['precedemment']['count'] += loop_count
+                av_diff = precedemment_audio_count - precedemment_video_count
 
-                if loop_count < video_silence:
-                    # Add silence at the beginning of the episode or fade_in
-                    nested_dict_set(db_video['episode'], (video_silence - loop_count), 'effects', 'loop_and_fadein')
+                print(f"\tav_diff : {precedemment_audio_count - precedemment_video_count}")
+                if av_diff <= video_silence:
+                    print_purple("no need to revalidate")
+
+                    # Add loop_and_fadeout to precedemment up to end of audio
+                    loop_count = precedemment_audio_count - precedemment_video_count
+                    loop_start = (last_shot_precedemment['start']
+                        + last_shot_precedemment['count'] - 1)
+                    last_shot_precedemment.update({
+                        'effects': ['loop_and_fadeout', loop_start, loop_count, loop_count]})
+                    db_video_target['precedemment']['count'] += loop_count
+
+                    # If the amount of added frames were not enough
+                    if loop_count < video_silence:
+                        # Add silence at the beginning of the episode or fade_in
+                        loop_count = video_silence - loop_count
+                        nested_dict_set(db_video['episode'], loop_count, 'effects', 'loop_and_fadein')
+                        db_video_target['episode']['count'] += loop_count
+                else:
+                    # Add loop_and_fadeout to precedemment up to end of audio
+                    loop_count = video_silence - av_diff
+                    loop_start = (last_shot_precedemment['start']
+                        + last_shot_precedemment['count'] - 1)
+                    last_shot_precedemment.update({
+                        'effects': ['loop_and_fadeout', loop_start, loop_count, loop_count]})
+                    db_video_target['precedemment']['count'] += loop_count
+
+                    # # If the amount of added frames were not enough
+                    # if loop_count < video_silence:
+                    #     # Add silence at the beginning of the episode or fade_in
+                    #     loop_count = video_silence - loop_count
+                    #     nested_dict_set(db_video['episode'], loop_count, 'effects', 'loop_and_fadein')
+                    #     db_video_target['episode']['count'] += loop_count
+
+
+                    print_yellow("warning: silence is not enough")
+
+
+
 
             else:
                 print(f"\tTODO: episode: loop and fadein")
@@ -570,6 +604,12 @@ def calculate_av_sync(db, k_ep):
         'avsync': 0,
         # 'count': ms_to_frames(db_audio[k_part]['duration'])
     })
+
+    # TODO remove the above modification of frames count once frame count is validate
+    # Recalculte video count
+    for k_part in K_PARTS_ORDERED:
+        print(f"{k_part}")
+        print(f"\tcurrent: {db_video[k_part]['count']}")
 
 
 
