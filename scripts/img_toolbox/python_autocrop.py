@@ -56,7 +56,7 @@ def calculate_crop_values(
 
         brightness_estimation = int(cv2.mean(gray_img)[0])
         contrast_estimation = int(gray_img.std())
-        print(p_yellow(f"\tmean: {brightness_estimation}\tcontrast: {contrast_estimation}"))
+        print(yellow(f"\tmean: {brightness_estimation}\tcontrast: {contrast_estimation}"))
 
         if brightness_estimation < 25:
             try:
@@ -174,7 +174,7 @@ def calculate_crop_values(
 
 
     if len(shot_contours) == 0:
-        print(p_red("Error: cannot find contour for this shot"))
+        print(red("Error: cannot find contour for this shot"))
         return ([0]*4, (w_img, h_img))
 
     elif len(shot_contours) < len(images):

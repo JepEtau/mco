@@ -130,7 +130,12 @@ def main():
                     if ((av_sync and k_part in ['precedemment', 'episode'])
                         or (fade and k_part in ['precedemment', 'episode', 'asuivre', 'documentaire'])):
                         files.append(os.path.join(output_dir, f))
-                continue
+                    continue
+
+                if db[k_ep]['video']['target'][k_part]['shots'][shot_no]['src']['replace']:
+                    files.append(os.path.join(output_dir, f))
+                    continue
+
 
     filesize = 0
     for f in files:

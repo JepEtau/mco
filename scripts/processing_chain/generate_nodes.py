@@ -71,11 +71,11 @@ def set_output_dependencies(nodes:dict):
 def verify_correctness(nodes:dict) -> bool:
     for node in nodes.values():
         if len(node['in']) == 0 and 'begin' not in node.keys():
-            print(p_red("Error: node has not input"))
+            print(red("Error: node has not input"))
             return False
 
         if len(node['out']) == 0 and 'end' not in node.keys():
-            print(p_red("Error: node has not output"))
+            print(red("Error: node has not output"))
             print(node)
             return False
 

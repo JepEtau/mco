@@ -4,7 +4,7 @@ from typing_extensions import Literal
 from utils.common import K_PARTS_ORDERED
 from utils.time_conversions import ms_to_frames
 
-def p_red(*values: object) -> str:
+def red(*values: object) -> str:
     return "\033[31m{}\033[00m" .format(values[0])
 
 
@@ -86,7 +86,7 @@ def print_lightgreen(*values: object,
     print("\033[92m{}\033[00m" .format(values[0]), sep=sep, end=end, flush=flush)
 
 
-def p_yellow(*values: object) -> str:
+def yellow(*values: object) -> str:
     return "\033[93m{}\033[00m" .format(values[0])
 def print_yellow(*values: object,
             sep: str | None = " ",
@@ -254,6 +254,11 @@ def pprint_episode(db, k_ep):
 
         # loop
         tmp_str = f"{loop_count}"
+        try:
+            if last_shot['effects'][0] == 'loop_and_fadeout':
+                tmp_str = f"{loop_count}({last_shot['effects'][3]})"
+        except:
+            pass
         print(f"{tmp_str.rjust(12)}", end='')
 
         # avsync

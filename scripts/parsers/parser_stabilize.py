@@ -112,7 +112,7 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
             # get frame_no and type(deshake or smooth stabilize)
             frame_no_type = re.search(re.compile("(\d+)_(deshake|stabilize)"), frame_no_str)
             if frame_no_type is None:
-                sys.exit(p_red(f"error: frame no. not recognized in file {filepath}, section: {k_section}"))
+                sys.exit(red(f"error: frame no. not recognized in file {filepath}, section: {k_section}"))
             frame_no = int(frame_no_type.group(1))
             type_str = frame_no_type.group(2)
 

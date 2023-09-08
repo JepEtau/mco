@@ -36,7 +36,7 @@ def extract_audio_track(db, k_ep:str, k_ed, force=False) -> str:
     try:
         input_filepath = db['editions'][k_ed]['inputs']['audio'][k_ep_src]
     except:
-        sys.exit(p_red(f"Missing input file: edition {k_ed}, epiosde {k_ep_src[2:]}"))
+        sys.exit(red(f"Missing input file: edition {k_ed}, epiosde {k_ep_src[2:]}"))
     if force or verbose:
         print(f"%s extract audio stream: %s:%s from %s" % (current_datetime_str(), k_ed, k_ep_src, input_filepath))
 

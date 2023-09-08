@@ -40,13 +40,13 @@ from parsers.parser_replace import (
 from parsers.parser_geometry import parse_geometry_configurations
 from parsers.parser_stabilize import parse_stabilize_configurations
 
-from video.consolidate_av import (
-    align_audio_video_durations,
-    calculate_av_sync,
-    align_audio_video_durations_g_debut_fin
-)
-from parsers.parser_shots import consolidate_target_shots, consolidate_target_shots_g
+from video.calculate_av_sync import calculate_av_sync
+from video.consolidate_av_tracks import consolidate_av_tracks
 
+from shot.consolidate_target_shots import (
+    consolidate_target_shots,
+    consolidate_target_shots_g,
+)
 from .model_geometry import *
 from .model_curves import *
 from .model_replace import *
@@ -180,7 +180,7 @@ class Model_database(Model_geometry,
                 consolidate_target_shots_g(self.global_database, k_ep=k_ep, k_part_g=k_part_g)
 
             calculate_av_sync(self.global_database, k_ep=k_ep)
-            align_audio_video_durations(self.global_database, k_ep=k_ep)
+            consolidate_av_tracks(self.global_database, k_ep=k_ep)
 
             # Consolidate each shot for the target
             # consolidate_target_shots(db=self.global_database, k_ep=k_ep, k_part=k_part)
@@ -222,7 +222,7 @@ class Model_database(Model_geometry,
             consolidate_target_shots_g(db=self.global_database, k_ep=k_ep, k_part_g=k_part_g)
 
             # Consolidate by aligning the A/V tracks of generiques
-            align_audio_video_durations_g_debut_fin(self.global_database, k_ep='', k_part_g=k_part_g)
+            consolidate_av_tracks(self.global_database, k_ep='', k_part=k_part_g)
 
             self.initialize_db_for_curves(db=self.global_database, k_ep='', k_part=k_part_g)
             self.initialize_db_for_replace(db=self.global_database, k_ep='', k_part=k_part_g)

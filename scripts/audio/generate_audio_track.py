@@ -32,7 +32,7 @@ def generate_audio_track(db, k_ep_or_g:str, force=False, verbose=False) -> None:
         None
 
     """
-    verbose = True
+    verbose = False
     db_audio:Audio = db[k_ep_or_g]['audio']
 
     # Create the audio directory
@@ -120,7 +120,7 @@ def generate_audio_track(db, k_ep_or_g:str, force=False, verbose=False) -> None:
                 tmp_filename = f"{k_ep_src}_{k_ed}_audio_extract.{ext}"
                 tmp_filepath = os.path.join(input_directory, tmp_filename)
                 if not os.path.exists(tmp_filepath):
-                    tmp_filepath = extract_audio_track(db, k_ep_src, k_ed, force=force, verbose=verbose)
+                    tmp_filepath = extract_audio_track(db, k_ep_src, k_ed, force=force)
                 if verbose:
                     print(f"use file from another episode")
                     print(f"\tsample rate: {sample_rate}")

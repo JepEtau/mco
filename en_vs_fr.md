@@ -20,7 +20,7 @@
 * Episode 10: same
 * Episode 11: same
 * Episode 12: same
-* Episode 13: same
+* Episode 13: en +6 frames in episode, avsync should be enough
 * Episode 14: same
 * Episode 15: same
 * Episode 16: same (except frame shift on "previously", avsync to be set)

@@ -21,7 +21,7 @@ from parsers.parser_generiques import (
     parse_generiques,
     get_dependencies_for_generique,
 )
-from parsers.parser_shots import (
+from shot.consolidate_target_shots import (
     consolidate_target_shots,
     consolidate_target_shots_g,
 )
@@ -33,11 +33,9 @@ from utils.common import (
     K_GENERIQUES,
     K_NON_GENERIQUE_PARTS,
 )
-from video.consolidate_av import (
-    align_audio_video_durations,
-    align_audio_video_durations_g_debut_fin,
-    calculate_av_sync,
-)
+from video.calculate_av_sync import calculate_av_sync
+from video.consolidate_av_tracks import consolidate_av_tracks
+
 from utils.path import PATH_DATABASE
 
 
@@ -176,7 +174,7 @@ def parse_database(database, k_ep, lang:str=''):
         consolidate_target_shots_g(database, k_ep='', k_part_g=k_part_g)
 
         # Consolidate by aligning the A/V tracks of generiques
-        align_audio_video_durations_g_debut_fin(database, k_ep='', k_part_g=k_part_g)
+        consolidate_av_tracks(database, k_ep='', k_part=k_part_g)
         # if k_part_g == 'g_fin':
         #     sys.exit()
 
@@ -194,7 +192,7 @@ def parse_database(database, k_ep, lang:str=''):
             consolidate_target_shots_g(database, k_ep=k_ep, k_part_g=k_part_g)
 
         calculate_av_sync(database, k_ep=k_ep)
-        align_audio_video_durations(database, k_ep=k_ep)
+        consolidate_av_tracks(database, k_ep=k_ep)
 
         pprint_episode(database, k_ep=k_ep)
     else:

@@ -296,7 +296,7 @@ class Python_deshaker:
                 # cv2.destroyAllWindows()
 
         if abs(t_x) > 2*IMG_BORDER_HIGH_RES or abs(t_y) > 2*IMG_BORDER_HIGH_RES:
-            print(p_red(f"erroneous calcOpticalFlowPyrLK: t_x={t_x}, t_y={t_y}"))
+            print(red(f"erroneous calcOpticalFlowPyrLK: t_x={t_x}, t_y={t_y}"))
             print(f"{len(valid_keypoints_from)} points, {len(valid_keypoints_to)} points")
             if False:
                 # draw the tracks

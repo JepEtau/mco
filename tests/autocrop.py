@@ -101,7 +101,7 @@ def main():
 
             if (cropped_img.shape[0] != img_dimensions[1]
                 or cropped_img.shape[1] != img_dimensions[0]):
-                print(p_red(f"ERRRRRORRRRRR!!!! {img_dimensions[0]}, {img_dimensions[1]}, {cropped_img.shape}"))
+                print(red(f"ERRRRRORRRRRR!!!! {img_dimensions[0]}, {img_dimensions[1]}, {cropped_img.shape}"))
     else:
         print(p_lightcyan("DEBUG MODE"))
 
@@ -133,7 +133,7 @@ def main():
 
             if (cropped_img.shape[0] != img_dimensions[1]
                 or cropped_img.shape[1] != img_dimensions[0]):
-                print(p_red(f"ERRRRRORRRRRR!!!! {img_dimensions[0]}, {img_dimensions[1]}, {cropped_img.shape}"))
+                print(red(f"ERRRRRORRRRRR!!!! {img_dimensions[0]}, {img_dimensions[1]}, {cropped_img.shape}"))
 
     return
 

@@ -325,7 +325,7 @@ def avisynth_script_executor(shot, image_list,
     else:
         # Create a FFv1 file until find a solution to pipe in/out images
         # input_filepath= ...
-        print(p_red("TODO: create FFv1 file"))
+        print(red("TODO: create FFv1 file"))
         input_filepath = os.path.abspath(os.path.join(output_folder,
             FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, '_' + input_hash)))
         do_generate_ffv1_file = True

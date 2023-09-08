@@ -349,7 +349,7 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
         try:
             db_video = db[k_ep]['video'][k_ed_src][k_part]
         except:
-            sys.exit(p_red(f"error: {k_ed_src}:{k_ep}: it seems that the input file is missing"))
+            sys.exit(red(f"error: {k_ed_src}:{k_ep}: it seems that the input file is missing"))
         if 'shots' in db_video.keys():
             shots = db_video['shots']
             for shot in shots:
@@ -368,7 +368,7 @@ def parse_get_dependencies_for_episodes(db, k_ep) -> dict:
         try:
             db_audio = db[k_ep]['audio'][k_part]
         except:
-            sys.exit(p_red(f"error: {k_ed_src}:{k_ep}: it seems that the input file is missing"))
+            sys.exit(red(f"error: {k_ed_src}:{k_ep}: it seems that the input file is missing"))
 
         for segment in db_audio['segments']:
             if 'k_ep' in segment.keys() and segment['k_ep'] != k_ep:
