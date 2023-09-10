@@ -316,6 +316,9 @@ def parse_target_shotlist(db_shots, config, k_section, language:str='fr') -> Non
                 elif d[0] == 'count':
                     shot['src']['count'] = int(d[1])
 
+                elif d[0] == 'start':
+                    shot['src']['start'] = int(d[1])
+
             # Debug episode2
             if k_section == 'shots_episode.fr' and shot_no == 207:
                 print(k_section)

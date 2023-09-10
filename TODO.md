@@ -19,6 +19,17 @@
     ep15: fr, en
     ep16: fr, en
     ep17: fr, en
+    ep18: fr, en
+    ep19: fr, en
+    ep20: fr, en
+    ep21: fr, en
+    ep22: fr, en
+    ep23: fr, en
+    ep24: fr, en
+    ep25: fr, en
+    ep26:
+    ep27: fr, en
+    ep28: fr, en
 
 
 - regression: stabilization does not work on lr images. g_debut, shot no.3: default mode is not static

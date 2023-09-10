@@ -74,9 +74,9 @@ def calculate_av_sync(db, k_ep):
 
         avsync_episode = 0
         if episode_src_count != episode_target_count:
-            # ep: 2, 13
+            # ep: 2, 13, 22
             print(red(f"\twarning: target vs source: erroneous frame count:"),
-                    f"target: {episode_target_count}, target: {episode_src_count}")
+                    f"target: {episode_target_count}, src ({k_ed_audio_src}): {episode_src_count}")
             sys.exit()
             avsync_episode = episode_target_count - episode_src_count
 
