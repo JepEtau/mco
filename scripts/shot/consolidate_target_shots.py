@@ -103,18 +103,20 @@ def consolidate_target_shots(db, k_ep, k_part):
                 'k_part': k_part,
             })
 
-        else:
+        elif shot['count'] > 0:
             # Shot was defined in target section
             shot['src']['replace'] = True
 
-            if 'k_ed' not in shot['src'].keys():
-                shot['src']['k_ed'] = k_ed_src
-            if 'k_ep' not in shot['src'].keys():
-                shot['src']['k_ep'] = k_ep
-            if 'k_part' not in shot['src'].keys():
-                shot['src']['k_part'] = k_part
-            if 'no' not in shot['src'].keys():
-                shot['src']['no'] = shot['no']
+            d = {
+                'k_ed': k_ed_src,
+                'k_ep': k_ep,
+                'k_part': k_part,
+                'no': shot['no'],
+            }
+            for k, v in d.items():
+                if k not in shot['src'].keys():
+                    shot['src']['k_ed'] = v
+
 
             # Copy properties from src
             _k_ed_src = shot['src']['k_ed']
@@ -152,123 +154,6 @@ def consolidate_target_shots(db, k_ep, k_part):
 
     # Set frame count for this part
     db_video_target['count'] = frame_count
-
-
-    # TODO:
-    #   - add effects!
-    #   - modify shot 0? avsync
-
-    # if ('start' not in db_video_target.keys()
-    #     or db_video_target['start'] is None) and 'shots' not in db_video_target.keys():
-    #     # This was not specified in the target file, so use the one from the source
-    #     print("info: create_target_shots: %s:%s is not declared in target, use the src %s" % (k_ep, k_part, k_ed_src))
-    #     db_video_target.update({
-    #         'start': db_video_src['start'],
-    #         'end': db_video_src['end'],
-    #         'count': db_video_src['count'],
-    #         'effects': db_video_src['effects'],
-    #     })
-    #     if k_ep==K_EP_DEBUG and k_part == K_PART_DEBUG:
-    #         sys.exit()
-
-    # if k_ep==K_EP_DEBUG and k_part == K_PART_DEBUG:
-    #     print("\n%s.create_target_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
-    #     print(" start")
-    #     print("\tvideo (src): %d\t(%d)" % (db_video_src['start'], db_video_src['count']))
-    #     # print("\tvideo (target): %d\t(%d)" % (db_video_target['start'], db_video_target['count']))
-
-
-
-    # if k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
-    #     print("\n%s.create_target_shots: consolidate %s:%s" % (__name__, k_ep, k_part))
-    #     print("------------------- before -----------------------------")
-    #     print("db_video_src:")
-    #     print("   start: %d" % (db_video_src['start']))
-    #     print("   count: %d" % (db_video_src['count']))
-    #     if 'shots' in db_video_src.keys():
-    #         print("   db_video_src[shots]")
-    #         for s in db_video_src['shots']:
-    #             print("\t", s)
-    #     print("\n")
-
-    #     print("-------------------- before ----------------------------")
-    #     print("db_video_target:")
-    #     print("   start: %d" % (db_video_target['start']))
-    #     print("   count: %d" % (db_video_target['count']))
-    #     if 'shots' in db_video_target.keys():
-    #         print("   db_video_target[shots]")
-    #         for s in db_video_target['shots']:
-    #             print("\t", s)
-    #     print("\n")
-
-
-    # if 'shots' not in db_video_target.keys():
-    #     # print("\n%s.create_target_shots: consolidate %s:%s, create DST shot" % (__name__, k_ep, k_part))
-    #     # print("------------------------------------------------")
-    #     db_video_target['shots'] = deepcopy(db_video_src['shots'])
-    #     for shot in  db_video_target['shots']:
-    #         # Remove uneccessary properties
-    #         for p in ['filters',
-    #                     'curves',
-    #                     'replace']:
-    #             if p in shot.keys():
-    #                 del shot[p]
-    #         if 'src' not in shot.keys() or not shot['src']['use']:
-    #             shot['src'] = {
-    #                 'k_ep': k_ep,
-    #                 'k_ed': k_ed_src,
-    #                 'start': shot['start'],
-    #                 'count': shot['count'],
-    #                 'use': True,
-    #             }
-
-
-    # Calculate frames count
-    # shots = db_video_target['shots']
-    # if db_video_target['start'] != db_video_src['start']:
-    #     # The 1st shot is shorter in dst
-    #     delta_frames_count = db_video_target['start'] - db_video_src['start']
-
-    #     # Patch the first src shot
-    #     db_video_src['shots'][0]['start'] += delta_frames_count
-    #     db_video_src['shots'][0]['count'] -= delta_frames_count
-
-    #     # Patch the first dst shot
-    #     db_video_target['shots'][0]['start'] += delta_frames_count
-    #     db_video_target['shots'][0]['count'] -= delta_frames_count
-
-    #     # Create a src structure for this shot if not already specified
-    #     if 'src' not in shots[0].keys():
-    #         shots[0]['src'] = {
-    #             'k_ed': k_ed_src,
-    #             'k_ep': k_ep,
-    #             'use': True,
-    #         }
-    #     # Update the first shot (note: avsync is already calculated before)
-    #     shots[0]['src'].update({
-    #         'start': db_video_target['start'],
-    #         'count': db_video_src['shots'][0]['count'],
-    #     })
-
-    # Calculate real duration of the dst part
-    # frames_count = 0
-    # for shot in shots:
-    #     if 'src' in shot.keys():
-    #         shot['src']['k_ed'] = k_ed_src
-    #         if 'use' in shot['src'].keys() and shot['src']['use']:
-    #             # Use the src defined in configuration file
-    #             shot['count'] = shot['src']['count']
-    #         else:
-    #             # Use the original shot
-    #             shot['src'].update({
-    #                 'start': shot['start'],
-    #                 'count': shot['count'],
-    #                 'k_ed': k_ed_src,
-    #                 'k_ep': k_ep,
-    #                 'use': True,
-    #             })
-    #     frames_count += shot['count']
-    # db_video_target['count'] = frames_count
 
 
     if k_ep == K_EP_DEBUG and k_part == K_PART_DEBUG:
