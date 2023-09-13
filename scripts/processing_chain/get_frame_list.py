@@ -32,9 +32,7 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
         index_end = shot['dst']['count']
     else:
         index_start = max(0, shot['src']['start'] - shot['start'])
-
-        index_end = index_start + shot['count']
-    print(f"{index_start} -> {index_end}")
+        index_end = index_start + shot['dst']['count']
 
     step_no = shot['last_step']['step_no']
     hash = shot['last_step']['hash']
@@ -76,6 +74,8 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
                 step_no=step_no,
                 hash=hash)
 
+    # pprint(image_list)
+    # print(lightcyan(f"{index_start} -> {index_end}"))
     return image_list[index_start:index_end]
 
 
@@ -98,14 +98,6 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
     else:
         db_video = db[k_ep]['video']['target'][k_part]
 
-    k_part_src = shot['k_part']
-    if 'start' in shot['dst']:
-        print_lightgreen("use the dst start and count for the concatenation file")
-        start = shot['dst']['start']
-        end = start + shot['dst']['count']
-    else:
-        start = shot['start']
-        end = start + shot['count']
 
     # Get hash to set the suffix
     hash = shot['last_step']['hash']
@@ -119,8 +111,8 @@ def get_frame_list(db, k_ep, k_part, shot) -> list:
     # A/V sync for the first shot
     try:
         if shot['no'] == 0:
-
-            black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
+            black_image_filepath = os.path.join(
+                db['common']['directories']['cache'], 'black.png')
             if db_video['avsync'] > 0:
                 # Add black images to the first shot for A/V sync
                 # print("avsync: add frames for k_part=%s, avsync=%d" % (k_part, db_video['avsync']))

@@ -201,7 +201,7 @@ def consolidate_av_tracks(db, k_ep, k_part:str='') -> None:
 
     # Add/modify effect of the first/last shot
     #---------------------------------------------------------------------------
-    verbose = True
+    verbose = False
     for k_part in ['episode', 'asuivre', 'documentaire']:
         db_video_part = db_video[k_part]
         if db_video_part['count'] < 1:

@@ -181,6 +181,8 @@ def pprint_episode(db, k_ep):
             print("%s%s" % ("0".rjust(12), "0".rjust(8)))
             continue
 
+        # print(red(db_video['count']))
+
         part_frame_count = db_video['avsync']
 
         first_shot = db_video['shots'][0]
@@ -189,19 +191,19 @@ def pprint_episode(db, k_ep):
             frame_count += shot['dst']['count']
         last_shot = db_video['shots'][-1]
 
+        part_frame_count += frame_count
+
         loop_count = 0
-        if 'effects' in last_shot:
+        if 'effects' in last_shot.keys():
             # print(f"\teffect:{last_shot['effects']}")
             if 'loop' in last_shot['effects'][0]:
                 loop_count = last_shot['effects'][2]
-        try:
-            if 'loop_and_fadein' in first_shot.keys():
-                print("todo: add fadein")
-                print(db_video['shots'][0]['effects'])
-                loop_count += db_video['shots'][0]['effects'][2]
-        except:
-            pass
-        part_frame_count += frame_count + loop_count
+
+        if ('effects' in first_shot.keys()
+            and first_shot['effects'][0] == 'loop_and_fadein'):
+                loop_count += first_shot['effects'][2]
+
+        part_frame_count += loop_count
 
         video_silence = 0
         try:

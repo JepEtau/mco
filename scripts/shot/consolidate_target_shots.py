@@ -30,7 +30,7 @@ def consolidate_target_shots(db, k_ep, k_part):
 
     """
     K_EP_DEBUG, K_PART_DEBUG, SHOT_NO = ['', '', 0]
-    # K_EP_DEBUG, K_PART_DEBUG, SHOT_NO = 'ep29', 'episode', 267
+    # K_EP_DEBUG, K_PART_DEBUG, SHOT_NO = 'ep29', 'episode', 139
 
     db_video_target:VideoPart = db[k_ep]['video']['target'][k_part]
 

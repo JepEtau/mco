@@ -177,6 +177,7 @@ def calculate_av_sync(db, k_ep):
                         loop_count = video_silence - loop_count
                         nested_dict_set(db_video['episode'], loop_count, 'effects', 'loop_and_fadein')
                         db_video_target['episode']['count'] += loop_count
+                        print(f"\tAdd silence at the beginning of the episode: {loop_count}")
                 else:
                     # Add loop_and_fadeout to precedemment up to end of audio
                     # fr: ep no. 6, 7, 8
