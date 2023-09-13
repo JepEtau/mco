@@ -30,7 +30,7 @@ def consolidate_target_shots(db, k_ep, k_part):
 
     """
     K_EP_DEBUG, K_PART_DEBUG, SHOT_NO = ['', '', 0]
-    # K_EP_DEBUG, K_PART_DEBUG, SHOT_NO = 'ep23', 'episode', 231
+    # K_EP_DEBUG, K_PART_DEBUG, SHOT_NO = 'ep29', 'episode', 267
 
     db_video_target:VideoPart = db[k_ep]['video']['target'][k_part]
 
@@ -83,6 +83,7 @@ def consolidate_target_shots(db, k_ep, k_part):
     frame_count = 0
     for shot in db_video_target['shots']:
         # TODO: 'dst' count may be erroneous... to validate
+
         if 'src' not in shot.keys() and 'dst' not in shot.keys():
             # Shot is copied from src
             shot.update({
@@ -110,6 +111,7 @@ def consolidate_target_shots(db, k_ep, k_part):
             # Shot was defined in target section
             shot['src']['replace'] = True
 
+            # Add the missing field in 'src' dict
             d = {
                 'k_ed': k_ed_src,
                 'k_ep': k_ep,
@@ -131,20 +133,21 @@ def consolidate_target_shots(db, k_ep, k_part):
                 if k not in shot.keys():
                     shot[k] = deepcopy(_shot_src[k])
 
-            if 'count' not in shot['src'].keys():
-                shot['src']['count'] = shot['count']
-            if 'start' not in shot['src'].keys():
-                shot['src']['start'] = shot['start']
+            if 'segments' in shot['src'].keys():
+                dst_count = 0
+                for s in shot['src']['segments']:
+                    dst_count += s['count']
 
-            shot['count'] = min(shot['count'], shot['src']['count'])
-            if shot['count'] > shot['src']['count']:
-                print(red(f"error: {k_ep}:{k_part}, not enough frames in src to generate shot no. {shot['no'],}"))
-                sys.exit()
+            else:
+                # Use the frame start/count from the original shot
+                for k in ['start', 'count']:
+                    if k not in shot['src'].keys():
+                        shot['src'][k] = shot[k]
 
-            shot['start'] = max(shot['start'], shot['src']['start'])
-            if (shot['start'] + shot['count']) > (shot['src']['start'] + shot['src']['count']):
-                print(red(f"error: {k_ep}:{k_part}, not enough frames in src to generate shot no. {shot['no'],}"))
-                sys.exit()
+                dst_count = min(shot['count'], shot['src']['count'])
+                if dst_count > shot['count']:
+                    print(red(f"error: {k_ep}:{k_part}, not enough frames in src to generate shot no. {shot['no'],}"))
+                    sys.exit()
 
 
             shot.update({
@@ -152,8 +155,9 @@ def consolidate_target_shots(db, k_ep, k_part):
                     'k_ed': k_ed_src,
                     'k_ep': k_ep,
                     'k_part': k_part,
-                    'count': shot['count'],
+                    'count': dst_count,
                 },
+
                 'k_ed': _k_ed_src,
                 'k_ep': _k_ep_src,
                 'k_part': _k_part_src,
@@ -161,7 +165,7 @@ def consolidate_target_shots(db, k_ep, k_part):
 
 
         # Calculate frames count
-        frame_count += shot['count']
+        frame_count += shot['dst']['count']
 
     # Set frame count for this part
     db_video_target['count'] = frame_count

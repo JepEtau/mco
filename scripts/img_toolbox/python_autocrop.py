@@ -181,7 +181,7 @@ def calculate_crop_values(
         print(p_orange(f"Warning: found {len(shot_contours)}/{len(images)}"))
 
     if verbose:
-        print(p_lightcyan("all images parsed, shot_contours:"))
+        print(lightcyan("all images parsed, shot_contours:"))
         pprint(shot_contours)
 
     # Find the minimum area

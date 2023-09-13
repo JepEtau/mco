@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import re
 import sys
 from pprint import pprint
 
@@ -6,6 +7,7 @@ from utils.common import (
     K_ALL_PARTS,
     pprint_video,
 )
+from utils.nested_dict import nested_dict_set
 from utils.pretty_print import *
 from utils.types import Shot
 
@@ -241,41 +243,50 @@ def parse_target_shotlist(db_shots, config, k_section, language:str='fr') -> Non
             # Append this shot to the list of shots
             db_shots.append({
                 'no': shot_no,
-                'src': dict()
+                'src': dict(),
             })
             shot = db_shots[-1]
 
             for p in shot_properties:
-                d = p.split('=')
+                try:
+                    k, v = p.split('=')
+                except:
+                    print(f'Error: target, section {k_section}, shot no.{shot_no}, unvalid property: [{p}]')
+                    # sys.exit()
+                    continue
 
-                if d[0] == 'ed':
-                    shot['src']['k_ed'] = d[1]
+                if k == 'ed':
+                    shot['src']['k_ed'] = v
 
-                elif d[0] == 'ep':
-                    shot['src']['k_ep'] = "ep%02d" % (int(d[1]))
+                elif k == 'ep':
+                    shot['src']['k_ep'] = f"ep{int(v):02}"
 
-                elif d[0] == 'part':
-                    if d[1] in K_ALL_PARTS:
-                        shot['src']['k_part'] = d[1]
+                elif k == 'part':
+                    if v in K_ALL_PARTS:
+                        shot['src']['k_part'] = v
                     else:
-                        sys.exit("parse_target_shotlist: %s is not recognized" % (d[1]))
-                elif d[0] == 'shot':
-                    shot['src']['no'] = int(d[1])
+                        sys.exit(f"parse_target_shotlist: {v} is not recognized")
 
-                elif d[0] == 'segment':
-                    start_end = d[1].split(':')
-                    shot['src']['start'] = int(start_end[0])
-                    shot['src']['count'] = int(start_end[1]) - shot['src']['start']
+                elif k == 'shot':
+                    shot['src']['no'] = int(v)
 
-                elif d[0] == 'count':
-                    shot['src']['count'] = int(d[1])
+                elif k == 'segments':
+                    shot['src']['segments'] = list()
+                    segments = v.replace(' ', '').split('\n')
+                    for s in segments:
+                        if (match := re.match(re.compile("(\d+):(\d+)"), s)):
+                            shot['src']['segments'].append({
+                                'start': int(match.group(1)),
+                                'count': int(match.group(2)),
+                            })
 
-                elif d[0] == 'start':
-                    shot['src']['start'] = int(d[1])
+                elif k in ['start', 'count']:
+                    shot['src'][k] = int(v)
+
 
             # Debug episode29
             if k_section == 'shots_episode.fr' and shot_no == 267:
                 print(k_section)
-                pprint(shot_properties)
+                # pprint(shot_properties)
                 pprint(shot)
-                sys.exit()
+                # sys.exit()

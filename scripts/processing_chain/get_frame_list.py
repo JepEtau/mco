@@ -27,8 +27,13 @@ def get_frame_file_paths_until_effects(db, k_part, shot, suffix):
 
 
     # Append images
-    index_start = max(0, shot['src']['start'] - shot['start'])
-    index_end = index_start + shot['count']
+    if 'segments' in shot['src'].keys() and len(shot['src']['segments']) > 0:
+        index_start = 0
+        index_end = shot['dst']['count']
+    else:
+        index_start = max(0, shot['src']['start'] - shot['start'])
+
+        index_end = index_start + shot['count']
     print(f"{index_start} -> {index_end}")
 
     step_no = shot['last_step']['step_no']

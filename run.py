@@ -183,7 +183,7 @@ def main():
         # Parse database
         parse_database(g_database, k_ep=k_episode, lang=arguments.lang)
         gc.collect()
-        print(p_lightcyan(f"Language: {g_database['common']['settings']['language']}"))
+        print(lightcyan(f"Language: {g_database['common']['settings']['language']}"))
 
         if arguments.part in K_GENERIQUES:
             print("\t\t- %s: " % (arguments.part))
@@ -198,7 +198,7 @@ def main():
             # pprint(g_database[k_episode]['video']['f'].keys())
             # pprint(g_database[k_episode]['video']['f'][arguments.part]['filters'])
             # pprint(g_database[k_episode]['video']['f'][arguments.part])
-            print(p_lightcyan(f"--------------------------- target -------------------------------"))
+            print(lightcyan(f"--------------------------- target -------------------------------"))
             pprint(g_database[k_episode]['video']['target'][arguments.part])
         print()
 

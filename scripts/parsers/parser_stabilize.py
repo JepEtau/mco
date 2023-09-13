@@ -223,7 +223,7 @@ def parse_stabilize_configurations(db, k_ep_or_g:str):
 def parse_stab_parameters(stab_parameters_str:str):
     verbose = False
     if verbose:
-        print(p_lightcyan("parse_stab_parameters:"), stab_parameters_str)
+        print(lightcyan("parse_stab_parameters:"), stab_parameters_str)
 
     stab_parameters_list = stab_parameters_str.split('=')
     stab = stab_parameters_list[0]
@@ -259,7 +259,7 @@ def parse_stab_parameters(stab_parameters_str:str):
 def parse_tracker(tracker_str:str):
     verbose = False
     if verbose:
-        print(p_lightcyan("parse_tracker:"), tracker_str)
+        print(lightcyan("parse_tracker:"), tracker_str)
     tracker = {
         'is_hr': True,
         'enable': False,
