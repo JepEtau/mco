@@ -23,7 +23,7 @@ def combine_images_into_video(db_common, k_part, video_shot,
         suffix += "_%s" % (video_shot['last_task'])
     shot_filepath = shot_filepath.replace('.txt', f'{suffix}.mkv')
 
-    print(lightgrey(f"\tcombine images into video:"), p_lightcyan(f"{k_part}:"), f"{shot_filepath}")
+    print(lightgrey(f"\tcombine images into video:"), lightcyan(f"{k_part}:"), f"{shot_filepath}")
 
     if not os.path.exists(shot_filepath) or force or DEBUG_DESHAKE:
         db_settings = db_common['settings']

@@ -48,7 +48,7 @@ def parse_part_sections(db_video, config, verbose=False):
 
         db_video[k_part].update({
             'effects': {
-                'fadein': part_fadein,
+                'loop_and_fadein': part_fadein,
                 'fadeout': part_fadeout,
             },
             'start': start,

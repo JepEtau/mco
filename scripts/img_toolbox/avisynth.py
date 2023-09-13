@@ -19,6 +19,7 @@ from utils.process import create_process
 from processing_chain.get_image_list import (
     FILENAME_TEMPLATE,
     get_image_list,
+    get_deinterlaced_image_filepaths,
 )
 from processing_chain.hash import (
     calculate_hash,
@@ -123,10 +124,9 @@ def avisynth_deinterlace(shot, image_list,
     # Output images
     filename_template = os.path.abspath(os.path.join(output_folder,
         FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, '_' + hash)))
-    output_image_list = get_image_list(
+    output_image_list = get_deinterlaced_image_filepaths(
         shot=shot,
         folder=output_folder,
-        step_no=step_no,
         hash=hash)
     output_images = list()
 
@@ -325,7 +325,7 @@ def avisynth_script_executor(shot, image_list,
     else:
         # Create a FFv1 file until find a solution to pipe in/out images
         # input_filepath= ...
-        print(p_red("TODO: create FFv1 file"))
+        print(red("TODO: create FFv1 file"))
         input_filepath = os.path.abspath(os.path.join(output_folder,
             FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, '_' + input_hash)))
         do_generate_ffv1_file = True

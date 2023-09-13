@@ -26,13 +26,14 @@ class Geometry(TypedDict):
     shot: ShotGeometry
 
 
-class ShotSrc(TypedDict):
+class SrcShot(TypedDict):
     k_ed: str
     k_ep: str
     k_part: str
     no: int
     start: int
     count: int
+    segment: list
 
 
 class Shot(TypedDict):
@@ -69,7 +70,8 @@ class Shot(TypedDict):
     # This struct defines the src shot uses to generate this one.
     # When processing this shot, it uses the k_ed:k_episode:k_part:shot specified by this variable
     # e.g. we can use a shot from another edition if not available in this one
-    src: ShotSrc
+    # if a list of segments has to be specified, they shall use the same episode/part/shot no.
+    src: SrcShot
 
     # RGB curves: name, points and LUT table
     curves: dict

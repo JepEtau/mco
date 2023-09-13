@@ -20,8 +20,8 @@ from utils.pretty_print import *
 
 
 def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_filepath=''):
-    print_lightgrey(f"\tcreate concatenation file: ", end='')
-    print_lightcyan(f"{k_ep}, {k_part}, shot no. {shot['no']}")
+    print(lightgrey(f"\tcreate concatenation file: "), end='')
+    print(lightcyan(f"{k_ep}, {k_part}, shot no. {shot['no']}"))
     # Use a single concatenation file for
     #   - g_asuivre, g_documentaire
     if k_part in ['g_asuivre', 'g_documentaire']:
@@ -36,6 +36,7 @@ def create_concatenation_file(db, k_ep, k_part, shot, previous_concatenation_fil
     # Get the list of images
     images_filepath = get_frame_list(db=db,
         k_ep=k_ep, k_part=k_part, shot=shot)
+    print(f"image count: {len(images_filepath)}")
 
     # Folder for concatenation file
     create_folder_for_concatenation(db, k_ep, k_part)

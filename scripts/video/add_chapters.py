@@ -50,7 +50,7 @@ def add_chapters(db, k_ep:str, last_task:str, simulation:bool=False) -> None:
     final_filename = f"{k_ep}{suffix}{lang_str}.mkv"
     final_filepath = os.path.join(output_directory, final_filename)
 
-    print(p_lightgreen(f"Add chapters:"), p_lightcyan(f"{k_ep}"))
+    print(p_lightgreen(f"Add chapters:"), lightcyan(f"{k_ep}"))
     print(f"\tFinal file: {final_filepath}")
 
     # Create file for chapters

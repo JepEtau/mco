@@ -68,27 +68,54 @@ def get_image_list(shot, folder, step_no, hash=''):
         if step_no == shot['last_step']['step_edition']:
             print_red("warning: get_image_list, current step is step_edition")
             return get_image_list_pre_replace(shot, folder, step_no, hash=hash)
-    # try:
-    #     if step_no == shot['last_step']['step_edition']:
-    #         return get_new_image_list(shot=shot, step_no=step_no, hash=hash)
     except:
-        # print_orange("get_image_list: continue, step=%d" % (step_no))
         pass
 
     # Template to name the files
-    suffix = "_%s" % (hash) if hash != '' else ''
+    suffix = f"_{hash}" if hash != '' else ''
     filename_template = FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, suffix)
-
-    # Start frame no.: deinterlace: use frame no to facilitate the debug
-    frame_start = shot['start'] if step_no == 0 else 0
 
     # Generate the list
     image_list = list()
-    for no in range(frame_start, frame_start+shot['count']):
-        image_list.append(os.path.join(os.path.normpath(folder),
-            filename_template % (no)))
+    if step_no == 0:
+        # Start frame no.: deinterlace: use frame no to facilitate the debug
+        if 'segments' in shot['src'].keys() and len(shot['src']['segments']) > 0:
+            print(lightcyan(f"!!!WARNING: {shot['k_ed']}:{shot['k_ep']}:{shot['k_part']}:{shot['no']}\n"),
+                yellow(f"get_image_list used with step_no=0 and segments defined\n"),
+                yellow(f"must be only used to generate a concatenation file"))
+            for s in shot['src']['segments']:
+                start, count = s['start'], s['count']
+                image_list += list([os.path.join(os.path.normpath(folder),
+                    filename_template % (no)) for no in range(start, start+count)])
+        else:
+            start, count = shot['start'], shot['count']
+    else:
+        start, count = 0, shot['dst']['count']
+
+    if len(image_list) == 0:
+        image_list = list([os.path.join(os.path.normpath(folder),
+            filename_template % (no)) for no in range(start, start+count)])
 
     return image_list
+
+
+
+def get_deinterlaced_image_filepaths(shot, folder, hash=''):
+    # List the original frames when deinterlacing
+    # step = 0
+    step_no = 0
+
+    # Template to name the files
+    suffix = f"_{hash}" if hash != '' else ''
+    filename_template = FILENAME_TEMPLATE % (shot['k_ep'], shot['k_ed'], step_no, suffix)
+
+    # Generate the list
+    start, count = shot['start'], shot['count']
+    image_list = list([os.path.join(os.path.normpath(folder),
+            filename_template % (no)) for no in range(start, start+count)])
+
+    return image_list
+
 
 
 def get_image_list_pre_replace(shot, folder, step_no, hash=''):
@@ -100,8 +127,15 @@ def get_image_list_pre_replace(shot, folder, step_no, hash=''):
 
     # Generate the list
     image_list = list()
-    for frame_no in range(shot['start'], shot['start'] + shot['count']):
-        image_list.append(os.path.join(os.path.normpath(folder),
-            filename_template % (frame_no)))
+    if 'segments' in shot['src'].keys() and len(shot['src']['segments']) > 0:
+        for s in shot['src']['segments']:
+            start, count = s['start'], s['count']
+            image_list = list([os.path.join(os.path.normpath(folder),
+                    filename_template % (no)) for no in range(start, start+count)])
+
+    else:
+        start, count = shot['src']['start'], shot['src']['count']
+        image_list = list([os.path.join(os.path.normpath(folder),
+                filename_template % (no)) for no in range(start, start+count)])
 
     return image_list

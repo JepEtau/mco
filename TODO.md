@@ -1,24 +1,36 @@
 # TODO script
 (1)
-- audio/video synchro
-    * episode 1: audio synchro: 26
-    * episode 2: no silence between p&e, no synchro
-    * episode 19: remove 16 frames -> to implement
 
+- audio/video synchro + fade
+    ep01: fr, en
+    ep02: fr, en
+    ep03: fr, en
+    ep04: fr, en
+    ep05: fr, en
+    ep06: fr, en
+    ep07: fr, en
+    ep08: fr, en
+    ep09: fr, en
+    ep10: fr, en
+    ep11: fr, en
+    ep12: fr, en
+    ep13: fr, en
+    ep14: fr, en
+    ep15: fr, en
+    ep16: fr, en
+    ep17: fr, en
+    ep18: fr, en
+    ep19: fr, en
+    ep20: fr, en
+    ep21: fr, en
+    ep22: fr, en
+    ep23: fr, en
+    ep24: fr, en
+    ep25: fr, en
+    ep26:
+    ep27: fr, en
+    ep28: fr, en
 
-
-
-
-
-
-
-
-
-
-- bug: when start of 1st shot of episode != end of precedemment:
-    * insert black frames as silence
-    * if avsync (precedemment) > 0, reduce the silence
-    * if avsync is still > 0, remove video frames
 
 - regression: stabilization does not work on lr images. g_debut, shot no.3: default mode is not static
 - bug: stab: !!! ROI does not work for lowres img !!!
@@ -45,7 +57,7 @@
 - (?) smooth stabilization: to evaluate (g_fin)
 - stats: list unused curves. reason: clean the db
 - effects: verify when replacing shots (asuivre/precedemment)
-- geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from an part to another
+- geometry: 'dst' should be used to find target geometry. Reason: when replacing shots from a part by an other one
 - deshake to stabilize: list of transformations may be wrong due to the transformation applied to the first image. This may have an impact if smooth stabilisation is implemented
 
 

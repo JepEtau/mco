@@ -81,7 +81,7 @@ def parse_filters(db_video, config, k_section):
                     step_dict['id'] = result.group(1)
                     step_str = result.group(2)
                 else:
-                    sys.exit(p_red(f"Error parsing filters: [{step_str}]"))
+                    sys.exit(red(f"Error parsing filters: [{step_str}]"))
 
             result = re.match(re.compile("^([a-z_]+):(.+)$"), step_str)
             if result is not None:

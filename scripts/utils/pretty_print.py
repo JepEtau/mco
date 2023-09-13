@@ -4,7 +4,7 @@ from typing_extensions import Literal
 from utils.common import K_PARTS_ORDERED
 from utils.time_conversions import ms_to_frames
 
-def p_red(*values: object) -> str:
+def red(*values: object) -> str:
     return "\033[31m{}\033[00m" .format(values[0])
 
 
@@ -47,6 +47,8 @@ def print_purple(*values: object,
     print("\033[35m{}\033[00m" .format(values[0]), sep=sep, end=end, flush=flush)
 
 
+def cyan(*values: object) -> str:
+    return "\033[36m{}\033[00m" .format(values[0])
 def print_cyan(*values: object,
             sep: str | None = " ",
             end: str | None = "\n",
@@ -86,7 +88,7 @@ def print_lightgreen(*values: object,
     print("\033[92m{}\033[00m" .format(values[0]), sep=sep, end=end, flush=flush)
 
 
-def p_yellow(*values: object) -> str:
+def yellow(*values: object) -> str:
     return "\033[93m{}\033[00m" .format(values[0])
 def print_yellow(*values: object,
             sep: str | None = " ",
@@ -110,7 +112,7 @@ def print_pink(*values: object,
 
 
 
-def p_lightcyan(*values: object) -> str:
+def lightcyan(*values: object) -> str:
     return "\033[96m{}\033[00m" .format(values[0])
 def print_lightcyan(*values: object,
             sep: str | None = " ",
@@ -175,9 +177,11 @@ def pprint_episode(db, k_ep):
         frame_count = 0
         print_lightcyan("  %s" % (k_p.ljust(12)), end='')
 
-        if db_video['count'] == 0:
+        if db_video['count'] < 1:
             print("%s%s" % ("0".rjust(12), "0".rjust(8)))
             continue
+
+        # print(red(db_video['count']))
 
         part_frame_count = db_video['avsync']
 
@@ -187,18 +191,19 @@ def pprint_episode(db, k_ep):
             frame_count += shot['dst']['count']
         last_shot = db_video['shots'][-1]
 
+        part_frame_count += frame_count
+
         loop_count = 0
-        if 'effects' in last_shot:
+        if 'effects' in last_shot.keys():
             # print(f"\teffect:{last_shot['effects']}")
             if 'loop' in last_shot['effects'][0]:
                 loop_count = last_shot['effects'][2]
-            try:
-                if 'fadein' in db_video['shots'][0]['effects'][0]:
-                    print("todo: add fadein")
-                    print(db_video['shots'][0]['effects'])
-            except:
-                pass
-        part_frame_count += frame_count + loop_count
+
+        if ('effects' in first_shot.keys()
+            and first_shot['effects'][0] == 'loop_and_fadein'):
+                loop_count += first_shot['effects'][2]
+
+        part_frame_count += loop_count
 
         video_silence = 0
         try:
@@ -253,6 +258,11 @@ def pprint_episode(db, k_ep):
 
         # loop
         tmp_str = f"{loop_count}"
+        try:
+            if last_shot['effects'][0] == 'loop_and_fadeout':
+                tmp_str = f"{loop_count}({last_shot['effects'][3]})"
+        except:
+            pass
         print(f"{tmp_str.rjust(12)}", end='')
 
         # avsync

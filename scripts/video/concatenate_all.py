@@ -9,7 +9,7 @@ from utils.pretty_print import *
 
 
 def concatenate_all(db, k_ep:str, last_task:str, force=False, simulation:bool=False) -> None:
-    print(p_lightgreen(f"Concatenate all A/V files:"), p_lightcyan(f"{k_ep}"))
+    print(p_lightgreen(f"Concatenate all A/V files:"), lightcyan(f"{k_ep}"))
 
     language = db[k_ep]['audio']['lang']
     lang_str = '' if language == 'fr' else f"_{language}"

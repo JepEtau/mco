@@ -42,7 +42,7 @@ def parse_video_target_section(db_video, config:ConfigParser, k_section, k_ep):
 
         # Walk through values
         properties = value_str.split(',')
-        # print("\t%s:%s, properties:," % (k_ep, k_part), properties)
+        # print(f"\t{k_ep}:{k_part}, properties: ", properties)
         for property in properties:
 
             search_start_end = re.search(re.compile("(\d+):(-?\d+)"), property)
@@ -75,6 +75,7 @@ def parse_video_target_section(db_video, config:ConfigParser, k_section, k_ep):
             'effects': {
                 'fadein': part_fadein,
                 'fadeout': part_fadeout,
+                'loop_and_fadein': 0,
             },
             'start': start,
             'end': end,
@@ -108,8 +109,6 @@ def parse_video_target_section(db_video, config:ConfigParser, k_section, k_ep):
     for k_part in K_NON_GENERIQUE_PARTS:
         if db_video[k_part]['k_ed_src'] is None:
             sys.exit("Errror: parse_video_target_section: edition shall be defined for %s:%s" % (k_ep, k_part))
-
-
 
 
 

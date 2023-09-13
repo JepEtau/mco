@@ -15,7 +15,7 @@ from utils.pretty_print import *
 
 def combine_av_tracks(db, k_ep_or_g, last_task, force:bool=False, simulation:bool=False):
     # Output filepath
-    print(p_lightgreen(f"Merge audio and video tracks:"), p_lightcyan(f"{k_ep_or_g}"))
+    print(p_lightgreen(f"Merge audio and video tracks:"), lightcyan(f"{k_ep_or_g}"))
     cache_path = db[k_ep_or_g]['cache_path']
 
     language = db[k_ep_or_g]['audio']['lang']

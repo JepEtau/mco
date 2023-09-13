@@ -41,7 +41,7 @@ def create_black_frame(db, shot):
 
 
 
-def effect_fadein(db, shot):
+def effect_loop_and_fadein(db, shot):
     # Validate with:
     #   - ep02: episode
 
@@ -74,9 +74,7 @@ def effect_fadein(db, shot):
         output_filepath = os.path.join(db[k_part_dst]['cache_path'])
     else:
         output_filepath = os.path.join(db[k_ep_dst]['cache_path'], k_part_dst)
-    output_filepath = os.path.join(output_filepath,
-        '%03d' % (shot['no']),
-        '%02d' % (step_no))
+    output_filepath = os.path.join(output_filepath, f"{shot['no']:03}", f"{step_no:02}")
     if not os.path.exists(output_filepath):
         os.makedirs(output_filepath)
     print_lightgrey("\toutput_filepath: %s" % (output_filepath))
@@ -97,7 +95,7 @@ def effect_fadein(db, shot):
             folder=input_filepath,
             step_no=step_no,
             hash=hash)
-    img_input = image_list[fadein_count]
+    img_input = image_list[0]
 
     # Output image list
     filename_template = FILENAME_TEMPLATE % (
@@ -123,9 +121,7 @@ def effect_fadein(db, shot):
     img_src = cv2.imread(img_input, cv2.IMREAD_COLOR)
     print_lightgrey("\tinput image filepath: %s" % (img_input))
     for count, img_output in zip(range(fadein_count), output_image_list):
-        # Calculate coefficient: last frame is not completely black because there is always
-        # a silence after this (i.e. black frames)
-        coef = 1 - np.power(0.07, (float(count) / fadein_count))
+        coef = 1 - np.power(0.5, (float(count) / fadein_count))
         # keep print for debug until end of validation
         print(f"\t{count:02d}: {img_input[cache_strlen:]} -> {img_output[cache_strlen:]}, coef={coef:.02f}")
 
