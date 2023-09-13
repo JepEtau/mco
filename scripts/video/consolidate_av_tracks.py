@@ -150,7 +150,10 @@ def consolidate_av_tracks(db, k_ep, k_part:str='') -> None:
         # video_count = db_video[k_part]['count']
 
         # print(f"info: %s:consolidate_av_tracks: %s:%s: video=%d, audio=%d" % (__name__, k_ep, k_part, video_count, audio_count))
-        last_shot: Shot = db_video[k_part]['shots'][-1]
+        try:
+            last_shot: Shot = db_video[k_part]['shots'][-1]
+        except:
+            continue
 
         if audio_count > video_count:
             # Frames shall be added: use the loop (and fadeout) effect for this
@@ -201,6 +204,8 @@ def consolidate_av_tracks(db, k_ep, k_part:str='') -> None:
     verbose = True
     for k_part in ['episode', 'asuivre', 'documentaire']:
         db_video_part = db_video[k_part]
+        if db_video_part['count'] < 1:
+            continue
         first_shot:Shot = db_video_part['shots'][0]
         last_shot:Shot = db_video_part['shots'][-1]
 

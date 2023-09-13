@@ -152,50 +152,6 @@ def parse_shotlist_new(db_shots, config, k_section, verbose=False) -> None:
                     # custom filter
                     db_shots[shot_no]['filters_id'] = d[1]
 
-#                 elif d[0] == 'ed':
-#                     # edition that will be used to generate this shot
-#                     if 'src' not in db_shots[shot_no].keys():
-#                         db_shots[shot_no]['src'] = dict()
-#                     db_shots[shot_no]['src'].update({'k_ed': d[1]})
-
-#                 elif d[0] == 'ep' or d[0] == 'src':
-#                     # episode that will be used to generate this shot
-#                     if 'src' not in db_shots[shot_no].keys():
-#                         db_shots[shot_no]['src'] = dict()
-#                     src = d[1].split(':')
-#                     if len(src) == 3:
-#                         db_shots[shot_no]['src'].update({
-#                             'k_ep': 'ep%02d' % (int(src[0])),
-#                             'start': int(src[1]),
-#                             'count': int(src[2]),
-#                         })
-#                     elif len(src) == 2:
-#                         db_shots[shot_no]['src'].update({
-#                             'k_ep': 'ep%02d' % (int(src[0])),
-#                             'start': int(src[1]),
-# # 2022-11-13: replacement does not work: to verify
-#                             'count': -1
-#                         })
-#                     else:
-#                         db_shots[shot_no]['src'].update({
-#                             'k_ep': 'ep%02d' % (int(src[0])),
-#                             'start': start,
-# # 2022-11-13: replacement does not work: to verify
-#                             'count': -1
-#                         })
-
-#                 elif d[0] == 'replace':
-#                     # Replace this shot by the source
-#                     if 'src' not in db_shots[shot_no].keys():
-#                         db_shots[shot_no]['src'] = dict()
-#                     db_shots[shot_no]['src'].update({'use': True if d[1]=='y' else False})
-
-#                 elif d[0] == 'effects':
-#                     db_shots[shot_no]['effects'] = d[1].split(',')
-
-
-
-
 
 
 def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
@@ -260,8 +216,6 @@ def consolidate_parsed_shots(db, k_ed, k_ep, k_part) -> None:
 
 
 
-
-
 def parse_target_shotlist(db_shots, config, k_section, language:str='fr') -> None:
 
     for k_option in config.options(k_section):
@@ -319,9 +273,9 @@ def parse_target_shotlist(db_shots, config, k_section, language:str='fr') -> Non
                 elif d[0] == 'start':
                     shot['src']['start'] = int(d[1])
 
-            # Debug episode2
-            if k_section == 'shots_episode.fr' and shot_no == 207:
+            # Debug episode29
+            if k_section == 'shots_episode.fr' and shot_no == 267:
                 print(k_section)
                 pprint(shot_properties)
                 pprint(shot)
-                # sys.exit()
+                sys.exit()

@@ -36,9 +36,9 @@
 * Episode 26: same (frame shift, ivtc in 'en' version?)
 * Episode 27: same
 * Episode 28: same
-* Episode 29: same
+* Episode 29: differs (130 frames)
 * Episode 30: same
-* Episode 31: same
+* Episode 31: differs (33)
 * Episode 32:
     - en: shot from 29662 is shorter (k: ~29628)
     - en: missing shot: k:29776-29859
@@ -50,8 +50,8 @@
     - fr: some others are shorter
 * Episode 34: same
 * Episode 35: same
-* Episode 36: same
-* Episode 37: same
-* Episode 38: same
+* Episode 36: differs (106)
+* Episode 37: differs (67)
+* Episode 38: differs (125)
 * Episode 39: same
 

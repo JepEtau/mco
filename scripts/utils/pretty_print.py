@@ -175,7 +175,7 @@ def pprint_episode(db, k_ep):
         frame_count = 0
         print_lightcyan("  %s" % (k_p.ljust(12)), end='')
 
-        if db_video['count'] == 0:
+        if db_video['count'] < 1:
             print("%s%s" % ("0".rjust(12), "0".rjust(8)))
             continue
 

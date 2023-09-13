@@ -41,6 +41,9 @@ def consolidate_target_shots(db, k_ep, k_part):
     k_ed_src = db_video_target['k_ed_src']
     db_video_src = db[k_ep]['video'][k_ed_src][k_part]
 
+    if db_video_src['count'] < 1:
+        return
+
     # Verify that shots are defined in src or target
     if ('shots' not in db_video_target.keys()
         and 'shots' not in db_video_src.keys()):
@@ -103,7 +106,7 @@ def consolidate_target_shots(db, k_ep, k_part):
                 'k_part': k_part,
             })
 
-        elif shot['count'] > 0:
+        else:
             # Shot was defined in target section
             shot['src']['replace'] = True
 
@@ -115,7 +118,7 @@ def consolidate_target_shots(db, k_ep, k_part):
             }
             for k, v in d.items():
                 if k not in shot['src'].keys():
-                    shot['src']['k_ed'] = v
+                    shot['src'][k] = v
 
 
             # Copy properties from src
@@ -134,7 +137,15 @@ def consolidate_target_shots(db, k_ep, k_part):
                 shot['src']['start'] = shot['start']
 
             shot['count'] = min(shot['count'], shot['src']['count'])
+            if shot['count'] > shot['src']['count']:
+                print(red(f"error: {k_ep}:{k_part}, not enough frames in src to generate shot no. {shot['no'],}"))
+                sys.exit()
+
             shot['start'] = max(shot['start'], shot['src']['start'])
+            if (shot['start'] + shot['count']) > (shot['src']['start'] + shot['src']['count']):
+                print(red(f"error: {k_ep}:{k_part}, not enough frames in src to generate shot no. {shot['no'],}"))
+                sys.exit()
+
 
             shot.update({
                 'dst': {
