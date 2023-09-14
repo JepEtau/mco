@@ -50,8 +50,8 @@
     - fr: some others are shorter
 * Episode 34: same
 * Episode 35: same
-* Episode 36: differs (106)
-* Episode 37: differs (67)
-* Episode 38: differs (125)
+* Episode 36: same
+* Episode 37: same
+* Episode 38: same
 * Episode 39: same
 

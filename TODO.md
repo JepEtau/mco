@@ -1,7 +1,7 @@
 # TODO script
 (1)
 
-- audio/video synchro + fade
+- audio/video synchro + fade. Done:
     ep01: fr, en
     ep02: fr, en
     ep03: fr, en
@@ -27,10 +27,20 @@
     ep23: fr, en
     ep24: fr, en
     ep25: fr, en
-    ep26:
+    ep26: fr, en
     ep27: fr, en
     ep28: fr, en
-
+    ep29: fr, en
+    ep30: fr, en
+    ep31: fr, en
+    ep32:
+    ep33:
+    ep34: fr, en
+    ep35: fr, en
+    ep36: fr, en
+    ep37: fr, en
+    ep38: fr, en
+    ep39: fr, en
 
 - regression: stabilization does not work on lr images. g_debut, shot no.3: default mode is not static
 - bug: stab: !!! ROI does not work for lowres img !!!
