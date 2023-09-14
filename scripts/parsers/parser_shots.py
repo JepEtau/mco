@@ -285,7 +285,7 @@ def parse_target_shotlist(db_shots, config, k_section, language:str='fr') -> Non
 
 
             # Debug episode29
-            if k_section == 'shots_episode.fr' and shot_no == 267:
+            if k_section == 'shots_episode.fr' and shot_no == 307:
                 print(k_section)
                 # pprint(shot_properties)
                 pprint(shot)
