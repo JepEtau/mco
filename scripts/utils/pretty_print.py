@@ -157,17 +157,16 @@ def pprint_episode(db, k_ep):
                 continue
             print("  ", db_video['shots'][-1])
 
-    print_lightcyan("\n              ", end='')
-    print_lightcyan("total(V)".rjust(12), end='')
-    print_lightcyan("total(A)".rjust(12), end='')
-    print_lightcyan("avsync(A)".rjust(12), end='')
+    print_lightcyan("\n                ", end='')
+    print_lightcyan("total(V)".rjust(10), end='')
+    print_lightcyan("total(A)".rjust(10), end='')
+    print_lightcyan("AVsync".rjust(10), end='')
     print_lightcyan("silence(A)".rjust(12), end='')
     print_lightcyan("+adjust(A)".rjust(12), end='')
     print_lightcyan("silence(V)".rjust(12), end='')
     print_lightcyan("1st shot".rjust(12), end='')
     print_lightcyan("frames".rjust(10), end='')
-    print_lightcyan("loop".rjust(8), end='')
-    print_lightcyan("avsync(V)".rjust(12), end='')
+    print_lightcyan("loop".rjust(12), end='')
     print_lightcyan("")
     episode_audio_count = 0
     episode_video_count = 0
@@ -175,7 +174,7 @@ def pprint_episode(db, k_ep):
         db_video = db[k_ep]['video']['target'][k_p]
         db_audio = db[k_ep]['audio'][k_p]
         frame_count = 0
-        print_lightcyan("  %s" % (k_p.ljust(12)), end='')
+        print_lightcyan("  %s" % (k_p.ljust(14)), end='')
 
         if db_video['count'] < 1:
             print("%s%s" % ("0".rjust(12), "0".rjust(8)))
@@ -227,14 +226,14 @@ def pprint_episode(db, k_ep):
 
         # total frames count
         tmp_str = f"{part_frame_count}"
-        print(f"{tmp_str.rjust(12)}", end='')
+        print(f"{tmp_str.rjust(10)}", end='')
 
         # total audio count
         tmp_str = f"{db_audio['count']}"
-        print(f"{tmp_str.rjust(12)}", end='')
+        print(f"{tmp_str.rjust(10)}", end='')
 
         # avsync audio
-        tmp_str = f"{ms_to_frames(db_audio['avsync'])}"
+        tmp_str = f"{ms_to_frames(db_audio['avsync'])}/{db_video['avsync']}"
         print(f"{tmp_str.rjust(8)}", end='')
 
         # silence audio
@@ -264,11 +263,6 @@ def pprint_episode(db, k_ep):
         except:
             pass
         print(f"{tmp_str.rjust(12)}", end='')
-
-        # avsync
-        tmp_str = f"{db_video['avsync']}"
-        print(f"{tmp_str.rjust(12)}", end='')
-
 
         print("")
 

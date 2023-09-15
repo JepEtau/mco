@@ -44,14 +44,11 @@
     - en: missing shot: k:29776-29859
     - en: missing shot: k:30255-30423
 * Episode 33:
-    - fr: shot @~10382 is shorter
-    - fr: shot @~14900 is shorter
-    - fr: shot @~15130 is different
-    - fr: some others are shorter
+    - fr: same shots but some are shorter/longer
 * Episode 34: same
 * Episode 35: same
-* Episode 36: differs (106)
-* Episode 37: differs (67)
-* Episode 38: differs (125)
+* Episode 36: same
+* Episode 37: same
+* Episode 38: same
 * Episode 39: same
 

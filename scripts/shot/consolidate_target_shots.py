@@ -30,7 +30,7 @@ def consolidate_target_shots(db, k_ep, k_part):
 
     """
     K_EP_DEBUG, K_PART_DEBUG, SHOT_NO = ['', '', 0]
-    # K_EP_DEBUG, K_PART_DEBUG, SHOT_NO = 'ep29', 'episode', 139
+    # K_EP_DEBUG, K_PART_DEBUG, SHOT_NO = 'ep32', 'episode', 298
 
     db_video_target:VideoPart = db[k_ep]['video']['target'][k_part]
 
@@ -181,8 +181,9 @@ def consolidate_target_shots(db, k_ep, k_part):
         print_green("-------------------- after ----------------------------\n")
         if 'shots' in db_video_target.keys():
             print_lightblue("\tdb_video_target[shots]")
-            # for s in db_video_target['shots']:
-            #     print("\t", s)
+            for s in db_video_target['shots']:
+                print(lightcyan(f"\n{s['no']:03}"))
+                pprint(s)
             pprint(db_video_target['shots'][SHOT_NO])
         # print("   start: %d" % (db_video_target['start']))
         print("   count: %d" % (db_video_target['count']))

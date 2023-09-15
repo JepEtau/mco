@@ -74,10 +74,11 @@ def effect_loop_and_fadein(db, shot):
         output_filepath = os.path.join(db[k_part_dst]['cache_path'])
     else:
         output_filepath = os.path.join(db[k_ep_dst]['cache_path'], k_part_dst)
-    output_filepath = os.path.join(output_filepath, f"{shot['no']:03}", f"{step_no:02}")
+    output_filepath = os.path.join(output_filepath,
+        f"{shot['no']:03}", f"{step_no:02}")
     if not os.path.exists(output_filepath):
         os.makedirs(output_filepath)
-    print_lightgrey("\toutput_filepath: %s" % (output_filepath))
+    print_lightgrey(f"\toutput_filepath: {output_filepath}")
 
 
     # Input image list
@@ -173,8 +174,7 @@ def effect_loop_and_fadeout(db, shot):
     else:
         output_filepath = os.path.join(db[k_ep_dst]['cache_path'], k_part_dst)
     output_filepath = os.path.join(output_filepath,
-        '%03d' % (shot['no']),
-        '%02d' % (step_no))
+        f"{shot['no']:03}",f"{step_no:02}")
     if not os.path.exists(output_filepath):
         os.makedirs(output_filepath)
     print_lightgrey("\toutput_filepath: %s" % (output_filepath))
@@ -272,8 +272,7 @@ def effect_fadeout(db, shot):
     else:
         output_filepath = os.path.join(db[k_ep_dst]['cache_path'], k_part_dst)
     output_filepath = os.path.join(output_filepath,
-        '%03d' % (shot['no']),
-        '%02d' % (step_no))
+        f"{shot['no']:03}",f"{step_no:02}")
     if not os.path.exists(output_filepath):
         os.makedirs(output_filepath)
     print_lightgrey("\toutput_filepath: %s" % (output_filepath))

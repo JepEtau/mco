@@ -1,36 +1,47 @@
 # TODO script
 (1)
+- revalidate all fadeout, because audio files were not generated after modifications.
 
-- audio/video synchro + fade
-    ep01: fr, en
-    ep02: fr, en
-    ep03: fr, en
-    ep04: fr, en
-    ep05: fr, en
-    ep06: fr, en
-    ep07: fr, en
-    ep08: fr, en
-    ep09: fr, en
-    ep10: fr, en
-    ep11: fr, en
-    ep12: fr, en
-    ep13: fr, en
-    ep14: fr, en
-    ep15: fr, en
-    ep16: fr, en
-    ep17: fr, en
-    ep18: fr, en
-    ep19: fr, en
-    ep20: fr, en
-    ep21: fr, en
-    ep22: fr, en
-    ep23: fr, en
-    ep24: fr, en
-    ep25: fr, en
-    ep26:
-    ep27: fr, en
-    ep28: fr, en
-
+- audio/video synchro + fade. Done and ok:
+    ep01: fr, en,
+    ep02: fr, en,
+    ep03: fr, en,
+    ep04: fr, en,
+    ep05: fr, en,
+    ep06: fr, en,
+    ep07: fr, en,
+    ep08: fr, en,
+    ep09: fr, en,
+    ep10: fr, en,
+    ep11: fr, en,
+    ep12: fr, en,
+    ep13: fr, en,
+    ep14: fr, en,
+    ep15: fr, en,
+    ep16: fr, en,
+    ep17: fr, en,
+    ep18: fr, en,
+    ep19: fr, en,
+    ep20: fr, en,
+    ep21: fr, en,
+    ep22: fr, en,
+    ep23: fr, en,
+    ep24: fr, en,
+    ep25: fr, en,
+    ep26: fr, en,
+    ep27: fr, en,
+    ep28: fr, en,
+    ep29: fr, en,
+    ep30: fr, en,
+    ep31: fr, en,
+    ep32: fr, en,
+    ep33: fr, en, fadeout
+    ep34: fr, en,
+    ep35: fr, en,
+    ep36: fr, en,
+    ep37: fr, en,
+    ep38: fr, en,
+    ep39: fr, en,
 
 - regression: stabilization does not work on lr images. g_debut, shot no.3: default mode is not static
 - bug: stab: !!! ROI does not work for lowres img !!!
