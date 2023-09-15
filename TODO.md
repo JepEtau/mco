@@ -1,5 +1,6 @@
 # TODO script
 (1)
+- revalidate all fadeout, because audio files were not generated after modifications.
 
 - audio/video synchro + fade. Done:
     ep01: fr, en
@@ -33,7 +34,7 @@
     ep29: fr, en
     ep30: fr, en
     ep31: fr, en
-    ep32:
+    ep32: fr, en
     ep33:
     ep34: fr, en
     ep35: fr, en
