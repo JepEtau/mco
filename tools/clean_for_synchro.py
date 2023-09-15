@@ -85,7 +85,7 @@ def main():
     # Audio files
     output_dir = os.path.join(db['common']['directories']['cache'], k_ep, 'audio')
     for lang in ['', '_en']:
-        f = os.path.join(output_dir, f"{k_ep}_audio{lang}.mkv")
+        f = os.path.join(output_dir, f"{k_ep}_audio{lang}.wav")
         if os.path.exists(f):
             files.append(f)
 
