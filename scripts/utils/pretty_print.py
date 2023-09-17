@@ -65,6 +65,8 @@ def print_lightgrey(*values: object,
     print("\033[37m{}\033[00m" .format(values[0]), sep=sep, end=end, flush=flush)
 
 
+def darkgrey(*values: object) -> str:
+    return "\033[90m{}\033[00m" .format(values[0])
 def print_darkgrey(*values: object,
             sep: str | None = " ",
             end: str | None = "\n",
