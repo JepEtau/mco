@@ -47,19 +47,22 @@ def parse_curve_configurations(db, k_ep_or_g:str):
         # print("warning: %s:__parse_curve_configurations: %s, %s is missing" % (__name__, k_ep_or_g, filepath))
         return
 
+    if verbose:
+        print(f"parsing {filepath}")
+
     # Parse the file
     config = configparser.ConfigParser()
     config.read(filepath)
     for k_section in config.sections():
         if verbose:
-            print("\tsection:%s" % (k_section))
-
-        if k_section not in db['editions']['available']:
-            continue
+            print(f"\tsection: {k_section}")
 
         if '.' not in k_section:
             sys.exit("__parse_curve_configurations: error, no edition,ep,part specified")
         k_ed, k_ep, k_part = k_section.split('.')
+
+        if k_ed not in db['editions']['available']:
+            continue
 
         for frame_no_str in config.options(k_section):
             frame_no = int(frame_no_str)
@@ -72,14 +75,17 @@ def parse_curve_configurations(db, k_ep_or_g:str):
             try:
                 shot = get_shot_from_frame_no(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_part=k_part)
                 if shot is None:
+                    print_orange(f"parse curves configuration:", end=' ')
+                    print(darkgrey(f"{k_ed}:{k_ep}:{k_part}: shot not found for frame: {frame_no}"))
                     continue
             except:
-                print(f"exception: parser_curves: get shot in {k_ed}:{k_ep}:{k_part} from frame no {frame_no} failed")
+                print_orange(f"parse curves configuration:", end=' ')
+                print(darkgrey(f"{k_ed}:{k_ep}:{k_part} shot not found for frame no. {frame_no}"))
                 continue
 
             if frame_no != shot['start']:
-                print_orange(f"warning: parse curves configuration:", end=' ')
-                print(f"{frame_no} is not the start of {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}, {shot['start']}")
+                print_orange(f"parse curves configuration:", end=' ')
+                print(darkgrey(f"{frame_no} is not the start of {k_ed}:{k_ep}:{k_part}, no. {shot['no']:03}, {shot['start']}"))
 
             # Append curves struct to the shot
             shot['curves'] = {

@@ -251,7 +251,7 @@ def parse_target_shotlist(db_shots, config, k_section, language:str='fr') -> Non
                 try:
                     k, v = p.split('=')
                 except:
-                    print(f'Error: target, section {k_section}, shot no.{shot_no}, unvalid property: [{p}]')
+                    # print(f'Error: target, section {k_section}, shot no. {shot_no}, unvalid property: [{p}]')
                     # sys.exit()
                     continue
 
@@ -284,9 +284,9 @@ def parse_target_shotlist(db_shots, config, k_section, language:str='fr') -> Non
                     shot['src'][k] = int(v)
 
 
-            # Debug episode29
-            if k_section == 'shots_episode.fr' and shot_no == 307:
-                print(k_section)
-                # pprint(shot_properties)
-                pprint(shot)
-                # sys.exit()
+            # # Debug
+            # if k_section == 'shots_episode.fr' and shot_no == 307:
+            #     print(k_section)
+            #     # pprint(shot_properties)
+            #     pprint(shot)
+            #     # sys.exit()
