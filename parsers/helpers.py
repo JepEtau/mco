@@ -15,3 +15,6 @@ def nested_dict_set(d: dict, o: object, *keys) -> None:
         nested_d = nested_d[k]
     nested_d[k] = o
 
+
+def get_chapter_video_src(db, ep, ed, chapter) -> dict:
+    return db[ep]['video'][ed][chapter]

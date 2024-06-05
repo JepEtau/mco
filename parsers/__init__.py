@@ -1,4 +1,7 @@
-from .database import parse_database
+from .database import (
+    parse_database,
+    get_dependencies
+)
 from .logger import logger
 
 from ._types import (
@@ -17,6 +20,8 @@ from ._keys import (
     non_credit_chapter_keys,
 )
 
+
+
 __all__ = [
     "logger",
     "parse_database",
@@ -28,4 +33,5 @@ __all__ = [
     "non_credit_chapter_keys",
     "Chapter",
     "get_fps",
+    "get_dependencies",
 ]

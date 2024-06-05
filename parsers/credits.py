@@ -8,6 +8,7 @@ from pathlib import (
 )
 import re
 from pprint import pprint
+from typing import Literal
 from .audio import parse_audio_g
 from .scene import parse_target_scenelist
 from .video_target import parse_video_target_g
@@ -186,51 +187,57 @@ def parse_generiques(db, k_ed, verbose=False):
 
 
 
-def get_credits_dependencies(db, k_chapter_g='') -> dict:
+def get_credits_dependencies(
+    db,
+    k_chapter_g: str = '',
+    track: Literal['audio', 'video', 'all'] = 'all'
+) -> dict[str, list]:
     """Return a dict of edition and episode which are required for
     this generique"""
-    dependencies = dict()
+    dependencies: dict[str, set] = {}
 
     if k_chapter_g not in credit_chapter_keys():
         return dependencies
 
     # Audio
-    try:
-        db_audio = db[k_chapter_g]['audio']
-        k_ed_src = db_audio['src']['k_ed']
-        k_ep_src = db_audio['src']['k_ep']
-        if k_ed_src not in dependencies.keys():
-            dependencies[k_ed_src] = list()
-        dependencies[k_ed_src].append(k_ep_src)
-    except:
-        pass
+    if track in ('audio', 'all'):
+        try:
+            db_audio = db[k_chapter_g]['audio']
+            k_ed_src = db_audio['src']['k_ed']
+            k_ep_src = db_audio['src']['k_ep']
+            if k_ed_src not in dependencies.keys():
+                dependencies[k_ed_src] = set()
+            dependencies[k_ed_src].add(k_ep_src)
+        except:
+            pass
 
     # Video
-    db_video = db[k_chapter_g]['video']
+    if track in ('video', 'all'):
+        db_video = db[k_chapter_g]['video']
 
-    # Common chapter contains the source
-    if 'k_ep' in db_video['src'].keys():
-        k_ed_src = db_video['src']['k_ed']
-        k_ep_src = db_video['src']['k_ep']
-        if k_ed_src not in dependencies.keys():
-            dependencies[k_ed_src] = list()
-        dependencies[k_ed_src].append(k_ep_src)
+        # Common chapter contains the source
+        if 'k_ep' in db_video['src'].keys():
+            k_ed_src = db_video['src']['k_ed']
+            k_ep_src = db_video['src']['k_ep']
+            if k_ed_src not in dependencies.keys():
+                dependencies[k_ed_src] = set()
+            dependencies[k_ed_src].add(k_ep_src)
 
-    # scenes
-    if 'scenes' not in db_video.keys():
-        sys.exit("get_dependencies_for_generique: error, list of scenes is missing")
+        # scenes
+        if 'scenes' not in db_video.keys():
+            sys.exit("get_dependencies_for_generique: error, list of scenes is missing")
 
-    # print("get_dependencies_for_generique: %s" % (k_chapter_g))
-    # pprint(db_video['scenes'])
-    for s in db_video['scenes']:
-        if 'k_ed' not in s['src'].keys():
-            s['src']['k_ed'] = db_video['src']['k_ed']
-        k_ed = s['src']['k_ed']
-        if k_ed not in dependencies.keys():
-            dependencies[k_ed] = list()
-        dependencies[k_ed].append(s['src']['k_ep'])
+        # print("get_dependencies_for_generique: %s" % (k_chapter_g))
+        # pprint(db_video['scenes'])
+        for s in db_video['scenes']:
+            if 'k_ed' not in s['src'].keys():
+                s['src']['k_ed'] = db_video['src']['k_ed']
+            k_ed = s['src']['k_ed']
+            if k_ed not in dependencies.keys():
+                dependencies[k_ed] = set()
+            dependencies[k_ed].add(s['src']['k_ep'])
 
     for k_ed in dependencies.keys():
-        dependencies[k_ed] = list(set(dependencies[k_ed]))
+        dependencies[k_ed] = list(dependencies[k_ed])
 
     return dependencies

@@ -226,3 +226,16 @@ def parse_database_for_study(db, k_ed, k_ep, k_chapter):
     parse_frames_for_study(db, k_ep=k_ep)
 
 
+
+def get_dependencies(
+    db: dict,
+    episode: int | str | None = None,
+    chapter: str | None = None,
+    track: Literal['audio', 'video', 'all'] = 'all'
+) -> dict[str, list]:
+
+    if episode is not None and episode != 0:
+        return get_episode_dependencies(db, episode, track)
+    else:
+        return get_credits_dependencies(db, chapter, track)
+

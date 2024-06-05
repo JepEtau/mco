@@ -8,6 +8,7 @@ from pathlib import (
 )
 import sys
 from pprint import pprint
+from typing import Literal
 
 from .logger import logger
 
@@ -27,6 +28,7 @@ from .scene import (
 from ._keys import (
     all_chapter_keys,
     main_chapter_keys,
+    non_credit_chapter_keys,
     key
 )
 from .helpers import nested_dict_set
@@ -328,69 +330,78 @@ def parse_episode(db, k_ed, k_ep):
             sys.exit()
 
 
-def get_episode_dependencies(db, k_ep) -> dict:
+
+def get_episode_dependencies(
+    db,
+    episode: int | str,
+    track: Literal['audio', 'video', 'all'] = 'all'
+) -> dict[str, list]:
     """Return a dict of edition and episode which are required for
     this episode
 
     """
-    dependencies: dict[str, list] = {}
+    k_ep: str = key(episode)
+    dependencies: dict[str, set] = {}
+    target_video: dict = db[k_ep]['video']['target']
 
     # Common chapter
-    for k_chapter in main_chapter_keys():
-        if k_chapter not in db[k_ep]['video']['target'].keys():
+    for chapter in main_chapter_keys():
+        if chapter not in target_video:
             continue
 
-        db_video: dict = db[k_ep]['video']['target'][k_chapter]
-        if 'scenes' in db_video.keys():
-            scenes: list[dict] = db_video['scenes']
+        chapter_video: dict = target_video[chapter]
+        if 'scenes' in chapter_video.keys():
+            scenes: list[dict] = chapter_video['scenes']
             for scene in scenes:
                 # print(scene)
                 if 'src' in scene.keys() and 'k_ep' in scene['src'].keys():
                     if 'k_ed' in scene['src']:
                         k_ed_dep = scene['src']['k_ed']
                     else:
-                        k_ed_dep = db_video['k_ed_src']
+                        k_ed_dep = chapter_video['k_ed_src']
 
                     if k_ed_dep not in dependencies.keys():
-                        dependencies[k_ed_dep] = []
-                    dependencies[k_ed_dep].append(scene['src']['k_ep'])
-
+                        dependencies[k_ed_dep] = set()
+                    dependencies[k_ed_dep].add(scene['src']['k_ep'])
 
     # Edition used as the default source
-    for k_chapter in main_chapter_keys():
-        k_ed_src = db[k_ep]['video']['target'][k_chapter]['k_ed_src']
+    for chapter in non_credit_chapter_keys():
+        k_ed_src = target_video[chapter]['k_ed_src']
 
-        try:
-            db_video = db[k_ep]['video'][k_ed_src][k_chapter]
-        except:
-            sys.exit(red(f"error: {k_ed_src}:{k_ep}: missing input file"))
-        if 'scenes' in db_video.keys():
-            scenes = db_video['scenes']
-            for scene in scenes:
-                if 'src' in scene.keys() and 'k_ep' in scene['src'].keys():
-                    # print(scene)
-                    if 'k_ed' in scene['src']:
-                        k_ed_dep = scene['src']['k_ed']
-                    else:
-                        k_ed_dep = k_ed_src
+        if track in ('video', 'all'):
+            try:
+                chapter_video = db[k_ep]['video'][k_ed_src][chapter]
+            except:
+                sys.exit(red(f"error: {k_ed_src}:{k_ep}: missing input file"))
+            if 'scenes' in chapter_video.keys():
+                scenes = chapter_video['scenes']
+                for scene in scenes:
+                    if 'src' in scene.keys() and 'k_ep' in scene['src'].keys():
+                        # print(scene)
+                        if 'k_ed' in scene['src']:
+                            k_ed_dep = scene['src']['k_ed']
+                        else:
+                            k_ed_dep = k_ed_src
 
+                        if k_ed_dep not in dependencies.keys():
+                            dependencies[k_ed_dep] = set()
+                        dependencies[k_ed_dep].add(scene['src']['k_ep'])
+
+        if track in ('audio', 'all'):
+            k_ed_dep = db[k_ep]['audio']['src']['k_ed']
+            try:
+                db_audio = db[k_ep]['audio'][chapter]
+            except:
+                sys.exit(red(f"error: {k_ed_src}:{k_ep}: missing input file"))
+
+            for segment in db_audio['segments']:
+                if 'k_ep' in segment.keys() and segment['k_ep'] != k_ep:
                     if k_ed_dep not in dependencies.keys():
                         dependencies[k_ed_dep] = []
-                    dependencies[k_ed_dep].append(scene['src']['k_ep'])
-
-        k_ed_dep = db[k_ep]['audio']['src']['k_ed']
-        try:
-            db_audio = db[k_ep]['audio'][k_chapter]
-        except:
-            sys.exit(red(f"error: {k_ed_src}:{k_ep}: missing input file"))
-
-        for segment in db_audio['segments']:
-            if 'k_ep' in segment.keys() and segment['k_ep'] != k_ep:
-                if k_ed_dep not in dependencies.keys():
-                    dependencies[k_ed_dep] = []
-                dependencies[k_ed_dep].append(segment['k_ep'])
+                    dependencies[k_ed_dep].add(segment['k_ep'])
 
     for k_ed in dependencies.keys():
-        dependencies[k_ed] = list(set(dependencies[k_ed]))
+        dependencies[k_ed] = list(dependencies[k_ed])
 
     return dependencies
+

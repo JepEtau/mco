@@ -5,17 +5,20 @@ from pprint import pprint
 import signal
 import sys
 from parsers import (
+    key,
     parse_database,
     logger,
     all_chapter_keys,
+    get_dependencies,
 )
+from parsers.helpers import get_chapter_video_src
 from utils.p_print import *
 
 g_database = dict()
 
 def main():
     # Arguments
-    parser = argparse.ArgumentParser(description="Parse the database")
+    parser = argparse.ArgumentParser(description="Deinterlace")
     parser.add_argument(
         "--episode",
         "-ep",
@@ -38,13 +41,6 @@ def main():
         action="store_true",
         required=False,
         help="English version"
-    )
-
-    parser.add_argument(
-        "--stats",
-        action="store_true",
-        required=False,
-        help="debug"
     )
 
     parser.add_argument(
@@ -86,16 +82,30 @@ def main():
     )
     gc.collect()
 
+    db = g_database
+    ep: str = key(episode)
+    # Dependencies
+    dependencies = get_dependencies(
+        db=db,
+        episode=ep,
+        chapter=chapter,
+        track='video'
+    )
+    # editions: list[str] = list([ed for ed, eps in dependencies.items() if ep in eps])
+    editions: list[str] = list(dependencies.keys())
 
-    # For inspection
-    # db_ep: dict = g_database['ep01']
-    # print(db_ep.keys())
-    # print(db_ep['cache_path'])
-    # pprint(db_ep['audio'])
+    # Get all range to deinterlace for each dependency
+    interlaced: dict[str, set] = {}
+    for ed in editions:
+        for k_c in all_chapter_keys():
+            inputs = get_chapter_video_src(db, ep, ed, k_c)['inputs']
+            fp: str = inputs['interlaced']['filepath']
+            segment: tuple[int, int] = (inputs['progressive']['start'], inputs['progressive']['count'])
+            if fp not in interlaced:
+                interlaced[fp] = set()
+            interlaced[fp].add(segment)
 
-    # print(g_database.keys())
-    # pprint(g_database['common'])
-
+    pprint(interlaced)
 
 
 if __name__ == "__main__":
