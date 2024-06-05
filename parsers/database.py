@@ -34,7 +34,6 @@ from .geometry import parse_geometry_configurations
 from .replace import parse_replace_configurations
 # from .stabilize import parse_stabilize_configurations
 from ._keys import (
-    key,
     credit_chapter_keys,
     non_credit_chapter_keys,
 )

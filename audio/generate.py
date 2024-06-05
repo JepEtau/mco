@@ -37,7 +37,7 @@ def generate_audio_track(
 
     if os.path.exists(out_filepath) and not force:
         target_str: str = f"{k}:{chapter}" if episode is not None and chapter is not None else f"{k}"
-        print(f"{target_str}: audio track already exists, skip")
+        print(f"{target_str}: audio track already generated: {out_filepath}")
         return
 
     # Use a specific function

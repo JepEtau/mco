@@ -47,6 +47,8 @@
         "**/*.png": true,
         "**/*.ui": false,
         "**/*.ffindex": true,
+        "**/external": true,
+        "**/*.exe": true,
     },
     "files.insertFinalNewline": true,
     "files.trimFinalNewlines": false,

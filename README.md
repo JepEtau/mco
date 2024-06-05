@@ -21,6 +21,8 @@ pip install -r requirements.txt
 
 - To upgrade packages (if needed): `pip install -r requirements.txt --upgrade`
 
+- Put [FFmpeg/FFprobe](https://ffmpeg.org/download.html)'s executables in `external/ffmpeg`
+
 ## Usage
 - Activate the conda env
 - Run a python script

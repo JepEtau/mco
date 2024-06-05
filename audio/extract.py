@@ -7,7 +7,7 @@ from parsers import (
 from utils.p_print import *
 from utils.path_utils import get_extension
 from .helpers import run_ffmpeg_command
-
+from utils.tools import ffmpeg_exe
 
 def extract_audio_track(
     db,
@@ -59,7 +59,7 @@ def extract_audio_track(
         logger.debug(f"\t{in_filepath} -> {out_filepath}")
 
         # FFmpeg command
-        ffmpeg_command = [db['common']['tools']['ffmpeg']]
+        ffmpeg_command = [ffmpeg_exe]
         ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
         ffmpeg_command.extend([
             "-i", in_filepath,

@@ -175,3 +175,5 @@ cython_debug/
 cache/
 frames/
 
+*.exe
+external/ffmpeg/ffmpeg*

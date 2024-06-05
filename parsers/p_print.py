@@ -10,6 +10,9 @@ def pprint_episode(db, k_ep) -> dict[str, tuple[int]]:
     """Return nb of frames of video and audio tracks"""
     fps = get_fps(db)
 
+    # Do not show silences to fit terminal width
+    show_silence: bool = False
+
     if False:
         # print last scene of every part
         for k_chapter in K_PARTS_ORDERED:
@@ -23,9 +26,11 @@ def pprint_episode(db, k_ep) -> dict[str, tuple[int]]:
     print(lightcyan("Video".rjust(10)), end='')
     print(lightcyan("Audio".rjust(10)), end='')
     print(lightcyan("AVsync".rjust(10)), end='')
-    print(lightcyan("silence(A)".rjust(12)), end='')
+    if show_silence:
+        print(lightcyan("silence(A)".rjust(12)), end='')
     print(lightcyan("+adjust(A)".rjust(12)), end='')
-    print(lightcyan("silence(V)".rjust(12)), end='')
+    if show_silence:
+        print(lightcyan("silence(V)".rjust(12)), end='')
     print(lightcyan("1st scene".rjust(12)), end='')
     print(lightcyan("frames".rjust(10)), end='')
     print(lightcyan("loop".rjust(12)), end='')
@@ -98,16 +103,18 @@ def pprint_episode(db, k_ep) -> dict[str, tuple[int]]:
         tmp_str = f"{ms_to_frame(db_audio['avsync'], fps)}/{db_video['avsync']}"
         print(f"{tmp_str.rjust(8)}", end='')
 
-        # silence audio
-        tmp_str = "%.02f" % (db_audio['silence']/1000)
-        print(f"{tmp_str.rjust(12)}", end='')
+        # audio silence
+        if show_silence:
+            tmp_str = "%.02f" % (db_audio['silence']/1000)
+            print(f"{tmp_str.rjust(12)}", end='')
 
         # -> padded (A)
         extra_str = f"{ms_to_frame(db_audio['avsync'] + audio_silence_padding, fps)}"
         print(f"{extra_str.rjust(12)}", end='')
 
         # video: append silence
-        print(f"{str(video_silence).rjust(12)}", end='')
+        if show_silence:
+            print(f"{str(video_silence).rjust(12)}", end='')
 
         # start of 1st scene
         start_str = f"{first_scene['start']}"
@@ -155,6 +162,9 @@ def pprint_episode(db, k_ep) -> dict[str, tuple[int]]:
 
 
 def pprint_g_debut_fin(db) -> dict[str, tuple[int]]:
+    # Do not show silences to fit terminal width
+    show_silence: bool = False
+
     fps = get_fps(db)
 
     if False:
@@ -170,7 +180,8 @@ def pprint_g_debut_fin(db) -> dict[str, tuple[int]]:
     print("Video".rjust(12), end='')
     print("Audio".rjust(12), end='')
     print("avsync(A)".rjust(12), end='')
-    print("silence(A)".rjust(12), end='')
+    if show_silence:
+        print("silence(A)".rjust(12), end='')
     print("->extra(A)".rjust(12), end='')
     print("1st scene".rjust(12), end='')
     print("frames".rjust(10), end='')
@@ -230,8 +241,9 @@ def pprint_g_debut_fin(db) -> dict[str, tuple[int]]:
         print(f"{tmp_str.rjust(12)}", end='')
 
         # silence audio
-        tmp_str = "%.02f" % (audio_track['silence']/1000)
-        print(f"{tmp_str.rjust(12)}", end='')
+        if show_silence:
+            tmp_str = "%.02f" % (audio_track['silence']/1000)
+            print(f"{tmp_str.rjust(12)}", end='')
 
         # -> padded (A)
         extra_str = f"{ms_to_frame(audio_track['avsync'] + audio_track['silence'], fps)}"
