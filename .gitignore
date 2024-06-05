@@ -163,6 +163,8 @@ cython_debug/
 
 
 # Specific to this poject
+*.exe
+*.bin
 **/*.mkv
 **/*.wav
 **/*.mp4
@@ -174,6 +176,4 @@ cython_debug/
 **/*.mp4
 cache/
 frames/
-
-*.exe
 external/ffmpeg/ffmpeg*
