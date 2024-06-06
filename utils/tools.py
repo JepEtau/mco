@@ -12,8 +12,8 @@ external_dir: str = absolute_path(
 )
 
 if sys.platform == "win32":
-    ffmpeg_exe = os.path.join(ffmpeg_path, "ffmpeg.exe")
-    ffprobe_exe = os.path.join(ffmpeg_path, "ffprobe.exe")
+    ffmpeg_exe = os.path.join(external_dir, "ffmpeg", "ffmpeg.exe")
+    ffprobe_exe = os.path.join(external_dir, "ffmpeg", "ffprobe.exe")
     python_exe = "python.exe"
 
 elif sys.platform == "linux":
