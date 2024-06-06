@@ -1,6 +1,7 @@
 
 import os
 from pathlib import Path
+import tempfile
 from typing import Literal
 
 
@@ -38,3 +39,15 @@ def absolute_path(path: str | Path) -> str:
     if path is not None and path != "":
         return os.path.abspath(os.path.expanduser(str(path)))
     return path
+
+
+def get_app_tempdir() -> str:
+    tmp_dirname: str = os.path.join(
+        tempfile.gettempdir(),
+        os.path.split(
+            absolute_path(
+                os.path.join(os.path.dirname(__file__), os.pardir)
+            )
+        )[-1]
+    )
+    return tmp_dirname

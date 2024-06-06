@@ -48,6 +48,18 @@ def current_datetime_str() -> str:
     return datetime.now().strftime(r"%Y-%m-%d %H:%M:%S")
 
 
+def reformat_datetime(date_str: str) -> str | None:
+    """Returns the datetime to a string which can be used as a filename"""
+    date_format = "%a, %d %b %Y %H:%M:%S GMT"
+    try:
+        d = datetime.strptime(date_str, date_format)
+    except:
+        d_str: str = date_str
+        for c in (' ', ',', ':', ','):
+            d_str = d_str.replace(c, '_')
+        return d_str
+    return d.strftime("%Y-%m-%d_%H-%M-%S")
+
 
 if __name__ == "__main__":
     fps = 25
