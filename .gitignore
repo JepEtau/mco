@@ -176,4 +176,4 @@ cython_debug/
 **/*.mp4
 cache/
 frames/
-external/ffmpeg/ffmpeg*
+external/*
