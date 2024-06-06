@@ -9,6 +9,7 @@ from utils.p_print import *
 from utils.logger import logger
 
 
+
 def external_packages() -> tuple[ExternalPackage]:
     packages: tuple[ExternalPackage] = (
         ExternalPackage(
@@ -43,7 +44,11 @@ def main():
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.setLevel("WARNING")
 
-    installed: bool = install_external_packages(external_packages())
+    installed: bool = install_external_packages(
+        external_packages(),
+        rehost_url_base="https://github.com/JepEtau/external_rehost/releases/download/external",
+        threads=2,
+    )
     if installed:
         print(lightgreen("All packages installed"))
     else:

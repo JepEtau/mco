@@ -14,14 +14,16 @@ conda create -n m python==3.11.8
 conda activate mco
 ```
 
-- Install requirements
+- **Install python packages**
 ```sh
 pip install -r requirements.txt
 ```
-
 - To upgrade packages (if needed): `pip install -r requirements.txt --upgrade`
 
-- Put [FFmpeg/FFprobe](https://ffmpeg.org/download.html)'s executables in `external/ffmpeg`
+- **Install external tools**
+```sh
+python install.py
+```
 
 ## Usage
 - Activate the conda env
