@@ -200,6 +200,7 @@ def install_ext_packages(
     for package in packages:
         package.host = rehost_url_base
 
+    packages = [package for package in packages if not package.skip]
     if threads == 1:
         with progress:
             for package in packages:
@@ -208,7 +209,6 @@ def install_ext_packages(
                     return False
     else:
         success: bool = True
-        packages = [package for package in packages if not package.skip]
         with progress:
             with ThreadPoolExecutor(max_workers=threads) as executor:
                 for result in executor.map(

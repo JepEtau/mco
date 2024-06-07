@@ -1,4 +1,5 @@
 
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from importlib import metadata
 import os
@@ -169,9 +170,25 @@ def update_package_url(package: PyPackage, retry: int = 3) -> bool:
     return True
 
 
+def uninstall_py_package(package: PyPackage) -> bool:
+    logger.debug(f"[V] uninstall {package.name}")
+    pip_command: str = f"python -m pip uninstall -y {package.name}"
+    try:
+        subprocess.run(
+            pip_command.split(' '),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+        )
+    except:
+        return False
+    return True
+
 
 def install_py_package(package: PyPackage, ext_package: ExtPackage) -> bool:
-    logger.info(lightgrey(f"  install"))
+    logger.debug(lightgrey(f"  install {ext_package.tmp_file}"))
+
+    if package.uninstall_before:
+        uninstall_py_package(package)
 
     pip_command: list[str] = [
         "python",
@@ -201,7 +218,7 @@ def install_py_package(package: PyPackage, ext_package: ExtPackage) -> bool:
         shutil.rmtree(os.path.dirname(ext_package.tmp_file))
     except:
         pass
-    logger.info(lightgrey(f"  {package.name} installed"))
+    logger.debug(lightgrey(f"  {package.name} installed"))
 
     return True
 
@@ -240,7 +257,7 @@ def download_install_py_package(
         and os.path.getsize(ext_package.tmp_file) == ext_package.size
     ):
         ext_package.downloaded = True
-        logger.info(lightgrey(f"  already downloaded"))
+        logger.debug(lightgrey(f"  already downloaded"))
 
     else:
         ext_package.downloaded = download_package(
@@ -281,47 +298,51 @@ def install_py_packages(
         TimeRemainingColumn(),
     )
 
-    # debug with numpy
-    packages = [packages[2]]
-
-    for package in packages:
+    def _get_info(package: PyPackage) -> None:
         update_package_info(package)
         update_package_url(package)
         logger.debug(f"[V] {package.pretty_name}: {package.url}")
-        if not package.is_installed() and package.supported:
-            logger.warning(
-                f"[I] {package.pretty_name} has to be updated: "
-                + f"{package.installed_version} -> {package.version}"
-            )
+        if package.supported:
+            if not package.is_installed():
+                logger.info(orange(
+                    f"[I] {package.pretty_name} has to be updated: "
+                    + f"{package.installed_version} -> {package.version}"
+                ))
+            else:
+                logger.info(lightgreen(
+                    f"[I] {package.pretty_name} is already installed: {package.version}"
+                ))
+
+
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        executor.map(_get_info, packages)
+
+
     packages = [package for package in packages if not package.is_installed()]
     if not packages:
         logger.info(f"[I] No packages to update")
         return True
 
-    # if threads == 1:
-    with progress:
-        for package in packages:
-            success = download_install_py_package(
-                package,
-                progress=progress,
-                retry=retry
-            )
-            if not success:
-                return False
+    if threads == 1:
+        with progress:
+            for package in packages:
+                success = download_install_py_package(
+                    package,
+                    progress=progress,
+                    retry=retry
+                )
+                if not success:
+                    return False
 
-    # else:
-    #     success: bool = True
-    #     packages = [package for package in packages if not package.skip]
-    #     with progress:
-    #         with ThreadPoolExecutor(max_workers=threads) as executor:
-    #             for result in executor.map(
-    #                 lambda args: install_py_package(*args),
-    #                 [
-    #                     (package, progress, retry)
-    #                     for package in packages
-    #                 ]
-    #             ):
-    #                 success = success and result
-    #     return success
+    else:
+        success: bool = True
+        with progress:
+            with ThreadPoolExecutor(max_workers=threads) as executor:
+                for result in executor.map(
+                    lambda args: download_install_py_package(*args),
+                    [(package, progress, retry) for package in packages]
+                ):
+                    success = success and result
+        return success
 
     return True

@@ -1,3 +1,4 @@
+from concurrent.futures import ThreadPoolExecutor
 import logging
 from pprint import pprint
 import signal
@@ -12,6 +13,7 @@ from utils.logger import logger
 from utils.py_packages import (
     PyPackage,
     install_py_packages,
+    uninstall_py_package,
     update_package_info,
     update_package_url,
     update_pip,
@@ -56,20 +58,6 @@ py_packages: tuple[PyPackage] = (
         uninstall_before=True,
     ),
     PyPackage(
-        pretty_name="TorchVision",
-        name="torchvision",
-        index_url="https://download.pytorch.org/whl/cu121",
-        uninstall_before=True,
-    ),
-    PyPackage(
-        pretty_name="NumPy",
-        name="numpy",
-    ),
-    PyPackage(
-        pretty_name="SafeTensors",
-        name="safetensors",
-    ),
-    PyPackage(
         pretty_name="ONNX",
         name="onnx",
     ),
@@ -84,6 +72,24 @@ py_packages: tuple[PyPackage] = (
     PyPackage(
         pretty_name="ONNX Optimizer",
         name="onnxoptimizer",
+    ),
+    PyPackage(
+        pretty_name="TorchVision",
+        name="torchvision",
+        index_url="https://download.pytorch.org/whl/cu121",
+        uninstall_before=True,
+    ),
+    PyPackage(
+        pretty_name="soundfile",
+        name="soundfile",
+    ),
+    PyPackage(
+        pretty_name="NumPy",
+        name="numpy",
+    ),
+    PyPackage(
+        pretty_name="SafeTensors",
+        name="safetensors",
     ),
 )
 
@@ -101,7 +107,13 @@ def main():
         logger.warning("[W] Failed updating pip")
 
 
-    install_py_packages(py_packages)
+    # for package in py_packages:
+    #     logger.info(f"[I] uninstall {package.pretty_name}")
+    #     uninstall_py_package(package)
+
+    # sys.exit()
+    print("Let's do install")
+    install_py_packages(py_packages,threads=4)
 
 
     sys.exit()
