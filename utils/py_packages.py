@@ -1,12 +1,27 @@
 
 from dataclasses import dataclass
 from importlib import metadata
+import os
+from pprint import pprint
 import re
 import requests
+from rich.progress import (
+    BarColumn,
+    DownloadColumn,
+    Progress,
+    TaskID,
+    TextColumn,
+    TimeRemainingColumn,
+    TransferSpeedColumn,
+)
+import shutil
 import subprocess
 import time
 from urllib.parse import unquote
+
+from .ext_packages import ExtPackage, download_package
 from .logger import logger
+from .path_utils import get_app_tempdir, get_extension
 from .p_print import *
 
 
@@ -24,6 +39,10 @@ class PyPackage:
     installed: bool = False
     installed_version: str = ""
     uninstall_before: bool = False
+
+    def is_installed(self) -> bool:
+        # print(lightcyan(f"[{self.installed_version}] vs [{self.version}]"))
+        return bool(self.version == self.installed_version)
 
 
 
@@ -47,7 +66,7 @@ def update_package_info(package: PyPackage, retry: int = 3) -> None:
     installed_version: str = ""
     try:
         installed_version = metadata.metadata(package.name).json['version']
-        logger.info(f"[I] {package.pretty_name}: {installed_version}")
+        logger.debug(f"[V] {package.pretty_name}: {installed_version}")
         package.installed_version = installed_version
     except:
         logger.info(f"[I] Package {package.pretty_name} is not installed")
@@ -98,7 +117,7 @@ def update_package_url(package: PyPackage, retry: int = 3) -> bool:
             except:
                 break
             if _retry < retry:
-                print(line)
+                logger.debug(line)
 
             if (result := re.search(regex, line)):
                 sub_process.terminate()
@@ -146,5 +165,163 @@ def update_package_url(package: PyPackage, retry: int = 3) -> bool:
                 logger.error(f"File {package.url} not found")
             return False
         package.size=int(response.headers.get('Content-length', 0))
+
+    return True
+
+
+
+def install_py_package(package: PyPackage, ext_package: ExtPackage) -> bool:
+    logger.info(lightgrey(f"  install"))
+
+    pip_command: list[str] = [
+        "python",
+        "-m", "pip", "install",
+        "--no-cache-dir",
+        ext_package.tmp_file,
+        "--progress-bar=off",
+        "-v"
+    ]
+
+    sub_process = subprocess.Popen(
+        pip_command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT
+    )
+
+    while sub_process.poll() is None:
+        try:
+            line = sub_process.stdout.readline().decode('utf-8').strip()
+        except:
+            break
+        # print(line)
+
+
+    package.installed = True
+    try:
+        shutil.rmtree(os.path.dirname(ext_package.tmp_file))
+    except:
+        pass
+    logger.info(lightgrey(f"  {package.name} installed"))
+
+    return True
+
+
+
+def download_install_py_package(
+    package: PyPackage,
+    progress: Progress| None = None,
+    retry: int = 3
+) -> bool:
+    url: str = package.url
+    temp_dir: str = get_app_tempdir()
+
+    response: requests.Response
+    try:
+        response = requests.get(url, stream=True)
+        response.raise_for_status()
+    except requests.exceptions.RequestException as e:
+        if str(e).startswith('404'):
+            logger.error(f"File {url} not found")
+        return False
+
+    # Use the external package download procedure
+    ext_package = ExtPackage(
+        name=package.pretty_name,
+        filename=package.wheel,
+        size=package.size,
+        response=response,
+        dirname="wheels",
+        tmp_file=os.path.join(temp_dir, "wheels", package.wheel)
+    )
+
+    # Download package
+    if (
+        os.path.exists(ext_package.tmp_file)
+        and os.path.getsize(ext_package.tmp_file) == ext_package.size
+    ):
+        ext_package.downloaded = True
+        logger.info(lightgrey(f"  already downloaded"))
+
+    else:
+        ext_package.downloaded = download_package(
+            ext_package,
+            progress=progress,
+            task_id=progress.add_task(
+                "[green] Installing...",
+                name=ext_package.name,
+                start=False
+            ),
+            retry=retry
+        )
+
+    if not ext_package.downloaded:
+        return False
+
+    return install_py_package(package, ext_package)
+
+
+
+
+
+def install_py_packages(
+    packages: tuple[PyPackage],
+    retry: int = 3,
+    threads: int = 1,
+) -> bool:
+    threads = min(max(threads, 1), len(packages))
+    progress = Progress(
+        TextColumn("[bold cyan]{task.fields[name]}", justify="right"),
+        BarColumn(bar_width=None),
+        "[progress.percentage]{task.percentage:>3.1f}%",
+        "•",
+        DownloadColumn(),
+        "•",
+        TransferSpeedColumn(),
+        "•",
+        TimeRemainingColumn(),
+    )
+
+    # debug with numpy
+    packages = [packages[2]]
+
+    for package in packages:
+        update_package_info(package)
+        update_package_url(package)
+        logger.debug(f"[V] {package.pretty_name}: {package.url}")
+        if not package.is_installed() and package.supported:
+            logger.warning(
+                f"[I] {package.pretty_name} has to be updated: "
+                + f"{package.installed_version} -> {package.version}"
+            )
+    packages = [package for package in packages if not package.is_installed()]
+    if not packages:
+        logger.info(f"[I] No packages to update")
+        return True
+
+    # if threads == 1:
+    with progress:
+        for package in packages:
+            success = download_install_py_package(
+                package,
+                progress=progress,
+                retry=retry
+            )
+            if not success:
+                return False
+
+    # else:
+    #     success: bool = True
+    #     packages = [package for package in packages if not package.skip]
+    #     with progress:
+    #         with ThreadPoolExecutor(max_workers=threads) as executor:
+    #             for result in executor.map(
+    #                 lambda args: install_py_package(*args),
+    #                 [
+    #                     (package, progress, retry)
+    #                     for package in packages
+    #                 ]
+    #             ):
+    #                 success = success and result
+    #     return success
 
     return True

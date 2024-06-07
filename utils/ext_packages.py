@@ -3,7 +3,6 @@ from dataclasses import dataclass
 import os
 import requests
 import shutil
-import sys
 from rich.progress import (
     BarColumn,
     DownloadColumn,
@@ -23,15 +22,17 @@ from .logger import logger
 
 
 @dataclass
-class ExternalPackage:
+class ExtPackage:
     name: str
     dirname: str
     filename: str
     size: int = 0
+    host: str = ''
     response: requests.Response | None = None
     last_modified: str = ''
     downloaded: bool = False
     installed: bool = False
+    install_dir: str = ''
     tmp_file: str = ''
     skip: bool = False
 
@@ -41,7 +42,7 @@ class ExternalPackage:
 
 
 def download_package(
-    package: ExternalPackage,
+    package: ExtPackage,
     retry: int = 3,
     progress: Progress| None = None,
     task_id: TaskID | None = None,
@@ -51,7 +52,7 @@ def download_package(
 
     _retry: int = retry
     while _retry:
-        logger.info(f"Downloading: {package.name} to {tmp_dir}")
+        logger.debug(f"Downloading: {package.name} to {tmp_dir}")
         if progress is not None:
             progress.update(task_id, total=package.size)
             progress.start_task(task_id)
@@ -73,18 +74,46 @@ def download_package(
 
         _retry = 0
 
-    open(
-        os.path.join(tmp_dir, package.last_modified), 'w'
-    ).close()
+    if package.last_modified:
+        open(os.path.join(tmp_dir, package.last_modified), 'w').close()
+
     return  True
 
 
 
-def install_package(
-    package: ExternalPackage,
-    rehost_url: str,
+def install_ext_package(package: ExtPackage) -> bool:
+    logger.info(lightgrey(f"  install"))
+    install_dir: str = package.install_dir
+
+    extension: str = get_extension(package.tmp_file)
+    if os.path.exists(install_dir):
+        shutil.rmtree(install_dir)
+    if extension == '.zip':
+        import zipfile
+        with zipfile.ZipFile(package.tmp_file, "r") as f:
+            f.extractall(install_dir)
+
+    else:
+        if os.path.exists(install_dir):
+            shutil.rmtree(install_dir)
+        os.makedirs(install_dir)
+        shutil.move(package.tmp_file, install_dir)
+
+    package.installed = True
+    open(os.path.join(install_dir, package.last_modified), 'w').close()
+    try:
+        shutil.rmtree(os.path.dirname(package.tmp_file))
+    except:
+        pass
+    logger.info(lightgrey(f"  {package.name} installed"))
+
+    return True
+
+
+
+def download_install_ext_package(
+    package: ExtPackage,
     progress: Progress| None = None,
-    task_id: TaskID | None = None,
     retry: int = 3,
 ) -> bool:
     temp_dir: str = get_app_tempdir()
@@ -93,7 +122,7 @@ def install_package(
     logger.info(f"Package: {package.name}")
 
     # Get info from host and update package info
-    url: str = f"{rehost_url}/{package.filename}"
+    url: str = f"{package.host}/{package.filename}"
     response: requests.Response
     try:
         response = requests.get(url, stream=True)
@@ -109,8 +138,8 @@ def install_package(
     package.tmp_file=os.path.join(temp_dir, package.dirname, package.filename)
 
     # Check if installed
-    install_dir: str = os.path.join(external_dir, package.dirname)
-    if os.path.exists(os.path.join(install_dir, last_modified)):
+    package.install_dir = os.path.join(external_dir, package.dirname)
+    if os.path.exists(os.path.join(package.install_dir, last_modified)):
         package.installed = True
         logger.info(lightgrey(f"  already installed"))
         try:
@@ -144,36 +173,13 @@ def install_package(
         return False
 
     # Install package
-    logger.info(lightgrey(f"  install"))
-
-    extension: str = get_extension(package.tmp_file)
-    if os.path.exists(install_dir):
-        shutil.rmtree(install_dir)
-    if extension == '.zip':
-        import zipfile
-        with zipfile.ZipFile(package.tmp_file, "r") as f:
-            f.extractall(install_dir)
-
-    else:
-        if os.path.exists(install_dir):
-            shutil.rmtree(install_dir)
-        os.makedirs(install_dir)
-        shutil.move(package.tmp_file, install_dir)
-
-    package.installed = True
-    open(os.path.join(install_dir, package.last_modified), 'w').close()
-    try:
-        shutil.rmtree(os.path.dirname(package.tmp_file))
-    except:
-        pass
-    logger.info(lightgrey(f"  {package.name} installed"))
-
-    return True
+    return install_ext_package(package)
 
 
 
-def install_external_packages(
-    packages: tuple[ExternalPackage],
+
+def install_ext_packages(
+    packages: tuple[ExtPackage],
     rehost_url_base: str,
     retry: int = 3,
     threads: int = 1,
@@ -191,14 +197,13 @@ def install_external_packages(
         TimeRemainingColumn(),
     )
 
+    for package in packages:
+        package.host = rehost_url_base
+
     if threads == 1:
         with progress:
             for package in packages:
-                success = install_package(
-                    package,
-                    rehost_url=rehost_url_base,
-                    progress=progress,
-                )
+                success = download_install_ext_package(package, progress, retry)
                 if not success:
                     return False
     else:
@@ -207,11 +212,8 @@ def install_external_packages(
         with progress:
             with ThreadPoolExecutor(max_workers=threads) as executor:
                 for result in executor.map(
-                    lambda args: install_package(*args),
-                    [
-                        (package, rehost_url_base, progress, retry)
-                        for package in packages
-                    ]
+                    lambda args: download_install_ext_package(*args),
+                    [(package, progress, retry) for package in packages]
                 ):
                     success = success and result
         return success

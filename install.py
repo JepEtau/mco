@@ -3,23 +3,24 @@ from pprint import pprint
 import signal
 import sys
 
-from utils.external_packages import (
-    ExternalPackage,
-    install_external_packages
+from utils.ext_packages import (
+    ExtPackage,
+    install_ext_packages
 )
 from utils.p_print import *
 from utils.logger import logger
 from utils.py_packages import (
     PyPackage,
+    install_py_packages,
     update_package_info,
     update_package_url,
     update_pip,
 )
 
 
-def external_packages() -> tuple[ExternalPackage]:
-    packages: tuple[ExternalPackage] = (
-        ExternalPackage(
+def external_packages() -> tuple[ExtPackage]:
+    packages: tuple[ExtPackage] = (
+        ExtPackage(
             name="FFmpeg",
             dirname='ffmpeg',
             filename=(
@@ -28,7 +29,7 @@ def external_packages() -> tuple[ExternalPackage]:
                 else "ffmpeg_linux_amd64.zip"
             )
         ),
-        ExternalPackage(
+        ExtPackage(
             name="AviSynth+ plugins",
             dirname="avs",
             filename=(
@@ -37,7 +38,7 @@ def external_packages() -> tuple[ExternalPackage]:
                 else ""
             )
         ),
-        ExternalPackage(
+        ExtPackage(
             name="NNedi3",
             dirname="nnedi3",
             filename="nnedi3.zip"
@@ -47,7 +48,7 @@ def external_packages() -> tuple[ExternalPackage]:
 
 
 
-py_packages: list[PyPackage] = (
+py_packages: tuple[PyPackage] = (
     PyPackage(
         pretty_name="PyTorch",
         name="torch",
@@ -69,7 +70,7 @@ py_packages: list[PyPackage] = (
         name="safetensors",
     ),
     PyPackage(
-        pretty_name="ONNX Runtime",
+        pretty_name="ONNX",
         name="onnx",
     ),
     PyPackage(
@@ -81,7 +82,7 @@ py_packages: list[PyPackage] = (
         name="onnxruntime-directml",
     ),
     PyPackage(
-        pretty_name="ONNX Runtime DirectML",
+        pretty_name="ONNX Optimizer",
         name="onnxoptimizer",
     ),
 )
@@ -90,7 +91,7 @@ py_packages: list[PyPackage] = (
 
 def main():
     logger.addHandler(logging.StreamHandler(sys.stdout))
-    logger.setLevel("WARNING")
+    logger.setLevel("INFO")
 
 
     success: bool = update_pip()
@@ -100,17 +101,12 @@ def main():
         logger.warning("[W] Failed updating pip")
 
 
-    for package in py_packages:
-        update_package_info(package)
-        update_package_url(package)
-        logger.info(f"[I] {package.pretty_name}: {package.url}")
-        pprint(package)
-
+    install_py_packages(py_packages)
 
 
     sys.exit()
 
-    installed: bool = install_external_packages(
+    installed: bool = install_ext_packages(
         external_packages(),
         rehost_url_base="https://github.com/JepEtau/external_rehost/releases/download/external",
         threads=2,
