@@ -187,7 +187,7 @@ def install_ext_packages(
     threads = min(max(threads, 1), len(packages))
     progress = Progress(
         TextColumn("[bold cyan]{task.fields[name]}", justify="right"),
-        BarColumn(bar_width=None),
+        BarColumn(bar_width=40),
         "[progress.percentage]{task.percentage:>3.1f}%",
         "•",
         DownloadColumn(),
