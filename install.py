@@ -1,23 +1,20 @@
-from concurrent.futures import ThreadPoolExecutor
 import logging
 from pprint import pprint
 import signal
 import sys
+from utils.p_print import *
+from utils.logger import logger
 
-from utils.ext_packages import (
+from deps.ext_packages import (
     ExtPackage,
     install_ext_packages
 )
-from utils.p_print import *
-from utils.logger import logger
-from utils.py_packages import (
+from deps.py_packages import (
     PyPackage,
     install_py_packages,
-    uninstall_py_package,
-    update_package_info,
-    update_package_url,
     update_pip,
 )
+
 
 
 def external_packages() -> tuple[ExtPackage]:
@@ -50,55 +47,55 @@ def external_packages() -> tuple[ExtPackage]:
 
 
 
-py_packages: tuple[PyPackage] = (
-    PyPackage(
-        pretty_name="PyTorch",
-        name="torch",
-        index_url="https://download.pytorch.org/whl/cu121",
-        uninstall_before=True,
-    ),
-    PyPackage(
-        pretty_name="ONNX",
-        name="onnx",
-    ),
-    PyPackage(
-        pretty_name="ONNX Runtime",
-        name="onnxruntime",
-    ),
-    PyPackage(
-        pretty_name="ONNX Runtime DirectML",
-        name="onnxruntime-directml",
-    ),
-    PyPackage(
-        pretty_name="ONNX Optimizer",
-        name="onnxoptimizer",
-    ),
-    PyPackage(
-        pretty_name="TorchVision",
-        name="torchvision",
-        index_url="https://download.pytorch.org/whl/cu121",
-        uninstall_before=True,
-    ),
-    PyPackage(
-        pretty_name="soundfile",
-        name="soundfile",
-    ),
-    PyPackage(
-        pretty_name="NumPy",
-        name="numpy",
-    ),
-    PyPackage(
-        pretty_name="SafeTensors",
-        name="safetensors",
-    ),
-)
-
+def py_packages() -> tuple[PyPackage]:
+    packages: tuple[PyPackage] = (
+        PyPackage(
+            pretty_name="PyTorch",
+            name="torch",
+            index_url="https://download.pytorch.org/whl/cu121",
+            uninstall_before=True,
+        ),
+        PyPackage(
+            pretty_name="ONNX",
+            name="onnx",
+        ),
+        PyPackage(
+            pretty_name="ONNX Runtime",
+            name="onnxruntime",
+        ),
+        PyPackage(
+            pretty_name="ONNX Runtime DirectML",
+            name="onnxruntime-directml",
+        ),
+        PyPackage(
+            pretty_name="ONNX Optimizer",
+            name="onnxoptimizer",
+        ),
+        PyPackage(
+            pretty_name="TorchVision",
+            name="torchvision",
+            index_url="https://download.pytorch.org/whl/cu121",
+            uninstall_before=True,
+        ),
+        PyPackage(
+            pretty_name="soundfile",
+            name="soundfile",
+        ),
+        PyPackage(
+            pretty_name="NumPy",
+            name="numpy",
+        ),
+        PyPackage(
+            pretty_name="SafeTensors",
+            name="safetensors",
+        ),
+    )
+    return packages
 
 
 def main():
     logger.addHandler(logging.StreamHandler(sys.stdout))
     logger.setLevel("INFO")
-
 
     success: bool = update_pip()
     if success:
@@ -106,22 +103,12 @@ def main():
     else:
         logger.warning("[W] Failed updating pip")
 
-
-    # for package in py_packages:
-    #     logger.info(f"[I] uninstall {package.pretty_name}")
-    #     uninstall_py_package(package)
-
-    # sys.exit()
-    print("Let's do install")
-    install_py_packages(py_packages,threads=4)
-
-
-    sys.exit()
+    # install_py_packages(py_packages(),threads=4)
 
     installed: bool = install_ext_packages(
         external_packages(),
         rehost_url_base="https://github.com/JepEtau/external_rehost/releases/download/external",
-        threads=2,
+        threads=1,
     )
     if installed:
         print(lightgreen("All packages installed"))

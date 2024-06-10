@@ -20,9 +20,9 @@ import time
 from urllib.parse import unquote
 
 from .ext_packages import ExtPackage, download_package
-from .logger import logger
-from .path_utils import get_app_tempdir, get_extension
-from .p_print import *
+from utils.logger import logger
+from utils.path_utils import get_app_tempdir
+from utils.p_print import *
 
 
 @dataclass
