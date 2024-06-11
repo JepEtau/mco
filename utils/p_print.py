@@ -27,9 +27,6 @@ def orange(*values: object) -> str:
 def red(*values: object) -> str:
     return _color_str_template(ColorCode.red).format(values[0])
 
-def lightblue(*values: object) -> str:
-    return _color_str_template(ColorCode.lightblue).format(values[0])
-
 def lightcyan(*values: object) -> str:
     return _color_str_template(ColorCode.lightcyan).format(values[0])
 
@@ -41,6 +38,9 @@ def purple(*values: object) -> str:
 
 def blue(*values: object) -> str:
     return _color_str_template(ColorCode.blue).format(values[0])
+
+def cyan(*values: object) -> str:
+    return _color_str_template(ColorCode.cyan).format(values[0])
 
 def lightgrey(*values: object) -> str:
     return _color_str_template(ColorCode.lightgrey).format(values[0])
@@ -65,7 +65,6 @@ __all__ = [
     "blue",
     "darkgrey",
     "green",
-    "lightblue",
     "lightcyan",
     "lightgreen",
     "lightgrey",
@@ -73,4 +72,5 @@ __all__ = [
     "purple",
     "red",
     "yellow",
+    "cyan",
 ]

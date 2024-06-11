@@ -1,11 +1,11 @@
 SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
-SetFilterMTMode("FFVideoSource", MT_SERIALIZED)
+SetFilterMTMode("FFMPEGSource2", MT_SERIALIZED)
 SetFilterMTMode ("QTGMC", MT_MULTI_INSTANCE)
 
-FFVideoSource("A:\mco\inputs\f\f_ep01.mkv", cache=false)
+FFMPEGSource2("f_ep01.mkv", cache=false)
 
 AssumeTFF()
-trim(0, -1)
+trim(0, 0)
 
 QTGMC(preset="Slower", \
     TR0=2, TR1=2, \

@@ -2,12 +2,13 @@ from dataclasses import dataclass
 import os
 from pathlib import Path
 from pprint import pprint
+import re
 import sys
 from typing import Any, Literal
 
 from utils.media import FieldOrder, VideoInfo
 from utils.p_print import *
-from utils.path_utils import absolute_path
+from utils.path_utils import absolute_path, get_app_tempdir
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.tools import ffmpeg_exe
 
@@ -214,3 +215,65 @@ def create_ffmpeg_command(self) -> str:
 
     print(lightgrey(f"ffmpeg_command: {' '.join(self.ffmpeg_command)}"))
     return ffmpeg_command
+
+
+
+
+def patch_avs_script(
+    avs_script_filepath: str,
+    in_video_info: VideoInfo,
+    trim_start: int = 0,
+    trim_count: int = -1,
+    out_dir: str | None = None
+) -> str:
+    with open(avs_script_filepath, mode='r') as script:
+        lines = script.readlines()
+
+    if trim_count != -1 and trim_start + trim_count > in_video_info['frame_count']:
+        raise ValueError(f"Erroneous trim value: {trim_start+trim_count} > {in_video_info['frame_count']}")
+    if trim_count == -1:
+        trim_line = "trim(%d, 0)\n" % (trim_start)
+    else:
+        trim_line = "trim(%d, end=%d)\n" % (trim_start, (trim_start + trim_count - 1))
+
+    filepath_replaced: bool = False
+    trim_replaced: bool = False
+    for i, line in enumerate(lines):
+
+        # Discard comments
+        if (search := re.search(re.compile("^\s*#"), line)):
+            continue
+
+        # Replace input file
+        if not filepath_replaced:
+            found: bool = False
+            if (search := re.search(re.compile("\s*FFMPEGSource2\(\s*\"(.+)\"\s*"), line)):
+                found = True
+            elif (search := re.search(re.compile("\s*FFMPEGSource2\(\s*source\s=\s*\"(.+)\""), line)):
+                found = True
+            if found:
+                lines[i] = line.replace(search.group(1), in_video_info['filepath'])
+                filepath_replaced = True
+
+        # Trim
+        if not trim_replaced:
+            if (search := re.search(re.compile("\s*trim\(([^\)]+)\)"), line)):
+                lines[i] = trim_line
+                trim_replaced = True
+
+    if (trim_start != 0 or trim_count != -1) and not trim_replaced:
+        raise ValueError("Missing trim instruction")
+
+    _, filename = os.path.split(avs_script_filepath)
+    out_filepath: str = ""
+    if out_dir is None:
+        out_filepath = os.path.join(get_app_tempdir(), filename)
+    else:
+        out_filepath = os.path.join(out_dir, filename)
+    if out_filepath == avs_script_filepath:
+        raise ValueError("Overwriting the original script is not allowed")
+
+    with open(out_filepath, mode='w') as script:
+        script.write(''.join(lines))
+
+    return out_filepath

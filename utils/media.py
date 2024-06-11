@@ -115,6 +115,7 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
 
     # Video stream
     # Only first stream is used
+    pprint(v_stream)
     field_order = FieldOrder._value2member_map_[v_stream.get('field_order', 'progressive')]
     video_info: VideoInfo = {
         'filepath': media_filepath,
