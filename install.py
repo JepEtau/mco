@@ -1,18 +1,25 @@
 import logging
+from pprint import pprint
 import signal
 import sys
-from utils.external_packages import (
-    ExternalPackage,
-    install_external_packages
-)
 from utils.p_print import *
 from utils.logger import logger
 
+from deps.ext_packages import (
+    ExtPackage,
+    install_ext_packages
+)
+from deps.py_packages import (
+    PyPackage,
+    install_py_packages,
+    update_pip,
+)
 
 
-def external_packages() -> tuple[ExternalPackage]:
-    packages: tuple[ExternalPackage] = (
-        ExternalPackage(
+
+def external_packages() -> tuple[ExtPackage]:
+    packages: tuple[ExtPackage] = (
+        ExtPackage(
             name="FFmpeg",
             dirname='ffmpeg',
             filename=(
@@ -21,7 +28,7 @@ def external_packages() -> tuple[ExternalPackage]:
                 else "ffmpeg_linux_amd64.zip"
             )
         ),
-        ExternalPackage(
+        ExtPackage(
             name="AviSynth+ plugins",
             dirname="avs",
             filename=(
@@ -30,7 +37,7 @@ def external_packages() -> tuple[ExternalPackage]:
                 else ""
             )
         ),
-        ExternalPackage(
+        ExtPackage(
             name="NNedi3",
             dirname="nnedi3",
             filename="nnedi3.zip"
@@ -40,14 +47,68 @@ def external_packages() -> tuple[ExternalPackage]:
 
 
 
+def py_packages() -> tuple[PyPackage]:
+    packages: tuple[PyPackage] = (
+        PyPackage(
+            pretty_name="PyTorch",
+            name="torch",
+            index_url="https://download.pytorch.org/whl/cu121",
+            uninstall_before=True,
+        ),
+        PyPackage(
+            pretty_name="ONNX",
+            name="onnx",
+        ),
+        PyPackage(
+            pretty_name="ONNX Runtime",
+            name="onnxruntime",
+        ),
+        PyPackage(
+            pretty_name="ONNX Runtime DirectML",
+            name="onnxruntime-directml",
+        ),
+        PyPackage(
+            pretty_name="ONNX Optimizer",
+            name="onnxoptimizer",
+        ),
+        PyPackage(
+            pretty_name="TorchVision",
+            name="torchvision",
+            index_url="https://download.pytorch.org/whl/cu121",
+            uninstall_before=True,
+        ),
+        PyPackage(
+            pretty_name="soundfile",
+            name="soundfile",
+        ),
+        PyPackage(
+            pretty_name="NumPy",
+            name="numpy",
+        ),
+        PyPackage(
+            pretty_name="SafeTensors",
+            name="safetensors",
+        ),
+    )
+    return packages
+
+
 def main():
     logger.addHandler(logging.StreamHandler(sys.stdout))
-    logger.setLevel("WARNING")
+    logger.setLevel("INFO")
 
-    installed: bool = install_external_packages(
+    success: bool = update_pip()
+    if success:
+        logger.info("[I] pip is up-to-date")
+    else:
+        logger.warning("[W] Failed updating pip")
+
+    # install_py_packages(py_packages(),threads=4)
+
+    installed: bool = install_ext_packages(
         external_packages(),
         rehost_url_base="https://github.com/JepEtau/external_rehost/releases/download/external",
-        threads=2,
+        threads=1,
     )
     if installed:
         print(lightgreen("All packages installed"))

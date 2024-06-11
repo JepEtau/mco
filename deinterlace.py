@@ -12,7 +12,11 @@ from parsers import (
     get_dependencies,
 )
 from parsers.helpers import get_chapter_video_src
+from processing.avs import QtgmcSettings, generate_avs_script
+from processing.decoder import decoder_frame_prop
+from utils.media import VideoInfo, extract_media_info, get_media_info
 from utils.p_print import *
+from utils.path_utils import absolute_path
 
 g_database = dict()
 
@@ -106,6 +110,34 @@ def main():
             interlaced[fp].add(segment)
 
     pprint(interlaced)
+
+    in_media_path: str = absolute_path(list(interlaced.keys())[0])
+    try:
+        in_media_info = extract_media_info(in_media_path)
+    except:
+        # debug:
+        pprint(get_media_info(in_media_path))
+        sys.exit(f"[E] {in_media_path} is not a valid input media file")
+    if arguments.debug:
+        print(lightcyan("FFmpeg media info:"))
+        pprint(get_media_info(in_media_path))
+        print(lightcyan("to media info:"))
+        pprint(in_media_info)
+    in_video_info: VideoInfo = in_media_info['video']
+    in_video_info['filepath'] = in_media_path
+
+
+    decoder_frame_prop(
+        in_video_info,
+        deint_algo='qtgmc',
+        
+    )
+
+    generate_avs_script(
+        in_media_info["video"],
+        in_video_info,
+        QtgmcSettings()
+    )
 
 
 if __name__ == "__main__":
