@@ -488,11 +488,13 @@ def deint_command(
         deint_params: str = params
 
         ffmpeg_deint: str = ""
+        sep: str = '='
         if algo == 'nnedi':
             deint_algo = f"nnedi=weights={nnedi3_weights}"
+            sep = ':'
 
         ffmpeg_deint = (
-            f"{deint_algo}:{deint_params}"
+            f"{deint_algo}{sep}{deint_params}"
             if deint_algo and deint_params
             else deint_algo
         )
