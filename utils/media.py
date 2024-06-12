@@ -115,7 +115,6 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
 
     # Video stream
     # Only first stream is used
-    pprint(v_stream)
     field_order = FieldOrder._value2member_map_[v_stream.get('field_order', 'progressive')]
     video_info: VideoInfo = {
         'filepath': media_filepath,
@@ -143,7 +142,7 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
     }
 
     # Is interlaced?
-    if (fo := v_stream.get('is_interlaced', None)):
+    if (fo := v_stream.get('field_order', None)):
         video_info['is_interlaced'] = bool(fo != FieldOrder.PROGRESSIVE.value)
     else:
         video_info['is_interlaced'] = False
@@ -178,6 +177,16 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
         (video_info['duration'] * video_info['frame_rate_r'][0])
         / video_info['frame_rate_r'][1]
     )
+
+    tags = v_stream.get('tags', None)
+    if tags is not None:
+        tag_frame_count = tags.get('NUMBER_OF_FRAMES', None)
+        if tag_frame_count is not None:
+            tag_frame_count = int(tag_frame_count)
+            if video_info['frame_count'] != tag_frame_count:
+                video_info['frame_count'] = tag_frame_count
+                video_info['frame_rate_r'] = tag_frame_count / video_info['duration']
+                video_info['avg_frame_rate'] = video_info['frame_rate_r']
 
     return MediaInfo(
         video=video_info,

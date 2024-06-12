@@ -1,4 +1,5 @@
 
+from collections import OrderedDict
 from configparser import ConfigParser
 import os
 import os.path
@@ -335,13 +336,13 @@ def get_episode_dependencies(
     db,
     episode: int | str,
     track: Literal['audio', 'video', 'all'] = 'all'
-) -> dict[str, list]:
+) -> OrderedDict[str, list]:
     """Return a dict of edition and episode which are required for
     this episode
 
     """
     k_ep: str = key(episode)
-    dependencies: dict[str, set] = {}
+    dependencies: OrderedDict[str, set] = OrderedDict()
     target_video: dict = db[k_ep]['video']['target']
 
     # Common chapter

@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from dataclasses import dataclass
 import os
 from pathlib import Path
@@ -6,9 +7,10 @@ import re
 import sys
 from typing import Any, Literal
 
+from utils.hash import calc_hash
 from utils.media import FieldOrder, VideoInfo
 from utils.p_print import *
-from utils.path_utils import absolute_path, get_app_tempdir
+from utils.path_utils import absolute_path, get_app_tempdir, path_split
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.tools import ffmpeg_exe
 
@@ -220,20 +222,22 @@ def create_ffmpeg_command(self) -> str:
 
 
 def patch_avs_script(
-    avs_script_filepath: str,
+    in_script_filepath: str,
+    out_script_filepath: str,
     in_video_info: VideoInfo,
     trim_start: int = 0,
     trim_count: int = -1,
-    out_dir: str | None = None
 ) -> str:
-    with open(avs_script_filepath, mode='r') as script:
+    with open(in_script_filepath, mode='r') as script:
         lines = script.readlines()
 
     if trim_count != -1 and trim_start + trim_count > in_video_info['frame_count']:
         raise ValueError(f"Erroneous trim value: {trim_start+trim_count} > {in_video_info['frame_count']}")
-    if trim_count == -1:
+
+    trim_line: str = ""
+    if trim_start != 0 and trim_count == -1:
         trim_line = "trim(%d, 0)\n" % (trim_start)
-    else:
+    elif trim_start != 0 and trim_count != -1:
         trim_line = "trim(%d, end=%d)\n" % (trim_start, (trim_start + trim_count - 1))
 
     filepath_replaced: bool = False
@@ -264,16 +268,147 @@ def patch_avs_script(
     if (trim_start != 0 or trim_count != -1) and not trim_replaced:
         raise ValueError("Missing trim instruction")
 
-    _, filename = os.path.split(avs_script_filepath)
-    out_filepath: str = ""
-    if out_dir is None:
-        out_filepath = os.path.join(get_app_tempdir(), filename)
-    else:
-        out_filepath = os.path.join(out_dir, filename)
-    if out_filepath == avs_script_filepath:
-        raise ValueError("Overwriting the original script is not allowed")
-
-    with open(out_filepath, mode='w') as script:
+    with open(out_script_filepath, mode='w') as script:
         script.write(''.join(lines))
 
-    return out_filepath
+
+
+def _clean_str(line: str):
+    cleaned: str = line
+    for c in ('\\', '\"', ' ', '\r', '\n'):
+        cleaned = cleaned.replace(c, '')
+    return cleaned.strip()
+
+
+_ordered_arg_keys: tuple[str] = (
+    "preset",
+    'TR0', 'TR1', 'TR2',
+    'Rep0', 'Rep1', 'Rep2', 'RepChroma',
+    'EdiMode',
+    'ChromaEdi',
+    'Sharpness',
+    'SourceMatch',
+    'EZDenoise',
+    'EZKeepGrain',
+    'NoisePreset',
+    'Denoiser',
+    'EdiThreads'
+)
+
+
+def get_qtgmc_args(
+    script_filepath: str
+) -> OrderedDict[str, str]:
+
+    # Open script filepath
+    script: str = ""
+    with open(script_filepath, mode='r') as f:
+        for line in f.readlines():
+            # Discard comments
+            if (search := re.search(re.compile("(.*)#.*"), line)):
+                script += search.group(1)
+                continue
+            script += line
+    script = _clean_str(script)
+    if (qtgmc_arg:= re.search(re.compile("QTGMC\(([^\)]+)\)"), _clean_str(script))):
+        arguments: list[str] = qtgmc_arg.group(1).split(',')
+    else:
+        raise ValueError("QTGMC function not found in script")
+
+    # get arguments
+    qtgmc_args: dict[str, str] = {}
+    for _arg in arguments:
+        k_value = _arg.split('=')
+        if len(k_value) != 2:
+            raise ValueError(f"unrecognized argument format for QTGMC function")
+        k, value = k_value
+        qtgmc_args[k.strip()] = _clean_str(value)
+
+    # Sort keys
+    keys: list[str] = list([k for k in _ordered_arg_keys if k in qtgmc_args.keys()])
+    keys.extend(list([k for k in qtgmc_args.keys() if k not in _ordered_arg_keys]))
+
+    ordered_dict = OrderedDict()
+    for k in keys:
+        ordered_dict[k] = qtgmc_args[k]
+
+    return ordered_dict
+
+
+
+def create_hash(args_dict: OrderedDict[str, str]) -> tuple[str, str]:
+    """Returns hashcode and values for log"""
+    qtgmc_arg_str: str = ", ".join([f"{k}={v}" for k, v in args_dict.items()])
+
+    return calc_hash(qtgmc_arg_str), qtgmc_arg_str
+
+
+
+def create_qtgmc_ffmpeg_command(
+    in_video_info: VideoInfo,
+    qtgmc_args: dict[str, str],
+    out_filepath: str | None = None
+) -> list[str]:
+    ffmpeg_command: list[str] = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "warning",
+        "-stats",
+    ]
+
+    # Input file
+    # ffmpeg_command.extend(["-t", "10"])
+    ffmpeg_command.extend(["-i", in_video_info['filepath']])
+
+    # Resize with SAR
+    in_h, in_w = in_video_info['shape'][:2]
+    resize = f"""
+        scale=
+        {int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)}
+        :{in_h}
+        :sws_flags=
+            bilinear
+            + full_chroma_int
+            + full_chroma_inp
+            + accurate_rnd
+            + bitexact
+    """
+    ffmpeg_filter = _clean_str(resize)
+    ffmpeg_command.extend([
+        "-filter_complex", f"[0:v]{ffmpeg_filter}[outv]",
+        "-map", "[outv]"
+    ])
+
+    # Frame rate
+    fps: float | int | tuple[int, int] = in_video_info['frame_rate_r']
+    ffmpeg_command.extend([
+        "-r",
+        '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
+    ])
+
+    ffmpeg_command.extend([
+        "-pix_fmt", # out_video_info['pix_fmt']
+        "yuv420p"
+    ])
+
+    ffmpeg_command.extend([
+        "-an",
+        "-sn",
+        "-map_chapters", "-1"
+    ])
+
+    if qtgmc_args.keys():
+        ffmpeg_command.extend([
+            "-movflags",
+            "use_metadata_tags",
+        ])
+        i: int = 1
+        for k, v in qtgmc_args.items():
+            ffmpeg_command.extend([
+                "-metadata:s:v:0",
+                f"qtgmc_{i:02}_{k}={v}"
+            ])
+            i += 1
+
+    ffmpeg_command.extend([out_filepath, "-y"])
+    return ffmpeg_command

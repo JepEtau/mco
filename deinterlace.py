@@ -4,7 +4,9 @@ import logging
 import os
 from pprint import pprint
 import signal
+import subprocess
 import sys
+from typing import OrderedDict
 from parsers import (
     key,
     parse_database,
@@ -13,11 +15,12 @@ from parsers import (
     get_dependencies,
 )
 from parsers.helpers import get_chapter_video_src
-from processing.avs_qtgmc import QtgmcSettings, generate_avs_script, patch_avs_script
+from processing.avs_qtgmc import create_hash, create_qtgmc_ffmpeg_command, generate_avs_script, get_qtgmc_args, patch_avs_script
 from processing.decoder import decoder_frame_prop
 from utils.media import VideoInfo, extract_media_info, get_media_info
 from utils.p_print import *
-from utils.path_utils import absolute_path
+from utils.path_utils import absolute_path, path_split
+
 
 g_database = dict()
 
@@ -105,11 +108,17 @@ def main():
         chapter=chapter,
         track='video'
     )
-    # editions: list[str] = list([ed for ed, eps in dependencies.items() if ep in eps])
-    editions: list[str] = list(dependencies.keys())
+
+    main_edition: str = g_database['ep01']['video']['target']['episode']['k_ed_src']
+    editions: list[str] = []
+    [
+        editions.append(ed)
+        for ed in [main_edition] + list(dependencies.keys())
+        if ed not in editions
+    ]
 
     # Get all range to deinterlace for each dependency
-    in_videos: dict[str, dict[str, set]] = {}
+    in_videos: OrderedDict[str, dict[str, set]] = OrderedDict()
     for ed in editions:
         for k_c in all_chapter_keys():
             inputs = get_chapter_video_src(db, ep, ed, k_c)['inputs']
@@ -132,12 +141,12 @@ def main():
 
         # Input media
         in_media_path: str = absolute_path(in_video)
+        print(cyan(f"Input:"), f"{in_media_path}")
         try:
             in_media_info = extract_media_info(in_media_path)
         except:
             # debug:
             extract_media_info(in_media_path)
-            pprint(get_media_info(in_media_path))
             sys.exit(f"[E] {in_media_path} is not a valid input media file")
         if arguments.debug:
             print(lightcyan("FFmpeg media info:"))
@@ -147,61 +156,117 @@ def main():
         in_video_info: VideoInfo = in_media_info['video']
         in_video_info['filepath'] = in_media_path
 
-        pprint(in_video_info)
+        if not in_video_info['is_interlaced']:
+            print(yellow(f"\t{in_media_path} is already progressive"))
+            continue
 
         # Get the output shape/dtype/channel order depending on the deinterlace algo
         d_shape, d_dtype, d_c_order, d_size = decoder_frame_prop(
             in_video_info,
             deint_algo='qtgmc',
         )
-        print(cyan("Decoder:"))
-        print(f"shape: {d_shape}")
-        print(f"dtype: {d_dtype}")
-        print(f"c_order: {d_c_order}")
-        print(f"size: {d_size}")
+        if arguments.debug:
+            print(cyan("Decoder:"))
+            print(f"\tshape: {d_shape}")
+            print(f"\tdtype: {d_dtype}")
+            print(f"\tc_order: {d_c_order}")
+            print(f"\tsize: {d_size}")
 
+        db_directories: dict[str, str] = g_database['common']['directories']
 
-        ep_db_dir: str = os.path.join(g_database['common']['directories']['config'], ep)
+        # Is an avs script exist for this episode?
         # priorities: edition, episode, global
-        deint_script: str = ''
+        ep_db_dir: str = os.path.join(db_directories['config'], ep)
+        template_script: str = ''
         for script in (
             os.path.join(ep_db_dir, f"{ep}_{ed}_deint.avs"),
             os.path.join(ep_db_dir, f"{ep}_deint.avs"),
-            os.path.join(g_database['common']['directories']['config'], f"deint.avs")
+            os.path.join(db_directories['config'], f"deint.avs")
         ):
-            print(script)
             if os.path.exists(script):
-                deint_script = script
+                template_script = script
                 break
-        if deint_script != '':
-            print(f"found a deinterlace script: {deint_script}")
-        else:
-            print(yellow("no script found"))
+        if template_script == '':
+            print(yellow(f"no deinterlace script found for episode {ed}:{ep}"))
+            # If not... Generate an avs script?
+            continue
+        print(cyan(f"Avisynth+ script template:"), f"{template_script}")
 
-        # Is an avs script exist for this episode?
-        #   use edition/episode no.
-
-        # If not... Generate an avs script?
-        # generate_avs_script(
-        #     in_media_info["video"],
-        #     in_video_info,
-        #     QtgmcSettings()
-        # )
-        cache_dir: str = os.path.join(g_database['common']['directories']['cache'], ep)
+        # Patch the script for this episode
+        cache_dir: str = os.path.join(db_directories['cache'], ep)
         os.makedirs(cache_dir, exist_ok=True)
         trim_start, trim_count = list(value['segments'])[0]
-        script_filepath: str = ""
-        if deint_script != '':
-            script_filepath = patch_avs_script(
-                deint_script,
-                in_video_info,
-                trim_start,
-                trim_count,
-                cache_dir
-            )
-        print(script_filepath)
+        deint_script: str = ""
+        if template_script != '':
+            # Extract QTGMC arguments
+            qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
+            hashcode, filter_str = create_hash(qtgmc_args)
 
-        break
+            script_filepath: str = os.path.join(
+                db_directories['cache_progressive'],
+                f"{path_split(template_script)[1]}_{hashcode}.avs"
+            )
+            if script_filepath == template_script:
+                raise ValueError("Overwriting the original script is not allowed")
+
+            deint_script = patch_avs_script(
+                template_script,
+                script_filepath,
+                in_video_info=in_video_info,
+                trim_start=trim_start,
+                trim_count=trim_count,
+            )
+        print(cyan(f"Avisynth+ script:"), f"{deint_script}")
+
+        out_filepath: str = os.path.join(
+            db_directories['cache_progressive'],
+            f"{path_split(in_media_path)[1]}_{hashcode}.mkv"
+        )
+
+        if os.path.exists(out_filepath):
+            out_video_info = extract_media_info(out_filepath)['video']
+            if (
+                (trim_count == -1 and trim_count == out_video_info['frame_count'])
+                or out_video_info['frame_count'] == trim_count
+            ):
+                print(yellow(f"{out_filepath} already exists"))
+                continue
+
+        print(cyan(f"Output:"), f"{out_filepath}")
+        frame_count: int = (
+            in_video_info['frame_count']
+            if trim_count == -1
+            else trim_count
+        )
+        print(cyan(f"Number of frames:"), f"{frame_count}")
+        # Create the FFmpeg command
+        ffmpeg_command: str = create_qtgmc_ffmpeg_command(
+            in_video_info=in_video_info,
+            qtgmc_args=qtgmc_args,
+            out_filepath=out_filepath
+        )
+
+        if arguments.debug:
+            print(f"{hashcode} -> {filter_str}")
+            print(' '.join(ffmpeg_command))
+
+        os.makedirs(db_directories['cache_progressive'], exist_ok=True)
+        sub_process = subprocess.Popen(
+            ffmpeg_command,
+            stdin=subprocess.PIPE,
+            stdout=sys.stdout,
+            stderr=subprocess.STDOUT,
+        )
+
+        stdout, stderr = sub_process.communicate()
+        if arguments.debug:
+            if stderr is not None:
+                for line in stderr.decode('utf-8').split('\n'):
+                    print(line)
+            if stdout is not None:
+                for line in stdout.decode('utf-8').split('\n'):
+                    print(line)
+
 
 
 if __name__ == "__main__":
