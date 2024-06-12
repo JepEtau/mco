@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from configparser import ConfigParser
 import sys
 import os
@@ -191,10 +192,10 @@ def get_credits_dependencies(
     db,
     k_chapter_g: str = '',
     track: Literal['audio', 'video', 'all'] = 'all'
-) -> dict[str, list]:
+) -> OrderedDict[str, list]:
     """Return a dict of edition and episode which are required for
     this generique"""
-    dependencies: dict[str, set] = {}
+    dependencies: OrderedDict[str, set] = OrderedDict()
 
     if k_chapter_g not in credit_chapter_keys():
         return dependencies

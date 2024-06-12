@@ -1,5 +1,4 @@
 import logging
-from pprint import pprint
 import signal
 import sys
 from utils.p_print import *
@@ -11,7 +10,6 @@ from deps.ext_packages import (
 )
 from deps.py_packages import (
     PyPackage,
-    install_py_packages,
     update_pip,
 )
 
@@ -95,7 +93,7 @@ def py_packages() -> tuple[PyPackage]:
 
 def main():
     logger.addHandler(logging.StreamHandler(sys.stdout))
-    logger.setLevel("INFO")
+    logger.setLevel("WARNING")
 
     success: bool = update_pip()
     if success:

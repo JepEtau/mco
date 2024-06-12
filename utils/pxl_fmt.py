@@ -263,10 +263,10 @@ if (formats := re.findall(
         elif 'gray' in k:
             c_order = 'gray'
 
+        bpp = max(list(map(int, bit_depths.split('-'))))
         _pixel_formats[k] = {
             'c': int(nc),
-            'bpp': int(bpp),
-            'd_bpp': math.prod(list(map(int, bit_depths.split('-')))),
+            'bpp': bpp,
             'c_order': c_order,
             'supported': True if c_order in ('rgb', 'bgr', 'gbr', 'yuv') else False,
         }

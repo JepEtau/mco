@@ -26,12 +26,15 @@ def decoder_frame_prop(
         fp32: force dtype to float32
     """
 
-    out_c_order: ChannelOrder = (
-        'rgb'
-        if video_info['c_order'] == 'yuv' or deint_algo == 'qtgmc'
-        else video_info['c_order']
-    )
-    out_c_order = 'bgr' if 'bgr' in out_c_order or fp32 else 'rgb'
+    if deint_algo == 'qtgmc':
+        out_c_order: ChannelOrder = 'rgb'
+    else:
+        out_c_order: ChannelOrder = (
+            'rgb'
+            if video_info['c_order'] == 'yuv' or deint_algo == 'qtgmc'
+            else video_info['c_order']
+        )
+        out_c_order = 'bgr' if 'bgr' in out_c_order or fp32 else 'rgb'
 
     in_bpp = video_info['bpp']
     if in_bpp > 16:

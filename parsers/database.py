@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import os
 from pprint import pprint
 import sys
@@ -231,7 +232,7 @@ def get_dependencies(
     episode: int | str | None = None,
     chapter: str | None = None,
     track: Literal['audio', 'video', 'all'] = 'all'
-) -> dict[str, list]:
+) -> OrderedDict[str, list]:
 
     if episode is not None and episode != 0:
         return get_episode_dependencies(db, episode, track)
