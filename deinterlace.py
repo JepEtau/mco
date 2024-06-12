@@ -15,7 +15,14 @@ from parsers import (
     get_dependencies,
 )
 from parsers.helpers import get_chapter_video_src
-from processing.avs_qtgmc import create_hash, create_qtgmc_ffmpeg_command, generate_avs_script, get_qtgmc_args, patch_avs_script
+from processing.deint import (
+    create_hash,
+    deint_command,
+    qtgmc_deint_command,
+    g_deint_algorithms,
+    get_qtgmc_args,
+    generate_avs_script
+)
 from processing.decoder import decoder_frame_prop
 from utils.media import VideoInfo, extract_media_info, get_media_info
 from utils.p_print import *
@@ -65,6 +72,30 @@ def main():
         default='',
         required=False,
         help="deinterlace video of this edition only"
+    )
+
+    # Deinterlace
+    parser.add_argument(
+        "--deint",
+        choices=g_deint_algorithms,
+        default='qtgmc',
+        required=False,
+        help="""Deinterlace algorithm.
+QTGMC uses an Avisynth+ script and can be runned under Windows only.
+Others are FFmpeg deinterlacers. Refer to https://ffmpeg.org/documentation.html
+use deint_params to customize settings
+note for nnedi: it is not needed to specify the path
+\n"""
+    )
+    parser.add_argument(
+        "--deint_params",
+        type=str,
+        default='',
+        required=False,
+        help="""Parameters passed to the FFmpeg command for deinterlacing
+Refer to https://ffmpeg.org/documentation.html
+Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:pscrn=new3\".
+\n"""
     )
 
     arguments = parser.parse_args()
@@ -124,7 +155,10 @@ def main():
             inputs = get_chapter_video_src(db, ep, ed, k_c)['inputs']
             # in_videos[ed_ep_c] =
             fp: str = inputs['interlaced']['filepath']
-            segment: tuple[int, int] = (inputs['progressive']['start'], inputs['progressive']['count'])
+            segment: tuple[int, int] = (
+                inputs['progressive']['start'],
+                inputs['progressive']['count']
+            )
             if fp not in in_videos:
                 in_videos[fp] = {
                     'ed_ep': (ed, ep),
@@ -163,7 +197,7 @@ def main():
         # Get the output shape/dtype/channel order depending on the deinterlace algo
         d_shape, d_dtype, d_c_order, d_size = decoder_frame_prop(
             in_video_info,
-            deint_algo='qtgmc',
+            deint_algo=arguments.deint,
         )
         if arguments.debug:
             print(cyan("Decoder:"))
@@ -174,54 +208,89 @@ def main():
 
         db_directories: dict[str, str] = g_database['common']['directories']
 
-        # Is an avs script exist for this episode?
-        # priorities: edition, episode, global
-        ep_db_dir: str = os.path.join(db_directories['config'], ep)
-        template_script: str = ''
-        for script in (
-            os.path.join(ep_db_dir, f"{ep}_{ed}_deint.avs"),
-            os.path.join(ep_db_dir, f"{ep}_deint.avs"),
-            os.path.join(db_directories['config'], f"deint.avs")
-        ):
-            if os.path.exists(script):
-                template_script = script
-                break
-        if template_script == '':
-            print(yellow(f"no deinterlace script found for episode {ed}:{ep}"))
-            # If not... Generate an avs script?
-            continue
-        print(cyan(f"Avisynth+ script template:"), f"{template_script}")
 
-        # Patch the script for this episode
-        cache_dir: str = os.path.join(db_directories['cache'], ep)
-        os.makedirs(cache_dir, exist_ok=True)
+        # QTGMC or FFmpeg
         trim_start, trim_count = list(value['segments'])[0]
-        deint_script: str = ""
-        if template_script != '':
-            # Extract QTGMC arguments
-            qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
-            hashcode, filter_str = create_hash(qtgmc_args)
+        if arguments.deint == 'qtgmc':
 
-            script_filepath: str = os.path.join(
+            # Find AviSynth+ template. Priorities: edition, episode, global
+            ep_db_dir: str = os.path.join(db_directories['config'], ep)
+            template_script: str = ''
+            for script in (
+                os.path.join(ep_db_dir, f"{ep}_{ed}_deint.avs"),
+                os.path.join(ep_db_dir, f"{ep}_deint.avs"),
+                os.path.join(db_directories['config'], f"deint.avs")
+            ):
+                if os.path.exists(script):
+                    template_script = script
+                    break
+            if template_script == '':
+                print(yellow(f"no deinterlace script found for episode {ed}:{ep}"))
+                # If not... Generate an avs script?
+                continue
+            print(cyan(f"Avisynth+ script template:"), f"{template_script}")
+
+            # Create a script from this template
+            cache_dir: str = os.path.join(db_directories['cache'], ep)
+            os.makedirs(cache_dir, exist_ok=True)
+
+            if template_script != '':
+                # Extract QTGMC arguments to create a hashcode
+                # and to add to the output video metadata
+                qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
+                hashcode, filter_str = create_hash(qtgmc_args)
+                script_filepath: str = os.path.join(
+                    db_directories['cache_progressive'],
+                    f"{path_split(in_media_path)[1]}_{hashcode}.avs"
+                )
+                if script_filepath == template_script:
+                    raise ValueError("Overwriting the original script is not allowed")
+
+                generate_avs_script(
+                    template_script,
+                    script_filepath,
+                    in_video_info=in_video_info,
+                    trim_start=trim_start,
+                    trim_count=trim_count,
+                )
+            print(cyan(f"Avisynth+ script:"), f"{script_filepath}")
+
+            # Create the FFmpeg command
+            out_filepath: str = os.path.join(
                 db_directories['cache_progressive'],
-                f"{path_split(template_script)[1]}_{hashcode}.avs"
+                f"{path_split(in_media_path)[1]}_{hashcode}.mkv"
             )
-            if script_filepath == template_script:
-                raise ValueError("Overwriting the original script is not allowed")
-
-            deint_script = patch_avs_script(
-                template_script,
-                script_filepath,
+            ffmpeg_command: str = qtgmc_deint_command(
                 in_video_info=in_video_info,
+                script=script_filepath,
+                qtgmc_args=qtgmc_args,
+                out_filepath=out_filepath
+            )
+
+        else:
+            deint_algo: str = arguments.deint
+            deint_params: str = arguments.deint_params
+            if deint_algo == 'nnedi' and deint_params == '':
+                deint_params: str = "nsize=s8x6:nns=n128:qual=slow:etype=s:pscrn=new3"
+            hashcode, filter_str = create_hash({
+                'algo': deint_algo,
+                'params': deint_params
+            })
+
+            # Other deinterlacers
+            out_filepath: str = os.path.join(
+                db_directories['cache_progressive'],
+                f"{path_split(in_media_path)[1]}_{deint_algo}_{hashcode}.mkv"
+            )
+
+            ffmpeg_command: str = deint_command(
+                in_video_info=in_video_info,
+                algo=deint_algo,
+                params=deint_params,
                 trim_start=trim_start,
                 trim_count=trim_count,
+                out_filepath=out_filepath
             )
-        print(cyan(f"Avisynth+ script:"), f"{deint_script}")
-
-        out_filepath: str = os.path.join(
-            db_directories['cache_progressive'],
-            f"{path_split(in_media_path)[1]}_{hashcode}.mkv"
-        )
 
         if os.path.exists(out_filepath):
             out_video_info = extract_media_info(out_filepath)['video']
@@ -232,6 +301,7 @@ def main():
                 print(yellow(f"{out_filepath} already exists"))
                 continue
 
+
         print(cyan(f"Output:"), f"{out_filepath}")
         frame_count: int = (
             in_video_info['frame_count']
@@ -239,12 +309,6 @@ def main():
             else trim_count
         )
         print(cyan(f"Number of frames:"), f"{frame_count}")
-        # Create the FFmpeg command
-        ffmpeg_command: str = create_qtgmc_ffmpeg_command(
-            in_video_info=in_video_info,
-            qtgmc_args=qtgmc_args,
-            out_filepath=out_filepath
-        )
 
         if arguments.debug:
             print(f"{hashcode} -> {filter_str}")

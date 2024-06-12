@@ -10,9 +10,27 @@ from typing import Any, Literal
 from utils.hash import calc_hash
 from utils.media import FieldOrder, VideoInfo
 from utils.p_print import *
-from utils.path_utils import absolute_path, get_app_tempdir, path_split
+from utils.path_utils import absolute_path, get_extension
 from utils.pxl_fmt import PIXEL_FORMAT
-from utils.tools import ffmpeg_exe
+from utils.time_conversions import frame_to_sexagesimal
+from utils.tools import ffmpeg_exe, avs_dir, nnedi3_weights
+
+
+g_deint_algorithms = [
+    'nnedi',
+    'bob',
+    'bwdif',
+    'decomb',
+    'estdif',
+    'kerneldeint',
+    'mcdeint',
+    'w3fdif',
+    'yadif'
+]
+if sys.platform == 'win32':
+    g_deint_algorithms.extend([
+        'qtgmc'
+    ])
 
 
 
@@ -221,7 +239,7 @@ def create_ffmpeg_command(self) -> str:
 
 
 
-def patch_avs_script(
+def generate_avs_script(
     in_script_filepath: str,
     out_script_filepath: str,
     in_video_info: VideoInfo,
@@ -268,9 +286,26 @@ def patch_avs_script(
     if (trim_start != 0 or trim_count != -1) and not trim_replaced:
         raise ValueError("Missing trim instruction")
 
-    with open(out_script_filepath, mode='w') as script:
-        script.write(''.join(lines))
+    # Imports
+    ignore: tuple[str] = (
+        "AviSynth.dll"
+    )
+    import_lines: list[str] = ["ClearAutoloadDirs()"]
+    for root, _, files in os.walk(avs_dir):
+        for f in files:
+            if f in ignore:
+                continue
+            fp: str = os.path.join(root, f)
+            ext: str = get_extension(fp)
+            if ext == '.dll':
+                import_lines.append(f"LoadPlugin(\"{fp}\")")
+            elif ext == '.avsi':
+                import_lines.append(f"Import(\"{fp}\")")
+    import_lines.append('\n')
 
+    with open(out_script_filepath, mode='w') as script:
+        script.write('\n'.join(import_lines))
+        script.write(''.join(lines))
 
 
 def _clean_str(line: str):
@@ -344,10 +379,11 @@ def create_hash(args_dict: OrderedDict[str, str]) -> tuple[str, str]:
 
 
 
-def create_qtgmc_ffmpeg_command(
+def qtgmc_deint_command(
     in_video_info: VideoInfo,
+    script: str,
     qtgmc_args: dict[str, str],
-    out_filepath: str | None = None
+    out_filepath: str
 ) -> list[str]:
     ffmpeg_command: list[str] = [
         ffmpeg_exe,
@@ -356,9 +392,8 @@ def create_qtgmc_ffmpeg_command(
         "-stats",
     ]
 
-    # Input file
-    # ffmpeg_command.extend(["-t", "10"])
-    ffmpeg_command.extend(["-i", in_video_info['filepath']])
+    # Avisynth+ file
+    ffmpeg_command.extend(["-i", script])
 
     # Resize with SAR
     in_h, in_w = in_video_info['shape'][:2]
@@ -373,6 +408,8 @@ def create_qtgmc_ffmpeg_command(
             + accurate_rnd
             + bitexact
     """
+
+    # FFmpeg complex filter
     ffmpeg_filter = _clean_str(resize)
     ffmpeg_command.extend([
         "-filter_complex", f"[0:v]{ffmpeg_filter}[outv]",
@@ -411,4 +448,131 @@ def create_qtgmc_ffmpeg_command(
             i += 1
 
     ffmpeg_command.extend([out_filepath, "-y"])
+    return ffmpeg_command
+
+
+
+
+def deint_command(
+    in_video_info: VideoInfo,
+    algo: str,
+    params: str,
+    out_filepath: str,
+    trim_start: int = 0,
+    trim_count: int = -1,
+) -> list[str]:
+    in_pix_fmt = in_video_info['pix_fmt']
+    fps: float | int | tuple[int, int] = in_video_info['frame_rate_r']
+
+    # Chroma interpolation
+    chroma_interpolation: str = ""
+    c_order = PIXEL_FORMAT[in_pix_fmt]['c_order']
+    if (
+        ('yuv' in c_order or 'gray' in c_order)
+        and '444' not in in_pix_fmt
+    ):
+        chroma_interpolation = """
+            scale=iw:ih
+                :sws_flags=
+                    lanczos
+                    + full_chroma_int
+                    + full_chroma_inp
+                    + accurate_rnd
+                    + bitexact
+        """
+
+    # Deinterlace algo/params
+    ffmpeg_deint: str = ""
+    if in_video_info['is_interlaced']:
+        deint_algo: str = algo
+        deint_params: str = params
+
+        ffmpeg_deint: str = ""
+        if algo == 'nnedi':
+            deint_algo = f"nnedi=weights={nnedi3_weights}"
+
+        ffmpeg_deint = (
+            f"{deint_algo}:{deint_params}"
+            if deint_algo and deint_params
+            else deint_algo
+        )
+        if ffmpeg_deint:
+            ffmpeg_deint = f"{ffmpeg_deint}"
+
+    # Resize with SAR
+    in_h, in_w = in_video_info['shape'][:2]
+    resize = f"""
+        scale=
+        {int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)}
+        :{in_h}
+        :sws_flags=
+            bilinear
+            + full_chroma_int
+            + full_chroma_inp
+            + accurate_rnd
+            + bitexact
+    """
+
+    ## FFmpeg filter
+    ffmpeg_filter = ','.join([
+        s for s in (
+            ffmpeg_deint,
+            chroma_interpolation,
+            resize,
+        ) if len(s) != 0
+    ])
+    ffmpeg_filter = _clean_str(ffmpeg_filter)
+
+    # Create the command
+    ffmpeg_command: list[str] = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "warning",
+        "-stats",
+    ]
+
+    # Seek
+    if trim_count != -1 and trim_start + trim_count > in_video_info['frame_count']:
+        raise ValueError(f"Erroneous trim value: {trim_start+trim_count} > {in_video_info['frame_count']}")
+    if trim_start:
+        ffmpeg_command.extend(["-ss", frame_to_sexagesimal(trim_start, fps)])
+    if trim_count != 1:
+        ffmpeg_command.extend(["-t", frame_to_sexagesimal(trim_count, fps)])
+
+    # Input file
+    ffmpeg_command.extend(["-i", in_video_info['filepath']])
+
+    # Add filters
+    if ffmpeg_filter:
+        ffmpeg_command.extend([
+            "-filter_complex", f"[0:v]{ffmpeg_filter}[outv]",
+            "-map", "[outv]"
+        ])
+
+    # Frame rate
+    ffmpeg_command.extend([
+        "-r",
+        '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
+    ])
+
+    ffmpeg_command.extend([
+        "-pix_fmt", # out_video_info['pix_fmt']
+        "yuv420p"
+    ])
+
+    ffmpeg_command.extend([
+        "-an",
+        "-sn",
+        "-map_chapters", "-1"
+    ])
+
+    if params != '':
+        ffmpeg_command.extend([
+            "-movflags", "use_metadata_tags",
+            "-metadata:s:v:0", f"deint_algo={algo}",
+            "-metadata:s:v:0", f"deint_params=\"{params}\""
+        ])
+
+    ffmpeg_command.extend([out_filepath, "-y"])
+    pprint(ffmpeg_command)
     return ffmpeg_command

@@ -2,7 +2,7 @@ SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
 SetFilterMTMode("FFMPEGSource2", MT_SERIALIZED)
 SetFilterMTMode ("QTGMC", MT_MULTI_INSTANCE)
 
-FFMPEGSource2("f_ep01.mkv", cache=false)
+FFMPEGSource2("ep.mkv", cache=false)
 
 AssumeTFF()
 trim(0, 0)

@@ -33,4 +33,6 @@ elif sys.platform == "linux":
 else:
     sys.exit("[E] Platform/system not supported.")
 
-nnedi3_weights = absolute_path(f"{external_dir}/nnedi3_weights.bin")
+nnedi3_weights = "external/nnedi3/nnedi3_weights.bin"
+
+avs_dir = os.path.join(external_dir, "avs")
