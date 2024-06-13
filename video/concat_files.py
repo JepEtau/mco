@@ -3,10 +3,7 @@ import os
 from pprint import pprint
 
 from parsers.helpers import get_fps
-from processing_chain.get_frame_list import (
-    get_frame_list,
-    get_frame_list_single,
-)
+
 from utils.mco_types import Scene
 # Audio, VideoPart
 from utils.mco_utils import makedirs
@@ -18,6 +15,7 @@ from parsers import (
     credit_chapter_keys,
 )
 from utils.time_conversions import ms_to_frame
+from video.frame_list import get_frame_list
 
 
 
@@ -43,7 +41,7 @@ def generate_concat_file(
     #   - episode
     #   - documentaire
 
-    # Get the list of images
+    # Get the list of frames for this scene
     images_filepath = get_frame_list(k_ep=k_ep, k_ch=k_ch, scene=scene)
 
     # Folder for concatenation file
@@ -51,11 +49,10 @@ def generate_concat_file(
 
     # Open concatenation file
     k_ed = scene['k_ed']
-    if (previous_concat_fp == ''
-        or len(images_filepath) >= 5):
+    if previous_concat_fp == '' or len(images_filepath) >= 5:
         # Use previous concatenation files because FFmpeg
         # cannot create a video file from less than 5 frames
-        if k_ch in ['g_debut', 'g_fin']:
+        if k_ch in ('g_debut', 'g_fin'):
             concatenation_filepath = os.path.join(
                 db[k_ch]['cache_path'],
                 "concatenation",
@@ -110,8 +107,9 @@ def generate_single_concat_file(db, k_ep, k_ch, scene, previous_concatenation_fi
     k_ep_or_g = k_ep if k_ch not in ['g_debut', 'g_fin'] else k_ch
 
     # Get the list of images
-    images_filepath = get_frame_list_single(db,
-        k_ep=k_ep, k_ch=k_ch, scene=scene)
+    images_filepath = get_frame_list_single(
+        k_ep=k_ep, k_ch=k_ch, scene=scene
+    )
 
     # Folder for concatenation file
     makedirs(k_ep, k_ch, 'concatenation')

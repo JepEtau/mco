@@ -9,6 +9,7 @@ from ._types import (
     Database,
     TaskName,
     ProcessingTask,
+    task_to_dirname,
 )
 
 from .helpers import (
@@ -40,4 +41,5 @@ __all__ = [
     "get_dependencies",
     "TaskName",
     "ProcessingTask",
+    "task_to_dirname",
 ]

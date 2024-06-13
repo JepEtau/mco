@@ -138,7 +138,7 @@ def generate_video_track(
             do_generate_video = False
             concat_fp = generate_concat_file(
                 k_ep=k_ep_src,
-                chapter=chapter,
+                k_ch=chapter,
                 scene=scene,
                 previous_concat_fp=previous_concat_fp
             )
@@ -153,7 +153,8 @@ def generate_video_track(
             else:
                 # This scene has not enough frames to generate a video scene,
                 # append images to the previous scene and regenerate it
-                combine_images_into_video(db['common'],
+                combine_images_into_video(
+                    db['common'],
                     chapter,
                     video_scene=clips[-1],
                     force=True,
@@ -165,7 +166,8 @@ def generate_video_track(
             # Combine images into a video file
             if do_generate_video:
                 # print(purple("\tcombine images to video (scene): k_p=%s, scene no. %d" % (k_p, scene['no'])))
-                combine_images_into_video(db['common'],
+                combine_images_into_video(
+                    db['common'],
                     chapter,
                     video_scene=clips[-1],
                     force=force,

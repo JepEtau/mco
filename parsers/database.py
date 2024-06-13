@@ -117,8 +117,7 @@ def parse_database(
             dependencies[k] = list()
         dependencies[k] = list(set(dependencies[k] + v))
 
-    print(lightcyan("dependencies: "), end='')
-    print(dependencies)
+    # print(lightcyan("dependencies: "), dependencies)
 
     # Parse episodes which are required (dependencies)
     for k_ed_tmp, v in dependencies.items():
@@ -216,7 +215,6 @@ def parse_database_for_study(k_ed, k_ep, k_chapter):
 
 
 def get_dependencies(
-    db: dict,
     episode: int | str | None = None,
     chapter: str | None = None,
     track: Literal['audio', 'video', 'all'] = 'all'

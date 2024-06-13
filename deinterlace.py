@@ -8,6 +8,7 @@ import subprocess
 import sys
 from typing import OrderedDict
 from parsers import (
+    db,
     key,
     parse_database,
     logger,
@@ -30,7 +31,6 @@ from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
 
 
-g_database = dict()
 
 def main():
     # Arguments
@@ -125,23 +125,20 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
 
     # Parse database
     parse_database(
-        g_database,
         episode=episode,
         lang='en' if arguments.en else 'fr'
     )
     gc.collect()
 
-    db = g_database
     ep: str = key(episode)
     # Dependencies
     dependencies = get_dependencies(
-        db=db,
         episode=ep,
         chapter=chapter,
         track='video'
     )
 
-    main_edition: str = g_database['ep01']['video']['target']['episode']['k_ed_src']
+    main_edition: str = db['ep01']['video']['target']['episode']['k_ed_src']
     editions: list[str] = []
     [
         editions.append(ed)
@@ -207,7 +204,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             print(f"\tc_order: {d_c_order}")
             print(f"\tsize: {d_size}")
 
-        db_directories: dict[str, str] = g_database['common']['directories']
+        db_directories: dict[str, str] = db['common']['directories']
 
 
         # QTGMC or FFmpeg

@@ -2,8 +2,10 @@ import os
 from typing import Literal
 from utils.mco_types import Scene
 from utils.p_print import *
-from parsers import Chapter, key
-from parsers import db
+from parsers import (
+    Chapter, key, db, task_to_dirname, TaskName
+)
+
 
 def makedirs(
     episode,
@@ -46,7 +48,8 @@ def get_cache_path(scene: Scene) -> str:
     if scene['k_ch'] in ('g_debut', 'g_fin'):
         return os.path.join(
             db['common']['directories']['cache'],
-            scene['k_ch'], f"{scene['no']:03}"
+            scene['k_ch'],
+            f"{scene['no']:03}"
         )
 
     # If last task is geometry, use the dst structure
@@ -68,4 +71,39 @@ def get_cache_path(scene: Scene) -> str:
             f"{scene['src']['no']:03}"
         )
 
+    return output_path
+
+
+
+
+def get_out_dirname(scene: Scene, task: TaskName):
+    dirname: str = task_to_dirname[task]
+
+    # Put all images in a single folder for 'génériques'
+    if scene['k_ch'] in ['g_debut', 'g_fin']:
+        return os.path.join(
+            db['common']['directories']['cache'],
+            scene['k_ch'],
+            f"{scene['no']:03}",
+            dirname,
+        )
+
+    if task == 'final':
+        output_path = os.path.join(
+            db['common']['directories']['cache'],
+            scene['dst']['k_ep'],
+            scene['dst']['k_ch'],
+            f"{scene['no']:03}",
+            dirname,
+        )
+
+    else:
+        # Work in the src directory
+        output_path = os.path.join(
+            db['common']['directories']['cache'],
+            scene['k_ep'],
+            scene['k_ch'],
+            f"{scene['src']['no']:03}",
+            dirname
+        )
     return output_path

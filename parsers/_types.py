@@ -6,17 +6,20 @@ from ._keys import key
 
 
 
+
 TaskName = Literal[
     # Deinterlace the input video:
     #   input: interlaced video
     #   output: progressive video. single file: FFv1 8-bit
     #   out_hash:
+    # folder: 00_initial
     'deinterlace',
 
     # Create a low resolution video for edition only
     # Uses the final video mounting
     # Uses the frames to replace/duplicates to remove, etc.
     # Test purpose only, prefix = lr
+    # 00_lr
     'lr',
 
     # Denoise & upscale:
@@ -29,19 +32,31 @@ TaskName = Literal[
     #   output: in 2 steps.
     #       upscaled frames
     #       create a clip/scene
-    #   ??? out_hash: upscale model
-    'upscale',
+    #   ??? out_hash: upscale mode
+    # 01_hr
+    'hr',
 
     # Stabilize and color grading, external tool
     # Input: clips from upscale: hash?
     # output: FFv1 8 or 16bit
+    # 03_restored
     'stabilize',
     'color',
 
     # Finalize: temporal filter, geometry, fading
     #   output: all params
+    # 04_final
     'final'
 ]
+
+
+task_to_dirname: dict[TaskName, str] = {
+    'deinterlace': '00_initial',
+    'lr': '00_lr',
+    'upscale': '01_upscaled',
+    'stabilize': '02_restored',
+    'final': '04_final',
+}
 
 
 @dataclass
