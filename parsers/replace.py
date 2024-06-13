@@ -11,9 +11,10 @@ import sys
 from .scene import get_scene_from_frame_no
 from .helpers import nested_dict_set
 from utils.p_print import *
+from ._db import db
 
 
-def parse_replace_configurations(db, k_ep_or_g:str):
+def parse_replace_configurations(k_ep_or_g:str):
     """ Parse configuration file
     It will returns the replaced frame for each frame. This is mainly edited in video
     editor
@@ -98,7 +99,7 @@ def get_replaced_frames(db, k_ep, k_chapter) -> dict:
         # TODO clean because src is also the same as the root k_ed/k_ep/k_chapter
         k_ed_src = scene['src']['k_ed']
         k_ep_src = scene['src']['k_ep']
-        k_chapter_src = scene['src']['k_chapter']
+        k_chapter_src = scene['src']['k_ch']
         scene_no_src = scene['src']['no']
         scene_src = db[k_ep_src]['video'][k_ed_src][k_chapter_src]['scenes'][scene_no_src]
 

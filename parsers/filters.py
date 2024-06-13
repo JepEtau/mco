@@ -42,7 +42,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
 
     # Find chapter and subchapter
     # k_section is filters_chapter[_subchapter]
-    tmp = re.search(re.compile("^filters_([a-z_]+)[.]*([0-9]*)$"), k_section)
+    tmp = re.search(re.compile(r"^filters_([a-z_]+)[.]*([0-9]*)$"), k_section)
     if tmp is None:
         print(red("parse_filters: error: [%s] is not a valid filter label" % (k_section)))
         sys.exit()
@@ -78,14 +78,14 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
 
             # Get the node id
             if step_str.startswith('id:'):
-                result = re.match(re.compile("id:([a-z0-9_-]+),(.+)$"), step_str)
+                result = re.match(re.compile(r"id:([a-z0-9_-]+),(.+)$"), step_str)
                 if result is not None:
                     step_dict['id'] = result.group(1)
                     step_str = result.group(2)
                 else:
                     sys.exit(red(f"Error parsing filters: [{step_str}]"))
 
-            result = re.match(re.compile("^([a-z_]+):(.+)$"), step_str)
+            result = re.match(re.compile(r"^([a-z_]+):(.+)$"), step_str)
             if result is not None:
                 step_dict['type'] = result.group(1)
                 step_dict['str'] = result.group(2)
@@ -93,7 +93,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
             else:
                 # May use yes-pattern or no-pattern in the previous regex
                 # but no time
-                result = re.match(re.compile("^([a-z]+)$"), step_str)
+                result = re.match(re.compile(r"^([a-z]+)$"), step_str)
                 if result is not None:
                     step_dict['type'] = result.group(1)
                     step_dict['str'] = ''

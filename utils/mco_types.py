@@ -3,7 +3,10 @@ from dataclasses import dataclass, field
 from typing import Literal, TypedDict, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from parsers import Chapter
+    from parsers import (
+        Chapter,
+        ProcessingTask,
+    )
 
 # Common to all types:
 # k_ed: key: editon. 1 letter format in [k, s, f, ..]
@@ -125,8 +128,8 @@ class Scene(TypedDict):
     # If specified (i.e. not 'default'), this scene uses another chain defined in the
     # ini file of the edition/episode/chapter
     filters_id: str
-    # This key is used to stop the processing once this task is reached
-    last_task: str
+
+    task: ProcessingTask
 
     # This structure defines the destination of this scene. It is automatically set
     # when consolidating the scene.

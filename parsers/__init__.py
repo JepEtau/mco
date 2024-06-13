@@ -1,11 +1,14 @@
+from ._db import db
 from .database import (
     parse_database,
-    get_dependencies
+    get_dependencies,
 )
 from .logger import logger
 
 from ._types import (
     Database,
+    TaskName,
+    ProcessingTask,
 )
 
 from .helpers import (
@@ -23,6 +26,7 @@ from ._keys import (
 
 
 __all__ = [
+    "db",
     "logger",
     "parse_database",
     "Database",
@@ -34,4 +38,6 @@ __all__ = [
     "Chapter",
     "get_fps",
     "get_dependencies",
+    "TaskName",
+    "ProcessingTask",
 ]

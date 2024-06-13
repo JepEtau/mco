@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 import re
 import sys
-from ._keys import all_chapter_keys
+from ._keys import all_chapter_keys, key
 from utils.p_print import *
 from utils.mco_types import Scene
 
@@ -265,11 +265,11 @@ def parse_target_scenelist(
                     scene['src']['k_ed'] = v
 
                 elif k == 'ep':
-                    scene['src']['k_ep'] = f"ep{int(v):02}"
+                    scene['src']['k_ep'] = key(int(v))
 
                 elif k == 'chapter':
                     if v in all_chapter_keys():
-                        scene['src']['k_chapter'] = v
+                        scene['src']['k_ch'] = v
                     else:
                         sys.exit(f"parse_target_scenelist: {v} is not recognized")
 
@@ -280,7 +280,7 @@ def parse_target_scenelist(
                     scene['src']['segments'] = []
                     segments = v.replace(' ', '').split('\n')
                     for s in segments:
-                        if (match := re.match(re.compile("(\d+):(\d+)"), s)):
+                        if (match := re.match(re.compile(r"(\d+):(\d+)"), s)):
                             scene['src']['segments'].append({
                                 'start': int(match.group(1)),
                                 'count': int(match.group(2)),

@@ -10,6 +10,7 @@ from audio import (
     get_audio_frame_count,
 )
 from parsers import (
+    db,
     key,
     logger,
     parse_database,
@@ -17,8 +18,6 @@ from parsers import (
 from parsers import all_chapter_keys, credit_chapter_keys
 from utils.p_print import *
 
-
-g_database = dict()
 
 def main():
     editions = ['s0', 's', 'k', 'a', 'f', 'b', 'c']
@@ -34,7 +33,6 @@ def main():
         required=False,
         help="from 1 to 39"
     )
-
 
     parser.add_argument(
         "--chapter",
@@ -60,7 +58,6 @@ def main():
         required=False,
         help="English version"
     )
-
 
     parser.add_argument(
         "--edition",
@@ -131,11 +128,7 @@ def main():
     elif process == 'generate':
         print("extract, generate")
 
-    stats = parse_database(
-        g_database,
-        episode=episode,
-        lang='en' if arguments.en else 'fr'
-    )
+    stats = parse_database(episode=episode, lang='en' if arguments.en else 'fr')
     gc.collect()
 
     # Process
@@ -143,19 +136,19 @@ def main():
     if chapter in credit_chapter_keys():
         if process == 'extract':
             extract_audio_track(
-                g_database,
+                db,
                 chapter=chapter,
                 edition=edition,
                 force=arguments.force
             )
 
         elif process == 'generate' and chapter in ('g_debut', 'g_fin'):
-            if edition != g_database[chapter]['audio']['src']['k_ed']:
+            if edition != db[chapter]['audio']['src']['k_ed']:
                 print(orange(
-                    f"[I] use edition: \'{g_database[chapter]['audio']['src']['k_ed']}\'")
+                    f"[I] use edition: \'{db[chapter]['audio']['src']['k_ed']}\'")
                 )
             generate_audio_track(
-                g_database,
+                db,
                 chapter=chapter,
                 force=arguments.force
             )
@@ -164,7 +157,6 @@ def main():
         # precedemment, episode, g_asuivre, asuivre, g_documentaire, documentaire
         if process == 'extract':
             extract_audio_track(
-                g_database,
                 episode=episode,
                 chapter=chapter,
                 edition=edition,
@@ -173,7 +165,6 @@ def main():
 
         elif process == 'generate':
             generate_audio_track(
-                g_database,
                 episode=episode,
                 force=arguments.force
             )
@@ -183,13 +174,11 @@ def main():
         if process == 'extract':
             for _chapter in ['g_debut', 'g_fin']:
                 extract_audio_track(
-                    g_database,
                     edition=edition,
                     force=arguments.force
                 )
 
             extract_audio_track(
-                g_database,
                 episode=episode,
                 chapter=_chapter,
                 edition=edition,
@@ -199,13 +188,11 @@ def main():
         elif process == 'generate':
             for _chapter in ['g_debut', 'g_fin']:
                 generate_audio_track(
-                    g_database,
                     episode=_chapter,
                     force=arguments.force
                 )
 
             generate_audio_track(
-                g_database,
                 episode=episode,
                 force=arguments.force
             )
@@ -216,7 +203,6 @@ def main():
         _chapter = chapter if _episode is not None else chapter
         print(f"\nVerify generated audio file: {_episode}:{_chapter}")
         frame_count = get_audio_frame_count(
-            g_database,
             episode=_episode,
             chapter=_chapter,
         )

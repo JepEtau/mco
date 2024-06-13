@@ -16,7 +16,9 @@ Chapter = Literal[
     'g_asuivre',
     'asuivre',
     'g_documentaire',
-    'documentaire'
+    'documentaire',
+    'g_debut',
+    'g_fin',
 ]
 
 _credits: tuple[str] = (

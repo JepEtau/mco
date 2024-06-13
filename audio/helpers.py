@@ -5,6 +5,7 @@ from scipy.io import wavfile
 import subprocess
 import time
 from parsers import (
+    db,
     logger,
     key,
     get_fps,
@@ -77,7 +78,6 @@ def run_ffmpeg_command(command: list[str]) -> bool:
 
 
 def get_output_filepath(
-    db: dict,
     episode: str | int | None = None,
     chapter: str | None = None,
 ) -> tuple[str, str]:
@@ -110,8 +110,8 @@ def get_output_filepath(
 
 
 
-def get_audio_frame_count(db, episode: str, chapter: str) -> float:
-    k, out_filepath = get_output_filepath(db, episode, chapter)
+def get_audio_frame_count(episode: str, chapter: str) -> float:
+    k, out_filepath = get_output_filepath(episode, chapter)
     fps = get_fps(db)
 
     print(lightgrey(f"  {k}: {out_filepath}"))

@@ -30,18 +30,18 @@ def parse_chapter_sections(
         # print("\t%s:%s, properties:," % (k_ep, k_chapter), properties)
         for property in properties:
 
-            search_start_end = re.search(re.compile("(\d+):(\d+)"), property)
+            search_start_end = re.search(re.compile(r"(\d+):(\d+)"), property)
             if search_start_end is not None:
                 start = int(search_start_end.group(1))
                 end = int(search_start_end.group(2))
                 continue
 
-            search_fadein = re.search(re.compile("fadein=([0-9.]+)"), property)
+            search_fadein = re.search(re.compile(r"fadein=([0-9.]+)"), property)
             if search_fadein is not None:
                 search_fadein = int(float(search_fadein.group(1)) * fps)
                 continue
 
-            search_fadeout = re.search(re.compile("fadeout=([0-9.]+)"), property)
+            search_fadeout = re.search(re.compile(r"fadeout=([0-9.]+)"), property)
             if search_fadeout is not None:
                 chapter_fadeout = int(float(search_fadeout.group(1)) * fps)
                 continue

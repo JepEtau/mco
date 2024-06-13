@@ -8,8 +8,11 @@ from parsers import (
     parse_database,
     logger,
     all_chapter_keys,
+    db
 )
 from utils.p_print import *
+from video.video_track import generate_video_track
+
 
 
 def main():
@@ -53,6 +56,45 @@ def main():
         help="debug"
     )
 
+    parser.add_argument(
+        "--edition",
+        "-ed",
+        choices=['f', 'k', 's'],
+        default='',
+        required=False,
+        help="Use this edition as source rather than the one selected in database"
+    )
+
+    parser.add_argument(
+        "--scene",
+        "-s",
+        type=str,
+        default='',
+        required=False,
+        help="scene no. to process. Integer or frame value (e.g. 2450f)"
+    )
+
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        required=False,
+        help="Overwrite"
+    )
+
+    parser.add_argument(
+        "--simulate",
+        action="store_true",
+        required=False,
+        help="Simulate the process"
+    )
+
+    parser.add_argument(
+        "--watermark",
+        action="store_true",
+        required=False,
+        help="Watermark each scene with scene no."
+    )
+
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -78,10 +120,7 @@ def main():
     print("\t- parse database")
 
     # Parse database
-    parse_database(
-        episode=episode,
-        lang='en' if arguments.en else 'fr'
-    )
+    parse_database(episode=episode, lang='en' if arguments.en else 'fr')
     gc.collect()
 
 
@@ -93,6 +132,27 @@ def main():
 
     # print(g_database.keys())
     # pprint(g_database['common'])
+
+    #
+    scene_no: int | None = None
+    scene_arg: str = arguments.scene
+    if scene_arg.endswith('f'):
+        scene_no = frame_to_scene_no(int(scene_arg[:-1]))
+    elif scene_arg != '':
+        scene_no: int = int(scene_arg)
+
+    generate_video_track(
+        episode=arguments.episode,
+        chapter=arguments.chapter,
+        task='lr',
+        force=arguments.force,
+        simulation=arguments.simulate,
+        scene_no=scene_no,
+        watermark=arguments.watermark,
+        edition=arguments.edition,
+    )
+
+
 
 
 

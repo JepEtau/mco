@@ -12,9 +12,11 @@ from utils.time_conversions import (
     ms_to_frame,
 )
 from utils.mco_types import Scene
+from ._db import db
 
 
-def consolidate_av_sync(db, k_ep):
+
+def consolidate_av_sync(k_ep):
     episode = db[k_ep]
     fps = get_fps(db)
     logger.debug(lightgreen(f"consolidate_av_sync"))

@@ -16,6 +16,7 @@ from .logger import logger
 from .scene import get_scene_from_frame_no
 from .helpers import nested_dict_set
 from utils.p_print import *
+from ._db import db
 
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages
@@ -23,7 +24,7 @@ from utils.p_print import *
 # et plus rapide encore lorsque la chapterie est spécifiée; lors de l'écriture automatique
 # par l'éditeur, le no. de trame correspond à la 1ere trame du plan
 
-def parse_geometry_configurations(db, k_ep_or_g:str):
+def parse_geometry_configurations(k_ep_or_g:str):
     """ Parse configuration file which list the crop coordinates for each scene.
     TODO: it uses the first frame of a scene to identify the scene rather the index, so that
     a modification of scenes will not break anything
@@ -176,7 +177,7 @@ def get_geometry_from_properties(properties_str: str):
 
 
 
-def get_initial_target_geometry(db, k_ep: str, k_chapter: str) -> dict:
+def get_initial_target_geometry(k_ep: str, k_chapter: str) -> dict:
     # print("get_initial_target_geometry for %s:%s" % (k_ep, k_chapter))
     target_geometry = {}
 
@@ -204,7 +205,7 @@ def get_initial_target_geometry(db, k_ep: str, k_chapter: str) -> dict:
 
 
 
-def get_initial_default_scene_geometry(db, k_ep: str, k_chapter: str) -> dict:
+def get_initial_default_scene_geometry(k_ep: str, k_chapter: str) -> dict:
     """ Returns a list of crops/resize per chapter for each edition
     """
     verbose = True
@@ -251,7 +252,7 @@ def get_initial_default_scene_geometry(db, k_ep: str, k_chapter: str) -> dict:
 
 
 
-def get_initial_scene_geometry(db, k_ep, k_chapter) -> dict:
+def get_initial_scene_geometry(k_ep, k_chapter) -> dict:
     verbose = False
 
     if verbose:

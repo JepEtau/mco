@@ -13,10 +13,14 @@ from .helpers import (
 )
 from utils.p_print import *
 from utils.path_utils import absolute_path
+from ._db import (
+    db,
+    database_path,
+)
 
 
 
-def parse_common_configuration(db, db_directory: str, language:str=''):
+def parse_common_configuration(language:str=''):
     verbose = False
 
     if verbose:
@@ -24,7 +28,7 @@ def parse_common_configuration(db, db_directory: str, language:str=''):
 
     db['common'] = dict()
     db_common = db['common']
-    db_path = absolute_path(db_directory)
+    db_path = absolute_path(database_path)
     external_dir = absolute_path(os.path.join(__file__, os.pardir, os.pardir, "external"))
 
     # Get configuration file's directories
@@ -75,7 +79,7 @@ def parse_common_configuration(db, db_directory: str, language:str=''):
 
 
     # Directories
-    db_common['directories']['config'] = db_directory
+    db_common['directories']['config'] = database_path
     for d in (
         'config',
         'inputs',
@@ -190,7 +194,7 @@ def parse_common_configuration(db, db_directory: str, language:str=''):
         db_common['settings']['language'] = 'fr'
 
     # middle priority: 'en' file stored in database folder
-    if os.path.exists(os.path.normpath(os.path.abspath(os.path.join(db_directory, 'en')))):
+    if os.path.exists(os.path.normpath(os.path.abspath(os.path.join(database_path, 'en')))):
         db_common['settings']['language'] = 'en'
 
     # highest priority: argument

@@ -4,9 +4,10 @@ from utils.mco_types import Scene
 from .helpers import get_fps
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
+from ._db import db
 
 
-def pprint_episode(db, k_ep) -> dict[str, tuple[int]]:
+def pprint_episode(k_ep) -> dict[str, tuple[int]]:
     """Return nb of frames of video and audio tracks"""
     fps = get_fps(db)
 
@@ -161,7 +162,7 @@ def pprint_episode(db, k_ep) -> dict[str, tuple[int]]:
 
 
 
-def pprint_g_debut_fin(db) -> dict[str, tuple[int]]:
+def pprint_g_debut_fin() -> dict[str, tuple[int]]:
     # Do not show silences to fit terminal width
     show_silence: bool = False
 

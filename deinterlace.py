@@ -16,8 +16,9 @@ from parsers import (
 )
 from parsers.helpers import get_chapter_video_src
 from processing.deint import (
-    create_hash,
+    calc_deint_hash,
     deint_command,
+    get_template_script,
     qtgmc_deint_command,
     g_deint_algorithms,
     get_qtgmc_args,
@@ -213,21 +214,8 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         trim_start, trim_count = list(value['segments'])[0]
         if arguments.deint == 'qtgmc':
 
-            # Find AviSynth+ template. Priorities: edition, episode, global
-            ep_db_dir: str = os.path.join(db_directories['config'], ep)
-            template_script: str = ''
-            for script in (
-                os.path.join(ep_db_dir, f"{ep}_{ed}_deint.avs"),
-                os.path.join(ep_db_dir, f"{ep}_deint.avs"),
-                os.path.join(db_directories['config'], f"deint.avs")
-            ):
-                if os.path.exists(script):
-                    template_script = script
-                    break
-            if template_script == '':
-                print(yellow(f"no deinterlace script found for episode {ed}:{ep}"))
-                # If not... Generate an avs script?
-                continue
+            # Get AviSynth+ template
+            template_script: str = get_template_script(ep, ed)
             print(cyan(f"Avisynth+ script template:"), f"{template_script}")
 
             # Create a script from this template
@@ -238,7 +226,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
                 # Extract QTGMC arguments to create a hashcode
                 # and to add to the output video metadata
                 qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
-                hashcode, filter_str = create_hash(qtgmc_args)
+                hashcode, filter_str = calc_deint_hash(qtgmc_args)
                 script_filepath: str = os.path.join(
                     db_directories['cache_progressive'],
                     f"{path_split(in_media_path)[1]}_{hashcode}.avs"
@@ -272,7 +260,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             deint_params: str = arguments.deint_params
             if deint_algo == 'nnedi' and deint_params == '':
                 deint_params: str = "nsize=s8x6:nns=n128:qual=slow:etype=s:pscrn=new3"
-            hashcode, filter_str = create_hash({
+            hashcode, filter_str = calc_deint_hash({
                 'algo': deint_algo,
                 'params': deint_params
             })

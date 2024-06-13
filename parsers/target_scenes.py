@@ -7,9 +7,11 @@ from .helpers import get_fps, nested_dict_set
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
 from utils.mco_types import ChapterAudio, Scene, VideoChapter
+from ._db import db
+from ._types import key
 
 
-def consolidate_target_scenes(db, k_ep: str, k_chapter: str):
+def consolidate_target_scenes(k_ep: int | str, k_chapter: str):
     """This procedure is used to consolidate chapter of an 'episode': it uses the 'replace'
     field to generate a new list of scenes in the 'common' structure of the 'episode'. This list
     will be used for processing instead of the list defined in the edition.
@@ -29,6 +31,7 @@ def consolidate_target_scenes(db, k_ep: str, k_chapter: str):
         None
 
     """
+    k_ep = key(k_ep)
     K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = ['', '', 0]
     # K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = 'ep01', 'episode', 0
 
@@ -92,7 +95,7 @@ def consolidate_target_scenes(db, k_ep: str, k_chapter: str):
                 'src': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep,
-                    'k_chapter': k_chapter,
+                    'k_ch': k_chapter,
                     'no': target_scene['no'],
                     'start': target_scene['start'],
                     'count': target_scene['count'],
@@ -101,12 +104,12 @@ def consolidate_target_scenes(db, k_ep: str, k_chapter: str):
                 'dst': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep,
-                    'k_chapter': k_chapter,
+                    'k_ch': k_chapter,
                     'count': target_scene['count'],
                 },
                 'k_ed': k_ed_src,
                 'k_ep': k_ep,
-                'k_chapter': k_chapter,
+                'k_ch': k_chapter,
             })
 
         elif 'src' in target_scene.keys():
@@ -118,7 +121,7 @@ def consolidate_target_scenes(db, k_ep: str, k_chapter: str):
             d = {
                 'k_ed': k_ed_src,
                 'k_ep': k_ep,
-                'k_chapter': k_chapter,
+                'k_ch': k_chapter,
                 'no': target_scene['no'],
             }
             for k, v in d.items():
@@ -129,7 +132,7 @@ def consolidate_target_scenes(db, k_ep: str, k_chapter: str):
             # Copy properties from src
             _k_ed_src = target_scene['src']['k_ed']
             _k_ep_src = target_scene['src']['k_ep']
-            _k_chapter_src = target_scene['src']['k_chapter']
+            _k_chapter_src = target_scene['src']['k_ch']
             _scene_no_src = target_scene['src']['no']
             _scene_src: Scene = db[_k_ep_src]['video'][_k_ed_src][_k_chapter_src]['scenes'][_scene_no_src]
             for k in _scene_src.keys():
@@ -157,13 +160,13 @@ def consolidate_target_scenes(db, k_ep: str, k_chapter: str):
                 'dst': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep,
-                    'k_chapter': k_chapter,
+                    'k_ch': k_chapter,
                     'count': dst_count,
                 },
 
                 'k_ed': _k_ed_src,
                 'k_ep': _k_ep_src,
-                'k_chapter': _k_chapter_src,
+                'k_ch': _k_chapter_src,
             })
         else:
             print(red(f"{k_ep}:{k_chapter} Error: do not know what to do with: {target_scene}"))
@@ -196,12 +199,12 @@ def consolidate_target_scenes(db, k_ep: str, k_chapter: str):
 
 
 
-
-def consolidate_target_scenes_g(db, k_ep: str, k_chapter_c: str) -> None:
+def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
     """Generate the list of scenes which will be used for this credit
     (opening, precedemment, asuivre, end)
     The total duration (in frames) is updated
     """
+    k_ep: str = key(k_ep)
     fps = get_fps(db)
     logger.debug(lightgreen(f"consolidate_target_scenes_g: {k_ep}:{k_chapter_c}"))
 
@@ -240,7 +243,7 @@ def consolidate_target_scenes_g(db, k_ep: str, k_chapter_c: str) -> None:
             'avsync': 0,
             # 'dst': {
             #     'k_ep': k_ep,
-            #     'k_chapter': k_chapter_g,
+            #     'k_ch': k_chapter_g,
             # },
         }
         db_video_target = db[k_ep]['video']['target'][k_chapter_c]
@@ -298,7 +301,7 @@ def consolidate_target_scenes_g(db, k_ep: str, k_chapter_c: str) -> None:
                 'src': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep_src,
-                    'k_chapter': k_chapter_c,
+                    'k_ch': k_chapter_c,
                     'no': scene['no'],
                     'start': scene['start'],
                     'count': scene['count'],
@@ -306,12 +309,12 @@ def consolidate_target_scenes_g(db, k_ep: str, k_chapter_c: str) -> None:
                 'dst': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep,
-                    'k_chapter': k_chapter_c,
+                    'k_ch': k_chapter_c,
                     'count': scene['count'],
                 },
                 'k_ed': k_ed_src,
                 'k_ep': k_ep_src,
-                'k_chapter': k_chapter_c,
+                'k_ch': k_chapter_c,
             })
 
         else:
@@ -320,15 +323,15 @@ def consolidate_target_scenes_g(db, k_ep: str, k_chapter_c: str) -> None:
                 scene['src']['k_ed'] = k_ed_src
             if 'k_ep' not in scene['src'].keys():
                 scene['src']['k_ep'] = k_ep
-            if 'k_chapter' not in scene['src'].keys():
-                scene['src']['k_chapter'] = k_chapter_c
+            if 'k_ch' not in scene['src'].keys():
+                scene['src']['k_ch'] = k_chapter_c
             if 'no' not in scene['src'].keys():
                 scene['src']['no'] = scene['no']
 
             # Copy properties from src
             _k_ed_src = scene['src']['k_ed']
             _k_ep_src = scene['src']['k_ep']
-            _k_chapter_src = scene['src']['k_chapter']
+            _k_chapter_src = scene['src']['k_ch']
             _scene_no_src = scene['src']['no']
             _scene_src = db[_k_ep_src]['video'][_k_ed_src][_k_chapter_src]['scenes'][_scene_no_src]
             for k in _scene_src.keys():
@@ -344,12 +347,12 @@ def consolidate_target_scenes_g(db, k_ep: str, k_chapter_c: str) -> None:
                 'dst': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep,
-                    'k_chapter': k_chapter_c,
+                    'k_ch': k_chapter_c,
                     'count': scene['count'],
                 },
                 'k_ed': _k_ed_src,
                 'k_ep': _k_ep_src,
-                'k_chapter': _k_chapter_src,
+                'k_ch': _k_chapter_src,
             })
 
 

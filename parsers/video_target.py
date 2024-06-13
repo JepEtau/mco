@@ -55,23 +55,23 @@ def parse_video_target(
         # logger.debug(f"\t{k_ep}:{k_chapter}, properties: ", properties)
         for property in properties:
 
-            search_start_end = re.search(re.compile("(\d+):(-?\d+)"), property)
+            search_start_end = re.search(re.compile(r"(\d+):(-?\d+)"), property)
             if search_start_end is not None:
                 start = int(search_start_end.group(1))
                 end = int(search_start_end.group(2))
                 continue
 
-            search_fadein = re.search(re.compile("fadein=([0-9.]+)"), property)
+            search_fadein = re.search(re.compile(r"fadein=([0-9.]+)"), property)
             if search_fadein is not None:
                 chapter_fadein = int(float(search_fadein.group(1)) * fps)
                 continue
 
-            search_fadeout = re.search(re.compile("fadeout=([0-9.]+)"), property)
+            search_fadeout = re.search(re.compile(r"fadeout=([0-9.]+)"), property)
             if search_fadeout is not None:
                 chapter_fadeout = int(float(search_fadeout.group(1)) * fps)
                 continue
 
-            search_k_ed_src = re.search(re.compile("ed=([a-z]+[0-9]*)"), property)
+            search_k_ed_src = re.search(re.compile(r"ed=([a-z]+[0-9]*)"), property)
             if search_k_ed_src is not None:
                 k_chapter_ed_src = search_k_ed_src.group(1)
                 # sys.exit("found %s for %s:%s" % (k_chapter_ed_src, k_ep, k_chapter))
@@ -137,7 +137,7 @@ def parse_video_target_g(
         # logger.debug("%s:%s=" % (k_section, k_option), value_str)
 
         if k_option == 'source':
-            tmp = re.match(re.compile("([a-z_0-9]+):(ep[0-9]{2})"), value_str)
+            tmp = re.match(re.compile(r"([a-z_0-9]+):(ep[0-9]{2})"), value_str)
             if tmp is None:
                 sys.exit("Error: wrong value for %s:%s [%s]" % (k_section, k_option, value_str))
             db_video['src'] = {
@@ -151,7 +151,7 @@ def parse_video_target_g(
 
         chapter_fadeout = 0
         for property in properties:
-            search_fadeout = re.search(re.compile("fadeout=([0-9.]+)"), property)
+            search_fadeout = re.search(re.compile(r"fadeout=([0-9.]+)"), property)
             if search_fadeout is not None:
                 chapter_fadeout = int(float(search_fadeout.group(1)) * fps)
 

@@ -1,6 +1,7 @@
 import os
 import sys
 from parsers import (
+    db,
     key,
     logger,
 )
@@ -10,7 +11,6 @@ from .helpers import run_ffmpeg_command
 from utils.tools import ffmpeg_exe
 
 def extract_audio_track(
-    db,
     episode: int | str| None = None,
     chapter: str | None = None,
     edition: str = '',

@@ -8,10 +8,11 @@ from utils.time_conversions import (
     ms_to_frame,
 )
 from utils.mco_types import Scene
+from ._db import db
 
 
 
-def consolidate_av_tracks(db, k_ep, k_chapter: str = '') -> None:
+def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
     if k_chapter in ['g_debut', 'g_fin']:
         _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c=k_chapter)
         return

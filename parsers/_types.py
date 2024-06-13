@@ -5,6 +5,51 @@ from typing import Any, Literal
 from ._keys import key
 
 
+
+TaskName = Literal[
+    # Deinterlace the input video:
+    #   input: interlaced video
+    #   output: progressive video. single file: FFv1 8-bit
+    #   out_hash:
+    'deinterlace',
+
+    # Create a low resolution video for edition only
+    # Uses the final video mounting
+    # Uses the frames to replace/duplicates to remove, etc.
+    # Test purpose only, prefix = lr
+    'lr',
+
+    # Denoise & upscale:
+    # - Identify images to upscale only
+    # - Remove outer black borders
+    # - upscale
+    # - resize to
+    #
+    #   input: progressive video
+    #   output: in 2 steps.
+    #       upscaled frames
+    #       create a clip/scene
+    #   ??? out_hash: upscale model
+    'upscale',
+
+    # Stabilize and color grading, external tool
+    # Input: clips from upscale: hash?
+    # output: FFv1 8 or 16bit
+    'stabilize',
+    'color',
+
+    # Finalize: temporal filter, geometry, fading
+    #   output: all params
+    'final'
+]
+
+
+@dataclass
+class ProcessingTask:
+    name: TaskName
+    hash: str = ''
+
+
 @dataclass
 class OutputSettings:
     audio_format: str = 'wav'
