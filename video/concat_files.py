@@ -17,7 +17,10 @@ from parsers import (
     credit_chapter_keys,
 )
 from utils.time_conversions import ms_to_frame
-from video.out_frame_list import get_out_frame_list
+from video.out_frame_list import (
+    get_out_frame_list,
+    get_out_frame_list_single,
+)
 
 
 
@@ -120,8 +123,8 @@ def generate_single_concat_file(
     k_ep_or_g = k_ep if k_ch not in ['g_debut', 'g_fin'] else k_ch
 
     # Get the list of images
-    images_filepath = get_frame_list_single(
-        k_ep=k_ep, k_ch=k_ch, scene=scene
+    images_filepath = get_out_frame_list_single(
+        episode=episode, chapter=chapter, scene=scene
     )
 
     # Folder for concatenation file
@@ -130,26 +133,26 @@ def generate_single_concat_file(
     # Open concatenation file
     # hash = scene['last_step']['hash']
     k_ed = scene['k_ed']
-    if previous_concat_file == '':
+    if previous_concat_fp == '':
         # Create a concatenation file
 
         if k_ch in ['g_debut', 'g_fin']:
             # Use the edition/episode defined as reference
-            concatenation_filepath = os.path.join(
+            concat_fp: str = os.path.join(
                 db[k_ep_or_g]['cache_path'], "concat",
                 "%s_video.txt" % (k_ep_or_g))
         else:
-            concatenation_filepath = os.path.join(
+            concat_fp: str = os.path.join(
                 db[k_ep_or_g]['cache_path'],
                 "concat",
                 "%s_%s_%03d__%s_%s_.txt" % (k_ep, k_ch, 0, k_ed, scene['src']['k_ep'])
             )
-        previous_concat_file = concatenation_filepath
-        concatenation_file = open(concatenation_filepath, "w")
+        previous_concat_fp = concat_fp
+        concatenation_file = open(concat_fp, "w")
 
     else:
         # Use the previous concatenation file
-        concatenation_file = open(previous_concat_file, "a")
+        concatenation_file = open(previous_concat_fp, "a")
 
     # Frame duration
     duration_str = "duration %.02f\n" % (1/get_fps(db))
@@ -160,7 +163,7 @@ def generate_single_concat_file(
         concatenation_file.write(duration_str)
     concatenation_file.close()
 
-    return previous_concat_file
+    return previous_concat_fp
 
 
 
@@ -232,9 +235,10 @@ def generate_video_concat_file(k_ep, k_ch, video_files:dict):
 
 
 
-def create_slience_concat_files(db, k_ep) -> dict:
-    # Create a concatenation file for silence
+def generate_silence_concat_file(episode: int | str) -> dict:
+    k_ep = key(episode)
     files: dict[str, list] = {}
+
     for k_ch in main_chapter_keys():
         files[k_ch] = []
         if k_ch not in db[k_ep]['audio'].keys():

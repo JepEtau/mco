@@ -9,6 +9,8 @@ from parsers import (
 )
 from .logger import logger
 
+
+
 def makedirs(
     episode,
     chapter: Chapter = '',
@@ -58,7 +60,7 @@ def get_cache_path(scene: Scene) -> str:
         )
 
     # If last task is geometry, use the dst structure
-    if scene['last_task'] in ('geometry'):
+    if scene['task'] == 'final':
         output_path: str = os.path.join(
             db['common']['directories']['cache'],
             scene['dst']['k_ep'],
@@ -80,9 +82,9 @@ def get_cache_path(scene: Scene) -> str:
 
 
 
-
-def get_out_dirname(scene: Scene, task: TaskName):
-    dirname: str = task_to_dirname[task]
+def get_out_dirname(scene: Scene):
+    task_name: TaskName = scene['task'].name
+    dirname: str = task_to_dirname[task_name]
 
     # Put all images in a single folder for 'génériques'
     if scene['k_ch'] in ['g_debut', 'g_fin']:
@@ -93,7 +95,7 @@ def get_out_dirname(scene: Scene, task: TaskName):
             dirname,
         )
 
-    if task == 'final':
+    if task_name == 'final':
         output_path = os.path.join(
             db['common']['directories']['cache'],
             scene['dst']['k_ep'],
@@ -112,6 +114,7 @@ def get_out_dirname(scene: Scene, task: TaskName):
             dirname
         )
     return output_path
+
 
 
 def run_simple_command(command: list[str] | tuple[str]) -> bool:

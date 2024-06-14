@@ -208,6 +208,8 @@ class VideoChapter(TypedDict):
     # Add black frames after this chapter
     silence: int
 
+    task: ProcessingTask
+
 
 @dataclass
 class VideoTrack:

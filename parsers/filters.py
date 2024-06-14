@@ -104,6 +104,10 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
                 pprint(filters)
                 raise ValueError("Unrecognized filter")
 
+            if task_filter.task_name not in TASK_NAMES:
+                print(yellow(f"[W] {task_filter.task_name} is not allowed"))
+                continue
+
             scene_filters[task_filter.task_name] = task_filter
 
         nested_dict_set(db_video, scene_filters, k_chapter, 'filters', k_option)

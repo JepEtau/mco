@@ -14,7 +14,7 @@ def get_in_frame_list(scene: Scene, task: TaskName) -> list[str]:
     print(orange(f"\t\t\tget_new_image_list: use replace list, task={task}"))
     dirname: str = task_to_dirname[scene['task'].name]
 
-    h: str = scene['task'].hash
+    h: str = scene['task'].hashcode
     filename_template = IMG_FILENAME_TEMPLATE % (
         scene['k_ep'],
         scene['k_ed'],

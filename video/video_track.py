@@ -6,10 +6,11 @@ from pprint import pprint
 
 from scene.consolidate import consolidate_scene
 from utils.hash import calc_hash
-from utils.mco_types import Scene
+from utils.mco_types import Scene, VideoChapter
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
+from .concat_scenes import concat_scenes
 from .combine_frames import combine_frames
 
 from utils.mco_utils import makedirs, nested_dict_set
@@ -21,7 +22,10 @@ from parsers import (
     TaskName,
     ProcessingTask
 )
-from video.concat_files import generate_concat_file
+from video.concat_files import (
+    generate_concat_file,
+    generate_silence_concat_file,
+)
 
 
 
@@ -52,38 +56,41 @@ def generate_video_track(
 
     # Create the scen vclip chapter by chapter
     chapters: Chapter = all_chapter_keys() if chapter == '' else [chapter]
+    hashes: dict[Chapter, str] = {}
     for chapter in chapters:
         hashes_str = ''
 
         # k_ep_src is the default episode source used to generate a chapter
         k_ep_src: str = ''
+        video: VideoChapter
         if chapter in ['g_debut', 'g_fin']:
-            video_fp = db[chapter]['video']
-            k_ep_src = video_fp['src']['k_ep']
+            video = db[chapter]['video']
+            k_ep_src = video['src']['k_ep']
 
-        elif episode == 'ep00':
+        elif k_ep == 'ep00':
             sys.exit(red("Missing episode no."))
 
         else:
             # Use the source video clip if edition is specified
             # Used for study
-            video_fp = (
-                db[episode]['video']['target'][chapter]
+            video = (
+                db[k_ep]['video']['target'][chapter]
                 if edition == ''
-                else db[episode]['video'][edition][chapter]
+                else db[k_ep]['video'][edition][chapter]
             )
-            k_ep_src = episode
+            k_ep_src = k_ep
 
         # Do not generate clip for unused chapters
-        if video_fp['count'] == 0:
+        if video['count'] == 0:
             continue
 
         print(f"\n<<<<<<<<<<<<<<<<<<<<< {chapter} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
+        video['task'] = ProcessingTask(name=task)
         previous_concat_fp = ''
 
         # Walk through target scenes
-        scenes: list[Scene] = video_fp['scenes']
+        scenes: list[Scene] = video['scenes']
         for scene in scenes:
             start_time = time.time()
             if not scene['no'] != scene_no:
@@ -125,13 +132,8 @@ def generate_video_track(
                 consolidate_scene(scene=scene)
 
             # Calculate hash for the video
-            hashes_str += f",{scene['task'].hash}"
+            hashes_str += f",{scene['task'].hashcode}"
 
-            if False:
-                print_lightcyan("================================== Scene =======================================")
-                pprint(scene)
-                print_lightcyan("===============================================================================")
-                # sys.exit()
 
             # Create concatenation file
             do_generate_video = False
@@ -181,34 +183,44 @@ def generate_video_track(
                 f"{s_to_sexagesimal(elapsed)} ({elapsed/scene['count']:02f}s/f)\n"
             ))
 
+            if True:
+                print(lightcyan("================================== Scene ======================================="))
+                pprint(scene)
+                print(lightcyan("==============================================================================="))
+                # sys.exit()
+
             print(purple(scene['task']))
 
-
-        video_fp['hash'] = calc_hash(hashes_str[:-1])
+        video['hash'] = calc_hash(hashes_str[:-1])
         # video_clips[chapter]['hash'] = video_fp['hash']
 
     # For each part, concatenate scenes in a single clip
-    chapter_scene_files: dict[str, list[str]] = {}
     for chapter in chapters:
-        if len(video_fp['scenes']) > 0:
-            concat_fp, scene_fp = concatenate_scenes(
-                k_ep=episode,
+        video: VideoChapter
+        if chapter in ['g_debut', 'g_fin']:
+            video: VideoChapter = db[chapter]['video']
+        else:
+            video: VideoChapter = (
+                db[k_ep]['video']['target'][chapter]
+                if edition == ''
+                else db[k_ep]['video'][edition][chapter]
+            )
+
+        if len(video) > 0:
+            concat_scenes(
+                episode=episode,
                 chapter=chapter,
-                video_files=video_fp,
+                video=video,
                 force=force,
                 simulation=simulation
             )
-            chapter_scene_files[chapter]['files'] = [scene_fp]
 
-    verbose = False
-    if verbose:
-        print(lightgreen(f"video_files"))
-        pprint(chapter_scene_files)
+    verbose = True
 
     # Create concatenation files and video files for silences
     if chapter == '':
         print(lightgreen(f"\nCreate silences after:"))
-        silences = create_concatenation_file_silence(k_ep=episode)
+        silences = generate_silence_concat_file(episode=episode)
         if verbose:
             print(lightgreen(f"silences:"))
             pprint(silences)
@@ -221,20 +233,25 @@ def generate_video_track(
             for f in filepaths:
                 if verbose:
                     print(f"{chapter}: {f}")
-                virtual_video_scene = {'path': f, 'task': '', 'hash': ''}
+                virtual_video_scene: Scene = Scene(
+                    task=ProcessingTask(
+                        name=task,
+                        concat_file=f,
+                    )
+                )
                 scene_fp = combine_frames(
                     chapter=chapter,
-                    video_scene=virtual_video_scene,
+                    scene=virtual_video_scene,
                     force=force,
-                    simulation=simulation)
-                try:
-                    video_clips[chapter]['files'].append(scene_fp)
-                except:
-                    nested_dict_set(video_clips[chapter], [scene_fp], 'files')
+                    simulation=simulation
+                )
+                # try:
+                #     video_clips[chapter]['files'].append(scene_fp)
+                # except:
+                #     nested_dict_set(video_clips[chapter], [scene_fp], 'files')
 
     if verbose:
         print(lightgreen(f"video files used to concatenate all clips"))
-        pprint(video_clips)
 
 
     # Concatenate video clips from all chapters

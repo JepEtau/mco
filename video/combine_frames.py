@@ -19,33 +19,34 @@ from utils.tools import ffmpeg_exe
 def combine_frames(
     chapter,
     scene: Scene,
-    force=False,
-    simulation:bool=False,
-    watermark:str=None
+    force: bool = False,
+    simulation: bool = False,
+    watermark: str| None = None,
 ):
     verbose = False
     db_common: dict = db['common']
     task: ProcessingTask = scene['task']
 
     suffix: str = ''
-    if task.hash != '':
-        suffix += f"_{task.hash}"
+    if task.hashcode != '':
+        suffix += f"_{task.hashcode}"
 
     if task != '':
         suffix += f"_{task.name}"
 
     dir, basename, _ = path_split(task.concat_file)
-    video_scene_fp: str = absolute_path(
+    task.video_file= absolute_path(
         os.path.join(dir, os.pardir, "video", f"{basename}{suffix}.mkv")
     )
+    video_filepath: str = task.video_file
 
     print(
         lightgrey(f"\tcombine images into video:"),
         lightcyan(f"{chapter}:"),
-        f"{video_scene_fp}"
+        f"{video_filepath}"
     )
 
-    if not os.path.exists(video_scene_fp) or force:
+    if not os.path.exists(video_filepath) or force:
         db_settings: dict[str, str] = db_common['settings']
 
         ffmpeg_command = [ffmpeg_exe]
@@ -73,7 +74,7 @@ def combine_frames(
         else:
             ffmpeg_command.extend(db_settings['video_tune'].split(' '))
 
-        ffmpeg_command.extend(["-y", video_scene_fp])
+        ffmpeg_command.extend(["-y", video_filepath])
 
         if verbose:
             print(green(ffmpeg_command))
@@ -82,12 +83,12 @@ def combine_frames(
 
         success = run_simple_command(ffmpeg_command=ffmpeg_command)
         if not success:
-            print(red(f"Error: failed to generate {video_scene_fp}"))
+            print(red(f"Error: failed to generate {video_filepath}"))
             try:
-                os.remove(video_scene_fp)
+                os.remove(video_filepath)
             except:
                 pass
 
-    return video_scene_fp
+    return video_filepath
 
 

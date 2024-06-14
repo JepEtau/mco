@@ -65,8 +65,9 @@ task_to_dirname: dict[TaskName, str] = {
 @dataclass
 class ProcessingTask:
     name: TaskName
-    hash: str = ''
+    hashcode: str = ''
     concat_file: str = ''
+    video_file: str = ''
 
 
 @dataclass

@@ -22,7 +22,7 @@ def consolidate_scene(scene: Scene) -> None:
 
     edition_mode: used to not consolidate geometry/curves and remove replace/stabilize/deshake
     """
-    verbose = True
+    verbose = False
     if verbose:
         print(lightgreen("Consolidate scene:"))
         print(lightcyan("================================== Scene ======================================="))
@@ -148,7 +148,7 @@ def consolidate_scene(scene: Scene) -> None:
 
 
     # Update the scene task
-    scene['task'].hash = scene_filters[scene['task'].name].hash
+    scene['task'].hashcode = scene_filters[scene['task'].name].hash
 
 
     if False:
