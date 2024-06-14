@@ -22,7 +22,7 @@ def combine_frames(
     force: bool = False,
     simulation: bool = False,
     watermark: str| None = None,
-):
+) -> None:
     verbose = False
     db_common: dict = db['common']
     task: ProcessingTask = scene['task']
@@ -89,6 +89,5 @@ def combine_frames(
             except:
                 pass
 
-    return video_filepath
 
 

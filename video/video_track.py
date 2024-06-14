@@ -10,10 +10,7 @@ from utils.mco_types import Scene, VideoChapter
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from .concat_scenes import concat_scenes
-from .combine_frames import combine_frames
-
-from utils.mco_utils import makedirs, nested_dict_set
+from utils.mco_utils import makedirs
 from parsers import (
     db,
     Chapter,
@@ -22,16 +19,19 @@ from parsers import (
     TaskName,
     ProcessingTask
 )
-from video.concat_files import (
+from .concat_files import (
     generate_concat_file,
     generate_silence_concat_file,
+    generate_video_concat_file,
 )
+from .concat_scenes import concat_scenes
+from .combine_frames import combine_frames
 
 
 
 def generate_video_track(
     episode: str,
-    chapter: Chapter = '',
+    single_chapter: Chapter = '',
     task: TaskName = '',
     force: bool = False,
     simulation: bool = False,
@@ -40,9 +40,10 @@ def generate_video_track(
     edition: str | None = None,
 ):
     k_ep = key(episode)
+    do_concatenate_video: bool = single_chapter == ''
 
     # Create the video directory for this episode or chapter
-    makedirs(k_ep, chapter, 'video')
+    makedirs(k_ep, single_chapter, 'video')
 
     # List video files for each chapter
     # video_clips = dict()
@@ -55,7 +56,7 @@ def generate_video_track(
     # print("Generate video: %s, %s, tasks=%s" % (edition, k_ep, ', '.join(tasks)))
 
     # Create the scen vclip chapter by chapter
-    chapters: Chapter = all_chapter_keys() if chapter == '' else [chapter]
+    chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
     hashes: dict[Chapter, str] = {}
     for chapter in chapters:
         hashes_str = ''
@@ -218,7 +219,7 @@ def generate_video_track(
     verbose = True
 
     # Create concatenation files and video files for silences
-    if chapter == '':
+    if single_chapter == '':
         print(lightgreen(f"\nCreate silences after:"))
         silences = generate_silence_concat_file(episode=episode)
         if verbose:
@@ -239,7 +240,7 @@ def generate_video_track(
                         concat_file=f,
                     )
                 )
-                scene_fp = combine_frames(
+                combine_frames(
                     chapter=chapter,
                     scene=virtual_video_scene,
                     force=force,
@@ -255,24 +256,23 @@ def generate_video_track(
 
 
     # Concatenate video clips from all chapters
-    if chapter == '':
+    if do_concatenate_video:
 
         # Generate concatenation files which contains all video files
-        concat_fp = create_concatenation_file_video(
-            k_ep=k_ep,
-            chapter=chapter,
-            video_files=video_clips
+        concat_fp = generate_video_concat_file(
+            episode=k_ep,
+            chapter=single_chapter,
         )
 
         # Get language
-        language = db[episode]['audio']['lang']
+        language = db[k_ep]['audio']['lang']
         lang_str = '' if language == 'fr' else f"_{language}"
 
         # Concatenate video clips
         episode_video_filepath = os.path.join(
-            db[episode]['cache_path'],
+            db[k_ep]['cache_path'],
             "video",
-            f"{episode}_video{lang_str}.mkv"
+            f"{k_ep}_video{lang_str}.mkv"
         )
 
         # Force concatenation
@@ -292,20 +292,21 @@ def generate_video_track(
             "-y", episode_video_filepath
         ]
 
-        sub_process = subprocess.Popen(
-            ffmpeg_command,
-            stdin=subprocess.PIPE,
-            stdout=sys.stdout,
-            stderr=subprocess.STDOUT,
-        )
+        if not simulation:
+            sub_process = subprocess.Popen(
+                ffmpeg_command,
+                stdin=subprocess.PIPE,
+                stdout=sys.stdout,
+                stderr=subprocess.STDOUT,
+            )
 
-        stdout, stderr = sub_process.communicate()
-        if stderr is not None:
-            for line in stderr.decode('utf-8').split('\n'):
-                print(line)
-        if stdout is not None:
-            for line in stdout.decode('utf-8').split('\n'):
-                print(line)
+            stdout, stderr = sub_process.communicate()
+            if stderr is not None:
+                for line in stderr.decode('utf-8').split('\n'):
+                    print(line)
+            if stdout is not None:
+                for line in stdout.decode('utf-8').split('\n'):
+                    print(line)
 
 
 

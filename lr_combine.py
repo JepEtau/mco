@@ -143,7 +143,7 @@ def main():
 
     generate_video_track(
         episode=arguments.episode,
-        chapter=arguments.chapter,
+        single_chapter=arguments.chapter,
         task='lr',
         force=arguments.force,
         simulation=arguments.simulate,
