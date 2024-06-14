@@ -6,7 +6,7 @@ from parsers import (
     logger,
 )
 from utils.p_print import *
-from utils.path_utils import get_extension
+from utils.path_utils import absolute_path, get_extension
 from .helpers import run_ffmpeg_command
 from utils.tools import ffmpeg_exe
 
@@ -40,7 +40,7 @@ def extract_audio_track(
         sys.exit(f"Error: audio: input file is missing, edition: {k_ed}")
 
     # Output audio file
-    out_directory: str = os.path.join(db['common']['directories']['cache'], 'audio')
+    out_directory: str = db['common']['directories']['audio']
     os.makedirs(out_directory, exist_ok=True)
 
     out_filename: str = f"{k_src}_{k_ed}_audio.{db['common']['settings']['audio_format']}"

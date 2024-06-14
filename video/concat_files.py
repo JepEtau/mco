@@ -11,28 +11,34 @@ from utils.p_print import *
 # from utils.types import
 from parsers import (
     db,
+    Chapter,
+    key,
     main_chapter_keys,
     credit_chapter_keys,
 )
 from utils.time_conversions import ms_to_frame
-from video.frame_list import get_frame_list
+from video.out_frame_list import get_out_frame_list
 
 
 
 def generate_concat_file(
-    k_ep: str,
-    k_ch: str,
+    episode: str | int,
+    chapter: Chapter,
     scene: Scene,
     previous_concat_fp: str = ''
 ):
-    print(lightgrey(f"\tcreate concatenation file: "), end='')
-    print(lightcyan(f"{k_ep}, {k_ch}, scene no. {scene['no']}"))
+    k_ep, k_ch = key(episode), chapter
+
+    print(
+        lightgrey(f"\tcreate concatenation file: "),
+        lightcyan(f"{k_ep}, {k_ch}, scene no. {scene['no']}")
+    )
     # Use a single concatenation file for
     #   - g_asuivre, g_documentaire
     if k_ch in ['g_asuivre', 'g_documentaire']:
         return generate_single_concat_file(
-            k_ep=k_ep,
-            k_ch=k_ch,
+            episode=episode,
+            chapter=chapter,
             scene=scene,
             previous_concat_fp=previous_concat_fp
         )
@@ -42,36 +48,36 @@ def generate_concat_file(
     #   - documentaire
 
     # Get the list of frames for this scene
-    images_filepath = get_frame_list(k_ep=k_ep, k_ch=k_ch, scene=scene)
+    img_fp: list[str] = get_out_frame_list(k_ep, k_ch, scene)
 
     # Folder for concatenation file
-    makedirs(k_ep, k_ch, 'concatenation')
+    makedirs(k_ep, k_ch, 'concat')
 
     # Open concatenation file
     k_ed = scene['k_ed']
-    if previous_concat_fp == '' or len(images_filepath) >= 5:
+    if previous_concat_fp == '' or len(img_fp) >= 5:
         # Use previous concatenation files because FFmpeg
         # cannot create a video file from less than 5 frames
         if k_ch in ('g_debut', 'g_fin'):
-            concatenation_filepath = os.path.join(
+            concat_fp = os.path.join(
                 db[k_ch]['cache_path'],
-                "concatenation",
+                "concat",
                 f"{k_ch}_{scene['no']:03}__{k_ed}_{scene['k_ep']}_.txt"
             )
         else:
-            concatenation_filepath = os.path.join(
+            concat_fp = os.path.join(
                 db[k_ep]['cache_path'],
-                "concatenation",
+                "concat",
                 f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}_.txt"
             )
 
         # Save this filepath because it may be used for next scene
-        previous_concat_fp = concatenation_filepath
-        concatenation_file = open(concatenation_filepath, "w")
+        previous_concat_fp = concat_fp
+        concatenation_file = open(concat_fp, "w")
 
     else:
         print(orange(f"Use previous concatenation file: {previous_concat_fp}"))
-        print(orange(f"{len(images_filepath)}"))
+        print(orange(f"{len(img_fp)}"))
         # print("-------------------------------------")
         # for k, v in db[k_ep]['video']['target'][k_ch].items():
         #     if k == 'scenes':
@@ -87,7 +93,7 @@ def generate_concat_file(
     duration_str = "duration %.02f\n" % (1/get_fps(db))
 
     # Write into the concatenation file
-    for p in images_filepath:
+    for p in img_fp:
         concatenation_file.write(f"file \'{p}\' \n")
         concatenation_file.write(duration_str)
     concatenation_file.close()
@@ -95,13 +101,20 @@ def generate_concat_file(
     return previous_concat_fp
 
 
-def generate_single_concat_file(db, k_ep, k_ch, scene, previous_concatenation_filepath=''):
+
+def generate_single_concat_file(
+    episode: int | str,
+    chapter: Chapter,
+    scene: Scene,
+    previous_concat_fp: str = ''
+):
     """This function is used for the following chs:
         - precedemment
         - g_asuivre
         - asuivre
         - g_documentaire
     """
+    k_ep, k_ch = key(episode), chapter
     # print("%s._create_concatenation_file" % (__name__))
     # pprint(scene)
     k_ep_or_g = k_ep if k_ch not in ['g_debut', 'g_fin'] else k_ch
@@ -112,31 +125,31 @@ def generate_single_concat_file(db, k_ep, k_ch, scene, previous_concatenation_fi
     )
 
     # Folder for concatenation file
-    makedirs(k_ep, k_ch, 'concatenation')
+    makedirs(k_ep, k_ch, 'concat')
 
     # Open concatenation file
     # hash = scene['last_step']['hash']
     k_ed = scene['k_ed']
-    if previous_concatenation_filepath == '':
+    if previous_concat_file == '':
         # Create a concatenation file
 
         if k_ch in ['g_debut', 'g_fin']:
             # Use the edition/episode defined as reference
             concatenation_filepath = os.path.join(
-                db[k_ep_or_g]['cache_path'], "concatenation",
+                db[k_ep_or_g]['cache_path'], "concat",
                 "%s_video.txt" % (k_ep_or_g))
         else:
             concatenation_filepath = os.path.join(
                 db[k_ep_or_g]['cache_path'],
-                "concatenation",
+                "concat",
                 "%s_%s_%03d__%s_%s_.txt" % (k_ep, k_ch, 0, k_ed, scene['src']['k_ep'])
             )
-        previous_concatenation_filepath = concatenation_filepath
+        previous_concat_file = concatenation_filepath
         concatenation_file = open(concatenation_filepath, "w")
 
     else:
         # Use the previous concatenation file
-        concatenation_file = open(previous_concatenation_filepath, "a")
+        concatenation_file = open(previous_concat_file, "a")
 
     # Frame duration
     duration_str = "duration %.02f\n" % (1/get_fps(db))
@@ -147,7 +160,7 @@ def generate_single_concat_file(db, k_ep, k_ch, scene, previous_concatenation_fi
         concatenation_file.write(duration_str)
     concatenation_file.close()
 
-    return previous_concatenation_filepath
+    return previous_concat_file
 
 
 
@@ -184,12 +197,12 @@ def generate_video_concat_file(k_ep, k_ch, video_files:dict):
             k_ch = ''
 
         # Folder used to store concatenation file
-        makedirs(k_ep, k_ch, 'concatenation')
+        makedirs(k_ep, k_ch, 'concat')
 
         # Open concatenation file
         concatenation_filepath = os.path.join(
             db[k_ep_or_g]['cache_path'],
-            "concatenation",
+            "concat",
             f"{suffix}{lang_str}.txt")
         concatenation_file = open(concatenation_filepath, "w")
         if verbose:
@@ -200,19 +213,19 @@ def generate_video_concat_file(k_ep, k_ch, video_files:dict):
             for k in main_chapter_keys():
                 for scene in video_files[k]:
                     p = scene['path'].replace('.txt', f"_{scene['hash']}_{scene['last_task']}{lang_str}.mkv")
-                    p = p.replace('concatenation', 'video')
+                    p = p.replace('concat', 'video')
                     concatenation_file.write(f"file \'{p}\' \n")
         else:
             for k in main_chapter_keys():
                 try:
                     for filepath in video_files[k]['files']:
-                        p = filepath.replace('concatenation', 'video')
+                        p = filepath.replace('concat', 'video')
                         concatenation_file.write(f"file \'{p}\' \n")
                 except:
                     if k in credit_chapter_keys():
                         for scene in video_files[k]['scenelist']:
                             p = scene['path'].replace('.txt', f"_{scene['hash']}_{scene['last_task']}{lang_str}.mkv")
-                            p = p.replace('concatenation', 'video')
+                            p = p.replace('concat', 'video')
                             concatenation_file.write(f"file \'{p}\' \n")
         concatenation_file.close()
         return concatenation_filepath
@@ -241,10 +254,10 @@ def create_slience_concat_files(db, k_ep) -> dict:
             duration_str = f"duration {1/get_fps(db):.02f}\n"
 
             # Create the concatenation file for the silence
-            makedirs(k_ep, k_ch, 'concatenation')
+            makedirs(k_ep, k_ch, 'concat')
             concatenation_filepath = os.path.join(
                 db[k_ep]['cache_path'],
-                "concatenation",
+                "concat",
                 f"{k_ep}_{k_ch}__999_silence.txt"
             )
             concatenation_file = open(concatenation_filepath, "w")

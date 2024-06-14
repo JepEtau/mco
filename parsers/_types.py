@@ -1,10 +1,12 @@
 from __future__ import annotations
+import ast
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 from ._keys import key
 
 
+IMG_FILENAME_TEMPLATE = "%s_%%05d__%s__%02d%s.png"
 
 
 TaskName = Literal[
@@ -13,7 +15,7 @@ TaskName = Literal[
     #   output: progressive video. single file: FFv1 8-bit
     #   out_hash:
     # folder: 00_initial
-    'deinterlace',
+    'initial',
 
     # Create a low resolution video for edition only
     # Uses the final video mounting
@@ -49,6 +51,7 @@ TaskName = Literal[
     'final'
 ]
 
+TASK_NAMES: list[str] = get_args(TaskName)
 
 task_to_dirname: dict[TaskName, str] = {
     'deinterlace': '00_initial',
@@ -63,6 +66,17 @@ task_to_dirname: dict[TaskName, str] = {
 class ProcessingTask:
     name: TaskName
     hash: str = ''
+    concat_file: str = ''
+
+
+@dataclass
+class Filter:
+    sequence: str = ''
+    hash: str = ''
+    # TODO remove
+    # id: str | None = None
+    task_name: str = ''
+
 
 
 @dataclass

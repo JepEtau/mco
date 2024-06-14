@@ -4,6 +4,7 @@ import re
 from pprint import pprint
 from .helpers import nested_dict_set
 from utils.p_print import *
+from ._types import Filter, TASK_NAMES, TaskName
 
 # ID used to identify stage
 FILTERS_IDS = [
@@ -21,7 +22,7 @@ def parser_strip(data: str) -> str:
     return data
 
 
-def __clean_filter(data: str) -> str:
+def _clean_filter(data: str) -> str:
     for c in ['\"', '\r', '\n', ' ']:
         data = data.replace(c, '')
     return data
@@ -29,7 +30,7 @@ def __clean_filter(data: str) -> str:
 
 
 def parse_filters(db_video, config: ConfigParser, k_section: str):
-    verbose = False
+    verbose = True
     if verbose:
         print(lightcyan("Parse_filters: "))
         print(green(f"\tsection: {k_section}"))
@@ -60,56 +61,63 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
         if verbose:
             print(green(f"\tparse filter {k_section}/{k_option}"))
         # Convert filter str to a list of dict
-        steps_str = config.get(k_section, k_option)
-        steps_str = __clean_filter(steps_str)
-        step_list: list[str] = steps_str.split(';')
+        filters_str: str = config.get(k_section, k_option)
+        filters: list[str] = (
+            _clean_filter(filters_str).split(';')
+        )
+        filters = list([f for f in filters if f != ''])
+        pprint(filters)
+        scene_filters: dict[TaskName, Filter] = {}
+        for f in filters:
 
-        filters = list()
-        for step_str in step_list:
-            step_dict = {
-                'save': False,
-                'id': None,
-            }
+            # # Save images after this filter
+            if f.startswith('*'):
+                f = f[1:]
+            #     task_filter.save = True
 
-            # Save images after this filter
-            if step_str.startswith('*'):
-                step_str = step_str[1:]
-                step_dict['save'] = True
+            # # Get the node id
+            # if f.startswith('id:'):
+            #     result = re.match(re.compile(r"id:([a-z0-9_-]+),(.+)$"), f)
+            #     if result is not None:
+            #         step_dict['id'] = result.group(1)
+            #         f = result.group(2)
+            #     else:
+            #         sys.exit(red(f"Error parsing filters: [{f}]"))
 
-            # Get the node id
-            if step_str.startswith('id:'):
-                result = re.match(re.compile(r"id:([a-z0-9_-]+),(.+)$"), step_str)
-                if result is not None:
-                    step_dict['id'] = result.group(1)
-                    step_str = result.group(2)
-                else:
-                    sys.exit(red(f"Error parsing filters: [{step_str}]"))
+            task_filter: Filter | None = None
+            if (result := re.search(re.compile(r"^([a-z_]+):(.+)$"), f)):
+                task_filter = Filter(
+                    task_name=result.group(1),
+                    sequence=result.group(2)
+                )
 
-            result = re.match(re.compile(r"^([a-z_]+):(.+)$"), step_str)
-            if result is not None:
-                step_dict['type'] = result.group(1)
-                step_dict['str'] = result.group(2)
-                filters.append(step_dict)
-            else:
+            elif (result := re.search(re.compile(r"^([a-z]+)$"), f)):
                 # May use yes-pattern or no-pattern in the previous regex
-                # but no time
-                result = re.match(re.compile(r"^([a-z]+)$"), step_str)
-                if result is not None:
-                    step_dict['type'] = result.group(1)
-                    step_dict['str'] = ''
-                    filters.append(step_dict)
+                task_filter = Filter(
+                    task_name=result.group(1),
+                    sequence=''
+                )
+                task_filter.task_name = result.group(1)
+                task_filter.sequence = ''
 
-        nested_dict_set(db_video, filters, k_chapter, 'filters', k_option)
+            else:
+                pprint(filters)
+                raise ValueError("Unrecognized filter")
+
+            scene_filters[task_filter.task_name] = task_filter
+
+        nested_dict_set(db_video, scene_filters, k_chapter, 'filters', k_option)
 
         if verbose and k_option == '999':
             # used to debug complex processing chains
-            pprint(filters)
+            pprint(scene_filters)
             sys.exit()
 
     if verbose:
         print(green(f"\tfinally: section {k_section}"))
         pprint(db_video[k_chapter]['filters'])
-
+        # if len(db_video[k_chapter]['filters']['default']) > 0:
+        #     sys.exit()
 
 
 

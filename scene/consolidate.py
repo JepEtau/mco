@@ -4,7 +4,11 @@ from pprint import pprint
 from typing import OrderedDict
 from processing.deint import calc_deint_hash, get_qtgmc_args, get_template_script
 from utils.mco_types import Scene
-from parsers import db
+from parsers import (
+    db,
+    Filter,
+    TASK_NAMES
+)
 from utils.mco_utils import get_cache_path, nested_dict_set
 from utils.p_print import *
 from utils.path_utils import path_split
@@ -121,7 +125,15 @@ def consolidate_scene(scene: Scene) -> None:
 
     # Get filters used by this scene
     scene['filters'] = deepcopy(get_filters(scene))
-    pprint(scene)
+
+    # consolidate_scene_filters
+    scene_filters = scene['filters']
+
+    # Add missing filters
+    for t in TASK_NAMES:
+        if t not in scene_filters:
+            scene_filters[t] = Filter(task_name=t)
+
 
     # Deinterlace
     template_script: str = get_template_script(
@@ -130,6 +142,13 @@ def consolidate_scene(scene: Scene) -> None:
     )
     qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
     deint_hashcode, _ = calc_deint_hash(qtgmc_args)
+    scene_filters['initial'].hash = deint_hashcode
+
+    scene_filters['lr'].hash = deint_hashcode
+
+
+    # Update the scene task
+    scene['task'].hash = scene_filters[scene['task'].name].hash
 
 
     if False:

@@ -6,6 +6,8 @@ if TYPE_CHECKING:
     from parsers import (
         Chapter,
         ProcessingTask,
+        Filter,
+        TaskName,
     )
 
 # Common to all types:
@@ -124,7 +126,7 @@ class Scene(TypedDict):
 
     # Filters: this is the processing chain for this scene. Once consolidated,
     # this variable specifies a list of filters for each frame
-    filters: list
+    filters: dict[TaskName, Filter]
     # If specified (i.e. not 'default'), this scene uses another chain defined in the
     # ini file of the edition/episode/chapter
     filters_id: str

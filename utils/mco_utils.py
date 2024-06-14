@@ -1,16 +1,18 @@
 import os
+import subprocess
+import time
 from typing import Literal
 from utils.mco_types import Scene
 from utils.p_print import *
 from parsers import (
     Chapter, key, db, task_to_dirname, TaskName
 )
-
+from .logger import logger
 
 def makedirs(
     episode,
     chapter: Chapter = '',
-    type: Literal['video', 'concatenation'] = 'video'
+    type: Literal['video', 'concat'] = 'video'
 ):
     """ Create a directory that contains all video clips or the concatenation files
     """
@@ -23,8 +25,11 @@ def makedirs(
     if type == 'video':
         directory = os.path.join(db[k]['cache_path'], 'video')
 
-    elif type == 'video':
-        directory = os.path.join(db[k]['cache_path'], "concatenation")
+    elif type == 'concat':
+        directory = os.path.join(db[k]['cache_path'], "concat")
+
+    else:
+        raise ValueError(f"Wrong type: {type}")
 
     os.makedirs(directory, exist_ok=True)
     return directory
@@ -107,3 +112,30 @@ def get_out_dirname(scene: Scene, task: TaskName):
             dirname
         )
     return output_path
+
+
+def run_simple_command(command: list[str] | tuple[str]) -> bool:
+    start_time: float = time.time()
+    result = subprocess.run(
+        command,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    stdout: str = ''
+    stderr: str = ''
+    try:
+        stdout = result.stdout.decode('utf-8')
+    except:
+        pass
+    try:
+        stderr = result.stderr.decode('utf-8')
+    except:
+        pass
+
+    logger.debug(f"[V] {command[0]} executed in {time.time() - start_time:.02f}s")
+    if stdout:
+        print(stdout)
+    if stderr:
+        print(stderr)
+        return False
+    return True

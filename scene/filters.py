@@ -2,10 +2,10 @@ from pprint import pprint
 import sys
 from utils.p_print import *
 from utils.mco_types import Scene
-from parsers import db
+from parsers import db, Filter
 
 
-def get_filters(scene: Scene):
+def get_filters(scene: Scene) -> list[Filter]:
     verbose = False
     k_ed = scene['k_ed']
     k_ep = scene['k_ep']

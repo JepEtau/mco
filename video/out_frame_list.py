@@ -2,7 +2,7 @@ import sys
 import os
 from pprint import pprint
 
-IMG_FILENAME_TEMPLATE = "%s_%%05d__%s__%02d%s.png"
+
 
 # from processing_chain.get_image_list import (
 #     get_image_list_pre_replace,
@@ -12,10 +12,23 @@ IMG_FILENAME_TEMPLATE = "%s_%%05d__%s__%02d%s.png"
 from utils.mco_types import Scene
 from utils.mco_utils import get_out_dirname
 from utils.p_print import *
-from parsers import db
+from parsers import (
+    db,
+    Chapter,
+    key,
+    main_chapter_keys,
+    credit_chapter_keys,
+    IMG_FILENAME_TEMPLATE,
+)
+from .in_frame_list import get_in_frame_list
 
 
-def get_frame_file_paths_until_effects(chapter: str, scene: Scene, suffix: str):
+
+def get_frame_file_paths_until_effects(
+    chapter: str,
+    scene: Scene,
+    suffix: str
+):
     k_ed = scene['k_ed']
     k_ep = scene['k_ep']
     chapter = scene['k_ch']
@@ -40,11 +53,11 @@ def get_frame_file_paths_until_effects(chapter: str, scene: Scene, suffix: str):
 
     if hash == '':
         # Last filter is null, use previous one?
-        return list()
+        # return list()
         # step_no -= 1
-        print(red("Error:last filter has a null hash value!"))
+        print(red(f"Error: {scene['task'].name} has a null hash value!"))
         pprint(scene['filters'])
-        # sys.exit()
+        sys.exit()
         previous_filter = scene['filters'][step_no-1]
         hash = previous_filter['hash']
         if previous_filter['task'] == 'deinterlace':
@@ -62,7 +75,7 @@ def get_frame_file_paths_until_effects(chapter: str, scene: Scene, suffix: str):
                 hash=hash)
 
     else:
-        if scene['task'].name == 'deinterlace':
+        if scene['task'].name == 'initial':
             image_list = get_image_list_pre_replace(
                 scene=scene,
                 folder=current_output_folder,
@@ -70,20 +83,18 @@ def get_frame_file_paths_until_effects(chapter: str, scene: Scene, suffix: str):
                 hash=hash
             )
 
-        elif step_no == scene['task']['step_edition']:
-            image_list = get_new_image_list(
-                scene=scene,
-                step_no=step_no,
-                hash=scene['filters'][step_no - 1]['hash']
+        else:
+            image_list = get_in_frame_list(
+                scene=scene, task=scene['task'].name
             )
 
-        else:
-            image_list = get_image_list(
-                scene=scene,
-                folder=current_output_folder,
-                step_no=step_no,
-                hash=hash
-            )
+        # else:
+        #     image_list = get_image_list(
+        #         scene=scene,
+        #         folder=current_output_folder,
+        #         step_no=step_no,
+        #         hash=hash
+        #     )
 
     # pprint(image_list)
     # print(lightcyan(f"{index_start} -> {index_end}"))
@@ -91,7 +102,11 @@ def get_frame_file_paths_until_effects(chapter: str, scene: Scene, suffix: str):
 
 
 
-def get_frame_list(k_ep: str, k_ch: str, scene: Scene) -> list[str]:
+def get_out_frame_list(
+    episode: int | str,
+    chapter: str,
+    scene: Scene
+) -> list[str]:
     """This function returns a list of images which is used
     to create concatenation files or by tools for video editing
     It is used for the following parts:
@@ -99,6 +114,7 @@ def get_frame_list(k_ep: str, k_ch: str, scene: Scene) -> list[str]:
       - documentaire
       - g_debut, g_fin
     """
+    k_ep, k_ch = key(episode), chapter
     image_list: list[str] = []
 
     k_ed = scene['k_ed']
@@ -135,7 +151,7 @@ def get_frame_list(k_ep: str, k_ch: str, scene: Scene) -> list[str]:
 
 
     # Add files for effects
-    if 'effects' in scene.keys() and scene['task'].name != 'edition':
+    if 'effects' in scene and scene['task'].name != 'initial':
         effect = scene['effects'][0]
         print(green(f"\tget frame list: effect={effect}"))
 

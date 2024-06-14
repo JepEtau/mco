@@ -10,6 +10,9 @@ from ._types import (
     TaskName,
     ProcessingTask,
     task_to_dirname,
+    Filter,
+    TASK_NAMES,
+    IMG_FILENAME_TEMPLATE,
 )
 
 from .helpers import (
@@ -42,4 +45,7 @@ __all__ = [
     "TaskName",
     "ProcessingTask",
     "task_to_dirname",
+    "Filter",
+    "TASK_NAMES",
+    "IMG_FILENAME_TEMPLATE",
 ]
