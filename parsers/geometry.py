@@ -50,7 +50,7 @@ def parse_geometry_configurations(k_ep_or_g:str):
             print("\tparse_geometry_configurations: section:%s" % (k_section))
         if k_section in all_chapter_keys():
             # This section define the geometry of the target: i.e. width
-            if k_ep_or_g in ['g_debut', 'g_fin']:
+            if k_ep_or_g in ('g_debut', 'g_fin'):
                 nested_dict_set(db, {'target':dict()}, k_ep_or_g, 'video', 'geometry')
                 target_geometry = db[k_ep_or_g]['video']['geometry']['target']
             else:
@@ -181,7 +181,7 @@ def get_initial_target_geometry(k_ep: str, k_chapter: str) -> dict:
     # print("get_initial_target_geometry for %s:%s" % (k_ep, k_chapter))
     target_geometry = {}
 
-    if k_chapter in ['g_debut', 'g_fin']:
+    if k_chapter in ('g_debut', 'g_fin'):
         db_video = db[k_chapter]['video']
         k_ep_target = 'ep00'
     elif k_chapter in ['g_asuivre', 'g_documentaire']:
@@ -213,7 +213,7 @@ def get_initial_default_scene_geometry(k_ep: str, k_chapter: str) -> dict:
         print(lightgreen("get_initial_default_scene_geometry for %s:%s" % (k_ep, k_chapter)))
     default_scene_geometry = dict()
 
-    if k_chapter in ['g_debut', 'g_fin']:
+    if k_chapter in ('g_debut', 'g_fin'):
         # Get the list of editions and episode that are used by this generique
         dependencies = get_credits_dependencies(db, k_chapter_g=k_chapter)
 
@@ -259,7 +259,7 @@ def get_initial_scene_geometry(k_ep, k_chapter) -> dict:
         print(lightcyan(f"get_initial_scene_geometry: {k_ep}:{k_chapter}"))
 
     scene_geometry = dict()
-    if k_chapter in ['g_debut', 'g_fin']:
+    if k_chapter in ('g_debut', 'g_fin'):
         # Get the list of editions and episode that are used by this generique
         dependencies = get_credits_dependencies(db, k_chapter_g=k_chapter)
 

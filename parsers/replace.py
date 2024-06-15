@@ -86,7 +86,7 @@ def get_replaced_frames(db, k_ep, k_chapter) -> dict:
     replace = dict()
 
     # Get the list of editions and episode that are used by this ep/chapter
-    if k_chapter in ['g_debut', 'g_fin']:
+    if k_chapter in ('g_debut', 'g_fin'):
         db_video = db[k_chapter]['video']
         if verbose:
             pprint(db_video)

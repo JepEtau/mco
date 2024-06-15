@@ -10,6 +10,8 @@ from utils.path_utils import absolute_path, get_extension
 from .helpers import run_ffmpeg_command
 from utils.tools import ffmpeg_exe
 
+
+
 def extract_audio_track(
     episode: int | str| None = None,
     chapter: str | None = None,
@@ -19,7 +21,7 @@ def extract_audio_track(
     print("Extracting audio from input files")
     k_ep: str = key(episode)
 
-    if chapter in ['g_debut', 'g_fin']:
+    if chapter in ('g_debut', 'g_fin'):
         k_src = db[chapter]['audio']['src']['k_ep']
         k_ed = db[chapter]['audio']['src']['k_ed']
     else:

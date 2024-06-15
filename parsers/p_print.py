@@ -170,7 +170,7 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
 
     if False:
         # print last scene of every part
-        for k_chapter_g in ['g_debut', 'g_fin']:
+        for k_chapter_g in ('g_debut', 'g_fin'):
             print(f"{k_chapter_g}")
             video_track = db[k_chapter_g]['target']['video']
             if video_track['count'] == 0:
@@ -190,7 +190,7 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
     print("avsync(V)".rjust(12), end='')
     print("")
     frames: dict[str, tuple[int]] = {}
-    for k_chapter_g in ['g_debut', 'g_fin']:
+    for k_chapter_g in ('g_debut', 'g_fin'):
         audio_count = 0
         video_count = 0
         video_track = db[k_chapter_g]['video']

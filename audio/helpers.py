@@ -95,7 +95,7 @@ def get_output_filepath(
     db_audio = db[k]['audio']
 
     # Working dir, maybe customized
-    out_directory = os.path.join(db['common']['directories']['cache'], 'audio')
+    out_directory = os.path.join(db['common']['directories']['audio'])
 
     # Create the audio directory
     os.makedirs(out_directory, exist_ok=True)

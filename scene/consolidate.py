@@ -82,7 +82,7 @@ def consolidate_scene(scene: Scene) -> None:
 
         # Target geometry: width defined
         try:
-            if k_ch in ['g_debut', 'g_fin']:
+            if k_ch in ('g_debut', 'g_fin'):
                 target_geometry = db[k_ch]['video']['geometry']['target']
             else:
                 target_geometry = db[k_ep]['video']['target'][k_ch]['geometry']['target']

@@ -6,6 +6,7 @@ from pprint import pprint
 
 from scene.consolidate import consolidate_scene
 from utils.hash import calc_hash
+from utils.logger import logger
 from utils.mco_types import Scene, VideoChapter
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
@@ -38,7 +39,9 @@ def generate_video_track(
     scene_no: int | None = None,
     watermark: bool = False,
     edition: str | None = None,
+    debug: bool = False
 ):
+
     k_ep = key(episode)
     do_concatenate_video: bool = single_chapter == ''
 
@@ -57,14 +60,16 @@ def generate_video_track(
 
     # Create the scen vclip chapter by chapter
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
-    hashes: dict[Chapter, str] = {}
+
+    start_time_full = time.time()
+
     for chapter in chapters:
         hashes_str = ''
 
         # k_ep_src is the default episode source used to generate a chapter
         k_ep_src: str = ''
         video: VideoChapter
-        if chapter in ['g_debut', 'g_fin']:
+        if chapter in ('g_debut', 'g_fin'):
             video = db[chapter]['video']
             k_ep_src = video['src']['k_ep']
 
@@ -85,7 +90,8 @@ def generate_video_track(
         if video['count'] == 0:
             continue
 
-        print(f"\n<<<<<<<<<<<<<<<<<<<<< {chapter} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        if debug:
+            print(f"\n<<<<<<<<<<<<<<<<<<<<< {chapter} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
         video['task'] = ProcessingTask(name=task)
         previous_concat_fp = ''
@@ -116,12 +122,12 @@ def generate_video_track(
                     'k_ch': chapter,
                 })
 
-
-            print(lightgreen(
-                f"\t{scene['no']}: {scene['start']}",
-                f"\t({scene['dst']['count']})\t<- {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}",
-                f"   {scene['start']} ({scene['count']})"
-            ))
+            if debug:
+                print(lightgreen(
+                    f"\t{scene['no']}: {scene['start']}",
+                    f"\t({scene['dst']['count']})\t<- {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}",
+                    f"   {scene['start']} ({scene['count']})"
+                ))
 
             # Set the last task
             scene['task'] = ProcessingTask(name=task)
@@ -135,7 +141,6 @@ def generate_video_track(
             # Calculate hash for the video
             hashes_str += f",{scene['task'].hashcode}"
 
-
             # Create concatenation file
             do_generate_video = False
             concat_fp = generate_concat_file(
@@ -145,20 +150,13 @@ def generate_video_track(
                 previous_concat_fp=previous_concat_fp
             )
             if concat_fp != previous_concat_fp and concat_fp != '':
-                # Add the filepath to the the concatenation video file
                 scene['task'].concat_file = concat_fp
-                # clips.append({
-                #     'path': concat_fp,
-                #     'hash': scene_hash,
-                #     'task': scene['task'] if scene['task'] != 'final' else ''
-                # })
                 do_generate_video = True
             else:
                 # This scene has not enough frames to generate a video scene,
                 # append images to the previous scene and regenerate it
                 combine_frames(
                     chapter=chapter,
-                    # scene=clips[-1],
                     scene=scene,
                     force=True,
                     simulation=simulation,
@@ -178,27 +176,26 @@ def generate_video_track(
                     watermark=f"{scene['no']}" if watermark else None
                 )
 
-            elapsed = time.time() - start_time
-            print(purple(
-                f"\t\tscene no. {scene['no']} generated in "
-                f"{s_to_sexagesimal(elapsed)} ({elapsed/scene['count']:02f}s/f)\n"
-            ))
+            if debug:
+                elapsed = time.time() - start_time
+                print(purple(
+                    f"\t\tscene no. {scene['no']} generated in "
+                    f"{s_to_sexagesimal(elapsed)} ({elapsed/scene['count']:02f}s/f)\n"
+                ))
 
-            if True:
+            if debug:
                 print(lightcyan("================================== Scene ======================================="))
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
                 # sys.exit()
 
-            print(purple(scene['task']))
 
         video['hash'] = calc_hash(hashes_str[:-1])
-        # video_clips[chapter]['hash'] = video_fp['hash']
 
     # For each part, concatenate scenes in a single clip
     for chapter in chapters:
         video: VideoChapter
-        if chapter in ['g_debut', 'g_fin']:
+        if chapter in ('g_debut', 'g_fin'):
             video: VideoChapter = db[chapter]['video']
         else:
             video: VideoChapter = (
@@ -216,24 +213,20 @@ def generate_video_track(
                 simulation=simulation
             )
 
-    verbose = True
+    verbose = False
 
     # Create concatenation files and video files for silences
     if single_chapter == '':
-        print(lightgreen(f"\nCreate silences after:"))
+        logger.debug(lightgreen(f"\nCreate silences after:"))
         silences = generate_silence_concat_file(episode=episode)
-        if verbose:
-            print(lightgreen(f"silences:"))
-            pprint(silences)
-
         for chapter, filepaths in silences.items():
             if verbose:
-                print(lightgreen(f"combine images to video: {chapter}"))
+                logger.debug(lightgreen(f"combine images to video: {chapter}"))
                 pprint(filepaths)
 
             for f in filepaths:
                 if verbose:
-                    print(f"{chapter}: {f}")
+                    logger.debug(f"{chapter}: {f}")
                 virtual_video_scene: Scene = Scene(
                     task=ProcessingTask(
                         name=task,
@@ -276,7 +269,7 @@ def generate_video_track(
         )
 
         # Force concatenation
-        print(
+        logger.debug(
             lightgreen(
                 f"\nConcatenate video clips:\n"
             ),
@@ -309,7 +302,7 @@ def generate_video_track(
                     print(line)
 
 
-
+    print(f"Total time: {time.time() - start_time_full:.02f}s")
 
 
 

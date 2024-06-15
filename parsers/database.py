@@ -203,7 +203,7 @@ def parse_database_for_study(k_ed, k_ep, k_chapter):
     parse_replace_configurations(k_ep_or_g=k_ep)
     parse_geometry_configurations(k_ep_or_g=k_ep)
 
-    for k_p in ['g_debut', 'g_fin']:
+    for k_p in ('g_debut', 'g_fin'):
         parse_replace_configurations(k_ep_or_g=k_p)
         parse_geometry_configurations(k_ep_or_g=k_p)
 

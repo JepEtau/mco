@@ -22,7 +22,7 @@ def makedirs(
     if episode in ['ep00', 'ep40']:
         return
 
-    k = chapter if chapter in ['g_debut', 'g_fin'] else episode
+    k = chapter if chapter in ('g_debut', 'g_fin') else episode
 
     if type == 'video':
         directory = os.path.join(db[k]['cache_path'], 'video')
@@ -87,7 +87,7 @@ def get_out_dirname(scene: Scene):
     dirname: str = task_to_dirname[task_name]
 
     # Put all images in a single folder for 'génériques'
-    if scene['k_ch'] in ['g_debut', 'g_fin']:
+    if scene['k_ch'] in ('g_debut', 'g_fin'):
         return os.path.join(
             db['common']['directories']['cache'],
             scene['k_ch'],

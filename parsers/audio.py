@@ -42,7 +42,7 @@ def parse_audio_g(
             continue
 
         # Parse only supported sections
-        if k_option not in ['g_debut', 'g_fin']:
+        if k_option not in ('g_debut', 'g_fin'):
             continue
 
         db_audio['segments'] = list()

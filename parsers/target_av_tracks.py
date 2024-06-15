@@ -13,7 +13,7 @@ from ._db import db
 
 
 def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
-    if k_chapter in ['g_debut', 'g_fin']:
+    if k_chapter in ('g_debut', 'g_fin'):
         _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c=k_chapter)
         return
 
@@ -274,7 +274,7 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
     """
     logger.debug(lightgreen(f"consolidate_av_tracks_g_debut_end: {k_chapter_c}"))
     fps = get_fps(db)
-    if k_chapter_c not in ['g_debut', 'g_fin']:
+    if k_chapter_c not in ('g_debut', 'g_fin'):
         return
 
     # video and audio tracks

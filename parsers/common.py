@@ -79,7 +79,8 @@ def parse_common_configuration(language:str=''):
 
 
     # Directories
-    db_common['directories']['config'] = database_path
+    directories: dict[str, str] = db_common['directories']
+    directories['config'] = database_path
     for d in (
         'config',
         'inputs',
@@ -94,26 +95,24 @@ def parse_common_configuration(language:str=''):
         'audio',
         'audio_default',
     ):
-        v: str = db_common['directories'][d]
+        v: str = directories[d]
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')
-        db_common['directories'][d] = absolute_path(v)
+        directories[d] = absolute_path(v)
 
 
     # Clean
-    for d, v in db_common['directories'].items():
+    for d, v in directories.items():
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')
-        db_common['directories'][d] = absolute_path(v)
+        directories[d] = absolute_path(v)
 
     # Use default values
-    for d in ['cache', 'cache_progressive', 'frames', 'audio']:
-        if not os.path.exists(db_common['directories'][d]):
-            db_common['directories'][d] = absolute_path(
-                db_common['directories'][f"{d}_default"]
-            )
+    for d in ('cache', 'cache_progressive', 'frames', 'audio'):
+        if not os.path.exists(directories[d]):
+            directories[d] = absolute_path(directories[f"{d}_default"])
         try:
-            del db_common['directories'][f"{d}_default"]
+            del directories[f"{d}_default"]
         except:
             pass
 

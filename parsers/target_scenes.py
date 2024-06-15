@@ -218,7 +218,7 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
         raise KeyError(f"Error: missing file from edition {k_ed_src}",
                        f"cannot use {k_ep_src}:{k_chapter_c}")
 
-    if k_chapter_c in ['g_debut', 'g_fin']:
+    if k_chapter_c in ('g_debut', 'g_fin'):
         db_video_target: VideoChapter = db[k_chapter_c]['video']
         if 'avsync' in db_video_target.keys():
             print("############# consolidate_target_scenes_g: avsync shall not be reset to 0: %d" % (db_video_target['avsync']))
@@ -363,7 +363,7 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
 
 
     # Effects
-    if k_chapter_c in ['g_debut', 'g_fin']:
+    if k_chapter_c in ('g_debut', 'g_fin'):
         db_video_target = db[k_chapter_c]['video']
         if 'effects' in db_video_target.keys():
             last_scene = db_video_target['scenes'][-1]

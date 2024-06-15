@@ -41,7 +41,7 @@ def generate_audio_track(
         return
 
     # Use a specific function
-    if k in ['g_debut', 'g_fin']:
+    if k in ('g_debut', 'g_fin'):
         _generate_audio_track_g(
             chapter=k,
             out_filepath=out_filepath,
@@ -266,7 +266,7 @@ def _generate_audio_track_g(
         None
 
     """
-    if chapter not in ['g_debut', 'g_fin']:
+    if chapter not in ('g_debut', 'g_fin'):
         sys.exit(red(f"Error: {__name__}: do not use this function for chapter {chapter}"))
 
     logger.debug(lightgreen(f"{__name__}: {chapter}"))

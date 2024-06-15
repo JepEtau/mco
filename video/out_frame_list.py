@@ -12,6 +12,7 @@ from pprint import pprint
 from utils.mco_types import Scene
 from utils.mco_utils import get_out_dirname
 from utils.p_print import *
+from utils.logger import logger
 from parsers import (
     db,
     Chapter,
@@ -121,7 +122,7 @@ def get_out_frame_list(
     k_ed = scene['k_ed']
     k_ep_src = scene['k_ep']
     # Target video
-    if k_ch in ['g_debut', 'g_fin']:
+    if k_ch in ('g_debut', 'g_fin'):
         db_video = db[k_ch]['video']
     else:
         db_video = db[k_ep]['video']['target'][k_ch]
@@ -156,14 +157,14 @@ def get_out_frame_list(
     # Add files for effects
     if 'effects' in scene and scene['task'].name != 'initial':
         effect = scene['effects'][0]
-        print(green(f"\tget frame list: effect={effect}"))
+        logger.debug(green(f"\tget frame list: effect={effect}"))
 
         if effect == 'loop_and_fadeout':
             # Initialize values for loop/fadeout
             loop_start = scene['effects'][1]
             loop_count = scene['effects'][2]
             fadeout_count = scene['effects'][3]
-            print(lightgrey(
+            logger.debug(lightgrey(
                 f"\tloop start={loop_start}, count={loop_count} / fadeout start=?, count={fadeout_count}"
             ))
 
@@ -197,7 +198,7 @@ def get_out_frame_list(
             # Output folder
             k_ep_dst: str = scene['dst']['k_ep']
             k_ch_dst: str = scene['dst']['k_ch']
-            if k_ch_dst in ['g_debut', 'g_fin']:
+            if k_ch_dst in ('g_debut', 'g_fin'):
                 output_folder: str = os.path.join(db[k_ch_dst]['cache_path'])
             else:
                 output_folder: str = os.path.join(
@@ -232,7 +233,7 @@ def get_out_frame_list(
             fadeout_count = scene['effects'][2]
             # print("\t\tfadeout: fadeout %d->%d (%d)" % (
             #     fadeout_start, fadeout_start+fadeout_count, fadeout_count))
-            print(lightgrey(f"\tfadeout start=?, count={fadeout_count}"))
+            logger.debug(lightgrey(f"\tfadeout start=?, count={fadeout_count}"))
 
             # Append images until start of fadeout
             image_list += get_frame_file_paths_until_effects(
@@ -243,7 +244,7 @@ def get_out_frame_list(
             # Output folder
             k_ep_dst = scene['dst']['k_ep']
             k_ch_dst = scene['dst']['k_ch']
-            if k_ch_dst in ['g_debut', 'g_fin']:
+            if k_ch_dst in ('g_debut', 'g_fin'):
                 output_folder = os.path.join(db[k_ch_dst]['cache_path'])
             else:
                 output_folder = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
@@ -274,12 +275,12 @@ def get_out_frame_list(
         elif effect == 'loop_and_fadein':
             # fadein_start = scene['effects'][1]
             fadein_count = scene['effects'][2]
-            print(lightgrey(f"\tloop and fade in start={scene['start']}, count={fadein_count}"))
+            logger.debug(lightgrey(f"\tloop and fade in start={scene['start']}, count={fadein_count}"))
 
             # Output folder
             k_ep_dst = scene['dst']['k_ep']
             k_ch_dst = scene['dst']['k_ch']
-            if k_ch_dst in ['g_debut', 'g_fin']:
+            if k_ch_dst in ('g_debut', 'g_fin'):
                 output_folder = os.path.join(db[k_ch_dst]['cache_path'])
             else:
                 output_folder = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
@@ -347,7 +348,7 @@ def get_out_frame_list_single(
 
     k_ed = scene['k_ed']
     k_ep_src = scene['k_ep']
-    if chapter in ['g_debut', 'g_fin']:
+    if chapter in ('g_debut', 'g_fin'):
         db_video = db[chapter]['video']
         print(yellow("CLEEEEEEEEEAAAAAAAAAAAAAAAAANNNNNNNNNNN"))
     else:
@@ -393,12 +394,12 @@ def get_out_frame_list_single(
     # Add files for effects
     if 'effects' in scene.keys():
         effect = scene['effects'][0]
-        print(green(f"\tget frame list (single): effect={effect}"))
+        logger.debug(green(f"\tget frame list (single): effect={effect}"))
 
         if effect == 'loop':
             frame_no = scene['effects'][1]
             loop_count = scene['effects'][2]
-            print(lightgrey(f"\tloop {loop_count} times on {frame_no}"))
+            logger.debug(lightgrey(f"\tloop {loop_count} times on {frame_no}"))
 
             input_folder = get_out_dirname(scene)
 
@@ -407,7 +408,7 @@ def get_out_frame_list_single(
             if scene['task'].name not in ('deinterlace'):
                 end -= start
                 start = 0
-            print(orange("start=%d, end=%d" % (start, end)))
+            logger.debug(orange("start=%d, end=%d" % (start, end)))
             for f_no in range(start, end):
                 filepath = os.path.join(input_folder, filename_template % (f_no))
                 image_list.append(filepath)
@@ -428,7 +429,7 @@ def get_out_frame_list_single(
             loop_start = scene['effects'][1]
             loop_count = scene['effects'][2]
             fadeout_count = scene['effects'][3]
-            print(lightgrey(
+            logger.debug(lightgrey(
                 f"\tstart={loop_start}, count={loop_count} / fadeout start=?, count={fadeout_count}"
             ))
 
@@ -458,7 +459,7 @@ def get_out_frame_list_single(
             # Output folder
             k_ep_dst = scene['dst']['k_ep']
             k_ch_dst = scene['dst']['k_ch']
-            if k_ch_dst in ['g_debut', 'g_fin']:
+            if k_ch_dst in ('g_debut', 'g_fin'):
                 output_folder = os.path.join(db[k_ch_dst]['cache_path'])
             else:
                 output_folder = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
@@ -492,7 +493,7 @@ def get_out_frame_list_single(
             fadeout_count = scene['effects'][2]
             # print("\t\tfadeout: fadeout %d->%d (%d)" % (
             #     fadeout_start, fadeout_start+fadeout_count, fadeout_count))
-            print(lightgreen("\t%s: fadeout start=%s, count=%d" % (
+            logger.debug(lightgreen("\t%s: fadeout start=%s, count=%d" % (
                 effect, fadeout_start, fadeout_count)))
 
 
@@ -504,7 +505,7 @@ def get_out_frame_list_single(
             # Output folder
             k_ep_dst = scene['dst']['k_ep']
             k_ch_dst = scene['dst']['k_ch']
-            if k_ch_dst in ['g_debut', 'g_fin']:
+            if k_ch_dst in ('g_debut', 'g_fin'):
                 output_folder = os.path.join(db[k_ch_dst]['cache_path'])
             else:
                 output_folder = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)

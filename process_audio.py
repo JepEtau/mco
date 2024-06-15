@@ -172,7 +172,7 @@ def main():
     else:
         # All
         if process == 'extract':
-            for _chapter in ['g_debut', 'g_fin']:
+            for _chapter in ('g_debut', 'g_fin'):
                 extract_audio_track(
                     edition=edition,
                     force=arguments.force
@@ -186,7 +186,7 @@ def main():
             )
 
         elif process == 'generate':
-            for _chapter in ['g_debut', 'g_fin']:
+            for _chapter in ('g_debut', 'g_fin'):
                 generate_audio_track(
                     episode=_chapter,
                     force=arguments.force

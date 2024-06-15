@@ -11,7 +11,7 @@ from utils.p_print import *
 
 
 def get_in_frame_list(scene: Scene, task: TaskName) -> list[str]:
-    print(orange(f"\t\t\tget_new_image_list: use replace list, task={task}"))
+    # print(orange(f"\t\t\tget_new_image_list: use replace list, task={task}"))
     dirname: str = task_to_dirname[scene['task'].name]
 
     h: str = scene['task'].hashcode

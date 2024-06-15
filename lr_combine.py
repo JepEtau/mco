@@ -95,11 +95,18 @@ def main():
         help="Watermark each scene with scene no."
     )
 
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        required=False,
+        help="Print for debug"
+    )
+
     arguments = parser.parse_args()
 
     if arguments.debug:
         logger.addHandler(logging.StreamHandler(sys.stdout))
-        logger.setLevel("DEBUG")
+        logger.setLevel("ERROR")
 
     episode: int = arguments.episode
     chapter: str = arguments.chapter

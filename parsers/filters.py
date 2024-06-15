@@ -30,7 +30,7 @@ def _clean_filter(data: str) -> str:
 
 
 def parse_filters(db_video, config: ConfigParser, k_section: str):
-    verbose = True
+    verbose = False
     if verbose:
         print(lightcyan("Parse_filters: "))
         print(green(f"\tsection: {k_section}"))

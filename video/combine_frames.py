@@ -40,11 +40,11 @@ def combine_frames(
     )
     video_filepath: str = task.video_file
 
-    print(
-        lightgrey(f"\tcombine images into video:"),
-        lightcyan(f"{chapter}:"),
-        f"{video_filepath}"
-    )
+    # print(
+    #     lightgrey(f"\tcombine images into video:"),
+    #     lightcyan(f"{chapter}:"),
+    #     f"{video_filepath}"
+    # )
 
     if not os.path.exists(video_filepath) or force:
         db_settings: dict[str, str] = db_common['settings']

@@ -1,6 +1,4 @@
-import sys
 import os
-from pprint import pprint
 
 from parsers.helpers import get_fps
 
@@ -8,6 +6,7 @@ from utils.mco_types import Scene, VideoChapter
 # Audio, VideoPart
 from utils.mco_utils import makedirs
 from utils.p_print import *
+from utils.logger import logger
 # from utils.types import
 from parsers import (
     db,
@@ -32,10 +31,10 @@ def generate_concat_file(
 ):
     k_ep, k_ch = key(episode), chapter
 
-    print(
-        lightgrey(f"\tcreate concatenation file: "),
-        lightcyan(f"{k_ep}, {k_ch}, scene no. {scene['no']}")
-    )
+    # print(
+    #     lightgrey(f"\tcreate concatenation file: "),
+    #     lightcyan(f"{k_ep}, {k_ch}, scene no. {scene['no']}")
+    # )
     # Use a single concatenation file for
     #   - g_asuivre, g_documentaire
     if k_ch in ['g_asuivre', 'g_documentaire']:
@@ -120,7 +119,7 @@ def generate_single_concat_file(
     k_ep, k_ch = key(episode), chapter
     # print("%s._create_concatenation_file" % (__name__))
     # pprint(scene)
-    k_ep_or_g = k_ep if k_ch not in ['g_debut', 'g_fin'] else k_ch
+    k_ep_or_g = k_ep if k_ch not in ('g_debut', 'g_fin') else k_ch
 
     # Get the list of images
     images_filepath = get_out_frame_list_single(
@@ -136,7 +135,7 @@ def generate_single_concat_file(
     if previous_concat_fp == '':
         # Create a concatenation file
 
-        if k_ch in ['g_debut', 'g_fin']:
+        if k_ch in ('g_debut', 'g_fin'):
             # Use the edition/episode defined as reference
             concat_fp: str = os.path.join(
                 db[k_ep_or_g]['cache_path'], "concat",
@@ -179,7 +178,7 @@ def generate_silence_concat_file(episode: int | str) -> dict:
 
         db_audio = db[k_ep]['audio'][k_ch]
         if 'silence' in db_audio and db_audio['silence'] > 0:
-            print(lightgrey(f"\t- {k_ch}"))
+            logger.debug(lightgrey(f"\t- {k_ch}"))
 
             # Convert silence duration in nb of frames
             silence_count = ms_to_frame(db_audio['silence'], fps)
@@ -241,7 +240,7 @@ def generate_video_concat_file(
 
     for k_ep_or_g in [k_ep, 'g_debut', 'g_fin']:
 
-        if k_ep_or_g in ['g_debut', 'g_fin']:
+        if k_ep_or_g in ('g_debut', 'g_fin'):
             k_ch = k_ep_or_g
             suffix = f"{k_ch}"
         else:
@@ -261,7 +260,7 @@ def generate_video_concat_file(
         if verbose:
             print(green(f"create_video_concat_file: {concat_fp}"))
 
-        if k_ch in ['g_debut', 'g_fin']:
+        if k_ch in ('g_debut', 'g_fin'):
             # TODO remove!
             print(red("Not allowed"))
             for k in main_chapter_keys():
