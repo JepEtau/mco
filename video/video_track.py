@@ -5,8 +5,9 @@ import time
 from pprint import pprint
 
 from scene.consolidate import consolidate_scene
+from scene.process import process_scene
 from utils.hash import calc_hash
-from utils.logger import logger
+from utils.logger import main_logger
 from utils.mco_types import Scene, VideoChapter
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
@@ -20,7 +21,7 @@ from parsers import (
     TaskName,
     ProcessingTask
 )
-from video.in_frame_list import get_frame_list
+from video.frame_list import get_frame_list
 from .concat_files import (
     generate_concat_file,
     generate_silence_concat_file,
@@ -135,14 +136,22 @@ def generate_video_track(
             scene['task'] = ProcessingTask(name=task)
 
             # Generate frames for this scene
+            consolidate_scene(scene=scene)
+            scene['in_frames'] = get_frame_list(scene)
+
             if not simulation:
-                process_scene(scene=scene, force=force)
+                result = process_scene(scene=scene, force=force)
+                if not result:
+                    raise RuntimeError(
+                        red(f"Failed processing scene: source: {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}")
+                    )
             else:
-                consolidate_scene(scene=scene)
-                scene['in_frames'] = get_frame_list(scene)
                 # For stats
                 if chapter not in ('g_debut', 'g_fin'):
                     unique_input_frame_count += len(scene['in_frames'])
+
+            if task == 'initial':
+                continue
 
             # Calculate hash for the video
             hashes_str += f",{scene['task'].hashcode}"
@@ -198,6 +207,10 @@ def generate_video_track(
 
         video['hash'] = calc_hash(hashes_str[:-1])
 
+    if task == 'initial':
+        print(f"Total time: {time.time() - start_time_full:.03f}s")
+        return
+
     # For each part, concatenate scenes in a single clip
     for chapter in chapters:
         video: VideoChapter
@@ -223,16 +236,16 @@ def generate_video_track(
 
     # Create concatenation files and video files for silences
     if single_chapter == '':
-        logger.debug(lightgreen(f"\nCreate silences after:"))
+        main_logger.debug(lightgreen(f"\nCreate silences after:"))
         silences = generate_silence_concat_file(episode=episode)
         for chapter, filepaths in silences.items():
             if verbose:
-                logger.debug(lightgreen(f"combine images to video: {chapter}"))
+                main_logger.debug(lightgreen(f"combine images to video: {chapter}"))
                 pprint(filepaths)
 
             for f in filepaths:
                 if verbose:
-                    logger.debug(f"{chapter}: {f}")
+                    main_logger.debug(f"{chapter}: {f}")
                 virtual_video_scene: Scene = Scene(
                     task=ProcessingTask(
                         name=task,
@@ -275,11 +288,9 @@ def generate_video_track(
         )
 
         # Force concatenation
-        logger.debug(
-            lightgreen(
-                f"\nConcatenate video clips:\n"
-            ),
-            f"\t{episode_video_filepath}\n"
+        main_logger.debug(
+            lightgreen(f"\nConcatenate video clips:\n")
+            + f"\t{episode_video_filepath}\n"
         )
         ffmpeg_command = [
             ffmpeg_exe,

@@ -20,6 +20,20 @@ if TYPE_CHECKING:
 # count: frame count of a chapter/scene/segment
 
 
+class Inputs(TypedDict):
+    class Interlaced(TypedDict):
+        filepath: str
+
+    class Progressive(TypedDict):
+        filepath: str
+        cache: str
+        enable: bool
+        start: int
+        count: int
+
+    interlaced: Interlaced
+    progressive: Progressive
+
 
 # unless specified, timestamps and duration are in ms
 class AudioSrc(TypedDict):
@@ -167,7 +181,7 @@ class Scene(TypedDict):
     # i.e. specifies all variables to generate images
 
     # struct which define the the input file
-    inputs: dict
+    inputs: Inputs
         # 'progressive' : dict
         #       'filepath' : str
         #       'filepath' : str

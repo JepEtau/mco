@@ -10,9 +10,9 @@ from pprint import pprint
 #     get_image_list,
 # )
 from utils.mco_types import Scene
-from utils.mco_utils import get_out_dirname
+from utils.mco_utils import get_out_directory
 from utils.p_print import *
-from utils.logger import logger
+from utils.logger import main_logger
 from parsers import (
     db,
     Chapter,
@@ -22,7 +22,7 @@ from parsers import (
     IMG_FILENAME_TEMPLATE,
     task_to_dirname,
 )
-from .in_frame_list import get_frame_list
+from .frame_list import get_frame_list
 
 
 
@@ -36,7 +36,7 @@ def get_frame_file_paths_until_effects(
     chapter = scene['k_ch']
 
     # Input folder
-    current_output_folder = get_out_dirname(scene)
+    current_output_folder = get_out_directory(scene)
 
     # print(yellow("get_frame_file_paths_until_effects: output folder: %s" % (current_output_folder)))
         # pprint("last task: [%s]" % (scene['tasks'][-1]))
@@ -86,7 +86,7 @@ def get_frame_file_paths_until_effects(
             )
 
         else:
-            image_list = get_frame_list(scene=scene, replace=True)
+            image_list = get_frame_list(scene=scene, replace=True, out=True)
 
         # else:
         #     image_list = get_image_list(
@@ -150,14 +150,14 @@ def get_out_frame_list(
     # Add files for effects
     if 'effects' in scene and scene['task'].name != 'initial':
         effect = scene['effects'][0]
-        logger.debug(green(f"\tget frame list: effect={effect}"))
+        main_logger.debug(green(f"\tget frame list: effect={effect}"))
 
         if effect == 'loop_and_fadeout':
             # Initialize values for loop/fadeout
             loop_start = scene['effects'][1]
             loop_count = scene['effects'][2]
             fadeout_count = scene['effects'][3]
-            logger.debug(
+            main_logger.debug(
                 lightgrey(f"\tloop start={loop_start}, ")
                 + lightgrey(f"count={loop_count} / fadeout start={loop_start}, ")
                 + lightgrey(f"count={fadeout_count}")
@@ -168,7 +168,7 @@ def get_out_frame_list(
                 chapter=k_ch, scene=scene, suffix=suffix
             )
 
-            input_folder = get_out_dirname(scene)
+            input_folder = get_out_directory(scene)
             if loop_count < fadeout_count:
                 # Looping is < fading out: replace the frames before the loop
                 # by the generated ones
@@ -229,7 +229,7 @@ def get_out_frame_list(
             fadeout_count = scene['effects'][2]
             # print("\t\tfadeout: fadeout %d->%d (%d)" % (
             #     fadeout_start, fadeout_start+fadeout_count, fadeout_count))
-            logger.debug(lightgrey(f"\tfadeout start=?, count={fadeout_count}"))
+            main_logger.debug(lightgrey(f"\tfadeout start=?, count={fadeout_count}"))
 
             # Append images until start of fadeout
             image_list += get_frame_file_paths_until_effects(
@@ -271,7 +271,7 @@ def get_out_frame_list(
         elif effect == 'loop_and_fadein':
             # fadein_start = scene['effects'][1]
             fadein_count = scene['effects'][2]
-            logger.debug(lightgrey(f"\tloop and fade in start={scene['start']}, count={fadein_count}"))
+            main_logger.debug(lightgrey(f"\tloop and fade in start={scene['start']}, count={fadein_count}"))
 
             # Output folder
             k_ep_dst = scene['dst']['k_ep']
@@ -390,21 +390,21 @@ def get_out_frame_list_single(
     # Add files for effects
     if 'effects' in scene.keys():
         effect = scene['effects'][0]
-        logger.debug(green(f"\tget frame list (single): effect={effect}"))
+        main_logger.debug(green(f"\tget frame list (single): effect={effect}"))
 
         if effect == 'loop':
             frame_no = scene['effects'][1]
             loop_count = scene['effects'][2]
-            logger.debug(lightgrey(f"\tloop {loop_count} times on {frame_no}"))
+            main_logger.debug(lightgrey(f"\tloop {loop_count} times on {frame_no}"))
 
-            input_folder = get_out_dirname(scene)
+            input_folder = get_out_directory(scene)
 
             # Append the frames before the loop
             filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
             # if scene['task'].name not in ('deinterlace'):
             #     end -= start
             #     start = 0
-            logger.debug(orange("start=%d, end=%d" % (start, end)))
+            main_logger.debug(orange("start=%d, end=%d" % (start, end)))
             for f_no in range(start, end):
                 filepath = os.path.join(input_folder, filename_template % (f_no))
                 image_list.append(filepath)
@@ -425,7 +425,7 @@ def get_out_frame_list_single(
             loop_start = scene['effects'][1]
             loop_count = scene['effects'][2]
             fadeout_count = scene['effects'][3]
-            logger.debug(lightgrey(
+            main_logger.debug(lightgrey(
                 f"\tstart={loop_start}, count={loop_count} / fadeout start=?, count={fadeout_count}"
             ))
 
@@ -435,7 +435,7 @@ def get_out_frame_list_single(
             )
 
 
-            input_folder = get_out_dirname(scene)
+            input_folder = get_out_directory(scene)
             if loop_count < fadeout_count:
                 # Looping is < fading out: replace the frames before the loop
                 # by the generated ones
@@ -489,7 +489,7 @@ def get_out_frame_list_single(
             fadeout_count = scene['effects'][2]
             # print("\t\tfadeout: fadeout %d->%d (%d)" % (
             #     fadeout_start, fadeout_start+fadeout_count, fadeout_count))
-            logger.debug(lightgreen("\t%s: fadeout start=%s, count=%d" % (
+            main_logger.debug(lightgreen("\t%s: fadeout start=%s, count=%d" % (
                 effect, fadeout_start, fadeout_count)))
 
 

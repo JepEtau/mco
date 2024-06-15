@@ -8,6 +8,7 @@ import sys
 from typing import Any, Literal
 
 from utils.hash import calc_hash
+from utils.logger import main_logger
 from utils.media import FieldOrder, VideoInfo
 from utils.p_print import *
 from utils.path_utils import absolute_path, get_extension
@@ -121,10 +122,10 @@ def generate_avs_script(
 ) -> Path | str:
     script = """
         SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
-        SetFilterMTMode("FFVideoSource", MT_SERIALIZED)
+        SetFilterMTMode("FFMPEGSource2", MT_SERIALIZED)
         SetFilterMTMode ("QTGMC", MT_MULTI_INSTANCE)
 
-        FFVideoSource("{filepath}", cache=false)
+        FFMPEGSource2("{filepath}", cache=false)
         {field_order}
         {trim}
         {qtgmc}
@@ -272,11 +273,15 @@ def generate_avs_script(
     if trim_count != -1 and trim_start + trim_count > in_video_info['frame_count']:
         raise ValueError(f"Erroneous trim value: {trim_start+trim_count} > {in_video_info['frame_count']}")
 
+    main_logger.debug(f"trim: start: {trim_start}, count: {trim_count}")
     trim_line: str = ""
     if trim_start != 0 and trim_count == -1:
-        trim_line = "trim(%d, 0)\n" % (trim_start)
-    elif trim_start != 0 and trim_count != -1:
-        trim_line = "trim(%d, end=%d)\n" % (trim_start, (trim_start + trim_count - 1))
+        trim_line = f"trim({trim_start}, 0)\n"
+    elif trim_start == 0 and trim_count != -1:
+        trim_line = f"trim({trim_start}, {trim_start + trim_count - 1})\n"
+    elif trim_start != 0 or trim_count != -1:
+        trim_line = f"trim({trim_start}, {trim_start + trim_count - 1})\n"
+    main_logger.debug(f"trim_line: {trim_line}")
 
     filepath_replaced: bool = False
     trim_replaced: bool = False
@@ -303,8 +308,10 @@ def generate_avs_script(
                 lines[i] = trim_line
                 trim_replaced = True
 
-    if (trim_start != 0 or trim_count != -1) and not trim_replaced:
-        raise ValueError("Missing trim instruction")
+    if not filepath_replaced:
+        raise ValueError(red("Error: failed to modify input video"))
+    if not trim_replaced and (trim_start != 0 or trim_count != -1):
+        raise ValueError(red("Error: failed to modify trim values"))
 
     # Imports
     ignore: tuple[str] = (

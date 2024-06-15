@@ -3,7 +3,7 @@ from pprint import pprint
 
 from utils.mco_utils import makedirs
 from utils.mco_types import Scene, VideoChapter
-from utils.logger import logger
+from utils.logger import main_logger
 from utils.p_print import *
 from parsers import (
     db,
@@ -28,7 +28,7 @@ def concat_scenes(
     k_ep, k_ch = key(episode), chapter
     hashcode: str = video['hash']
 
-    logger.debug(lightcyan(f"\nConcatenate scenes: {k_ep}:{k_ch}"))
+    main_logger.debug(lightcyan(f"\nConcatenate scenes: {k_ep}:{k_ch}"))
 
     # if verbose:
     #     pprint(video_files)
@@ -78,7 +78,7 @@ def concat_scenes(
 
         if verbose:
             print(f"{k_ch}: concatenate scenes into a single clip: {out_video}")
-        logger.debug(f"\t{out_video}")
+        main_logger.debug(f"\t{out_video}")
         # Concatenate scenes into a single video
         ffmpeg_command = [db['common']['tools']['ffmpeg']]
         ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))

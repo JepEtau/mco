@@ -6,12 +6,13 @@ from pprint import pprint
 import signal
 import subprocess
 import sys
+import time
 from typing import OrderedDict
 from parsers import (
     db,
+    logger as parse_logger,
     key,
     parse_database,
-    logger,
     all_chapter_keys,
     get_dependencies,
 )
@@ -26,10 +27,12 @@ from processing.deint import (
     generate_avs_script
 )
 from processing.decoder import decoder_frame_prop
+from utils.mco_types import Inputs
 from utils.media import VideoInfo, extract_media_info, get_media_info
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
-
+from utils.logger import main_logger
+from utils.time_conversions import s_to_sexagesimal
 
 
 def main():
@@ -102,8 +105,11 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
     arguments = parser.parse_args()
 
     if arguments.debug:
-        logger.addHandler(logging.StreamHandler(sys.stdout))
-        logger.setLevel("DEBUG")
+        parse_logger.addHandler(logging.StreamHandler(sys.stdout))
+        parse_logger.setLevel("WARNING")
+
+        main_logger.addHandler(logging.StreamHandler(sys.stdout))
+        main_logger.setLevel("DEBUG")
 
     episode: int = arguments.episode
     chapter: str = arguments.chapter
@@ -146,30 +152,42 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         if ed not in editions
     ]
 
+    if arguments.debug:
+        print(cyan("Dependencies"))
+        pprint(dependencies)
+        pprint(editions)
+
     # Get all range to deinterlace for each dependency
     in_videos: OrderedDict[str, dict[str, set]] = OrderedDict()
-    for ed in editions:
-        for k_c in all_chapter_keys():
-            inputs = get_chapter_video_src(db, ep, ed, k_c)['inputs']
-            # in_videos[ed_ep_c] =
-            fp: str = inputs['interlaced']['filepath']
-            segment: tuple[int, int] = (
-                inputs['progressive']['start'],
-                inputs['progressive']['count']
-            )
-            if fp not in in_videos:
-                in_videos[fp] = {
-                    'ed_ep': (ed, ep),
-                    'segments': set(),
-                }
-            in_videos[fp]['segments'].add(segment)
+    for k_ed in editions:
+        if k_ed not in dependencies:
+            continue
 
-    pprint(in_videos)
+        for k_ep in dependencies[k_ed]:
+            for k_c in all_chapter_keys():
+                input: Inputs = db[k_ep]['video'][k_ed][k_c]['inputs']
+                fp: str = input['interlaced']['filepath']
+
+                segment: tuple[int, int] = (
+                    input['progressive']['start'],
+                    input['progressive']['count']
+                )
+
+                if fp not in in_videos:
+                    in_videos[fp] = {
+                        'ed_ep': (k_ed, k_ep),
+                        'segments': set(),
+                    }
+                in_videos[fp]['segments'].add(segment)
+
+    if arguments.debug:
+        print(cyan("Dependencies"))
+        pprint(in_videos)
 
     for in_video, value in in_videos.items():
         ed, ep = value['ed_ep']
-        if arguments.edition != '' and ed != arguments.edition:
-            continue
+        # if arguments.edition != '' and ed != arguments.edition:
+        #     continue
 
         # Input media
         in_media_path: str = absolute_path(in_video)
@@ -209,6 +227,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
 
         # QTGMC or FFmpeg
         trim_start, trim_count = list(value['segments'])[0]
+        main_logger.debug(f"trim: start: {trim_start}, count: {trim_count}")
         if arguments.deint == 'qtgmc':
 
             # Get AviSynth+ template
@@ -277,19 +296,28 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
                 out_filepath=out_filepath
             )
 
+        print(cyan(f"Output:"), f"{out_filepath}")
         if os.path.exists(out_filepath):
             out_video_info = extract_media_info(out_filepath)['video']
-            if (
-                (trim_count == -1 and trim_count == out_video_info['frame_count'])
-                or out_video_info['frame_count'] == trim_count
-            ):
-                print(yellow(f"{out_filepath} already exists"))
+            _trim_count: int = (
+                trim_count
+                if trim_count != -1
+                else in_video_info['frame_count'] - trim_start
+            )
+            main_logger.debug(
+                f"{out_filepath} already exists "
+                + f"asked: {_trim_count} vs "
+                + f"current video: {out_video_info['frame_count']}"
+            )
+
+            if out_video_info['frame_count'] == _trim_count:
+                print()
                 continue
+        else:
+           main_logger.debug(f"{out_filepath} does not exist")
 
-
-        print(cyan(f"Output:"), f"{out_filepath}")
         frame_count: int = (
-            in_video_info['frame_count']
+            in_video_info['frame_count'] - trim_start
             if trim_count == -1
             else trim_count
         )
@@ -300,6 +328,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             print(' '.join(ffmpeg_command))
 
         os.makedirs(db_directories['cache_progressive'], exist_ok=True)
+        start_time: float = time.time()
         sub_process = subprocess.Popen(
             ffmpeg_command,
             stdin=subprocess.PIPE,
@@ -316,7 +345,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
                 for line in stdout.decode('utf-8').split('\n'):
                     print(line)
 
-
+        print(cyan("Elapsed time"), f"{s_to_sexagesimal(time.time() - start_time)}")
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)

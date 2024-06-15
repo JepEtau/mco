@@ -172,10 +172,10 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
 
 
     video_info['bpp'] = v['bpp']
-
     video_info['frame_count'] = int(
-        (video_info['duration'] * video_info['frame_rate_r'][0])
+        (video_info['duration'] * float(video_info['frame_rate_r'][0]))
         / video_info['frame_rate_r'][1]
+        + 0.5
     )
 
     tags = v_stream.get('tags', None)

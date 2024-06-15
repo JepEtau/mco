@@ -18,7 +18,7 @@ from video.video_track import generate_video_track
 
 def main():
     # Arguments
-    parser = argparse.ArgumentParser(description="Parse the database")
+    parser = argparse.ArgumentParser(description="Extract initial frames")
     parser.add_argument(
         "--episode",
         "-ep",
@@ -146,7 +146,7 @@ def main():
     generate_video_track(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
-        task='lr',
+        task='initial',
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=scene_no,

@@ -17,7 +17,7 @@ from utils.p_print import *
 from utils.path_utils import get_app_tempdir, get_extension
 from utils.tools import external_dir
 from utils.time_conversions import reformat_datetime
-from utils.logger import logger
+from utils.logger import main_logger
 
 
 
@@ -52,7 +52,7 @@ def download_package(
 
     _retry: int = retry
     while _retry:
-        logger.debug(f"Downloading: {package.name} to {tmp_dir}")
+        main_logger.debug(f"Downloading: {package.name} to {tmp_dir}")
         if progress is not None:
             progress.update(task_id, total=package.size)
             progress.start_task(task_id)
@@ -64,12 +64,12 @@ def download_package(
                     if progress is not None:
                         progress.update(task_id, advance=len(data))
             except Exception as e:
-                logger.info("[W] Retry download, error: type(e)")
+                main_logger.info("[W] Retry download, error: type(e)")
                 _retry -= 1
                 continue
 
         if _retry == 0:
-            logger.info(f"[E] failed downloading {package.filename}")
+            main_logger.info(f"[E] failed downloading {package.filename}")
             return False
 
         _retry = 0
@@ -82,7 +82,7 @@ def download_package(
 
 
 def install_ext_package(package: ExtPackage) -> bool:
-    logger.info(lightgrey(f"  install"))
+    main_logger.info(lightgrey(f"  install"))
     install_dir: str = package.install_dir
 
     extension: str = get_extension(package.tmp_file)
@@ -105,7 +105,7 @@ def install_ext_package(package: ExtPackage) -> bool:
         shutil.rmtree(os.path.dirname(package.tmp_file))
     except:
         pass
-    logger.info(lightgrey(f"  {package.name} installed"))
+    main_logger.info(lightgrey(f"  {package.name} installed"))
 
     return True
 
@@ -119,7 +119,7 @@ def download_install_ext_package(
     temp_dir: str = get_app_tempdir()
     if package.skip:
         return True
-    logger.info(f"Package: {package.name}")
+    main_logger.info(f"Package: {package.name}")
 
     # Get info from host and update package info
     url: str = f"{package.host}/{package.filename}"
@@ -129,7 +129,7 @@ def download_install_ext_package(
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         if str(e).startswith('404'):
-            logger.error(f"File {url} not found")
+            main_logger.error(f"File {url} not found")
         return False
     last_modified: str = reformat_datetime(response.headers['Last-Modified'])
     package.size=int(response.headers.get('Content-length', 0))
@@ -141,7 +141,7 @@ def download_install_ext_package(
     package.install_dir = os.path.join(external_dir, package.dirname)
     if os.path.exists(os.path.join(package.install_dir, last_modified)):
         package.installed = True
-        logger.info(lightgrey(f"  already installed"))
+        main_logger.info(lightgrey(f"  already installed"))
         try:
             shutil.rmtree(os.path.dirname(package.tmp_file))
         except:
@@ -155,7 +155,7 @@ def download_install_ext_package(
         and os.path.getsize(package.tmp_file) == package.size
     ):
         package.downloaded = True
-        logger.info(lightgrey(f"  already downloaded"))
+        main_logger.info(lightgrey(f"  already downloaded"))
 
     else:
         package.downloaded = download_package(

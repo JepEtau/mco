@@ -2,7 +2,7 @@ import logging
 import signal
 import sys
 from utils.p_print import *
-from utils.logger import logger
+from utils.logger import main_logger
 
 from deps.ext_packages import (
     ExtPackage,
@@ -92,14 +92,14 @@ def py_packages() -> tuple[PyPackage]:
 
 
 def main():
-    logger.addHandler(logging.StreamHandler(sys.stdout))
-    logger.setLevel("WARNING")
+    main_logger.addHandler(logging.StreamHandler(sys.stdout))
+    main_logger.setLevel("WARNING")
 
     success: bool = update_pip()
     if success:
-        logger.info("[I] pip is up-to-date")
+        main_logger.info("[I] pip is up-to-date")
     else:
-        logger.warning("[W] Failed updating pip")
+        main_logger.warning("[W] Failed updating pip")
 
     # install_py_packages(py_packages(),threads=4)
 

@@ -385,12 +385,11 @@ def get_episode_dependencies(
                 scenes = chapter_video['scenes']
                 for scene in scenes:
                     if 'src' in scene.keys() and 'k_ep' in scene['src']:
-                        # print(scene)
-                        if 'k_ed' in scene['src']:
-                            k_ed_dep = scene['src']['k_ed']
-                        else:
-                            k_ed_dep = k_ed_src
-
+                        k_ed_dep = (
+                            scene['src']['k_ed']
+                            if 'k_ed' in scene['src']
+                            else k_ed_src
+                        )
                         if k_ed_dep not in dependencies:
                             dependencies[k_ed_dep] = set()
                         dependencies[k_ed_dep].add(scene['src']['k_ep'])

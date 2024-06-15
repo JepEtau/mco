@@ -6,7 +6,7 @@ from utils.mco_types import Scene, VideoChapter
 # Audio, VideoPart
 from utils.mco_utils import makedirs
 from utils.p_print import *
-from utils.logger import logger
+from utils.logger import main_logger
 # from utils.types import
 from parsers import (
     db,
@@ -178,7 +178,7 @@ def generate_silence_concat_file(episode: int | str) -> dict:
 
         db_audio = db[k_ep]['audio'][k_ch]
         if 'silence' in db_audio and db_audio['silence'] > 0:
-            logger.debug(lightgrey(f"\t- {k_ch}"))
+            main_logger.debug(lightgrey(f"\t- {k_ch}"))
 
             # Convert silence duration in nb of frames
             silence_count = ms_to_frame(db_audio['silence'], fps)

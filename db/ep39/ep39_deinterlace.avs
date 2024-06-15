@@ -1,8 +1,8 @@
 SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
-SetFilterMTMode("FFVideoSource", MT_SERIALIZED)
+SetFilterMTMode("FFMPEGSource2", MT_SERIALIZED)
 SetFilterMTMode ("QTGMC", MT_MULTI_INSTANCE)
 
-FFVideoSource("A:\mco\inputs\f\f_ep39.mkv", cache=false)
+FFMPEGSource2("A:\mco\inputs\f\f_ep39.mkv", cache=false)
 
 AssumeTFF()
 trim(0, -1)

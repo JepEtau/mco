@@ -7,7 +7,7 @@ from utils.p_print import *
 from parsers import (
     Chapter, key, db, task_to_dirname, TaskName
 )
-from .logger import logger
+from .logger import main_logger
 
 
 
@@ -82,14 +82,15 @@ def get_cache_path(scene: Scene) -> str:
 
 
 
-def get_out_dirname(scene: Scene):
+def get_out_directory(scene: Scene):
     task_name: TaskName = scene['task'].name
     dirname: str = task_to_dirname[task_name]
+    cache_dir: str = db['common']['directories']['cache']
 
     # Put all images in a single folder for 'génériques'
     if scene['k_ch'] in ('g_debut', 'g_fin'):
         return os.path.join(
-            db['common']['directories']['cache'],
+            cache_dir,
             scene['k_ch'],
             f"{scene['no']:03}",
             dirname,
@@ -97,7 +98,7 @@ def get_out_dirname(scene: Scene):
 
     if task_name == 'final':
         output_path = os.path.join(
-            db['common']['directories']['cache'],
+            cache_dir,
             scene['dst']['k_ep'],
             scene['dst']['k_ch'],
             f"{scene['no']:03}",
@@ -107,7 +108,7 @@ def get_out_dirname(scene: Scene):
     else:
         # Work in the src directory
         output_path = os.path.join(
-            db['common']['directories']['cache'],
+            cache_dir,
             scene['k_ep'],
             scene['k_ch'],
             f"{scene['src']['no']:03}",
@@ -135,7 +136,7 @@ def run_simple_command(command: list[str] | tuple[str]) -> bool:
     except:
         pass
 
-    logger.debug(f"[V] {command[0]} executed in {time.time() - start_time:.02f}s")
+    main_logger.debug(f"[V] {command[0]} executed in {time.time() - start_time:.02f}s")
     if stdout:
         print(stdout)
     if stderr:

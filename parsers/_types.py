@@ -55,7 +55,7 @@ TaskName = Literal[
 TASK_NAMES: list[str] = get_args(TaskName)
 
 task_to_dirname: dict[TaskName, str] = {
-    'deinterlace': '00_initial',
+    'initial': '00_initial',
     'lr': '00_lr',
     'upscale': '01_upscaled',
     'stabilize': '02_restored',
