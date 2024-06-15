@@ -1,4 +1,5 @@
 import os
+from typing import Literal
 from parsers import (
     IMG_FILENAME_TEMPLATE,
     task_to_dirname,
@@ -10,8 +11,7 @@ from utils.mco_types import (
 from utils.p_print import *
 
 
-def get_in_frame_list(scene: Scene, task: TaskName) -> list[str]:
-    # print(orange(f"\t\t\tget_new_image_list: use replace list, task={task}"))
+def get_frame_list(scene: Scene, replace: bool = False) -> list[str]:
     dirname: str = task_to_dirname[scene['task'].name]
 
     h: str = scene['task'].hashcode
@@ -23,38 +23,20 @@ def get_in_frame_list(scene: Scene, task: TaskName) -> list[str]:
     )
     directory: str = os.path.join(scene['cache'], dirname)
 
-    # Generate the list
-    replace: dict[int, int] = scene['replace']
-    frames: list[str] = []
-
-    # Deinterlace: use frame no to facilitate the debug
-    for no in range(
-        scene['start'],
-        scene['start'] + scene['count']
-    ):
-        try:
-            new_frame_no = replace[no]
-            # print_purple("\t%d -> %d" % (no, new_frame_no))
-        except:
-            new_frame_no = no
-            # print_green("\t%d -> %d" % (no, new_frame_no))
-
-        frames.append(
+    frame_replace = scene['replace']
+    if replace:
+        return list([
             os.path.join(
                 directory,
-                filename_template % (new_frame_no)
+                filename_template % (frame_replace[no] if no in frame_replace else no)
             )
-        )
-    # else:
-    #     for no in range(scene['count']):
-    #         try:
-    #             new_frame_no = replace[scene['start'] + no] - scene['start']
-    #             # print_purple("\t%d <- %d" % (no, new_frame_no))
-    #         except:
-    #             new_frame_no = no
-    #             # print_green("\t%d <- %d" % (no, new_frame_no))
+            for no in range(scene['start'], scene['start'] + scene['count'])
+            if no not in frame_replace
+        ])
 
-    #         image_list.append(os.path.join(os.path.normpath(folder),
-    #             filename_template % (new_frame_no)))
-
-    return frames
+    else:
+        return list([
+            os.path.join(directory, filename_template % (no))
+            for no in range(scene['start'], scene['start'] + scene['count'])
+            if no not in frame_replace
+        ])

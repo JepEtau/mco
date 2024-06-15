@@ -15,6 +15,7 @@ TaskName = Literal[
     #   output: progressive video. single file: FFv1 8-bit
     #   out_hash:
     # folder: 00_initial
+    # NOT YET SUPPORTED
     'initial',
 
     # Create a low resolution video for edition only

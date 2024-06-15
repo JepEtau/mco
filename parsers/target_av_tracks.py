@@ -167,7 +167,12 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
                     frame_no = last_scene['src']['start'] + last_scene['src']['count'] - 1
 
                 last_scene.update({
-                    'effects': ['loop_and_fadeout', frame_no, loop_count, min(loop_count, 25)]
+                    'effects': [
+                        'loop_and_fadeout',
+                        frame_no,
+                        loop_count,
+                        min(loop_count, 25)
+                    ]
                 })
                 # last_scene['src']['count'] -= loop_count
 
@@ -225,8 +230,10 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
                 # logger.debug(first_scene)
                 # sys.exit()
 
-            if ('fadeout' in video['effects'].keys()
-                and video['effects']['fadeout'] != 0):
+            if (
+                'fadeout' in video['effects']
+                and video['effects']['fadeout'] != 0
+            ):
                 logger.debug(yellow(f"\t{k_ep}:{k_chapter} modify fadeout effect in db_video!"))
 
                 fadeout_count = video['effects']['fadeout']

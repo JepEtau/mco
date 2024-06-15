@@ -20,6 +20,7 @@ from parsers import (
     TaskName,
     ProcessingTask
 )
+from video.in_frame_list import get_frame_list
 from .concat_files import (
     generate_concat_file,
     generate_silence_concat_file,
@@ -137,6 +138,7 @@ def generate_video_track(
                 process_scene(scene=scene, force=force)
             else:
                 consolidate_scene(scene=scene)
+                # pprint(get_frame_list(scene))
 
             # Calculate hash for the video
             hashes_str += f",{scene['task'].hashcode}"

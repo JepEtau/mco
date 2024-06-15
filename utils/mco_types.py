@@ -148,7 +148,7 @@ class Scene(TypedDict):
     src: SceneSrc
 
     # list of frames to replace
-    replace: dict
+    replace: dict[int, int]
 
     # contains parameters to deshake.
     #   warning: stabilize = deshake. TODO correct this

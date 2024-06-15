@@ -10,6 +10,7 @@ from parsers import (
     all_chapter_keys,
     db
 )
+from utils.logger import logger as main_logger
 from utils.p_print import *
 from video.video_track import generate_video_track
 
@@ -95,18 +96,11 @@ def main():
         help="Watermark each scene with scene no."
     )
 
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        required=False,
-        help="Print for debug"
-    )
-
     arguments = parser.parse_args()
 
     if arguments.debug:
-        logger.addHandler(logging.StreamHandler(sys.stdout))
-        logger.setLevel("ERROR")
+        main_logger.addHandler(logging.StreamHandler(sys.stdout))
+        main_logger.setLevel("DEBUG")
 
     episode: int = arguments.episode
     chapter: str = arguments.chapter
@@ -144,6 +138,7 @@ def main():
     scene_no: int | None = None
     scene_arg: str = arguments.scene
     if scene_arg.endswith('f'):
+        raise NotImplementedError("scene_arg not yet implemented")
         scene_no = frame_to_scene_no(int(scene_arg[:-1]))
     elif scene_arg != '':
         scene_no: int = int(scene_arg)
@@ -157,9 +152,8 @@ def main():
         scene_no=scene_no,
         watermark=arguments.watermark,
         edition=arguments.edition,
+        debug=arguments.debug
     )
-
-
 
 
 
