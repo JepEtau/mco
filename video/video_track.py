@@ -140,9 +140,9 @@ def generate_video_track(
             else:
                 consolidate_scene(scene=scene)
                 scene['in_frames'] = get_frame_list(scene)
+                # For stats
                 if chapter not in ('g_debut', 'g_fin'):
                     unique_input_frame_count += len(scene['in_frames'])
-                # pprint(get_frame_list(scene))
 
             # Calculate hash for the video
             hashes_str += f",{scene['task'].hashcode}"
