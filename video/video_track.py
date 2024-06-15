@@ -61,6 +61,7 @@ def generate_video_track(
 
     # Create the scen vclip chapter by chapter
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
+    unique_input_frame_count: int = 0
 
     start_time_full = time.time()
 
@@ -138,6 +139,9 @@ def generate_video_track(
                 process_scene(scene=scene, force=force)
             else:
                 consolidate_scene(scene=scene)
+                scene['in_frames'] = get_frame_list(scene)
+                if chapter not in ('g_debut', 'g_fin'):
+                    unique_input_frame_count += len(scene['in_frames'])
                 # pprint(get_frame_list(scene))
 
             # Calculate hash for the video
@@ -303,8 +307,8 @@ def generate_video_track(
                 for line in stdout.decode('utf-8').split('\n'):
                     print(line)
 
-
-    print(f"Total time: {time.time() - start_time_full:.02f}s")
+    print(f"total number of frames to upscale: {unique_input_frame_count}")
+    print(f"Total time: {time.time() - start_time_full:.03f}s")
 
 
 

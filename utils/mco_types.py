@@ -182,8 +182,13 @@ class Scene(TypedDict):
     # path to the file which contains all hashes for this episode
     hash_log_file: str
 
-    # Path the the cache directory for this scene
+    # Path of the cache directory for this scene
     cache: str
+
+    # List of unique frames to generate this scene.
+    # This is usefull to optimize some processing such as upscale
+    in_frames: list[str]
+
 
 
 class DstScene(TypedDict):
