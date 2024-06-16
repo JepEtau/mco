@@ -62,7 +62,7 @@ def main():
         "-ed",
         choices=['f', 'k', 's'],
         default='',
-        required=False,
+        required=True,
         help="Use this edition as source rather than the one selected in database"
     )
 

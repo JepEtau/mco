@@ -16,7 +16,6 @@ from parsers import (
     all_chapter_keys,
     get_dependencies,
 )
-from parsers.helpers import get_chapter_video_src
 from processing.deint import (
     calc_deint_hash,
     deint_command,

@@ -17,18 +17,24 @@ def get_filters(scene: Scene) -> list[Filter]:
     if scene['filters_id'] == 'default':
         if verbose:
             print(lightgrey(f"\tdefault filter"))
-            pprint(db[k_ep]['video'][k_ed][k_ch]['filters'])
+            # pprint(db[k_ep]['video'][k_ed][k_ch]['filters'])
 
         # This scene uses default filters. Use the one defined in the part
-        if 'filters' not in db[k_ep]['video'][k_ed][k_ch].keys():
+        if (
+            'filters' not in db[k_ep]['video'][k_ed][k_ch]
+            and scene['task'].name != 'initial'
+        ):
             sys.exit(print(red(f"Error: {k_ed}:{k_ep}:{k_ch}: no available filters")))
 
         try:
             filters = db[k_ep]['video'][k_ed][k_ch]['filters']['default']
         except:
-            print(red(f"Error: default filter is not defined but required by {k_ed}:{k_ep}:{k_ch}, no. {scene['no']:03}"))
-            pprint(scene)
-            sys.exit()
+            if scene['task'].name == 'initial':
+                return {}
+            else:
+                print(red(f"Error: default filter is not defined but required by {k_ed}:{k_ep}:{k_ch}, no. {scene['no']:03}"))
+                pprint(scene)
+                sys.exit()
 
     elif isinstance(scene['filters_id'], str):
         if verbose:

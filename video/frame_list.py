@@ -20,9 +20,9 @@ def get_out_dirname(scene: Scene, out: bool =False) -> str:
         try:
             index: int = TASK_NAMES.index(task_name)
         except:
-            return ""
-        if index >= 1:
-            return ""
+            index = 0
+        if index < 1:
+            return task_to_dirname[TASK_NAMES[0]]
         dirname: str = task_to_dirname[TASK_NAMES[index - 1]]
     return dirname
 

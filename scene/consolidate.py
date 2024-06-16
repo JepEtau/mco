@@ -15,6 +15,52 @@ from utils.path_utils import path_split
 from .filters import get_filters
 
 
+def _consolidate_for_initial(scene: Scene) -> None:
+    k_ep = scene['k_ep']
+    k_ed = scene['k_ed']
+    k_ch = scene['k_ch']
+
+    scene['filters'] = deepcopy(get_filters(scene))
+
+    # consolidate_scene_filters
+    scene_filters = scene['filters']
+
+    # Add missing filters
+    for t in TASK_NAMES:
+        if t not in scene_filters:
+            scene_filters[t] = Filter(task_name=t)
+
+    # Deinterlace
+    template_script: str = get_template_script(
+        episode=scene['src']['k_ep'],
+        edition=scene['src']['k_ed']
+    )
+    qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
+    deint_hashcode, _ = calc_deint_hash(qtgmc_args)
+    scene_filters['initial'].hash = deint_hashcode
+
+    # Update the scene task
+    scene['task'].hashcode = scene_filters[scene['task'].name].hash
+
+    # Inputs
+    scene['cache'] = get_cache_path(scene)
+    scene['inputs'] = deepcopy(db[k_ep]['video'][k_ed][k_ch]['inputs'])
+    scene['inputs']['progressive']['cache'] = db['common']['directories']['cache_progressive']
+
+    # Set the progressive filepath
+    basename: str = path_split(scene['inputs']['interlaced']['filepath'])[1]
+    filename: str = f"{basename}_{deint_hashcode}.mkv"
+    progressive_fp: str = os.path.join(
+        db['common']['directories']['cache_progressive'],
+        filename
+    )
+    scene['inputs']['progressive']['filepath'] = progressive_fp
+
+
+
+
+
+
 def consolidate_scene(scene: Scene) -> None:
     """This procedure is used to simplify a single scene and add
     properties to process it: removes unecessary property, add
@@ -22,13 +68,15 @@ def consolidate_scene(scene: Scene) -> None:
 
     edition_mode: used to not consolidate geometry/curves and remove replace/stabilize/deshake
     """
-    verbose = False
+    verbose = True
     if verbose:
         print(lightgreen("Consolidate scene:"))
         print(lightcyan("================================== Scene ======================================="))
         pprint(scene)
         print(lightcyan("-------------------------------------------------------------------------------"))
 
+    # if scene['task'].name == 'initial':
+    #     return _consolidate_for_initial(scene)
 
     # k_ed, k_ep and k_ch are the source keys for this scene
     # [dst][k_ep] and [dst][k_ch] are the destination (i.e. target)
@@ -52,72 +100,73 @@ def consolidate_scene(scene: Scene) -> None:
 
     # Geometry
     #---------------------------------------------------------------------------
-    if k_ch in ['g_asuivre', 'g_documentaire']:
-        # print("\t\t\tconsolidate_scene: get geometry from %s:%s:%s" % (k_ed, k_ep, k_ch[2:]))
-        k_ep_dst = scene['dst']['k_ep']
-        try:
-            target_geometry = db[k_ep_dst]['video']['target'][k_ch[2:]]['geometry']['target']
-        except:
-            target_geometry = None
-        nested_dict_set(scene, target_geometry, 'geometry', 'target')
+    if scene['task'].name != 'initial':
+        if k_ch in ['g_asuivre', 'g_documentaire']:
+            # print("\t\t\tconsolidate_scene: get geometry from %s:%s:%s" % (k_ed, k_ep, k_ch[2:]))
+            k_ep_dst = scene['dst']['k_ep']
+            try:
+                target_geometry = db[k_ep_dst]['video']['target'][k_ch[2:]]['geometry']['target']
+            except:
+                target_geometry = None
+            nested_dict_set(scene, target_geometry, 'geometry', 'target')
 
-        try:
-            scene_geometry = db[k_ep]['video'][k_ed][k_ch]['geometry']
-            scene_geometry['is_default'] = False
-        except:
-            scene_geometry = {
-                'keep_ratio': True,
-                'fit_to_width': False,
-                'crop': [0] * 4,
-                'is_default': False,
-            }
-        nested_dict_set(scene, scene_geometry, 'geometry', 'scene')
+            try:
+                scene_geometry = db[k_ep]['video'][k_ed][k_ch]['geometry']
+                scene_geometry['is_default'] = False
+            except:
+                scene_geometry = {
+                    'keep_ratio': True,
+                    'fit_to_width': False,
+                    'crop': [0] * 4,
+                    'is_default': False,
+                }
+            nested_dict_set(scene, scene_geometry, 'geometry', 'scene')
 
-    else:
-        # print("\t\t\tconsolidate_scene: get geometry for %s:%s:%s" % (k_ed, k_ep, k_ch))
-        k_ed_src = scene['src']['k_ed']
-        k_ep_src = scene['src']['k_ep']
-        k_ch_src = scene['src']['k_ch']
-        scene_no_src = scene['src']['no']
-
-        # Target geometry: width defined
-        try:
-            if k_ch in ('g_debut', 'g_fin'):
-                target_geometry = db[k_ch]['video']['geometry']['target']
-            else:
-                target_geometry = db[k_ep]['video']['target'][k_ch]['geometry']['target']
-        except:
-            target_geometry = None
-        nested_dict_set(scene, target_geometry, 'geometry', 'target')
-
-        # Get default geometry for a scene
-        try:
-            default_scene_src_geometry = db[k_ep_src]['video'][k_ed_src][k_ch_src]['geometry']
-            default_scene_src_geometry['is_default'] = True
-        except:
-            default_scene_src_geometry = {
-                'keep_ratio': True,
-                'fit_to_width': False,
-                'crop': [0] * 4,
-                'is_default': True
-            }
-
-        # Get the customized geometry for a scene
-        try:
-            scene_src_geometry = db[k_ep_src]['video'][k_ed_src][k_ch_src]['scenes'][scene_no_src]['geometry']['scene']
-            scene_src_geometry['is_default'] = False
-        except:
-            scene_src_geometry = None
-
-        if scene_src_geometry is not None:
-            # Use the customized
-            nested_dict_set(scene, scene_src_geometry, 'geometry', 'scene')
-            scene['geometry']['scene']['is_default'] = False
         else:
-            # Use the default because no customized defined
-            nested_dict_set(scene, default_scene_src_geometry, 'geometry', 'scene')
-            try: scene['geometry']['scene']['is_default'] = True
-            except: pass
+            print("\t\t\tconsolidate_scene: get geometry for %s:%s:%s" % (k_ed, k_ep, k_ch))
+            k_ed_src = scene['src']['k_ed']
+            k_ep_src = scene['src']['k_ep']
+            k_ch_src = scene['src']['k_ch']
+            scene_no_src = scene['src']['no']
+
+            # Target geometry: width defined
+            try:
+                if k_ch in ('g_debut', 'g_fin'):
+                    target_geometry = db[k_ch]['video']['geometry']['target']
+                else:
+                    target_geometry = db[k_ep]['video']['target'][k_ch]['geometry']['target']
+            except:
+                target_geometry = None
+            nested_dict_set(scene, target_geometry, 'geometry', 'target')
+
+            # Get default geometry for a scene
+            try:
+                default_scene_src_geometry = db[k_ep_src]['video'][k_ed_src][k_ch_src]['geometry']
+                default_scene_src_geometry['is_default'] = True
+            except:
+                default_scene_src_geometry = {
+                    'keep_ratio': True,
+                    'fit_to_width': False,
+                    'crop': [0] * 4,
+                    'is_default': True
+                }
+
+            # Get the customized geometry for a scene
+            try:
+                scene_src_geometry = db[k_ep_src]['video'][k_ed_src][k_ch_src]['scenes'][scene_no_src]['geometry']['scene']
+                scene_src_geometry['is_default'] = False
+            except:
+                scene_src_geometry = None
+
+            if scene_src_geometry is not None:
+                # Use the customized
+                nested_dict_set(scene, scene_src_geometry, 'geometry', 'scene')
+                scene['geometry']['scene']['is_default'] = False
+            else:
+                # Use the default because no customized defined
+                nested_dict_set(scene, default_scene_src_geometry, 'geometry', 'scene')
+                try: scene['geometry']['scene']['is_default'] = True
+                except: pass
 
 
     # Processing chain

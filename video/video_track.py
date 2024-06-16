@@ -45,6 +45,7 @@ def generate_video_track(
 ):
 
     k_ep = key(episode)
+    k_ed = edition
     do_concatenate_video: bool = single_chapter == ''
 
     # Create the video directory for this episode or chapter
@@ -74,7 +75,7 @@ def generate_video_track(
         video: VideoChapter
         if chapter in ('g_debut', 'g_fin'):
             video = db[chapter]['video']
-            k_ep_src = video['src']['k_ep']
+            k_ep_src: str = k_ep if task == 'initial' else video['src']['k_ep']
 
         elif k_ep == 'ep00':
             sys.exit(red("Missing episode no."))
@@ -84,13 +85,13 @@ def generate_video_track(
             # Used for study
             video = (
                 db[k_ep]['video']['target'][chapter]
-                if edition == ''
-                else db[k_ep]['video'][edition][chapter]
+                if k_ed == ''
+                else db[k_ep]['video'][k_ed][chapter]
             )
             k_ep_src = k_ep
 
         # Do not generate clip for unused chapters
-        if video['count'] == 0:
+        if video['count'] <= 0:
             continue
 
         if debug:
@@ -107,21 +108,21 @@ def generate_video_track(
                 continue
 
             # Patch the for study mode
-            if edition != '':
+            if k_ed != '':
                 scene.update({
                     'dst': {
                         'count': scene['count'],
-                        'k_ed': edition,
-                        'k_ep': episode,
+                        'k_ed': k_ed,
+                        'k_ep': k_ep,
                         'k_ch': chapter,
                     },
                     'src': {
-                        'k_ed': edition,
-                        'k_ep': episode,
+                        'k_ed': k_ed,
+                        'k_ep': k_ep_src,
                         'k_ch': chapter,
                     },
-                    'k_ed': edition,
-                    'k_ep': episode,
+                    'k_ed': k_ed,
+                    'k_ep': k_ep_src,
                     'k_ch': chapter,
                 })
 
@@ -142,6 +143,7 @@ def generate_video_track(
             if not simulation:
                 result = process_scene(scene=scene, force=force)
                 if not result:
+                    pprint(db[scene['k_ep']]['video'][scene['k_ed']])
                     raise RuntimeError(
                         red(f"Failed processing scene: source: {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}")
                     )
