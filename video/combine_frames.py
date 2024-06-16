@@ -81,7 +81,7 @@ def combine_frames(
         if simulation:
             return
 
-        success = run_simple_command(ffmpeg_command=ffmpeg_command)
+        success = run_simple_command(command=ffmpeg_command)
         if not success:
             print(red(f"Error: failed to generate {video_filepath}"))
             try:
