@@ -7,6 +7,7 @@ from parsers import (
     get_fps,
     task_to_dirname
 )
+from processing.effects import effect_fadeout
 from utils.logger import main_logger
 from utils.mco_types import Scene
 from utils.mco_utils import get_cache_path, get_out_directory, run_simple_command
@@ -36,7 +37,7 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
     #         effect_loop_and_fadein(db, scene)
 
     #     else:
-    #         print_green("\tuse concatenation files")
+    #         print(green("\tuse concatenation files"))
 
     # Extract frames from video
     task_name: str = scene['task'].name
@@ -107,12 +108,24 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
         else:
             success: bool = True
 
-        pprint(scene)
         if success and 'effects' in scene:
+            pprint(scene)
             fp = filepath_template % scene['src']['start']
-            print(fp)
 
-            sys.exit()
+            effect = scene['effects'][0]
+            print(lightcyan("Effects:"))
+
+            if effect == 'loop_and_fadeout':
+                effect_loop_and_fadeout(scene)
+
+            elif effect == 'fadeout':
+                effect_fadeout(scene)
+
+            elif effect == 'loop_and_fadein':
+                effect_loop_and_fadein(scene)
+
+            else:
+                print(green("\tuse concatenation files"))
 
 
         return success

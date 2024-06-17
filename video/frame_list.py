@@ -28,7 +28,7 @@ def get_out_dirname(scene: Scene, out: bool =False) -> str:
 
 
 def get_frame_list(scene: Scene, replace: bool = False, out: bool =False) -> list[str]:
-    dirname: str = get_out_dirname(scene)
+    dirname: str = get_out_dirname(scene) #, out)
     directory: str = os.path.join(scene['cache'], dirname)
 
     h: str = scene['task'].hashcode
@@ -41,14 +41,11 @@ def get_frame_list(scene: Scene, replace: bool = False, out: bool =False) -> lis
 
     frame_replace = scene['replace']
     if replace:
-        return list([
-            os.path.join(
-                directory,
-                filename_template % (frame_replace[no] if no in frame_replace else no)
-            )
-            for no in range(scene['start'], scene['start'] + scene['count'])
-            if no not in frame_replace
-        ])
+        imgs: list[str] = []
+        for no in range(scene['start'], scene['start'] + scene['count']):
+            out_no: int = frame_replace[no] if no in frame_replace else no
+            imgs.append(os.path.join(directory, filename_template % (out_no)))
+        return imgs
 
     else:
         return list([

@@ -120,7 +120,7 @@ def get_out_frame_list(
       - g_debut, g_fin
     """
     k_ep, k_ch = key(episode), chapter
-    image_list: list[str] = []
+    imgs: list[str] = []
 
     k_ed = scene['k_ed']
     k_ep_src = scene['k_ep']
@@ -147,7 +147,7 @@ def get_out_frame_list(
                     'black.png'
                 )
                 for _ in range(db_video['avsync']):
-                    image_list.append(black_image_filepath)
+                    imgs.append(black_image_filepath)
     except:
         print(orange("\t\t\tinfo: discard a/v, target does not exist"))
 
@@ -169,15 +169,15 @@ def get_out_frame_list(
             )
 
             # Append images until start of loop_and_fadeout
-            image_list += get_frame_file_paths_until_effects(
+            imgs += get_frame_file_paths_until_effects(
                 chapter=k_ch, scene=scene, suffix=suffix
             )
 
-            input_folder = get_out_directory(scene)
+            input_dir = get_out_directory(scene)
             if loop_count < fadeout_count:
                 # Looping is < fading out: replace the frames before the loop
                 # by the generated ones
-                del image_list[loop_count - fadeout_count:]
+                del imgs[loop_count - fadeout_count:]
 
             elif loop_count > fadeout_count:
                 # Looping is > fading out: append the differences to the image list
@@ -186,7 +186,7 @@ def get_out_frame_list(
                 )
                 # if scene['task'].name == 'deinterlace':
                 filepath = os.path.join(
-                    input_folder, filename_template % (loop_start)
+                    input_dir, filename_template % (loop_start)
                 )
                 # else:
                 #     filepath = os.path.join(
@@ -194,22 +194,16 @@ def get_out_frame_list(
                 #     )
                 for _ in range(loop_count - fadeout_count):
                     print(f"\t\t\t+ loop: {filepath}")
-                    image_list.append(filepath)
+                    imgs.append(filepath)
 
-            # Output folder
+            # Output directory
             k_ep_dst: str = scene['dst']['k_ep']
             k_ch_dst: str = scene['dst']['k_ch']
             if k_ch_dst in ('g_debut', 'g_fin'):
-                output_folder: str = os.path.join(db[k_ch_dst]['cache_path'])
+                out_dir: str = os.path.join(db[k_ch_dst]['cache_path'])
             else:
-                output_folder: str = os.path.join(
-                    db[k_ep_dst]['cache_path'], k_ch_dst
-                )
-            output_folder = os.path.join(
-                output_folder,
-                f"{scene['no']:03}",
-                dirname
-            )
+                out_dir: str = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
+            out_dir = os.path.join(out_dir, f"{scene['no']:03}", dirname)
 
             # Append images to the list
             scene_src_start, scene_src_count = scene['start'], scene['count']
@@ -223,8 +217,8 @@ def get_out_frame_list(
                 scene_src_start + scene_src_count,
                 scene_src_start + scene_src_count + fadeout_count
             ):
-                filepath = os.path.join(output_folder, filename_template % (f_no))
-                image_list.append(filepath)
+                filepath = os.path.join(out_dir, filename_template % (f_no))
+                imgs.append(filepath)
                 # print("\t\t\t+ fadeout: %s" % (p))
 
         elif effect == 'fadeout':
@@ -237,20 +231,20 @@ def get_out_frame_list(
             main_logger.debug(lightgrey(f"\tfadeout start=?, count={fadeout_count}"))
 
             # Append images until start of fadeout
-            image_list += get_frame_file_paths_until_effects(
+            imgs += get_frame_file_paths_until_effects(
                 chapter=k_ch, scene=scene, suffix=suffix
             )
-            image_list = image_list[:-1 *fadeout_count]
+            imgs = imgs[:-1 *fadeout_count]
 
             # Output folder
             k_ep_dst = scene['dst']['k_ep']
             k_ch_dst = scene['dst']['k_ch']
             if k_ch_dst in ('g_debut', 'g_fin'):
-                output_folder = os.path.join(db[k_ch_dst]['cache_path'])
+                out_dir = os.path.join(db[k_ch_dst]['cache_path'])
             else:
-                output_folder = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
-            output_folder = os.path.join(
-                output_folder,
+                out_dir = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
+            out_dir = os.path.join(
+                out_dir,
                 f"{scene['no']:03}",
                 dirname
             )
@@ -261,15 +255,12 @@ def get_out_frame_list(
             filename_template = IMG_FILENAME_TEMPLATE % (
                 k_ep_src, k_ed, task_no, suffix
             )
-            if scene['task'].name not in ('deinterlace'):
-                scene_src_start = 0
-
             for f_no in range(
                 scene_src_start + scene_src_count,
                 scene_src_start + scene_src_count + fadeout_count
             ):
-                filepath = os.path.join(output_folder, filename_template % (f_no))
-                image_list.append(filepath)
+                filepath = os.path.join(out_dir, filename_template % (f_no))
+                imgs.append(filepath)
 
                 # print("\t\t\t+ fadeout: %s" % (p))
 
@@ -282,11 +273,11 @@ def get_out_frame_list(
             k_ep_dst = scene['dst']['k_ep']
             k_ch_dst = scene['dst']['k_ch']
             if k_ch_dst in ('g_debut', 'g_fin'):
-                output_folder = os.path.join(db[k_ch_dst]['cache_path'])
+                out_dir = os.path.join(db[k_ch_dst]['cache_path'])
             else:
-                output_folder = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
-            output_folder = os.path.join(
-                output_folder,
+                out_dir = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
+            out_dir = os.path.join(
+                out_dir,
                 f"{scene['no']:03}",
                 dirname
             )
@@ -300,20 +291,20 @@ def get_out_frame_list(
             if scene['task'].name not in ('deinterlace'):
                 scene_src_start = 0
 
-            image_list = list()
+            imgs = list()
             for f_no in range(scene_src_start + scene_src_count,
                                 scene_src_start + scene_src_count + fadein_count):
-                image_list.append(
-                    os.path.join(output_folder, filename_template % (f_no))
+                imgs.append(
+                    os.path.join(out_dir, filename_template % (f_no))
                 )
 
             # List of images and remove the 1st 'fadein_count' images
-            image_list += get_frame_file_paths_until_effects(
+            imgs += get_frame_file_paths_until_effects(
                 chapter=k_ch, scene=scene, suffix=suffix
             )
 
     else:
-        image_list += get_frame_file_paths_until_effects(
+        imgs += get_frame_file_paths_until_effects(
             chapter=k_ch, scene=scene, suffix=suffix
         )
 
@@ -324,9 +315,9 @@ def get_out_frame_list(
                 db['common']['directories']['cache'], 'black.png'
             )
             for _ in range(db_video['silence']):
-                image_list.append(black_image_filepath)
+                imgs.append(black_image_filepath)
 
-    return image_list
+    return imgs
 
 
 

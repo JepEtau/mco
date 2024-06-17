@@ -1,1 +1,2 @@
 - add an option to set the codec to FFv1 when deinterlacing video
+- effect_fadeout: won't work because filename_template must be different from out and in

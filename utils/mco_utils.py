@@ -18,11 +18,11 @@ def makedirs(
 ):
     """ Create a directory that contains all video clips or the concatenation files
     """
-    episode = key(episode)
-    if episode in ['ep00', 'ep40']:
+    k_ep = key(episode)
+    if k_ep in ['ep00', 'ep40']:
         return
 
-    k = chapter if chapter in ('g_debut', 'g_fin') else episode
+    k = chapter if chapter in ('g_debut', 'g_fin') else k_ep
 
     if type == 'video':
         directory = os.path.join(db[k]['cache_path'], 'video')

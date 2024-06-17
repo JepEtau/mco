@@ -46,7 +46,11 @@ def generate_video_track(
 
     k_ep = key(episode)
     k_ed = edition
-    do_concatenate_video: bool = single_chapter == ''
+    do_concatenate_video: bool = (
+        True
+        if single_chapter == '' # or single_chapter in ('g_debut', 'g_fin')
+        else False
+    )
 
     # Create the video directory for this episode or chapter
     makedirs(k_ep, single_chapter, 'video')
@@ -126,12 +130,11 @@ def generate_video_track(
                     'k_ch': chapter,
                 })
 
-            if debug:
-                print(lightgreen(
-                    f"\t{scene['no']}: {scene['start']}",
-                    f"\t({scene['dst']['count']})\t<- {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}",
-                    f"   {scene['start']} ({scene['count']})"
-                ))
+            print(lightgreen(
+                f"\t{scene['no']}: {scene['start']}",
+                f"\t({scene['dst']['count']})\t<- {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}",
+                f"   {scene['start']} ({scene['count']})"
+            ))
 
             # Set the last task
             scene['task'] = ProcessingTask(name=task)
@@ -205,7 +208,6 @@ def generate_video_track(
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
                 # sys.exit()
-
 
         video['hash'] = calc_hash(hashes_str[:-1])
 
