@@ -63,9 +63,10 @@ python parse_db.py --episode 1 --en
 
 ## 1. Generate audio tracks
 Examples:
-- Opening credits:
+- Opening/Ending credits:
     ```sh
     python process_audio.py --chapter g_debut
+    python.exe process_audio.py --chapter g_fin
     ```
 
 - Episode:

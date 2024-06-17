@@ -119,7 +119,6 @@ def effect_loop_and_fadeout(scene: Scene):
     #   - ep01: episode
     #   - ep01: asuivre
     #   - g_debut
-    sys.exit("effect_loop_and_fadeout")
 
     # Start and count of frames for the loop
     loop_start = scene['effects'][1]
@@ -127,60 +126,53 @@ def effect_loop_and_fadeout(scene: Scene):
     fadeout_count = scene['effects'][3]
     print(green(f"\tloop and fadeout: loop: start={loop_start}, count={loop_count} / fadeout: count={fadeout_count}"))
 
-
-    # Get hash to set the suffix
-    hash = scene['last_step']['hash']
-    step_no = scene['last_step']['step_no']
-    if hash == '':
-        # Last filter is null, use previous hash
-        previous_filter = scene['filters'][step_no - STEP_INC]
-        hash = previous_filter['hash']
-        input_filepath = get_input_path_from_shot(
-            scene=scene, task=previous_filter['task'])
-    else:
-        input_filepath = get_input_path_from_shot(
-            scene=scene)
-    suffix = "_%s" % (hash)
+    hash: str = scene['task'].hashcode
+    dirname: str = task_to_dirname[scene['task'].name]
+    task_no: int = int(dirname[:2])
+    suffix: str = f"_{hash}"
+    k_ed = scene['k_ed']
+    k_ep_src = scene['k_ep']
 
     # Input directory
-    print(lightgrey("\tinput_filepath: %s" % (input_filepath)))
-
+    in_dir: str = os.path.join(
+        get_cache_path(scene), get_out_dirname(scene)
+    )
+    print(lightgrey(f"\tinput_filepath: {in_dir}"))
 
     # Output directory
-    k_ep_dst = scene['dst']['k_ep']
-    k_ch_dst = scene['dst']['k_part']
-    if k_ch_dst in ['g_debut', 'g_fin']:
-        output_filepath = os.path.join(db[k_ch_dst]['cache_path'])
+    k_ep_dst: str = scene['dst']['k_ep']
+    k_ch_dst: str = scene['dst']['k_ch']
+    if k_ch_dst in ('g_debut', 'g_fin'):
+        out_dir: str = os.path.join(db[k_ch_dst]['cache_path'])
     else:
-        output_filepath = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
-    output_filepath = os.path.join(output_filepath,
-        f"{scene['no']:03}",f"{step_no:02}")
-    if not os.path.exists(output_filepath):
-        os.makedirs(output_filepath)
-    print(lightgrey("\toutput_filepath: %s" % (output_filepath)))
+        out_dir: str = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
+    out_dir = os.path.join(out_dir, f"{scene['no']:03}", dirname)
+    print(lightgrey("\toutput_directory: %s" % (out_dir)))
+    os.makedirs(out_dir, exist_ok=True)
 
 
     # Input image list before the loop
-    if scene['last_task'] == 'edition':
-        image_list = get_image_list_pre_replace(scene=scene,
-            folder=input_filepath,
-            step_no=step_no,
-            hash=hash)
-    elif scene['last_step']['step_no'] == scene['last_step']['step_edition']:
-        image_list = get_new_image_list(scene=scene,
-            step_no=step_no,
-            hash=scene['filters'][step_no - STEP_INC]['hash'])
-    else:
-        image_list = get_image_list(scene=scene,
-            folder=input_filepath,
-            step_no=step_no,
-            hash=hash)
+    # if scene['last_task'] == 'edition':
+    #     image_list = get_image_list_pre_replace(scene=scene,
+    #         folder=input_filepath,
+    #         step_no=step_no,
+    #         hash=hash)
+    # elif scene['last_step']['step_no'] == scene['last_step']['step_edition']:
+    #     image_list = get_new_image_list(scene=scene,
+    #         step_no=step_no,
+    #         hash=scene['filters'][step_no - STEP_INC]['hash'])
+    # else:
+    #     image_list = get_image_list(scene=scene,
+    #         folder=input_filepath,
+    #         step_no=step_no,
+    #         hash=hash)
+
     # Duplicate the last one
     loop_start -= scene['start']
     last_image_filepath = image_list[loop_start]
-    print(lightgrey("\tfile used for the loop effect: %s" % (last_image_filepath)))
+    print(lightgrey(f"\tfile used for the loop effect: {last_image_filepath}"))
     image_list += [last_image_filepath] * loop_count
-    print(lightgrey("\tnb of frames after the loop: %s" % (len(image_list))))
+    print(lightgrey(f"\tnb of frames after the loop: {len(image_list)}"))
     input_image_list = image_list[-1*fadeout_count:]
     # pprint(input_image_list)
     print(lightgrey("\tfade out: frames count: %d" % (len(input_image_list))))
@@ -189,21 +181,18 @@ def effect_loop_and_fadeout(scene: Scene):
     # Output image list
     filename_template = FILENAME_TEMPLATE % (
         scene['k_ep'], scene['k_ed'], step_no, suffix)
-    if scene['last_task'] == 'deinterlace':
-        start = scene['start'] + scene['count']
-        end = start + fadeout_count
-    else:
-        start = scene['count']
-        end = start + fadeout_count
+
+    start = scene['start'] + scene['count']
+    end = start + fadeout_count
+
+
     output_image_list = list([os.path.join(output_filepath, filename_template % (f_no))
         for f_no in range(start, end)])
 
     print(lightgrey("\toutput image count: %d" % (len(output_image_list))))
 
-    (height, width, channel_count) = scene['last_step']['shape']
-
-    # Create a  black image for fadeout
-    img_black = np.zeros([height, width, channel_count], dtype=np.uint8)
+    img_src: np.ndarray = cv2.imread(in_imgs[0], cv2.IMREAD_COLOR)
+    img_black = np.zeros(img_src.shape, dtype=img_src.dtype)
 
     cache_strlen = len(db['common']['directories']['cache']) + 1
     for count, img_input, img_output in zip(range(fadeout_count), input_image_list, output_image_list):
@@ -230,18 +219,18 @@ def effect_fadeout(scene: Scene):
     fadeout_count = scene['effects'][2]
     print(green(f"\tfadeout: start={fadeout_start}, count={fadeout_count}"))
 
-    # Input directory
-    in_dir: str = os.path.join(
-        get_cache_path(scene), get_out_dirname(scene)
-    )
-    print(lightgrey(f"\tinput_filepath: {in_dir}"))
-
     hash: str = scene['task'].hashcode
     dirname: str = task_to_dirname[scene['task'].name]
     task_no: int = int(dirname[:2])
     suffix: str = f"_{hash}"
     k_ed = scene['k_ed']
     k_ep_src = scene['k_ep']
+
+    # Input directory
+    in_dir: str = os.path.join(
+        get_cache_path(scene), get_out_dirname(scene)
+    )
+    print(lightgrey(f"\tinput_filepath: {in_dir}"))
 
     # Output directory
     k_ep_dst: str = scene['dst']['k_ep']
@@ -263,8 +252,6 @@ def effect_fadeout(scene: Scene):
         os.path.join(out_dir, filename_template % (scene['start'] + scene['count'] + i))
         for i in range(fadeout_count)
     ]
-
-    # (height, width, channel_count) = scene['last_step']['shape']
 
     img_src: np.ndarray = cv2.imread(in_imgs[0], cv2.IMREAD_COLOR)
     img_black = np.zeros(img_src.shape, dtype=img_src.dtype)
