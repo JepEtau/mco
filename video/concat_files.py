@@ -2,6 +2,7 @@ import os
 
 from parsers.helpers import get_fps
 
+from processing.black_frame import generate_black_frame
 from utils.mco_types import Scene, VideoChapter
 # Audio, VideoPart
 from utils.mco_utils import makedirs
@@ -51,6 +52,9 @@ def generate_concat_file(
 
     # Get the list of frames for this scene
     img_fp: list[str] = get_out_frame_list(k_ep, k_ch, scene)
+
+    black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
+    generate_black_frame(black_image_filepath, img_fp[0])
 
     # Folder for concatenation file
     makedirs(k_ep, k_ch, 'concat')
@@ -122,9 +126,12 @@ def generate_single_concat_file(
     k_ep_or_g = k_ep if k_ch not in ('g_debut', 'g_fin') else k_ch
 
     # Get the list of images
-    images_filepath = get_out_frame_list_single(
+    img_fp: list[str] = get_out_frame_list_single(
         episode=episode, chapter=chapter, scene=scene
     )
+
+    black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
+    generate_black_frame(black_image_filepath, img_fp[0])
 
     # Folder for concatenation file
     makedirs(k_ep, k_ch, 'concat')
@@ -157,7 +164,7 @@ def generate_single_concat_file(
     duration_str = "duration %.02f\n" % (1/get_fps(db))
 
     # Write into the concatenation file
-    for p in images_filepath:
+    for p in img_fp:
         concatenation_file.write(f"file \'{p}\' \n")
         concatenation_file.write(duration_str)
     concatenation_file.close()

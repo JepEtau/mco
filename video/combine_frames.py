@@ -81,13 +81,18 @@ def combine_frames(
         if simulation:
             return
 
-        success = run_simple_command(command=ffmpeg_command)
+        succes: bool = False
+        try:
+            success = run_simple_command(command=ffmpeg_command)
+        except Exception as e:
+            raise RuntimeError(red("Failed running FFmpeg command"))
         if not success:
-            print(red(f"Error: failed to generate {video_filepath}"))
             try:
                 os.remove(video_filepath)
             except:
                 pass
+            raise(red(f"Error: failed to generate {video_filepath}"))
+
 
 
 

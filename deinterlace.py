@@ -162,6 +162,9 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         if k_ed not in dependencies:
             continue
 
+        if arguments.edition != '' and k_ed != arguments.edition:
+            continue
+
         for k_ep in dependencies[k_ed]:
             for k_c in all_chapter_keys():
                 input: Inputs = db[k_ep]['video'][k_ed][k_c]['inputs']
@@ -190,6 +193,8 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
 
         # Input media
         in_media_path: str = absolute_path(in_video)
+        if in_media_path is None or in_media_path == '':
+            raise FileExistsError(red(f"Missing input file: edition: {ed}, episode: {ep}"))
         print(cyan(f"Input:"), f"{in_media_path}")
         try:
             in_media_info = extract_media_info(in_media_path)

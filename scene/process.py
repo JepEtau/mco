@@ -4,11 +4,12 @@ import sys
 from parsers import (
     db,
     IMG_FILENAME_TEMPLATE,
-    get_fps
+    get_fps,
+    task_to_dirname
 )
 from utils.logger import main_logger
 from utils.mco_types import Scene
-from utils.mco_utils import get_out_directory, run_simple_command
+from utils.mco_utils import get_cache_path, get_out_directory, run_simple_command
 from utils.p_print import *
 from utils.time_conversions import frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
@@ -44,10 +45,13 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
         #   input: 8bpp
 
         in_video_fp: str = scene['inputs']['progressive']['filepath']
+        if task_name == 'lr' and not os.path.exists(in_video_fp):
+            raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
         out_frames = get_frame_list(scene=scene, replace=False, out=True)
 
         # Create filename template
-        directory: str = get_out_directory(scene)
+        # directory: str = get_out_directory(scene)
+        directory: str = os.path.join(get_cache_path(scene), task_to_dirname['initial'])
         dirname: str = get_out_dirname(scene=scene, out=True)
         h: str = scene['task'].hashcode
         filename_template = IMG_FILENAME_TEMPLATE % (
@@ -66,41 +70,51 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
                 if not os.path.exists(fp):
                     do_process = True
                     break
-            if not do_process:
-                return True
 
-        if scene['task'].name == 'initial':
-            src_video = (
-                db
-                [scene['src']['k_ep']]
-                ['video']
-                [scene['src']['k_ed']]
-                [scene['src']['k_ch']]
+        if do_process:
+            if scene['task'].name == 'initial':
+                src_video = (
+                    db
+                    [scene['src']['k_ep']]
+                    ['video']
+                    [scene['src']['k_ed']]
+                    [scene['src']['k_ch']]
+                )
+                scene['src']['start'] = src_video['start']
+                scene['src']['count'] = src_video['count']
+
+            start: int = (
+                scene['src']['start'] - scene['inputs']['progressive']['start']
             )
-            scene['src']['start'] = src_video['start']
-            scene['src']['count'] = src_video['count']
+            count: int = scene['src']['count']
 
-        start: int = (
-            scene['src']['start'] - scene['inputs']['progressive']['start']
-        )
-        count: int = scene['src']['count']
+            if start < 0:
+                raise ValueError(f"Error, start < 0 for scene {scene['no']}")
+            ffmpeg_command: list[str] = [
+                ffmpeg_exe,
+                "-hide_banner",
+                "-loglevel", "warning",
+                "-ss", str(frame_to_sexagesimal(no=start, frame_rate=get_fps(db))),
+                "-i", in_video_fp,
+                "-t", str(frame_to_s(no=count, frame_rate=get_fps(db))),
+                '-pixel_format', 'bgr24',
+                "-start_number", str(scene['src']['start']),
+                filepath_template
+            ]
 
-        if start < 0:
-            raise ValueError(f"Error, start < 0 for scene {scene['no']}")
-        ffmpeg_command: list[str] = [
-            ffmpeg_exe,
-            "-hide_banner",
-            "-loglevel", "warning",
-            "-ss", str(frame_to_sexagesimal(no=start, frame_rate=get_fps(db))),
-            "-i", in_video_fp,
-            "-t", str(frame_to_s(no=count, frame_rate=get_fps(db))),
-            '-pixel_format', 'bgr24',
-            "-start_number", str(scene['src']['start']),
-            filepath_template
-        ]
+            main_logger.debug(' '.join(ffmpeg_command))
+            success: bool = run_simple_command(ffmpeg_command)
+        else:
+            success: bool = True
 
-        main_logger.debug(' '.join(ffmpeg_command))
-        success: bool = run_simple_command(ffmpeg_command)
+        pprint(scene)
+        if success and 'effects' in scene:
+            fp = filepath_template % scene['src']['start']
+            print(fp)
+
+            sys.exit()
+
+
         return success
 
 

@@ -9,8 +9,9 @@ from pprint import pprint
 #     get_new_image_list,
 #     get_image_list,
 # )
+from processing.black_frame import generate_black_frame
 from utils.mco_types import Scene
-from utils.mco_utils import get_out_directory
+from utils.mco_utils import get_cache_path, get_out_directory
 from utils.p_print import *
 from utils.logger import main_logger
 from parsers import (
@@ -36,7 +37,11 @@ def get_frame_file_paths_until_effects(
     chapter = scene['k_ch']
 
     # Input folder
-    current_output_folder = get_out_directory(scene)
+    current_output_folder: str = ''
+    if scene['task'].name == 'lr':
+        current_output_folder = os.path.join(get_cache_path(scene), task_to_dirname['initial'])
+    else:
+        current_output_folder = get_out_directory(scene)
 
     # print(yellow("get_frame_file_paths_until_effects: output folder: %s" % (current_output_folder)))
         # pprint("last task: [%s]" % (scene['tasks'][-1]))
@@ -134,13 +139,13 @@ def get_out_frame_list(
     # A/V sync for the first scene
     try:
         if scene['no'] == 0:
-            black_image_filepath = os.path.join(
-                db['common']['directories']['cache'],
-                'black.png'
-            )
             if db_video['avsync'] > 0:
                 # Add black images to the first scene for A/V sync
                 # print("avsync: add frames for k_ch=%s, avsync=%d" % (k_ch, db_video['avsync']))
+                black_image_filepath = os.path.join(
+                    db['common']['directories']['cache'],
+                    'black.png'
+                )
                 for _ in range(db_video['avsync']):
                     image_list.append(black_image_filepath)
     except:
@@ -535,6 +540,7 @@ def get_out_frame_list_single(
         )
         for _ in range(db_video['silence']):
             image_list.append(black_image_filepath)
+        generate_black_frame(black_image_filepath, image_list[0])
 
     return image_list
 

@@ -561,11 +561,14 @@ def deint_command(
     ]
 
     # Seek
+    main_logger.debug(f"trim: start: {trim_start}, count: {trim_count}")
     if trim_count != -1 and trim_start + trim_count > in_video_info['frame_count']:
         raise ValueError(f"Erroneous trim value: {trim_start+trim_count} > {in_video_info['frame_count']}")
+
     if trim_start:
         ffmpeg_command.extend(["-ss", frame_to_sexagesimal(trim_start, fps)])
-    if trim_count != 1:
+
+    if trim_count != -1:
         ffmpeg_command.extend(["-t", frame_to_sexagesimal(trim_count, fps)])
 
     # Input file

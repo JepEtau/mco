@@ -1,0 +1,1 @@
+- add an option to set the codec to FFv1 when deinterlacing video

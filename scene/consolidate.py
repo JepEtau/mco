@@ -68,7 +68,7 @@ def consolidate_scene(scene: Scene) -> None:
 
     edition_mode: used to not consolidate geometry/curves and remove replace/stabilize/deshake
     """
-    verbose = True
+    verbose = False
     if verbose:
         print(lightgreen("Consolidate scene:"))
         print(lightcyan("================================== Scene ======================================="))
@@ -123,7 +123,8 @@ def consolidate_scene(scene: Scene) -> None:
             nested_dict_set(scene, scene_geometry, 'geometry', 'scene')
 
         else:
-            print("\t\t\tconsolidate_scene: get geometry for %s:%s:%s" % (k_ed, k_ep, k_ch))
+            if verbose:
+                print("\t\t\tconsolidate_scene: get geometry for %s:%s:%s" % (k_ed, k_ep, k_ch))
             k_ed_src = scene['src']['k_ed']
             k_ep_src = scene['src']['k_ep']
             k_ch_src = scene['src']['k_ch']

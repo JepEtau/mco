@@ -78,6 +78,7 @@ class Filter:
     # TODO remove
     # id: str | None = None
     task_name: str = ''
+    size: tuple[int, int] = ()
 
 
 

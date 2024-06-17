@@ -1,7 +1,7 @@
 import os
 from pprint import pprint
 
-from utils.mco_utils import makedirs
+from utils.mco_utils import makedirs, run_simple_command
 from utils.mco_types import Scene, VideoChapter
 from utils.logger import main_logger
 from utils.p_print import *
@@ -95,12 +95,9 @@ def concat_scenes(
         if os.path.exists(out_video) and not force:
             print(lightgrey(' '.join(ffmpeg_command)))
         elif not simulation:
-            std = execute_ffmpeg_command(
-                command=ffmpeg_command,
-                filename=out_video,
-                simulation=simulation
-            )
-            print(std)
+            success = run_simple_command(command=ffmpeg_command)
+            if not success:
+                raise RuntimeError(red("Failed to conactenate scenes"))
     else:
         concat_fp = os.path.join(
             cache_directory,
