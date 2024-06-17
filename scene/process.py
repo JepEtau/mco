@@ -19,31 +19,12 @@ from video.frame_list import get_frame_list, get_out_dirname
 
 def process_scene(scene: Scene, force: bool = False) -> bool:
 
-    # Create a black frame used for silences/effects
-    # create_black_frame(scene)
-
-
-    # Effects
-    # if 'effects' in scene:
-    #     effect = scene['effects'][0]
-
-    #     if effect == 'loop_and_fadeout':
-    #         effect_loop_and_fadeout(db, scene)
-
-    #     elif effect == 'fadeout':
-    #         effect_fadeout(db, scene)
-
-    #     elif effect == 'loop_and_fadein':
-    #         effect_loop_and_fadein(db, scene)
-
-    #     else:
-    #         print(green("\tuse concatenation files"))
-
     # Extract frames from video
     task_name: str = scene['task'].name
     if task_name in ('initial', 'lr'):
         # Assume:
         #   input: 8bpp
+        pprint(scene)
 
         in_video_fp: str = scene['inputs']['progressive']['filepath']
         if task_name == 'lr' and not os.path.exists(in_video_fp):

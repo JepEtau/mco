@@ -82,10 +82,7 @@ def get_output_filepath(
     chapter: str | None = None,
 ) -> tuple[str, str]:
     k: str = ''
-    if chapter in ('g_debut', 'g_fin'):
-        k = chapter
-        logger.debug(lightgreen(f"{__name__}: {k}"))
-    elif episode is None:
+    if chapter in ('g_debut', 'g_fin') or episode is None:
         k = chapter
         logger.debug(lightgreen(f"{__name__}: {k}"))
     else:
@@ -110,7 +107,7 @@ def get_output_filepath(
 
 
 
-def get_audio_frame_count(episode: str, chapter: str) -> float:
+def get_audio_frame_count(episode: str, chapter: str) -> int:
     k, out_filepath = get_output_filepath(episode, chapter)
     fps = get_fps(db)
 
@@ -124,7 +121,7 @@ def get_audio_frame_count(episode: str, chapter: str) -> float:
     print(lightgrey(f"    duration: {duration}"))
 
     samples: float = buffer.shape[0]
-    frame_count = fps * samples / float(sample_rate)
+    frame_count: int = int(fps * samples / float(sample_rate))
     print(f"  {frame_count} frames")
 
     return frame_count

@@ -5,6 +5,7 @@ from utils.mco_utils import makedirs, run_simple_command
 from utils.mco_types import Scene, VideoChapter
 from utils.logger import main_logger
 from utils.p_print import *
+from utils.tools import ffmpeg_exe
 from parsers import (
     db,
     key,
@@ -19,7 +20,7 @@ def concat_scenes(
     force: bool=False,
     simulation: bool=False
 ) -> None:
-    verbose = False
+    verbose = True
     if 'scenes' not in video:
         return
     scenes: list[Scene] = video['scenes']
@@ -80,7 +81,7 @@ def concat_scenes(
             print(f"{k_ch}: concatenate scenes into a single clip: {out_video}")
         main_logger.debug(f"\t{out_video}")
         # Concatenate scenes into a single video
-        ffmpeg_command = [db['common']['tools']['ffmpeg']]
+        ffmpeg_command = [ffmpeg_exe]
         ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
         ffmpeg_command.extend([
             "-f", "concat",

@@ -12,6 +12,7 @@ from parsers import (
 )
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
+from video.combine_av import combine_av_tracks
 from video.video_track import generate_video_track
 
 
@@ -155,6 +156,16 @@ def main():
         debug=arguments.debug
     )
 
+
+    if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == '':
+        # Merge audio and video files
+        combine_av_tracks(
+            episode=arguments.episode,
+            chapter=arguments.chapter,
+            task='lr',
+            force=arguments.force,
+            simulation=arguments.simulate
+        )
 
 
 if __name__ == "__main__":
