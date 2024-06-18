@@ -12,7 +12,7 @@ from parsers import (
 )
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
-from video.combine_av import combine_av_tracks
+from video.combine_av import combine_av_tracks, concatenate_all
 from video.video_track import generate_video_track
 
 
@@ -144,10 +144,12 @@ def main():
     elif scene_arg != '':
         scene_no: int = int(scene_arg)
 
+    task = 'lr'
+
     generate_video_track(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
-        task='lr',
+        task=task,
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=scene_no,
@@ -162,10 +164,43 @@ def main():
         combine_av_tracks(
             episode=arguments.episode,
             chapter=arguments.chapter,
-            task='lr',
+            task=task,
             force=arguments.force,
             simulation=arguments.simulate
         )
+
+    if arguments.chapter == '':
+        for k in ('g_debut', 'g_fin'):
+            combine_av_tracks(
+                episode='',
+                chapter=k,
+                task=task,
+                force=arguments.force,
+                simulation=arguments.simulate
+            )
+
+        combine_av_tracks(
+            episode=arguments.episode,
+            chapter='',
+            task=task,
+            force=arguments.force,
+            simulation=arguments.simulate
+        )
+
+        # Merge video and audio stream from all parts (except g_debut and g_fin)
+        concatenate_all(
+            episode=arguments.episode,
+            task=task,
+            force=arguments.force,
+            simulation=arguments.simulate
+        )
+
+        add_chapters(
+            k_ep=k_episode,
+            last_task=video_filter,
+            simulation=arguments.simulate
+        )
+
 
 
 if __name__ == "__main__":

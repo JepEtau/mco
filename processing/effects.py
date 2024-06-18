@@ -119,12 +119,14 @@ def effect_loop_and_fadeout(scene: Scene):
     #   - ep01: episode
     #   - ep01: asuivre
     #   - g_debut
+    verbose: bool = True
 
     # Start and count of frames for the loop
     loop_start = scene['effects'][1]
     loop_count = scene['effects'][2]
     fadeout_count = scene['effects'][3]
-    print(green(f"\tloop and fadeout: loop: start={loop_start}, count={loop_count} / fadeout: count={fadeout_count}"))
+    if verbose:
+        print(green(f"\tloop and fadeout: loop: start={loop_start}, count={loop_count} / fadeout: count={fadeout_count}"))
 
     hash: str = scene['task'].hashcode
     dirname: str = task_to_dirname[scene['task'].name]
@@ -137,7 +139,8 @@ def effect_loop_and_fadeout(scene: Scene):
     in_dir: str = os.path.join(
         get_cache_path(scene), get_out_dirname(scene)
     )
-    print(lightgrey(f"\tinput_filepath: {in_dir}"))
+    if verbose:
+        print(lightgrey(f"\tinput_filepath: {in_dir}"))
 
     # Output directory
     k_ep_dst: str = scene['dst']['k_ep']
@@ -147,7 +150,8 @@ def effect_loop_and_fadeout(scene: Scene):
     else:
         out_dir: str = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
     out_dir = os.path.join(out_dir, f"{scene['no']:03}", dirname)
-    print(lightgrey("\toutput_directory: %s" % (out_dir)))
+    if verbose:
+        print(lightgrey("\toutput_directory: %s" % (out_dir)))
     os.makedirs(out_dir, exist_ok=True)
 
 
@@ -168,39 +172,58 @@ def effect_loop_and_fadeout(scene: Scene):
     #         hash=hash)
 
     # Duplicate the last one
-    loop_start -= scene['start']
-    last_image_filepath = image_list[loop_start]
-    print(lightgrey(f"\tfile used for the loop effect: {last_image_filepath}"))
-    image_list += [last_image_filepath] * loop_count
-    print(lightgrey(f"\tnb of frames after the loop: {len(image_list)}"))
-    input_image_list = image_list[-1*fadeout_count:]
-    # pprint(input_image_list)
-    print(lightgrey("\tfade out: frames count: %d" % (len(input_image_list))))
+    filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
+    loop_img: str = os.path.join(in_dir, filename_template % (loop_start))
+    if verbose:
+        print(lightgrey(f"\tfile used for the loop effect: {loop_img}"))
 
 
-    # Output image list
-    filename_template = FILENAME_TEMPLATE % (
-        scene['k_ep'], scene['k_ed'], step_no, suffix)
+    in_imgs: list[str] = [
+        os.path.join(in_dir, filename_template % (
+            scene['start'] + scene['count'] - (fadeout_count - loop_count) + i
+        ))
+        for i in range(fadeout_count - loop_count)
+    ]
+    in_imgs.extend([loop_img] * loop_count)
+    if verbose:
+        pprint(in_imgs)
+        print(lightgrey(f"\toutput image count: {len(in_imgs)}"))
 
-    start = scene['start'] + scene['count']
-    end = start + fadeout_count
+    out_imgs: list[str] = [
+        os.path.join(out_dir, filename_template % (
+            scene['start'] + scene['count'] + i
+        ))
+        for i in range(fadeout_count - loop_count)
+    ]
+    out_imgs.extend([
+        os.path.join(
+            out_dir, filename_template % (
+                scene['start'] + scene['count'] + fadeout_count - loop_count + i
+            )
+        )
+        for i in range(loop_count)
+    ])
+    if verbose:
+        pprint(out_imgs)
+        print(lightgrey(f"\toutput image count: {len(out_imgs)}"))
 
-
-    output_image_list = list([os.path.join(output_filepath, filename_template % (f_no))
-        for f_no in range(start, end)])
-
-    print(lightgrey("\toutput image count: %d" % (len(output_image_list))))
+    # sys.exit()
 
     img_src: np.ndarray = cv2.imread(in_imgs[0], cv2.IMREAD_COLOR)
     img_black = np.zeros(img_src.shape, dtype=img_src.dtype)
 
     cache_strlen = len(db['common']['directories']['cache']) + 1
-    for count, img_input, img_output in zip(range(fadeout_count), input_image_list, output_image_list):
+    for count, img_input, img_output in zip(
+        range(fadeout_count),
+        in_imgs,
+        out_imgs
+    ):
         # Calculate coefficient: last frame is not completely black because there is always
         # a silence after this (i.e. black frames)
         coef = float(count) / fadeout_count
         # keep print for debug until end of validation
-        print(f"\t{count:02d}: {img_input[cache_strlen:]} -> {img_output[cache_strlen:]}, coef={coef:.02f}")
+        if verbose:
+            print(f"\t{count:02d}: {img_input[cache_strlen:]} -> {img_output[cache_strlen:]}, coef={coef:.02f}")
 
         # Mix images
         img_src = cv2.imread(img_input, cv2.IMREAD_COLOR)
@@ -215,9 +238,12 @@ def effect_fadeout(scene: Scene):
     # verified:
     #   - ep01: documentaire
     # warning: ep02, 'en' version
+    verbose: bool = False
+
     fadeout_start = scene['effects'][1]
     fadeout_count = scene['effects'][2]
-    print(green(f"\tfadeout: start={fadeout_start}, count={fadeout_count}"))
+    if verbose:
+        print(green(f"\tfadeout: start={fadeout_start}, count={fadeout_count}"))
 
     hash: str = scene['task'].hashcode
     dirname: str = task_to_dirname[scene['task'].name]
@@ -230,7 +256,8 @@ def effect_fadeout(scene: Scene):
     in_dir: str = os.path.join(
         get_cache_path(scene), get_out_dirname(scene)
     )
-    print(lightgrey(f"\tinput_filepath: {in_dir}"))
+    if verbose:
+        print(lightgrey(f"\tinput_filepath: {in_dir}"))
 
     # Output directory
     k_ep_dst: str = scene['dst']['k_ep']
@@ -240,7 +267,8 @@ def effect_fadeout(scene: Scene):
     else:
         out_dir: str = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
     out_dir = os.path.join(out_dir, f"{scene['no']:03}", dirname)
-    print(lightgrey("\toutput_directory: %s" % (out_dir)))
+    if verbose:
+        print(lightgrey("\toutput_directory: %s" % (out_dir)))
     os.makedirs(out_dir, exist_ok=True)
 
     filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
@@ -257,12 +285,17 @@ def effect_fadeout(scene: Scene):
     img_black = np.zeros(img_src.shape, dtype=img_src.dtype)
 
     cache_strlen = len(db['common']['directories']['cache']) + 1
-    for i, img_input, img_output in zip(range(fadeout_count), in_imgs, out_imgs):
+    for i, img_input, img_output in zip(
+        range(fadeout_count),
+        in_imgs,
+        out_imgs
+    ):
         # Calculate coefficient: last frame is not completely black because there is always
         # a silence after this (i.e. black frames)
         coef = float(i) / fadeout_count
         # keep print for debug until end of validation
-        print(f"\t{i:02d}: {img_input[cache_strlen:]} -> {img_output[cache_strlen:]}, coef={coef:.02f}")
+        if verbose:
+            print(f"\t{i:02d}: {img_input[cache_strlen:]} -> {img_output[cache_strlen:]}, coef={coef:.02f}")
 
         # Mix images
         img_src = cv2.imread(img_input, cv2.IMREAD_COLOR)

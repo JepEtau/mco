@@ -7,7 +7,7 @@ from parsers import (
     get_fps,
     task_to_dirname
 )
-from processing.effects import effect_fadeout
+from processing.effects import effect_fadeout, effect_loop_and_fadeout
 from utils.logger import main_logger
 from utils.mco_types import Scene
 from utils.mco_utils import get_cache_path, get_out_directory, run_simple_command
@@ -24,7 +24,6 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
     if task_name in ('initial', 'lr'):
         # Assume:
         #   input: 8bpp
-        pprint(scene)
 
         in_video_fp: str = scene['inputs']['progressive']['filepath']
         if task_name == 'lr' and not os.path.exists(in_video_fp):
@@ -65,10 +64,26 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
                 scene['src']['start'] = src_video['start']
                 scene['src']['count'] = src_video['count']
 
-            start: int = (
-                scene['src']['start'] - scene['inputs']['progressive']['start']
-            )
-            count: int = scene['src']['count']
+            if 'segments' not in scene['src']:
+                start: int = (
+                    scene['src']['start'] - scene['inputs']['progressive']['start']
+                )
+                count: int = scene['src']['count']
+                scene_start: int = scene['src']['start']
+            else:
+                _scene: Scene = (
+                    db[scene['src']['k_ep']]
+                    ['video']
+                    [scene['src']['k_ed']]
+                    [scene['src']['k_ch']]
+                    ['scenes']
+                    [scene['src']['no']]
+                )
+                start: int = _scene['start']
+                count: int = _scene['count']
+                scene_start: int = start
+                # pprint(scene)
+                # sys.exit()
 
             if start < 0:
                 raise ValueError(f"Error, start < 0 for scene {scene['no']}")
@@ -80,7 +95,7 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
                 "-i", in_video_fp,
                 "-t", str(frame_to_s(no=count, frame_rate=get_fps(db))),
                 '-pixel_format', 'bgr24',
-                "-start_number", str(scene['src']['start']),
+                "-start_number", str(scene_start),
                 filepath_template
             ]
 
@@ -89,12 +104,12 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
         else:
             success: bool = True
 
-        if success and 'effects' in scene:
-            pprint(scene)
+        if success and 'effects' in scene and not 'segments' in scene['src']:
+            # pprint(scene)
             fp = filepath_template % scene['src']['start']
 
             effect = scene['effects'][0]
-            print(lightcyan("Effects:"))
+            main_logger.debug(lightcyan("Effects:"))
 
             if effect == 'loop_and_fadeout':
                 effect_loop_and_fadeout(scene)
@@ -106,8 +121,7 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
                 effect_loop_and_fadein(scene)
 
             else:
-                print(green("\tuse concatenation files"))
-
+                main_logger.debug(f"\t{effect}")
 
         return success
 

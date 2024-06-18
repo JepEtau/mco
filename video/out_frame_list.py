@@ -178,6 +178,7 @@ def get_out_frame_list(
                 # Looping is < fading out: replace the frames before the loop
                 # by the generated ones
                 del imgs[loop_count - fadeout_count:]
+                print(orange(len(imgs)))
 
             elif loop_count > fadeout_count:
                 # Looping is > fading out: append the differences to the image list
@@ -213,13 +214,12 @@ def get_out_frame_list(
             # if scene['task'].name != 'deinterlace':
             #     scene_src_start = 0
 
-            for f_no in range(
-                scene_src_start + scene_src_count,
-                scene_src_start + scene_src_count + fadeout_count
-            ):
-                filepath = os.path.join(out_dir, filename_template % (f_no))
+            for i in range(fadeout_count):
+                filepath = os.path.join(
+                    out_dir,
+                    filename_template % (scene_src_start + scene_src_count + i)
+                )
                 imgs.append(filepath)
-                # print("\t\t\t+ fadeout: %s" % (p))
 
         elif effect == 'fadeout':
             # print("\n%s.get_out_frame_list (%s:%s)" % (__name__, k_ep, k_ch))
@@ -393,22 +393,29 @@ def get_out_frame_list_single(
             loop_count = scene['effects'][2]
             main_logger.debug(lightgrey(f"\tloop {loop_count} times on {frame_no}"))
 
-            input_folder = get_out_directory(scene)
+            in_dir: str = ""
+            if scene['task'].name == 'lr':
+                in_dir = os.path.join(
+                    get_cache_path(scene),
+                    task_to_dirname['initial']
+                )
+            else:
+                in_dir = get_out_directory(scene)
 
             # Append the frames before the loop
             filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
             # if scene['task'].name not in ('deinterlace'):
             #     end -= start
             #     start = 0
-            main_logger.debug(orange("start=%d, end=%d" % (start, end)))
+            main_logger.debug(orange(f"start={start}, end={end}"))
             for f_no in range(start, end):
-                filepath = os.path.join(input_folder, filename_template % (f_no))
+                filepath = os.path.join(in_dir, filename_template % (f_no))
                 image_list.append(filepath)
 
             # Loop
             filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
             # if scene['task'].name in ('deinterlace'):
-            filepath = os.path.join(input_folder, filename_template % (frame_no))
+            filepath = os.path.join(in_dir, filename_template % (frame_no))
             # else:
             #     filepath = os.path.join(input_folder, filename_template % (frame_no - scene['start']))
             # print(orange("start=%d, end=%d" % (start, end)))
@@ -431,7 +438,7 @@ def get_out_frame_list_single(
             )
 
 
-            input_folder = get_out_directory(scene)
+            in_dir = get_out_directory(scene)
             if loop_count < fadeout_count:
                 # Looping is < fading out: replace the frames before the loop
                 # by the generated ones
@@ -441,7 +448,7 @@ def get_out_frame_list_single(
                 # Looping is > fading out: append the differences to the image list
                 filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
                 # if scene['task'].name == 'deinterlace':
-                filepath = os.path.join(input_folder, filename_template % (loop_start))
+                filepath = os.path.join(in_dir, filename_template % (loop_start))
                 # else:
                 #     filepath = os.path.join(input_folder, filename_template % (loop_start - scene['start']))
                 for _ in range(loop_count - fadeout_count):
@@ -462,7 +469,8 @@ def get_out_frame_list_single(
             )
 
             # Append images to the list
-            scene_src_start, scene_src_count = scene['src']['start'], scene['src']['count']
+            scene_src_start: int = scene['src']['start']
+            scene_src_count: int = scene['src']['count'] - (fadeout_count - loop_count)
             filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
             # if scene['task'].name != 'deinterlace':
             #     scene_src_start = 0

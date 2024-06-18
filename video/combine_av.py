@@ -12,12 +12,13 @@ from parsers import (
     TaskName
 )
 from audio import get_audio_frame_count
-from utils.mco_utils import run_simple_command
+from utils.mco_utils import makedirs, run_simple_command
 from utils.p_print import *
+from utils.path_utils import absolute_path
 from utils.tools import ffprobe_exe, ffmpeg_exe
 
 
-def _get_video_duration(filename: str, integrity: bool = True) -> tuple[float, int]:
+def get_video_duration(filename: str, integrity: bool = True) -> tuple[float, int]:
     fps = get_fps(db)
 
     command: list[str] = [ffprobe_exe, "-hide_banner"]
@@ -64,7 +65,6 @@ def combine_av_tracks(
         k = chapter
     else:
         k = key(episode)
-    fps = get_fps(db)
 
     # Output filepath
     print(lightgreen(f"Merge audio and video tracks:"), lightcyan(f"{k}"))
@@ -100,7 +100,7 @@ def combine_av_tracks(
 
     video_frames_count: int = 0
     try:
-        _, video_frames_count = _get_video_duration(video_filepath, integrity=False)
+        _, video_frames_count = get_video_duration(video_filepath, integrity=False)
     except:
         pass
 
@@ -137,6 +137,60 @@ def combine_av_tracks(
     ])
 
     return run_simple_command(ffmpeg_command)
+
+
+
+def concatenate_all(
+    episode: str,
+    task: str,
+    force=False,
+    simulation:bool=False
+) -> None:
+    k_ep: str = key(episode)
+    print(lightgreen(f"Concatenate all A/V files:"), lightcyan(f"{k_ep}"))
+
+    language = db[k_ep]['audio']['lang']
+    lang_str = '' if language == 'fr' else f"_{language}"
+
+    suffix = '' if task == '' or task == 'final' else f"_{task}"
+
+    cache_directory = db[k_ep]['cache_path']
+    output_filename = f"{k_ep}_no_chapters{suffix}{lang_str}.mkv"
+    output_filepath = os.path.join(cache_directory, output_filename)
+    print(f"\tA/V file (without chapters): {output_filepath}")
+
+    # Create concatenation file
+    makedirs(episode)
+    concat_fp: str = absolute_path(
+        cache_directory,
+        "concatenation",
+        f"{k_ep}.txt"
+    )
+    concat_file = open(concat_fp, "w")
+
+    p = os.path.join(db['g_debut']['cache_path'], f"g_debut{suffix}{lang_str}.mkv")
+    concat_file.write(f"file \'{p}\' \n")
+
+    p = os.path.join(cache_directory, f"{k_ep}_av{suffix}{lang_str}.mkv")
+    concat_file.write(f"file \'{p}\' \n")
+
+    p = os.path.join(db['g_fin']['cache_path'], f"g_fin{suffix}{lang_str}.mkv")
+    concat_file.write(f"file \'{p}\' \n")
+
+    concat_file.close()
+
+    # Concatenate files
+    ffmpeg_command = [ffmpeg_exe]
+    ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
+    ffmpeg_command.extend([
+        "-f", "concat",
+        "-safe", "0",
+        "-i", concat_fp,
+        "-c", "copy",
+        "-y", output_filepath
+    ])
+
+    run_simple_command(ffmpeg_command)
 
 
 

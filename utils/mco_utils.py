@@ -57,7 +57,7 @@ def get_cache_path(scene: Scene) -> str:
     # Put all images in a single folder for start/end credits
     if scene['k_ch'] in ('g_debut', 'g_fin'):
         return os.path.join(
-            db['common']['directories']['cache'],
+            cache_dir,
             scene['k_ch'],
             f"{scene['no']:03}"
         )
@@ -65,7 +65,7 @@ def get_cache_path(scene: Scene) -> str:
     # If last task is geometry, use the dst structure
     if task_name == 'final':
         output_path: str = os.path.join(
-            db['common']['directories']['cache'],
+            cache_dir,
             scene['dst']['k_ep'],
             scene['dst']['k_ch'],
             f"{scene['no']:03}"
@@ -84,7 +84,7 @@ def get_cache_path(scene: Scene) -> str:
         # Otherwise, use the src directory
         #  because these frames are used by multiple episodes
         output_path: str = os.path.join(
-            db['common']['directories']['cache'],
+            cache_dir,
             scene['k_ep'],
             scene['k_ch'],
             f"{scene['src']['no']:03}"

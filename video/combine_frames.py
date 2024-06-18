@@ -4,6 +4,7 @@ from pprint import pprint
 # from img_toolbox.python_deshaker import DEBUG_DESHAKE
 # from img_toolbox.ffmpeg_utils import run_simple_command
 
+from utils.logger import main_logger
 from utils.mco_types import Scene
 from utils.mco_utils import run_simple_command
 from utils.p_print import *
@@ -14,6 +15,7 @@ from parsers import (
 )
 from utils.path_utils import absolute_path, path_split
 from utils.tools import ffmpeg_exe
+from video.combine_av import get_video_duration
 
 
 def combine_frames(
@@ -36,15 +38,25 @@ def combine_frames(
 
     dir, basename, _ = path_split(task.concat_file)
     task.video_file= absolute_path(
-        os.path.join(dir, os.pardir, "video", f"{basename}{suffix}.mkv")
+        os.path.join(
+            dir, os.pardir, "video", f"{basename}{suffix}.mkv"
+        )
     )
     video_filepath: str = task.video_file
 
-    # print(
-    #     lightgrey(f"\tcombine images into video:"),
-    #     lightcyan(f"{chapter}:"),
-    #     f"{video_filepath}"
-    # )
+    main_logger.debug(
+        lightgrey(f"\tcombine images into video:")
+        + lightcyan(f"{chapter}:")
+        + f"{video_filepath}"
+    )
+
+    if os.path.exists(video_filepath):
+        video_frames_count: int = 0
+        try:
+            _, video_frames_count = get_video_duration(video_filepath, integrity=False)
+        except:
+            pass
+        print(red(f"\t\tvideo: {video_frames_count}, should be {scene['dst']['count']}"))
 
     if not os.path.exists(video_filepath) or force:
         db_settings: dict[str, str] = db_common['settings']
@@ -80,6 +92,8 @@ def combine_frames(
             print(green(ffmpeg_command))
         if simulation:
             return
+
+        os.makedirs(path_split(video_filepath)[0], exist_ok=True)
 
         succes: bool = False
         try:

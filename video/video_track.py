@@ -22,7 +22,7 @@ from parsers import (
     ProcessingTask
 )
 from video.frame_list import get_frame_list
-from .concat_files import (
+from .concat_frames import (
     generate_concat_file,
     generate_silence_concat_file,
     generate_video_concat_file,
@@ -100,6 +100,7 @@ def generate_video_track(
 
         if debug:
             print(f"\n<<<<<<<<<<<<<<<<<<<<< {chapter} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+        print(lightcyan(chapter))
 
         video['task'] = ProcessingTask(name=task)
         previous_concat_fp = ''
@@ -130,11 +131,11 @@ def generate_video_track(
                     'k_ch': chapter,
                 })
 
-            print(lightgreen(
-                f"\t{scene['no']}: {scene['start']}",
+            print(
+                lightgreen(f"\t{scene['no']}: {scene['start']}"),
                 f"\t({scene['dst']['count']})\t<- {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}",
                 f"   {scene['start']} ({scene['count']})"
-            ))
+            )
 
             # Set the last task
             scene['task'] = ProcessingTask(name=task)
@@ -296,16 +297,17 @@ def generate_video_track(
             lightgreen(f"\nConcatenate video clips:\n")
             + f"\t{episode_video_filepath}\n"
         )
-        ffmpeg_command = [
-            ffmpeg_exe,
-            db['common']['settings']['verbose'].split(' '),
+        ffmpeg_command = [ffmpeg_exe]
+        ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
+        ffmpeg_command.extend([
             "-f", "concat",
             "-safe", "0",
             "-i", concat_fp,
             "-c", "copy",
             "-y", episode_video_filepath
-        ]
+        ])
 
+        pprint(ffmpeg_command)
         if not simulation:
             sub_process = subprocess.Popen(
                 ffmpeg_command,
