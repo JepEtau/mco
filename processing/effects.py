@@ -238,11 +238,12 @@ def effect_fadeout(scene: Scene):
     # verified:
     #   - ep01: documentaire
     # warning: ep02, 'en' version
-    verbose: bool = False
+    verbose: bool = True
 
     fadeout_start = scene['effects'][1]
     fadeout_count = scene['effects'][2]
     if verbose:
+        pprint(scene)
         print(green(f"\tfadeout: start={fadeout_start}, count={fadeout_count}"))
 
     hash: str = scene['task'].hashcode
@@ -276,10 +277,14 @@ def effect_fadeout(scene: Scene):
         os.path.join(in_dir, filename_template % (f_no))
         for f_no in range(fadeout_start, fadeout_start + fadeout_count)
     ]
+    print(lightcyan("IN images:"))
+    pprint(in_imgs)
     out_imgs: list[str] = [
-        os.path.join(out_dir, filename_template % (scene['start'] + scene['count'] + i))
+        os.path.join(out_dir, filename_template % (scene['src']['start'] + scene['src']['count'] + i))
         for i in range(fadeout_count)
     ]
+    print(lightcyan("OUT images:"))
+    pprint(out_imgs)
 
     img_src: np.ndarray = cv2.imread(in_imgs[0], cv2.IMREAD_COLOR)
     img_black = np.zeros(img_src.shape, dtype=img_src.dtype)

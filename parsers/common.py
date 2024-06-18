@@ -117,55 +117,6 @@ def parse_common_configuration(language:str=''):
             pass
 
 
-    # Executables
-    #=============================================================================
-    if sys.platform == "win32":
-        db_common['tools'] = {
-            'ffmpeg': "ffmpeg.exe",
-            'mkvmerge': "mkvmerge.exe",
-            'ffprobe': "ffprobe.exe"
-        }
-
-        for tool in ['ffmpeg', 'ffprobe']:
-            try:
-                v = db_common['directories'][d]
-                for c in ['\"', '\r', '\n']:
-                    v = v.replace(c, '')
-            except:
-                pass
-
-
-        tool = 'mkvmerge'
-        if sys.platform == "win32":
-            db_common['tools']['mkvmerge'] = absolute_path(
-                os.path.join(db_common['directories'][f"{tool}_win"], tool)
-            )
-        else:
-            db_common['tools']['mkvmerge'] = tool
-
-
-    else:
-        # Linux
-        db_common['tools'] = {
-            'ffmpeg': "ffmpeg",
-            'mkvmerge': "mkvmerge",
-            'ffprobe': "ffprobe"
-        }
-
-        for d in ['ffmpeg', 'ffmpeg_win',
-                    'mkvmerge', 'mkvmerge_win']:
-            try:
-                del db_common['directories'][d]
-            except:
-                pass
-
-
-
-    # Subprocess settings
-    #===========================================================================
-    # db_common['process'] = get_process_cfg()
-
-
     # Others
     #===========================================================================
 

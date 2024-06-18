@@ -20,7 +20,7 @@ def concat_scenes(
     force: bool=False,
     simulation: bool=False
 ) -> None:
-    verbose = True
+    verbose: bool = False
     if 'scenes' not in video:
         return
     scenes: list[Scene] = video['scenes']
@@ -93,9 +93,8 @@ def concat_scenes(
         if verbose:
             print(lightgrey(' '.join(ffmpeg_command)))
 
-        if os.path.exists(out_video) and not force:
-            print(lightgrey(' '.join(ffmpeg_command)))
-        elif not simulation:
+        main_logger.debug(' '.join(ffmpeg_command))
+        if not simulation:
             success = run_simple_command(command=ffmpeg_command)
             if not success:
                 raise RuntimeError(red("Failed to conactenate scenes"))

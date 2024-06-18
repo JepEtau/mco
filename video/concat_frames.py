@@ -81,7 +81,7 @@ def generate_concat_file(
 
         # Save this filepath because it may be used for next scene
         previous_concat_fp = concat_fp
-        concatenation_file = open(concat_fp, "w")
+        concat_file = open(concat_fp, "w")
 
     else:
         print(orange(f"Use previous concatenation file: {previous_concat_fp}"))
@@ -93,7 +93,7 @@ def generate_concat_file(
         #     print(f"{k}:")
         #     pprint(v)
         # sys.exit(print_red("Error or (TODO: deprecate) Use previous concatenation file: %s ?" % (previous_concatenation_filepath)))
-        concatenation_file = open(previous_concat_fp, 'a')
+        concat_file = open(previous_concat_fp, 'a')
 
     # print(f"{concatenation_filepath}")
 
@@ -102,9 +102,9 @@ def generate_concat_file(
 
     # Write into the concatenation file
     for p in img_fp:
-        concatenation_file.write(f"file \'{p}\' \n")
-        concatenation_file.write(duration_str)
-    concatenation_file.close()
+        concat_file.write(f"file \'{p}\' \n")
+        concat_file.write(duration_str)
+    concat_file.close()
 
     return previous_concat_fp
 
@@ -123,7 +123,7 @@ def generate_single_concat_file(
         - g_documentaire
     """
     k_ep, k_ch = key(episode), chapter
-    # print("%s._create_concatenation_file" % (__name__))
+    # print("%s.generate_single_concat_file" % (__name__))
     # pprint(scene)
     k: str = k_ep if k_ch not in ('g_debut', 'g_fin') else k_ch
 
@@ -158,20 +158,20 @@ def generate_single_concat_file(
                 f"{k_ep}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}.txt"
             )
         previous_concat_fp = concat_fp
-        concatenation_file = open(concat_fp, "w")
+        concat_file = open(concat_fp, "w")
 
     else:
         # Use the previous concatenation file
-        concatenation_file = open(previous_concat_fp, "a")
+        concat_file = open(previous_concat_fp, "a")
 
     # Frame duration
     duration_str = f"duration {1/get_fps(db):.02f}\n"
 
     # Write into the concatenation file
     for p in img_fp:
-        concatenation_file.write(f"file \'{p}\' \n")
-        concatenation_file.write(duration_str)
-    concatenation_file.close()
+        concat_file.write(f"file \'{p}\' \n")
+        concat_file.write(duration_str)
+    concat_file.close()
 
     return previous_concat_fp
 
@@ -206,20 +206,20 @@ def generate_silence_concat_file(episode: int | str) -> dict:
 
             # Create the concatenation file for the silence
             makedirs(k_ep, k_ch, 'concat')
-            concatenation_filepath = os.path.join(
+            concat_fp = os.path.join(
                 db[k_ep]['cache_path'],
                 "concat",
                 f"{k_ep}_{k_ch}_silence.txt"
             )
-            concatenation_file = open(concatenation_filepath, "w")
+            concat_file = open(concat_fp, "w")
 
             # Add frames to the files
             for _ in range(silence_count):
-                concatenation_file.write(f"file \'{black_image_filepath}\' \n")
-                concatenation_file.write(duration_str)
+                concat_file.write(f"file \'{black_image_filepath}\' \n")
+                concat_file.write(duration_str)
 
-            files[k_ch].append(concatenation_filepath)
-            concatenation_file.close()
+            files[k_ch].append(concat_fp)
+            concat_file.close()
 
     return files
 
@@ -242,11 +242,8 @@ def generate_video_concat_file(
           Concatenation file path
     """
     k_ep, k_ch = key(episode), chapter
-    verbose = True
-    if verbose:
-        print(lightcyan(f"create_video_concat_file {k_ep}:{k_ch}"))
-        # pprint(video_files)
-    print(lightcyan(f"create_video_concat_file {k_ep}:{k_ch}"))
+    verbose: bool = False
+    main_logger.debug(f"create_video_concat_file {k_ep}:{k_ch}")
 
     # Assume language is same for k_ep and start/end/to_follow/documentary credits
     if k_ch in ('g_debut', 'g_fin'):

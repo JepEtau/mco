@@ -118,6 +118,7 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
                 effect_fadeout(scene)
 
             elif effect == 'loop_and_fadein':
+                raise NotImplementedError("effect_loop_and_fadein")
                 effect_loop_and_fadein(scene)
 
             else:

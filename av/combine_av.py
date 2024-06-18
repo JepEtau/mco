@@ -5,12 +5,11 @@ import os
 from pprint import pprint
 from parsers import (
     db,
-    IMG_FILENAME_TEMPLATE,
     key,
     get_fps,
-    task_to_dirname,
     TaskName
 )
+from utils.logger import main_logger
 from audio import get_audio_frame_count
 from utils.mco_utils import makedirs, run_simple_command
 from utils.p_print import *
@@ -142,9 +141,8 @@ def combine_av_tracks(
 
 def concatenate_all(
     episode: str,
-    task: str,
-    force=False,
-    simulation:bool=False
+    task: TaskName,
+    simulation: bool = False
 ) -> None:
     k_ep: str = key(episode)
     print(lightgreen(f"Concatenate all A/V files:"), lightcyan(f"{k_ep}"))
@@ -157,14 +155,16 @@ def concatenate_all(
     cache_directory = db[k_ep]['cache_path']
     output_filename = f"{k_ep}_no_chapters{suffix}{lang_str}.mkv"
     output_filepath = os.path.join(cache_directory, output_filename)
-    print(f"\tA/V file (without chapters): {output_filepath}")
+    main_logger.debug(f"A/V file (without chapters): {output_filepath}")
 
-    # Create concatenation file
+    # Create concat file
     makedirs(episode)
     concat_fp: str = absolute_path(
-        cache_directory,
-        "concatenation",
-        f"{k_ep}.txt"
+        os.path.join(
+            cache_directory,
+            "concat",
+            f"{k_ep}.txt"
+        )
     )
     concat_file = open(concat_fp, "w")
 
@@ -180,17 +180,20 @@ def concatenate_all(
     concat_file.close()
 
     # Concatenate files
-    ffmpeg_command = [ffmpeg_exe]
-    ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
-    ffmpeg_command.extend([
+    ffmpeg_command: list[str] = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "error",
         "-f", "concat",
         "-safe", "0",
         "-i", concat_fp,
         "-c", "copy",
         "-y", output_filepath
-    ])
+    ]
 
-    run_simple_command(ffmpeg_command)
+    main_logger.debug(' '.join(ffmpeg_command))
+    if not simulation:
+        run_simple_command(ffmpeg_command)
 
 
 

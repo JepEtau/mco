@@ -15,7 +15,7 @@ from parsers import (
 )
 from utils.path_utils import absolute_path, path_split
 from utils.tools import ffmpeg_exe
-from video.combine_av import get_video_duration
+from av.combine_av import get_video_duration
 
 
 def combine_frames(
@@ -50,13 +50,18 @@ def combine_frames(
         + f"{video_filepath}"
     )
 
-    if os.path.exists(video_filepath):
+    if os.path.exists(video_filepath) and not 'silence' in video_filepath:
         video_frames_count: int = 0
         try:
             _, video_frames_count = get_video_duration(video_filepath, integrity=False)
         except:
             pass
-        print(red(f"\t\tvideo: {video_frames_count}, should be {scene['dst']['count']}"))
+        # Force regeneration if the scene has effects
+        main_logger.debug(f"\t\tvideo: {video_frames_count}, should be {scene['dst']['count']}")
+        if 'effects' in scene:
+            force  = True
+        elif video_frames_count != scene['dst']['count']:
+            force = True
 
     if not os.path.exists(video_filepath) or force:
         db_settings: dict[str, str] = db_common['settings']
@@ -95,11 +100,12 @@ def combine_frames(
 
         os.makedirs(path_split(video_filepath)[0], exist_ok=True)
 
-        succes: bool = False
+        success: bool = False
         try:
             success = run_simple_command(command=ffmpeg_command)
         except Exception as e:
             raise RuntimeError(red("Failed running FFmpeg command"))
+
         if not success:
             try:
                 os.remove(video_filepath)

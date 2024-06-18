@@ -178,7 +178,6 @@ def get_out_frame_list(
                 # Looping is < fading out: replace the frames before the loop
                 # by the generated ones
                 del imgs[loop_count - fadeout_count:]
-                print(orange(len(imgs)))
 
             elif loop_count > fadeout_count:
                 # Looping is > fading out: append the differences to the image list

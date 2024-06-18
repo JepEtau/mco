@@ -307,7 +307,7 @@ def generate_video_track(
             "-y", episode_video_filepath
         ])
 
-        pprint(ffmpeg_command)
+        main_logger.debug(' '.join(ffmpeg_command))
         if not simulation:
             sub_process = subprocess.Popen(
                 ffmpeg_command,
@@ -324,7 +324,7 @@ def generate_video_track(
                 for line in stdout.decode('utf-8').split('\n'):
                     print(line)
 
-    print(f"total number of frames to upscale: {unique_input_frame_count}")
+    print(f"Total number of frames to upscale: {unique_input_frame_count}")
     print(f"Total time: {time.time() - start_time_full:.03f}s")
 
 

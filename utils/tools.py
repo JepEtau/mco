@@ -17,6 +17,7 @@ if sys.platform == "win32":
     python_exe = "python.exe"
     ffprobe_exe = absolute_path(ffprobe_exe)
     ffmpeg_exe = absolute_path(ffmpeg_exe)
+    mkvmerge_exe = r"C:\Program Files\MKVToolNix\mkvmerge.exe"
 
 elif sys.platform == "linux":
     ffmpeg_exe = os.path.join(external_dir, "ffmpeg", "ffmpeg")
@@ -29,6 +30,8 @@ elif sys.platform == "linux":
         st_mode = os.stat(f).st_mode
         if oct(st_mode & 0o100) == "0o0":
             os.chmod(f, st_mode |S_IEXEC)
+
+    mkvmerge_exe = mkvmerge
 
 else:
     sys.exit("[E] Platform/system not supported.")

@@ -4,6 +4,7 @@ import logging
 from pprint import pprint
 import signal
 import sys
+from av.chapters import add_chapters
 from parsers import (
     parse_database,
     logger,
@@ -12,7 +13,7 @@ from parsers import (
 )
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
-from video.combine_av import combine_av_tracks, concatenate_all
+from av.combine_av import combine_av_tracks, concatenate_all
 from video.video_track import generate_video_track
 
 
@@ -191,13 +192,12 @@ def main():
         concatenate_all(
             episode=arguments.episode,
             task=task,
-            force=arguments.force,
             simulation=arguments.simulate
         )
 
         add_chapters(
-            k_ep=k_episode,
-            last_task=video_filter,
+            episode=arguments.episode,
+            task=task,
             simulation=arguments.simulate
         )
 
