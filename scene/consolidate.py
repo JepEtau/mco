@@ -12,6 +12,8 @@ from parsers import (
 from utils.mco_utils import get_cache_path, nested_dict_set
 from utils.p_print import *
 from utils.path_utils import path_split
+from video.frame_list import get_frame_list
+from video.out_frame_list import get_out_frame_list, get_out_frame_list_single
 from .filters import get_filters
 
 
@@ -245,6 +247,22 @@ def consolidate_scene(scene: Scene) -> None:
     )
     scene['inputs']['progressive']['filepath'] = progressive_fp
 
+    # List frames
+    scene['in_frames'] = get_frame_list(scene)
+    if scene['task'].name == 'lr':
+        if k_ch in ('g_asuivre', 'g_documentaire'):
+            scene['out_frames'] = get_out_frame_list_single(
+                episode=k_ep,
+                chapter=k_ch,
+                scene=scene
+            )
+
+        else:
+            scene['out_frames'] = get_out_frame_list(
+                episode=k_ep,
+                chapter=k_ch,
+                scene=scene
+            )
 
     if verbose:
         print(lightcyan("TO"))

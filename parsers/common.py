@@ -27,9 +27,8 @@ def parse_common_configuration(language:str=''):
         print(lightcyan("Parse common configuration, file: "), end='')
 
     db['common'] = dict()
-    db_common = db['common']
+    db_common: dict[str, str | list[str]] = db['common']
     db_path = absolute_path(database_path)
-    external_dir = absolute_path(os.path.join(__file__, os.pardir, os.pardir, "external"))
 
     # Get configuration file's directories
     filepath = os.path.join(db_path, "directories.ini")
@@ -77,6 +76,7 @@ def parse_common_configuration(language:str=''):
             v = v.replace(c, '')
         db_common['settings'][k] = v
 
+    db_common['settings']['verbose'] = db_common['settings']['verbose'].split(' ')
 
     # Directories
     directories: dict[str, str] = db_common['directories']

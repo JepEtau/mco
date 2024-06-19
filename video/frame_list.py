@@ -1,9 +1,7 @@
 import os
-from typing import Literal
 from parsers import (
     IMG_FILENAME_TEMPLATE,
     task_to_dirname,
-    TaskName,
     TASK_NAMES
 )
 from utils.mco_types import (
@@ -15,10 +13,12 @@ from utils.p_print import *
 def get_out_dirname(scene: Scene, out: bool =False) -> str:
     if out:
         dirname: str = task_to_dirname[scene['task'].name]
+
     else:
+        index: str = 0
         task_name: str = scene['task'].name
         try:
-            index: int = TASK_NAMES.index(task_name)
+            index = TASK_NAMES.index(task_name)
         except:
             index = 0
         if index < 1:
@@ -27,8 +27,12 @@ def get_out_dirname(scene: Scene, out: bool =False) -> str:
     return dirname
 
 
+
 def get_frame_list(scene: Scene, replace: bool = False, out: bool =False) -> list[str]:
-    dirname: str = get_out_dirname(scene) #, out)
+    dirname: str = get_out_dirname(
+        scene,
+        False if scene['task'].name in ('lr') else out
+    )
     directory: str = os.path.join(scene['cache'], dirname)
 
     h: str = scene['task'].hashcode

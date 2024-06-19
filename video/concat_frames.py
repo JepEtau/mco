@@ -53,7 +53,8 @@ def generate_concat_file(
     #   - documentaire
 
     # Get the list of frames for this scene
-    img_fp: list[str] = get_out_frame_list(k_ep, k_ch, scene)
+    # img_fp: list[str] = get_out_frame_list(k_ep, k_ch, scene)
+    img_fp: list[str] = scene['out_frames']
 
     black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
     generate_black_frame(black_image_filepath, img_fp[0])
@@ -128,9 +129,10 @@ def generate_single_concat_file(
     k: str = k_ep if k_ch not in ('g_debut', 'g_fin') else k_ch
 
     # Get the list of images
-    img_fp: list[str] = get_out_frame_list_single(
-        episode=episode, chapter=chapter, scene=scene
-    )
+    # img_fp: list[str] = get_out_frame_list_single(
+    #     episode=episode, chapter=chapter, scene=scene
+    # )
+    img_fp: list[str] = scene['out_frames']
 
     black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
     generate_black_frame(black_image_filepath, img_fp[0])
@@ -279,7 +281,6 @@ def generate_video_concat_file(
 
         if k_ep_or_g in ('g_debut', 'g_fin'):
             video: VideoChapter = db[k]['video']
-            pprint(video)
             concat_file.write(f"file \'{video['task'].video_file}\' \n")
             audio = db[k_ep]['audio'][k]
             if 'silence' in audio and audio['silence'] > 0:

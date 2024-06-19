@@ -81,15 +81,15 @@ def concat_scenes(
             print(f"{k_ch}: concatenate scenes into a single clip: {out_video}")
         main_logger.debug(f"\t{out_video}")
         # Concatenate scenes into a single video
-        ffmpeg_command = [ffmpeg_exe]
-        ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
-        ffmpeg_command.extend([
+        ffmpeg_command: list[str] = [
+            ffmpeg_exe,
+            *db['common']['settings']['verbose'],
             "-f", "concat",
             "-safe", "0",
             "-i", concat_fp,
             "-c", "copy",
             "-y", out_video
-        ])
+        ]
         if verbose:
             print(lightgrey(' '.join(ffmpeg_command)))
 

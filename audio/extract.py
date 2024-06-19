@@ -61,13 +61,13 @@ def extract_audio_track(
         logger.debug(f"\t{in_filepath} -> {out_filepath}")
 
         # FFmpeg command
-        ffmpeg_command = [ffmpeg_exe]
-        ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
-        ffmpeg_command.extend([
+        ffmpeg_command: list[str] = [
+            ffmpeg_exe,
+            *db['common']['settings']['verbose'],
             "-i", in_filepath,
             "-sn",
             "-vn"
-        ])
+        ]
 
         # AWFULL but necessary to keep 24bit audio for the 'b' edition
         # TODO: do a ffprobe before ?

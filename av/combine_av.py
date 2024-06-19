@@ -125,15 +125,15 @@ def combine_av_tracks(
         sys.exit(red(f"Error: cannot merge audio and video tracks: nb of frames differs"))
 
     # Merge Audio and Video tracks
-    ffmpeg_command = [ffmpeg_exe]
-    ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
-    ffmpeg_command.extend([
+    ffmpeg_command: list[str] = [
+        ffmpeg_exe,
+        *db['common']['settings']['verbose'],
         "-i", video_filepath,
         "-i", audio_filepath,
         "-c:v", "copy",
         "-c:a", "copy",
         "-y", audio_video_filepath
-    ])
+    ]
 
     return run_simple_command(ffmpeg_command)
 

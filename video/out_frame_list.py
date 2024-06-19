@@ -27,11 +27,7 @@ from .frame_list import get_frame_list
 
 
 
-def get_frame_file_paths_until_effects(
-    chapter: str,
-    scene: Scene,
-    suffix: str
-):
+def get_frame_file_paths_until_effects(scene: Scene) -> list[str]:
     k_ed = scene['k_ed']
     k_ep = scene['k_ep']
     chapter = scene['k_ch']
@@ -91,7 +87,7 @@ def get_frame_file_paths_until_effects(
             )
 
         else:
-            image_list = get_frame_list(scene=scene, replace=True, out=True)
+            image_list = get_frame_list(scene=scene, replace=True, out=False)
 
         # else:
         #     image_list = get_image_list(
@@ -169,9 +165,7 @@ def get_out_frame_list(
             )
 
             # Append images until start of loop_and_fadeout
-            imgs += get_frame_file_paths_until_effects(
-                chapter=k_ch, scene=scene, suffix=suffix
-            )
+            imgs += get_frame_file_paths_until_effects(scene)
 
             input_dir = get_out_directory(scene)
             if loop_count < fadeout_count:
@@ -230,9 +224,7 @@ def get_out_frame_list(
             main_logger.debug(lightgrey(f"\tfadeout start=?, count={fadeout_count}"))
 
             # Append images until start of fadeout
-            imgs += get_frame_file_paths_until_effects(
-                chapter=k_ch, scene=scene, suffix=suffix
-            )
+            imgs += get_frame_file_paths_until_effects(scene)
             imgs = imgs[:-1 *fadeout_count]
 
             # Output folder
@@ -298,14 +290,10 @@ def get_out_frame_list(
                 )
 
             # List of images and remove the 1st 'fadein_count' images
-            imgs += get_frame_file_paths_until_effects(
-                chapter=k_ch, scene=scene, suffix=suffix
-            )
+            imgs += get_frame_file_paths_until_effects(scene)
 
     else:
-        imgs += get_frame_file_paths_until_effects(
-            chapter=k_ch, scene=scene, suffix=suffix
-        )
+        imgs += get_frame_file_paths_until_effects(scene)
 
     if k_ch in ('g_debut', 'g_fin', 'precedemment'):
         # Append silence to these parts
@@ -379,7 +367,9 @@ def get_out_frame_list_single(
                 for i in range(abs(db_video['avsync'])):
                     image_list.append(black_image_filepath)
     except:
-        sys.exit(print(red("\t\t\tinfo: discard a/v, target does not exist")))
+        # sys.exit(
+        print(red("get_out_frame_list_single: discard a/v, target does not exist"))
+        # )
 
 
     # Add files for effects
@@ -432,12 +422,9 @@ def get_out_frame_list_single(
             ))
 
             # Append images until start of loop_and_fadeout
-            image_list += get_frame_file_paths_until_effects(
-                chapter=chapter, scene=scene, suffix=suffix
-            )
+            image_list += get_frame_file_paths_until_effects(scene)
 
-
-            in_dir = get_out_directory(scene)
+            in_dir: str = get_out_directory(scene)
             if loop_count < fadeout_count:
                 # Looping is < fading out: replace the frames before the loop
                 # by the generated ones
@@ -497,8 +484,7 @@ def get_out_frame_list_single(
 
 
             # Append images until start of fadeout
-            image_list += get_frame_file_paths_until_effects(db,
-                chapter=chapter, scene=scene, suffix=suffix)
+            image_list += get_frame_file_paths_until_effects(scene)
             image_list = image_list[:-1 *fadeout_count]
 
             # Output folder
@@ -525,9 +511,7 @@ def get_out_frame_list_single(
                 image_list.append(filepath)
 
     else:
-        image_list += get_frame_file_paths_until_effects(
-            chapter=chapter, scene=scene, suffix=suffix
-        )
+        image_list += get_frame_file_paths_until_effects(scene)
 
     # Append silence to this part
     if 'silence' in db_video and scene['no'] == (len(db_video['scenes']) - 1):

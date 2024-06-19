@@ -202,6 +202,7 @@ class Scene(TypedDict):
     # List of unique frames to generate this scene.
     # This is usefull to optimize some processing such as upscale
     in_frames: list[str]
+    out_frames: list[str]
 
 
 

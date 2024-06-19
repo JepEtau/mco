@@ -66,9 +66,9 @@ def combine_frames(
     if not os.path.exists(video_filepath) or force:
         db_settings: dict[str, str] = db_common['settings']
 
-        ffmpeg_command = [ffmpeg_exe]
-        ffmpeg_command.extend(db_settings['verbose'].split(' '))
-        ffmpeg_command.extend([
+        ffmpeg_command: list[str] = [
+            ffmpeg_exe,
+            *db['common']['settings']['verbose'],
             "-r", str(get_fps(db)),
             "-f", "concat",
             "-safe", "0",
@@ -78,7 +78,7 @@ def combine_frames(
             "-color_primaries:v", "bt709",
             "-color_trc:v", "bt709",
             "-color_range:v", "tv"
-        ])
+        ]
 
         if watermark is not None:
             watermark_argument = f"drawtext=text=\'{watermark}\':fontcolor=green:fontsize=24:x=10:y=h-th-10"
@@ -101,6 +101,7 @@ def combine_frames(
         os.makedirs(path_split(video_filepath)[0], exist_ok=True)
 
         success: bool = False
+        main_logger.debug(' '.join(map(str, ffmpeg_command)))
         try:
             success = run_simple_command(command=ffmpeg_command)
         except Exception as e:

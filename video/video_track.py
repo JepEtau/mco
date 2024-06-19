@@ -142,7 +142,7 @@ def generate_video_track(
 
             # Generate frames for this scene
             consolidate_scene(scene=scene)
-            scene['in_frames'] = get_frame_list(scene)
+
 
             if not simulation:
                 result = process_scene(scene=scene, force=force)
@@ -297,15 +297,15 @@ def generate_video_track(
             lightgreen(f"\nConcatenate video clips:\n")
             + f"\t{episode_video_filepath}\n"
         )
-        ffmpeg_command = [ffmpeg_exe]
-        ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
-        ffmpeg_command.extend([
+        ffmpeg_command: list[str] = [
+            ffmpeg_exe,
+            *db['common']['settings']['verbose'],
             "-f", "concat",
             "-safe", "0",
             "-i", concat_fp,
             "-c", "copy",
             "-y", episode_video_filepath
-        ])
+        ]
 
         main_logger.debug(' '.join(ffmpeg_command))
         if not simulation:
