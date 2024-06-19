@@ -113,7 +113,8 @@ def combine_av_tracks(
     try:
         frame_count = get_audio_frame_count(episode, chapter)
     except:
-        pass
+        k: str = f"episode {episode}" if chapter == '' else chapter
+        raise RuntimeError(f"No valid audio for {k}")
     audio_frames_count = frame_count
 
     print(f"\tvideo: {video_filepath}: {video_frames_count}")

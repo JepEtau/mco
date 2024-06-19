@@ -99,6 +99,8 @@ def get_out_directory(scene: Scene):
     dirname: str = task_to_dirname[task_name]
     cache_dir: str = db['common']['directories']['cache']
 
+    print(yellow(f"get_out_directory:"), f"{task_name} -> {dirname}")
+
     # Put all images in a single folder for 'génériques'
     if scene['k_ch'] in ('g_debut', 'g_fin'):
         return os.path.join(

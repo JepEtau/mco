@@ -57,10 +57,21 @@ TASK_NAMES: list[str] = get_args(TaskName)
 task_to_dirname: dict[TaskName, str] = {
     'initial': '00_initial',
     'lr': '00_lr',
-    'upscale': '01_upscaled',
+    'hr': '01_hr',
     'stabilize': '02_restored',
     'final': '04_final',
 }
+
+filter_name_to_dirname: dict[str, TaskName] = {
+    'initial': 'initial',
+    'lr': 'lr',
+    'upscale': 'hr',
+    'stabilize': 'stabilize',
+    'final': 'final',
+}
+
+
+
 
 
 @dataclass

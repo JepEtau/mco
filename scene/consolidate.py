@@ -3,6 +3,7 @@ import os
 from pprint import pprint
 from typing import OrderedDict
 from processing.deint import calc_deint_hash, get_qtgmc_args, get_template_script
+from utils.hash import calc_hash
 from utils.mco_types import Scene
 from parsers import (
     db,
@@ -171,7 +172,6 @@ def consolidate_scene(scene: Scene) -> None:
                 try: scene['geometry']['scene']['is_default'] = True
                 except: pass
 
-
     # Processing chain
     #---------------------------------------------------------------------------
 
@@ -186,7 +186,6 @@ def consolidate_scene(scene: Scene) -> None:
         if t not in scene_filters:
             scene_filters[t] = Filter(task_name=t)
 
-
     # Deinterlace
     template_script: str = get_template_script(
         episode=scene['src']['k_ep'],
@@ -198,10 +197,11 @@ def consolidate_scene(scene: Scene) -> None:
 
     scene_filters['lr'].hash = deint_hashcode
 
+    upscale_hashcode = calc_hash(';'.join([deint_hashcode, scene_filters['hr'].sequence]))
+    scene_filters['hr'].hash = upscale_hashcode
 
     # Update the scene task
     scene['task'].hashcode = scene_filters[scene['task'].name].hash
-
 
     if False:
         # Consolidate filters: add rgb/geometry, identify tasks
@@ -248,8 +248,8 @@ def consolidate_scene(scene: Scene) -> None:
     scene['inputs']['progressive']['filepath'] = progressive_fp
 
     # List frames
-    scene['in_frames'] = get_frame_list(scene)
     if scene['task'].name == 'lr':
+        scene['in_frames'] = get_frame_list(scene)
         if k_ch in ('g_asuivre', 'g_documentaire'):
             scene['out_frames'] = get_out_frame_list_single(
                 episode=k_ep,
@@ -263,6 +263,29 @@ def consolidate_scene(scene: Scene) -> None:
                 chapter=k_ch,
                 scene=scene
             )
+
+    elif scene['task'].name == 'hr':
+
+        scene['in_frames'] = set(get_frame_list(scene, replace=True, out = False))
+        if k_ch in ('g_asuivre', 'g_documentaire'):
+            scene['out_frames'] = get_out_frame_list_single(
+                episode=k_ep,
+                chapter=k_ch,
+                scene=scene
+            )
+
+        else:
+            scene['out_frames'] = get_out_frame_list(
+                episode=k_ep,
+                chapter=k_ch,
+                scene=scene
+            )
+
+        print(lightcyan("==============================================================================="))
+        pprint(scene)
+        print(lightcyan("==============================================================================="))
+
+
 
     if verbose:
         print(lightcyan("TO"))

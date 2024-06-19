@@ -109,7 +109,7 @@ def generate_video_track(
         scenes: list[Scene] = video['scenes']
         for scene in scenes:
             start_time = time.time()
-            if not scene['no'] != scene_no:
+            if scene_no is not None and scene['no'] != scene_no:
                 continue
 
             # Patch the for study mode
@@ -216,6 +216,9 @@ def generate_video_track(
         print(f"Total time: {time.time() - start_time_full:.03f}s")
         return
 
+    if scene_no is not None:
+        return
+
     # For each part, concatenate scenes in a single clip
     for chapter in chapters:
         video: VideoChapter
@@ -228,7 +231,7 @@ def generate_video_track(
                 else db[k_ep]['video'][edition][chapter]
             )
 
-        if len(video) > 0:
+        if video['count'] > 0:
             concat_scenes(
                 episode=episode,
                 chapter=chapter,

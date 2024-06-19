@@ -4,7 +4,7 @@ import re
 from pprint import pprint
 from .helpers import nested_dict_set
 from utils.p_print import *
-from ._types import Filter, TASK_NAMES, TaskName
+from ._types import Filter, TASK_NAMES, TaskName, filter_name_to_dirname
 
 # ID used to identify stage
 FILTERS_IDS = [
@@ -30,9 +30,9 @@ def _clean_filter(data: str) -> str:
 
 
 def parse_filters(db_video, config: ConfigParser, k_section: str):
-    verbose = False
+    verbose = True
     if verbose:
-        print(lightcyan("Parse_filters: "))
+        print(lightcyan(f"Parse_filters:"))
         print(green(f"\tsection: {k_section}"))
         if k_section.startswith('filters'):
             for k_option in config.options(k_section):
@@ -87,18 +87,16 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
             task_filter: Filter | None = None
             if (result := re.search(re.compile(r"^([a-z_]+):(.+)$"), f)):
                 task_filter = Filter(
-                    task_name=result.group(1),
+                    task_name=filter_name_to_dirname.get(result.group(1), None),
                     sequence=result.group(2)
                 )
 
             elif (result := re.search(re.compile(r"^([a-z]+)$"), f)):
                 # May use yes-pattern or no-pattern in the previous regex
                 task_filter = Filter(
-                    task_name=result.group(1),
+                    task_name=filter_name_to_dirname.get(result.group(1), None),
                     sequence=''
                 )
-                task_filter.task_name = result.group(1)
-                task_filter.sequence = ''
 
             else:
                 pprint(filters)
@@ -108,7 +106,10 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
                 print(yellow(f"[W] {task_filter.task_name} is not allowed"))
                 continue
 
-            scene_filters[task_filter.task_name] = task_filter
+            if task_filter.task_name is not None:
+                scene_filters[task_filter.task_name] = task_filter
+            else:
+                print(f"TODO: rework filter: {k_section}")
 
         nested_dict_set(db_video, scene_filters, k_chapter, 'filters', k_option)
 

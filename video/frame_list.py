@@ -11,8 +11,8 @@ from utils.p_print import *
 
 
 def get_out_dirname(scene: Scene, out: bool =False) -> str:
-    if out:
-        dirname: str = task_to_dirname[scene['task'].name]
+    if scene['task'].name in ('lr'):
+        dirname: str = task_to_dirname['initial']
 
     else:
         index: str = 0
@@ -23,17 +23,21 @@ def get_out_dirname(scene: Scene, out: bool =False) -> str:
             index = 0
         if index < 1:
             return task_to_dirname[TASK_NAMES[0]]
-        dirname: str = task_to_dirname[TASK_NAMES[index - 1]]
+        if out:
+            dirname: str = task_to_dirname[TASK_NAMES[index]]
+        else:
+            dirname: str = task_to_dirname[TASK_NAMES[index - 1]]
     return dirname
 
 
 
-def get_frame_list(scene: Scene, replace: bool = False, out: bool =False) -> list[str]:
+def get_frame_list(scene: Scene, replace: bool = False, out: bool = True) -> list[str]:
     dirname: str = get_out_dirname(
         scene,
         False if scene['task'].name in ('lr') else out
     )
     directory: str = os.path.join(scene['cache'], dirname)
+    print(red(f"get_frame_list: {dirname}"))
 
     h: str = scene['task'].hashcode
     filename_template = IMG_FILENAME_TEMPLATE % (

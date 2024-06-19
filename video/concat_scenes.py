@@ -27,7 +27,10 @@ def concat_scenes(
     if not scenes:
         return
     k_ep, k_ch = key(episode), chapter
-    hashcode: str = video['hash']
+    try:
+        hashcode: str = video['hash']
+    except:
+        pprint(video)
 
     main_logger.debug(lightcyan(f"\nConcatenate scenes: {k_ep}:{k_ch}"))
 
@@ -67,6 +70,7 @@ def concat_scenes(
             # hash = scene['task'].hash
             # p = filepath.replace('.txt', f"_{hash}{suffix}.mkv")
             # p = p.replace('concat', 'video')
+            pprint(scene)
             concat_file.write(f"file \'{scene['task'].video_file}\' \n")
         concat_file.close()
 

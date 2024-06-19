@@ -145,7 +145,7 @@ def main():
     elif scene_arg != '':
         scene_no: int = int(scene_arg)
 
-    task = 'lr'
+    task = 'hr'
 
     generate_video_track(
         episode=arguments.episode,
@@ -158,50 +158,6 @@ def main():
         edition=arguments.edition,
         debug=arguments.debug
     )
-
-    if scene_arg == '':
-        return
-
-    if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == '':
-        # Merge audio and video files
-        combine_av_tracks(
-            episode=arguments.episode,
-            chapter=arguments.chapter,
-            task=task,
-            force=arguments.force,
-            simulation=arguments.simulate
-        )
-
-    if arguments.chapter == '':
-        for k in ('g_debut', 'g_fin'):
-            combine_av_tracks(
-                episode='',
-                chapter=k,
-                task=task,
-                force=arguments.force,
-                simulation=arguments.simulate
-            )
-
-        combine_av_tracks(
-            episode=arguments.episode,
-            chapter='',
-            task=task,
-            force=arguments.force,
-            simulation=arguments.simulate
-        )
-
-        # Merge video and audio stream from all parts (except g_debut and g_fin)
-        concatenate_all(
-            episode=arguments.episode,
-            task=task,
-            simulation=arguments.simulate
-        )
-
-        add_chapters(
-            episode=arguments.episode,
-            task=task,
-            simulation=arguments.simulate
-        )
 
 
 

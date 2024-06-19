@@ -119,7 +119,7 @@ def effect_loop_and_fadeout(scene: Scene):
     #   - ep01: episode
     #   - ep01: asuivre
     #   - g_debut
-    verbose: bool = True
+    verbose: bool = False
 
     # Start and count of frames for the loop
     loop_start = scene['effects'][1]
@@ -277,14 +277,10 @@ def effect_fadeout(scene: Scene):
         os.path.join(in_dir, filename_template % (f_no))
         for f_no in range(fadeout_start, fadeout_start + fadeout_count)
     ]
-    print(lightcyan("IN images:"))
-    pprint(in_imgs)
     out_imgs: list[str] = [
         os.path.join(out_dir, filename_template % (scene['src']['start'] + scene['src']['count'] + i))
         for i in range(fadeout_count)
     ]
-    print(lightcyan("OUT images:"))
-    pprint(out_imgs)
 
     img_src: np.ndarray = cv2.imread(in_imgs[0], cv2.IMREAD_COLOR)
     img_black = np.zeros(img_src.shape, dtype=img_src.dtype)
