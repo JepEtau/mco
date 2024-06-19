@@ -31,7 +31,7 @@ elif sys.platform == "linux":
         if oct(st_mode & 0o100) == "0o0":
             os.chmod(f, st_mode |S_IEXEC)
 
-    mkvmerge_exe = mkvmerge
+    mkvmerge_exe = "mkvmerge"
 
 else:
     sys.exit("[E] Platform/system not supported.")
