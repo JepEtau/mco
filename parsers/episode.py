@@ -35,7 +35,7 @@ from ._keys import (
 from .helpers import nested_dict_set
 from utils.p_print import *
 from utils.path_utils import absolute_path
-
+from ._db import db
 
 
 #===========================================================================
@@ -43,17 +43,15 @@ from utils.path_utils import absolute_path
 #   Initialize configuration for all episodes
 #
 #===========================================================================
-def db_init_episodes(db, k_ed, ep_min:int=1, ep_max:int=39, force:bool=False):
-    # ep_maxCount is the maximum nb of episodes for debug purpose
-    db_common = db['common']
+def db_init_episodes(k_ed, ep_min: int = 1, ep_max: int = 39, force: bool = True):
+    inputs: dict = db['editions'][k_ed]['inputs']
 
     for i in range(ep_min, min(40, ep_max+1)):
-        k_ep = f'ep{i:02d}'
+        k_ep = key(i)
 
         if not force:
             # Do not create section if input file does not exist
-            if (k_ep not in db['editions'][k_ed]['inputs']['video'].keys()
-                and k_ep not in db['editions'][k_ed]['inputs']['audio'].keys()):
+            if k_ep not in inputs['video'] and k_ep not in inputs['audio']:
                 # print("warning: input file for episode no. %d does not exist" % (i))
                 continue
 
@@ -61,9 +59,13 @@ def db_init_episodes(db, k_ed, ep_min:int=1, ep_max:int=39, force:bool=False):
 
         # default sections:
         for k_chapter in all_chapter_keys():
-            nested_dict_set(db, {
+            nested_dict_set(
+                db,
+                {
                     'replace': {},
-                }, k_ep, 'video', k_ed, k_chapter)
+                },
+                k_ep, 'video', k_ed, k_chapter
+            )
 
         # Set the video input file
         # nested_dict_set(db,
@@ -72,7 +74,8 @@ def db_init_episodes(db, k_ed, ep_min:int=1, ep_max:int=39, force:bool=False):
 
         # Add path cache
         db[k_ep]['cache_path'] = os.path.normpath(
-            os.path.join(db['common']['directories']['cache'], "%s" % (k_ep)))
+            os.path.join(db['common']['directories']['cache'], k_ep)
+        )
 
 
 
@@ -81,7 +84,7 @@ def db_init_episodes(db, k_ed, ep_min:int=1, ep_max:int=39, force:bool=False):
 #   Parse the common episode file for all editions
 #
 #===========================================================================
-def parse_episodes_target(db, ep_min: int = 1, ep_max: int = 39):
+def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
     # ep_maxCount is the maximum nb of episodes: used for debug
     language = db['common']['settings']['language']
 
@@ -103,9 +106,13 @@ def parse_episodes_target(db, ep_min: int = 1, ep_max: int = 39):
 
 
         # Open configuration file
-        filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_target.ini" % (k_ep))
-        if filepath.startswith("~/"):
-            filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+        filepath: str = absolute_path(
+            os.path.join(
+                db['common']['directories']['config'],
+                k_ep,
+                f"{k_ep}_target.ini"
+            )
+        )
         if not os.path.exists(filepath):
             continue
 
@@ -172,8 +179,9 @@ def parse_episodes_target(db, ep_min: int = 1, ep_max: int = 39):
 #   Parse a single episode configuration file
 #
 #===========================================================================
-def parse_episode(db, k_ed, k_ep):
+def parse_episode(k_ed: str, k_ep: str | int):
     verbose = False
+    k_ep: str = key(k_ep)
 
     logger.debug(lightgreen(f"parse_episode: {k_ed}:{k_ep}"))
 
@@ -333,7 +341,6 @@ def parse_episode(db, k_ed, k_ep):
 
 
 def get_episode_dependencies(
-    db,
     episode: int | str,
     track: Literal['audio', 'video', 'all'] = 'all'
 ) -> OrderedDict[str, list]:
@@ -355,7 +362,7 @@ def get_episode_dependencies(
             scenes: list[dict] = chapter_video['scenes']
             for scene in scenes:
                 # print(scene)
-                if 'src' in scene.keys() and 'k_ep' in scene['src'].keys():
+                if 'src' in scene.keys() and 'k_ep' in scene['src']:
                     if 'k_ed' in scene['src']:
                         k_ed_dep = scene['src']['k_ed']
                     else:
@@ -377,14 +384,13 @@ def get_episode_dependencies(
             if 'scenes' in chapter_video.keys():
                 scenes = chapter_video['scenes']
                 for scene in scenes:
-                    if 'src' in scene.keys() and 'k_ep' in scene['src'].keys():
-                        # print(scene)
-                        if 'k_ed' in scene['src']:
-                            k_ed_dep = scene['src']['k_ed']
-                        else:
-                            k_ed_dep = k_ed_src
-
-                        if k_ed_dep not in dependencies.keys():
+                    if 'src' in scene.keys() and 'k_ep' in scene['src']:
+                        k_ed_dep = (
+                            scene['src']['k_ed']
+                            if 'k_ed' in scene['src']
+                            else k_ed_src
+                        )
+                        if k_ed_dep not in dependencies:
                             dependencies[k_ed_dep] = set()
                         dependencies[k_ed_dep].add(scene['src']['k_ep'])
 
@@ -396,7 +402,7 @@ def get_episode_dependencies(
                 sys.exit(red(f"error: {k_ed_src}:{k_ep}: missing input file"))
 
             for segment in db_audio['segments']:
-                if 'k_ep' in segment.keys() and segment['k_ep'] != k_ep:
+                if 'k_ep' in segment and segment['k_ep'] != k_ep:
                     if k_ed_dep not in dependencies.keys():
                         dependencies[k_ed_dep] = []
                     dependencies[k_ed_dep].add(segment['k_ep'])

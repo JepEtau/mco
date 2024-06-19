@@ -2,4 +2,4 @@ numpy
 rich
 scipy
 soundfile
-
+opencv-python

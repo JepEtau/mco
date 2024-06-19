@@ -4,9 +4,10 @@ from utils.mco_types import Scene
 from .helpers import get_fps
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
+from ._db import db
 
 
-def pprint_episode(db, k_ep) -> dict[str, tuple[int]]:
+def pprint_episode(k_ep) -> dict[str, tuple[int]]:
     """Return nb of frames of video and audio tracks"""
     fps = get_fps(db)
 
@@ -161,7 +162,7 @@ def pprint_episode(db, k_ep) -> dict[str, tuple[int]]:
 
 
 
-def pprint_g_debut_fin(db) -> dict[str, tuple[int]]:
+def pprint_g_debut_fin() -> dict[str, tuple[int]]:
     # Do not show silences to fit terminal width
     show_silence: bool = False
 
@@ -169,7 +170,7 @@ def pprint_g_debut_fin(db) -> dict[str, tuple[int]]:
 
     if False:
         # print last scene of every part
-        for k_chapter_g in ['g_debut', 'g_fin']:
+        for k_chapter_g in ('g_debut', 'g_fin'):
             print(f"{k_chapter_g}")
             video_track = db[k_chapter_g]['target']['video']
             if video_track['count'] == 0:
@@ -189,7 +190,7 @@ def pprint_g_debut_fin(db) -> dict[str, tuple[int]]:
     print("avsync(V)".rjust(12), end='')
     print("")
     frames: dict[str, tuple[int]] = {}
-    for k_chapter_g in ['g_debut', 'g_fin']:
+    for k_chapter_g in ('g_debut', 'g_fin'):
         audio_count = 0
         video_count = 0
         video_track = db[k_chapter_g]['video']

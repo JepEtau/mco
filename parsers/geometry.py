@@ -16,6 +16,7 @@ from .logger import logger
 from .scene import get_scene_from_frame_no
 from .helpers import nested_dict_set
 from utils.p_print import *
+from ._db import db
 
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages
@@ -23,7 +24,7 @@ from utils.p_print import *
 # et plus rapide encore lorsque la chapterie est spécifiée; lors de l'écriture automatique
 # par l'éditeur, le no. de trame correspond à la 1ere trame du plan
 
-def parse_geometry_configurations(db, k_ep_or_g:str):
+def parse_geometry_configurations(k_ep_or_g:str):
     """ Parse configuration file which list the crop coordinates for each scene.
     TODO: it uses the first frame of a scene to identify the scene rather the index, so that
     a modification of scenes will not break anything
@@ -49,7 +50,7 @@ def parse_geometry_configurations(db, k_ep_or_g:str):
             print("\tparse_geometry_configurations: section:%s" % (k_section))
         if k_section in all_chapter_keys():
             # This section define the geometry of the target: i.e. width
-            if k_ep_or_g in ['g_debut', 'g_fin']:
+            if k_ep_or_g in ('g_debut', 'g_fin'):
                 nested_dict_set(db, {'target':dict()}, k_ep_or_g, 'video', 'geometry')
                 target_geometry = db[k_ep_or_g]['video']['geometry']['target']
             else:
@@ -176,11 +177,11 @@ def get_geometry_from_properties(properties_str: str):
 
 
 
-def get_initial_target_geometry(db, k_ep: str, k_chapter: str) -> dict:
+def get_initial_target_geometry(k_ep: str, k_chapter: str) -> dict:
     # print("get_initial_target_geometry for %s:%s" % (k_ep, k_chapter))
     target_geometry = {}
 
-    if k_chapter in ['g_debut', 'g_fin']:
+    if k_chapter in ('g_debut', 'g_fin'):
         db_video = db[k_chapter]['video']
         k_ep_target = 'ep00'
     elif k_chapter in ['g_asuivre', 'g_documentaire']:
@@ -204,7 +205,7 @@ def get_initial_target_geometry(db, k_ep: str, k_chapter: str) -> dict:
 
 
 
-def get_initial_default_scene_geometry(db, k_ep: str, k_chapter: str) -> dict:
+def get_initial_default_scene_geometry(k_ep: str, k_chapter: str) -> dict:
     """ Returns a list of crops/resize per chapter for each edition
     """
     verbose = True
@@ -212,7 +213,7 @@ def get_initial_default_scene_geometry(db, k_ep: str, k_chapter: str) -> dict:
         print(lightgreen("get_initial_default_scene_geometry for %s:%s" % (k_ep, k_chapter)))
     default_scene_geometry = dict()
 
-    if k_chapter in ['g_debut', 'g_fin']:
+    if k_chapter in ('g_debut', 'g_fin'):
         # Get the list of editions and episode that are used by this generique
         dependencies = get_credits_dependencies(db, k_chapter_g=k_chapter)
 
@@ -251,14 +252,14 @@ def get_initial_default_scene_geometry(db, k_ep: str, k_chapter: str) -> dict:
 
 
 
-def get_initial_scene_geometry(db, k_ep, k_chapter) -> dict:
+def get_initial_scene_geometry(k_ep, k_chapter) -> dict:
     verbose = False
 
     if verbose:
         print(lightcyan(f"get_initial_scene_geometry: {k_ep}:{k_chapter}"))
 
     scene_geometry = dict()
-    if k_chapter in ['g_debut', 'g_fin']:
+    if k_chapter in ('g_debut', 'g_fin'):
         # Get the list of editions and episode that are used by this generique
         dependencies = get_credits_dependencies(db, k_chapter_g=k_chapter)
 

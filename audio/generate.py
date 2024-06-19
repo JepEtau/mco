@@ -8,6 +8,7 @@ from utils.time_conversions import (
     frame_to_ms,
 )
 from parsers import (
+    db,
     get_fps,
     key,
     logger,
@@ -22,7 +23,6 @@ from .helpers import (
 
 
 def generate_audio_track(
-    db: dict,
     episode: str | int | None = None,
     chapter: str | None = None,
     force: bool = False,
@@ -30,7 +30,7 @@ def generate_audio_track(
     """Create an audio file for a specific episode. It will be merged
     with the video track of this episode (openening and end credits are excluded)
     """
-    k, out_filepath = get_output_filepath(db, episode, chapter)
+    k, out_filepath = get_output_filepath(episode, chapter)
 
     fps = get_fps(db)
     db_audio = db[k]['audio']
@@ -41,9 +41,8 @@ def generate_audio_track(
         return
 
     # Use a specific function
-    if k in ['g_debut', 'g_fin']:
+    if k in ('g_debut', 'g_fin'):
         _generate_audio_track_g(
-            db,
             chapter=k,
             out_filepath=out_filepath,
             force=force,
@@ -56,7 +55,6 @@ def generate_audio_track(
 
     # Extract audio file if needed
     input_filepath = extract_audio_track(
-        db,
         episode=k_ep,
         edition=k_ed,
         force=force
@@ -120,7 +118,6 @@ def generate_audio_track(
                 )
                 if not os.path.exists(tmp_filepath):
                     tmp_filepath = extract_audio_track(
-                        db,
                         episode=k_ep_src,
                         edition=k_ed,
                         force=force
@@ -255,7 +252,6 @@ def generate_audio_track(
 
 
 def _generate_audio_track_g(
-    db: dict,
     chapter: str,
     out_filepath: str,
     force: bool = False
@@ -270,7 +266,7 @@ def _generate_audio_track_g(
         None
 
     """
-    if chapter not in ['g_debut', 'g_fin']:
+    if chapter not in ('g_debut', 'g_fin'):
         sys.exit(red(f"Error: {__name__}: do not use this function for chapter {chapter}"))
 
     logger.debug(lightgreen(f"{__name__}: {chapter}"))
@@ -282,7 +278,6 @@ def _generate_audio_track_g(
 
     # Read audio file, extract audio file if needed
     in_filepath: str = extract_audio_track(
-        db,
         episode=k_ep,
         chapter=chapter,
         edition=k_ed,

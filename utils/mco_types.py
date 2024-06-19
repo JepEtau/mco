@@ -3,7 +3,12 @@ from dataclasses import dataclass, field
 from typing import Literal, TypedDict, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from parsers import Chapter
+    from parsers import (
+        Chapter,
+        ProcessingTask,
+        Filter,
+        TaskName,
+    )
 
 # Common to all types:
 # k_ed: key: editon. 1 letter format in [k, s, f, ..]
@@ -14,6 +19,20 @@ if TYPE_CHECKING:
 # start: start frame form 0 to ..
 # count: frame count of a chapter/scene/segment
 
+
+class Inputs(TypedDict):
+    class Interlaced(TypedDict):
+        filepath: str
+
+    class Progressive(TypedDict):
+        filepath: str
+        cache: str
+        enable: bool
+        start: int
+        count: int
+
+    interlaced: Interlaced
+    progressive: Progressive
 
 
 # unless specified, timestamps and duration are in ms
@@ -121,12 +140,12 @@ class Scene(TypedDict):
 
     # Filters: this is the processing chain for this scene. Once consolidated,
     # this variable specifies a list of filters for each frame
-    filters: list
+    filters: dict[TaskName, Filter]
     # If specified (i.e. not 'default'), this scene uses another chain defined in the
     # ini file of the edition/episode/chapter
     filters_id: str
-    # This key is used to stop the processing once this task is reached
-    last_task: str
+
+    task: ProcessingTask
 
     # This structure defines the destination of this scene. It is automatically set
     # when consolidating the scene.
@@ -143,7 +162,7 @@ class Scene(TypedDict):
     src: SceneSrc
 
     # list of frames to replace
-    replace: dict
+    replace: dict[int, int]
 
     # contains parameters to deshake.
     #   warning: stabilize = deshake. TODO correct this
@@ -162,7 +181,7 @@ class Scene(TypedDict):
     # i.e. specifies all variables to generate images
 
     # struct which define the the input file
-    inputs: dict
+    inputs: Inputs
         # 'progressive' : dict
         #       'filepath' : str
         #       'filepath' : str
@@ -177,8 +196,14 @@ class Scene(TypedDict):
     # path to the file which contains all hashes for this episode
     hash_log_file: str
 
-    # Path the the cache directory for this scene
+    # Path of the cache directory for this scene
     cache: str
+
+    # List of unique frames to generate this scene.
+    # This is usefull to optimize some processing such as upscale
+    in_frames: list[str]
+    out_frames: list[str]
+
 
 
 class DstScene(TypedDict):
@@ -202,6 +227,8 @@ class VideoChapter(TypedDict):
 
     # Add black frames after this chapter
     silence: int
+
+    task: ProcessingTask
 
 
 @dataclass

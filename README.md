@@ -63,9 +63,10 @@ python parse_db.py --episode 1 --en
 
 ## 1. Generate audio tracks
 Examples:
-- Opening credits:
+- Opening/Ending credits:
     ```sh
     python process_audio.py --chapter g_debut
+    python process_audio.py --chapter g_fin
     ```
 
 - Episode:
@@ -77,3 +78,15 @@ Notes:
 - The audio tracks of the opening/end credits are automatically generated when generating the audio of an episode
 - It is possible to overwrite the previously generated audio tracks by appending `--force` to the command line
 
+
+## (Generate Low Resolution video)
+- Opening/Ending credits
+    ```sh
+    python generate_lr.py --chapter g_debut
+    python generate_lr.py --chapter g_fin
+    ```
+
+- Episode
+    ```sh
+    python generate_lr.py --episode 1
+    ```

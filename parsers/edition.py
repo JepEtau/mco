@@ -10,9 +10,12 @@ from pathlib import (
 from pprint import pprint
 import re
 from utils.p_print import *
+from utils.path_utils import absolute_path
 from ._types import Database
 from ._keys import key
-from.logger import logger
+from .logger import logger
+from ._db import db, database_path
+
 
 #===========================================================================
 #
@@ -21,12 +24,11 @@ from.logger import logger
 #===========================================================================
 def parser_edition_common(db_common: dict, filename: str, verbose=False):
 
-    # Get specific 'common configuration file' and merge it
-    #=============================================================================
-    if filename.startswith("~/"):
-        filename = os.path.join(PosixPath(Path.home()), filename[2:])
+    db_common = db['common']
+
+    filename = absolute_path(filename)
     if not os.path.exists(filename):
-        sys.exit("[E] fichier de configuration manquant: %s" % (filename))
+        sys.exit(f"[E] fichier de configuration manquant: {filename}")
     try:
         config_general = ConfigParser()
         config_general.read(filename)
@@ -47,18 +49,16 @@ def parser_edition_common(db_common: dict, filename: str, verbose=False):
 #   Get editions from folder
 #
 #===========================================================================
-def parse_editions(database, db_dir: str, verbose=False, force:bool=False):
-    db_common = database['common']
+def parse_editions(verbose=False):
+    db_common = db['common']
     verbose = False
-
-    db = Database()
 
     logger.debug(lightgreen(f"parse editions:"))
 
     inputs_dir = db_common['directories']['inputs']
-    if 'editions' not in database.keys():
-        database['editions'] = dict()
-    db_editions = database['editions']
+    if 'editions' not in db:
+        db['editions'] = dict()
+    db_editions = db['editions']
     available_editions = list()
 
     # Get directory path
@@ -91,11 +91,11 @@ def parse_editions(database, db_dir: str, verbose=False, force:bool=False):
             for filename in os.listdir(f_edition):
                 logger.debug(f"\tfilename= {filename}" % ())
                 filepath = os.path.join(inputs_dir, folder, filename)
-                if os.path.isfile(filepath) or force:
+                if os.path.isfile(filepath):
                     if verbose:
                         print("\tsearch ep no. from %s" % (filename))
                     if (tmp := re.search(
-                        re.compile("^([a-z_a-z0-9]+)_ep([0-9]{2})(?:-([0-9]{2}))?"),
+                        re.compile(r"^([a-z_a-z0-9]+)_ep([0-9]{2})(?:-([0-9]{2}))?"),
                         filename)
                     ):
                         if tmp.group(1) == folder:
@@ -136,8 +136,8 @@ def parse_editions(database, db_dir: str, verbose=False, force:bool=False):
 
 
     # Get directory path
-    if not os.path.isdir(db_dir):
-        sys.exit(red(f"Error: parse_editions: {db_dir} is not a valid directory"))
+    if not os.path.isdir(database_path):
+        sys.exit(red(f"Error: parse_editions: {database_path} is not a valid directory"))
 
 
     if verbose:

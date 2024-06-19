@@ -30,7 +30,7 @@ def parse_audio_g(
 
         # Source: edition and episode for the audio track
         if k_option == 'source':
-            tmp = re.match(re.compile("([a-z_0-9]+):(ep[0-9]{2})"), value_str)
+            tmp = re.match(re.compile(r"([a-z_0-9]+):(ep[0-9]{2})"), value_str)
             if tmp is None:
                 sys.exit(red(f"Error: wrong value for {k_section}:{k_option} [{value_str}]"))
             nested_dict_set(db_audio, {
@@ -42,7 +42,7 @@ def parse_audio_g(
             continue
 
         # Parse only supported sections
-        if k_option not in ['g_debut', 'g_fin']:
+        if k_option not in ('g_debut', 'g_fin'):
             continue
 
         db_audio['segments'] = list()
@@ -78,19 +78,19 @@ def parse_audio_g(
             if len(properties) > 1:
                 for i in range(1, len(properties)):
 
-                    search_gain = re.search(re.compile("gain=([0-9.]+)"), properties[i])
+                    search_gain = re.search(re.compile(r"gain=([0-9.]+)"), properties[i])
                     if search_gain is not None:
                         gain = float(search_gain.group(1))
                         db_audio['segments'][-1]['gain'] = gain
                         continue
 
                     # The following will be considered as properties for the whole chapter
-                    search_avsync = re.search(re.compile("avsync=([+-]?[0-9.]+)"), properties[i])
+                    search_avsync = re.search(re.compile(r"avsync=([+-]?[0-9.]+)"), properties[i])
                     if search_avsync is not None:
                         avsync = int(1000 * float(search_avsync.group(1)))
                         continue
 
-                    search_silence = re.search(re.compile("silence=([0-9.]+)"), properties[i])
+                    search_silence = re.search(re.compile(r"silence=([0-9.]+)"), properties[i])
                     if search_silence is not None:
                         chapter_silence = int(float(search_silence.group(1)) * 1000)
                         # frames_count += chapter_silence
@@ -176,25 +176,25 @@ def parse_audio_section(
             # If other properties
             if len(properties) > 1:
                 for i in range(1, len(properties)):
-                    search_fadein = re.search(re.compile("fadein=([0-9.]+)"), properties[i])
+                    search_fadein = re.search(re.compile(r"fadein=([0-9.]+)"), properties[i])
                     if search_fadein is not None:
                         search_fadein = int(float(search_fadein.group(1)) * 1000)
                         continue
 
-                    search_fadeout = re.search(re.compile("fadeout=([0-9.]+):?([a-z]*)"), properties[i])
+                    search_fadeout = re.search(re.compile(r"fadeout=([0-9.]+):?([a-z]*)"), properties[i])
                     if search_fadeout is not None:
                         chapter_fadeout = int(float(search_fadeout.group(1)) * 1000)
                         chapter_fadeout_alg = search_fadeout.group(2)
                         continue
 
-                    search_silence = re.search(re.compile("silence=([0-9.]+)"), properties[i])
+                    search_silence = re.search(re.compile(r"silence=([0-9.]+)"), properties[i])
                     if search_silence is not None:
                         chapter_silence = int(float(search_silence.group(1)) * 1000)
                         # chapter_silence = int(float(search_silence.group(1)) * fps)
                         # frames_count += chapter_silence
                         continue
 
-                    search_k_ep_src = re.search(re.compile("src=([0-9]{1,2})"), properties[i])
+                    search_k_ep_src = re.search(re.compile(r"src=([0-9]{1,2})"), properties[i])
                     if search_k_ep_src is not None:
                         k_ep_src = int(search_k_ep_src.group(1))
                         db_audio[k_chapter]['segments'][-1]['k_ep'] = 'ep%02d' % (k_ep_src)

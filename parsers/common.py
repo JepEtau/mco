@@ -13,19 +13,22 @@ from .helpers import (
 )
 from utils.p_print import *
 from utils.path_utils import absolute_path
+from ._db import (
+    db,
+    database_path,
+)
 
 
 
-def parse_common_configuration(db, db_directory: str, language:str=''):
+def parse_common_configuration(language:str=''):
     verbose = False
 
     if verbose:
         print(lightcyan("Parse common configuration, file: "), end='')
 
     db['common'] = dict()
-    db_common = db['common']
-    db_path = absolute_path(db_directory)
-    external_dir = absolute_path(os.path.join(__file__, os.pardir, os.pardir, "external"))
+    db_common: dict[str, str | list[str]] = db['common']
+    db_path = absolute_path(database_path)
 
     # Get configuration file's directories
     filepath = os.path.join(db_path, "directories.ini")
@@ -73,9 +76,11 @@ def parse_common_configuration(db, db_directory: str, language:str=''):
             v = v.replace(c, '')
         db_common['settings'][k] = v
 
+    db_common['settings']['verbose'] = db_common['settings']['verbose'].split(' ')
 
     # Directories
-    db_common['directories']['config'] = db_directory
+    directories: dict[str, str] = db_common['directories']
+    directories['config'] = database_path
     for d in (
         'config',
         'inputs',
@@ -86,85 +91,30 @@ def parse_common_configuration(db, db_directory: str, language:str=''):
         'cache_default',
         'frames',
         'frames_default',
-        'hashes'
+        'hashes',
+        'audio',
+        'audio_default',
     ):
-        v: str = db_common['directories'][d]
+        v: str = directories[d]
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')
-        db_common['directories'][d] = absolute_path(v)
+        directories[d] = absolute_path(v)
 
 
     # Clean
-    for d, v in db_common['directories'].items():
+    for d, v in directories.items():
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')
-        db_common['directories'][d] = v
+        directories[d] = absolute_path(v)
 
     # Use default values
-    for d in ['cache', 'cache_progressive', 'frames']:
-        if not os.path.exists(db_common['directories'][d]):
-            db_common['directories'][d] = db_common['directories']['%s_default' % (d)]
+    for d in ('cache', 'cache_progressive', 'frames', 'audio'):
+        if not os.path.exists(directories[d]):
+            directories[d] = absolute_path(directories[f"{d}_default"])
         try:
-            del db_common['directories']['%s_default' % (d)]
+            del directories[f"{d}_default"]
         except:
             pass
-
-
-    # Executables
-    #=============================================================================
-    if sys.platform == "win32":
-        db_common['tools'] = {
-            'ffmpeg': "ffmpeg.exe",
-            'mkvmerge': "mkvmerge.exe",
-            'ffprobe': "ffprobe.exe"
-        }
-
-        for tool in ['ffmpeg', 'ffprobe']:
-            try:
-                v = db_common['directories'][d]
-                for c in ['\"', '\r', '\n']:
-                    v = v.replace(c, '')
-            except:
-                pass
-
-
-        tool = 'mkvmerge'
-        if sys.platform == "win32":
-            db_common['tools']['mkvmerge'] = absolute_path(
-                os.path.join(db_common['directories'][f"{tool}_win"], tool)
-            )
-        else:
-            db_common['tools']['mkvmerge'] = tool
-
-
-    else:
-        # Linux
-        db_common['tools'] = {
-            'ffmpeg': "ffmpeg",
-            'mkvmerge': "mkvmerge",
-            'ffprobe': "ffprobe"
-        }
-
-        for d in ['ffmpeg', 'ffmpeg_win',
-                    'mkvmerge', 'mkvmerge_win']:
-            try:
-                del db_common['directories'][d]
-            except:
-                pass
-
-
-    db_common['tools']['nnedi3_weights'] = absolute_path(
-        os.path.join(external_dir, db_common['directories']['nnedi3_weights'])
-    )
-    try:
-        del db_common['directories']['nnedi3_weights']
-    except:
-        pass
-
-
-    # Subprocess settings
-    #===========================================================================
-    # db_common['process'] = get_process_cfg()
 
 
     # Others
@@ -190,7 +140,7 @@ def parse_common_configuration(db, db_directory: str, language:str=''):
         db_common['settings']['language'] = 'fr'
 
     # middle priority: 'en' file stored in database folder
-    if os.path.exists(os.path.normpath(os.path.abspath(os.path.join(db_directory, 'en')))):
+    if os.path.exists(os.path.normpath(os.path.abspath(os.path.join(database_path, 'en')))):
         db_common['settings']['language'] = 'en'
 
     # highest priority: argument

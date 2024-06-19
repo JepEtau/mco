@@ -1,16 +1,18 @@
 import os
 import sys
 from parsers import (
+    db,
     key,
     logger,
 )
 from utils.p_print import *
-from utils.path_utils import get_extension
+from utils.path_utils import absolute_path, get_extension
 from .helpers import run_ffmpeg_command
 from utils.tools import ffmpeg_exe
 
+
+
 def extract_audio_track(
-    db,
     episode: int | str| None = None,
     chapter: str | None = None,
     edition: str = '',
@@ -19,7 +21,7 @@ def extract_audio_track(
     print("Extracting audio from input files")
     k_ep: str = key(episode)
 
-    if chapter in ['g_debut', 'g_fin']:
+    if chapter in ('g_debut', 'g_fin'):
         k_src = db[chapter]['audio']['src']['k_ep']
         k_ed = db[chapter]['audio']['src']['k_ed']
     else:
@@ -40,7 +42,7 @@ def extract_audio_track(
         sys.exit(f"Error: audio: input file is missing, edition: {k_ed}")
 
     # Output audio file
-    out_directory: str = os.path.join(db['common']['directories']['cache'], 'audio')
+    out_directory: str = db['common']['directories']['audio']
     os.makedirs(out_directory, exist_ok=True)
 
     out_filename: str = f"{k_src}_{k_ed}_audio.{db['common']['settings']['audio_format']}"
@@ -59,13 +61,13 @@ def extract_audio_track(
         logger.debug(f"\t{in_filepath} -> {out_filepath}")
 
         # FFmpeg command
-        ffmpeg_command = [ffmpeg_exe]
-        ffmpeg_command.extend(db['common']['settings']['verbose'].split(' '))
-        ffmpeg_command.extend([
+        ffmpeg_command: list[str] = [
+            ffmpeg_exe,
+            *db['common']['settings']['verbose'],
             "-i", in_filepath,
             "-sn",
             "-vn"
-        ])
+        ]
 
         # AWFULL but necessary to keep 24bit audio for the 'b' edition
         # TODO: do a ffprobe before ?

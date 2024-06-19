@@ -5,6 +5,7 @@ from scipy.io import wavfile
 import subprocess
 import time
 from parsers import (
+    db,
     logger,
     key,
     get_fps,
@@ -77,15 +78,11 @@ def run_ffmpeg_command(command: list[str]) -> bool:
 
 
 def get_output_filepath(
-    db: dict,
     episode: str | int | None = None,
     chapter: str | None = None,
 ) -> tuple[str, str]:
     k: str = ''
-    if chapter in ('g_debut', 'g_fin'):
-        k = chapter
-        logger.debug(lightgreen(f"{__name__}: {k}"))
-    elif episode is None:
+    if chapter in ('g_debut', 'g_fin') or episode is None:
         k = chapter
         logger.debug(lightgreen(f"{__name__}: {k}"))
     else:
@@ -95,7 +92,7 @@ def get_output_filepath(
     db_audio = db[k]['audio']
 
     # Working dir, maybe customized
-    out_directory = os.path.join(db['common']['directories']['cache'], 'audio')
+    out_directory = os.path.join(db['common']['directories']['audio'])
 
     # Create the audio directory
     os.makedirs(out_directory, exist_ok=True)
@@ -110,8 +107,8 @@ def get_output_filepath(
 
 
 
-def get_audio_frame_count(db, episode: str, chapter: str) -> float:
-    k, out_filepath = get_output_filepath(db, episode, chapter)
+def get_audio_frame_count(episode: str, chapter: str) -> int:
+    k, out_filepath = get_output_filepath(episode, chapter)
     fps = get_fps(db)
 
     print(lightgrey(f"  {k}: {out_filepath}"))
@@ -124,7 +121,7 @@ def get_audio_frame_count(db, episode: str, chapter: str) -> float:
     print(lightgrey(f"    duration: {duration}"))
 
     samples: float = buffer.shape[0]
-    frame_count = fps * samples / float(sample_rate)
+    frame_count: int = int(fps * samples / float(sample_rate))
     print(f"  {frame_count} frames")
 
     return frame_count

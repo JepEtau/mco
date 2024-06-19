@@ -1,3 +1,3 @@
 import logging
 
-logger: logging.Logger = logging.getLogger("logger_mco_main")
+main_logger: logging.Logger = logging.getLogger("logger_mco_main")

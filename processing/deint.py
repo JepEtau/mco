@@ -8,13 +8,14 @@ import sys
 from typing import Any, Literal
 
 from utils.hash import calc_hash
+from utils.logger import main_logger
 from utils.media import FieldOrder, VideoInfo
 from utils.p_print import *
 from utils.path_utils import absolute_path, get_extension
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.time_conversions import frame_to_sexagesimal
 from utils.tools import ffmpeg_exe, avs_dir, nnedi3_weights
-
+from parsers import db, key
 
 g_deint_algorithms = [
     'nnedi',
@@ -91,6 +92,26 @@ class QtgmcSettings:
 
 
 
+def get_template_script(episode: int | str, edition: str) -> str:
+    # Find AviSynth+ template. Priorities: edition, episode, global
+    k_ep: str = key(episode)
+    k_ed: str = edition
+
+    db_directories: dict[str, str] = db['common']['directories']
+    ep_db_dir: str = os.path.join(db_directories['config'], k_ep)
+    template_script: str = ''
+    for script in (
+        os.path.join(ep_db_dir, f"{k_ep}_{k_ed}_deint.avs"),
+        os.path.join(ep_db_dir, f"{k_ep}_deint.avs"),
+        os.path.join(db_directories['config'], f"deint.avs")
+    ):
+        if os.path.exists(script):
+            template_script = script
+            break
+
+    if template_script == '':
+        raise ValueError(f"No deinterlace script found for {k_ed}:{k_ep}")
+    return template_script
 
 
 
@@ -101,10 +122,10 @@ def generate_avs_script(
 ) -> Path | str:
     script = """
         SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
-        SetFilterMTMode("FFVideoSource", MT_SERIALIZED)
+        SetFilterMTMode("FFMPEGSource2", MT_SERIALIZED)
         SetFilterMTMode ("QTGMC", MT_MULTI_INSTANCE)
 
-        FFVideoSource("{filepath}", cache=false)
+        FFMPEGSource2("{filepath}", cache=false)
         {field_order}
         {trim}
         {qtgmc}
@@ -252,26 +273,30 @@ def generate_avs_script(
     if trim_count != -1 and trim_start + trim_count > in_video_info['frame_count']:
         raise ValueError(f"Erroneous trim value: {trim_start+trim_count} > {in_video_info['frame_count']}")
 
+    main_logger.debug(f"trim: start: {trim_start}, count: {trim_count}")
     trim_line: str = ""
     if trim_start != 0 and trim_count == -1:
-        trim_line = "trim(%d, 0)\n" % (trim_start)
-    elif trim_start != 0 and trim_count != -1:
-        trim_line = "trim(%d, end=%d)\n" % (trim_start, (trim_start + trim_count - 1))
+        trim_line = f"trim({trim_start}, 0)\n"
+    elif trim_start == 0 and trim_count != -1:
+        trim_line = f"trim({trim_start}, {trim_start + trim_count - 1})\n"
+    elif trim_start != 0 or trim_count != -1:
+        trim_line = f"trim({trim_start}, {trim_start + trim_count - 1})\n"
+    main_logger.debug(f"trim_line: {trim_line}")
 
     filepath_replaced: bool = False
     trim_replaced: bool = False
     for i, line in enumerate(lines):
 
         # Discard comments
-        if (search := re.search(re.compile("^\s*#"), line)):
+        if (search := re.search(re.compile(r"^\s*#"), line)):
             continue
 
         # Replace input file
         if not filepath_replaced:
             found: bool = False
-            if (search := re.search(re.compile("\s*FFMPEGSource2\(\s*\"(.+)\"\s*"), line)):
+            if (search := re.search(re.compile(r"\s*FFMPEGSource2\(\s*\"(.+)\"\s*"), line)):
                 found = True
-            elif (search := re.search(re.compile("\s*FFMPEGSource2\(\s*source\s=\s*\"(.+)\""), line)):
+            elif (search := re.search(re.compile(r"\s*FFMPEGSource2\(\s*source\s=\s*\"(.+)\""), line)):
                 found = True
             if found:
                 lines[i] = line.replace(search.group(1), in_video_info['filepath'])
@@ -279,12 +304,14 @@ def generate_avs_script(
 
         # Trim
         if not trim_replaced:
-            if (search := re.search(re.compile("\s*trim\(([^\)]+)\)"), line)):
+            if (search := re.search(re.compile(r"\s*trim\(([^\)]+)\)"), line)):
                 lines[i] = trim_line
                 trim_replaced = True
 
-    if (trim_start != 0 or trim_count != -1) and not trim_replaced:
-        raise ValueError("Missing trim instruction")
+    if not filepath_replaced:
+        raise ValueError(red("Error: failed to modify input video"))
+    if not trim_replaced and (trim_start != 0 or trim_count != -1):
+        raise ValueError(red("Error: failed to modify trim values"))
 
     # Imports
     ignore: tuple[str] = (
@@ -340,12 +367,12 @@ def get_qtgmc_args(
     with open(script_filepath, mode='r') as f:
         for line in f.readlines():
             # Discard comments
-            if (search := re.search(re.compile("(.*)#.*"), line)):
+            if (search := re.search(re.compile(r"(.*)#.*"), line)):
                 script += search.group(1)
                 continue
             script += line
     script = _clean_str(script)
-    if (qtgmc_arg:= re.search(re.compile("QTGMC\(([^\)]+)\)"), _clean_str(script))):
+    if (qtgmc_arg:= re.search(re.compile(r"QTGMC\(([^\)]+)\)"), _clean_str(script))):
         arguments: list[str] = qtgmc_arg.group(1).split(',')
     else:
         raise ValueError("QTGMC function not found in script")
@@ -371,7 +398,7 @@ def get_qtgmc_args(
 
 
 
-def create_hash(args_dict: OrderedDict[str, str]) -> tuple[str, str]:
+def calc_deint_hash(args_dict: OrderedDict[str, str]) -> tuple[str, str]:
     """Returns hashcode and values for log"""
     qtgmc_arg_str: str = ", ".join([f"{k}={v}" for k, v in args_dict.items()])
 
@@ -534,11 +561,14 @@ def deint_command(
     ]
 
     # Seek
+    main_logger.debug(f"trim: start: {trim_start}, count: {trim_count}")
     if trim_count != -1 and trim_start + trim_count > in_video_info['frame_count']:
         raise ValueError(f"Erroneous trim value: {trim_start+trim_count} > {in_video_info['frame_count']}")
+
     if trim_start:
         ffmpeg_command.extend(["-ss", frame_to_sexagesimal(trim_start, fps)])
-    if trim_count != 1:
+
+    if trim_count != -1:
         ffmpeg_command.extend(["-t", frame_to_sexagesimal(trim_count, fps)])
 
     # Input file

@@ -1,8 +1,96 @@
 from __future__ import annotations
+import ast
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Literal, get_args
 from ._keys import key
+
+
+IMG_FILENAME_TEMPLATE = "%s_%%05d__%s__%02d%s.png"
+
+
+TaskName = Literal[
+    # Deinterlace the input video:
+    #   input: interlaced video
+    #   output: progressive video. single file: FFv1 8-bit
+    #   out_hash:
+    # folder: 00_initial
+    # NOT YET SUPPORTED
+    'initial',
+
+    # Create a low resolution video for edition only
+    # Uses the final video mounting
+    # Uses the frames to replace/duplicates to remove, etc.
+    # Test purpose only, prefix = lr
+    # 00_lr
+    'lr',
+
+    # Denoise & upscale:
+    # - Identify images to upscale only
+    # - Remove outer black borders
+    # - upscale
+    # - resize to
+    #
+    #   input: progressive video
+    #   output: in 2 steps.
+    #       upscaled frames
+    #       create a clip/scene
+    #   ??? out_hash: upscale mode
+    # 01_hr
+    'hr',
+
+    # Stabilize and color grading, external tool
+    # Input: clips from upscale: hash?
+    # output: FFv1 8 or 16bit
+    # 03_restored
+    'stabilize',
+    'color',
+
+    # Finalize: temporal filter, geometry, fading
+    #   output: all params
+    # 04_final
+    'final'
+]
+
+TASK_NAMES: list[str] = get_args(TaskName)
+
+task_to_dirname: dict[TaskName, str] = {
+    'initial': '00_initial',
+    'lr': '00_lr',
+    'hr': '01_hr',
+    'stabilize': '02_restored',
+    'final': '04_final',
+}
+
+filter_name_to_dirname: dict[str, TaskName] = {
+    'initial': 'initial',
+    'lr': 'lr',
+    'upscale': 'hr',
+    'stabilize': 'stabilize',
+    'final': 'final',
+}
+
+
+
+
+
+@dataclass
+class ProcessingTask:
+    name: TaskName
+    hashcode: str = ''
+    concat_file: str = ''
+    video_file: str = ''
+
+
+@dataclass
+class Filter:
+    sequence: str = ''
+    hash: str = ''
+    # TODO remove
+    # id: str | None = None
+    task_name: str = ''
+    size: tuple[int, int] = ()
+
 
 
 @dataclass

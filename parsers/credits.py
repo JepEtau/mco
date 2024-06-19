@@ -10,15 +10,17 @@ from pathlib import (
 import re
 from pprint import pprint
 from typing import Literal
+
+from utils.path_utils import absolute_path
 from .audio import parse_audio_g
 from .scene import parse_target_scenelist
 from .video_target import parse_video_target_g
 from ._keys import credit_chapter_keys
 from utils.p_print import *
+from ._db import db
 
 
-
-def parse_credit_target(db):
+def parse_credit_target():
     verbose = False
 
     language = db['common']['settings']['language']
@@ -114,26 +116,29 @@ def parse_credit_target(db):
 #   Parse generiques configuration file
 #
 #===========================================================================
-def parse_generiques(db, k_ed, verbose=False):
+def parse_generiques(k_ed: str, verbose=False):
 
     for k_chapter_g in credit_chapter_keys():
         # Open db file
-        filepath = os.path.join(db['common']['directories']['config'], k_chapter_g, "%s_%s.ini" % (k_chapter_g, k_ed))
-        if filepath.startswith("~/"):
-            filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+        filepath = absolute_path(
+            os.path.join(
+                db['common']['directories']['config'],
+                k_chapter_g,
+                f"{k_chapter_g}_{k_ed}.ini"
+            )
+        )
         if not os.path.exists(filepath):
             if verbose:
-                print("Warning: %s.parse_generiques: missing file: %s, continue" % (__name__, filepath))
+                print(f"Warning: {__name__}.parse_generiques: missing file: {filepath}, continue")
             continue
-
 
         # Get config from edition
         db_generique = db[k_chapter_g][k_ed]
 
-        config = configparser.ConfigParser()
+        config = ConfigParser()
         config.read(filepath)
         for k_section in config.sections():
-            tmp = re.search(re.compile("([a-z]+)[_]*([a-z0-9]*)"), k_section)
+            tmp = re.search(re.compile(r"([a-z]+)[_]*([a-z0-9]*)"), k_section)
             if tmp is None:
                 print("[E] [%s] n'est pas reconnu" % (k_section))
                 sys.exit()
@@ -152,7 +157,7 @@ def parse_generiques(db, k_ed, verbose=False):
                 for k_option in config.options(k_section):
                     value_str = config.get(k_section, k_option)
                     value_str = value_str.replace(' ','')
-                    # print("%s:%s=" % (k_section, k_option), value_str)
+                    print("%s:%s=" % (k_section, k_option), value_str)
 
                     # Episode used as reference
                     if k_option == 'episode':
@@ -189,7 +194,6 @@ def parse_generiques(db, k_ed, verbose=False):
 
 
 def get_credits_dependencies(
-    db,
     k_chapter_g: str = '',
     track: Literal['audio', 'video', 'all'] = 'all'
 ) -> OrderedDict[str, list]:
@@ -217,7 +221,7 @@ def get_credits_dependencies(
         db_video = db[k_chapter_g]['video']
 
         # Common chapter contains the source
-        if 'k_ep' in db_video['src'].keys():
+        if 'k_ep' in db_video['src']:
             k_ed_src = db_video['src']['k_ed']
             k_ep_src = db_video['src']['k_ep']
             if k_ed_src not in dependencies.keys():
@@ -225,16 +229,16 @@ def get_credits_dependencies(
             dependencies[k_ed_src].add(k_ep_src)
 
         # scenes
-        if 'scenes' not in db_video.keys():
+        if 'scenes' not in db_video:
             sys.exit("get_dependencies_for_generique: error, list of scenes is missing")
 
         # print("get_dependencies_for_generique: %s" % (k_chapter_g))
         # pprint(db_video['scenes'])
         for s in db_video['scenes']:
-            if 'k_ed' not in s['src'].keys():
+            if 'k_ed' not in s['src']:
                 s['src']['k_ed'] = db_video['src']['k_ed']
             k_ed = s['src']['k_ed']
-            if k_ed not in dependencies.keys():
+            if k_ed not in dependencies:
                 dependencies[k_ed] = set()
             dependencies[k_ed].add(s['src']['k_ep'])
 

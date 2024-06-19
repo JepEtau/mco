@@ -8,11 +8,12 @@ from utils.time_conversions import (
     ms_to_frame,
 )
 from utils.mco_types import Scene
+from ._db import db
 
 
 
-def consolidate_av_tracks(db, k_ep, k_chapter: str = '') -> None:
-    if k_chapter in ['g_debut', 'g_fin']:
+def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
+    if k_chapter in ('g_debut', 'g_fin'):
         _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c=k_chapter)
         return
 
@@ -166,7 +167,12 @@ def consolidate_av_tracks(db, k_ep, k_chapter: str = '') -> None:
                     frame_no = last_scene['src']['start'] + last_scene['src']['count'] - 1
 
                 last_scene.update({
-                    'effects': ['loop_and_fadeout', frame_no, loop_count, min(loop_count, 25)]
+                    'effects': [
+                        'loop_and_fadeout',
+                        frame_no,
+                        loop_count,
+                        min(loop_count, 25)
+                    ]
                 })
                 # last_scene['src']['count'] -= loop_count
 
@@ -224,8 +230,10 @@ def consolidate_av_tracks(db, k_ep, k_chapter: str = '') -> None:
                 # logger.debug(first_scene)
                 # sys.exit()
 
-            if ('fadeout' in video['effects'].keys()
-                and video['effects']['fadeout'] != 0):
+            if (
+                'fadeout' in video['effects']
+                and video['effects']['fadeout'] != 0
+            ):
                 logger.debug(yellow(f"\t{k_ep}:{k_chapter} modify fadeout effect in db_video!"))
 
                 fadeout_count = video['effects']['fadeout']
@@ -273,7 +281,7 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
     """
     logger.debug(lightgreen(f"consolidate_av_tracks_g_debut_end: {k_chapter_c}"))
     fps = get_fps(db)
-    if k_chapter_c not in ['g_debut', 'g_fin']:
+    if k_chapter_c not in ('g_debut', 'g_fin'):
         return
 
     # video and audio tracks

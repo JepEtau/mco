@@ -11,7 +11,6 @@ from parsers import (
 )
 from utils.p_print import *
 
-g_database = dict()
 
 def main():
     # Arguments
@@ -80,7 +79,6 @@ def main():
 
     # Parse database
     parse_database(
-        g_database,
         episode=episode,
         lang='en' if arguments.en else 'fr'
     )

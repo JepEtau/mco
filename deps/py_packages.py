@@ -20,7 +20,7 @@ import time
 from urllib.parse import unquote
 
 from .ext_packages import ExtPackage, download_package
-from utils.logger import logger
+from utils.logger import main_logger
 from utils.path_utils import get_app_tempdir
 from utils.p_print import *
 
@@ -66,10 +66,10 @@ def update_package_info(package: PyPackage, retry: int = 3) -> None:
     installed_version: str = ""
     try:
         installed_version = metadata.metadata(package.name).json['version']
-        logger.debug(f"[V] {package.pretty_name}: {installed_version}")
+        main_logger.debug(f"[V] {package.pretty_name}: {installed_version}")
         package.installed_version = installed_version
     except:
-        logger.info(f"[I] Package {package.pretty_name} is not installed")
+        main_logger.info(f"[I] Package {package.pretty_name} is not installed")
 
 
 
@@ -117,7 +117,7 @@ def update_package_url(package: PyPackage, retry: int = 3) -> bool:
             except:
                 break
             if _retry < retry:
-                logger.debug(line)
+                main_logger.debug(line)
 
             if (result := re.search(regex, line)):
                 sub_process.terminate()
@@ -132,7 +132,7 @@ def update_package_url(package: PyPackage, retry: int = 3) -> bool:
             if "No matching distribution found" in line:
                 sub_process.terminate()
                 package.supported = False
-                logger.warning(f"[W] {package.pretty_name} is not supported on this platform")
+                main_logger.warning(f"[W] {package.pretty_name} is not supported on this platform")
                 break
 
         if url == '' or package.installed:
@@ -144,14 +144,14 @@ def update_package_url(package: PyPackage, retry: int = 3) -> bool:
             if not package.installed and package.supported:
                 _retry -= 1
                 timeout += (retry - _retry) * 5
-                logger.warning(f"retry: {_retry}, new timeout: timeout")
+                main_logger.warning(f"retry: {_retry}, new timeout: timeout")
 
     package.url = url
     if package.url == '' and not package.installed and package.supported:
-        logger.error(red(f"[E] Failed  to fetch url for {package.name}"))
+        main_logger.error(red(f"[E] Failed  to fetch url for {package.name}"))
 
     elif package.installed:
-        logger.info(f"[I] {package.pretty_name} already installed")
+        main_logger.info(f"[I] {package.pretty_name} already installed")
 
     elif package.url != '':
         package.wheel = unquote(package.url.split('/')[-1])
@@ -162,7 +162,7 @@ def update_package_url(package: PyPackage, retry: int = 3) -> bool:
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             if str(e).startswith('404'):
-                logger.error(f"File {package.url} not found")
+                main_logger.error(f"File {package.url} not found")
             return False
         package.size=int(response.headers.get('Content-length', 0))
 
@@ -170,7 +170,7 @@ def update_package_url(package: PyPackage, retry: int = 3) -> bool:
 
 
 def uninstall_py_package(package: PyPackage) -> bool:
-    logger.debug(f"[V] uninstall {package.name}")
+    main_logger.debug(f"[V] uninstall {package.name}")
     pip_command: str = f"python -m pip uninstall -y {package.name}"
     try:
         subprocess.run(
@@ -184,7 +184,7 @@ def uninstall_py_package(package: PyPackage) -> bool:
 
 
 def install_py_package(package: PyPackage, ext_package: ExtPackage) -> bool:
-    logger.debug(lightgrey(f"  install {ext_package.tmp_file}"))
+    main_logger.debug(lightgrey(f"  install {ext_package.tmp_file}"))
 
     if package.uninstall_before:
         uninstall_py_package(package)
@@ -217,7 +217,7 @@ def install_py_package(package: PyPackage, ext_package: ExtPackage) -> bool:
         shutil.rmtree(os.path.dirname(ext_package.tmp_file))
     except:
         pass
-    logger.debug(lightgrey(f"  {package.name} installed"))
+    main_logger.debug(lightgrey(f"  {package.name} installed"))
 
     return True
 
@@ -237,7 +237,7 @@ def download_install_py_package(
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         if str(e).startswith('404'):
-            logger.error(f"File {url} not found")
+            main_logger.error(f"File {url} not found")
         return False
 
     # Use the external package download procedure
@@ -256,7 +256,7 @@ def download_install_py_package(
         and os.path.getsize(ext_package.tmp_file) == ext_package.size
     ):
         ext_package.downloaded = True
-        logger.debug(lightgrey(f"  already downloaded"))
+        main_logger.debug(lightgrey(f"  already downloaded"))
 
     else:
         ext_package.downloaded = download_package(
@@ -300,15 +300,15 @@ def install_py_packages(
     def _get_info(package: PyPackage) -> None:
         update_package_info(package)
         update_package_url(package)
-        logger.debug(f"[V] {package.pretty_name}: {package.url}")
+        main_logger.debug(f"[V] {package.pretty_name}: {package.url}")
         if package.supported:
             if not package.is_installed():
-                logger.info(orange(
+                main_logger.info(orange(
                     f"[I] {package.pretty_name} has to be updated: "
                     + f"{package.installed_version} -> {package.version}"
                 ))
             else:
-                logger.info(lightgreen(
+                main_logger.info(lightgreen(
                     f"[I] {package.pretty_name} is already installed: {package.version}"
                 ))
 
@@ -319,7 +319,7 @@ def install_py_packages(
 
     packages = [package for package in packages if not package.is_installed()]
     if not packages:
-        logger.info(f"[I] No packages to update")
+        main_logger.info(f"[I] No packages to update")
         return True
 
     if threads == 1:
