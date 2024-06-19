@@ -159,7 +159,7 @@ def main():
         debug=arguments.debug
     )
 
-    if scene_arg == '':
+    if scene_arg != '':
         return
 
     if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == '':

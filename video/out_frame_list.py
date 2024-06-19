@@ -39,9 +39,7 @@ def get_frame_file_paths_until_effects(scene: Scene) -> list[str]:
     else:
         current_output_folder = get_out_directory(scene)
 
-    print(yellow(f"get_frame_file_paths_until_effects: output folder:"), f"{current_output_folder}")
-        # pprint("last task: [%s]" % (scene['tasks'][-1]))
-        # print("get_frame_file_paths_until_effects: input_folder=%s" % (input_folder))
+    # print(yellow(f"get_frame_file_paths_until_effects: output folder:"), f"{current_output_folder}")
 
     # Append images
     if 'segments' in scene['src'] and len(scene['src']['segments']) > 0:

@@ -37,7 +37,7 @@ def get_frame_list(scene: Scene, replace: bool = False, out: bool = True) -> lis
         False if scene['task'].name in ('lr') else out
     )
     directory: str = os.path.join(scene['cache'], dirname)
-    print(red(f"get_frame_list: {dirname}"))
+    # print(red(f"get_frame_list: {dirname}"))
 
     h: str = scene['task'].hashcode
     filename_template = IMG_FILENAME_TEMPLATE % (

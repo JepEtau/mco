@@ -58,7 +58,7 @@ def combine_frames(
             pass
         # Force regeneration if the scene has effects
         main_logger.debug(f"\t\tvideo: {video_frames_count}, should be {scene['dst']['count']}")
-        if 'effects' in scene:
+        if 'effects' in scene and chapter not in ('g_debut', 'g_fin'):
             force  = True
         elif video_frames_count != scene['dst']['count']:
             force = True

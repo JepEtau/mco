@@ -6,7 +6,7 @@ from parsers import db, Filter
 
 
 def get_filters(scene: Scene) -> list[Filter]:
-    verbose = True
+    verbose = False
     k_ed = scene['k_ed']
     k_ep = scene['k_ep']
     k_ch = scene['k_ch']
