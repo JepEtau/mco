@@ -14,6 +14,7 @@ from parsers import (
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
 from av.combine_av import combine_av_tracks, concatenate_all
+from video.hr_video_clips import generate_hr_video_clip
 from video.video_track import generate_video_track
 
 
@@ -147,7 +148,7 @@ def main():
 
     task = 'hr'
 
-    generate_video_track(
+    generate_hr_video_clip(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
         task=task,
