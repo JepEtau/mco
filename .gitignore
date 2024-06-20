@@ -178,3 +178,4 @@ cache/
 frames/
 external/*
 1_audio.bat
+2_deinterlace.bat

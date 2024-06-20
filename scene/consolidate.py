@@ -267,7 +267,9 @@ def consolidate_scene(scene: Scene) -> None:
 
     elif scene['task'].name == 'hr':
 
-        scene['in_frames'] = set(get_frame_list(scene, replace=True, out = False))
+        frames = get_frame_list(scene, replace=True, out=False)
+        scene['in_frames'] = list(OrderedDict.fromkeys(frames))
+
         if k_ch in ('g_asuivre', 'g_documentaire'):
             scene['out_frames'] = get_out_frame_list_single(
                 episode=k_ep,
