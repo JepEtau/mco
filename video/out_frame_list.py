@@ -176,14 +176,14 @@ def get_out_frame_list(
                 filename_template = IMG_FILENAME_TEMPLATE % (
                     k_ep_src, k_ed, task_no, suffix
                 )
-                # if scene['task'].name == 'deinterlace':
-                filepath = os.path.join(
-                    input_dir, filename_template % (loop_start)
-                )
-                # else:
-                #     filepath = os.path.join(
-                #         input_folder, filename_template % (loop_start - scene['start'])
-                #     )
+                if scene['task'].name == 'lr':
+                    filepath = os.path.join(
+                        os.path.join(get_cache_path(scene), task_to_dirname['initial']),
+                        filename_template % (loop_start)
+                    )
+                else:
+                    filepath = os.path.join(input_dir, filename_template % (loop_start))
+
                 for _ in range(loop_count - fadeout_count):
                     print(f"\t\t\t+ loop: {filepath}")
                     imgs.append(filepath)

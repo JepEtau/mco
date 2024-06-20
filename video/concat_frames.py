@@ -51,7 +51,7 @@ def set_concat_filename(
     new_concat_file: bool = bool(previous_concat_fp == '')
     if k_ch not in ('g_asuivre', 'g_documentaire'):
         # new_concat_file = new_concat_file or bool(len(img_fp) >= 5)
-        new_concat_file = new_concat_file or bool(len(img_fp) >= 5)
+        new_concat_file = new_concat_file or bool(len(img_fp) >= 3)
 
     if new_concat_file:
         # Use previous concatenation files because FFmpeg
