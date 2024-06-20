@@ -52,7 +52,7 @@ def generate_hr_video_clip(
 
     # Create the scen vclip chapter by chapter
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
-    unique_input_frame_count: int = 0
+    in_frame_count: int = 0
 
     start_time_full = time.time()
     for chapter in chapters:
@@ -89,7 +89,6 @@ def generate_hr_video_clip(
         # Walk through target scenes
         scenes: list[Scene] = video['scenes']
         for scene in scenes:
-            start_time = time.time()
             if scene_no is not None and scene['no'] != scene_no:
                 continue
 
@@ -124,15 +123,8 @@ def generate_hr_video_clip(
 
             # Generate frames for this scene
             consolidate_scene(scene=scene)
+            in_frame_count += len(scene['in_frames'])
 
-            unique_input_frame_count += len(scene['in_frames'])
-
-            if debug:
-                elapsed = time.time() - start_time
-                print(purple(
-                    f"\t\tscene no. {scene['no']} generated in "
-                    f"{s_to_sexagesimal(elapsed)} ({elapsed/scene['count']:02f}s/f)\n"
-                ))
 
             if debug:
                 print(lightcyan("================================== Scene ======================================="))
@@ -140,9 +132,48 @@ def generate_hr_video_clip(
                 print(lightcyan("==============================================================================="))
 
 
-    print(f"Total number of frames to upscale: {unique_input_frame_count}")
+    print(f"Total number of frames to upscale: {in_frame_count}")
     print(f"Total time: {time.time() - start_time_full:.03f}s")
 
     if scene_no is not None:
         return
+
+
+
+    in_frame_count: int = 0
+    out_frame_count: int = 0
+    for chapter in chapters:
+        k_ep_src: str = ''
+        video: VideoChapter
+        if chapter in ('g_debut', 'g_fin'):
+            video = db[chapter]['video']
+            k_ep_src: str = k_ep if task == 'initial' else video['src']['k_ep']
+        else:
+            video = (
+                db[k_ep]['video']['target'][chapter]
+                if k_ed == ''
+                else db[k_ep]['video'][k_ed][chapter]
+            )
+            k_ep_src = k_ep
+
+        if video['count'] <= 0:
+            continue
+
+        # Walk through target scenes
+        scenes: list[Scene] = video['scenes']
+        for scene in scenes:
+            if scene_no is not None and scene['no'] != scene_no:
+                continue
+
+            print(lightcyan("================================== Scene ======================================="))
+            pprint(scene)
+            print(lightcyan("==============================================================================="))
+
+
+
+            in_frame_count += len(scene['in_frames'])
+            out_frame_count += len(scene['out_frames'])
+
+    print(f"Total number of frames to upscale: {in_frame_count}")
+    print(f"Total number of frames to generate clips: {out_frame_count}")
 

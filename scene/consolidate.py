@@ -8,11 +8,12 @@ from utils.mco_types import Scene
 from parsers import (
     db,
     Filter,
-    TASK_NAMES
+    TASK_NAMES,
+    ProcessingTask,
 )
 from utils.mco_utils import get_cache_path, nested_dict_set
 from utils.p_print import *
-from utils.path_utils import path_split
+from utils.path_utils import absolute_path, path_split
 from video.frame_list import get_frame_list
 from video.out_frame_list import get_out_frame_list, get_out_frame_list_single
 from .filters import get_filters
@@ -284,7 +285,6 @@ def consolidate_scene(scene: Scene) -> None:
         # print(lightcyan("==============================================================================="))
         # pprint(scene)
         # print(lightcyan("==============================================================================="))
-
 
 
     if verbose:

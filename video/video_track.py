@@ -21,7 +21,6 @@ from parsers import (
     TaskName,
     ProcessingTask
 )
-from video.frame_list import get_frame_list
 from .concat_frames import (
     generate_concat_file,
     generate_silence_concat_file,

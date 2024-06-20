@@ -1,29 +1,18 @@
 import os
-from pprint import pprint
-
-from parsers.helpers import get_fps
-
-from processing.black_frame import generate_black_frame
-from utils.mco_types import Scene, VideoChapter
-# Audio, VideoPart
-from utils.mco_utils import makedirs
-from utils.p_print import *
-from utils.logger import main_logger
-# from utils.types import
 from parsers import (
     db,
     Chapter,
+    get_fps,
     key,
     main_chapter_keys,
-    all_chapter_keys,
     ProcessingTask,
 )
+from processing.black_frame import generate_black_frame
+from utils.mco_types import Scene, VideoChapter
+from utils.mco_utils import makedirs
+from utils.p_print import *
+from utils.logger import main_logger
 from utils.time_conversions import ms_to_frame
-from video.out_frame_list import (
-    get_out_frame_list,
-    get_out_frame_list_single,
-)
-
 
 
 def generate_concat_file(
@@ -34,26 +23,7 @@ def generate_concat_file(
 ):
     k_ep, k_ch = key(episode), chapter
 
-    # print(
-    #     lightgrey(f"\tcreate concatenation file: "),
-    #     lightcyan(f"{k_ep}, {k_ch}, scene no. {scene['no']}")
-    # )
-    # Use a single concatenation file for
-    #   - g_asuivre, g_documentaire
-    if k_ch in ['g_asuivre', 'g_documentaire']:
-        return generate_single_concat_file(
-            episode=episode,
-            chapter=chapter,
-            scene=scene,
-            previous_concat_fp=previous_concat_fp
-        )
-
-    # This function is used for the following chapters:
-    #   - episode
-    #   - documentaire
-
     # Get the list of frames for this scene
-    # img_fp: list[str] = get_out_frame_list(k_ep, k_ch, scene)
     img_fp: list[str] = scene['out_frames']
 
     black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
@@ -64,14 +34,24 @@ def generate_concat_file(
 
     # Open concatenation file
     k_ed = scene['k_ed']
-    if previous_concat_fp == '' or len(img_fp) >= 5:
+    new_concat_file: bool = bool(previous_concat_fp == '')
+    if k_ch not in ('g_asuivre', 'g_documentaire'):
+        new_concat_file = new_concat_file or bool(len(img_fp) >= 5)
+
+    if new_concat_file:
         # Use previous concatenation files because FFmpeg
-        # cannot create a video file from less than 5 frames
+        # cannot create a video file with 5 frames or less
         if k_ch in ('g_debut', 'g_fin'):
             concat_fp = os.path.join(
                 db[k_ch]['cache_path'],
                 "concat",
                 f"{k_ch}_{scene['no']:03}__{k_ed}_{scene['k_ep']}.txt"
+            )
+        elif k_ch in ('g_asuivre', 'g_documentaire'):
+            concat_fp: str = os.path.join(
+                db[k_ep]['cache_path'],
+                "concat",
+                f"{k_ep}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}.txt"
             )
         else:
             concat_fp = os.path.join(
@@ -79,92 +59,12 @@ def generate_concat_file(
                 "concat",
                 f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}.txt"
             )
-
-        # Save this filepath because it may be used for next scene
         previous_concat_fp = concat_fp
         concat_file = open(concat_fp, "w")
 
     else:
-        print(orange(f"Use previous concatenation file: {previous_concat_fp}"))
-        print(orange(f"{len(img_fp)}"))
-        # print("-------------------------------------")
-        # for k, v in db[k_ep]['video']['target'][k_ch].items():
-        #     if k == 'scenes':
-        #         continue
-        #     print(f"{k}:")
-        #     pprint(v)
-        # sys.exit(print_red("Error or (TODO: deprecate) Use previous concatenation file: %s ?" % (previous_concatenation_filepath)))
+        main_logger.debug(orange(f"Use previous concatenation file: {previous_concat_fp}"))
         concat_file = open(previous_concat_fp, 'a')
-
-    # print(f"{concatenation_filepath}")
-
-    # Frame duration
-    duration_str = "duration %.02f\n" % (1/get_fps(db))
-
-    # Write into the concatenation file
-    for p in img_fp:
-        concat_file.write(f"file \'{p}\' \n")
-        concat_file.write(duration_str)
-    concat_file.close()
-
-    return previous_concat_fp
-
-
-
-def generate_single_concat_file(
-    episode: int | str,
-    chapter: Chapter,
-    scene: Scene,
-    previous_concat_fp: str = ''
-):
-    """This function is used for the following chs:
-        - precedemment
-        - g_asuivre
-        - asuivre
-        - g_documentaire
-    """
-    k_ep, k_ch = key(episode), chapter
-    # print("%s.generate_single_concat_file" % (__name__))
-    # pprint(scene)
-    k: str = k_ep if k_ch not in ('g_debut', 'g_fin') else k_ch
-
-    # Get the list of images
-    # img_fp: list[str] = get_out_frame_list_single(
-    #     episode=episode, chapter=chapter, scene=scene
-    # )
-    img_fp: list[str] = scene['out_frames']
-
-    black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
-    generate_black_frame(black_image_filepath, img_fp[0])
-
-    # Folder for concatenation file
-    makedirs(k_ep, k_ch, 'concat')
-
-    # Open concatenation file
-    # hash = scene['last_step']['hash']
-    k_ed = scene['k_ed']
-    if previous_concat_fp == '':
-        # Create a concatenation file
-        if k_ch in ('g_debut', 'g_fin'):
-            # Use the edition/episode defined as reference
-            concat_fp: str = os.path.join(
-                db[k]['cache_path'],
-                "concat",
-                f"{k}_video.txt"
-            )
-
-        else:
-            concat_fp: str = os.path.join(
-                db[k]['cache_path'],
-                "concat",
-                f"{k_ep}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}.txt"
-            )
-        previous_concat_fp = concat_fp
-        concat_file = open(concat_fp, "w")
-
-    else:
-        # Use the previous concatenation file
-        concat_file = open(previous_concat_fp, "a")
 
     # Frame duration
     duration_str = f"duration {1/get_fps(db):.02f}\n"
