@@ -199,9 +199,12 @@ class Scene(TypedDict):
     # Path of the cache directory for this scene
     cache: str
 
-    # List of unique frames to generate this scene.
-    # This is usefull to optimize some processing such as upscale
+    # List of unique frames to generate this scene
+    # This is usefull to optimize some tasks
+    # the generated files have to use this list and replace directory, filenames
     in_frames: list[str]
+
+    # This list contains the frames used to generate a clip after processing
     out_frames: list[str]
 
 

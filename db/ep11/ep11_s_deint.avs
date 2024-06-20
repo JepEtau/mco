@@ -1,6 +1,6 @@
-SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
+# SetFilterMTMode("DEFAULT_MT_MODE", MT_MULTI_INSTANCE)
 SetFilterMTMode("FFMPEGSource2", MT_SERIALIZED)
-SetFilterMTMode ("QTGMC", MT_MULTI_INSTANCE)
+# SetFilterMTMode ("QTGMC", MT_MULTI_INSTANCE)
 
 FFMPEGSource2("ep.mkv", cache=false)
 
@@ -18,4 +18,4 @@ QTGMC( \
 SelectEven()
 ConvertToRGB24()
 
-Prefetch(4)
+# Prefetch(4)

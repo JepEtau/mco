@@ -56,7 +56,7 @@ def generate_hr_video_clip(
 
     start_time_full = time.time()
     for chapter in chapters:
-        hashes_str = ''
+
         # k_ep_src is the default episode source used to generate a chapter
         k_ep_src: str = ''
         video: VideoChapter
@@ -64,7 +64,7 @@ def generate_hr_video_clip(
             video = db[chapter]['video']
             k_ep_src: str = k_ep if task == 'initial' else video['src']['k_ep']
 
-        elif k_ep == 'ep00':
+        elif k_ep is None or k_ep == 'ep00':
             sys.exit(red("Missing episode no."))
 
         else:
@@ -82,8 +82,7 @@ def generate_hr_video_clip(
             continue
 
         if debug:
-            print(f"\n<<<<<<<<<<<<<<<<<<<<< {chapter} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        print(lightcyan(chapter))
+            print(lightcyan(chapter))
 
         video['task'] = ProcessingTask(name=task)
 
@@ -113,17 +112,20 @@ def generate_hr_video_clip(
                     'k_ch': chapter,
                 })
 
-            print(
-                lightgreen(f"\t{scene['no']}: {scene['start']}"),
-                f"\t({scene['dst']['count']})\t<- {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}",
-                f"   {scene['start']} ({scene['count']})"
-            )
+            if debug:
+                print(
+                    lightgreen(f"\t{scene['no']}: {scene['start']}"),
+                    f"\t({scene['dst']['count']})\t<- {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}",
+                    f"   {scene['start']} ({scene['count']})"
+                )
 
             # Set the last task
             scene['task'] = ProcessingTask(name=task)
 
             # Generate frames for this scene
             consolidate_scene(scene=scene)
+
+            unique_input_frame_count += len(scene['in_frames'])
 
             if debug:
                 elapsed = time.time() - start_time
@@ -138,6 +140,8 @@ def generate_hr_video_clip(
                 print(lightcyan("==============================================================================="))
 
 
+    print(f"Total number of frames to upscale: {unique_input_frame_count}")
+    print(f"Total time: {time.time() - start_time_full:.03f}s")
 
     if scene_no is not None:
         return

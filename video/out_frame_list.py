@@ -366,7 +366,7 @@ def get_out_frame_list_single(
                     image_list.append(black_image_filepath)
     except:
         # sys.exit(
-        print(red("get_out_frame_list_single: discard a/v, target does not exist"))
+        main_logger.debug(red("get_out_frame_list_single: discard a/v, target does not exist"))
         # )
 
 
