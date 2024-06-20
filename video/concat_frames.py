@@ -17,9 +17,8 @@ from utils.time_conversions import ms_to_frame
 
 
 
-def set_video_filename(scene: Scene, concat_fp: str = '') -> None:
+def set_video_filename(scene: Scene) -> None:
     task: ProcessingTask = scene['task']
-
     suffix: str = ''
     if task.hashcode != '':
         suffix += f"_{task.hashcode}"
@@ -40,47 +39,36 @@ def set_concat_filename(
     episode: str | int,
     chapter: Chapter,
     scene: Scene,
-    previous_concat_fp: str = ''
 ) -> None:
     k_ep, k_ch = key(episode), chapter
 
     # Get the list of frames for this scene
-    img_fp: list[str] = scene['out_frames']
+    # img_fp: list[str] = scene['out_frames']
 
     k_ed = scene['k_ed']
-    new_concat_file: bool = bool(previous_concat_fp == '')
-    if k_ch not in ('g_asuivre', 'g_documentaire'):
-        # new_concat_file = new_concat_file or bool(len(img_fp) >= 5)
-        new_concat_file = new_concat_file or bool(len(img_fp) >= 3)
-
-    if new_concat_file:
-        # Use previous concatenation files because FFmpeg
-        # cannot create a video file with 5 frames or less
-        if k_ch in ('g_debut', 'g_fin'):
-            concat_fp = os.path.join(
-                db[k_ch]['cache_path'],
-                "concat",
-                f"{k_ch}_{scene['no']:03}__{k_ed}_{scene['k_ep']}.txt"
-            )
-        elif k_ch in ('g_asuivre', 'g_documentaire'):
-            concat_fp: str = os.path.join(
-                db[k_ep]['cache_path'],
-                "concat",
-                f"{k_ep}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}.txt"
-            )
-        else:
-            concat_fp = os.path.join(
-                db[k_ep]['cache_path'],
-                "concat",
-                f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}.txt"
-            )
-        previous_concat_fp = concat_fp
-        scene['task'].concat_file = previous_concat_fp
-
+    # Use previous concatenation files because FFmpeg
+    # cannot create a video file with 5 frames or less
+    if k_ch in ('g_debut', 'g_fin'):
+        concat_fp = os.path.join(
+            db[k_ch]['cache_path'],
+            "concat",
+            f"{k_ch}_{scene['no']:03}__{k_ed}_{scene['k_ep']}.txt"
+        )
+    elif k_ch in ('g_asuivre', 'g_documentaire'):
+        concat_fp: str = os.path.join(
+            db[k_ep]['cache_path'],
+            "concat",
+            f"{k_ep}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}.txt"
+        )
     else:
-        main_logger.debug(orange(f"Use previous concatenation file: {previous_concat_fp}"))
+        concat_fp = os.path.join(
+            db[k_ep]['cache_path'],
+            "concat",
+            f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}.txt"
+        )
 
-    return previous_concat_fp
+    scene['task'].concat_file = concat_fp
+
 
 
 

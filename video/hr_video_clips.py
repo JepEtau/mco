@@ -126,13 +126,13 @@ def generate_hr_video_clip(
             # Generate frames for this scene
             consolidate_scene(scene=scene)
             in_frame_count += len(scene['in_frames'])
-
+            set_concat_filename(episode=k_ep_src, chapter=chapter, scene=scene)
+            set_video_filename(scene)
 
             if debug:
                 print(lightcyan("================================== Scene ======================================="))
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
-
 
     print(f"Total number of frames to upscale: {in_frame_count}")
     print(f"Total time: {time.time() - start_time_full:.03f}s")
@@ -162,26 +162,14 @@ def generate_hr_video_clip(
             continue
 
         # Walk through target scenes
-        previous_concat_fp: str = ''
         scenes: list[Scene] = video['scenes']
         for scene in scenes:
             if scene_no is not None and scene['no'] != scene_no:
                 continue
 
-            concat_fp = set_concat_filename(
-                episode=k_ep_src,
-                chapter=chapter,
-                scene=scene,
-                previous_concat_fp=previous_concat_fp
-            )
-            if concat_fp != previous_concat_fp and concat_fp != '':
-                set_video_filename(scene, concat_fp)
-
-
             print(lightcyan("================================== Scene ======================================="))
             pprint(scene)
             print(lightcyan("==============================================================================="))
-
 
             in_frame_count += len(scene['in_frames'])
             out_frame_count += len(scene['out_frames'])

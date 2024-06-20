@@ -163,53 +163,29 @@ def generate_video_track(
             # Calculate hash for the video
             hashes_str += f",{scene['task'].hashcode}"
 
-            if len(scene['out_frames']) < 5:
-                print(lightcyan("================================== Scene ======================================="))
-                pprint(scene)
-                print(lightcyan("==============================================================================="))
-                raise ValueError("Scene has less than 5 frames")
+            # if len(scene['out_frames']) < 5:
+            #     print(lightcyan("================================== Scene ======================================="))
+            #     pprint(scene)
+            #     print(lightcyan("==============================================================================="))
+            #     raise ValueError("Scene has less than 5 frames")
+
 
             # Create concatenation file
-            do_generate_video = False
-            concat_fp = set_concat_filename(
-                episode=k_ep_src,
-                chapter=chapter,
-                scene=scene,
-                previous_concat_fp=previous_concat_fp
-            )
-            if concat_fp != previous_concat_fp and concat_fp != '':
-                set_video_filename(scene, concat_fp)
-                do_generate_video = True
-            else:
-                # This scene has not enough frames to generate a video scene,
-                # append images to the previous scene and regenerate it
-                combine_frames(
-                    chapter=chapter,
-                    scene=scene,
-                    force=True,
-                    simulation=simulation,
-                    watermark=f"{scene['no'] - 1}" if watermark else None
-                )
-            previous_concat_fp = concat_fp
-
+            set_concat_filename(episode=k_ep_src, chapter=chapter, scene=scene)
+            set_video_filename(scene)
             generate_concat_file(
                 episode=episode,
                 chapter=chapter,
                 video=video,
                 scene=scene
             )
-
-            # Combine images into a video file
-            if do_generate_video:
-                # print(purple("\tcombine images to video (scene): k_p=%s, scene no. %d" % (k_p, scene['no'])))
-                combine_frames(
-                    chapter=chapter,
-                    # scene=clips[-1],
-                    scene=scene,
-                    force=force,
-                    simulation=simulation,
-                    watermark=f"{scene['no']}" if watermark else None
-                )
+            combine_frames(
+                chapter=chapter,
+                scene=scene,
+                force=force,
+                simulation=simulation,
+                watermark=f"{scene['no']}" if watermark else None
+            )
 
             if debug:
                 elapsed = time.time() - start_time
