@@ -99,7 +99,8 @@ def combine_av_tracks(
 
     video_frames_count: int = 0
     try:
-        _, video_frames_count = get_video_duration(video_filepath, integrity=False)
+        if not simulation:
+            _, video_frames_count = get_video_duration(video_filepath, integrity=False)
     except:
         pass
 
@@ -111,11 +112,11 @@ def combine_av_tracks(
     print(yellow(audio_filepath))
     audio_frames_count: int = 0
     try:
-        frame_count = get_audio_frame_count(episode, chapter)
+        if not simulation:
+            audio_frames_count = get_audio_frame_count(episode, chapter)
     except:
         k: str = f"episode {episode}" if chapter == '' else chapter
         raise RuntimeError(f"No valid audio for {k}")
-    audio_frames_count = frame_count
 
     print(f"\tvideo: {video_filepath}: {video_frames_count}")
     print(f"\taudio: {audio_filepath}: {audio_frames_count}")
@@ -136,8 +137,11 @@ def combine_av_tracks(
         "-y", audio_video_filepath
     ]
 
-    return run_simple_command(ffmpeg_command)
+    main_logger.debug(' '.join(ffmpeg_command))
+    if not simulation:
+        return run_simple_command(ffmpeg_command)
 
+    return True
 
 
 def concatenate_all(

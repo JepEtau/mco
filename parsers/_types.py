@@ -80,6 +80,7 @@ class ProcessingTask:
     hashcode: str = ''
     concat_file: str = ''
     video_file: str = ''
+    do_generate: bool = True
 
 
 @dataclass

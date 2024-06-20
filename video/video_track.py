@@ -25,6 +25,8 @@ from .concat_frames import (
     generate_concat_file,
     generate_silence_concat_file,
     generate_video_concat_file,
+    set_concat_filename,
+    set_video_filename,
 )
 from .concat_scenes import concat_scenes
 from .combine_frames import combine_frames
@@ -161,16 +163,22 @@ def generate_video_track(
             # Calculate hash for the video
             hashes_str += f",{scene['task'].hashcode}"
 
+            if len(scene['out_frames']) < 5:
+                print(lightcyan("================================== Scene ======================================="))
+                pprint(scene)
+                print(lightcyan("==============================================================================="))
+                raise ValueError("Scene has less than 5 frames")
+
             # Create concatenation file
             do_generate_video = False
-            concat_fp = generate_concat_file(
+            concat_fp = set_concat_filename(
                 episode=k_ep_src,
                 chapter=chapter,
                 scene=scene,
                 previous_concat_fp=previous_concat_fp
             )
             if concat_fp != previous_concat_fp and concat_fp != '':
-                scene['task'].concat_file = concat_fp
+                set_video_filename(scene, concat_fp)
                 do_generate_video = True
             else:
                 # This scene has not enough frames to generate a video scene,
@@ -183,6 +191,13 @@ def generate_video_track(
                     watermark=f"{scene['no'] - 1}" if watermark else None
                 )
             previous_concat_fp = concat_fp
+
+            generate_concat_file(
+                episode=episode,
+                chapter=chapter,
+                video=video,
+                scene=scene
+            )
 
             # Combine images into a video file
             if do_generate_video:

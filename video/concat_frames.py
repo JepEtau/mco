@@ -12,30 +12,45 @@ from utils.mco_types import Scene, VideoChapter
 from utils.mco_utils import makedirs
 from utils.p_print import *
 from utils.logger import main_logger
+from utils.path_utils import absolute_path, path_split
 from utils.time_conversions import ms_to_frame
 
 
-def generate_concat_file(
+
+def set_video_filename(scene: Scene, concat_fp: str = '') -> None:
+    task: ProcessingTask = scene['task']
+
+    suffix: str = ''
+    if task.hashcode != '':
+        suffix += f"_{task.hashcode}"
+
+    if task != '':
+        suffix += f"_{task.name}"
+
+    dir, basename, _ = path_split(task.concat_file)
+    task.video_file= absolute_path(
+        os.path.join(
+            dir, os.pardir, "video", f"{basename}{suffix}.mkv"
+        )
+    )
+
+
+
+def set_concat_filename(
     episode: str | int,
     chapter: Chapter,
     scene: Scene,
     previous_concat_fp: str = ''
-):
+) -> None:
     k_ep, k_ch = key(episode), chapter
 
     # Get the list of frames for this scene
     img_fp: list[str] = scene['out_frames']
 
-    black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
-    generate_black_frame(black_image_filepath, img_fp[0])
-
-    # Folder for concatenation file
-    makedirs(k_ep, k_ch, 'concat')
-
-    # Open concatenation file
     k_ed = scene['k_ed']
     new_concat_file: bool = bool(previous_concat_fp == '')
     if k_ch not in ('g_asuivre', 'g_documentaire'):
+        # new_concat_file = new_concat_file or bool(len(img_fp) >= 5)
         new_concat_file = new_concat_file or bool(len(img_fp) >= 5)
 
     if new_concat_file:
@@ -60,11 +75,41 @@ def generate_concat_file(
                 f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}.txt"
             )
         previous_concat_fp = concat_fp
-        concat_file = open(concat_fp, "w")
+        scene['task'].concat_file = previous_concat_fp
 
     else:
         main_logger.debug(orange(f"Use previous concatenation file: {previous_concat_fp}"))
-        concat_file = open(previous_concat_fp, 'a')
+
+    return previous_concat_fp
+
+
+
+
+def generate_concat_file(
+    episode: str | int,
+    chapter: Chapter,
+    video: VideoChapter,
+    scene: Scene,
+) -> None:
+    k_ep, k_ch = key(episode), chapter
+
+    # Get the list of frames for this scene
+    img_fp: list[str] = scene['out_frames']
+
+    black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
+    generate_black_frame(black_image_filepath, img_fp[0])
+
+    # Folder for concatenation file
+    makedirs(k_ep, k_ch, 'concat')
+
+    # Open concatenation file
+    if (
+        scene['no'] > 0
+        and scene['task'].concat_file == video['scenes'][scene['no'] - 1]['task'].concat_file
+    ):
+        concat_file = open(video['scenes'][scene['no'] - 1]['task'].concat_file, "a")
+    else:
+        concat_file = open(scene['task'].concat_file, "w")
 
     # Frame duration
     duration_str = f"duration {1/get_fps(db):.02f}\n"
@@ -75,7 +120,6 @@ def generate_concat_file(
         concat_file.write(duration_str)
     concat_file.close()
 
-    return previous_concat_fp
 
 
 

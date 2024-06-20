@@ -26,6 +26,8 @@ from .concat_frames import (
     generate_concat_file,
     generate_silence_concat_file,
     generate_video_concat_file,
+    set_concat_filename,
+    set_video_filename,
 )
 from .concat_scenes import concat_scenes
 from .combine_frames import combine_frames
@@ -160,15 +162,25 @@ def generate_hr_video_clip(
             continue
 
         # Walk through target scenes
+        previous_concat_fp: str = ''
         scenes: list[Scene] = video['scenes']
         for scene in scenes:
             if scene_no is not None and scene['no'] != scene_no:
                 continue
 
+            concat_fp = set_concat_filename(
+                episode=k_ep_src,
+                chapter=chapter,
+                scene=scene,
+                previous_concat_fp=previous_concat_fp
+            )
+            if concat_fp != previous_concat_fp and concat_fp != '':
+                set_video_filename(scene, concat_fp)
+
+
             print(lightcyan("================================== Scene ======================================="))
             pprint(scene)
             print(lightcyan("==============================================================================="))
-
 
 
             in_frame_count += len(scene['in_frames'])
