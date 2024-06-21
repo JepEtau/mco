@@ -1,19 +1,15 @@
 from collections import deque
-from dataclasses import dataclass
 import re
-import subprocess
 import sys
 import os
 import time
 from pprint import pprint
 
-import numpy as np
-import torch
 
-from nn_inference import UpscalePipeline
+from processing.upscale import UpscalePipeline
+from nn_inference.threads.common import Frame
 from scene.consolidate import consolidate_scene
-from scene.process import process_scene
-from utils.hash import calc_hash
+
 from utils.logger import main_logger
 from utils.mco_types import Scene, VideoChapter
 from utils.p_print import *
@@ -148,15 +144,7 @@ def generate_hr_video_clip(
     print(f"Total time: {time.time() - start_time_full:.03f}s")
 
 
-    img_queue: deque = deque()
-    @dataclass
-    class Frame:
-        in_img_fp: str
-        out_img_fp: str
-        img: np.ndarray | torch.Tensor | None = None
-        filter: Filter
-
-
+    frames: list = list()
     in_frame_count: int = 0
     out_frame_count: int = 0
     for chapter in chapters:
@@ -188,9 +176,9 @@ def generate_hr_video_clip(
             dirname: str = task_to_dirname[scene['task'].name]
             task_no: str = dirname[:2]
             hashcode: str = scene['task'].hashcode
+            out_video_fp: str = scene['task'].video_file
             for i, in_img in enumerate(scene['in_frames']):
                 dir, basename, extension = path_split(in_img)
-                # img_queue.append(img_fp)
                 # IMG_FILENAME_TEMPLATE
                 if (result := re.search(re.compile(r"(.*__)\d{2}_[a-z0-9]{7}"), basename)):
                     basename = result.group(1)
@@ -209,14 +197,18 @@ def generate_hr_video_clip(
                     not os.path.exists(out_img)
                     or os.stat(in_img).st_mtime > os.stat(out_img).st_mtime
                 ):
-                    print(f"regenerate {out_img}")
-                    img_queue.append(
+                    # print(f"regenerate {out_img}")
+                    frames.append(
                         Frame(
                             in_img_fp=in_img,
                             out_img_fp=out_img,
-                            filter=scene[task]
+                            scene_no=scene['no'],
+                            scene=scene_no,
+                            out_video_fp=out_video_fp
                         )
                     )
+                    out_video_fp = ''
+
 
             in_frame_count += len(scene['in_frames'])
             out_frame_count += len(scene['out_frames'])
@@ -224,13 +216,13 @@ def generate_hr_video_clip(
 
     print(f"Total number of frames to upscale: {in_frame_count}")
     print(f"Total number of frames to generate clips: {out_frame_count}")
-    print(f"Total number of frames to process: {len(img_queue)}")
+    print(f"Total number of frames to process: {len(frames)}")
 
     device: str = 'cuda'
     fp16: bool = True
 
     pipeline = UpscalePipeline(
-        img_queue,
+        frames,
         device,
         fp16,
         debug
