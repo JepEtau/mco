@@ -14,7 +14,7 @@ from utils.mco_utils import get_cache_path, get_out_directory, run_simple_comman
 from utils.p_print import *
 from utils.time_conversions import frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from video.frame_list import get_frame_list, get_out_dirname
+from video.frame_list import get_frame_list, get_dirname
 
 
 def process_scene(scene: Scene, force: bool = False) -> bool:
@@ -33,7 +33,7 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
         # Create filename template
         # directory: str = get_out_directory(scene)
         directory: str = os.path.join(get_cache_path(scene), task_to_dirname['initial'])
-        dirname: str = get_out_dirname(scene=scene, out=True)
+        dirname: str = get_dirname(scene=scene, out=True)[0]
         h: str = scene['task'].hashcode
         filename_template = IMG_FILENAME_TEMPLATE % (
             scene['k_ep'],

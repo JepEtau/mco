@@ -10,9 +10,12 @@ from utils.mco_types import (
 from utils.p_print import *
 
 
-def get_out_dirname(scene: Scene, out: bool =False) -> str:
-    if scene['task'].name in ('lr'):
-        dirname: str = task_to_dirname['initial']
+def get_dirname(scene: Scene, out: bool = False) -> tuple[str, str]:
+    if (
+        scene['task'].name in ('lr')
+        or (scene['task'].name in ('hr') and not out)
+    ):
+        return task_to_dirname['initial'], scene['filters']['initial'].hash
 
     else:
         index: str = 0
@@ -27,24 +30,21 @@ def get_out_dirname(scene: Scene, out: bool =False) -> str:
             dirname: str = task_to_dirname[TASK_NAMES[index]]
         else:
             dirname: str = task_to_dirname[TASK_NAMES[index - 1]]
-    return dirname
+
+    return dirname, scene['filters'][task_name].hash
 
 
 
 def get_frame_list(scene: Scene, replace: bool = False, out: bool = True) -> list[str]:
-    dirname: str = get_out_dirname(
-        scene,
-        False if scene['task'].name in ('lr') else out
-    )
+    dirname, hashcode = get_dirname(scene, out)
     directory: str = os.path.join(scene['cache'], dirname)
     # print(red(f"get_frame_list: {dirname}"))
 
-    h: str = scene['task'].hashcode
     filename_template = IMG_FILENAME_TEMPLATE % (
         scene['k_ep'],
         scene['k_ed'],
         int(dirname[:2]),
-        f"_{h}" if h != '' else ""
+        f"_{hashcode}" if hashcode != '' else ""
     )
 
     frame_replace = scene['replace']

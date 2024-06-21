@@ -1,4 +1,5 @@
 from collections import deque
+from dataclasses import dataclass
 import re
 import subprocess
 import sys
@@ -6,13 +7,17 @@ import os
 import time
 from pprint import pprint
 
+import numpy as np
+import torch
+
+from nn_inference import UpscalePipeline
 from scene.consolidate import consolidate_scene
 from scene.process import process_scene
 from utils.hash import calc_hash
 from utils.logger import main_logger
 from utils.mco_types import Scene, VideoChapter
 from utils.p_print import *
-from utils.path_utils import path_split
+from utils.path_utils import path_split, absolute_path
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
 from utils.mco_utils import makedirs
@@ -23,7 +28,8 @@ from parsers import (
     key,
     TaskName,
     ProcessingTask,
-    task_to_dirname
+    task_to_dirname,
+    Filter,
 )
 from video.frame_list import get_frame_list
 from .concat_frames import (
@@ -143,6 +149,13 @@ def generate_hr_video_clip(
 
 
     img_queue: deque = deque()
+    @dataclass
+    class Frame:
+        in_img_fp: str
+        out_img_fp: str
+        img: np.ndarray | torch.Tensor | None = None
+        filter: Filter
+
 
     in_frame_count: int = 0
     out_frame_count: int = 0
@@ -172,7 +185,8 @@ def generate_hr_video_clip(
             # print(lightcyan("================================== Scene ======================================="))
             # pprint(scene)
             # print(lightcyan("==============================================================================="))
-            task_no: str = task_to_dirname[scene['task'].name][:2]
+            dirname: str = task_to_dirname[scene['task'].name]
+            task_no: str = dirname[:2]
             hashcode: str = scene['task'].hashcode
             for i, in_img in enumerate(scene['in_frames']):
                 dir, basename, extension = path_split(in_img)
@@ -180,15 +194,53 @@ def generate_hr_video_clip(
                 # IMG_FILENAME_TEMPLATE
                 if (result := re.search(re.compile(r"(.*__)\d{2}_[a-z0-9]{7}"), basename)):
                     basename = result.group(1)
-                out_img: str = os.path.join(dir, f"{basename}{task_no}_{hashcode}{extension}"
-                                            )
-                print(f"{i:02d}: {basename}{task_no}_{hashcode}{extension} -> {out_img}")
+                else:
+                    raise ValueError(f"{basename} is not a valid basename")
+                out_img: str = os.path.join(
+                    absolute_path(os.path.join(dir, os.pardir, dirname)),
+                    f"{basename}{task_no}_{hashcode}{extension}"
+                )
+                # print(f"{i:02d}: {in_img} -> {out_img}")
 
-            break
+                if not os.path.exists(in_img):
+                    raise ValueError(f"missing input file: {in_img}")
+
+                if (
+                    not os.path.exists(out_img)
+                    or os.stat(in_img).st_mtime > os.stat(out_img).st_mtime
+                ):
+                    print(f"regenerate {out_img}")
+                    img_queue.append(
+                        Frame(
+                            in_img_fp=in_img,
+                            out_img_fp=out_img,
+                            filter=scene[task]
+                        )
+                    )
+
             in_frame_count += len(scene['in_frames'])
             out_frame_count += len(scene['out_frames'])
         break
 
     print(f"Total number of frames to upscale: {in_frame_count}")
     print(f"Total number of frames to generate clips: {out_frame_count}")
+    print(f"Total number of frames to process: {len(img_queue)}")
+
+    device: str = 'cuda'
+    fp16: bool = True
+
+    pipeline = UpscalePipeline(
+        img_queue,
+        device,
+        fp16,
+        debug
+    )
+
+
+    # 1. Upscale
+
+
+    # 2. Add borders
+
+    # 3. Generate video
 

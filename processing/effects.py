@@ -14,7 +14,7 @@ from utils.mco_utils import get_cache_path, get_out_directory
 from utils.p_print import *
 from utils.logger import main_logger
 from utils.mco_types import Scene
-from video.frame_list import get_out_dirname
+from video.frame_list import get_dirname
 
 
 
@@ -139,7 +139,7 @@ def effect_loop_and_fadeout(scene: Scene):
 
     # Input directory
     in_dir: str = os.path.join(
-        get_cache_path(scene), get_out_dirname(scene)
+        get_cache_path(scene), get_dirname(scene)[0]
     )
     if verbose:
         print(lightgrey(f"\tinput_filepath: {in_dir}"))
@@ -225,7 +225,8 @@ def effect_fadeout(scene: Scene):
 
     # Input directory
     in_dir: str = os.path.join(
-        get_cache_path(scene), get_out_dirname(scene)
+        get_cache_path(scene),
+        get_dirname(scene)[0]
     )
     if verbose:
         print(lightgrey(f"\tinput_filepath: {in_dir}"))
