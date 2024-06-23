@@ -15,7 +15,7 @@ from parsers import (
 )
 from utils.path_utils import absolute_path, path_split
 from utils.tools import ffmpeg_exe
-from av.combine_av import get_video_duration
+from av_merge.combine_av import get_video_duration
 
 
 # def verify_integrity(

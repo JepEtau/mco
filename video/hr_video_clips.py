@@ -166,6 +166,7 @@ def generate_hr_video_clip(
 
         # Walk through target scenes
         scenes: list[Scene] = video['scenes']
+        models: set[str] = set()
         for scene in scenes:
             if scene_no is not None and scene['no'] != scene_no:
                 continue
@@ -177,6 +178,11 @@ def generate_hr_video_clip(
             task_no: str = dirname[:2]
             hashcode: str = scene['task'].hashcode
             out_video_fp: str = scene['task'].video_file
+
+            # Get all models
+            filter: str = scene['filters'][scene['task'].name].sequence
+            models.add(filter)
+
             for i, in_img in enumerate(scene['in_frames']):
                 dir, basename, extension = path_split(in_img)
                 # IMG_FILENAME_TEMPLATE
@@ -209,10 +215,9 @@ def generate_hr_video_clip(
                     )
                     out_video_fp = ''
 
-
             in_frame_count += len(scene['in_frames'])
             out_frame_count += len(scene['out_frames'])
-        break
+        # break
 
     print(f"Total number of frames to upscale: {in_frame_count}")
     print(f"Total number of frames to generate clips: {out_frame_count}")
@@ -223,6 +228,7 @@ def generate_hr_video_clip(
 
     pipeline = UpscalePipeline(
         frames,
+        models,
         device,
         fp16,
         debug

@@ -4,7 +4,6 @@ import logging
 from pprint import pprint
 import signal
 import sys
-from av.chapters import add_chapters
 from parsers import (
     parse_database,
     logger,
@@ -13,7 +12,8 @@ from parsers import (
 )
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
-from av.combine_av import combine_av_tracks, concatenate_all
+from av_merge.combine_av import combine_av_tracks, concatenate_all
+from av_merge.chapters import add_chapters
 from video.video_track import generate_video_track
 
 

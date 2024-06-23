@@ -451,8 +451,8 @@ def qtgmc_deint_command(
     ])
 
     ffmpeg_command.extend([
-        "-pix_fmt", # out_video_info['pix_fmt']
-        "yuv420p"
+        "-pixel_format", "bgr24",
+        "-vcodec", "ffv1",
     ])
 
     ffmpeg_command.extend([
@@ -588,8 +588,8 @@ def deint_command(
     ])
 
     ffmpeg_command.extend([
-        "-pix_fmt", # out_video_info['pix_fmt']
-        "yuv420p"
+        "-pixel_format", "bgr24",
+        "-vcodec", "ffv1",
     ])
 
     ffmpeg_command.extend([
