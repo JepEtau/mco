@@ -8,6 +8,7 @@ from parsers import (
     parse_database,
     logger,
     all_chapter_keys,
+    db,
 )
 from utils.p_print import *
 
@@ -92,7 +93,7 @@ def main():
     # pprint(db_ep['audio'])
 
     # print(g_database.keys())
-    # pprint(g_database['common'])
+    pprint(db['common'])
 
 
 

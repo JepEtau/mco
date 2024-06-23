@@ -10,7 +10,7 @@ from pathlib import (
 from pprint import pprint
 import re
 from utils.p_print import *
-from utils.path_utils import absolute_path
+from utils.path_utils import absolute_path, get_extension
 from ._types import Database
 from ._keys import key
 from .logger import logger
@@ -103,7 +103,8 @@ def parse_editions(verbose=False):
                             ep_no = int(tmp.group(2))
                             k_ep = key(ep_no)
                             # Video with or w/out audio
-                            if filename.endswith(".mkv"):
+                            extension: str = get_extension(filename)
+                            if extension in (".mkv", ".mpg"):
                                 inputs['video'][k_ep] = filepath
                                 if k_ep not in inputs['audio']:
                                     # use this file by default as the audio src
@@ -123,7 +124,7 @@ def parse_editions(verbose=False):
                                 if tmp.group(3) is not None:
                                     # multiple episode in this file
                                     for i in range(ep_no+1, int(tmp.group(3))+1):
-                                        inputs['audio']['ep%02d' % (i)] = filepath
+                                        inputs['audio'][key(i)] = filepath
                         else:
                             print("Error: prefix differs from edition %s vs %s" % (tmp.group(1), folder))
 

@@ -173,7 +173,8 @@ cython_debug/
 **/*.bak
 **/*.png
 **/*.mkv
-**/*.mp4
+**/*.vob
+**/*.mpg
 cache/
 frames/
 external/*

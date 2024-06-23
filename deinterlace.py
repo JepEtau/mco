@@ -71,7 +71,7 @@ def main():
     parser.add_argument(
         "--edition",
         "-ed",
-        choices=['f', 'k', 's'],
+        choices=['f', 'k', 's', 'j'],
         default='',
         required=False,
         help="deinterlace video of this edition only"
@@ -212,7 +212,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
 
         if not in_video_info['is_interlaced']:
             print(yellow(f"\t{in_media_path} is already progressive"))
-            continue
+            # continue
 
         # Get the output shape/dtype/channel order depending on the deinterlace algo
         d_shape, d_dtype, d_c_order, d_size = decoder_frame_prop(

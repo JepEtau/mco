@@ -380,7 +380,7 @@ def get_episode_dependencies(
             try:
                 chapter_video = db[k_ep]['video'][k_ed_src][chapter]
             except:
-                sys.exit(red(f"error: {k_ed_src}:{k_ep}: missing input file"))
+                sys.exit(red(f"error: {k_ed_src}:{k_ep}:{chapter}: missing input file"))
             if 'scenes' in chapter_video.keys():
                 scenes = chapter_video['scenes']
                 for scene in scenes:
@@ -399,7 +399,7 @@ def get_episode_dependencies(
             try:
                 db_audio = db[k_ep]['audio'][chapter]
             except:
-                sys.exit(red(f"error: {k_ed_src}:{k_ep}: missing input file"))
+                sys.exit(red(f"error: {k_ed_src}:{k_ep}:{chapter}: missing input file"))
 
             for segment in db_audio['segments']:
                 if 'k_ep' in segment and segment['k_ep'] != k_ep:

@@ -31,7 +31,7 @@ from nn_inference.resource_mgr import Frame
 from nn_inference.threads.t_img_reader import ImgReaderThread, ImgReaderThreadConfig
 from utils.p_print import *
 from utils.path_utils import absolute_path
-
+from utils.tools import ffmpeg_exe
 
 @dataclass
 class ImageReaderParams:
@@ -47,8 +47,6 @@ class UpscalePipeline(object):
         models: set[str],
         device: str,
         fp16: bool,
-        max_in_size: tuple[int, int] | None = None,
-        debug: bool = False
     ) -> None:
 
         # Decoder
@@ -67,8 +65,7 @@ class UpscalePipeline(object):
 
         self.max_nbytes: int = max_nbytes
         self.frames = deque(frames)
-        d_dtype = np.dtype
-        d_c_order = 'rgb'
+        r_c_order = 'rgb'
         self.models = models
         self.device = device
         self.fp16 = fp16
@@ -169,7 +166,9 @@ class UpscalePipeline(object):
         r_thread_config = ImgReaderThreadConfig(
             htod_mem=htod_mem,
             frames=self.frames,
-            cuda_stream=htod_cuda_stream
+            cuda_stream=htod_cuda_stream,
+            tensor_dtype=tensor_dtype,
+            device=device
         )
         try:
             r_thread = ImgReaderThread(r_thread_config)
@@ -178,6 +177,7 @@ class UpscalePipeline(object):
             print(red(f"[E] decoder: {type(e)}"))
             return True, 0, 0
         r_thread.setName("img_reader")
+
 
 
         # Create inference thread
@@ -202,6 +202,16 @@ class UpscalePipeline(object):
             return True, 0, 0
         i_thread.setName("inference")
 
+
+        e_ffmpeg_cmd: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "error",
+            '-f', 'rawvideo',
+            # '-pixel_format', in_video_info['pix_fmt'],
+            # '-video_size', f"{w}x{h}",
+            "-r", 25
+        ]
 
 
         # Create encoder thread
