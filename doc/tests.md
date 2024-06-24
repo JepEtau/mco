@@ -1,3 +1,6 @@
+copy /b "VTS_01_1.VOB"+"VTS_01_2.VOB"+"VTS_01_3.VOB"+"VTS_01_4.VOB"+"VTS_01_5.VOB"+"VTS_01_6.VOB"+"VTS_01_7.VOB"+"VTS_01_8.VOB" "output.vob"
+
+
 cls; python .\pynference.py --input D:\mco\cache\progressive\f_ep01_c37d117.mkv --output A:\video\output\ep01_2.46_80_2x-LD-Anime-Compact.mkv --model A:\ml_models\2x-LD-Anime-Compact.pth --ss 2:46 -t 80 --trt --fp16
 
 
@@ -92,3 +95,24 @@ cls; python .\pynference.py --input D:\mco\cache\progressive\j_ep01_7e784ec.mkv 
 
 
 cls; python .\pynference.py --input A:\mco\outputs\j_ep01_xxxx_2x-DigitalFilmV5-Lite.mkv --output A:\mco\outputs\j_ep01_xxxx_2x-DigitalFilmV5-Lite_scunet_color_real_gan.mkv --model A:\ml_models\scunet_color_real_gan.pth --cuda --fp16
+
+
+# jp editions: ep01
+
+cls; python .\pynference.py --input D:\mco\cache\progressive\j_ep01_7e784ec_vob.mkv --output A:\mco\outputs\j_ep01_7e784ec_vob_scunet_color_real_gan.mkv --model A:\ml_models\scunet_color_real_gan.pth --cuda --fp16 --ss 3:06 --t 1:40
+cls; python .\pynference.py --input A:\mco\outputs\j_ep01_7e784ec_vob_scunet_color_real_gan.mkv --output A:\mco\outputs\j_ep01_7e784ec_vob_scunet_color_real_gan_2x-DigitalFilmV5-Lite.mkv --model A:\ml_models\2x-DigitalFilmV5-Lite.pth --trt --fp16
+
+
+cls; python .\pynference.py --input D:\mco\cache\progressive\j_ep01_7e784ec_mpg.mkv --output A:\mco\outputs\j_ep01_7e784ec_mpg_scunet_color_real_gan.mkv --model A:\ml_models\scunet_color_real_gan.pth --cuda --fp16 --ss 0:54 --t 1:30
+cls; python .\pynference.py --input A:\mco\outputs\j_ep01_7e784ec_mpg_scunet_color_real_gan.mkv --output A:\mco\outputs\j_ep01_7e784ec_mpg_scunet_color_real_gan_2x-DigitalFilmV5-Lite.mkv --model A:\ml_models\2x-DigitalFilmV5-Lite.pth --trt --fp16
+
+
+# jp editions: ep06
+cls; python .\pynference.py --input D:\mco\cache\progressive\j_ep06_7e784ec_vob.mkv --output A:\mco\outputs\j_ep06_7e784ec_vob_scunet_color_real_gan.mkv --model A:\ml_models\scunet_color_real_gan.pth --cuda --fp16 --ss 3:06 --t 1:40
+cls; python .\pynference.py --input A:\mco\outputs\j_ep06_7e784ec_vob_scunet_color_real_gan.mkv --output A:\mco\outputs\j_ep06_7e784ec_vob_scunet_color_real_gan_2x-DigitalFilmV5-Lite.mkv --model A:\ml_models\2x-DigitalFilmV5-Lite.pth --trt --fp16
+
+
+cls; python .\pynference.py --input D:\mco\cache\progressive\j_ep06_7e784ec_mpg.mkv --output A:\mco\outputs\j_ep06_7e784ec_mpg_scunet_color_real_gan.mkv --model A:\ml_models\scunet_color_real_gan.pth --cuda --fp16 --ss 0:54 --t 1:30
+cls; python .\pynference.py --input A:\mco\outputs\j_ep06_7e784ec_mpg_scunet_color_real_gan.mkv --output A:\mco\outputs\j_ep06_7e784ec_mpg_scunet_color_real_gan_2x-DigitalFilmV5-Lite.mkv --model A:\ml_models\2x-DigitalFilmV5-Lite.pth --trt --fp16
+
+
