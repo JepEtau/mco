@@ -10,7 +10,7 @@ from pprint import pprint
 #     get_image_list,
 # )
 from processing.black_frame import generate_black_frame
-from utils.mco_types import Scene
+from utils.mco_types import Effect, Scene
 from utils.mco_utils import get_cache_path, get_out_directory
 from utils.p_print import *
 from utils.logger import main_logger
@@ -148,14 +148,14 @@ def get_out_frame_list(
 
     # Add files for effects
     if 'effects' in scene and scene['task'].name != 'initial':
-        effect = scene['effects'][0]
+        effect = scene['effects'].primary_effect()
         main_logger.debug(green(f"\tget frame list: effect={effect}"))
 
-        if effect == 'loop_and_fadeout':
+        if effect.name == 'loop_and_fadeout':
             # Initialize values for loop/fadeout
-            loop_start = scene['effects'][1]
-            loop_count = scene['effects'][2]
-            fadeout_count = scene['effects'][3]
+            loop_start = effect.frame_ref
+            loop_count = effect.loop
+            fadeout_count = effect.fade
             main_logger.debug(
                 lightgrey(f"\tloop start={loop_start}, ")
                 + lightgrey(f"count={loop_count} / fadeout start={loop_start}, ")
@@ -212,11 +212,11 @@ def get_out_frame_list(
                 )
                 imgs.append(filepath)
 
-        elif effect == 'fadeout':
+        elif effect.name == 'fadeout':
             # print("\n%s.get_out_frame_list (%s:%s)" % (__name__, k_ep, k_ch))
             # pprint(scene)
             # fadeout_start = scene['effects'][1]
-            fadeout_count = scene['effects'][2]
+            fadeout_count = effect.fade
             # print("\t\tfadeout: fadeout %d->%d (%d)" % (
             #     fadeout_start, fadeout_start+fadeout_count, fadeout_count))
             main_logger.debug(lightgrey(f"\tfadeout start=?, count={fadeout_count}"))
@@ -253,11 +253,12 @@ def get_out_frame_list(
 
                 # print("\t\t\t+ fadeout: %s" % (p))
 
-        elif effect == 'loop_and_fadein':
+        elif effect.name == 'loop_and_fadein':
             # fadein_start = scene['effects'][1]
             fadein_count = scene['effects'][2]
             main_logger.debug(lightgrey(f"\tloop and fade in start={scene['start']}, count={fadein_count}"))
-
+            print(yellow(f"TODO: verify loop_and_fadein"))
+            raise
             # Output folder
             k_ep_dst = scene['dst']['k_ep']
             k_ch_dst = scene['dst']['k_ch']
@@ -371,13 +372,13 @@ def get_out_frame_list_single(
 
 
     # Add files for effects
-    if 'effects' in scene.keys():
-        effect = scene['effects'][0]
+    if 'effects' in scene:
+        effect: Effect = scene['effects'].primary_effect()
         main_logger.debug(green(f"\tget frame list (single): effect={effect}"))
 
-        if effect == 'loop':
-            frame_no = scene['effects'][1]
-            loop_count = scene['effects'][2]
+        if effect.name == 'loop':
+            frame_no = effect.frame_ref
+            loop_count = effect.loop
             main_logger.debug(lightgrey(f"\tloop {loop_count} times on {frame_no}"))
 
             in_dir: str = ""
@@ -407,14 +408,14 @@ def get_out_frame_list_single(
             #     filepath = os.path.join(input_folder, filename_template % (frame_no - scene['start']))
             # print(orange("start=%d, end=%d" % (start, end)))
 
-            for i in range(loop_count):
+            for _ in range(loop_count):
                 image_list.append(filepath)
 
         elif effect == 'loop_and_fadeout':
             # Initialize values for loop/fadeout
-            loop_start = scene['effects'][1]
-            loop_count = scene['effects'][2]
-            fadeout_count = scene['effects'][3]
+            loop_start = effect.frame_ref
+            loop_count = effect.loop
+            fadeout_count = effect.fade
             main_logger.debug(lightgrey(
                 f"\tstart={loop_start}, count={loop_count} / fadeout start=?, count={fadeout_count}"
             ))
@@ -469,12 +470,12 @@ def get_out_frame_list_single(
                 print(f"\t\t\t+ fadeout: {f_no}")
 
 
-        elif effect == 'fadeout':
+        elif effect.name == 'fadeout':
             sys.exit(print(red("error: get_out_frame_list_single: effect=%s has to be verified" % (effect))))
             # print("\n%s.get_out_frame_list (%s:%s)" % (__name__, k_ep, k_ch))
             # pprint(scene)
-            fadeout_start = scene['effects'][1]
-            fadeout_count = scene['effects'][2]
+            fadeout_start = effect.frame_ref
+            fadeout_count = effect.fade
             # print("\t\tfadeout: fadeout %d->%d (%d)" % (
             #     fadeout_start, fadeout_start+fadeout_count, fadeout_count))
             main_logger.debug(lightgreen("\t%s: fadeout start=%s, count=%d" % (

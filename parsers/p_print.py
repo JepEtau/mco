@@ -52,24 +52,23 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
 
         chapter_frame_count = db_video['avsync']
 
-        first_scene = db_video['scenes'][0]
-
+        first_scene: Scene = db_video['scenes'][0]
         for scene in db_video['scenes']:
             frame_count += scene['dst']['count']
         last_scene: Scene = db_video['scenes'][-1]
 
         chapter_frame_count += frame_count
 
-        loop_count = 0
+        loop_count: int = 0
         if 'effects' in last_scene:
+            effect = last_scene['effects'].primary_effect()
             # print(f"\teffect:{last_scene['effects']}")
-            if 'loop' in last_scene['effects'][0]:
-                loop_count = last_scene['effects'][2]
-
-        if ('effects' in first_scene.keys()
-            and first_scene['effects'][0] == 'loop_and_fadein'):
-                loop_count += first_scene['effects'][2]
-
+            if 'loop' in effect.name:
+                loop_count = effect.loop
+        if 'effects' in first_scene:
+            effect = first_scene['effects'].primary_effect()
+            if effect.name == 'loop_and_fadein':
+                loop_count += effect.loop
         chapter_frame_count += loop_count
 
         video_silence = 0
@@ -127,11 +126,10 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
 
         # loop
         tmp_str = f"{loop_count}"
-        try:
-            if last_scene['effects'][0] == 'loop_and_fadeout':
-                tmp_str = f"{loop_count}({last_scene['effects'][3]})"
-        except:
-            pass
+        if 'effects' in last_scene:
+            effect = last_scene['effects'].primary_effect()
+            if effect.name == 'loop_and_fadeout':
+                tmp_str = f"{loop_count}({effect.fade})"
         print(f"{tmp_str.rjust(12)}", end='')
 
         print("")
@@ -202,16 +200,16 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
             print("\t(0)")
             continue
 
-        first_scene = video_track['scenes'][0]
-
+        first_scene: Scene = video_track['scenes'][0]
         for scene in video_track['scenes']:
             frame_count += scene['count']
-        last_scene = video_track['scenes'][-1]
+        last_scene: Scene = video_track['scenes'][-1]
 
-        loop_count = 0
+        loop_count: int = 0
         if 'effects' in last_scene:
-            if 'loop' in last_scene['effects'][0]:
-                loop_count = last_scene['effects'][2]
+            effect = last_scene['effects'].primary_effect()
+            if 'loop' in effect.name:
+                loop_count = effect.loop
         chapter_frame_count = frame_count + loop_count
 
         chapter_frame_count += video_track['avsync']

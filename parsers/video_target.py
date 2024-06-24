@@ -2,6 +2,8 @@
 from configparser import ConfigParser
 import re
 import sys
+
+from utils.mco_types import Effect, Effects
 from ._keys import (
     key,
     all_chapter_keys,
@@ -82,11 +84,11 @@ def parse_video_target(
 
         nested_dict_set(db_video, dict(), k_chapter)
         db_video[k_chapter].update({
-            'effects': {
-                'fadein': chapter_fadein,
-                'fadeout': chapter_fadeout,
-                'loop_and_fadein': 0,
-            },
+            'effects': Effects([
+                Effect(name='fadein', fade=chapter_fadein),
+                Effect(name='fadeout', fade=chapter_fadeout),
+                Effect(name='loop_and_fadein', fade=0),
+            ]),
             'start': start,
             'end': end,
             'count': (end - start) if end > 0 else -1,
@@ -155,6 +157,6 @@ def parse_video_target_g(
             if search_fadeout is not None:
                 chapter_fadeout = int(float(search_fadeout.group(1)) * fps)
 
-                db_video['effects'] = {
-                    'fadeout': chapter_fadeout,
-                }
+                db_video['effects'] = Effects([
+                    Effect(name='fadeout', fade=chapter_fadeout)
+                ])

@@ -121,7 +121,36 @@ class SceneSrc(TypedDict):
     no: int
     start: int
     count: int
-    segment: list
+    segments: list
+
+
+
+@dataclass
+class Effect:
+    name: Literal['loop', 'fadeout', 'loop_and_fadeout', 'loop_and_fadein', 'watermark']
+    frame_ref: int = 0
+    loop: int = 0
+    fade: int = 0
+
+
+@dataclass
+class Effects(list):
+    effects: list[Effect] = field(default_factory=list)
+
+    def do_watermark(self) -> bool:
+        for e in self.effects:
+            if e.name == 'watermark':
+                return True
+        return False
+
+    def primary_effect(self) -> Effect | None:
+        for e in self.effects:
+            if e.name != 'watermark':
+                return e
+        return None
+
+    # def add(self, effect: Effect) -> None:
+    #     self.effects.append(effect)
 
 
 class Scene(TypedDict):
@@ -174,7 +203,7 @@ class Scene(TypedDict):
 
     # Video effect: fade in / fade out / loop and fade out
     # historic: only the first effect is used. Do not rembebr why defined as a list...
-    effects: list
+    effects: Effects
 
 
     # The following variables are set by the script when 'consolidating' the target scene
@@ -220,7 +249,7 @@ class VideoChapter(TypedDict):
     count: int
 
     scenes: list[Scene]
-    effects: dict
+    effects: Effects
 
     # default geometry for scenes that have not geometry defined
     geometry: Geometry

@@ -9,7 +9,7 @@ from parsers import (
 )
 from processing.effects import effect_fadeout, effect_loop_and_fadeout
 from utils.logger import main_logger
-from utils.mco_types import Scene
+from utils.mco_types import Effect, Scene
 from utils.mco_utils import get_cache_path, get_out_directory, run_simple_command
 from utils.p_print import *
 from utils.time_conversions import frame_to_s, frame_to_sexagesimal
@@ -108,18 +108,18 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
             # pprint(scene)
             fp = filepath_template % scene['src']['start']
 
-            effect = scene['effects'][0]
+            effect: Effect = scene['effects'].primary_effect()
             main_logger.debug(lightcyan("Effects:"))
 
-            if effect == 'loop_and_fadeout':
-                effect_loop_and_fadeout(scene)
+            if effect.name == 'loop_and_fadeout':
+                effect_loop_and_fadeout(scene, effect)
 
-            elif effect == 'fadeout':
-                effect_fadeout(scene)
+            elif effect.name == 'fadeout':
+                effect_fadeout(scene, effect)
 
-            elif effect == 'loop_and_fadein':
+            elif effect.name == 'loop_and_fadein':
                 raise NotImplementedError("effect_loop_and_fadein")
-                effect_loop_and_fadein(scene)
+                effect_loop_and_fadein(scene, effect)
 
             else:
                 main_logger.debug(f"\t{effect}")

@@ -250,16 +250,13 @@ def generate_video_track(
                         concat_file=f,
                     )
                 )
+                set_video_filename(virtual_video_scene)
                 combine_frames(
                     chapter=chapter,
                     scene=virtual_video_scene,
                     force=force,
                     simulation=simulation
                 )
-                # try:
-                #     video_clips[chapter]['files'].append(scene_fp)
-                # except:
-                #     nested_dict_set(video_clips[chapter], [scene_fp], 'files')
 
     if verbose:
         print(lightgreen(f"video files used to concatenate all clips"))

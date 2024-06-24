@@ -13,20 +13,20 @@ from pprint import pprint
 from utils.mco_utils import get_cache_path, get_out_directory
 from utils.p_print import *
 from utils.logger import main_logger
-from utils.mco_types import Scene
+from utils.mco_types import Effect, Scene
 from video.frame_list import get_dirname
 
 
 
 
-def effect_loop_and_fadein(scene: Scene):
+def effect_loop_and_fadein(scene: Scene, effect: Effect) -> None:
     # Validate with:
     #   - ep02: episode
 
     sys.exit("effect_loop_and_fadein")
 
     # Start and count of frames for the loop
-    fadein_count = scene['effects'][2]
+    fadein_count = effect.fade
     print(green(f"\tloop and fadein: loop: start={fadein_count}, fadein: count={fadein_count}"))
 
 
@@ -114,7 +114,7 @@ def effect_loop_and_fadein(scene: Scene):
 
 
 
-def effect_loop_and_fadeout(scene: Scene):
+def effect_loop_and_fadeout(scene: Scene, effect: Effect) -> None:
     # Validate with:
     #   - ep01: episode
     #   - ep01: asuivre
@@ -122,9 +122,9 @@ def effect_loop_and_fadeout(scene: Scene):
     verbose: bool = True
 
     # Start and count of frames for the loop
-    loop_start = scene['effects'][1]
-    loop_count = scene['effects'][2]
-    fadeout_count = scene['effects'][3]
+    loop_start = effect.frame_ref
+    loop_count = effect.loop
+    fadeout_count = effect.fade
     if verbose:
         print(lightgreen("==========================================================="))
         pprint(scene)
@@ -203,15 +203,15 @@ def effect_loop_and_fadeout(scene: Scene):
 
 
 
-
-def effect_fadeout(scene: Scene):
+def effect_fadeout(scene: Scene, effect: Effect) -> None:
     # verified:
     #   - ep01: documentaire
     # warning: ep02, 'en' version
     verbose: bool = True
 
-    fadeout_start = scene['effects'][1]
-    fadeout_count = scene['effects'][2]
+    fadeout_start = effect.frame_ref
+    fadeout_count = effect.fade
+
     if verbose:
         pprint(scene)
         print(green(f"\tfadeout: start={fadeout_start}, count={fadeout_count}"))
