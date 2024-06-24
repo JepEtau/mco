@@ -142,8 +142,7 @@ def generate_video_track(
             scene['task'] = ProcessingTask(name=task)
 
             # Generate frames for this scene
-            consolidate_scene(scene=scene)
-
+            consolidate_scene(scene=scene, watermark=watermark)
 
             if not simulation:
                 result = process_scene(scene=scene, force=force)

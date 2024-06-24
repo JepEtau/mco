@@ -10,6 +10,10 @@ from parsers import (
 from .logger import main_logger
 
 
+def do_watermark(scene: Scene) -> bool:
+    return bool('watermark' in scene['filters'][scene['task'].name].sequence)
+
+
 
 def makedirs(
     episode,
@@ -110,7 +114,7 @@ def get_out_directory(scene: Scene):
             dirname,
         )
 
-    if task_name == 'final':
+    if task_name == 'final' or do_watermark(scene):
         output_path = os.path.join(
             cache_dir,
             scene['dst']['k_ep'],

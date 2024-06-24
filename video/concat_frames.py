@@ -1,4 +1,5 @@
 import os
+from pprint import pprint
 from parsers import (
     db,
     Chapter,
@@ -93,6 +94,7 @@ def generate_concat_file(
     # Open concatenation file
     if (
         scene['no'] > 0
+        and 'task' in video['scenes'][scene['no'] - 1]
         and scene['task'].concat_file == video['scenes'][scene['no'] - 1]['task'].concat_file
     ):
         concat_file = open(video['scenes'][scene['no'] - 1]['task'].concat_file, "a")

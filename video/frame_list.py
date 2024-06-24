@@ -2,34 +2,39 @@ import os
 from parsers import (
     IMG_FILENAME_TEMPLATE,
     task_to_dirname,
-    TASK_NAMES
+    TASK_NAMES,
+    TaskName
 )
 from utils.mco_types import (
     Scene
 )
+from utils.mco_utils import do_watermark
 from utils.p_print import *
 
 
 def get_dirname(scene: Scene, out: bool = False) -> tuple[str, str]:
-    if (
-        scene['task'].name in ('lr')
-        or (scene['task'].name in ('hr') and not out)
-    ):
-        return task_to_dirname['initial'], scene['filters']['initial'].hash
+    task_name: TaskName = scene['task'].name
+    print(red(f"get_dirname: out:{out}, {task_name}"))
+    if not out:
+        if (
+            task_name == 'lr' and not do_watermark(scene)
+            or task_name == 'hr'
+        ):
+            return task_to_dirname['initial'], scene['filters']['initial'].hash
 
+
+    index: str = 0
+    try:
+        index = TASK_NAMES.index(task_name)
+    except:
+        index = 0
+
+    if index < 1:
+        dirname = task_to_dirname[TASK_NAMES[0]]
+    elif out:
+        dirname: str = task_to_dirname[TASK_NAMES[index]]
     else:
-        index: str = 0
-        task_name: str = scene['task'].name
-        try:
-            index = TASK_NAMES.index(task_name)
-        except:
-            index = 0
-        if index < 1:
-            return task_to_dirname[TASK_NAMES[0]]
-        if out:
-            dirname: str = task_to_dirname[TASK_NAMES[index]]
-        else:
-            dirname: str = task_to_dirname[TASK_NAMES[index - 1]]
+        dirname: str = task_to_dirname[TASK_NAMES[index - 1]]
 
     return dirname, scene['filters'][task_name].hash
 
@@ -38,7 +43,7 @@ def get_dirname(scene: Scene, out: bool = False) -> tuple[str, str]:
 def get_frame_list(scene: Scene, replace: bool = False, out: bool = True) -> list[str]:
     dirname, hashcode = get_dirname(scene, out)
     directory: str = os.path.join(scene['cache'], dirname)
-    # print(red(f"get_frame_list: {dirname}"))
+    print(red(f"get_frame_list: out:{out} -> {dirname}"))
 
     filename_template = IMG_FILENAME_TEMPLATE % (
         scene['k_ep'],

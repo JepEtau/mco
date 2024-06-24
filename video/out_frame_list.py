@@ -1,25 +1,14 @@
 import sys
 import os
 from pprint import pprint
-
-
-
-# from processing_chain.get_image_list import (
-#     get_image_list_pre_replace,
-#     get_new_image_list,
-#     get_image_list,
-# )
 from processing.black_frame import generate_black_frame
 from utils.mco_types import Effect, Scene
-from utils.mco_utils import get_cache_path, get_out_directory
+from utils.mco_utils import do_watermark, get_cache_path, get_out_directory
 from utils.p_print import *
 from utils.logger import main_logger
 from parsers import (
     db,
-    Chapter,
     key,
-    main_chapter_keys,
-    credit_chapter_keys,
     IMG_FILENAME_TEMPLATE,
     task_to_dirname,
 )
@@ -34,8 +23,11 @@ def get_frame_file_paths_until_effects(scene: Scene) -> list[str]:
 
     # Input folder
     current_output_folder: str = ''
-    if scene['task'].name == 'lr':
-        current_output_folder = os.path.join(get_cache_path(scene), task_to_dirname['initial'])
+    if scene['task'].name == 'lr' and not do_watermark(scene):
+        current_output_folder = os.path.join(
+            get_cache_path(scene),
+            task_to_dirname['initial']
+        )
     else:
         current_output_folder = get_out_directory(scene)
 
@@ -132,16 +124,15 @@ def get_out_frame_list(
 
     # A/V sync for the first scene
     try:
-        if scene['no'] == 0:
-            if db_video['avsync'] > 0:
-                # Add black images to the first scene for A/V sync
-                # print("avsync: add frames for k_ch=%s, avsync=%d" % (k_ch, db_video['avsync']))
-                black_image_filepath = os.path.join(
-                    db['common']['directories']['cache'],
-                    'black.png'
-                )
-                for _ in range(db_video['avsync']):
-                    imgs.append(black_image_filepath)
+        if scene['no'] == 0 and db_video['avsync'] > 0:
+            # Add black images to the first scene for A/V sync
+            # print("avsync: add frames for k_ch=%s, avsync=%d" % (k_ch, db_video['avsync']))
+            black_image_filepath = os.path.join(
+                db['common']['directories']['cache'],
+                'black.png'
+            )
+            for _ in range(db_video['avsync']):
+                imgs.append(black_image_filepath)
     except:
         print(orange("\t\t\tinfo: discard a/v, target does not exist"))
 
@@ -255,7 +246,7 @@ def get_out_frame_list(
 
         elif effect.name == 'loop_and_fadein':
             # fadein_start = scene['effects'][1]
-            fadein_count = scene['effects'][2]
+            fadein_count = effect.fade
             main_logger.debug(lightgrey(f"\tloop and fade in start={scene['start']}, count={fadein_count}"))
             print(yellow(f"TODO: verify loop_and_fadein"))
             raise
@@ -468,7 +459,6 @@ def get_out_frame_list_single(
                     os.path.join(output_folder, filename_template % (f_no))
                 )
                 print(f"\t\t\t+ fadeout: {f_no}")
-
 
         elif effect.name == 'fadeout':
             sys.exit(print(red("error: get_out_frame_list_single: effect=%s has to be verified" % (effect))))

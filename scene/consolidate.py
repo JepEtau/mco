@@ -4,7 +4,7 @@ from pprint import pprint
 from typing import OrderedDict
 from processing.deint import calc_deint_hash, get_qtgmc_args, get_template_script
 from utils.hash import calc_hash
-from utils.mco_types import Scene
+from utils.mco_types import Effect, Effects, Scene
 from parsers import (
     db,
     Filter,
@@ -65,7 +65,7 @@ def _consolidate_for_initial(scene: Scene) -> None:
 
 
 
-def consolidate_scene(scene: Scene) -> None:
+def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     """This procedure is used to simplify a single scene and add
     properties to process it: removes unecessary property, add
     paths to input/output files, update frames no. depending on edition, etc.
@@ -248,9 +248,20 @@ def consolidate_scene(scene: Scene) -> None:
     )
     scene['inputs']['progressive']['filepath'] = progressive_fp
 
+    if scene['task'].name == 'lr' and watermark:
+        # if 'effects' in scene:
+        #     scene['effects'] = Effects()
+        # scene['effects'].append(Effect(name='watermark'))
+        sequence: str = scene['filters']['lr'].sequence
+        scene['filters']['lr'].sequence = (
+            f"{sequence};watermark"
+            if sequence
+            else "watermark"
+        )
+
     # List frames
     if scene['task'].name == 'lr':
-        scene['in_frames'] = get_frame_list(scene)
+        scene['in_frames'] = get_frame_list(scene, out=False)
         if k_ch in ('g_asuivre', 'g_documentaire'):
             scene['out_frames'] = get_out_frame_list_single(
                 episode=k_ep,
@@ -283,6 +294,8 @@ def consolidate_scene(scene: Scene) -> None:
                 chapter=k_ch,
                 scene=scene
             )
+
+
 
         # print(lightcyan("==============================================================================="))
         # pprint(scene)
