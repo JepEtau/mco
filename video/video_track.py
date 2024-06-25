@@ -196,6 +196,7 @@ def generate_video_track(
             if debug:
                 print(lightcyan("================================== Scene ======================================="))
                 pprint(scene)
+                # print(scene['in_frames'])
                 print(lightcyan("==============================================================================="))
                 # sys.exit()
 

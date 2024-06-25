@@ -1,17 +1,18 @@
 import os
 import subprocess
 import time
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
+# if TYPE_CHECKING:
+from scene.filters import do_watermark
 from utils.mco_types import Scene
+from parsers import Chapter
 from utils.p_print import *
 from parsers import (
-    Chapter, key, db, task_to_dirname, TaskName
+    key, db, task_to_dirname, TaskName, TASK_NAMES
 )
 from .logger import main_logger
 
 
-def do_watermark(scene: Scene) -> bool:
-    return bool('watermark' in scene['filters'][scene['task'].name].sequence)
 
 
 
@@ -96,6 +97,37 @@ def get_cache_path(scene: Scene) -> str:
 
     return output_path
 
+
+def get_dirname(scene: Scene, out: bool = False) -> tuple[str, str]:
+    task_name: TaskName = scene['task'].name
+    print(red(f"get_dirname: out:{out}, {task_name}"))
+    if out:
+        
+        if task_name == 'lr' and not do_watermark(scene):
+            return task_to_dirname['initial'], scene['filters']['initial'].hash
+    else:
+        # Use initial folder as the source
+        if (
+            task_name == 'lr' and not do_watermark(scene)
+            or task_name == 'hr'
+        ):
+            return task_to_dirname['initial'], scene['filters']['initial'].hash
+
+
+    index: str = 0
+    try:
+        index = TASK_NAMES.index(task_name)
+    except:
+        index = 0
+
+    if index < 1:
+        dirname = task_to_dirname[TASK_NAMES[0]]
+    elif out:
+        dirname: str = task_to_dirname[TASK_NAMES[index]]
+    else:
+        dirname: str = task_to_dirname[TASK_NAMES[index - 1]]
+
+    return dirname, scene['filters'][task_name].hash
 
 
 def get_out_directory(scene: Scene):

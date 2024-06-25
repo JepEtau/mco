@@ -5,16 +5,15 @@ import numpy as np
 import cv2
 from parsers import (
     db,
-    IMG_FILENAME_TEMPLATE,
     get_fps,
     task_to_dirname,
 )
 from pprint import pprint
-from utils.mco_utils import get_cache_path, get_out_directory
+from utils.images import IMG_FILENAME_TEMPLATE
+from utils.mco_utils import get_cache_path, get_dirname
 from utils.p_print import *
 from utils.logger import main_logger
 from utils.mco_types import Effect, Scene
-from video.frame_list import get_dirname
 
 
 

@@ -1,22 +1,23 @@
+from __future__ import annotations
 import sys
 import os
 from pprint import pprint
 from processing.black_frame import generate_black_frame
+from scene.filters import do_watermark
+from utils.images import IMG_FILENAME_TEMPLATE
 from utils.mco_types import Effect, Scene
-from utils.mco_utils import do_watermark, get_cache_path, get_out_directory
+from utils.mco_utils import get_cache_path, get_dirname, get_out_directory
 from utils.p_print import *
 from utils.logger import main_logger
 from parsers import (
     db,
     key,
-    IMG_FILENAME_TEMPLATE,
     task_to_dirname,
 )
-from .frame_list import get_frame_list
 
 
 
-def get_frame_file_paths_until_effects(scene: Scene) -> list[str]:
+def get_out_frame_paths_until_effects(scene: Scene) -> list[str]:
     k_ed = scene['k_ed']
     k_ep = scene['k_ep']
     chapter = scene['k_ch']
@@ -77,7 +78,26 @@ def get_frame_file_paths_until_effects(scene: Scene) -> list[str]:
             )
 
         else:
-            image_list = get_frame_list(scene=scene, replace=True, out=True)
+            dirname, hashcode = get_dirname(scene, out=True)
+            directory: str = os.path.join(scene['cache'], dirname)
+            print(red(f"get_out_frame_paths -> {dirname}"))
+
+            filename_template = IMG_FILENAME_TEMPLATE % (
+                scene['k_ep'],
+                scene['k_ed'],
+                int(dirname[:2]),
+                f"_{hashcode}" if hashcode != '' else ""
+            )
+
+            frame_replace = scene['replace']
+
+
+            image_list: list[str] = []
+            for no in range(scene['start'], scene['start'] + scene['count']):
+                out_no: int = frame_replace[no] if no in frame_replace else no
+                image_list.append(os.path.join(directory, filename_template % (out_no)))
+
+
 
         # else:
         #     image_list = get_image_list(
@@ -93,7 +113,7 @@ def get_frame_file_paths_until_effects(scene: Scene) -> list[str]:
 
 
 
-def get_out_frame_list(
+def get_out_frame_paths(
     episode: int | str,
     chapter: str,
     scene: Scene
@@ -154,7 +174,7 @@ def get_out_frame_list(
             )
 
             # Append images until start of loop_and_fadeout
-            imgs += get_frame_file_paths_until_effects(scene)
+            imgs += get_out_frame_paths_until_effects(scene)
 
             input_dir = get_out_directory(scene)
             if loop_count < fadeout_count:
@@ -167,10 +187,12 @@ def get_out_frame_list(
                 filename_template = IMG_FILENAME_TEMPLATE % (
                     k_ep_src, k_ed, task_no, suffix
                 )
-                if scene['task'].name == 'lr':
+                if scene['task'].name == 'lr' and not do_watermark(scene):
                     filepath = os.path.join(
-                        os.path.join(get_cache_path(scene), task_to_dirname['initial']),
-                        filename_template % (loop_start)
+                        os.path.join(
+                            get_cache_path(scene),
+                            task_to_dirname['initial']),
+                            filename_template % (loop_start)
                     )
                 else:
                     filepath = os.path.join(input_dir, filename_template % (loop_start))
@@ -213,7 +235,7 @@ def get_out_frame_list(
             main_logger.debug(lightgrey(f"\tfadeout start=?, count={fadeout_count}"))
 
             # Append images until start of fadeout
-            imgs += get_frame_file_paths_until_effects(scene)
+            imgs += get_out_frame_paths_until_effects(scene)
             imgs = imgs[:-1 *fadeout_count]
 
             # Output folder
@@ -280,10 +302,10 @@ def get_out_frame_list(
                 )
 
             # List of images and remove the 1st 'fadein_count' images
-            imgs += get_frame_file_paths_until_effects(scene)
+            imgs += get_out_frame_paths_until_effects(scene)
 
     else:
-        imgs += get_frame_file_paths_until_effects(scene)
+        imgs += get_out_frame_paths_until_effects(scene)
 
     if k_ch in ('g_debut', 'g_fin', 'precedemment'):
         # Append silence to these parts
@@ -373,7 +395,7 @@ def get_out_frame_list_single(
             main_logger.debug(lightgrey(f"\tloop {loop_count} times on {frame_no}"))
 
             in_dir: str = ""
-            if scene['task'].name == 'lr':
+            if scene['task'].name == 'lr' and not do_watermark(scene):
                 in_dir = os.path.join(
                     get_cache_path(scene),
                     task_to_dirname['initial']
@@ -412,7 +434,7 @@ def get_out_frame_list_single(
             ))
 
             # Append images until start of loop_and_fadeout
-            image_list += get_frame_file_paths_until_effects(scene)
+            image_list += get_out_frame_paths_until_effects(scene)
 
             in_dir: str = get_out_directory(scene)
             if loop_count < fadeout_count:
@@ -473,7 +495,7 @@ def get_out_frame_list_single(
 
 
             # Append images until start of fadeout
-            image_list += get_frame_file_paths_until_effects(scene)
+            image_list += get_out_frame_paths_until_effects(scene)
             image_list = image_list[:-1 *fadeout_count]
 
             # Output folder
@@ -500,7 +522,7 @@ def get_out_frame_list_single(
                 image_list.append(filepath)
 
     else:
-        image_list += get_frame_file_paths_until_effects(scene)
+        image_list += get_out_frame_paths_until_effects(scene)
 
     # Append silence to this part
     if 'silence' in db_video and scene['no'] == (len(db_video['scenes']) - 1):

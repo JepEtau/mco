@@ -89,8 +89,6 @@ def parse_common_configuration(language:str=''):
         'cache_progressive',
         'cache_progressive_default',
         'cache_default',
-        'frames',
-        'frames_default',
         'hashes',
         'audio',
         'audio_default',
@@ -108,7 +106,7 @@ def parse_common_configuration(language:str=''):
         directories[d] = absolute_path(v)
 
     # Use default values
-    for d in ('cache', 'cache_progressive', 'frames', 'audio'):
+    for d in ('cache', 'cache_progressive', 'audio'):
         if not os.path.exists(directories[d]):
             directories[d] = absolute_path(directories[f"{d}_default"])
         try:

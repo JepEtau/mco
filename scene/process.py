@@ -3,18 +3,18 @@ from pprint import pprint
 import sys
 from parsers import (
     db,
-    IMG_FILENAME_TEMPLATE,
     get_fps,
     task_to_dirname
 )
 from processing.effects import effect_fadeout, effect_loop_and_fadeout
+from utils.images import IMG_FILENAME_TEMPLATE
 from utils.logger import main_logger
 from utils.mco_types import Effect, Scene
-from utils.mco_utils import get_cache_path, get_out_directory, run_simple_command
+from utils.mco_utils import get_cache_path, get_dirname, run_simple_command
 from utils.p_print import *
 from utils.time_conversions import frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from video.frame_list import get_frame_list, get_dirname
+from video.out_frames import get_out_frame_paths
 
 
 def process_scene(scene: Scene, force: bool = False) -> bool:
@@ -28,7 +28,7 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
         in_video_fp: str = scene['inputs']['progressive']['filepath']
         if task_name == 'lr' and not os.path.exists(in_video_fp):
             raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
-        out_frames = get_frame_list(scene=scene, replace=False, out=True)
+        out_frames = get_out_frame_paths(scene=scene, replace=False)
 
         # Create filename template
         # directory: str = get_out_directory(scene)

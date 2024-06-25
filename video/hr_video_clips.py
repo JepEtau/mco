@@ -138,6 +138,7 @@ def generate_hr_video_clip(
             if debug:
                 print(lightcyan("================================== Scene ======================================="))
                 pprint(scene)
+                pprint(scene['in_frames'])
                 print(lightcyan("==============================================================================="))
 
     print(f"Total number of frames to upscale: {in_frame_count}")

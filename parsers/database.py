@@ -20,10 +20,6 @@ from .episode import (
     db_init_episodes,
     parse_episode,
 )
-from .frames import (
-    parse_frames_for_study,
-    parse_frames_for_study_g,
-)
 from .p_print import pprint_episode, pprint_g_debut_fin
 from .logger import logger
 from .target_scenes import (
@@ -206,12 +202,6 @@ def parse_database_for_study(k_ed, k_ep, k_chapter):
     for k_p in ('g_debut', 'g_fin'):
         parse_replace_configurations(k_ep_or_g=k_p)
         parse_geometry_configurations(k_ep_or_g=k_p)
-
-    if k_chapter in credit_chapter_keys():
-        parse_frames_for_study_g(db, k_chapter_g=k_chapter)
-
-    parse_frames_for_study(db, k_ep=k_ep)
-
 
 
 def get_dependencies(

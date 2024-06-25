@@ -2,7 +2,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal, TypedDict, TYPE_CHECKING
 
+
 if TYPE_CHECKING:
+    from .images import Images
     from parsers import (
         Chapter,
         ProcessingTask,
@@ -153,6 +155,9 @@ class Effects(list):
     #     self.effects.append(effect)
 
 
+
+
+
 class Scene(TypedDict):
     # This type decsribes a scene
     # Some variables are not defined in the list of src scenes but are set
@@ -231,7 +236,7 @@ class Scene(TypedDict):
     # List of unique frames to generate this scene
     # This is usefull to optimize some tasks
     # the generated files have to use this list and replace directory, filenames
-    in_frames: list[str]
+    in_frames: Images
 
     # This list contains the frames used to generate a clip after processing
     out_frames: list[str]

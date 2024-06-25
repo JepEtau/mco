@@ -5,6 +5,11 @@ from utils.mco_types import Scene
 from parsers import db, Filter
 
 
+def do_watermark(scene: Scene) -> bool:
+    return bool('watermark' in scene['filters'][scene['task'].name].sequence)
+
+
+
 def get_filters(scene: Scene) -> list[Filter]:
     verbose = False
     k_ed = scene['k_ed']

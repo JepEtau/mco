@@ -4,7 +4,8 @@ from pprint import pprint
 from typing import OrderedDict
 from processing.deint import calc_deint_hash, get_qtgmc_args, get_template_script
 from utils.hash import calc_hash
-from utils.mco_types import Effect, Effects, Scene
+from utils.mco_types import Scene
+from utils.images import Images
 from parsers import (
     db,
     Filter,
@@ -13,9 +14,8 @@ from parsers import (
 )
 from utils.mco_utils import get_cache_path, nested_dict_set
 from utils.p_print import *
-from utils.path_utils import absolute_path, path_split
-from video.frame_list import get_frame_list
-from video.out_frame_list import get_out_frame_list, get_out_frame_list_single
+from utils.path_utils import path_split
+from video.out_frames import get_out_frame_paths, get_out_frame_list_single
 from .filters import get_filters
 
 
@@ -261,7 +261,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     # List frames
     if scene['task'].name == 'lr':
-        scene['in_frames'] = get_frame_list(scene, out=False)
+        scene['in_frames'] = Images(scene)
         if k_ch in ('g_asuivre', 'g_documentaire'):
             scene['out_frames'] = get_out_frame_list_single(
                 episode=k_ep,
@@ -270,16 +270,14 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
             )
 
         else:
-            scene['out_frames'] = get_out_frame_list(
+            scene['out_frames'] = get_out_frame_paths(
                 episode=k_ep,
                 chapter=k_ch,
                 scene=scene
             )
 
     elif scene['task'].name == 'hr':
-
-        frames = get_frame_list(scene, replace=True, out=False)
-        scene['in_frames'] = list(OrderedDict.fromkeys(frames))
+        scene['in_frames'] = Images(scene)
 
         if k_ch in ('g_asuivre', 'g_documentaire'):
             scene['out_frames'] = get_out_frame_list_single(
@@ -289,7 +287,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
             )
 
         else:
-            scene['out_frames'] = get_out_frame_list(
+            scene['out_frames'] = get_out_frame_paths(
                 episode=k_ep,
                 chapter=k_ch,
                 scene=scene

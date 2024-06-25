@@ -1,13 +1,8 @@
 from __future__ import annotations
-import ast
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, get_args
 from ._keys import key
-
-
-IMG_FILENAME_TEMPLATE = "%s_%%05d__%s__%02d%s.png"
-
 
 TaskName = Literal[
     # Deinterlace the input video:
