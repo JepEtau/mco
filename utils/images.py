@@ -74,3 +74,15 @@ class Images:
         repr += ",\n".join([str(img) for img in self._images])
         repr += "\n]"
         return repr
+
+
+    def images(self) -> list[Image]:
+        return self._images
+
+
+    def out_images(self) -> list[str]:
+        return list([i.out_fp for i in self._images])
+
+    def in_images(self) -> list[str]:
+        return list([i.in_fp for i in self._images])
+

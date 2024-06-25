@@ -36,6 +36,7 @@ elif sys.platform == "linux":
 else:
     sys.exit("[E] Platform/system not supported.")
 
-nnedi3_weights = "external/nnedi3/nnedi3_weights.bin"
+nnedi3_weights: str = "external/nnedi3/nnedi3_weights.bin"
+font_dir: str = os.path.join(external_dir, "fonts")
 
 avs_dir = os.path.join(external_dir, "avs")
