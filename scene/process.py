@@ -87,25 +87,39 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
             filepath_template: str = os.path.join(directory, filename_template)
             os.makedirs(directory, exist_ok=True)
 
-            # Create FFmpeg command
-            ffmpeg_command: list[str] = [
-                ffmpeg_exe,
-                "-hide_banner",
-                "-loglevel", "warning",
-                "-ss", str(frame_to_sexagesimal(no=start, frame_rate=get_fps(db))),
-                "-i", in_video_fp,
-                "-t", str(frame_to_s(no=count, frame_rate=get_fps(db))),
-                '-pixel_format', 'bgr24',
-                "-start_number", str(scene_start),
-                filepath_template
-            ]
 
-            main_logger.debug(' '.join(ffmpeg_command))
-            success: bool = run_simple_command(ffmpeg_command)
+
+            # Create FFmpeg command
+            do_extract: bool = True
+            if not force:
+                do_extract = False
+                for fp in scene['in_frames'].in_images():
+                    print(fp)
+                    if not os.path.exists(fp):
+                        do_extract = True
+                        break
+            if do_extract:
+                ffmpeg_command: list[str] = [
+                    ffmpeg_exe,
+                    "-hide_banner",
+                    "-loglevel", "warning",
+                    "-ss", str(frame_to_sexagesimal(no=start, frame_rate=get_fps(db))),
+                    "-i", in_video_fp,
+                    "-t", str(frame_to_s(no=count, frame_rate=get_fps(db))),
+                    '-pixel_format', 'bgr24',
+                    "-start_number", str(scene_start),
+                    filepath_template
+                ]
+                main_logger.debug(' '.join(ffmpeg_command))
+                success: bool = run_simple_command(ffmpeg_command)
+            else:
+                success = True
         else:
             success: bool = True
 
         if do_watermark(scene):
+            directory: str = os.path.join(get_cache_path(scene), task_to_dirname['lr'])
+            os.makedirs(directory, exist_ok=True)
             max_workers: int = multiprocessing.cpu_count()
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
                 for _ in executor.map(
@@ -113,9 +127,6 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
                     [(img, scene) for img in scene['in_frames'].images()]
                 ):
                     pass
-
-
-
 
         if success and 'effects' in scene and not 'segments' in scene['src']:
             effect: Effect = scene['effects'].primary_effect()

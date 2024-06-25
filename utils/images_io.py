@@ -28,6 +28,19 @@ def load_image_fp32(filepath: Path | str) -> np.ndarray:
     )
 
 
+def write_image(filepath: Path | str, img: np.ndarray) -> None:
+    extension = os.path.splitext(filepath)[1]
+    # try:
+    #     _, img_buffer = cv2.imencode(f".{extension}", img)
+    #     with open(filepath, "wb") as buffered_writer:
+    #         buffered_writer.write(img_buffer)
+    # except Exception as e:
+    #     raise RuntimeError(f"Failed to save image as {filepath}, reason: {type(e)}")
+    _, img_buffer = cv2.imencode(f".{extension}", img)
+    with open(filepath, "wb") as buffered_writer:
+        buffered_writer.write(img_buffer)
+
+
 def load_images(
     filepaths: list[Path | str],
     cpu_count: int = 4,
@@ -38,20 +51,6 @@ def load_images(
             imgs.append(img)
     return imgs
 
-
-def write_image(filepath: Path | str, img: np.ndarray) -> None:
-    # Support uint8 only as these functions aare used for debugging purpose
-    # no nedd to improve this
-    extension = os.path.splitext(filepath)[1]
-    try:
-        _, img_buffer = cv2.imencode(
-            f".{extension}",
-            np_to_uint8(img)
-        )
-        with open(filepath, "wb") as buffered_writer:
-            buffered_writer.write(img_buffer)
-    except Exception as e:
-        raise RuntimeError(f"Failed to save image as {filepath}, reason: {type(e)}")
 
 
 def write_images(

@@ -8,7 +8,7 @@ from PIL import (
 )
 
 from utils.images import Image
-from utils.images_io import load_image
+from utils.images_io import load_image, write_image
 from utils.mco_types import Scene
 from utils.tools import font_dir
 
@@ -27,19 +27,16 @@ class WatermarkAlignment(Enum):
 
 
 
-def get_font_size(font: ImageFont.FreeTypeFont, text: str) -> tuple[int, int]:
-    # bounding box (in pixels): left, top, right, bottom
-    bounding_box: tuple[int, int, int, int] = font.getbbox(text)
-    return bounding_box[2] - bounding_box[0], bounding_box[3] - bounding_box[1]
-
-
 def add_watermark(image: Image, scene: Scene) -> None:
     # Load and save image with dtype=uint8
-    in_img: np.ndarray = load_image(image.in_fp)
-    height, width = in_img.shape[:2]
+    # print(f"{image.in_fp} -> {image.out_fp}")
 
-    text: str = f"""{scene['src']['k_ed']}:{scene['src']['k_ep']}    {image.no}"""
-    bold: bool = True
+    in_img: np.ndarray = load_image(image.in_fp)
+    height: int = in_img.shape[0]
+
+    text: str = f"""{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['no']:03}{str(image.no).rjust(10)}"""
+    font_size: int = 20
+    bold: bool = False
     italic: bool = False
     alignment: WatermarkAlignment = WatermarkAlignment.LEFT
     color: tuple[int, int, int] = (0, 240, 0)
@@ -50,17 +47,12 @@ def add_watermark(image: Image, scene: Scene) -> None:
     line_count, max_line = len(lines), max(lines, key=len)
 
     # Use a text as reference to get max size
-    font = ImageFont.truetype(font_path, size=100)
-    w_ref, h_ref = get_font_size(max_line)[0], get_font_size("[§]")[1]
-
-    # Calculate font size to fill the specified image size
-    w = int(width * 100.0 / w_ref)
-    h = int(height * 100.0 / (h_ref * line_count))
-    font_size = min(w, h)
     font = ImageFont.truetype(font_path, size=font_size)
-    w_text, h_text = get_font_size(max_line)
 
-    position_h: int = height - h_text - 20
+    # bounding box (in pixels): left, top, right, bottom
+    bounding_box: tuple[int, int, int, int] = font.getbbox(text)
+    h_text = bounding_box[3] - bounding_box[1]
+    position_h: int = height - h_text - 5
 
     # Text color
     ink = color
@@ -71,11 +63,13 @@ def add_watermark(image: Image, scene: Scene) -> None:
         (50, position_h),
         text,
         font=font,
-        anchor="mm",
+        anchor="ls",
         align=alignment.value,
         fill=ink,
     )
+    img: np.ndarray = np.array(pil_image)
 
-    img = np.array(pil_image)
+    # print(f"img: {img.shape}, {img.dtype}. Htext={h_text}px position: (50, {position_h})")
+    write_image(image.out_fp, img)
 
 
