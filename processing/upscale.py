@@ -11,8 +11,7 @@ import cupy as cp
 import numpy as np
 from nn_inference.progress import ProgressThread
 from nn_inference.cupy import HostDeviceMemory, allocate_memory
-from nn_inference.pytorch.session_cupy import PyTorchCuPySession
-from nn_inference.tensorrt.session_cupy import TensorRtCupySession
+
 from nn_inference.resource_mgr import ResourceManager
 from nn_inference.threads.t_encoder import EncoderThread, EncoderThreadConfig
 from nn_inference.threads.t_inference import InferenceParams, InferenceThread, InferenceThreadConfig
@@ -31,7 +30,11 @@ from nn_inference.resource_mgr import Frame
 from nn_inference.threads.t_img_reader import ImgReaderThread, ImgReaderThreadConfig
 from utils.p_print import *
 from utils.path_utils import absolute_path
-from utils.tools import ffmpeg_exe
+from utils.tools import ffmpeg_exe, ml_model_dir
+if is_tensorrt_available():
+    from nn_inference.pytorch.session_cupy import PyTorchCuPySession
+    from nn_inference.tensorrt.session_cupy import TensorRtCupySession
+
 
 @dataclass
 class ImageReaderParams:
@@ -47,6 +50,7 @@ class UpscalePipeline(object):
         models: set[str],
         device: str,
         fp16: bool,
+        debug: bool,
     ) -> None:
 
         # Decoder
@@ -72,12 +76,10 @@ class UpscalePipeline(object):
 
         # Open models
         self.models: dict[str, NnModel] = {}
-        for fp in models:
+        for m in models:
+            fp: str = absolute_path(os.path.join(ml_model_dir, m))
             print(lightcyan(f"Model:"), f"{fp}")
-            self.models[os.path.basename(fp)] = nnlib.open(
-                absolute_path(fp),
-                device='cuda'
-            )
+            self.models[os.path.basename(fp)] = nnlib.open(fp, device='cuda')
         # self.e_ffmpeg_cmd = generate_ffmpeg_encoder_cmd(
         #     i_video_info, self.e_params, in_media_info
         # )
@@ -97,7 +99,8 @@ class UpscalePipeline(object):
 
 
         # Set custom sessions
-        nnlib.set_session_constructor(NnFrameworkType.PYTORCH, PyTorchCuPySession)
+        if is_cuda_available():
+            nnlib.set_session_constructor(NnFrameworkType.PYTORCH, PyTorchCuPySession)
         if is_tensorrt_available():
             nnlib.set_session_constructor(NnFrameworkType.TENSORRT, TensorRtCupySession)
 
@@ -143,6 +146,13 @@ class UpscalePipeline(object):
             dtoh_cuda_stream = session.dtoh_stream
             infer_cuda_stream = session.infer_stream
             tensor_dtype: cp.dtype = cp.float16 if self.fp16 else cp.float32
+
+        if (
+            model.fwk_type == NnFrameworkType.PYTORCH
+            and not is_cuda_available()
+        ):
+            print("use CPU session")
+            session
 
         sessions[model_key] = session
 

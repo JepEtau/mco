@@ -7,15 +7,12 @@ from pprint import pprint
 
 
 from processing.upscale import UpscalePipeline
-from nn_inference.threads.common import Frame
+from nn_inference.resource_mgr import Frame
 from scene.consolidate import consolidate_scene
-
-from utils.logger import main_logger
+from utils.images import Image, Images
 from utils.mco_types import Scene, VideoChapter
 from utils.p_print import *
 from utils.path_utils import path_split, absolute_path
-from utils.time_conversions import s_to_sexagesimal
-from utils.tools import ffmpeg_exe
 from utils.mco_utils import makedirs
 from parsers import (
     db,
@@ -27,17 +24,10 @@ from parsers import (
     task_to_dirname,
     Filter,
 )
-from video.frame_list import get_frame_list
 from .concat_frames import (
-    generate_concat_file,
-    generate_silence_concat_file,
-    generate_video_concat_file,
     set_concat_filename,
     set_video_filename,
 )
-from .concat_scenes import concat_scenes
-from .combine_frames import combine_frames
-
 
 
 def generate_hr_video_clip(
@@ -145,7 +135,7 @@ def generate_hr_video_clip(
     print(f"Total time: {time.time() - start_time_full:.03f}s")
 
 
-    frames: list = list()
+    frames: list = []
     in_frame_count: int = 0
     out_frame_count: int = 0
     for chapter in chapters:
@@ -175,49 +165,30 @@ def generate_hr_video_clip(
             # print(lightcyan("================================== Scene ======================================="))
             # pprint(scene)
             # print(lightcyan("==============================================================================="))
-            dirname: str = task_to_dirname[scene['task'].name]
-            task_no: str = dirname[:2]
-            hashcode: str = scene['task'].hashcode
             out_video_fp: str = scene['task'].video_file
 
             # Get all models
             filter: str = scene['filters'][scene['task'].name].sequence
             models.add(filter)
 
-            for i, in_img in enumerate(scene['in_frames']):
-                dir, basename, extension = path_split(in_img)
-                # IMG_FILENAME_TEMPLATE
-                if (result := re.search(re.compile(r"(.*__)\d{2}_[a-z0-9]{7}"), basename)):
-                    basename = result.group(1)
-                else:
-                    raise ValueError(f"{basename} is not a valid basename")
-                out_img: str = os.path.join(
-                    absolute_path(os.path.join(dir, os.pardir, dirname)),
-                    f"{basename}{task_no}_{hashcode}{extension}"
-                )
-                # print(f"{i:02d}: {in_img} -> {out_img}")
-
-                if not os.path.exists(in_img):
-                    raise ValueError(f"missing input file: {in_img}")
-
+            images: list[Image] = scene['in_frames'].images()
+            for img in images:
                 if (
-                    not os.path.exists(out_img)
-                    or os.stat(in_img).st_mtime > os.stat(out_img).st_mtime
+                    not os.path.exists(img.out_fp)
+                    or os.stat(img.in_fp).st_mtime > os.stat(img.out_fp).st_mtime
                 ):
-                    # print(f"regenerate {out_img}")
                     frames.append(
                         Frame(
-                            in_img_fp=in_img,
-                            out_img_fp=out_img,
+                            in_img_fp=img.in_fp,
+                            out_img_fp=img.out_fp,
                             scene_no=scene['no'],
                             scene=scene_no,
                             out_video_fp=out_video_fp
                         )
                     )
-                    out_video_fp = ''
 
-            in_frame_count += len(scene['in_frames'])
-            out_frame_count += len(scene['out_frames'])
+        in_frame_count += len(frames)
+        out_frame_count += len(frames)
         # break
 
     print(f"Total number of frames to upscale: {in_frame_count}")
@@ -234,7 +205,7 @@ def generate_hr_video_clip(
         fp16,
         debug
     )
-
+    pipeline.run()
 
     # 1. Upscale
 
