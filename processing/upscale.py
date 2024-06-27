@@ -12,6 +12,7 @@ import numpy as np
 from nn_inference.progress import ProgressThread
 from nn_inference.cupy import HostDeviceMemory, allocate_memory
 
+from nn_inference.pytorch.session_stub import PyTorchStubSession
 from nn_inference.resource_mgr import ResourceManager
 from nn_inference.threads.t_encoder import EncoderThread, EncoderThreadConfig
 from nn_inference.threads.t_inference import InferenceParams, InferenceThread, InferenceThreadConfig
@@ -113,6 +114,9 @@ class UpscalePipeline(object):
 
         # Initialize session
         _session: NnModelSession = nnlib.session(model)
+        htod_cuda_stream = None
+        dtoh_cuda_stream = None
+        infer_cuda_stream = None
         if (
             model.fwk_type == NnFrameworkType.PYTORCH
             and is_cuda_available()
@@ -152,7 +156,12 @@ class UpscalePipeline(object):
             and not is_cuda_available()
         ):
             print("use CPU session")
-            session
+            session: PyTorchStubSession = _session
+            session.initialize(
+                device=device,
+                fp16=self.fp16,
+            )
+            tensor_dtype: np.dtype = np.float32
 
         sessions[model_key] = session
 
@@ -169,6 +178,9 @@ class UpscalePipeline(object):
             if model.fwk_type == NnFrameworkType.TENSORRT:
                 session.set_host_mem(htod_mem.host, dtoh_mem.host)
                 session.warmup(10)
+        else:
+            htod_mem = None
+            dtoh_mem = None
 
 
         # Create image reader thread
@@ -241,6 +253,11 @@ class UpscalePipeline(object):
             return True, 0, 0
         e_thread.setName("encoder")
 
+
+        ResourceManager().register_thread(r_thread)
+        r_thread.start()
+        time.sleep(10)
+        sys.exit()
 
         # Start all threads
         for thread in (r_thread, e_thread, i_thread):
