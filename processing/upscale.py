@@ -182,9 +182,13 @@ class UpscalePipeline(object):
             htod_mem = None
             dtoh_mem = None
 
+        print(yellow("HtoD memory:"))
+        pprint(htod_mem)
+        print(yellow("DtoH memory:"))
+        pprint(dtoh_mem)
+
 
         # Create image reader thread
-        htod_mem = None
         r_thread_config = ImgReaderThreadConfig(
             htod_mem=htod_mem,
             frames=self.frames,
@@ -192,14 +196,13 @@ class UpscalePipeline(object):
             tensor_dtype=tensor_dtype,
             device=device
         )
+        pprint(r_thread_config)
         try:
             r_thread = ImgReaderThread(r_thread_config)
         except Exception as e:
-            r_thread = ImgReaderThread(r_thread_config)
             print(red(f"[E] decoder: {type(e)}"))
             return True, 0, 0
         r_thread.setName("img_reader")
-
 
 
         # Create inference thread
@@ -232,7 +235,7 @@ class UpscalePipeline(object):
             '-f', 'rawvideo',
             # '-pixel_format', in_video_info['pix_fmt'],
             # '-video_size', f"{w}x{h}",
-            "-r", 25
+            # "-r", 25
         ]
 
 
@@ -241,11 +244,13 @@ class UpscalePipeline(object):
             command=e_ffmpeg_cmd,
             cuda_stream=i_params.dtoh_cuda_stream,
             tensor_dtype=i_params.tensor_dtype,
-            dtoh_bank=i_params.dtoh_mem,
+            dtoh_mem=i_params.dtoh_mem,
             img_shape=(), # i_video_info['shape'],
-            img_dtype="uint16", # np.dtype(e_video_info['dtype']).name,
+            img_dtype="uint8", # np.dtype(e_video_info['dtype']).name,
             img_c_order='bgr', # e_video_info['c_order'],
         )
+        print("e_thread_config")
+        pprint(e_thread_config)
         try:
             e_thread = EncoderThread(e_thread_config)
         except Exception as e:
@@ -253,14 +258,8 @@ class UpscalePipeline(object):
             return True, 0, 0
         e_thread.setName("encoder")
 
-
-        ResourceManager().register_thread(r_thread)
-        r_thread.start()
-        time.sleep(10)
-        sys.exit()
-
         # Start all threads
-        for thread in (r_thread, e_thread, i_thread):
+        for thread in (r_thread, i_thread, e_thread):
             ResourceManager().register_thread(thread)
             thread.start()
 
