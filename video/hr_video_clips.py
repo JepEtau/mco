@@ -194,6 +194,9 @@ def generate_hr_video_clip(
     print(f"Total number of frames to upscale: {in_frame_count}")
     print(f"Total number of frames to generate clips: {out_frame_count}")
     print(f"Total number of frames to process: {len(frames)}")
+    if len(frames) == 0:
+        print(f"No frame to upscale")
+        return
 
     device: str = 'cuda'
     fp16: bool = True

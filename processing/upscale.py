@@ -251,11 +251,12 @@ class UpscalePipeline(object):
         )
         print("e_thread_config")
         pprint(e_thread_config)
-        try:
-            e_thread = EncoderThread(e_thread_config)
-        except Exception as e:
-            print(red(f"[E] encoder: {type(e)}"))
-            return True, 0, 0
+        e_thread = EncoderThread(e_thread_config)
+        # try:
+        #     e_thread = EncoderThread(e_thread_config)
+        # except Exception as e:
+        #     print(red(f"[E] encoder: {type(e)}"))
+        #     return True, 0, 0
         e_thread.setName("encoder")
 
         # Start all threads
@@ -289,7 +290,11 @@ class UpscalePipeline(object):
         real_start = time.time()
         while True:
             if not decoding:
-                # print("[V][C] Not decoding anymore")
+                # print(f"[V][C] Not decoding anymore,",
+                #     f"reader={r_thread.is_alive()}",
+                #     f"inference={i_thread.is_alive()}",
+                #     f"encoder={e_thread.is_alive()}",
+                # )
                 if (
                     not r_thread.is_alive()
                     and not i_thread.is_alive()
@@ -308,7 +313,7 @@ class UpscalePipeline(object):
 
             time.sleep(0.0001)
             if not r_thread.is_alive() and decoding:
-                # print("[V][C] decoder has ended")
+                print("[V][C] decoder has ended")
                 err, message = r_thread.error_encountered()
                 if err:
                     print(red(message))
