@@ -136,6 +136,7 @@ def generate_hr_video_clip(
 
 
     frames: list = []
+    scenes_to_combine: list = []
     in_frame_count: int = 0
     out_frame_count: int = 0
     for chapter in chapters:
@@ -166,6 +167,10 @@ def generate_hr_video_clip(
             # pprint(scene)
             # print(lightcyan("==============================================================================="))
             out_video_fp: str = scene['task'].video_file
+            out_video_datetime: float = 0
+            if os.path.exists(out_video_fp):
+                out_video_datetime: float = os.stat(out_video_fp).st_mtime
+            max_img_datetime: float = 0
 
             # Get all models
             filter: str = scene['filters'][scene['task'].name].sequence
@@ -173,6 +178,7 @@ def generate_hr_video_clip(
 
             images: list[Image] = scene['in_frames'].images()
             for img in images:
+                max_img_datetime = max(os.stat(img.out_fp).st_mtime, max_img_datetime)
                 if (
                     not os.path.exists(img.out_fp)
                     or os.stat(img.in_fp).st_mtime > os.stat(img.out_fp).st_mtime
@@ -186,6 +192,14 @@ def generate_hr_video_clip(
                             out_video_fp=out_video_fp
                         )
                     )
+
+            do_generate_video: bool = False
+            if len(frames) == 0:
+                if max_img_datetime > out_video_datetime:
+                    do_generate_video = True
+
+            if do_generate_video and len(frames) == 0:
+
 
         in_frame_count += len(frames)
         out_frame_count += len(frames)
