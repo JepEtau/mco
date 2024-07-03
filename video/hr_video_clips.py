@@ -194,7 +194,7 @@ def generate_hr_video_clip(
                         )
                     )
 
-            do_generate_video: bool = False
+            do_generate_video = False
             if len(frames) == 0:
                 # Regenerate video if there is a newer imgage
                 if max_img_datetime > out_video_datetime:
@@ -202,7 +202,7 @@ def generate_hr_video_clip(
             if do_generate_video:
                 if len(frames) == 0:
                     scenes_to_combine.append(scene)
-                else:
+                elif not os.path.exists(out_video_fp):
                     video_count += 1
 
         in_frame_count += len(frames)
@@ -215,6 +215,7 @@ def generate_hr_video_clip(
     if len(frames) == 0:
         print(f"No frame to upscale")
         return
+    print(f"Total number of video clips to: {video_count}")
 
     device: str = 'cuda'
     fp16: bool = True
