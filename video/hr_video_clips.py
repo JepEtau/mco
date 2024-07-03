@@ -139,6 +139,7 @@ def generate_hr_video_clip(
     scenes_to_combine: list = []
     in_frame_count: int = 0
     out_frame_count: int = 0
+    video_count: int = 0
     for chapter in chapters:
         k_ep_src: str = ''
         video: VideoChapter
@@ -195,11 +196,14 @@ def generate_hr_video_clip(
 
             do_generate_video: bool = False
             if len(frames) == 0:
+                # Regenerate video if there is a newer imgage
                 if max_img_datetime > out_video_datetime:
                     do_generate_video = True
-
-            if do_generate_video and len(frames) == 0:
-
+            if do_generate_video:
+                if len(frames) == 0:
+                    scenes_to_combine.append(scene)
+                else:
+                    video_count += 1
 
         in_frame_count += len(frames)
         out_frame_count += len(frames)
@@ -220,7 +224,9 @@ def generate_hr_video_clip(
         models,
         device,
         fp16,
-        debug
+        scenes_to_combine=scenes_to_combine,
+        video_count=video_count,
+        debug=debug
     )
     pipeline.run()
 

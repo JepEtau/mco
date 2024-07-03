@@ -15,6 +15,7 @@ from nn_inference.cupy import HostDeviceMemory, allocate_memory
 from nn_inference.pytorch.session_stub import PyTorchStubSession
 from nn_inference.resource_mgr import ResourceManager
 from nn_inference.threads.t_encoder import EncoderThread, EncoderThreadConfig
+from nn_inference.threads.t_img_writer import ImgWriterThread, ImgWriterThreadConfig
 from nn_inference.threads.t_inference import InferenceParams, InferenceThread, InferenceThreadConfig
 from pynnlib import (
     nnlib,
@@ -29,6 +30,7 @@ import torch
 from nn_inference.img_dim import get_image_shape
 from nn_inference.resource_mgr import Frame
 from nn_inference.threads.t_img_reader import ImgReaderThread, ImgReaderThreadConfig
+from utils.mco_types import Scene
 from utils.p_print import *
 from utils.path_utils import absolute_path
 from utils.tools import ffmpeg_exe, ml_model_dir
@@ -51,6 +53,8 @@ class UpscalePipeline(object):
         models: set[str],
         device: str,
         fp16: bool,
+        scenes_to_combine: list[Scene],
+        video_count: int,
         debug: bool,
     ) -> None:
 
@@ -84,6 +88,10 @@ class UpscalePipeline(object):
         # self.e_ffmpeg_cmd = generate_ffmpeg_encoder_cmd(
         #     i_video_info, self.e_params, in_media_info
         # )
+
+        self.scenes_to_encode: list[Scene] = scenes_to_combine
+        # Number of clips to generate
+        self.video_count = video_count
 
 
     def run(self) -> tuple[bool, int, float, float]:
@@ -165,7 +173,6 @@ class UpscalePipeline(object):
 
         sessions[model_key] = session
 
-
         # Allocate Host memory
         if (
             is_cuda_available()
@@ -228,20 +235,8 @@ class UpscalePipeline(object):
         i_thread.setName("inference")
 
 
-        e_ffmpeg_cmd: list[str] = [
-            ffmpeg_exe,
-            "-hide_banner",
-            "-loglevel", "error",
-            '-f', 'rawvideo',
-            # '-pixel_format', in_video_info['pix_fmt'],
-            # '-video_size', f"{w}x{h}",
-            # "-r", 25
-        ]
-
-
-        # Create encoder thread
-        e_thread_config: EncoderThreadConfig = EncoderThreadConfig(
-            command=e_ffmpeg_cmd,
+        # Create image writer thread
+        w_thread_config: ImgWriterThreadConfig = ImgWriterThreadConfig(
             cuda_stream=i_params.dtoh_cuda_stream,
             tensor_dtype=i_params.tensor_dtype,
             dtoh_mem=i_params.dtoh_mem,
@@ -249,31 +244,66 @@ class UpscalePipeline(object):
             img_dtype="uint8", # np.dtype(e_video_info['dtype']).name,
             img_c_order='bgr', # e_video_info['c_order'],
         )
-        print("e_thread_config")
-        pprint(e_thread_config)
-        e_thread = EncoderThread(e_thread_config)
+        print("w_thread_config")
+        pprint(w_thread_config)
+        w_thread = ImgWriterThread(w_thread_config)
         # try:
-        #     e_thread = EncoderThread(e_thread_config)
+        #     w_thread = ImgWriterThread(w_thread_config)
         # except Exception as e:
-        #     print(red(f"[E] encoder: {type(e)}"))
+        #     print(red(f"[E] img_writer: {type(e)}"))
         #     return True, 0, 0
-        e_thread.setName("encoder")
+        w_thread.setName("img_writer")
 
-        # Start all threads
-        for thread in (r_thread, i_thread, e_thread):
-            ResourceManager().register_thread(thread)
-            thread.start()
+
+        e_ffmpeg_cmd: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "error",
+            # '-f', 'rawvideo',
+            # '-pixel_format', in_video_info['pix_fmt'],
+            # '-video_size', f"{w}x{h}",
+            # "-r", 25
+        ]
+
+        # Create encoder thread
+        e_thread_config: EncoderThreadConfig = EncoderThreadConfig(
+            command=e_ffmpeg_cmd,
+        )
+        e_thread = EncoderThread(e_thread_config)
+
+
 
         # "Connect nodes"
         r_thread.set_consumer(i_thread)
-        i_thread.set_producer(r_thread)
-        i_thread.set_consumer(e_thread)
-        e_thread.set_producer(i_thread)
-        r_thread.set_produce_flag()
 
-        progress_thread = ProgressThread(total=len(self.frames))
-        ResourceManager().register_thread(progress_thread)
-        e_thread.set_consumer(progress_thread)
+        i_thread.set_producer(r_thread)
+        i_thread.set_consumer(w_thread)
+
+        w_thread.set_producer(i_thread)
+        w_thread.set_consumer(e_thread)
+
+        e_thread.set_producer(w_thread)
+
+        f_progress_thread = ProgressThread(total=len(self.frames))
+        w_thread.set_progress_bar(f_progress_thread)
+
+        v_progress_thread = ProgressThread(total=self.video_count)
+        w_thread.set_progress_bar(v_progress_thread)
+
+        # Start all threads
+        r_thread.set_produce_flag()
+        for thread in (
+            r_thread,
+            i_thread,
+            w_thread,
+            e_thread,
+            f_progress_thread,
+            v_progress_thread,
+        ):
+            ResourceManager().register_thread(thread)
+            thread.start()
+
+        # Filter
 
         # Run until the end
         elapsed: float = 0.
@@ -282,8 +312,8 @@ class UpscalePipeline(object):
         decoding: bool = True
         err: bool = False
 
-        if progress_thread is not None:
-            progress_thread.start()
+        if f_progress_thread is not None:
+            f_progress_thread.start()
 
 
         start_time = 0
@@ -298,15 +328,15 @@ class UpscalePipeline(object):
                 if (
                     not r_thread.is_alive()
                     and not i_thread.is_alive()
-                    and not e_thread.is_alive()
+                    and not w_thread.is_alive()
                 ):
                     current_time: float = time.time()
                     total_elapsed = current_time - real_start
-                    if progress_thread is not None:
-                        elapsed = progress_thread.elapsed()
+                    if f_progress_thread is not None:
+                        elapsed = f_progress_thread.elapsed()
                     else:
                         elapsed = current_time - start_time
-                    encoded = e_thread.encoded
+                    encoded = w_thread.encoded
                     break
                 time.sleep(0.0001)
                 continue
@@ -322,7 +352,7 @@ class UpscalePipeline(object):
                     decoding = False
 
             time.sleep(0.0001)
-            if not e_thread.is_alive() and r_thread.is_alive():
+            if not w_thread.is_alive() and r_thread.is_alive():
                 print(red("Error: the encoder encountered an unexpected error"))
                 err, encoded, total_elapsed = True, 0, 0
                 break
@@ -330,10 +360,10 @@ class UpscalePipeline(object):
             time.sleep(0.001)
 
         # Stop remaining threads if not already stopped (error cases)
-        for thread in (r_thread, e_thread, i_thread):
+        for thread in (r_thread, w_thread, i_thread):
             thread.stop()
-        if progress_thread is not None:
-            progress_thread.stop()
+        if f_progress_thread is not None:
+            f_progress_thread.stop()
 
         return err, encoded, elapsed, total_elapsed
 
