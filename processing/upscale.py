@@ -56,6 +56,7 @@ class UpscalePipeline(object):
         scenes_to_combine: list[Scene],
         video_count: int,
         debug: bool,
+        simulation: bool = False,
     ) -> None:
 
         # Decoder
@@ -92,6 +93,8 @@ class UpscalePipeline(object):
         self.scenes_to_encode: list[Scene] = scenes_to_combine
         # Number of clips to generate
         self.video_count = video_count
+
+        self.simulation: bool = simulation
 
 
     def run(self) -> tuple[bool, int, float, float]:
@@ -203,7 +206,7 @@ class UpscalePipeline(object):
             tensor_dtype=tensor_dtype,
             device=device
         )
-        pprint(r_thread_config)
+        # pprint(r_thread_config)
         try:
             r_thread = ImgReaderThread(r_thread_config)
         except Exception as e:
@@ -287,8 +290,11 @@ class UpscalePipeline(object):
         f_progress_thread = ProgressThread(total=len(self.frames))
         w_thread.set_progress_bar(f_progress_thread)
 
-        v_progress_thread = ProgressThread(total=self.video_count)
-        w_thread.set_progress_bar(v_progress_thread)
+        e_progress_thread = ProgressThread(total=self.video_count)
+        e_thread.set_progress_bar(e_progress_thread)
+
+        if self.simulation:
+            return [0] * 4
 
         # Start all threads
         r_thread.set_produce_flag()
@@ -298,7 +304,7 @@ class UpscalePipeline(object):
             w_thread,
             e_thread,
             f_progress_thread,
-            v_progress_thread,
+            e_progress_thread,
         ):
             ResourceManager().register_thread(thread)
             thread.start()
@@ -311,10 +317,6 @@ class UpscalePipeline(object):
 
         decoding: bool = True
         err: bool = False
-
-        if f_progress_thread is not None:
-            f_progress_thread.start()
-
 
         start_time = 0
         real_start = time.time()

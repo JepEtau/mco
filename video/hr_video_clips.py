@@ -178,12 +178,14 @@ def generate_hr_video_clip(
             models.add(filter)
 
             images: list[Image] = scene['in_frames'].images()
+            os.makedirs(path_split(images[0].out_fp)[0], exist_ok=True)
             for img in images:
-                max_img_datetime = max(os.stat(img.out_fp).st_mtime, max_img_datetime)
-                if (
-                    not os.path.exists(img.out_fp)
-                    or os.stat(img.in_fp).st_mtime > os.stat(img.out_fp).st_mtime
-                ):
+                add = True
+                if os.path.exists(img.out_fp):
+                    max_img_datetime = max(os.stat(img.out_fp).st_mtime, max_img_datetime)
+                    if os.stat(img.out_fp).st_mtime > os.stat(img.in_fp).st_mtime:
+                        add = False
+                if add:
                     frames.append(
                         Frame(
                             in_img_fp=img.in_fp,
@@ -199,6 +201,9 @@ def generate_hr_video_clip(
                 # Regenerate video if there is a newer imgage
                 if max_img_datetime > out_video_datetime:
                     do_generate_video = True
+            else:
+                video_count += 1
+
             if do_generate_video:
                 if len(frames) == 0:
                     scenes_to_combine.append(scene)
@@ -238,3 +243,4 @@ def generate_hr_video_clip(
 
     # 3. Generate video
 
+    print("done")
