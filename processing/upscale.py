@@ -105,10 +105,8 @@ class UpscalePipeline(object):
         device: str = self.device
         channels_last: bool = False
 
-
         d_dtype: np.dtype = np.uint8
         i_out_dtype = e_in_dtype = np.float32
-
 
         # Set custom sessions
         if is_cuda_available():
@@ -116,12 +114,10 @@ class UpscalePipeline(object):
         if is_tensorrt_available():
             nnlib.set_session_constructor(NnFrameworkType.TENSORRT, TensorRtCupySession)
 
-
         # In and Out max shapes used for memory allocation
         in_max_shape: tuple[int, int, int] = (self.max_nbytes, 1, 1)
         max_scale = max([m.scale for m in self.models.values()])
         out_max_shape: tuple[int, int, int] = (self.max_nbytes * max_scale * max_scale, 1, 1)
-
 
         # Initialize session
         _session: NnModelSession = nnlib.session(model)
@@ -274,8 +270,6 @@ class UpscalePipeline(object):
         )
         e_thread = EncoderThread(e_thread_config)
 
-
-
         # "Connect nodes"
         r_thread.set_consumer(i_thread)
 
@@ -288,10 +282,10 @@ class UpscalePipeline(object):
         e_thread.set_producer(w_thread)
 
         f_progress_thread = ProgressThread(total=len(self.frames))
-        w_thread.set_progress_bar(f_progress_thread)
+        w_thread.set_progress_thread(f_progress_thread)
 
-        e_progress_thread = ProgressThread(total=self.video_count)
-        e_thread.set_progress_bar(e_progress_thread)
+        # e_progress_thread = ProgressThread(total=self.video_count)
+        # e_thread.set_progress_bar(e_progress_thread)
 
         if self.simulation:
             return [0] * 4
@@ -304,7 +298,7 @@ class UpscalePipeline(object):
             w_thread,
             e_thread,
             f_progress_thread,
-            e_progress_thread,
+            # e_progress_thread,
         ):
             ResourceManager().register_thread(thread)
             thread.start()
@@ -338,14 +332,14 @@ class UpscalePipeline(object):
                         elapsed = f_progress_thread.elapsed()
                     else:
                         elapsed = current_time - start_time
-                    encoded = w_thread.encoded
+                    encoded = w_thread._written
                     break
                 time.sleep(0.0001)
                 continue
 
             time.sleep(0.0001)
             if not r_thread.is_alive() and decoding:
-                print("[V][C] decoder has ended")
+                # print("[V][C] decoder has ended")
                 err, message = r_thread.error_encountered()
                 if err:
                     print(red(message))
@@ -362,7 +356,7 @@ class UpscalePipeline(object):
             time.sleep(0.001)
 
         # Stop remaining threads if not already stopped (error cases)
-        for thread in (r_thread, w_thread, i_thread):
+        for thread in (r_thread, i_thread, w_thread, e_thread):
             thread.stop()
         if f_progress_thread is not None:
             f_progress_thread.stop()

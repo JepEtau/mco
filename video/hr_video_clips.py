@@ -232,7 +232,8 @@ def generate_hr_video_clip(
         fp16,
         scenes_to_combine=scenes_to_combine,
         video_count=video_count,
-        debug=debug
+        debug=debug,
+        simulation=simulation,
     )
     pipeline.run()
 
