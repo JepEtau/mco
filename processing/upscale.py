@@ -1,6 +1,8 @@
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+import gc
+import logging
 import multiprocessing
 import os
 from pprint import pprint
@@ -22,17 +24,20 @@ from pynnlib import (
     is_cuda_available,
     NnModelSession,
     NnModel,
+    nnlogger,
     NnFrameworkType,
     set_cuda_device,
     is_tensorrt_available,
+    ShapeStrategy,
 )
 import torch
 from nn_inference.img_dim import get_image_shape
 from nn_inference.resource_mgr import Frame
 from nn_inference.threads.t_img_reader import ImgReaderThread, ImgReaderThreadConfig
+from pynnlib.model import TrtModel
 from utils.mco_types import Scene
 from utils.p_print import *
-from utils.path_utils import absolute_path
+from utils.path_utils import absolute_path, path_split
 from utils.tools import ffmpeg_exe, ml_model_dir
 if is_tensorrt_available():
     from nn_inference.pytorch.session_cupy import PyTorchCuPySession
@@ -63,29 +68,89 @@ class UpscalePipeline(object):
         # ImageReaderParams
         max_nbytes: int = 0
         max_shape: tuple[int] = (0,0,0)
+        min_nbytes: int = sys.maxsize
+        min_shape: tuple[int] = (0,0,0)
         start_time = time.time()
         for f in frames:
             shape, nbytes = get_image_shape(f.in_img_fp)
             if nbytes > max_nbytes:
                 max_nbytes = nbytes
                 max_shape = shape
+            if nbytes < min_nbytes:
+                min_nbytes = nbytes
+                min_shape = shape
         elapsed = time.time() - start_time
-        print(f"{max_nbytes} bytes, with shape: {max_shape} ({elapsed * 1000:.03f}ms)")
+        print(f"Max: {max_nbytes} bytes, with shape: {max_shape} ({elapsed * 1000:.03f}ms)")
+        print(f"Min: {min_nbytes} bytes, with shape: {min_shape} ({elapsed * 1000:.03f}ms)")
 
-
-        self.max_nbytes: int = max_nbytes
         self.frames = deque(frames)
         r_c_order = 'rgb'
         self.models = models
         self.device = device
         self.fp16 = fp16
 
+        execution_provider = 'trt'
+        opset: int = 17
+
+        min_size = np.flip(np.array(min_shape[:2]))
+        max_size = np.flip(np.array(max_shape[:2]))
+
+        nnlogger.addHandler(logging.StreamHandler(sys.stdout))
+        nnlogger.setLevel("DEBUG")
+
         # Open models
         self.models: dict[str, NnModel] = {}
         for m in models:
             fp: str = absolute_path(os.path.join(ml_model_dir, m))
             print(lightcyan(f"Model:"), f"{fp}")
-            self.models[os.path.basename(fp)] = nnlib.open(fp, device='cuda')
+            _model: NnModel = nnlib.open(fp, device='cuda')
+            k = os.path.basename(fp)
+
+            if execution_provider == 'trt':
+                # Convert model to TensorRT
+                if _model.fwk_type != NnFrameworkType.TENSORRT:
+                    shape_strategy: ShapeStrategy = ShapeStrategy()
+                    print(f"\tconvert to TensorRT, ",
+                        f"onnx opset={opset}, "
+                        f"datatype={'fp16' if fp16 else 'fp32'}"
+                    )
+                    start_time = time.time()
+                    if np.array_equal(min_size, max_size):
+                        shape_strategy.opt_size = tuple(max_size)
+                    else:
+                        shape_strategy.opt_size = tuple((max_size - min_size) // 2)
+                        shape_strategy.min_size = tuple(min_size)
+                        shape_strategy.max_size = tuple(max_size)
+
+                    trt_model: TrtModel = nnlib.convert_to_tensorrt(
+                        model=_model,
+                        shape_strategy=shape_strategy,
+                        fp16=fp16,
+                        bf16=False,
+                        tf32=False,
+                        # optimization_level=3,
+                        opset=opset,
+                        device=device,
+                        out_dir=path_split(_model.filepath)[0],
+                    )
+
+                    elapsed_time = time.time() - start_time
+                    if elapsed_time > 2:
+                        print(f"[V] Converted to TRT engine in {elapsed_time:.2f}s")
+                    del _model
+                    gc.collect()
+                    _model = trt_model
+
+            self.models[k] = _model
+
+            min_size = _model.scale * min_size
+            max_size = _model.scale * min_size
+            max_nbytes *= _model.scale * _model.scale
+
+        self.out_max_nbytes: int = max_nbytes
+        self.in_max_nbytes: int = min_nbytes
+
+
         # self.e_ffmpeg_cmd = generate_ffmpeg_encoder_cmd(
         #     i_video_info, self.e_params, in_media_info
         # )
@@ -95,6 +160,9 @@ class UpscalePipeline(object):
         self.video_count = video_count
 
         self.simulation: bool = simulation
+
+        # Output settings
+        self.img_dtype: np.dtype = np.uint16
 
 
     def run(self) -> tuple[bool, int, float, float]:
@@ -115,9 +183,8 @@ class UpscalePipeline(object):
             nnlib.set_session_constructor(NnFrameworkType.TENSORRT, TensorRtCupySession)
 
         # In and Out max shapes used for memory allocation
-        in_max_shape: tuple[int, int, int] = (self.max_nbytes, 1, 1)
-        max_scale = max([m.scale for m in self.models.values()])
-        out_max_shape: tuple[int, int, int] = (self.max_nbytes * max_scale * max_scale, 1, 1)
+        in_max_shape: tuple[int, int, int] = (self.in_max_nbytes, 1, 1)
+        out_max_shape: tuple[int, int, int] = (self.out_max_nbytes, 1, 1)
 
         # Initialize session
         _session: NnModelSession = nnlib.session(model)
@@ -182,8 +249,9 @@ class UpscalePipeline(object):
             dtoh_mem = allocate_memory(out_max_shape, i_out_dtype, dtoh_cuda_stream)
 
             if model.fwk_type == NnFrameworkType.TENSORRT:
+                session: TensorRtCupySession
                 session.set_host_mem(htod_mem.host, dtoh_mem.host)
-                session.warmup(10)
+                session.warmup(3)
         else:
             htod_mem = None
             dtoh_mem = None
@@ -192,7 +260,6 @@ class UpscalePipeline(object):
         pprint(htod_mem)
         print(yellow("DtoH memory:"))
         pprint(dtoh_mem)
-
 
         # Create image reader thread
         r_thread_config = ImgReaderThreadConfig(
@@ -240,7 +307,7 @@ class UpscalePipeline(object):
             tensor_dtype=i_params.tensor_dtype,
             dtoh_mem=i_params.dtoh_mem,
             img_shape=(), # i_video_info['shape'],
-            img_dtype="uint8", # np.dtype(e_video_info['dtype']).name,
+            img_dtype=np.dtype(self.img_dtype).name,
             img_c_order='bgr', # e_video_info['c_order'],
         )
         print("w_thread_config")
@@ -281,6 +348,7 @@ class UpscalePipeline(object):
 
         e_thread.set_producer(w_thread)
 
+        f_progress_thread = None
         f_progress_thread = ProgressThread(total=len(self.frames))
         w_thread.set_progress_thread(f_progress_thread)
 
@@ -300,8 +368,9 @@ class UpscalePipeline(object):
             f_progress_thread,
             # e_progress_thread,
         ):
-            ResourceManager().register_thread(thread)
-            thread.start()
+            if thread is not None:
+                ResourceManager().register_thread(thread)
+                thread.start()
 
         # Filter
 
