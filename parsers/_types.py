@@ -29,16 +29,18 @@ TaskName = Literal[
     #   input: progressive video
     #   output: in 2 steps.
     #       upscaled frames
+    'upscale',
+
     #       create a clip/scene
     #   ??? out_hash: upscale mode
     # 01_hr
     'hr',
 
-    # Stabilize and color grading, external tool
+    # Upscaled and color grading, external tool
     # Input: clips from upscale: hash?
     # output: FFv1 8 or 16bit
     # 03_restored
-    'stabilize',
+    'restored',
     'color',
 
     # Finalize: temporal filter, geometry, fading
@@ -52,16 +54,18 @@ TASK_NAMES: list[str] = get_args(TaskName)
 task_to_dirname: dict[TaskName, str] = {
     'initial': '00_initial',
     'lr': '00_lr',
-    'hr': '01_hr',
-    'stabilize': '02_restored',
+    'upscale': '01_upscaled',
+    'hr': '02_hr',
+    'restored': '03_restored',
     'final': '04_final',
 }
 
 filter_name_to_dirname: dict[str, TaskName] = {
     'initial': 'initial',
     'lr': 'lr',
-    'upscale': 'hr',
-    'stabilize': 'stabilize',
+    'upscale': 'upscaled',
+    'hr': 'hr',
+    'restored': 'restored',
     'final': 'final',
 }
 

@@ -181,6 +181,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     # consolidate_scene_filters
     scene_filters = scene['filters']
+    pprint(scene_filters)
 
     # Add missing filters
     for t in TASK_NAMES:
@@ -198,8 +199,11 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     scene_filters['lr'].hash = deint_hashcode
 
-    upscale_hashcode = calc_hash(';'.join([deint_hashcode, scene_filters['hr'].sequence]))
-    scene_filters['hr'].hash = upscale_hashcode
+    upscale_hashcode = calc_hash(';'.join([deint_hashcode, scene_filters['upscale'].sequence]))
+    scene_filters['upscale'].hash = upscale_hashcode
+
+    # hr_hashcode = calc_hash(';'.join([upscale_hashcode, scene_filters['hr'].sequence]))
+    # scene_filters['upscale'].hash = upscale_hashcode
 
     # Update the scene task
     scene['task'].hashcode = scene_filters[scene['task'].name].hash
