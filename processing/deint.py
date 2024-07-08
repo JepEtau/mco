@@ -613,6 +613,8 @@ def deint_command(
         ])
 
     # Frame rate
+    ##### FORCE TO 25 fps
+    fps = 25
     ffmpeg_command.extend([
         "-r",
         '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"

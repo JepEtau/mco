@@ -132,7 +132,7 @@ def upscale_scenes(
     print(f"Total time: {time.time() - start_time_full:.03f}s")
 
 
-    # scenes_to_combine: list = []
+    scenes_to_upscale: list[Scene] = []
     # in_frame_count: int = 0
     # out_frame_count: int = 0
     # video_count: int = 0
@@ -164,14 +164,17 @@ def upscale_scenes(
             # pprint(scene)
             # print(lightcyan("==============================================================================="))
             out_video_fp: str = scene['task'].video_file
-            out_video_datetime: float = 0
+            # out_video_datetime: float = 0
             if os.path.exists(out_video_fp):
-                out_video_datetime: float = os.stat(out_video_fp).st_mtime
-            max_img_datetime: float = 0
+                continue
+            #     out_video_datetime: float = os.stat(out_video_fp).st_mtime
+            # max_img_datetime: float = 0
 
             # Get all models
             filter: str = scene['filters'][scene['task'].name].sequence
             models.add(filter)
+
+            scenes_to_upscale.append(scene)
 
             os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
 
@@ -193,7 +196,7 @@ def upscale_scenes(
     #     out_frame_count += len(frames)
     #     # break
 
-    # print(f"Total number of frames to upscale: {in_frame_count}")
+    print(f"Total number of scenes to upscale: {len(scenes_to_upscale)}")
     # print(f"Total number of frames to generate clips: {out_frame_count}")
     # print(f"Total number of frames to process: {len(frames)}")
     # if len(frames) == 0:
@@ -205,7 +208,6 @@ def upscale_scenes(
     # fp16: bool = True
 
     # pipeline = UpscalePipeline(
-    #     frames,
     #     models,
     #     device,
     #     fp16,
