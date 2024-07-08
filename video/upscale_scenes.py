@@ -121,7 +121,6 @@ def upscale_scenes(
 
             # Generate frames for this scene
             consolidate_scene(scene=scene)
-            # in_frame_count += len(scene['in_frames'])
             set_video_filename(scene)
 
             if debug:
@@ -130,7 +129,6 @@ def upscale_scenes(
                 # pprint(scene['in_frames'])
                 print(lightcyan("==============================================================================="))
 
-    print(f"Total number of frames to upscale: {in_frame_count}")
     print(f"Total time: {time.time() - start_time_full:.03f}s")
 
 
@@ -175,24 +173,7 @@ def upscale_scenes(
             filter: str = scene['filters'][scene['task'].name].sequence
             models.add(filter)
 
-            images: list[Image] = scene['in_frames'].images()
-            os.makedirs(path_split(images[0].out_fp)[0], exist_ok=True)
-            # for img in images:
-            #     add = True
-            #     if os.path.exists(img.out_fp):
-            #         max_img_datetime = max(os.stat(img.out_fp).st_mtime, max_img_datetime)
-            #         if os.stat(img.out_fp).st_mtime > os.stat(img.in_fp).st_mtime:
-            #             add = False
-            #     if add:
-            #         frames.append(
-            #             Frame(
-            #                 in_img_fp=img.in_fp,
-            #                 out_img_fp=img.out_fp,
-            #                 scene_no=scene['no'],
-            #                 scene=scene_no,
-            #                 out_video_fp=out_video_fp
-            #             )
-            #         )
+            os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
 
             # do_generate_video = False
             # if len(frames) == 0:

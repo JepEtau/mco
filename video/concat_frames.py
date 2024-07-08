@@ -27,10 +27,21 @@ def set_video_filename(scene: Scene) -> None:
     if task != '':
         suffix += f"_{task.name}"
 
-    dir, basename, _ = path_split(task.concat_file)
+    k_ed, k_ep, k_ch = scene['src']['k_ed'], scene['src']['k_ep'], scene['src']['k_ch']
+    cache_dir: str = db[k_ep]['cache_path']
+    if k_ch in ('g_debut', 'g_fin'):
+        cache_dir = db[k_ch]['cache_path']
+        basename = f"{k_ch}_{scene['no']:03}__{k_ed}_{scene['k_ep']}"
+
+    elif k_ch in ('g_asuivre', 'g_documentaire'):
+        basename = f"{k_ep}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}"
+
+    else:
+        basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}.txt"
+
     task.video_file= absolute_path(
         os.path.join(
-            dir, os.pardir, "video", f"{basename}{suffix}.mkv"
+            cache_dir, "video", f"{basename}{suffix}.mkv"
         )
     )
 
