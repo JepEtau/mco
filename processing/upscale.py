@@ -16,6 +16,7 @@ from nn_inference.cupy import HostDeviceMemory, allocate_memory
 
 from nn_inference.pytorch.session_stub import PyTorchStubSession
 from nn_inference.resource_mgr import ResourceManager
+from nn_inference.threads.t_decoder import DecoderThreadConfig, VideoDecoderConfig
 from nn_inference.threads.t_encoder import EncoderThread, EncoderThreadConfig
 from nn_inference.threads.t_img_writer import ImgWriterThread, ImgWriterThreadConfig
 from nn_inference.threads.t_inference import InferenceParams, InferenceThread, InferenceThreadConfig
@@ -36,6 +37,7 @@ from nn_inference.resource_mgr import Frame
 from nn_inference.threads.t_img_reader import ImgReaderThread, ImgReaderThreadConfig
 from pynnlib.model import TrtModel
 from utils.mco_types import Scene
+from utils.media import FShape
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
 from utils.tools import ffmpeg_exe, ml_model_dir
@@ -54,12 +56,11 @@ class ImageReaderParams:
 class UpscalePipeline(object):
     def __init__(
         self,
-        frames: list[Frame],
         models: set[str],
         device: str,
         fp16: bool,
-        scenes_to_combine: list[Scene],
-        video_count: int,
+        scenes: list[Scene],
+        input_videos: dict[str, VideoDecoderConfig],
         debug: bool,
         simulation: bool = False,
     ) -> None:
@@ -67,29 +68,30 @@ class UpscalePipeline(object):
         # Decoder
         # ImageReaderParams
         max_nbytes: int = 0
-        max_shape: tuple[int] = (0,0,0)
+        max_shape: FShape = (0, 0, 0)
         min_nbytes: int = sys.maxsize
-        min_shape: tuple[int] = (0,0,0)
-        start_time = time.time()
-        for f in frames:
-            shape, nbytes = get_image_shape(f.in_img_fp)
+        min_shape: FShape = (0, 0, 0)
+
+        for v in input_videos.values():
+            shape, nbytes = v.img_shape, v.img_nbytes
             if nbytes > max_nbytes:
                 max_nbytes = nbytes
                 max_shape = shape
             if nbytes < min_nbytes:
                 min_nbytes = nbytes
                 min_shape = shape
-        elapsed = time.time() - start_time
-        print(f"Max: {max_nbytes} bytes, with shape: {max_shape} ({elapsed * 1000:.03f}ms)")
-        print(f"Min: {min_nbytes} bytes, with shape: {min_shape} ({elapsed * 1000:.03f}ms)")
 
-        self.frames = deque(frames)
-        r_c_order = 'rgb'
+        print(f"Max: {max_nbytes} bytes, with shape: {max_shape}")
+        print(f"Min: {min_nbytes} bytes, with shape: {min_shape}")
+
         self.models = models
         self.device = device
         self.fp16 = fp16
 
-        execution_provider = 'trt'
+        if is_tensorrt_available():
+            execution_provider = 'trt'
+        else:
+            execution_provider = 'cpu'
         opset: int = 17
 
         min_size = np.flip(np.array(min_shape[:2]))
@@ -155,14 +157,14 @@ class UpscalePipeline(object):
         #     i_video_info, self.e_params, in_media_info
         # )
 
-        self.scenes_to_encode: list[Scene] = scenes_to_combine
-        # Number of clips to generate
-        self.video_count = video_count
 
         self.simulation: bool = simulation
 
         # Output settings
         self.img_dtype: np.dtype = np.uint16
+
+        self.scenes: list[Scene] = scenes
+        self.input_videos = input_videos
 
 
     def run(self) -> tuple[bool, int, float, float]:
@@ -261,14 +263,17 @@ class UpscalePipeline(object):
         print(yellow("DtoH memory:"))
         pprint(dtoh_mem)
 
-        # Create image reader thread
-        r_thread_config = ImgReaderThreadConfig(
+        # Video decoder for each scene
+        r_thread_config = DecoderThreadConfig(
+            scenes=self.scenes,
+            input_videos=self.input_videos,
+
             htod_mem=htod_mem,
-            frames=self.frames,
             cuda_stream=htod_cuda_stream,
             tensor_dtype=tensor_dtype,
             device=device
         )
+
         # pprint(r_thread_config)
         try:
             r_thread = ImgReaderThread(r_thread_config)

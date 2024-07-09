@@ -1,19 +1,28 @@
 from collections import deque
+import math
 import re
+import subprocess
 import sys
 import os
 import time
 from pprint import pprint
 
+import numpy as np
 
+
+from nn_inference.threads.t_decoder import VideoDecoderConfig
+from processing.decoder import decoder_frame_prop
 from processing.upscale import UpscalePipeline
 from nn_inference.resource_mgr import Frame
 from scene.consolidate import consolidate_scene
 from utils.images import Image, Images
+from utils.images_io import write_image
 from utils.mco_types import Scene, VideoChapter
+from utils.media import extract_media_info
 from utils.p_print import *
 from utils.path_utils import path_split, absolute_path
 from utils.mco_utils import makedirs
+from utils.tools import ffmpeg_exe
 from parsers import (
     db,
     Chapter,
@@ -172,6 +181,10 @@ def upscale_scenes(
 
             # Get all models
             filter: str = scene['filters'][scene['task'].name].sequence
+            if filter == '':
+                raise ValueError(red(
+                    f"No filter defined for scene {scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['k_ch']}:{scene['src']['no']}"
+                ))
             models.add(filter)
 
             scenes_to_upscale.append(scene)
@@ -197,6 +210,85 @@ def upscale_scenes(
     #     # break
 
     print(f"Total number of scenes to upscale: {len(scenes_to_upscale)}")
+    print(f"Models:")
+    pprint(models)
+    if scenes_to_upscale and len(models) == 0:
+        raise ValueError(red("No models"))
+
+    input_videos: dict[str, VideoDecoderConfig] = {}
+    for scene in scenes_to_upscale:
+        in_media_path = scene['inputs']['progressive']['filepath']
+        if in_media_path not in input_videos:
+            None
+
+            in_video_info = extract_media_info(in_media_path)['video']
+            # force output to rgb
+            d_c_order = 'rgb'
+            if in_video_info['bpp'] > 8:
+                d_dtype = np.uint16
+                pix_fmt = f"{d_c_order}48"
+            else:
+                d_dtype = np.uint8
+                pix_fmt = f"{d_c_order}24"
+            stdin_img_nbytes = math.prod(in_video_info['shape']) * np.dtype(d_dtype).itemsize
+
+            input_videos[in_media_path] = VideoDecoderConfig(
+                img_dtype=d_dtype,
+                img_c_order=d_c_order,
+                img_shape=in_video_info['shape'],
+                img_nbytes=stdin_img_nbytes,
+                pix_fmt=pix_fmt
+            )
+
+    pprint(input_videos)
+
+    if False:
+        command: str = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "warning",
+            "-nostats",
+            "-ss", "3:48",
+            "-i", scenes_to_upscale[0]['inputs']['progressive']['filepath'],
+            "-t", "1",
+            "-f", "image2pipe",
+            "-pix_fmt", 'bgr24',
+            "-vcodec", "rawvideo",
+            "-"
+        ]
+        print(' '.join(command))
+
+        sub_process: subprocess.Popen | None = None
+        try:
+            sub_process = subprocess.Popen(
+                command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                # stderr=sys.stdout,
+            )
+        except Exception as e:
+            print(f"[E] Unexpected error: {type(e)}", flush=True)
+
+        stdin_img_size = 768*576*3
+        in_dtype = np.uint8
+        i = 0
+        # print(f"img size: {stdin_img_size}")
+        while True:
+            try:
+                img: np.ndarray = np.frombuffer(
+                    sub_process.stdout.read(stdin_img_size),
+                    dtype=in_dtype
+                ).reshape((576, 768, 3))
+                # print(i)
+                # write_image(f"test{i:05}.png", img)
+                i += 1
+                # if i == 25:
+                #     break
+            except:
+                break
+
+# cls; viztracer --ignore_frozen --tracer_entries 1000000 -- upscale.py --chapter g_debut --debug --scene 9
+
     # print(f"Total number of frames to generate clips: {out_frame_count}")
     # print(f"Total number of frames to process: {len(frames)}")
     # if len(frames) == 0:
@@ -204,19 +296,19 @@ def upscale_scenes(
     #     return
     # print(f"Total number of video clips to: {video_count}")
 
-    # device: str = 'cuda'
-    # fp16: bool = True
+    device: str = 'cuda'
+    fp16: bool = True
 
-    # pipeline = UpscalePipeline(
-    #     models,
-    #     device,
-    #     fp16,
-    #     scenes_to_combine=scenes_to_combine,
-    #     video_count=video_count,
-    #     debug=debug,
-    #     simulation=simulation,
-    # )
-    # pipeline.run()
+    pipeline = UpscalePipeline(
+        models,
+        device,
+        fp16,
+        scenes=scenes_to_upscale,
+        input_videos=input_videos,
+        debug=debug,
+        simulation=simulation,
+    )
+    pipeline.run()
 
     # 1. Upscale
 
