@@ -16,7 +16,7 @@ from nn_inference.cupy import HostDeviceMemory, allocate_memory
 
 from nn_inference.pytorch.session_stub import PyTorchStubSession
 from nn_inference.resource_mgr import ResourceManager
-from nn_inference.threads.t_decoder import DecoderThreadConfig, VideoDecoderConfig
+from nn_inference.threads.t_decoder import DecoderThread, DecoderThreadConfig, VideoStreamInfo
 from nn_inference.threads.t_encoder import EncoderThread, EncoderThreadConfig
 from nn_inference.threads.t_img_writer import ImgWriterThread, ImgWriterThreadConfig
 from nn_inference.threads.t_inference import InferenceParams, InferenceThread, InferenceThreadConfig
@@ -60,7 +60,7 @@ class UpscalePipeline(object):
         device: str,
         fp16: bool,
         scenes: list[Scene],
-        input_videos: dict[str, VideoDecoderConfig],
+        total_frames: int,
         debug: bool,
         simulation: bool = False,
     ) -> None:
@@ -72,7 +72,8 @@ class UpscalePipeline(object):
         min_nbytes: int = sys.maxsize
         min_shape: FShape = (0, 0, 0)
 
-        for v in input_videos.values():
+        for scene in scenes:
+            v: VideoStreamInfo = scene["inputs"]['progressive']['info']
             shape, nbytes = v.img_shape, v.img_nbytes
             if nbytes > max_nbytes:
                 max_nbytes = nbytes
@@ -164,7 +165,6 @@ class UpscalePipeline(object):
         self.img_dtype: np.dtype = np.uint16
 
         self.scenes: list[Scene] = scenes
-        self.input_videos = input_videos
 
 
     def run(self) -> tuple[bool, int, float, float]:
@@ -266,8 +266,6 @@ class UpscalePipeline(object):
         # Video decoder for each scene
         r_thread_config = DecoderThreadConfig(
             scenes=self.scenes,
-            input_videos=self.input_videos,
-
             htod_mem=htod_mem,
             cuda_stream=htod_cuda_stream,
             tensor_dtype=tensor_dtype,
@@ -276,11 +274,11 @@ class UpscalePipeline(object):
 
         # pprint(r_thread_config)
         try:
-            r_thread = ImgReaderThread(r_thread_config)
+            r_thread = DecoderThread(r_thread_config)
         except Exception as e:
             print(red(f"[E] decoder: {type(e)}"))
             return True, 0, 0
-        r_thread.setName("img_reader")
+        r_thread.setName("decoder")
 
 
         # Create inference thread
@@ -354,7 +352,7 @@ class UpscalePipeline(object):
         e_thread.set_producer(w_thread)
 
         f_progress_thread = None
-        f_progress_thread = ProgressThread(total=len(self.frames))
+        # f_progress_thread = ProgressThread(total=total_frames)
         w_thread.set_progress_thread(f_progress_thread)
 
         # e_progress_thread = ProgressThread(total=self.video_count)

@@ -10,7 +10,7 @@ from pprint import pprint
 import numpy as np
 
 
-from nn_inference.threads.t_decoder import VideoDecoderConfig
+from nn_inference.threads.t_decoder import VideoStreamInfo
 from processing.decoder import decoder_frame_prop
 from processing.upscale import UpscalePipeline
 from nn_inference.resource_mgr import Frame
@@ -165,6 +165,7 @@ def upscale_scenes(
         # Walk through target scenes
         scenes: list[Scene] = video['scenes']
         models: set[str] = set()
+        total_frames: int = 0
         for scene in scenes:
             if scene_no is not None and scene['no'] != scene_no:
                 continue
@@ -189,6 +190,8 @@ def upscale_scenes(
 
             scenes_to_upscale.append(scene)
 
+            total_frames += scene['src']['count']
+
             os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
 
             # do_generate_video = False
@@ -210,12 +213,15 @@ def upscale_scenes(
     #     # break
 
     print(f"Total number of scenes to upscale: {len(scenes_to_upscale)}")
+    print(f"Total number of frames to upscale: {total_frames}")
+
     print(f"Models:")
     pprint(models)
     if scenes_to_upscale and len(models) == 0:
         raise ValueError(red("No models"))
+    # sys.exit()
 
-    input_videos: dict[str, VideoDecoderConfig] = {}
+    input_videos: dict[str, VideoStreamInfo] = {}
     for scene in scenes_to_upscale:
         in_media_path = scene['inputs']['progressive']['filepath']
         if in_media_path not in input_videos:
@@ -232,15 +238,16 @@ def upscale_scenes(
                 pix_fmt = f"{d_c_order}24"
             stdin_img_nbytes = math.prod(in_video_info['shape']) * np.dtype(d_dtype).itemsize
 
-            input_videos[in_media_path] = VideoDecoderConfig(
+            input_videos[in_media_path] = VideoStreamInfo(
                 img_dtype=d_dtype,
                 img_c_order=d_c_order,
                 img_shape=in_video_info['shape'],
                 img_nbytes=stdin_img_nbytes,
-                pix_fmt=pix_fmt
+                pix_fmt=pix_fmt,
+                framerate=in_video_info['frame_rate_r']
             )
+        scene['inputs']['progressive']['info'] = input_videos[in_media_path]
 
-    pprint(input_videos)
 
     if False:
         command: str = [
@@ -304,7 +311,7 @@ def upscale_scenes(
         device,
         fp16,
         scenes=scenes_to_upscale,
-        input_videos=input_videos,
+        total_frames=total_frames,
         debug=debug,
         simulation=simulation,
     )

@@ -2,7 +2,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Literal, TypedDict, TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     from .images import Images
     from parsers import (
@@ -11,6 +10,7 @@ if TYPE_CHECKING:
         Filter,
         TaskName,
     )
+    from nn_inference.threads.t_decoder import VideoStreamInfo
 
 # Common to all types:
 # k_ed: key: editon. 1 letter format in [k, s, f, ..]
@@ -32,6 +32,7 @@ class Inputs(TypedDict):
         enable: bool
         start: int
         count: int
+        info: VideoStreamInfo
 
     interlaced: Interlaced
     progressive: Progressive
