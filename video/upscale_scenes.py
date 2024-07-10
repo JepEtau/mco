@@ -173,12 +173,8 @@ def upscale_scenes(
             # print(lightcyan("================================== Scene ======================================="))
             # pprint(scene)
             # print(lightcyan("==============================================================================="))
-            out_video_fp: str = scene['task'].video_file
-            # out_video_datetime: float = 0
-            if os.path.exists(out_video_fp):
+            if os.path.exists(scene['task'].video_file) and not force:
                 continue
-            #     out_video_datetime: float = os.stat(out_video_fp).st_mtime
-            # max_img_datetime: float = 0
 
             # Get all models
             filter: str = scene['filters'][scene['task'].name].sequence
@@ -192,25 +188,6 @@ def upscale_scenes(
 
             total_frames += scene['src']['count']
 
-            os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
-
-            # do_generate_video = False
-            # if len(frames) == 0:
-            #     # Regenerate video if there is a newer imgage
-            #     if max_img_datetime > out_video_datetime:
-            #         do_generate_video = True
-            # else:
-            #     video_count += 1
-
-            # if do_generate_video:
-            #     if len(frames) == 0:
-            #         scenes_to_combine.append(scene)
-            #     elif not os.path.exists(out_video_fp):
-            #         video_count += 1
-
-    #     in_frame_count += len(frames)
-    #     out_frame_count += len(frames)
-    #     # break
 
     print(f"Total number of scenes to upscale: {len(scenes_to_upscale)}")
     print(f"Total number of frames to upscale: {total_frames}")
@@ -220,6 +197,10 @@ def upscale_scenes(
     if scenes_to_upscale and len(models) == 0:
         raise ValueError(red("No models"))
     # sys.exit()
+
+    if not len(scenes_to_upscale):
+        print(f"No scenes to upscale")
+        return
 
     vinfos: dict[str, VideoStreamInfo] = {}
     for scene in scenes_to_upscale:

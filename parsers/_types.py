@@ -70,6 +70,12 @@ filter_name_to_dirname: dict[str, TaskName] = {
 }
 
 
+@dataclass
+class VideoSettings:
+    codec: str
+    codec_options: list[str]
+    pix_fmt: str
+    frame_rate: int
 
 
 
@@ -80,6 +86,7 @@ class ProcessingTask:
     concat_file: str = ''
     video_file: str = ''
     do_generate: bool = True
+    video_settings: VideoSettings | None = None
 
 
 @dataclass

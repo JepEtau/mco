@@ -14,6 +14,24 @@ from .tools import ffprobe_exe
 ChannelOrder = Literal['rgb', 'bgr']
 FShape = tuple[int, int, int]
 
+
+class VideoCodec(Enum):
+    H264 = "libx264"
+    H265 = "libx265"
+    VP9 = "libvpx-vp9"
+    FFV1 = "ffv1"
+    DNXHD = "dnxhd"
+
+
+str_to_video_codec: dict[str, VideoCodec] = {
+    'h264': VideoCodec.H264,
+    'h265': VideoCodec.H265,
+    'ffv1': VideoCodec.FFV1,
+    'vp9': VideoCodec.VP9,
+    'dnxhd': VideoCodec.DNXHD,
+}
+
+
 class FieldOrder(Enum):
     PROGRESSIVE = 'progressive' # Progressive video
     TOP_FIELD_FIRST = 'tt'      # Interlaced video, top field coded and displayed first

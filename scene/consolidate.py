@@ -11,6 +11,7 @@ from parsers import (
     Filter,
     TASK_NAMES,
     ProcessingTask,
+    VideoSettings,
 )
 from utils.mco_utils import get_cache_path, nested_dict_set
 from utils.p_print import *
@@ -252,7 +253,8 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     )
     scene['inputs']['progressive']['filepath'] = progressive_fp
 
-    if scene['task'].name == 'lr' and watermark:
+    task_name: str = scene['task'].name
+    if task_name == 'lr' and watermark:
         # if 'effects' in scene:
         #     scene['effects'] = Effects()
         # scene['effects'].append(Effect(name='watermark'))
@@ -264,7 +266,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
         )
 
     # List frames
-    if scene['task'].name == 'lr':
+    if task_name == 'lr':
         scene['in_frames'] = Images(scene)
         if k_ch in ('g_asuivre', 'g_documentaire'):
             scene['out_frames'] = get_out_frame_list_single(
@@ -280,7 +282,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
                 scene=scene
             )
 
-    elif scene['task'].name == 'hr':
+    elif task_name == 'hr':
         scene['in_frames'] = Images(scene)
 
         if k_ch in ('g_asuivre', 'g_documentaire'):
@@ -297,11 +299,14 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
                 scene=scene
             )
 
+    # Output video settings
+    vsettings: VideoSettings | None = db['common']['video_format'].get(task_name, None)
+    if vsettings is not None:
+        scene['task'].video_settings = vsettings
 
-
-        # print(lightcyan("==============================================================================="))
-        # pprint(scene)
-        # print(lightcyan("==============================================================================="))
+    # print(lightcyan("==============================================================================="))
+    # pprint(scene)
+    # print(lightcyan("==============================================================================="))
 
 
     if verbose:

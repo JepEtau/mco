@@ -236,7 +236,7 @@ IO... gbrap14le              4             56      14-14-14-14
 ..H.. d3d12                  0              0      0
 """
 
-_pixel_formats: dict[dict[str, int | bool]] = {}
+_pixel_formats: dict[str, dict[str, int | bool]] = {}
 if (formats := re.findall(
         re.compile(r"[IOHBP.]{5}\s+([a-z_\d]+)\s+([1234]{1})\s+(\d+)\s+([\d-]+)"),
         ffmpeg_pixl_fmts

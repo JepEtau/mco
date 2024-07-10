@@ -92,7 +92,7 @@ def main():
     # print(db_ep['cache_path'])
     # pprint(db_ep['audio'])
 
-    # print(g_database.keys())
+    print(db.keys())
     pprint(db['common'])
 
 
