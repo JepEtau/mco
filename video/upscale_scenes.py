@@ -221,10 +221,10 @@ def upscale_scenes(
         raise ValueError(red("No models"))
     # sys.exit()
 
-    input_videos: dict[str, VideoStreamInfo] = {}
+    vinfos: dict[str, VideoStreamInfo] = {}
     for scene in scenes_to_upscale:
         in_media_path = scene['inputs']['progressive']['filepath']
-        if in_media_path not in input_videos:
+        if in_media_path not in vinfos:
             None
 
             in_video_info = extract_media_info(in_media_path)['video']
@@ -238,7 +238,7 @@ def upscale_scenes(
                 pix_fmt = f"{d_c_order}24"
             stdin_img_nbytes = math.prod(in_video_info['shape']) * np.dtype(d_dtype).itemsize
 
-            input_videos[in_media_path] = VideoStreamInfo(
+            vinfos[in_media_path] = VideoStreamInfo(
                 img_dtype=d_dtype,
                 img_c_order=d_c_order,
                 img_shape=in_video_info['shape'],
@@ -246,7 +246,7 @@ def upscale_scenes(
                 pix_fmt=pix_fmt,
                 framerate=in_video_info['frame_rate_r']
             )
-        scene['inputs']['progressive']['info'] = input_videos[in_media_path]
+        scene['inputs']['progressive']['info'] = vinfos[in_media_path]
 
 
     if False:
