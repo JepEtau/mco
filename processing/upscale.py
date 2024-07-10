@@ -3,6 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import gc
 import logging
+import math
 import multiprocessing
 import os
 from pprint import pprint
@@ -40,6 +41,7 @@ from utils.mco_types import Scene
 from utils.media import FShape, VideoCodec
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
+from utils.pxl_fmt import PIXEL_FORMAT
 from utils.tools import ffmpeg_exe, ml_model_dir
 if is_tensorrt_available():
     from nn_inference.pytorch.session_cupy import PyTorchCuPySession
@@ -67,24 +69,6 @@ class UpscalePipeline(object):
 
         # Decoder
         # ImageReaderParams
-        max_nbytes: int = 0
-        max_shape: FShape = (0, 0, 0)
-        min_nbytes: int = sys.maxsize
-        min_shape: FShape = (0, 0, 0)
-
-        for scene in scenes:
-            v: VideoStreamInfo = scene["inputs"]['progressive']['info']
-            shape, nbytes = v.img_shape, v.img_nbytes
-            if nbytes > max_nbytes:
-                max_nbytes = nbytes
-                max_shape = shape
-            if nbytes < min_nbytes:
-                min_nbytes = nbytes
-                min_shape = shape
-
-        print(f"Max: {max_nbytes} bytes, with shape: {max_shape}")
-        print(f"Min: {min_nbytes} bytes, with shape: {min_shape}")
-
         self.models = models
         self.device = device
         self.fp16 = fp16
@@ -94,9 +78,6 @@ class UpscalePipeline(object):
         else:
             execution_provider = 'cpu'
         opset: int = 17
-
-        min_size = np.flip(np.array(min_shape[:2]))
-        max_size = np.flip(np.array(max_shape[:2]))
 
         nnlogger.addHandler(logging.StreamHandler(sys.stdout))
         nnlogger.setLevel("DEBUG")
@@ -108,65 +89,82 @@ class UpscalePipeline(object):
             print(lightcyan(f"Model:"), f"{fp}")
             _model: NnModel = nnlib.open(fp, device='cuda')
             k = os.path.basename(fp)
-
-            if execution_provider == 'trt':
-                # Convert model to TensorRT
-                if _model.fwk_type != NnFrameworkType.TENSORRT:
-                    shape_strategy: ShapeStrategy = ShapeStrategy()
-                    print(f"\tconvert to TensorRT, ",
-                        f"onnx opset={opset}, "
-                        f"datatype={'fp16' if fp16 else 'fp32'}"
-                    )
-                    start_time = time.time()
-                    if np.array_equal(min_size, max_size):
-                        shape_strategy.opt_size = tuple(max_size)
-                    else:
-                        shape_strategy.opt_size = tuple((max_size - min_size) // 2)
-                        shape_strategy.min_size = tuple(min_size)
-                        shape_strategy.max_size = tuple(max_size)
-
-                    trt_model: TrtModel = nnlib.convert_to_tensorrt(
-                        model=_model,
-                        shape_strategy=shape_strategy,
-                        fp16=fp16,
-                        bf16=False,
-                        tf32=False,
-                        # optimization_level=3,
-                        opset=opset,
-                        device=device,
-                        out_dir=path_split(_model.filepath)[0],
-                    )
-
-                    elapsed_time = time.time() - start_time
-                    if elapsed_time > 2:
-                        print(f"[V] Converted to TRT engine in {elapsed_time:.2f}s")
-                    del _model
-                    gc.collect()
-                    _model = trt_model
-
             self.models[k] = _model
 
-            min_size = _model.scale * min_size
-            max_size = _model.scale * min_size
-            max_nbytes *= _model.scale * _model.scale
 
-        self.out_max_nbytes: int = max_nbytes
-        self.in_max_nbytes: int = min_nbytes
+        # GPU memory
+        in_max_nbytes: int = 0
+        out_max_nbytes: int = 0
+        for scene in scenes:
+            vi: VideoStreamInfo = scene["inputs"]['progressive']['info']
+            nbytes: int = vi.img_nbytes * np.dtype(vi.img_dtype).itemsize
+
+            if nbytes > in_max_nbytes:
+                in_max_nbytes = nbytes
+
+            task_name = scene['task'].name
+            sequence: list[str] = scene['filters'][task_name].sequence
+            _scale = math.prod(list([self.models[model].scale for model in sequence]))
+            out_nbytes = _scale * _scale * in_max_nbytes
+            if PIXEL_FORMAT[scene['task'].video_settings.pix_fmt]['bpp'] > 8:
+                out_nbytes *= 2
+            if out_nbytes > out_max_nbytes:
+                out_max_nbytes = out_nbytes
+
+            print(f"Scene {scene['no']}, in: {nbytes} bytes, out: {out_nbytes}")
+
+        self.in_max_nbytes: int = in_max_nbytes
+        self.out_max_nbytes: int = out_max_nbytes
+        print(f"Max: in: {in_max_nbytes} bytes, out: {out_max_nbytes}")
 
 
-        # self.e_ffmpeg_cmd = generate_ffmpeg_encoder_cmd(
-        #     i_video_info, self.e_params, in_media_info
-        # )
+        # Convert to trt
+
+            # if execution_provider == 'trt':
+            #     # Convert model to TensorRT
+            #     if _model.fwk_type != NnFrameworkType.TENSORRT:
+            #         shape_strategy: ShapeStrategy = ShapeStrategy()
+            #         print(f"\tconvert to TensorRT, ",
+            #             f"onnx opset={opset}, "
+            #             f"datatype={'fp16' if fp16 else 'fp32'}"
+            #         )
+            #         start_time = time.time()
+            #         if np.array_equal(min_size, max_size):
+            #             shape_strategy.opt_size = tuple(max_size)
+            #         else:
+            #             shape_strategy.opt_size = tuple((max_size - min_size) // 2)
+            #             shape_strategy.min_size = tuple(min_size)
+            #             shape_strategy.max_size = tuple(max_size)
+
+            #         trt_model: TrtModel = nnlib.convert_to_tensorrt(
+            #             model=_model,
+            #             shape_strategy=shape_strategy,
+            #             fp16=fp16,
+            #             bf16=False,
+            #             tf32=False,
+            #             # optimization_level=3,
+            #             opset=opset,
+            #             device=device,
+            #             out_dir=path_split(_model.filepath)[0],
+            #         )
+
+            #         elapsed_time = time.time() - start_time
+            #         if elapsed_time > 2:
+            #             print(f"[V] Converted to TRT engine in {elapsed_time:.2f}s")
+            #         del _model
+            #         gc.collect()
+            #         _model = trt_model
+
+
 
 
         self.simulation: bool = simulation
 
         # Output settings
-        self.img_dtype: np.dtype = np.uint16
-
         self.scenes: list[Scene] = scenes
-
         self.total_frames = total_frames
+
+        sys.exit()
 
 
     def run(self) -> tuple[bool, int, float, float]:

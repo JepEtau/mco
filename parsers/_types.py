@@ -91,7 +91,7 @@ class ProcessingTask:
 
 @dataclass
 class Filter:
-    sequence: str = ''
+    sequence: str | list[str] = ''
     hash: str = ''
     # TODO remove
     # id: str | None = None

@@ -132,12 +132,6 @@ def upscale_scenes(
             consolidate_scene(scene=scene)
             set_video_filename(scene)
 
-            if debug:
-                print(lightcyan("================================== Scene ======================================="))
-                pprint(scene)
-                # pprint(scene['in_frames'])
-                print(lightcyan("==============================================================================="))
-
     print(f"Total time: {time.time() - start_time_full:.03f}s")
 
 
@@ -164,7 +158,7 @@ def upscale_scenes(
 
         # Walk through target scenes
         scenes: list[Scene] = video['scenes']
-        models: set[str] = set()
+        model_list: set[str] = set()
         total_frames: int = 0
         for scene in scenes:
             if scene_no is not None and scene['no'] != scene_no:
@@ -177,12 +171,15 @@ def upscale_scenes(
                 continue
 
             # Get all models
-            filter: str = scene['filters'][scene['task'].name].sequence
-            if filter == '':
+            filter_sequence: str = scene['filters'][scene['task'].name].sequence
+            if filter_sequence == '':
                 raise ValueError(red(
                     f"No filter defined for scene {scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['k_ch']}:{scene['src']['no']}"
                 ))
-            models.add(filter)
+            scene['filters'][scene['task'].name].sequence = filter_sequence.split(',')
+            for model in scene['filters'][scene['task'].name].sequence:
+                if model.endswith('.pth'):
+                    model_list.add(model)
 
             scenes_to_upscale.append(scene)
 
@@ -193,8 +190,8 @@ def upscale_scenes(
     print(f"Total number of frames to upscale: {total_frames}")
 
     print(f"Models:")
-    pprint(models)
-    if scenes_to_upscale and len(models) == 0:
+    pprint(model_list)
+    if scenes_to_upscale and len(model_list) == 0:
         raise ValueError(red("No models"))
     # sys.exit()
 
@@ -225,9 +222,14 @@ def upscale_scenes(
                 img_shape=in_video_info['shape'],
                 img_nbytes=stdin_img_nbytes,
                 pix_fmt=pix_fmt,
-                framerate=in_video_info['frame_rate_r']
+                frame_rate=in_video_info['frame_rate_r']
             )
         scene['inputs']['progressive']['info'] = vinfos[in_media_path]
+
+        if debug:
+            print(lightcyan("================================== Scene ======================================="))
+            pprint(scene)
+            print(lightcyan("==============================================================================="))
 
 
     if False:
@@ -288,7 +290,7 @@ def upscale_scenes(
     fp16: bool = True
 
     pipeline = UpscalePipeline(
-        models,
+        model_list,
         device,
         fp16,
         scenes=scenes_to_upscale,
