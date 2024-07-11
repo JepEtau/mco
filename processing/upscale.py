@@ -12,8 +12,9 @@ import time
 from typing import Any
 import cupy as cp
 import numpy as np
+from nn_inference.model_mgr import ModelManager
 from nn_inference.progress import ProgressThread
-from nn_inference.cupy import HostDeviceMemory, allocate_memory
+from nn_inference.cupy_utils import HostDeviceMemory, allocate_memory
 
 from nn_inference.pytorch.session_stub import PyTorchStubSession
 from nn_inference.resource_mgr import ResourceManager
@@ -59,7 +60,6 @@ class ImageReaderParams:
 class UpscalePipeline(object):
     def __init__(
         self,
-        models: set[str],
         device: str,
         fp16: bool,
         scenes: list[Scene],
@@ -82,17 +82,10 @@ class UpscalePipeline(object):
         nnlogger.addHandler(logging.StreamHandler(sys.stdout))
         nnlogger.setLevel("DEBUG")
 
-        # Open models
-        nn_models: dict[str, NnModel] = {}
-        for m in models:
-            fp: str = absolute_path(os.path.join(ml_model_dir, m))
-            print(lightcyan(f"Model:"), f"{fp}")
-            _model: NnModel = nnlib.open(fp, device='cuda')
-            k = os.path.basename(fp)
-            nn_models[k] = _model
-
 
         # GPU memory, list shapes for each model, create a list of steps
+        model_manager: ModelManager = ModelManager()
+
         in_max_nbytes: int = 0
         out_max_nbytes: int = 0
         model_shapes: dict[str, set] = {}
@@ -107,15 +100,10 @@ class UpscalePipeline(object):
             filters: Filter = scene['filters'][task_name]
             scale: int = 1
             shape = [vi.img_shape[1], vi.img_shape[0]]
-            for model in filters.sequence:
-                _scale = self.nn_models[model].scale
+            for i, model_key in enumerate(filters.steps):
+                _scale = model_manager.get_scale(model_key)
+                filters.steps[i] = model_manager.set_input_size(model_key, shape)
                 shape = list([x * _scale for x in shape])
-                if model not in model_shapes:
-                    model_shapes[model] = set()
-                size = 'x'.join(map(str, shape))
-                if execution_provider == 'trt':
-                    model_shapes[model].add(size)
-                filters.steps.append([model, execution_provider, 'fp16' if self.fp16 else 'fp32', size])
 
             out_nbytes = scale * scale * in_max_nbytes
             if PIXEL_FORMAT[scene['task'].video_settings.pix_fmt]['bpp'] > 8:
@@ -124,47 +112,14 @@ class UpscalePipeline(object):
                 out_max_nbytes = out_nbytes
 
             print(f"Scene {scene['no']}, in: {nbytes} bytes, out: {out_nbytes}")
-            pprint(filters.steps)
 
-        self.in_max_nbytes: int = in_max_nbytes
-        self.out_max_nbytes: int = out_max_nbytes
         print(f"Max: in: {in_max_nbytes} bytes, out: {out_max_nbytes}")
-        pprint(model_shapes)
 
+        pprint(model_manager._shapes)
 
-        # Convert to trt
-        self.nn_models: dict[str[dict[str,dict[str]]]] = {}
-        for model_name, shapes in model_shapes.items():
-            _model = nn_models[model_name]
-            for shape in shapes:
-                # Convert model to TensorRT
-                if _model.fwk_type != NnFrameworkType.TENSORRT:
-                    shape_strategy: ShapeStrategy = ShapeStrategy()
-                    print(f"\tconvert to TensorRT, ",
-                        f"onnx opset={opset}, "
-                        f"datatype={'fp16' if fp16 else 'fp32'}"
-                    )
-                    start_time = time.time()
-                    shape_strategy.opt_size = shape.split('x')
-
-                    trt_model: TrtModel = nnlib.convert_to_tensorrt(
-                        model=_model,
-                        shape_strategy=shape_strategy,
-                        fp16=fp16,
-                        bf16=False,
-                        tf32=False,
-                        # optimization_level=3,
-                        opset=opset,
-                        device=device,
-                        out_dir=path_split(_model.filepath)[0],
-                    )
-
-                    elapsed_time = time.time() - start_time
-                    if elapsed_time > 2:
-                        print(f"[V] Converted to TRT engine in {elapsed_time:.2f}s")
-
-
-
+        model_manager.consolidate()
+        model_manager.set_in_out_max_nbytes(in_max_nbytes, out_max_nbytes)
+        print(model_manager)
 
 
         self.simulation: bool = simulation
@@ -178,8 +133,6 @@ class UpscalePipeline(object):
 
     def run(self) -> tuple[bool, int, float, float]:
         # Params and settings
-        model_key: str = list(self.nn_models.keys())[0]
-        model = self.nn_models[model_key]
         sessions: dict[str, NnModelSession] = {}
         device: str = self.device
         channels_last: bool = False
@@ -187,21 +140,6 @@ class UpscalePipeline(object):
         d_dtype: np.dtype = np.uint8
         i_out_dtype = e_in_dtype = np.float32
 
-        # Set custom sessions
-        if is_cuda_available():
-            nnlib.set_session_constructor(NnFrameworkType.PYTORCH, PyTorchCuPySession)
-        if is_tensorrt_available():
-            nnlib.set_session_constructor(NnFrameworkType.TENSORRT, TensorRtCupySession)
-
-        # In and Out max shapes used for memory allocation
-        in_max_shape: tuple[int, int, int] = (self.in_max_nbytes, 1, 1)
-        out_max_shape: tuple[int, int, int] = (self.out_max_nbytes, 1, 1)
-
-        # Initialize session
-        _session: NnModelSession = nnlib.session(model)
-        htod_cuda_stream = None
-        dtoh_cuda_stream = None
-        infer_cuda_stream = None
         if (
             model.fwk_type == NnFrameworkType.PYTORCH
             and is_cuda_available()
@@ -250,22 +188,7 @@ class UpscalePipeline(object):
 
         sessions[model_key] = session
 
-        # Allocate Host memory
-        if (
-            is_cuda_available()
-            and model.fwk_type in (NnFrameworkType.PYTORCH, NnFrameworkType.TENSORRT)
-            and 'cuda' in device
-        ):
-            htod_mem = allocate_memory(in_max_shape, d_dtype, htod_cuda_stream)
-            dtoh_mem = allocate_memory(out_max_shape, i_out_dtype, dtoh_cuda_stream)
 
-            if model.fwk_type == NnFrameworkType.TENSORRT:
-                session: TensorRtCupySession
-                session.set_host_mem(htod_mem.host, dtoh_mem.host)
-                session.warmup(3)
-        else:
-            htod_mem = None
-            dtoh_mem = None
 
         print(yellow("HtoD memory:"))
         pprint(htod_mem)

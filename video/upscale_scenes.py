@@ -10,6 +10,7 @@ from pprint import pprint
 import numpy as np
 
 
+from nn_inference.model_mgr import ModelManager
 from nn_inference.threads.t_decoder import VideoStreamInfo
 from processing.decoder import decoder_frame_prop
 from processing.upscale import UpscalePipeline
@@ -134,6 +135,7 @@ def upscale_scenes(
 
     print(f"Total time: {time.time() - start_time_full:.03f}s")
 
+    model_manager = ModelManager()
 
     scenes_to_upscale: list[Scene] = []
     # in_frame_count: int = 0
@@ -158,7 +160,6 @@ def upscale_scenes(
 
         # Walk through target scenes
         scenes: list[Scene] = video['scenes']
-        model_list: set[str] = set()
         total_frames: int = 0
         for scene in scenes:
             if scene_no is not None and scene['no'] != scene_no:
@@ -171,27 +172,32 @@ def upscale_scenes(
                 continue
 
             # Get all models
-            filter_sequence: str = scene['filters'][scene['task'].name].sequence
-            if filter_sequence == '':
+            filters: Filter = scene['filters'][scene['task'].name]
+            if filters.sequence == '':
                 raise ValueError(red(
                     f"No filter defined for scene {scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['k_ch']}:{scene['src']['no']}"
                 ))
-            scene['filters'][scene['task'].name].sequence = filter_sequence.split(',')
-            for model in scene['filters'][scene['task'].name].sequence:
-                if model.endswith('.pth'):
-                    model_list.add(model)
+
+            if len(filters.steps) != 0:
+                print(yellow(f"sequence already parsed: scene {scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['k_ch']}:{scene['src']['no']}"))
+
+            for model in filters.sequence.split(','):
+                if '.pth' not in model:
+                    raise NotImplementedError(f"{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['k_ch']}:{scene['src']['no']}: {model}")
+                model_key = model_manager.register(model)
+                if model_key is None:
+                    raise ValueError(red(f"[E] {model} is not a valid model"))
+                filters.steps.append(model_key)
 
             scenes_to_upscale.append(scene)
-
             total_frames += scene['src']['count']
 
 
     print(f"Total number of scenes to upscale: {len(scenes_to_upscale)}")
     print(f"Total number of frames to upscale: {total_frames}")
 
-    print(f"Models:")
-    pprint(model_list)
-    if scenes_to_upscale and len(model_list) == 0:
+    print(model_manager)
+    if scenes_to_upscale and model_manager.count() == 0:
         raise ValueError(red("No models"))
     # sys.exit()
 
@@ -290,7 +296,6 @@ def upscale_scenes(
     fp16: bool = True
 
     pipeline = UpscalePipeline(
-        model_list,
         device,
         fp16,
         scenes=scenes_to_upscale,
