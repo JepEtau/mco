@@ -128,79 +128,32 @@ class UpscalePipeline(object):
         self.scenes: list[Scene] = scenes
         self.total_frames = total_frames
 
-        sys.exit()
+        # sys.exit()
 
 
     def run(self) -> tuple[bool, int, float, float]:
         # Params and settings
-        sessions: dict[str, NnModelSession] = {}
         device: str = self.device
         channels_last: bool = False
+
+        model_manager: ModelManager = ModelManager()
+        if is_cuda_available():
+            model_manager.initialize_sessions()
+
 
         d_dtype: np.dtype = np.uint8
         i_out_dtype = e_in_dtype = np.float32
 
-        if (
-            model.fwk_type == NnFrameworkType.PYTORCH
-            and is_cuda_available()
-        ):
-            session: PyTorchCuPySession = _session
-            session.initialize(
-                device=device,
-                fp16=self.fp16,
-                memalloc=False,
-                in_max_shape=in_max_shape,
-            )
-
-            set_cuda_device(device)
-            htod_cuda_stream = cp.cuda.stream.Stream(non_blocking=True)
-            dtoh_cuda_stream = cp.cuda.stream.Stream(non_blocking=True)
-            infer_cuda_stream = torch.cuda.Stream(device)
-            tensor_dtype: cp.dtype = cp.float16 if self.fp16 else cp.float32
-
-        if (
-            is_tensorrt_available()
-            and model.fwk_type == NnFrameworkType.TENSORRT
-        ):
-            session: TensorRtCupySession = _session
-            session.initialize(
-                device=device,
-                fp16=self.fp16,
-                memalloc=False
-            )
-
-            htod_cuda_stream = session.htod_stream
-            dtoh_cuda_stream = session.dtoh_stream
-            infer_cuda_stream = session.infer_stream
-            tensor_dtype: cp.dtype = cp.float16 if self.fp16 else cp.float32
-
-        if (
-            model.fwk_type == NnFrameworkType.PYTORCH
-            and not is_cuda_available()
-        ):
-            print("use CPU session")
-            session: PyTorchStubSession = _session
-            session.initialize(
-                device=device,
-                fp16=self.fp16,
-            )
-            tensor_dtype: np.dtype = np.float32
-
-        sessions[model_key] = session
-
-
-
         print(yellow("HtoD memory:"))
-        pprint(htod_mem)
+        pprint(model_manager.htod_mem)
         print(yellow("DtoH memory:"))
-        pprint(dtoh_mem)
+        pprint(model_manager.dtoh_mem)
 
         # Video decoder for each scene
         d_thread_config = DecoderThreadConfig(
             scenes=self.scenes,
-            htod_mem=htod_mem,
-            cuda_stream=htod_cuda_stream,
-            tensor_dtype=tensor_dtype,
+            htod_mem=model_manager.htod_mem,
+            cuda_stream=model_manager.htod_cuda_stream,
             device=device
         )
         try:
@@ -210,18 +163,18 @@ class UpscalePipeline(object):
             return True, 0, 0
         d_thread.setName("decoder")
 
+
         # Create inference thread
         i_params: InferenceParams = InferenceParams(
-            htod_mem=htod_mem,
-            dtoh_mem=dtoh_mem,
-            htod_cuda_stream=htod_cuda_stream,
-            infer_cuda_stream=infer_cuda_stream,
-            dtoh_cuda_stream=dtoh_cuda_stream,
-            tensor_dtype=tensor_dtype,
+            htod_mem=model_manager.htod_mem,
+            dtoh_mem=model_manager.dtoh_mem,
+            htod_cuda_stream=model_manager.htod_cuda_stream,
+            infer_cuda_stream=model_manager.torch_cuda_stream,
+            dtoh_cuda_stream=model_manager.dtoh_cuda_stream,
         )
         i_thread_config: InferenceThreadConfig = InferenceThreadConfig(
-            session=session,
-            cuda_stream=infer_cuda_stream,
+            execution_provider='cuda',
+            cuda_stream=model_manager.trt_cuda_stream,
             channels_last=channels_last,
             skip_inference=False
         )
@@ -234,9 +187,8 @@ class UpscalePipeline(object):
 
         # Create encoder thread
         e_thread_config: EncoderThreadConfig = EncoderThreadConfig(
-            cuda_stream=dtoh_cuda_stream,
-            tensor_dtype=tensor_dtype,
-            dtoh_mem=dtoh_mem,
+            cuda_stream=model_manager.dtoh_cuda_stream,
+            dtoh_mem=model_manager.dtoh_mem,
         )
         try:
             e_thread = EncoderThread(e_thread_config)
@@ -276,7 +228,7 @@ class UpscalePipeline(object):
         e_thread.set_producer(i_thread)
 
         f_progress_thread = None
-        f_progress_thread = ProgressThread(total=self.total_frames)
+        # f_progress_thread = ProgressThread(total=self.total_frames)
         e_thread.set_progress_thread(f_progress_thread)
 
         # e_progress_thread = ProgressThread(total=self.video_count)
