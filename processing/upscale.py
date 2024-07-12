@@ -1,27 +1,16 @@
-from collections import deque
-from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 import gc
 import logging
-import math
-import multiprocessing
-import os
 from pprint import pprint
 import sys
 import time
-from typing import Any
-import cupy as cp
 import numpy as np
 from nn_inference.model_mgr import ModelManager
-from nn_inference.progress import ProgressThread
-from nn_inference.cupy_utils import HostDeviceMemory, allocate_memory
 
-from nn_inference.pytorch.session_stub import PyTorchStubSession
 from nn_inference.resource_mgr import ResourceManager
-from nn_inference.threads.t_decoder import DecoderThread, DecoderThreadConfig, VideoStreamInfo
-from nn_inference.threads.t_encoder import EncoderThread, EncoderThreadConfig
-from nn_inference.threads.t_img_writer import ImgWriterThread, ImgWriterThreadConfig
-from nn_inference.threads.t_inference import InferenceParams, InferenceThread, InferenceThreadConfig
+from nn_inference.threads.t_decoder import DecoderThread, VideoStreamInfo
+from nn_inference.threads.t_encoder import EncoderThread
+from nn_inference.threads.t_inference import InferenceThread, InferenceThreadConfig
 from parsers._types import Filter
 from pynnlib import (
     nnlib,
@@ -32,22 +21,10 @@ from pynnlib import (
     NnFrameworkType,
     set_cuda_device,
     is_tensorrt_available,
-    ShapeStrategy,
 )
-import torch
-from nn_inference.img_dim import get_image_shape
-from nn_inference.resource_mgr import Frame
-from nn_inference.threads.t_img_reader import ImgReaderThread, ImgReaderThreadConfig
-from pynnlib.model import TrtModel
 from utils.mco_types import Scene
-from utils.media import FShape, VideoCodec
 from utils.p_print import *
-from utils.path_utils import absolute_path, path_split
 from utils.pxl_fmt import PIXEL_FORMAT
-from utils.tools import ffmpeg_exe, ml_model_dir
-if is_tensorrt_available():
-    from nn_inference.pytorch.session_cupy import PyTorchCuPySession
-    from nn_inference.tensorrt.session_cupy import TensorRtCupySession
 
 
 @dataclass
@@ -104,6 +81,7 @@ class UpscalePipeline(object):
                 _scale = model_manager.get_scale(model_key)
                 filters.steps[i] = model_manager.set_input_size(model_key, shape)
                 shape = list([x * _scale for x in shape])
+                scale *= _scale
 
             out_nbytes = scale * scale * in_max_nbytes
             if PIXEL_FORMAT[scene['task'].video_settings.pix_fmt]['bpp'] > 8:
@@ -150,31 +128,18 @@ class UpscalePipeline(object):
         pprint(model_manager.dtoh_mem)
 
         # Video decoder for each scene
-        d_thread_config = DecoderThreadConfig(
-            scenes=self.scenes,
-            htod_mem=model_manager.htod_mem,
-            cuda_stream=model_manager.htod_cuda_stream,
-            device=device
-        )
         try:
-            d_thread = DecoderThread(d_thread_config)
+            d_thread = DecoderThread(scenes=self.scenes)
         except Exception as e:
+            d_thread = DecoderThread(scenes=self.scenes)
             print(red(f"[E] decoder: {type(e)}"))
             return True, 0, 0
         d_thread.setName("decoder")
 
 
         # Create inference thread
-        i_params: InferenceParams = InferenceParams(
-            htod_mem=model_manager.htod_mem,
-            dtoh_mem=model_manager.dtoh_mem,
-            htod_cuda_stream=model_manager.htod_cuda_stream,
-            infer_cuda_stream=model_manager.torch_cuda_stream,
-            dtoh_cuda_stream=model_manager.dtoh_cuda_stream,
-        )
         i_thread_config: InferenceThreadConfig = InferenceThreadConfig(
             execution_provider='cuda',
-            cuda_stream=model_manager.trt_cuda_stream,
             channels_last=channels_last,
             skip_inference=False
         )
@@ -186,12 +151,8 @@ class UpscalePipeline(object):
         i_thread.setName("inference")
 
         # Create encoder thread
-        e_thread_config: EncoderThreadConfig = EncoderThreadConfig(
-            cuda_stream=model_manager.dtoh_cuda_stream,
-            dtoh_mem=model_manager.dtoh_mem,
-        )
         try:
-            e_thread = EncoderThread(e_thread_config)
+            e_thread = EncoderThread()
         except Exception as e:
             print(red(f"[E] encoder: {type(e)}"))
             return True, 0, 0
