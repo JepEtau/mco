@@ -47,6 +47,8 @@ def upscale_scenes(
     force: bool = False,
     simulation: bool = False,
     scene_no: int | None = None,
+    scene_min: int = -1,
+    scene_max: int = -1,
     watermark: bool = False,
     edition: str | None = None,
     debug: bool = False
@@ -99,6 +101,9 @@ def upscale_scenes(
         for scene in scenes:
             if scene_no is not None and scene['no'] != scene_no:
                 continue
+            if scene_min != -1 and scene_max != -1:
+                if scene['no'] < scene_min or scene['no'] > scene_max:
+                    continue
 
             # Patch the for study mode
             if k_ed != '':
@@ -164,6 +169,9 @@ def upscale_scenes(
         for scene in scenes:
             if scene_no is not None and scene['no'] != scene_no:
                 continue
+            if scene_min != -1 and scene_max != -1:
+                if scene['no'] < scene_min or scene['no'] > scene_max:
+                    continue
 
             # print(lightcyan("================================== Scene ======================================="))
             # pprint(scene)

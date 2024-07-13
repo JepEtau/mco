@@ -80,6 +80,21 @@ def main():
     )
 
     parser.add_argument(
+        "--scene_min",
+        type=int,
+        default=-1,
+        required=False,
+        help="starting scene no. to process"
+    )
+
+    parser.add_argument(
+        "--scene_max",
+        type=int,
+        default=-1,
+        required=False,
+        help="last scene no. to process"
+    )
+    parser.add_argument(
         "--force",
         action="store_true",
         required=False,
@@ -156,6 +171,8 @@ def main():
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=scene_no,
+        scene_min=arguments.scene_min,
+        scene_max=arguments.scene_max,
         watermark=arguments.watermark,
         edition=arguments.edition,
         debug=arguments.debug
