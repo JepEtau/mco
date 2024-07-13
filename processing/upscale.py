@@ -7,6 +7,7 @@ import time
 import numpy as np
 from nn_inference.model_mgr import ModelManager
 
+from nn_inference.progress import ProgressThread
 from nn_inference.resource_mgr import ResourceManager
 from nn_inference.threads.t_decoder import DecoderThread, VideoStreamInfo
 from nn_inference.threads.t_encoder import EncoderThread
@@ -49,23 +50,18 @@ class UpscalePipeline(object):
         # ImageReaderParams
         self.device = device
         self.fp16 = fp16
-
-        if is_tensorrt_available():
-            execution_provider = 'trt'
-        else:
-            execution_provider = 'cpu'
-        opset: int = 17
+        self.simulation: bool = simulation
+        self.scenes: list[Scene] = scenes
+        self.total_frames = total_frames
 
         nnlogger.addHandler(logging.StreamHandler(sys.stdout))
         nnlogger.setLevel("DEBUG")
-
 
         # GPU memory, list shapes for each model, create a list of steps
         model_manager: ModelManager = ModelManager()
 
         in_max_nbytes: int = 0
         out_max_nbytes: int = 0
-        model_shapes: dict[str, set] = {}
         for scene in scenes:
             vi: VideoStreamInfo = scene["inputs"]['progressive']['info']
             nbytes: int = vi.img_nbytes * np.dtype(vi.img_dtype).itemsize
@@ -94,19 +90,10 @@ class UpscalePipeline(object):
         print(f"Max: in: {in_max_nbytes} bytes, out: {out_max_nbytes}")
 
         pprint(model_manager._shapes)
-
         model_manager.consolidate()
         model_manager.set_in_out_max_nbytes(in_max_nbytes, out_max_nbytes)
         print(model_manager)
 
-
-        self.simulation: bool = simulation
-
-        # Output settings
-        self.scenes: list[Scene] = scenes
-        self.total_frames = total_frames
-
-        # sys.exit()
 
 
     def run(self) -> tuple[bool, int, float, float]:
@@ -136,19 +123,33 @@ class UpscalePipeline(object):
             return True, 0, 0
         d_thread.setName("decoder")
 
+        # Create cuda inference thread
+        i_cuda_thread: InferenceThread = None
+        if model_manager.has_torch_models():
+            i_cuda_thread_config: InferenceThreadConfig = InferenceThreadConfig(
+                execution_provider='cuda',
+                channels_last=channels_last,
+                skip_inference=False
+            )
+            try:
+                i_cuda_thread = InferenceThread(i_cuda_thread_config)
+            except Exception as e:
+                print(red(f"[E] inference: {type(e)}"))
+                return True, 0, 0
+            i_cuda_thread.setName("cuda_inference")
 
-        # Create inference thread
-        i_thread_config: InferenceThreadConfig = InferenceThreadConfig(
-            execution_provider='cuda',
-            channels_last=channels_last,
-            skip_inference=False
-        )
-        try:
-            i_thread = InferenceThread(i_thread_config)
-        except Exception as e:
-            print(red(f"[E] inference: {type(e)}"))
-            return True, 0, 0
-        i_thread.setName("inference")
+        # Create TensorRT inference thread
+        i_trt_thread: InferenceThread = None
+        if model_manager.has_trt_models():
+            i_trt_thread_config: InferenceThreadConfig = InferenceThreadConfig(
+                execution_provider='trt',
+            )
+            try:
+                i_trt_thread = InferenceThread(i_trt_thread_config)
+            except Exception as e:
+                print(red(f"[E] inference: {type(e)}"))
+                return True, 0, 0
+            i_trt_thread.setName("trt_inference")
 
         # Create encoder thread
         try:
@@ -178,18 +179,27 @@ class UpscalePipeline(object):
         # w_thread.setName("img_writer")
 
         # "Connect nodes"
-        d_thread.set_consumer(i_thread)
+        if i_trt_thread is not None:
+            d_thread.set_consumer(i_trt_thread)
 
-        i_thread.set_producer(d_thread)
-        i_thread.set_consumer(e_thread)
+            i_trt_thread.set_producer(d_thread)
+            i_trt_thread.set_consumer(e_thread)
+            e_thread.set_producer(i_trt_thread)
+
+        elif i_cuda_thread is not None:
+            d_thread.set_consumer(i_cuda_thread)
+
+            i_cuda_thread.set_producer(d_thread)
+            i_cuda_thread.set_consumer(e_thread)
+            e_thread.set_producer(i_cuda_thread)
+
 
         # w_thread.set_producer(i_thread)
         # w_thread.set_consumer(e_thread)
 
-        e_thread.set_producer(i_thread)
 
         f_progress_thread = None
-        # f_progress_thread = ProgressThread(total=self.total_frames)
+        f_progress_thread = ProgressThread(total=self.total_frames)
         e_thread.set_progress_thread(f_progress_thread)
 
         # e_progress_thread = ProgressThread(total=self.video_count)
@@ -202,7 +212,8 @@ class UpscalePipeline(object):
         d_thread.set_produce_flag()
         for thread in (
             d_thread,
-            i_thread,
+            i_cuda_thread,
+            i_trt_thread,
             e_thread,
             f_progress_thread,
             # e_progress_thread,
@@ -224,14 +235,14 @@ class UpscalePipeline(object):
         real_start = time.time()
         while True:
             if not decoding:
-                # print(f"[V][C] Not decoding anymore,",
-                #     f"reader={d_thread.is_alive()}",
-                #     f"inference={i_thread.is_alive()}",
-                #     f"encoder={e_thread.is_alive()}",
-                # )
+                inference_threads_ended = bool(
+                    (i_cuda_thread is None or not i_cuda_thread.is_alive())
+                    and (i_trt_thread is None or not i_trt_thread.is_alive())
+                )
+
                 if (
                     not d_thread.is_alive()
-                    and not i_thread.is_alive()
+                    and inference_threads_ended
                     and not e_thread.is_alive()
                 ):
                     current_time: float = time.time()
@@ -264,8 +275,9 @@ class UpscalePipeline(object):
             time.sleep(0.001)
 
         # Stop remaining threads if not already stopped (error cases)
-        for thread in (d_thread, i_thread, e_thread):
-            thread.stop()
+        for thread in (d_thread, i_cuda_thread, i_trt_thread, e_thread):
+            if thread is not None:
+                thread.stop()
         if f_progress_thread is not None:
             f_progress_thread.stop()
 
