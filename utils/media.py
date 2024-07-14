@@ -116,6 +116,8 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
     media_info = get_media_info(media_filepath)
     duration_s = float(media_info['format']['duration'])
 
+    pprint(media_info)
+
     # Use the first video track
     v_stream: dict = [
         stream for stream in media_info['streams'] if stream['codec_type'] == 'video'
@@ -157,7 +159,14 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
         'color_primaries': v_stream.get('color_primaries', None),
 
         'duration': duration_s,
+        'metadata': v_stream.get('tags', None),
     }
+
+    for tag_name in ['DURATION', 'ENCODER']:
+        try:
+            del video_info['metadata'][tag_name]
+        except:
+            pass
 
     # Is interlaced?
     if (fo := v_stream.get('field_order', None)):

@@ -163,5 +163,5 @@ def parse_common_configuration(language:str=''):
             codec=vformat['codec'],
             codec_options=vformat['codec_options'].split('') if vformat['codec_options'] else [],
             pix_fmt=vformat['pix_fmt'],
-            frame_rate=db_common['settings']['fps']
+            frame_rate=db_common['settings']['fps'],
         )

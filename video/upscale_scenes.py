@@ -217,7 +217,6 @@ def upscale_scenes(
     for scene in scenes_to_upscale:
         in_media_path = scene['inputs']['progressive']['filepath']
         if in_media_path not in vinfos:
-            None
 
             in_video_info = extract_media_info(in_media_path)['video']
             # force output to rgb
@@ -236,8 +235,10 @@ def upscale_scenes(
                 img_shape=in_video_info['shape'],
                 img_nbytes=stdin_img_nbytes,
                 pix_fmt=pix_fmt,
-                frame_rate=in_video_info['frame_rate_r']
+                frame_rate=in_video_info['frame_rate_r'],
+                metadata=in_video_info['metadata'],
             )
+            scene['task'].video_settings.metadata = vinfos[in_media_path].metadata
         scene['inputs']['progressive']['info'] = vinfos[in_media_path]
 
         if debug:

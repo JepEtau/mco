@@ -495,7 +495,7 @@ def qtgmc_deint_command(
     if qtgmc_args.keys():
         ffmpeg_command.extend([
             "-movflags",
-            "use_metadata_tags",
+            "use_metadata_tags"
         ])
         i: int = 1
         for k, v in qtgmc_args.items():
