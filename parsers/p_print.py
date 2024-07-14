@@ -62,7 +62,7 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
         loop_count: int = 0
         if 'effects' in last_scene:
             effect = last_scene['effects'].primary_effect()
-            # print(f"\teffect:{last_scene['effects']}")
+            print(f"\teffect:{last_scene['effects']}")
             if 'loop' in effect.name:
                 loop_count = effect.loop
         if 'effects' in first_scene:
@@ -207,6 +207,7 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
 
         loop_count: int = 0
         if 'effects' in last_scene:
+            print(last_scene['effects'])
             effect = last_scene['effects'].primary_effect()
             if 'loop' in effect.name:
                 loop_count = effect.loop

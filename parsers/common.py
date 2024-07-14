@@ -159,9 +159,10 @@ def parse_common_configuration(language:str=''):
             continue
 
         vformat = config_general[section]
+        options: str = vformat['codec_options'].replace('\"', '')
         db_common['video_format'][task] = VideoSettings(
             codec=vformat['codec'],
-            codec_options=vformat['codec_options'].split('') if vformat['codec_options'] else [],
+            codec_options=options.split(' ') if options else [],
             pix_fmt=vformat['pix_fmt'],
             frame_rate=db_common['settings']['fps'],
         )

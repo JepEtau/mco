@@ -116,8 +116,6 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
     media_info = get_media_info(media_filepath)
     duration_s = float(media_info['format']['duration'])
 
-    pprint(media_info)
-
     # Use the first video track
     v_stream: dict = [
         stream for stream in media_info['streams'] if stream['codec_type'] == 'video'

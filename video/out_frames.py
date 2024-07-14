@@ -228,7 +228,6 @@ def get_out_frame_paths(
         elif effect.name == 'fadeout':
             # print("\n%s.get_out_frame_list (%s:%s)" % (__name__, k_ep, k_ch))
             # pprint(scene)
-            # fadeout_start = scene['effects'][1]
             fadeout_count = effect.fade
             # print("\t\tfadeout: fadeout %d->%d (%d)" % (
             #     fadeout_start, fadeout_start+fadeout_count, fadeout_count))
@@ -267,7 +266,6 @@ def get_out_frame_paths(
                 # print("\t\t\t+ fadeout: %s" % (p))
 
         elif effect.name == 'loop_and_fadein':
-            # fadein_start = scene['effects'][1]
             fadein_count = effect.fade
             main_logger.debug(lightgrey(f"\tloop and fade in start={scene['start']}, count={fadein_count}"))
             print(yellow(f"TODO: verify loop_and_fadein"))
