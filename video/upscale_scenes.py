@@ -12,6 +12,7 @@ import numpy as np
 
 from nn_inference.model_mgr import ModelManager
 from nn_inference.threads.t_decoder import VideoStreamInfo
+from parsers.episode import parse_episode
 from processing.decoder import decoder_frame_prop
 from processing.upscale import UpscalePipeline
 from nn_inference.resource_mgr import Frame
@@ -106,6 +107,7 @@ def upscale_scenes(
 
             # Patch the for study mode
             if k_ed != '':
+                scene_src: Scene = db[k_ep]['video'][k_ed][chapter]['scenes'][scene_no]
                 scene.update({
                     'dst': {
                         'count': scene['count'],
@@ -115,13 +117,17 @@ def upscale_scenes(
                     },
                     'src': {
                         'k_ed': k_ed,
-                        'k_ep': k_ep_src,
+                        'k_ep': k_ep,
                         'k_ch': chapter,
+                        'no': scene_no,
+                        'start': scene_src['start'],
+                        'count': scene_src['count'],
                     },
                     'k_ed': k_ed,
-                    'k_ep': k_ep_src,
+                    'k_ep': k_ep,
                     'k_ch': chapter,
                 })
+                # parse_episode(k_ed=k_ed, k_ep=k_ep)
 
             if debug:
                 print(

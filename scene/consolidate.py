@@ -74,7 +74,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     edition_mode: used to not consolidate geometry/curves and remove replace/stabilize/deshake
     """
-    verbose = False
+    verbose: bool = False
     if verbose:
         print(lightgreen("Consolidate scene:"))
         print(lightcyan("================================== Scene ======================================="))
@@ -95,6 +95,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     # print("--------------------------------------------------------------------")
 
     # Inputs
+    print(db[k_ep]['video'][k_ed][k_ch].keys())
     scene['inputs'] = deepcopy(db[k_ep]['video'][k_ed][k_ch]['inputs'])
     scene['inputs']['progressive']['cache'] = db['common']['directories']['cache_progressive']
 

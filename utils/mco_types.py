@@ -120,7 +120,7 @@ class Geometry(TypedDict):
 class SceneSrc(TypedDict):
     k_ed: str
     k_ep: str
-    k_chapter: str
+    k_ch: str
     no: int
     start: int
     count: int

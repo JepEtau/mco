@@ -439,15 +439,6 @@ def qtgmc_deint_command(
             + accurate_rnd
             + bitexact
     """
-    resize = f"""
-        scale={in_w}:{in_h}
-        :sws_flags=
-            lanczos
-            + full_chroma_int
-            + full_chroma_inp
-            + accurate_rnd
-            + bitexact
-    """
 
     # FFmpeg complex filter
     ffmpeg_filter = _clean_str(resize)

@@ -17,7 +17,7 @@ from video.upscale_scenes import upscale_scenes
 
 def main():
     # Arguments
-    parser: ArgumentParser = common_argument_parser('Upscale scenes')
+    parser: ArgumentParser = common_argument_parser('Upscale scenes', add_language=True)
     parser.add_argument(
         "--edition",
         "-ed",
@@ -98,7 +98,13 @@ def main():
     print("\t- parse database")
 
     # Parse database
-    parse_database(episode=episode, lang='en' if arguments.en else 'fr')
+    if arguments.edition != '':
+        episode = arguments.episode
+    parse_database(
+        episode=episode,
+        lang='en' if arguments.en else 'fr',
+        edition=arguments.edition,
+    )
     gc.collect()
 
 
