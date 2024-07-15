@@ -1,7 +1,5 @@
-import argparse
 import gc
 import logging
-from pprint import pprint
 import signal
 import sys
 from audio import (
@@ -15,32 +13,18 @@ from parsers import (
     logger,
     parse_database,
 )
-from parsers import all_chapter_keys, credit_chapter_keys
+from parsers import credit_chapter_keys
+from utils.arg_parser import common_argument_parser
 from utils.p_print import *
 
 
 def main():
     editions = ['s0', 's', 'k', 'a', 'f', 'b', 'c']
 
-
     # Arguments
-    parser = argparse.ArgumentParser(description="Parse the database")
-    parser.add_argument(
-        "--episode",
-        "-ep",
-        type=int,
-        default=0,
-        required=False,
-        help="from 1 to 39"
-    )
-
-    parser.add_argument(
-        "--chapter",
-        "-c",
-        choices=all_chapter_keys(),
-        default='',
-        required=False,
-        help="Chapter"
+    parser = common_argument_parser(
+        description="Generate audio stream",
+        add_language=True,
     )
 
     parser.add_argument(
@@ -50,13 +34,6 @@ def main():
         default='generate',
         required=False,
         help="Extract or generate the audio track"
-    )
-
-    parser.add_argument(
-        "--en",
-        action="store_true",
-        required=False,
-        help="English version"
     )
 
     parser.add_argument(
@@ -74,20 +51,6 @@ def main():
         action="store_true",
         required=False,
         help="Force. Overwrite previous files"
-    )
-
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        required=False,
-        help="debug"
-    )
-
-    parser.add_argument(
-        "--stats",
-        action="store_true",
-        required=False,
-        help="Statistics"
     )
 
     arguments = parser.parse_args()

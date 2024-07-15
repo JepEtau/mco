@@ -1,4 +1,3 @@
-import argparse
 import gc
 import logging
 from pprint import pprint
@@ -7,51 +6,21 @@ import sys
 from parsers import (
     parse_database,
     logger,
-    all_chapter_keys,
     db,
 )
+from utils.arg_parser import common_argument_parser
 from utils.p_print import *
 
 
 def main():
     # Arguments
-    parser = argparse.ArgumentParser(description="Parse the database")
-    parser.add_argument(
-        "--episode",
-        "-ep",
-        type=int,
-        default=0,
-        required=False,
-        help="from 1 to 39"
-    )
-
-    parser.add_argument(
-        "--chapter",
-        choices=all_chapter_keys(),
-        default='',
-        required=False,
-        help="Chapter"
-    )
+    parser = common_argument_parser(description="Parse the database")
 
     parser.add_argument(
         "--en",
         action="store_true",
         required=False,
         help="English version"
-    )
-
-    parser.add_argument(
-        "--stats",
-        action="store_true",
-        required=False,
-        help="debug"
-    )
-
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        required=False,
-        help="debug"
     )
 
     arguments = parser.parse_args()

@@ -87,6 +87,7 @@ class ProcessingTask:
     video_file: str = ''
     do_generate: bool = True
     video_settings: VideoSettings | None = None
+    in_video_file: str = ''
 
 
 @dataclass

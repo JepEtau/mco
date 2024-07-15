@@ -1,4 +1,4 @@
-import argparse
+from argparse import ArgumentParser
 import gc
 import logging
 from pprint import pprint
@@ -6,61 +6,18 @@ import signal
 import sys
 from parsers import (
     parse_database,
-    logger,
     all_chapter_keys,
-    db
 )
+from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
-from av_merge.combine_av import combine_av_tracks, concatenate_all
-from av_merge.chapters import add_chapters
-from video.hr_video_clips import generate_hr_video_clip
 from video.upscale_scenes import upscale_scenes
-from video.video_track import generate_video_track
 
 
 
 def main():
     # Arguments
-    parser = argparse.ArgumentParser(description="Parse the database")
-    parser.add_argument(
-        "--episode",
-        "-ep",
-        type=int,
-        default=0,
-        required=False,
-        help="from 1 to 39"
-    )
-
-    parser.add_argument(
-        "--chapter",
-        choices=all_chapter_keys(),
-        default='',
-        required=False,
-        help="Chapter"
-    )
-
-    parser.add_argument(
-        "--en",
-        action="store_true",
-        required=False,
-        help="English version"
-    )
-
-    parser.add_argument(
-        "--stats",
-        action="store_true",
-        required=False,
-        help="debug"
-    )
-
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        required=False,
-        help="debug"
-    )
-
+    parser: ArgumentParser = common_argument_parser('Upscale scenes')
     parser.add_argument(
         "--edition",
         "-ed",
@@ -94,6 +51,7 @@ def main():
         required=False,
         help="last scene no. to process"
     )
+
     parser.add_argument(
         "--force",
         action="store_true",

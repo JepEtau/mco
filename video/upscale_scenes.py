@@ -62,7 +62,6 @@ def upscale_scenes(
 
     # Create the scen vclip chapter by chapter
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
-    in_frame_count: int = 0
 
     start_time_full = time.time()
     for chapter in chapters:
@@ -143,9 +142,6 @@ def upscale_scenes(
     model_manager = ModelManager()
 
     scenes_to_upscale: list[Scene] = []
-    # in_frame_count: int = 0
-    # out_frame_count: int = 0
-    # video_count: int = 0
     for chapter in chapters:
         k_ep_src: str = ''
         video: VideoChapter
@@ -292,14 +288,6 @@ def upscale_scenes(
             except:
                 break
 
-# cls; viztracer --ignore_frozen --tracer_entries 1000000 -- upscale.py --chapter g_debut --debug --scene 9
-
-    # print(f"Total number of frames to generate clips: {out_frame_count}")
-    # print(f"Total number of frames to process: {len(frames)}")
-    # if len(frames) == 0:
-    #     print(f"No frame to upscale")
-    #     return
-    # print(f"Total number of video clips to: {video_count}")
 
     device: str = 'cuda'
     fp16: bool = True
@@ -313,12 +301,5 @@ def upscale_scenes(
         simulation=simulation,
     )
     pipeline.run()
-
-    # 1. Upscale
-
-
-    # 2. Add borders
-
-    # 3. Generate video
 
     print("done")

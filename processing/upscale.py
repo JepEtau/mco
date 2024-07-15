@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-import gc
 import logging
 from pprint import pprint
 import sys
@@ -12,20 +11,15 @@ from nn_inference.resource_mgr import ResourceManager
 from nn_inference.threads.t_decoder import DecoderThread, VideoStreamInfo
 from nn_inference.threads.t_encoder import EncoderThread
 from nn_inference.threads.t_inference import InferenceThread, InferenceThreadConfig
-from parsers._types import Filter
+from parsers import Filter
 from pynnlib import (
-    nnlib,
     is_cuda_available,
-    NnModelSession,
-    NnModel,
     nnlogger,
-    NnFrameworkType,
-    set_cuda_device,
-    is_tensorrt_available,
 )
 from utils.mco_types import Scene
 from utils.p_print import *
 from utils.pxl_fmt import PIXEL_FORMAT
+
 
 
 @dataclass

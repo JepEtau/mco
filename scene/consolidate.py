@@ -16,6 +16,7 @@ from parsers import (
 from utils.mco_utils import get_cache_path, nested_dict_set
 from utils.p_print import *
 from utils.path_utils import path_split
+from video.concat_frames import get_video_filename
 from video.out_frames import get_out_frame_paths, get_out_frame_list_single
 from .filters import get_filters
 
@@ -200,11 +201,19 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     scene_filters['lr'].hash = deint_hashcode
 
+    # Upscale
     upscale_hashcode = calc_hash(';'.join([deint_hashcode, scene_filters['upscale'].sequence]))
     scene_filters['upscale'].hash = upscale_hashcode
 
-    # hr_hashcode = calc_hash(';'.join([upscale_hashcode, scene_filters['hr'].sequence]))
-    # scene_filters['upscale'].hash = upscale_hashcode
+    # HR
+    if len(scene['replace']) != 0:
+        hash = calc_hash(
+            f"{upscale_hashcode};"
+            + ','.join([f"{k}:{v}" for k, v in scene['replace'].items()])
+        )
+    else:
+        hash = upscale_hashcode
+    scene_filters['hr'].hash = hash
 
     # Update the scene task
     scene['task'].hashcode = scene_filters[scene['task'].name].hash
@@ -225,24 +234,6 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
             'hash': get_hash_from_last_task(scene),
             'step_no': get_step_no_from_last_task(scene),
         }
-
-    # Find replace filter
-    # pprint(scene['filters'])
-    # if scene['filters'] is not None:
-    #     for step_no, filter in enumerate(scene['filters']):
-    #         if filter['task'] in ['replace', 'edition']:
-    #             scene['last_step']['step_edition'] = step_no
-    #             break
-
-    # print(cyan("Filters: %s:%s:%s, scene no. %d" % (scene['k_ed'], scene['k_ep'], scene['k_ch'], scene['no']))
-    # for f in scene['filters']:
-    #     print("\t", end='')
-    #     print(green(f['task'], end='\t\t')
-    #     if f['task'] == '':
-    #         print('\t', end='')
-    #     print(green(f['str'])
-    # print(green(scene['last_step'])
-    # sys.exit()
 
     # Set the progressive filepath
     basename: str = path_split(scene['inputs']['interlaced']['filepath'])[1]
@@ -283,24 +274,39 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
             )
 
     elif task_name == 'hr':
-        scene['in_frames'] = Images(scene)
+        # scene['in_frames'] = Images(scene)
 
         if k_ch in ('g_asuivre', 'g_documentaire'):
-            scene['out_frames'] = get_out_frame_list_single(
-                episode=k_ep,
-                chapter=k_ch,
-                scene=scene
-            )
+            if 'start' in scene['dst']:
+                # print("use the dst start and count for the concatenation file")
+                start = scene['dst']['start']
+                end = start + scene['dst']['count']
+            else:
+                start = scene['start']
+                end = start + scene['count']
+            scene['out_frames'] = list([no for no in range(start, end)])
 
         else:
-            scene['out_frames'] = get_out_frame_paths(
-                episode=k_ep,
-                chapter=k_ch,
-                scene=scene
-            )
+            out_frames: list[int] = []
+
+            # Append images
+            if 'segments' in scene['src'] and len(scene['src']['segments']) > 0:
+                index_start = 0
+                index_end = scene['dst']['count']
+            else:
+                index_start = max(0, scene['src']['start'] - scene['start'])
+                index_end = index_start + scene['dst']['count']
+
+            frame_replace = scene['replace']
+            for no in range(scene['start'], scene['start'] + scene['count']):
+                out_frames.append(frame_replace[no] if no in frame_replace else no)
+            scene['out_frames'] = out_frames[index_start:index_end]
+
+        scene['task'].in_video_file = get_video_filename(scene=scene, task_name='upscale')
 
     # Output video settings
-    vsettings: VideoSettings | None = db['common']['video_format'].get(task_name, None)
+    _task_name: str = 'upscale' if task_name == 'hr' else task_name
+    vsettings: VideoSettings | None = db['common']['video_format'].get(_task_name, None)
     if vsettings is not None:
         scene['task'].video_settings = vsettings
 

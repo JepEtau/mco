@@ -8,24 +8,37 @@ from parsers import (
     main_chapter_keys,
     ProcessingTask,
 )
+from parsers import TaskName
 from processing.black_frame import generate_black_frame
 from utils.mco_types import Scene, VideoChapter
 from utils.mco_utils import makedirs
 from utils.p_print import *
 from utils.logger import main_logger
-from utils.path_utils import absolute_path, path_split
+from utils.path_utils import absolute_path
 from utils.time_conversions import ms_to_frame
 
 
 
 def set_video_filename(scene: Scene) -> None:
-    task: ProcessingTask = scene['task']
-    suffix: str = ''
-    if task.hashcode != '':
-        suffix += f"_{task.hashcode}"
+    scene['task'].video_file = absolute_path(
+        get_video_filename(scene, task_name='')
+    )
 
-    if task != '':
-        suffix += f"_{task.name}"
+
+def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
+    suffix: str = ''
+    if task_name == '':
+        task: ProcessingTask = scene['task']
+        hashcode: str = task.hashcode
+        task_name = task.name
+    else:
+        hashcode: str = scene['filters'][task_name].hash
+
+    if hashcode != '':
+        suffix += f"_{hashcode}"
+
+    if task_name != '':
+        suffix += f"_{task_name}"
 
     k_ed, k_ep, k_ch = scene['src']['k_ed'], scene['src']['k_ep'], scene['src']['k_ch']
     cache_dir: str = db[k_ep]['cache_path']
@@ -39,12 +52,9 @@ def set_video_filename(scene: Scene) -> None:
     else:
         basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}.txt"
 
-    task.video_file= absolute_path(
-        os.path.join(
-            cache_dir, "video", f"{basename}{suffix}.mkv"
-        )
+    return absolute_path(
+        os.path.join(cache_dir, "video", f"{basename}{suffix}.mkv")
     )
-
 
 
 def set_concat_filename(

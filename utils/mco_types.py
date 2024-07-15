@@ -240,7 +240,7 @@ class Scene(TypedDict):
     in_frames: Images
 
     # This list contains the frames used to generate a clip after processing
-    out_frames: list[str]
+    out_frames: list[str | int]
 
 
 
