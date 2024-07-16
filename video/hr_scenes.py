@@ -46,6 +46,10 @@ def generate_hr_scenes(
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
     scenes_to_process: list[Scene] = []
 
+    if scene_min != -1 and scene_max != -1 and len(chapters) > 1:
+        raise ValueError(red(f"[E] Missing chapter when specifing scene_min and scene_max"))
+
+
     start_time = time.time()
     for chapter in chapters:
 
@@ -122,7 +126,7 @@ def generate_hr_scenes(
 
             out_video_file: str = scene['task'].video_file
             if os.path.exists(out_video_file) and not force:
-                if os.path.exists(out_video_file):
+                try:
                     video_info = extract_media_info(out_video_file)['video']
                     if (
                         'HR' in video_info['metadata']
@@ -131,22 +135,29 @@ def generate_hr_scenes(
                     ):
                         print(f"Scene no. {scene['no']} is up-to-date, ignore")
                         continue
-
+                except:
+                    print(f"failed opening {out_video_file}")
+                    pass
             scenes_to_process.append(scene)
+
     print(f"Total time: {time.time() - start_time:.03f}s")
 
     print(f"Total number of scenes to generate: {len(scenes_to_process)}")
-
-    pprint(db['common']['video_format'])
     for scene in scenes_to_process:
-        if debug:
-            print(lightcyan("================================== Scene ======================================="))
-            pprint(scene)
-            print(lightcyan("==============================================================================="))
+        # if debug:
+        #     print(lightcyan("================================== Scene ======================================="))
+        #     pprint(scene)
+        #     print(lightcyan("==============================================================================="))
 
         succes: bool = generate_hr_scene(scene=scene, debug=debug)
         if not succes:
             return
+
+
+    if scene_min != -1 and scene_max != -1:
+        for scene in scenes_to_process:
+            print(scene['task'].video_file)
+
 
     print("Done.")
 

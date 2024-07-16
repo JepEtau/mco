@@ -95,7 +95,6 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     # print("--------------------------------------------------------------------")
 
     # Inputs
-    print(db[k_ep]['video'][k_ed][k_ch].keys())
     scene['inputs'] = deepcopy(db[k_ep]['video'][k_ed][k_ch]['inputs'])
     scene['inputs']['progressive']['cache'] = db['common']['directories']['cache_progressive']
 
@@ -184,7 +183,6 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     # consolidate_scene_filters
     scene_filters = scene['filters']
-    pprint(scene_filters)
 
     # Add missing filters
     for t in TASK_NAMES:
@@ -219,22 +217,6 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     # Update the scene task
     scene['task'].hashcode = scene_filters[scene['task'].name].hash
 
-    if False:
-        # Consolidate filters: add rgb/geometry, identify tasks
-        consolidate_tasks(scene)
-
-        # Update filters: add hash for each filter
-        hash_log_file = create_hash_file(db, scene['k_ep'])
-        scene['hash_log_file'] = hash_log_file
-
-        hashes = process_chain_list(db=db, scene=scene, get_hashes=True)
-        for hash, filter in zip(hashes, scene['filters']):
-            filter['hash'] = hash[1]
-
-        scene['last_step'] = {
-            'hash': get_hash_from_last_task(scene),
-            'step_no': get_step_no_from_last_task(scene),
-        }
 
     # Set the progressive filepath
     basename: str = path_split(scene['inputs']['interlaced']['filepath'])[1]
@@ -275,9 +257,8 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
             )
 
     elif task_name == 'hr':
-        # scene['in_frames'] = Images(scene)
-
         if k_ch in ('g_asuivre', 'g_documentaire'):
+            raise NotImplementedError(red("TODO: HR for g_asuivre and g_documentaire"))
             if 'start' in scene['dst']:
                 # print("use the dst start and count for the concatenation file")
                 start = scene['dst']['start']

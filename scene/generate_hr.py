@@ -1,9 +1,12 @@
 from collections import deque
 from copy import deepcopy
 import math
+import os
+import shutil
 import sys
 import subprocess
 from pprint import pprint
+from tempfile import gettempdir
 
 import numpy as np
 
@@ -27,8 +30,45 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
     src_scene: SrcScene = scene['src']
     scene_key: str = f"{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['k_ch']}:{src_scene['k_ch']}"
 
-    # Input
     in_fp: str = scene['task'].in_video_file
+    out_fp: str = scene['task'].video_file
+
+    if len(scene['replace'].keys()) == 0:
+        print("no frames to replace")
+        print(f"{in_fp} -> {out_fp}")
+        shutil.copyfile(in_fp, out_fp)
+        xml_file: str = os.path.join(gettempdir(), "mco_tag_tmp.xml")
+        with open(xml_file, mode='w') as f:
+            f.write(
+f"""<?xml version="1.0"?>
+<Tags>
+    <Tag>
+        <Targets />
+        <Simple>
+            <Name>HR</Name>
+            <String>{scene['task'].hashcode}</String>
+        </Simple>
+    </Tag>
+</Tags>
+"""
+            )
+
+        process = subprocess.run(
+            [
+                "mkvpropedit",
+                out_fp,
+                "--tags",
+                f"track:v1:{xml_file}"
+            ],
+            stdout=subprocess.PIPE
+        )
+        os.remove(xml_file)
+        stdout: str = process.stdout.decode('utf-8')
+        if stdout == "The file is being analyzed.\nThe changes are written to the file.\nDone.\n":
+            return True
+        print(red(f"Error: {stdout}"))
+
+    # Input
     video_info = extract_media_info(in_fp)['video']
     pix_fmt: str = video_info['pix_fmt']
     pipe_bpp: int = PIXEL_FORMAT[pix_fmt]['pipe_bpp']
@@ -73,7 +113,6 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
         return False
 
     # Output settings
-    out_fp: str = scene['task'].video_file
     frame_rate: FrameRate = video_info['frame_rate_r']
     fps: str = ''
     if isinstance(frame_rate, tuple | list):
