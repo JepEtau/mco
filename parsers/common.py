@@ -154,15 +154,16 @@ def parse_common_configuration(language:str=''):
     # Video formats
     db_common['video_format'] = {}
     for task in TASK_NAMES:
-        section: str = f"video_format_{task}"
+        section: str = f"video_settings_{task}"
         if section not in config_general.sections():
             continue
 
         vformat = config_general[section]
-        options: str = vformat['codec_options'].replace('\"', '')
+        options: str = vformat.get('codec_options', '').replace('\"', '')
         db_common['video_format'][task] = VideoSettings(
-            codec=vformat['codec'],
+            codec=vformat.get('codec', ''),
             codec_options=options.split(' ') if options else [],
-            pix_fmt=vformat['pix_fmt'],
+            pix_fmt=vformat.get('pix_fmt', ''),
             frame_rate=db_common['settings']['fps'],
+            pad=int(vformat.get('pad', '0')),
         )

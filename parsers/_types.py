@@ -76,6 +76,7 @@ class VideoSettings:
     codec_options: list[str]
     pix_fmt: str
     frame_rate: int
+    pad: int = 0
     metadata: dict[str, str] = field(default_factory=dict)
 
 

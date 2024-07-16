@@ -122,23 +122,28 @@ def generate_hr_scenes(
 
             out_video_file: str = scene['task'].video_file
             if os.path.exists(out_video_file) and not force:
-                continue
-
-            video_info = extract_media_info(out_video_file)['video']
-            if (
-                'HR' in video_info['metadata']
-                and video_info['metadata']['HR'] == scene['task'].hashcode
-            ):
-                print(f"Scene no. {scene['no']} is up-to-date, ignore")
-                continue
+                if os.path.exists(out_video_file):
+                    video_info = extract_media_info(out_video_file)['video']
+                    if (
+                        'HR' in video_info['metadata']
+                        and video_info['metadata']['HR'] == scene['task'].hashcode
+                        and not force
+                    ):
+                        print(f"Scene no. {scene['no']} is up-to-date, ignore")
+                        continue
 
             scenes_to_process.append(scene)
     print(f"Total time: {time.time() - start_time:.03f}s")
 
     print(f"Total number of scenes to generate: {len(scenes_to_process)}")
 
+    pprint(db['common']['video_format'])
     for scene in scenes_to_process:
-        scene: Scene = scenes_to_process[0]
+        if debug:
+            print(lightcyan("================================== Scene ======================================="))
+            pprint(scene)
+            print(lightcyan("==============================================================================="))
+
         succes: bool = generate_hr_scene(scene=scene, debug=debug)
         if not succes:
             return

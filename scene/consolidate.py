@@ -307,10 +307,15 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     # Output video settings
     _task_name: str = 'upscale' if task_name == 'hr' else task_name
-    vsettings: VideoSettings | None = db['common']['video_format'].get(_task_name, None)
+    vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
     if vsettings is not None:
-        scene['task'].video_settings = vsettings
-
+        scene['task'].video_settings = deepcopy(vsettings)
+        vsettings = scene['task'].video_settings
+        if task_name == 'hr':
+            vsettings.pad = db['common']['video_format'][task_name].pad
+            vsettings.metadata['HR'] = scene['task'].hashcode
+    else:
+        raise ValueError(f"VideoSettings not defined for task: {task_name}")
     # print(lightcyan("==============================================================================="))
     # pprint(scene)
     # print(lightcyan("==============================================================================="))

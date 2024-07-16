@@ -89,6 +89,16 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
         sys.exit(red(f"{vsettings.codec} is not supported"))
     h, w = video_info['shape'][:2]
 
+    # Out filter: pad
+    filter_complex: list[str] = []
+    if vsettings.pad != 0:
+        pad: int = vsettings.pad
+        pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
+        filter_complex: list[str] = [
+            "-filter_complex", f"[0:v]{pad_filter}[outv]",
+            "-map", "[outv]"
+        ]
+
     # Output
     in_fp: str = ""
     writer_command: list[str] = [
@@ -104,6 +114,8 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
 
         "-i", "pipe:0",
 
+        *filter_complex,
+
         "-vcodec", str_to_video_codec[vsettings.codec].value,
         "-pix_fmt", vsettings.pix_fmt,
         *vsettings.codec_options
@@ -114,10 +126,6 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
     if len(vsettings.metadata.keys()):
         for k, bpp in vsettings.metadata.items():
             writer_command.extend(["-metadata:s:v:0", f"{k}={bpp}"])
-
-    writer_command.extend([
-        "-metadata:s:v:0", f"HR={scene['task'].hashcode}"
-    ])
 
     # Output filename
     writer_command.extend([out_fp, "-y"])
