@@ -2,12 +2,9 @@ from collections import deque
 from copy import deepcopy
 import math
 import os
-import shutil
 import sys
 import subprocess
 from pprint import pprint
-from tempfile import gettempdir
-
 import numpy as np
 
 from parsers._types import VideoSettings
@@ -18,7 +15,7 @@ from processing.frame_replace import (
     get_frames_to_remove,
 )
 from utils.mco_types import Scene, SrcScene
-from utils.media import extract_media_info, str_to_video_codec
+from utils.media import VideoInfo, extract_media_info, str_to_video_codec
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
@@ -27,54 +24,86 @@ from utils.tools import ffmpeg_exe
 
 
 
+def _get_framerate(video_info: VideoInfo) -> str:
+    frame_rate: FrameRate = video_info['frame_rate_r']
+    fps: str = ''
+    if isinstance(frame_rate, tuple | list):
+        if frame_rate[1] == 1:
+            fps = str(frame_rate[0])
+        else:
+            fps = '/'.join(map(str, frame_rate))
+    else:
+        fps = f"{frame_rate}"
+    return fps
+
+
+
+def _get_complex_filter(scene: Scene) -> list[str]:
+    vsettings: VideoSettings = scene['task'].video_settings
+
+    filter_complex: list[str] = []
+    if vsettings.pad != 0:
+        pad: int = vsettings.pad
+        pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
+        filter_complex: list[str] = [
+            "-filter_complex", f"[0:v]{pad_filter}[outv]",
+            "-map", "[outv]"
+        ]
+    return filter_complex
+
+
+
 def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
     src_scene: SrcScene = scene['src']
     scene_key: str = f"{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['k_ch']}:{src_scene['k_ch']}"
 
-    os.makedirs(path_split(scene['task'].video_file)[0], exist_ok=True)
-
     in_fp: str = scene['task'].in_video_file
     out_fp: str = scene['task'].video_file
+    os.makedirs(path_split(out_fp)[0], exist_ok=True)
+
+    # Input
+    video_info: VideoInfo = extract_media_info(in_fp)['video']
 
     if len(scene['replace'].keys()) == 0:
         print("no frames to replace")
-        print(f"{in_fp} -> {out_fp}")
-        shutil.copyfile(in_fp, out_fp)
-        xml_file: str = os.path.join(gettempdir(), "mco_tag_tmp.xml")
-        with open(xml_file, mode='w') as f:
-            f.write(
-f"""<?xml version="1.0"?>
-<Tags>
-    <Tag>
-        <Targets />
-        <Simple>
-            <Name>HR</Name>
-            <String>{scene['task'].hashcode}</String>
-        </Simple>
-    </Tag>
-</Tags>
-"""
-            )
+        return _add_borders_to_scene(scene, video_info, debug)
 
-        process = subprocess.run(
-            [
-                "mkvpropedit",
-                out_fp,
-                "--tags",
-                f"track:v1:{xml_file}"
-            ],
-            stdout=subprocess.PIPE
-        )
-        os.remove(xml_file)
-        stdout: str = process.stdout.decode('utf-8')
-        if stdout == "The file is being analyzed.\nThe changes are written to the file.\nDone.\n":
-            return True
-        print(red(f"Error: {stdout}"))
+# Keep it for later use
+#         print(f"{in_fp} -> {out_fp}")
+#         shutil.copyfile(in_fp, out_fp)
+#         xml_file: str = os.path.join(gettempdir(), "mco_tag_tmp.xml")
+#         with open(xml_file, mode='w') as f:
+#             f.write(
+# f"""<?xml version="1.0"?>
+# <Tags>
+#     <Tag>
+#         <Targets />
+#         <Simple>
+#             <Name>HR</Name>
+#             <String>{scene['task'].hashcode}</String>
+#         </Simple>
+#     </Tag>
+# </Tags>
+# """
+#             )
 
-    # Input
-    video_info = extract_media_info(in_fp)['video']
-    pix_fmt: str = video_info['pix_fmt']
-    pipe_bpp: int = PIXEL_FORMAT[pix_fmt]['pipe_bpp']
+#         process = subprocess.run(
+#             [
+#                 "mkvpropedit",
+#                 out_fp,
+#                 "--tags",
+#                 f"track:v1:{xml_file}"
+#             ],
+#             stdout=subprocess.PIPE
+#         )
+#         os.remove(xml_file)
+#         stdout: str = process.stdout.decode('utf-8')
+#         if stdout == "The file is being analyzed.\nThe changes are written to the file.\nDone.\n":
+#             return True
+#         print(red(f"Error: {stdout}"))
+
+    pipe_pixfmt: str = video_info['pix_fmt']
+    pipe_bpp: int = PIXEL_FORMAT[pipe_pixfmt]['pipe_bpp']
     if debug:
         print(f"pipe_bpp: {pipe_bpp}")
     nbytes = math.prod(video_info['shape'][:2]) * pipe_bpp / 8
@@ -84,8 +113,6 @@ f"""<?xml version="1.0"?>
     in_frame_nbytes: int = int(nbytes)
     if debug:
         print(f"Input frame, {frame_count} frames, nbytes = {in_frame_nbytes}")
-
-    pipe_pixfmt = pix_fmt
 
     reader_command: list[str] = [
         ffmpeg_exe,
@@ -109,37 +136,19 @@ f"""<?xml version="1.0"?>
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
-            bufsize=10**9
         )
     except Exception as e:
         print(red(f"[E][R] {scene_key} Unexpected error: {type(e)}", flush=True))
         return False
 
     # Output settings
-    frame_rate: FrameRate = video_info['frame_rate_r']
-    fps: str = ''
-    if isinstance(frame_rate, tuple | list):
-        if frame_rate[1] == 1:
-            fps = str(frame_rate[0])
-        else:
-            fps = '/'.join(map(str, frame_rate))
-    else:
-        fps = f"{frame_rate}"
-
     vsettings: VideoSettings = scene['task'].video_settings
     if vsettings.codec not in str_to_video_codec:
         sys.exit(red(f"{vsettings.codec} is not supported"))
     h, w = video_info['shape'][:2]
 
     # Out filter: pad
-    filter_complex: list[str] = []
-    if vsettings.pad != 0:
-        pad: int = vsettings.pad
-        pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
-        filter_complex: list[str] = [
-            "-filter_complex", f"[0:v]{pad_filter}[outv]",
-            "-map", "[outv]"
-        ]
+    filter_complex: list[str] = _get_complex_filter(scene)
 
     # Output
     in_fp: str = ""
@@ -152,7 +161,7 @@ f"""<?xml version="1.0"?>
         "-f", "rawvideo",
         '-pixel_format', pipe_pixfmt,
         '-video_size', f"{w}x{h}",
-        "-r", fps,
+        "-r", _get_framerate(video_info),
 
         "-i", "pipe:0",
 
@@ -314,6 +323,70 @@ f"""<?xml version="1.0"?>
             if stderr != '':
                 print(f"{scene_key} stderr:")
                 pprint(stderr)
+
+    return True
+
+
+
+def _add_borders_to_scene(
+    scene: Scene,
+    video_info: VideoInfo,
+    debug: bool = False
+) -> bool:
+    src_scene: SrcScene = scene['src']
+    scene_key: str = f"{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['k_ch']}:{src_scene['k_ch']}"
+    vsettings: VideoSettings = scene['task'].video_settings
+    filter_complex: list[str] = _get_complex_filter(scene)
+
+    add_border_command: list[str] = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "warning",
+        "-nostats",
+        "-i", scene['task'].in_video_file,
+        *filter_complex,
+        "-vcodec", str_to_video_codec[vsettings.codec].value,
+        "-pix_fmt", vsettings.pix_fmt,
+        *vsettings.codec_options
+    ]
+
+    # Add metadata
+    add_border_command.extend(["-movflags", "use_metadata_tags"])
+    if len(vsettings.metadata.keys()):
+        for k, bpp in vsettings.metadata.items():
+            add_border_command.extend(["-metadata:s:v:0", f"{k}={bpp}"])
+
+    # Output filename
+    add_border_command.extend([scene['task'].video_file, "-y"])
+
+    if debug:
+        print(lightgreen(f"[V] FFmpeg command (add border):"), ' '.join(add_border_command))
+
+    try:
+        add_border_subprocess = subprocess.Popen(
+            add_border_command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except Exception as e:
+        print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+        return False
+
+    stderr_bytes: bytes | None = None
+    try:
+        # Arbitrary timeout value
+        _, stderr_bytes = add_border_subprocess.communicate()
+    except:
+        add_border_subprocess.kill()
+        pass
+    if stderr_bytes is not None:
+        stderr = stderr_bytes.decode('utf-8)')
+        # TODO: parse the output file
+        if stderr != '':
+            print(f"{scene_key} stderr:")
+            pprint(stderr)
+            return False
 
     return True
 
