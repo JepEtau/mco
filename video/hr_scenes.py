@@ -1,14 +1,17 @@
 import sys
 import os
+from tempfile import gettempdir
 import time
 from pprint import pprint
 
 from scene.consolidate import consolidate_scene
 from scene.generate_hr import generate_hr_scene
 from utils.mco_types import Scene, VideoChapter
+from utils.logger import main_logger
 from utils.media import extract_media_info
 from utils.p_print import *
-from utils.mco_utils import makedirs
+from utils.mco_utils import makedirs, run_simple_command
+from utils.tools import ffmpeg_exe
 from parsers import (
     db,
     Chapter,
@@ -17,6 +20,7 @@ from parsers import (
     TaskName,
     ProcessingTask,
 )
+from utils.path_utils import path_split
 from .concat_frames import (
     set_video_filename,
 )
@@ -157,6 +161,42 @@ def generate_hr_scenes(
     if scene_min != -1 and scene_max != -1:
         for scene in scenes_to_process:
             print(scene['task'].video_file)
+
+        concat_fp = os.path.join(gettempdir(), f"mco_concat_tmp.txt")
+        with open(concat_fp, mode='w') as f:
+            for scene in scenes:
+                if scene_min != -1 and scene_max != -1:
+                    if scene['no'] < scene_min or scene['no'] > scene_max:
+                        continue
+                f.write(f"file \'{scene['task'].video_file}\' \n")
+
+        # Output video file
+        out_filename: str = f"{chapter}_{scene_min}-{scene_max}.mkv"
+        if chapter not in ('g_debut', 'g_fin'):
+            out_filename = f"{k_ep}_{out_filename}"
+
+        out_video: str = os.path.join(
+            path_split(scene['task'].video_file)[0],
+            out_filename
+        )
+        concat_command: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "warning",
+            "-nostats",
+            "-f", "concat",
+            "-safe", "0",
+            "-i", concat_fp,
+            "-c", "copy",
+            "-y", out_video
+        ]
+        if debug:
+            print(lightgreen(f"[V] FFmpeg concat command:"), ' '.join(concat_command))
+
+        if not simulation:
+            success = run_simple_command(command=concat_command)
+            if not success:
+                raise RuntimeError(red("Failed to conactenate scenes"))
 
 
     print("Done.")

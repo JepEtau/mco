@@ -20,6 +20,7 @@ from processing.frame_replace import (
 from utils.mco_types import Scene, SrcScene
 from utils.media import extract_media_info, str_to_video_codec
 from utils.p_print import *
+from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.time_conversions import FrameRate
 from utils.tools import ffmpeg_exe
@@ -29,6 +30,8 @@ from utils.tools import ffmpeg_exe
 def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
     src_scene: SrcScene = scene['src']
     scene_key: str = f"{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['k_ch']}:{src_scene['k_ch']}"
+
+    os.makedirs(path_split(scene['task'].video_file)[0], exist_ok=True)
 
     in_fp: str = scene['task'].in_video_file
     out_fp: str = scene['task'].video_file

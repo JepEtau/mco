@@ -52,8 +52,14 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
     else:
         basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}.txt"
 
+    folder_name: str = "video"
+    if task_name == 'hr':
+        folder_name = 'hr'
+    elif task_name == 'restored':
+        folder_name = 'restored'
+
     return absolute_path(
-        os.path.join(cache_dir, "video", f"{basename}{suffix}.mkv")
+        os.path.join(cache_dir, folder_name, f"{basename}{suffix}.mkv")
     )
 
 
