@@ -117,7 +117,7 @@ class Geometry(TypedDict):
     scene: SceneGeometry
 
 
-class SceneSrc(TypedDict):
+class SrcScene(TypedDict):
     k_ed: str
     k_ep: str
     k_ch: str
@@ -194,7 +194,7 @@ class Scene(TypedDict):
     # When processing this scene, it uses the k_ed:k_episode:k_chapter:scene specified by this variable
     # e.g. we can use a scene from another edition if not available in this one
     # if a list of segments has to be specified, they shall use the same episode/chapter/scene no.
-    src: SceneSrc
+    src: SrcScene
 
     # list of frames to replace
     replace: dict[int, int]

@@ -3,7 +3,7 @@ import re
 import sys
 from ._keys import all_chapter_keys, key
 from utils.p_print import *
-from utils.mco_types import Effect, Effects, Scene, SceneSrc, VideoChapter
+from utils.mco_types import Effect, Effects, Scene, SrcScene, VideoChapter
 from ._db import db
 from ._keys import key
 
@@ -238,7 +238,7 @@ def parse_target_scenelist(
             # Append this scene to the list of scenes
             db_scenes.append({
                 'no': scene_no,
-                'src': SceneSrc(),
+                'src': SrcScene(),
             })
             scene: Scene = db_scenes[-1]
 
@@ -250,7 +250,7 @@ def parse_target_scenelist(
                     # sys.exit()
                     continue
 
-                scene_src: SceneSrc = scene['src']
+                scene_src: SrcScene = scene['src']
                 if k == 'ed':
                     scene_src['k_ed'] = v
 

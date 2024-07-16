@@ -34,7 +34,7 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
     else:
         hashcode: str = scene['filters'][task_name].hash
 
-    if hashcode != '':
+    if hashcode != '' and task_name not in ('hr'):
         suffix += f"_{hashcode}"
 
     if task_name != '':

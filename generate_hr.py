@@ -15,7 +15,7 @@ from utils.logger import main_logger as main_logger
 from utils.p_print import *
 from av_merge.combine_av import combine_av_tracks, concatenate_all
 from av_merge.chapters import add_chapters
-from video.hr_video_scenes import generate_hr_scenes
+from video.hr_scenes import generate_hr_scenes
 from video.video_track import generate_video_track
 
 
