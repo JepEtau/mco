@@ -4,10 +4,7 @@ import logging
 from pprint import pprint
 import signal
 import sys
-from parsers import (
-    parse_database,
-    all_chapter_keys,
-)
+from parsers import parse_database
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *

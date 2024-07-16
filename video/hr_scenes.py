@@ -2,12 +2,10 @@ import sys
 import os
 from tempfile import gettempdir
 import time
-from pprint import pprint
 
 from scene.consolidate import consolidate_scene
 from scene.generate_hr import generate_hr_scene
 from utils.mco_types import Scene, VideoChapter
-from utils.logger import main_logger
 from utils.media import extract_media_info
 from utils.p_print import *
 from utils.mco_utils import makedirs, run_simple_command
@@ -159,9 +157,6 @@ def generate_hr_scenes(
 
 
     if scene_min != -1 and scene_max != -1:
-        for scene in scenes_to_process:
-            print(scene['task'].video_file)
-
         concat_fp = os.path.join(gettempdir(), f"mco_concat_tmp.txt")
         with open(concat_fp, mode='w') as f:
             for scene in scenes:
@@ -195,6 +190,7 @@ def generate_hr_scenes(
 
         if not simulation:
             success = run_simple_command(command=concat_command)
+            os.remove(concat_fp)
             if not success:
                 raise RuntimeError(red("Failed to conactenate scenes"))
 
