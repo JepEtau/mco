@@ -64,6 +64,9 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
     # Input
     video_info: VideoInfo = extract_media_info(in_fp)['video']
 
+    pprint(scene['task'].video_settings)
+    pprint(video_info)
+
     if len(scene['replace'].keys()) == 0:
         print("no frames to replace")
         return _add_borders_to_scene(scene, video_info, debug)
@@ -105,11 +108,11 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
     pipe_pixfmt: str = video_info['pix_fmt']
     pipe_bpp: int = PIXEL_FORMAT[pipe_pixfmt]['pipe_bpp']
     if debug:
-        print(f"pipe_bpp: {pipe_bpp}")
+        print(f"pipe_pixfmt: {pipe_pixfmt}, bpp: {pipe_bpp}")
     nbytes = math.prod(video_info['shape'][:2]) * pipe_bpp / 8
     frame_count: int = video_info['frame_count']
     if int(nbytes) != nbytes:
-        raise ValueError(f"[E] {scene_key} Number of bytes is not a multiple of 8: {nbytes} bytes ({pix_fmt})")
+        raise ValueError(f"[E] {scene_key} Number of bytes is not a multiple of 8: {nbytes} bytes ({pipe_pixfmt})")
     in_frame_nbytes: int = int(nbytes)
     if debug:
         print(f"Input frame, {frame_count} frames, nbytes = {in_frame_nbytes}")
@@ -136,10 +139,26 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
+            bufsize=10**8
         )
     except Exception as e:
         print(red(f"[E][R] {scene_key} Unexpected error: {type(e)}", flush=True))
         return False
+
+    # Used to correct PIXEL_FORMAT array
+    if False:
+        total_size: int  = 0
+        while True:
+            try:
+                data = reader_subproces.stdout.read()
+            except:
+                break
+            if len(data) == 0:
+                break
+            # print(total_size)
+            total_size += len(data)
+        print(total_size)
+        sys.exit()
 
     # Output settings
     vsettings: VideoSettings = scene['task'].video_settings
@@ -174,9 +193,10 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
 
     # Add metadata
     writer_command.extend(["-movflags", "use_metadata_tags"])
-    if len(vsettings.metadata.keys()):
-        for k, bpp in vsettings.metadata.items():
-            writer_command.extend(["-metadata:s:v:0", f"{k}={bpp}"])
+    for metadata in (video_info['metadata'], vsettings.metadata):
+        if len(metadata.keys()):
+            for k, bpp in metadata.items():
+                writer_command.extend(["-metadata:s:v:0", f"{k}={bpp}"])
 
     # Output filename
     writer_command.extend([out_fp, "-y"])
@@ -187,17 +207,16 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
 
     # Open subprocess
     writer_subproces: subprocess.Popen = None
-    if True:
-        try:
-            writer_subproces = subprocess.Popen(
-                writer_command,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-            )
-        except Exception as e:
-            print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
-            return False
+    try:
+        writer_subproces = subprocess.Popen(
+            writer_command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except Exception as e:
+        print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+        return False
 
     # Read stdin, replace and write to stdout
     replacements = scene['replace']
@@ -352,9 +371,10 @@ def _add_borders_to_scene(
 
     # Add metadata
     add_border_command.extend(["-movflags", "use_metadata_tags"])
-    if len(vsettings.metadata.keys()):
-        for k, bpp in vsettings.metadata.items():
-            add_border_command.extend(["-metadata:s:v:0", f"{k}={bpp}"])
+    for metadata in (video_info['metadata'], vsettings.metadata):
+        if len(metadata.keys()):
+            for k, bpp in metadata.items():
+                add_border_command.extend(["-metadata:s:v:0", f"{k}={bpp}"])
 
     # Output filename
     add_border_command.extend([scene['task'].video_file, "-y"])

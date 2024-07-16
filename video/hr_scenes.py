@@ -166,9 +166,9 @@ def generate_hr_scenes(
                 f.write(f"file \'{scene['task'].video_file}\' \n")
 
         # Output video file
-        out_filename: str = f"{chapter}_{scene_min}-{scene_max}.mkv"
+        out_filename: str = f"_{chapter}_{scene_min}-{scene_max}.mkv"
         if chapter not in ('g_debut', 'g_fin'):
-            out_filename = f"{k_ep}_{out_filename}"
+            out_filename = f"_{k_ep}{out_filename}"
 
         out_video: str = os.path.join(
             path_split(scene['task'].video_file)[0],
