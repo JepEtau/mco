@@ -11,11 +11,11 @@ from nn_inference.resource_mgr import ResourceManager
 from nn_inference.threads.t_decoder import DecoderThread, VideoStreamInfo
 from nn_inference.threads.t_encoder import EncoderThread
 from nn_inference.threads.t_inference import InferenceThread, InferenceThreadConfig
-from parsers import Filter
-from pynnlib import (
+from nn_inference import (
     is_cuda_available,
     nnlogger,
 )
+from parsers import Filter
 from utils.mco_types import Scene
 from utils.p_print import *
 from utils.pxl_fmt import PIXEL_FORMAT
