@@ -1,6 +1,3 @@
-[submodule "pynnlib"]
-	path = pynnlib
-	url = https://github.com:adegerard/pynnlib.git
 [submodule "nn_inference"]
 	path = nn_inference
 	url = https://github.com:JepEtau/nn_inference.git
