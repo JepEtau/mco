@@ -1,13 +1,8 @@
 from __future__ import annotations
-import ast
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, get_args
 from ._keys import key
-
-
-IMG_FILENAME_TEMPLATE = "%s_%%05d__%s__%02d%s.png"
-
 
 TaskName = Literal[
     # Deinterlace the input video:
@@ -34,16 +29,18 @@ TaskName = Literal[
     #   input: progressive video
     #   output: in 2 steps.
     #       upscaled frames
+    'upscale',
+
     #       create a clip/scene
     #   ??? out_hash: upscale mode
     # 01_hr
     'hr',
 
-    # Stabilize and color grading, external tool
+    # Upscaled and color grading, external tool
     # Input: clips from upscale: hash?
     # output: FFv1 8 or 16bit
     # 03_restored
-    'stabilize',
+    'restored',
     'color',
 
     # Finalize: temporal filter, geometry, fading
@@ -57,21 +54,30 @@ TASK_NAMES: list[str] = get_args(TaskName)
 task_to_dirname: dict[TaskName, str] = {
     'initial': '00_initial',
     'lr': '00_lr',
-    'hr': '01_hr',
-    'stabilize': '02_restored',
+    'upscale': '01_upscaled',
+    'hr': '02_hr',
+    'restored': '03_restored',
     'final': '04_final',
 }
 
 filter_name_to_dirname: dict[str, TaskName] = {
     'initial': 'initial',
     'lr': 'lr',
-    'upscale': 'hr',
-    'stabilize': 'stabilize',
+    'upscale': 'upscaled',
+    'hr': 'hr',
+    'restored': 'restored',
     'final': 'final',
 }
 
 
-
+@dataclass
+class VideoSettings:
+    codec: str
+    codec_options: list[str]
+    pix_fmt: str
+    frame_rate: int
+    pad: int = 0
+    metadata: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -80,17 +86,20 @@ class ProcessingTask:
     hashcode: str = ''
     concat_file: str = ''
     video_file: str = ''
+    do_generate: bool = True
+    video_settings: VideoSettings | None = None
+    in_video_file: str = ''
 
 
 @dataclass
 class Filter:
-    sequence: str = ''
+    sequence: str | list[str] = ''
     hash: str = ''
     # TODO remove
     # id: str | None = None
     task_name: str = ''
     size: tuple[int, int] = ()
-
+    steps: list = field(default_factory=list)
 
 
 @dataclass

@@ -7,7 +7,7 @@ from utils.time_conversions import (
     frame_to_ms,
     ms_to_frame,
 )
-from utils.mco_types import Scene
+from utils.mco_types import Effect, Effects, Scene, VideoChapter
 from ._db import db
 
 
@@ -36,11 +36,14 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
         # Update the scene with the duration that is calculated in the audio structure
         k_chapter_c = 'g_asuivre'
         db_video[k_chapter_c]['count'] = db_audio[k_chapter_c]['count']
-        last_scene = db_video[k_chapter_c]['scenes'][-1]
-        last_scene['effects'] = [
-            'loop',
-            last_scene['start'] + last_scene['count'] - 1,
-            db_video[k_chapter_c]['count'] - last_scene['count']]
+        last_scene: Scene = db_video[k_chapter_c]['scenes'][-1]
+        last_scene['effects'] = Effects([
+            Effect(
+                name='loop',
+                frame_ref=last_scene['start'] + last_scene['count'] - 1,
+                loop=db_video[k_chapter_c]['count'] - last_scene['count']
+            )
+        ])
         if k_ep == K_EP_DEBUG:
             print(f"\ndb_video: %s:\n--------------------------------------" % (k_chapter_c))
             pprint(db_video[k_chapter_c])
@@ -57,7 +60,13 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
         loop_start = last_scene['start'] + last_scene['count'] - 1
         loop_count = db_audio[k_chapter_c]['count'] - db_video[k_chapter_c]['count']
         logger.debug(f"{k_chapter_c}: loop, last frame={loop_start}, {loop_count} frames")
-        last_scene['effects'] = ['loop', loop_start, loop_count]
+        last_scene['effects'] = Effects([
+            Effect(
+                name='loop',
+                frame_ref=loop_start,
+                loop=loop_count
+            )
+        ])
 
     elif db_video[k_chapter_c]['count'] > db_audio[k_chapter_c]['count']:
         # remove some frames
@@ -83,9 +92,11 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
 
         if k_chapter == 'episode':
             # Add precedemment
-            audio_duration = (db_audio['precedemment']['avsync']
+            audio_duration = (
+                db_audio['precedemment']['avsync']
                 + db_audio['precedemment']['duration']
-                + db_audio['episode']['duration'])
+                + db_audio['episode']['duration']
+            )
 
         # Round audio count to a multiple of 1000/fps ms
         audio_count = ms_to_frame(audio_duration, fps)
@@ -121,8 +132,11 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
             # print(f"\taudio avsync: {db_audio['episode']['avsync']}")
 
             db_audio['episode']['count'] = audio_count - db_audio['precedemment']['count']
-            video_count = (db_video['precedemment']['avsync'] + db_video['precedemment']['count']
-                + db_video['episode']['avsync'] + db_video['episode']['count'])
+            video_count: int = (
+                db_video['precedemment']['avsync']
+                + db_video['precedemment']['count']
+                + db_video['episode']['avsync'] + db_video['episode']['count']
+            )
 
 
             # db_video[k_chapter]['count'] += db_video[k_chapter]['avsync']
@@ -135,7 +149,8 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
 
         # Add loop_and_fade_in
         try:
-            video_count += db_video[k_chapter]['scenes'][0]['effects'][1]
+            effects: Effects = db_video[k_chapter]['scenes'][0]['effects']
+            video_count += effects.primary_effect().loop
         except:
             pass
 
@@ -166,14 +181,14 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
                 if last_scene['src']['k_ep'] != k_ep:
                     frame_no = last_scene['src']['start'] + last_scene['src']['count'] - 1
 
-                last_scene.update({
-                    'effects': [
-                        'loop_and_fadeout',
-                        frame_no,
-                        loop_count,
-                        min(loop_count, 25)
-                    ]
-                })
+                last_scene['effects'] = Effects([
+                    Effect(
+                        name='loop_and_fadeout',
+                        frame_ref=frame_no,
+                        loop=loop_count,
+                        fade=min(loop_count, 25)
+                    )
+                ])
                 # last_scene['src']['count'] -= loop_count
 
             db_video[k_chapter]['count'] += loop_count
@@ -209,63 +224,76 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
     # Add/modify effect of the first/last scene
     #---------------------------------------------------------------------------
     for k_chapter in ['episode', 'asuivre', 'documentaire']:
-        video = db_video[k_chapter]
+        video: VideoChapter = db_video[k_chapter]
         if video['count'] < 1:
             continue
         first_scene: Scene = video['scenes'][0]
         last_scene: Scene = video['scenes'][-1]
 
-        if 'effects' in video.keys():
-            logger.debug(green(f"\teffects detected in {k_ep}:{k_chapter}"))
-            logger.debug(f"\t", video['effects'])
+        if 'effects' in video:
+            logger.debug(green(f"Effects detected in {k_ep}:{k_chapter}"))
+            print("====================================================")
+            pprint(video['effects'])
+            for effect in video['effects']:
+            # effect: Effect = video['effects'].primary_effect()
 
-            if video['effects']['loop_and_fadein'] != 0:
-                fadein_count = video['effects']['loop_and_fadein']
-                logger.debug(f"\t{k_ep}:{k_chapter}, patch the first scene -> fadein: add effects")
-                # pprint(video)
-                # first_scene['src']['start'] += fadein_count
-                # first_scene['src']['count'] -= fadein_count
-                nested_dict_set(first_scene,
-                    ['loop_and_fadein', fadein_count, fadein_count], 'effects')
-                # logger.debug(first_scene)
-                # sys.exit()
-
-            if (
-                'fadeout' in video['effects']
-                and video['effects']['fadeout'] != 0
-            ):
-                logger.debug(yellow(f"\t{k_ep}:{k_chapter} modify fadeout effect in db_video!"))
-
-                fadeout_count = video['effects']['fadeout']
-                if 'effects' in last_scene.keys():
-                    # Patch the fadeout/loop_and_fadeout duration
-                    if last_scene['effects'][0] == 'fadeout':
-                        logger.debug(f"\t{k_ep}:{k_chapter}, patch the last scene -> fadeout: modify")
-                        last_scene['effects'][2] = fadeout_count
-
-                    elif last_scene['effects'][0] == 'loop_and_fadeout':
-                        logger.debug(f"\t{k_ep}:{k_chapter}, patch the last scene -> loop_and_fadeout: modify")
-                        logger.debug(f"\t%d vs %d" % (last_scene['effects'][3], fadeout_count))
-                        # pprint(last_scene)
-
-                        last_scene_count = (last_scene['count'] +  last_scene['effects'][2])
-                        if fadeout_count > last_scene_count:
-                            # Modify it because scene duration > fadeout duration
-                            last_scene['effects'][3] = last_scene_count
-                        else:
-                            last_scene['effects'][3] = fadeout_count
-
-                        # logger.debug(f"-> {last_scene}")
-
-                else:
-                    # Patch the last scene, add 'fadeout' effect
-                    logger.debug(f"\tconsolidate_av_tracks: {k_ep}:{k_chapter}, patch the last scene -> fadeout: add effects")
+                if effect.name == 'loop_and_fadein':
+                    raise RuntimeError("TODO to be corrected asap")
+                    fadein_count = video['effects'].primary_effect()
+                    logger.debug(f"\t{k_ep}:{k_chapter}, patch the first scene -> fadein: add effects")
                     # pprint(video)
-                    frame_no = last_scene['start'] + last_scene['count'] - 1
-                    frame_loop_start = frame_no - fadeout_count + 1
-                    nested_dict_set(last_scene,
-                        ['fadeout', frame_loop_start, fadeout_count], 'effects')
+                    # first_scene['src']['start'] += fadein_count
+                    # first_scene['src']['count'] -= fadein_count
 
+                    first_scene['effects'] = Effects([
+                        Effect(
+                            name='loop_and_fadein',
+                            frame_ref=0,
+                            loop=fadein_count,
+                            fade=fadein_count
+                        )
+                    ])
+                    # logger.debug(first_scene)
+                    # sys.exit()
+
+                if 'fadeout' in effect.name and effect.fade > 0:
+                    logger.debug(yellow(f"\t{k_ep}:{k_chapter} modify fadeout effect in db_video!"))
+
+                    fadeout_count = effect.fade
+                    if 'effects' in last_scene:
+                        effect: Effect = last_scene['effects'].primary_effect()
+                        # Patch the fadeout/loop_and_fadeout duration
+                        if effect.name == 'fadeout':
+                            logger.debug(f"\t{k_ep}:{k_chapter}, patch the last scene -> fadeout: modify")
+                            effect.fade = fadeout_count
+
+                        elif effect.name == 'loop_and_fadeout':
+                            logger.debug(f"\t{k_ep}:{k_chapter}, patch the last scene -> loop_and_fadeout: modify")
+                            logger.debug(f"\t%d vs %d" % (effect.fade, fadeout_count))
+                            # pprint(last_scene)
+
+                            last_scene_count = (last_scene['count'] + effect.loop)
+                            if fadeout_count > last_scene_count:
+                                # Modify it because scene duration > fadeout duration
+                                effect.fade = last_scene_count
+                            else:
+                                effect.fade = fadeout_count
+
+                            # logger.debug(f"-> {last_scene}")
+
+                    else:
+                        # Patch the last scene, add 'fadeout' effect
+                        logger.debug(f"\tconsolidate_av_tracks: {k_ep}:{k_chapter}, patch the last scene -> fadeout: add effects")
+                        # pprint(video)
+                        frame_no = last_scene['start'] + last_scene['count'] - 1
+                        frame_loop_start = frame_no - fadeout_count + 1
+                        last_scene['effects'] = Effects([
+                            Effect(
+                                name='fadeout',
+                                frame_ref=frame_loop_start,
+                                fade=fadeout_count
+                            )
+                        ])
 
 
 
@@ -346,9 +374,14 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
         frame_no = last_scene['start'] + last_scene['count'] - 1
         # print(f"info: consolidate_av_tracks: %s: add video frames, video(%d) < audio (%d)" % (k_chapter_c, video_count, audio_count))
         loop_count = audio_count - video_count
-        last_scene.update({
-            'effects': ['loop_and_fadeout', frame_no, loop_count, min(loop_count, 25)]
-        })
+        last_scene['effects'] = Effects([
+            Effect(
+                name='loop_and_fadeout',
+                frame_ref=frame_no,
+                loop=loop_count,
+                fade=min(loop_count, 25)
+            )
+        ])
         db_video['count'] += loop_count
 
     elif video_count > audio_count:

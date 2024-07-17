@@ -8,6 +8,8 @@ from pathlib import (
 )
 from pprint import pprint
 import sys
+
+from ._types import TASK_NAMES, VideoSettings
 from .helpers import (
     nested_dict_set,
 )
@@ -61,6 +63,9 @@ def parse_common_configuration(language:str=''):
         config_general.read(filepath)
 
         for k_section in config_general.sections():
+            if k_section.startswith('video_format'):
+                continue
+
             db_common[k_section] = {}
             for _option in config_general.options(k_section):
                 value = config_general.get(k_section, _option)
@@ -89,8 +94,6 @@ def parse_common_configuration(language:str=''):
         'cache_progressive',
         'cache_progressive_default',
         'cache_default',
-        'frames',
-        'frames_default',
         'hashes',
         'audio',
         'audio_default',
@@ -108,7 +111,7 @@ def parse_common_configuration(language:str=''):
         directories[d] = absolute_path(v)
 
     # Use default values
-    for d in ('cache', 'cache_progressive', 'frames', 'audio'):
+    for d in ('cache', 'cache_progressive', 'audio'):
         if not os.path.exists(directories[d]):
             directories[d] = absolute_path(directories[f"{d}_default"])
         try:
@@ -148,3 +151,19 @@ def parse_common_configuration(language:str=''):
         db_common['settings']['language'] = language
 
 
+    # Video formats
+    db_common['video_format'] = {}
+    for task in TASK_NAMES:
+        section: str = f"video_settings_{task}"
+        if section not in config_general.sections():
+            continue
+
+        vformat = config_general[section]
+        options: str = vformat.get('codec_options', '').replace('\"', '')
+        db_common['video_format'][task] = VideoSettings(
+            codec=vformat.get('codec', ''),
+            codec_options=options.split(' ') if options else [],
+            pix_fmt=vformat.get('pix_fmt', ''),
+            frame_rate=db_common['settings']['fps'],
+            pad=int(vformat.get('pad', '0')),
+        )

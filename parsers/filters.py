@@ -43,12 +43,11 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
 
     # Find chapter and subchapter
     # k_section is filters_chapter[_subchapter]
-    tmp = re.search(re.compile(r"^filters_([a-z_]+)[.]*([0-9]*)$"), k_section)
-    if tmp is None:
+    if (tmp := re.search(re.compile(r"^filters_([a-z_]+)[.]*([0-9]*)$"), k_section)):
+        k_chapter = tmp.group(1)
+    else:
         print(red("parse_filters: error: [%s] is not a valid filter label" % (k_section)))
         sys.exit()
-    else:
-        k_chapter = tmp.group(1)
 
     for k_option in config.options(k_section):
         if k_option != 'default' and not k_option.isdecimal():
@@ -86,15 +85,19 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
 
             task_filter: Filter | None = None
             if (result := re.search(re.compile(r"^([a-z_]+):(.+)$"), f)):
+                # if result.group(1) not in TASK_NAMES:
+                #     raise ValueError(f"{result.group(1)} is not a valid task")
                 task_filter = Filter(
-                    task_name=filter_name_to_dirname.get(result.group(1), None),
+                    task_name=result.group(1),
                     sequence=result.group(2)
                 )
 
             elif (result := re.search(re.compile(r"^([a-z]+)$"), f)):
                 # May use yes-pattern or no-pattern in the previous regex
+                # if result.group(1) not in TASK_NAMES:
+                #     raise ValueError(f"{result.group(1)} is not a valid task")
                 task_filter = Filter(
-                    task_name=filter_name_to_dirname.get(result.group(1), None),
+                    task_name=result.group(1),
                     sequence=''
                 )
 

@@ -90,3 +90,16 @@ Notes:
     ```sh
     python generate_lr.py --episode 1
     ```
+
+## 2. Upscale
+- Credits
+    ```sh
+    python upscale.py --chapter g_debut
+    ```
+
+- Episode
+    ```sh
+    python generate_lr.py --episode 1
+    ```
+
+Note: g_asuivre not yet supported

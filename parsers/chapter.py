@@ -1,5 +1,7 @@
 import re
 import sys
+
+from utils.mco_types import Effect, Effects
 from .helpers import get_fps
 from ._keys import key
 
@@ -50,12 +52,13 @@ def parse_chapter_sections(
             sys.exit("Error: parse_chapter_sections: start and end values are required for %s in episode file" % (k_chapter))
 
         db_video[k_chapter].update({
-            'effects': {
-                'loop_and_fadein': chapter_fadein,
-                'fadeout': chapter_fadeout,
-            },
             'start': start,
             'end': end,
             'count': (end - start) if end > 0 else -1,
         })
-
+        db_video[k_chapter]['effects'] = Effects(
+            effects=[
+                Effect(name='loop_and_fadein', fade=chapter_fadein),
+                Effect(name='fadeout', fade=chapter_fadeout)
+            ]
+        )

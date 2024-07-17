@@ -3,12 +3,14 @@ from dataclasses import dataclass, field
 from typing import Literal, TypedDict, TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from .images import Images
     from parsers import (
         Chapter,
         ProcessingTask,
         Filter,
         TaskName,
     )
+    from nn_inference.threads.t_decoder import VideoStreamInfo
 
 # Common to all types:
 # k_ed: key: editon. 1 letter format in [k, s, f, ..]
@@ -30,6 +32,7 @@ class Inputs(TypedDict):
         enable: bool
         start: int
         count: int
+        info: VideoStreamInfo
 
     interlaced: Interlaced
     progressive: Progressive
@@ -114,14 +117,46 @@ class Geometry(TypedDict):
     scene: SceneGeometry
 
 
-class SceneSrc(TypedDict):
+class SrcScene(TypedDict):
     k_ed: str
     k_ep: str
-    k_chapter: str
+    k_ch: str
     no: int
     start: int
     count: int
-    segment: list
+    segments: list
+
+
+
+@dataclass
+class Effect:
+    name: Literal['loop', 'fadeout', 'loop_and_fadeout', 'loop_and_fadein', 'watermark']
+    frame_ref: int = 0
+    loop: int = 0
+    fade: int = 0
+
+
+@dataclass
+class Effects(list):
+    effects: list[Effect] = field(default_factory=list)
+
+    def do_watermark(self) -> bool:
+        for e in self.effects:
+            if e.name == 'watermark':
+                return True
+        return False
+
+    def primary_effect(self) -> Effect | None:
+        for e in self.effects:
+            if e.name != 'watermark':
+                return e
+        return None
+
+    # def add(self, effect: Effect) -> None:
+    #     self.effects.append(effect)
+
+
+
 
 
 class Scene(TypedDict):
@@ -159,7 +194,7 @@ class Scene(TypedDict):
     # When processing this scene, it uses the k_ed:k_episode:k_chapter:scene specified by this variable
     # e.g. we can use a scene from another edition if not available in this one
     # if a list of segments has to be specified, they shall use the same episode/chapter/scene no.
-    src: SceneSrc
+    src: SrcScene
 
     # list of frames to replace
     replace: dict[int, int]
@@ -174,7 +209,7 @@ class Scene(TypedDict):
 
     # Video effect: fade in / fade out / loop and fade out
     # historic: only the first effect is used. Do not rembebr why defined as a list...
-    effects: list
+    effects: Effects
 
 
     # The following variables are set by the script when 'consolidating' the target scene
@@ -199,10 +234,13 @@ class Scene(TypedDict):
     # Path of the cache directory for this scene
     cache: str
 
-    # List of unique frames to generate this scene.
-    # This is usefull to optimize some processing such as upscale
-    in_frames: list[str]
-    out_frames: list[str]
+    # List of unique frames to generate this scene
+    # This is usefull to optimize some tasks
+    # the generated files have to use this list and replace directory, filenames
+    in_frames: Images
+
+    # This list contains the frames used to generate a clip after processing
+    out_frames: list[str | int]
 
 
 
@@ -217,7 +255,7 @@ class VideoChapter(TypedDict):
     count: int
 
     scenes: list[Scene]
-    effects: dict
+    effects: Effects
 
     # default geometry for scenes that have not geometry defined
     geometry: Geometry

@@ -12,7 +12,7 @@ from ._types import (
     task_to_dirname,
     Filter,
     TASK_NAMES,
-    IMG_FILENAME_TEMPLATE,
+    VideoSettings,
 )
 
 from .helpers import (
@@ -47,5 +47,5 @@ __all__ = [
     "task_to_dirname",
     "Filter",
     "TASK_NAMES",
-    "IMG_FILENAME_TEMPLATE",
+    "VideoSettings",
 ]

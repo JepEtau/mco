@@ -21,11 +21,12 @@ from parsers import (
     TaskName,
     ProcessingTask
 )
-from video.frame_list import get_frame_list
 from .concat_frames import (
     generate_concat_file,
     generate_silence_concat_file,
     generate_video_concat_file,
+    set_concat_filename,
+    set_video_filename,
 )
 from .concat_scenes import concat_scenes
 from .combine_frames import combine_frames
@@ -141,8 +142,7 @@ def generate_video_track(
             scene['task'] = ProcessingTask(name=task)
 
             # Generate frames for this scene
-            consolidate_scene(scene=scene)
-
+            consolidate_scene(scene=scene, watermark=watermark)
 
             if not simulation:
                 result = process_scene(scene=scene, force=force)
@@ -162,40 +162,29 @@ def generate_video_track(
             # Calculate hash for the video
             hashes_str += f",{scene['task'].hashcode}"
 
+            # if len(scene['out_frames']) < 5:
+            #     print(lightcyan("================================== Scene ======================================="))
+            #     pprint(scene)
+            #     print(lightcyan("==============================================================================="))
+            #     raise ValueError("Scene has less than 5 frames")
+
+
             # Create concatenation file
-            do_generate_video = False
-            concat_fp = generate_concat_file(
-                episode=k_ep_src,
+            set_concat_filename(episode=k_ep_src, chapter=chapter, scene=scene)
+            set_video_filename(scene)
+            generate_concat_file(
+                episode=episode,
+                chapter=chapter,
+                video=video,
+                scene=scene
+            )
+            combine_frames(
                 chapter=chapter,
                 scene=scene,
-                previous_concat_fp=previous_concat_fp
+                force=force,
+                simulation=simulation,
+                watermark=f"{scene['no']}" if watermark else None
             )
-            if concat_fp != previous_concat_fp and concat_fp != '':
-                scene['task'].concat_file = concat_fp
-                do_generate_video = True
-            else:
-                # This scene has not enough frames to generate a video scene,
-                # append images to the previous scene and regenerate it
-                combine_frames(
-                    chapter=chapter,
-                    scene=scene,
-                    force=True,
-                    simulation=simulation,
-                    watermark=f"{scene['no'] - 1}" if watermark else None
-                )
-            previous_concat_fp = concat_fp
-
-            # Combine images into a video file
-            if do_generate_video:
-                # print(purple("\tcombine images to video (scene): k_p=%s, scene no. %d" % (k_p, scene['no'])))
-                combine_frames(
-                    chapter=chapter,
-                    # scene=clips[-1],
-                    scene=scene,
-                    force=force,
-                    simulation=simulation,
-                    watermark=f"{scene['no']}" if watermark else None
-                )
 
             if debug:
                 elapsed = time.time() - start_time
@@ -207,6 +196,7 @@ def generate_video_track(
             if debug:
                 print(lightcyan("================================== Scene ======================================="))
                 pprint(scene)
+                # print(scene['in_frames'])
                 print(lightcyan("==============================================================================="))
                 # sys.exit()
 
@@ -260,16 +250,13 @@ def generate_video_track(
                         concat_file=f,
                     )
                 )
+                set_video_filename(virtual_video_scene)
                 combine_frames(
                     chapter=chapter,
                     scene=virtual_video_scene,
                     force=force,
                     simulation=simulation
                 )
-                # try:
-                #     video_clips[chapter]['files'].append(scene_fp)
-                # except:
-                #     nested_dict_set(video_clips[chapter], [scene_fp], 'files')
 
     if verbose:
         print(lightgreen(f"video files used to concatenate all clips"))

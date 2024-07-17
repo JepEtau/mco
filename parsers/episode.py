@@ -277,16 +277,13 @@ def parse_episode(k_ed: str, k_ep: str | int):
                                     'g_fin',
                                     'g_asuivre',
                                     'g_documentaire']:
-                        parse_scenes(db_video_chapter['scenes'],
-                            k_ep, k_chapter, value_str)
+                        parse_scenes(db_video_chapter['scenes'], value_str)
 
                     elif k_section in ['precedemment', 'asuivre']:
                         # precedemment and asuivre are different as some scenes
                         # may be replaced
                         # TODO rework as the function/parameteres are the same!
-                        parse_scenes(
-                            db_video_chapter['scenes'], k_ep, k_chapter, value_str
-                        )
+                        parse_scenes(db_video_chapter['scenes'], value_str)
 
 
         # chapters: scenes (new format)
@@ -295,10 +292,8 @@ def parse_episode(k_ed: str, k_ep: str | int):
             k_chapter = k_section[len('scenes_'):]
             if k_chapter not in all_chapter_keys():
                 continue
-            nested_dict_set(db_video, [], k_chapter, 'scenes')
-            parse_scenes_new(
-                db_video[k_chapter]['scenes'], config, k_section
-            )
+            db_video[k_chapter]['scenes'] = []
+            parse_scenes_new(db_video[k_chapter]['scenes'], config, k_section)
 
 
     # Set dimensions
@@ -308,7 +303,7 @@ def parse_episode(k_ed: str, k_ep: str | int):
 
     # Calculate durations for each chapters based on scenes duration
     for k_p in all_chapter_keys():
-        consolidate_parsed_scenes(db=db, k_ed=k_ed, k_ep=k_ep, k_chapter=k_p)
+        consolidate_parsed_scenes(k_ed=k_ed, k_ep=k_ep, k_chapter=k_p)
 
     # Consolidate inputs dict
     for k_chapter in all_chapter_keys():
@@ -380,7 +375,7 @@ def get_episode_dependencies(
             try:
                 chapter_video = db[k_ep]['video'][k_ed_src][chapter]
             except:
-                sys.exit(red(f"error: {k_ed_src}:{k_ep}: missing input file"))
+                sys.exit(red(f"error: {k_ed_src}:{k_ep}:{chapter}: missing input file"))
             if 'scenes' in chapter_video.keys():
                 scenes = chapter_video['scenes']
                 for scene in scenes:
@@ -399,7 +394,7 @@ def get_episode_dependencies(
             try:
                 db_audio = db[k_ep]['audio'][chapter]
             except:
-                sys.exit(red(f"error: {k_ed_src}:{k_ep}: missing input file"))
+                sys.exit(red(f"error: {k_ed_src}:{k_ep}:{chapter}: missing input file"))
 
             for segment in db_audio['segments']:
                 if 'k_ep' in segment and segment['k_ep'] != k_ep:

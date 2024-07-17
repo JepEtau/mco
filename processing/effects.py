@@ -5,28 +5,27 @@ import numpy as np
 import cv2
 from parsers import (
     db,
-    IMG_FILENAME_TEMPLATE,
     get_fps,
     task_to_dirname,
 )
 from pprint import pprint
-from utils.mco_utils import get_cache_path, get_out_directory
+from utils.images import IMG_FILENAME_TEMPLATE
+from utils.mco_utils import get_cache_path, get_dirname
 from utils.p_print import *
 from utils.logger import main_logger
-from utils.mco_types import Scene
-from video.frame_list import get_out_dirname
+from utils.mco_types import Effect, Scene
 
 
 
 
-def effect_loop_and_fadein(scene: Scene):
+def effect_loop_and_fadein(scene: Scene, effect: Effect) -> None:
     # Validate with:
     #   - ep02: episode
 
     sys.exit("effect_loop_and_fadein")
 
     # Start and count of frames for the loop
-    fadein_count = scene['effects'][2]
+    fadein_count = effect.fade
     print(green(f"\tloop and fadein: loop: start={fadein_count}, fadein: count={fadein_count}"))
 
 
@@ -114,18 +113,20 @@ def effect_loop_and_fadein(scene: Scene):
 
 
 
-def effect_loop_and_fadeout(scene: Scene):
+def effect_loop_and_fadeout(scene: Scene, effect: Effect) -> None:
     # Validate with:
     #   - ep01: episode
     #   - ep01: asuivre
     #   - g_debut
-    verbose: bool = False
+    verbose: bool = True
 
     # Start and count of frames for the loop
-    loop_start = scene['effects'][1]
-    loop_count = scene['effects'][2]
-    fadeout_count = scene['effects'][3]
+    loop_start = effect.frame_ref
+    loop_count = effect.loop
+    fadeout_count = effect.fade
     if verbose:
+        print(lightgreen("==========================================================="))
+        pprint(scene)
         print(green(f"\tloop and fadeout: loop: start={loop_start}, count={loop_count} / fadeout: count={fadeout_count}"))
 
     hash: str = scene['task'].hashcode
@@ -137,7 +138,7 @@ def effect_loop_and_fadeout(scene: Scene):
 
     # Input directory
     in_dir: str = os.path.join(
-        get_cache_path(scene), get_out_dirname(scene)
+        get_cache_path(scene), get_dirname(scene)[0]
     )
     if verbose:
         print(lightgrey(f"\tinput_filepath: {in_dir}"))
@@ -154,29 +155,11 @@ def effect_loop_and_fadeout(scene: Scene):
         print(lightgrey("\toutput_directory: %s" % (out_dir)))
     os.makedirs(out_dir, exist_ok=True)
 
-
-    # Input image list before the loop
-    # if scene['last_task'] == 'edition':
-    #     image_list = get_image_list_pre_replace(scene=scene,
-    #         folder=input_filepath,
-    #         step_no=step_no,
-    #         hash=hash)
-    # elif scene['last_step']['step_no'] == scene['last_step']['step_edition']:
-    #     image_list = get_new_image_list(scene=scene,
-    #         step_no=step_no,
-    #         hash=scene['filters'][step_no - STEP_INC]['hash'])
-    # else:
-    #     image_list = get_image_list(scene=scene,
-    #         folder=input_filepath,
-    #         step_no=step_no,
-    #         hash=hash)
-
     # Duplicate the last one
     filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
     loop_img: str = os.path.join(in_dir, filename_template % (loop_start))
     if verbose:
         print(lightgrey(f"\tfile used for the loop effect: {loop_img}"))
-
 
     in_imgs: list[str] = [
         os.path.join(in_dir, filename_template % (
@@ -189,25 +172,11 @@ def effect_loop_and_fadeout(scene: Scene):
         pprint(in_imgs)
         print(lightgrey(f"\toutput image count: {len(in_imgs)}"))
 
-    out_imgs: list[str] = [
-        os.path.join(out_dir, filename_template % (
-            scene['start'] + scene['count'] + i
-        ))
-        for i in range(fadeout_count - loop_count)
-    ]
-    out_imgs.extend([
-        os.path.join(
-            out_dir, filename_template % (
-                scene['start'] + scene['count'] + fadeout_count - loop_count + i
-            )
-        )
-        for i in range(loop_count)
-    ])
+    out_imgs: list[str] = scene['out_frames'][-fadeout_count:]
     if verbose:
+        print("OUT:")
         pprint(out_imgs)
         print(lightgrey(f"\toutput image count: {len(out_imgs)}"))
-
-    # sys.exit()
 
     img_src: np.ndarray = cv2.imread(in_imgs[0], cv2.IMREAD_COLOR)
     img_black = np.zeros(img_src.shape, dtype=img_src.dtype)
@@ -233,15 +202,15 @@ def effect_loop_and_fadeout(scene: Scene):
 
 
 
-
-def effect_fadeout(scene: Scene):
+def effect_fadeout(scene: Scene, effect: Effect) -> None:
     # verified:
     #   - ep01: documentaire
     # warning: ep02, 'en' version
     verbose: bool = True
 
-    fadeout_start = scene['effects'][1]
-    fadeout_count = scene['effects'][2]
+    fadeout_start = effect.frame_ref
+    fadeout_count = effect.fade
+
     if verbose:
         pprint(scene)
         print(green(f"\tfadeout: start={fadeout_start}, count={fadeout_count}"))
@@ -255,7 +224,8 @@ def effect_fadeout(scene: Scene):
 
     # Input directory
     in_dir: str = os.path.join(
-        get_cache_path(scene), get_out_dirname(scene)
+        get_cache_path(scene),
+        get_dirname(scene)[0]
     )
     if verbose:
         print(lightgrey(f"\tinput_filepath: {in_dir}"))

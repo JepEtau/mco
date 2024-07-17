@@ -73,8 +73,8 @@ IO... yuv422p10be            3             20      10-10-10
 IO... yuv422p10le            3             20      10-10-10
 IO... yuv444p9be             3             27      9-9-9
 IO... yuv444p9le             3             27      9-9-9
-IO... yuv444p10be            3             30      10-10-10
-IO... yuv444p10le            3             30      10-10-10
+IO... yuv444p10be            3             48      10-10-10
+IO... yuv444p10le            3             48      10-10-10
 IO... yuv422p9be             3             18      9-9-9
 IO... yuv422p9le             3             18      9-9-9
 IO... gbrp                   3             24      8-8-8
@@ -236,7 +236,7 @@ IO... gbrap14le              4             56      14-14-14-14
 ..H.. d3d12                  0              0      0
 """
 
-_pixel_formats: dict[dict[str, int | bool]] = {}
+_pixel_formats: dict[str, dict[str, int | bool]] = {}
 if (formats := re.findall(
         re.compile(r"[IOHBP.]{5}\s+([a-z_\d]+)\s+([1234]{1})\s+(\d+)\s+([\d-]+)"),
         ffmpeg_pixl_fmts
@@ -263,10 +263,11 @@ if (formats := re.findall(
         elif 'gray' in k:
             c_order = 'gray'
 
-        bpp = max(list(map(int, bit_depths.split('-'))))
+        storage_bpp = max(list(map(int, bit_depths.split('-'))))
         _pixel_formats[k] = {
             'c': int(nc),
-            'bpp': bpp,
+            'bpp': storage_bpp,
+            'pipe_bpp': int(bpp),
             'c_order': c_order,
             'supported': True if c_order in ('rgb', 'bgr', 'gbr', 'yuv') else False,
         }

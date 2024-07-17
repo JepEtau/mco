@@ -52,3 +52,8 @@
 * Episode 38: same
 * Episode 39: same
 
+
+Less than 5 frames
+* episode 19: a suivre
+* episode 20: episode 13594
+* episode 21: episode 7319

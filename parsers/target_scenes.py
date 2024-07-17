@@ -6,7 +6,7 @@ from .logger import logger
 from .helpers import get_fps, nested_dict_set
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
-from utils.mco_types import ChapterAudio, Scene, VideoChapter
+from utils.mco_types import ChapterAudio, Effect, Effects, Scene, VideoChapter
 from ._db import db
 from ._types import key
 
@@ -364,12 +364,19 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
 
     # Effects
     if k_chapter_c in ('g_debut', 'g_fin'):
-        db_video_target = db[k_chapter_c]['video']
-        if 'effects' in db_video_target.keys():
+        db_video_target: VideoChapter = db[k_chapter_c]['video']
+        if 'effects' in db_video_target:
             last_scene = db_video_target['scenes'][-1]
 
-            if 'fadeout' in db_video_target['effects'].keys():
-                fadeout_count = db_video_target['effects']['fadeout']
+            effect: Effect = db_video_target['effects'].primary_effect()
+            if 'fadeout' in effect.name:
+                fadeout_count: int = effect.fade
                 frame_no = last_scene['src']['start'] + last_scene['src']['count'] - 1
-                nested_dict_set(last_scene,
-                    ['fadeout', frame_no - fadeout_count + 1, fadeout_count], 'effects')
+                last_scene['effects'] = Effects([
+                    Effect(
+                        name='fadeout',
+                        frame_ref=frame_no - fadeout_count + 1,
+                        fade=fadeout_count
+                    )
+                ])
+

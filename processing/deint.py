@@ -298,6 +298,10 @@ def generate_avs_script(
                 found = True
             elif (search := re.search(re.compile(r"\s*FFMPEGSource2\(\s*source\s=\s*\"(.+)\""), line)):
                 found = True
+            elif (search := re.search(re.compile(r"\s*FFVideoSource\(\s*\"(.+)\"\s*"), line)):
+                found = True
+            elif (search := re.search(re.compile(r"\s*FFVideoSource\(\s*source\s=\s*\"(.+)\""), line)):
+                found = True
             if found:
                 lines[i] = line.replace(search.group(1), in_video_info['filepath'])
                 filepath_replaced = True
@@ -429,7 +433,7 @@ def qtgmc_deint_command(
         {int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)}
         :{in_h}
         :sws_flags=
-            bilinear
+            lanczos
             + full_chroma_int
             + full_chroma_inp
             + accurate_rnd
@@ -445,15 +449,33 @@ def qtgmc_deint_command(
 
     # Frame rate
     fps: float | int | tuple[int, int] = in_video_info['frame_rate_r']
+    # ffmpeg_command.extend([
+    #     "-r",
+    #     '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
+    # ])
     ffmpeg_command.extend([
-        "-r",
-        '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
+        "-r", "25"
+    ])
+    ffmpeg_command.extend([
+        "-pixel_format", "rgb24",
+        "-vcodec", "ffv1",
     ])
 
-    ffmpeg_command.extend([
-        "-pix_fmt", # out_video_info['pix_fmt']
-        "yuv420p"
-    ])
+    # ffmpeg_command.extend([
+    #     "-pixel_format", "yuv444p",
+    #     "-vcodec", "libx264",
+    #     "-crf", "14",
+    #     "-preset", "slow",
+    #     "-tune", "stillimage"
+    # ])
+
+    # ffmpeg_command.extend([
+    #     "-pix_fmt", "yuv444p",
+    #     "-vcodec", "libx264",
+    #     "-preset", "slow",
+    #     "-crf", "10",
+    #     "-tune", "stillimage"
+    # ])
 
     ffmpeg_command.extend([
         "-an",
@@ -464,7 +486,7 @@ def qtgmc_deint_command(
     if qtgmc_args.keys():
         ffmpeg_command.extend([
             "-movflags",
-            "use_metadata_tags",
+            "use_metadata_tags"
         ])
         i: int = 1
         for k, v in qtgmc_args.items():
@@ -582,14 +604,16 @@ def deint_command(
         ])
 
     # Frame rate
+    ##### FORCE TO 25 fps
+    fps = 25
     ffmpeg_command.extend([
         "-r",
         '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
     ])
 
     ffmpeg_command.extend([
-        "-pix_fmt", # out_video_info['pix_fmt']
-        "yuv420p"
+        "-pixel_format", "bgr24",
+        "-vcodec", "ffv1",
     ])
 
     ffmpeg_command.extend([

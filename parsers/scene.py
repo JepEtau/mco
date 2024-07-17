@@ -3,26 +3,19 @@ import re
 import sys
 from ._keys import all_chapter_keys, key
 from utils.p_print import *
-from utils.mco_types import Scene
+from utils.mco_types import Effect, Effects, Scene, SrcScene, VideoChapter
+from ._db import db
+from ._keys import key
+
 
 
 def parse_scenes(
     scenes: list[Scene],
-    k_ep: str,
-    k_chapter: str,
     scenes_str: str
 ) -> None:
     """This procedure parse a string wich contains the list of scenes
         and update the structure of the db.
-        Used for 'épisodes' and 'documentaire'
-
-    Args:
-        db_scenes: the structure where to store the scenes
-        scenelist_str: the string to parse
-
-    Returns:
-        None
-
+        Used for 'episodes' and 'documentaire'
     """
     for scene_no, scene in enumerate(scenes_str.split()):
         # print(scene)
@@ -77,20 +70,20 @@ def parse_scenes(
                     src = d[1].split(':')
                     if len(src) == 3:
                         scenes[scene_no]['src'].update({
-                            'k_ep': 'ep%02d' % (int(src[0])),
+                            'k_ep': key(int(src[0])),
                             'start': int(src[1]),
                             'count': int(src[2]),
                         })
                     elif len(src) == 2:
                         scenes[scene_no]['src'].update({
-                            'k_ep': 'ep%02d' % (int(src[0])),
+                            'k_ep': key(int(src[0])),
                             'start': int(src[1]),
 # 2022-11-13: replacement does not work: to verify
                             'count': -1
                         })
                     else:
                         scenes[scene_no]['src'].update({
-                            'k_ep': 'ep%02d' % (int(src[0])),
+                            'k_ep': key(int(src[0])),
                             'start': start,
 # 2022-11-13: replacement does not work: to verify
                             'count': -1
@@ -103,8 +96,13 @@ def parse_scenes(
                     scenes[scene_no]['src'].update({'use': True if d[1]=='y' else False})
 
                 elif d[0] == 'effects':
-                    scenes[scene_no]['effects'] = d[1].split(',')
-
+                    effect = d[1].split(',')
+                    if len(effect) < 4:
+                        effect.extend([0] * 3)
+                    name, ref, loop, fade = effect[:3]
+                    scenes[scene_no]['effects'] = Effects([
+                        Effect(name=name, frame_ref=ref, loop=loop, fade=fade)
+                    ])
 
 
 
@@ -114,10 +112,10 @@ def parse_scenes_new(
     k_section: str,
 ) -> None:
     for k_option in config.options(k_section):
-        value_str = config.get(k_section, k_option).replace(' ','')
+        value_str: str = config.get(k_section, k_option).replace(' ','')
 
         scene_no = int(k_option)
-        scene_properties = value_str.split(',')
+        scene_properties: list[str] = value_str.split(',')
 
 
         # scene may specify start or start:end
@@ -150,27 +148,21 @@ def parse_scenes_new(
         if len(scene_properties) > 1:
             for p in scene_properties:
                 d = p.split('=')
+                # Custom filter
                 if d[0] == 'filters':
-                    # custom filter
                     scenes[scene_no]['filters_id'] = d[1]
 
 
 
-def consolidate_parsed_scenes(db, k_ed, k_ep, k_chapter) -> None:
+def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
     """This procedure is used to consolidate the parsed scenes
     It updates the total duration (in frames of the video for a chapter
-    Args:
-        db_video: the structure which contains the scenes
-                    and video properties
-    Returns:
-        None
-
     """
-    db_video = db[k_ep]['video'][k_ed][k_chapter]
+    db_video: VideoChapter = db[k_ep]['video'][k_ed][k_chapter]
 
     # Create a single scene if no scene defined by the configuration file
-    if 'scenes' not in db_video.keys():
-        if 'count' not in db_video.keys() or db_video['count'] == 0:
+    if 'scenes' not in db_video:
+        if 'count' not in db_video or db_video['count'] == 0:
             return
         db_video['scenes'] = [
             Scene(
@@ -190,32 +182,29 @@ def consolidate_parsed_scenes(db, k_ed, k_ep, k_chapter) -> None:
         return
 
     # Update each scene durations
-    scenes = db_video['scenes']
-    frames_count = 0
-    for i in range(0, len(scenes)):
-        # print(scenes[i])
-        if scenes[i] is None:
+    scenes: list[Scene] = db_video['scenes']
+    frames_count: int = 0
+    for i, scene in enumerate(scenes):
+        if scene is None:
             continue
 
-        if scenes[i]['count'] == 0:
+        if scene['count'] == 0:
             if i + 1 >= len(scenes):
                 # Last scene: use the count field of the chapter
-                scenes[i]['count'] = db_video['start'] + db_video['count'] - scenes[i]['start']
+                scene['count'] = db_video['start'] + db_video['count'] - scene['start']
             else:
-                scenes[i]['count'] = scenes[i+1]['start'] - scenes[i]['start']
+                scene['count'] = scenes[i+1]['start'] - scene['start']
 
-        if 'effects' in scenes[i]:
-            if scenes[i]['effects'][0] == 'loop':
-                frames_count += scenes[i]['effects'][2]
+        if 'effects' in scene:
+            effect: Effect = scene['effects'].primary_effect()
+            if effect.name == 'loop':
+                frames_count += effect.loop
                 sys.exit("%s: add loop duration" % (__name__))
 
-        if scenes[i]['count'] <= 0 and i < len(scenes)-1:
-            sys.exit(red(f"Error: {k_ed}:{k_ep}:{k_chapter}: scene no. {scenes[i]['no']:03d}, length (scenes[i]['count']) < 0"))
+        if scene['count'] <= 0 and i < len(scenes) - 1:
+            sys.exit(red(f"Error: {k_ed}:{k_ep}:{k_chapter}: scene no. {scene['no']:03d}, length (scene['count']) < 0"))
 
-        frames_count += scenes[i]['count']
-
-    # The new chapter duration is the sum of all scenes duration
-    # db_video['count'] = frames_count
+        frames_count += scene['count']
 
 
 
@@ -249,9 +238,9 @@ def parse_target_scenelist(
             # Append this scene to the list of scenes
             db_scenes.append({
                 'no': scene_no,
-                'src': dict(),
+                'src': SrcScene(),
             })
-            scene = db_scenes[-1]
+            scene: Scene = db_scenes[-1]
 
             for p in scene_properties:
                 try:
@@ -261,33 +250,34 @@ def parse_target_scenelist(
                     # sys.exit()
                     continue
 
+                scene_src: SrcScene = scene['src']
                 if k == 'ed':
-                    scene['src']['k_ed'] = v
+                    scene_src['k_ed'] = v
 
                 elif k == 'ep':
-                    scene['src']['k_ep'] = key(int(v))
+                    scene_src['k_ep'] = key(int(v))
 
                 elif k == 'chapter':
                     if v in all_chapter_keys():
-                        scene['src']['k_ch'] = v
+                        scene_src['k_ch'] = v
                     else:
                         sys.exit(f"parse_target_scenelist: {v} is not recognized")
 
                 elif k == 'scene':
-                    scene['src']['no'] = int(v)
+                   scene_src['no'] = int(v)
 
                 elif k == 'segments':
-                    scene['src']['segments'] = []
+                    scene_src['segments'] = []
                     segments = v.replace(' ', '').split('\n')
                     for s in segments:
-                        if (match := re.match(re.compile(r"(\d+):(\d+)"), s)):
-                            scene['src']['segments'].append({
+                        if (match := re.search(re.compile(r"(\d+):(\d+)"), s)):
+                            scene_src['segments'].append({
                                 'start': int(match.group(1)),
                                 'count': int(match.group(2)),
                             })
 
                 elif k in ['start', 'count']:
-                    scene['src'][k] = int(v)
+                    scene_src[k] = int(v)
 
 
             # # Debug

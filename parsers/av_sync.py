@@ -11,7 +11,7 @@ from utils.time_conversions import (
     frame_to_ms,
     ms_to_frame,
 )
-from utils.mco_types import Scene
+from utils.mco_types import Effect, Effects, Scene
 from ._db import db
 
 
@@ -164,10 +164,18 @@ def consolidate_av_sync(k_ep):
 
                     # Add loop_and_fadeout to precedemment up to end of audio
                     loop_count = precedemment_audio_count - precedemment_video_count
-                    loop_start = (last_scene_precedemment['start']
-                        + last_scene_precedemment['count'] - 1)
-                    last_scene_precedemment.update({
-                        'effects': ['loop_and_fadeout', loop_start, loop_count, loop_count]})
+                    loop_start = (
+                        last_scene_precedemment['start']
+                        + last_scene_precedemment['count'] - 1
+                    )
+                    last_scene_precedemment['effects'] = Effects([
+                        Effect(
+                            name='loop_and_fadeout',
+                            frame_ref=loop_start,
+                            loop=loop_count,
+                            fade=loop_count
+                        )
+                    ])
                     video_track['precedemment']['count'] += loop_count
 
                     # If the amount of added frames were not enough
@@ -182,10 +190,18 @@ def consolidate_av_sync(k_ep):
                     # fr: ep no. 6, 7, 8
 
                     loop_count = video_silence
-                    loop_start = (last_scene_precedemment['start']
-                        + last_scene_precedemment['count'] - 1)
-                    last_scene_precedemment.update({
-                        'effects': ['loop_and_fadeout', loop_start, loop_count, loop_count]})
+                    loop_start = (
+                        last_scene_precedemment['start']
+                        + last_scene_precedemment['count'] - 1
+                    )
+                    last_scene_precedemment['effects'] = Effects([
+                        Effect(
+                            name='loop_and_fadeout',
+                            frame_ref=loop_start,
+                            loop=loop_count,
+                            fade=loop_count
+                        )
+                    ])
                     video_track['precedemment']['count'] += loop_count
 
                     logger.debug(purple(f"loop_count: {loop_count}"))

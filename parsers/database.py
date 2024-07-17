@@ -20,10 +20,6 @@ from .episode import (
     db_init_episodes,
     parse_episode,
 )
-from .frames import (
-    parse_frames_for_study,
-    parse_frames_for_study_g,
-)
 from .p_print import pprint_episode, pprint_g_debut_fin
 from .logger import logger
 from .target_scenes import (
@@ -45,7 +41,8 @@ from ._db import db
 
 def parse_database(
     episode: str | int,
-    lang: Literal['en', 'fr'] = 'fr'
+    lang: Literal['en', 'fr'] = 'fr',
+    edition: str = ''
 ) -> dict[str, tuple[int]]:
     """Return nb of frames of video and audio tracks"""
 
@@ -87,7 +84,7 @@ def parse_database(
     parse_credit_target()
 
     # Create a dict of dependencies for generiques
-    dependencies = dict()
+    dependencies: dict[str, list] = {}
     for k_chapter_g in credit_chapter_keys():
         dependencies_tmp = get_credits_dependencies(k_chapter_g=k_chapter_g)
         for k, v in dependencies_tmp.items():
@@ -112,12 +109,16 @@ def parse_database(
         sys.exit()
 
     # Merge dependencies
-    for k, v in dependencies_tmp.items():
-        if k not in dependencies.keys():
-            dependencies[k] = list()
-        dependencies[k] = list(set(dependencies[k] + v))
+    for k_ed, v in dependencies_tmp.items():
+        if k_ed not in dependencies.keys():
+            dependencies[k_ed] = list()
+        dependencies[k_ed] = list(set(dependencies[k_ed] + v))
 
-    # print(lightcyan("dependencies: "), dependencies)
+    print(lightcyan("dependencies: "), dependencies)
+    if edition != '':
+        if edition not in dependencies:
+            dependencies[edition] = list()
+        dependencies[edition].append(k_ep)
 
     # Parse episodes which are required (dependencies)
     for k_ed_tmp, v in dependencies.items():
@@ -206,12 +207,6 @@ def parse_database_for_study(k_ed, k_ep, k_chapter):
     for k_p in ('g_debut', 'g_fin'):
         parse_replace_configurations(k_ep_or_g=k_p)
         parse_geometry_configurations(k_ep_or_g=k_p)
-
-    if k_chapter in credit_chapter_keys():
-        parse_frames_for_study_g(db, k_chapter_g=k_chapter)
-
-    parse_frames_for_study(db, k_ep=k_ep)
-
 
 
 def get_dependencies(

@@ -18,6 +18,7 @@ if sys.platform == "win32":
     ffprobe_exe = absolute_path(ffprobe_exe)
     ffmpeg_exe = absolute_path(ffmpeg_exe)
     mkvmerge_exe = r"C:\Program Files\MKVToolNix\mkvmerge.exe"
+    ml_model_dir = r"A:\ml_models"
 
 elif sys.platform == "linux":
     ffmpeg_exe = os.path.join(external_dir, "ffmpeg", "ffmpeg")
@@ -32,10 +33,14 @@ elif sys.platform == "linux":
             os.chmod(f, st_mode |S_IEXEC)
 
     mkvmerge_exe = "mkvmerge"
+    ml_model_dir = "~/ml_models"
 
 else:
     sys.exit("[E] Platform/system not supported.")
 
-nnedi3_weights = "external/nnedi3/nnedi3_weights.bin"
+nnedi3_weights: str = "external/nnedi3/nnedi3_weights.bin"
+font_dir: str = os.path.join(external_dir, "fonts")
 
 avs_dir = os.path.join(external_dir, "avs")
+
+ml_model_dir = absolute_path(ml_model_dir)
