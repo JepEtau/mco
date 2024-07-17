@@ -74,9 +74,8 @@ def combine_frames(
             "-color_range:v", "tv"
         ]
 
-        # if watermark is not None:
-        #     watermark_argument = f"drawtext=text=\'{watermark}\':fontcolor=green:fontsize=24:x=10:y=h-th-10"
-        #     ffmpeg_command.extend(["-vf", watermark_argument])
+        if task.name == 'lr':
+            ffmpeg_command.extend(["-vf", "scale=768:576"])
 
         ffmpeg_command.extend(db_settings['video_quality'].split(' '))
 

@@ -325,7 +325,7 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
     # Get nb of frames for the video track
     video_count = 0
     for s in scenes:
-        video_count += s['count']
+        video_count += s['dst']['count']
     if db_video['count'] != video_count:
         sys.exit(red(f"consolidate_av_tracks : error: {k_ep}:{k_chapter_c} consolidate has not been done before: why?"))
 

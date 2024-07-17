@@ -428,12 +428,14 @@ def qtgmc_deint_command(
 
     # Resize with SAR
     in_h, in_w = in_video_info['shape'][:2]
+    if in_video_info['sar'][0] >= in_video_info['sar'][1]:
+        in_w = int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)
+    else:
+        in_h = int((in_h * float(in_video_info['sar'][1]) / in_video_info['sar'][0]) + 0.5)
+
     resize = f"""
-        scale=
-        {int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)}
-        :{in_h}
-        :sws_flags=
-            lanczos
+        scale={in_w}:{in_h}:sws_flags=
+            bilinear
             + full_chroma_int
             + full_chroma_inp
             + accurate_rnd
@@ -552,11 +554,13 @@ def deint_command(
 
     # Resize with SAR
     in_h, in_w = in_video_info['shape'][:2]
+    if in_video_info['sar'][0] >= in_video_info['sar'][1]:
+        in_w = int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)
+    else:
+        in_h = int((in_h * float(in_video_info['sar'][1]) / in_video_info['sar'][0]) + 0.5)
+
     resize = f"""
-        scale=
-        {int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)}
-        :{in_h}
-        :sws_flags=
+        scale={in_w}:{in_h}:sws_flags=
             bilinear
             + full_chroma_int
             + full_chroma_inp

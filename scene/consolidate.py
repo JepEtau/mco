@@ -273,8 +273,8 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
             # Append images
             if 'segments' in scene['src'] and len(scene['src']['segments']) > 0:
-                index_start = 0
-                index_end = scene['dst']['count']
+                index_start = max(0, scene['src']['start'] - scene['start'])
+                index_end = index_start + scene['dst']['count']
             else:
                 index_start = max(0, scene['src']['start'] - scene['start'])
                 index_end = index_start + scene['dst']['count']

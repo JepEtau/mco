@@ -114,11 +114,12 @@ def main():
             print(lightgreen(f"{scene['start']}".rjust(6)), end='')
             print(f"{scene['dst']['count']}".rjust(8), end='')
 
-            print(f"    {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}".rjust(8), end='')
-            print(f"   {scene['src']['start']}".rjust(8), end='')
-            print(f"({scene['src']['count']})".rjust(8), end='')
+            print(f"  <-  {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}:{scene['src']['no']: 3}".ljust(18), end='')
+
+            src_scene = db[scene['k_ep']]['video'][scene['k_ed']][scene['k_ch']]['scenes'][scene['src']['no']]
+            print(f"   {src_scene['start']}".rjust(10), end='')
+            print(f"({src_scene['count']})".rjust(8), end='')
             print()
-            # print(scene['src'])
 
 
 if __name__ == "__main__":

@@ -128,7 +128,6 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str):
                 if k not in target_scene['src'].keys():
                     target_scene['src'][k] = v
 
-
             # Copy properties from src
             _k_ed_src = target_scene['src']['k_ed']
             _k_ep_src = target_scene['src']['k_ep']
@@ -319,14 +318,18 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
 
         else:
             # Scene was defined in target
-            if 'k_ed' not in target_scene['src'].keys():
-                target_scene['src']['k_ed'] = k_ed_src
-            if 'k_ep' not in target_scene['src'].keys():
-                target_scene['src']['k_ep'] = k_ep
-            if 'k_ch' not in target_scene['src'].keys():
-                target_scene['src']['k_ch'] = k_chapter_c
-            if 'no' not in target_scene['src'].keys():
-                target_scene['src']['no'] = target_scene['no']
+            target_scene['src']['replace'] = True
+
+            # Add the missing field in 'src' dict
+            d = {
+                'k_ed': k_ed_src,
+                'k_ep': k_ep,
+                'k_ch': k_chapter_c,
+                'no': target_scene['no'],
+            }
+            for k, v in d.items():
+                if k not in target_scene['src'].keys():
+                    target_scene['src'][k] = v
 
             # Copy properties from src
             _k_ed_src = target_scene['src']['k_ed']
@@ -373,7 +376,7 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
 
 
         # Calculate frames count
-        frame_count += target_scene['count']
+        frame_count += target_scene['dst']['count']
 
     db_video_target['count'] = frame_count
 
