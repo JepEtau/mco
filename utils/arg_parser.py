@@ -35,13 +35,6 @@ def common_argument_parser(
         )
 
     parser.add_argument(
-        "--stats",
-        action="store_true",
-        required=False,
-        help="debug"
-    )
-
-    parser.add_argument(
         "--debug",
         action="store_true",
         required=False,

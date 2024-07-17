@@ -7,8 +7,17 @@ from parsers import (
     parse_database,
     logger,
     db,
+    Chapter,
+    all_chapter_keys,
+    key,
+    ProcessingTask,
+    TaskName,
 )
 from utils.arg_parser import common_argument_parser
+from utils.mco_types import (
+    Scene,
+    VideoChapter,
+)
 from utils.p_print import *
 
 
@@ -21,6 +30,23 @@ def main():
         action="store_true",
         required=False,
         help="English version"
+    )
+
+    parser.add_argument(
+        "--stats",
+        choices=['scene'],
+        default='',
+        required=False,
+        help="debug"
+    )
+
+    parser.add_argument(
+        "--edition",
+        "-ed",
+        choices=['f', 'k', 's', 'j'],
+        default='',
+        required=False,
+        help="Use this edition as source rather than the one selected in database"
     )
 
     arguments = parser.parse_args()
@@ -61,9 +87,38 @@ def main():
     # print(db_ep['cache_path'])
     # pprint(db_ep['audio'])
 
-    print(db.keys())
-    pprint(db['common'])
+    # print(db.keys())
+    # pprint(db['common'])
+    k_ep = key(episode)
+    task: TaskName = 'initial'
 
+    single_chapter: Chapter = arguments.chapter
+    chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
+    for chapter in chapters:
+        k_ep_src: str = ''
+        video: VideoChapter
+        if chapter in ('g_debut', 'g_fin'):
+            video = db[chapter]['video']
+            k_ep_src: str = k_ep if task == 'initial' else video['src']['k_ep']
+        elif k_ep == 'ep00':
+            sys.exit(red("Missing episode no."))
+
+        if video['count'] <= 0:
+            continue
+        video['task'] = ProcessingTask(name='initial')
+
+        # Walk through target scenes
+        scenes: list[Scene] = video['scenes']
+        for scene in scenes:
+            print(lightgreen(f"    {scene['no']}".rjust(8)), end=':')
+            print(lightgreen(f"{scene['start']}".rjust(6)), end='')
+            print(f"{scene['dst']['count']}".rjust(8), end='')
+
+            print(f"    {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}".rjust(8), end='')
+            print(f"   {scene['src']['start']}".rjust(8), end='')
+            print(f"({scene['src']['count']})".rjust(8), end='')
+            print()
+            # print(scene['src'])
 
 
 if __name__ == "__main__":

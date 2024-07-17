@@ -293,24 +293,24 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
 
 
     frame_count = 0
-    for scene in db_video_target['scenes']:
+    for target_scene in db_video_target['scenes']:
         # TODO: 'dst' count may be erroneous... to validate
-        if 'src' not in scene.keys():
+        if 'src' not in target_scene.keys():
             # Scene is copied from src
-            scene.update({
+            target_scene.update({
                 'src': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep_src,
                     'k_ch': k_chapter_c,
-                    'no': scene['no'],
-                    'start': scene['start'],
-                    'count': scene['count'],
+                    'no': target_scene['no'],
+                    'start': target_scene['start'],
+                    'count': target_scene['count'],
                 },
                 'dst': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep,
                     'k_ch': k_chapter_c,
-                    'count': scene['count'],
+                    'count': target_scene['count'],
                 },
                 'k_ed': k_ed_src,
                 'k_ep': k_ep_src,
@@ -319,36 +319,52 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
 
         else:
             # Scene was defined in target
-            if 'k_ed' not in scene['src'].keys():
-                scene['src']['k_ed'] = k_ed_src
-            if 'k_ep' not in scene['src'].keys():
-                scene['src']['k_ep'] = k_ep
-            if 'k_ch' not in scene['src'].keys():
-                scene['src']['k_ch'] = k_chapter_c
-            if 'no' not in scene['src'].keys():
-                scene['src']['no'] = scene['no']
+            if 'k_ed' not in target_scene['src'].keys():
+                target_scene['src']['k_ed'] = k_ed_src
+            if 'k_ep' not in target_scene['src'].keys():
+                target_scene['src']['k_ep'] = k_ep
+            if 'k_ch' not in target_scene['src'].keys():
+                target_scene['src']['k_ch'] = k_chapter_c
+            if 'no' not in target_scene['src'].keys():
+                target_scene['src']['no'] = target_scene['no']
 
             # Copy properties from src
-            _k_ed_src = scene['src']['k_ed']
-            _k_ep_src = scene['src']['k_ep']
-            _k_chapter_src = scene['src']['k_ch']
-            _scene_no_src = scene['src']['no']
-            _scene_src = db[_k_ep_src]['video'][_k_ed_src][_k_chapter_src]['scenes'][_scene_no_src]
+            _k_ed_src = target_scene['src']['k_ed']
+            _k_ep_src = target_scene['src']['k_ep']
+            _k_chapter_src = target_scene['src']['k_ch']
+            _scene_no_src = target_scene['src']['no']
+            _scene_src: Scene = db[_k_ep_src]['video'][_k_ed_src][_k_chapter_src]['scenes'][_scene_no_src]
             for k in _scene_src.keys():
-                if k not in scene.keys():
-                    scene[k] = deepcopy(_scene_src[k])
+                if k not in target_scene.keys():
+                    target_scene[k] = deepcopy(_scene_src[k])
 
-            if 'count' not in scene['src'].keys():
-                scene['src']['count'] = scene['count']
-            if 'start' not in scene['src'].keys():
-                scene['src']['start'] = scene['start']
+            if 'segments' in target_scene['src'].keys():
+                dst_count = 0
+                for s in target_scene['src']['segments']:
+                    dst_count += s['count']
+                if len(target_scene['src']['segments']) > 1:
+                    raise NotImplementedError("More than 1 sgement is not supported")
 
-            scene.update({
+                target_scene['src']['start'] = target_scene['src']['segments'][0]['start']
+                target_scene['src']['count'] = target_scene['src']['segments'][0]['count']
+
+            else:
+                # Use the frame start/count from the original scene
+                for k in ['start', 'count']:
+                    if k not in target_scene['src'].keys():
+                        target_scene['src'][k] = target_scene[k]
+
+                dst_count = min(target_scene['count'], target_scene['src']['count'])
+                if dst_count > target_scene['count']:
+                    print(red(f"error: {k_ep}:{k_chapter_c}, not enough frames in src to generate scene no. {target_scene['no'],}"))
+                    sys.exit()
+
+            target_scene.update({
                 'dst': {
                     'k_ed': k_ed_src,
                     'k_ep': k_ep,
                     'k_ch': k_chapter_c,
-                    'count': scene['count'],
+                    'count': dst_count,
                 },
                 'k_ed': _k_ed_src,
                 'k_ep': _k_ep_src,
@@ -357,7 +373,7 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
 
 
         # Calculate frames count
-        frame_count += scene['count']
+        frame_count += target_scene['count']
 
     db_video_target['count'] = frame_count
 
