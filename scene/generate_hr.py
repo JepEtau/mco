@@ -64,9 +64,6 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
     # Input
     video_info: VideoInfo = extract_media_info(in_fp)['video']
 
-    pprint(scene['task'].video_settings)
-    pprint(video_info)
-
     if len(scene['replace'].keys()) == 0:
         print("no frames to replace")
         return _add_borders_to_scene(scene, video_info, debug)
