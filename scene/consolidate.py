@@ -240,7 +240,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
         )
 
     # List frames
-    if task_name == 'lr':
+    if task_name in ('initial', 'lr'):
         scene['in_frames'] = Images(scene)
         if k_ch in ('g_asuivre', 'g_documentaire'):
             scene['out_frames'] = get_out_frame_list_single(
@@ -287,7 +287,12 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
         scene['task'].in_video_file = get_video_filename(scene=scene, task_name='upscale')
 
     # Output video settings
-    _task_name: str = 'upscale' if task_name == 'hr' else task_name
+    _task_name: str = task_name
+    if task_name == 'hr':
+        _task_name = 'upscale'
+    elif task_name == 'initial':
+        _task_name = 'hr'
+
     vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
     if vsettings is not None:
         scene['task'].video_settings = deepcopy(vsettings)

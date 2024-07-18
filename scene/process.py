@@ -38,6 +38,7 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
         do_process: bool = True
         if not force:
             do_process = False
+            pprint(scene)
             for fp in scene['in_frames'].out_images():
                 if not os.path.exists(fp):
                     do_process = True
