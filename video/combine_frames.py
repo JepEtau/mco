@@ -32,7 +32,6 @@ def combine_frames(
     scene: Scene,
     force: bool = False,
     simulation: bool = False,
-    watermark: str| None = None,
 ) -> None:
     verbose = False
     task: ProcessingTask = scene['task']
@@ -74,6 +73,7 @@ def combine_frames(
             "-color_range:v", "tv"
         ]
 
+        # Force all scenes to the same dimension
         if task.name == 'lr':
             ffmpeg_command.extend(["-vf", "scale=768:576"])
 

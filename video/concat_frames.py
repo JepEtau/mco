@@ -110,10 +110,15 @@ def generate_concat_file(
     k_ep, k_ch = key(episode), chapter
 
     # Get the list of frames for this scene
-    img_fp: list[str] = scene['out_frames']
+    img_fp: list[str] = []
+    if scene['task'].name == 'initial':
+        img_fp = scene['in_frames'].in_images()
 
-    black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
-    generate_black_frame(black_image_filepath, img_fp[0])
+    else:
+        img_fp = scene['out_frames']
+        black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
+        generate_black_frame(black_image_filepath, img_fp[0])
+
 
     # Folder for concatenation file
     makedirs(k_ep, k_ch, 'concat')

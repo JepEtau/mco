@@ -24,7 +24,7 @@ def get_out_frame_paths_until_effects(scene: Scene) -> list[str]:
 
     # Input folder
     current_output_folder: str = ''
-    if scene['task'].name == 'lr' and not do_watermark(scene):
+    if scene['task'].name in 'lr' and not do_watermark(scene):
         current_output_folder = os.path.join(
             get_cache_path(scene),
             task_to_dirname['initial']
@@ -68,47 +68,45 @@ def get_out_frame_paths_until_effects(scene: Scene) -> list[str]:
                 step_no=step_no-1,
                 hash=hash)
 
+    if scene['task'].name == 'initial':
+        dirname, hashcode = get_dirname(scene, out=True)
+        directory: str = os.path.join(scene['cache'], dirname)
+        print(f"get_out_frame_paths_until_effects {scene['task'].name} -> {dirname}")
+        index_start = 0
+        index_end = 0
+
+        filename_template = IMG_FILENAME_TEMPLATE % (
+            scene['k_ep'],
+            scene['k_ed'],
+            int(dirname[:2]),
+            f"_{hashcode}" if hashcode != '' else ""
+        )
+
+        image_list: list[str] = list([
+            os.path.join(directory, filename_template % (scene['start'] + no))
+            for no in range(scene['count'])
+        ])
+
     else:
-        if scene['task'].name == 'initial':
-            image_list = get_image_list_pre_replace(
-                scene=scene,
-                folder=current_output_folder,
-                step_no=step_no,
-                hash=hash
-            )
+        dirname, hashcode = get_dirname(scene, out=True)
+        directory: str = os.path.join(scene['cache'], dirname)
+        print(red(f"get_out_frame_paths -> {dirname}"))
 
-        else:
-            dirname, hashcode = get_dirname(scene, out=True)
-            directory: str = os.path.join(scene['cache'], dirname)
-            print(red(f"get_out_frame_paths -> {dirname}"))
+        filename_template = IMG_FILENAME_TEMPLATE % (
+            scene['k_ep'],
+            scene['k_ed'],
+            int(dirname[:2]),
+            f"_{hashcode}" if hashcode != '' else ""
+        )
 
-            filename_template = IMG_FILENAME_TEMPLATE % (
-                scene['k_ep'],
-                scene['k_ed'],
-                int(dirname[:2]),
-                f"_{hashcode}" if hashcode != '' else ""
-            )
-
-            frame_replace = scene['replace']
+        frame_replace = scene['replace']
 
 
-            image_list: list[str] = []
-            for no in range(scene['start'], scene['start'] + scene['count']):
-                out_no: int = frame_replace[no] if no in frame_replace else no
-                image_list.append(os.path.join(directory, filename_template % (out_no)))
+        image_list: list[str] = []
+        for no in range(scene['start'], scene['start'] + scene['count']):
+            out_no: int = frame_replace[no] if no in frame_replace else no
+            image_list.append(os.path.join(directory, filename_template % (out_no)))
 
-
-
-        # else:
-        #     image_list = get_image_list(
-        #         scene=scene,
-        #         folder=current_output_folder,
-        #         step_no=step_no,
-        #         hash=hash
-        #     )
-
-    # pprint(image_list)
-    # print(lightcyan(f"{index_start} -> {index_end}"))
     return image_list[index_start:index_end]
 
 
@@ -384,7 +382,7 @@ def get_out_frame_list_single(
 
 
     # Add files for effects
-    if 'effects' in scene:
+    if 'effects' in scene and scene['task'].name != 'initial':
         effect: Effect = scene['effects'].primary_effect()
         main_logger.debug(green(f"\tget frame list (single): effect={effect}"))
 

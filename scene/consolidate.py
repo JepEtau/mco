@@ -228,12 +228,12 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     scene['inputs']['progressive']['filepath'] = progressive_fp
 
     task_name: str = scene['task'].name
-    if task_name == 'lr' and watermark:
+    if task_name in ('initial', 'lr') and watermark:
         # if 'effects' in scene:
         #     scene['effects'] = Effects()
         # scene['effects'].append(Effect(name='watermark'))
-        sequence: str = scene['filters']['lr'].sequence
-        scene['filters']['lr'].sequence = (
+        sequence: str = scene['filters'][task_name].sequence
+        scene['filters'][task_name].sequence = (
             f"{sequence};watermark"
             if sequence
             else "watermark"

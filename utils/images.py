@@ -45,14 +45,15 @@ class Images:
         )
         print(red(f"Images: {in_dirname} -> {out_dirname}"))
 
-        frame_replace = scene['replace']
+        frame_replace: dict[int, int] = {}
+        if scene['task'].name != 'initial':
+            frame_replace = scene['replace']
         # if replace:
         #     imgs: list[str] = []
         #     for no in range(scene['start'], scene['start'] + scene['count']):
         #         out_no: int = frame_replace[no] if no in frame_replace else no
         #         imgs.append(os.path.join(directory, filename_template % (out_no)))
         #     return imgs
-
         self._images = list([
             Image(
                 no=no,

@@ -126,6 +126,9 @@ def generate_video_track(
                         'k_ed': k_ed,
                         'k_ep': k_ep_src,
                         'k_ch': chapter,
+                        'no': scene['no'],
+                        'start': scene['start'],
+                        'count': scene['count'],
                     },
                     'k_ed': k_ed,
                     'k_ep': k_ep_src,
@@ -156,8 +159,8 @@ def generate_video_track(
                 if chapter not in ('g_debut', 'g_fin'):
                     unique_input_frame_count += len(scene['in_frames'])
 
-            if task == 'initial':
-                continue
+            # if task == 'initial':
+            #     continue
 
             # Calculate hash for the video
             hashes_str += f",{scene['task'].hashcode}"
@@ -183,7 +186,6 @@ def generate_video_track(
                 scene=scene,
                 force=force,
                 simulation=simulation,
-                watermark=f"{scene['no']}" if watermark else None
             )
 
             if debug:
@@ -193,11 +195,10 @@ def generate_video_track(
                     f"{s_to_sexagesimal(elapsed)} ({elapsed/scene['count']:02f}s/f)\n"
                 ))
 
-            if debug:
-                print(lightcyan("================================== Scene ======================================="))
-                pprint(scene)
-                # print(scene['in_frames'])
-                print(lightcyan("==============================================================================="))
+            # if debug:
+            #     print(lightcyan("================================== Scene ======================================="))
+            #     pprint(scene)
+            #     print(lightcyan("==============================================================================="))
                 # sys.exit()
 
         video['hash'] = calc_hash(hashes_str[:-1])

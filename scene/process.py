@@ -38,7 +38,6 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
         do_process: bool = True
         if not force:
             do_process = False
-            pprint(scene)
             for fp in scene['in_frames'].out_images():
                 if not os.path.exists(fp):
                     do_process = True
@@ -53,8 +52,10 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
                     [scene['src']['k_ed']]
                     [scene['src']['k_ch']]
                 )
-                scene['src']['start'] = src_video['start']
-                scene['src']['count'] = src_video['count']
+                scene['src'].update({
+                    'start': src_video['scenes'][scene['src']['no']]['start'],
+                    'count': src_video['scenes'][scene['src']['no']]['count'],
+                })
 
             if 'segments' not in scene['src']:
                 start: int = (
@@ -119,7 +120,7 @@ def process_scene(scene: Scene, force: bool = False) -> bool:
             success: bool = True
 
         if do_watermark(scene):
-            directory: str = os.path.join(get_cache_path(scene), task_to_dirname['lr'])
+            directory: str = os.path.join(get_cache_path(scene), task_to_dirname[scene['task'].name])
             os.makedirs(directory, exist_ok=True)
             max_workers: int = multiprocessing.cpu_count()
             with ThreadPoolExecutor(max_workers=max_workers) as executor:
