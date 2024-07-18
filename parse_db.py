@@ -109,18 +109,32 @@ def main():
 
         # Walk through target scenes
         scenes: list[Scene] = video['scenes']
+        ref_count: int = 0
+        target_count = 0
+        src_count = 0
         for scene in scenes:
             print(lightgreen(f"    {scene['no']}".rjust(8)), end=':')
             print(lightgreen(f"{scene['start']}".rjust(6)), end='')
+            print(lightgreen(f"  (src: {scene['src']['count']})".rjust(8)), end='')
+            print(lightgreen(f"{scene['count']}".rjust(6)), end='')
+            ref_count += scene['ref']['count']
             print(f"{scene['dst']['count']}".rjust(8), end='')
+            target_count += scene['dst']['count']
 
             print(f"  <-  {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}:{scene['src']['no']: 3}".ljust(18), end='')
 
             src_scene = db[scene['k_ep']]['video'][scene['k_ed']][scene['k_ch']]['scenes'][scene['src']['no']]
             print(f"   {src_scene['start']}".rjust(10), end='')
-            print(f"({src_scene['count']})".rjust(8), end='')
+            print(f"{src_scene['count']}".rjust(8), end='')
+            try:
+                src_count += src_scene['count']
+            except:
+                pprint(scene['src'])
             print()
 
+        print(f"Reference: {ref_count}")
+        print(f"Source: {src_count}")
+        print(f"Destination: {target_count}")
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)

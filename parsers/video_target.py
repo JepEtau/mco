@@ -3,7 +3,7 @@ from configparser import ConfigParser
 import re
 import sys
 
-from utils.mco_types import Effect, Effects
+from utils.mco_types import Effect, Effects, Scene
 from ._keys import (
     key,
     all_chapter_keys,
@@ -16,6 +16,28 @@ from .helpers import (
 )
 from .logger import logger
 from utils.p_print import *
+from ._db import db
+
+
+
+def get_video_chapter_frame_count(k_ep: str, k_ch: str) -> int:
+    if k_ch in ('g_debut', 'g_fin'):
+        db_video = db[k_ch]['video']
+        scenes: list[Scene] = db_video['scenes']
+        if len(scenes) == 1:
+            if db_video['count'] != scenes[0]['count']:
+                sys.exit(red(f"consolidate_av_tracks : {k_ep}:{k_ch} todo: correct and remove this as this shall not occur: end"))
+
+
+        video_count = 0
+        scenes
+        for s in scenes:
+            video_count += s['dst']['count']
+        if db_video['count'] != video_count:
+            sys.exit(red(f"consolidate_av_tracks : error: {k_ep}:{k_ch} consolidate has not been done before: why?"))
+        return video_count
+
+    raise NotImplementedError(":".join((k_ep, k_ch)))
 
 
 

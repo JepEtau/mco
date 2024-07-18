@@ -307,9 +307,10 @@ def get_out_frame_paths(
 
     if k_ch in ('g_debut', 'g_fin', 'precedemment'):
         # Append silence to these parts
-        if 'silence' in db_video and scene['no'] == (len(db_video['scenes']) - 1):
+        if 'silence' in db_video and scene['no'] == len(db_video['scenes']) - 1:
             black_image_filepath = os.path.join(
-                db['common']['directories']['cache'], 'black.png'
+                db['common']['directories']['cache'],
+                'black.png'
             )
             for _ in range(db_video['silence']):
                 imgs.append(black_image_filepath)

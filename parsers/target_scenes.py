@@ -6,7 +6,7 @@ from .logger import logger
 from .helpers import get_fps, nested_dict_set
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
-from utils.mco_types import ChapterAudio, Effect, Effects, Scene, VideoChapter
+from utils.mco_types import ChapterAudio, Effect, Effects, RefScene, Scene, VideoChapter
 from ._db import db
 from ._types import key
 
@@ -217,6 +217,7 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
         raise KeyError(f"Error: missing file from edition {k_ed_src}",
                        f"cannot use {k_ep_src}:{k_chapter_c}")
 
+
     if k_chapter_c in ('g_debut', 'g_fin'):
         db_video_target: VideoChapter = db[k_chapter_c]['video']
         if 'avsync' in db_video_target.keys():
@@ -289,7 +290,6 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
         if scene_src['no'] not in target_scene_nos:
             db_video_target['scenes'].append(deepcopy(scene_src))
     db_video_target['scenes'] = sorted(db_video_target['scenes'], key=lambda s: s['no'])
-
 
     frame_count = 0
     for target_scene in db_video_target['scenes']:
@@ -379,6 +379,29 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
         frame_count += target_scene['dst']['count']
 
     db_video_target['count'] = frame_count
+
+    # Reference
+    if k_chapter_c == 'g_debut':
+        for scene in db_video_target['scenes']:
+            ref_count = (
+                db[k_ep_src]
+                ['video']
+                [k_ed_src]
+                [k_chapter_c]
+                ['scenes']
+                [scene['no']]
+                ['count']
+            )
+            scene['ref'] = RefScene(count=ref_count)
+            if scene['count'] != ref_count:
+                print(
+                    yellow(f"Wrong nb of frames"),
+                    f"ref= {ref_count: 4}",
+                    "<-",
+                    lightgreen(f"{scene['count']: 4} {':'.join((k_ed_src, k_ep_src))}")
+                )
+                # pprint(scene)
+                # print()
 
 
     # Effects

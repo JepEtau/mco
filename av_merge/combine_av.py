@@ -79,8 +79,8 @@ def combine_av_tracks(
         else os.path.join(cache_path, f"{k}_av{suffix}{language}.mkv")
     )
 
-    if os.path.exists(audio_video_filepath) and not force and not simulation:
-        return
+    # if os.path.exists(audio_video_filepath) and not force and not simulation:
+    #     return
 
     # Get nb of frames from video stream
     if k in ('g_debut', 'g_fin'):

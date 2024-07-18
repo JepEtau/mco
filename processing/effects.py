@@ -173,6 +173,17 @@ def effect_loop_and_fadeout(scene: Scene, effect: Effect) -> None:
         print(lightgrey(f"\toutput image count: {len(in_imgs)}"))
 
     out_imgs: list[str] = scene['out_frames'][-fadeout_count:]
+    if k_ch_dst in ('g_debut', 'g_fin', 'precedemment'):
+        db_video = (
+            db[k_ch_dst]['video']
+            if k_ch_dst in ('g_debut', 'g_fin')
+            else db[k_ep_src]['video']['target'][k_ch_dst]
+        )
+        if 'silence' in db_video:
+            db_video['silence']
+            out_imgs: list[str] = scene['out_frames'][-(fadeout_count + db_video['silence']):]
+
+
     if verbose:
         print("OUT:")
         pprint(out_imgs)
