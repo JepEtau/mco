@@ -33,13 +33,15 @@ from .combine_frames import combine_frames
 
 
 
-def generate_video_track(
+def extract_scenes(
     episode: str,
     single_chapter: Chapter = '',
     task: TaskName = '',
     force: bool = False,
     simulation: bool = False,
     scene_no: int | None = None,
+    scene_min: int = -1,
+    scene_max: int = -1,
     watermark: bool = False,
     edition: str | None = None,
     debug: bool = False
@@ -75,25 +77,16 @@ def generate_video_track(
     for chapter in chapters:
         hashes_str = ''
 
-        # k_ep_src is the default episode source used to generate a chapter
-        k_ep_src: str = ''
         video: VideoChapter
         if chapter in ('g_debut', 'g_fin'):
             video = db[chapter]['video']
-            k_ep_src: str = k_ep if task == 'initial' else video['src']['k_ep']
 
         elif k_ep == 'ep00':
             sys.exit(red("Missing episode no."))
 
-        else:
-            # Use the source video clip if edition is specified
-            # Used for study
-            video = (
-                db[k_ep]['video']['target'][chapter]
-                if k_ed == ''
-                else db[k_ep]['video'][k_ed][chapter]
-            )
-            k_ep_src = k_ep
+        # Use the source video clip if edition is specified
+        # Used for study
+        video = db[k_ep]['video'][k_ed][chapter]
 
         # Do not generate clip for unused chapters
         if video['count'] <= 0:
@@ -104,7 +97,6 @@ def generate_video_track(
         print(lightcyan(chapter))
 
         video['task'] = ProcessingTask(name=task)
-        previous_concat_fp = ''
 
         # Walk through target scenes
         scenes: list[Scene] = video['scenes']
@@ -112,36 +104,30 @@ def generate_video_track(
             start_time = time.time()
             if scene_no is not None and scene['no'] != scene_no:
                 continue
+            if scene_min != -1 and scene_max != -1:
+                if scene['no'] < scene_min or scene['no'] > scene_max:
+                    continue
 
             # Patch the for study mode
-            if k_ed != '':
-                _scene: Scene = (
-                    db[k_ep_src]
-                    ['video']
-                    [k_ed]
-                    [chapter]
-                    ['scenes']
-                    [scene['no']]
-                )
-                scene.update({
-                    'dst': {
-                        'count': scene['count'],
-                        'k_ed': k_ed,
-                        'k_ep': k_ep,
-                        'k_ch': chapter,
-                    },
-                    'src': {
-                        'k_ed': k_ed,
-                        'k_ep': k_ep_src,
-                        'k_ch': chapter,
-                        'no': scene['no'],
-                        'start': _scene['start'],
-                        'count': _scene['count'],
-                    },
+            scene.update({
+                'dst': {
+                    'count': scene['count'],
                     'k_ed': k_ed,
-                    'k_ep': k_ep_src,
+                    'k_ep': k_ep,
                     'k_ch': chapter,
-                })
+                },
+                'src': {
+                    'k_ed': k_ed,
+                    'k_ep': k_ep,
+                    'k_ch': chapter,
+                    'no': scene['no'],
+                    'start': scene['start'],
+                    'count': scene['count'],
+                },
+                'k_ed': k_ed,
+                'k_ep': k_ep,
+                'k_ch': chapter,
+            })
 
             print(
                 lightgreen(f"\t{scene['no']}: {scene['start']}"),
@@ -179,7 +165,7 @@ def generate_video_track(
             hashes_str += f",{scene['task'].hashcode}"
 
             # Create concatenation file
-            set_concat_filename(episode=k_ep_src, chapter=chapter, scene=scene)
+            set_concat_filename(episode=k_ep, chapter=chapter, scene=scene)
             set_video_filename(scene)
             generate_concat_file(
                 episode=episode,
