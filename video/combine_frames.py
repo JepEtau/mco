@@ -34,6 +34,7 @@ def combine_frames(
     simulation: bool = False,
 ) -> None:
     verbose = False
+    pprint(scene)
     task: ProcessingTask = scene['task']
     video_fp: str = task.video_file
 

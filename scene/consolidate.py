@@ -242,19 +242,11 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     # List frames
     if task_name in ('initial', 'lr'):
         scene['in_frames'] = Images(scene)
-        if k_ch in ('g_asuivre', 'g_documentaire'):
-            scene['out_frames'] = get_out_frame_list_single(
-                episode=k_ep,
-                chapter=k_ch,
-                scene=scene
-            )
-
-        else:
-            scene['out_frames'] = get_out_frame_paths(
-                episode=k_ep,
-                chapter=k_ch,
-                scene=scene
-            )
+        scene['out_frames'] = get_out_frame_paths(
+            episode=k_ep,
+            chapter=k_ch,
+            scene=scene
+        )
 
     elif task_name == 'hr':
         if k_ch in ('g_asuivre', 'g_documentaire'):

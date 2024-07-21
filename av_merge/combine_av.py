@@ -11,7 +11,8 @@ from parsers import (
 )
 from utils.logger import main_logger
 from audio import get_audio_frame_count
-from utils.mco_utils import makedirs, run_simple_command
+from utils.mco_utils import run_simple_command
+from utils.mco_path import makedirs
 from utils.p_print import *
 from utils.path_utils import absolute_path
 from utils.tools import ffprobe_exe, ffmpeg_exe

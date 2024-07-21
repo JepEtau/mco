@@ -5,7 +5,7 @@ import time
 from pprint import pprint
 
 from scene.consolidate import consolidate_scene
-from scene.process import process_scene
+from scene.generate_lr import generate_lr_scene
 from utils.hash import calc_hash
 from utils.logger import main_logger
 from utils.mco_types import Scene, VideoChapter
@@ -147,7 +147,7 @@ def extract_scenes(
                 print(lightcyan("==============================================================================="))
 
             if not simulation:
-                result = process_scene(scene=scene, force=force)
+                result = generate_lr_scene(scene=scene, force=force)
                 if not result:
                     pprint(db[scene['k_ep']]['video'][scene['k_ed']])
                     raise RuntimeError(

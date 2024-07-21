@@ -68,7 +68,7 @@ def add_watermark(image: Image, scene: Scene) -> None:
         align=alignment.value,
         fill=ink,
     )
-    if scene['task'].name == 'initial':
+    if scene['task'].name in ('initial', 'lr'):
         add_watermark_initial(pil_image=pil_image, scene=scene)
     img: np.ndarray = np.array(pil_image)
 
@@ -82,13 +82,20 @@ def add_watermark_initial(pil_image: PilImage.Image, scene: Scene) -> None:
 
     height: int = pil_image.height
 
-    src_scene = db[scene['k_ep']]['video'][scene['k_ed']][scene['k_ch']]['scenes'][scene['src']['no']]
-    text: str = f"{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['no']:03} {src_scene['count']}"
+    if scene['task'].name == 'initial':
+        src_scene = db[scene['k_ep']]['video'][scene['k_ed']][scene['k_ch']]['scenes'][scene['src']['no']]
+        text: str = f"{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['no']:03} {src_scene['count']}"
+        color: tuple[int, int, int] = (0, 240, 0)
+    else:
+        src_scene = scene
+        text: str = f"{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['no']:03} {src_scene['dst']['count']}"
+        color: tuple[int, int, int] = (255, 240, 0)
+
     font_size: int = 70
     bold: bool = True
     italic: bool = False
     alignment: WatermarkAlignment = WatermarkAlignment.LEFT
-    color: tuple[int, int, int] = (0, 240, 0)
+
 
     font_path = os.path.join(font_dir, _FONT_PATH[int(bold)][int(italic)])
 

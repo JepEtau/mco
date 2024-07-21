@@ -14,7 +14,7 @@ from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
 from video.extract_scenes import extract_scenes
-from video.video_track import generate_video_track
+from video.lr_scenes import generate_lr_scenes
 
 
 

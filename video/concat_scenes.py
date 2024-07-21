@@ -1,7 +1,8 @@
 import os
 from pprint import pprint
 
-from utils.mco_utils import makedirs, run_simple_command
+from utils.mco_utils import run_simple_command
+from utils.mco_path import makedirs
 from utils.mco_types import Scene, VideoChapter
 from utils.logger import main_logger
 from utils.p_print import *
@@ -20,6 +21,10 @@ def concat_scenes(
     force: bool=False,
     simulation: bool=False
 ) -> None:
+    """Generate a concatenate file that lists
+        scenes into a single video clips
+    """
+
     verbose: bool = False
     if 'scenes' not in video:
         return

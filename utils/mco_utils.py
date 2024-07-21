@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 import time
 from typing import Literal, TYPE_CHECKING
 # if TYPE_CHECKING:
@@ -16,30 +17,7 @@ from .logger import main_logger
 
 
 
-def makedirs(
-    episode,
-    chapter: Chapter = '',
-    type: Literal['video', 'concat'] = 'video'
-):
-    """ Create a directory that contains all video clips or the concatenation files
-    """
-    k_ep = key(episode)
-    if k_ep in ['ep00', 'ep40']:
-        return
 
-    k = chapter if chapter in ('g_debut', 'g_fin') else k_ep
-
-    if type == 'video':
-        directory = os.path.join(db[k]['cache_path'], 'video')
-
-    elif type == 'concat':
-        directory = os.path.join(db[k]['cache_path'], "concat")
-
-    else:
-        raise ValueError(f"Wrong type: {type}")
-
-    os.makedirs(directory, exist_ok=True)
-    return directory
 
 
 
@@ -55,7 +33,7 @@ def nested_dict_set(d: dict, o: object, *keys) -> None:
 
 
 
-def get_cache_path(scene: Scene) -> str:
+def get_cache_path(scene: Scene, out: bool=False) -> str:
     task_name: TaskName = scene['task'].name
     cache_dir: str = db['common']['directories']['cache']
 
@@ -66,6 +44,22 @@ def get_cache_path(scene: Scene) -> str:
             scene['k_ch'],
             f"{scene['no']:03}"
         )
+
+    if scene['k_ch'] in ('g_asuivre', 'g_documentaire'):
+        if out:
+            return os.path.join(
+                cache_dir,
+                scene['dst']['k_ep'],
+                scene['dst']['k_ch'],
+                f"{scene['src']['no']:03}"
+            )
+        return os.path.join(
+            cache_dir,
+            scene['src']['k_ep'],
+            scene['dst']['k_ch'],
+            f"{scene['src']['no']:03}"
+        )
+
 
     # If last task is geometry, use the dst structure
     if task_name == 'final':
@@ -101,17 +95,19 @@ def get_cache_path(scene: Scene) -> str:
 def get_dirname(scene: Scene, out: bool = False) -> tuple[str, str]:
     task_name: TaskName = scene['task'].name
     print(red(f"get_dirname: out:{out}, {task_name}"))
-    if out:
-        
-        if task_name == 'lr' and not do_watermark(scene):
-            return task_to_dirname['initial'], scene['filters']['initial'].hash
-    else:
-        # Use initial folder as the source
-        if (
-            task_name == 'lr' and not do_watermark(scene)
-            or task_name == 'hr'
-        ):
-            return task_to_dirname['initial'], scene['filters']['initial'].hash
+    if (
+        out
+        and task_name == 'lr'
+        and not do_watermark(scene)
+    ):
+        return task_to_dirname['initial'], scene['filters']['initial'].hash
+
+    # Use initial folder as the source
+    if (
+        task_name == 'lr' and not do_watermark(scene)
+        or task_name == 'hr'
+    ):
+        return task_to_dirname['initial'], scene['filters']['initial'].hash
 
 
     index: str = 0
@@ -135,12 +131,28 @@ def get_out_directory(scene: Scene):
     dirname: str = task_to_dirname[task_name]
     cache_dir: str = db['common']['directories']['cache']
 
-    # print(yellow(f"get_out_directory:"), f"{task_name} -> {dirname}")
+    if (
+        scene['task'].name in 'lr'
+        and not do_watermark(scene)
+    ):
+        return os.path.join(
+            get_cache_path(scene),
+            task_to_dirname['initial']
+        )
 
     # Put all images in a single folder for 'génériques'
     if scene['k_ch'] in ('g_debut', 'g_fin'):
         return os.path.join(
             cache_dir,
+            scene['k_ch'],
+            f"{scene['no']:03}",
+            dirname,
+        )
+
+    if scene['k_ch'] in ('g_reportage', 'g_asuivre'):
+        output_path = os.path.join(
+            cache_dir,
+            scene['k_ep'],
             scene['k_ch'],
             f"{scene['no']:03}",
             dirname,
