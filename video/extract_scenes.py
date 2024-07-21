@@ -12,7 +12,7 @@ from utils.mco_types import Scene, VideoChapter
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from utils.mco_utils import makedirs
+from utils.mco_path import makedirs
 from parsers import (
     db,
     Chapter,
@@ -49,11 +49,11 @@ def extract_scenes(
 
     k_ep = key(episode)
     k_ed = edition
-    do_concatenate_video: bool = (
-        True
-        if single_chapter == '' # or single_chapter in ('g_debut', 'g_fin')
-        else False
-    )
+    # do_concatenate_video: bool = (
+    #     True
+    #     if single_chapter == '' # or single_chapter in ('g_debut', 'g_fin')
+    #     else False
+    # )
 
     # Create the video directory for this episode or chapter
     makedirs(k_ep, single_chapter, 'video')
@@ -197,7 +197,6 @@ def extract_scenes(
 
     if task == 'initial':
         print(f"Total time: {time.time() - start_time_full:.03f}s")
-        return
 
     if scene_no is not None:
         return
@@ -254,6 +253,7 @@ def extract_scenes(
     if verbose:
         print(lightgreen(f"video files used to concatenate all clips"))
 
+    do_concatenate_video: bool = False
 
     # Concatenate video clips from all chapters
     if do_concatenate_video:
@@ -282,7 +282,8 @@ def extract_scenes(
         )
         ffmpeg_command: list[str] = [
             ffmpeg_exe,
-            *db['common']['settings']['verbose'],
+            "-hide_banner",
+            "-loglevel", "warning",
             "-f", "concat",
             "-safe", "0",
             "-i", concat_fp,
@@ -290,6 +291,7 @@ def extract_scenes(
             "-y", episode_video_filepath
         ]
 
+        pprint(ffmpeg_command)
         main_logger.debug(' '.join(ffmpeg_command))
         if not simulation:
             sub_process = subprocess.Popen(

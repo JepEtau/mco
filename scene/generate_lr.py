@@ -131,21 +131,22 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         # sys.exit()
 
         if do_watermark(scene):
+            # Force extract and add watermark if extract only
+            # Used to identify scene no and compare 2 src and target editions
             do_generate: bool = False
-            for fp in scene['in_frames'].out_images():
-                if not os.path.exists(fp):
-                    print(yellow(f"LR: do generate, missing {fp}"))
-                    do_generate = True
-                    break
+            if task_name == 'lr':
+                for fp in scene['in_frames'].out_images():
+                    if not os.path.exists(fp):
+                        print(yellow(f"LR: do generate, missing {fp}"))
+                        do_generate = True
+                        break
+            else:
+                do_generate = True
+
             if do_generate:
-                lr_directory: str = path_split(
-                    scene['in_frames'].out_images()[0]
-                )[0]
-                # lr_directory: str = os.path.join(
-                #     get_cache_path(scene),
-                #     task_to_dirname[scene['task'].name]
-                # )
+                lr_directory: str = path_split(scene['in_frames'].out_images()[0])[0]
                 os.makedirs(lr_directory, exist_ok=True)
+
                 max_workers: int = multiprocessing.cpu_count()
                 with ThreadPoolExecutor(max_workers=max_workers) as executor:
                     for _ in executor.map(

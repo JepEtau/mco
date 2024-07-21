@@ -104,7 +104,8 @@ def get_dirname(scene: Scene, out: bool = False) -> tuple[str, str]:
 
     # Use initial folder as the source
     if (
-        task_name == 'lr' and not do_watermark(scene)
+        task_name == 'lr'
+        and not do_watermark(scene)
         or task_name == 'hr'
     ):
         return task_to_dirname['initial'], scene['filters']['initial'].hash
