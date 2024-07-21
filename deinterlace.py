@@ -101,6 +101,13 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
 \n"""
     )
 
+    parser.add_argument(
+        "--check_duration",
+        action="store_true",
+        required=False,
+        help="Ignore check before deinterlacing"
+    )
+
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -314,7 +321,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
                 + f"current video: {out_video_info['frame_count']}"
             )
 
-            if out_video_info['frame_count'] == _trim_count:
+            if out_video_info['frame_count'] == _trim_count or not arguments.check_duration:
                 print()
                 continue
         else:

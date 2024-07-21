@@ -127,6 +127,13 @@ class SrcScene(TypedDict):
     segments: list
 
 
+class RefScene(TypedDict):
+    count: int
+    k_ed: str = ''
+    k_ep: str = ''
+    k_ch: str = ''
+    no: int = 0
+
 
 @dataclass
 class Effect:
@@ -195,6 +202,8 @@ class Scene(TypedDict):
     # e.g. we can use a scene from another edition if not available in this one
     # if a list of segments has to be specified, they shall use the same episode/chapter/scene no.
     src: SrcScene
+
+    ref: RefScene
 
     # list of frames to replace
     replace: dict[int, int]

@@ -4,7 +4,7 @@ import os
 from pprint import pprint
 from processing.black_frame import generate_black_frame
 from scene.filters import do_watermark
-from utils.images import IMG_FILENAME_TEMPLATE
+from utils.images import IMG_FILENAME_TEMPLATE, Images
 from utils.mco_types import Effect, Scene
 from utils.mco_utils import get_cache_path, get_dirname, get_out_directory
 from utils.p_print import *
@@ -18,28 +18,24 @@ from parsers import (
 
 
 def get_out_frame_paths_until_effects(scene: Scene) -> list[str]:
-    k_ed = scene['k_ed']
-    k_ep = scene['k_ep']
-    chapter = scene['k_ch']
 
-    # Input folder
-    current_output_folder: str = ''
-    if scene['task'].name == 'lr' and not do_watermark(scene):
-        current_output_folder = os.path.join(
-            get_cache_path(scene),
-            task_to_dirname['initial']
-        )
-    else:
-        current_output_folder = get_out_directory(scene)
+    out_dir: str = get_out_directory(scene)
+    print(yellow(f"get_out_frame_paths_until_effects: out_directory: {out_dir}"))
+
+    # if isinstance(scene['in_frames'], Images):
+    #     return scene['in_frames'].out_images()
+
 
     # print(yellow(f"get_frame_file_paths_until_effects: output folder:"), f"{current_output_folder}")
-
+    # sys.exit()
     # Append images
     if 'segments' in scene['src'] and len(scene['src']['segments']) > 0:
-        index_start = 0
-        index_end = scene['dst']['count']
+        pprint(scene['src'])
+        index_start = scene['src']['segments'][0]['start']
+        index_end = index_start + scene['dst']['count']
     else:
-        index_start = max(0, scene['src']['start'] - scene['start'])
+        # index_start = max(0, scene['src']['start'] - scene['start'])
+        index_start = scene['src']['start']
         index_end = index_start + scene['dst']['count']
 
     # step_no = scene['task']['step_no']
@@ -55,62 +51,47 @@ def get_out_frame_paths_until_effects(scene: Scene) -> list[str]:
         previous_filter = scene['filters'][step_no-1]
         hash = previous_filter['hash']
         if previous_filter['task'] == 'deinterlace':
-            current_output_folder = get_output_path_from_scene(db=db, scene=scene, task=previous_filter['task'])
+            out_dir = get_output_path_from_scene(db=db, scene=scene, task=previous_filter['task'])
             image_list = get_image_list(
                 scene=scene,
-                folder=current_output_folder,
+                folder=out_dir,
                 step_no=step_no,
                 hash=hash)
         else:
             image_list = get_image_list(
                 scene=scene,
-                folder=current_output_folder,
+                folder=out_dir,
                 step_no=step_no-1,
                 hash=hash)
 
+    dirname, hashcode = get_dirname(scene, out=True)
+    directory: str = os.path.join(scene['cache'], dirname)
+    print(yellow(f"get_out_frame_paths_until_effects {scene['task'].name} -> {dirname}"))
+    filename_template = IMG_FILENAME_TEMPLATE % (
+        scene['k_ep'],
+        scene['k_ed'],
+        int(dirname[:2]),
+        f"_{hashcode}" if hashcode != '' else ""
+    )
+
+    image_list: list[str] = []
+    if scene['task'].name == 'initial':
+        image_list: list[str] = list([
+            os.path.join(directory, filename_template % (index_start + no))
+            for no in range(scene['src']['count'])
+        ])
+
     else:
-        if scene['task'].name == 'initial':
-            image_list = get_image_list_pre_replace(
-                scene=scene,
-                folder=current_output_folder,
-                step_no=step_no,
-                hash=hash
-            )
-
-        else:
-            dirname, hashcode = get_dirname(scene, out=True)
-            directory: str = os.path.join(scene['cache'], dirname)
-            print(red(f"get_out_frame_paths -> {dirname}"))
-
-            filename_template = IMG_FILENAME_TEMPLATE % (
-                scene['k_ep'],
-                scene['k_ed'],
-                int(dirname[:2]),
-                f"_{hashcode}" if hashcode != '' else ""
-            )
-
-            frame_replace = scene['replace']
-
-
-            image_list: list[str] = []
-            for no in range(scene['start'], scene['start'] + scene['count']):
-                out_no: int = frame_replace[no] if no in frame_replace else no
-                image_list.append(os.path.join(directory, filename_template % (out_no)))
-
-
-
-        # else:
-        #     image_list = get_image_list(
-        #         scene=scene,
-        #         folder=current_output_folder,
-        #         step_no=step_no,
-        #         hash=hash
-        #     )
+        frame_replace = scene['replace']
+        for no in range(index_start, index_end):
+            out_no: int = frame_replace[no] if no in frame_replace else no
+            image_list.append(os.path.join(directory, filename_template % (out_no)))
 
     # pprint(image_list)
-    # print(lightcyan(f"{index_start} -> {index_end}"))
-    return image_list[index_start:index_end]
-
+    # print(len(image_list))
+    # sys.exit()
+    # return image_list[index_start:index_end]
+    return image_list
 
 
 def get_out_frame_paths(
@@ -144,25 +125,47 @@ def get_out_frame_paths(
 
     # A/V sync for the first scene
     try:
-        if scene['no'] == 0 and db_video['avsync'] > 0:
-            # Add black images to the first scene for A/V sync
-            # print("avsync: add frames for k_ch=%s, avsync=%d" % (k_ch, db_video['avsync']))
-            black_image_filepath = os.path.join(
-                db['common']['directories']['cache'],
-                'black.png'
-            )
-            for _ in range(db_video['avsync']):
-                imgs.append(black_image_filepath)
+        if scene['no'] == 0:
+            if db_video['avsync'] != 0 and chapter != 'precedemment':
+                sys.exit(print(red("get_out_frame_list_single: avsync not supported for %s:%s" % (k_ep, chapter))))
+
+            if db_video['avsync'] > 0:
+                # Add black images to the first scene for A/V sync
+                # print("avsync: add frames for k_ch=%s, avsync=%d" % (k_ch, db_video['avsync']))
+                black_image_filepath = os.path.join(
+                    db['common']['directories']['cache'],
+                    'black.png'
+                )
+                for _ in range(db_video['avsync']):
+                    imgs.append(black_image_filepath)
     except:
         print(orange("\t\t\tinfo: discard a/v, target does not exist"))
-
 
     # Add files for effects
     if 'effects' in scene and scene['task'].name != 'initial':
         effect = scene['effects'].primary_effect()
         main_logger.debug(green(f"\tget frame list: effect={effect}"))
 
-        if effect.name == 'loop_and_fadeout':
+        if effect.name == 'loop':
+            # Used by g_asuivre, g_documentaire
+            frame_no = effect.frame_ref
+            loop_count = effect.loop
+            main_logger.debug(lightgrey(f"\tloop {loop_count} times on {frame_no}"))
+
+            # All frames until loop effect
+            imgs = get_out_frame_paths_until_effects(scene)
+
+            # Loop
+            out_dir: str = os.path.join(
+                scene['cache'],
+                get_dirname(scene, out=True)[0]
+            )
+
+            filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
+            filepath = os.path.join(out_dir, filename_template % (frame_no))
+            imgs.extend(list([filepath] * loop_count))
+
+        elif effect.name == 'loop_and_fadeout':
             # Initialize values for loop/fadeout
             loop_start = effect.frame_ref
             loop_count = effect.loop
@@ -307,12 +310,14 @@ def get_out_frame_paths(
 
     if k_ch in ('g_debut', 'g_fin', 'precedemment'):
         # Append silence to these parts
-        if 'silence' in db_video and scene['no'] == (len(db_video['scenes']) - 1):
+        if 'silence' in db_video and scene['no'] == len(db_video['scenes']) - 1:
             black_image_filepath = os.path.join(
-                db['common']['directories']['cache'], 'black.png'
+                db['common']['directories']['cache'],
+                'black.png'
             )
             for _ in range(db_video['silence']):
                 imgs.append(black_image_filepath)
+            generate_black_frame(black_image_filepath, imgs[0])
 
     return imgs
 
@@ -345,13 +350,13 @@ def get_out_frame_list_single(
 
     # print("%s:get_out_frame_list_single: use %s for %s:%s" % (__name__, k_ep_src, k_ep, k_ch))
     # pprint(scene)
-    if 'start' in scene['dst']:
-        # print("use the dst start and count for the concatenation file")
-        start = scene['dst']['start']
-        end = start + scene['dst']['count']
-    else:
-        start = scene['start']
-        end = start + scene['count']
+    # if 'start' in scene['dst']:
+    #     # print("use the dst start and count for the concatenation file")
+    #     start = scene['dst']['start']
+    #     end = start + scene['dst']['count']
+    # else:
+    #     start = scene['start']
+    #     end = start + scene['count']
 
     # Get hash to set the suffix
     hash: str = scene['task'].hashcode
@@ -383,44 +388,28 @@ def get_out_frame_list_single(
 
 
     # Add files for effects
-    if 'effects' in scene:
+    if 'effects' in scene and scene['task'].name != 'initial':
         effect: Effect = scene['effects'].primary_effect()
         main_logger.debug(green(f"\tget frame list (single): effect={effect}"))
 
         if effect.name == 'loop':
+            # Used by g_asuivre, g_documentaire
             frame_no = effect.frame_ref
             loop_count = effect.loop
             main_logger.debug(lightgrey(f"\tloop {loop_count} times on {frame_no}"))
 
-            in_dir: str = ""
-            if scene['task'].name == 'lr' and not do_watermark(scene):
-                in_dir = os.path.join(
-                    get_cache_path(scene),
-                    task_to_dirname['initial']
-                )
-            else:
-                in_dir = get_out_directory(scene)
-
-            # Append the frames before the loop
-            filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
-            # if scene['task'].name not in ('deinterlace'):
-            #     end -= start
-            #     start = 0
-            main_logger.debug(orange(f"start={start}, end={end}"))
-            for f_no in range(start, end):
-                filepath = os.path.join(in_dir, filename_template % (f_no))
-                image_list.append(filepath)
+            # All frames until loop effect
+            image_list = get_out_frame_paths_until_effects(scene)
 
             # Loop
-            filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
-            # if scene['task'].name in ('deinterlace'):
-            filepath = os.path.join(in_dir, filename_template % (frame_no))
-            # else:
-            #     filepath = os.path.join(input_folder, filename_template % (frame_no - scene['start']))
-            # print(orange("start=%d, end=%d" % (start, end)))
+            out_dir: str = os.path.join(
+                scene['cache'],
+                get_dirname(scene, out=True)[0]
+            )
 
-            for _ in range(loop_count):
-                image_list.append(filepath)
+            filename_template = IMG_FILENAME_TEMPLATE % (k_ep_src, k_ed, task_no, suffix)
+            filepath = os.path.join(out_dir, filename_template % (frame_no))
+            image_list.extend(list([filepath] * loop_count))
 
         elif effect == 'loop_and_fadeout':
             # Initialize values for loop/fadeout

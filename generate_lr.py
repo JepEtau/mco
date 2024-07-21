@@ -15,7 +15,7 @@ from utils.logger import main_logger as main_logger
 from utils.p_print import *
 from av_merge.combine_av import combine_av_tracks, concatenate_all
 from av_merge.chapters import add_chapters
-from video.video_track import generate_video_track
+from video.lr_scenes import generate_lr_scenes
 
 
 
@@ -114,7 +114,7 @@ def main():
 
     task = 'lr'
 
-    generate_video_track(
+    generate_lr_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
         task=task,
@@ -126,8 +126,6 @@ def main():
         debug=arguments.debug
     )
 
-    if scene_arg != '':
-        return
 
     if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == '':
         # Merge audio and video files
@@ -135,7 +133,7 @@ def main():
             episode=arguments.episode,
             chapter=arguments.chapter,
             task=task,
-            force=arguments.force,
+            force=True,
             simulation=arguments.simulate
         )
 
@@ -145,7 +143,7 @@ def main():
                 episode='',
                 chapter=k,
                 task=task,
-                force=arguments.force,
+                force=True,
                 simulation=arguments.simulate
             )
 
@@ -153,7 +151,7 @@ def main():
             episode=arguments.episode,
             chapter='',
             task=task,
-            force=arguments.force,
+            force=True,
             simulation=arguments.simulate
         )
 

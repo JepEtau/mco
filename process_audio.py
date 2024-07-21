@@ -46,6 +46,13 @@ def main():
     )
 
     parser.add_argument(
+        "--stats",
+        action="store_true",
+        required=False,
+        help="debug"
+    )
+
+    parser.add_argument(
         "--force",
         "-f",
         action="store_true",

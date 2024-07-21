@@ -170,8 +170,12 @@ def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
 
                 nested_dict_set(db_video_target, [], k_chapter, 'scenes')
                 if lang == db_audio_target['lang']:
-                    parse_target_scenelist(db_video_target[k_chapter]['scenes'],
-                        config, k_section, lang)
+                    parse_target_scenelist(
+                        db_video_target[k_chapter]['scenes'],
+                        config,
+                        k_section,
+                        lang
+                    )
 
 
 #===========================================================================

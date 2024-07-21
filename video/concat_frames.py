@@ -1,5 +1,6 @@
 import os
 from pprint import pprint
+import sys
 from parsers import (
     db,
     Chapter,
@@ -10,13 +11,21 @@ from parsers import (
 )
 from parsers import TaskName
 from processing.black_frame import generate_black_frame
+from utils.images import Images
 from utils.mco_types import Scene, VideoChapter
-from utils.mco_utils import makedirs
+from utils.mco_path import makedirs
 from utils.p_print import *
 from utils.logger import main_logger
 from utils.path_utils import absolute_path
 from utils.time_conversions import ms_to_frame
 
+
+def get_silence_filepath(k_ep: str, chapter: str, task: TaskName) -> str:
+    return os.path.join(
+        db[k_ep]['cache_path'],
+        "video",
+        f"{k_ep}_{chapter}_silence_{task}.mkv"
+    )
 
 
 def set_video_filename(scene: Scene) -> None:
@@ -40,21 +49,30 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
     if task_name != '':
         suffix += f"_{task_name}"
 
-    k_ed, k_ep, k_ch = scene['src']['k_ed'], scene['src']['k_ep'], scene['src']['k_ch']
+    try:
+        k_ed, k_ep, k_ch = scene['src']['k_ed'], scene['src']['k_ep'], scene['src']['k_ch']
+    except:
+        pprint(scene)
+        raise
     cache_dir: str = db[k_ep]['cache_path']
     if k_ch in ('g_debut', 'g_fin'):
         cache_dir = db[k_ch]['cache_path']
         basename = f"{k_ch}_{scene['no']:03}__{k_ed}_{scene['k_ep']}"
 
     elif k_ch in ('g_asuivre', 'g_documentaire'):
-        basename = f"{k_ep}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}"
+        cache_dir = db[scene['dst']['k_ep']]['cache_path']
+        basename = f"{scene['dst']['k_ep']}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}"
 
     else:
-        basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}.txt"
+        basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}"
 
     folder_name: str = "video"
-    if task_name == 'hr':
-        folder_name = 'hr'
+    if task_name == 'initial':
+        folder_name = f'scenes_{scene['src']['k_ed']}'
+    elif task_name == 'hr':
+        folder_name = 'scenes_hr'
+    elif task_name == 'lr':
+        folder_name = 'scenes_lr'
     elif task_name == 'restored':
         folder_name = 'restored'
 
@@ -98,9 +116,6 @@ def set_concat_filename(
     scene['task'].concat_file = concat_fp
 
 
-
-
-
 def generate_concat_file(
     episode: str | int,
     chapter: Chapter,
@@ -110,10 +125,24 @@ def generate_concat_file(
     k_ep, k_ch = key(episode), chapter
 
     # Get the list of frames for this scene
-    img_fp: list[str] = scene['out_frames']
+    img_fp: list[str] = []
+    if scene['task'].name == 'initial':
+        img_fp = scene['in_frames'].in_images()
 
-    black_image_filepath = os.path.join(db['common']['directories']['cache'], 'black.png')
-    generate_black_frame(black_image_filepath, img_fp[0])
+    elif (
+        scene['task'].name == 'lr'
+        and isinstance(scene['in_frames'], Images)
+        and scene['dst']['k_ch'] not in ('g_asuivre', 'g_reportage')
+    ):
+        img_fp = scene['in_frames'].out_frames()
+
+    else:
+        img_fp = scene['out_frames']
+        black_image_filepath = os.path.join(
+            db['common']['directories']['cache'],
+            'black.png'
+        )
+        generate_black_frame(black_image_filepath, img_fp[0])
 
     # Folder for concatenation file
     makedirs(k_ep, k_ch, 'concat')
@@ -153,8 +182,9 @@ def generate_silence_concat_file(episode: int | str) -> dict:
         db_audio = db[k_ep]['audio'][k_ch]
         if 'silence' in db_audio and db_audio['silence'] > 0:
             main_logger.debug(lightgrey(f"\t- {k_ch}"))
+            print(lightgrey(f"\t- {k_ch}"))
 
-            task: ProcessingTask = db[k_ep]['video']['target'][k_ch]['task']
+            # task: ProcessingTask = db[k_ep]['video']['target'][k_ch]['task']
 
             # Convert silence duration in nb of frames
             silence_count = ms_to_frame(db_audio['silence'], fps)
@@ -219,6 +249,9 @@ def generate_video_concat_file(
         if k_ep_or_g is None:
             continue
 
+        if chapter != '' and k_ep_or_g != chapter:
+            continue
+
         if k_ep_or_g in ('g_debut', 'g_fin'):
             k_ch = k_ep_or_g
             suffix = f"{k_ch}"
@@ -237,48 +270,50 @@ def generate_video_concat_file(
             "concat",
             f"{suffix}{lang_str}.txt")
         concat_file = open(concat_fp, "w")
-        if verbose:
+        if True:
             print(green(f"create_video_concat_file: {concat_fp}"))
 
         if k_ep_or_g in ('g_debut', 'g_fin'):
-            video: VideoChapter = db[k]['video']
+            video: VideoChapter = db[k_ep_or_g]['video']
             concat_file.write(f"file \'{video['task'].video_file}\' \n")
-            audio = db[k_ep]['audio'][k]
+            audio = db[k_ep_or_g]['audio']
             if 'silence' in audio and audio['silence'] > 0:
                 silence_fp: str = os.path.join(
-                    db[k_ep]['cache_path'],
+                    db[k_ep_or_g]['cache_path'],
                     "video",
-                    f"{k_ep}_{k}_silence.mkv"
+                    f"{k_ep_or_g}_silence.mkv"
                 )
                 concat_file.write(f"file \'{silence_fp}\' \n")
 
-            import sys
-            sys.exit()
-            for k in main_chapter_keys():
-                for scene in video_files[k]:
-                    p = scene['path'].replace('.txt', f"_{scene['hash']}_{scene['last_task']}{lang_str}.mkv")
-                    p = p.replace('concat', 'video')
-                    concat_file.write(f"file \'{p}\' \n")
+            # import sys
+            # sys.exit()
+            # for k in main_chapter_keys():
+            #     for scene in video_files[k]:
+            #         p = scene['path'].replace('.txt', f"_{scene['hash']}_{scene['last_task']}{lang_str}.mkv")
+            #         p = p.replace('concat', 'video')
+            #         concat_file.write(f"file \'{p}\' \n")
         else:
-            # if k in ('g_debut', 'g_fin'):
+            for _chapter in main_chapter_keys():
+                if chapter != '' and _chapter != chapter:
+                    continue
 
-
-            for k in main_chapter_keys():
-                video: VideoChapter = db[k_ep]['video']['target'][k]
+                video = db[k_ep]['video']['target'][_chapter]
                 if video['count'] == 0:
                     continue
 
                 if len(video['scenes']) > 1:
                     concat_file.write(f"file \'{video['task'].video_file}\' \n")
                 else:
+                    pprint(video['scenes'][0])
                     concat_file.write(f"file \'{video['scenes'][0]['task'].video_file}\' \n")
 
-                audio = db[k_ep]['audio'][k]
+                if chapter != '':
+                    continue
+
+                audio = db[k_ep]['audio'][_chapter]
                 if 'silence' in audio and audio['silence'] > 0:
-                    silence_fp: str = os.path.join(
-                        db[k_ep]['cache_path'],
-                        "video",
-                        f"{k_ep}_{k}_silence_{video['task'].name}.mkv"
+                    silence_fp: str = get_silence_filepath(
+                        k_ep, _chapter, video['task'].name
                     )
                     concat_file.write(f"file \'{silence_fp}\' \n")
 

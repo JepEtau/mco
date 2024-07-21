@@ -182,7 +182,13 @@ def consolidate_av_sync(k_ep):
                     if loop_count < video_silence:
                         # Add silence at the beginning of the episode or fade_in
                         loop_count = video_silence - loop_count
-                        nested_dict_set(db_video['episode'], loop_count, 'effects', 'loop_and_fadein')
+                        db_video['episode']['effects'] = Effects([
+                            Effect(
+                                name='loop_and_fadein',
+                                loop=loop_count,
+                                fade=0,
+                            )
+                        ])
                         video_track['episode']['count'] += loop_count
                         logger.debug(f"\tAdd silence at the beginning of the episode: {loop_count}")
                 else:

@@ -8,7 +8,8 @@ from scene.generate_hr import generate_hr_scene
 from utils.mco_types import Scene, VideoChapter
 from utils.media import extract_media_info
 from utils.p_print import *
-from utils.mco_utils import makedirs, run_simple_command
+from utils.mco_utils import run_simple_command
+from utils.mco_path import makedirs
 from utils.tools import ffmpeg_exe
 from parsers import (
     db,

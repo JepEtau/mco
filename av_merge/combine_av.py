@@ -11,7 +11,8 @@ from parsers import (
 )
 from utils.logger import main_logger
 from audio import get_audio_frame_count
-from utils.mco_utils import makedirs, run_simple_command
+from utils.mco_utils import run_simple_command
+from utils.mco_path import makedirs
 from utils.p_print import *
 from utils.path_utils import absolute_path
 from utils.tools import ffprobe_exe, ffmpeg_exe
@@ -79,8 +80,8 @@ def combine_av_tracks(
         else os.path.join(cache_path, f"{k}_av{suffix}{language}.mkv")
     )
 
-    if os.path.exists(audio_video_filepath) and not force and not simulation:
-        return
+    # if os.path.exists(audio_video_filepath) and not force and not simulation:
+    #     return
 
     # Get nb of frames from video stream
     if k in ('g_debut', 'g_fin'):

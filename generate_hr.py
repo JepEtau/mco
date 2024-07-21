@@ -16,7 +16,7 @@ from utils.p_print import *
 from av_merge.combine_av import combine_av_tracks, concatenate_all
 from av_merge.chapters import add_chapters
 from video.hr_scenes import generate_hr_scenes
-from video.video_track import generate_video_track
+from video.lr_scenes import generate_lr_scenes
 
 
 

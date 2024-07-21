@@ -10,57 +10,25 @@ from parsers import (
     all_chapter_keys,
     db
 )
+from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
-from video.video_track import generate_video_track
+from video.extract_scenes import extract_scenes
+from video.lr_scenes import generate_lr_scenes
 
 
 
 def main():
     # Arguments
-    parser = argparse.ArgumentParser(description="Extract initial frames")
-    parser.add_argument(
-        "--episode",
-        "-ep",
-        type=int,
-        default=0,
-        required=False,
-        help="from 1 to 39"
-    )
-
-    parser.add_argument(
-        "--chapter",
-        choices=all_chapter_keys(),
-        default='',
-        required=False,
-        help="Chapter"
-    )
-
-    parser.add_argument(
-        "--en",
-        action="store_true",
-        required=False,
-        help="English version"
-    )
-
-    parser.add_argument(
-        "--stats",
-        action="store_true",
-        required=False,
-        help="debug"
-    )
-
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        required=False,
-        help="debug"
+    parser: argparse.ArgumentParser = common_argument_parser(
+        description="Extract initial frames",
+        add_language=False,
     )
 
     parser.add_argument(
         "--edition",
         "-ed",
-        choices=['f', 'k', 's'],
+        choices=['f', 'k', 's', 'j'],
         default='',
         required=True,
         help="Use this edition as source rather than the one selected in database"
@@ -73,6 +41,36 @@ def main():
         default='',
         required=False,
         help="scene no. to process. Integer or frame value (e.g. 2450f)"
+    )
+
+    parser.add_argument(
+        "--scene_min",
+        type=int,
+        default=-1,
+        required=False,
+        help="starting scene no. to process"
+    )
+
+    parser.add_argument(
+        "--scene_max",
+        type=int,
+        default=-1,
+        required=False,
+        help="last scene no. to process"
+    )
+
+    parser.add_argument(
+        "--watermark",
+        action="store_true",
+        required=False,
+        help="Watermark each scene with scene no."
+    )
+
+    parser.add_argument(
+        "--stats",
+        action="store_true",
+        required=False,
+        help="debug"
     )
 
     parser.add_argument(
@@ -89,12 +87,6 @@ def main():
         help="Simulate the process"
     )
 
-    parser.add_argument(
-        "--watermark",
-        action="store_true",
-        required=False,
-        help="Watermark each scene with scene no."
-    )
 
     arguments = parser.parse_args()
 
@@ -116,14 +108,15 @@ def main():
         print(f"Episode: {episode}")
     if chapter != '':
         print("Chapter: %s" % (chapter))
-    print(f"Language: {'en' if arguments.en else 'fr'}")
     print("Tasks:")
     print("\t- parse database")
 
     # Parse database
-    parse_database(episode=episode, lang='en' if arguments.en else 'fr')
+    parse_database(episode=episode, edition=arguments.edition)
     gc.collect()
 
+    if arguments.edition == '':
+        raise ValueError(f"Edition must be specified")
 
     # For inspection
     # db_ep: dict = g_database['ep01']
@@ -143,13 +136,15 @@ def main():
     elif scene_arg != '':
         scene_no: int = int(scene_arg)
 
-    generate_video_track(
+    extract_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
         task='initial',
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=scene_no,
+        scene_min=arguments.scene_min,
+        scene_max=arguments.scene_max,
         watermark=arguments.watermark,
         edition=arguments.edition,
         debug=arguments.debug

@@ -228,33 +228,25 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     scene['inputs']['progressive']['filepath'] = progressive_fp
 
     task_name: str = scene['task'].name
-    if task_name == 'lr' and watermark:
+    if task_name in ('initial', 'lr') and watermark:
         # if 'effects' in scene:
         #     scene['effects'] = Effects()
         # scene['effects'].append(Effect(name='watermark'))
-        sequence: str = scene['filters']['lr'].sequence
-        scene['filters']['lr'].sequence = (
+        sequence: str = scene['filters'][task_name].sequence
+        scene['filters'][task_name].sequence = (
             f"{sequence};watermark"
             if sequence
             else "watermark"
         )
 
     # List frames
-    if task_name == 'lr':
+    if task_name in ('initial', 'lr'):
         scene['in_frames'] = Images(scene)
-        if k_ch in ('g_asuivre', 'g_documentaire'):
-            scene['out_frames'] = get_out_frame_list_single(
-                episode=k_ep,
-                chapter=k_ch,
-                scene=scene
-            )
-
-        else:
-            scene['out_frames'] = get_out_frame_paths(
-                episode=k_ep,
-                chapter=k_ch,
-                scene=scene
-            )
+        scene['out_frames'] = get_out_frame_paths(
+            episode=k_ep,
+            chapter=k_ch,
+            scene=scene
+        )
 
     elif task_name == 'hr':
         if k_ch in ('g_asuivre', 'g_documentaire'):
@@ -273,8 +265,8 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
             # Append images
             if 'segments' in scene['src'] and len(scene['src']['segments']) > 0:
-                index_start = 0
-                index_end = scene['dst']['count']
+                index_start = max(0, scene['src']['start'] - scene['start'])
+                index_end = index_start + scene['dst']['count']
             else:
                 index_start = max(0, scene['src']['start'] - scene['start'])
                 index_end = index_start + scene['dst']['count']
@@ -287,7 +279,12 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
         scene['task'].in_video_file = get_video_filename(scene=scene, task_name='upscale')
 
     # Output video settings
-    _task_name: str = 'upscale' if task_name == 'hr' else task_name
+    _task_name: str = task_name
+    if task_name == 'hr':
+        _task_name = 'upscale'
+    elif task_name == 'initial':
+        _task_name = 'hr'
+
     vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
     if vsettings is not None:
         scene['task'].video_settings = deepcopy(vsettings)

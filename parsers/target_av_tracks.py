@@ -1,5 +1,7 @@
 import sys
 from pprint import pprint
+
+from parsers.video_target import get_video_chapter_frame_count
 from .helpers import get_fps, nested_dict_set
 from .logger import logger
 from utils.p_print import *
@@ -316,33 +318,22 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
     db_video = db[k_chapter_c]['video']
     db_audio = db[k_chapter_c]['audio']
 
-    # Verify that the nb of frames corresponds to the part duration
-    scenes: list[Scene] = db_video['scenes']
-    if len(scenes) == 1:
-        if db_video['count'] != scenes[0]['count']:
-            sys.exit(red(f"consolidate_av_tracks : {k_ep}:{k_chapter_c} todo: correct and remove this as this shall not occur: end"))
-
     # Get nb of frames for the video track
-    video_count = 0
-    for s in scenes:
-        video_count += s['count']
-    if db_video['count'] != video_count:
-        sys.exit(red(f"consolidate_av_tracks : error: {k_ep}:{k_chapter_c} consolidate has not been done before: why?"))
+    video_count: int = get_video_chapter_frame_count(k_ep=k_ep, k_ch=k_chapter_c)
 
     # Align video track to a multiple of seconds
     db_video['count'] = int(fps * int(1 + db_video['count'] / fps))
     if video_count != db_video['count']:
         db_video['silence'] = db_video['count'] - video_count
 
-
     # Get the duration in ms
     audio_duration = db_audio['duration']
-    if 'avsync' in db_audio.keys():
+    if 'avsync' in db_audio:
         audio_duration += db_audio['avsync']
-    if 'silence' in db_audio.keys():
+    if 'silence' in db_audio:
         audio_duration += db_audio['silence']
-    # print(f"audio duration: %.03fs" % (audio_duration/1000))
-    # print(f"audio count: %d" % (ms_to_frame(audio_duration)))
+    print(f"audio duration: {audio_duration/1000:.03f}s")
+    print(f"audio count: {ms_to_frame(audio_duration, fps)}")
 
     # Align audio track to a multiple of seconds
     rounded_audio_duration = 1000 * int(1 + float(audio_duration)/1000)
@@ -360,19 +351,21 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
     db_audio['duration'] = frame_to_ms(audio_count, fps)
 
 
-    # print(f"----------------- consolidate_av_tracks: AUDIO ------------------")
-    # print(f"\tk_chapter_c=%s" % (k_chapter_c))
-    # print(f"\t- audio_count=%d" % (db_audio['count']))
-    # print(f"\t- audio_duration=%d" % (db_audio['duration']))
-    # print(f"\t- video_count=%d" % (db_video['count']))
+    print(f"----------------- Consolidate A/V tracks ------------------")
+    print(f"chapter: {k_chapter_c}")
+    print(f"  - audio_count: {db_audio['count']}")
+    print(f"  - audio_duration: {db_audio['duration']}")
+    print(f"  - video_count : {video_count}")
+    print(f"  - video_count (rounded): {db_video['count']}")
 
     # Align audio and video duration
+    scenes: list[Scene] = db_video['scenes']
     video_count = db_video['count']
     if audio_count > video_count:
         # Frames shall be added: use the loop effect for this
         last_scene: Scene = scenes[-1]
         frame_no = last_scene['start'] + last_scene['count'] - 1
-        # print(f"info: consolidate_av_tracks: %s: add video frames, video(%d) < audio (%d)" % (k_chapter_c, video_count, audio_count))
+        print(f"[I] consolidate_av_tracks: {k_chapter_c}: add video frames, video({video_count}) < audio ({audio_count})")
         loop_count = audio_count - video_count
         last_scene['effects'] = Effects([
             Effect(
@@ -386,7 +379,7 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
 
     elif video_count > audio_count:
         # Add silence to the audio track by adding a new segment
-        # print(f"info: consolidate_av_tracks: %s: video(%d) > audio (%d)" % (k_chapter_c, video_count, audio_count))
+        print(f"[I] consolidate_av_tracks: {k_chapter_c}: add audio silence, video({video_count}) > audio ({audio_count})")
         video_duration = frame_to_ms(video_count, fps)
         audio_duration = db_audio['duration']
         silence_duration = video_duration - audio_duration

@@ -94,8 +94,11 @@ def parse_credit_target():
                     pass
 
                 if lang == db_audio_target['lang'] or k_section == 'video':
-                    parse_target_scenelist(db_video_target['scenes'],
-                        config, k_section)
+                    parse_target_scenelist(
+                        db_video_target['scenes'],
+                        config,
+                        k_section
+                    )
 
 
         # Source must be defined before consolidating

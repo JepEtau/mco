@@ -202,7 +202,7 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
 
         first_scene: Scene = video_track['scenes'][0]
         for scene in video_track['scenes']:
-            frame_count += scene['count']
+            frame_count += scene['dst']['count']
         last_scene: Scene = video_track['scenes'][-1]
 
         loop_count: int = 0
