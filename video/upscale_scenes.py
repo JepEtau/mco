@@ -19,7 +19,7 @@ from nn_inference.resource_mgr import Frame
 from scene.consolidate import consolidate_scene
 from utils.images import Image, Images
 from utils.images_io import write_image
-from utils.mco_types import Scene, VideoChapter
+from utils.mco_types import Scene, ChapterVideo
 from utils.media import extract_media_info
 from utils.p_print import *
 from utils.path_utils import path_split, absolute_path
@@ -69,7 +69,7 @@ def upscale_scenes(
 
         # k_ep_src is the default episode source used to generate a chapter
         k_ep_src: str = ''
-        video: VideoChapter
+        video: ChapterVideo
         if chapter in ('g_debut', 'g_fin'):
             video = db[chapter]['video']
             k_ep_src: str = k_ep if task == 'initial' else video['src']['k_ep']
@@ -150,7 +150,7 @@ def upscale_scenes(
     scenes_to_upscale: list[Scene] = []
     for chapter in chapters:
         k_ep_src: str = ''
-        video: VideoChapter
+        video: ChapterVideo
         if chapter in ('g_debut', 'g_fin'):
             video = db[chapter]['video']
             k_ep_src: str = k_ep if task == 'initial' else video['src']['k_ep']

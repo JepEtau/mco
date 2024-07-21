@@ -3,7 +3,7 @@ from pprint import pprint
 
 from utils.mco_utils import run_simple_command
 from utils.mco_path import makedirs
-from utils.mco_types import Scene, VideoChapter
+from utils.mco_types import Scene, ChapterVideo
 from utils.logger import main_logger
 from utils.p_print import *
 from utils.tools import ffmpeg_exe
@@ -17,7 +17,7 @@ from parsers import (
 def concat_scenes(
     episode: str,
     chapter: str,
-    video: VideoChapter,
+    video: ChapterVideo,
     force: bool=False,
     simulation: bool=False
 ) -> None:

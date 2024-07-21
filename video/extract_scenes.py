@@ -8,7 +8,7 @@ from scene.consolidate import consolidate_scene
 from scene.generate_lr import generate_lr_scene
 from utils.hash import calc_hash
 from utils.logger import main_logger
-from utils.mco_types import Scene, VideoChapter
+from utils.mco_types import Scene, ChapterVideo
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
@@ -77,7 +77,7 @@ def extract_scenes(
     for chapter in chapters:
         hashes_str = ''
 
-        video: VideoChapter
+        video: ChapterVideo
         if chapter in ('g_debut', 'g_fin'):
             video = db[chapter]['video']
 
@@ -203,11 +203,11 @@ def extract_scenes(
 
     # For each part, concatenate scenes in a single clip
     for chapter in chapters:
-        video: VideoChapter
+        video: ChapterVideo
         if chapter in ('g_debut', 'g_fin'):
-            video: VideoChapter = db[chapter]['video']
+            video: ChapterVideo = db[chapter]['video']
         else:
-            video: VideoChapter = (
+            video: ChapterVideo = (
                 db[k_ep]['video']['target'][chapter]
                 if edition == ''
                 else db[k_ep]['video'][edition][chapter]

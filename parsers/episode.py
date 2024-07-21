@@ -11,6 +11,8 @@ import sys
 from pprint import pprint
 from typing import Literal
 
+from utils.mco_types import ChapterVideo
+
 from .logger import logger
 
 from .audio import parse_audio_section
@@ -168,10 +170,16 @@ def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
                 except:
                     continue
 
-                nested_dict_set(db_video_target, [], k_chapter, 'scenes')
+                ch_video = db_video_target[k_chapter]
+                ch_video.update({
+                    'k_ep': k_ep,
+                    'k_ch': k_chapter,
+                    'scenes': []
+                })
+
                 if lang == db_audio_target['lang']:
                     parse_target_scenelist(
-                        db_video_target[k_chapter]['scenes'],
+                        ch_video,
                         config,
                         k_section,
                         lang
@@ -356,20 +364,14 @@ def get_episode_dependencies(
         if chapter not in target_video:
             continue
 
-        chapter_video: dict = target_video[chapter]
-        if 'scenes' in chapter_video.keys():
-            scenes: list[dict] = chapter_video['scenes']
-            for scene in scenes:
-                # print(scene)
-                if 'src' in scene.keys() and 'k_ep' in scene['src']:
-                    if 'k_ed' in scene['src']:
-                        k_ed_dep = scene['src']['k_ed']
-                    else:
-                        k_ed_dep = chapter_video['k_ed_src']
-
-                    if k_ed_dep not in dependencies.keys():
-                        dependencies[k_ed_dep] = set()
-                    dependencies[k_ed_dep].add(scene['src']['k_ep'])
+        chapter_video: ChapterVideo = target_video[chapter]
+        if 'scenes' in chapter_video:
+            for scene in chapter_video['scenes']:
+                for k_ed, k_eps in scene['src'].get_dependencies().items():
+                    if k_ed not in dependencies:
+                        dependencies[k_ed] = set()
+                    for k_ep in k_eps:
+                        dependencies[k_ed].add(k_ep)
 
     # Edition used as the default source
     for chapter in non_credit_chapter_keys():

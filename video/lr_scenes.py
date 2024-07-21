@@ -8,7 +8,7 @@ from scene.consolidate import consolidate_scene
 from scene.generate_lr import generate_lr_scene
 from utils.hash import calc_hash
 from utils.logger import main_logger
-from utils.mco_types import Scene, VideoChapter, SrcScene
+from utils.mco_types import Scene, ChapterVideo, SrcScene
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
@@ -78,7 +78,7 @@ def generate_lr_scenes(
 
         # k_ep_src is the default episode source used to generate a chapter
         k_ep_src: str = ''
-        ch_video: VideoChapter
+        ch_video: ChapterVideo
         if chapter in ('g_debut', 'g_fin'):
             ch_video = db[chapter]['video']
             k_ep_src: str = k_ep if task == 'initial' else ch_video['src']['k_ep']
@@ -223,12 +223,12 @@ def generate_lr_scenes(
 
     # For each part, concatenate scenes in a single clip
     for chapter in chapters:
-        ch_video: VideoChapter
+        ch_video: ChapterVideo
         if chapter in ('g_debut', 'g_fin'):
-            ch_video: VideoChapter = db[chapter]['video']
+            ch_video: ChapterVideo = db[chapter]['video']
 
         else:
-            ch_video: VideoChapter = (
+            ch_video: ChapterVideo = (
                 db[k_ep]['video']['target'][chapter]
                 if edition == ''
                 else db[k_ep]['video'][edition][chapter]

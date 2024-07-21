@@ -1,9 +1,10 @@
 from configparser import ConfigParser
+from pprint import pprint
 import re
 import sys
 from ._keys import all_chapter_keys, key
 from utils.p_print import *
-from utils.mco_types import Effect, Effects, Scene, SrcScene, VideoChapter
+from utils.mco_types import Effect, Effects, Scene, SrcScenes, ChapterVideo
 from ._db import db
 from ._keys import key
 
@@ -158,7 +159,7 @@ def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
     """This procedure is used to consolidate the parsed scenes
     It updates the total duration (in frames of the video for a chapter
     """
-    db_video: VideoChapter = db[k_ep]['video'][k_ed][k_chapter]
+    db_video: ChapterVideo = db[k_ep]['video'][k_ed][k_chapter]
 
     # Create a single scene if no scene defined by the configuration file
     if 'scenes' not in db_video:
@@ -209,11 +210,13 @@ def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
 
 
 def parse_target_scenelist(
-    db_scenes: list[dict],
+    db_video_target: ChapterVideo,
     config: ConfigParser,
     k_section,
     language: str = 'fr'
 ) -> None:
+
+    db_scenes: list[Scene] = db_video_target['scenes']
 
     for k_option in config.options(k_section):
         value_str: str = config.get(k_section, k_option).replace(' ','')
@@ -238,10 +241,15 @@ def parse_target_scenelist(
             # Append this scene to the list of scenes
             db_scenes.append({
                 'no': scene_no,
-                'src': SrcScene(),
+                'src': SrcScenes(),
             })
             scene: Scene = db_scenes[-1]
 
+            k_ed: str = db_video_target['k_ed_src']
+            k_ep: str = db_video_target['k_ep']
+            k_ch: str = db_video_target['k_ch']
+
+            current_scene_no: int = -1
             for p in scene_properties:
                 try:
                     k, v = p.split('=')
@@ -250,42 +258,47 @@ def parse_target_scenelist(
                     # sys.exit()
                     continue
 
-                scene_src: SrcScene = scene['src']
                 if k == 'ed':
-                    scene_src['k_ed'] = v
+                    k_ed = v
 
                 elif k == 'ep':
-                    scene_src['k_ep'] = key(int(v))
+                    k_ep = key(int(v))
 
                 elif k == 'chapter':
                     if v in all_chapter_keys():
-                        scene_src['k_ch'] = v
+                        k_ch = v
                     else:
                         sys.exit(f"parse_target_scenelist: {v} is not recognized")
 
                 elif k == 'scene':
-                   scene_src['no'] = int(v)
+                   if current_scene_no != -1:
+                       scene['src'].add_scene(
+                           k_ed=k_ed,
+                           k_ep=k_ep,
+                           k_ch=k_ch,
+                           no=current_scene_no,
+                           start=segment_start,
+                           count=segment_count,
+                       )
+                   current_scene_no = int(v)
+                   segment_start = -1
+                   segment_count = -1
 
-                elif k == 'segments':
-                    scene_src['segments'] = []
-                    segments = v.replace(' ', '').split('\n')
-                    for s in segments:
-                        if (match := re.search(re.compile(r"(\d+):(\d+)"), s)):
-                            scene_src['segments'].append({
-                                'start': int(match.group(1)),
-                                'count': int(match.group(2)),
-                            })
+                elif k == 'segment':
+                    if (match := re.search(re.compile(r"(\d+):(\d+)"), v)):
+                        segment_start = int(match.group(1))
+                        segment_count = int(match.group(2))
 
-                elif k in ['start', 'count']:
-                    scene_src[k] = int(v)
+            if current_scene_no != -1:
+                scene['src'].add_scene(
+                    k_ed=k_ed,
+                    k_ep=k_ep,
+                    k_ch=k_ch,
+                    no=current_scene_no,
+                    start=segment_start,
+                    count=segment_count,
+                )
 
-
-            # # Debug
-            # if k_section == 'scenes_episode.fr' and scene_no == 307:
-            #     print(k_section)
-            #     # pprint(scene_properties)
-            #     pprint(scene)
-            #     # sys.exit()
 
 
 def get_scene_from_frame_no(

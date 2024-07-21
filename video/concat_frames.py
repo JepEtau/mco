@@ -12,7 +12,7 @@ from parsers import (
 from parsers import TaskName
 from processing.black_frame import generate_black_frame
 from utils.images import Images
-from utils.mco_types import Scene, VideoChapter
+from utils.mco_types import Scene, ChapterVideo
 from utils.mco_path import makedirs
 from utils.p_print import *
 from utils.logger import main_logger
@@ -119,7 +119,7 @@ def set_concat_filename(
 def generate_concat_file(
     episode: str | int,
     chapter: Chapter,
-    video: VideoChapter,
+    video: ChapterVideo,
     scene: Scene,
 ) -> None:
     k_ep, k_ch = key(episode), chapter
@@ -274,7 +274,7 @@ def generate_video_concat_file(
             print(green(f"create_video_concat_file: {concat_fp}"))
 
         if k_ep_or_g in ('g_debut', 'g_fin'):
-            video: VideoChapter = db[k_ep_or_g]['video']
+            video: ChapterVideo = db[k_ep_or_g]['video']
             concat_file.write(f"file \'{video['task'].video_file}\' \n")
             audio = db[k_ep_or_g]['audio']
             if 'silence' in audio and audio['silence'] > 0:

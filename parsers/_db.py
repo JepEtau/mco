@@ -9,4 +9,6 @@ database_path = absolute_path(
 )
 
 
+K_ED_REF: int = 'f'
+
 db = dict()

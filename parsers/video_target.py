@@ -115,6 +115,8 @@ def parse_video_target(
             'end': end,
             'count': (end - start) if end > 0 else -1,
             'k_ed_src': k_chapter_ed_src,
+            'k_ep': k_ep,
+            'k_ch': k_chapter,
         })
         if chapter_fadein != 0:
             logger.debug(lightcyan(f"fadein != 0: {k_chapter}"))

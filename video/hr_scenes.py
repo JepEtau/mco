@@ -5,7 +5,7 @@ import time
 
 from scene.consolidate import consolidate_scene
 from scene.generate_hr import generate_hr_scene
-from utils.mco_types import Scene, VideoChapter
+from utils.mco_types import Scene, ChapterVideo
 from utils.media import extract_media_info
 from utils.p_print import *
 from utils.mco_utils import run_simple_command
@@ -58,7 +58,7 @@ def generate_hr_scenes(
 
         # k_ep_src is the default episode source used to generate a chapter
         k_ep_src: str = ''
-        video: VideoChapter
+        video: ChapterVideo
         if chapter in ('g_debut', 'g_fin'):
             video = db[chapter]['video']
             k_ep_src: str = k_ep if task == 'initial' else video['src']['k_ep']

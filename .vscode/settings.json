@@ -39,7 +39,7 @@
         "**/db/ep36": true,
         "**/db/ep37": true,
         "**/db/ep38": true,
-        "**/db/ep39": true,
+        "**/db/ep39": false,
         "**/cache": true,
         "**/frames": true,
         "**/*.mkv": true,

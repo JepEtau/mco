@@ -16,7 +16,7 @@ from parsers import (
 from utils.arg_parser import common_argument_parser
 from utils.mco_types import (
     Scene,
-    VideoChapter,
+    ChapterVideo,
 )
 from utils.p_print import *
 
@@ -96,11 +96,9 @@ def main():
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
     for chapter in chapters:
         print(lightcyan(f"{chapter}"))
-        k_ep_src: str = ''
-        chapter_video: VideoChapter
+        chapter_video: ChapterVideo
         if chapter in ('g_debut', 'g_fin'):
             chapter_video = db[chapter]['video']
-            k_ep_src: str = k_ep if task == 'initial' else chapter_video['src']['k_ep']
         elif k_ep == 'ep00':
             sys.exit(red("Missing episode no."))
         elif chapter in db[k_ep]['video']['target']:
@@ -108,6 +106,8 @@ def main():
         else:
             continue
 
+        if 'count' not in chapter_video:
+            pprint(chapter_video)
         if chapter_video['count'] <= 0:
             continue
         chapter_video['task'] = ProcessingTask(name=task)
@@ -116,34 +116,30 @@ def main():
         scenes: list[Scene] = chapter_video['scenes']
         ref_count: int = 0
         target_count = 0
-        src_count = 0
         for scene in scenes:
             print(lightgreen(f"    {scene['no']}".rjust(8)), end=':')
-            print(lightgreen(f"{scene['start']}".rjust(6)), end='')
-            if 'segments' in scene['src']:
-                print(lightgreen(f"  (src: {scene['src']['segments'][0]['count']})".rjust(8)), end='')
-                print(lightgreen(f"{scene['count']}".rjust(6)), end='')
-            else:
-                print(lightgreen(f"  (src: {scene['src']['count']})".rjust(8)), end='')
-                print(lightgreen(f"{scene['count']}".rjust(6)), end='')
             if 'ref' in scene:
-                ref_count += scene['ref']['count']
-            print(f"{scene['dst']['count']}".rjust(8), end='')
+                print(lightgreen(f"{scene['ref']['start']}".rjust(6)), end='')
+                print(lightgreen(f"  ({scene['ref']['count']})".rjust(8)), end='')
+            else:
+                print(lightgreen("..."), end='')
+
+            print(f"  <- ", end='')
+
+            print(f"{scene['dst']['count']}".rjust(4), end='  ')
             target_count += scene['dst']['count']
 
-            print(f"  <-  {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}:{scene['src']['no']: 3}".ljust(18), end='')
+            for s in scene['src'].scenes():
+                _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']
+                print(f" {_k_ed}:{_k_ep}:{_k_ch}:{_no: 3}".rjust(10), end='')
+                print(f" {s['start']}".rjust(10), end='')
+                print(f"{s['count']}".rjust(8), end='')
+                if len(scene['src']) > 1:
+                    print(', ', end='')
 
-            src_scene = db[scene['k_ep']]['video'][scene['k_ed']][scene['k_ch']]['scenes'][scene['src']['no']]
-            print(f"   {src_scene['start']}".rjust(10), end='')
-            print(f"{src_scene['count']}".rjust(8), end='')
-            try:
-                src_count += src_scene['count']
-            except:
-                pprint(scene['src'])
             print()
 
         print(f"Reference: {ref_count}")
-        print(f"Source: {src_count}")
         print(f"Destination: {target_count}")
 
 if __name__ == "__main__":

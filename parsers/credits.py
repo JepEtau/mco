@@ -11,6 +11,7 @@ import re
 from pprint import pprint
 from typing import Literal
 
+from utils.mco_types import ChapterVideo, SrcScenes
 from utils.path_utils import absolute_path
 from .audio import parse_audio_g
 from .scene import parse_target_scenelist
@@ -93,9 +94,15 @@ def parse_credit_target():
                 except:
                     pass
 
+                db_video_target.update({
+                    'k_ep': '',
+                    'k_ch': k_chapter_g,
+                    'k_ed_src': '',
+                    'scenes': []
+                })
                 if lang == db_audio_target['lang'] or k_section == 'video':
                     parse_target_scenelist(
-                        db_video_target['scenes'],
+                        db_video_target,
                         config,
                         k_section
                     )
@@ -221,29 +228,28 @@ def get_credits_dependencies(
 
     # Video
     if track in ('video', 'all'):
-        db_video = db[k_chapter_g]['video']
+        chapter_video: ChapterVideo = db[k_chapter_g]['video']
 
         # Common chapter contains the source
-        if 'k_ep' in db_video['src']:
-            k_ed_src = db_video['src']['k_ed']
-            k_ep_src = db_video['src']['k_ep']
+        if 'k_ep' in chapter_video['src']:
+            k_ed_src = chapter_video['src']['k_ed']
+            k_ep_src = chapter_video['src']['k_ep']
             if k_ed_src not in dependencies.keys():
                 dependencies[k_ed_src] = set()
             dependencies[k_ed_src].add(k_ep_src)
 
         # scenes
-        if 'scenes' not in db_video:
+        if 'scenes' not in chapter_video:
             sys.exit("get_dependencies_for_generique: error, list of scenes is missing")
 
         # print("get_dependencies_for_generique: %s" % (k_chapter_g))
         # pprint(db_video['scenes'])
-        for s in db_video['scenes']:
-            if 'k_ed' not in s['src']:
-                s['src']['k_ed'] = db_video['src']['k_ed']
-            k_ed = s['src']['k_ed']
-            if k_ed not in dependencies:
-                dependencies[k_ed] = set()
-            dependencies[k_ed].add(s['src']['k_ep'])
+        for scene in chapter_video['scenes']:
+            for k_ed, k_eps in scene['src'].get_dependencies().items():
+                if k_ed not in dependencies:
+                    dependencies[k_ed] = set()
+                for k_ep in k_eps:
+                    dependencies[k_ed].add(k_ep)
 
     for k_ed in dependencies.keys():
         dependencies[k_ed] = list(dependencies[k_ed])
