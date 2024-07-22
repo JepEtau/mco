@@ -210,6 +210,13 @@ class SrcScenes:
         return len(self._scenes)
 
 
+    def get_frame_replace(self) -> dict[int, int]:
+        frame_replace: dict[int, int] = {}
+        for s in self._scenes:
+            frame_replace.update(s['scene']['replace'])
+        return frame_replace
+
+
 
 class RefScene(TypedDict):
     no: int

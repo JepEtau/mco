@@ -178,13 +178,12 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
         '-pixel_format', pipe_pixfmt,
         '-video_size', f"{w}x{h}",
         "-r", _get_framerate(video_info),
-
         "-i", "pipe:0",
 
         *filter_complex,
 
-        "-vcodec", str_to_video_codec[vsettings.codec].value,
         "-pix_fmt", vsettings.pix_fmt,
+        "-vcodec", str_to_video_codec[vsettings.codec].value,
         *vsettings.codec_options
     ]
 

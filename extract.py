@@ -1,4 +1,4 @@
-import argparse
+from argparse import ArgumentParser
 import gc
 import logging
 from pprint import pprint
@@ -10,6 +10,7 @@ from parsers import (
     all_chapter_keys,
     db
 )
+from parsers.episode import parse_episode
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
@@ -20,18 +21,32 @@ from video.lr_scenes import generate_lr_scenes
 
 def main():
     # Arguments
-    parser: argparse.ArgumentParser = common_argument_parser(
-        description="Extract initial frames",
-        add_language=False,
+    parser: ArgumentParser = ArgumentParser(
+        description="Extract initial frames"
+    )
+    parser.add_argument(
+        "--episode",
+        "-ep",
+        type=int,
+        default=0,
+        required=True,
+        help="from 1 to 39"
     )
 
+    parser.add_argument(
+        "--chapter",
+        choices=all_chapter_keys(),
+        default='',
+        required=False,
+        help="Chapter"
+    )
     parser.add_argument(
         "--edition",
         "-ed",
         choices=['f', 'k', 's', 'j'],
         default='',
         required=True,
-        help="Use this edition as source rather than the one selected in database"
+        help="Use this edition"
     )
 
     parser.add_argument(
@@ -67,6 +82,13 @@ def main():
     )
 
     parser.add_argument(
+        "--debug",
+        action="store_true",
+        required=False,
+        help="debug"
+    )
+
+    parser.add_argument(
         "--stats",
         action="store_true",
         required=False,
@@ -86,7 +108,6 @@ def main():
         required=False,
         help="Simulate the process"
     )
-
 
     arguments = parser.parse_args()
 
@@ -136,6 +157,7 @@ def main():
     elif scene_arg != '':
         scene_no: int = int(scene_arg)
 
+    parse_episode(k_ed=arguments.edition, k_ep=arguments.episode)
     extract_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,

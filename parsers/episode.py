@@ -289,13 +289,13 @@ def parse_episode(k_ed: str, k_ep: str | int):
                                     'g_fin',
                                     'g_asuivre',
                                     'g_documentaire']:
-                        parse_scenes(db_video_chapter['scenes'], value_str)
+                        parse_scenes(k_ed, k_ep, k_chapter, value_str)
 
                     elif k_section in ['precedemment', 'asuivre']:
                         # precedemment and asuivre are different as some scenes
                         # may be replaced
                         # TODO rework as the function/parameteres are the same!
-                        parse_scenes(db_video_chapter['scenes'], value_str)
+                        parse_scenes(k_ed, k_ep, k_chapter, value_str)
 
 
         # chapters: scenes (new format)
@@ -305,7 +305,7 @@ def parse_episode(k_ed: str, k_ep: str | int):
             if k_chapter not in all_chapter_keys():
                 continue
             db_video[k_chapter]['scenes'] = []
-            parse_scenes_new(db_video[k_chapter]['scenes'], config, k_section)
+            parse_scenes_new(k_ed, k_ep, k_chapter, config, k_section)
 
 
     # Set dimensions

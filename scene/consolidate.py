@@ -1,6 +1,7 @@
 from copy import deepcopy
 import os
 from pprint import pprint
+import sys
 from typing import OrderedDict
 from processing.deint import calc_deint_hash, get_qtgmc_args, get_template_script
 from utils.hash import calc_hash
@@ -12,41 +13,62 @@ from parsers import (
     TASK_NAMES,
     ProcessingTask,
     VideoSettings,
+    TaskName,
 )
 from utils.mco_utils import get_cache_path, nested_dict_set
 from utils.p_print import *
-from utils.path_utils import path_split
-from video.concat_frames import get_video_filename
-from video.out_frames import get_out_frame_paths, get_out_frame_list_single
+from utils.path_utils import absolute_path, path_split
+from video.concat_frames import get_video_filename, set_video_filename
+from video.out_frames import get_out_frame_paths
 from .filters import get_filters
 
 
-def _consolidate_for_initial(scene: Scene) -> None:
+def consolidate_src_scene(
+    scene: Scene,
+    task_name: TaskName = 'initial',
+    watermark: bool = False
+) -> None:
+    verbose: bool = False
+    if verbose:
+        print(lightgreen("Consolidate scene:"))
+        print(lightcyan("================================== Scene ======================================="))
+        pprint(scene)
+        print(lightcyan("-------------------------------------------------------------------------------"))
+
+    scene['task'] = ProcessingTask(name=task_name)
+
     k_ep = scene['k_ep']
     k_ed = scene['k_ed']
     k_ch = scene['k_ch']
 
-    scene['filters'] = deepcopy(get_filters(scene))
+    scene['filters'] = get_filters(scene)
 
-    # consolidate_scene_filters
+    # Consolidate_scene_filters: add missing filters
     scene_filters = scene['filters']
-
-    # Add missing filters
     for t in TASK_NAMES:
         if t not in scene_filters:
             scene_filters[t] = Filter(task_name=t)
 
     # Deinterlace
     template_script: str = get_template_script(
-        episode=scene['src']['k_ep'],
-        edition=scene['src']['k_ed']
+        episode=k_ep,
+        edition=k_ed
     )
     qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
     deint_hashcode, _ = calc_deint_hash(qtgmc_args)
-    scene_filters['initial'].hash = deint_hashcode
+    scene_filters[task_name].hash = deint_hashcode
 
     # Update the scene task
     scene['task'].hashcode = scene_filters[scene['task'].name].hash
+
+    task_name: str = scene['task'].name
+    if watermark:
+        sequence: str = scene['filters'][task_name].sequence
+        scene['filters'][task_name].sequence = (
+            f"{sequence};watermark"
+            if sequence
+            else "watermark"
+        )
 
     # Inputs
     scene['cache'] = get_cache_path(scene)
@@ -62,9 +84,32 @@ def _consolidate_for_initial(scene: Scene) -> None:
     )
     scene['inputs']['progressive']['filepath'] = progressive_fp
 
+    # Output video settings
+    _task_name: TaskName = 'lr'
+    vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
+    if vsettings is not None:
+        scene['task'].video_settings = deepcopy(vsettings)
+        vsettings = scene['task'].video_settings
+    else:
+        raise ValueError(f"VideoSettings not defined for task: {task_name}")
 
+    # Output video filename
+    basename = f"{k_ed}_{k_ep}_{k_ch}_{scene['no']:03}"
+    suffix = f"_{scene['task'].hashcode}"
+    suffix += f"_{task_name}"
+    scene['task'].video_file = absolute_path(
+        os.path.join(
+            db[k_ep]['cache_path'],
+            f"scenes_{scene['k_ed']}",
+            f"{basename}{suffix}.mkv"
+        )
+    )
 
-
+    # print(lightgreen("Consolidate scene:"))
+    # print(lightcyan("================================== Scene ======================================="))
+    # pprint(scene)
+    # print(lightcyan("-------------------------------------------------------------------------------"))
+    # sys.exit()
 
 
 def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
@@ -74,7 +119,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     edition_mode: used to not consolidate geometry/curves and remove replace/stabilize/deshake
     """
-    verbose: bool = False
+    verbose: bool = True
     if verbose:
         print(lightgreen("Consolidate scene:"))
         print(lightcyan("================================== Scene ======================================="))
@@ -177,23 +222,23 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     # Processing chain
     #---------------------------------------------------------------------------
+    primary_src_scene = scene['src'].primary_scene()
 
-    # Get filters used by this scene
-    scene['filters'] = deepcopy(get_filters(scene))
+    # Get filters used by this scene: use the filters from the first src scene
+    # all src scenes MUST have the same filters. Assume that's the case
+    scene['filters'] = deepcopy(get_filters(primary_src_scene))
 
-    # consolidate_scene_filters
+    # consolidate_scene_filters: add missing filters
     scene_filters = scene['filters']
-
-    # Add missing filters
     for t in TASK_NAMES:
         if t not in scene_filters:
             scene_filters[t] = Filter(task_name=t)
 
     # Deinterlace
     template_script: str = get_template_script(
-        episode=scene['src']['k_ep'],
-        edition=scene['src']['k_ed']
-    )
+        episode=primary_src_scene['scene']['k_ep'],
+        edition=primary_src_scene['scene']['k_ed']
+    )['scene']
     qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
     deint_hashcode, _ = calc_deint_hash(qtgmc_args)
     scene_filters['initial'].hash = deint_hashcode
@@ -205,10 +250,11 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     scene_filters['upscale'].hash = upscale_hashcode
 
     # HR
-    if len(scene['replace']) != 0:
+    frame_replace = scene['src'].get_frame_replace()
+    if len(frame_replace.keys()) != 0:
         hash = calc_hash(
             f"{upscale_hashcode};"
-            + ','.join([f"{k}:{v}" for k, v in scene['replace'].items()])
+            + ','.join([f"{k}:{v}" for k, v in frame_replace.items()])
         )
     else:
         hash = upscale_hashcode
@@ -303,4 +349,4 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
         print(lightcyan("TO"))
         pprint(scene)
         print(lightcyan("==============================================================================="))
-        # sys.exit()
+        sys.exit()

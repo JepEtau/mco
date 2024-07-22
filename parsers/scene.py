@@ -11,13 +11,16 @@ from ._keys import key
 
 
 def parse_scenes(
-    scenes: list[Scene],
+    k_ed: str,
+    k_ep: str,
+    k_ch: str,
     scenes_str: str
 ) -> None:
     """This procedure parse a string wich contains the list of scenes
         and update the structure of the db.
         Used for 'episodes' and 'documentaire'
     """
+    scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
     for scene_no, scene in enumerate(scenes_str.split()):
         # print(scene)
         scene_properties = scene.split(',')
@@ -38,6 +41,9 @@ def parse_scenes(
 
         # Append this scene to the list of scenes
         new_scene: Scene = {
+            'k_ed': k_ed,
+            'k_ep': k_ep,
+            'k_ch': k_ch,
             'no': scene_no,
             'start': start,
             'count': count,
@@ -91,10 +97,7 @@ def parse_scenes(
                         })
 
                 elif d[0] == 'replace':
-                    # Replace this scene by the source
-                    if 'src' not in scenes[scene_no].keys():
-                        scenes[scene_no]['src'] = dict()
-                    scenes[scene_no]['src'].update({'use': True if d[1]=='y' else False})
+                    raise ValueError(red("scene replace is deprecated"))
 
                 elif d[0] == 'effects':
                     effect = d[1].split(',')
@@ -108,10 +111,13 @@ def parse_scenes(
 
 
 def parse_scenes_new(
-    scenes: list[Scene],
+    k_ed: str,
+    k_ep: str,
+    k_ch: str,
     config,
     k_section: str,
 ) -> None:
+    scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
     for k_option in config.options(k_section):
         value_str: str = config.get(k_section, k_option).replace(' ','')
 
@@ -135,6 +141,9 @@ def parse_scenes_new(
 
         # Append this scene to the list of scenes
         scenes.append({
+            'k_ed': k_ed,
+            'k_ep': k_ep,
+            'k_ch': k_ch,
             'no': scene_no,
             'start': start,
             'count': count,

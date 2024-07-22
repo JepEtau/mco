@@ -123,7 +123,7 @@ def main():
                 print(lightgreen(f"  ({scene['ref']['count']})".rjust(8)), end='')
                 ref_count += scene['ref']['count']
             else:
-                print(lightgreen("..."), end='')
+                print(lightgreen(" ..."), end='')
 
             print(f"  <- ", end='')
 

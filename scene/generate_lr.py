@@ -37,12 +37,12 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
 
         do_generate: bool = True
-        if not force:
-            do_generate = False
-            for fp in scene['in_frames'].out_images():
-                if not os.path.exists(fp):
-                    do_generate = True
-                    break
+        # if not force:
+        #     do_generate = False
+        #     for fp in scene['in_frames'].out_images():
+        #         if not os.path.exists(fp):
+        #             do_generate = True
+        #             break
 
         if do_generate:
             if scene['task'].name == 'initial':

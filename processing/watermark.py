@@ -27,14 +27,20 @@ class WatermarkAlignment(Enum):
 
 
 
-def add_watermark(image: Image, scene: Scene) -> None:
+def add_watermark(image: Image | np.ndarray, scene: Scene, no: int) -> np.ndarray | None:
     # Load and save image with dtype=uint8
     # print(f"{image.in_fp} -> {image.out_fp}")
+    if isinstance(image, Image):
+        in_img: np.ndarray = load_image(image.in_fp)
+        text: str = f"""{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['no']:03}{str(image.no).rjust(10)}"""
+    else:
+        in_img = image
+        if scene['task'].name == 'initial':
+            text: str = f"""{scene['k_ed']}:{scene['k_ep']}:{scene['no']:03}{str(no).rjust(10)}"""
+        else:
+            text: str = f"""{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['no']:03}{str(no).rjust(10)}"""
 
-    in_img: np.ndarray = load_image(image.in_fp)
     height: int = in_img.shape[0]
-
-    text: str = f"""{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['no']:03}{str(image.no).rjust(10)}"""
     font_size: int = 20
     bold: bool = False
     italic: bool = False
@@ -70,11 +76,14 @@ def add_watermark(image: Image, scene: Scene) -> None:
     )
     if scene['task'].name in ('initial', 'lr'):
         add_watermark_initial(pil_image=pil_image, scene=scene)
-    img: np.ndarray = np.array(pil_image)
+    out_img: np.ndarray = np.array(pil_image)
 
     # print(f"img: {img.shape}, {img.dtype}. Htext={h_text}px position: (50, {position_h})")
-    write_image(image.out_fp, img)
+    if isinstance(image, Image):
+        write_image(image.out_fp, out_img)
+        return None
 
+    return out_img
 
 
 
@@ -83,8 +92,7 @@ def add_watermark_initial(pil_image: PilImage.Image, scene: Scene) -> None:
     height: int = pil_image.height
 
     if scene['task'].name == 'initial':
-        src_scene = db[scene['k_ep']]['video'][scene['k_ed']][scene['k_ch']]['scenes'][scene['src']['no']]
-        text: str = f"{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['no']:03} {src_scene['count']}"
+        text: str = f"{scene['k_ed']}:{scene['k_ep']}:{scene['no']:03} {scene['count']}"
         color: tuple[int, int, int] = (0, 240, 0)
     else:
         src_scene = scene

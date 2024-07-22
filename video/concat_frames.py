@@ -68,7 +68,7 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
 
     folder_name: str = "video"
     if task_name == 'initial':
-        folder_name = f'scenes_{scene['src']['k_ed']}'
+        folder_name = f"scenes_{scene['k_ed']}"
     elif task_name == 'hr':
         folder_name = 'scenes_hr'
     elif task_name == 'lr':
