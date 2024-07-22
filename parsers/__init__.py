@@ -26,7 +26,9 @@ from ._keys import (
     all_chapter_keys,
     non_credit_chapter_keys,
 )
-
+from .p_print import (
+    pprint_scene_mapping
+)
 
 
 __all__ = [
@@ -48,4 +50,5 @@ __all__ = [
     "Filter",
     "TASK_NAMES",
     "VideoSettings",
+    "pprint_scene_mapping",
 ]

@@ -1,10 +1,12 @@
+from __future__ import annotations
 from configparser import ConfigParser
 from pprint import pprint
 import re
 import sys
 from ._keys import all_chapter_keys, key
 from utils.p_print import *
-from utils.mco_types import Effect, Effects, Scene, SrcScenes, ChapterVideo
+from utils.mco_types import Effect, Effects, ChapterVideo, Scene
+from scene.src_scene import SrcScenes
 from ._db import db
 from ._keys import key
 

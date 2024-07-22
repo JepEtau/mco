@@ -33,9 +33,10 @@ def concat_scenes(
         return
     k_ep, k_ch = key(episode), chapter
     try:
-        hashcode: str = video['hash']
+        hashcode: str = video['task'].hashcode
     except:
         pprint(video)
+        raise ValueError("concat_scenes")
 
     main_logger.debug(lightcyan(f"\nConcatenate scenes: {k_ep}:{k_ch}"))
 

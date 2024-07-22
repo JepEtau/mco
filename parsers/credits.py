@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections import OrderedDict
 from configparser import ConfigParser
 import sys
@@ -11,7 +12,7 @@ import re
 from pprint import pprint
 from typing import Literal
 
-from utils.mco_types import ChapterVideo, SrcScenes
+from utils.mco_types import ChapterVideo
 from utils.path_utils import absolute_path
 from .audio import parse_audio_g
 from .scene import parse_target_scenelist

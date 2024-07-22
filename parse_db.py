@@ -12,6 +12,7 @@ from parsers import (
     key,
     ProcessingTask,
     TaskName,
+    pprint_scene_mapping,
 )
 from utils.arg_parser import common_argument_parser
 from utils.mco_types import (
@@ -117,33 +118,17 @@ def main():
         target_count = 0
         ref_count: int = 0
         for scene in scenes:
-            print(lightgreen(f"    {scene['no']}".rjust(8)), end=':')
+            pprint_scene_mapping(scene)
+
             if 'ref' in scene:
-                print(lightgreen(f"{scene['ref']['start']}".rjust(6)), end='')
-                print(lightgreen(f"  ({scene['ref']['count']})".rjust(8)), end='')
                 ref_count += scene['ref']['count']
-            else:
-                print(lightgreen(" ..."), end='')
-
-            print(f"  <- ", end='')
-
-            print(f"{scene['dst']['count']}".rjust(4), end='  ')
             target_count += scene['dst']['count']
-
-            for s in scene['src'].scenes():
-                _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']
-                print(f" {_k_ed}:{_k_ep}:{_k_ch}:{_no: 3}".rjust(10), end='')
-                print(f" {s['start']}".rjust(10), end='')
-                print(f"{s['count']}".rjust(8), end='')
-                if len(scene['src']) > 1:
-                    print(', ', end='')
-            print()
 
         if 'ref' not in scene:
             ref_count = 0
             _k_ed = 'k' if db[k_ep]['audio']['lang'] == 'fr' else 'f'
             print(f"  reference: {_k_ed}:{k_ep}:{chapter}")
-            for s in db[_k_ep]['video'][_k_ed][chapter]['scenes']:
+            for s in db[k_ep]['video'][_k_ed][chapter]['scenes']:
                 ref_count += s['count']
 
         print(f"  Reference: {ref_count}")

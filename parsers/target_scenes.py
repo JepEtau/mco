@@ -6,7 +6,12 @@ from .logger import logger
 from .helpers import get_fps
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
-from utils.mco_types import ChapterAudio, Effect, Effects, RefScene, Scene, ChapterVideo, SrcScenes
+from utils.mco_types import (
+    ChapterAudio, Effect, Effects, RefScene, Scene, ChapterVideo,
+)
+from scene.src_scene import (
+    SrcScenes
+)
 from ._db import db
 from ._types import key
 

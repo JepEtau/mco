@@ -1,6 +1,8 @@
 import os
 from pprint import pprint
 import sys
+
+import numpy as np
 from parsers import (
     db,
     Chapter,
@@ -14,10 +16,13 @@ from processing.black_frame import generate_black_frame
 from utils.images import Images
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_path import makedirs
+from utils.mco_utils import run_simple_command
+from utils.media import VideoInfo, extract_media_info
 from utils.p_print import *
 from utils.logger import main_logger
-from utils.path_utils import absolute_path
+from utils.path_utils import absolute_path, path_split
 from utils.time_conversions import ms_to_frame
+from utils.tools import ffmpeg_exe
 
 
 def get_silence_filepath(k_ep: str, chapter: str, task: TaskName) -> str:
@@ -319,4 +324,43 @@ def generate_video_concat_file(
 
         concat_file.close()
         return concat_fp
+
+
+
+
+
+def generate_silence(k_ep: str, k_ch: str) -> None:
+
+    if k_ch in ('g_debut', 'g_fin'):
+        db_video: ChapterVideo = db[k_ch]['video']
+        db_audio = db[k_ch]['audio']
+        out_filename = f"{k_ch}_silence.mkv"
+    else:
+        db_video: ChapterVideo = db[k_ep]['video']['target'][k_ch]
+        db_audio = db[k_ep]['audio'][k_ch]
+        out_filename = f"{k_ep}_{k_ch}_silence.mkv"
+
+    if 'silence' in db_audio and db_audio['silence'] > 0:
+        print(f"add silence for {k_ep}: {k_ch}")
+        ch_video_filepath: str = db_video['task'].video_file
+        vi: VideoInfo = extract_media_info(ch_video_filepath)['video']
+        h, w = vi['shape'][:2]
+        ch_silence_filepath = os.path.join(
+            path_split(ch_video_filepath)[0],
+            out_filename
+        )
+        ffmpeg_command: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "warning",
+            "-nostats",
+            "-f", "lavfi",
+            "-i",
+            f"color=c=black:s={w}x{h}:r={get_fps(db)}:d={db_audio['silence']/1000}",
+            "-pix_fmt", vi['pix_fmt'],
+            "-vcodec", vi['codec'],
+            ch_silence_filepath, "-y"
+        ]
+        main_logger.debug(' '.join(ffmpeg_command))
+        run_simple_command(ffmpeg_command)
 

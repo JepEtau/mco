@@ -38,8 +38,8 @@ def main():
     parser.add_argument(
         "--scene",
         "-s",
-        type=str,
-        default='',
+        type=int,
+        default=-1,
         required=False,
         help="scene no. to process. Integer or frame value (e.g. 2450f)"
     )
@@ -94,24 +94,6 @@ def main():
     gc.collect()
 
 
-    # For inspection
-    # db_ep: dict = g_database['ep01']
-    # print(db_ep.keys())
-    # print(db_ep['cache_path'])
-    # pprint(db_ep['audio'])
-
-    # print(g_database.keys())
-    # pprint(g_database['common'])
-
-    #
-    scene_no: int | None = None
-    scene_arg: str = arguments.scene
-    if scene_arg.endswith('f'):
-        raise NotImplementedError("scene_arg not yet implemented")
-        scene_no = frame_to_scene_no(int(scene_arg[:-1]))
-    elif scene_arg != '':
-        scene_no: int = int(scene_arg)
-
     task = 'lr'
 
     generate_lr_scenes(
@@ -120,14 +102,14 @@ def main():
         task=task,
         force=arguments.force,
         simulation=arguments.simulate,
-        scene_no=scene_no,
+        scene_no=arguments.scene,
         watermark=arguments.watermark,
         edition=arguments.edition,
         debug=arguments.debug
     )
 
 
-    if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == '':
+    if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == -1:
         # Merge audio and video files
         combine_av_tracks(
             episode=arguments.episode,

@@ -1,20 +1,19 @@
+from __future__ import annotations
 import subprocess
 import sys
 import os
 import time
 from pprint import pprint
 
-from scene.consolidate import consolidate_src_scene
+from scene.consolidate_src import consolidate_src_scene
 from scene.extract import extract_scene
-from scene.generate_lr import generate_lr_scene
 from utils.hash import calc_hash
 from utils.logger import main_logger
 from utils.mco_types import Scene, ChapterVideo
-from utils.mco_utils import get_cache_path, run_simple_command
+from utils.mco_utils import run_simple_command
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from utils.mco_path import makedirs
 from parsers import (
     db,
     Chapter,
@@ -23,16 +22,6 @@ from parsers import (
     TaskName,
     ProcessingTask
 )
-from .concat_frames import (
-    generate_concat_file,
-    generate_silence_concat_file,
-    generate_video_concat_file,
-    set_concat_filename,
-    set_video_filename,
-)
-from .concat_scenes import concat_scenes
-from .combine_frames import combine_frames
-
 
 
 def extract_scenes(
@@ -41,7 +30,7 @@ def extract_scenes(
     task: TaskName = '',
     force: bool = False,
     simulation: bool = False,
-    scene_no: int | None = None,
+    scene_no: int = -1,
     scene_min: int = -1,
     scene_max: int = -1,
     watermark: bool = False,
@@ -49,42 +38,34 @@ def extract_scenes(
     debug: bool = False
 ):
 
-    k_ep = key(episode)
     k_ed = edition
+    k_ep = key(episode)
+    chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
+
     concatenate_clips: bool = (
         True
-        if scene_no is None and scene_min == -1 and scene_max ==-1
+        if scene_no == -1 and scene_min == -1 and scene_max ==-1
         else False
     )
 
-    # Create the video directory for this episode or chapter
-    makedirs(k_ep, single_chapter, 'video')
-
-    # Create the scen vclip chapter by chapter
-    chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
-
     start_time_full = time.time()
-
     for chapter in chapters:
         hashes_str = ''
-        video: ChapterVideo = db[k_ep]['video'][k_ed][chapter]
+        ch_video: ChapterVideo = db[k_ep]['video'][k_ed][chapter]
 
         # Do not generate clip for unused chapters
-        pprint(video)
-        if video['count'] <= 0:
+        if ch_video['count'] <= 0:
             continue
 
+        ch_video['task'] = ProcessingTask(name=task)
         if debug:
             print(f"\n<<<<<<<<<<<<<<<<<<<<< {chapter} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-        print(lightcyan(chapter))
-
-        video['task'] = ProcessingTask(name=task)
 
         # Walk through target scenes
-        scenes: list[Scene] = video['scenes']
+        scenes: list[Scene] = ch_video['scenes']
         for scene in scenes:
             start_time = time.time()
-            if scene_no is not None and scene['no'] != scene_no:
+            if scene_no != -1 and scene['no'] != scene_no:
                 continue
             if scene_min != -1 and scene_max != -1:
                 if scene['no'] < scene_min or scene['no'] > scene_max:
@@ -95,7 +76,7 @@ def extract_scenes(
                 f"{scene['count']}".rjust(4),
             )
 
-            # COnsolidate this scene
+            # Consolidate this scene
             consolidate_src_scene(
                 scene=scene,
                 task_name='initial',
@@ -127,36 +108,30 @@ def extract_scenes(
 
         hashcode: str = calc_hash(hashes_str[:-1])
         basename: str = f"{k_ed}_{k_ep}_{chapter}_{task}_{hashcode}"
-        video['task'] = ProcessingTask(
+        ch_video['task'] = ProcessingTask(
             name=task,
             hashcode=hashcode,
             concat_file=os.path.join(db[k_ep]['cache_path'], "concat", f"{basename}.txt"),
             video_file=os.path.join(db[k_ep]['cache_path'], f"scenes_{k_ed}", f"{basename}.mkv"),
         )
+    print(f"Extracted scenes in {time.time() - start_time_full:.03f}s")
 
-    print(f"Total time: {time.time() - start_time_full:.03f}s")
-
-    if scene_no is not None:
+    if scene_no != -1:
         return
 
     # Concatenate video clips from all chapters
     if concatenate_clips:
         for chapter in chapters:
-            video: ChapterVideo
-            # if chapter in ('g_debut', 'g_fin'):
-            #     video: ChapterVideo = db[chapter]['video']
-            # else:
-            video: ChapterVideo = db[k_ep]['video'][k_ed][chapter]
+            ch_video: ChapterVideo = db[k_ep]['video'][k_ed][chapter]
 
-            pprint(video['task'])
-            out_video_file: str = video['task'].video_file
+            out_video_file: str = ch_video['task'].video_file
             modified_time: int = 0
             if os.path.exists(out_video_file):
                 modified_time = os.stat(out_video_file).st_mode
 
             do_concatenate: bool = False
-            with open(video['task'].concat_file, "w") as f:
-                for scene in video['scenes']:
+            with open(ch_video['task'].concat_file, "w") as f:
+                for scene in ch_video['scenes']:
                     out_filepath: str = scene['task'].video_file
                     f.write(f"file '{out_filepath}'\n")
 
@@ -165,8 +140,6 @@ def extract_scenes(
                         or os.stat(out_filepath).st_mode > modified_time
                     ):
                         do_concatenate = True
-
-            print(f"dogenerate: {do_concatenate}")
 
             if do_concatenate:
                 # Force concatenation
@@ -180,7 +153,7 @@ def extract_scenes(
                     "-loglevel", "warning",
                     "-f", "concat",
                     "-safe", "0",
-                    "-i", video['task'].concat_file,
+                    "-i", ch_video['task'].concat_file,
                     "-c", "copy",
                     "-y", out_video_file
                 ]

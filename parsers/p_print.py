@@ -275,3 +275,26 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
         frames[k_chapter_g] = (video_count, audio_count)
 
     return frames
+
+
+
+
+def pprint_scene_mapping(scene: Scene) -> None:
+    print(lightgreen(f"    {scene['no']}".rjust(8)), end=':')
+    if 'ref' in scene:
+        print(lightgreen(f"{scene['ref']['start']}".rjust(6)), end='')
+        print(lightgreen(f"  ({scene['ref']['count']})".rjust(8)), end='')
+    else:
+        print(lightgreen(" ..."), end='')
+
+    print(f"  <- ", end='')
+    print(f"{scene['dst']['count']}".rjust(4), end='  ')
+
+    for s in scene['src'].scenes():
+        _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']
+        print(f" {_k_ed}:{_k_ep}:{_k_ch}:{_no: 3}".rjust(10), end='')
+        print(f" {s['start']}".rjust(10), end='')
+        print(f"{s['count']}".rjust(8), end='')
+        if len(scene['src']) > 1:
+            print(', ', end='')
+    print()

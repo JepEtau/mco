@@ -1,15 +1,13 @@
+from __future__ import annotations
 import os
 import subprocess
 import sys
 import time
-from typing import Literal, TYPE_CHECKING
-# if TYPE_CHECKING:
 from scene.filters import do_watermark
 from utils.mco_types import Scene
-from parsers import Chapter
 from utils.p_print import *
 from parsers import (
-    key, db, task_to_dirname, TaskName, TASK_NAMES
+    db, task_to_dirname, TaskName, TASK_NAMES
 )
 from .logger import main_logger
 
@@ -36,12 +34,13 @@ def nested_dict_set(d: dict, o: object, *keys) -> None:
 def get_cache_path(scene: Scene, out: bool=False) -> str:
     task_name: TaskName = scene['task'].name
     cache_dir: str = db['common']['directories']['cache']
+    k_ch_dst: str = scene['dst']['k_ch'] if 'dst' in scene else scene['k_ch']
 
     # Put all images in a single folder for start/end credits
-    if scene['k_ch'] in ('g_debut', 'g_fin'):
+    if k_ch_dst in ('g_debut', 'g_fin'):
         return os.path.join(
             cache_dir,
-            scene['k_ch'],
+            k_ch_dst,
             f"{scene['no']:03}"
         )
 
@@ -50,13 +49,13 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
             return os.path.join(
                 cache_dir,
                 scene['dst']['k_ep'],
-                scene['dst']['k_ch'],
+                k_ch_dst,
                 f"{scene['src']['no']:03}"
             )
         return os.path.join(
             cache_dir,
             scene['src']['k_ep'],
-            scene['dst']['k_ch'],
+            k_ch_dst,
             f"{scene['src']['no']:03}"
         )
 
@@ -66,7 +65,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
         output_path: str = os.path.join(
             cache_dir,
             scene['dst']['k_ep'],
-            scene['dst']['k_ch'],
+            k_ch_dst,
             f"{scene['no']:03}"
         )
 
@@ -75,7 +74,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
         output_path = os.path.join(
             cache_dir,
             scene['k_ep'],
-            scene['k_ch'],
+            k_ch_dst,
             f"{scene['no']:03}"
         )
 
@@ -85,7 +84,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
         output_path: str = os.path.join(
             cache_dir,
             scene['k_ep'],
-            scene['k_ch'],
+            k_ch_dst,
             f"{scene['src']['no']:03}"
         )
 

@@ -15,7 +15,7 @@ from utils.path_utils import absolute_path, get_extension
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.time_conversions import frame_to_sexagesimal
 from utils.tools import ffmpeg_exe, avs_dir, nnedi3_weights
-from parsers import db, key
+from parsers import db
 
 g_deint_algorithms = [
     'nnedi',
@@ -92,11 +92,8 @@ class QtgmcSettings:
 
 
 
-def get_template_script(episode: int | str, edition: str) -> str:
+def get_template_script(k_ep: str, k_ed: str) -> str:
     # Find AviSynth+ template. Priorities: edition, episode, global
-    k_ep: str = key(episode)
-    k_ed: str = edition
-
     db_directories: dict[str, str] = db['common']['directories']
     ep_db_dir: str = os.path.join(db_directories['config'], k_ep)
     template_script: str = ''

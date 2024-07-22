@@ -11,6 +11,7 @@ from parsers import (
 )
 from utils.logger import main_logger
 from audio import get_audio_frame_count
+from utils.mco_types import ChapterVideo
 from utils.mco_utils import run_simple_command
 from utils.mco_path import makedirs
 from utils.p_print import *
@@ -60,42 +61,43 @@ def combine_av_tracks(
     force: bool = False,
     simulation: bool = False
 ):
-    k: str = ''
+    k_ep_or_g: str = ''
     if chapter in ('g_debut', 'g_fin') or episode is None:
-        k = chapter
+        k_ep_or_g = chapter
     else:
-        k = key(episode)
+        k_ep_or_g = key(episode)
 
     # Output filepath
-    print(lightgreen(f"Merge audio and video tracks:"), lightcyan(f"{k}"))
-    cache_path = db[k]['cache_path']
+    print(lightgreen(f"Merge audio and video tracks:"), lightcyan(f"{k_ep_or_g}"))
+    cache_path = db[k_ep_or_g]['cache_path']
 
-    language: str = db[k]['audio']['lang']
+    language: str = db[k_ep_or_g]['audio']['lang']
     language = '' if language == 'fr' else f"_{language}"
     suffix = '' if task == '' or task == 'final' else f"_{task}"
 
     audio_video_filepath: str = (
-        os.path.join(cache_path, f"{k}{suffix}{language}.mkv")
-        if k in ('g_debut', 'g_fin')
-        else os.path.join(cache_path, f"{k}_av{suffix}{language}.mkv")
+        os.path.join(cache_path, f"{k_ep_or_g}{suffix}{language}.mkv")
+        if k_ep_or_g in ('g_debut', 'g_fin')
+        else os.path.join(cache_path, f"{k_ep_or_g}_av{suffix}{language}.mkv")
     )
 
     # if os.path.exists(audio_video_filepath) and not force and not simulation:
     #     return
 
     # Get nb of frames from video stream
-    if k in ('g_debut', 'g_fin'):
+    if k_ep_or_g in ('g_debut', 'g_fin'):
+        db_video: ChapterVideo = db[k_ep_or_g]['video']
         video_filepath = os.path.join(
             cache_path,
             "video",
-            f"{k}_video_{db[k]['video']['hash']}{suffix}{language}.mkv"
+            f"{k_ep_or_g}_video_{db_video['task'].hashcode}{suffix}{language}.mkv"
         )
 
     else:
         video_filepath = os.path.join(
             cache_path,
             "video",
-            f"{k}_video{language}.mkv"
+            f"{k_ep_or_g}_video{language}.mkv"
         )
 
     video_frames_count: int = 0
@@ -108,7 +110,7 @@ def combine_av_tracks(
     # Get equivalent nb of frames from audio stream
     audio_filepath = os.path.join(
         db['common']['directories']['audio'],
-        f"{k}_audio{language}.{db['common']['settings']['audio_format']}"
+        f"{k_ep_or_g}_audio{language}.{db['common']['settings']['audio_format']}"
     )
     print(yellow(audio_filepath))
     audio_frames_count: int = 0
@@ -116,8 +118,8 @@ def combine_av_tracks(
         if not simulation:
             audio_frames_count = get_audio_frame_count(episode, chapter)
     except:
-        k: str = f"episode {episode}" if chapter == '' else chapter
-        raise RuntimeError(f"No valid audio for {k}")
+        k_ep_or_g: str = f"episode {episode}" if chapter == '' else chapter
+        raise RuntimeError(f"No valid audio for {k_ep_or_g}")
 
     print(f"\tvideo: {video_filepath}: {video_frames_count}")
     print(f"\taudio: {audio_filepath}: {audio_frames_count}")

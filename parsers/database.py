@@ -4,7 +4,6 @@ from pprint import pprint
 import sys
 from typing import Literal
 from utils.p_print import *
-from utils.path_utils import absolute_path
 
 from .av_sync import consolidate_av_sync
 from .common import parse_common_configuration
