@@ -42,7 +42,6 @@ def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> boo
     count: int = scene['count']
     frame_no: int = scene['start']
     vsettings: VideoSettings = scene['task'].video_settings
-
     if start < 0:
         raise ValueError(f"Error, start < 0 for scene {scene['no']}")
 

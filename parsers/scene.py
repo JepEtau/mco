@@ -261,6 +261,8 @@ def parse_target_scenelist(
             k_ch: str = db_video_target['k_ch']
 
             current_scene_no: int = -1
+            segment_start: int = -1
+            segment_count: int = -1
             for p in scene_properties:
                 try:
                     k, v = p.split('=')
@@ -300,17 +302,14 @@ def parse_target_scenelist(
                         segment_start = int(match.group(1))
                         segment_count = int(match.group(2))
 
-            if current_scene_no != -1:
-                scene['src'].add_scene(
-                    k_ed=k_ed,
-                    k_ep=k_ep,
-                    k_ch=k_ch,
-                    no=current_scene_no,
-                    start=segment_start,
-                    count=segment_count,
-                )
-
-
+            scene['src'].add_scene(
+                k_ed=k_ed,
+                k_ep=k_ep,
+                k_ch=k_ch,
+                no=current_scene_no if current_scene_no != -1 else scene_no,
+                start=segment_start,
+                count=segment_count,
+            )
 
 def get_scene_from_frame_no(
     db, frame_no: int, k_ed: str, k_ep: str, k_chapter: str

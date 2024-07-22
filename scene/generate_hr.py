@@ -14,7 +14,7 @@ from processing.frame_replace import (
     get_frames_to_cache,
     get_frames_to_remove,
 )
-from utils.mco_types import Scene, SrcScene
+from utils.mco_types import Scene
 from utils.media import VideoInfo, extract_media_info, str_to_video_codec
 from utils.p_print import *
 from utils.path_utils import path_split
