@@ -250,7 +250,7 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
         print(f"{extra_str.rjust(12)}", end='')
 
         # start of 1st scene
-        start_str = f"{first_scene['start']}"
+        start_str = f"{first_scene['src'].first_frame_no()}"
         print(f"{start_str.rjust(14)}", end='')
 
         # frames count (sum of scenes only)

@@ -3,11 +3,11 @@ from copy import deepcopy
 from pprint import pprint
 
 from .logger import logger
-from .helpers import get_fps, nested_dict_set
+from .helpers import get_fps
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
-from utils.mco_types import ChapterAudio, Effect, Effects, RefScene, Scene, ChapterVideo, SrcScene, SrcScenes
-from ._db import K_ED_REF, db
+from utils.mco_types import ChapterAudio, Effect, Effects, RefScene, Scene, ChapterVideo, SrcScenes
+from ._db import db
 from ._types import key
 
 
@@ -92,8 +92,13 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str):
     # k_ed/k_ep/k_chapter:
     #       - related to the scene defined by the src structure
     #
-    frame_count = 0
-    ref_scenes: list[Scene] = db[k_ep]['video'][K_ED_REF][k_chapter]['scenes']
+    k_ed_ref: str = 'f' if db[k_ep]['audio']['lang'] == 'en' else 'k'
+
+    if k_ep == 'ep01' and k_chapter in ('episode'):
+        print(red("REWORK ep01 db"))
+        k_ed_ref = 'f'
+
+    ref_scenes: list[Scene] = db[k_ep]['video'][k_ed_ref][k_chapter]['scenes']
     add_ref: bool = True
     if len(ref_scenes) != len(target_chapter['scenes']):
         print(f"reference: {k_ed_src}:{k_ep}:{k_chapter}")
@@ -103,7 +108,7 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str):
             pprint(ref_scenes)
             raise ValueError
 
-
+    frame_count = 0
     for no, target_scene in enumerate(target_chapter['scenes']):
         if len(target_scene['src']) == 0:
             in_scene: Scene = chapter_src['scenes'][no]
@@ -158,28 +163,28 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str):
 
 
 
-def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
+def consolidate_target_scenes_g(k_ep: int | str, k_chapter: str) -> None:
     """Generate the list of scenes which will be used for this credit
     (opening, precedemment, asuivre, end)
     The total duration (in frames) is updated
     """
     k_ep: str = key(k_ep)
     fps = get_fps(db)
-    logger.debug(lightgreen(f"consolidate_target_scenes_g: {k_ep}:{k_chapter_c}"))
+    logger.debug(lightgreen(f"consolidate_target_scenes_g: {k_ep}:{k_chapter}"))
 
     # Get the default source
-    src_video = db[k_chapter_c]['video']['src']
+    src_video = db[k_chapter]['video']['src']
     k_ed_src, k_ep_src = src_video['k_ed'], src_video['k_ep']
     try:
-        chapter_src: ChapterVideo = db[k_ep_src]['video'][k_ed_src][k_chapter_c]
+        chapter_src: ChapterVideo = db[k_ep_src]['video'][k_ed_src][k_chapter]
     except:
-        pprint(db[k_chapter_c])
+        pprint(db[k_chapter])
         raise KeyError(f"Error: missing file from edition {k_ed_src}",
-                       f"cannot use {k_ep_src}:{k_chapter_c}")
+                       f"cannot use {k_ep_src}:{k_chapter}")
 
 
-    if k_chapter_c in ('g_debut', 'g_fin'):
-        target_chapter: ChapterVideo = db[k_chapter_c]['video']
+    if k_chapter in ('g_debut', 'g_fin'):
+        target_chapter: ChapterVideo = db[k_chapter]['video']
         if 'avsync' in target_chapter.keys():
             print("############# consolidate_target_scenes_g: avsync shall not be reset to 0: %d" % (target_chapter['avsync']))
             target_chapter.update({
@@ -188,16 +193,16 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
         else:
             target_chapter['avsync'] = 0
 
-    elif k_chapter_c == 'g_asuivre':
+    elif k_chapter == 'g_asuivre':
         # Create a structure:
         #   this chapter was not yet defined because it depends on audio start/duration
         # print("create_target_scenes_g;: %s:%s:%s" % ('', k_ep, k_chapter_g))
         try:
-            db_audio = db[k_ep]['audio'][k_chapter_c]
+            db_audio = db[k_ep]['audio'][k_chapter]
         except:
-            sys.exit(f"error: {k_ep}:{k_chapter_c}: audio is not defined or erroneous")
+            sys.exit(f"error: {k_ep}:{k_chapter}: audio is not defined or erroneous")
         db_audio['avsync'] = 0
-        db[k_ep]['video']['target'][k_chapter_c] = {
+        db[k_ep]['video']['target'][k_chapter] = {
             'start': 0,
             'count': ms_to_frame(db_audio['duration'], fps),
             'avsync': 0,
@@ -206,27 +211,27 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
             #     'k_ch': k_chapter_g,
             # },
         }
-        target_chapter = db[k_ep]['video']['target'][k_chapter_c]
+        target_chapter = db[k_ep]['video']['target'][k_chapter]
 
-    elif k_chapter_c == 'g_documentaire':
+    elif k_chapter == 'g_documentaire':
         # Create the g_documentaire structure:
         #   this chapter was not yet defined because it depends on audio start/duration
-        db_audio: ChapterAudio = db[k_ep]['audio'][k_chapter_c]
+        db_audio: ChapterAudio = db[k_ep]['audio'][k_chapter]
         try:
-            db_audio = db[k_ep]['audio'][k_chapter_c]
+            db_audio = db[k_ep]['audio'][k_chapter]
         except:
-            sys.exit(f"error: {k_ep}:{k_chapter_c}: audio is not defined or erroneous")
+            sys.exit(f"error: {k_ep}:{k_chapter}: audio is not defined or erroneous")
         audio_count = ms_to_frame(db_audio['duration'], fps)
         db_audio.update({
             'count': audio_count,
             'avsync': 0,
         })
-        db[k_ep]['video']['target'][k_chapter_c] = {
+        db[k_ep]['video']['target'][k_chapter] = {
             'start': ms_to_frame(db_audio['start'], fps),
             'count': audio_count,
             'avsync': 0,
         }
-        target_chapter = db[k_ep]['video']['target'][k_chapter_c]
+        target_chapter = db[k_ep]['video']['target'][k_chapter]
 
 
     # Verify that scenes are defined in src or target
@@ -234,7 +239,7 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
         'scenes' not in target_chapter.keys()
         and 'scenes' not in chapter_src.keys()
     ):
-        sys.exit(red("error: %s.create_target_scenes: no scenes in src/dst %s:%s" % (__name__, k_ep, k_chapter_c)))
+        sys.exit(red("error: %s.create_target_scenes: no scenes in src/dst %s:%s" % (__name__, k_ep, k_chapter)))
 
 
     # List the scene no which are defined in target
@@ -257,6 +262,18 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
     target_chapter['scenes'] = sorted(target_chapter['scenes'], key=lambda s: s['no'])
 
 
+    k_ed_ref: str = 'f' if db[k_chapter]['audio']['lang'] == 'en' else 'k'
+    # k_ed_src, k_ep_src = src_video['k_ed'], src_video['k_ep']
+
+    print(red(f"target scenes, reference: {k_ed_src}:{k_ep_src}:{k_chapter}"))
+    # sys.exit()
+    ref_scenes: list[Scene] = db[k_ep_src]['video'][k_ed_src][k_chapter]['scenes']
+    add_ref: bool = True
+    if len(ref_scenes) != len(target_chapter['scenes']):
+        print(f"reference: {k_ed_src}:{k_ep}:{k_chapter}")
+        print(red(f"Target: {len(target_chapter['scenes'])}, Reference: {len(ref_scenes)} scenes"))
+        add_ref = False
+
     frame_count: int = 0
     for no, target_scene in enumerate(target_chapter['scenes']):
         # TODO: 'dst' count may be erroneous... to validate
@@ -265,23 +282,25 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
             target_scene['src'].add_scene(
                 k_ed=k_ed_src,
                 k_ep=k_ep_src,
-                k_ch=k_chapter_c,
+                k_ch=k_chapter,
                 no=in_scene['no'],
                 start=in_scene['start'],
                 count=in_scene['count'],
             )
 
-        target_scene.update({
-            'dst': {
-                'k_ed': k_ed_src,
-                'k_ep': k_ep,
-                'k_ch': k_chapter_c,
-                'count': target_scene['src'].frame_count()
-            },
-            # 'k_ed': _k_ed_src,
-            # 'k_ep': _k_ep_src,
-            # 'k_ch': _k_chapter_src,
-        })
+        target_scene['dst'] = {
+            'k_ed': k_ed_src,
+            'k_ep': k_ep,
+            'k_ch': k_chapter,
+            'count': target_scene['src'].frame_count()
+        }
+
+        if add_ref:
+            target_scene['ref'] = RefScene(
+                no=ref_scenes[no]['no'],
+                start=ref_scenes[no]['start'],
+                count=ref_scenes[no]['count'],
+            )
 
         frame_count += target_scene['dst']['count']
 
@@ -289,8 +308,8 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter_c: str) -> None:
     target_chapter['count'] = frame_count
 
     # Effects
-    if k_chapter_c in ('g_debut', 'g_fin'):
-        target_chapter: ChapterVideo = db[k_chapter_c]['video']
+    if k_chapter in ('g_debut', 'g_fin'):
+        target_chapter: ChapterVideo = db[k_chapter]['video']
         if 'effects' in target_chapter:
             last_scene = target_chapter['scenes'][-1]
 

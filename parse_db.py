@@ -114,13 +114,14 @@ def main():
 
         # Walk through target scenes
         scenes: list[Scene] = chapter_video['scenes']
-        ref_count: int = 0
         target_count = 0
+        ref_count: int = 0
         for scene in scenes:
             print(lightgreen(f"    {scene['no']}".rjust(8)), end=':')
             if 'ref' in scene:
                 print(lightgreen(f"{scene['ref']['start']}".rjust(6)), end='')
                 print(lightgreen(f"  ({scene['ref']['count']})".rjust(8)), end='')
+                ref_count += scene['ref']['count']
             else:
                 print(lightgreen("..."), end='')
 
@@ -136,11 +137,17 @@ def main():
                 print(f"{s['count']}".rjust(8), end='')
                 if len(scene['src']) > 1:
                     print(', ', end='')
-
             print()
 
-        print(f"Reference: {ref_count}")
-        print(f"Destination: {target_count}")
+        if 'ref' not in scene:
+            ref_count = 0
+            _k_ed = 'k' if db[k_ep]['audio']['lang'] == 'fr' else 'f'
+            print(f"  reference: {_k_ed}:{k_ep}:{chapter}")
+            for s in db[_k_ep]['video'][_k_ed][chapter]['scenes']:
+                ref_count += s['count']
+
+        print(f"  Reference: {ref_count}")
+        print(f"  Target: {target_count}")
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)

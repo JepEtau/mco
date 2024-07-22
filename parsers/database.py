@@ -108,6 +108,10 @@ def parse_database(
         print("------------------------------------")
         sys.exit()
 
+    # Add the reference
+    if lang == 'fr':
+        dependencies['k'].append('ep01')
+
     # Merge dependencies
     for k_ed, v in dependencies_tmp.items():
         if k_ed not in dependencies.keys():
@@ -157,7 +161,7 @@ def parse_database(
         parse_geometry_configurations(k_ep_or_g=k_chapter_g)
 
         # Create scenes used for the generation
-        consolidate_target_scenes_g(k_ep='', k_chapter_c=k_chapter_g)
+        consolidate_target_scenes_g(k_ep='', k_chapter=k_chapter_g)
 
         # Consolidate by aligning the A/V tracks of generiques
         consolidate_av_tracks(k_ep='', k_chapter=k_chapter_g)
@@ -174,7 +178,7 @@ def parse_database(
             # parse_stabilize_configurations(k_ep_or_g=k_chapter_g)
             parse_geometry_configurations(k_ep_or_g=k_chapter_g)
 
-            consolidate_target_scenes_g(k_ep=k_ep, k_chapter_c=k_chapter_g)
+            consolidate_target_scenes_g(k_ep=k_ep, k_chapter=k_chapter_g)
 
         consolidate_av_sync(k_ep=k_ep)
         consolidate_av_tracks(k_ep=k_ep)
