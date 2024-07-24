@@ -1,13 +1,16 @@
 from collections import deque
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
+from enum import Enum
 import math
 import multiprocessing
 import os
 from pprint import pprint
 import subprocess
 import sys
+from typing import Literal
 
+import cv2
 import numpy as np
 from parsers import (
     db,
@@ -23,7 +26,7 @@ from scene.src_scene import SrcScene
 from utils.images import IMG_FILENAME_TEMPLATE, Image, Images
 from utils.images_io import load_image
 from utils.logger import main_logger
-from utils.mco_types import Effect, Scene
+from utils.mco_types import Effect, Effects, Scene
 from utils.mco_utils import get_cache_path, get_dirname, run_simple_command
 from utils.p_print import *
 from utils.path_utils import path_split
@@ -31,6 +34,12 @@ from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
 from video.out_frames import get_out_frame_paths
 from utils.media import VideoInfo, extract_media_info, str_to_video_codec
+
+
+@dataclass(slots=True)
+class Frame:
+    no: int
+    img: np.ndarray
 
 
 def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
@@ -116,7 +125,9 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         video_info: VideoInfo = extract_media_info(in_video_fp)['video']
         h, w, c = video_info['shape']
         pipe_pixfmt = 'bgr24'
-        in_frame_nbytes = math.prod(video_info['shape'])
+        pipe_img_nbytes = math.prod(video_info['shape'])
+        pipe_dtype = np.uint8
+        pipe_img_shape: tuple[int, int, int] = video_info['shape']
         xtract_command.extend([
             "-f", "image2pipe",
             "-pix_fmt", pipe_pixfmt,
@@ -138,9 +149,9 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
 
         def _read_frame() -> np.ndarray:
-            frame = reader_subproces.stdout.read(in_frame_nbytes)
-            if len(frame) < in_frame_nbytes:
-                raise ValueError(red(f"[E][R] {scene_key} Unexpected error: frame size < {in_frame_nbytes}"))
+            frame = reader_subproces.stdout.read(pipe_img_nbytes)
+            if len(frame) < pipe_img_nbytes:
+                raise ValueError(red(f"[E][R] {scene_key} Unexpected error: frame size < {pipe_img_nbytes}"))
             return frame
 
         # Replacements
@@ -151,31 +162,15 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         frame_cache.set_occurences(frame_occurences(frame_replace))
         frame_cache.set_exceptions(frames_to_replace)
 
-        if len(frames_to_cache):
-            f_no_to_cache: int = frames_to_cache.popleft()
-            f_no_to_replace: int = frames_to_replace[0]
-            ftr_no: int = 1
-        else:
-            f_no_to_cache: int = -1
-            f_no_to_replace: int = -1
-            ftr_no: int = 0
-
-
-        _out_f_nos: list[int] = []
-
         to_produce: int = count
         from_cache: bool = False
         print(lightcyan(f"Frames to produce: {to_produce}"))
         pprint(frames_to_replace)
 
-        @dataclass(slots=True)
-        class Frame:
-            no: int
-            img: np.ndarray
+
 
         in_f_no: int = start - 1
         out_f_no: int = start
-        frame: Frame
 
         in_frame: Frame = None
         out_frame: Frame = None
@@ -185,7 +180,10 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             in_frame: Frame = None
             while in_frame is None:
                 in_f_no += 1
-                img: np.ndarray = _read_frame()
+                img: np.ndarray = np.frombuffer(
+                    reader_subproces.stdout.read(pipe_img_nbytes),
+                    dtype=pipe_dtype,
+                ).reshape(pipe_img_shape)
                 if in_f_no not in frames_to_replace:
                     print(purple(f"Read frame no.{in_f_no}"))
                     in_frame: Frame = Frame(no=in_f_no, img=img)
@@ -208,8 +206,15 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                     frame_cache.add(in_f_no, in_frame)
 
                 if out_frame is not None:
-                    print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
-                    writer_subproces.stdin.write(out_frame.img)
+
+                    out_frames = apply_effect(scene, out_f_no, out_frame)
+                    if isinstance(out_frames, list):
+                        print(yellow(f"\t{out_i}: send {len(out_frames)}"))
+                        [writer_subproces.stdin.write(f.img) for f in out_frames]
+                    else:
+                        print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
+                        writer_subproces.stdin.write(out_frame.img)
+
                     out_f_no += 1
                     out_i += 1
                     to_produce -= 1
@@ -296,6 +301,89 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
         # return success
 
-    sys.exit()
-    return False
+    return True
 
+
+
+def apply_effect(scene: Scene, out_f_no: int, frame: Frame) -> Frame | list[Frame]:
+    if 'effects' in scene:
+        effect: Effect = scene['effects'].primary_effect()
+        if effect.name == 'loop' and out_f_no == effect.frame_ref:
+            print(f"loop count = {effect.loop + 1}")
+            return [frame] * (effect.loop + 1)
+
+        elif effect.name == 'fadeout' and out_f_no >= effect.frame_ref:
+            if out_f_no >= effect.frame_ref:
+                coef: float = float(out_f_no - effect.frame_ref) / effect.fade
+                img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
+                img_out: np.ndarray = cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0)
+                print(f"out_i: {out_f_no}, coef={coef:.06f}")
+                return Frame(no=frame.no, img=img_out)
+
+        elif effect.name == 'loop_and_fadeout':
+            fadeout_start = effect.frame_ref + effect.loop - effect.fade
+            print(f"fadeout_start= {fadeout_start}, out_f_no: {out_f_no}")
+
+            if effect.fade > effect.loop and out_f_no >= fadeout_start:
+                print(f"effect.frame_ref: {effect.frame_ref} vs {scene['dst']['start'] + scene['dst']['count']}")
+                img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
+
+                if out_f_no < effect.frame_ref:
+                    i = float(out_f_no - fadeout_start)
+                    coef: float = float(i) / effect.fade
+                    img_out: np.ndarray = cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0)
+                    print(f"out_i: {out_f_no}, coef={coef:.06f}")
+                    return Frame(no=frame.no, img=img_out)
+
+                elif out_f_no == effect.frame_ref:
+                    out_frames: list[Frame] = []
+                    for i in range (effect.loop):
+                        coef: float = float(effect.frame_ref + i) / effect.fade
+                        print(f"out_i: {out_f_no}, coef={coef:.06f}")
+                        out_frames.append(Frame(
+                            no=frame.no,
+                            img=cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0),
+                        ))
+                    return out_frames
+
+            elif out_f_no == effect.frame_ref:
+                img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
+                if effect.loop >= effect.fade:
+                    out_frames: list[Frame] = [frame] * (effect.loop - effect.fade + 1)
+                else:
+                    out_frames: list[Frame] = [frame]
+
+                for i in range (effect.fade):
+                    coef: float = float(i) / effect.fade
+                    print(f"out_i: {out_f_no}, coef={coef:.06f}")
+                    out_frames.append(Frame(
+                        no=frame.no,
+                        img=cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0),
+                    ))
+                return out_frames
+            # else:
+            #     raise NotImplementedError(effect.name)
+
+
+        else:
+            raise NotImplementedError(effect.name)
+
+    else:
+        print("no effect")
+
+    return frame
+
+
+class FadeCurve(Enum):
+    LINEAR = "linear"
+
+def coef_table(
+    fade_type: Literal['in', 'out'],
+    curve: FadeCurve,
+    count: int
+) -> np.ndarray[float]:
+    if curve == FadeCurve.LINEAR:
+        coefs = np.array([float(x) / count for x in range(count)])
+    else:
+        raise NotImplementedError("not yet implemented")
+    return coefs if fade_type == 'in' else 1.0 - coefs
