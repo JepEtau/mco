@@ -16,7 +16,7 @@ from parsers import (
     VideoSettings,
 )
 from processing.effects import effect_fadeout, effect_loop_and_fadeout
-from processing.frame_replace import ImageCache, frame_occurences, get_frames_to_cache, get_frames_to_remove
+from processing.frame_replace import ItemCache, frame_occurences, get_frames_to_cache, get_frames_to_remove
 from processing.watermark import add_watermark
 from scene.filters import do_watermark
 from scene.src_scene import SrcScene
@@ -144,11 +144,11 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             return frame
 
         # Replacements
-        replacements = src_scene['replace']
-        frames_to_replace: list[int] = get_frames_to_remove(replacements)
-        frames_to_cache: deque[int] = get_frames_to_cache(replacements)
-        frame_cache: ImageCache = ImageCache()
-        frame_cache.set_occurences(frame_occurences(replacements))
+        frame_replace = src_scene['replace']
+        frames_to_replace: list[int] = get_frames_to_remove(frame_replace)
+        frames_to_cache: deque[int] = get_frames_to_cache(frame_replace)
+        frame_cache: ItemCache = ItemCache()
+        frame_cache.set_occurences(frame_occurences(frame_replace))
         frame_cache.set_exceptions(frames_to_replace)
 
         if len(frames_to_cache):
@@ -162,107 +162,59 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
 
         _out_f_nos: list[int] = []
-        # f_no: int = out_f_nos.popleft()
 
         to_produce: int = count
-        consumable: int = count
-        out_i: int = 0
         from_cache: bool = False
-        in_f_no: int = start
         print(lightcyan(f"Frames to produce: {to_produce}"))
         pprint(frames_to_replace)
-        print(lightcyan(f"next frame to replace: {f_no_to_replace}"))
 
         @dataclass(slots=True)
         class Frame:
             no: int
             img: np.ndarray
 
-        in_f_no: int = start
+        in_f_no: int = start - 1
         out_f_no: int = start
         frame: Frame
 
-        out_frame_nos: deque[int] = deque([
-            replacements[no] if no in replacements else no
-            for no in range(start, start + count)
-        ])
-        pprint(out_frame_nos)
-
-        out_f_no = out_frame_nos
+        in_frame: Frame = None
+        out_frame: Frame = None
+        out_i: int = 0
         while to_produce:
-            print(darkgrey(f"out f_no: {out_f_no}"))
-            frame = None
-            from_cache = False
 
-            if out_f_no == f_no_to_replace:
-                # This frame has to be replaced
-                frame_to_use = replacements[out_f_no]
-                print(red(f"replace frame no.{out_f_no} by {frame_to_use}"))
-                if frame_to_use in frame_cache:
-                    print(f"  use frame no.{frame_to_use} from cache")
-                    from_cache = True
-                    frame = frame_cache[frame_to_use]
-                    try:
-                        f_no_to_replace = frames_to_replace[ftr_no]
-                        ftr_no += 1
-                    except:
-                        f_no_to_replace = -1
-                    print(lightcyan(f"  next frame to replace: {f_no_to_replace}"))
-                    print(f"  push frame {yellow(frame_to_use)} in out_slot")
-
-                else:
-                    print(f"{frame_to_use} not yet in cache, cannot produce, let's caching")
-                    # frame_to_find = frame_to_use
-                    while in_f_no <= frame_to_use and consumable > 0:
-                        print(purple(f"Read frame no.{in_f_no} -> to cache"))
-                        if in_f_no not in frames_to_replace:
-                            frame_cache.add(in_f_no, Frame(no=in_f_no, img=_read_frame()))
-                        in_f_no += 1
-                        consumable -= 1
-
-            else:
-                # This frame has not to be replaced
-                if out_f_no in frame_cache:
-                    frame = frame_cache[out_f_no]
-                    from_cache = True
-
-                else:
-                    from_cache = False
+            in_frame: Frame = None
+            while in_frame is None:
+                in_f_no += 1
+                img: np.ndarray = _read_frame()
+                if in_f_no not in frames_to_replace:
                     print(purple(f"Read frame no.{in_f_no}"))
-                    frame: Frame = Frame(no=in_f_no, img=_read_frame())
+                    in_frame: Frame = Frame(no=in_f_no, img=img)
 
-                    if in_f_no == f_no_to_cache:
-                        print(lightgreen(f"  put frame {in_f_no} in cache"))
-                        # Put this image in the cache as it will be later used
-                        frame_cache.add(
-                            in_f_no,
-                            frame,
-                            bool(in_f_no > out_f_no)
-                        )
-                        try:
-                            f_no_to_cache = frames_to_cache.popleft()
-                        except:
-                            pass
-                        print(lightcyan(f"  next frame to cache: {f_no_to_cache}"))
+            out_frame = None
+            while True:
+                f_no = frame_replace[out_f_no] if out_f_no in frame_replace else out_f_no
+                out_frame = None
 
-                    elif in_f_no in frames_to_replace:
-                        # This frame won't be used
-                        frame = None
+                from_cache = False
 
-                    in_f_no += 1
-                    consumable -= 1
+                if f_no == in_f_no:
+                    out_frame = in_frame
 
-            if frame is not None:
-                print(yellow(f"\t{out_i}: send {frame.no} (from {'cache' if from_cache else 'producer'})"))
-                out_i += 1
+                elif f_no in frame_cache:
+                    out_frame = frame_cache[f_no]
+                    from_cache = True
 
-                writer_subproces.stdin.write(frame.img)
-                to_produce -= 1
-                _out_f_nos.append(out_f_no)
-                if not to_produce:
+                elif in_f_no not in frame_cache:
+                    frame_cache.add(in_f_no, in_frame)
+
+                if out_frame is not None:
+                    print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
+                    writer_subproces.stdin.write(out_frame.img)
+                    out_f_no += 1
+                    out_i += 1
+                    to_produce -= 1
+                else:
                     break
-                out_f_no += 1
-
 
         stderr_bytes: bytes | None = None
         try:

@@ -9,7 +9,7 @@ import numpy as np
 
 from parsers._types import VideoSettings
 from processing.frame_replace import (
-    ImageCache,
+    ItemCache,
     frame_occurences,
     get_frames_to_cache,
     get_frames_to_remove,
@@ -219,7 +219,7 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
     frames_to_replace: list[int] = get_frames_to_remove(replacements)
     frames_to_cache: deque[int] = get_frames_to_cache(replacements)
 
-    img_cache: ImageCache = ImageCache()
+    img_cache: ItemCache = ItemCache()
     img_cache.set_occurences(frame_occurences(replacements))
     # Do not cache images that are replaced
     img_cache.set_exceptions(frames_to_replace)
