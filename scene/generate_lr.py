@@ -26,10 +26,11 @@ from scene.src_scene import SrcScene
 from utils.images import IMG_FILENAME_TEMPLATE, Image, Images
 from utils.images_io import load_image
 from utils.logger import main_logger
-from utils.mco_types import Effect, Effects, Scene
-from utils.mco_utils import get_cache_path, get_dirname, run_simple_command
+from utils.mco_types import ChapterVideo, Effect, Effects, Scene
+from utils.mco_utils import get_cache_path, get_dirname, get_target_video, is_first_scene, is_last_scene, run_simple_command
 from utils.p_print import *
 from utils.path_utils import path_split
+from utils.pxl_fmt import PIXEL_FORMAT
 from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
 from video.out_frames import get_out_frame_paths
@@ -71,6 +72,11 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     video_info: VideoInfo = extract_media_info(in_video_fp)['video']
     h, w, c = video_info['shape']
     pipe_pixfmt = 'bgr24'
+    pipe_out_dtype = (
+        np.uint8
+        if PIXEL_FORMAT[pipe_pixfmt]['bpp'] <= 8
+        else np.uint16
+    )
 
     frame_rate: FrameRate = get_fps(db)
     vsettings: VideoSettings = scene['task'].video_settings
@@ -167,7 +173,12 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         print(lightcyan(f"Frames to produce: {to_produce}"))
         pprint(frames_to_replace)
 
-
+        ch_video: ChapterVideo = get_target_video(scene)
+        if is_first_scene(scene):
+            print(lightcyan("first scene"))
+            pprint(ch_video['avsync'])
+            if ch_video['avsync'] != 0:
+                raise NotImplementedError("avsync not yet supported")
 
         in_f_no: int = start - 1
         out_f_no: int = start
@@ -220,6 +231,10 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                     to_produce -= 1
                 else:
                     break
+
+        if is_last_scene(scene) and ch_video['silence'] > 0:
+            img_black = np.zeros(video_info['shape'], dtype=pipe_out_dtype)
+            [writer_subproces.stdin.write(img_black) for _ in range(ch_video['silence'])]
 
         stderr_bytes: bytes | None = None
         try:

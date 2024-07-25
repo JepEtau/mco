@@ -102,6 +102,7 @@ def generate_lr_scenes(
                 print(lightcyan("======================= generate_lr_scenes: Scene ============================="))
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
+                pprint(ch_video['effects'])
 
             if not simulation:
                 result = generate_lr_scene(scene=scene, force=force)

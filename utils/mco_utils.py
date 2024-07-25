@@ -4,7 +4,7 @@ import subprocess
 import sys
 import time
 from scene.filters import do_watermark
-from utils.mco_types import Scene
+from utils.mco_types import ChapterVideo, Scene
 from utils.p_print import *
 from parsers import (
     db, task_to_dirname, TaskName, TASK_NAMES
@@ -13,10 +13,21 @@ from .logger import main_logger
 
 
 
+def get_target_video(scene: Scene) -> ChapterVideo:
+    k_ep = scene['dst']['k_ep']
+    k_ch = scene['dst']['k_ch']
+    if k_ch in ('g_debut', 'g_fin'):
+        return db[k_ch]['video']
+    else:
+        return db[k_ep]['video']['target'][k_ch]
 
 
+def is_first_scene(scene: Scene) -> bool:
+    return bool(scene is get_target_video(scene)['scenes'][0])
 
 
+def is_last_scene(scene: Scene) -> bool:
+    return bool(scene is get_target_video(scene)['scenes'][-1])
 
 
 def nested_dict_set(d: dict, o: object, *keys) -> None:

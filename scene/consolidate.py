@@ -5,7 +5,7 @@ import sys
 from typing import OrderedDict
 from processing.deint import calc_deint_hash, get_qtgmc_args, get_template_script
 from utils.hash import calc_hash
-from utils.mco_types import Scene
+from utils.mco_types import ChapterVideo, Effect, Scene
 from utils.images import Images
 from parsers import (
     db,
@@ -15,7 +15,7 @@ from parsers import (
     VideoSettings,
     TaskName,
 )
-from utils.mco_utils import get_cache_path, nested_dict_set
+from utils.mco_utils import get_cache_path, get_target_video, is_last_scene, nested_dict_set
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
 from video.concat_frames import get_video_filename, set_video_filename
@@ -143,7 +143,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     # Upscale
     upscale_hashcode = calc_hash(';'.join([deint_hashcode, scene_filters['upscale'].sequence]))
 
-    # Stor hashes
+    # Store hashes
     scene_filters['lr'].hash = calc_hash(';'.join([deint_hashcode, replace_hash]))
     scene_filters['hr'].hash = calc_hash(';'.join([deint_hashcode, replace_hash, upscale_hashcode]))
     scene_filters['upscale'].hash = upscale_hashcode
@@ -193,6 +193,9 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
         scene['task'].in_video_file = get_video_filename(scene=scene, task_name='upscale')
 
+    # Output
+    #---------------------------------------------------------------------------
+
     # Output video settings
     _task_name: str = task_name
     if task_name == 'hr':
@@ -226,6 +229,33 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     )
 
 
+    # Effects
+    #---------------------------------------------------------------------------
+    if is_last_scene(scene):
+        ch_effect: Effect = get_target_video(scene)['effects'].primary_effect()
+        scene_effect: Effect = scene['effects'].primary_effect()
+        pprint(ch_effect)
+        pprint(scene_effect)
+        if 'fadeout' in ch_effect.name:
+            if scene_effect is not None and 'fadeout' in scene_effect.name:
+                # Patch fadeout
+                scene_effect.fade = min(
+                    max(scene_effect.fade, ch_effect.fade),
+                    scene['dst']['count'] + scene_effect.loop
+                )
+                # scene_effect.frame_ref = (
+                #     scene['src'].first_frame_no() + scene['dst']['count']
+                #     + scene_effect.loop - scene_effect.fade
+                # )
+            elif scene_effect is None:
+                scene['effects'] = Effects([
+                    Effect(
+                        name='fadeout',
+                        frame_ref=scene['dst']['count'] - ch_effect.fade,
+                        fade= ch_effect.fade
+                    )
+                ])
+            # verbose = True
     if verbose:
         print(lightcyan("TO"))
         pprint(scene)
