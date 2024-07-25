@@ -124,7 +124,13 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             "-hide_banner",
             "-loglevel", "warning",
             "-nostats",
-            "-ss", str(frame_to_sexagesimal(no=start, frame_rate=frame_rate)),
+            "-ss",
+            str(
+                frame_to_sexagesimal(
+                    no=start - src_scene['inputs']['progressive']['start'],
+                    frame_rate=frame_rate
+                )
+            ),
             "-i", in_video_fp,
             "-t", str(frame_to_s(no=count, frame_rate=frame_rate))
         ]
@@ -163,7 +169,6 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         # Replacements
         frame_replace = src_scene['replace']
         frames_to_replace: list[int] = get_frames_to_remove(frame_replace)
-        frames_to_cache: deque[int] = get_frames_to_cache(frame_replace)
         frame_cache: ItemCache = ItemCache()
         frame_cache.set_occurences(frame_occurences(frame_replace))
         frame_cache.set_exceptions(frames_to_replace)
@@ -380,11 +385,11 @@ def apply_effect(scene: Scene, out_f_no: int, frame: Frame) -> Frame | list[Fram
             #     raise NotImplementedError(effect.name)
 
 
-        else:
-            raise NotImplementedError(effect.name)
+        # else:
+        #     raise NotImplementedError(effect.name)
 
-    else:
-        print("no effect")
+    # else:
+    #     print("no effect")
 
     return frame
 
