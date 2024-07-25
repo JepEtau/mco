@@ -27,11 +27,11 @@ from utils.images import IMG_FILENAME_TEMPLATE, Image, Images
 from utils.images_io import load_image
 from utils.logger import main_logger
 from utils.mco_types import ChapterVideo, Effect, Effects, Scene
-from utils.mco_utils import get_cache_path, get_dirname, get_target_video, is_first_scene, is_last_scene, run_simple_command
+from utils.mco_utils import get_cache_path, get_dirname, get_target_audio, get_target_video, is_first_scene, is_last_scene, run_simple_command
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
-from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
+from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal, ms_to_frame
 from utils.tools import ffmpeg_exe
 from video.out_frames import get_out_frame_paths
 from utils.media import VideoInfo, extract_media_info, str_to_video_codec
@@ -41,6 +41,8 @@ from utils.media import VideoInfo, extract_media_info, str_to_video_codec
 class Frame:
     no: int
     img: np.ndarray
+
+
 
 
 def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
@@ -92,7 +94,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         "-r", str(frame_rate),
         "-i", "pipe:0",
 
-        # *filter_complex,
+        "-vf", "scale=768:576",
 
         "-pix_fmt", vsettings.pix_fmt,
         "-vcodec", str_to_video_codec[vsettings.codec].value,
@@ -111,12 +113,18 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
         return False
 
-
+    produced: int = 0
+    to_produce: int = scene['dst']['count']
+    print(lightcyan(f"Frames to produce: {to_produce}"))
     for src in scene['src'].scenes():
         src_scene: Scene = src['scene']
         in_video_fp: str = src_scene['inputs']['progressive']['filepath']
         start: int = src['start']
         count: int = src['count']
+        if to_produce < count:
+            count = to_produce
+        print(f"extract {count} frames")
+        to_produce -= count
 
 
         xtract_command: list[str] = [
@@ -173,10 +181,9 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         frame_cache.set_occurences(frame_occurences(frame_replace))
         frame_cache.set_exceptions(frames_to_replace)
 
-        to_produce: int = count
+
         from_cache: bool = False
-        print(lightcyan(f"Frames to produce: {to_produce}"))
-        pprint(frames_to_replace)
+        # pprint(frames_to_replace)
 
         ch_video: ChapterVideo = get_target_video(scene)
         if is_first_scene(scene):
@@ -191,7 +198,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         in_frame: Frame = None
         out_frame: Frame = None
         out_i: int = 0
-        while to_produce:
+        while count:
 
             in_frame: Frame = None
             while in_frame is None:
@@ -201,7 +208,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                     dtype=pipe_dtype,
                 ).reshape(pipe_img_shape)
                 if in_f_no not in frames_to_replace:
-                    print(purple(f"Read frame no.{in_f_no}"))
+                    # print(purple(f"Read frame no.{in_f_no}"))
                     in_frame: Frame = Frame(no=in_f_no, img=img)
 
             out_frame = None
@@ -225,102 +232,46 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
                     out_frames = apply_effect(scene, out_f_no, out_frame)
                     if isinstance(out_frames, list):
-                        print(yellow(f"\t{out_i}: send {len(out_frames)}"))
+                        # print(yellow(f"\t{out_i}: send {len(out_frames)}"))
                         [writer_subproces.stdin.write(f.img) for f in out_frames]
+                        produced += len(out_frames)
                     else:
-                        print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
+                        # print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
                         writer_subproces.stdin.write(out_frame.img)
+                        produced += 1
 
                     out_f_no += 1
                     out_i += 1
-                    to_produce -= 1
+                    count -= 1
                 else:
                     break
 
-        if is_last_scene(scene) and ch_video['silence'] > 0:
+    print(f"produced: {produced}")
+    if is_last_scene(scene):
+        if 'silence' in ch_video and ch_video['silence'] > 0:
+            print(f"silence!!! {ch_video['silence']}")
             img_black = np.zeros(video_info['shape'], dtype=pipe_out_dtype)
             [writer_subproces.stdin.write(img_black) for _ in range(ch_video['silence'])]
 
-        stderr_bytes: bytes | None = None
-        try:
-            # Arbitrary timeout value
-            _, stderr_bytes = writer_subproces.communicate(timeout=10)
-        except:
-            writer_subproces.kill()
+            produced += ch_video['silence']
+            print(f"produced w/ silence: {produced}")
+
+
+    stderr_bytes: bytes | None = None
+    try:
+        # Arbitrary timeout value
+        _, stderr_bytes = writer_subproces.communicate(timeout=10)
+    except:
+        writer_subproces.kill()
+        return False
+
+    if stderr_bytes is not None:
+        stderr = stderr_bytes.decode('utf-8)')
+        # TODO: parse the output file
+        if stderr != '':
+            print(f"{scene_key} stderr:")
+            pprint(stderr)
             return False
-
-        if stderr_bytes is not None:
-            stderr = stderr_bytes.decode('utf-8)')
-            # TODO: parse the output file
-            if stderr != '':
-                print(f"{scene_key} stderr:")
-                pprint(stderr)
-                return False
-
-        # # Get image from pipe, add watermak and output to pipe
-        # frame_no = start
-        # for _ in range(count):
-        #     in_img = np.frombuffer(
-        #         reader_subproces.stdout.read(nbytes),
-        #         dtype=np.uint8,
-        #         count=nbytes
-        #     ).reshape((h, w, 3))
-        #     out_img: np.ndarray = add_watermark(in_img, scene, frame_no)
-        #     frame_no += 1
-        #     writer_subproces.stdin.write(np.ascontiguousarray(out_img))
-
-
-
-        # for image in scene['in_frames'].images():
-        #     print(f"{image.in_fp}\n  -> {image.out_fp}")
-        # pprint(scene['in_frames'].in_images())
-        # pprint(scene['in_frames'].out_images())
-        # sys.exit()
-
-        # if do_watermark(scene):
-        #     # Force extract and add watermark if extract only
-        #     # Used to identify scene no and compare 2 src and target editions
-        #     do_generate: bool = False
-        #     if task_name == 'lr':
-        #         for fp in scene['in_frames'].out_images():
-        #             if not os.path.exists(fp):
-        #                 print(yellow(f"LR: do generate, missing {fp}"))
-        #                 do_generate = True
-        #                 break
-        #     else:
-        #         do_generate = True
-
-        #     if do_generate:
-        #         lr_directory: str = path_split(scene['in_frames'].out_images()[0])[0]
-        #         os.makedirs(lr_directory, exist_ok=True)
-
-        #         max_workers: int = multiprocessing.cpu_count()
-        #         with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        #             for _ in executor.map(
-        #                 lambda args: add_watermark(*args),
-        #                 [(img, scene) for img in scene['in_frames'].images()]
-        #             ):
-        #                 pass
-
-        # if success and 'effects' in scene and not 'segments' in scene['src']:
-        #     effect: Effect = scene['effects'].primary_effect()
-        #     main_logger.debug(lightcyan("Effects:"))
-
-        #     if effect.name == 'loop_and_fadeout':
-        #         effect_loop_and_fadeout(scene, effect)
-
-        #     elif effect.name == 'fadeout':
-        #         effect_fadeout(scene, effect)
-
-        #     elif effect.name == 'loop_and_fadein':
-        #         raise NotImplementedError("effect_loop_and_fadein")
-        #         effect_loop_and_fadein(scene, effect)
-
-        #     else:
-        #         main_logger.debug(f"\t{effect}")
-
-        # return success
-
     return True
 
 
@@ -342,10 +293,11 @@ def apply_effect(scene: Scene, out_f_no: int, frame: Frame) -> Frame | list[Fram
 
         elif effect.name == 'loop_and_fadeout':
             fadeout_start = effect.frame_ref + effect.loop - effect.fade
-            print(f"fadeout_start= {fadeout_start}, out_f_no: {out_f_no}")
+            # print(f"fadeout_start= {fadeout_start}, out_f_no: {out_f_no}")
 
             if effect.fade > effect.loop and out_f_no >= fadeout_start:
-                print(f"effect.frame_ref: {effect.frame_ref} vs {scene['dst']['start'] + scene['dst']['count']}")
+                print(f"start @{out_f_no} (fadeout_start: {fadeout_start})")
+                # print(f"effect.frame_ref: {effect.frame_ref} vs {scene['dst']['start'] + scene['dst']['count']}")
                 img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
 
                 if out_f_no < effect.frame_ref:
@@ -357,8 +309,8 @@ def apply_effect(scene: Scene, out_f_no: int, frame: Frame) -> Frame | list[Fram
 
                 elif out_f_no == effect.frame_ref:
                     out_frames: list[Frame] = []
-                    for i in range (effect.loop):
-                        coef: float = float(effect.frame_ref + i) / effect.fade
+                    for i in range (effect.loop + 1):
+                        coef: float = float(effect.frame_ref + i - fadeout_start) / effect.fade
                         print(f"out_i: {out_f_no}, coef={coef:.06f}")
                         out_frames.append(Frame(
                             no=frame.no,

@@ -13,6 +13,15 @@ from .logger import main_logger
 
 
 
+def get_target_audio(scene: Scene):
+    k_ep = scene['dst']['k_ep']
+    k_ch = scene['dst']['k_ch']
+    if k_ch in ('g_debut', 'g_fin'):
+        return db[k_ch]['audio']
+    else:
+        return db[k_ep]['audio'][k_ch]
+
+
 def get_target_video(scene: Scene) -> ChapterVideo:
     k_ep = scene['dst']['k_ep']
     k_ch = scene['dst']['k_ch']
@@ -55,19 +64,19 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
             f"{scene['no']:03}"
         )
 
-    if scene['k_ch'] in ('g_asuivre', 'g_documentaire'):
-        if out:
-            return os.path.join(
-                cache_dir,
-                scene['dst']['k_ep'],
-                k_ch_dst,
-                f"{scene['src']['no']:03}"
-            )
+    if k_ch_dst in ('g_asuivre', 'g_documentaire'):
+        # if out:
+        #     return os.path.join(
+        #         cache_dir,
+        #         scene['k_ep'],
+        #         k_ch_dst,
+        #         f"{scene['no']:03}"
+        #     )
         return os.path.join(
             cache_dir,
-            scene['src']['k_ep'],
+            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
             k_ch_dst,
-            f"{scene['src']['no']:03}"
+            f"{scene['no']:03}"
         )
 
 
@@ -94,9 +103,9 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
         #  because these frames are used by multiple episodes
         output_path: str = os.path.join(
             cache_dir,
-            scene['k_ep'],
+            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
             k_ch_dst,
-            f"{scene['src']['no']:03}"
+            f"{scene['no']:03}"
         )
 
     return output_path

@@ -58,19 +58,22 @@ def generate_lr_scenes(
         else False
     )
 
+    if k_ep == '' and single_chapter not in ('g_debut', 'g_fin'):
+        raise ValueError(red("[E] episode must be set"))
+
     start_time_full = time.time()
-    for chapter in chapters:
+    for k_ch in chapters:
         hashes_str = ''
 
         ch_video: ChapterVideo
-        if chapter in ('g_debut', 'g_fin'):
-            ch_video = db[chapter]['video']
+        if k_ch in ('g_debut', 'g_fin'):
+            ch_video = db[k_ch]['video']
 
         elif k_ep == 'ep00':
             sys.exit(red("Missing episode no."))
 
         else:
-            ch_video = db[k_ep]['video']['target'][chapter]
+            ch_video = db[k_ep]['video']['target'][k_ch]
 
         # Do not generate clip for unused chapters
         if ch_video['count'] <= 0:
@@ -78,7 +81,7 @@ def generate_lr_scenes(
 
         ch_video['task'] = ProcessingTask(name=task)
         if debug:
-            print(f"\n<<<<<<<<<<<<<<<<<<<<< {chapter} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+            print(f"\n<<<<<<<<<<<<<<<<<<<<< {k_ch} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
@@ -102,7 +105,6 @@ def generate_lr_scenes(
                 print(lightcyan("======================= generate_lr_scenes: Scene ============================="))
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
-                pprint(ch_video['effects'])
 
             if not simulation:
                 result = generate_lr_scene(scene=scene, force=force)
@@ -129,12 +131,17 @@ def generate_lr_scenes(
                 # sys.exit()
 
         hashcode: str = calc_hash(hashes_str[:-1])
-        basename: str = f"{k_ed}_{k_ep}_{chapter}_{task}_{hashcode}"
+        basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task}_{hashcode}"
+        cache_path = (
+            db[k_ch]['cache_path']
+            if k_ch in ('g_debut', 'g_fin')
+            else db[k_ep]['cache_path']
+        )
         ch_video['task'] = ProcessingTask(
             name=task,
             hashcode=hashcode,
-            concat_file=os.path.join(db[k_ep]['cache_path'], "concat", f"{basename}.txt"),
-            video_file=os.path.join(db[k_ep]['cache_path'], f"video", f"{basename}.mkv"),
+            concat_file=os.path.join(cache_path, "concat", f"{basename}.txt"),
+            video_file=os.path.join(cache_path, f"video_lr", f"{basename}.mkv"),
         )
     print(f"Generated scenes in {time.time() - start_time_full:.03f}s")
 
@@ -143,26 +150,26 @@ def generate_lr_scenes(
 
 
     # For each part, concatenate scenes in a single clip
-    for chapter in chapters:
+    for k_ch in chapters:
         ch_video: ChapterVideo
-        if chapter in ('g_debut', 'g_fin'):
-            ch_video: ChapterVideo = db[chapter]['video']
+        if k_ch in ('g_debut', 'g_fin'):
+            ch_video: ChapterVideo = db[k_ch]['video']
         else:
-            ch_video: ChapterVideo = db[k_ep]['video']['target'][chapter]
+            ch_video: ChapterVideo = db[k_ep]['video']['target'][k_ch]
 
         if ch_video['count'] > 0:
             concat_scenes(
                 episode=k_ep,
-                chapter=chapter,
+                chapter=k_ch,
                 video=ch_video,
                 force=force,
                 simulation=simulation
             )
 
-            if single_chapter == '':
-                main_logger.debug(lightgreen(f"\nCreate silences after:"))
-                for chapter in chapters:
-                    generate_silence(k_ep, chapter)
+            # if single_chapter == '':
+            #     main_logger.debug(lightgreen(f"\nCreate silences after:"))
+            #     for chapter in chapters:
+            #         generate_silence(k_ep, chapter)
 
     # print(f"\n<<<<<<<<<<<<<<<<<<<<< {chapter} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
     # pprint(ch_video['task'])

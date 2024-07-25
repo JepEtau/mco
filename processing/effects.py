@@ -225,7 +225,7 @@ def effect_fadeout(scene: Scene, effect: Effect) -> None:
     if verbose:
         pprint(scene)
         print(green(f"\tfadeout: start={fadeout_start}, count={fadeout_count}"))
-
+        sys.exit()
     hash: str = scene['task'].hashcode
     dirname: str = task_to_dirname[scene['task'].name]
     task_no: int = int(dirname[:2])

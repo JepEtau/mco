@@ -1,9 +1,10 @@
 
 from configparser import ConfigParser
+from pprint import pprint
 import re
 import sys
 
-from utils.mco_types import Effect, Effects, Scene
+from utils.mco_types import ChapterVideo, Effect, Effects, Scene
 from ._keys import (
     key,
     all_chapter_keys,
@@ -105,12 +106,9 @@ def parse_video_target(
         #     sys.exit("Error: parse_video_target_section: start and end values are required for %s:%s in target file" % (k_ep, k_chapter))
 
         nested_dict_set(db_video, dict(), k_chapter)
-        db_video[k_chapter].update({
-            'effects': Effects([
-                Effect(name='fadein', fade=chapter_fadein),
-                Effect(name='fadeout', fade=chapter_fadeout),
-                Effect(name='loop_and_fadein', fade=0),
-            ]),
+        ch_video: ChapterVideo = db_video[k_chapter]
+        ch_video.update({
+            'effects': Effects(),
             'start': start,
             'end': end,
             'count': (end - start) if end > 0 else -1,
@@ -118,10 +116,14 @@ def parse_video_target(
             'k_ep': k_ep,
             'k_ch': k_chapter,
         })
-        if chapter_fadein != 0:
+
+        if chapter_fadein:
             logger.debug(lightcyan(f"fadein != 0: {k_chapter}"))
-            logger.debug(db_video[k_chapter])
-            # sys.exit()
+            logger.debug(ch_video)
+            ch_video['effects'].append(Effect(name='fadein', fade=chapter_fadein))
+
+        if chapter_fadeout:
+            ch_video['effects'].append(Effect(name='fadeout', fade=chapter_fadeout))
 
     if k_ed_src is None:
         sys.exit("error: parse_video_target_section: missing key \'source\' in target file %s_target.ini" % (k_ep))

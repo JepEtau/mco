@@ -45,7 +45,6 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
 
     # Cache directory
-
     scene['cache'] = get_cache_path(scene)
     # os.path.join(db['common']['directories']['cache'], k_ep, k_ch, "%03d" % (scene['no']))
 
@@ -231,12 +230,20 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     # Effects
     #---------------------------------------------------------------------------
-    if is_last_scene(scene):
-        ch_effect: Effect = get_target_video(scene)['effects'].primary_effect()
+    # pprint(scene)
+    # sys.exit()
+    if is_last_scene(scene) and 'effects' in scene:
+        print(yellow("last scene"))
+        ch_video: ChapterVideo = get_target_video(scene)
+        ch_effect: Effect = (
+            ch_video['effects'].primary_effect()
+            if 'effects' in ch_video
+            else None
+        )
         scene_effect: Effect = scene['effects'].primary_effect()
         pprint(ch_effect)
         pprint(scene_effect)
-        if 'fadeout' in ch_effect.name:
+        if ch_effect is not None and 'fadeout' in ch_effect.name:
             if scene_effect is not None and 'fadeout' in scene_effect.name:
                 # Patch fadeout
                 scene_effect.fade = min(

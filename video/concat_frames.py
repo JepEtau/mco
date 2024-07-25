@@ -282,13 +282,13 @@ def generate_video_concat_file(
             video: ChapterVideo = db[k_ep_or_g]['video']
             concat_file.write(f"file \'{video['task'].video_file}\' \n")
             audio = db[k_ep_or_g]['audio']
-            if 'silence' in audio and audio['silence'] > 0:
-                silence_fp: str = os.path.join(
-                    db[k_ep_or_g]['cache_path'],
-                    "video",
-                    f"{k_ep_or_g}_silence.mkv"
-                )
-                concat_file.write(f"file \'{silence_fp}\' \n")
+            # if 'silence' in audio and audio['silence'] > 0:
+            #     silence_fp: str = os.path.join(
+            #         db[k_ep_or_g]['cache_path'],
+            #         "video",
+            #         f"{k_ep_or_g}_silence.mkv"
+            #     )
+            #     concat_file.write(f"file \'{silence_fp}\' \n")
 
             # import sys
             # sys.exit()
@@ -315,12 +315,12 @@ def generate_video_concat_file(
                 if chapter != '':
                     continue
 
-                audio = db[k_ep]['audio'][_chapter]
-                if 'silence' in audio and audio['silence'] > 0:
-                    silence_fp: str = get_silence_filepath(
-                        k_ep, _chapter, video['task'].name
-                    )
-                    concat_file.write(f"file \'{silence_fp}\' \n")
+                # audio = db[k_ep]['audio'][_chapter]
+                # if 'silence' in audio and audio['silence'] > 0:
+                #     silence_fp: str = get_silence_filepath(
+                #         k_ep, _chapter, video['task'].name
+                #     )
+                #     concat_file.write(f"file \'{silence_fp}\' \n")
 
         concat_file.close()
         return concat_fp
