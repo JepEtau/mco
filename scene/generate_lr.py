@@ -27,7 +27,7 @@ from utils.images import IMG_FILENAME_TEMPLATE, Image, Images
 from utils.images_io import load_image
 from utils.logger import main_logger
 from utils.mco_types import ChapterVideo, Effect, Effects, Scene
-from utils.mco_utils import get_cache_path, get_dirname, get_target_audio, get_target_video, is_first_scene, is_last_scene, run_simple_command
+from utils.mco_utils import calculate_frame_count, get_cache_path, get_dirname, get_target_audio, get_target_video, is_first_scene, is_last_scene, run_simple_command
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
@@ -56,9 +56,12 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     out_video_fp: str = scene['task'].video_file
     if not force:
         if os.path.exists(out_video_fp):
+            dst_frame_count: int = calculate_frame_count(scene)
+            print(yellow(f"dst frame_count: {dst_frame_count}"))
             try:
                 out_video_info: VideoInfo = extract_media_info(out_video_fp)['video']
-                if out_video_info['frame_count'] == scene['dst']['count']:
+                print(f"output scene file: {out_video_info['frame_count']}")
+                if out_video_info['frame_count'] == dst_frame_count:
                     return True
             except:
                 pass
@@ -116,6 +119,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     produced: int = 0
     to_produce: int = scene['dst']['count']
     print(lightcyan(f"Frames to produce: {to_produce}"))
+    watermark: bool = do_watermark(scene=scene)
     for src in scene['src'].scenes():
         src_scene: Scene = src['scene']
         in_video_fp: str = src_scene['inputs']['progressive']['filepath']
@@ -229,6 +233,13 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                     frame_cache.add(in_f_no, in_frame)
 
                 if out_frame is not None:
+
+                    if watermark:
+                        out_frame.img = add_watermark(
+                            image=out_frame.img,
+                            scene=scene,
+                            no=out_frame.no
+                        )
 
                     out_frames = apply_effect(scene, out_f_no, out_frame)
                     if isinstance(out_frames, list):

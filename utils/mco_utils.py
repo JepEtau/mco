@@ -1,10 +1,11 @@
 from __future__ import annotations
 import os
+from pprint import pprint
 import subprocess
 import sys
 import time
 from scene.filters import do_watermark
-from utils.mco_types import ChapterVideo, Scene
+from utils.mco_types import ChapterVideo, Effect, Scene
 from utils.p_print import *
 from parsers import (
     db, task_to_dirname, TaskName, TASK_NAMES
@@ -37,6 +38,37 @@ def is_first_scene(scene: Scene) -> bool:
 
 def is_last_scene(scene: Scene) -> bool:
     return bool(scene is get_target_video(scene)['scenes'][-1])
+
+
+def calculate_frame_count(scene: Scene) -> int:
+    count: int = 0
+    task_name: TaskName = scene['task'].name
+
+    if task_name == 'initial':
+        return scene['count']
+
+    if task_name == 'denoise':
+        return scene['dst']['count']
+
+    count = scene['dst']['count']
+    if task_name == 'lr':
+        ch_video: ChapterVideo = get_target_video(scene)
+        if is_first_scene(scene):
+            print(lightcyan("first scene, avsync:"))
+            print(ch_video['avsync'])
+            if ch_video['avsync'] != 0:
+                raise NotImplementedError("avsync not yet supported")
+
+        if is_last_scene(scene):
+            count += ch_video['silence'] if 'silence' in ch_video else 0
+
+        if 'effects' in scene:
+            count += scene['effects'].primary_effect().loop
+
+
+    return count
+
+
 
 
 def nested_dict_set(d: dict, o: object, *keys) -> None:

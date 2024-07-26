@@ -91,11 +91,13 @@ class SrcScenes:
     def first_frame_no(self) -> int:
         return self._scenes[0]['start']
 
+
     def primary_scene(self) -> SrcScene:
         primary_scene = self._scenes[0]
         if primary_scene['scene'] is None:
             self._consolidate_scene(primary_scene)
         return primary_scene
+
 
     def __len__(self) -> int:
         return len(self._scenes)
@@ -106,6 +108,7 @@ class SrcScenes:
         for s in self._scenes:
             frame_replace.update(s['scene']['replace'])
         return frame_replace
+
 
     def consolidate(self, task_name: TaskName, watermark: bool) -> None:
         from scene.consolidate_src import consolidate_src_scene
@@ -118,4 +121,13 @@ class SrcScenes:
                 watermark=watermark
             )
 
+
+    def get_src_scene_from_frame_no(self, frame_no: int) -> SrcScene:
+        for src_scene in self._scenes:
+            start: int = src_scene['scene']['start']
+            end: int = src_scene['scene']['start'] + src_scene['scene']['count'] - 1
+            if start <= frame_no <= end:
+                return src_scene
+        raise ValueError(f"Scene not found for frame no. {frame_no}")
+        return None
 

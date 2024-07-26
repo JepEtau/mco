@@ -7,6 +7,7 @@ from PIL import (
     ImageFont,
 )
 
+from scene.src_scene import SrcScene, SrcScenes
 from utils.images import Image
 from utils.images_io import load_image, write_image
 from utils.mco_types import Scene
@@ -28,17 +29,21 @@ class WatermarkAlignment(Enum):
 
 
 def add_watermark(image: Image | np.ndarray, scene: Scene, no: int) -> np.ndarray | None:
+    """Add edition, episode, scene no, frame no
+    no is the frame no.
+    """
+
     # Load and save image with dtype=uint8
-    # print(f"{image.in_fp} -> {image.out_fp}")
     if isinstance(image, Image):
         in_img: np.ndarray = load_image(image.in_fp)
-        text: str = f"""{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['no']:03}{str(image.no).rjust(10)}"""
+        text: str = f"""{scene['k_ed']}:{scene['k_ep']}:{scene['no']:03}{str(image.no).rjust(10)}"""
     else:
         in_img = image
         if scene['task'].name == 'initial':
             text: str = f"""{scene['k_ed']}:{scene['k_ep']}:{scene['no']:03}{str(no).rjust(10)}"""
         else:
-            text: str = f"""{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['no']:03}{str(no).rjust(10)}"""
+            src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no)['scene']
+            text: str = f"""{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['no']:03}{str(no).rjust(10)}"""
 
     height: int = in_img.shape[0]
     font_size: int = 20
@@ -75,7 +80,7 @@ def add_watermark(image: Image | np.ndarray, scene: Scene, no: int) -> np.ndarra
         fill=ink,
     )
     if scene['task'].name in ('initial', 'lr'):
-        add_watermark_initial(pil_image=pil_image, scene=scene)
+        add_watermark_initial(pil_image=pil_image, scene=scene, no=no)
     out_img: np.ndarray = np.array(pil_image)
 
     # print(f"img: {img.shape}, {img.dtype}. Htext={h_text}px position: (50, {position_h})")
@@ -87,7 +92,7 @@ def add_watermark(image: Image | np.ndarray, scene: Scene, no: int) -> np.ndarra
 
 
 
-def add_watermark_initial(pil_image: PilImage.Image, scene: Scene) -> None:
+def add_watermark_initial(pil_image: PilImage.Image, scene: Scene, no: int) -> None:
 
     height: int = pil_image.height
 
@@ -95,8 +100,8 @@ def add_watermark_initial(pil_image: PilImage.Image, scene: Scene) -> None:
         text: str = f"{scene['k_ed']}:{scene['k_ep']}:{scene['no']:03} {scene['count']}"
         color: tuple[int, int, int] = (0, 240, 0)
     else:
-        src_scene = scene
-        text: str = f"{scene['src']['k_ed']}:{scene['src']['k_ep']}:{scene['src']['no']:03} {src_scene['dst']['count']}"
+        src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no)['scene']
+        text: str = f"{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['no']:03} {src_scene['count']}"
         color: tuple[int, int, int] = (255, 240, 0)
 
     font_size: int = 70

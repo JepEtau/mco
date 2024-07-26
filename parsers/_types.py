@@ -20,6 +20,8 @@ TaskName = Literal[
     # 00_lr
     'lr',
 
+    'denoise',
+
     # Denoise & upscale:
     # - Identify images to upscale only
     # - Remove outer black borders
