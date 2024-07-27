@@ -1,72 +1,41 @@
-from collections import deque
-from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass
-from enum import Enum
 import math
-import multiprocessing
 import os
 from pprint import pprint
 import subprocess
-import sys
-from typing import Literal
-
-import cv2
 import numpy as np
 from parsers import (
     db,
     get_fps,
-    task_to_dirname,
     VideoSettings,
 )
-from processing.effects import effect_fadeout, effect_loop_and_fadeout
-from processing.frame_replace import ItemCache, frame_occurences, get_frames_to_cache, get_frames_to_remove
+from processing.effects import apply_effect
+from processing.frame_replace import ItemCache, frame_occurences, get_frames_to_remove
 from processing.watermark import add_watermark
 from scene.filters import do_watermark
-from scene.src_scene import SrcScene
-from utils.images import IMG_FILENAME_TEMPLATE, Image, Images
-from utils.images_io import load_image
 from utils.logger import main_logger
-from utils.mco_types import ChapterVideo, Effect, Effects, Scene
-from utils.mco_utils import calculate_frame_count, get_cache_path, get_dirname, get_target_audio, get_target_video, is_first_scene, is_last_scene, run_simple_command
+from utils.mco_types import ChapterVideo, Frame, Scene
+from utils.mco_utils import (
+    calculate_frame_count,
+    get_target_video,
+    is_first_scene,
+    is_last_scene,
+    is_up_to_date
+)
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
-from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal, ms_to_frame
+from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from video.out_frames import get_out_frame_paths
 from utils.media import VideoInfo, extract_media_info, str_to_video_codec
-
-
-@dataclass(slots=True)
-class Frame:
-    no: int
-    img: np.ndarray
-
 
 
 
 def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
-
-    for s in scene['src'].scenes():
-        in_video_fp: str = s['scene']['inputs']['progressive']['filepath']
-        if not os.path.exists(in_video_fp):
-            raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
-
     out_video_fp: str = scene['task'].video_file
-    if not force:
-        if os.path.exists(out_video_fp):
-            dst_frame_count: int = calculate_frame_count(scene)
-            print(yellow(f"dst frame_count: {dst_frame_count}"))
-            try:
-                out_video_info: VideoInfo = extract_media_info(out_video_fp)['video']
-                print(f"output scene file: {out_video_info['frame_count']}")
-                if out_video_info['frame_count'] == dst_frame_count:
-                    return True
-            except:
-                pass
 
-    task_name: str = scene['task'].name
+    if is_up_to_date(scene) and not force:
+        return True
 
     # Output directory
     lr_directory: str = path_split(scene['task'].video_file)[0]
@@ -74,14 +43,21 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
     # Out video clip
     in_video_fp = scene['src'].primary_scene()['scene']['inputs']['progressive']['filepath']
-    video_info: VideoInfo = extract_media_info(in_video_fp)['video']
-    h, w, c = video_info['shape']
+    in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+    h, w = in_video_info['shape'][:2]
     pipe_pixfmt = 'bgr24'
     pipe_out_dtype = (
         np.uint8
         if PIXEL_FORMAT[pipe_pixfmt]['bpp'] <= 8
         else np.uint16
     )
+
+    filter_complex: list[str] = []
+    if h != 576 or w != 576:
+        filter_complex = [
+            "-filter_complex", f"[0:v]scale=768:576:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
+            "-map", "[outv]"
+        ]
 
     frame_rate: FrameRate = get_fps(db)
     vsettings: VideoSettings = scene['task'].video_settings
@@ -97,7 +73,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         "-r", str(frame_rate),
         "-i", "pipe:0",
 
-        "-vf", "scale=768:576",
+        *filter_complex,
 
         "-pix_fmt", vsettings.pix_fmt,
         "-vcodec", str_to_video_codec[vsettings.codec].value,
@@ -146,12 +122,12 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             "-i", in_video_fp,
             "-t", str(frame_to_s(no=count, frame_rate=frame_rate))
         ]
-        video_info: VideoInfo = extract_media_info(in_video_fp)['video']
-        h, w, c = video_info['shape']
+        in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+        h, w, c = in_video_info['shape']
         pipe_pixfmt = 'bgr24'
-        pipe_img_nbytes = math.prod(video_info['shape'])
+        pipe_img_nbytes = math.prod(in_video_info['shape'])
         pipe_dtype = np.uint8
-        pipe_img_shape: tuple[int, int, int] = video_info['shape']
+        pipe_img_shape: tuple[int, int, int] = in_video_info['shape']
         xtract_command.extend([
             "-f", "image2pipe",
             "-pix_fmt", pipe_pixfmt,
@@ -261,7 +237,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     if is_last_scene(scene):
         if 'silence' in ch_video and ch_video['silence'] > 0:
             print(f"silence!!! {ch_video['silence']}")
-            img_black = np.zeros(video_info['shape'], dtype=pipe_out_dtype)
+            img_black = np.zeros(in_video_info['shape'], dtype=pipe_out_dtype)
             [writer_subproces.stdin.write(img_black) for _ in range(ch_video['silence'])]
 
             produced += ch_video['silence']
@@ -285,88 +261,3 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             return False
     return True
 
-
-
-def apply_effect(scene: Scene, out_f_no: int, frame: Frame) -> Frame | list[Frame]:
-    if 'effects' in scene:
-        effect: Effect = scene['effects'].primary_effect()
-        if effect.name == 'loop' and out_f_no == effect.frame_ref:
-            print(f"loop count = {effect.loop + 1}")
-            return [frame] * (effect.loop + 1)
-
-        elif effect.name == 'fadeout' and out_f_no >= effect.frame_ref:
-            if out_f_no >= effect.frame_ref:
-                coef: float = float(out_f_no - effect.frame_ref) / effect.fade
-                img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
-                img_out: np.ndarray = cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0)
-                print(f"out_i: {out_f_no}, coef={coef:.06f}")
-                return Frame(no=frame.no, img=img_out)
-
-        elif effect.name == 'loop_and_fadeout':
-            fadeout_start = effect.frame_ref + effect.loop - effect.fade
-            # print(f"fadeout_start= {fadeout_start}, out_f_no: {out_f_no}")
-
-            if effect.fade > effect.loop and out_f_no >= fadeout_start:
-                print(f"start @{out_f_no} (fadeout_start: {fadeout_start})")
-                # print(f"effect.frame_ref: {effect.frame_ref} vs {scene['dst']['start'] + scene['dst']['count']}")
-                img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
-
-                if out_f_no < effect.frame_ref:
-                    i = float(out_f_no - fadeout_start)
-                    coef: float = float(i) / effect.fade
-                    img_out: np.ndarray = cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0)
-                    print(f"out_i: {out_f_no}, coef={coef:.06f}")
-                    return Frame(no=frame.no, img=img_out)
-
-                elif out_f_no == effect.frame_ref:
-                    out_frames: list[Frame] = []
-                    for i in range (effect.loop + 1):
-                        coef: float = float(effect.frame_ref + i - fadeout_start) / effect.fade
-                        print(f"out_i: {out_f_no}, coef={coef:.06f}")
-                        out_frames.append(Frame(
-                            no=frame.no,
-                            img=cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0),
-                        ))
-                    return out_frames
-
-            elif out_f_no == effect.frame_ref:
-                img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
-                if effect.loop >= effect.fade:
-                    out_frames: list[Frame] = [frame] * (effect.loop - effect.fade + 1)
-                else:
-                    out_frames: list[Frame] = [frame]
-
-                for i in range (effect.fade):
-                    coef: float = float(i) / effect.fade
-                    print(f"out_i: {out_f_no}, coef={coef:.06f}")
-                    out_frames.append(Frame(
-                        no=frame.no,
-                        img=cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0),
-                    ))
-                return out_frames
-            # else:
-            #     raise NotImplementedError(effect.name)
-
-
-        # else:
-        #     raise NotImplementedError(effect.name)
-
-    # else:
-    #     print("no effect")
-
-    return frame
-
-
-class FadeCurve(Enum):
-    LINEAR = "linear"
-
-def coef_table(
-    fade_type: Literal['in', 'out'],
-    curve: FadeCurve,
-    count: int
-) -> np.ndarray[float]:
-    if curve == FadeCurve.LINEAR:
-        coefs = np.array([float(x) / count for x in range(count)])
-    else:
-        raise NotImplementedError("not yet implemented")
-    return coefs if fade_type == 'in' else 1.0 - coefs

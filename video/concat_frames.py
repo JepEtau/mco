@@ -86,39 +86,6 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
     )
 
 
-def set_concat_filename(
-    episode: str | int,
-    chapter: Chapter,
-    scene: Scene,
-) -> None:
-    k_ep, k_ch = key(episode), chapter
-
-    # Get the list of frames for this scene
-    # img_fp: list[str] = scene['out_frames']
-
-    k_ed = scene['k_ed']
-    # Use previous concatenation files because FFmpeg
-    # cannot create a video file with 5 frames or less
-    if k_ch in ('g_debut', 'g_fin'):
-        concat_fp = os.path.join(
-            db[k_ch]['cache_path'],
-            "concat",
-            f"{k_ch}_{scene['no']:03}__{k_ed}_{scene['k_ep']}.txt"
-        )
-    elif k_ch in ('g_asuivre', 'g_documentaire'):
-        concat_fp: str = os.path.join(
-            db[k_ep]['cache_path'],
-            "concat",
-            f"{k_ep}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}.txt"
-        )
-    else:
-        concat_fp = os.path.join(
-            db[k_ep]['cache_path'],
-            "concat",
-            f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}.txt"
-        )
-
-    scene['task'].concat_file = concat_fp
 
 
 def generate_concat_file(
@@ -172,54 +139,6 @@ def generate_concat_file(
     concat_file.close()
 
 
-
-
-def generate_silence_concat_file(episode: int | str) -> dict:
-    k_ep = key(episode)
-    files: dict[str, list] = {}
-    fps = get_fps(db)
-
-    for k_ch in main_chapter_keys():
-        files[k_ch] = []
-        if k_ch not in db[k_ep]['audio']:
-            continue
-
-        db_audio = db[k_ep]['audio'][k_ch]
-        if 'silence' in db_audio and db_audio['silence'] > 0:
-            main_logger.debug(lightgrey(f"\t- {k_ch}"))
-            print(lightgrey(f"\t- {k_ch}"))
-
-            # task: ProcessingTask = db[k_ep]['video']['target'][k_ch]['task']
-
-            # Convert silence duration in nb of frames
-            silence_count = ms_to_frame(db_audio['silence'], fps)
-            # print("silence = %d frames" % (silence_count))
-
-            # Duration
-            black_image_filepath = os.path.join(
-                db['common']['directories']['cache'],
-                'black.png'
-            )
-            duration_str = f"duration {1/fps:.02f}\n"
-
-            # Create the concatenation file for the silence
-            makedirs(k_ep, k_ch, 'concat')
-            concat_fp = os.path.join(
-                db[k_ep]['cache_path'],
-                "concat",
-                f"{k_ep}_{k_ch}_silence.txt"
-            )
-            concat_file = open(concat_fp, "w")
-
-            # Add frames to the files
-            for _ in range(silence_count):
-                concat_file.write(f"file \'{black_image_filepath}\' \n")
-                concat_file.write(duration_str)
-
-            files[k_ch].append(concat_fp)
-            concat_file.close()
-
-    return files
 
 
 

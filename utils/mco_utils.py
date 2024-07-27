@@ -5,13 +5,35 @@ import subprocess
 import sys
 import time
 from scene.filters import do_watermark
-from utils.mco_types import ChapterVideo, Effect, Scene
+from utils.mco_types import ChapterVideo, Scene
+from utils.media import VideoInfo, extract_media_info
 from utils.p_print import *
 from parsers import (
     db, task_to_dirname, TaskName, TASK_NAMES
 )
 from .logger import main_logger
 
+
+
+def is_up_to_date(scene: Scene) -> bool:
+    for s in scene['src'].scenes():
+        in_video_fp: str = s['scene']['inputs']['progressive']['filepath']
+        if not os.path.exists(in_video_fp):
+            raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
+
+    out_video_fp: str = scene['task'].video_file
+    if os.path.exists(out_video_fp):
+        dst_frame_count: int = calculate_frame_count(scene)
+        print(yellow(f"dst frame_count: {dst_frame_count}"))
+        try:
+            out_video_info: VideoInfo = extract_media_info(out_video_fp)['video']
+            print(f"output scene file: {out_video_info['frame_count']}")
+            if out_video_info['frame_count'] == dst_frame_count:
+                return True
+        except:
+            pass
+
+    return False
 
 
 def get_target_audio(scene: Scene):

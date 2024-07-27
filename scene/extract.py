@@ -31,6 +31,7 @@ def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> boo
     if not os.path.exists(in_video_fp):
         raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
     out_video_fp: str = scene['task'].video_file
+    in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
 
     if not force:
         if os.path.exists(out_video_fp):
@@ -60,7 +61,17 @@ def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> boo
         "-i", in_video_fp,
         "-t", str(frame_to_s(no=count, frame_rate=frame_rate))
     ]
-    filter_complex: list[str] = _get_complex_filter(scene)
+    h, w = in_video_info['shape'][:2]
+
+    # Force to 576p to facilitate comparisons
+    filter_complex: list[str] = []
+    if h != 576 or w != 576:
+        filter_complex = [
+            "-filter_complex",
+            f"[0:v]scale=768:576:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
+            "-map", "[outv]"
+        ]
+
     if do_watermark(scene=scene):
         video_info: VideoInfo = extract_media_info(in_video_fp)['video']
         h, w, c = video_info['shape']

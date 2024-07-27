@@ -224,7 +224,11 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     suffix = f"_{scene['task'].hashcode}"
     suffix += f"_{task_name}"
     scene['task'].video_file = absolute_path(
-        os.path.join(cache_path, "video", f"{basename}{suffix}.mkv")
+        os.path.join(
+            cache_path,
+            f"scenes_{task_name}",
+            f"{basename}{suffix}.mkv"
+        )
     )
 
 

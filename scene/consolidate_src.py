@@ -95,12 +95,17 @@ def consolidate_src_scene(
         raise ValueError(f"VideoSettings not defined for task: {task_name}")
 
     # Output video filename
+    if k_ch in ('g_debut', 'g_fin'):
+        cache_path: str = db[k_ch]['cache_path']
+    else:
+        cache_path: str = db[k_ep]['cache_path']
+
     basename = f"{k_ed}_{k_ep}_{k_ch}_{scene['no']:03}"
     suffix = f"_{scene['task'].hashcode}"
     suffix += f"_{task_name}"
     scene['task'].video_file = absolute_path(
         os.path.join(
-            db[k_ep]['cache_path'],
+            cache_path,
             f"scenes_{scene['k_ed']}",
             f"{basename}{suffix}.mkv"
         )

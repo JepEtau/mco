@@ -9,6 +9,7 @@ from scene.generate_lr import generate_lr_scene
 from utils.hash import calc_hash
 from utils.logger import main_logger
 from utils.mco_types import Scene, ChapterVideo
+from utils.mco_utils import is_up_to_date
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
@@ -21,17 +22,8 @@ from parsers import (
     ProcessingTask,
     pprint_scene_mapping,
 )
-from .concat_frames import (
-    generate_concat_file,
-    generate_silence,
-    generate_silence_concat_file,
-    generate_video_concat_file,
-    get_silence_filepath,
-    set_concat_filename,
-    set_video_filename,
-)
+from .concat_frames import generate_video_concat_file
 from .concat_scenes import concat_scenes
-from .combine_frames import combine_frames
 
 
 
@@ -106,7 +98,7 @@ def generate_lr_scenes(
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
 
-            if not simulation:
+            if not simulation and not is_up_to_date(scene) or force:
                 result = generate_lr_scene(scene=scene, force=force)
                 if not result:
                     # pprint(db[scene['k_ep']]['video'][scene['k_ed']])
