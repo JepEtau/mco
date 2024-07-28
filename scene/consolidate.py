@@ -140,7 +140,10 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
         replace_hash = ','.join([f"{k}:{v}" for k, v in frame_replace.items()])
 
     # Upscale
-    upscale_hashcode = calc_hash(';'.join([deint_hashcode, scene_filters['upscale'].sequence]))
+    upscale_hashcode = calc_hash(';'.join([
+        deint_hashcode,
+        scene_filters['upscale'].sequence.replace('.pth', '')
+    ]))
 
     # Store hashes
     scene_filters['lr'].hash = calc_hash(';'.join([deint_hashcode, replace_hash]))

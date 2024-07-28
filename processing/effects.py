@@ -5,12 +5,17 @@ import cv2
 from pprint import pprint
 from utils.p_print import *
 from utils.logger import main_logger
-from utils.mco_types import Effect, Frame, Scene
+from utils.mco_types import Effect, McoFrame, Scene
 
 
 
 
-def apply_effect(scene: Scene, out_f_no: int, frame: Frame) -> Frame | list[Frame]:
+def apply_effect(
+    out_f_no: int,
+    frame: McoFrame
+) -> McoFrame | list[McoFrame]:
+    scene: Scene = frame.scene
+
     if 'effects' in scene:
         effect: Effect = scene['effects'].primary_effect()
         if effect.name == 'loop' and out_f_no == effect.frame_ref:
@@ -23,7 +28,7 @@ def apply_effect(scene: Scene, out_f_no: int, frame: Frame) -> Frame | list[Fram
                 img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
                 img_out: np.ndarray = cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0)
                 print(f"out_i: {out_f_no}, coef={coef:.06f}")
-                return Frame(no=frame.no, img=img_out)
+                return McoFrame(no=frame.no, img=img_out)
 
         elif effect.name == 'loop_and_fadeout':
             fadeout_start = effect.frame_ref + effect.loop - effect.fade
@@ -39,14 +44,14 @@ def apply_effect(scene: Scene, out_f_no: int, frame: Frame) -> Frame | list[Fram
                     coef: float = float(i) / effect.fade
                     img_out: np.ndarray = cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0)
                     print(f"out_i: {out_f_no}, coef={coef:.06f}")
-                    return Frame(no=frame.no, img=img_out)
+                    return McoFrame(no=frame.no, img=img_out)
 
                 elif out_f_no == effect.frame_ref:
-                    out_frames: list[Frame] = []
+                    out_frames: list[McoFrame] = []
                     for i in range (effect.loop + 1):
                         coef: float = float(effect.frame_ref + i - fadeout_start) / effect.fade
                         print(f"out_i: {out_f_no}, coef={coef:.06f}")
-                        out_frames.append(Frame(
+                        out_frames.append(McoFrame(
                             no=frame.no,
                             img=cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0),
                         ))
@@ -55,14 +60,14 @@ def apply_effect(scene: Scene, out_f_no: int, frame: Frame) -> Frame | list[Fram
             elif out_f_no == effect.frame_ref:
                 img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
                 if effect.loop >= effect.fade:
-                    out_frames: list[Frame] = [frame] * (effect.loop - effect.fade + 1)
+                    out_frames: list[McoFrame] = [frame] * (effect.loop - effect.fade + 1)
                 else:
-                    out_frames: list[Frame] = [frame]
+                    out_frames: list[McoFrame] = [frame]
 
                 for i in range (effect.fade):
                     coef: float = float(i) / effect.fade
                     print(f"out_i: {out_f_no}, coef={coef:.06f}")
-                    out_frames.append(Frame(
+                    out_frames.append(McoFrame(
                         no=frame.no,
                         img=cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0),
                     ))

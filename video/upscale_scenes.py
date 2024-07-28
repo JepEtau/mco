@@ -131,8 +131,6 @@ def upscale_scenes(
                     print(yellow(f"sequence already parsed: scene {src_scene['k_ed_ep_ch_no']}"))
 
                 for model in filters.sequence.split(','):
-                    if '.pth' not in model:
-                        raise NotImplementedError(f"{src_scene['k_ed_ep_ch_no']}: {model}")
                     model_key = model_manager.register(model)
                     if model_key is None:
                         raise ValueError(red(f"[E] {model} is not a valid model"))
@@ -140,7 +138,6 @@ def upscale_scenes(
 
                 scenes_to_upscale.append(scene)
                 total_frames += scene['dst']['count'] - len(scene['src'].get_frame_replace().keys())
-
 
         hashcode: str = calc_hash(hashes_str[:-1])
         basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task}_{hashcode}"
@@ -156,7 +153,6 @@ def upscale_scenes(
             video_file=os.path.join(cache_path, f"video_lr", f"{basename}.mkv"),
         )
 
-
     print(f"Consolidated scenes: {time.time() - start_time_full:.03f}s")
     print(f"Total number of scenes to upscale: {len(scenes_to_upscale)}")
     print(f"Total number of frames to upscale: {total_frames}")
@@ -169,43 +165,43 @@ def upscale_scenes(
         print(f"No scenes to upscale")
         return
 
-
-    sys.exit()
-
-
+    # Extract video before to optimize processing
+    # avoid extracting multiple time info from the same input
     vinfos: dict[str, VideoStreamInfo] = {}
     for scene in scenes_to_upscale:
-        in_media_path = scene['inputs']['progressive']['filepath']
-        if in_media_path not in vinfos:
+        for src_scene in scene['src'].scenes():
+            progressive_input = src_scene['scene']['inputs']['progressive']
 
-            in_video_info = extract_media_info(in_media_path)['video']
-            # force output to rgb
-            d_c_order = 'rgb'
-            if in_video_info['bpp'] > 8:
-                d_dtype = np.uint16
-                pix_fmt = f"{d_c_order}48"
-            else:
-                d_dtype = np.uint8
-                pix_fmt = f"{d_c_order}24"
-            stdin_img_nbytes = math.prod(in_video_info['shape']) * np.dtype(d_dtype).itemsize
+            in_media_path = progressive_input['filepath']
+            if in_media_path not in vinfos:
 
-            vinfos[in_media_path] = VideoStreamInfo(
-                img_dtype=d_dtype,
-                img_c_order=d_c_order,
-                img_shape=in_video_info['shape'],
-                img_nbytes=stdin_img_nbytes,
-                pix_fmt=pix_fmt,
-                frame_rate=in_video_info['frame_rate_r'],
-                metadata=in_video_info['metadata'],
-            )
-            scene['task'].video_settings.metadata = vinfos[in_media_path].metadata
-        scene['inputs']['progressive']['info'] = vinfos[in_media_path]
+                in_video_info = extract_media_info(in_media_path)['video']
+                # force output to rgb
+                d_c_order = 'rgb'
+                if in_video_info['bpp'] > 8:
+                    d_dtype = np.uint16
+                    pix_fmt = f"{d_c_order}48"
+                else:
+                    d_dtype = np.uint8
+                    pix_fmt = f"{d_c_order}24"
+                stdin_img_nbytes = math.prod(in_video_info['shape']) * np.dtype(d_dtype).itemsize
+
+                vinfos[in_media_path] = VideoStreamInfo(
+                    img_dtype=d_dtype,
+                    img_c_order=d_c_order,
+                    img_shape=in_video_info['shape'],
+                    img_nbytes=stdin_img_nbytes,
+                    pix_fmt=pix_fmt,
+                    frame_rate=in_video_info['frame_rate_r'],
+                    metadata=in_video_info['metadata'],
+                )
+                scene['task'].video_settings.metadata = vinfos[in_media_path].metadata
+            progressive_input['info'] = vinfos[in_media_path]
 
         if debug:
             print(lightcyan("================================== Scene ======================================="))
             pprint(scene)
             print(lightcyan("==============================================================================="))
-
 
     if False:
         command: str = [
@@ -264,6 +260,7 @@ def upscale_scenes(
         debug=debug,
         simulation=simulation,
     )
+
     pipeline.run()
 
     print("done")

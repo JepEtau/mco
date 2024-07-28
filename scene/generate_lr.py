@@ -13,7 +13,7 @@ from processing.frame_replace import ItemCache, frame_occurences, get_frames_to_
 from processing.watermark import add_watermark
 from scene.filters import do_watermark
 from utils.logger import main_logger
-from utils.mco_types import ChapterVideo, Frame, Scene
+from utils.mco_types import ChapterVideo, McoFrame, Scene
 from utils.mco_utils import (
     calculate_frame_count,
     get_target_video,
@@ -106,6 +106,13 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         print(f"extract {count} frames")
         to_produce -= count
 
+        # Extract info from input video file
+        in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+        h, w, c = in_video_info['shape']
+        pipe_pixfmt = 'bgr24'
+        pipe_img_nbytes = math.prod(in_video_info['shape'])
+        pipe_dtype = np.uint8
+        pipe_img_shape: tuple[int, int, int] = in_video_info['shape']
 
         xtract_command: list[str] = [
             ffmpeg_exe,
@@ -120,20 +127,12 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                 )
             ),
             "-i", in_video_fp,
-            "-t", str(frame_to_s(no=count, frame_rate=frame_rate))
-        ]
-        in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
-        h, w, c = in_video_info['shape']
-        pipe_pixfmt = 'bgr24'
-        pipe_img_nbytes = math.prod(in_video_info['shape'])
-        pipe_dtype = np.uint8
-        pipe_img_shape: tuple[int, int, int] = in_video_info['shape']
-        xtract_command.extend([
+            "-t", str(frame_to_s(no=count, frame_rate=frame_rate)),
             "-f", "image2pipe",
             "-pix_fmt", pipe_pixfmt,
             "-vcodec", "rawvideo",
             "-"
-        ])
+        ]
 
         reader_subproces: subprocess.Popen = None
         try:
@@ -146,13 +145,6 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         except Exception as e:
             print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
             return False
-
-
-        def _read_frame() -> np.ndarray:
-            frame = reader_subproces.stdout.read(pipe_img_nbytes)
-            if len(frame) < pipe_img_nbytes:
-                raise ValueError(red(f"[E][R] {scene_key} Unexpected error: frame size < {pipe_img_nbytes}"))
-            return frame
 
         # Replacements
         frame_replace = src_scene['replace']
@@ -175,12 +167,12 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         in_f_no: int = start - 1
         out_f_no: int = start
 
-        in_frame: Frame = None
-        out_frame: Frame = None
+        in_frame: McoFrame = None
+        out_frame: McoFrame = None
         out_i: int = 0
         while count:
 
-            in_frame: Frame = None
+            in_frame: McoFrame = None
             while in_frame is None:
                 in_f_no += 1
                 img: np.ndarray = np.frombuffer(
@@ -189,7 +181,9 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                 ).reshape(pipe_img_shape)
                 if in_f_no not in frames_to_replace:
                     # print(purple(f"Read frame no.{in_f_no}"))
-                    in_frame: Frame = Frame(no=in_f_no, img=img)
+                    in_frame: McoFrame = McoFrame(
+                        no=in_f_no, img=img, scene=scene
+                    )
 
             out_frame = None
             while True:
@@ -212,12 +206,11 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
                     if watermark:
                         out_frame.img = add_watermark(
-                            image=out_frame.img,
-                            scene=scene,
+                            frame=out_frame,
                             no=out_frame.no
                         )
 
-                    out_frames = apply_effect(scene, out_f_no, out_frame)
+                    out_frames = apply_effect(out_f_no, out_frame)
                     if isinstance(out_frames, list):
                         # print(yellow(f"\t{out_i}: send {len(out_frames)}"))
                         [writer_subproces.stdin.write(f.img) for f in out_frames]

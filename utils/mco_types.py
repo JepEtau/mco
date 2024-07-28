@@ -19,9 +19,10 @@ if TYPE_CHECKING:
 
 
 @dataclass(slots=True)
-class Frame:
+class McoFrame:
     no: int
     img: np.ndarray
+    scene: Scene = None
 
 
 

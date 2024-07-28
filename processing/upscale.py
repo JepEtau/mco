@@ -57,7 +57,26 @@ class UpscalePipeline(object):
         in_max_nbytes: int = 0
         out_max_nbytes: int = 0
         for scene in scenes:
-            vi: VideoStreamInfo = scene["inputs"]['progressive']['info']
+            # Verify that input videos to generate this scene have the same info
+            vi: VideoStreamInfo = (
+                scene['src'].primary_scene()['scene']
+                ['inputs']['progressive']['info']
+            )
+            shape = [vi.img_shape[1], vi.img_shape[0]]
+
+            for src_scene in scene['src'].scenes():
+                _vi: VideoStreamInfo = src_scene['scene']['inputs']['progressive']['info']
+                _shape = [_vi.img_shape[1], _vi.img_shape[0]]
+                if _shape != shape:
+                    raise ValueError(
+                        f"{src_scene['k_ed_ep_ch_no']}:",
+                        "input video must have the same resolution as the primary one"
+                    )
+
+            vi: VideoStreamInfo = (
+                scene['src'].primary_scene()['scene']
+                ['inputs']['progressive']['info']
+            )
             nbytes: int = vi.img_nbytes * np.dtype(vi.img_dtype).itemsize
 
             if nbytes > in_max_nbytes:
@@ -66,7 +85,7 @@ class UpscalePipeline(object):
             task_name = scene['task'].name
             filters: Filter = scene['filters'][task_name]
             scale: int = 1
-            shape = [vi.img_shape[1], vi.img_shape[0]]
+
             for i, model_key in enumerate(filters.steps):
                 _scale = model_manager.get_scale(model_key)
                 filters.steps[i] = model_manager.set_input_size(model_key, shape)
@@ -88,7 +107,6 @@ class UpscalePipeline(object):
         model_manager.consolidate()
         model_manager.set_in_out_max_nbytes(in_max_nbytes, out_max_nbytes)
         print(model_manager)
-
 
 
     def run(self) -> tuple[bool, int, float, float]:
@@ -193,6 +211,10 @@ class UpscalePipeline(object):
         if self.simulation:
             return [0] * 4
 
+        # Verbose
+        d_thread.verbose = True
+        e_thread.verbose = True
+
         # Start all threads
         d_thread.set_produce_flag()
         for thread in (
@@ -206,8 +228,6 @@ class UpscalePipeline(object):
             if thread is not None:
                 ResourceManager().register_thread(thread)
                 thread.start()
-
-        # Filter
 
         # Run until the end
         elapsed: float = 0.
