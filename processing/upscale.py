@@ -212,8 +212,8 @@ class UpscalePipeline(object):
             return [0] * 4
 
         # Verbose
-        d_thread.verbose = True
-        e_thread.verbose = True
+        d_thread.verbose = False
+        e_thread.verbose = False
 
         # Start all threads
         d_thread.set_produce_flag()

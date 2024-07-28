@@ -6,8 +6,22 @@ from utils.mco_types import Scene
 from parsers import (
     db,
     Filter,
+    VideoSettings,
 )
 
+
+def get_pad_complex_filter(scene: Scene) -> list[str]:
+    vsettings: VideoSettings = scene['task'].video_settings
+
+    filter_complex: list[str] = []
+    if vsettings.pad != 0:
+        pad: int = vsettings.pad
+        pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
+        filter_complex: list[str] = [
+            "-filter_complex", f"[0:v]{pad_filter}[outv]",
+            "-map", "[outv]"
+        ]
+    return filter_complex
 
 
 def do_watermark(scene: Scene) -> bool:
