@@ -49,6 +49,7 @@ def consolidate_src_scene(
     for t in TASK_NAMES:
         if t not in scene_filters:
             scene_filters[t] = Filter(task_name=t)
+    scene_filters['hr'] = scene_filters['upscale']
 
     # Deinterlace
     template_script: str = get_template_script(

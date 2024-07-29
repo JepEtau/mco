@@ -97,6 +97,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     print(lightcyan(f"Frames to produce: {to_produce}"))
     watermark: bool = do_watermark(scene=scene)
     for src in scene['src'].scenes():
+        print(red("BUUUUUUUUUUUUUUUUUUUGGGG: wrong start"))
         src_scene: Scene = src['scene']
         in_video_fp: str = src_scene['inputs']['progressive']['filepath']
         start: int = src['start']

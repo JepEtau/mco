@@ -2,11 +2,8 @@ from copy import deepcopy
 import os
 from pprint import pprint
 import sys
-from typing import OrderedDict
-from processing.deint import calc_deint_hash, get_qtgmc_args, get_template_script
 from utils.hash import calc_hash
 from utils.mco_types import ChapterVideo, Effect, Scene
-from utils.images import Images
 from parsers import (
     db,
     Filter,
@@ -15,12 +12,15 @@ from parsers import (
     VideoSettings,
     TaskName,
 )
-from utils.mco_utils import get_cache_path, get_target_video, is_last_scene, nested_dict_set
+from utils.mco_utils import (
+    get_cache_path,
+    get_target_video,
+    is_last_scene,
+    nested_dict_set
+)
 from utils.p_print import *
-from utils.path_utils import absolute_path, path_split
-from video.concat_frames import get_video_filename, set_video_filename
-from video.out_frames import get_out_frame_paths
-from .filters import get_filters
+from utils.path_utils import absolute_path
+from video.concat_frames import get_video_filename
 
 
 def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
@@ -131,6 +131,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     for t in TASK_NAMES:
         if t not in scene_filters:
             scene_filters[t] = Filter(task_name=t)
+
     deint_hashcode = scene_filters['initial'].hash
 
     # Replace
@@ -147,7 +148,7 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     # Store hashes
     scene_filters['lr'].hash = calc_hash(';'.join([deint_hashcode, replace_hash]))
-    scene_filters['hr'].hash = calc_hash(';'.join([deint_hashcode, replace_hash, upscale_hashcode]))
+    scene_filters['hr'].hash = upscale_hashcode
     scene_filters['upscale'].hash = upscale_hashcode
 
     # Update the scene task
@@ -164,46 +165,14 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
             else "watermark"
         )
 
-    # List frames
-    if task_name == 'hr':
-        if k_ch in ('g_asuivre', 'g_documentaire'):
-            raise NotImplementedError(red("TODO: HR for g_asuivre and g_documentaire"))
-            if 'start' in scene['dst']:
-                # print("use the dst start and count for the concatenation file")
-                start = scene['dst']['start']
-                end = start + scene['dst']['count']
-            else:
-                start = scene['start']
-                end = start + scene['count']
-            scene['out_frames'] = list([no for no in range(start, end)])
-
-        else:
-            out_frames: list[int] = []
-
-            # Append images
-            if 'segments' in scene['src'] and len(scene['src']['segments']) > 0:
-                index_start = max(0, scene['src']['start'] - scene['start'])
-                index_end = index_start + scene['dst']['count']
-            else:
-                index_start = max(0, scene['src']['start'] - scene['start'])
-                index_end = index_start + scene['dst']['count']
-
-            frame_replace = scene['replace']
-            for no in range(scene['start'], scene['start'] + scene['count']):
-                out_frames.append(frame_replace[no] if no in frame_replace else no)
-            scene['out_frames'] = out_frames[index_start:index_end]
-
-        scene['task'].in_video_file = get_video_filename(scene=scene, task_name='upscale')
 
     # Output
     #---------------------------------------------------------------------------
 
     # Output video settings
     _task_name: str = task_name
-    if task_name == 'hr':
-        _task_name = 'upscale'
-    elif task_name == 'initial':
-        _task_name = 'hr'
+    if task_name == 'initial':
+        _task_name = 'lr'
 
     vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
     if vsettings is not None:
