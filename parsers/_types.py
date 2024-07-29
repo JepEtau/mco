@@ -6,11 +6,6 @@ from ._keys import key
 
 TaskName = Literal[
     # Deinterlace the input video:
-    #   input: interlaced video
-    #   output: progressive video. single file: FFv1 8-bit
-    #   out_hash:
-    # folder: 00_initial
-    # NOT YET SUPPORTED
     'initial',
 
     # Create a low resolution video for edition only
@@ -22,20 +17,10 @@ TaskName = Literal[
 
     'denoise',
 
-    # Denoise & upscale:
-    # - Identify images to upscale only
-    # - Remove outer black borders
-    # - upscale
-    # - resize to
-    #
-    #   input: progressive video
-    #   output: in 2 steps.
-    #       upscaled frames
+    # Upscale and generate a 1080p imag for comparison
     'upscale',
 
-    #       create a clip/scene
-    #   ??? out_hash: upscale mode
-    # 01_hr
+    # Create video clips to be stabilized
     'hr',
 
     # Upscaled and color grading, external tool
@@ -55,11 +40,11 @@ TASK_NAMES: list[str] = get_args(TaskName)
 
 task_to_dirname: dict[TaskName, str] = {
     'initial': '00_initial',
-    'lr': '00_lr',
-    'upscale': '01_upscaled',
-    'hr': '02_hr',
-    'restored': '03_restored',
-    'final': '04_final',
+    'lr': '01_lr',
+    'upscale': '02_upscaled',
+    'hr': '03_hr',
+    'restored': '04_restored',
+    'final': '05_final',
 }
 
 filter_name_to_dirname: dict[str, TaskName] = {

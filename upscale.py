@@ -104,17 +104,6 @@ def main():
     )
     gc.collect()
 
-
-    # For inspection
-    # db_ep: dict = g_database['ep01']
-    # print(db_ep.keys())
-    # print(db_ep['cache_path'])
-    # pprint(db_ep['audio'])
-
-    # print(g_database.keys())
-    # pprint(g_database['common'])
-
-    #
     scene_no: int | None = None
     scene_arg: str = arguments.scene
     if scene_arg.endswith('f'):

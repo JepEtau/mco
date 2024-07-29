@@ -206,7 +206,8 @@ def generate_lr_scenes(
         )
         ffmpeg_command: list[str] = [
             ffmpeg_exe,
-            *db['common']['settings']['verbose'],
+            "-hide_banner",
+            "-loglevel", "warning",
             "-f", "concat",
             "-safe", "0",
             "-i", concat_fp,

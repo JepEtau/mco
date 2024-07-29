@@ -88,57 +88,6 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
 
 
 
-def generate_concat_file(
-    episode: str | int,
-    chapter: Chapter,
-    video: ChapterVideo,
-    scene: Scene,
-) -> None:
-    k_ep, k_ch = key(episode), chapter
-
-    # Get the list of frames for this scene
-    img_fp: list[str] = []
-    if scene['task'].name == 'initial':
-        img_fp = scene['in_frames'].in_images()
-
-    elif (
-        scene['task'].name == 'lr'
-        and isinstance(scene['in_frames'], Images)
-        and scene['dst']['k_ch'] not in ('g_asuivre', 'g_reportage')
-    ):
-        img_fp = scene['in_frames'].out_frames()
-
-    else:
-        img_fp = scene['out_frames']
-        black_image_filepath = os.path.join(
-            db['common']['directories']['cache'],
-            'black.png'
-        )
-        generate_black_frame(black_image_filepath, img_fp[0])
-
-    # Folder for concatenation file
-    makedirs(k_ep, k_ch, 'concat')
-
-    # Open concatenation file
-    if (
-        scene['no'] > 0
-        and 'task' in video['scenes'][scene['no'] - 1]
-        and scene['task'].concat_file == video['scenes'][scene['no'] - 1]['task'].concat_file
-    ):
-        concat_file = open(video['scenes'][scene['no'] - 1]['task'].concat_file, "a")
-    else:
-        concat_file = open(scene['task'].concat_file, "w")
-
-    # Frame duration
-    duration_str = f"duration {1/get_fps(db):.02f}\n"
-
-    # Write into the concatenation file
-    for p in img_fp:
-        concat_file.write(f"file \'{p}\' \n")
-        concat_file.write(duration_str)
-    concat_file.close()
-
-
 
 
 
@@ -249,6 +198,7 @@ def generate_video_concat_file(
 
 
 def generate_silence(k_ep: str, k_ch: str) -> None:
+    raise DeprecationWarning("generate_silence is deprecated")
 
     if k_ch in ('g_debut', 'g_fin'):
         db_video: ChapterVideo = db[k_ch]['video']

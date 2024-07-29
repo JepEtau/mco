@@ -63,7 +63,8 @@ def extract_audio_track(
         # FFmpeg command
         ffmpeg_command: list[str] = [
             ffmpeg_exe,
-            *db['common']['settings']['verbose'],
+            "-hide_banner",
+            "-loglevel", "warning",
             "-i", in_filepath,
             "-sn",
             "-vn"

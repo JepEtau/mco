@@ -132,7 +132,8 @@ def combine_av_tracks(
     # Merge Audio and Video tracks
     ffmpeg_command: list[str] = [
         ffmpeg_exe,
-        *db['common']['settings']['verbose'],
+        "-hide_banner",
+        "-loglevel", "warning",
         "-i", video_filepath,
         "-i", audio_filepath,
         "-c:v", "copy",

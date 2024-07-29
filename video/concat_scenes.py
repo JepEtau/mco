@@ -92,7 +92,8 @@ def concat_scenes(
         # Concatenate scenes into a single video
         ffmpeg_command: list[str] = [
             ffmpeg_exe,
-            *db['common']['settings']['verbose'],
+            "-hide_banner",
+            "-loglevel", "warning",
             "-f", "concat",
             "-safe", "0",
             "-i", concat_fp,
