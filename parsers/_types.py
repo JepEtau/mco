@@ -98,7 +98,7 @@ class OutputSettings:
     color_space: str ='bt709'
     film_tune: str ='-tune grain'
     pixel_format: str ='yuv420p'
-    quality: str ='-c:v libx264 -preset slow -crf 17'
+    quality: str ='-c:v libx264 -preset slow -crf 15'
     tune: str ='-tune stillimage'
 
 

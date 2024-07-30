@@ -58,7 +58,6 @@ def main():
         help="Simulate the process"
     )
 
-
     arguments = parser.parse_args()
 
     if arguments.debug:

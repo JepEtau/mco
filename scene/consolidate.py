@@ -51,9 +51,9 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
 
     # Geometry
     #---------------------------------------------------------------------------
-    k_ep = scene['dst']['k_ep']
-    k_ed = scene['dst']['k_ed']
-    k_ch = scene['dst']['k_ch']
+    k_ep: str = scene['dst']['k_ep']
+    k_ed: str = scene['dst']['k_ed']
+    k_ch: str = scene['dst']['k_ch']
     if k_ch in ['g_asuivre', 'g_documentaire']:
         # print("\t\t\tconsolidate_scene: get geometry from %s:%s:%s" % (k_ed, k_ep, k_ch[2:]))
         k_ep_dst = scene['dst']['k_ep']
