@@ -9,6 +9,7 @@ import sys
 import time
 import numpy as np
 from nn_inference.toolbox.detect_inner_rect import DetectInnerRectParams, detect_inner_rect
+from nn_inference.toolbox.resize_to_4_3 import ConvertTo43Params, calculate_transformation_values, resize_to_4_3
 from parsers import (
     db,
     get_fps,
@@ -45,8 +46,9 @@ def stdin_to_shared(
     img_dtype: np.dtype,
     max_value: float,
     ffmpeg_subprocess: subprocess.Popen,
+    detect_inner_rect_params,
     lock_array: list[mp.Lock]
-) -> bool:
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     with lock_array[i]:
         stream = ffmpeg_subprocess.stdout.read(in_size)
         lock_array[i+1].release()
@@ -55,7 +57,9 @@ def stdin_to_shared(
         img = img.astype(img_dtype)
         if max_value != 1.:
             img /= max_value
-    return img
+
+    coords, out_img = detect_inner_rect(img, detect_inner_rect_params)
+    return img, coords, out_img
 
 
 
@@ -105,7 +109,7 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
         raise FileExistsError(red(f"{in_video_fp}: No such file or directory"))
     in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
     in_shape = in_video_info['shape']
-    h, w = in_shape[:2]
+    in_h, in_w = in_shape[:2]
     in_pipe_dtype: np.dtype = np.uint8
     in_pipe_pixfmt: str = 'bgr24'
     in_pipe_nbytes: int = math.prod(in_shape)
@@ -126,11 +130,13 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
 
     print(f"IN: video file: {in_video_fp}")
     print(f"IN: frame_count: {in_video_info['frame_count']}")
-    print(f"IN: dimensions: {w}x{h}")
+    print(f"IN: dimensions: {in_w}x{in_h}")
     print(f"IN: pixfmt: {in_video_info['pix_fmt']}")
     print(f"IN: pipe dtype: {in_pipe_dtype}")
     print(f"IN: pipe pixfmt: {in_pipe_pixfmt}")
     print(f"IN: pipe nbytes: {in_pipe_nbytes}")
+
+    img_dtype = np.uint8
 
     print(f"OUT: video file: {out_video_fp}")
     print(f"OUT: pixfmt: {vsettings.pix_fmt}")
@@ -172,6 +178,8 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
         print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
         return False
 
+    detect_inner_rect_params = DetectInnerRectParams()
+    coordinates: list[np.ndarray] = []
 
     ofc: int = int(3 * mp.cpu_count() / 4)
     locks = [mp.Lock() for _ in range(ofc + 1)]
@@ -187,41 +195,25 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
         for l in locks:
             l.acquire(block=False)
         locks[0].release()
-        for img in executor.map(
+        for img, coords, out_img in executor.map(
             lambda i: stdin_to_shared(
                 i,
                 in_pipe_nbytes,
                 in_pipe_dtype,
                 in_shape,
-                in_pipe_dtype,
+                img_dtype,
                 1,
                 decoder_subprocess,
+                detect_inner_rect_params,
                 locks
             ),
             range(count)
         ):
             in_images.append(img)
+            coordinates.append(coords)
 
         remaining -= count
         write_index += count
-
-    # print(len(in_images))
-    # for img in in_images:
-    #     print(img.shape)
-    # Detect inner rect -> returns coordinates
-    #   poolexecutor
-    detect_inner_rect_params = DetectInnerRectParams()
-
-    coordinates: list[np.ndarray] = []
-
-    for coords, out_img in executor.map(
-        lambda args:
-            detect_inner_rect(*args),
-            [(img, detect_inner_rect_params) for img in in_images]
-        ):
-            coordinates.append(coords)
-
-    # pprint(coordinates)
 
     # Get min rectangle of coordinates
     x0, y0 = np.min(coordinates, axis=0)[:2]
@@ -234,11 +226,31 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
     pprint(final_coords)
     print(f"executed in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:1}fps)")
 
-    # Crop every image
-    # Resize to 1080p (pil resize)
-    # Add borders
-    #   poolexecutor
+    x0, x1, y0, y1 = final_coords
+    print(f"crop: {(y0, in_h - y1, x0, in_w - x1)}")
+    to_43_params: ConvertTo43Params = ConvertTo43Params(
+        # [top, bottom, left, right]
+        crop=(y0, in_h - y1, x0, in_w - x1),
+        keep_ratio=True,
+        fit_to_width=False,
+        final_height=1080,
+        scene_width=1440
+    )
+    transformation = calculate_transformation_values(
+        in_w=in_w,
+        in_h=in_h,
+        out_w=1440,
+        params=to_43_params,
+        verbose=True
+    )
 
+    out_imgs: list[np.ndarray] = [
+        resize_to_4_3(img, transformation=transformation)
+        for img in in_images
+    ]
+
+    print(len(out_imgs))
+    print(out_imgs[0].shape)
 
     # Effects
 
