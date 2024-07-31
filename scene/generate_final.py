@@ -144,6 +144,21 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
             f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
         ))
 
+
+    # Decoder
+    decoder_subproces: subprocess.Popen = None
+    try:
+        decoder_subproces = subprocess.Popen(
+            d_command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except Exception as e:
+        print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+        return False
+
+
     ofc: int = int(3 * mp.cpu_count() / 4)
     locks = [mp.Lock() for _ in range(ofc + 1)]
     executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='decoder')
