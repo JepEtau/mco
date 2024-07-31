@@ -6,7 +6,9 @@ import os
 from pprint import pprint
 import subprocess
 import sys
+import time
 import numpy as np
+from nn_inference.toolbox.detect_inner_rect import DetectInnerRectParams, detect_inner_rect
 from parsers import (
     db,
     get_fps,
@@ -43,8 +45,6 @@ def stdin_to_shared(
     img_dtype: np.dtype,
     max_value: float,
     ffmpeg_subprocess: subprocess.Popen,
-    shared_images: np.ndarray,
-    slot_no: int,
     lock_array: list[mp.Lock]
 ) -> bool:
     with lock_array[i]:
@@ -55,8 +55,7 @@ def stdin_to_shared(
         img = img.astype(img_dtype)
         if max_value != 1.:
             img /= max_value
-    shared_images[slot_no][:] = img[:]
-    return True
+    return img
 
 
 
@@ -102,6 +101,8 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
 
     # Input video clip
     in_video_fp: str = get_output_video_filepath(scene, task_name='restored')
+    if not os.path.exists(in_video_fp):
+        raise FileExistsError(red(f"{in_video_fp}: No such file or directory"))
     in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
     in_shape = in_video_info['shape']
     h, w = in_shape[:2]
@@ -144,11 +145,24 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
             f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
         ))
 
+    start_time: int = time.time()
 
     # Decoder
-    decoder_subproces: subprocess.Popen = None
+    d_command: list[str] = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "warning",
+        "-nostats",
+        "-i", in_video_fp,
+
+        "-f", "image2pipe",
+        "-pix_fmt", in_pipe_pixfmt,
+        "-vcodec", "rawvideo",
+        "-"
+    ]
+    decoder_subprocess: subprocess.Popen = None
     try:
-        decoder_subproces = subprocess.Popen(
+        decoder_subprocess = subprocess.Popen(
             d_command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -161,11 +175,11 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
 
     ofc: int = int(3 * mp.cpu_count() / 4)
     locks = [mp.Lock() for _ in range(ofc + 1)]
-    executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='decoder')
+    executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
 
     # Extract all images
     remaining: int = scene['dst']['count']
-    in_images: list[np.ndarray] = [None] * remaining
+    in_images: list[np.ndarray] = []
     write_index : int = 0
     while remaining > 0:
         count = min(remaining, ofc)
@@ -173,7 +187,7 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
         for l in locks:
             l.acquire(block=False)
         locks[0].release()
-        for result in executor.map(
+        for img in executor.map(
             lambda i: stdin_to_shared(
                 i,
                 in_pipe_nbytes,
@@ -182,22 +196,43 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
                 in_pipe_dtype,
                 1,
                 decoder_subprocess,
-                in_images,
-                (write_index + i),
                 locks
             ),
             range(count)
         ):
-            success = success and result
-
+            in_images.append(img)
 
         remaining -= count
         write_index += count
 
+    # print(len(in_images))
+    # for img in in_images:
+    #     print(img.shape)
     # Detect inner rect -> returns coordinates
     #   poolexecutor
+    detect_inner_rect_params = DetectInnerRectParams()
+
+    coordinates: list[np.ndarray] = []
+
+    for coords, out_img in executor.map(
+        lambda args:
+            detect_inner_rect(*args),
+            [(img, detect_inner_rect_params) for img in in_images]
+        ):
+            coordinates.append(coords)
+
+    # pprint(coordinates)
 
     # Get min rectangle of coordinates
+    x0, y0 = np.min(coordinates, axis=0)[:2]
+    x1, y1 = np.max(coordinates, axis=0)[2:]
+    final_coords = np.array((x0, x1, y0, y1))
+
+    elapsed_time = time.time() - start_time
+
+    print(yellow("final:"))
+    pprint(final_coords)
+    print(f"executed in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:1}fps)")
 
     # Crop every image
     # Resize to 1080p (pil resize)
