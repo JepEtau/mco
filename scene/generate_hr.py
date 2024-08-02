@@ -39,18 +39,18 @@ def _get_framerate(video_info: VideoInfo) -> str:
 
 
 
-def _get_complex_filter(scene: Scene) -> list[str]:
+def _get_ffmpeg_filter(scene: Scene) -> list[str]:
     vsettings: VideoSettings = scene['task'].video_settings
 
-    filter_complex: list[str] = []
+    ffmpeg_filter: list[str] = []
     if vsettings.pad != 0:
         pad: int = vsettings.pad
         pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
-        filter_complex: list[str] = [
+        ffmpeg_filter: list[str] = [
             "-filter_complex", f"[0:v]{pad_filter}[outv]",
             "-map", "[outv]"
         ]
-    return filter_complex
+    return ffmpeg_filter
 
 
 
@@ -165,7 +165,7 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
     h, w = video_info['shape'][:2]
 
     # Out filter: pad
-    filter_complex: list[str] = _get_complex_filter(scene)
+    filter_complex: list[str] = _get_ffmpeg_filter(scene)
 
     # Output
     in_fp: str = ""
@@ -352,7 +352,7 @@ def _add_borders_to_scene(
     src_scene: SrcScene = scene['src']
     scene_key: str = f"{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['k_ch']}:{src_scene['k_ch']}"
     vsettings: VideoSettings = scene['task'].video_settings
-    filter_complex: list[str] = _get_complex_filter(scene)
+    filter_complex: list[str] = _get_ffmpeg_filter(scene)
 
     add_border_command: list[str] = [
         ffmpeg_exe,

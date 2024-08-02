@@ -27,7 +27,8 @@ from utils.mco_utils import (
     get_target_video,
     is_first_scene,
     is_last_scene,
-    is_up_to_date
+    is_up_to_date,
+    run_simple_command
 )
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
@@ -185,10 +186,29 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
     locks = [mp.Lock() for _ in range(ofc + 1)]
     executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
 
+    debug_command: list[str] = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "warning",
+        "-nostats",
+
+        "-f", "rawvideo",
+        '-pixel_format', out_pipe_pixfmt,
+        '-video_size', f"{in_w}x{in_h}",
+        "-r", "25",
+        "-i", "pipe:0",
+        "-pix_fmt", "yuv420p",
+        "-vcodec", "libh264",
+        *vsettings.codec_options,
+        "-y", out_video_fp.replace('.mkv', '_debug.mkv')
+    ]
+
+
     # Extract all images
     remaining: int = scene['dst']['count']
     in_images: list[np.ndarray] = []
     write_index : int = 0
+    debug_img: list[np.ndarray] = []
     while remaining > 0:
         count = min(remaining, ofc)
 
@@ -211,46 +231,144 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
         ):
             in_images.append(img)
             coordinates.append(coords)
+            debug_img.append(out_img)
 
         remaining -= count
         write_index += count
 
     # Get min rectangle of coordinates
-    x0, y0 = np.min(coordinates, axis=0)[:2]
-    x1, y1 = np.max(coordinates, axis=0)[2:]
-    final_coords = np.array((x0, x1, y0, y1))
+    x0, x1 = np.min(coordinates, axis=0)[:2]
+    y0, y1 = np.max(coordinates, axis=0)[2:]
 
     elapsed_time = time.time() - start_time
 
     print(yellow("final:"))
-    pprint(final_coords)
+    print(f"({x0}, {y0}) -> ({x1}, {y1})")
     print(f"executed in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:1}fps)")
+    out_h, out_w = 1080, 1440
 
-    x0, x1, y0, y1 = final_coords
-    print(f"crop: {(y0, in_h - y1, x0, in_w - x1)}")
     to_43_params: ConvertTo43Params = ConvertTo43Params(
         # [top, bottom, left, right]
         crop=(y0, in_h - y1, x0, in_w - x1),
         keep_ratio=True,
         fit_to_width=False,
-        final_height=1080,
-        scene_width=1440
+        final_height=out_h,
+        scene_width=out_w
     )
+    pprint(to_43_params)
     transformation = calculate_transformation_values(
         in_w=in_w,
         in_h=in_h,
-        out_w=1440,
+        out_w=out_w,
         params=to_43_params,
         verbose=True
     )
 
-    out_imgs: list[np.ndarray] = [
-        resize_to_4_3(img, transformation=transformation)
-        for img in in_images
-    ]
 
-    print(len(out_imgs))
-    print(out_imgs[0].shape)
+    # Note: this could have be done with FFmpeg filter but as sson
+    # as some effects could be used (loop, fade in, fadeout)
+    if (
+        ('effects' not in scene.keys() or not scene['effects'].has_effects())
+        and False
+    ):
+        filters: list[str] = []
+
+        # (1)
+        w1, h1 = x1 - x0, y1 - y0
+        filters.append(f"crop={w1}:{h1}:{x0}:{y0}")
+
+        # (2)
+        w2, h2 = transformation.resize_to
+        interpolation_alg: str = (
+            'lanczos' if w2 > w1 or h2 > h1
+            else 'bicubic'
+        )
+        filters.append(
+            f"""scale={w2}:{h2}:sws_flags={interpolation_alg}
+                + full_chroma_int
+                + full_chroma_inp
+                + accurate_rnd
+                + bitexact
+            """
+        )
+
+        # (3)
+        crop_2 = transformation.crop_2
+        if crop_2 is not None:
+            top, bottom, left, right = crop_2
+            filters.append(
+                f"""crop=
+                    {w2 - (left + right)}:{h2 - (top + bottom)}
+                    :{left}:{top}
+                """
+            )
+
+        # Erroneous geometry: add white borders
+        err_borders = transformation.err_borders
+        if err_borders is not None:
+            filters.append(
+                f"""pad=
+                    {w2 + err_borders[2] + err_borders[3]}
+                    :{h2 + err_borders[0] + err_borders[1]}
+                    :{err_borders[2]}:{err_borders[0]}
+                """
+            )
+
+        # (4)
+        if transformation.borders[0] != 0:
+            filters.append(
+                f"""pad=
+                    {transformation.out_size[0]}:{transformation.out_size[1]}
+                    :{transformation.borders[0]}:0
+                """
+            )
+
+        filter_complex: str = ','.join(filters)
+        for c in (' ', '\n', '\r', '\t'):
+            filter_complex = filter_complex.replace(c, '')
+
+        ffmpeg_filter: list[str] = [
+            "-filter_complex",
+            f"[0:v]{filter_complex}[outv]",
+            "-map", "[outv]"
+        ]
+
+        encoder_command: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "warning",
+            "-nostats",
+            "-i", in_video_fp,
+            *ffmpeg_filter,
+
+            "-vcodec", str_to_video_codec[vsettings.codec].value,
+            "-pix_fmt", vsettings.pix_fmt,
+            *vsettings.codec_options
+        ]
+
+        # Add metadata
+        encoder_command.extend(["-movflags", "use_metadata_tags"])
+        if len(vsettings.metadata.keys()):
+            for k, v in vsettings.metadata.items():
+                encoder_command.extend(["-metadata:s:v:0", f"{k}={v}"])
+
+        # Output filename
+        encoder_command.extend([out_video_fp, "-y"])
+
+        os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
+        print(purple(f"[V] command: "), " ".join(encoder_command))
+        run_simple_command(encoder_command)
+
+    else:
+        out_imgs: list[np.ndarray] = [
+            resize_to_4_3(img, transformation=transformation)
+            for img in in_images
+        ]
+
+        print(len(out_imgs))
+        print(out_imgs[0].shape)
+
+
 
     # Effects
 

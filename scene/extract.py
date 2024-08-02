@@ -12,7 +12,7 @@ from parsers import (
 )
 from processing.watermark import add_watermark
 from scene.filters import do_watermark
-from scene.generate_hr import _get_complex_filter
+from scene.generate_hr import _get_ffmpeg_filter
 from utils.logger import main_logger
 from utils.mco_types import Scene
 from utils.mco_utils import run_simple_command
