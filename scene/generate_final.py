@@ -48,7 +48,8 @@ def stdin_to_shared(
     max_value: float,
     ffmpeg_subprocess: subprocess.Popen,
     detect_inner_rect_params,
-    lock_array: list[mp.Lock]
+    lock_array: list[mp.Lock],
+    debug: bool = False
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     with lock_array[i]:
         stream = ffmpeg_subprocess.stdout.read(in_size)
@@ -59,7 +60,11 @@ def stdin_to_shared(
         if max_value != 1.:
             img /= max_value
 
-    coords, out_img = detect_inner_rect(img, detect_inner_rect_params)
+    coords, out_img = detect_inner_rect(
+        img,
+        detect_inner_rect_params,
+        do_output_img=debug
+    )
     return img, coords, out_img
 
 
@@ -147,6 +152,21 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
 
     print(f"DST: frame_count: {scene['dst']['count']}")
 
+    ch_width = 1412
+    out_h, out_w = 1080, 1440
+    print(f"chapter: width: {ch_width}")
+    print(f"final dimension: {out_w}x{out_h}")
+    detect_inner_rect_params = DetectInnerRectParams(
+        threshold_min=25,
+        morph_kernel_radius=1,
+        erode_kernel_radius=2,
+        erode_iterations=2,
+        do_add_borders=True,
+    )
+
+
+
+
     if scene['dst']['count'] != in_video_info['frame_count']:
         raise ValueError(red(
             f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
@@ -179,29 +199,12 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
         print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
         return False
 
-    detect_inner_rect_params = DetectInnerRectParams()
+
     coordinates: list[np.ndarray] = []
 
     ofc: int = int(3 * mp.cpu_count() / 4)
     locks = [mp.Lock() for _ in range(ofc + 1)]
     executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
-
-    debug_command: list[str] = [
-        ffmpeg_exe,
-        "-hide_banner",
-        "-loglevel", "warning",
-        "-nostats",
-
-        "-f", "rawvideo",
-        '-pixel_format', out_pipe_pixfmt,
-        '-video_size', f"{in_w}x{in_h}",
-        "-r", "25",
-        "-i", "pipe:0",
-        "-pix_fmt", "yuv420p",
-        "-vcodec", "libh264",
-        *vsettings.codec_options,
-        "-y", out_video_fp.replace('.mkv', '_debug.mkv')
-    ]
 
 
     # Extract all images
@@ -225,13 +228,17 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
                 1,
                 decoder_subprocess,
                 detect_inner_rect_params,
-                locks
+                locks,
+                debug=True
             ),
             range(count)
         ):
             in_images.append(img)
-            coordinates.append(coords)
-            debug_img.append(out_img)
+            if coords is not None:
+                coordinates.append(coords)
+                debug_img.append(out_img)
+            else:
+                debug_img.append(img)
 
         remaining -= count
         write_index += count
@@ -245,7 +252,6 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
     print(yellow("final:"))
     print(f"({x0}, {y0}) -> ({x1}, {y1})")
     print(f"executed in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:1}fps)")
-    out_h, out_w = 1080, 1440
 
     to_43_params: ConvertTo43Params = ConvertTo43Params(
         # [top, bottom, left, right]
@@ -253,7 +259,7 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
         keep_ratio=True,
         fit_to_width=False,
         final_height=out_h,
-        scene_width=out_w
+        scene_width=ch_width
     )
     pprint(to_43_params)
     transformation = calculate_transformation_values(
@@ -265,11 +271,53 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
     )
 
 
+    # Draw rectangle
+    print(f"debug: {in_w}x{in_h}")
+    debug_command: list[str] = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "warning",
+        "-nostats",
+
+        "-f", "rawvideo",
+        '-pixel_format', out_pipe_pixfmt,
+        '-video_size', f"{in_w}x{in_h}",
+        "-r", "25",
+        "-i", "pipe:0",
+        "-pix_fmt", "yuv420p",
+        "-vcodec", "libx264",
+        *vsettings.codec_options,
+        "-y", out_video_fp.replace('.mkv', '_debug.mkv')
+    ]
+    debug_subproces: subprocess.Popen = None
+    try:
+        debug_subproces = subprocess.Popen(
+            debug_command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except Exception as e:
+        print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+        return False
+    for img in debug_img:
+        debug_subproces.stdin.write(img)
+    stderr_bytes: bytes | None = None
+    _, stderr_bytes = debug_subproces.communicate(timeout=10)
+    if stderr_bytes is not None:
+        stderr = stderr_bytes.decode('utf-8)')
+        # TODO: parse the output file
+        if stderr != '':
+            print(f"{scene_key} stderr:")
+            pprint(stderr)
+
+
+
     # Note: this could have be done with FFmpeg filter but as sson
     # as some effects could be used (loop, fade in, fadeout)
     if (
         ('effects' not in scene.keys() or not scene['effects'].has_effects())
-        and False
+        # and False
     ):
         filters: list[str] = []
 
@@ -311,6 +359,7 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
                     {w2 + err_borders[2] + err_borders[3]}
                     :{h2 + err_borders[0] + err_borders[1]}
                     :{err_borders[2]}:{err_borders[0]}
+                    :green
                 """
             )
 
