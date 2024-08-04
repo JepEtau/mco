@@ -43,8 +43,8 @@ def stdin_to_shared(
     i: int,
     in_size: int,
     in_dtype: np.dtype,
-    img_shape: tuple[int],
-    img_dtype: np.dtype,
+    in_pipe_shape: tuple[int],
+    out_pipe_dtype: np.dtype,
     max_value: float,
     ffmpeg_subprocess: subprocess.Popen,
     detect_inner_rect_params,
@@ -54,18 +54,19 @@ def stdin_to_shared(
     with lock_array[i]:
         stream = ffmpeg_subprocess.stdout.read(in_size)
         lock_array[i+1].release()
-    img = np.frombuffer(stream, dtype=in_dtype).reshape(img_shape)
-    if in_dtype != img_dtype:
-        img = img.astype(img_dtype)
+    img = np.frombuffer(stream, dtype=in_dtype).reshape(in_pipe_shape)
+    in_img: np.ndarray = None
+    if in_dtype != out_pipe_dtype:
+        in_img = img.astype(out_pipe_dtype)
         if max_value != 1.:
-            img /= max_value
+            in_img /= max_value
 
-    coords, out_img = detect_inner_rect(
-        img,
+    coords, debug_img = detect_inner_rect(
+        img if out_pipe_dtype == np.uint8 else in_img,
         detect_inner_rect_params,
         do_output_img=debug
     )
-    return img, coords, out_img
+    return in_img, coords, debug_img
 
 
 
@@ -114,15 +115,15 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
     if not os.path.exists(in_video_fp):
         raise FileExistsError(red(f"{in_video_fp}: No such file or directory"))
     in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
-    in_shape = in_video_info['shape']
-    in_h, in_w = in_shape[:2]
+    in_pipe_shape = in_video_info['shape']
+    in_h, in_w = in_pipe_shape[:2]
     in_pipe_dtype: np.dtype = np.uint8
     in_pipe_pixfmt: str = 'bgr24'
-    in_pipe_nbytes: int = math.prod(in_shape)
+    in_pipe_nbytes: int = math.prod(in_pipe_shape)
     if PIXEL_FORMAT[in_video_info['pix_fmt']]['bpp'] > 8:
         in_pipe_dtype = np.uint16
         in_pipe_pixfmt = 'bgr48'
-        in_pipe_nbytes: int = 2 * math.prod(in_shape)
+        in_pipe_nbytes: int = 2 * math.prod(in_pipe_shape)
 
     # Output video
     out_video_fp: str = get_output_video_filepath(scene)
@@ -142,8 +143,6 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
     print(f"IN: pipe pixfmt: {in_pipe_pixfmt}")
     print(f"IN: pipe nbytes: {in_pipe_nbytes}")
 
-    img_dtype = np.uint8
-
     print(f"OUT: video file: {out_video_fp}")
     print(f"OUT: pixfmt: {vsettings.pix_fmt}")
     print(f"OUT: pipe dtype: {out_pipe_dtype}")
@@ -158,7 +157,7 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
     print(f"final dimension: {out_w}x{out_h}")
     detect_inner_rect_params = DetectInnerRectParams(
         threshold_min=25,
-        morph_kernel_radius=1,
+        morph_kernel_radius=3,
         erode_kernel_radius=2,
         erode_iterations=2,
         do_add_borders=True,
@@ -211,20 +210,20 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
     remaining: int = scene['dst']['count']
     in_images: list[np.ndarray] = []
     write_index : int = 0
-    debug_img: list[np.ndarray] = []
+    debug_imgs: list[np.ndarray] = []
     while remaining > 0:
         count = min(remaining, ofc)
 
         for l in locks:
             l.acquire(block=False)
         locks[0].release()
-        for img, coords, out_img in executor.map(
+        for img, coords, debug_img in executor.map(
             lambda i: stdin_to_shared(
                 i,
                 in_pipe_nbytes,
                 in_pipe_dtype,
-                in_shape,
-                img_dtype,
+                in_pipe_shape,
+                out_pipe_dtype,
                 1,
                 decoder_subprocess,
                 detect_inner_rect_params,
@@ -235,10 +234,10 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
         ):
             in_images.append(img)
             if coords is not None:
-                coordinates.append(coords)
-                debug_img.append(out_img)
-            else:
-                debug_img.append(img)
+                if filtered_coord(coordinates, coords):
+                    coordinates.append(coords)
+            if debug_img is not None:
+                debug_imgs.append(debug_img)
 
         remaining -= count
         write_index += count
@@ -272,7 +271,7 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
 
 
     # Draw rectangle
-    print(f"debug: {in_w}x{in_h}")
+    print(f"debug: {in_w}x{in_h}, {len(debug_imgs)} images")
     debug_command: list[str] = [
         ffmpeg_exe,
         "-hide_banner",
@@ -280,7 +279,7 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
         "-nostats",
 
         "-f", "rawvideo",
-        '-pixel_format', out_pipe_pixfmt,
+        '-pixel_format', 'bgr24',
         '-video_size', f"{in_w}x{in_h}",
         "-r", "25",
         "-i", "pipe:0",
@@ -300,7 +299,7 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
     except Exception as e:
         print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
         return False
-    for img in debug_img:
+    for img in debug_imgs:
         debug_subproces.stdin.write(img)
     stderr_bytes: bytes | None = None
     _, stderr_bytes = debug_subproces.communicate(timeout=10)
@@ -425,3 +424,18 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
 
 
     sys.exit()
+
+
+
+def filtered_coord(coordinates: np.ndarray, coords: np.ndarray) -> bool:
+    if not coordinates:
+        return True
+
+    last_coords: np.ndarray = coordinates[-1]
+    # print(f"{last_coords} -> {coords}")
+    for lc, c in zip(last_coords, coords):
+        if abs(c - lc) > 10:
+            print(red(f"not valid: {c}, {lc}"))
+            return False
+    # print(lightgreen(f"not valid: {c}, {lc}"))
+    return True
