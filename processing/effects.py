@@ -71,6 +71,7 @@ def apply_effect(
                         no=frame.no,
                         img=cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0),
                     ))
+                print(yellow(f"out_frames: {len(out_frames)}"))
                 return out_frames
             # else:
             #     raise NotImplementedError(effect.name)

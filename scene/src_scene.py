@@ -90,6 +90,7 @@ class SrcScenes:
 
 
     def first_frame_no(self) -> int:
+        """Returns the frame no of the 1st source"""
         return self._scenes[0]['start']
 
 

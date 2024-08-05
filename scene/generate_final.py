@@ -42,10 +42,10 @@ from utils.media import VideoInfo, extract_media_info, str_to_video_codec
 def stdin_to_shared(
     i: int,
     in_size: int,
-    in_dtype: np.dtype,
+    in_pipe_dtype: np.dtype,
     in_pipe_shape: tuple[int],
     out_pipe_dtype: np.dtype,
-    max_value: float,
+    multiplier: float,
     ffmpeg_subprocess: subprocess.Popen,
     detect_inner_rect_params,
     lock_array: list[mp.Lock],
@@ -54,18 +54,23 @@ def stdin_to_shared(
     with lock_array[i]:
         stream = ffmpeg_subprocess.stdout.read(in_size)
         lock_array[i+1].release()
-    img = np.frombuffer(stream, dtype=in_dtype).reshape(in_pipe_shape)
-    in_img: np.ndarray = None
-    if in_dtype != out_pipe_dtype:
-        in_img = img.astype(out_pipe_dtype)
-        if max_value != 1.:
-            in_img /= max_value
+    img = np.frombuffer(stream, dtype=in_pipe_dtype).reshape(in_pipe_shape)
+    in_img: np.ndarray = img
+    # print(f"convert: {in_pipe_dtype} -> {out_pipe_dtype} ({multiplier})")
+    if in_pipe_dtype != out_pipe_dtype:
+        if multiplier > 1:
+            in_img = img.astype(out_pipe_dtype)
+            in_img *= multiplier
+        elif multiplier < 1:
+            in_img = img * multiplier
+            in_img = in_img.astype(out_pipe_dtype)
 
     coords, debug_img = detect_inner_rect(
-        img if out_pipe_dtype == np.uint8 else in_img,
+        in_img,
         detect_inner_rect_params,
         do_output_img=debug
     )
+    # print(f"stdin_to_shared: {in_img.shape}, {in_pipe_dtype} -> {in_img.dtype}")
     return in_img, coords, debug_img
 
 
@@ -167,9 +172,14 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
 
 
     if scene['dst']['count'] != in_video_info['frame_count']:
-        raise ValueError(red(
-            f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
-        ))
+        if True:
+            print(red(
+                f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
+            ))
+        else:
+            raise ValueError(red(
+                f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
+            ))
 
     start_time: int = time.time()
 
@@ -206,6 +216,15 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
     executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
 
 
+    # Change pixel value range
+    # Normalize pixel range
+    multiplier: float = 1.
+    if in_pipe_dtype != out_pipe_dtype:
+        num = float(np.iinfo(out_pipe_dtype).max)
+        denum = float(np.iinfo(in_pipe_dtype).max)
+        multiplier: float = num / denum
+
+
     # Extract all images
     remaining: int = scene['dst']['count']
     in_images: list[np.ndarray] = []
@@ -224,7 +243,7 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
                 in_pipe_dtype,
                 in_pipe_shape,
                 out_pipe_dtype,
-                1,
+                multiplier,
                 decoder_subprocess,
                 detect_inner_rect_params,
                 locks,
@@ -412,15 +431,81 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
             resize_to_4_3(img, transformation=transformation)
             for img in in_images
         ]
-
         print(len(out_imgs))
         print(out_imgs[0].shape)
 
 
+        encoder_command: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "warning",
+            "-nostats",
 
-    # Effects
+            "-f", "rawvideo",
+            '-pixel_format', out_pipe_pixfmt,
+            '-video_size', f"{out_w}x{out_h}",
+            "-r", str(vsettings.frame_rate),
 
-    # Send all images to pipe out
+            "-i", "pipe:0",
+
+            "-vcodec", str_to_video_codec[vsettings.codec].value,
+            "-pix_fmt", vsettings.pix_fmt,
+            *vsettings.codec_options
+        ]
+
+        # Add metadata
+        encoder_command.extend(["-movflags", "use_metadata_tags"])
+        if len(vsettings.metadata.keys()):
+            for k, v in vsettings.metadata.items():
+                encoder_command.extend(["-metadata:s:v:0", f"{k}={v}"])
+
+        # Output filename
+        encoder_command.extend([out_video_fp, "-y"])
+        os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
+        print(purple(f"[V] command: "), " ".join(encoder_command))
+
+        encoder_subproces: subprocess.Popen = None
+        try:
+            encoder_subproces = subprocess.Popen(
+                encoder_command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except Exception as e:
+            print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+            return False
+
+        produced: int = 0
+
+        for i, img in enumerate(out_imgs):
+            out_f_no = scene['src'].first_frame_no() + i
+            out_frame = McoFrame(
+                no=out_f_no,
+                img=img,
+                scene=scene
+            )
+
+            out_frames = apply_effect(out_f_no, out_frame)
+            if isinstance(out_frames, list):
+                print(yellow(f"\t{produced}: send {len(out_frames)} frames"))
+                [encoder_subproces.stdin.write(f.img) for f in out_frames]
+                produced += len(out_frames)
+            else:
+                print(yellow(f"\t{produced}: send {out_frames.no}"))
+                encoder_subproces.stdin.write(out_frames.img)
+                produced += 1
+
+        stderr_bytes: bytes | None = None
+        _, stderr_bytes = debug_subproces.communicate(timeout=10)
+        if stderr_bytes is not None:
+            stderr = stderr_bytes.decode('utf-8)')
+            # TODO: parse the output file
+            if stderr != '':
+                print(f"{scene_key} stderr:")
+                pprint(stderr)
+
+        print(f"generated {produced} frames")
 
 
     sys.exit()
