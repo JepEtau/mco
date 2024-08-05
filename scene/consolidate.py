@@ -193,8 +193,12 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
         cache_path: str = db[k_ep]['cache_path']
         basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
 
-    suffix = f"_{scene['task'].hashcode}"
-    suffix += f"_{task_name}"
+    suffix: str = ""
+    if task_name != "restored":
+        if scene['task'].hashcode != '':
+            suffix = f"_{scene['task'].hashcode}"
+        suffix += f"_{task_name}"
+
     scene['task'].video_file = absolute_path(
         os.path.join(
             cache_path,
@@ -202,7 +206,6 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
             f"{basename}{suffix}.mkv"
         )
     )
-
 
     # Effects
     #---------------------------------------------------------------------------
