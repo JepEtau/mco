@@ -12,21 +12,13 @@ from nn_inference.toolbox.detect_inner_rect import DetectInnerRectParams, detect
 from nn_inference.toolbox.resize_to_4_3 import ConvertTo43Params, calculate_transformation_values, resize_to_4_3
 from parsers import (
     db,
-    get_fps,
     VideoSettings,
     TaskName,
 )
 from processing.effects import apply_effect
-from processing.frame_replace import ItemCache, frame_occurences, get_frames_to_remove
-from processing.watermark import add_watermark
-from scene.filters import do_watermark
 from utils.logger import main_logger
-from utils.mco_types import ChapterVideo, McoFrame, Scene
+from utils.mco_types import McoFrame, Scene
 from utils.mco_utils import (
-    calculate_frame_count,
-    get_target_video,
-    is_first_scene,
-    is_last_scene,
     is_up_to_date,
     run_simple_command
 )
@@ -107,7 +99,7 @@ def get_output_video_filepath(scene: Scene, task_name: TaskName | None = None) -
 
 
 
-def generate_final_scene(scene: Scene, force: bool = False) -> bool:
+def generate_final_scene(scene: Scene, force: bool = False, debug: bool = False, stats: bool = False) -> bool:
     scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
     out_video_fp: str = scene['task'].video_file
 
@@ -170,9 +162,6 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
         erode_iterations=2,
         do_add_borders=True,
     )
-
-
-
 
     if scene['dst']['count'] != in_video_info['frame_count']:
         if True:
@@ -274,9 +263,15 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
     print(f"({x0}, {y0}) -> ({x1}, {y1})")
     print(f"executed in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:1}fps)")
 
+    # Update scene parameters for stats
+    # [top, bottom, left, right]
+    scene['geometry'].crop = (y0, in_h - y1, x0, in_w - x1)
+
+    if stats:
+        return True
+
     to_43_params: ConvertTo43Params = ConvertTo43Params(
-        # [top, bottom, left, right]
-        crop=(y0, in_h - y1, x0, in_w - x1),
+        crop=scene['geometry'].crop,
         keep_ratio=True,
         fit_to_width=False,
         final_height=out_h,
@@ -291,46 +286,46 @@ def generate_final_scene(scene: Scene, force: bool = False) -> bool:
         verbose=True
     )
 
+    if debug:
+        # Draw rectangle
+        print(f"debug: {in_w}x{in_h}, {len(debug_imgs)} images")
+        debug_command: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "warning",
+            "-nostats",
 
-    # Draw rectangle
-    print(f"debug: {in_w}x{in_h}, {len(debug_imgs)} images")
-    debug_command: list[str] = [
-        ffmpeg_exe,
-        "-hide_banner",
-        "-loglevel", "warning",
-        "-nostats",
-
-        "-f", "rawvideo",
-        '-pixel_format', 'bgr24',
-        '-video_size', f"{in_w}x{in_h}",
-        "-r", "25",
-        "-i", "pipe:0",
-        "-pix_fmt", "yuv420p",
-        "-vcodec", "libx264",
-        *vsettings.codec_options,
-        "-y", out_video_fp.replace('.mkv', '_debug.mkv')
-    ]
-    debug_subproces: subprocess.Popen = None
-    try:
-        debug_subproces = subprocess.Popen(
-            debug_command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-    except Exception as e:
-        print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
-        return False
-    for img in debug_imgs:
-        debug_subproces.stdin.write(img)
-    stderr_bytes: bytes | None = None
-    _, stderr_bytes = debug_subproces.communicate(timeout=10)
-    if stderr_bytes is not None:
-        stderr = stderr_bytes.decode('utf-8)')
-        # TODO: parse the output file
-        if stderr != '':
-            print(f"{scene_key} stderr:")
-            pprint(stderr)
+            "-f", "rawvideo",
+            '-pixel_format', 'bgr24',
+            '-video_size', f"{in_w}x{in_h}",
+            "-r", "25",
+            "-i", "pipe:0",
+            "-pix_fmt", "yuv420p",
+            "-vcodec", "libx264",
+            *vsettings.codec_options,
+            "-y", out_video_fp.replace('.mkv', '_debug.mkv')
+        ]
+        debug_subproces: subprocess.Popen = None
+        try:
+            debug_subproces = subprocess.Popen(
+                debug_command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except Exception as e:
+            print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+            return False
+        for img in debug_imgs:
+            debug_subproces.stdin.write(img)
+        stderr_bytes: bytes | None = None
+        _, stderr_bytes = debug_subproces.communicate(timeout=10)
+        if stderr_bytes is not None:
+            stderr = stderr_bytes.decode('utf-8)')
+            # TODO: parse the output file
+            if stderr != '':
+                print(f"{scene_key} stderr:")
+                pprint(stderr)
 
 
 

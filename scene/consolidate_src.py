@@ -115,8 +115,9 @@ def consolidate_src_scene(
         )
     )
 
-    # print(lightgreen("Consolidate scene:"))
-    # print(lightcyan("================================== Scene ======================================="))
-    # pprint(scene)
-    # print(lightcyan("-------------------------------------------------------------------------------"))
-    # sys.exit()
+    if verbose:
+        print(lightgreen("Consolidate scene:"))
+        print(lightcyan("================================== Scene ======================================="))
+        pprint(scene)
+        print(lightcyan("-------------------------------------------------------------------------------"))
+        sys.exit()

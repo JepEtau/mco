@@ -62,6 +62,13 @@ def main():
         help="Simulate the process"
     )
 
+    parser.add_argument(
+        "--stats",
+        action="store_true",
+        required=False,
+        help="Statistics to find the dimension of the scene for each chapter"
+    )
+
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -101,7 +108,8 @@ def main():
         scene_no=arguments.scene,
         scene_min=arguments.scene_min,
         scene_max=arguments.scene_max,
-        debug=arguments.debug
+        debug=arguments.debug,
+        stats=arguments.stats
     )
 
     if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == -1:

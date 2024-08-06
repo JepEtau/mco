@@ -312,7 +312,10 @@ def parse_target_scenelist(
             )
 
 def get_scene_from_frame_no(
-    db, frame_no: int, k_ed: str, k_ep: str, k_chapter: str
+    frame_no: int,
+    k_ed: str,
+    k_ep: str,
+    k_chapter: str
 ) -> Scene | None:
     # print("get_scene_from_frame_no: %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_chapter))
     scenes: list[Scene] = db[k_ep]['video'][k_ed][k_chapter]['scenes']

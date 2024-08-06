@@ -38,7 +38,8 @@ def generate_final_scenes(
     scene_max: int = -1,
     watermark: bool = False,
     edition: str | None = None,
-    debug: bool = False
+    debug: bool = False,
+    stats: bool = False
 ):
     k_ep = key(episode)
     k_ed = edition
@@ -99,7 +100,7 @@ def generate_final_scenes(
                 print(lightcyan("==============================================================================="))
 
             if not simulation and not is_up_to_date(scene) or force:
-                result = generate_final_scene(scene=scene, force=force)
+                result = generate_final_scene(scene=scene, force=force, debug=debug, stats=stats)
                 if not result:
                     # pprint(db[scene['k_ep']]['video'][scene['k_ed']])
                     raise RuntimeError(

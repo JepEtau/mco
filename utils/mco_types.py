@@ -111,17 +111,45 @@ class GenericSrc(TypedDict):
     k_ep: str
 
 
-class SceneGeometry(TypedDict):
-    is_default: bool
+
+@dataclass
+class ChapterGeometry:
+    width: int = -1
 
 
-class Geometry(TypedDict):
-    keep_ratio: bool
-    fit_to_width: bool
-    crop: list[int]
-    is_default: bool
-    scene: SceneGeometry
+@dataclass(slots=True)
+class DetectInnerRectParams:
+    threshold_min: float = 10
+    morph_kernel_radius: int = 3
+    erode_kernel_radius: int = 0
+    erode_iterations: int = 2
+    do_add_borders: bool = True
 
+
+@dataclass
+class SceneGeometry:
+    keep_ratio: bool = True
+    fit_to_width: bool = False
+    crop: tuple[int, int, int, int] = field(default_factory=tuple)
+    is_default: bool = True
+    chapter: ChapterGeometry = field(default_factory=ChapterGeometry)
+    inner_rect_parames: DetectInnerRectParams = field(
+        default_factory=DetectInnerRectParams
+    )
+
+
+    def __post_init__(self):
+        # top, bottom, left, right
+        self.crop = (0, 0, 0, 0)
+        self._defined: bool = False
+
+    @property
+    def defined(self) -> bool:
+        return self._defined
+
+    @defined.setter
+    def defined(self, defined) -> None:
+        self._defined = defined
 
 
 @dataclass
@@ -214,7 +242,7 @@ class Scene(TypedDict):
 
     # geometry applied to this. After consolidation, it contains
     # the width of the dst chapter.
-    geometry: Geometry
+    geometry: SceneGeometry
 
     # Video effect: fade in / fade out / loop and fade out
     # historic: only the first effect is used. Do not rembebr why defined as a list...
@@ -267,7 +295,7 @@ class ChapterVideo(TypedDict):
     effects: Effects
 
     # default geometry for scenes that have not geometry defined
-    geometry: Geometry
+    geometry: ChapterGeometry
 
     # used to sync audio and video: nb of frames to add before this chapter
     avsync: int

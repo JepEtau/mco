@@ -37,7 +37,7 @@ def parse_replace_configurations(k_ep_or_g:str):
     config.read(filepath)
     for k_section in config.sections():
         if verbose:
-            print(lightblue("\tk_section:%s" % (k_section)))
+            print(blue("\tk_section:%s" % (k_section)))
         if '.' not in k_section:
             sys.exit("parse_replace_configurations: error, no edition,ep,chapter specified")
         k_ed, k_ep, k_chapter = k_section.split('.')
@@ -51,7 +51,7 @@ def parse_replace_configurations(k_ep_or_g:str):
                 print("\tsearch %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_chapter))
 
             try:
-                scene = get_scene_from_frame_no(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_chapter=k_chapter)
+                scene = get_scene_from_frame_no(frame_no, k_ed=k_ed, k_ep=k_ep, k_chapter=k_chapter)
             except:
                 if verbose:
                     print("warning: parse_replace_configurations: scene not found for frame no. %d in %s:%s:%s" % (

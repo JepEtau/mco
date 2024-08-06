@@ -3,7 +3,7 @@ import os
 from pprint import pprint
 import sys
 from utils.hash import calc_hash
-from utils.mco_types import ChapterVideo, Effect, Scene
+from utils.mco_types import ChapterGeometry, ChapterVideo, Effect, Scene, SceneGeometry
 from parsers import (
     db,
     Filter,
@@ -57,67 +57,75 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
     if k_ch in ['g_asuivre', 'g_documentaire']:
         # print("\t\t\tconsolidate_scene: get geometry from %s:%s:%s" % (k_ed, k_ep, k_ch[2:]))
         k_ep_dst = scene['dst']['k_ep']
+        ch_geometry: ChapterGeometry | None
+        width: int = 0
         try:
-            target_geometry = db[k_ep_dst]['video']['target'][k_ch[2:]]['geometry']['target']
+            ch_geometry = db[k_ep_dst]['video']['target'][k_ch[2:]]['geometry']
+            width = ch_geometry.width
         except:
-            target_geometry = None
-        nested_dict_set(scene, target_geometry, 'geometry', 'target')
+            pass
+        # ch_geometry: ChapterGeometry = db[k_ep]['video'][k_ed][k_ch]['geometry']
 
-        try:
-            scene_geometry = db[k_ep]['video'][k_ed][k_ch]['geometry']
-            scene_geometry['is_default'] = False
-        except:
-            scene_geometry = {
-                'keep_ratio': True,
-                'fit_to_width': False,
-                'crop': [0] * 4,
-                'is_default': False,
-            }
-        nested_dict_set(scene, scene_geometry, 'geometry', 'scene')
+        scene['geometry'] = SceneGeometry(
+            chapter=ch_geometry
+        )
 
     else:
         k_ed_src, k_ep_src, k_ch_src, scene_no_src = primary_src_scene['k_ed_ep_ch_no']
         if verbose:
             print(f"\t\t\tconsolidate_scene: get geometry for {k_ed}:{k_ep}:{k_ch}")
 
+
+        scene['geometry'] = deepcopy(primary_src_scene['scene']['geometry'])
+
+
+
         # Target geometry: width defined
+        chapter: ChapterVideo | None = None
         try:
             if k_ch in ('g_debut', 'g_fin'):
-                target_geometry = db[k_ch]['video']['geometry']['target']
+                chapter = db[k_ch]['video']
             else:
-                target_geometry = db[k_ep]['video']['target'][k_ch]['geometry']['target']
+                chapter = db[k_ep]['video']['target'][k_ch]
         except:
-            target_geometry = None
-        nested_dict_set(scene, target_geometry, 'geometry', 'target')
+            pass
+        print(f"{k_ep}:{k_ch}")
+        print(f"{k_ed_src}:{k_ep_src}:{k_ch_src}:{scene_no_src}")
 
+        pprint(chapter['geometry'])
+        scene['geometry'].chapter = deepcopy(chapter['geometry'])
         # Get default geometry for a scene
-        try:
-            default_scene_src_geometry = db[k_ep_src]['video'][k_ed_src][k_ch_src]['geometry']
-            default_scene_src_geometry['is_default'] = True
-        except:
-            default_scene_src_geometry = {
-                'keep_ratio': True,
-                'fit_to_width': False,
-                'crop': [0] * 4,
-                'is_default': True
-            }
+        # scene_geometry: SceneGeometry =
 
-        # Get the customized geometry for a scene
-        try:
-            scene_src_geometry = db[k_ep_src]['video'][k_ed_src][k_ch_src]['scenes'][scene_no_src]['geometry']['scene']
-            scene_src_geometry['is_default'] = False
-        except:
-            scene_src_geometry = None
 
-        if scene_src_geometry is not None:
-            # Use the customized
-            nested_dict_set(scene, scene_src_geometry, 'geometry', 'scene')
-            scene['geometry']['scene']['is_default'] = False
-        else:
-            # Use the default because no customized defined
-            nested_dict_set(scene, default_scene_src_geometry, 'geometry', 'scene')
-            try: scene['geometry']['scene']['is_default'] = True
-            except: pass
+
+        # try:
+        #     default_scene_src_geometry = db[k_ep_src]['video'][k_ed_src][k_ch_src]['geometry']
+        #     default_scene_src_geometry['is_default'] = True
+        # except:
+        #     default_scene_src_geometry = {
+        #         'keep_ratio': True,
+        #         'fit_to_width': False,
+        #         'crop': [0] * 4,
+        #         'is_default': True
+        #     }
+
+        # # Get the customized geometry for a scene
+        # try:
+        #     scene_src_geometry = db[k_ep_src]['video'][k_ed_src][k_ch_src]['scenes'][scene_no_src]['geometry']['scene']
+        #     scene_src_geometry['is_default'] = False
+        # except:
+        #     scene_src_geometry = None
+
+        # if scene_src_geometry is not None:
+        #     # Use the customized
+        #     nested_dict_set(scene, scene_src_geometry, 'geometry', 'scene')
+        #     scene['geometry']['scene']['is_default'] = False
+        # else:
+        #     # Use the default because no customized defined
+        #     nested_dict_set(scene, default_scene_src_geometry, 'geometry', 'scene')
+        #     try: scene['geometry']['scene']['is_default'] = True
+        #     except: pass
 
     # Processing chain
     #---------------------------------------------------------------------------
