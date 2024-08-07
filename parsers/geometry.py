@@ -176,8 +176,14 @@ def get_geometry_from_properties(properties_str: str) -> SceneGeometry:
             geometry.crop = tuple([map(lambda x: int(x), values)])
             geometry.defined = True
 
-
-
+        # Inner rect detection
+        elif property_name == 'inner_rect_params':
+            # threshold_min, morph_kernel_radius, erode_kernel_radius, erode_iterations
+            values = property_array_str[1].split(':')
+            geometry.detection_params.threshold_min = int(values[0])
+            geometry.detection_params.morph_kernel_radius = int(values[1])
+            geometry.detection_params.erode_kernel_radius = int(values[2])
+            geometry.detection_params.erode_iterations = int(values[3])
 
     return geometry
 

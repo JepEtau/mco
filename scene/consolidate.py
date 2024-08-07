@@ -75,28 +75,25 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
         if verbose:
             print(f"\t\t\tconsolidate_scene: get geometry for {k_ed}:{k_ep}:{k_ch}")
 
+        if 'geometry' in primary_src_scene['scene']:
+            scene['geometry'] = deepcopy(primary_src_scene['scene']['geometry'])
 
-        scene['geometry'] = deepcopy(primary_src_scene['scene']['geometry'])
+            # Target geometry: width defined
+            chapter: ChapterVideo | None = None
+            try:
+                if k_ch in ('g_debut', 'g_fin'):
+                    chapter = db[k_ch]['video']
+                else:
+                    chapter = db[k_ep]['video']['target'][k_ch]
+            except:
+                pass
+            print(f"{k_ep}:{k_ch}")
+            print(f"{k_ed_src}:{k_ep_src}:{k_ch_src}:{scene_no_src}")
 
-
-
-        # Target geometry: width defined
-        chapter: ChapterVideo | None = None
-        try:
-            if k_ch in ('g_debut', 'g_fin'):
-                chapter = db[k_ch]['video']
-            else:
-                chapter = db[k_ep]['video']['target'][k_ch]
-        except:
-            pass
-        print(f"{k_ep}:{k_ch}")
-        print(f"{k_ed_src}:{k_ep_src}:{k_ch_src}:{scene_no_src}")
-
-        pprint(chapter['geometry'])
-        scene['geometry'].chapter = deepcopy(chapter['geometry'])
-        # Get default geometry for a scene
-        # scene_geometry: SceneGeometry =
-
+            pprint(chapter['geometry'])
+            scene['geometry'].chapter = deepcopy(chapter['geometry'])
+            # Get default geometry for a scene
+            # scene_geometry: SceneGeometry =
 
 
         # try:

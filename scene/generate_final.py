@@ -99,7 +99,14 @@ def get_output_video_filepath(scene: Scene, task_name: TaskName | None = None) -
 
 
 
-def generate_final_scene(scene: Scene, force: bool = False, debug: bool = False, stats: bool = False) -> bool:
+def generate_final_scene(
+    scene: Scene,
+    force: bool = False,
+    debug: bool = False,
+    stats: bool = False
+) -> bool:
+    debug_scene: bool = False
+
     scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
     out_video_fp: str = scene['task'].video_file
 
@@ -155,13 +162,8 @@ def generate_final_scene(scene: Scene, force: bool = False, debug: bool = False,
     out_h, out_w = 1080, 1440
     print(f"chapter: width: {ch_width}")
     print(f"final dimension: {out_w}x{out_h}")
-    detect_inner_rect_params = DetectInnerRectParams(
-        threshold_min=25,
-        morph_kernel_radius=3,
-        erode_kernel_radius=2,
-        erode_iterations=2,
-        do_add_borders=True,
-    )
+
+    detect_inner_rect_params = scene['geometry'].detection_params
 
     if scene['dst']['count'] != in_video_info['frame_count']:
         if True:
@@ -239,7 +241,7 @@ def generate_final_scene(scene: Scene, force: bool = False, debug: bool = False,
                 decoder_subprocess,
                 detect_inner_rect_params,
                 locks,
-                debug=True
+                debug=debug_scene
             ),
             range(count)
         ):

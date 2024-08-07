@@ -4,6 +4,7 @@ from typing import Literal, TypedDict, TYPE_CHECKING
 
 import numpy as np
 
+
 if TYPE_CHECKING:
     from .images import Images
     from parsers import (
@@ -133,7 +134,7 @@ class SceneGeometry:
     crop: tuple[int, int, int, int] = field(default_factory=tuple)
     is_default: bool = True
     chapter: ChapterGeometry = field(default_factory=ChapterGeometry)
-    inner_rect_parames: DetectInnerRectParams = field(
+    detection_params: DetectInnerRectParams = field(
         default_factory=DetectInnerRectParams
     )
 
