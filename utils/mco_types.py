@@ -155,10 +155,19 @@ class SceneGeometry:
 
 @dataclass
 class Effect:
-    name: Literal['loop', 'fadeout', 'loop_and_fadeout', 'loop_and_fadein', 'watermark']
+    name: Literal[
+        'loop',
+        'fadeout',
+        'loop_and_fadeout',
+        'loop_and_fadein',
+        'watermark',
+        'zoom_in',
+        'zoom_out'
+    ]
     frame_ref: int = 0
     loop: int = 0
     fade: int = 0
+    zoom_factor: float = 0
 
 
 @dataclass

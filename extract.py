@@ -116,7 +116,7 @@ def main():
     if episode == 0 and chapter == '':
         sys.exit("Error: at least an episode or a chapter shall be specified")
 
-    if episode < 0 or episode > 39:
+    if not (episode > 0 or episode <= 39 or episode == 99):
         sys.exit(red("Episode must be between 1 and 39"))
 
     if chapter in ('g_debut', 'g_fin'):
