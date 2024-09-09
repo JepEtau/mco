@@ -44,7 +44,10 @@ def extract_scenes(
 
     concatenate_clips: bool = (
         True
-        if scene_no == -1 and scene_min == -1 and scene_max ==-1
+        if (
+            (scene_no == -1 and scene_min == -1 and scene_max == -1)
+            and task != 'initial'
+        )
         else False
     )
 

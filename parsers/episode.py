@@ -48,9 +48,11 @@ from ._db import db
 def db_init_episodes(k_ed, ep_min: int = 1, ep_max: int = 39, force: bool = True):
     inputs: dict = db['editions'][k_ed]['inputs']
 
-    for i in range(ep_min, min(40, ep_max+1)):
-        k_ep = key(i)
+    # Add specific episode nb when g_debut/g_fin are in separate input video
+    k_eps: list[str] = list(map(key, range(ep_min, min(40, ep_max+1))))
+    k_eps.append('ep99')
 
+    for k_ep in k_eps:
         if not force:
             # Do not create section if input file does not exist
             if k_ep not in inputs['video'] and k_ep not in inputs['audio']:

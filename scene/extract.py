@@ -14,7 +14,7 @@ from processing.watermark import add_watermark
 from scene.filters import do_watermark
 from scene.generate_hr import _get_ffmpeg_filter
 from utils.logger import main_logger
-from utils.mco_types import Scene
+from utils.mco_types import McoFrame, Scene
 from utils.mco_utils import run_simple_command
 from utils.p_print import *
 from utils.path_utils import path_split
@@ -140,7 +140,10 @@ def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> boo
                 dtype=np.uint8,
                 count=nbytes
             ).reshape((h, w, 3))
-            out_img: np.ndarray = add_watermark(in_img, scene, frame_no)
+            out_img: np.ndarray = add_watermark(
+                McoFrame(no=frame_no, img=in_img, scene=scene),
+                no=frame_no
+            )
             frame_no += 1
             writer_subproces.stdin.write(np.ascontiguousarray(out_img))
 

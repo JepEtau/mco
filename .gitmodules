@@ -1,3 +1,3 @@
 [submodule "nn_inference"]
 	path = nn_inference
-	url = https://github.com:JepEtau/nn_inference.git
+	url = https://github.com/JepEtau/nn_inference.git
