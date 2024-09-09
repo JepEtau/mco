@@ -16,7 +16,7 @@ from ._db import db
 from ._types import key
 
 
-def consolidate_target_scenes(k_ep: int | str, k_chapter: str):
+def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
     """This procedure is used to consolidate chapter of an 'episode': it uses the 'replace'
     field to generate a new list of scenes in the 'common' structure of the 'episode'. This list
     will be used for processing instead of the list defined in the edition.
@@ -39,6 +39,9 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str):
     k_ep = key(k_ep)
     K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = ['', '', 0]
     # K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = 'ep01', 'episode', 0
+
+    if k_ep == 'ep99':
+        return
 
     target_chapter: ChapterVideo = db[k_ep]['video']['target'][k_chapter]
 

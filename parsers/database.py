@@ -124,6 +124,7 @@ def parse_database(
         dependencies[edition].append(k_ep)
 
     # Parse episodes which are required (dependencies)
+    pprint(dependencies)
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in v:
             if k_ep_tmp == k_ep:
@@ -169,6 +170,7 @@ def parse_database(
 
     # Consolidate database for the episode ONLY
     if k_ep != 'ep00':
+    # if k_ep not in ('ep00', 'ep99'):
         for chapter in non_credit_chapter_keys():
             consolidate_target_scenes(k_ep=k_ep, k_chapter=chapter)
 

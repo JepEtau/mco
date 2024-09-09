@@ -359,6 +359,8 @@ def get_episode_dependencies(
     """
     k_ep: str = key(episode)
     dependencies: OrderedDict[str, set] = OrderedDict()
+    if k_ep == 'ep99':
+        return dependencies
     target_video: dict = db[k_ep]['video']['target']
 
     # Common chapter
