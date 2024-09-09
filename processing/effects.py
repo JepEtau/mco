@@ -3,10 +3,11 @@ from typing import Literal
 import numpy as np
 import cv2
 from pprint import pprint
+from nn_inference.toolbox.resize import pillow_resize
 from utils.p_print import *
 from utils.logger import main_logger
 from utils.mco_types import Effect, McoFrame, Scene
-
+from PIL import Image
 
 
 
@@ -79,6 +80,25 @@ def apply_effect(
 
         # else:
         #     raise NotImplementedError(effect.name)
+
+        for effect in scene['effects'].effects:
+            if effect.name == 'zoom_in' and out_f_no == effect.frame_ref:
+                out_frames: list[McoFrame] = [frame]
+                in_h, in_w = frame.img.shape[:2]
+                for i in range (effect.loop):
+                    zoom: float = float(i + 1) / effect.loop
+                    out_h, out_w = int(zoom * in_w), int(zoom * in_h)
+                    zoomed: np.ndarray = pillow_resize(
+                        out_h, out_w, interpolation=Image.Resampling.LANCZOS
+                    )
+                    # crop....
+                    zoomed = zoomed[out_h, out_w
+                              ]
+
+                    out_frames.append(McoFrame(
+                        no=frame.no,
+                        img=zoomed,
+                    ))
 
     # else:
     #     print("no effect")
