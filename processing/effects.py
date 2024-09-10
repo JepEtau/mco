@@ -1,14 +1,31 @@
 from enum import Enum
+import math
+import os
+import subprocess
+import sys
 from typing import Literal
 import numpy as np
 import cv2
 from pprint import pprint
-from nn_inference.toolbox.resize import pillow_resize
+from parsers._types import ProcessingTask
+from parsers.helpers import get_fps
+from scene.consolidate import consolidate_scene
+from scene.src_scene import SrcScene
+from utils.images_io import write_image
+from utils.media import VideoInfo, extract_media_info
+from utils.np_dtypes import np_to_float32, np_to_uint16, np_to_uint8
 from utils.p_print import *
 from utils.logger import main_logger
 from utils.mco_types import Effect, McoFrame, Scene
 from PIL import Image
+from parsers import (
+    db,
+)
+from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
+from utils.tools import ffmpeg_exe
 
+
+cached_frame: McoFrame | None = None
 
 
 def apply_effect(
@@ -17,7 +34,102 @@ def apply_effect(
 ) -> McoFrame | list[McoFrame]:
     scene: Scene = frame.scene
 
+    last_src_scene: SrcScene = scene['src'].last_scene()
+    if 'effects' in last_src_scene and last_src_scene['effects'] is not None:
+        if last_src_scene['effects'].has_effect('zoom_in'):
+            effect: Effect = last_src_scene['effects'].get_effect('zoom_in')
+            if out_f_no == effect.frame_ref:
+                print("ZOOOOM")
+
+                out_frames: list[McoFrame] = [frame]
+                in_h, in_w = frame.img.shape[:2]
+                # print(frame.img.shape)
+
+                for i in range (effect.loop):
+                    # Zoom input image
+                    # Recalulate factor at every iteration: linear
+                    factor: float = 1 + ((effect.zoom_factor - 1) * (i + 1) ) / effect.loop
+                    print(lightcyan(f"factor = {factor}"))
+                    out_h, out_w = int(factor * in_h), int(factor * in_w)
+                    zoomed: np.ndarray = cv2.resize(
+                        frame.img,
+                        (out_w, out_h),
+                        interpolation=Image.Resampling.LANCZOS
+                    )
+
+                    # Crop to input image shape
+                    top, left = int((out_h - in_h) / 2), int((out_w - in_w) / 2)
+                    zoomed = np.ascontiguousarray(zoomed[
+                        top : top + in_h,
+                        left : left + in_w,
+                        :
+                    ])
+                    # print(zoomed.shape)
+                    out_frames.append(McoFrame(
+                        no=frame.no,
+                        img=zoomed,
+                    ))
+                return out_frames
+
+        elif last_src_scene['effects'].has_effect('blend'):
+            effect: Effect = last_src_scene['effects'].get_effect('blend')
+
+            if out_f_no >= effect.frame_ref and out_f_no < effect.frame_ref + effect.fade:
+                blend_factor = 1 - float(out_f_no - effect.frame_ref ) / effect.fade
+                # print(f"BLEND {out_f_no}, factor: {blend_factor}")
+                k_ch = scene['dst']['k_ch']
+                if k_ch != 'g_debut':
+                    raise ValueError(red("blend effect is supported for g_debut only"))
+                previous_scene: Scene = db[k_ch]['video']['scenes'][scene['no'] - 1]
+
+                # out_img: np.ndarray = 128 * np.ones(frame.img.shape, dtype=frame.img.dtype),
+                # pprint(out_img)
+                # return McoFrame(
+                #     out_f_no,
+                #     out_img,
+                #     scene
+                # )
+
+
+                # Consolidate scene if not already done because we need its last image
+                global cached_frame
+                if 'task' not in previous_scene:
+                    print(f"consolidate scene {previous_scene['no']}")
+                    previous_scene['task'] = ProcessingTask(name=scene['task'].name)
+                    consolidate_scene(scene=previous_scene, watermark=False)
+                    # Extract last frame
+                    cached_frame = extract_last_frame(previous_scene, frame.img.dtype)
+                    # write_image("test.png", cached_frame.img)
+                    cached_frame.img = np_to_float32(cached_frame.img)
+                    # sys.exit()
+
+                out_img: np.ndarray = blend_images(
+                    in_img=np_to_float32(frame.img),
+                    layer=cached_frame.img,
+                    opacity0=1 - blend_factor,
+                    opacity1=blend_factor
+                )
+                # print(f"{out_img.shape} vs {frame.img.shape}")
+                return McoFrame(
+                    no=out_f_no,
+                    img=(
+                        np_to_uint16(out_img)
+                        if frame.img.dtype == np.uint16
+                        else np_to_uint8(out_img)
+                    ),
+                    scene=scene
+                )
+
+            elif out_f_no == effect.frame_ref + effect.fade:
+                # Delete cached frame
+                cached_frame = None
+
+
+            return frame
+
+
     if 'effects' in scene:
+        print("HAS effects")
         effect: Effect = scene['effects'].primary_effect()
         if effect.name == 'loop' and out_f_no == effect.frame_ref:
             print(f"loop count = {effect.loop + 1}")
@@ -81,25 +193,6 @@ def apply_effect(
         # else:
         #     raise NotImplementedError(effect.name)
 
-        for effect in scene['effects'].effects:
-            if effect.name == 'zoom_in' and out_f_no == effect.frame_ref:
-                out_frames: list[McoFrame] = [frame]
-                in_h, in_w = frame.img.shape[:2]
-                for i in range (effect.loop):
-                    zoom: float = float(i + 1) / effect.loop
-                    out_h, out_w = int(zoom * in_w), int(zoom * in_h)
-                    zoomed: np.ndarray = pillow_resize(
-                        out_h, out_w, interpolation=Image.Resampling.LANCZOS
-                    )
-                    # crop....
-                    zoomed = zoomed[out_h, out_w
-                              ]
-
-                    out_frames.append(McoFrame(
-                        no=frame.no,
-                        img=zoomed,
-                    ))
-
     # else:
     #     print("no effect")
 
@@ -119,6 +212,168 @@ def coef_table(
     else:
         raise NotImplementedError("not yet implemented")
     return coefs if fade_type == 'in' else 1.0 - coefs
+
+
+
+
+def extract_last_frame(scene: Scene, dtype: np.dtype = np.uint8) -> McoFrame:
+    in_video_fp: str = scene['src'].last_scene()['scene']['inputs']['progressive']['filepath']
+
+    # pprint(scene)
+
+    if not os.path.exists(in_video_fp):
+        raise ValueError(red(f"Missing file: {in_video_fp}"))
+
+    in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+    pipe_img_nbytes = math.prod(in_video_info['shape'])
+    pipe_img_shape: tuple[int, int, int] = in_video_info['shape']
+    pipe_dtype: np.dtype = dtype
+    print(red("Error: extract_last_frame: fix this if task is not lr"))
+    # frame_no: int = in_video_info['frame_count'] - 1
+    frame_no: int = scene['src'].last_frame_no()
+    print(f"extract frame no. {frame_no} from {in_video_fp}")
+
+    frame_rate: FrameRate = get_fps(db)
+    xtract_command: list[str] = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "warning",
+        "-nostats",
+
+        "-ss", str(frame_to_sexagesimal(no=frame_no, frame_rate=frame_rate)),
+        "-i", in_video_fp,
+        "-t", str(frame_to_s(no=1, frame_rate=frame_rate)),
+
+        "-f", "image2pipe",
+        "-pix_fmt", 'bgr24' if dtype == np.uint8 else 'bgr48',
+        "-vcodec", "rawvideo",
+        "-"
+    ]
+
+    xtract_subproces: subprocess.Popen = None
+    try:
+        xtract_subproces = subprocess.Popen(
+            xtract_command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except Exception as e:
+        scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
+        print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+        raise
+
+    img: np.ndarray = np.frombuffer(
+        xtract_subproces.stdout.read(pipe_img_nbytes),
+        dtype=pipe_dtype,
+    ).reshape(pipe_img_shape)
+
+    stderr_bytes: bytes | None = None
+    try:
+        # Arbitrary timeout value
+        _, stderr_bytes = xtract_subproces.communicate(timeout=10)
+    except:
+        xtract_subproces.kill()
+
+    if stderr_bytes is not None:
+        stderr = stderr_bytes.decode('utf-8)')
+        # TODO: parse the output file
+        if stderr != '':
+            scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
+            print(f"{scene_key} stderr:")
+            pprint(stderr)
+            raise
+
+    return McoFrame(frame_no, img, scene)
+
+
+
+
+
+
+
+# https://www.w3.org/TR/compositing/#valdef-blend-mode-normal
+def blend_images(
+    in_img: np.ndarray,
+    layer: np.ndarray,
+    opacity0: float,
+    opacity1: float,
+) -> np.ndarray:
+
+    # TODO: img0/img1 MUST be RGB/BGR and must have the same dtype
+    # TODO: simplify if opacity == 1 for both
+
+    h0, w0 = in_img.shape[:2]
+    h1, w1 = layer.shape[:2]
+
+    # Calculate coordinates of the overlay layer
+    #   origin: top-let point of the img0 layer
+    #   (x0, y0): top-left point of the overlay layer
+    #   (x1, y1): bottom-right point of the overlay layer
+    x0, y0 = [int((w0 - w1) / 2), int((h0 - h1) / 2)]
+    x1, y1 = x0 + w1, y0 + h1
+
+    # Add borders to the img0 layer
+    left, right = abs(min(x0, 0)), max(0, (x1 - w0))
+    top, bottom = abs(min(y0, 0)), max(0, (y1 - h0))
+
+
+    if any((top, bottom, left, right)):
+        in_img_copy = cv2.cvtColor(in_img, cv2.COLOR_BGR2BGRA)
+        in_img_copy = cv2.copyMakeBorder(
+            in_img, top, bottom, left, right, cv2.BORDER_CONSTANT, value=(0.0,)
+        )
+    else:
+        in_img_copy = in_img.copy()
+        if opacity0 != 1.:
+            in_alpha = np.empty((h0, w0, 1), dtype=in_img.dtype)
+            in_alpha.fill(opacity0)
+            in_img = np.dstack((in_img, in_alpha))
+
+
+    # Coordinates of the intersection area
+    i_x0, i_x1 = x0 + left, x1 + left
+    i_y0, i_y1 = y0 + top, y1 + top
+    i_h, i_w = i_y1 - i_y0, i_x1 - i_x0
+
+    # TODO: optimize when opacity is 0 or 1
+
+    # Opacity
+    in_alpha = np.empty((i_h, i_w, 1), dtype=in_img.dtype)
+    in_alpha.fill(opacity0)
+    layer_alpha = np.empty((i_h, i_w, 1), dtype=in_img.dtype)
+    layer_alpha.fill(opacity1)
+
+    # Intersection
+    in_intersection = in_img_copy[i_y0 : i_y1, i_x0 : i_x1, :3]
+    # print(f"{i_y0}:{i_y1}, {i_x0}:{i_x1}")
+    # print(in_intersection.shape)
+
+    # Blend
+    # gimp-2.10.36\app\operations\layer-modes\gimpoperationnormal.c
+    alpha_out = layer_alpha + in_alpha - in_alpha * layer_alpha
+
+    # print(f"alpha_out: {alpha_out}")
+    # print(type(alpha_out))
+    # print(alpha_out.shape)
+    layer_weight = layer_alpha / alpha_out
+    in_weight = 1 - layer_weight
+    blended = layer * layer_weight + in_intersection * in_weight
+
+    # blended = np.dstack((blended, alpha_out))
+    in_img_copy[i_y0:i_y1, i_x0:i_x1, :3] = blended
+
+    # out_img = cv2.cvtColor(in_img, cv2.COLOR_BGRA2BGR)
+
+    return in_img_copy
+
+
+
+
+
+
+
+
 
 
 # def effect_loop_and_fadein(scene: Scene, effect: Effect) -> None:

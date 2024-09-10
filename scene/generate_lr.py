@@ -80,9 +80,9 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         *vsettings.codec_options,
         out_video_fp, "-y"
     ]
-    writer_subproces: subprocess.Popen = None
+    encoder_subprocess: subprocess.Popen = None
     try:
-        writer_subproces = subprocess.Popen(
+        encoder_subprocess = subprocess.Popen(
             writer_command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
@@ -135,9 +135,9 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             "-"
         ]
 
-        reader_subproces: subprocess.Popen = None
+        decoder_subprocess: subprocess.Popen = None
         try:
-            reader_subproces = subprocess.Popen(
+            decoder_subprocess = subprocess.Popen(
                 xtract_command,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
@@ -177,7 +177,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             while in_frame is None:
                 in_f_no += 1
                 img: np.ndarray = np.frombuffer(
-                    reader_subproces.stdout.read(pipe_img_nbytes),
+                    decoder_subprocess.stdout.read(pipe_img_nbytes),
                     dtype=pipe_dtype,
                 ).reshape(pipe_img_shape)
                 if in_f_no not in frames_to_replace:
@@ -214,11 +214,12 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                     out_frames = apply_effect(out_f_no, out_frame)
                     if isinstance(out_frames, list):
                         # print(yellow(f"\t{out_i}: send {len(out_frames)}"))
-                        [writer_subproces.stdin.write(f.img) for f in out_frames]
+                        [encoder_subprocess.stdin.write(f.img) for f in out_frames]
                         produced += len(out_frames)
                     else:
+                        out_frame = out_frames
                         # print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
-                        writer_subproces.stdin.write(out_frame.img)
+                        encoder_subprocess.stdin.write(out_frame.img)
                         produced += 1
 
                     out_f_no += 1
@@ -232,7 +233,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         if 'silence' in ch_video and ch_video['silence'] > 0:
             print(f"silence!!! {ch_video['silence']}")
             img_black = np.zeros(in_video_info['shape'], dtype=pipe_out_dtype)
-            [writer_subproces.stdin.write(img_black) for _ in range(ch_video['silence'])]
+            [encoder_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
 
             produced += ch_video['silence']
             print(f"produced w/ silence: {produced}")
@@ -241,9 +242,9 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     stderr_bytes: bytes | None = None
     try:
         # Arbitrary timeout value
-        _, stderr_bytes = writer_subproces.communicate(timeout=10)
+        _, stderr_bytes = encoder_subprocess.communicate(timeout=10)
     except:
-        writer_subproces.kill()
+        encoder_subprocess.kill()
         return False
 
     if stderr_bytes is not None:

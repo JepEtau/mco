@@ -332,4 +332,3 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter: str) -> None:
                         fade=fadeout_count
                     )
                 ])
-

@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TypedDict
-from utils.mco_types import Scene
+from utils.mco_types import Effects, Scene
 from parsers import (
     db,
 )
@@ -18,6 +18,7 @@ class SrcScene(TypedDict):
     start: int
     count: int
     k_ed_ep_ch_no: tuple[str, str, str, int]
+    effects: Effects
 
 
 @dataclass
@@ -31,7 +32,8 @@ class SrcScenes:
         k_ch: str,
         no: int,
         start: int,
-        count: int
+        count: int,
+        effects: Effects = None,
     ) -> None:
         try:
             _scene: Scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][no]
@@ -39,18 +41,24 @@ class SrcScenes:
             count = _scene['count'] if count == -1 else count
         except:
             _scene = None
+
         self._scenes.append(
             SrcScene(
                 scene=_scene,
                 start=start,
                 count=count,
-                k_ed_ep_ch_no=(k_ed, k_ep, k_ch, no)
+                k_ed_ep_ch_no=(k_ed, k_ep, k_ch, no),
+                effects=effects
             )
         )
 
 
     def scenes(self) -> list[SrcScene]:
         return self._scenes
+
+
+    def last_scene(self) -> SrcScene:
+        return self._scenes[-1]
 
 
     def get_dependencies(self) -> dict[str, set[str]]:
@@ -73,6 +81,13 @@ class SrcScenes:
             'start': _src_scene['start'] if src_scene['start'] == -1 else src_scene['start'],
             'count': _src_scene['count'] if src_scene['count'] == -1 else src_scene['count'],
         })
+
+        if src_scene['effects'] is not None:
+            for e in src_scene['effects'].effects:
+                if e.name == 'blend':
+                    e.frame_ref = src_scene['start']
+                elif e.frame_ref == -1:
+                    e.frame_ref = src_scene['start'] + src_scene['count'] - 1
 
 
     def frame_count(self) -> int:

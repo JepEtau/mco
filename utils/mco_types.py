@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Literal, TypedDict, TYPE_CHECKING
+from typing import Any, Literal, TypedDict, TYPE_CHECKING
 
 import numpy as np
 
@@ -196,6 +196,29 @@ class Effects(list):
             if effect.fade != 0 or effect.loop != 0:
                 return True
         return False
+
+    def has_effect(self, name: Literal[
+        'loop',
+        'fadeout',
+        'loop_and_fadeout',
+        'loop_and_fadein',
+        'watermark',
+        'zoom_in',
+        'zoom_out'
+    ]) -> bool:
+        for e in self.effects:
+            if e.name == name:
+                return True
+        return False
+
+    def append(self, object: Any) -> None:
+        return self.effects.append(object)
+
+    def get_effect(self, name: str) -> Effect | None:
+        for e in self.effects:
+            if e.name == name:
+                return e
+        return None
 
 
 class RefScene(TypedDict):

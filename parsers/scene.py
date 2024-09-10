@@ -263,6 +263,7 @@ def parse_target_scenelist(
             current_scene_no: int = -1
             segment_start: int = -1
             segment_count: int = -1
+            effects: Effects | None = None
             for p in scene_properties:
                 try:
                     k, v = p.split('=')
@@ -302,6 +303,59 @@ def parse_target_scenelist(
                         segment_start = int(match.group(1))
                         segment_count = int(match.group(2))
 
+
+                elif k == 'effect':
+                    print(f"effect: {v}")
+                    # name, frame_ref, count, param
+                    if (match := re.search(re.compile(
+                        r"([a-z_]+):(-?\d+):(\d+):(([\d+[.]*)?\d*)"
+                    ), v)):
+                        if effects is None:
+                            effects = Effects()
+                        name: str = match.group(1)
+                        frame_ref: int = int(match.group(2))
+                        loop: int = 0
+                        fade: int = 0
+                        zoom_factor: int = 0
+                        if 'loop' in name or 'zoom' in name:
+                            loop = int(match.group(3))
+                        if 'fade' in name:
+                            fade = int(match.group(4))
+                        if 'zoom' in name:
+                            zoom_factor = float(match.group(4))
+
+                        effects.append(
+                            Effect(
+                                name=name,
+                                frame_ref=frame_ref,
+                                loop=loop,
+                                fade=fade,
+                                zoom_factor=zoom_factor
+                            )
+                        )
+                    elif (match := re.search(re.compile(
+                        r"([a-z_]+):(-?\d+)"
+                    ), v)):
+                        # blend with last image from previous scene
+                        if effects is None:
+                            effects = Effects()
+                        name: str = match.group(1)
+                        frame_ref: int = 0
+                        # use fade for blend out
+                        fade: int = int(match.group(2))
+                        effects.append(
+                            Effect(
+                                name=name,
+                                frame_ref=frame_ref,
+                                fade=fade,
+                            )
+                        )
+                    else:
+                        print("failed")
+                    # if k_ch == 'g_debut':
+                    #     pprint(effects)
+                    #     # sys.exit()
+
             scene['src'].add_scene(
                 k_ed=k_ed,
                 k_ep=k_ep,
@@ -309,6 +363,7 @@ def parse_target_scenelist(
                 no=current_scene_no if current_scene_no != -1 else scene_no,
                 start=segment_start,
                 count=segment_count,
+                effects=effects
             )
 
 def get_scene_from_frame_no(

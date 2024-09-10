@@ -5,7 +5,8 @@ import subprocess
 import sys
 import time
 from scene.filters import do_watermark
-from utils.mco_types import ChapterVideo, Scene
+from scene.src_scene import SrcScene, SrcScenes
+from utils.mco_types import ChapterVideo, Effect, Scene
 from utils.media import VideoInfo, extract_media_info
 from utils.p_print import *
 from parsers import (
@@ -87,6 +88,10 @@ def calculate_frame_count(scene: Scene) -> int:
         if 'effects' in scene:
             count += scene['effects'].primary_effect().loop
 
+        src_scene: SrcScene = scene['src'].scenes()[-1]
+        if 'effects' in src_scene:
+            zoom_effect: Effect = src_scene['effects'].get_effect('zoom_in')
+            count += zoom_effect.loop if zoom_effect is not None else 0
 
     return count
 
