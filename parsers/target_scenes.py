@@ -76,6 +76,11 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
 
     # Append scenes from src and sort
     for scene_src in chapter_src['scenes']:
+        if (
+            'scene_count' in target_chapter
+            and len(target_chapter['scenes']) == target_chapter['scene_count']
+        ):
+            break
         if scene_src['no'] not in target_scene_nos:
             target_chapter['scenes'].append(
                 Scene(
@@ -260,6 +265,12 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter: str) -> None:
 
     # Append scenes from src and sort
     for scene_src in chapter_src['scenes']:
+        if (
+            'scene_count' in target_chapter
+            and len(target_chapter['scenes']) >= target_chapter['scene_count']
+        ):
+            break
+
         if scene_src['no'] not in target_scene_nos:
             target_chapter['scenes'].append(
                 Scene(
@@ -314,6 +325,10 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter: str) -> None:
 
     # Number of frames without effects
     target_chapter['count'] = frame_count
+
+    # if target_chapter['scenes'][0]['dst']['k_ch'] == 'g_debut':
+    #     pprint(target_chapter)
+    #     sys.exit(f"<- {target_chapter['scenes'][0]['dst']['k_ch']}")
 
     # Effects
     if k_chapter in ('g_debut', 'g_fin'):

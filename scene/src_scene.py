@@ -1,7 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TypedDict
-from utils.mco_types import Effects, Scene
+from utils.mco_types import Effect, Effects, Scene
 from parsers import (
     db,
 )
@@ -96,6 +96,11 @@ class SrcScenes:
             if src_scene['scene'] is None:
                 self._consolidate_scene(src_scene)
             count += src_scene['count']
+
+            if src_scene['effects'] is not None:
+                e: Effect = src_scene['effects'].get_effect('zoom_in')
+                count += e.loop if e is not None else 0
+
         return count
 
 

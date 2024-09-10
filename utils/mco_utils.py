@@ -88,11 +88,11 @@ def calculate_frame_count(scene: Scene) -> int:
         if 'effects' in scene:
             count += scene['effects'].primary_effect().loop
 
-        src_scene: SrcScene = scene['src'].scenes()[-1]
-        if 'effects' in src_scene:
-            zoom_effect: Effect = src_scene['effects'].get_effect('zoom_in')
-            count += zoom_effect.loop if zoom_effect is not None else 0
-
+        # src_scene: SrcScene = scene['src'].last_scene()
+        # if 'effects' in src_scene and src_scene['effects'] is not None:
+        #     zoom_effect: Effect = src_scene['effects'].get_effect('zoom_in')
+        #     count += zoom_effect.loop if zoom_effect is not None else 0
+    print(red(f"calculate_frame_count: {scene['no']} -> {count}"))
     return count
 
 

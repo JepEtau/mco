@@ -40,25 +40,25 @@ def apply_effect(
             effect: Effect = last_src_scene['effects'].get_effect('zoom_in')
             if out_f_no == effect.frame_ref:
                 print("ZOOOOM")
-
                 out_frames: list[McoFrame] = [frame]
                 in_h, in_w = frame.img.shape[:2]
-                # print(frame.img.shape)
-
                 for i in range (effect.loop):
-                    # Zoom input image
                     # Recalulate factor at every iteration: linear
-                    factor: float = 1 + ((effect.zoom_factor - 1) * (i + 1) ) / effect.loop
+                    factor: float = 1 + ((effect.zoom_factor - 1) * (i + 1)) / effect.loop
                     print(lightcyan(f"factor = {factor}"))
                     out_h, out_w = int(factor * in_h), int(factor * in_w)
-                    zoomed: np.ndarray = cv2.resize(
-                        frame.img,
-                        (out_w, out_h),
-                        interpolation=Image.Resampling.LANCZOS
-                    )
+                    # zoomed: np.ndarray = cv2.resize(
+                    #     frame.img,
+                    #     (out_w, out_h),
+                    #     interpolation=Image.Resampling.BICUBIC
+                    # )
+                    # Warning; in image must be uint8
+                    pimg = Image.fromarray(frame.img)
+                    pimg = pimg.resize((out_w, out_h), resample=Image.Resampling.BICUBIC)
+                    zoomed = np.asarray(pimg)
 
                     # Crop to input image shape
-                    top, left = int((out_h - in_h) / 2), int((out_w - in_w) / 2)
+                    top, left = int((out_h - in_h) / 2 + 0.5), int((out_w - in_w) / 2 + 0.5)
                     zoomed = np.ascontiguousarray(zoomed[
                         top : top + in_h,
                         left : left + in_w,
@@ -97,10 +97,36 @@ def apply_effect(
                     print(f"consolidate scene {previous_scene['no']}")
                     previous_scene['task'] = ProcessingTask(name=scene['task'].name)
                     consolidate_scene(scene=previous_scene, watermark=False)
+                if cached_frame is None:
                     # Extract last frame
                     cached_frame = extract_last_frame(previous_scene, frame.img.dtype)
-                    # write_image("test.png", cached_frame.img)
-                    cached_frame.img = np_to_float32(cached_frame.img)
+                    cached_img = cached_frame.img
+
+                    prev_last_src_scene: SrcScene = previous_scene['src'].last_scene()
+                    # pprint(prev_last_src_scene)
+                    if 'effects' in prev_last_src_scene and prev_last_src_scene['effects'] is not None:
+                        if prev_last_src_scene['effects'].has_effect('zoom_in'):
+                            effect: Effect = prev_last_src_scene['effects'].get_effect('zoom_in')
+                            factor: float = effect.zoom_factor
+                            print(lightcyan(f"factor = {factor}"))
+                            in_h, in_w = cached_img.shape[:2]
+                            out_h, out_w = int(factor * in_h), int(factor * in_w)
+                            zoomed: np.ndarray = cv2.resize(
+                                cached_img,
+                                (out_w, out_h),
+                                interpolation=Image.Resampling.LANCZOS
+                            )
+
+                            # Crop to input image shape
+                            top, left = int((out_h - in_h) / 2), int((out_w - in_w) / 2)
+                            cached_img = np.ascontiguousarray(zoomed[
+                                top : top + in_h,
+                                left : left + in_w,
+                                :
+                            ])
+
+                    # write_image("test.png", cached_img)
+                    cached_frame.img = np_to_float32(cached_img)
                     # sys.exit()
 
                 out_img: np.ndarray = blend_images(
@@ -129,7 +155,7 @@ def apply_effect(
 
 
     if 'effects' in scene:
-        print("HAS effects")
+
         effect: Effect = scene['effects'].primary_effect()
         if effect.name == 'loop' and out_f_no == effect.frame_ref:
             print(f"loop count = {effect.loop + 1}")
@@ -218,9 +244,6 @@ def coef_table(
 
 def extract_last_frame(scene: Scene, dtype: np.dtype = np.uint8) -> McoFrame:
     in_video_fp: str = scene['src'].last_scene()['scene']['inputs']['progressive']['filepath']
-
-    # pprint(scene)
-
     if not os.path.exists(in_video_fp):
         raise ValueError(red(f"Missing file: {in_video_fp}"))
 

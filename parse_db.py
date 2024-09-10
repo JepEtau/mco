@@ -126,9 +126,10 @@ def main():
 
         if 'ref' not in scene:
             ref_count = 0
-            _k_ed = 'k' if db[k_ep]['audio']['lang'] == 'fr' else 'f'
+            k_ep_or_g = chapter if chapter in ('g_debut', 'g_fin') else k_ep
+            _k_ed = 'k' if db[k_ep_or_g]['audio']['lang'] == 'fr' else 'f'
             print(f"  reference: {_k_ed}:{k_ep}:{chapter}")
-            for s in db[k_ep]['video'][_k_ed][chapter]['scenes']:
+            for s in db[k_ep_or_g]['video'][_k_ed][chapter]['scenes']:
                 ref_count += s['count']
 
         print(f"  Reference: {ref_count}")

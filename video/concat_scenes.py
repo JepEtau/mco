@@ -80,6 +80,7 @@ def concat_scenes(
         concat_file.close()
 
         # Output video file
+        os.makedirs(os.path.join(cache_directory, "video"), exist_ok=True)
         out_video: str = os.path.join(
             cache_directory,
             "video",

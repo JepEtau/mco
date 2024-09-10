@@ -232,6 +232,10 @@ def parse_target_scenelist(
     for k_option in config.options(k_section):
         value_str: str = config.get(k_section, k_option).replace(' ','')
 
+        if k_option == 'max':
+            db_video_target['scene_count'] = int(value_str) + 1
+            continue
+
         lang = language
         try:
             scene_no = int(k_option)
