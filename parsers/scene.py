@@ -230,7 +230,11 @@ def parse_target_scenelist(
     db_scenes: list[Scene] = db_video_target['scenes']
 
     for k_option in config.options(k_section):
-        value_str: str = config.get(k_section, k_option).replace(' ','')
+        value_str: str = (
+            config.get(k_section, k_option)
+            .replace(' ','')
+            .replace('\n','')
+        )
 
         if k_option == 'max':
             db_video_target['scene_count'] = int(value_str) + 1
@@ -312,7 +316,7 @@ def parse_target_scenelist(
                     print(f"effect: {v}")
                     # name, frame_ref, count, param
                     if (match := re.search(re.compile(
-                        r"([a-z_]+):(-?\d+):(\d+):(([\d+[.]*)?\d*)"
+                        r"([a-z_]+):(-?\d+):(\d+):([\d+[.]*\d*)"
                     ), v)):
                         if effects is None:
                             effects = Effects()
@@ -337,9 +341,10 @@ def parse_target_scenelist(
                                 zoom_factor=zoom_factor
                             )
                         )
-                    elif (match := re.search(re.compile(
-                        r"([a-z_]+):(-?\d+)"
-                    ), v)):
+                    elif (
+                        v.startswith('blend')
+                        and (match := re.search(re.compile(r"([a-z_]+):(-?\d+)"), v))
+                    ):
                         # blend with last image from previous scene
                         if effects is None:
                             effects = Effects()
@@ -352,6 +357,29 @@ def parse_target_scenelist(
                                 name=name,
                                 frame_ref=frame_ref,
                                 fade=fade,
+                            )
+                        )
+                    elif (
+                        v.startswith('title')
+                        and (match := re.search(re.compile(
+                                r"([a-z_]+):(-?\d+):([\d+[.]*\d*):([\d+[.]*\d*)"
+                            ), v))
+                    ):
+                        # blend with last image from previous scene
+                        if effects is None:
+                            effects = Effects()
+                        name: str = match.group(1)
+                        loop: int = int(match.group(2))
+                        start_zoom_factor = float(match.group(3))
+                        end_zoom_factor = float(match.group(4))
+                        effects.append(
+                            Effect(
+                                name=name,
+                                frame_ref=frame_ref,
+                                loop=loop,
+                                fade=fade,
+                                zoom_factor=start_zoom_factor,
+                                extra_param=end_zoom_factor,
                             )
                         )
                     else:

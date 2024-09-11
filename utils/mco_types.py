@@ -168,6 +168,7 @@ class Effect:
     loop: int = 0
     fade: int = 0
     zoom_factor: float = 0
+    extra_param: Any | None = None
 
 
 @dataclass
