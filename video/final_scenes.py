@@ -5,7 +5,7 @@ import time
 from pprint import pprint
 
 from scene.consolidate import consolidate_scene
-from scene.generate_lr import generate_lr_scene
+from scene.generate_final import generate_final_scene
 from utils.hash import calc_hash
 from utils.logger import main_logger
 from utils.mco_types import Scene, ChapterVideo
@@ -27,7 +27,7 @@ from .concat_scenes import concat_scenes
 
 
 
-def generate_lr_scenes(
+def generate_final_scenes(
     episode: str,
     single_chapter: Chapter,
     task: TaskName = '',
@@ -38,7 +38,8 @@ def generate_lr_scenes(
     scene_max: int = -1,
     watermark: bool = False,
     edition: str | None = None,
-    debug: bool = False
+    debug: bool = False,
+    stats: bool = False
 ):
     k_ep = key(episode)
     k_ed = edition
@@ -99,7 +100,7 @@ def generate_lr_scenes(
                 print(lightcyan("==============================================================================="))
 
             if not simulation and not is_up_to_date(scene) or force:
-                result = generate_lr_scene(scene=scene, force=force)
+                result = generate_final_scene(scene=scene, force=force, debug=debug, stats=stats)
                 if not result:
                     # pprint(db[scene['k_ep']]['video'][scene['k_ed']])
                     raise RuntimeError(
@@ -133,7 +134,7 @@ def generate_lr_scenes(
             name=task,
             hashcode=hashcode,
             concat_file=os.path.join(cache_path, "concat", f"{basename}.txt"),
-            video_file=os.path.join(cache_path, f"video_lr", f"{basename}.mkv"),
+            video_file=os.path.join(cache_path, f"video", f"{basename}.mkv"),
         )
     print(f"Generated scenes in {time.time() - start_time_full:.03f}s")
 

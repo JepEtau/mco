@@ -20,7 +20,7 @@ def get_frames_to_cache(replacements: dict[int, int]) -> deque[int]:
 
 
 
-class ImageCache(UserDict):
+class ItemCache(UserDict):
     def __init__(self, verbose: bool = False):
         super().__init__()
         self.occurences: Counter = Counter()

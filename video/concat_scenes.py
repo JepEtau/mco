@@ -3,7 +3,7 @@ from pprint import pprint
 
 from utils.mco_utils import run_simple_command
 from utils.mco_path import makedirs
-from utils.mco_types import Scene, VideoChapter
+from utils.mco_types import Scene, ChapterVideo
 from utils.logger import main_logger
 from utils.p_print import *
 from utils.tools import ffmpeg_exe
@@ -17,7 +17,7 @@ from parsers import (
 def concat_scenes(
     episode: str,
     chapter: str,
-    video: VideoChapter,
+    video: ChapterVideo,
     force: bool=False,
     simulation: bool=False
 ) -> None:
@@ -33,9 +33,10 @@ def concat_scenes(
         return
     k_ep, k_ch = key(episode), chapter
     try:
-        hashcode: str = video['hash']
+        hashcode: str = video['task'].hashcode
     except:
         pprint(video)
+        raise ValueError("concat_scenes")
 
     main_logger.debug(lightcyan(f"\nConcatenate scenes: {k_ep}:{k_ch}"))
 
@@ -79,6 +80,7 @@ def concat_scenes(
         concat_file.close()
 
         # Output video file
+        os.makedirs(os.path.join(cache_directory, "video"), exist_ok=True)
         out_video: str = os.path.join(
             cache_directory,
             "video",
@@ -91,7 +93,8 @@ def concat_scenes(
         # Concatenate scenes into a single video
         ffmpeg_command: list[str] = [
             ffmpeg_exe,
-            *db['common']['settings']['verbose'],
+            "-hide_banner",
+            "-loglevel", "warning",
             "-f", "concat",
             "-safe", "0",
             "-i", concat_fp,

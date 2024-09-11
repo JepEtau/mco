@@ -81,8 +81,6 @@ def parse_common_configuration(language:str=''):
             v = v.replace(c, '')
         db_common['settings'][k] = v
 
-    db_common['settings']['verbose'] = db_common['settings']['verbose'].split(' ')
-
     # Directories
     directories: dict[str, str] = db_common['directories']
     directories['config'] = database_path

@@ -4,7 +4,6 @@ import os
 from pprint import pprint
 import sys
 
-from utils.mco_types import SrcScene
 from .mco_utils import get_cache_path, get_dirname
 from .p_print import *
 from parsers import db

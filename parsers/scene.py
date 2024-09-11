@@ -1,22 +1,28 @@
+from __future__ import annotations
 from configparser import ConfigParser
+from pprint import pprint
 import re
 import sys
 from ._keys import all_chapter_keys, key
 from utils.p_print import *
-from utils.mco_types import Effect, Effects, Scene, SrcScene, VideoChapter
+from utils.mco_types import Effect, Effects, ChapterVideo, Scene
+from scene.src_scene import SrcScenes
 from ._db import db
 from ._keys import key
 
 
 
 def parse_scenes(
-    scenes: list[Scene],
+    k_ed: str,
+    k_ep: str,
+    k_ch: str,
     scenes_str: str
 ) -> None:
     """This procedure parse a string wich contains the list of scenes
         and update the structure of the db.
         Used for 'episodes' and 'documentaire'
     """
+    scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
     for scene_no, scene in enumerate(scenes_str.split()):
         # print(scene)
         scene_properties = scene.split(',')
@@ -37,6 +43,9 @@ def parse_scenes(
 
         # Append this scene to the list of scenes
         new_scene: Scene = {
+            'k_ed': k_ed,
+            'k_ep': k_ep,
+            'k_ch': k_ch,
             'no': scene_no,
             'start': start,
             'count': count,
@@ -90,10 +99,7 @@ def parse_scenes(
                         })
 
                 elif d[0] == 'replace':
-                    # Replace this scene by the source
-                    if 'src' not in scenes[scene_no].keys():
-                        scenes[scene_no]['src'] = dict()
-                    scenes[scene_no]['src'].update({'use': True if d[1]=='y' else False})
+                    raise ValueError(red("scene replace is deprecated"))
 
                 elif d[0] == 'effects':
                     effect = d[1].split(',')
@@ -107,10 +113,13 @@ def parse_scenes(
 
 
 def parse_scenes_new(
-    scenes: list[Scene],
+    k_ed: str,
+    k_ep: str,
+    k_ch: str,
     config,
     k_section: str,
 ) -> None:
+    scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
     for k_option in config.options(k_section):
         value_str: str = config.get(k_section, k_option).replace(' ','')
 
@@ -134,6 +143,9 @@ def parse_scenes_new(
 
         # Append this scene to the list of scenes
         scenes.append({
+            'k_ed': k_ed,
+            'k_ep': k_ep,
+            'k_ch': k_ch,
             'no': scene_no,
             'start': start,
             'count': count,
@@ -158,7 +170,7 @@ def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
     """This procedure is used to consolidate the parsed scenes
     It updates the total duration (in frames of the video for a chapter
     """
-    db_video: VideoChapter = db[k_ep]['video'][k_ed][k_chapter]
+    db_video: ChapterVideo = db[k_ep]['video'][k_ed][k_chapter]
 
     # Create a single scene if no scene defined by the configuration file
     if 'scenes' not in db_video:
@@ -209,14 +221,24 @@ def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
 
 
 def parse_target_scenelist(
-    db_scenes: list[dict],
+    db_video_target: ChapterVideo,
     config: ConfigParser,
     k_section,
     language: str = 'fr'
 ) -> None:
 
+    db_scenes: list[Scene] = db_video_target['scenes']
+
     for k_option in config.options(k_section):
-        value_str: str = config.get(k_section, k_option).replace(' ','')
+        value_str: str = (
+            config.get(k_section, k_option)
+            .replace(' ','')
+            .replace('\n','')
+        )
+
+        if k_option == 'max':
+            db_video_target['scene_count'] = int(value_str) + 1
+            continue
 
         lang = language
         try:
@@ -238,10 +260,18 @@ def parse_target_scenelist(
             # Append this scene to the list of scenes
             db_scenes.append({
                 'no': scene_no,
-                'src': SrcScene(),
+                'src': SrcScenes(),
             })
             scene: Scene = db_scenes[-1]
 
+            k_ed: str = db_video_target['k_ed_src']
+            k_ep: str = db_video_target['k_ep']
+            k_ch: str = db_video_target['k_ch']
+
+            current_scene_no: int = -1
+            segment_start: int = -1
+            segment_count: int = -1
+            effects: Effects | None = None
             for p in scene_properties:
                 try:
                     k, v = p.split('=')
@@ -250,46 +280,129 @@ def parse_target_scenelist(
                     # sys.exit()
                     continue
 
-                scene_src: SrcScene = scene['src']
                 if k == 'ed':
-                    scene_src['k_ed'] = v
+                    k_ed = v
 
                 elif k == 'ep':
-                    scene_src['k_ep'] = key(int(v))
+                    k_ep = key(int(v))
 
                 elif k == 'chapter':
                     if v in all_chapter_keys():
-                        scene_src['k_ch'] = v
+                        k_ch = v
                     else:
                         sys.exit(f"parse_target_scenelist: {v} is not recognized")
 
                 elif k == 'scene':
-                   scene_src['no'] = int(v)
+                   if current_scene_no != -1:
+                       scene['src'].add_scene(
+                           k_ed=k_ed,
+                           k_ep=k_ep,
+                           k_ch=k_ch,
+                           no=current_scene_no,
+                           start=segment_start,
+                           count=segment_count,
+                       )
+                   current_scene_no = int(v)
+                   segment_start = -1
+                   segment_count = -1
 
-                elif k == 'segments':
-                    scene_src['segments'] = []
-                    segments = v.replace(' ', '').split('\n')
-                    for s in segments:
-                        if (match := re.search(re.compile(r"(\d+):(\d+)"), s)):
-                            scene_src['segments'].append({
-                                'start': int(match.group(1)),
-                                'count': int(match.group(2)),
-                            })
-
-                elif k in ['start', 'count']:
-                    scene_src[k] = int(v)
+                elif k == 'segment':
+                    if (match := re.search(re.compile(r"(\d+):(\d+)"), v)):
+                        segment_start = int(match.group(1))
+                        segment_count = int(match.group(2))
 
 
-            # # Debug
-            # if k_section == 'scenes_episode.fr' and scene_no == 307:
-            #     print(k_section)
-            #     # pprint(scene_properties)
-            #     pprint(scene)
-            #     # sys.exit()
+                elif k == 'effect':
+                    print(f"effect: {v}")
+                    # name, frame_ref, count, param
+                    if (match := re.search(re.compile(
+                        r"([a-z_]+):(-?\d+):(\d+):([\d+[.]*\d*)"
+                    ), v)):
+                        if effects is None:
+                            effects = Effects()
+                        name: str = match.group(1)
+                        frame_ref: int = int(match.group(2))
+                        loop: int = 0
+                        fade: int = 0
+                        zoom_factor: int = 0
+                        if 'loop' in name or 'zoom' in name:
+                            loop = int(match.group(3))
+                        if 'fade' in name:
+                            fade = int(match.group(4))
+                        if 'zoom' in name:
+                            zoom_factor = float(match.group(4))
 
+                        effects.append(
+                            Effect(
+                                name=name,
+                                frame_ref=frame_ref,
+                                loop=loop,
+                                fade=fade,
+                                zoom_factor=zoom_factor
+                            )
+                        )
+                    elif (
+                        v.startswith('blend')
+                        and (match := re.search(re.compile(r"([a-z_]+):(-?\d+)"), v))
+                    ):
+                        # blend with last image from previous scene
+                        if effects is None:
+                            effects = Effects()
+                        name: str = match.group(1)
+                        frame_ref: int = 0
+                        # use fade for blend out
+                        fade: int = int(match.group(2))
+                        effects.append(
+                            Effect(
+                                name=name,
+                                frame_ref=frame_ref,
+                                fade=fade,
+                            )
+                        )
+                    elif (
+                        v.startswith('title')
+                        and (match := re.search(re.compile(
+                                r"([a-z_]+):(-?\d+):([\d+[.]*\d*):([\d+[.]*\d*)"
+                            ), v))
+                    ):
+                        # blend with last image from previous scene
+                        if effects is None:
+                            effects = Effects()
+                        name: str = match.group(1)
+                        loop: int = int(match.group(2))
+                        start_zoom_factor = float(match.group(3))
+                        end_zoom_factor = float(match.group(4))
+                        effects.append(
+                            Effect(
+                                name=name,
+                                frame_ref=frame_ref,
+                                loop=loop,
+                                fade=fade,
+                                zoom_factor=start_zoom_factor,
+                                extra_param=end_zoom_factor,
+                            )
+                        )
+                    else:
+                        print("failed")
+                    # if k_ch == 'g_debut':
+                    #     pprint(effects)
+                    #     # sys.exit()
+
+            scene['src'].add_scene(
+                k_ed=k_ed,
+                k_ep=k_ep,
+                k_ch=k_ch,
+                no=current_scene_no if current_scene_no != -1 else scene_no,
+                start=segment_start,
+                count=segment_count,
+                effects=effects
+            )
 
 def get_scene_from_frame_no(
-    db, frame_no: int, k_ed: str, k_ep: str, k_chapter: str
+    frame_no: int,
+    k_ed: str,
+    k_ep: str,
+    k_chapter: str
 ) -> Scene | None:
     # print("get_scene_from_frame_no: %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_chapter))
     scenes: list[Scene] = db[k_ep]['video'][k_ed][k_chapter]['scenes']

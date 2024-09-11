@@ -12,24 +12,15 @@ from utils.logger import main_logger as main_logger
 from utils.p_print import *
 from av_merge.combine_av import combine_av_tracks, concatenate_all
 from av_merge.chapters import add_chapters
-from video.lr_scenes import generate_lr_scenes
+from video.final_scenes import generate_final_scenes
 
 
 
 def main():
     # Arguments
     parser: ArgumentParser = common_argument_parser(
-        description="Generate Low Resolution video",
+        description="Generate episode (final)",
         add_language=True,
-    )
-
-    parser.add_argument(
-        "--edition",
-        "-ed",
-        choices=['f', 'k', 's'],
-        default='',
-        required=False,
-        help="Use this edition as source rather than the one selected in database"
     )
 
     parser.add_argument(
@@ -39,6 +30,22 @@ def main():
         default=-1,
         required=False,
         help="scene no. to process. Integer or frame value (e.g. 2450f)"
+    )
+
+    parser.add_argument(
+        "--scene_min",
+        type=int,
+        default=-1,
+        required=False,
+        help="starting scene no. to process"
+    )
+
+    parser.add_argument(
+        "--scene_max",
+        type=int,
+        default=-1,
+        required=False,
+        help="last scene no. to process"
     )
 
     parser.add_argument(
@@ -56,10 +63,10 @@ def main():
     )
 
     parser.add_argument(
-        "--watermark",
+        "--stats",
         action="store_true",
         required=False,
-        help="Watermark each scene with scene no."
+        help="Statistics to find the dimension of the scene for each chapter"
     )
 
     arguments = parser.parse_args()
@@ -91,20 +98,19 @@ def main():
     gc.collect()
 
 
-    task = 'lr'
-
-    generate_lr_scenes(
+    task = 'final'
+    generate_final_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
         task=task,
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=arguments.scene,
-        watermark=arguments.watermark,
-        edition=arguments.edition,
-        debug=arguments.debug
+        scene_min=arguments.scene_min,
+        scene_max=arguments.scene_max,
+        debug=arguments.debug,
+        stats=arguments.stats
     )
-
 
     if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == -1:
         # Merge audio and video files

@@ -11,6 +11,8 @@ import sys
 from pprint import pprint
 from typing import Literal
 
+from utils.mco_types import ChapterVideo
+
 from .logger import logger
 
 from .audio import parse_audio_section
@@ -46,9 +48,11 @@ from ._db import db
 def db_init_episodes(k_ed, ep_min: int = 1, ep_max: int = 39, force: bool = True):
     inputs: dict = db['editions'][k_ed]['inputs']
 
-    for i in range(ep_min, min(40, ep_max+1)):
-        k_ep = key(i)
+    # Add specific episode nb when g_debut/g_fin are in separate input video
+    k_eps: list[str] = list(map(key, range(ep_min, min(40, ep_max+1))))
+    k_eps.append('ep99')
 
+    for k_ep in k_eps:
         if not force:
             # Do not create section if input file does not exist
             if k_ep not in inputs['video'] and k_ep not in inputs['audio']:
@@ -168,10 +172,16 @@ def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
                 except:
                     continue
 
-                nested_dict_set(db_video_target, [], k_chapter, 'scenes')
+                ch_video = db_video_target[k_chapter]
+                ch_video.update({
+                    'k_ep': k_ep,
+                    'k_ch': k_chapter,
+                    'scenes': []
+                })
+
                 if lang == db_audio_target['lang']:
                     parse_target_scenelist(
-                        db_video_target[k_chapter]['scenes'],
+                        ch_video,
                         config,
                         k_section,
                         lang
@@ -281,13 +291,13 @@ def parse_episode(k_ed: str, k_ep: str | int):
                                     'g_fin',
                                     'g_asuivre',
                                     'g_documentaire']:
-                        parse_scenes(db_video_chapter['scenes'], value_str)
+                        parse_scenes(k_ed, k_ep, k_chapter, value_str)
 
                     elif k_section in ['precedemment', 'asuivre']:
                         # precedemment and asuivre are different as some scenes
                         # may be replaced
                         # TODO rework as the function/parameteres are the same!
-                        parse_scenes(db_video_chapter['scenes'], value_str)
+                        parse_scenes(k_ed, k_ep, k_chapter, value_str)
 
 
         # chapters: scenes (new format)
@@ -297,7 +307,7 @@ def parse_episode(k_ed: str, k_ep: str | int):
             if k_chapter not in all_chapter_keys():
                 continue
             db_video[k_chapter]['scenes'] = []
-            parse_scenes_new(db_video[k_chapter]['scenes'], config, k_section)
+            parse_scenes_new(k_ed, k_ep, k_chapter, config, k_section)
 
 
     # Set dimensions
@@ -349,6 +359,8 @@ def get_episode_dependencies(
     """
     k_ep: str = key(episode)
     dependencies: OrderedDict[str, set] = OrderedDict()
+    if k_ep == 'ep99':
+        return dependencies
     target_video: dict = db[k_ep]['video']['target']
 
     # Common chapter
@@ -356,20 +368,14 @@ def get_episode_dependencies(
         if chapter not in target_video:
             continue
 
-        chapter_video: dict = target_video[chapter]
-        if 'scenes' in chapter_video.keys():
-            scenes: list[dict] = chapter_video['scenes']
-            for scene in scenes:
-                # print(scene)
-                if 'src' in scene.keys() and 'k_ep' in scene['src']:
-                    if 'k_ed' in scene['src']:
-                        k_ed_dep = scene['src']['k_ed']
-                    else:
-                        k_ed_dep = chapter_video['k_ed_src']
-
-                    if k_ed_dep not in dependencies.keys():
-                        dependencies[k_ed_dep] = set()
-                    dependencies[k_ed_dep].add(scene['src']['k_ep'])
+        chapter_video: ChapterVideo = target_video[chapter]
+        if 'scenes' in chapter_video:
+            for scene in chapter_video['scenes']:
+                for k_ed, k_eps in scene['src'].get_dependencies().items():
+                    if k_ed not in dependencies:
+                        dependencies[k_ed] = set()
+                    for k_ep in k_eps:
+                        dependencies[k_ed].add(k_ep)
 
     # Edition used as the default source
     for chapter in non_credit_chapter_keys():

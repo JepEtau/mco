@@ -1,6 +1,9 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Literal, TypedDict, TYPE_CHECKING
+from typing import Any, Literal, TypedDict, TYPE_CHECKING
+
+import numpy as np
+
 
 if TYPE_CHECKING:
     from .images import Images
@@ -11,15 +14,19 @@ if TYPE_CHECKING:
         TaskName,
     )
     from nn_inference.threads.t_decoder import VideoStreamInfo
+    from scene.src_scene import SrcScenes
 
-# Common to all types:
-# k_ed: key: editon. 1 letter format in [k, s, f, ..]
-# k_ep: key: episode no. format: ep##
-# k_chapter: key: refer to K_ALL_chapterS
 
-# no: scene no.
-# start: start frame form 0 to ..
-# count: frame count of a chapter/scene/segment
+
+
+@dataclass(slots=True)
+class McoFrame:
+    no: int
+    img: np.ndarray
+    scene: Scene = None
+
+
+
 
 
 class Inputs(TypedDict):
@@ -105,42 +112,63 @@ class GenericSrc(TypedDict):
     k_ep: str
 
 
-class SceneGeometry(TypedDict):
-    is_default: bool
+
+@dataclass
+class ChapterGeometry:
+    width: int = -1
 
 
-class Geometry(TypedDict):
-    keep_ratio: bool
-    fit_to_width: bool
-    crop: list[int]
-    is_default: bool
-    scene: SceneGeometry
+@dataclass(slots=True)
+class DetectInnerRectParams:
+    threshold_min: float = 10
+    morph_kernel_radius: int = 3
+    erode_kernel_radius: int = 0
+    erode_iterations: int = 2
+    do_add_borders: bool = True
 
 
-class SrcScene(TypedDict):
-    k_ed: str
-    k_ep: str
-    k_ch: str
-    no: int
-    start: int
-    count: int
-    segments: list
+@dataclass
+class SceneGeometry:
+    keep_ratio: bool = True
+    fit_to_width: bool = False
+    crop: tuple[int, int, int, int] = field(default_factory=tuple)
+    is_default: bool = True
+    chapter: ChapterGeometry = field(default_factory=ChapterGeometry)
+    detection_params: DetectInnerRectParams = field(
+        default_factory=DetectInnerRectParams
+    )
 
 
-class RefScene(TypedDict):
-    count: int
-    k_ed: str = ''
-    k_ep: str = ''
-    k_ch: str = ''
-    no: int = 0
+    def __post_init__(self):
+        # top, bottom, left, right
+        self.crop = (0, 0, 0, 0)
+        self._defined: bool = False
+
+    @property
+    def defined(self) -> bool:
+        return self._defined
+
+    @defined.setter
+    def defined(self, defined) -> None:
+        self._defined = defined
 
 
 @dataclass
 class Effect:
-    name: Literal['loop', 'fadeout', 'loop_and_fadeout', 'loop_and_fadein', 'watermark']
+    name: Literal[
+        'loop',
+        'fadeout',
+        'loop_and_fadeout',
+        'loop_and_fadein',
+        'watermark',
+        'zoom_in',
+        'zoom_out'
+    ]
     frame_ref: int = 0
     loop: int = 0
     fade: int = 0
+    zoom_factor: float = 0
+    extra_param: Any | None = None
 
 
 @dataclass
@@ -162,8 +190,42 @@ class Effects(list):
     # def add(self, effect: Effect) -> None:
     #     self.effects.append(effect)
 
+    def has_effects(self) -> bool:
+        if len(self.effects) == 0:
+            return False
+        for effect in self.effects:
+            if effect.fade != 0 or effect.loop != 0:
+                return True
+        return False
+
+    def has_effect(self, name: Literal[
+        'loop',
+        'fadeout',
+        'loop_and_fadeout',
+        'loop_and_fadein',
+        'watermark',
+        'zoom_in',
+        'zoom_out'
+    ]) -> bool:
+        for e in self.effects:
+            if e.name == name:
+                return True
+        return False
+
+    def append(self, object: Any) -> None:
+        return self.effects.append(object)
+
+    def get_effect(self, name: str) -> Effect | None:
+        for e in self.effects:
+            if e.name == name:
+                return e
+        return None
 
 
+class RefScene(TypedDict):
+    no: int
+    start: int
+    count: int
 
 
 class Scene(TypedDict):
@@ -201,7 +263,7 @@ class Scene(TypedDict):
     # When processing this scene, it uses the k_ed:k_episode:k_chapter:scene specified by this variable
     # e.g. we can use a scene from another edition if not available in this one
     # if a list of segments has to be specified, they shall use the same episode/chapter/scene no.
-    src: SrcScene
+    src: SrcScenes
 
     ref: RefScene
 
@@ -214,7 +276,7 @@ class Scene(TypedDict):
 
     # geometry applied to this. After consolidation, it contains
     # the width of the dst chapter.
-    geometry: Geometry
+    geometry: SceneGeometry
 
     # Video effect: fade in / fade out / loop and fade out
     # historic: only the first effect is used. Do not rembebr why defined as a list...
@@ -258,7 +320,7 @@ class DstScene(TypedDict):
     k_chapter: str
 
 
-class VideoChapter(TypedDict):
+class ChapterVideo(TypedDict):
     start: int
     end: int # Attention, this is the end+1 frame no.
     count: int
@@ -267,7 +329,7 @@ class VideoChapter(TypedDict):
     effects: Effects
 
     # default geometry for scenes that have not geometry defined
-    geometry: Geometry
+    geometry: ChapterGeometry
 
     # used to sync audio and video: nb of frames to add before this chapter
     avsync: int
@@ -277,10 +339,16 @@ class VideoChapter(TypedDict):
 
     task: ProcessingTask
 
+    k_ed_src: str
+
+    # Episode, chapter: used to avoid too many arguments
+    k_ep: str
+    k_ch: str
+
 
 @dataclass
 class VideoTrack:
-    target: dict[Chapter, VideoChapter] = field(default_factory=dict)
+    target: dict[Chapter, ChapterVideo] = field(default_factory=dict)
 
 
 

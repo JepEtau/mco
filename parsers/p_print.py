@@ -12,7 +12,7 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
     fps = get_fps(db)
 
     # Do not show silences to fit terminal width
-    show_silence: bool = False
+    show_silence: bool = True
 
     if False:
         # print last scene of every part
@@ -62,7 +62,7 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
         loop_count: int = 0
         if 'effects' in last_scene:
             effect = last_scene['effects'].primary_effect()
-            print(f"\teffect:{last_scene['effects']}")
+            # print(f"\teffect:{last_scene['effects']}")
             if 'loop' in effect.name:
                 loop_count = effect.loop
         if 'effects' in first_scene:
@@ -117,7 +117,7 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
             print(f"{str(video_silence).rjust(12)}", end='')
 
         # start of 1st scene
-        start_str = f"{first_scene['start']}"
+        start_str = f"{first_scene['src'].first_frame_no()}"
         print(f"{start_str.rjust(12)}", end='')
 
         # frames count (sum of scenes only)
@@ -147,7 +147,8 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
     for k_chapter in ['episode', 'asuivre', 'documentaire']:
         silence_count = ms_to_frame(db[k_ep]['audio'][k_chapter]['silence'], fps)
         audio_count += silence_count
-        video_count += silence_count
+        # silence_count = db[k_ep]['video']['target'][k_chapter]['silence']
+        # video_count += silence_count
 
     print("")
     print(green(f" Audio track: {audio_count}"))
@@ -162,7 +163,7 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
 
 def pprint_g_debut_fin() -> dict[str, tuple[int]]:
     # Do not show silences to fit terminal width
-    show_silence: bool = False
+    show_silence: bool = True
 
     fps = get_fps(db)
 
@@ -250,7 +251,7 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
         print(f"{extra_str.rjust(12)}", end='')
 
         # start of 1st scene
-        start_str = f"{first_scene['start']}"
+        start_str = f"{first_scene['src'].first_frame_no()}"
         print(f"{start_str.rjust(14)}", end='')
 
         # frames count (sum of scenes only)
@@ -275,3 +276,26 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
         frames[k_chapter_g] = (video_count, audio_count)
 
     return frames
+
+
+
+
+def pprint_scene_mapping(scene: Scene) -> None:
+    print(lightgreen(f"    {scene['no']}".rjust(8)), end=':')
+    if 'ref' in scene:
+        print(lightgreen(f"{scene['ref']['start']}".rjust(6)), end='')
+        print(lightgreen(f"  ({scene['ref']['count']})".rjust(8)), end='')
+    else:
+        print(lightgreen(" ..."), end='')
+
+    print(f"  <- ", end='')
+    print(f"{scene['dst']['count']}".rjust(4), end='  ')
+
+    for s in scene['src'].scenes():
+        _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']
+        print(f" {_k_ed}:{_k_ep}:{_k_ch}:{_no: 3}".rjust(10), end='')
+        print(f" {s['start']}".rjust(10), end='')
+        print(f"{s['count']}".rjust(8), end='')
+        if len(scene['src']) > 1:
+            print(', ', end='')
+    print()

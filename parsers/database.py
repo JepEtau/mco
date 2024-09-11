@@ -4,7 +4,6 @@ from pprint import pprint
 import sys
 from typing import Literal
 from utils.p_print import *
-from utils.path_utils import absolute_path
 
 from .av_sync import consolidate_av_sync
 from .common import parse_common_configuration
@@ -108,6 +107,10 @@ def parse_database(
         print("------------------------------------")
         sys.exit()
 
+    # Add the reference
+    if lang == 'fr':
+        dependencies['k'].append('ep01')
+
     # Merge dependencies
     for k_ed, v in dependencies_tmp.items():
         if k_ed not in dependencies.keys():
@@ -121,6 +124,7 @@ def parse_database(
         dependencies[edition].append(k_ep)
 
     # Parse episodes which are required (dependencies)
+    pprint(dependencies)
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in v:
             if k_ep_tmp == k_ep:
@@ -157,7 +161,7 @@ def parse_database(
         parse_geometry_configurations(k_ep_or_g=k_chapter_g)
 
         # Create scenes used for the generation
-        consolidate_target_scenes_g(k_ep='', k_chapter_c=k_chapter_g)
+        consolidate_target_scenes_g(k_ep='', k_chapter=k_chapter_g)
 
         # Consolidate by aligning the A/V tracks of generiques
         consolidate_av_tracks(k_ep='', k_chapter=k_chapter_g)
@@ -166,6 +170,7 @@ def parse_database(
 
     # Consolidate database for the episode ONLY
     if k_ep != 'ep00':
+    # if k_ep not in ('ep00', 'ep99'):
         for chapter in non_credit_chapter_keys():
             consolidate_target_scenes(k_ep=k_ep, k_chapter=chapter)
 
@@ -174,7 +179,7 @@ def parse_database(
             # parse_stabilize_configurations(k_ep_or_g=k_chapter_g)
             parse_geometry_configurations(k_ep_or_g=k_chapter_g)
 
-            consolidate_target_scenes_g(k_ep=k_ep, k_chapter_c=k_chapter_g)
+            consolidate_target_scenes_g(k_ep=k_ep, k_chapter=k_chapter_g)
 
         consolidate_av_sync(k_ep=k_ep)
         consolidate_av_tracks(k_ep=k_ep)

@@ -1,4 +1,5 @@
 
+from copy import deepcopy
 import sys
 import configparser
 import os
@@ -9,6 +10,9 @@ from pathlib import (
 )
 from pprint import pprint
 from typing import Any
+
+from utils.mco_types import ChapterGeometry, SceneGeometry
+from utils.path_utils import absolute_path
 
 from .credits import get_credits_dependencies
 from ._keys import all_chapter_keys
@@ -21,7 +25,7 @@ from ._db import db
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages
 # le no. de plan est retrouvable par les parsers depuis le no. de trame
-# et plus rapide encore lorsque la chapterie est spécifiée; lors de l'écriture automatique
+# et plus rapide encore lorsque la partie est spécifiée; lors de l'écriture automatique
 # par l'éditeur, le no. de trame correspond à la 1ere trame du plan
 
 def parse_geometry_configurations(k_ep_or_g:str):
@@ -29,68 +33,70 @@ def parse_geometry_configurations(k_ep_or_g:str):
     TODO: it uses the first frame of a scene to identify the scene rather the index, so that
     a modification of scenes will not break anything
     """
-    verbose = False
+    verbose = True
     K_ED_DEBUG = ''
     K_EP_DEBUG = ''
     K_chapter_DEBUG = ''
     if verbose:
-        print(lightgreen("parse_geometry_configurations: %s" % (k_ep_or_g)))
+        print(lightgreen(f"parse_geometry_configurations: {k_ep_or_g}"))
+
     # Open configuration file
-    filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_geometry.ini" % (k_ep_or_g))
-    if filepath.startswith("~/"):
-        filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+    filepath = absolute_path(
+            os.path.join(
+            db['common']['directories']['config'],
+            k_ep_or_g,
+            f"{k_ep_or_g}_geometry.ini"
+        )
+    )
     if not os.path.exists(filepath):
         return
 
     # Parse the file
     config = configparser.ConfigParser()
     config.read(filepath)
-    for k_section in config.sections():
+    for section in config.sections():
         if verbose:
-            print("\tparse_geometry_configurations: section:%s" % (k_section))
-        if k_section in all_chapter_keys():
-            # This section define the geometry of the target: i.e. width
-            if k_ep_or_g in ('g_debut', 'g_fin'):
-                nested_dict_set(db, {'target':dict()}, k_ep_or_g, 'video', 'geometry')
-                target_geometry = db[k_ep_or_g]['video']['geometry']['target']
-            else:
-                nested_dict_set(db, {'target':dict()}, k_ep_or_g, 'video', 'target', k_section, 'geometry')
-                target_geometry = db[k_ep_or_g]['video']['target'][k_section]['geometry']['target']
-
-            properties = config.get(k_section, 'target').strip().replace(' ', '').split(',')
+            print(f"\tparse_geometry_configurations: chapter: {section}")
+        if section in all_chapter_keys():
+            width: int = -1
+            properties = config.get(section, 'target').strip().replace(' ', '').split(',')
             for property in properties:
                 property_array_str = property.split('=')
                 property_name = property_array_str[0]
 
                 if property_name == 'width':
-                    target_geometry['w'] = int(property_array_str[1])
+                    width = int(property_array_str[1])
 
-            # if k_section == 'asuivre':
-            #     print("\t%s:%s" % (k_ep_or_g, k_section))
-            #     pprint(db[k_ep_or_g]['video']['target'][k_section])
-            #     # sys.exit()
+            # This section define the geometry of the chapter: i.e. width
+            if k_ep_or_g in ('g_debut', 'g_fin'):
+                db[k_ep_or_g]['video']['geometry'] = ChapterGeometry(width)
+
+            else:
+                db[k_ep_or_g]['video']['target'][section]['geometry'] = ChapterGeometry(width)
+
             continue
-
 
         # if '.' not in k_section:
         #     sys.exit("__parse_curve_configurations: error, no edition,ep,chapter specified")
-        k_ed, k_ep, k_chapter = k_section.split('.')
+        k_ed, k_ep, k_chapter = section.split('.')
         if verbose:
             print(orange(f"\tk_ep_or_g={k_ep_or_g};\t{k_ed}:{k_ep}:{k_chapter}"))
-        for k_str in config.options(k_section):
+        for k_str in config.options(section):
             if verbose:
-                print("\t\tk_str=%s" % (k_str))
+                print(f"\t\tk_str={k_str}")
 
             if k_str == 'default':
                 # Default values for scenes of this chapter
-                properties = config.get(k_section, k_str)
+                properties = config.get(section, k_str)
                 if verbose:
                     print("\t\tproperties:", properties)
 
                 try:
-                    nested_dict_set(db[k_ep]['video'],
+                    nested_dict_set(
+                        db[k_ep]['video'],
                         get_geometry_from_properties(properties),
-                        k_ed, k_chapter, 'geometry')
+                        k_ed, k_chapter, 'geometry'
+                    )
                 except:
                     print(orange(f"warning: {k_ep}:{k_ed}:{k_chapter}: video does not exist"))
                 # if verbose:
@@ -102,12 +108,14 @@ def parse_geometry_configurations(k_ep_or_g:str):
                 # Custom values for a scene
 
                 # if the key is the start/middle of a scene
-                try: frame_no = int(k_str)
-                except: continue
+                try:
+                    frame_no = int(k_str)
+                except:
+                    continue
 
                 # Get scene from scene
                 try:
-                    scene = get_scene_from_frame_no(db, frame_no, k_ed=k_ed, k_ep=k_ep, k_chapter=k_chapter)
+                    scene = get_scene_from_frame_no(frame_no, k_ed=k_ed, k_ep=k_ep, k_chapter=k_chapter)
                 except:
                     # scenes not defined or unused
                     if verbose:
@@ -129,13 +137,8 @@ def parse_geometry_configurations(k_ep_or_g:str):
                     )
                     continue
 
-                properties = config.get(k_section, k_str)
-                nested_dict_set(
-                    scene,
-                    get_geometry_from_properties(properties),
-                    'geometry',
-                    'scene'
-                )
+                properties = config.get(section, k_str)
+                scene['geometry'] = get_geometry_from_properties(properties)
 
         # if k_section == 's.ep12.g_asuivre':
         #     pprint(db['g_asuivre'])
@@ -151,57 +154,38 @@ def parse_geometry_configurations(k_ep_or_g:str):
     #     sys.exit()
 
 
-def get_geometry_from_properties(properties_str: str):
-    geometry: dict[str, Any] = {
-        'keep_ratio': True,
-        'fit_to_width': False,
-        'crop': [0] * 4
-    }
+def get_geometry_from_properties(properties_str: str) -> SceneGeometry:
+    geometry: SceneGeometry = SceneGeometry()
+
     properties = properties_str.strip().replace(' ', '').split(',')
     for property in properties:
-        property_array_str = property.split('=')
+        property_array_str: list[str] = property.split('=')
         property_name = property_array_str[0]
 
         if property_name == 'keep_ratio':
-            geometry[property_name] = bool(property_array_str[1] == 'true')
+            geometry.keep_ratio = bool(property_array_str[1] == 'true')
+            geometry.defined = True
 
         elif property_name == 'fit_to_width':
-            geometry['fit_to_width'] = bool(property_array_str[1] == 'true')
+            geometry.fit_to_width = bool(property_array_str[1] == 'true')
+            geometry.defined = True
 
         elif property_name == 'crop':
             # crop: x0, y0, x1, y1
             values = property_array_str[1].split(':')
-            geometry[property_name] = list(map(lambda x: int(x), values))
+            geometry.crop = tuple([map(lambda x: int(x), values)])
+            geometry.defined = True
+
+        # Inner rect detection
+        elif property_name == 'inner_rect_params':
+            # threshold_min, morph_kernel_radius, erode_kernel_radius, erode_iterations
+            values = property_array_str[1].split(':')
+            geometry.detection_params.threshold_min = int(values[0])
+            geometry.detection_params.morph_kernel_radius = int(values[1])
+            geometry.detection_params.erode_kernel_radius = int(values[2])
+            geometry.detection_params.erode_iterations = int(values[3])
 
     return geometry
-
-
-
-def get_initial_target_geometry(k_ep: str, k_chapter: str) -> dict:
-    # print("get_initial_target_geometry for %s:%s" % (k_ep, k_chapter))
-    target_geometry = {}
-
-    if k_chapter in ('g_debut', 'g_fin'):
-        db_video = db[k_chapter]['video']
-        k_ep_target = 'ep00'
-    elif k_chapter in ['g_asuivre', 'g_documentaire']:
-        db_video = db[k_ep]['video']['target'][k_chapter[2:]]
-        k_ep_target = k_ep
-    else:
-        db_video = db[k_ep]['video']['target'][k_chapter]
-        k_ep_target = k_ep
-
-    try:
-        nested_dict_set(
-            target_geometry,
-            db_video['geometry']['target'].copy(),
-            k_ep_target,
-            k_chapter
-        )
-    except:
-        pass
-
-    return target_geometry
 
 
 
@@ -224,16 +208,21 @@ def get_initial_default_scene_geometry(k_ep: str, k_chapter: str) -> dict:
                 if verbose:
                     print(f"get_initial_default_scene_geometry for {k_chapter}: {k_ed}:{k_ep_tmp}:{k_chapter}")
                 # pprint(db[k_ep_src][k_ed][k_chapter])
+                raise ValueError("here!!!")
                 try:
-                    nested_dict_set(default_scene_geometry,
-                        db_video['geometry'].copy(),
-                        k_ed, k_ep_tmp, k_chapter)
+                    nested_dict_set(
+                        default_scene_geometry,
+                        deepcopy(db_video['geometry']),
+                        k_ed, k_ep_tmp, k_chapter
+                    )
+
                 except:
                     pass
     else:
         # Get All geometry for all editions ofr this ep/chapter
         if verbose:
             print("\t", db['editions']['available'])
+        raise ValueError("here!!!")
         for k_ed in db['editions']['available']:
             if k_ed not in db[k_ep]['video'].keys():
                 continue
@@ -274,13 +263,16 @@ def get_initial_scene_geometry(k_ep, k_chapter) -> dict:
                     # print("get_initial_scene_geometry: %s:%s:%s" % (k_ed,k_ep_src,k_chapter))
                     # pprint(db[k_ep_src][k_ed][k_chapter])
                     try:
-                        nested_dict_set(scene_geometry,
-                            scene['geometry']['scene'].copy(),
-                            k_ed, k_ep_tmp, k_chapter, scene['start'])
+                        geometry: SceneGeometry = scene['geometry']
+                        nested_dict_set(
+                            scene_geometry,
+                            geometry.scene,
+                            k_ed, k_ep_tmp, k_chapter, scene['start']
+                        )
                     except:
                         pass
     else:
-        # Get All geometry for all editions ofr this ep/chapter
+        # Get All geometry for all editions of this ep/chapter
         if verbose:
             print(lightgrey(f"\t- available editions: {db['editions']['available']}"))
 
@@ -296,9 +288,12 @@ def get_initial_scene_geometry(k_ep, k_chapter) -> dict:
 
             for scene in db_video['scenes']:
                 try:
-                    nested_dict_set(scene_geometry,
-                        scene['geometry']['scene'].copy(),
-                        k_ed, k_ep, k_chapter, scene['start'])
+                    geometry: SceneGeometry = scene['geometry']
+                    nested_dict_set(
+                        scene_geometry,
+                        geometry.scene,
+                        k_ed, k_ep, k_chapter, scene['start']
+                    )
                 except:
                     pass
 

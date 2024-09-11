@@ -11,6 +11,11 @@ external_dir: str = absolute_path(
     )
 )
 
+if not os.path.exists(external_dir):
+    os.makedirs(external_dir, exist_ok=True)
+if not os.path.exists(os.path.join(external_dir, "ffmpeg")):
+    os.makedirs(os.path.join(external_dir, "ffmpeg"), exist_ok=True)
+
 if sys.platform == "win32":
     ffmpeg_exe = os.path.join(external_dir, "ffmpeg", "ffmpeg.exe")
     ffprobe_exe = os.path.join(external_dir, "ffmpeg", "ffprobe.exe")
@@ -27,10 +32,13 @@ elif sys.platform == "linux":
 
     ffprobe_exe = absolute_path(ffprobe_exe)
     ffmpeg_exe = absolute_path(ffmpeg_exe)
-    for f in [ffmpeg_exe, ffprobe_exe]:
-        st_mode = os.stat(f).st_mode
-        if oct(st_mode & 0o100) == "0o0":
-            os.chmod(f, st_mode |S_IEXEC)
+    try:
+        for f in [ffmpeg_exe, ffprobe_exe]:
+            st_mode = os.stat(f).st_mode
+            if oct(st_mode & 0o100) == "0o0":
+                os.chmod(f, st_mode |S_IEXEC)
+    except:
+        pass
 
     mkvmerge_exe = "mkvmerge"
     ml_model_dir = "~/ml_models"

@@ -9,12 +9,13 @@ import numpy as np
 
 from parsers._types import VideoSettings
 from processing.frame_replace import (
-    ImageCache,
+    ItemCache,
     frame_occurences,
     get_frames_to_cache,
     get_frames_to_remove,
 )
-from utils.mco_types import Scene, SrcScene
+from scene.src_scene import SrcScene
+from utils.mco_types import Scene
 from utils.media import VideoInfo, extract_media_info, str_to_video_codec
 from utils.p_print import *
 from utils.path_utils import path_split
@@ -38,18 +39,18 @@ def _get_framerate(video_info: VideoInfo) -> str:
 
 
 
-def _get_complex_filter(scene: Scene) -> list[str]:
+def _get_ffmpeg_filter(scene: Scene) -> list[str]:
     vsettings: VideoSettings = scene['task'].video_settings
 
-    filter_complex: list[str] = []
+    ffmpeg_filter: list[str] = []
     if vsettings.pad != 0:
         pad: int = vsettings.pad
         pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
-        filter_complex: list[str] = [
+        ffmpeg_filter: list[str] = [
             "-filter_complex", f"[0:v]{pad_filter}[outv]",
             "-map", "[outv]"
         ]
-    return filter_complex
+    return ffmpeg_filter
 
 
 
@@ -164,7 +165,7 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
     h, w = video_info['shape'][:2]
 
     # Out filter: pad
-    filter_complex: list[str] = _get_complex_filter(scene)
+    filter_complex: list[str] = _get_ffmpeg_filter(scene)
 
     # Output
     in_fp: str = ""
@@ -178,13 +179,12 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
         '-pixel_format', pipe_pixfmt,
         '-video_size', f"{w}x{h}",
         "-r", _get_framerate(video_info),
-
         "-i", "pipe:0",
 
         *filter_complex,
 
-        "-vcodec", str_to_video_codec[vsettings.codec].value,
         "-pix_fmt", vsettings.pix_fmt,
+        "-vcodec", str_to_video_codec[vsettings.codec].value,
         *vsettings.codec_options
     ]
 
@@ -220,7 +220,7 @@ def generate_hr_scene(scene: Scene, debug: bool = False) -> bool:
     frames_to_replace: list[int] = get_frames_to_remove(replacements)
     frames_to_cache: deque[int] = get_frames_to_cache(replacements)
 
-    img_cache: ImageCache = ImageCache()
+    img_cache: ItemCache = ItemCache()
     img_cache.set_occurences(frame_occurences(replacements))
     # Do not cache images that are replaced
     img_cache.set_exceptions(frames_to_replace)
@@ -352,7 +352,7 @@ def _add_borders_to_scene(
     src_scene: SrcScene = scene['src']
     scene_key: str = f"{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['k_ch']}:{src_scene['k_ch']}"
     vsettings: VideoSettings = scene['task'].video_settings
-    filter_complex: list[str] = _get_complex_filter(scene)
+    filter_complex: list[str] = _get_ffmpeg_filter(scene)
 
     add_border_command: list[str] = [
         ffmpeg_exe,

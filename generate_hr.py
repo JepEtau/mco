@@ -4,36 +4,19 @@ import logging
 from pprint import pprint
 import signal
 import sys
-from parsers import (
-    parse_database,
-    logger,
-    all_chapter_keys,
-    db
-)
+from parsers import parse_database
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
-from av_merge.combine_av import combine_av_tracks, concatenate_all
-from av_merge.chapters import add_chapters
-from video.hr_scenes import generate_hr_scenes
-from video.lr_scenes import generate_lr_scenes
+from video.upscale_scenes import upscale_scenes
 
 
 
 def main():
     # Arguments
     parser: ArgumentParser = common_argument_parser(
-        description="Parse the database",
+        description="Generate the HR scenes",
         add_language=True
-    )
-
-    parser.add_argument(
-        "--edition",
-        "-ed",
-        choices=['f', 'k', 's'],
-        default='',
-        required=False,
-        help="Use this edition as source rather than the one selected in database"
     )
 
     parser.add_argument(
@@ -75,13 +58,6 @@ def main():
         help="Simulate the process"
     )
 
-    parser.add_argument(
-        "--watermark",
-        action="store_true",
-        required=False,
-        help="Watermark each scene with scene no."
-    )
-
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -110,17 +86,6 @@ def main():
     parse_database(episode=episode, lang='en' if arguments.en else 'fr')
     gc.collect()
 
-
-    # For inspection
-    # db_ep: dict = g_database['ep01']
-    # print(db_ep.keys())
-    # print(db_ep['cache_path'])
-    # pprint(db_ep['audio'])
-
-    # print(g_database.keys())
-    # pprint(g_database['common'])
-
-    #
     scene_no: int | None = None
     scene_arg: str = arguments.scene
     if scene_arg.endswith('f'):
@@ -131,7 +96,7 @@ def main():
 
     task = 'hr'
 
-    generate_hr_scenes(
+    upscale_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
         task=task,
@@ -140,8 +105,8 @@ def main():
         scene_no=scene_no,
         scene_min=arguments.scene_min,
         scene_max=arguments.scene_max,
-        watermark=arguments.watermark,
-        edition=arguments.edition,
+        watermark=False,
+        edition=None,
         debug=arguments.debug
     )
 

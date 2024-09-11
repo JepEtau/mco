@@ -1,182 +1,258 @@
-from concurrent.futures import ThreadPoolExecutor
-import multiprocessing
+import math
 import os
 from pprint import pprint
-import sys
-
+import subprocess
 import numpy as np
 from parsers import (
     db,
     get_fps,
-    task_to_dirname
+    VideoSettings,
 )
-from processing.effects import effect_fadeout, effect_loop_and_fadeout
+from processing.effects import apply_effect
+from processing.frame_replace import ItemCache, frame_occurences, get_frames_to_remove
 from processing.watermark import add_watermark
 from scene.filters import do_watermark
-from utils.images import IMG_FILENAME_TEMPLATE, Image, Images
-from utils.images_io import load_image
 from utils.logger import main_logger
-from utils.mco_types import Effect, Scene
-from utils.mco_utils import get_cache_path, get_dirname, run_simple_command
+from utils.mco_types import ChapterVideo, McoFrame, Scene
+from utils.mco_utils import (
+    calculate_frame_count,
+    get_target_video,
+    is_first_scene,
+    is_last_scene,
+    is_up_to_date
+)
 from utils.p_print import *
 from utils.path_utils import path_split
-from utils.time_conversions import frame_to_s, frame_to_sexagesimal
+from utils.pxl_fmt import PIXEL_FORMAT
+from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from video.out_frames import get_out_frame_paths
+from utils.media import VideoInfo, extract_media_info, str_to_video_codec
 
 
 
 def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
-    task_name: str = scene['task'].name
-    if task_name in ('initial', 'lr'):
-        # Assume:
-        #   input: 8bpp
+    scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
+    out_video_fp: str = scene['task'].video_file
 
-        in_video_fp: str = scene['inputs']['progressive']['filepath']
-        if task_name == 'lr' and not os.path.exists(in_video_fp):
-            raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
+    if is_up_to_date(scene) and not force:
+        return True
 
-        do_generate: bool = True
-        if not force:
-            do_generate = False
-            for fp in scene['in_frames'].out_images():
-                if not os.path.exists(fp):
-                    do_generate = True
+    # Output directory
+    lr_directory: str = path_split(scene['task'].video_file)[0]
+    os.makedirs(lr_directory, exist_ok=True)
+
+    # Out video clip
+    in_video_fp = scene['src'].primary_scene()['scene']['inputs']['progressive']['filepath']
+    in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+    h, w = in_video_info['shape'][:2]
+    pipe_pixfmt = 'bgr24'
+    pipe_out_dtype = (
+        np.uint8
+        if PIXEL_FORMAT[pipe_pixfmt]['bpp'] <= 8
+        else np.uint16
+    )
+
+    filter_complex: list[str] = []
+    if h != 576 or w != 576:
+        filter_complex = [
+            "-filter_complex", f"[0:v]scale=768:576:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
+            "-map", "[outv]"
+        ]
+
+    frame_rate: FrameRate = get_fps(db)
+    vsettings: VideoSettings = scene['task'].video_settings
+    writer_command: list[str] = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "warning",
+        "-nostats",
+
+        "-f", "rawvideo",
+        '-pixel_format', pipe_pixfmt,
+        '-video_size', f"{w}x{h}",
+        "-r", str(frame_rate),
+        "-i", "pipe:0",
+
+        *filter_complex,
+
+        "-pix_fmt", vsettings.pix_fmt,
+        "-vcodec", str_to_video_codec[vsettings.codec].value,
+        *vsettings.codec_options,
+        out_video_fp, "-y"
+    ]
+    encoder_subprocess: subprocess.Popen = None
+    try:
+        encoder_subprocess = subprocess.Popen(
+            writer_command,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+    except Exception as e:
+        print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+        return False
+
+    produced: int = 0
+    to_produce: int = scene['dst']['count']
+    print(lightcyan(f"Frames to produce: {to_produce}"))
+    watermark: bool = do_watermark(scene=scene)
+    for src in scene['src'].scenes():
+        print(red("BUUUUUUUUUUUUUUUUUUUGGGG: wrong start"))
+        src_scene: Scene = src['scene']
+        in_video_fp: str = src_scene['inputs']['progressive']['filepath']
+        start: int = src['start']
+        count: int = src['count']
+        if to_produce < count:
+            count = to_produce
+        print(f"extract {count} frames")
+        to_produce -= count
+
+        # Extract info from input video file
+        in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+        h, w, c = in_video_info['shape']
+        pipe_pixfmt = 'bgr24'
+        pipe_img_nbytes = math.prod(in_video_info['shape'])
+        pipe_dtype = np.uint8
+        pipe_img_shape: tuple[int, int, int] = in_video_info['shape']
+
+        xtract_command: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "warning",
+            "-nostats",
+            "-ss",
+            str(
+                frame_to_sexagesimal(
+                    no=start - src_scene['inputs']['progressive']['start'],
+                    frame_rate=frame_rate
+                )
+            ),
+            "-i", in_video_fp,
+            "-t", str(frame_to_s(no=count, frame_rate=frame_rate)),
+            "-f", "image2pipe",
+            "-pix_fmt", pipe_pixfmt,
+            "-vcodec", "rawvideo",
+            "-"
+        ]
+
+        decoder_subprocess: subprocess.Popen = None
+        try:
+            decoder_subprocess = subprocess.Popen(
+                xtract_command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except Exception as e:
+            print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+            return False
+
+        # Replacements
+        frame_replace = src_scene['replace']
+        frames_to_replace: list[int] = get_frames_to_remove(frame_replace)
+        frame_cache: ItemCache = ItemCache()
+        frame_cache.set_occurences(frame_occurences(frame_replace))
+        frame_cache.set_exceptions(frames_to_replace)
+
+
+        from_cache: bool = False
+        # pprint(frames_to_replace)
+
+        ch_video: ChapterVideo = get_target_video(scene)
+        if is_first_scene(scene):
+            print(lightcyan("first scene"))
+            pprint(ch_video['avsync'])
+            if ch_video['avsync'] != 0:
+                raise NotImplementedError("avsync not yet supported")
+
+        in_f_no: int = start - 1
+        out_f_no: int = start
+
+        in_frame: McoFrame = None
+        out_frame: McoFrame = None
+        out_i: int = 0
+        while count:
+
+            in_frame: McoFrame = None
+            while in_frame is None:
+                in_f_no += 1
+                img: np.ndarray = np.frombuffer(
+                    decoder_subprocess.stdout.read(pipe_img_nbytes),
+                    dtype=pipe_dtype,
+                ).reshape(pipe_img_shape)
+                if in_f_no not in frames_to_replace:
+                    # print(purple(f"Read frame no.{in_f_no}"))
+                    in_frame: McoFrame = McoFrame(
+                        no=in_f_no, img=img, scene=scene
+                    )
+
+            out_frame = None
+            while True:
+                f_no = frame_replace[out_f_no] if out_f_no in frame_replace else out_f_no
+                out_frame = None
+
+                from_cache = False
+
+                if f_no == in_f_no:
+                    out_frame = in_frame
+
+                elif f_no in frame_cache:
+                    out_frame = frame_cache[f_no]
+                    from_cache = True
+
+                elif in_f_no not in frame_cache:
+                    frame_cache.add(in_f_no, in_frame)
+
+                if out_frame is not None:
+
+                    if watermark:
+                        out_frame.img = add_watermark(
+                            frame=out_frame,
+                            no=out_frame.no
+                        )
+
+                    out_frames = apply_effect(out_f_no, out_frame)
+                    if isinstance(out_frames, list):
+                        # print(yellow(f"\t{out_i}: send {len(out_frames)}"))
+                        [encoder_subprocess.stdin.write(f.img) for f in out_frames]
+                        produced += len(out_frames)
+                    else:
+                        out_frame = out_frames
+                        # print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
+                        encoder_subprocess.stdin.write(out_frame.img)
+                        produced += 1
+
+                    out_f_no += 1
+                    out_i += 1
+                    count -= 1
+                else:
                     break
 
-        if do_generate:
-            if scene['task'].name == 'initial':
-                src_video = (
-                    db
-                    [scene['src']['k_ep']]
-                    ['video']
-                    [scene['src']['k_ed']]
-                    [scene['src']['k_ch']]
-                )
-                scene['src'].update({
-                    'start': src_video['scenes'][scene['src']['no']]['start'],
-                    'count': src_video['scenes'][scene['src']['no']]['count'],
-                })
+    print(f"produced: {produced}")
+    if is_last_scene(scene):
+        if 'silence' in ch_video and ch_video['silence'] > 0:
+            print(f"silence!!! {ch_video['silence']}")
+            img_black = np.zeros(in_video_info['shape'], dtype=pipe_out_dtype)
+            [encoder_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
 
-            if 'segments' not in scene['src']:
-                start: int = (
-                    scene['src']['start'] - scene['inputs']['progressive']['start']
-                )
-                count: int = scene['src']['count']
-                scene_start: int = scene['src']['start']
-            else:
-                _scene: Scene = (
-                    db[scene['src']['k_ep']]
-                    ['video']
-                    [scene['src']['k_ed']]
-                    [scene['src']['k_ch']]
-                    ['scenes']
-                    [scene['src']['no']]
-                )
-                pprint(_scene)
-                start: int = scene['src']['segments'][0]['start']
-                count: int = scene['src']['segments'][0]['count']
-                scene_start: int = start
-
-            if start < 0:
-                raise ValueError(f"Error, start < 0 for scene {scene['no']}")
-
-            # Create filename template
-            xtract_directory: str = os.path.join(get_cache_path(scene), task_to_dirname['initial'])
-            xtract_dirname: str = get_dirname(scene=scene, out=True)[0]
-            xtract_hash: str = scene['task'].hashcode
-            xtract_filename_template = IMG_FILENAME_TEMPLATE % (
-                scene['k_ep'],
-                scene['k_ed'],
-                int(xtract_dirname[:2]),
-                f"_{xtract_hash}" if xtract_hash != '' else ""
-            )
-            xtract_filepath_template: str = os.path.join(xtract_directory, xtract_filename_template)
-            os.makedirs(xtract_directory, exist_ok=True)
-
-            # Create FFmpeg command
-            do_extract: bool = True
-            if not force:
-                do_extract = False
-                for fp in scene['in_frames'].in_images():
-                    # print(fp)
-                    if not os.path.exists(fp):
-                        do_extract = True
-                        break
-
-            if do_extract:
-                print("do extract scene")
-                ffmpeg_command: list[str] = [
-                    ffmpeg_exe,
-                    "-hide_banner",
-                    "-loglevel", "warning",
-                    "-ss", str(frame_to_sexagesimal(no=start, frame_rate=get_fps(db))),
-                    "-i", in_video_fp,
-                    "-t", str(frame_to_s(no=count, frame_rate=get_fps(db))),
-                    '-pixel_format', 'bgr24',
-                    "-start_number", str(scene_start),
-                    xtract_filepath_template
-                ]
-                print(' '.join(ffmpeg_command))
-                success: bool = run_simple_command(ffmpeg_command)
-            else:
-                success = True
-        else:
-            success: bool = True
-
-        # for image in scene['in_frames'].images():
-        #     print(f"{image.in_fp}\n  -> {image.out_fp}")
-        # pprint(scene['in_frames'].in_images())
-        # pprint(scene['in_frames'].out_images())
-        # sys.exit()
-
-        if do_watermark(scene):
-            # Force extract and add watermark if extract only
-            # Used to identify scene no and compare 2 src and target editions
-            do_generate: bool = False
-            if task_name == 'lr':
-                for fp in scene['in_frames'].out_images():
-                    if not os.path.exists(fp):
-                        print(yellow(f"LR: do generate, missing {fp}"))
-                        do_generate = True
-                        break
-            else:
-                do_generate = True
-
-            if do_generate:
-                lr_directory: str = path_split(scene['in_frames'].out_images()[0])[0]
-                os.makedirs(lr_directory, exist_ok=True)
-
-                max_workers: int = multiprocessing.cpu_count()
-                with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                    for _ in executor.map(
-                        lambda args: add_watermark(*args),
-                        [(img, scene) for img in scene['in_frames'].images()]
-                    ):
-                        pass
-
-        if success and 'effects' in scene and not 'segments' in scene['src']:
-            effect: Effect = scene['effects'].primary_effect()
-            main_logger.debug(lightcyan("Effects:"))
-
-            if effect.name == 'loop_and_fadeout':
-                effect_loop_and_fadeout(scene, effect)
-
-            elif effect.name == 'fadeout':
-                effect_fadeout(scene, effect)
-
-            elif effect.name == 'loop_and_fadein':
-                raise NotImplementedError("effect_loop_and_fadein")
-                effect_loop_and_fadein(scene, effect)
-
-            else:
-                main_logger.debug(f"\t{effect}")
-
-        return success
+            produced += ch_video['silence']
+            print(f"produced w/ silence: {produced}")
 
 
-    else:
-        raise NotImplementedError(red(f"task={task_name}"))
+    stderr_bytes: bytes | None = None
+    try:
+        # Arbitrary timeout value
+        _, stderr_bytes = encoder_subprocess.communicate(timeout=10)
+    except:
+        encoder_subprocess.kill()
+        return False
 
-    return False
+    if stderr_bytes is not None:
+        stderr = stderr_bytes.decode('utf-8)')
+        # TODO: parse the output file
+        if stderr != '':
+            print(f"{scene_key} stderr:")
+            pprint(stderr)
+            return False
+    return True
 

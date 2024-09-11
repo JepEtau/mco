@@ -1,8 +1,27 @@
+from __future__ import annotations
 from pprint import pprint
 import sys
 from utils.p_print import *
 from utils.mco_types import Scene
-from parsers import db, Filter
+from parsers import (
+    db,
+    Filter,
+    VideoSettings,
+)
+
+
+def get_ffmpeg_pad_filter(scene: Scene) -> list[str]:
+    vsettings: VideoSettings = scene['task'].video_settings
+
+    ffmpeg_filter: list[str] = []
+    if vsettings.pad != 0:
+        pad: int = vsettings.pad
+        pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
+        ffmpeg_filter: list[str] = [
+            "-filter_complex", f"[0:v]{pad_filter}[outv]",
+            "-map", "[outv]"
+        ]
+    return ffmpeg_filter
 
 
 def do_watermark(scene: Scene) -> bool:
