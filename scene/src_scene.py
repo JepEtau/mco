@@ -88,7 +88,8 @@ class SrcScenes:
                     e.frame_ref = src_scene['start']
                 elif e.frame_ref == -1:
                     e.frame_ref = src_scene['start'] + src_scene['count'] - 1
-
+                elif e.frame_ref == 0:
+                    e.frame_ref = src_scene['start']
 
     def frame_count(self) -> int:
         count: int = 0

@@ -33,6 +33,7 @@ def apply_effect(
     frame: McoFrame
 ) -> McoFrame | list[McoFrame]:
     scene: Scene = frame.scene
+    out_frames: list[McoFrame] = []
 
     last_src_scene: SrcScene = scene['src'].last_scene()
     if 'effects' in last_src_scene and last_src_scene['effects'] is not None:
@@ -77,7 +78,6 @@ def apply_effect(
                         "title_fr.png"
                     )
                     initial_title_img: np.ndarray = load_image_fp32(title_fp)
-
                     start_factor: float = effect.zoom_factor
                     end_factor: float = effect.extra_param
 
@@ -153,8 +153,6 @@ def apply_effect(
             else:
                 out_frames = frame
 
-
-
         elif last_src_scene['effects'].has_effect('blend'):
             effect: Effect = last_src_scene['effects'].get_effect('blend')
 
@@ -198,8 +196,8 @@ def apply_effect(
                             print(lightcyan(f"factor = {factor}"))
                             in_h, in_w = cached_img.shape[:2]
                             out_h, out_w = int(factor * in_h), int(factor * in_w)
-                            if scene['task'].name == 'lr':
-                                out_h = int(factor * in_h * in_h / 576)
+                            # if scene['task'].name == 'lr':
+                            #     out_h = int(factor * in_h * in_h / 576)
                             zoomed: np.ndarray = cv2.resize(
                                 cached_img,
                                 (out_w, out_h),
@@ -257,11 +255,10 @@ def apply_effect(
 
                         alpha = initial_title_img[:,:,3:]
                         print(f"alpha shape: {alpha.shape}")
-                        initial_title_img = (
+                        cached_frame.img = (
                             (1.0 - alpha) * cached_frame.img
                             + alpha * rgb_title_img
                         )
-                        cached_frame.img = initial_title_img
                         # write_image("test.png", np_to_uint8(title_img))
 
                         # sys.exit()
@@ -293,6 +290,110 @@ def apply_effect(
             else:
                 frames = frame
             return frames
+
+        elif effect := last_src_scene['effects'].get_effect('title'):
+            # print("add title")
+            # pprint(effect)
+            # sys.exit()
+            if out_f_no >= effect.frame_ref:
+                if out_f_no > effect.frame_ref + effect.loop:
+                    print(f"{out_f_no}: add title, loop")
+                    frame.img = cached_frame.img
+                else:
+                    print(f"{out_f_no}: add title, zoom")
+                    bgd_img = np_to_float32(frame.img)
+                    title_fp: str = os.path.join(
+                        db['common']['directories']['inputs'],
+                        "title_fr.png"
+                    )
+                    initial_title_img: np.ndarray = load_image_fp32(title_fp)
+
+                    start_factor: float = effect.zoom_factor
+                    end_factor: float = effect.extra_param
+
+                    loop_start, loop_end = 0, 1
+                    do_return: bool = False
+                    if (
+                        effect.loop > last_src_scene['count']
+                        and out_f_no >= effect.frame_ref + last_src_scene['count'] - 1
+                    ):
+                        do_return = True
+                        loop_start = out_f_no - effect.frame_ref + last_src_scene['count'] - 1
+                        loop_end = effect.loop
+
+                    print(f"for loop: start: {loop_start}, {loop_end}")
+                    for i in range(loop_start, loop_end):
+                        print(yellow(f"  iteration no. {i}"))
+                        step: float = float((i + out_f_no - effect.frame_ref)/ effect.loop)
+                        factor: float = (start_factor * (1 - step) + end_factor * step)
+                        print(f"\n{out_f_no}: {step:.2f},  factor: {factor:.2f}")
+
+                        in_h, in_w = bgd_img.shape[:2]
+                        out_h, out_w = int(factor * in_h), int(factor* in_w)
+                        if scene['task'].name == 'lr':
+                            out_h = int(factor * 576)
+                        print(f"bgd shape: {bgd_img.shape}")
+                        print(f"{in_w}x{in_h} -> {out_w}x{out_h}")
+                        title_img: np.ndarray = cv2.resize(
+                            initial_title_img,
+                            (out_w, out_h),
+                            interpolation=cv2.INTER_LANCZOS4
+                        )
+
+                        # Crop if overlay is > background
+                        if out_w > in_w or out_h > in_h:
+                            top = max(0, int((out_h - in_h) / 2))
+                            left = max(0, int((out_w - in_w) / 2))
+
+                            print(f"crop: {top}, {left}")
+                            title_img = np.ascontiguousarray(
+                                title_img[
+                                    top : top + in_h,
+                                    left : left + in_w,
+                                    :
+                                ]
+                            )
+                            print(f"  cropped_title: {title_img.shape}")
+
+                        # Add borders if overlay is < background
+                        out_h, out_w = title_img.shape[:2]
+                        if out_w < in_w or out_h < in_h:
+                            top, left = (in_h - out_h) // 2, (in_w - out_w) // 2
+                            bottom, right = in_h - (out_h + top), in_w - (out_w + left)
+                            borders = [top, bottom, left, right]
+                            print(f"  borders: {borders}")
+                            title_img: np.ndarray = cv2.copyMakeBorder(
+                                title_img,
+                                *borders,
+                                cv2.BORDER_CONSTANT,
+                                value=0
+                            )
+
+                        print(f"foreground: {title_img.shape}")
+                        print(f"background: {bgd_img.shape}")
+
+                        rgb_title_img = title_img[:,:,:3]
+                        alpha = title_img[:,:,3:]
+                        print(f"alpha shape: {alpha.shape}")
+                        out_frames.append(
+                            McoFrame(
+                                no=frame.no,
+                                img=np_to_uint8(
+                                    (1.0 - alpha) * bgd_img
+                                    + alpha * rgb_title_img
+                                ),
+                                scene=frame.scene
+                            )
+                        )
+
+                    if out_f_no == effect.frame_ref + effect.loop or do_return:
+                        print(lightcyan("cache frame"))
+                        cached_frame = out_frames[-1]
+                        frame.img = cached_frame.img
+
+                    # if do_return and
+                    #     print("returns")
+                    #     return out_frames
 
 
 
@@ -341,10 +442,11 @@ def apply_effect(
 
             elif out_f_no == effect.frame_ref:
                 img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
+                count: int = effect.loop - effect.fade + 1 - len(out_frames)
                 if effect.loop >= effect.fade:
-                    out_frames: list[McoFrame] = [frame] * (effect.loop - effect.fade + 1)
+                    out_frames.extend([frame] * (count))
                 else:
-                    out_frames: list[McoFrame] = [frame]
+                    out_frames.extend([frame])
 
                 for i in range (effect.fade):
                     coef: float = float(i) / effect.fade
