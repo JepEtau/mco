@@ -4,8 +4,8 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
-from gui.replace_window import ReplaceWindow
-from gui.replace_controller import ReplaceController
+from tools.replace_window import ReplaceWindow
+from tools.replace_controller import ReplaceController
 
 
 if os.name == 'nt':
