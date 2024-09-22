@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ReplaceWindow</class>
+ <widget class="QMainWindow" name="ReplaceWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>501</width>
+    <height>284</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QVBoxLayout" name="verticalLayout_2">
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout">
+      <item>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <widget class="PreviewWidget" name="widget_preview" native="true"/>
+        </item>
+        <item>
+         <widget class="PlayerCtrlWidget" name="widget_player_ctrl" native="true"/>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <widget class="ReplaceWidget" name="widget_replace" native="true"/>
+      </item>
+      <item>
+       <widget class="SelectionWidget" name="widget_selection" native="true"/>
+      </item>
+     </layout>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>PlayerCtrlWidget</class>
+   <extends>QWidget</extends>
+   <header>ui.widget_player_ctrl</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>ReplaceWidget</class>
+   <extends>QWidget</extends>
+   <header>ui.widget_replace</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>SelectionWidget</class>
+   <extends>QWidget</extends>
+   <header>ui.widget_selection</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>PreviewWidget</class>
+   <extends>QWidget</extends>
+   <header location="global">ui.widget_preview</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

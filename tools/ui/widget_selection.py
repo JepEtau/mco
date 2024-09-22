@@ -1,0 +1,652 @@
+from functools import partial
+from pprint import pprint
+from logger import log
+from PySide6.QtCore import (
+    QEvent,
+    QObject,
+    QPoint,
+    Qt,
+    Signal,
+)
+from PySide6.QtGui import (
+    QBrush,
+    QColor,
+    QCursor,
+    QKeyEvent,
+    QWheelEvent,
+)
+from PySide6.QtWidgets import (
+    QTableWidgetItem,
+    QWidget,
+    QCheckBox,
+    QHBoxLayout,
+)
+from .ui.ui_widget_selection import Ui_SelectionWidget
+from utils.p_print import *
+from import_parsers import *
+from parsers import (
+    all_chapter_keys,
+    key
+)
+
+class SelectionWidget(QWidget, Ui_SelectionWidget):
+    signal_widget_selected = Signal(str)
+    signal_selection_changed = Signal(dict)
+    signal_selected_scene_changed = Signal(dict)
+    signal_selected_step_changed = Signal(str)
+    signal_close = Signal()
+
+    def __init__(self, parent: QWidget | None, controller=None) -> None:
+        super().__init__(parent)
+        self.setupUi(self)
+        self.controller = controller
+        self.setObjectName('selection')
+
+        # Setup and patch ui
+        self.setAutoFillBackground(True)
+
+        # Internal variables
+        self.__parent = parent
+        self.episodes_and_parts = {}
+        self.comboBox_episode.clear()
+        self.comboBox_part.clear()
+        self.previous_position = None
+        self.is_modified = False
+        self.initial_shot_no = None
+        self.previous_selection = [0]
+
+        # Initialize widgets
+        self.comboBox_episode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.comboBox_part.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.tableWidget_scenes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+
+        self.comboBox_episode.currentIndexChanged['int'].connect(self.event_episode_changed)
+        self.comboBox_part.currentIndexChanged['int'].connect(self.event_part_changed)
+
+
+
+        self.tableWidget_scenes.clearContents()
+        self.tableWidget_scenes.setRowCount(0)
+
+        self.columns = [
+            ['scene', 50, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter],
+            ['src', 60, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+            ['start', 65, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter],
+            ['count', 60, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+            ['st.', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+            ['fit', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+            ['g_r', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+            # ['err.', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+            # ['st.',   30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+            # ['geo.',    30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+            # ['other',   60, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter],
+        ]
+        self.tableWidget_scenes.setColumnCount(len(self.columns))
+        for column_no, column in zip(range(len(self.columns)), self.columns):
+            self.tableWidget_scenes.horizontalHeaderItem(column_no).setText(column[0])
+            self.tableWidget_scenes.horizontalHeaderItem(column_no).setTextAlignment(column[2])
+            self.tableWidget_scenes.setColumnWidth(column_no, column[1])
+
+
+        # Connect signals and filter events
+        self.tableWidget_scenes.selectionModel().selectionChanged.connect(self.event_selection_changed)
+        self.tableWidget_scenes.installEventFilter(self)
+
+        # self.controller.signal_shotlist_modified[dict].connect(self.event_refresh_shotlist)
+        # self.controller.signal_shot_modified[dict].connect(self.refresh_modification_status)
+        # self.controller.signal_current_shot_modified[dict].connect(self.event_current_scene_modified)
+
+        self.set_enabled(False)
+        # set_stylesheet(self)
+        # set_widget_stylesheet(self.pushButton_replace)
+        # set_widget_stylesheet(self.pushButton_stabilize)
+        # set_widget_stylesheet(self.pushButton_geometry)
+
+        # Install events for this widget
+        self.installEventFilter(self)
+
+        # self.set_selected(False)
+        self.adjustSize()
+
+
+    def closeEvent(self, event):
+        self.signal_close.emit()
+
+
+    def get_preferences(self):
+        k_ep = ''
+        if (self.comboBox_episode.currentText() != ' '
+        and self.comboBox_episode.currentText() != ''):
+            k_ep = int(self.comboBox_episode.currentText())
+
+        # First selected row no
+        selected_indexes = self.tableWidget_scenes.selectedIndexes()
+        try:
+            row_no = list(set([i.row() for i in selected_indexes]))[0]
+        except:
+            row_no = 0
+
+        preferences = {
+            'geometry': self.geometry().getRect(),
+            'episode': k_ep,
+            'scene_no': int(self.tableWidget_scenes.item(row_no, 0).text().replace('*', '')),
+            'part': self.comboBox_part.currentText(),
+            'step': self.get_current_step(),
+        }
+        return preferences
+
+
+
+    def set_initial_options(self, preferences:dict):
+        s = preferences['selection']
+        log.info(f"set_initial_options: {s['episode']}, {s['part']}, {s['step']}")
+        # print("%s:set_initial_options: " % (__name__), s)
+
+        self.set_enabled(False)
+        self.tableWidget_scenes.setEnabled(False)
+
+        # Episode
+        self.refresh_combobox_episode()
+        self.comboBox_episode.blockSignals(True)
+        saved_ep_no = s['episode']
+        if saved_ep_no == 0:
+            # print("none selected")
+            self.comboBox_episode.setCurrentText(" ")
+        else:
+            index = self.comboBox_episode.findText(str(saved_ep_no))
+            self.comboBox_episode.setCurrentIndex(index)
+        # self.comboBox_episode.blockSignals(False)
+
+        # Part
+        self.refresh_combobox_part()
+        self.comboBox_part.blockSignals(True)
+        self.comboBox_part.setCurrentText(s['part'])
+        if s['part'] in all_chapter_keys():
+            index = self.comboBox_part.findText(s['part'])
+            self.comboBox_part.setCurrentIndex(index)
+        # self.comboBox_part.blockSignals(False)
+
+        # Scenes
+        self.tableWidget_scenes.blockSignals(True)
+        self.tableWidget_scenes.clearContents()
+        self.tableWidget_scenes.setRowCount(0)
+        self.tableWidget_scenes.blockSignals(False)
+
+        # Current shot no
+        try:
+            self.initial_shot_no = s['shot_no']
+        except:
+            self.initial_shot_no = None
+
+        # Geometry
+        self.move(s['geometry'][0], s['geometry'][1])
+        self.adjustSize()
+
+
+
+
+    def event_current_scene_modified(self, modifications:dict):
+        self.tableWidget_scenes.blockSignals(True)
+        row_no = self.tableWidget_scenes.currentRow()
+
+        for column, column_no in zip(self.columns, range(len(self.columns))):
+            if column[0] == 'st.':
+                try:
+                    self.tableWidget_scenes.cellWidget(row_no, column_no).setChecked(modifications['stabilization'])
+                except:
+                    continue
+                    # self.tableWidget_scenes.cellWidget(row_no, column_no).setChecked(False)
+
+            elif column[0] == 'geo.':
+                try:
+                    self.tableWidget_scenes.cellWidget(row_no, column_no).setChecked(modifications['geometry'])
+                except:
+                    continue
+                    # self.tableWidget_scenes.cellWidget(row_no, column_no).setChecked(False)
+
+            elif column[0] == 'other':
+                try:
+                    self.tableWidget_scenes.setItem(row_no, 0, QTableWidgetItem(modifications['comment']))
+                except:
+                    continue
+                    # self.tableWidget_scenes.setItem(row_no, 0, QTableWidgetItem(""))
+
+            else:
+                continue
+
+        self.tableWidget_scenes.blockSignals(False)
+
+
+
+
+
+    def edition_started(self, is_started):
+        row_no = self.tableWidget_scenes.currentRow()
+        # print(f"edition_started: {row_no} is_started: {is_started}")
+        item = self.tableWidget_scenes.item(row_no, 0)
+        if is_started:
+            self.tableWidget_scenes.item(row_no, 0).setForeground(QBrush(COLOR_PURPLE))
+        else:
+            self.tableWidget_scenes.item(row_no, 0).setForeground(QBrush(COLOR_TEXT))
+
+
+    def refresh_modification_status(self, modifications:dict):
+        # Something has been modified, disable selection until saving or discard
+        row_no = modifications['shot_no']
+        shot_str = self.tableWidget_scenes.item(row_no, 0).text().replace('*', '')
+        if len(modifications['modifications']) > 0:
+            self.set_enabled(False)
+            self.widget_app_controls.set_save_discard_enabled(True)
+            self.tableWidget_scenes.item(row_no, 0).setText(f"{shot_str}*")
+            log.info("shot no. %d has been modified" % (modifications['shot_no']))
+        else:
+            self.set_enabled(True)
+            self.widget_app_controls.set_save_discard_enabled(False)
+            self.tableWidget_scenes.item(row_no, 0).setText(shot_str)
+            log.info("shot no. %d is not modified" % (modifications['shot_no']))
+
+
+
+    def refresh_browsing_folder(self, episodes_and_parts:dict):
+        log.info("refresh combobox_episode")
+        # print("%s:refresh_browsing_folder: " % (__name__), episodes_and_parts)
+        self.episodes_and_parts = episodes_and_parts
+
+
+
+    def refresh_combobox_episode(self):
+        episodes = sorted(list(self.episodes_and_parts.keys()))
+        self.comboBox_episode.blockSignals(True)
+        self.comboBox_episode.clear()
+        for k_ep in episodes:
+            if k_ep == ' ' or k_ep == '':
+                self.comboBox_episode.addItem(' ')
+            else:
+                self.comboBox_episode.addItem(str(int(k_ep[2:])))
+        self.comboBox_episode.setEnabled(True)
+        self.comboBox_episode.blockSignals(False)
+
+
+
+    def refresh_combobox_part(self, index=-1):
+        self.comboBox_part.blockSignals(True)
+
+        saved_part = self.comboBox_part.currentText()
+
+        self.comboBox_part.clear()
+        if index != -1:
+            # index is the new selected episode
+            selected_ep_str = self.comboBox_episode.itemText(index)
+        else:
+            selected_ep_str = self.comboBox_episode.currentText()
+
+        if selected_ep_str == ' ' or selected_ep_str == '':
+            raise ValueError("none is not supported")
+        elif selected_ep_str != '':
+            k_ep = key(selected_ep_str)
+            for k_p in all_chapter_keys():
+                if k_p in self.episodes_and_parts[k_ep]:
+                    self.comboBox_part.addItem(k_p)
+                    # print("\t[%s]" % (k_p))
+
+        # Restore the previous part if exists
+        i = self.comboBox_part.findText(saved_part)
+        new_index = i if i != -1 else 0
+        self.comboBox_part.setCurrentIndex(index)
+
+        if self.comboBox_part.count() > 0:
+            self.comboBox_part.setEnabled(True)
+        else:
+            self.comboBox_part.setEnabled(False)
+        self.comboBox_part.blockSignals(False)
+        self.comboBox_episode.blockSignals(False)
+
+
+
+    def event_refresh_shotlist(self, values:dict):
+        log.info("directory has been parsed, refresh shot list")
+        # print("%s:event_refresh:" % (__name__))
+        # pprint(values)
+        # print("---")
+        # sys.exit()
+        self.set_enabled(False)
+        self.tableWidget_scenes.blockSignals(True)
+
+
+        # Episode
+        k_ep = values['k_ep']
+        ep_no_str = str(int(k_ep[2:])) if (k_ep != '' and  k_ep != ' ') else ''
+        if self.comboBox_episode.currentText() != ep_no_str:
+            i = self.comboBox_episode.findText(ep_no_str)
+            self.comboBox_episode.blockSignals(True)
+            new_index = i if i != -1 else 0
+            self.comboBox_episode.setCurrentIndex(new_index)
+            self.comboBox_episode.blockSignals(False)
+
+        # Part
+        if self.comboBox_part.currentText() != values['k_part']:
+            i = self.comboBox_part.findText(values['k_part'])
+            self.comboBox_part.blockSignals(True)
+            new_index = i if i != -1 else 0
+            self.comboBox_part.setCurrentIndex(new_index)
+            self.comboBox_part.blockSignals(False)
+
+
+        # Scenes
+        scenes: dict = values['scenes']
+        self.tableWidget_scenes.clearContents()
+        self.tableWidget_scenes.setRowCount(0)
+        row_no = 0
+        for k_scene, scene in scenes.items():
+            self.tableWidget_scenes.insertRow(row_no)
+
+            for column_no, column in zip(range(len(self.columns)), self.columns):
+
+                if column[0] == 'scene':
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(str(k_scene)))
+                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+                elif column[0] == 'src':
+                    try:
+                        src_txt = f"{scene['src']['k_ed']}:{scene['src']['k_ep']}"
+                    except:
+                        print(red("ERROR: event_refresh_shotlist: k_ed/k_ep shall be defined in shot src. correct this ASAP"))
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(src_txt))
+                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                elif column[0] == 'start':
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f"{scene['src']['start']}"))
+                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                elif column[0] == 'count':
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f"{scene['src']['count']}"))
+                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+
+                elif column[0] == 'st.':
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f""))
+                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+
+                elif column[0] == 'g_d':
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f""))
+                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                elif column[0] == 'fit':
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f""))
+                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                elif column[0] == 'r':
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f""))
+                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                elif column[0] == 'err.':
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f""))
+                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
+                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                # elif column[0] == 'st.':
+                #     widget = QWidget()
+                #     __layout = QHBoxLayout(widget)
+                #     w = QCheckBox(widget)
+                #     w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                #     set_widget_stylesheet(w, 'small')
+                #     __layout.addWidget(w)
+                #     self.tableWidget_scenes.setCellWidget(row_no, column_no, widget)
+                #     self.tableWidget_scenes.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+                # elif column[0] == 'geo.':
+                #     widget = QWidget()
+                #     __layout = QHBoxLayout(widget)
+                #     w = QCheckBox(widget)
+                #     w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                #     set_widget_stylesheet(w, 'small')
+                #     __layout.addWidget(w)
+                #     self.tableWidget_scenes.setCellWidget(row_no, column_no, widget)
+                #     self.tableWidget_scenes.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+                # elif column[0] == 'other':
+                #     widget = QWidget()
+                #     __layout = QHBoxLayout(widget)
+                #     w = QCheckBox(widget)
+                #     w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                #     set_widget_stylesheet(w, 'small')
+                #     __layout.addWidget(w)
+                #     self.tableWidget_scenes.setCellWidget(row_no, column_no, widget)
+                #     self.tableWidget_scenes.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
+
+            if not scene['is_valid']:
+                # If true, it means that all pictures are present in the folder
+                # Bug: this does not work
+                self.tableWidget_scenes.item(row_no, 0).setData(Qt.FontRole, QColor(Qt.red))
+            row_no += 1
+
+
+        self.tableWidget_scenes.selectionModel().clearSelection()
+        self.tableWidget_scenes.blockSignals(False)
+
+        self.tableWidget_scenes.setEnabled(True)
+        self.set_enabled(True)
+
+        if len(scenes) > 0:
+            if self.initial_shot_no is not None:
+                log.info(f"select shot no. {self.initial_shot_no}")
+                self.tableWidget_scenes.selectRow(self.initial_shot_no)
+                self.initial_shot_no = None
+            else:
+                log.info("select shot no. 0")
+                self.tableWidget_scenes.selectRow(0)
+
+
+    def event_episode_changed(self, index=0):
+        log.info(f"select {self.comboBox_episode.currentText()}:{self.comboBox_part.currentText()}, {self.get_current_step()}")
+        self.refresh_combobox_part(-1)
+        # Generate a signal to inform that the following shall be updated:
+        #   - editions
+        #   - filter ids
+        #   - list of frames
+        k_ep = ''
+        selected_ep_str = self.comboBox_episode.currentText()
+        if selected_ep_str not in ['', ' ']:
+            k_ep = key(int(self.comboBox_episode.currentText()))
+
+        values = {
+            'k_ep': k_ep,
+            'k_part': self.comboBox_part.currentText(),
+        }
+
+        # if values['k_part'] != '':
+        self.signal_selection_changed.emit(values)
+        return True
+
+
+    def event_part_changed(self, index=-1):
+        log.info("select ep: %s, part: %s" % (self.comboBox_episode.currentText(), self.comboBox_part.currentText()))
+
+        k_ep = ''
+        selected_ep_str = self.comboBox_episode.currentText()
+        if selected_ep_str not in ['', ' ']:
+            k_ep = key(int(self.comboBox_episode.currentText()))
+
+        values = {
+            'k_ep': k_ep,
+            'k_part': self.comboBox_part.currentText(),
+        }
+        self.signal_selection_changed.emit(values)
+        return True
+
+
+
+    def event_selection_changed(self, selected):
+        print(lightcyan("event_selection_changed"))
+        selected_indexes = self.tableWidget_scenes.selectedIndexes()
+        selected_row_no = sorted(list(set([i.row() for i in selected_indexes])))
+        if len(selected_row_no) == 0:
+            # No selection, restore previous selection
+            self.tableWidget_scenes.blockSignals(True)
+            self.tableWidget_scenes.selectionModel().blockSignals(True)
+            # self.tableWidget_scenes.selectionModel().select(self.previous_selection, QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.Select)
+            # selectedRows(self.previous_selection)
+            self.tableWidget_scenes.selectionModel().blockSignals(False)
+            self.tableWidget_scenes.blockSignals(False)
+            log.error("Restore previous selection")
+            return
+        self.previous_selection = selected_indexes
+
+        log.info(f"event_selection_changed: {', '.join(map(lambda x: f"{x}", selected_row_no))}")
+
+        selected_shot_nos = list()
+        for row_no in selected_row_no:
+            shot_no_str = self.tableWidget_scenes.item(row_no, 0).text()
+            selected_shot_nos.append(int(shot_no_str.replace('*', '')))
+
+        k_ep = ''
+        if self.comboBox_episode.currentText() not in ['', ' ']:
+            k_ep = 'ep%02d' % (int(self.comboBox_episode.currentText()))
+        selected_shots = {
+            'k_ep': k_ep,
+            'k_part': self.comboBox_part.currentText(),
+            'scenes': selected_shot_nos
+        }
+        print("send signal")
+        pprint(selected_shots)
+        log.info(f"send signal: signal_selected_shots_changed")
+        self.signal_selected_shots_changed.emit(selected_shots)
+
+
+    def set_enabled(self, enabled):
+        if self.is_modified and enabled:
+            # do not allow selection until all modifications are saved or discarded
+            return
+
+        self.comboBox_episode.setEnabled(enabled)
+        self.comboBox_part.setEnabled(enabled)
+
+
+
+    def refresh_values(self, frame:dict):
+        pass
+
+    def get_preview_options(self):
+        return None
+
+
+
+    def select_next_scene(self):
+        if len(self.tableWidget_scenes.selectionModel().selectedRows()) > 1:
+            return
+        try:
+            row_no = self.tableWidget_scenes.currentRow() + 1
+            if row_no >= self.tableWidget_scenes.rowCount():
+                row_no = 0
+            self.tableWidget_scenes.clearSelection()
+            self.tableWidget_scenes.selectRow(row_no)
+        except:
+            pass
+
+
+    def select_previous_scene(self):
+        if len(self.tableWidget_scenes.selectionModel().selectedRows()) > 1:
+            return
+        try:
+            row_no = self.tableWidget_scenes.currentRow()
+            if row_no == 0:
+                row_no = self.tableWidget_scenes.rowCount() - 1
+            else:
+                row_no -= 1
+            self.tableWidget_scenes.clearSelection()
+            self.tableWidget_scenes.selectRow(row_no)
+        except:
+            pass
+
+
+
+
+    def event_key_pressed(self, event: QKeyEvent) -> bool:
+        key = event.key()
+        modifiers = event.modifiers()
+        if modifiers & Qt.ControlModifier:
+            if key == Qt.Key.Key_A:
+                self.tableWidget_scenes.selectAll()
+                return True
+
+        return False
+
+
+    def event_wheel(self, event: QWheelEvent) -> bool:
+        print(lightgreen("\tDefault selection fct"))
+        return False
+
+
+
+    def event_key_released(self, event: QKeyEvent) -> bool:
+        return False
+
+
+
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        # return super().eventFilter(watched, event)
+        # # Filter press/release events
+        if event.type() == QEvent.Type.KeyPress:
+            if self.event_key_pressed(event):
+                event.accept()
+                return True
+            else:
+                return self.__parent.event_key_pressed(event)
+
+
+        if event.type() == QEvent.Type.KeyRelease:
+            if self.event_key_released(event):
+                event.accept()
+                return True
+            else:
+                return self.__parent.event_key_released(event)
+
+        if event.type() == QEvent.Type.Wheel:
+            if event.angleDelta().y() > 0:
+                self.select_previous_scene()
+            else:
+                self.select_next_scene()
+            event.accept()
+            return True
+
+        # elif event.type() == QEvent.Type.FocusIn:
+        #     self.signal_widget_selected.emit(self.objectName())
+        #     event.accept()
+        #     return True
+        # elif event.type() == QEvent.HoverEnter:
+        #     update_selected_widget_stylesheet(self.frame, is_selected=True)
+        #     print_purple(f"selection: HoverEnter")
+        # elif event.type() == QEvent.HoverLeave:
+        #     update_selected_widget_stylesheet(self.frame, is_selected=False)
+        #     print_purple(f"selection: HoverLeave")
+
+        # elif event.type() == QEvent.ActivationChange:
+        #     event.accept()
+        #     self.signal_widget_selected.emit(self.objectName())
+        #     return True
+
+        # elif event.type() == QEvent.Leave:
+        #     update_selected_widget_stylesheet(self.frame, is_selected=False)
+        #     print_purple(f"selection: Leave")
+
+        return super().eventFilter(watched, event)
+        # return True

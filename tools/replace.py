@@ -4,10 +4,6 @@ import sys
 
 from PySide6.QtWidgets import QApplication
 
-from tools.replace_window import ReplaceWindow
-from tools.replace_controller import ReplaceController
-
-
 if os.name == 'nt':
     import ctypes
     myappid = "mco.replace"
@@ -17,10 +13,15 @@ if os.name == 'nt':
 def main():
 
     application = QApplication(sys.argv)
+    from logger import log
+
+    from backend.controller_replace import ReplaceController
     controller = ReplaceController()
+
+    from ui.window_replace import ReplaceWindow
     main_window = ReplaceWindow()
 
-    main_window.set_controller(controller)
+    # main_window.set_controller(controller)
     controller.set_view(main_window)
 
     main_window.show()
