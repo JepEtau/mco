@@ -123,7 +123,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
 
     def refresh_values(self, frame:dict):
-        self.label_ed_ep_part.setText(f"{frame['k_ed']}:{frame['k_ep']}:{frame['k_part']}:{frame['shot_no']:03d}")
+        self.label_ed_ep_part.setText(f"{frame['k_ed']}:{frame['k_ep']}:{frame['k_part']}:{frame['scene_no']:03d}")
         self.lineEdit_frame_no.setText(f"{frame['frame_no']}")
         self.lineEdit_frame_index.setText(f"{frame['index']}")
 

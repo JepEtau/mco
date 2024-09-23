@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pprint import pprint
+import time
 from PySide6.QtCore import (
     Signal,
 )
@@ -53,8 +54,12 @@ class ReplaceController(CommonController):
         log.info("set view, connect signals")
         self.view = view
 
-        self.view.widget_selection.signal_ep_p_changed[dict].connect(self.k_ep_p_changed)
-        # self.view.widget_selection.signal_selected_scene_changed[dict].connect(self.event_selected_scenes_changed)
+        self.view.widget_selection.signal_ep_p_changed[dict].connect(
+            self.k_ep_p_changed
+        )
+        self.view.widget_selection.signal_selected_scene_changed[dict].connect(
+            self.event_selected_scene_changed
+        )
         # self.view.widget_selection.signal_selected_step_changed[str].connect(self.event_selected_step_changed)
 
         self.view.widget_replace.signal_save.connect(self.event_replace_save_requested)
@@ -167,12 +172,99 @@ class ReplaceController(CommonController):
             'invalid': [],
         }
 
-        # for f in self.frames[shot_no]:
+        # for f in self.frames[scene_no]:
         #     print("%s" % f['filepath'])
 
 
         # print("selected: %s:%s:%s" % (k_ed_selected, k_ep_selected, k_part_selected))
         self.signal_scenelist.emit(self.current_selection)
+
+
+
+
+
+
+    def event_selected_scene_changed(self, selected: dict):
+        log.info(f"select {len(selected['scenes'])} scenes, start:{selected['scenes'][0]}")
+        verbose = True
+        if verbose:
+            print(lightgreen(f"selected scenes: {selected['k_ep']}:{selected['k_p']}, %s" % (
+                ','.join(map(lambda x: str(x), selected['scenes'])))))
+
+        log.info(f"selected scenes: {selected['k_ep']}:{selected['k_p']}, %s" % (
+            ','.join(map(lambda x: str(x), selected['scenes']))))
+
+        if len(selected['scenes']) == 0:
+            return
+
+        scene = self.current_scene()
+        print("selected:", selected)
+
+        # Create a list of frames for each selected scene
+        frame_nos = []
+        index = 0
+        ticklist = [0]
+        self.playlist_frames.clear()
+
+        for scene_no in selected['scenes']:
+            # mmmmh what??? should use self.scene
+            frames = self.frames[scene_no]
+            for index, frame in zip(range(len(frames)), frames):
+                frame['index'] = index
+                self.playlist_frames.append(frame)
+                frame_nos.append(frame['frame_no'])
+
+            ticklist.append(ticklist[-1] + len(self.frames[scene_no]))
+
+
+        # Load images
+        if verbose:
+            print(lightgrey("\tload images:", end=' '))
+            start_time = time.time()
+
+        for scene_no in selected['scenes']:
+            print(f"scene no. {scene_no}: load frames")
+
+        if verbose:
+            print(lightgrey(f"{time.time() - start_time:.1f}s"))
+
+
+        # Update each frame
+        for scene_no in selected['scenes']:
+            scene = self.scenes[scene_no]
+
+            # Replace
+            self.refresh_replace_for_each_frame(scene=scene)
+
+        if verbose and True:
+            print(lightcyan("================================== scene ======================================="))
+            pprint(self.scenes[0])
+            print(lightcyan("-------------------------------------------------------------------------------"))
+
+
+        self.playlist_properties.update({
+            'frame_nos': frame_nos,
+            'count': len(self.playlist_frames),
+            'ticks': ticklist,
+            'scenes': selected['scenes'],
+        })
+
+        # Set current to None to refresh widgets
+        self.current_frame = None
+
+        self.current_scene_no = selected['scenes'][0]
+        scene = self.current_scene()
+        scene_no = scene['no']
+
+
+        # Replace
+        self.refresh_replace_list()
+
+
+        self.signal_preview_options_consolidated.emit(self.preview_options)
+        log.info(f"selected scenes: scene is ready to play")
+        self.signal_ready_to_play.emit(self.playlist_properties)
+
 
 
 
@@ -184,19 +276,19 @@ class ReplaceController(CommonController):
         # List of frames to replace
         log.info("refresh list")
         if verbose:
-            print_lightcyan("Refresh replace list")
+            print(lightcyan("Refresh replace list"))
             pprint(self.model_database.db_replaced_frames_initial)
 
 
         list_replace = list()
 
         for frame in self.playlist_frames:
-            shot = self.shots[frame['shot_no']]
+            scene = self.scenes[frame['scene_no']]
             frame_no = self.model_database.get_replace_frame_no(
-                shot=shot, frame_no=frame['frame_no'])
+                scene=scene, frame_no=frame['frame_no'])
             if frame_no != -1:
                 list_replace.append({
-                    'shot_no': frame['shot_no'],
+                    'scene_no': frame['scene_no'],
                     'src': frame_no,
                     'dst': frame['frame_no'],
                 })
@@ -207,18 +299,18 @@ class ReplaceController(CommonController):
         self.signal_replace_list_refreshed.emit(list_replace)
 
 
-    def refresh_replace_for_each_frame(self, shot):
-        log.info(f"refresh replaced frame for each frame of shot {shot['no']}")
-        for frame in self.frames[shot['no']]:
-            frame['replaced_by']: self.model_database.get_replace_frame_no(shot=shot, frame_no=frame['frame_no'])
+    def refresh_replace_for_each_frame(self, scene):
+        log.info(f"refresh replaced frame for each frame of scene {scene['no']}")
+        for frame in self.frames[scene['no']]:
+            frame['replaced_by']: self.model_database.get_replace_frame_no(scene=scene, frame_no=frame['frame_no'])
 
 
 
     def get_replace_frame_no_str(self, index) -> str:
         # print("get_replace_frame_no_str: %d" % (index))
         frame_no = self.playlist_frames[index]['frame_no']
-        shot_no = self.playlist_frames[index]['shot_no']
-        new_frame_no = self.model_database.get_replace_frame_no(shot_no, frame_no)
+        scene_no = self.playlist_frames[index]['scene_no']
+        new_frame_no = self.model_database.get_replace_frame_no(scene_no, frame_no)
         # print("get_replace_frame_no: %d -> %d" % (frame_no, new_frame_no))
         if new_frame_no != -1:
             return str(new_frame_no)
@@ -231,18 +323,18 @@ class ReplaceController(CommonController):
 
         # print("\tsearch in %d -> %d" % (frame_no + 1, self.playlist_properties['start'] + self.playlist_properties['count']))
         for i in range(index + 1, self.playlist_properties['count']):
-            shot_no = self.get_shot_no_from_index(i)
-            shot = self.shots[shot_no]
-            frame_no = shot['start'] + i
-            if self.model_database.get_replace_frame_no(shot, frame_no) != -1:
+            scene_no = self.get_scene_no_from_index(i)
+            scene = self.scenes[scene_no]
+            frame_no = scene['start'] + i
+            if self.model_database.get_replace_frame_no(scene, frame_no) != -1:
                 return i
 
         # print("\tsearch in %d -> %d" % (self.playlist_properties['start'], frame_no-1))
         for i in range(0, index-1):
-            shot_no = self.get_shot_no_from_index(i)
-            shot = self.shots[shot_no]
-            frame_no = shot['start'] + i
-            if self.model_database.get_replace_frame_no(shot_no, frame_no) != -1:
+            scene_no = self.get_scene_no_from_index(i)
+            scene = self.scenes[scene_no]
+            frame_no = scene['start'] + i
+            if self.model_database.get_replace_frame_no(scene_no, frame_no) != -1:
                 return i
         return -1
 
@@ -252,34 +344,34 @@ class ReplaceController(CommonController):
         action = replace['action']
         frame_no = replace['dst']
         log.info("replace %d" % (frame_no))
-        print("shot no= %d" % (self.current_frame['shot_no']))
+        print("scene no= %d" % (self.current_frame['scene_no']))
         # pprint(self.playlist_frames)
-        shot = self.current_shot()
-        shot_no = shot['no']
-        index = frame_no - self.frames[shot_no][0]['frame_no']
+        scene = self.current_scene()
+        scene_no = scene['no']
+        index = frame_no - self.frames[scene_no][0]['frame_no']
 
         if action == 'replace':
-            log.info(f"replace: shot no. {shot_no}, frame {frame_no} (index {index}) by {replace['src']}")
+            log.info(f"replace: scene no. {scene_no}, frame {frame_no} (index {index}) by {replace['src']}")
 
             # If the src frame is already replaced, use the src of this frame
-            frame_no_src = self.model_database.get_replace_frame_no(shot, replace['src'])
+            frame_no_src = self.model_database.get_replace_frame_no(scene, replace['src'])
             if frame_no_src == -1:
                 frame_no_src = replace['src']
 
             self.model_database.set_replaced_frame(
-                shot=shot,
+                scene=scene,
                 frame_no=frame_no,
                 new_frame_no=frame_no_src)
 
         elif action == 'remove':
-            log.info(f"remove: shot no. {shot_no}, frame {frame_no} (index {index})")
-            self.model_database.remove_replaced_frame(shot=shot, frame_no=frame_no)
+            log.info(f"remove: scene no. {scene_no}, frame {frame_no} (index {index})")
+            self.model_database.remove_replaced_frame(scene=scene, frame_no=frame_no)
 
 
-        self.current_frame['replaced_by'] = self.model_database.get_replace_frame_no(shot=shot, frame_no=frame_no)
+        self.current_frame['replaced_by'] = self.model_database.get_replace_frame_no(scene=scene, frame_no=frame_no)
 
         self.set_modification_status('replace', True)
-        self.signal_shot_modified.emit({'shot_no': shot['no'], 'modifications': shot['modifications']})
+        self.signal_scene_modified.emit({'scene_no': scene['no'], 'modifications': scene['modifications']})
 
 
         self.refresh_replace_list()

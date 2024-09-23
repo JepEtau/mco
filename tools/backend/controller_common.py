@@ -24,10 +24,10 @@ class CommonController(QObject):
     signal_close = Signal()
     signal_scenelist = Signal(dict)
 
-    signal_shot_modified = Signal(dict)
+    signal_scene_modified = Signal(dict)
 
     def __init__(self):
-        super(CommonController, self).__init__()
+        super().__init__()
         self.view: ReplaceWindow = None
 
         # Internal variables
@@ -42,7 +42,8 @@ class CommonController(QObject):
 
         self.preview_options = None
 
-        self.preferences: Preferences = None
+        self.preferences: UserPreferences = None
+        self.current_scene_no: int = 0
 
 
     def exit(self):
@@ -125,8 +126,8 @@ class CommonController(QObject):
         except:
             pass
 
-    def get_shot_no_from_index(self, index:int):
-        return self.playlist_frames[index]['shot_no']
+    def get_scene_no_from_index(self, index:int):
+        return self.playlist_frames[index]['scene_no']
 
 
     def get_preview_options(self):
@@ -144,14 +145,14 @@ class CommonController(QObject):
 
 
 
-    def current_shot(self):
+    def current_scene(self):
         try:
-            return self.scenes[self.current_shot_no]
+            return self.scenes[self.current_scene_no]
         except:
-            print(orange("\tget current shot: current shot is None"))
-            log.warning("get current shot: current shot is None")
+            print(orange("\tget current scene: current scene is None"))
+            log.warning("get current scene: current scene is None")
             pass
-        # self.shots[self.current_frame['shot_no']]
+        # self.scenes[self.current_frame['scene_no']]
         return None
 
 
@@ -163,12 +164,12 @@ class CommonController(QObject):
 
 
     def set_modification_status(self, modification_type, is_modified:bool=False):
-        shot = self.current_shot()
-        try: shot['modifications']['list'].remove(modification_type)
+        scene = self.current_scene()
+        try: scene['modifications']['list'].remove(modification_type)
         except: pass
         if is_modified:
-            shot['modifications']['list'].append(modification_type)
-        self.signal_shot_modified.emit({
-            'shot_no': shot['no'],
-            'modifications': shot['modifications']['list']
+            scene['modifications']['list'].append(modification_type)
+        self.signal_scene_modified.emit({
+            'scene_no': scene['no'],
+            'modifications': scene['modifications']['list']
         })

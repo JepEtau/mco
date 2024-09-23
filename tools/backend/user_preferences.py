@@ -81,10 +81,10 @@ class UserPreferences(QObject):
             if self.settings.value('selection/step') != '':
                 self.preferences['selection']['step'] = self.settings.value('selection/step')
 
-        self.preferences['selection']['shot_no'] = 0
-        if self.settings.contains('selection/shot_no'):
-            if self.settings.value('selection/shot_no') != '':
-                self.preferences['selection']['shot_no'] = int(self.settings.value('selection/shot_no'))
+        self.preferences['selection']['scene_no'] = 0
+        if self.settings.contains('selection/scene_no'):
+            if self.settings.value('selection/scene_no') != '':
+                self.preferences['selection']['scene_no'] = int(self.settings.value('selection/scene_no'))
 
 
         # Default widget position
@@ -136,7 +136,7 @@ class UserPreferences(QObject):
         self.settings.setValue('selection/part', preferences['selection']['k_p'])
         self.settings.setValue('selection/step', preferences['selection']['step'])
         try:
-            self.settings.setValue('selection/shot_no', preferences['selection']['shot_no'])
+            self.settings.setValue('selection/scene_no', preferences['selection']['scene_no'])
         except:
             pass
         try:

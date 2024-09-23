@@ -66,7 +66,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
         self.previous_position = None
         self.is_modified = False
-        self.initial_shot_no = None
+        self.initial_scene_no = None
         self.previous_selection = [0]
 
         # Initialize widgets
@@ -108,8 +108,8 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.tableWidget_scenes.installEventFilter(self)
 
         self.controller.signal_scenelist[dict].connect(self.event_refresh_scenelist)
-        # self.controller.signal_shot_modified[dict].connect(self.refresh_modification_status)
-        # self.controller.signal_current_shot_modified[dict].connect(self.event_current_scene_modified)
+        # self.controller.signal_scene_modified[dict].connect(self.refresh_modification_status)
+        # self.controller.signal_current_scene_modified[dict].connect(self.event_current_scene_modified)
 
         self.set_enabled(True)
         set_stylesheet(self)
@@ -182,11 +182,11 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.tableWidget_scenes.setRowCount(0)
         self.tableWidget_scenes.blockSignals(False)
 
-        # Current shot no
+        # Current scene no
         try:
-            self.initial_shot_no = s['shot_no']
+            self.initial_scene_no = s['scene_no']
         except:
-            self.initial_shot_no = None
+            self.initial_scene_no = None
 
         # Geometry
         self.move(s['geometry'][0], s['geometry'][1])
@@ -243,18 +243,18 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
     def refresh_modification_status(self, modifications:dict):
         # Something has been modified, disable selection until saving or discard
         log.info("refresh modification status")
-        row_no = modifications['shot_no']
-        shot_str = self.tableWidget_scenes.item(row_no, 0).text().replace('*', '')
+        row_no = modifications['scene_no']
+        scene_str = self.tableWidget_scenes.item(row_no, 0).text().replace('*', '')
         if len(modifications['modifications']) > 0:
             self.set_enabled(False)
             self.widget_app_controls.set_save_discard_enabled(True)
-            self.tableWidget_scenes.item(row_no, 0).setText(f"{shot_str}*")
-            log.info("shot no. %d has been modified" % (modifications['shot_no']))
+            self.tableWidget_scenes.item(row_no, 0).setText(f"{scene_str}*")
+            log.info("scene no. %d has been modified" % (modifications['scene_no']))
         else:
             self.set_enabled(True)
             self.widget_app_controls.set_save_discard_enabled(False)
-            self.tableWidget_scenes.item(row_no, 0).setText(shot_str)
-            log.info("shot no. %d is not modified" % (modifications['shot_no']))
+            self.tableWidget_scenes.item(row_no, 0).setText(scene_str)
+            log.info("scene no. %d is not modified" % (modifications['scene_no']))
 
 
 
@@ -457,12 +457,12 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.set_enabled(True)
 
         if len(scenes) > 0:
-            if self.initial_shot_no is not None:
-                log.info(f"select shot no. {self.initial_shot_no}")
-                self.tableWidget_scenes.selectRow(self.initial_shot_no)
-                self.initial_shot_no = None
+            if self.initial_scene_no is not None:
+                log.info(f"select scene no. {self.initial_scene_no}")
+                self.tableWidget_scenes.selectRow(self.initial_scene_no)
+                self.initial_scene_no = None
             else:
-                log.info("select shot no. 0")
+                log.info("select scene no. 0")
                 self.tableWidget_scenes.selectRow(0)
 
         self.comboBox_episode.blockSignals(False)
@@ -512,20 +512,17 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
         selected_scene_nos = list()
         for row_no in selected_row_no:
-            shot_no_str = self.tableWidget_scenes.item(row_no, 0).text()
-            selected_scene_nos.append(int(shot_no_str.replace('*', '')))
+            scene_no_str = self.tableWidget_scenes.item(row_no, 0).text()
+            selected_scene_nos.append(int(scene_no_str.replace('*', '')))
 
         k_ep = ''
         if self.comboBox_episode.currentText() not in ['', ' ']:
-            k_ep = 'ep%02d' % (int(self.comboBox_episode.currentText()))
+            k_ep = f"ep{int(self.comboBox_episode.currentText()):02}"
         selected_scenes = {
             'k_ep': k_ep,
             'k_p': self.comboBox_part.currentText(),
             'scenes': selected_scene_nos
         }
-        print("send signal")
-        pprint(selected_scenes)
-        log.info(f"send signal: signal_selected_shots_changed")
         self.signal_selected_scene_changed.emit(selected_scenes)
 
 

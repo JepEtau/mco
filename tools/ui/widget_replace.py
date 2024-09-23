@@ -163,7 +163,7 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.tableWidget_replace.setRowCount(0)
         for row_no, v in zip(range(len(values)), values):
             self.tableWidget_replace.insertRow(row_no)
-            self.tableWidget_replace.setItem(row_no, 0, QTableWidgetItem(str(v['shot_no'])))
+            self.tableWidget_replace.setItem(row_no, 0, QTableWidgetItem(str(v['scene_no'])))
             self.tableWidget_replace.setItem(row_no, 1, QTableWidgetItem(str(v['dst'])))
             self.tableWidget_replace.setItem(row_no, 2, QTableWidgetItem(str(v['src'])))
 

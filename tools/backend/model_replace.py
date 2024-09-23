@@ -36,18 +36,18 @@ class ReplaceModel:
 
     def initialize_db_for_replace(self, db, k_ep, k_part):
         # This function is used by the video editor
-        # which uses the consolidated shots
+        # which uses the consolidated scenes
         self.db_replaced_frames_initial = get_replaced_frames(db, k_ep=k_ep, k_part=k_part)
         self.db_replaced_frames = dict()
 
 
     # Replaced frames
-    def get_replace_frame_no(self, shot:dict, frame_no:int):
+    def get_replace_frame_no(self, scene:dict, frame_no:int):
         """ Return the new frame no. if replaced. Returns -1 otherwise
         """
-        k_ed = shot['k_ed']
-        k_ep = shot['k_ep']
-        k_part = shot['k_p']
+        k_ed = scene['k_ed']
+        k_ep = scene['k_ep']
+        k_part = scene['k_p']
         # print_lightgreen("get_replace_frame_no %s:%s:%s:%d" % (k_ed, k_ep, k_part, frame_no))
         try:
             return self.db_replaced_frames[k_ed][k_ep][k_part][frame_no]
@@ -59,10 +59,10 @@ class ReplaceModel:
             return -1
 
 
-    def set_replaced_frame(self, shot, frame_no, new_frame_no):
-        k_ed = shot['k_ed']
-        k_ep = shot['k_ep']
-        k_part = shot['k_p']
+    def set_replaced_frame(self, scene, frame_no, new_frame_no):
+        k_ed = scene['k_ed']
+        k_ep = scene['k_ep']
+        k_part = scene['k_p']
         try:
             if new_frame_no in self.db_replaced_frames[k_ed][k_ep][k_part].keys():
                 print(red("error: replace: circular reference. TODO: block this"))
@@ -78,11 +78,11 @@ class ReplaceModel:
         self.is_replace_db_modified = True
 
 
-    def remove_replaced_frame(self, shot, frame_no):
+    def remove_replaced_frame(self, scene, frame_no):
         db_modified = self.db_replaced_frames
-        k_ed = shot['k_ed']
-        k_ep = shot['k_ep']
-        k_part = shot['k_p']
+        k_ed = scene['k_ed']
+        k_ep = scene['k_ep']
+        k_part = scene['k_p']
         try:
             if frame_no in self.db_replaced_frames_initial[k_ed][k_ep][k_part].keys():
                 nested_dict_set(self.db_replaced_frames, -1, k_ed,k_ep, k_part, frame_no)

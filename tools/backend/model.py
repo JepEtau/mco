@@ -43,9 +43,9 @@ from parsers.parser_stabilize import parse_stabilize_configurations
 from video.calculate_av_sync import calculate_av_sync
 from video.consolidate_av_tracks import consolidate_av_tracks
 
-from shot.consolidate_target_shots import (
-    consolidate_target_shots,
-    consolidate_target_shots_g,
+from scene.consolidate_target_scenes import (
+    consolidate_target_scenes,
+    consolidate_target_scenes_g,
 )
 from .model_geometry import *
 from .model_curves import *
@@ -158,20 +158,20 @@ class Model(
 
             # Consolidate database for the episode
             for k_p in K_NON_GENERIQUE_PARTS:
-                consolidate_target_shots(self.global_database, k_ep=k_ep, k_part=k_p)
+                consolidate_target_scenes(self.global_database, k_ep=k_ep, k_part=k_p)
 
             for k_part_g in ['g_asuivre', 'g_documentaire']:
                 parse_curve_configurations(self.global_database, k_ep_or_g=k_part_g)
                 parse_replace_configurations(self.global_database, k_ep_or_g=k_part_g)
                 parse_geometry_configurations(self.global_database, k_ep_or_g=k_part_g)
                 # parse_stabilize_configurations(self.global_database, k_ep_or_g=k_part_g)
-                consolidate_target_shots_g(self.global_database, k_ep=k_ep, k_part_g=k_part_g)
+                consolidate_target_scenes_g(self.global_database, k_ep=k_ep, k_part_g=k_part_g)
 
             calculate_av_sync(self.global_database, k_ep=k_ep)
             consolidate_av_tracks(self.global_database, k_ep=k_ep)
 
-            # Consolidate each shot for the target
-            # consolidate_target_shots(db=self.global_database, k_ep=k_ep, k_part=k_part)
+            # Consolidate each scene for the target
+            # consolidate_target_scenes(db=self.global_database, k_ep=k_ep, k_part=k_part)
 
             # Initialize db for edition
             if k_part != '':
@@ -206,8 +206,8 @@ class Model(
             parse_stabilize_configurations(self.global_database, k_ep_or_g=k_part_g)
             parse_geometry_configurations(self.global_database, k_ep_or_g=k_part_g)
 
-            # Consolidate each shot for the target
-            consolidate_target_shots_g(db=self.global_database, k_ep=k_ep, k_part_g=k_part_g)
+            # Consolidate each scene for the target
+            consolidate_target_scenes_g(db=self.global_database, k_ep=k_ep, k_part_g=k_part_g)
 
             # Consolidate by aligning the A/V tracks of generiques
             consolidate_av_tracks(self.global_database, k_ep='', k_part=k_part_g)
@@ -230,14 +230,14 @@ class Model(
     def is_db_modified(self, type:str=''):
         if type == 'curves':
             return bool(self.db_curves_library)
-        elif type == 'shot_selection':
+        elif type == 'scene_selection':
             return bool(self.db_curves_selection)
         elif type == 'replace':
             return bool(self.db_replaced_frames)
         elif type == 'geometry':
             return (bool(self.db_target_geometry)
-            or bool(self.db_default_shot_geometry)
-            or bool(self.db_shot_geometry))
+            or bool(self.db_default_scene_geometry)
+            or bool(self.db_scene_geometry))
         elif type == 'stabilize':
             return bool(self.db_stabilize)
 
@@ -249,19 +249,19 @@ class Model(
         pprint(self.db_replaced_frames)
         print_lightgreen('geometry: target')
         pprint(self.db_target_geometry)
-        print_lightgreen('geometry: default shot geometry')
-        pprint(self.db_default_shot_geometry)
-        print_lightgreen('geometry: shot geometry')
-        pprint(self.db_shot_geometry)
+        print_lightgreen('geometry: default scene geometry')
+        pprint(self.db_default_scene_geometry)
+        print_lightgreen('geometry: scene geometry')
+        pprint(self.db_scene_geometry)
         print_lightgreen('stabilize')
         pprint(self.db_stabilize)
 
-        # is_default_geometry_modified = bool(self.db_default_shot_geometry)
+        # is_default_geometry_modified = bool(self.db_default_scene_geometry)
         is_default_geometry_modified = False
-        for _k_ed in self.db_default_shot_geometry.keys():
-            for _k_ep in self.db_default_shot_geometry[_k_ed].keys():
-                for _k_part in self.db_default_shot_geometry[_k_ed][_k_ep].keys():
-                    crop = self.db_default_shot_geometry[_k_ed][_k_ep][_k_part]['crop']
+        for _k_ed in self.db_default_scene_geometry.keys():
+            for _k_ep in self.db_default_scene_geometry[_k_ed].keys():
+                for _k_part in self.db_default_scene_geometry[_k_ed][_k_ep].keys():
+                    crop = self.db_default_scene_geometry[_k_ed][_k_ep][_k_part]['crop']
                     for v in crop:
                         if v != 0:
                             is_default_geometry_modified = True
@@ -273,7 +273,7 @@ class Model(
             or bool(self.db_replaced_frames)
             or bool(self.db_target_geometry)
             or is_default_geometry_modified
-            or bool(self.db_shot_geometry)
+            or bool(self.db_scene_geometry)
             or bool(self.db_stabilize)):
             return True
 
@@ -296,8 +296,8 @@ class Model(
             modified_db.append('frames to replace')
 
         if (self.db_target_geometry
-            or self.db_default_shot_geometry
-            or self.db_shot_geometry):
+            or self.db_default_scene_geometry
+            or self.db_scene_geometry):
             modified_db.append('geometry')
 
 
