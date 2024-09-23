@@ -15,7 +15,10 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
 )
-
+from .stylesheet import (
+    set_stylesheet,
+    set_widget_stylesheet,
+)
 
 from .ui.ui_window_replace import Ui_ReplaceWindow
 
@@ -104,6 +107,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
 
         self.show()
         # self.installEventFilter(self)
+        set_stylesheet(self)
 
 
     def apply_user_preferences(self, user_preferences:dict):

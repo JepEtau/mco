@@ -25,11 +25,11 @@ class Ui_PlayerControlWidget(object):
     def setupUi(self, PlayerControlWidget):
         if not PlayerControlWidget.objectName():
             PlayerControlWidget.setObjectName(u"PlayerControlWidget")
-        PlayerControlWidget.resize(750, 61)
+        PlayerControlWidget.resize(840, 79)
         self.verticalLayout = QVBoxLayout(PlayerControlWidget)
-        self.verticalLayout.setSpacing(3)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.horizontalLayout_4 = QHBoxLayout()
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.slider_frames = CustomQSliderWidget(PlayerControlWidget)
         self.slider_frames.setObjectName(u"slider_frames")
         sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
@@ -39,11 +39,8 @@ class Ui_PlayerControlWidget(object):
         self.slider_frames.setSizePolicy(sizePolicy)
         self.slider_frames.setMinimumSize(QSize(750, 30))
 
-        self.verticalLayout.addWidget(self.slider_frames)
+        self.horizontalLayout_4.addWidget(self.slider_frames)
 
-        self.horizontalLayout_3 = QHBoxLayout()
-        self.horizontalLayout_3.setSpacing(12)
-        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.pushButton_play_pause = QPushButton(PlayerControlWidget)
@@ -70,8 +67,14 @@ class Ui_PlayerControlWidget(object):
         self.horizontalLayout.addWidget(self.pushButton_loop)
 
 
-        self.horizontalLayout_3.addLayout(self.horizontalLayout)
+        self.horizontalLayout_4.addLayout(self.horizontalLayout)
 
+
+        self.verticalLayout.addLayout(self.horizontalLayout_4)
+
+        self.horizontalLayout_3 = QHBoxLayout()
+        self.horizontalLayout_3.setSpacing(12)
+        self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.label_ed_ep_part = QLabel(PlayerControlWidget)
         self.label_ed_ep_part.setObjectName(u"label_ed_ep_part")
         self.label_ed_ep_part.setMinimumSize(QSize(170, 0))

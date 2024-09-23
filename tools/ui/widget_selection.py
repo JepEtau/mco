@@ -21,6 +21,10 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
 )
+from .stylesheet import (
+    set_stylesheet,
+    set_widget_stylesheet,
+)
 
 from typing import TYPE_CHECKING
 
@@ -108,10 +112,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         # self.controller.signal_current_shot_modified[dict].connect(self.event_current_scene_modified)
 
         self.set_enabled(True)
-        # set_stylesheet(self)
-        # set_widget_stylesheet(self.pushButton_replace)
-        # set_widget_stylesheet(self.pushButton_stabilize)
-        # set_widget_stylesheet(self.pushButton_geometry)
+        set_stylesheet(self)
 
         # Install events for this widget
         # self.installEventFilter(self)

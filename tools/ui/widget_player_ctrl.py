@@ -2,6 +2,10 @@
 from pprint import pprint
 from logger import log
 from import_parsers import *
+from .stylesheet import (
+    set_stylesheet,
+    set_widget_stylesheet,
+)
 from utils.p_print import *
 
 
@@ -80,8 +84,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         # self.slider_frames.installEventFilter(self)
         # self.installEventFilter(self)
 
-        # set_stylesheet(self)
-        # set_widget_stylesheet(self.label_ed_ep_part)
+        set_stylesheet(self)
+        set_widget_stylesheet(self.label_ed_ep_part)
         self.adjustSize()
 
 
