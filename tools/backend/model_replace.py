@@ -47,7 +47,7 @@ class ReplaceModel:
         """
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
-        k_part = shot['k_part']
+        k_part = shot['k_p']
         # print_lightgreen("get_replace_frame_no %s:%s:%s:%d" % (k_ed, k_ep, k_part, frame_no))
         try:
             return self.db_replaced_frames[k_ed][k_ep][k_part][frame_no]
@@ -62,7 +62,7 @@ class ReplaceModel:
     def set_replaced_frame(self, shot, frame_no, new_frame_no):
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
-        k_part = shot['k_part']
+        k_part = shot['k_p']
         try:
             if new_frame_no in self.db_replaced_frames[k_ed][k_ep][k_part].keys():
                 print(red("error: replace: circular reference. TODO: block this"))
@@ -82,7 +82,7 @@ class ReplaceModel:
         db_modified = self.db_replaced_frames
         k_ed = shot['k_ed']
         k_ep = shot['k_ep']
-        k_part = shot['k_part']
+        k_part = shot['k_p']
         try:
             if frame_no in self.db_replaced_frames_initial[k_ed][k_ep][k_part].keys():
                 nested_dict_set(self.db_replaced_frames, -1, k_ed,k_ep, k_part, frame_no)

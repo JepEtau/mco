@@ -1,3 +1,4 @@
+from __future__ import annotations
 import sys
 import os
 
@@ -8,6 +9,9 @@ from PySide6.QtCore import (
     QObject,
     Signal,
 )
+
+from ui.window_replace import ReplaceWindow
+from .user_preferences import UserPreferences
 from utils.p_print import *
 from import_parsers import *
 from parsers import (
@@ -18,13 +22,13 @@ from parsers import (
 
 class CommonController(QObject):
     signal_close = Signal()
-    signal_scenes_modified = Signal(dict)
+    signal_scenelist = Signal(dict)
 
     signal_shot_modified = Signal(dict)
 
     def __init__(self):
         super(CommonController, self).__init__()
-        self.view = None
+        self.view: ReplaceWindow = None
 
         # Internal variables
         self.scenes = {}
@@ -38,6 +42,8 @@ class CommonController(QObject):
 
         self.preview_options = None
 
+        self.preferences: Preferences = None
+
 
     def exit(self):
         # print("%s:exit" % (__name__))
@@ -50,6 +56,19 @@ class CommonController(QObject):
         # print("model: exit")
 
 
+    def apply_user_preferences(self, user_preferences:dict):
+        try:
+            s = user_preferences['window_main']
+            self.setGeometry(s['geometry'][0],
+                s['geometry'][1],
+                s['geometry'][2],
+                s['geometry'][3])
+        except:
+            pass
+        self.setGeometry(100,100,2000,800)
+
+
+
     def get_preferences(self):
         p = self.preferences.get_preferences()
         return p
@@ -60,31 +79,35 @@ class CommonController(QObject):
         self.preferences.save(preferences)
 
 
-    def get_available_episode_and_parts(self):
-        episode_and_parts = {}
-        path_cache = self.model_database.get_cache_path()
-        if os.path.exists(path_cache):
-            # Rather than walking through, try every possibilities
-            # another option would be to select a folder, then the combobox
-            # will be disabled
+    def get_available_episode_and_parts(self) -> dict[str, list]:
+        episode_and_parts: dict[str, list] = {}
+        # path_cache = self.model_database.get_cache_path()
+        # if os.path.exists(path_cache):
+        #     # Rather than walking through, try every possibilities
+        #     # another option would be to select a folder, then the combobox
+        #     # will be disabled
 
-            for no in range(1, 39):
-                k_ep = key(no)
-                if os.path.exists(os.path.join(path_cache, k_ep)):
-                    episode_and_parts[k_ep] = []
+        for no in range(1, 40):
+            k_ep = key(no)
+            # if os.path.exists(os.path.join(path_cache, k_ep)):
+            episode_and_parts[k_ep] = list(all_chapter_keys())
 
-                    for k_part in all_chapter_keys():
-                        if os.path.exists(os.path.join(path_cache, k_ep, k_part)):
-                            episode_and_parts[k_ep].append(k_part)
+                # for k_part in all_chapter_keys():
+                #     # if os.path.exists(os.path.join(path_cache, k_ep, k_part)):
+                #     #     episode_and_parts[k_ep].append(k_part)
 
-                    # g_asuivre, g_documentaire
-                    episode_and_parts[k_ep].append('g_asuivre')
-                    episode_and_parts[k_ep].append('g_documentaire')
+                # # g_asuivre, g_documentaire
+                # episode_and_parts[k_ep].append('g_asuivre')
+                # episode_and_parts[k_ep].append('g_documentaire')
 
-            episode_and_parts[' '] = []
-            for k_part_g in credit_chapter_keys():
-                if os.path.exists(os.path.join(path_cache, k_part_g)):
-                    episode_and_parts[' '].append(k_part_g)
+        #     episode_and_parts[' '] = []
+        #     for k_part_g in credit_chapter_keys():
+        #         if os.path.exists(os.path.join(path_cache, k_part_g)):
+        #             episode_and_parts[' '].append(k_part_g)
+
+        episode_and_parts['ep01'].remove('precedemment')
+        episode_and_parts['ep39'].remove('g_asuivre')
+        episode_and_parts['ep39'].remove('asuivre')
 
         return episode_and_parts
 

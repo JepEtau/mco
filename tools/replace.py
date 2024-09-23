@@ -19,7 +19,7 @@ def main():
     controller = ReplaceController()
 
     from ui.window_replace import ReplaceWindow
-    main_window = ReplaceWindow()
+    main_window = ReplaceWindow(controller=controller)
 
     # main_window.set_controller(controller)
     controller.set_view(main_window)

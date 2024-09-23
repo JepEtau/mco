@@ -10,10 +10,10 @@ from PySide6.QtCore import (
 from PySide6.QtWidgets import QApplication
 
 
-class Preferences(QObject):
+class UserPreferences(QObject):
 
     def __init__(self, tool:str, widget_list: list = []):
-        super(Preferences, self).__init__()
+        super().__init__()
 
         if widget_list is None or tool == '':
             raise Exception("Error: tool and widget list must be specified")
@@ -27,7 +27,7 @@ class Preferences(QObject):
 
         # Default
         self.preferences = {
-            'viewer': dict(),
+            'window': dict(),
             'selection': dict(),
         }
 
@@ -42,16 +42,16 @@ class Preferences(QObject):
 
         # (Mandatory) Viewer
         if self.settings.contains('viewer/screen'):
-            self.preferences['viewer']['screen'] = 0
+            self.preferences['window']['screen'] = 0
         else:
-            self.preferences['viewer']['screen'] = 0
+            self.preferences['window']['screen'] = 0
 
-        self.preferences['viewer']['geometry'] = [0, 0, screen_width, screen_height]
+        self.preferences['window']['geometry'] = [0, 0, screen_width, screen_height]
 
         if self.settings.contains('viewer/current_widget'):
-            self.preferences['viewer']['current_widget'] = self.settings.value('viewer/current_widget')
+            self.preferences['window']['current_widget'] = self.settings.value('viewer/current_widget')
         else:
-            self.preferences['viewer']['current_widget'] = 'selection'
+            self.preferences['window']['current_widget'] = 'selection'
 
         # Selection: use str keys for debug
         self.preferences['selection']['geometry'] = [screen_width-500, 20, 0, 0]
@@ -72,9 +72,9 @@ class Preferences(QObject):
             ep_no_str = self.settings.value('selection/episode')
             self.preferences['selection']['episode'] = ep_no_str if ep_no_str == '' else int(ep_no_str)
 
-        self.preferences['selection']['part'] = ''
+        self.preferences['selection']['k_p'] = ''
         if self.settings.contains('selection/part'):
-            self.preferences['selection']['part'] = self.settings.value('selection/part')
+            self.preferences['selection']['k_p'] = self.settings.value('selection/part')
 
         self.preferences['selection']['step'] = ''
         if self.settings.contains('selection/step'):
@@ -124,16 +124,16 @@ class Preferences(QObject):
 
         # (Mandatory) Viewer
         self.settings.setValue('viewer/geometry',
-            ':'.join(map(lambda x: "%d" % (x), preferences['viewer']['geometry'])))
+            ':'.join(map(lambda x: "%d" % (x), preferences['window']['geometry'])))
         self.settings.setValue('viewer/screen', 0)
 
-        self.settings.setValue('viewer/current_widget', preferences['viewer']['current_widget'])
+        self.settings.setValue('viewer/current_widget', preferences['window']['current_widget'])
 
         # (Special) Selection
         self.settings.setValue('selection/geometry',
             ':'.join(map(lambda x: "%d" % (x), preferences['selection']['geometry'])))
         self.settings.setValue('selection/episode', preferences['selection']['episode'])
-        self.settings.setValue('selection/part', preferences['selection']['part'])
+        self.settings.setValue('selection/part', preferences['selection']['k_p'])
         self.settings.setValue('selection/step', preferences['selection']['step'])
         try:
             self.settings.setValue('selection/shot_no', preferences['selection']['shot_no'])

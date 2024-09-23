@@ -75,6 +75,9 @@
             <height>0</height>
            </size>
           </property>
+          <property name="editable">
+           <bool>true</bool>
+          </property>
           <item>
            <property name="text">
             <string>ep01</string>

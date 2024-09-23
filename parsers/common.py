@@ -53,9 +53,7 @@ def parse_common_configuration(language:str=''):
 
 
     # Get common configuration file
-    filepath = os.path.join(db_path, "common.ini")
-    if filepath.startswith("~/"):
-        filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
+    filepath = absolute_path(os.path.join(db_path, "common.ini"))
     if not os.path.exists(filepath):
         sys.exit("[E] fichier de configuration manquant: %s" % (filepath))
     try:
@@ -99,24 +97,27 @@ def parse_common_configuration(language:str=''):
         v: str = directories[d]
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')
-        directories[d] = absolute_path(v)
+        directories[d] = v
 
+    root_path: str = absolute_path(
+        os.path.join(__file__, os.pardir, os.pardir)
+    )
 
     # Clean
     for d, v in directories.items():
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')
-        directories[d] = absolute_path(v)
+
+        directories[d] = absolute_path(os.path.join(root_path, v))
 
     # Use default values
     for d in ('cache', 'cache_progressive', 'audio'):
         if not os.path.exists(directories[d]):
-            directories[d] = absolute_path(directories[f"{d}_default"])
+            directories[d] = absolute_path(os.path.join(directories[f"{d}_default"]))
         try:
             del directories[f"{d}_default"]
         except:
             pass
-
 
     # Others
     #===========================================================================

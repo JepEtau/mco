@@ -68,9 +68,11 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         ]
         headers = ["scene", "frame", "by"]
         default_col_width = [60, 80, 80]
-        for col_no, header_str, col_width in zip(range(len(headers)),
-                                                    headers,
-                                                    default_col_width):
+        for col_no, header_str, col_width in zip(
+            range(len(headers)),
+            headers,
+            default_col_width
+        ):
             self.tableWidget_replace.horizontalHeaderItem(col_no).setText(header_str)
             self.tableWidget_replace.setColumnWidth(col_no, col_width)
         self.tableWidget_replace.horizontalHeader().setStretchLastSection(True)
@@ -83,9 +85,9 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         # self.controller.signal_replace_list_refreshed[list].connect(self.event_replace_list_refreshed)
         # self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
-        self.installEventFilter(self)
+        # self.installEventFilter(self)
 
-        self.frame.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
+        # self.frame.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
         # set_stylesheet(self)
         self.adjustSize()

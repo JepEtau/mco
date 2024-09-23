@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_replace.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.2
+## Created by: Qt User Interface Compiler version 6.6.0
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -25,7 +25,7 @@ class Ui_ReplaceWidget(object):
         if not ReplaceWidget.objectName():
             ReplaceWidget.setObjectName(u"ReplaceWidget")
         ReplaceWidget.resize(270, 370)
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Preferred)
+        sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(ReplaceWidget.sizePolicy().hasHeightForWidth())
@@ -49,23 +49,23 @@ class Ui_ReplaceWidget(object):
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.pushButton_set_preview = QPushButton(self.frame)
         self.pushButton_set_preview.setObjectName(u"pushButton_set_preview")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.pushButton_set_preview.sizePolicy().hasHeightForWidth())
         self.pushButton_set_preview.setSizePolicy(sizePolicy1)
         icon = QIcon()
-        icon.addFile(u"./icons/grey/eye.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        icon.addFile(u"./icons/blue/eye.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        icon.addFile(u"./icons/grey/eye.svg", QSize(), QIcon.Mode.Disabled, QIcon.State.Off)
-        icon.addFile(u"./icons/grey/eye.svg", QSize(), QIcon.Mode.Disabled, QIcon.State.On)
+        icon.addFile(u"./icons/grey/eye.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"./icons/blue/eye.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon.addFile(u"./icons/grey/eye.svg", QSize(), QIcon.Disabled, QIcon.Off)
+        icon.addFile(u"./icons/grey/eye.svg", QSize(), QIcon.Disabled, QIcon.On)
         self.pushButton_set_preview.setIcon(icon)
         self.pushButton_set_preview.setCheckable(True)
         self.pushButton_set_preview.setFlat(True)
 
         self.horizontalLayout.addWidget(self.pushButton_set_preview)
 
-        self.horizontalSpacer = QSpacerItem(5, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.horizontalSpacer = QSpacerItem(5, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
 
@@ -74,8 +74,8 @@ class Ui_ReplaceWidget(object):
         sizePolicy1.setHeightForWidth(self.pushButton_discard.sizePolicy().hasHeightForWidth())
         self.pushButton_discard.setSizePolicy(sizePolicy1)
         icon1 = QIcon()
-        icon1.addFile(u"./icons/grey/undo.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        icon1.addFile(u"./icons/purple/undo.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        icon1.addFile(u"./icons/grey/undo.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon1.addFile(u"./icons/purple/undo.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_discard.setIcon(icon1)
         self.pushButton_discard.setCheckable(False)
         self.pushButton_discard.setAutoDefault(False)
@@ -88,7 +88,7 @@ class Ui_ReplaceWidget(object):
         sizePolicy1.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
         self.pushButton_save.setSizePolicy(sizePolicy1)
         icon2 = QIcon()
-        icon2.addFile(u"./icons/purple/save.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon2.addFile(u"./icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_save.setIcon(icon2)
         self.pushButton_save.setCheckable(False)
         self.pushButton_save.setAutoDefault(False)
@@ -113,7 +113,7 @@ class Ui_ReplaceWidget(object):
         self.pushButton_copy.setObjectName(u"pushButton_copy")
         self.pushButton_copy.setMaximumSize(QSize(70, 16777215))
         icon3 = QIcon()
-        icon3.addFile(u"./icons/blue/copy.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon3.addFile(u"./icons/blue/copy.svg", QSize(), QIcon.Normal, QIcon.Off)
         self.pushButton_copy.setIcon(icon3)
         self.pushButton_copy.setFlat(True)
 
@@ -121,7 +121,7 @@ class Ui_ReplaceWidget(object):
 
         self.lineEdit_frame_no = QLineEdit(self.groupBox_replace)
         self.lineEdit_frame_no.setObjectName(u"lineEdit_frame_no")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.lineEdit_frame_no.sizePolicy().hasHeightForWidth())
@@ -136,8 +136,8 @@ class Ui_ReplaceWidget(object):
         self.pushButton_paste = QPushButton(self.groupBox_replace)
         self.pushButton_paste.setObjectName(u"pushButton_paste")
         icon4 = QIcon()
-        icon4.addFile(u"./icons/grey/arrow-left.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        icon4.addFile(u"./icons/blue/arrow-left.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        icon4.addFile(u"./icons/grey/arrow-left.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon4.addFile(u"./icons/blue/arrow-left.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_paste.setIcon(icon4)
         self.pushButton_paste.setFlat(True)
 
@@ -156,8 +156,8 @@ class Ui_ReplaceWidget(object):
         self.pushButton_remove = QPushButton(self.groupBox_replace)
         self.pushButton_remove.setObjectName(u"pushButton_remove")
         icon5 = QIcon()
-        icon5.addFile(u"./icons/grey/eraser.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        icon5.addFile(u"./icons/blue/eraser.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        icon5.addFile(u"./icons/grey/eraser.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon5.addFile(u"./icons/blue/eraser.svg", QSize(), QIcon.Normal, QIcon.On)
         self.pushButton_remove.setIcon(icon5)
         self.pushButton_remove.setFlat(True)
 
@@ -182,7 +182,7 @@ class Ui_ReplaceWidget(object):
         __qtablewidgetitem4 = QTableWidgetItem()
         self.tableWidget_replace.setItem(0, 2, __qtablewidgetitem4)
         self.tableWidget_replace.setObjectName(u"tableWidget_replace")
-        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
+        sizePolicy3 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.tableWidget_replace.sizePolicy().hasHeightForWidth())
