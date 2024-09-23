@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_player_ctrl.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.6.0
+## Created by: Qt User Interface Compiler version 6.7.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -32,7 +32,7 @@ class Ui_PlayerControlWidget(object):
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.slider_frames = CustomQSliderWidget(PlayerControlWidget)
         self.slider_frames.setObjectName(u"slider_frames")
-        sizePolicy = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Minimum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.slider_frames.sizePolicy().hasHeightForWidth())
@@ -47,7 +47,7 @@ class Ui_PlayerControlWidget(object):
         self.pushButton_play_pause.setObjectName(u"pushButton_play_pause")
         self.pushButton_play_pause.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon = QIcon()
-        icon.addFile(u"./icons/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
+        icon.addFile(u"./icons/blue/play.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.pushButton_play_pause.setIcon(icon)
         self.pushButton_play_pause.setCheckable(True)
         self.pushButton_play_pause.setFlat(True)
@@ -58,8 +58,8 @@ class Ui_PlayerControlWidget(object):
         self.pushButton_loop.setObjectName(u"pushButton_loop")
         self.pushButton_loop.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon1 = QIcon()
-        icon1.addFile(u"./icons/grey/repeat.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon1.addFile(u"./icons/blue/repeat.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon1.addFile(u"./icons/grey/repeat.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon1.addFile(u"./icons/blue/repeat.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
         self.pushButton_loop.setIcon(icon1)
         self.pushButton_loop.setCheckable(True)
         self.pushButton_loop.setFlat(True)
@@ -85,13 +85,13 @@ class Ui_PlayerControlWidget(object):
 
         self.horizontalLayout_3.addWidget(self.label_ed_ep_part)
 
-        self.horizontalSpacer_2 = QSpacerItem(10, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Minimum)
+        self.horizontalSpacer_2 = QSpacerItem(10, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer_2)
 
         self.lineEdit_frame_no = QLineEdit(PlayerControlWidget)
         self.lineEdit_frame_no.setObjectName(u"lineEdit_frame_no")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.lineEdit_frame_no.sizePolicy().hasHeightForWidth())
@@ -105,7 +105,7 @@ class Ui_PlayerControlWidget(object):
 
         self.horizontalLayout_3.addWidget(self.lineEdit_frame_no)
 
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer)
 

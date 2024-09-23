@@ -142,7 +142,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             'geometry': self.geometry().getRect(),
             'episode': k_ep,
             'scene_no': int(self.tableWidget_scenes.item(row_no, 0).text().replace('*', '')),
-            'k_p': self.comboBox_part.currentText(),
+            'k_ch': self.comboBox_part.currentText(),
         }
         return preferences
 
@@ -150,7 +150,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
     def set_initial_options(self, preferences:dict):
         s = preferences['selection']
-        log.info(f"set_initial_options: {s['episode']}, {s['k_p']}")
+        log.info(f"set_initial_options: {s['episode']}, {s['k_ch']}")
         print("%s:set_initial_options: " % (__name__), s)
 
         self.set_enabled(True)
@@ -171,8 +171,8 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         # Part
         # self.refresh_combobox_part()
         self.comboBox_part.blockSignals(True)
-        self.comboBox_part.setCurrentText(s['k_p'])
-        index = self.comboBox_part.findText(s['k_p'])
+        self.comboBox_part.setCurrentText(s['k_ch'])
+        index = self.comboBox_part.findText(s['k_ch'])
         self.comboBox_part.setCurrentIndex(index)
         self.comboBox_part.blockSignals(False)
 
@@ -330,8 +330,8 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         #     self.comboBox_episode.blockSignals(False)
 
         # # Part
-        # if self.comboBox_part.currentText() != values['k_p']:
-        #     i = self.comboBox_part.findText(values['k_p'])
+        # if self.comboBox_part.currentText() != values['k_ch']:
+        #     i = self.comboBox_part.findText(values['k_ch'])
         #     self.comboBox_part.blockSignals(True)
         #     new_index = i if i != -1 else 0
         #     self.comboBox_part.setCurrentIndex(new_index)
@@ -479,7 +479,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
         values = {
             'k_ep': k_ep,
-            'k_p': self.comboBox_part.currentText(),
+            'k_ch': self.comboBox_part.currentText(),
         }
 
         self.comboBox_episode.setEnabled(False)
@@ -520,7 +520,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             k_ep = f"ep{int(self.comboBox_episode.currentText()):02}"
         selected_scenes = {
             'k_ep': k_ep,
-            'k_p': self.comboBox_part.currentText(),
+            'k_ch': self.comboBox_part.currentText(),
             'scenes': selected_scene_nos
         }
         self.signal_selected_scene_changed.emit(selected_scenes)

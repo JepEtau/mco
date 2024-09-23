@@ -1,10 +1,14 @@
 from __future__ import annotations
+from import_parsers import *
 
 from pprint import pprint
 import time
 from PySide6.QtCore import (
     Signal,
 )
+
+from .frame_cache import FrameCache
+from utils.mco_types import Scene
 
 from .db_helpers import consolidate_target
 from ui.window_replace import ReplaceWindow
@@ -14,7 +18,6 @@ from .user_preferences import UserPreferences
 from logger import log
 
 
-from import_parsers import *
 from utils.p_print import *
 from parsers import (
     credit_chapter_keys,
@@ -48,6 +51,8 @@ class ReplaceController(CommonController):
         self.filepath = list()
         self.current_task = ''
 
+        self.frame_cache: FrameCache = FrameCache()
+
 
 
     def set_view(self, view: ReplaceWindow):
@@ -80,7 +85,7 @@ class ReplaceController(CommonController):
         }"
         self.current_selection = {
             'k_ep': '',
-            'k_p': '',
+            'k_ch': '',
             'scenes': None,
         }
 
@@ -88,10 +93,10 @@ class ReplaceController(CommonController):
             self.get_available_episode_and_parts()
         )
 
-        k_p: str = p['selection']['k_p']
+        k_p: str = p['selection']['k_ch']
         new_selection: dict[str, str] = {
             'k_ep': k_ep if k_ep not in ('', 'ep') else 'ep01',
-            'k_p': k_p if k_p != '' else 'g_debut',
+            'k_ch': k_p if k_p != '' else 'g_debut',
         }
 
         self.k_ep_p_changed(new_selection)
@@ -108,7 +113,7 @@ class ReplaceController(CommonController):
             print(lightcyan("----------------------- k_ep_p_changed -------------------------"))
             pprint(values)
         k_ep_selected = values['k_ep']
-        k_p_selected = values['k_p']
+        k_p_selected = values['k_ch']
 
         if ((k_ep_selected == '' and k_p_selected == '')
             or (k_ep_selected != '' and k_p_selected == '')):
@@ -145,8 +150,7 @@ class ReplaceController(CommonController):
         # Remove all frames
         self.frames.clear()
 
-        # This will contains all scenes for this part
-        self.scenes.clear()
+
 
         # Contains all path of frames for this part
         self.filepath.clear()
@@ -162,13 +166,14 @@ class ReplaceController(CommonController):
         else:
             k_ed_selected = db[k_ep_selected]['video']['target'][k_p_selected]['k_ed_src']
 
+        self.scenes = db_video['scenes']
 
         # Create a dict to update the "browser" part of the editor widget
         self.current_selection = {
             'k_ed': k_ed_selected,
             'k_ep': k_ep_selected,
-            'k_p': k_p_selected,
-            'scenes': db_video['scenes'],
+            'k_ch': k_p_selected,
+            'scenes': self.scenes,
             'invalid': [],
         }
 
@@ -188,10 +193,10 @@ class ReplaceController(CommonController):
         log.info(f"select {len(selected['scenes'])} scenes, start:{selected['scenes'][0]}")
         verbose = True
         if verbose:
-            print(lightgreen(f"selected scenes: {selected['k_ep']}:{selected['k_p']}, %s" % (
+            print(lightgreen(f"selected scenes: {selected['k_ep']}:{selected['k_ch']}, %s" % (
                 ','.join(map(lambda x: str(x), selected['scenes'])))))
 
-        log.info(f"selected scenes: {selected['k_ep']}:{selected['k_p']}, %s" % (
+        log.info(f"selected scenes: {selected['k_ep']}:{selected['k_ch']}, %s" % (
             ','.join(map(lambda x: str(x), selected['scenes']))))
 
         if len(selected['scenes']) == 0:
@@ -206,16 +211,24 @@ class ReplaceController(CommonController):
         ticklist = [0]
         self.playlist_frames.clear()
 
+        frames: list = []
+        start_time = time.time()
         for scene_no in selected['scenes']:
-            # mmmmh what??? should use self.scene
-            frames = self.frames[scene_no]
-            for index, frame in zip(range(len(frames)), frames):
-                frame['index'] = index
-                self.playlist_frames.append(frame)
-                frame_nos.append(frame['frame_no'])
+            frames.extend(self.frame_cache.get(self.scenes[scene_no]))
 
-            ticklist.append(ticklist[-1] + len(self.frames[scene_no]))
 
+
+            # # mmmmh what??? should use self.scene
+            # frames = self.frames[scene_no]
+            # for index, frame in zip(range(len(frames)), frames):
+            #     frame['index'] = index
+            #     self.playlist_frames.append(frame)
+            #     frame_nos.append(frame['frame_no'])
+
+            # ticklist.append(ticklist[-1] + len(self.frames[scene_no]))
+        # pprint(frames)
+        print(f"extracted in {time.time() - start_time:.2f}")
+        sys.exit()
 
         # Load images
         if verbose:

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_selection.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.6.0
+## Created by: Qt User Interface Compiler version 6.7.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -44,7 +44,7 @@ class Ui_SelectionWidget(object):
         self.comboBox_episode.addItem("")
         self.comboBox_episode.addItem("")
         self.comboBox_episode.setObjectName(u"comboBox_episode")
-        sizePolicy = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Fixed)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.comboBox_episode.sizePolicy().hasHeightForWidth())
@@ -64,7 +64,7 @@ class Ui_SelectionWidget(object):
         self.comboBox_part.addItem("")
         self.comboBox_part.addItem("")
         self.comboBox_part.setObjectName(u"comboBox_part")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Fixed)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.comboBox_part.sizePolicy().hasHeightForWidth())
@@ -74,20 +74,20 @@ class Ui_SelectionWidget(object):
 
         self.horizontalLayout.addWidget(self.comboBox_part)
 
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
 
         self.pushButton_save = QPushButton(self.frame)
         self.pushButton_save.setObjectName(u"pushButton_save")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Maximum, QSizePolicy.Maximum)
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
         self.pushButton_save.setSizePolicy(sizePolicy2)
         icon = QIcon()
-        icon.addFile(u"./icons/grey/save.svg", QSize(), QIcon.Normal, QIcon.Off)
-        icon.addFile(u"./icons/purple/save.svg", QSize(), QIcon.Normal, QIcon.On)
+        icon.addFile(u"./icons/grey/save.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon.addFile(u"./icons/purple/save.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
         self.pushButton_save.setIcon(icon)
         self.pushButton_save.setCheckable(False)
         self.pushButton_save.setFlat(True)
@@ -130,7 +130,7 @@ class Ui_SelectionWidget(object):
         __qtablewidgetitem12 = QTableWidgetItem()
         self.tableWidget_scenes.setItem(1, 2, __qtablewidgetitem12)
         self.tableWidget_scenes.setObjectName(u"tableWidget_scenes")
-        sizePolicy3 = QSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.Expanding)
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Expanding)
         sizePolicy3.setHorizontalStretch(0)
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.tableWidget_scenes.sizePolicy().hasHeightForWidth())
