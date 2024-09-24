@@ -1,4 +1,3 @@
-
 from pprint import pprint
 from logger import log
 from import_parsers import *
@@ -7,7 +6,6 @@ from .stylesheet import (
     set_widget_stylesheet,
 )
 from utils.p_print import *
-
 
 from PySide6.QtCore import (
     QEvent,

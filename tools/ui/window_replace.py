@@ -1,11 +1,13 @@
 from __future__ import annotations
 from functools import partial
 from pprint import pprint
+import time
 from PySide6.QtCore import (
     Signal,
+    Slot,
+    QBasicTimer,
+    Qt
 )
-
-
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -29,12 +31,18 @@ from .widget_selection import SelectionWidget
 
 from logger import log
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from backend.controller_replace import ReplaceController
 
 from backend.frame_cache import Frame
-
+from parsers import (
+    credit_chapter_keys,
+    parse_database,
+    key,
+    db,
+    get_fps,
+)
 
 
 class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
@@ -88,6 +96,21 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         #     self.event_k_ep_p_refreshed
         # )
 
+        self.widget_player_ctrl.signal_button_pushed[str].connect(
+            self.event_control_button_pressed
+        )
+        self.widget_player_ctrl.signal_slider_moved[int].connect(
+            self.event_move_to_frame_index
+        )
+        # self.widget_player_ctrl.signal_preview_options_changed.connect(
+        #     partial(self.event_preview_options_changed, 'controls')
+        # )
+
+        self.current_frame_index = -1
+        self.playing_frame_start_no = 0
+        self.current_frame_no = 0
+        self.timer = QBasicTimer()
+        self.timer.stop()
 
 
         # self.widget_replace.signal_preview_options_changed.connect(
@@ -103,7 +126,9 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
             self.event_move_to_frame_index
         )
         # self.widget_player_ctrl.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'controls'))
-
+        self.controller.signal_ready_to_play[dict].connect(
+            self.event_ready_to_play
+        )
 
 
         # for w in self.widgets.values():
@@ -159,6 +184,58 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         # self.widget_painter.refresh_preview_options(new_preview_settings)
 
 
+    @Slot(dict)
+    def event_ready_to_play(self, playlist_properties: dict[str, Any]):
+        log.info("ready to play")
+        self.current_frame_index = 0
+        self.playing_frame_count = playlist_properties['count']
+        f = self.controller.get_frame_at_index(self.current_frame_index)
+        self.display_frame(f)
+
+
+    @Slot(str)
+    def event_control_button_pressed(self, action: str):
+        if action == 'play':
+            self.widget_selection.set_enabled(False)
+            log.info("start playing")
+            speed = self.widget_player_ctrl.get_playing_speed()
+            self.timer_delay = int(1000/(get_fps(db)*speed))
+            self.timer.start(self.timer_delay, Qt.TimerType.PreciseTimer, self)
+            self.now = time.time()
+
+        elif action == 'pause':
+            self.timer.stop()
+            self.widget_selection.set_enabled(True)
+
+        elif action == 'stop':
+            self.timer.stop()
+            self.widget_selection.set_enabled(True)
+            self.event_move_to_frame_index(0)
+
+
+    def timerEvent(self, e=None):
+        now = time.time()
+        elasped_time = 1000 * (now - self.now)
+        if elasped_time > 45:
+            print(int(elasped_time))
+        self.now = now
+
+        self.current_frame_index += 1
+        if self.current_frame_index >= self.playing_frame_count:
+            if self.widget_player_ctrl.is_loop_enabled():
+                # in loop mode restart from beginning
+                self.current_frame_index = 0
+                self.widget_player_ctrl.set_playing_frame_properties(self.current_frame_index)
+                f = self.controller.get_frame_at_index(self.current_frame_index)
+                self.display_frame(f)
+            else:
+                self.timer.stop()
+                self.widget_player_ctrl.event_stop()
+        else:
+            self.widget_player_ctrl.set_playing_frame_properties(self.current_frame_index)
+            f = self.controller.get_frame_at_index(self.current_frame_index)
+            self.display_frame(f)
+
     # def flush_image(self):
     #     log.info("flush image")
     #     del self.image
@@ -168,6 +245,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
     def display_frame(self, frame: Frame):
         # self.widget_replace.refresh_values(frame)
         self.widget_player_ctrl.refresh_values(frame)
+        self.widget_preview.display_frame(frame)
 
 
 
@@ -190,3 +268,13 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         index = self.controller.get_index_from_frame_no(frame_no)
         # log.info(f"move to frame {frame_no} at index {index}")
         self.widget_player_ctrl.move_slider_to(index)
+
+
+    @Slot(str)
+    def error_message(self, message: str):
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Critical)
+        msg.setText("Error")
+        msg.setInformativeText(message)
+        msg.setWindowTitle("Error")
+        msg.exec_()

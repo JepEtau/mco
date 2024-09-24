@@ -20,10 +20,16 @@ from utils.time_conversions import (
     frame_to_s,
     frame_to_sexagesimal,
 )
+from PySide6.QtGui import (
+    QPixmap,
+    QImage,
+)
 from parsers import (
     db,
     get_fps,
 )
+
+
 
 @dataclass(slots=True)
 class Frame:
@@ -31,7 +37,9 @@ class Frame:
     i: int
     no: int
     by: int
-    img: np.ndarray
+    img: np.ndarray | None = None
+    pixmap: QPixmap | None = None
+
 
 
 class FrameCache:
@@ -39,25 +47,21 @@ class FrameCache:
     def __init__(
         self,
         replace_db: ReplaceDatabase | None = None,
-        verbose: bool = False
     ):
         super().__init__()
-        # self.occurences: Counter = Counter()
-        # self.exceptions: set = set()
-        self.verbose: bool = verbose
-
         self.scenes: OrderedDict[str, list[Frame]] = {}
         self.frame_count: int = 0
 
         self.video_infos: dict[str, VideoInfo] = {}
         self.replace_db: ReplaceDatabase | None = replace_db
 
+
     @staticmethod
     def _key(scene: Scene) -> str:
         return f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
 
 
-    def get(self, scene: Scene) -> list:
+    def get(self, scene: Scene) -> list | None:
         # Extract frames from input video and strore them here
         key = self._key(scene)
 
@@ -74,6 +78,9 @@ class FrameCache:
                 in_video_fp: str = src_scene['scene']['inputs']['progressive']['filepath']
                 directory, basename, extension = path_split(in_video_fp)
                 in_video_fp = os.path.join(directory, f"{basename}_h264{extension}")
+                if not os.path.exists(in_video_fp):
+                    return None
+
                 print(f"  segment: {in_video_fp}, {start}, {count}")
 
                 if in_video_fp not in self.video_infos:
@@ -135,8 +142,13 @@ class FrameCache:
                             )
                         )
                     )
-                # pprint(self.sub_process.stderr.read())
-
+                # Convert the 1st image of the scene to fasten the display
+                np_img: np.ndarray = self.scenes[key][0].img
+                h, w, c = np_img.shape
+                self.scenes[key][0].pixmap = QPixmap().fromImage(
+                    QImage(np_img, w, h, w * c, QImage.Format.Format_BGR888)
+                )
+                self.scenes[key][0].img = None
 
         return self.scenes[key]
 

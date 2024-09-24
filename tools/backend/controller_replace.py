@@ -40,6 +40,7 @@ class ReplaceController(CommonController):
     signal_replacements_refreshed = Signal()
 
     signal_scenelist = Signal(dict)
+    signal_error = Signal(str)
 
 
     def __init__(self):
@@ -224,10 +225,15 @@ class ReplaceController(CommonController):
                 print(lightgrey("extract frames:"), end=' ')
                 start_time = time.time()
             scene_frames = self.frame_cache.get(scene=scene)
+            if scene_frames is None:
+                break
             self.playlist_frames.extend(scene_frames)
             if verbose:
                 print(f"{time.time() - start_time:.2f}")
             ticklist.append(ticklist[-1] + len(scene_frames))
+
+        if scene_frames is None:
+            self.signal_error.emit(f"Missing input file for scene {scene_no}")
 
         frame_nos = [f.no for f in self.playlist_frames]
         self.playlist_properties.update({
