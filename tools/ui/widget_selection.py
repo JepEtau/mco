@@ -7,6 +7,7 @@ from PySide6.QtCore import (
     QPoint,
     Qt,
     Signal,
+    Slot,
 )
 from PySide6.QtGui import (
     QBrush,
@@ -27,10 +28,9 @@ from .stylesheet import (
 )
 
 from typing import TYPE_CHECKING
-
-from utils.mco_types import Scene
 if TYPE_CHECKING:
     from backend.controller_replace import ReplaceController
+from utils.mco_types import Scene
 from .ui.ui_widget_selection import Ui_SelectionWidget
 from import_parsers import *
 from utils.p_print import *
@@ -107,7 +107,9 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.tableWidget_scenes.selectionModel().selectionChanged.connect(self.event_scene_selected)
         self.tableWidget_scenes.installEventFilter(self)
 
-        self.controller.signal_scenelist[dict].connect(self.event_refresh_scenelist)
+        self.controller.signal_scenelist[dict].connect(
+            self.event_refresh_scenelist
+        )
         # self.controller.signal_scene_modified[dict].connect(self.refresh_modification_status)
         # self.controller.signal_current_scene_modified[dict].connect(self.event_current_scene_modified)
 
@@ -308,8 +310,8 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
 
 
-
-    def event_refresh_scenelist(self, values:dict):
+    @Slot(dict)
+    def event_refresh_scenelist(self, values: dict):
         log.info("directory has been parsed, refresh scene list")
         # print("%s:event_refresh:" % (__name__))
         # pprint(values)

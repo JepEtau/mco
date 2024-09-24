@@ -10,8 +10,10 @@ from collections import Counter, OrderedDict, UserDict
 from pprint import pprint
 from typing import Any
 
+from tools.backend.replace_database import ReplaceDatabase
 from utils.mco_types import Scene
 from utils.media import VideoInfo, extract_media_info
+from utils.path_utils import path_split
 from utils.tools import ffmpeg_exe
 from utils.time_conversions import (
     FrameRate,
@@ -27,11 +29,16 @@ from parsers import (
 class Frame:
     no: int
     img: np.ndarray
+    by: int
 
 
 class FrameCache:
 
-    def __init__(self, verbose: bool = False):
+    def __init__(
+        self,
+        replace_db: ReplaceDatabase | None = None,
+        verbose: bool = False
+    ):
         super().__init__()
         # self.occurences: Counter = Counter()
         # self.exceptions: set = set()
@@ -41,12 +48,12 @@ class FrameCache:
         self.frame_count: int = 0
 
         self.video_infos: dict[str, VideoInfo] = {}
+        self.replace_db: ReplaceDatabase | None = replace_db
 
     @staticmethod
     def _key(scene: Scene) -> str:
-        return ':'.join(
-            map(str, (scene['dst']['k_ep'], scene['dst']['k_ch'], scene['no']))
-        )
+        return f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
+
 
     def get(self, scene: Scene) -> list:
         # Extract frames from input video and strore them here
@@ -63,6 +70,8 @@ class FrameCache:
                 start = src_scene['start']
                 count = src_scene['count']
                 in_video_fp: str = src_scene['scene']['inputs']['progressive']['filepath']
+                directory, basename, extension = path_split(in_video_fp)
+                in_video_fp = os.path.join(directory, f"{basename}_h264{extension}")
                 print(f"  segment: {in_video_fp}, {start}, {count}")
 
                 if in_video_fp not in self.video_infos:
@@ -109,13 +118,19 @@ class FrameCache:
                         self.sub_process.stdout.read(pipe_img_nbytes),
                         dtype=in_dtype,
                     ).reshape(shape)
+                    f_no = start + i
                     self.scenes[key].append(
                         Frame(
-                            no=start+i,
+                            no=f_no,
                             img=img,
+                            by=(
+                                self.replace_db.get(src_scene=src_scene, f_no=f_no)
+                                if self.replace_db is not None
+                                else -1
+                            )
                         )
                     )
-                pprint(self.sub_process.stderr.read())
+                # pprint(self.sub_process.stderr.read())
 
 
         return self.scenes[key]

@@ -1,3 +1,4 @@
+from pprint import pprint
 from logger import log
 from import_parsers import *
 from utils.p_print import *
@@ -5,6 +6,7 @@ from utils.p_print import *
 from PySide6.QtCore import (
     Qt,
     Signal,
+    Slot,
 )
 from PySide6.QtGui import(
     QKeyEvent,
@@ -16,6 +18,13 @@ from PySide6.QtWidgets import (
 )
 
 from .ui.ui_widget_replace import Ui_ReplaceWidget
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from backend.controller_replace import ReplaceController
+from .stylesheet import (
+    set_stylesheet,
+    set_widget_stylesheet,
+)
 
 
 
@@ -28,11 +37,11 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
     signal_edition_started = Signal()
 
 
-    def __init__(self, ui=None, controller=None):
+    def __init__(self, ui, controller):
         super().__init__(ui)
         self.setupUi(self)
 
-        self.controller = controller
+        self.controller: ReplaceController = controller
         self.ui = ui
         self.setObjectName('replace')
 
@@ -82,14 +91,16 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.tableWidget_replace.itemDoubleClicked[QTableWidgetItem].connect(self.event_move_to_frame_no)
         self.tableWidget_replace.installEventFilter(self)
 
-        # self.controller.signal_replace_list_refreshed[list].connect(self.event_replace_list_refreshed)
+        self.controller.signal_replacements_refreshed.connect(
+            self.event_replace_list_refreshed
+        )
         # self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
         # self.installEventFilter(self)
 
         # self.frame.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
 
-        # set_stylesheet(self)
+        set_stylesheet(self)
         self.adjustSize()
 
 
@@ -123,7 +134,7 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.pushButton_set_preview.setChecked(s['widget']['enabled'])
 
         # Geometry
-        self.move(s['geometry'][0], s['geometry'][1])
+        # self.move(s['geometry'][0], s['geometry'][1])
         self.block_signals(False)
         self.adjustSize()
 
@@ -153,23 +164,30 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.pushButton_set_preview.setEnabled(allowed)
         self.pushButton_set_preview.blockSignals(False)
 
-    def event_replace_list_refreshed(self, values:list):
+
+    @Slot()
+    def event_replace_list_refreshed(self):
         log.info("refresh list of frames to replace")
-        # print(lightgreen("refresh list of frames to replace"))
-        # pprint(values)
+        replacements = self.controller.playlist_replacements()
         self.tableWidget_replace.blockSignals(True)
 
         self.tableWidget_replace.clearContents()
         self.tableWidget_replace.setRowCount(0)
-        for row_no, v in zip(range(len(values)), values):
-            self.tableWidget_replace.insertRow(row_no)
-            self.tableWidget_replace.setItem(row_no, 0, QTableWidgetItem(str(v['scene_no'])))
-            self.tableWidget_replace.setItem(row_no, 1, QTableWidgetItem(str(v['dst'])))
-            self.tableWidget_replace.setItem(row_no, 2, QTableWidgetItem(str(v['src'])))
 
-            for i in range(len(self.alignment)):
-                self.tableWidget_replace.item(row_no, i).setTextAlignment(self.alignment[i])
-                self.tableWidget_replace.item(row_no, i).setFlags(Qt.ItemIsSelectable|Qt.ItemIsEnabled)
+        row_no: int = 0
+        for scene_no, scene_replacements in replacements.items():
+            scene_no_str: str = f"{scene_no:03}"
+            for no, by in scene_replacements.items():
+                self.tableWidget_replace.insertRow(row_no)
+                self.tableWidget_replace.setItem(row_no, 0, QTableWidgetItem(scene_no_str))
+                self.tableWidget_replace.setItem(row_no, 1, QTableWidgetItem(str(no)))
+                self.tableWidget_replace.setItem(row_no, 2, QTableWidgetItem(str(by)))
+                for i in range(len(self.alignment)):
+                    self.tableWidget_replace.item(row_no, i).setTextAlignment(self.alignment[i])
+                    self.tableWidget_replace.item(row_no, i).setFlags(
+                        Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
+                    )
+                row_no += 1
 
         self.tableWidget_replace.selectionModel().clearSelection()
         self.tableWidget_replace.blockSignals(False)

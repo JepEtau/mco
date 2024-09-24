@@ -58,7 +58,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         self.verticalLayout.addWidget(self.widget_preview)
 
         # Player control
-        self.widget_player_ctrl = PlayerCtrlWidget(self.centralwidget)
+        self.widget_player_ctrl = PlayerCtrlWidget(self, controller)
         self.verticalLayout.addWidget(self.widget_player_ctrl)
         self.horizontalLayout.addLayout(self.verticalLayout)
 

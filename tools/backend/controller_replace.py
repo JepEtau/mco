@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 from import_parsers import *
 
 from pprint import pprint
@@ -7,7 +8,9 @@ from PySide6.QtCore import (
     Signal,
 )
 
-from .frame_cache import FrameCache
+from .replace_database import ReplaceDatabase
+
+from .frame_cache import FrameCache, Frame
 from utils.mco_types import Scene
 
 from .db_helpers import consolidate_target
@@ -34,7 +37,7 @@ class ReplaceController(CommonController):
     signal_is_saved = Signal(str)
 
     signal_preview_options_consolidated = Signal(dict)
-    signal_replace_list_refreshed = Signal(list)
+    signal_replacements_refreshed = Signal()
 
     signal_scenelist = Signal(dict)
 
@@ -50,8 +53,10 @@ class ReplaceController(CommonController):
         # self.model_database = Model_database()
         self.filepath = list()
         self.current_task = ''
-
-        self.frame_cache: FrameCache = FrameCache()
+        self.replace_db = ReplaceDatabase()
+        self.frame_cache: FrameCache = FrameCache(self.replace_db)
+        self.playlist_frames: list[Frame] = []
+        self.replacements: dict[int, dict[int, int]] = {}
 
 
 
@@ -209,52 +214,22 @@ class ReplaceController(CommonController):
         frame_nos = []
         index = 0
         ticklist = [0]
+        # self.playlist_frames.clear()
+
         self.playlist_frames.clear()
-
-        frames: list = []
-        start_time = time.time()
-        for scene_no in selected['scenes']:
-            frames.extend(self.frame_cache.get(self.scenes[scene_no]))
-
-
-
-            # # mmmmh what??? should use self.scene
-            # frames = self.frames[scene_no]
-            # for index, frame in zip(range(len(frames)), frames):
-            #     frame['index'] = index
-            #     self.playlist_frames.append(frame)
-            #     frame_nos.append(frame['frame_no'])
-
-            # ticklist.append(ticklist[-1] + len(self.frames[scene_no]))
-        # pprint(frames)
-        print(f"extracted in {time.time() - start_time:.2f}")
-        sys.exit()
-
         # Load images
-        if verbose:
-            print(lightgrey("\tload images:", end=' '))
-            start_time = time.time()
-
         for scene_no in selected['scenes']:
-            print(f"scene no. {scene_no}: load frames")
+            scene: Scene = self.scenes[scene_no]
+            if verbose:
+                print(lightgrey("extract frames:"), end=' ')
+                start_time = time.time()
+            scene_frames = self.frame_cache.get(scene=scene)
+            self.playlist_frames.extend(scene_frames)
+            if verbose:
+                print(f"{time.time() - start_time:.2f}")
+            ticklist.append(ticklist[-1] + len(scene_frames))
 
-        if verbose:
-            print(lightgrey(f"{time.time() - start_time:.1f}s"))
-
-
-        # Update each frame
-        for scene_no in selected['scenes']:
-            scene = self.scenes[scene_no]
-
-            # Replace
-            self.refresh_replace_for_each_frame(scene=scene)
-
-        if verbose and True:
-            print(lightcyan("================================== scene ======================================="))
-            pprint(self.scenes[0])
-            print(lightcyan("-------------------------------------------------------------------------------"))
-
-
+        frame_nos = [f.no for f in self.playlist_frames]
         self.playlist_properties.update({
             'frame_nos': frame_nos,
             'count': len(self.playlist_frames),
@@ -264,27 +239,30 @@ class ReplaceController(CommonController):
 
         # Set current to None to refresh widgets
         self.current_frame = None
-
         self.current_scene_no = selected['scenes'][0]
-        scene = self.current_scene()
-        scene_no = scene['no']
 
 
         # Replace
-        self.refresh_replace_list()
+        self.replacements.clear()
+        for scene_no in selected['scenes']:
+            scene: Scene = self.scenes[scene_no]
+            self.replacements.update(
+                self.replace_db.get_replacements(scene)
+            )
 
-
-        self.signal_preview_options_consolidated.emit(self.preview_options)
-        log.info(f"selected scenes: scene is ready to play")
+        self.signal_replacements_refreshed.emit()
+        # self.signal_preview_options_consolidated.emit(self.preview_options)
         self.signal_ready_to_play.emit(self.playlist_properties)
 
 
 
+    def playlist_replacements(self) -> dict[int, dict[int, int]]:
+        return self.replacements
 
 
     # Replace frames
     #---------------------------------------------------------------------------
-    def refresh_replace_list(self):
+    def refresh_replace_widget(self):
         verbose = False
         # List of frames to replace
         log.info("refresh list")
@@ -309,7 +287,7 @@ class ReplaceController(CommonController):
             print(f"send signal to refresh replace list widget:")
             pprint(list_replace)
 
-        self.signal_replace_list_refreshed.emit(list_replace)
+        self.signal_replacements_refreshed.emit(list_replace)
 
 
     def refresh_replace_for_each_frame(self, scene):
@@ -387,14 +365,14 @@ class ReplaceController(CommonController):
         self.signal_scene_modified.emit({'scene_no': scene['no'], 'modifications': scene['modifications']})
 
 
-        self.refresh_replace_list()
+        self.refresh_replace_widget()
         self.signal_reload_frame.emit()
 
 
     def event_replace_discard_requested(self):
         log.info("discard modifications requested")
         self.model_database.discard_replace_modifications()
-        self.refresh_replace_list()
+        self.refresh_replace_widget()
         self.set_modification_status('replace', False)
         self.signal_reload_frame.emit()
 

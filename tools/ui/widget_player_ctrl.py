@@ -33,9 +33,15 @@ from PySide6.QtWidgets import (
 )
 from .ui.ui_widget_player_ctrl import Ui_PlayerControlWidget
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from backend.controller_replace import ReplaceController
+
+
+
 class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
-    def __init__(self, parent: QWidget | None) -> None:
+    def __init__(self, parent: QWidget | None, controller) -> None:
         super().__init__(parent)
         self.setupUi(self)
 
@@ -79,7 +85,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.pushButton_loop.toggled.connect(self.event_loop_toggled)
         self.slider_frames.valueChanged.connect(self.event_slider_moved)
 
-        # self.controller.signal_ready_to_play[dict].connect(self.event_refresh_slider)
+        self.controller: ReplaceController = controller
+        self.controller.signal_ready_to_play[dict].connect(self.event_refresh_slider)
 
         # self.slider_frames.installEventFilter(self)
         # self.installEventFilter(self)
