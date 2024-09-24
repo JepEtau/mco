@@ -205,7 +205,7 @@ def set_widget_stylesheet(widget, widget_type=''):
             # Customized label with border
             widget.setStyleSheet("""
                 QLabel {
-                    background-color: rgb(35, 35, 35);
+                    background-color: rgb(60, 60, 60);
                     border: 1px solid rgb(60, 60, 60);
                     color: rgb(220, 220, 220);
                 }

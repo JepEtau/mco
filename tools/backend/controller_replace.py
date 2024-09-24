@@ -260,6 +260,17 @@ class ReplaceController(CommonController):
         return self.replacements
 
 
+
+
+    def get_frame_at_index(self, index: int) -> Frame:
+        frame: Frame = self.playlist_frames[index]
+        return frame
+
+
+
+
+
+
     # Replace frames
     #---------------------------------------------------------------------------
     def refresh_replace_widget(self):

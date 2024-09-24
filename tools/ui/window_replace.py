@@ -33,6 +33,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from backend.controller_replace import ReplaceController
 
+from backend.frame_cache import Frame
+
 
 
 class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
@@ -46,12 +48,14 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
     ):
         super().__init__()
         self.widgets: dict[str, QWidget] = {}
-
+        self.controller: ReplaceController = controller
 
         self.centralwidget = QWidget(self)
         self.verticalLayout_2 = QVBoxLayout(self.centralwidget)
         self.horizontalLayout = QHBoxLayout()
         self.verticalLayout = QVBoxLayout()
+
+        set_stylesheet(self)
 
         # Preview
         self.widget_preview = PreviewWidget(self.centralwidget)
@@ -95,7 +99,9 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
 
         # self.widget_player_ctrl.set_initial_options(p)
         # self.widget_player_ctrl.signal_button_pushed[str].connect(self.event_control_button_pressed)
-        # self.widget_player_ctrl.signal_slider_moved[int].connect(self.event_move_to_frame_index)
+        self.widget_player_ctrl.signal_slider_moved[int].connect(
+            self.event_move_to_frame_index
+        )
         # self.widget_player_ctrl.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'controls'))
 
 
@@ -107,7 +113,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
 
         self.show()
         # self.installEventFilter(self)
-        set_stylesheet(self)
+
 
 
     def apply_user_preferences(self, user_preferences:dict):
@@ -159,4 +165,28 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
     #     self.image = None
     #     self.is_grabbing_split_line = False
 
+    def display_frame(self, frame: Frame):
+        # self.widget_replace.refresh_values(frame)
+        self.widget_player_ctrl.refresh_values(frame)
 
+
+
+    def event_ready_to_play(self, playlist_properties):
+        log.info("ready to play")
+        self.current_frame_index = 0
+        self.playing_frame_count = playlist_properties['count']
+        f = self.controller.get_frame_at_index(self.current_frame_index)
+        self.display_frame(f)
+
+
+    def event_move_to_frame_index(self, frame_index):
+        log.info("move to frame %d" % (frame_index))
+        self.current_frame_index = frame_index
+        f = self.controller.get_frame_at_index(self.current_frame_index)
+        self.display_frame(f)
+
+
+    def event_move_to_frame_no(self, frame_no):
+        index = self.controller.get_index_from_frame_no(frame_no)
+        # log.info(f"move to frame {frame_no} at index {index}")
+        self.widget_player_ctrl.move_slider_to(index)

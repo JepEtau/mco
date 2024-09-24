@@ -79,7 +79,7 @@ class Ui_PlayerControlWidget(object):
         self.label_ed_ep_part.setObjectName(u"label_ed_ep_part")
         self.label_ed_ep_part.setMinimumSize(QSize(170, 0))
         self.label_ed_ep_part.setMaximumSize(QSize(180, 16777215))
-        self.label_ed_ep_part.setFrameShape(QFrame.Shape.Panel)
+        self.label_ed_ep_part.setFrameShape(QFrame.Shape.Box)
         self.label_ed_ep_part.setFrameShadow(QFrame.Shadow.Plain)
         self.label_ed_ep_part.setLineWidth(1)
 

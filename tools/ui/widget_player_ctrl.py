@@ -37,9 +37,14 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from backend.controller_replace import ReplaceController
 
+from backend.frame_cache import Frame
 
 
 class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
+    signal_widget_selected = Signal(str)
+    signal_button_pushed = Signal(str)
+    signal_slider_moved = Signal(int)
+
 
     def __init__(self, parent: QWidget | None, controller) -> None:
         super().__init__(parent)
@@ -88,8 +93,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.controller: ReplaceController = controller
         self.controller.signal_ready_to_play[dict].connect(self.event_refresh_slider)
 
-        # self.slider_frames.installEventFilter(self)
-        # self.installEventFilter(self)
+        self.slider_frames.installEventFilter(self)
+        self.installEventFilter(self)
 
         set_stylesheet(self)
         set_widget_stylesheet(self.label_ed_ep_part)
@@ -129,13 +134,14 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.slider_frames.setEnabled(enabled)
 
 
-    def refresh_values(self, frame:dict):
-        self.label_ed_ep_part.setText(f"{frame['k_ed']}:{frame['k_ep']}:{frame['k_ch']}:{frame['scene_no']:03d}")
-        self.lineEdit_frame_no.setText(f"{frame['frame_no']}")
-        self.lineEdit_frame_index.setText(f"{frame['index']}")
+    def refresh_values(self, frame: Frame):
+        self.label_ed_ep_part.setText(frame.key)
+        self.lineEdit_frame_no.setText(f"{frame.no}")
+        self.lineEdit_frame_index.setText(f"{frame.i}")
 
 
     def refresh(self, values:dict):
+        print(red("refresh"))
         self.lineEdit_frame_no.setText(f"{values['frame_no']}")
         self.lineEdit_frame_index.setText(f"{values['frame_index']}")
         self.slider_frames.setMaximum(values['count'])
@@ -231,8 +237,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         frame_index = self.slider_frames.value()
         frame_no = self.frame_nos[frame_index]
         self.lineEdit_frame_no.setText(f"{frame_no}")
-        self.lineEdit_frame_index.setText(f"frame_index")
-        # log.info(f"event, slider moved to frame {frame_no}")
+        self.lineEdit_frame_index.setText(f"-")
+        log.info(f"event, slider moved to frame {frame_no}")
         self.signal_slider_moved.emit(self.slider_frames.value())
 
 

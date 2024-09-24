@@ -25,6 +25,7 @@ from .stylesheet import (
     set_stylesheet,
     set_widget_stylesheet,
 )
+from backend.frame_cache import Frame
 
 
 
@@ -229,8 +230,8 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             })
 
 
-    def refresh_values(self, frame:dict):
-        if 'replaces' in frame.keys():
+    def refresh_values(self, frame: Frame):
+        if frame.by > 0 and frame.by != frame.no:
             # print("this frame (%d) replaces %d" % (frame['frame_no'], frame['replace']))
             self.lineEdit_frame_no.setText(str(frame['replace']))
             self.lineEdit_replaced_by.setText(str(frame['frame_no']))

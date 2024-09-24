@@ -25,11 +25,13 @@ from parsers import (
     get_fps,
 )
 
-@dataclass
+@dataclass(slots=True)
 class Frame:
+    key: str
+    i: int
     no: int
-    img: np.ndarray
     by: int
+    img: np.ndarray
 
 
 class FrameCache:
@@ -113,6 +115,7 @@ class FrameCache:
                 pipe_img_nbytes: int = math.prod(vi['shape'])
                 shape = vi['shape']
                 in_dtype = np.uint8
+                src_scene_key: str = f"{':'.join(src_scene['k_ed_ep_ch_no'][:-1])}:{src_scene['k_ed_ep_ch_no'][-1]:03}"
                 for i in range(count):
                     img: np.ndarray = np.frombuffer(
                         self.sub_process.stdout.read(pipe_img_nbytes),
@@ -121,6 +124,8 @@ class FrameCache:
                     f_no = start + i
                     self.scenes[key].append(
                         Frame(
+                            i=i,
+                            key=src_scene_key,
                             no=f_no,
                             img=img,
                             by=(

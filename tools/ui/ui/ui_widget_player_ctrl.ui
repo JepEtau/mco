@@ -99,7 +99,7 @@
         </size>
        </property>
        <property name="frameShape">
-        <enum>QFrame::Shape::Panel</enum>
+        <enum>QFrame::Shape::Box</enum>
        </property>
        <property name="frameShadow">
         <enum>QFrame::Shadow::Plain</enum>
