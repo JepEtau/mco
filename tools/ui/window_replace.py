@@ -142,7 +142,9 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         self.controller.signal_ready_to_play.connect(
             self.event_ready_to_play
         )
-
+        self.controller.signal_reload_frame.connect(
+            self.event_reload_frame
+        )
 
         # for w in self.widgets.values():
         #     w.blockSignals(True)
@@ -241,6 +243,17 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
     #     # self.widget_painter.refresh_preview_options(new_preview_settings)
 
 
+    def display_frame(self):
+        frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
+        self.widget_replace.set_current_frame(frame, original_frame)
+        self.widget_player_ctrl.refresh_values(frame, original_frame)
+        self.widget_preview.display_frame(frame)
+
+    @Slot()
+    def event_reload_frame(self):
+        log.info("reload frame")
+        self.display_frame()
+
     @Slot()
     def event_ready_to_play(self):
         log.info("ready to play")
@@ -283,27 +296,12 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
             if self.widget_player_ctrl.is_loop_enabled():
                 # in loop mode restart from beginning
                 self.current_frame_index = 0
-                self.widget_player_ctrl.set_playing_frame_properties(self.current_frame_index)
-                f = self.controller.get_frame_at_index(self.current_frame_index)
-                self.display_frame(f)
             else:
                 self.timer.stop()
                 self.widget_player_ctrl.event_stop()
-        else:
-            self.widget_player_ctrl.set_playing_frame_properties(self.current_frame_index)
-            f = self.controller.get_frame_at_index(self.current_frame_index)
-            self.display_frame(f)
-
-    # def flush_image(self):
-    #     log.info("flush image")
-    #     del self.image
-    #     self.image = None
-    #     self.is_grabbing_split_line = False
-
-    def display_frame(self, frame: Frame):
-        # self.widget_replace.refresh_values(frame)
-        self.widget_player_ctrl.refresh_values(frame)
-        self.widget_preview.display_frame(frame)
+                return
+        self.widget_player_ctrl.set_playing_frame_properties(self.current_frame_index)
+        self.display_frame()
 
 
     @Slot()
@@ -312,15 +310,13 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         playlist_properties = self.controller.playlist_properties()
         self.current_frame_index = 0
         self.playing_frame_count = playlist_properties.count
-        f = self.controller.get_frame_at_index(self.current_frame_index)
-        self.display_frame(f)
+        self.display_frame()
 
 
     def event_move_to_frame_index(self, frame_index):
         log.info(f"move to frame {frame_index}")
         self.current_frame_index = frame_index
-        f = self.controller.get_frame_at_index(self.current_frame_index)
-        self.display_frame(f)
+        self.display_frame()
 
 
     def event_move_to_frame_no(self, frame_no):
@@ -343,7 +339,6 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         key = event.key()
         modifiers = event.modifiers()
         self.current_key_pressed = None
-        print(f"WIndow: Key: {key}")
 
         for w in (
             self.widget_player_ctrl,

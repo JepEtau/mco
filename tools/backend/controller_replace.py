@@ -6,9 +6,10 @@ from pprint import pprint
 import time
 from PySide6.QtCore import (
     Signal,
+    Slot,
 )
 
-from ._types import PlaylistProperties, Selection
+from ._types import PlaylistProperties, ReplaceAction, Selection
 
 from .replace_database import ReplaceDatabase
 
@@ -61,6 +62,7 @@ class ReplaceController(CommonController):
         self.playlist_frames: list[Frame] = []
         self.replacements: dict[int, dict[int, int]] = {}
         self.preview_enabled: bool = True
+        self.current_frame: Frame | None = None
 
 
 
@@ -77,7 +79,11 @@ class ReplaceController(CommonController):
         # self.view.widget_selection.signal_selected_step_changed[str].connect(self.event_selected_step_changed)
 
         self.view.widget_replace.signal_save.connect(self.event_replace_save_requested)
-        self.view.widget_replace.signal_replace_modified[dict].connect(self.event_frame_replaced)
+        self.view.widget_replace.signal_replace_modified[ReplaceAction].connect(self.event_frame_replaced)
+        self.view.widget_replace.signal_replace_removed.connect(
+            self.event_replace_removed
+        )
+
 
         # self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
 
@@ -245,16 +251,63 @@ class ReplaceController(CommonController):
         return self._playlist_properties.frame_nos.index(frame_no)
 
 
-    def get_frame_at_index(self, index: int) -> Frame:
-        frame: Frame = self.playlist_frames[index]
+    def get_frame_at_index(self, index: int) -> tuple[Frame, Frame | None]:
+        original_frame: Frame = self.playlist_frames[index]
         if self.preview_enabled:
             frame = self.playlist_frames[
-                self.get_index_from_frame_no(frame.by)
+                self.get_index_from_frame_no(original_frame.by)
             ]
-        return frame
+        return (
+            frame,
+            original_frame if original_frame.no != frame.no else None
+        )
+
 
     def preview_modified(self, preview_settings: dict):
         self.preview_enabled = preview_settings['enabled']
+
+
+    @Slot(ReplaceAction)
+    def event_frame_replaced(self, replace: ReplaceAction):
+        print(yellow("event_frame_replaced"))
+        pprint(replace)
+        if replace.type == 'replace':
+            log.info(f"replace: {replace.current.no} <- {replace.by.no}")
+            by: int = (
+                replace.by.by
+                if replace.by.by != replace.current.no
+                else replace.by.no
+            )
+            log.info(f"replace (consolidated): {replace.current.no} <- {by}")
+            self.replace_db.add(replace.current.key, replace.current.no, by)
+
+            replace.current.by = by
+            scene_no: int = int(replace.current.key.split(':')[-1])
+            scene: Scene = self.scenes[scene_no]
+
+        del self.replacements[scene_no]
+        self.replacements.update(self.replace_db.get_replacements(scene))
+        self.signal_replacements_refreshed.emit()
+
+
+    @Slot(dict)
+    def event_replace_removed(self, remove_dict: dict[str, list[int]]) -> None:
+        removed_frame_no: list[int] = []
+        for scene_no, frame_nos in remove_dict.items():
+            removed_frame_no.extend(frame_nos)
+            scene_no = int(scene_no)
+            scene: Scene = self.scenes[scene_no]
+            self.replace_db.remove_multiple(scene, frame_nos)
+            del self.replacements[scene_no]
+            self.replacements.update(self.replace_db.get_replacements(scene))
+
+        for f in self.playlist_frames:
+            if f.no in removed_frame_no:
+                f.by = f.no
+                removed_frame_no.remove(f.by)
+
+        self.signal_replacements_refreshed.emit()
+        self.signal_reload_frame.emit()
 
 
 
@@ -327,44 +380,6 @@ class ReplaceController(CommonController):
                 return i
         return -1
 
-
-    def event_frame_replaced(self, replace:dict):
-        print(f"event_frame_replaced: {self.preview_options['replace']['allowed']}")
-        action = replace['action']
-        frame_no = replace['dst']
-        log.info("replace %d" % (frame_no))
-        print("scene no= %d" % (self.current_frame['scene_no']))
-        # pprint(self.playlist_frames)
-        scene = self.current_scene()
-        scene_no = scene['no']
-        index = frame_no - self.frames[scene_no][0]['frame_no']
-
-        if action == 'replace':
-            log.info(f"replace: scene no. {scene_no}, frame {frame_no} (index {index}) by {replace['src']}")
-
-            # If the src frame is already replaced, use the src of this frame
-            frame_no_src = self.model_database.get_replace_frame_no(scene, replace['src'])
-            if frame_no_src == -1:
-                frame_no_src = replace['src']
-
-            self.model_database.set_replaced_frame(
-                scene=scene,
-                frame_no=frame_no,
-                new_frame_no=frame_no_src)
-
-        elif action == 'remove':
-            log.info(f"remove: scene no. {scene_no}, frame {frame_no} (index {index})")
-            self.model_database.remove_replaced_frame(scene=scene, frame_no=frame_no)
-
-
-        self.current_frame['replaced_by'] = self.model_database.get_replace_frame_no(scene=scene, frame_no=frame_no)
-
-        self.set_modification_status('replace', True)
-        self.signal_scene_modified.emit({'scene_no': scene['no'], 'modifications': scene['modifications']})
-
-
-        self.refresh_replace_widget()
-        self.signal_reload_frame.emit()
 
 
     def event_replace_discard_requested(self):

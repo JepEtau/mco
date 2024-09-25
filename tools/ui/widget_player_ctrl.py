@@ -100,6 +100,10 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
         set_stylesheet(self)
         set_widget_stylesheet(self.label_ed_ep_part)
+
+        self.normal_style: str = self.lineEdit_frame_no.styleSheet()
+        self.replaced_style: str = self.normal_style.replace("rgb(220, 220, 220)", "yellow")
+
         self.adjustSize()
 
 
@@ -135,10 +139,14 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.slider_frames.setEnabled(enabled)
 
 
-    def refresh_values(self, frame: Frame):
+    def refresh_values(self, frame: Frame, original_frame: Frame):
         self.label_ed_ep_part.setText(frame.key)
         self.lineEdit_frame_no.setText(f"{frame.no}")
         self.lineEdit_frame_index.setText(f"{frame.i}")
+        if original_frame is not None:
+            self.lineEdit_frame_no.setStyleSheet(self.replaced_style)
+        else:
+            self.lineEdit_frame_no.setStyleSheet(self.normal_style)
 
 
     def refresh(self, values:dict):
@@ -203,8 +211,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
     @Slot()
     def event_refresh_slider(self):
-        log.info("ready to play, refresh slider")
         playlist_properties = self.controller.playlist_properties()
+        log.info(f"ready to play, refresh slider, count={playlist_properties.count}")
         self.slider_frames.blockSignals(True)
         self.slider_frames.setMaximum(playlist_properties.count - 1)
         self.frame_nos = playlist_properties.frame_nos

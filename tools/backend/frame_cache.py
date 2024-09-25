@@ -28,17 +28,8 @@ from parsers import (
     db,
     get_fps,
 )
+from ._types import Frame
 
-
-
-@dataclass(slots=True)
-class Frame:
-    key: str
-    i: int
-    no: int
-    by: int
-    img: np.ndarray | None = None
-    pixmap: QPixmap | None = None
 
 
 
@@ -61,7 +52,7 @@ class FrameCache:
         return f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
 
 
-    def get(self, scene: Scene) -> list | None:
+    def get(self, scene: Scene) -> list[Frame] | None:
         # Extract frames from input video and strore them here
         key = self._key(scene)
 

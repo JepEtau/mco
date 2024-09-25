@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 from pprint import pprint
 from logger import log
 from import_parsers import *
+from backend._types import ReplaceAction, ReplaceActionType
 from utils.p_print import *
 
 from PySide6.QtCore import (
@@ -29,9 +31,58 @@ from .stylesheet import (
 from backend.frame_cache import Frame
 
 
+class ModificationHistory:
+
+    @dataclass(slots=True)
+    class _ReplaceAction:
+        type: ReplaceActionType
+        src: int
+        dst: int
+        previous: int
+
+    history: list[_ReplaceAction] = []
+    index: int = 0
+    history_size: int = 20
+
+    def add(self, action: ReplaceAction, previous_frame_no: int):
+        self.history = self.history[:self.index]
+        if len(self.history) >= self.history_size:
+            self.history = self.history[1:]
+            self.index -= 1
+        self.history.append(
+            self._ReplaceAction(
+                type=action.type,
+                src=action.by,
+                dst=action.current,
+                previous=previous_frame_no
+            )
+        )
+        self.index += 1
+
+    def undo(self) -> ReplaceAction | None:
+        if not self.history:
+            return None
+        previous_action = self.history[self.index]
+        self.index -= 1
+        undo_action: ReplaceActionType = previous_action.type
+        if undo_action == 'delete':
+            undo_action == 'replace'
+        return ReplaceAction(
+            type=undo_action,
+            by=previous_action.previous,
+            current=previous_action.src
+        )
+
+    def clear(self) -> None:
+        self.history.clear()
+        self.index = 0
+
+
+
 
 class ReplaceWidget(QWidget, Ui_ReplaceWidget):
-    signal_replace_modified = Signal(dict)
+    signal_replace_modified = Signal(ReplaceAction)
+    signal_replace_removed = Signal(dict)
     signal_frame_selected = Signal(int)
     signal_save = Signal()
     signal_discard = Signal()
@@ -48,8 +99,9 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.setObjectName('replace')
 
         # Internal variables
-        self.copied_frame_no = -1
         self.previous_position = None
+        self.current_frame: Frame | None = None
+        self.copied_frame: Frame | None = None
 
         # Disable focus
         self.pushButton_set_preview.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -66,9 +118,9 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.lineEdit_frame_no.clear()
         self.lineEdit_replaced_by.clear()
 
-        self.pushButton_copy.clicked.connect(self.event_frame_no_copied)
-        self.pushButton_paste.clicked.connect(self.event_frame_no_paste)
-        self.pushButton_remove.clicked.connect(self.event_removed)
+        self.pushButton_copy.clicked.connect(self.event_copy)
+        self.pushButton_paste.clicked.connect(self.event_paste)
+        self.pushButton_remove.clicked.connect(self.event_remove)
 
         # Table
         self.tableWidget_replace.clearContents()
@@ -211,59 +263,57 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.signal_frame_selected.emit(frame_no)
 
 
-    def event_selection_removed(self):
-        print("event_selection_removed")
-        selected_indexes = self.tableWidget_replace.selectedIndexes()
-        selected_row_nos = list(set([i.row() for i in selected_indexes]))
-        selected_frame_nos = list(map(lambda x: int(self.tableWidget_replace.item(x,1).text()),
-                selected_row_nos))
-
-        if len(selected_frame_nos) > 0:
-            self.pushButton_discard.setEnabled(True)
-            self.pushButton_save.setEnabled(True)
-
-        for frame_no in selected_frame_nos:
-            self.signal_replace_modified.emit({
-                'action': 'remove',
-                'dst': frame_no
-            })
 
 
-    def refresh_values(self, frame: Frame):
-        if frame.by > 0 and frame.by != frame.no:
-            # print("this frame (%d) replaces %d" % (frame['frame_no'], frame['replace']))
-            self.lineEdit_frame_no.setText(str(frame['replace']))
-            self.lineEdit_replaced_by.setText(str(frame['frame_no']))
+
+    def set_current_frame(self, frame: Frame, original_frame: Frame | None) -> None:
+        if original_frame is not None:
+            self.lineEdit_frame_no.setText(str(original_frame.no))
+            self.lineEdit_replaced_by.setText(str(frame.no))
             self.pushButton_remove.setEnabled(True)
         else:
-            self.lineEdit_frame_no.setText(str(frame['frame_no']))
+            # self.lineEdit_frame_no.setText(str(original_f_no))
+            self.lineEdit_frame_no.clear()
             try:
-                self.lineEdit_replaced_by.setText(str(frame['replaced_by']))
+                self.lineEdit_replaced_by.clear()
+                # self.lineEdit_replaced_by.setText(str(frame.no))
                 self.pushButton_remove.setEnabled(True)
             except:
                 self.lineEdit_replaced_by.clear()
                 self.pushButton_remove.setEnabled(False)
+        self.current_frame: Frame = frame
 
 
-    def event_frame_no_copied(self):
-        self.copied_frame_no = int(self.lineEdit_frame_no.text())
-        log.info("event: copy %d" % (self.copied_frame_no))
+
+    def event_copy(self):
+        log.info(f"event: copy {self.current_frame.no} (by: {self.current_frame.by})")
+        if self.current_frame.by != self.current_frame.no:
+            self.pushButton_paste.setEnabled(False)
+            self.copied_frame = None
+            return
+        self.copied_frame = self.current_frame
         self.pushButton_paste.setEnabled(True)
 
 
-    def event_frame_no_paste(self):
-        log.info("event: paste")
-        frame_no = int(self.lineEdit_frame_no.text())
-        if (self.copied_frame_no != -1
-        and frame_no != self.copied_frame_no):
-            log.info("event: paste to %d" % (frame_no))
+    def event_paste(self):
+        if self.copied_frame is None:
+            log.error(f"circular reference")
+            return
+        log.info(f"event: paste: {self.current_frame.no} <- {self.copied_frame.no}")
+        frame_no = self.current_frame.no
+        if (
+            self.copied_frame.by != -1
+            and frame_no != self.copied_frame.no
+        ):
+            log.info(f"event: paste to {frame_no}")
             self.pushButton_discard.setEnabled(True)
             self.pushButton_save.setEnabled(True)
-            self.signal_replace_modified.emit({
-                'src': self.copied_frame_no,
-                'dst': frame_no,
-                'action': 'replace'
-            })
+            replace_action = ReplaceAction(
+                type='replace',
+                current=self.current_frame,
+                by=self.copied_frame,
+            )
+            self.signal_replace_modified.emit(replace_action)
 
 
 
@@ -275,14 +325,23 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         })
 
 
-    def event_removed(self):
-        log.info("event: remove")
+    def event_remove(self):
+        selected_indexes = self.tableWidget_replace.selectedIndexes()
+        selected_row_nos = list(set([i.row() for i in selected_indexes]))
+        remove_dict: dict[int, list[int]] = {}
+        for row in selected_row_nos:
+            scene_no = self.tableWidget_replace.item(row, 0).text()
+            if scene_no not in remove_dict:
+                remove_dict[scene_no] = []
+            remove_dict[scene_no].append(int(self.tableWidget_replace.item(row, 1).text()))
+
+        # if len(selected_frame_nos) > 0:
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
-        self.signal_replace_modified.emit({
-            'action': 'remove',
-            'dst': int(self.lineEdit_frame_no.text())
-        })
+
+        print(f"event_remove: {remove_dict}")
+        self.signal_replace_removed.emit(remove_dict)
+
 
 
 
@@ -300,7 +359,7 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         key = event.key()
         modifiers = event.modifiers()
         print(green(f"widget_replace: event_key_pressed: {key}"))
-        # print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
+        print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
 
         if modifiers & Qt.KeyboardModifier.ControlModifier:
             if key == Qt.Key.Key_S:
@@ -309,10 +368,11 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
                 return True
 
             elif key == Qt.Key.Key_C:
-                self.event_frame_no_copied()
+                self.event_copy()
                 return True
+
             elif key == Qt.Key.Key_V:
-                self.event_frame_no_paste()
+                self.event_paste()
                 return True
             # elif key == Qt.Key_Z:
             #     self.event_undo()
@@ -325,7 +385,7 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
 
         if QApplication.focusObject() is self.tableWidget_replace:
             if key == Qt.Key.Key_Delete:
-                self.event_selection_removed()
+                self.event_remove()
                 return True
 
         # elif key == Qt.Key_R:
