@@ -354,6 +354,20 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.pushButton_save.blockSignals(enabled)
 
 
+    def event_discard_modifications(self):
+        log.info("discard modifications")
+        self.pushButton_save.setEnabled(False)
+        self.pushButton_discard.setEnabled(False)
+        self.signal_discard.emit()
+
+
+    def event_save_modifications(self):
+        if self.pushButton_save.isEnabled():
+            log.info(f"save widget_{self.objectName()}")
+            self.pushButton_save.setEnabled(False)
+            self.signal_save.emit()
+
+
 
     def event_key_pressed(self, event: QKeyEvent) -> bool:
         key = event.key()

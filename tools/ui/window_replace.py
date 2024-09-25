@@ -115,7 +115,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         #     partial(self.event_preview_options_changed, 'controls')
         # )
 
-        self.current_frame_index = -1
+        self.current_frame_index = 0
         self.playing_frame_start_no = 0
         self.current_frame_no = 0
         self.timer = QBasicTimer()
@@ -145,7 +145,9 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         self.controller.signal_reload_frame.connect(
             self.event_reload_frame
         )
-
+        self.controller.signal_error[str].connect(
+            self.error_message
+        )
         # for w in self.widgets.values():
         #     w.blockSignals(True)
         #     w.hide()
@@ -226,8 +228,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
 
         self.preview_enabled = enabled
         self.widget_player_ctrl.set_preview_enabled(enabled)
-        f = self.controller.get_frame_at_index(self.current_frame_index)
-        self.display_frame(f)
+        self.display_frame()
 
     # def get_preview_options(self):
     #     log.info("get preview options")
@@ -339,6 +340,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         key = event.key()
         modifiers = event.modifiers()
         self.current_key_pressed = None
+        print(f"{__name__} received: {key}")
 
         for w in (
             self.widget_player_ctrl,
@@ -347,6 +349,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
             self.widget_selection
         ):
             if w.event_key_pressed(event):
+                print(f"{__name__} {key} forwarded to {w.objectName()}")
                 return True
 
 

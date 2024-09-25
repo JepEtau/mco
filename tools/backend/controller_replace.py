@@ -83,6 +83,9 @@ class ReplaceController(CommonController):
         self.view.widget_replace.signal_replace_removed.connect(
             self.event_replace_removed
         )
+        self.view.widget_replace.signal_save.connect(
+            self.event_replace_save_requested
+        )
 
 
         # self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
@@ -211,6 +214,7 @@ class ReplaceController(CommonController):
             ticklist.append(ticklist[-1] + len(scene_frames))
 
         if scene_frames is None:
+            print(red(f"Missing input file for scene {scene_no}"))
             self.signal_error.emit(f"Missing input file for scene {scene_no}")
 
         frame_nos = [f.no for f in self.playlist_frames]
@@ -253,6 +257,7 @@ class ReplaceController(CommonController):
 
     def get_frame_at_index(self, index: int) -> tuple[Frame, Frame | None]:
         original_frame: Frame = self.playlist_frames[index]
+        frame = original_frame
         if self.preview_enabled:
             frame = self.playlist_frames[
                 self.get_index_from_frame_no(original_frame.by)
@@ -308,6 +313,15 @@ class ReplaceController(CommonController):
 
         self.signal_replacements_refreshed.emit()
         self.signal_reload_frame.emit()
+
+
+
+    def event_replace_save_requested(self):
+        self.replace_db.save()
+        self.signal_is_saved.emit('replace')
+        self.set_modification_status('replace', False)
+
+
 
 
 
@@ -389,9 +403,4 @@ class ReplaceController(CommonController):
         self.set_modification_status('replace', False)
         self.signal_reload_frame.emit()
 
-
-    def event_replace_save_requested(self):
-        self.model_database.save_replace_database()
-        self.signal_is_saved.emit('replace')
-        self.set_modification_status('replace', False)
 
