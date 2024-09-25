@@ -132,6 +132,7 @@ class CommonController(QObject):
     def get_preview_options(self):
         return self.preview_options
 
+
     def event_preview_options_changed(self, preview_options):
         # log.info("preview has changed")
         if False:

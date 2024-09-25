@@ -128,7 +128,7 @@ class FrameCache:
                         self.sub_process.stdout.read(pipe_img_nbytes),
                         dtype=in_dtype,
                     ).reshape(shape)
-                    f_no = start + i
+                    f_no = start + src_scene['scene']['inputs']['progressive']['start'] + i
                     self.scenes[key].append(
                         Frame(
                             i=i,

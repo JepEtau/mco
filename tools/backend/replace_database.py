@@ -57,4 +57,4 @@ class ReplaceDatabase:
             _key = self._key(src_scene)
             if _key in self._db:
                 scene_replace.update(self._db[_key])
-        return {scene_no: scene_replace}
+        return {scene_no: dict(sorted(scene_replace.items()))}

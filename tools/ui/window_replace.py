@@ -55,6 +55,7 @@ from parsers import (
 
 class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
     signal_k_ep_p_refreshed = Signal(dict)
+    signal_preview_modified = Signal(dict)
 
 
     def __init__(
@@ -125,9 +126,12 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         # self.widget_replace.signal_preview_options_changed.connect(
         #     partial(self.event_preview_options_changed, 'replace')
         # )
-        # self.widget_replace.signal_frame_selected[int].connect(
-        #     self.event_move_to_frame_no
-        # )
+        self.widget_replace.signal_preview_toggled[bool].connect(
+            self.preview_modified
+        )
+        self.widget_replace.signal_frame_selected[int].connect(
+            self.event_move_to_frame_no
+        )
 
         # self.widget_player_ctrl.set_initial_options(p)
         # self.widget_player_ctrl.signal_button_pushed[str].connect(self.event_control_button_pressed)
@@ -150,7 +154,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
 
 
 
-    def apply_user_preferences(self, user_preferences:dict):
+    def apply_user_preferences(self, user_preferences: dict):
         try:
             s = user_preferences['window']
             self.setGeometry(
@@ -162,6 +166,8 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         except:
             self.setGeometry(0,0,1920,1080)
         self.setGeometry(50,50,1800,800)
+
+        self.widget_replace.apply_user_preferences(user_preferences)
 
 
     def get_user_preferences(self) -> dict:
@@ -210,18 +216,29 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         self.widget_selection.edition_started(True)
 
 
-    def get_preview_options(self):
-        log.info("get preview options")
-        preview_options = dict()
-        for e, w in self.widgets.items():
-            preview_options.update({e: w.get_preview_options()})
-        return preview_options
+    @Slot(bool)
+    def preview_modified(self, enabled: bool) -> None:
+        log.info(f"widget preview changed to {enabled}")
+
+        self.signal_preview_modified.emit({'enabled': enabled})
+
+        self.preview_enabled = enabled
+        self.widget_player_ctrl.set_preview_enabled(enabled)
+        f = self.controller.get_frame_at_index(self.current_frame_index)
+        self.display_frame(f)
+
+    # def get_preview_options(self):
+    #     log.info("get preview options")
+    #     preview_options = dict()
+    #     for e, w in self.widgets.items():
+    #         preview_options.update({e: w.get_preview_options()})
+    #     return preview_options
 
 
-    def event_preview_options_consolidated(self, new_preview_settings):
-        # log.info("preview options have been consolidated, refresh widgets")
-        self.widget_replace.refresh_preview_options(new_preview_settings)
-        # self.widget_painter.refresh_preview_options(new_preview_settings)
+    # def event_preview_options_consolidated(self, new_preview_settings):
+    #     # log.info("preview options have been consolidated, refresh widgets")
+    #     self.widget_replace.refresh_preview_options(new_preview_settings)
+    #     # self.widget_painter.refresh_preview_options(new_preview_settings)
 
 
     @Slot()
@@ -300,7 +317,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
 
 
     def event_move_to_frame_index(self, frame_index):
-        log.info("move to frame %d" % (frame_index))
+        log.info(f"move to frame {frame_index}")
         self.current_frame_index = frame_index
         f = self.controller.get_frame_at_index(self.current_frame_index)
         self.display_frame(f)
@@ -346,7 +363,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
                 self.widget_player_ctrl,
                 self.widget_replace,
                 # self.widget_preview,
-                self.widget_selection
+                # self.widget_selection
             ):
                 if w.event_wheel(event):
                     return True

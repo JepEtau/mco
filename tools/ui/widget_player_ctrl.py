@@ -81,8 +81,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.frame_nos = list()
 
         self.copied_frame_no = -1
-        self.backup_preview_options = dict()
         self.current_key_pressed = None
+        self.preview_enabled: bool = True
 
 
         # Signals
@@ -126,6 +126,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.adjustSize()
 
 
+    def set_preview_enabled(self, enabled: bool):
+        self.preview_enabled = enabled
 
 
     def set_enabled(self, enabled):
@@ -317,7 +319,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         key = event.key()
         modifiers = event.modifiers()
         self.current_key_pressed = None
-        print(f"Key: {key}")
+        print(f"{__name__} key: {key}")
 
         # action
         if key == Qt.Key.Key_Space:
@@ -403,7 +405,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        verbose = False
+        verbose = True
         if event.type() == QEvent.Type.KeyPress:
             if verbose:
                 print(lightcyan(f"eventFilter: widget_{self.objectName()}: keypress {event.key()}"))
@@ -415,14 +417,14 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             else:
                 if verbose:
                     print(f"\tforward to parent")
-                return self._parent.event_key_pressed(event)
+                return self._parent.keyPressEvent(event)
 
         elif event.type() == QEvent.Type.KeyRelease:
             if self.event_key_released(event):
                 event.accept()
                 return True
             else:
-                return self._parent.event_key_released(event)
+                return self._parent.keyPressEvent(event)
 
         elif event.type() == QEvent.Type.Wheel:
             # print(lightcyan(f"eventFilter: widget_controls: wheel"))
@@ -433,7 +435,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             else:
                 if verbose:
                     print(f"\twheel: send to parent")
-                if self._parent.event_wheel(event):
+                if self._parent.wheelEvent(event):
                     event.accept()
                     return
 

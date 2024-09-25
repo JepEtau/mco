@@ -60,6 +60,7 @@ class ReplaceController(CommonController):
         self.frame_cache: FrameCache = FrameCache(self.replace_db)
         self.playlist_frames: list[Frame] = []
         self.replacements: dict[int, dict[int, int]] = {}
+        self.preview_enabled: bool = True
 
 
 
@@ -78,8 +79,9 @@ class ReplaceController(CommonController):
         self.view.widget_replace.signal_save.connect(self.event_replace_save_requested)
         self.view.widget_replace.signal_replace_modified[dict].connect(self.event_frame_replaced)
 
-        # self.view.signal_preview_options_changed[dict].connect(self.event_preview_options_changed)
         # self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
+
+        self.view.signal_preview_modified[dict].connect(self.preview_modified)
 
         # Force refresh of preview options
         p = self.user_preferences.get_preferences()
@@ -239,14 +241,20 @@ class ReplaceController(CommonController):
         return self.replacements
 
 
+    def get_index_from_frame_no(self, frame_no):
+        return self._playlist_properties.frame_nos.index(frame_no)
 
 
     def get_frame_at_index(self, index: int) -> Frame:
         frame: Frame = self.playlist_frames[index]
+        if self.preview_enabled:
+            frame = self.playlist_frames[
+                self.get_index_from_frame_no(frame.by)
+            ]
         return frame
 
-
-
+    def preview_modified(self, preview_settings: dict):
+        self.preview_enabled = preview_settings['enabled']
 
 
 

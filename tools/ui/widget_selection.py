@@ -1,3 +1,4 @@
+from copy import copy
 from functools import partial
 from pprint import pprint
 from logger import log
@@ -8,6 +9,8 @@ from PySide6.QtCore import (
     Qt,
     Signal,
     Slot,
+    QItemSelection,
+    QItemSelectionModel,
 )
 from PySide6.QtGui import (
     QBrush,
@@ -40,6 +43,8 @@ from parsers import (
     all_chapter_keys,
     key
 )
+
+
 
 class SelectionWidget(QWidget, Ui_SelectionWidget):
     signal_widget_selected = Signal(str)
@@ -495,21 +500,21 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
 
 
-    def event_scene_selected(self, selected):
-        print(lightcyan("event_selection_changed"))
+    def event_scene_selected(self, selected: QItemSelection):
         selected_indexes = self.tableWidget_scenes.selectedIndexes()
         selected_row_no = sorted(list(set([i.row() for i in selected_indexes])))
+
+        # I selection is empty, restore previous selection
         if len(selected_row_no) == 0:
-            # No selection, restore previous selection
             self.tableWidget_scenes.blockSignals(True)
             self.tableWidget_scenes.selectionModel().blockSignals(True)
-            # self.tableWidget_scenes.selectionModel().select(self.previous_selection, QtGui.QItemSelectionModel.Rows | QtGui.QItemSelectionModel.Select)
-            # selectedRows(self.previous_selection)
+            for r in self.previous_selection:
+                self.tableWidget_scenes.selectRow(r)
             self.tableWidget_scenes.selectionModel().blockSignals(False)
             self.tableWidget_scenes.blockSignals(False)
             log.error("Restore previous selection")
             return
-        self.previous_selection = selected_indexes
+        self.previous_selection = copy(selected_row_no)
 
         log.info(f"event_selection_changed: {', '.join(map(lambda x: f"{x}", selected_row_no))}")
 
@@ -605,6 +610,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         # return super().eventFilter(watched, event)
         # # Filter press/release events
         if event.type() == QEvent.Type.KeyPress:
+            print(f"{__name__}: eventFilter key press")
             if self.event_key_pressed(event):
                 event.accept()
                 return True
@@ -613,6 +619,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
 
         if event.type() == QEvent.Type.KeyRelease:
+            print(f"{__name__}: eventFilter key release")
             if self.event_key_released(event):
                 event.accept()
                 return True
