@@ -14,6 +14,7 @@ from PySide6.QtCore import (
     QSize,
     Qt,
     Signal,
+    Slot,
 )
 from PySide6.QtGui import (
     QCursor,
@@ -30,8 +31,8 @@ from PySide6.QtWidgets import (
     QSlider,
 )
 from .ui.ui_widget_player_ctrl import Ui_PlayerControlWidget
-
-from typing import TYPE_CHECKING
+from backend._types import PlaylistProperties
+from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from backend.controller_replace import ReplaceController
 
@@ -71,6 +72,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
 
         # variables
+        self._parent = parent
         self.previous_position = None
         self.refresh_status('stopped')
         self.ticks = list()
@@ -89,7 +91,9 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.slider_frames.valueChanged.connect(self.event_slider_moved)
 
         self.controller: ReplaceController = controller
-        self.controller.signal_ready_to_play[dict].connect(self.event_refresh_slider)
+        self.controller.signal_ready_to_play.connect(
+            self.event_refresh_slider
+        )
 
         self.slider_frames.installEventFilter(self)
         self.installEventFilter(self)
@@ -99,12 +103,9 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.adjustSize()
 
 
-    def get_preferences(self):
+    def get_user_preferences(self):
         preferences = {
-            'geometry': self.geometry().getRect(),
-            'widget': {
-                'loop': self.pushButton_loop.isChecked()
-            },
+            'loop': self.pushButton_loop.isChecked()
         }
         return preferences
 
@@ -198,12 +199,13 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         return 1
 
 
-    def event_refresh_slider(self, playlist_properties):
+    @Slot()
+    def event_refresh_slider(self):
         log.info("ready to play, refresh slider")
-
+        playlist_properties = self.controller.playlist_properties()
         self.slider_frames.blockSignals(True)
-        self.slider_frames.setMaximum(playlist_properties['count'] - 1)
-        self.frame_nos = playlist_properties['frame_nos']
+        self.slider_frames.setMaximum(playlist_properties.count - 1)
+        self.frame_nos = playlist_properties.frame_nos
         self.copied_frame_no = -1
 
         self.slider_frames.setValue(0)
@@ -218,11 +220,12 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             self.lineEdit_frame_index.clear()
 
         # Save the list of tick position
-        self.ticks = playlist_properties['ticks']
+        self.ticks = playlist_properties.ticks
 
         self.slider_frames.blockSignals(False)
         self.set_enabled(True)
         self.clearFocus()
+
 
 
     def event_slider_moved(self, value):
@@ -309,10 +312,12 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
     def is_loop_enabled(self):
         return self.pushButton_loop.isChecked()
 
-    def event_key_pressed(self, event:QKeyEvent) -> bool:
+
+    def event_key_pressed(self, event: QKeyEvent) -> None:
         key = event.key()
         modifiers = event.modifiers()
         self.current_key_pressed = None
+        print(f"Key: {key}")
 
         # action
         if key == Qt.Key.Key_Space:
@@ -410,14 +415,14 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             else:
                 if verbose:
                     print(f"\tforward to parent")
-                return self.__parent.event_key_pressed(event)
+                return self._parent.event_key_pressed(event)
 
         elif event.type() == QEvent.Type.KeyRelease:
             if self.event_key_released(event):
                 event.accept()
                 return True
             else:
-                return self.__parent.event_key_released(event)
+                return self._parent.event_key_released(event)
 
         elif event.type() == QEvent.Type.Wheel:
             # print(lightcyan(f"eventFilter: widget_controls: wheel"))
@@ -428,7 +433,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             else:
                 if verbose:
                     print(f"\twheel: send to parent")
-                if self.__parent.event_wheel(event):
+                if self._parent.event_wheel(event):
                     event.accept()
                     return
 

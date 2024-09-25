@@ -119,30 +119,25 @@ class UserPreferences(QObject):
 
 
     def save(self, preferences):
-        # print("%s.save preferences" % (__name__))
-        # pprint(preferences)
+        print(f"{__name__}.save preferences")
+        pprint(preferences)
 
         # (Mandatory) Viewer
-        self.settings.setValue('viewer/geometry',
-            ':'.join(map(lambda x: "%d" % (x), preferences['window']['geometry'])))
-        self.settings.setValue('viewer/screen', 0)
+        self.settings.setValue(
+            'window/geometry',
+            ':'.join(map(lambda x: "%d" % (x), preferences['window']['geometry']))
+        )
+        self.settings.setValue('window/screen', 0)
 
-        self.settings.setValue('viewer/current_widget', preferences['window']['current_widget'])
 
         # (Special) Selection
-        self.settings.setValue('selection/geometry',
-            ':'.join(map(lambda x: "%d" % (x), preferences['selection']['geometry'])))
         self.settings.setValue('selection/episode', preferences['selection']['episode'])
         self.settings.setValue('selection/part', preferences['selection']['k_ch'])
-        self.settings.setValue('selection/step', preferences['selection']['step'])
         try:
             self.settings.setValue('selection/scene_no', preferences['selection']['scene_no'])
         except:
             pass
-        try:
-            self.settings.setValue('selection/edition', preferences['selection']['edition'])
-        except:
-            pass
+
 
         # Other widgets (editors)
         for editor in self.editors:

@@ -22,6 +22,8 @@ from PySide6.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
 )
+
+from backend._types import Selection
 from .stylesheet import (
     set_stylesheet,
     set_widget_stylesheet,
@@ -41,7 +43,7 @@ from parsers import (
 
 class SelectionWidget(QWidget, Ui_SelectionWidget):
     signal_widget_selected = Signal(str)
-    signal_ep_p_changed = Signal(dict)
+    signal_ep_p_changed = Signal(Selection)
     signal_selected_scene_changed = Signal(dict)
     signal_close = Signal()
 
@@ -70,15 +72,14 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.previous_selection = [0]
 
         # Initialize widgets
+        self.pushButton_save.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
         self.comboBox_episode.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.comboBox_part.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tableWidget_scenes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-
-        self.comboBox_episode.currentIndexChanged['int'].connect(self.event_ep_p_changed)
-        self.comboBox_part.currentIndexChanged['int'].connect(self.event_ep_p_changed)
-
-
+        self.comboBox_episode.currentIndexChanged[int].connect(self.event_ep_p_changed)
+        self.comboBox_part.currentIndexChanged[int].connect(self.event_ep_p_changed)
 
         self.tableWidget_scenes.clearContents()
         self.tableWidget_scenes.setRowCount(0)
@@ -107,7 +108,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.tableWidget_scenes.selectionModel().selectionChanged.connect(self.event_scene_selected)
         self.tableWidget_scenes.installEventFilter(self)
 
-        self.controller.signal_scenelist[dict].connect(
+        self.controller.signal_selection_modified.connect(
             self.event_refresh_scenelist
         )
         # self.controller.signal_scene_modified[dict].connect(self.refresh_modification_status)
@@ -127,7 +128,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.signal_close.emit()
 
 
-    def get_preferences(self):
+    def get_user_preferences(self):
         k_ep = ''
         if (self.comboBox_episode.currentText() != ' '
         and self.comboBox_episode.currentText() != ''):
@@ -141,7 +142,6 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             row_no = 0
 
         preferences = {
-            'geometry': self.geometry().getRect(),
             'episode': k_ep,
             'scene_no': int(self.tableWidget_scenes.item(row_no, 0).text().replace('*', '')),
             'k_ch': self.comboBox_part.currentText(),
@@ -191,7 +191,6 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             self.initial_scene_no = None
 
         # Geometry
-        self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
 
 
@@ -310,8 +309,8 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
 
 
-    @Slot(dict)
-    def event_refresh_scenelist(self, values: dict):
+    @Slot()
+    def event_refresh_scenelist(self):
         log.info("directory has been parsed, refresh scene list")
         # print("%s:event_refresh:" % (__name__))
         # pprint(values)
@@ -320,28 +319,30 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         # self.set_enabled(False)
         self.tableWidget_scenes.blockSignals(True)
 
+        selection: Selection = self.controller.selection()
 
-        # # Episode
-        # k_ep = values['k_ep']
-        # ep_no_str = str(int(k_ep[2:])) if (k_ep != '' and  k_ep != ' ') else ''
-        # if self.comboBox_episode.currentText() != ep_no_str:
-        #     i = self.comboBox_episode.findText(ep_no_str)
-        #     self.comboBox_episode.blockSignals(True)
-        #     new_index = i if i != -1 else 0
-        #     self.comboBox_episode.setCurrentIndex(new_index)
-        #     self.comboBox_episode.blockSignals(False)
 
-        # # Part
-        # if self.comboBox_part.currentText() != values['k_ch']:
-        #     i = self.comboBox_part.findText(values['k_ch'])
-        #     self.comboBox_part.blockSignals(True)
-        #     new_index = i if i != -1 else 0
-        #     self.comboBox_part.setCurrentIndex(new_index)
-        #     self.comboBox_part.blockSignals(False)
+        # Episode
+        k_ep = selection.k_ep
+        ep_no_str = str(int(k_ep[2:])) if (k_ep != '' and  k_ep != ' ') else ''
+        if self.comboBox_episode.currentText() != ep_no_str:
+            i = self.comboBox_episode.findText(ep_no_str)
+            self.comboBox_episode.blockSignals(True)
+            new_index = i if i != -1 else 0
+            self.comboBox_episode.setCurrentIndex(new_index)
+            self.comboBox_episode.blockSignals(False)
+
+        # Chapter
+        if self.comboBox_part.currentText() != selection.k_ch:
+            i = self.comboBox_part.findText(selection.k_ch)
+            self.comboBox_part.blockSignals(True)
+            new_index = i if i != -1 else 0
+            self.comboBox_part.setCurrentIndex(new_index)
+            self.comboBox_part.blockSignals(False)
 
 
         # Scenes
-        scenes: list[Scene] = values['scenes']
+        scenes: list[Scene] = selection.scenes
         self.tableWidget_scenes.clearContents()
         self.tableWidget_scenes.setRowCount(0)
         row_no = 0
@@ -444,8 +445,8 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                 #     self.tableWidget_scenes.setCellWidget(row_no, column_no, widget)
                 #     self.tableWidget_scenes.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-
-            if scene['no'] in values['invalid']:
+            # Append invalid scenes
+            if scene['no'] in selection.invalid:
                 # If true, it means that all pictures are present in the folder
                 # Bug: this does not work
                 self.tableWidget_scenes.item(row_no, 0).setData(Qt.FontRole, QColor(Qt.red))
@@ -479,17 +480,17 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         if selected_ep_str not in ['', ' ']:
             k_ep = key(int(self.comboBox_episode.currentText()))
 
-        values = {
-            'k_ep': k_ep,
-            'k_ch': self.comboBox_part.currentText(),
-        }
+        selection: Selection = Selection(
+            k_ep=k_ep,
+            k_ch=self.comboBox_part.currentText(),
+        )
 
         self.comboBox_episode.setEnabled(False)
         self.comboBox_part.setEnabled(False)
         self.comboBox_episode.blockSignals(True)
         self.comboBox_part.blockSignals(True)
 
-        self.signal_ep_p_changed.emit(values)
+        self.signal_ep_p_changed.emit(selection)
         return True
 
 

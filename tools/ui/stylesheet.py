@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QSpinBox,
     QTableWidget,
     QTableWidgetItem,
+    QSlider,
 )
 
 # icons:
@@ -513,3 +514,15 @@ def set_stylesheet(widget):
         """)
 
 
+    # QSlider
+    for w in widget.findChildren(QSlider, options=Qt.FindChildrenRecursively):
+        w.setStyleSheet("""
+            QSlider {
+                background-color: rgb(35, 35, 35);
+                color: rgb(220, 220, 220);
+            }
+            QSlider::item:disabled {
+                background-color: rgb(35, 35, 35);
+                color: rgb(60, 60, 60);
+            }
+        """)

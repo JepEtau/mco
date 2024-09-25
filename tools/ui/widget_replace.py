@@ -18,7 +18,7 @@ from PySide6.QtWidgets import (
 )
 
 from .ui.ui_widget_replace import Ui_ReplaceWidget
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from backend.controller_replace import ReplaceController
 from .stylesheet import (
@@ -52,6 +52,10 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.is_edition_allowed = False
 
         # Disable focus
+        self.pushButton_set_preview.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_save.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_discard.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
         self.lineEdit_frame_no.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.lineEdit_replaced_by.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.pushButton_copy.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -138,6 +142,10 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         # self.move(s['geometry'][0], s['geometry'][1])
         self.block_signals(False)
         self.adjustSize()
+
+
+    def get_user_preferences(self) -> dict[str, Any]:
+        return {}
 
 
     def refresh_preview_options(self, new_preview_settings):
@@ -245,15 +253,14 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
                 self.lineEdit_replaced_by.clear()
                 self.pushButton_remove.setEnabled(False)
 
-    def event_frame_no_copied(self):
 
+    def event_frame_no_copied(self):
         self.copied_frame_no = int(self.lineEdit_frame_no.text())
         log.info("event: copy %d" % (self.copied_frame_no))
         self.pushButton_paste.setEnabled(True)
 
 
     def event_frame_no_paste(self):
-
         log.info("event: paste")
         frame_no = int(self.lineEdit_frame_no.text())
         if (self.copied_frame_no != -1

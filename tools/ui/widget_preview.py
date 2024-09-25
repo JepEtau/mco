@@ -13,6 +13,7 @@ from PySide6.QtGui import (
     QPainter,
     QPen,
     QColor,
+    QKeyEvent,
 )
 from PySide6.QtWidgets import (
     QTableWidgetItem,

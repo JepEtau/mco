@@ -10,6 +10,7 @@ from PySide6.QtCore import (
     Signal,
 )
 
+from ._types import PlaylistProperties
 from ui.window_replace import ReplaceWindow
 from .user_preferences import UserPreferences
 from utils.p_print import *
@@ -22,8 +23,6 @@ from parsers import (
 
 class CommonController(QObject):
     signal_close = Signal()
-    signal_scenelist = Signal(dict)
-
     signal_scene_modified = Signal(dict)
 
     def __init__(self):
@@ -34,7 +33,7 @@ class CommonController(QObject):
         self.scenes = {}
         self.frames = {}
 
-        self.playlist_properties = {}
+        self._playlist_properties: PlaylistProperties = PlaylistProperties()
         self.playlist_frames = []
 
         self.current_selection = {}
@@ -42,14 +41,14 @@ class CommonController(QObject):
 
         self.preview_options = None
 
-        self.preferences: UserPreferences = None
+        self.user_preferences: UserPreferences = None
         self.current_scene_no: int = 0
 
 
     def exit(self):
         # print("%s:exit" % (__name__))
-        p = self.view.get_preferences()
-        self.preferences.save(p)
+        p = self.view.get_user_preferences()
+        self.user_preferences.save(p)
         try:
             log.handlers[0].close()
         except:
@@ -70,14 +69,14 @@ class CommonController(QObject):
 
 
 
-    def get_preferences(self):
-        p = self.preferences.get_preferences()
+    def get_user_preferences(self):
+        p = self.user_preferences.get_preferences()
         return p
 
 
     def save_preferences(self, preferences:dict):
-        preferences = self.view.get_preferences()
-        self.preferences.save(preferences)
+        preferences = self.view.get_user_preferences()
+        self.user_preferences.save(preferences)
 
 
     def get_available_episode_and_parts(self) -> dict[str, list]:

@@ -6,7 +6,13 @@ from PySide6.QtCore import (
     Signal,
     Slot,
     QBasicTimer,
-    Qt
+    Qt,
+    QEvent,
+    QObject,
+    Slot,
+)
+from PySide6.QtGui import (
+    QKeyEvent,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -17,6 +23,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
 )
+
+from backend._types import PlaylistProperties
 from .stylesheet import (
     set_stylesheet,
     set_widget_stylesheet,
@@ -111,6 +119,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         self.current_frame_no = 0
         self.timer = QBasicTimer()
         self.timer.stop()
+        self.is_closing: bool = False
 
 
         # self.widget_replace.signal_preview_options_changed.connect(
@@ -126,7 +135,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
             self.event_move_to_frame_index
         )
         # self.widget_player_ctrl.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'controls'))
-        self.controller.signal_ready_to_play[dict].connect(
+        self.controller.signal_ready_to_play.connect(
             self.event_ready_to_play
         )
 
@@ -137,7 +146,7 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         #     w.blockSignals(False)
 
         self.show()
-        # self.installEventFilter(self)
+        self.installEventFilter(self)
 
 
 
@@ -154,8 +163,39 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
             self.setGeometry(0,0,1920,1080)
         self.setGeometry(50,50,1800,800)
 
+
+    def get_user_preferences(self) -> dict:
+        # Get preferences from children, merge them and return it
+        preferences = {
+            'window': {
+                'screen': 0,
+                'geometry': self.geometry().getRect(),
+            },
+        }
+        for e, w in self.widgets.items():
+            preferences.update({e: w.get_user_preferences()})
+
+        return preferences
+
+
+    def closeEvent(self, event):
+        # print("closeEvent")
+        # self.event_editor_action('exit')
+        self.event_close()
+
+
+    def event_close(self):
+        # print("%s:event_close" % (__name__))
+        if not self.is_closing:
+            self.is_closing = True
+            self.timer.stop()
+            self.controller.exit()
+            return
+        self.close()
+
     def event_selection_scenes_refreshed(self):
         pass
+
 
     def refresh_available_selection(self, selection: dict):
         # self.widget_replace.
@@ -184,11 +224,12 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         # self.widget_painter.refresh_preview_options(new_preview_settings)
 
 
-    @Slot(dict)
-    def event_ready_to_play(self, playlist_properties: dict[str, Any]):
+    @Slot()
+    def event_ready_to_play(self):
         log.info("ready to play")
+        playlist_properties = self.controller.playlist_properties()
         self.current_frame_index = 0
-        self.playing_frame_count = playlist_properties['count']
+        self.playing_frame_count = playlist_properties.count
         f = self.controller.get_frame_at_index(self.current_frame_index)
         self.display_frame(f)
 
@@ -248,11 +289,12 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         self.widget_preview.display_frame(frame)
 
 
-
-    def event_ready_to_play(self, playlist_properties):
+    @Slot()
+    def event_ready_to_play(self):
         log.info("ready to play")
+        playlist_properties = self.controller.playlist_properties()
         self.current_frame_index = 0
-        self.playing_frame_count = playlist_properties['count']
+        self.playing_frame_count = playlist_properties.count
         f = self.controller.get_frame_at_index(self.current_frame_index)
         self.display_frame(f)
 
@@ -278,3 +320,35 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         msg.setInformativeText(message)
         msg.setWindowTitle("Error")
         msg.exec_()
+
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        key = event.key()
+        modifiers = event.modifiers()
+        self.current_key_pressed = None
+        print(f"WIndow: Key: {key}")
+
+        for w in (
+            self.widget_player_ctrl,
+            self.widget_replace,
+            # self.widget_preview,
+            self.widget_selection
+        ):
+            if w.event_key_pressed(event):
+                return True
+
+
+        return super().keyPressEvent(event)
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Wheel:
+            for w in (
+                self.widget_player_ctrl,
+                self.widget_replace,
+                # self.widget_preview,
+                self.widget_selection
+            ):
+                if w.event_wheel(event):
+                    return True
+
+        return super().eventFilter(watched, event)

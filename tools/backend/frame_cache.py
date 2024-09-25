@@ -73,7 +73,7 @@ class FrameCache:
             total_count = scene['src'].frame_count()
             for src_scene in scene['src'].scenes():
                 print(f"extract {total_count} frames from: {src_scene['k_ed_ep_ch_no']}")
-                start = src_scene['start']
+                start = src_scene['start'] - src_scene['scene']['inputs']['progressive']['start']
                 count = src_scene['count']
                 in_video_fp: str = src_scene['scene']['inputs']['progressive']['filepath']
                 directory, basename, extension = path_split(in_video_fp)

@@ -8,6 +8,8 @@ from PySide6.QtCore import (
     Signal,
 )
 
+from ._types import PlaylistProperties, Selection
+
 from .replace_database import ReplaceDatabase
 
 from .frame_cache import FrameCache, Frame
@@ -32,14 +34,14 @@ from parsers import (
 
 class ReplaceController(CommonController):
     signal_current_scene_modified = Signal(dict)
-    signal_ready_to_play = Signal(dict)
+    signal_ready_to_play = Signal()
     signal_reload_frame = Signal()
     signal_is_saved = Signal(str)
 
     signal_preview_options_consolidated = Signal(dict)
     signal_replacements_refreshed = Signal()
 
-    signal_scenelist = Signal(dict)
+    signal_selection_modified = Signal()
     signal_error = Signal(str)
 
 
@@ -65,7 +67,7 @@ class ReplaceController(CommonController):
         log.info("set view, connect signals")
         self.view = view
 
-        self.view.widget_selection.signal_ep_p_changed[dict].connect(
+        self.view.widget_selection.signal_ep_p_changed[Selection].connect(
             self.k_ep_p_changed
         )
         self.view.widget_selection.signal_selected_scene_changed[dict].connect(
@@ -82,34 +84,30 @@ class ReplaceController(CommonController):
         # Force refresh of preview options
         p = self.user_preferences.get_preferences()
         view.apply_user_preferences(p)
+        pprint(p)
 
         self.parsed_episodes: list[str] = []
-        k_ep = f"ep{
-            (p['selection']['episode'])
-            if p['selection']['episode'] != ''
-            else ''
-        }"
-        self.current_selection = {
-            'k_ep': '',
-            'k_ch': '',
-            'scenes': None,
-        }
+
 
         self.view.refresh_available_selection(
             self.get_available_episode_and_parts()
         )
 
-        k_p: str = p['selection']['k_ch']
-        new_selection: dict[str, str] = {
-            'k_ep': k_ep if k_ep not in ('', 'ep') else 'ep01',
-            'k_ch': k_p if k_p != '' else 'g_debut',
-        }
+        self.current_selection = Selection(
+            k_ep='', k_ch=''
+        )
+        k_ep = key(p['selection']['episode'])
+        k_ch: str = p['selection']['k_ch']
+        new_selection: Selection = Selection(
+            k_ep=k_ep if k_ep not in ('', 'ep') else 'ep01',
+            k_ch=k_ch if k_ch != '' else 'g_debut',
+        )
 
         self.k_ep_p_changed(new_selection)
 
 
 
-    def k_ep_p_changed(self, values:dict):
+    def k_ep_p_changed(self, selection: Selection):
         """ Directory or step has been changed, update the database, list all images,
             list all scenes
         """
@@ -117,81 +115,53 @@ class ReplaceController(CommonController):
         verbose = True
         if verbose:
             print(lightcyan("----------------------- k_ep_p_changed -------------------------"))
-            pprint(values)
-        k_ep_selected = values['k_ep']
-        k_p_selected = values['k_ch']
+            pprint(selection)
 
-        if ((k_ep_selected == '' and k_p_selected == '')
-            or (k_ep_selected != '' and k_p_selected == '')):
+        if ((selection.k_ep == '' and selection.k_ch == '')
+            or (selection.k_ep != '' and selection.k_ch == '')):
             log.info(f"no selected episode/part")
             return
-        log.info(f"selection_changed: {k_ep_selected}:{k_p_selected}, {self.current_task}")
+        log.info(f"selection_changed: {selection.k_ep}:{selection.k_ch}, {selection.task}")
 
         if (
-            k_ep_selected != self.current_selection['k_ep']
-            and k_ep_selected not in self.parsed_episodes
+            selection.k_ep != self.current_selection.k_ep
+            and selection.k_ep not in self.parsed_episodes
         ):
             parse_database(
-                episode=k_ep_selected,
+                episode=selection.k_ep,
                 lang='fr'
             )
             consolidate_target(
-                k_ep=k_ep_selected,
+                k_ep=selection.k_ep,
                 task='lr'
             )
 
-            self.parsed_episodes.append(k_ep_selected)
-
-
-        # self.model_database.consolidate_database(
-        #     k_ep=k_ep_selected,
-        #     k_part=k_part_selected
-        # )
-        # NOTE replace: model contains the list of frames to replace
-
-        # self.scenes is a pointer to the scenes for this episode/part
-        # db = self.model_database.database()
-
+            self.parsed_episodes.append(selection.k_ep)
 
         # Remove all frames
         self.frames.clear()
 
-
-
-        # Contains all path of frames for this part
-        self.filepath.clear()
-
         # Get video db
-        if k_p_selected in ('g_debut', 'g_fin'):
-            db_video = db[k_p_selected]['video']
+        if selection.k_ch in ('g_debut', 'g_fin'):
+            db_video = db[selection.k_ch]['video']
         else:
-            db_video = db[k_ep_selected]['video']['target'][k_p_selected]
-
-        if k_p_selected in credit_chapter_keys():
-            k_ed_selected = ''
-        else:
-            k_ed_selected = db[k_ep_selected]['video']['target'][k_p_selected]['k_ed_src']
+            db_video = db[selection.k_ep]['video']['target'][selection.k_ch]
 
         self.scenes = db_video['scenes']
 
         # Create a dict to update the "browser" part of the editor widget
-        self.current_selection = {
-            'k_ed': k_ed_selected,
-            'k_ep': k_ep_selected,
-            'k_ch': k_p_selected,
-            'scenes': self.scenes,
-            'invalid': [],
-        }
-
-        # for f in self.frames[scene_no]:
-        #     print("%s" % f['filepath'])
+        self.current_selection = Selection(
+            k_ep=selection.k_ep,
+            k_ch=selection.k_ch,
+            task='lr',
+            scenes=self.scenes,
+        )
+        self.signal_selection_modified.emit()
 
 
-        # print("selected: %s:%s:%s" % (k_ed_selected, k_ep_selected, k_part_selected))
-        self.signal_scenelist.emit(self.current_selection)
-
-
-
+    def selection(self) -> Selection:
+        # Return current selection and scene list
+        return self.current_selection
 
 
 
@@ -236,12 +206,12 @@ class ReplaceController(CommonController):
             self.signal_error.emit(f"Missing input file for scene {scene_no}")
 
         frame_nos = [f.no for f in self.playlist_frames]
-        self.playlist_properties.update({
-            'frame_nos': frame_nos,
-            'count': len(self.playlist_frames),
-            'ticks': ticklist,
-            'scenes': selected['scenes'],
-        })
+        self._playlist_properties: PlaylistProperties = PlaylistProperties(
+            frame_nos=frame_nos,
+            count=len(self.playlist_frames),
+            ticks=ticklist,
+            scenes=selected['scenes'],
+        )
 
         # Set current to None to refresh widgets
         self.current_frame = None
@@ -258,8 +228,11 @@ class ReplaceController(CommonController):
 
         self.signal_replacements_refreshed.emit()
         # self.signal_preview_options_consolidated.emit(self.preview_options)
-        self.signal_ready_to_play.emit(self.playlist_properties)
+        self.signal_ready_to_play.emit()
 
+
+    def playlist_properties(self) -> PlaylistProperties:
+        return self._playlist_properties
 
 
     def playlist_replacements(self) -> dict[int, dict[int, int]]:
@@ -330,7 +303,7 @@ class ReplaceController(CommonController):
         # print("find following replaced frame")
 
         # print("\tsearch in %d -> %d" % (frame_no + 1, self.playlist_properties['start'] + self.playlist_properties['count']))
-        for i in range(index + 1, self.playlist_properties['count']):
+        for i in range(index + 1, self._playlist_properties['count']):
             scene_no = self.get_scene_no_from_index(i)
             scene = self.scenes[scene_no]
             frame_no = scene['start'] + i
