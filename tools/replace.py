@@ -19,7 +19,7 @@ def main():
     application = QApplication(sys.argv)
     from logger import log
 
-    from backend.controller_replace import ReplaceController
+    from tools.backend.replace_controller import ReplaceController
     controller = ReplaceController()
 
     from ui.window_replace import ReplaceWindow

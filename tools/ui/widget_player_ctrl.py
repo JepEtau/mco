@@ -34,7 +34,7 @@ from .ui.ui_widget_player_ctrl import Ui_PlayerControlWidget
 from backend._types import PlaylistProperties
 from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
-    from backend.controller_replace import ReplaceController
+    from tools.backend.replace_controller import ReplaceController
 
 from backend.frame_cache import Frame
 
@@ -67,6 +67,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         # self.pushButton_play_pause.setIcon(self.icon_pause)
 
         self.label_ed_ep_part.clear()
+        self.lineEdit_fno.clear()
         self.lineEdit_frame_no.clear()
         self.lineEdit_frame_index.clear()
 
@@ -103,7 +104,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
         self.normal_style: str = self.lineEdit_frame_no.styleSheet()
         self.replaced_style: str = self.normal_style.replace("rgb(220, 220, 220)", "yellow")
-
+        self.initial_style: str = self.normal_style.replace("rgb(220, 220, 220)", "green")
         self.adjustSize()
 
 
@@ -140,22 +141,37 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
 
     def refresh_values(self, frame: Frame, original_frame: Frame):
-        self.label_ed_ep_part.setText(frame.src_scene_key)
-        self.lineEdit_frame_no.setText(f"{frame.no}")
-        self.lineEdit_frame_index.setText(f"{frame.i}")
+        self.label_ed_ep_part.setText(f"{frame.src_scene_key}")
+        self.lineEdit_fno.setText(
+            f"{original_frame.no if original_frame is not None else frame.no}"
+        )
+        self.lineEdit_frame_index.setText(
+            f"{original_frame.i if original_frame is not None else frame.i}"
+        )
+
         if original_frame is not None:
+            self.lineEdit_fno.setStyleSheet(self.normal_style)
+            self.lineEdit_frame_no.setText(f"{frame.no}")
             self.lineEdit_frame_no.setStyleSheet(self.replaced_style)
-        else:
+
+        elif self.controller.is_frame_used_for_replace(frame):
+            self.lineEdit_fno.setStyleSheet(self.initial_style)
             self.lineEdit_frame_no.setStyleSheet(self.normal_style)
+            self.lineEdit_frame_no.clear()
+
+        else:
+            self.lineEdit_fno.setStyleSheet(self.normal_style)
+            self.lineEdit_frame_no.setStyleSheet(self.normal_style)
+            self.lineEdit_frame_no.clear()
 
 
-    def refresh(self, values:dict):
-        print(red("refresh"))
-        self.lineEdit_frame_no.setText(f"{values['frame_no']}")
-        self.lineEdit_frame_index.setText(f"{values['frame_index']}")
-        self.slider_frames.setMaximum(values['count'])
-        self.slider_frames.setTickPosition(values['position'])
-        self.refresh_status(values['status'])
+    # def refresh(self, values:dict):
+    #     print(red("refresh"))
+    #     self.lineEdit_frame_no.setText(f"{values['frame_no']}")
+    #     self.lineEdit_frame_index.setText(f"{values['frame_index']}")
+    #     self.slider_frames.setMaximum(values['count'])
+    #     self.slider_frames.setTickPosition(values['position'])
+    #     self.refresh_status(values['status'])
 
 
     def refresh_status(self, status:str):

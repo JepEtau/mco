@@ -85,15 +85,28 @@ class Ui_PlayerControlWidget(object):
 
         self.horizontalLayout_3.addWidget(self.label_ed_ep_part)
 
-        self.horizontalSpacer_2 = QSpacerItem(10, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_3.addItem(self.horizontalSpacer_2)
-
-        self.lineEdit_frame_no = QLineEdit(PlayerControlWidget)
-        self.lineEdit_frame_no.setObjectName(u"lineEdit_frame_no")
+        self.lineEdit_fno = QLineEdit(PlayerControlWidget)
+        self.lineEdit_fno.setObjectName(u"lineEdit_fno")
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.lineEdit_fno.sizePolicy().hasHeightForWidth())
+        self.lineEdit_fno.setSizePolicy(sizePolicy1)
+        self.lineEdit_fno.setMinimumSize(QSize(55, 0))
+        self.lineEdit_fno.setMaximumSize(QSize(60, 16777215))
+        self.lineEdit_fno.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.lineEdit_fno.setFrame(False)
+        self.lineEdit_fno.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.lineEdit_fno.setReadOnly(True)
+
+        self.horizontalLayout_3.addWidget(self.lineEdit_fno)
+
+        self.horizontalSpacer_3 = QSpacerItem(10, 20, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_3.addItem(self.horizontalSpacer_3)
+
+        self.lineEdit_frame_no = QLineEdit(PlayerControlWidget)
+        self.lineEdit_frame_no.setObjectName(u"lineEdit_frame_no")
         sizePolicy1.setHeightForWidth(self.lineEdit_frame_no.sizePolicy().hasHeightForWidth())
         self.lineEdit_frame_no.setSizePolicy(sizePolicy1)
         self.lineEdit_frame_no.setMinimumSize(QSize(55, 0))
@@ -136,6 +149,7 @@ class Ui_PlayerControlWidget(object):
         self.pushButton_play_pause.setText("")
         self.pushButton_loop.setText("")
         self.label_ed_ep_part.setText(QCoreApplication.translate("PlayerControlWidget", u"s:ep11:g_documentaire:999", None))
+        self.lineEdit_fno.setText(QCoreApplication.translate("PlayerControlWidget", u"123456", None))
         self.lineEdit_frame_no.setText(QCoreApplication.translate("PlayerControlWidget", u"123456", None))
         self.lineEdit_frame_index.setText(QCoreApplication.translate("PlayerControlWidget", u"123456", None))
     # retranslateUi

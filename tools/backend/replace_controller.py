@@ -267,31 +267,54 @@ class ReplaceController(CommonController):
         )
 
 
+    def get_original_frame(self, index: int) -> Frame:
+        frame: Frame = self.playlist_frames[index]
+        if frame.by != frame.no:
+            frame = self.playlist_frames[
+                self.get_index_from_frame_no(frame.by)
+            ]
+        return frame
+
+
     def preview_modified(self, preview_settings: dict):
         self.preview_enabled = preview_settings['enabled']
+
+
+
+    def is_frame_used_for_replace(self, frame: Frame) -> bool:
+        scene_no = int(frame.scene_key.split(':')[-1])
+        return bool(frame.no in list(self.replacements[scene_no].values()))
 
 
     @Slot(ReplaceAction)
     def event_frame_replaced(self, replace: ReplaceAction):
         print(yellow("event_frame_replaced"))
         pprint(replace)
-        if replace.type == 'replace':
-            log.info(f"replace: {replace.current.no} <- {replace.by.no}")
-            by: int = (
-                replace.by.by
-                if replace.by.by != replace.current.no
-                else replace.by.no
-            )
-            log.info(f"replace (consolidated): {replace.current.no} <- {by}")
-            scene_no: int = int(replace.current.scene_key.split(':')[-1])
-            scene: Scene = self.scenes[scene_no]
-            self.replace_db.add(
-                scene,
-                replace.current.src_scene_key,
-                replace.current.no,
-                by
-            )
-            replace.current.by = by
+
+        scene_no: int = int(replace.current.scene_key.split(':')[-1])
+        # if isinstance(replace.by, Frame):
+        log.info(f"replace: {replace.current.no} <- {replace.by.no}")
+        by: int = (
+            replace.by.by
+            if replace.by.by != replace.current.no
+            else replace.by.no
+        )
+        log.info(f"replace (consolidated): {replace.current.no} <- {by}")
+
+        # else:
+        #     i = self.get_index_from_frame_no(replace.by)
+        #     original_frame: Frame = self.playlist_frames[i]
+        #     print("event_frame_replaced, replaced by a replaced frame")
+        #     pprint(original_frame)
+
+        scene: Scene = self.scenes[scene_no]
+        self.replace_db.add(
+            scene,
+            replace.current.src_scene_key,
+            replace.current.no,
+            by
+        )
+        replace.current.by = replace.by.no
 
         print(self.replace_db.modified_scene_nos())
         del self.replacements[scene_no]

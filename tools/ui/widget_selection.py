@@ -34,7 +34,7 @@ from .stylesheet import (
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from backend.controller_replace import ReplaceController
+    from tools.backend.replace_controller import ReplaceController
 from utils.mco_types import Scene
 from .ui.ui_widget_selection import Ui_SelectionWidget
 from import_parsers import *

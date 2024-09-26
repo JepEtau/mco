@@ -41,7 +41,7 @@ from logger import log
 
 from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
-    from backend.controller_replace import ReplaceController
+    from tools.backend.replace_controller import ReplaceController
 
 from backend.frame_cache import Frame
 from parsers import (

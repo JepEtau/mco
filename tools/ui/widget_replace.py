@@ -23,12 +23,18 @@ from PySide6.QtWidgets import (
 from .ui.ui_widget_replace import Ui_ReplaceWidget
 from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
-    from backend.controller_replace import ReplaceController
+    from tools.backend.replace_controller import ReplaceController
 from .stylesheet import (
     set_stylesheet,
     set_widget_stylesheet,
 )
 from backend.frame_cache import Frame
+
+@dataclass(slots=True)
+class CurrentFrame:
+    no: int
+    frame: Frame
+    original: Frame
 
 
 class ModificationHistory:
@@ -100,8 +106,8 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
 
         # Internal variables
         self.previous_position = None
-        self.current_frame: Frame | None = None
-        self.copied_frame: Frame | None = None
+        self.current_frame: CurrentFrame | None = None
+        self.copied: CurrentFrame | None = None
 
         # Disable focus
         self.pushButton_set_preview.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -264,16 +270,22 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
 
 
 
-
-
-    def set_current_frame(self, frame: Frame, original_frame: Frame | None) -> None:
+    def set_current_frame(
+        self,
+        frame: Frame,
+        original_frame: Frame | None,
+    ) -> None:
+        self.lineEdit_frame_no.setText(
+            str(original_frame.no if original_frame is not None else frame.no)
+        )
         if original_frame is not None:
-            self.lineEdit_frame_no.setText(str(original_frame.no))
             self.lineEdit_replaced_by.setText(str(frame.no))
             self.pushButton_remove.setEnabled(True)
+            src_frame_no = original_frame.no
+            self.current_frame = frame
+
         else:
-            # self.lineEdit_frame_no.setText(str(original_f_no))
-            self.lineEdit_frame_no.clear()
+            # self.lineEdit_frame_no.clear()
             try:
                 self.lineEdit_replaced_by.clear()
                 # self.lineEdit_replaced_by.setText(str(frame.no))
@@ -281,45 +293,66 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             except:
                 self.lineEdit_replaced_by.clear()
                 self.pushButton_remove.setEnabled(False)
-        self.current_frame: Frame = frame
+            src_frame_no = frame.no
 
+        self.current_frame = CurrentFrame(
+            no=src_frame_no,
+            frame=frame,
+            original=original_frame
+        )
 
 
     def event_copy(self):
-        log.info(f"event: copy {self.current_frame.no} (by: {self.current_frame.by})")
-        if self.current_frame.by != self.current_frame.no:
-            self.pushButton_paste.setEnabled(False)
-            self.copied_frame = None
-            return
-        self.copied_frame = self.current_frame
+        # log.info(f"event: copy {self.current_frame.no} (by: {self.current_frame.by})")
+        # if self.src_frame_no != self.current_frame.no:
+        #     print("cannot copy this frame")
+        #     self.pushButton_paste.setEnabled(False)
+        #     self.copied = None
+        #     return
+        # self.controller.get_original_frame(self.parent().curre)
+
+        self.copied = self.current_frame
+        print("copied")
+        pprint(self.copied)
         self.pushButton_paste.setEnabled(True)
 
 
     def event_paste(self):
-        if self.copied_frame is None:
+        if self.copied is None:
             log.error(f"circular reference")
             return
-        log.info(f"event: paste: {self.current_frame.no} <- {self.copied_frame.no}")
-        frame_no = self.current_frame.no
+        log.info(f"event: paste: {self.current_frame.no} <- {self.copied.frame.no}")
+        # frame_no = self.current_frame.no
         if (
-            int(self.copied_frame.scene_key.split(':')[-1])
-            != int(self.current_frame.scene_key.split(':')[-1])
+            int(self.copied.frame.scene_key.split(':')[-1])
+            != int(self.current_frame.frame.scene_key.split(':')[-1])
         ):
             print(red("Error: cannot paste in a different scene"))
+            return
 
-        if (
-            self.copied_frame.by != -1
-            and frame_no != self.copied_frame.no
-        ):
-            log.info(f"event: paste to {frame_no}")
-            self.pushButton_discard.setEnabled(True)
-            self.pushButton_save.setEnabled(True)
-            replace_action = ReplaceAction(
-                type='replace',
-                current=self.current_frame,
-                by=self.copied_frame,
-            )
-            self.signal_replace_modified.emit(replace_action)
+        if self.controller.is_frame_used_for_replace(self.current_frame.frame):
+            print(red("cannot paste to a frame whic is the source of other frames"))
+            return False
+
+        # by: int | Frame = (
+        #     self.copied.no
+        #     if self.copied.no != self.copied.frame.no
+        #     else self.copied.frame
+        # )
+        print(yellow("copied:"))
+        pprint(self.copied)
+        print(yellow("paste to:"))
+        pprint(self.current_frame)
+
+        log.info(f"event: paste to {self.current_frame.no}")
+        self.pushButton_discard.setEnabled(True)
+        self.pushButton_save.setEnabled(True)
+        replace_action = ReplaceAction(
+            type='replace',
+            current=self.current_frame.frame,
+            by=self.copied.frame,
+        )
+        self.signal_replace_modified.emit(replace_action)
 
 
 

@@ -46,6 +46,6 @@ ReplaceActionType = Literal['replace', 'remove']
 class ReplaceAction:
     type: ReplaceActionType
     current: Frame | None
-    by: Frame | None
+    by: Frame | int | None
 
 
