@@ -11,7 +11,8 @@ from PySide6.QtGui import (
 
 @dataclass(slots=True)
 class Frame:
-    key: str
+    src_scene_key: str
+    scene_key: str
     i: int
     no: int
     by: int

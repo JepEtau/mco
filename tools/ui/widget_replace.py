@@ -302,6 +302,12 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         log.info(f"event: paste: {self.current_frame.no} <- {self.copied_frame.no}")
         frame_no = self.current_frame.no
         if (
+            int(self.copied_frame.scene_key.split(':')[-1])
+            != int(self.current_frame.scene_key.split(':')[-1])
+        ):
+            print(red("Error: cannot paste in a different scene"))
+
+        if (
             self.copied_frame.by != -1
             and frame_no != self.copied_frame.no
         ):

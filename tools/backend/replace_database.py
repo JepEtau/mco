@@ -1,12 +1,16 @@
 from __future__ import annotations
-from copy import deepcopy
+from collections import OrderedDict
+from configparser import ConfigParser
+from copy import copy, deepcopy
+import os
 from pprint import pprint
 from import_parsers import *
+from parsers._keys import credit_chapter_keys
 from utils.mco_types import Scene, Singleton
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from scene.src_scene import SrcScene
-
+from parse_db import db
 
 
 class ReplaceDatabase:
@@ -14,7 +18,8 @@ class ReplaceDatabase:
     def __init__(self) -> None:
         self._db: dict[str, dict[int, int]] = {}
         self._is_modified: bool = False
-        self._modified_scenes: set[str] = set()
+        self.modified_scenes: set[str] = set()
+        self.modified_src_scenes: set[str] = set()
 
 
     @staticmethod
@@ -63,87 +68,123 @@ class ReplaceDatabase:
 
 
     def add(
-            self,
-            scene_key: str,
-            current: int,
-            by: int
+        self,
+        scene: Scene,
+        src_scene_key: str,
+        current: int,
+        by: int
     ) -> None:
-        replace_dict = self._db[scene_key]
-        replace_dict[current] = by
+        replace_dict = self._db[src_scene_key]
+        if current != by:
+            replace_dict[current] = by
         self._is_modified = True
-        self._modified_scenes.add(scene_key)
+        self.modified_src_scenes.add(src_scene_key)
+        self.modified_scenes.add(scene['no'])
 
 
     def remove_multiple(self, scene: Scene, frame_nos: list[int]) -> None:
         for src_scene in scene['src'].scenes():
-            scene_key = self._key(src_scene)
-            if scene_key in self._db:
+            src_scene_key = self._key(src_scene)
+            if src_scene_key in self._db:
                 for f_no in frame_nos:
-                    if f_no in self._db[scene_key]:
-                        del self._db[scene_key][f_no]
-        self._modified_scenes.add(scene_key)
-        self._is_modified = True
+                    if f_no in self._db[src_scene_key]:
+                        del self._db[src_scene_key][f_no]
+            self.modified_src_scenes.add(src_scene_key)
+        self.modified_scenes.add(scene['no'])
 
 
-    @property
-    def is_modified(self) -> bool:
-        return self._is_modified
-
-
-    def save(self):
-        pprint(self._db)
-        if not self._is_modified:
+    def is_modified(self, scene: Scene) -> bool:
+        if scene['no'] in self.modified_scenes:
             return True
-
-        for key in self._modified_scenes:
-            k_ed, k_ep, k_ch, scene_no = key.split()
-            if k_ch in
-
-        # for k_ed, ed_values in self.db_replaced_frames.items():
-        #     for k_ep, ep_values in ed_values.items():
-        #         for k_part, part_values in ep_values.items():
-
-        #             # Open configuration file
-        #             if k_part in K_GENERIQUES:
-        #                 # Write into a single file in the generique directory
-        #                 filepath = os.path.join(db['common']['directories']['config'], k_part, "%s_replace.ini" % (k_part))
-        #             else:
-        #                 filepath = os.path.join(db['common']['directories']['config'], k_ep, "%s_replace.ini" % (k_ep))
-        #             if filepath.startswith("~/"):
-        #                 filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
-
-        #             # Parse the file
-        #             if os.path.exists(filepath):
-        #                 config_replace = configparser.ConfigParser(dict_type=collections.OrderedDict)
-        #                 config_replace.read(filepath)
-        #             else:
-        #                 config_replace = configparser.ConfigParser({}, collections.OrderedDict)
-
-        #             # Update the config file, select section
-        #             k_section = '%s.%s.%s' % (k_ed, k_ep, k_part)
-
-        #             if not config_replace.has_section(k_section):
-        #                 config_replace[k_section] = dict()
-
-        #             # Update the values
-        #             for frame_no, new_frame_no in part_values.items():
-        #                 if new_frame_no == -1:
-        #                     # Remove from the config file
-        #                     if config_replace.has_option(k_section, str(frame_no)):
-        #                         config_replace.remove_option(k_section, str(frame_no))
-        #                     try: del self.db_replaced_frames_initial[k_ed][k_ep][k_part][frame_no]
-        #                     except: pass
-        #                 else:
-        #                     # Set the new value
-        #                     config_replace.set(k_section, str(frame_no), str(new_frame_no))
-        #                     nested_dict_set(self.db_replaced_frames_initial,
-        #                         new_frame_no, k_ed, k_ep, k_part, frame_no)
+        for src_scene in scene['src'].scenes():
+            src_scene_key = self._key(src_scene)
+            if src_scene_key in self.modified_src_scenes:
+                return True
+        return False
 
 
-        #             # Write to the database
-        #             with open(filepath, 'w') as config_file:
-        #                 config_replace.write(config_file)
+    def modified_scene_nos(self) -> list[int]:
+        return list(self.modified_scenes)
 
-        # self.db_replaced_frames.clear()
-        # self.is_replace_db_modified = False
-        # return True
+
+    def save(self, scene: Scene):
+        if not self.is_modified(scene):
+            return
+
+        modified_src_scenes = copy(self.modified_src_scenes)
+        for src_scene in scene['src'].scenes():
+            src_scene_key = self._key(src_scene)
+            print(f"SRC scene_key: {src_scene_key}", end=' ')
+            if src_scene_key not in self.modified_src_scenes:
+                print("not modified")
+                continue
+            print ("to save")
+
+            k_ed, k_ep, k_ch, src_scene_no = src_scene_key.split(':')
+            # filepath
+            k = (
+                k_ch if k_ch in credit_chapter_keys()
+                else k_ep
+            )
+            replace_fp = os.path.join(
+                db['common']['directories']['config'], k, f"{k}_replace.ini"
+            )
+
+            # Parse the file
+            if os.path.exists(replace_fp):
+                config_replace = ConfigParser(dict_type=OrderedDict)
+                config_replace.read(replace_fp)
+            else:
+                config_replace = ConfigParser({}, OrderedDict)
+
+            # Update the config file, select section
+            k_section = '.'.join((k_ed, k_ep, k_ch, ))
+            print(f"k_section: {k_section}")
+
+            _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][int(src_scene_no)]
+            initial_replace = _src_scene['replace']
+            # config_replace[k_section] = {}
+
+            for no in initial_replace:
+                if (
+                    config_replace.has_option(k_section, f"{no}")
+                    and no not in self._db[src_scene_key]
+                ):
+                    print(f"remove: {k_section}: {no}")
+                    config_replace.remove_option(k_section, f"{no}")
+
+            # Set new values
+            for no, by in self._db[src_scene_key].items():
+                if no != by:
+                    config_replace.set(k_section, f"{no}", f"{by}")
+
+            # Write to the database
+            with open(replace_fp, 'w') as config_file:
+                config_replace.write(config_file)
+
+            # Remove modified
+            _src_scene['replace'] = deepcopy(self._db[src_scene_key])
+            self.modified_src_scenes.remove(src_scene_key)
+
+        self.modified_scenes.remove(scene['no'])
+
+
+    def discard(self, scene: Scene):
+        if not self.is_modified(scene):
+            return
+
+        modified_src_scenes = copy(self.modified_src_scenes)
+        for src_scene in scene['src'].scenes():
+            src_scene_key = self._key(src_scene)
+            print(f"scene_key: {src_scene_key}")
+            if src_scene_key not in self.modified_src_scenes:
+                continue
+
+            k_ed, k_ep, k_ch, src_scene_no = src_scene_key.split(':')
+            src_scene_no = int(src_scene_no)
+
+            _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][src_scene_no]
+            _src_scene['replace'] = deepcopy(self._db[src_scene_key])
+            self.modified_src_scenes.remove(src_scene_key)
+
+        self.modified_scenes.remove(scene['no'])

@@ -4,6 +4,14 @@ from pathlib import Path
 from typing import Any, Literal, get_args
 from ._keys import key
 
+
+class Db:
+    common: dict
+
+
+
+
+
 TaskName = Literal[
     # Deinterlace the input video:
     'initial',

@@ -140,7 +140,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
 
     def refresh_values(self, frame: Frame, original_frame: Frame):
-        self.label_ed_ep_part.setText(frame.key)
+        self.label_ed_ep_part.setText(frame.src_scene_key)
         self.lineEdit_frame_no.setText(f"{frame.no}")
         self.lineEdit_frame_index.setText(f"{frame.i}")
         if original_frame is not None:

@@ -351,9 +351,24 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
             if w.event_key_pressed(event):
                 print(f"{__name__} {key} forwarded to {w.objectName()}")
                 return True
-
-
         return super().keyPressEvent(event)
+
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        for w in (
+            self.widget_player_ctrl,
+            self.widget_replace,
+            # self.widget_preview,
+            self.widget_selection
+        ):
+            try:
+                w.event_key_released(event)
+            except:
+                pass
+
+        return super().keyReleaseEvent(event)
+
+
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.Wheel:

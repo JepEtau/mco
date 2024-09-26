@@ -78,7 +78,6 @@ class ReplaceController(CommonController):
         )
         # self.view.widget_selection.signal_selected_step_changed[str].connect(self.event_selected_step_changed)
 
-        self.view.widget_replace.signal_save.connect(self.event_replace_save_requested)
         self.view.widget_replace.signal_replace_modified[ReplaceAction].connect(self.event_frame_replaced)
         self.view.widget_replace.signal_replace_removed.connect(
             self.event_replace_removed
@@ -284,15 +283,21 @@ class ReplaceController(CommonController):
                 else replace.by.no
             )
             log.info(f"replace (consolidated): {replace.current.no} <- {by}")
-            self.replace_db.add(replace.current.key, replace.current.no, by)
-
-            replace.current.by = by
-            scene_no: int = int(replace.current.key.split(':')[-1])
+            scene_no: int = int(replace.current.scene_key.split(':')[-1])
             scene: Scene = self.scenes[scene_no]
+            self.replace_db.add(
+                scene,
+                replace.current.src_scene_key,
+                replace.current.no,
+                by
+            )
+            replace.current.by = by
 
+        print(self.replace_db.modified_scene_nos())
         del self.replacements[scene_no]
         self.replacements.update(self.replace_db.get_replacements(scene))
         self.signal_replacements_refreshed.emit()
+        self.signal_reload_frame.emit()
 
 
     @Slot(dict)
@@ -311,16 +316,30 @@ class ReplaceController(CommonController):
                 f.by = f.no
                 removed_frame_no.remove(f.by)
 
+        print(self.replace_db.modified_scene_nos())
         self.signal_replacements_refreshed.emit()
         self.signal_reload_frame.emit()
 
 
 
     def event_replace_save_requested(self):
-        self.replace_db.save()
-        self.signal_is_saved.emit('replace')
-        self.set_modification_status('replace', False)
+        print(f"selected scenes: {self.playlist_properties().scenes}")
+        print(self.replace_db.modified_scene_nos())
+        for scene_no in self.playlist_properties().scenes:
+            print(f"save no.{scene_no}")
+            scene: Scene = self.current_selection.scenes[scene_no]
+            self.replace_db.save(scene)
 
+        self.signal_is_saved.emit('replace')
+        # self.set_modification_status('replace', False)
+
+
+    def event_replace_discard_requested(self):
+        log.info("discard modifications requested")
+        self.replace_db.discard()
+        self.signal_replacements_refreshed.emit()
+        # self.set_modification_status('replace', False)
+        self.signal_reload_frame.emit()
 
 
 
@@ -355,23 +374,6 @@ class ReplaceController(CommonController):
         self.signal_replacements_refreshed.emit(list_replace)
 
 
-    def refresh_replace_for_each_frame(self, scene):
-        log.info(f"refresh replaced frame for each frame of scene {scene['no']}")
-        for frame in self.frames[scene['no']]:
-            frame['replaced_by']: self.model_database.get_replace_frame_no(scene=scene, frame_no=frame['frame_no'])
-
-
-
-    def get_replace_frame_no_str(self, index) -> str:
-        # print("get_replace_frame_no_str: %d" % (index))
-        frame_no = self.playlist_frames[index]['frame_no']
-        scene_no = self.playlist_frames[index]['scene_no']
-        new_frame_no = self.model_database.get_replace_frame_no(scene_no, frame_no)
-        # print("get_replace_frame_no: %d -> %d" % (frame_no, new_frame_no))
-        if new_frame_no != -1:
-            return str(new_frame_no)
-        return ''
-
 
     def get_next_replaced_frame_index(self, index):
         # TODO: replace this: use the list_replace
@@ -396,11 +398,5 @@ class ReplaceController(CommonController):
 
 
 
-    def event_replace_discard_requested(self):
-        log.info("discard modifications requested")
-        self.model_database.discard_replace_modifications()
-        self.refresh_replace_widget()
-        self.set_modification_status('replace', False)
-        self.signal_reload_frame.emit()
 
 

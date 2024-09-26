@@ -1,4 +1,5 @@
 from pprint import pprint
+import sys
 import time
 from import_parsers import *
 from parsers import (
@@ -50,7 +51,7 @@ def consolidate_target(
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
         for scene in scenes:
-            # pprint_scene_mapping(scene)
+            pprint_scene_mapping(scene)
 
             # Set the last task
             scene['task'] = ProcessingTask(name=task)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import math
+import os
 import subprocess
 
 import numpy as np
@@ -54,10 +55,10 @@ class FrameCache:
 
     def get(self, scene: Scene) -> list[Frame] | None:
         # Extract frames from input video and strore them here
-        key = self._key(scene)
+        scene_key = self._key(scene)
 
-        if key not in self.scenes:
-            self.scenes[key] = []
+        if scene_key not in self.scenes:
+            self.scenes[scene_key] = []
 
             frame_rate: float = get_fps(db)
 
@@ -120,10 +121,11 @@ class FrameCache:
                         dtype=in_dtype,
                     ).reshape(shape)
                     f_no = start + src_scene['scene']['inputs']['progressive']['start'] + i
-                    self.scenes[key].append(
+                    self.scenes[scene_key].append(
                         Frame(
                             i=i,
-                            key=src_scene_key,
+                            src_scene_key=src_scene_key,
+                            scene_key=scene_key,
                             no=f_no,
                             img=img,
                             by=(
@@ -134,14 +136,14 @@ class FrameCache:
                         )
                     )
                 # Convert the 1st image of the scene to fasten the display
-                np_img: np.ndarray = self.scenes[key][0].img
+                np_img: np.ndarray = self.scenes[scene_key][0].img
                 h, w, c = np_img.shape
-                self.scenes[key][0].pixmap = QPixmap().fromImage(
+                self.scenes[scene_key][0].pixmap = QPixmap().fromImage(
                     QImage(np_img, w, h, w * c, QImage.Format.Format_BGR888)
                 )
-                self.scenes[key][0].img = None
+                self.scenes[scene_key][0].img = None
 
-        return self.scenes[key]
+        return self.scenes[scene_key]
 
     # def __getitem__(self, key: Any) -> Any:
     #     if self.verbose:
