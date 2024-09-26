@@ -142,12 +142,12 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
     def refresh_values(self, frame: Frame, original_frame: Frame):
         self.label_ed_ep_part.setText(f"{frame.src_scene_key}")
-        self.lineEdit_fno.setText(
-            f"{original_frame.no if original_frame is not None else frame.no}"
-        )
-        self.lineEdit_frame_index.setText(
-            f"{original_frame.i if original_frame is not None else frame.i}"
-        )
+        if original_frame is not None:
+            no, i = original_frame.no, original_frame.i
+        else:
+            no, i = frame.no, frame.i
+        self.lineEdit_fno.setText(f"{no}")
+        self.lineEdit_frame_index.setText(f"{i}")
 
         if original_frame is not None:
             self.lineEdit_fno.setStyleSheet(self.normal_style)

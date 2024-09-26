@@ -37,53 +37,6 @@ class CurrentFrame:
     original: Frame
 
 
-class ModificationHistory:
-
-    @dataclass(slots=True)
-    class _ReplaceAction:
-        type: ReplaceActionType
-        src: int
-        dst: int
-        previous: int
-
-    history: list[_ReplaceAction] = []
-    index: int = 0
-    history_size: int = 20
-
-    def add(self, action: ReplaceAction, previous_frame_no: int):
-        self.history = self.history[:self.index]
-        if len(self.history) >= self.history_size:
-            self.history = self.history[1:]
-            self.index -= 1
-        self.history.append(
-            self._ReplaceAction(
-                type=action.type,
-                src=action.by,
-                dst=action.current,
-                previous=previous_frame_no
-            )
-        )
-        self.index += 1
-
-    def undo(self) -> ReplaceAction | None:
-        if not self.history:
-            return None
-        previous_action = self.history[self.index]
-        self.index -= 1
-        undo_action: ReplaceActionType = previous_action.type
-        if undo_action == 'delete':
-            undo_action == 'replace'
-        return ReplaceAction(
-            type=undo_action,
-            by=previous_action.previous,
-            current=previous_action.src
-        )
-
-    def clear(self) -> None:
-        self.history.clear()
-        self.index = 0
-
-
 
 
 class ReplaceWidget(QWidget, Ui_ReplaceWidget):
@@ -92,6 +45,7 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
     signal_frame_selected = Signal(int)
     signal_save = Signal()
     signal_discard = Signal()
+    signal_undo = Signal()
     signal_preview_toggled = Signal(bool)
     signal_edition_started = Signal()
 
@@ -155,18 +109,19 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             self.event_move_to_frame_no
         )
         self.tableWidget_replace.installEventFilter(self)
-
-        self.controller.signal_replacements_refreshed.connect(
-            self.event_replace_list_refreshed
-        )
-
         self.pushButton_set_preview.toggled[bool].connect(self.event_set_preview_toggled)
+        self.pushButton_discard.clicked.connect(self.event_discard_modifications)
+        self.pushButton_discard.setEnabled(False)
+        self.pushButton_save.clicked.connect(self.event_save_modifications)
+        self.pushButton_save.setEnabled(False)
+
+        self.controller.signal_replacements_refreshed.connect(self.event_replace_list_refreshed)
+        self.controller.signal_modified_scenes[list].connect(self.event_modified_scenes)
 
         # self.controller.signal_is_saved[str].connect(self.event_is_saved)
 
         # self.installEventFilter(self)
 
-        # self.frame.setFocusPolicy(Qt.FocusPolicy.ClickFocus)
         set_stylesheet(self)
         self.adjustSize()
 
@@ -251,7 +206,6 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.tableWidget_replace.setEnabled(True)
 
 
-
     def event_replace_selected(self):
         log.info("event_replace_selected")
         self.tableWidget_replace.setFocus()
@@ -267,7 +221,6 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         # log.info(f"selected frame at row={row_no}, column {row_no}")
         frame_no = int(self.tableWidget_replace.item(row_no, column_no).text())
         self.signal_frame_selected.emit(frame_no)
-
 
 
     def set_current_frame(
@@ -303,14 +256,6 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
 
 
     def event_copy(self):
-        # log.info(f"event: copy {self.current_frame.no} (by: {self.current_frame.by})")
-        # if self.src_frame_no != self.current_frame.no:
-        #     print("cannot copy this frame")
-        #     self.pushButton_paste.setEnabled(False)
-        #     self.copied = None
-        #     return
-        # self.controller.get_original_frame(self.parent().curre)
-
         self.copied = self.current_frame
         print("copied")
         pprint(self.copied)
@@ -322,7 +267,6 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             log.error(f"circular reference")
             return
         log.info(f"event: paste: {self.current_frame.no} <- {self.copied.frame.no}")
-        # frame_no = self.current_frame.no
         if (
             int(self.copied.frame.scene_key.split(':')[-1])
             != int(self.current_frame.frame.scene_key.split(':')[-1])
@@ -334,11 +278,6 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             print(red("cannot paste to a frame whic is the source of other frames"))
             return False
 
-        # by: int | Frame = (
-        #     self.copied.no
-        #     if self.copied.no != self.copied.frame.no
-        #     else self.copied.frame
-        # )
         print(yellow("copied:"))
         pprint(self.copied)
         print(yellow("paste to:"))
@@ -355,13 +294,9 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.signal_replace_modified.emit(replace_action)
 
 
-
-    def event_undo_replace(self):
-        log.info("event: undo for frame_no: %d")
-        self.signal_replace_modified.emit({
-            'action': 'undo',
-            'dst': int(self.lineEdit_frame_no.text())
-        })
+    def event_undo(self):
+        log.info('undo requested')
+        self.signal_undo.emit()
 
 
     def event_remove(self):
@@ -374,14 +309,11 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
                 remove_dict[scene_no] = []
             remove_dict[scene_no].append(int(self.tableWidget_replace.item(row, 1).text()))
 
-        # if len(selected_frame_nos) > 0:
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
 
         print(f"event_remove: {remove_dict}")
         self.signal_replace_removed.emit(remove_dict)
-
-
 
 
     def block_signals(self, enabled):
@@ -391,6 +323,13 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.pushButton_set_preview.blockSignals(enabled)
         self.pushButton_discard.blockSignals(enabled)
         self.pushButton_save.blockSignals(enabled)
+
+
+    @Slot(list)
+    def event_modified_scenes(self, modified_scenes: list[int]) -> None:
+        enabled = True if len(modified_scenes) > 0 else False
+        self.pushButton_discard.setEnabled(enabled)
+        self.pushButton_save.setEnabled(enabled)
 
 
     def event_discard_modifications(self):
@@ -427,9 +366,10 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             elif key == Qt.Key.Key_V:
                 self.event_paste()
                 return True
-            # elif key == Qt.Key_Z:
-            #     self.event_undo()
-            #     return True
+
+            elif key == Qt.Key.Key_Z:
+                self.event_undo()
+                return True
 
         if key == Qt.Key.Key_F2:
             if self.pushButton_set_preview.isEnabled():

@@ -125,8 +125,8 @@
           </property>
           <property name="icon">
            <iconset>
-            <normaloff>../../icons/grey/undo.svg</normaloff>
-            <normalon>../../icons/purple/undo.svg</normalon>../../icons/grey/undo.svg</iconset>
+            <normaloff>../../icons/purple/undo.svg</normaloff>
+            <normalon>../../icons/purple/undo.svg</normalon>../../icons/purple/undo.svg</iconset>
           </property>
           <property name="checkable">
            <bool>false</bool>

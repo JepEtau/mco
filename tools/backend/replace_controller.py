@@ -1,5 +1,4 @@
 from __future__ import annotations
-from copy import deepcopy
 from import_parsers import *
 
 from pprint import pprint
@@ -10,23 +9,17 @@ from PySide6.QtCore import (
 )
 
 from ._types import PlaylistProperties, ReplaceAction, Selection
-
 from .replace_database import ReplaceDatabase
-
 from .frame_cache import FrameCache, Frame
-from utils.mco_types import Scene
-
 from .db_helpers import consolidate_target
-from ui.window_replace import ReplaceWindow
-
 from .controller_common import CommonController
 from .user_preferences import UserPreferences
 from logger import log
+from ui.window_replace import ReplaceWindow
 
-
+from utils.mco_types import Scene
 from utils.p_print import *
 from parsers import (
-    credit_chapter_keys,
     parse_database,
     key,
     db,
@@ -44,6 +37,8 @@ class ReplaceController(CommonController):
 
     signal_selection_modified = Signal()
     signal_error = Signal(str)
+
+    signal_modified_scenes = Signal(list)
 
 
     def __init__(self):
@@ -82,9 +77,9 @@ class ReplaceController(CommonController):
         self.view.widget_replace.signal_replace_removed.connect(
             self.event_replace_removed
         )
-        self.view.widget_replace.signal_save.connect(
-            self.event_replace_save_requested
-        )
+        self.view.widget_replace.signal_undo.connect(self.event_replace_undo)
+        self.view.widget_replace.signal_save.connect(self.event_replace_save)
+        self.view.widget_replace.signal_discard.connect(self.event_replace_discard)
 
 
         # self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
@@ -167,6 +162,7 @@ class ReplaceController(CommonController):
             scenes=self.scenes,
         )
         self.signal_selection_modified.emit()
+        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
 
 
     def selection(self) -> Selection:
@@ -301,12 +297,6 @@ class ReplaceController(CommonController):
         )
         log.info(f"replace (consolidated): {replace.current.no} <- {by}")
 
-        # else:
-        #     i = self.get_index_from_frame_no(replace.by)
-        #     original_frame: Frame = self.playlist_frames[i]
-        #     print("event_frame_replaced, replaced by a replaced frame")
-        #     pprint(original_frame)
-
         scene: Scene = self.scenes[scene_no]
         self.replace_db.add(
             scene,
@@ -321,6 +311,8 @@ class ReplaceController(CommonController):
         self.replacements.update(self.replace_db.get_replacements(scene))
         self.signal_replacements_refreshed.emit()
         self.signal_reload_frame.emit()
+        print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
+        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
 
 
     @Slot(dict)
@@ -342,10 +334,27 @@ class ReplaceController(CommonController):
         print(self.replace_db.modified_scene_nos())
         self.signal_replacements_refreshed.emit()
         self.signal_reload_frame.emit()
+        print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
+        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
 
 
+    @Slot()
+    def event_replace_undo(self):
+        log.info("undo signal received")
+        self.replace_db.undo()
+        self.replacements.clear()
+        for scene_no in self.playlist_properties().scenes:
+            scene: Scene = self.scenes[scene_no]
+            self.replacements.update(
+                self.replace_db.get_replacements(scene)
+            )
+        self.signal_replacements_refreshed.emit()
+        self.signal_reload_frame.emit()
+        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
 
-    def event_replace_save_requested(self):
+
+    @Slot()
+    def event_replace_save(self):
         print(f"selected scenes: {self.playlist_properties().scenes}")
         print(self.replace_db.modified_scene_nos())
         for scene_no in self.playlist_properties().scenes:
@@ -354,15 +363,25 @@ class ReplaceController(CommonController):
             self.replace_db.save(scene)
 
         self.signal_is_saved.emit('replace')
-        # self.set_modification_status('replace', False)
+        print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
+        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
 
 
-    def event_replace_discard_requested(self):
+
+    def event_replace_discard(self):
         log.info("discard modifications requested")
-        self.replace_db.discard()
+        self.replacements.clear()
+        for scene_no in self.playlist_properties().scenes:
+            scene: Scene = self.scenes[scene_no]
+            self.replace_db.discard(scene)
+            self.replacements.update(
+                self.replace_db.get_replacements(scene)
+            )
         self.signal_replacements_refreshed.emit()
-        # self.set_modification_status('replace', False)
         self.signal_reload_frame.emit()
+        print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
+        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
+
 
 
 

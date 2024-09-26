@@ -74,7 +74,7 @@ class Ui_ReplaceWidget(object):
         sizePolicy1.setHeightForWidth(self.pushButton_discard.sizePolicy().hasHeightForWidth())
         self.pushButton_discard.setSizePolicy(sizePolicy1)
         icon1 = QIcon()
-        icon1.addFile(u"./icons/grey/undo.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon1.addFile(u"./icons/purple/undo.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         icon1.addFile(u"./icons/purple/undo.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
         self.pushButton_discard.setIcon(icon1)
         self.pushButton_discard.setCheckable(False)

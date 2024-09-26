@@ -1,35 +1,30 @@
 from copy import copy
-from functools import partial
 from pprint import pprint
 from logger import log
 from PySide6.QtCore import (
     QEvent,
     QObject,
-    QPoint,
     Qt,
     Signal,
     Slot,
     QItemSelection,
-    QItemSelectionModel,
 )
 from PySide6.QtGui import (
     QBrush,
     QColor,
-    QCursor,
     QKeyEvent,
     QWheelEvent,
 )
 from PySide6.QtWidgets import (
     QTableWidgetItem,
     QWidget,
-    QCheckBox,
-    QHBoxLayout,
 )
 
 from backend._types import Selection
 from .stylesheet import (
+    COLOR_PURPLE,
+    COLOR_TEXT,
     set_stylesheet,
-    set_widget_stylesheet,
 )
 
 from typing import TYPE_CHECKING
@@ -116,7 +111,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.controller.signal_selection_modified.connect(
             self.event_refresh_scenelist
         )
-        # self.controller.signal_scene_modified[dict].connect(self.refresh_modification_status)
+        self.controller.signal_modified_scenes[list].connect(self.refresh_modification_status)
         # self.controller.signal_current_scene_modified[dict].connect(self.event_current_scene_modified)
 
         self.set_enabled(True)
@@ -246,22 +241,19 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             self.tableWidget_scenes.item(row_no, 0).setForeground(QBrush(COLOR_TEXT))
 
 
-    def refresh_modification_status(self, modifications:dict):
+    @Slot(list)
+    def refresh_modification_status(self, modified_scenes: list[int]):
         # Something has been modified, disable selection until saving or discard
-        log.info("refresh modification status")
-        row_no = modifications['scene_no']
-        scene_str = self.tableWidget_scenes.item(row_no, 0).text().replace('*', '')
-        if len(modifications['modifications']) > 0:
-            self.set_enabled(False)
-            self.widget_app_controls.set_save_discard_enabled(True)
-            self.tableWidget_scenes.item(row_no, 0).setText(f"{scene_str}*")
-            log.info("scene no. %d has been modified" % (modifications['scene_no']))
-        else:
-            self.set_enabled(True)
-            self.widget_app_controls.set_save_discard_enabled(False)
-            self.tableWidget_scenes.item(row_no, 0).setText(scene_str)
-            log.info("scene no. %d is not modified" % (modifications['scene_no']))
+        log.info(f"refresh modification status, modified scenes: {modified_scenes}")
+        for row_no in range(self.tableWidget_scenes.rowCount()):
+            scene_str = self.tableWidget_scenes.item(row_no, 0).text().replace('*', '')
+            if row_no in modified_scenes:
+                self.tableWidget_scenes.item(row_no, 0).setText(f"{scene_str}*")
+            else:
+                self.tableWidget_scenes.item(row_no, 0).setText(scene_str)
 
+        self.set_enabled(bool(len(modified_scenes) == 0))
+        self.edition_started(bool(self.tableWidget_scenes.currentRow() in modified_scenes))
 
 
     def refresh_browsing_folder(self, episodes_and_parts:dict):
@@ -357,7 +349,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             for column_no, column in zip(range(len(self.columns)), self.columns):
 
                 if column[0] == 'scene':
-                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(str(k_scene)))
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f"{k_scene:03}"))
                     self.tableWidget_scenes.item(row_no, column_no).setFlags(
                         Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
@@ -449,6 +441,10 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                 #     __layout.addWidget(w)
                 #     self.tableWidget_scenes.setCellWidget(row_no, column_no, widget)
                 #     self.tableWidget_scenes.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                try:
+                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
+                except:
+                    pass
 
             # Append invalid scenes
             if scene['no'] in selection.invalid:

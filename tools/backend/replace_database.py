@@ -2,6 +2,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from configparser import ConfigParser
 from copy import copy, deepcopy
+from logger import log
 import os
 from pprint import pprint
 from import_parsers import *
@@ -13,13 +14,16 @@ if TYPE_CHECKING:
 from parse_db import db
 
 
+
+
 class ReplaceDatabase:
 
     def __init__(self) -> None:
         self._db: dict[str, dict[int, int]] = {}
-        self._is_modified: bool = False
         self.modified_scenes: set[str] = set()
         self.modified_src_scenes: set[str] = set()
+        self.history: list = []
+        self.history_depth: int = 10
 
 
     @staticmethod
@@ -67,6 +71,16 @@ class ReplaceDatabase:
         return {scene_no: dict(sorted(scene_replace.items()))}
 
 
+    def _push_to_history(self):
+        self.history.append({
+            '_db': deepcopy(self._db),
+            'modified_src_scenes': deepcopy(self.modified_src_scenes),
+            'modified_scenes': deepcopy(self.modified_scenes),
+        })
+        if len(self.history) > self.history_depth:
+            self.history = self.history[1:]
+
+
     def add(
         self,
         scene: Scene,
@@ -74,15 +88,16 @@ class ReplaceDatabase:
         current: int,
         by: int
     ) -> None:
+        self._push_to_history()
         replace_dict = self._db[src_scene_key]
         if current != by:
             replace_dict[current] = by
-        self._is_modified = True
         self.modified_src_scenes.add(src_scene_key)
         self.modified_scenes.add(scene['no'])
 
 
     def remove_multiple(self, scene: Scene, frame_nos: list[int]) -> None:
+        self._push_to_history()
         for src_scene in scene['src'].scenes():
             src_scene_key = self._key(src_scene)
             if src_scene_key in self._db:
@@ -105,6 +120,18 @@ class ReplaceDatabase:
 
     def modified_scene_nos(self) -> list[int]:
         return list(self.modified_scenes)
+
+
+    def undo(self) -> None:
+        if len(self.history) > 0:
+            log.info('get previous database')
+            previous = self.history[-1]
+            self._db = previous['_db']
+            self.modified_src_scenes = previous['modified_src_scenes']
+            self.modified_scenes = previous['modified_scenes']
+            self.history = self.history[:-1]
+        else:
+            log.info('history is empty')
 
 
     def save(self, scene: Scene):
@@ -165,24 +192,17 @@ class ReplaceDatabase:
             self.modified_src_scenes.remove(src_scene_key)
 
         self.modified_scenes.remove(scene['no'])
+        self.history.clear()
 
 
     def discard(self, scene: Scene):
         if not self.is_modified(scene):
             return
 
-        modified_src_scenes = copy(self.modified_src_scenes)
         for src_scene in scene['src'].scenes():
             src_scene_key = self._key(src_scene)
-            print(f"scene_key: {src_scene_key}")
-            if src_scene_key not in self.modified_src_scenes:
-                continue
-
-            k_ed, k_ep, k_ch, src_scene_no = src_scene_key.split(':')
-            src_scene_no = int(src_scene_no)
-
-            _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][src_scene_no]
-            _src_scene['replace'] = deepcopy(self._db[src_scene_key])
+            self._db[src_scene_key] = deepcopy(src_scene['scene']['replace'])
             self.modified_src_scenes.remove(src_scene_key)
 
         self.modified_scenes.remove(scene['no'])
+        self.history.clear()
