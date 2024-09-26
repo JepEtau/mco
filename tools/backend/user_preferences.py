@@ -40,26 +40,21 @@ class UserPreferences(QObject):
         screen_width = screens[0].size().width()
         screen_height = screens[0].size().height()
 
-        # (Mandatory) Viewer
-        if self.settings.contains('viewer/screen'):
-            self.preferences['window']['screen'] = 0
+        # (Mandatory) Main window
+        if self.settings.contains('window/screen'):
+            self.preferences['window']['screen'] = self.settings.value('window/screen')
         else:
             self.preferences['window']['screen'] = 0
 
         self.preferences['window']['geometry'] = [0, 0, screen_width, screen_height]
+        try:
+            self.preferences['window']['geometry'] = list(
+                map(lambda x: int(x), self.settings.value('window/geometry').split(':'))
+            )
+        except:
+            pass
 
-        if self.settings.contains('viewer/current_widget'):
-            self.preferences['window']['current_widget'] = self.settings.value('viewer/current_widget')
-        else:
-            self.preferences['window']['current_widget'] = 'selection'
-
-        # Selection: use str keys for debug
-        self.preferences['selection']['geometry'] = [screen_width-500, 20, 0, 0]
-        if self.settings.contains('selection/geometry'):
-            self.preferences['selection']['geometry'] = list(map(lambda x: int(x),
-                self.settings.value("selection/geometry").split(':')))
-            if self.preferences['selection']['geometry'][0] > screen_width and screens_count < 2:
-                self.preferences['selection']['geometry'][0] -= screen_width
+        # Selection
         try:
             self.preferences['selection']['edition'] = ''
             if self.settings.contains('selection/edition'):
@@ -76,28 +71,11 @@ class UserPreferences(QObject):
         if self.settings.contains('selection/part'):
             self.preferences['selection']['k_ch'] = self.settings.value('selection/part')
 
-        self.preferences['selection']['step'] = ''
-        if self.settings.contains('selection/step'):
-            if self.settings.value('selection/step') != '':
-                self.preferences['selection']['step'] = self.settings.value('selection/step')
-
         self.preferences['selection']['scene_no'] = 0
         if self.settings.contains('selection/scene_no'):
             if self.settings.value('selection/scene_no') != '':
                 self.preferences['selection']['scene_no'] = int(self.settings.value('selection/scene_no'))
 
-
-        # Default widget position
-        try: self.preferences['controls']['geometry'] = [100, screen_height-150, 0, 0]
-        except: pass
-        try: self.preferences['curves']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
-        except: pass
-        try: self.preferences['replace']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
-        except: pass
-        try: self.preferences['stabilize']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
-        except: pass
-        try: self.preferences['geometry']['geometry'] = [(screen_width-500), screen_height-300, 0, 0]
-        except: pass
 
         # use the preferences save in the file
         for editor in self.editors:

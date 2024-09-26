@@ -1,5 +1,4 @@
 from __future__ import annotations
-from functools import partial
 from pprint import pprint
 import time
 from PySide6.QtCore import (
@@ -24,10 +23,10 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from backend._types import PlaylistProperties
+from utils.p_print import red
+
 from .stylesheet import (
     set_stylesheet,
-    set_widget_stylesheet,
 )
 
 from .ui.ui_window_replace import Ui_ReplaceWindow
@@ -39,15 +38,11 @@ from .widget_selection import SelectionWidget
 
 from logger import log
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from tools.backend.replace_controller import ReplaceController
 
-from backend.frame_cache import Frame
 from parsers import (
-    credit_chapter_keys,
-    parse_database,
-    key,
     db,
     get_fps,
 )
@@ -97,35 +92,20 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
         self.verticalLayout_2.addLayout(self.horizontalLayout)
         self.setCentralWidget(self.centralwidget)
 
-
-        # self.widget_selection.signal_selection_changed[dict].connect(
-        #     self.event_selection_changed
-        # )
-        # self.signal_k_ep_p_refreshed[dict].connect(
-        #     self.event_k_ep_p_refreshed
-        # )
-
         self.widget_player_ctrl.signal_button_pushed[str].connect(
             self.event_control_button_pressed
         )
         self.widget_player_ctrl.signal_slider_moved[int].connect(
             self.event_move_to_frame_index
         )
-        # self.widget_player_ctrl.signal_preview_options_changed.connect(
-        #     partial(self.event_preview_options_changed, 'controls')
-        # )
 
         self.current_frame_index = 0
         self.playing_frame_start_no = 0
         self.current_frame_no = 0
-        self.timer = QBasicTimer()
+        self.timer: QBasicTimer = QBasicTimer()
         self.timer.stop()
         self.is_closing: bool = False
 
-
-        # self.widget_replace.signal_preview_options_changed.connect(
-        #     partial(self.event_preview_options_changed, 'replace')
-        # )
         self.widget_replace.signal_preview_toggled[bool].connect(
             self.preview_modified
         )
@@ -133,45 +113,25 @@ class ReplaceWindow(QMainWindow, Ui_ReplaceWindow):
             self.event_move_to_frame_no
         )
 
-        # self.widget_player_ctrl.set_initial_options(p)
-        # self.widget_player_ctrl.signal_button_pushed[str].connect(self.event_control_button_pressed)
         self.widget_player_ctrl.signal_slider_moved[int].connect(
             self.event_move_to_frame_index
         )
-        # self.widget_player_ctrl.signal_preview_options_changed.connect(partial(self.event_preview_options_changed, 'controls'))
-        self.controller.signal_ready_to_play.connect(
-            self.event_ready_to_play
-        )
-        self.controller.signal_reload_frame.connect(
-            self.event_reload_frame
-        )
-        self.controller.signal_error[str].connect(
-            self.error_message
-        )
-        # for w in self.widgets.values():
-        #     w.blockSignals(True)
-        #     w.hide()
-        #     w.blockSignals(False)
+        self.controller.signal_ready_to_play.connect(self.event_ready_to_play)
+        self.controller.signal_reload_frame.connect(self.event_reload_frame)
+        self.controller.signal_error[str].connect(self.error_message)
 
         self.show()
         self.installEventFilter(self)
 
 
-
     def apply_user_preferences(self, user_preferences: dict):
         try:
-            s = user_preferences['window']
-            self.setGeometry(
-                s['geometry'][0],
-                s['geometry'][1],
-                s['geometry'][2],
-                s['geometry'][3]
-            )
+            w: list[int] = user_preferences['window']
+            self.setGeometry(*w['geometry'])
         except:
             self.setGeometry(0,0,1920,1080)
-        self.setGeometry(50,50,1800,800)
-
         self.widget_replace.apply_user_preferences(user_preferences)
+        self.widget_selection.apply_user_preferences(user_preferences)
 
 
     def get_user_preferences(self) -> dict:

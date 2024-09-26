@@ -181,6 +181,8 @@ class ReplaceDatabase:
             # Set new values
             for no, by in self._db[src_scene_key].items():
                 if no != by:
+                    if not config_replace.has_section(k_section):
+                        config_replace.add_section(k_section)
                     config_replace.set(k_section, f"{no}", f"{by}")
 
             # Write to the database

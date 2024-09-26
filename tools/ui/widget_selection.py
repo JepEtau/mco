@@ -1,5 +1,6 @@
 from copy import copy
 from pprint import pprint
+import sys
 from logger import log
 from PySide6.QtCore import (
     QEvent,
@@ -68,7 +69,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
         self.previous_position = None
         self.is_modified = False
-        self.initial_scene_no = None
+        self.initial_scene_no: int = -1
         self.previous_selection = [0]
 
         # Initialize widgets
@@ -150,7 +151,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
 
 
-    def set_initial_options(self, preferences:dict):
+    def apply_user_preferences(self, preferences:dict):
         s = preferences['selection']
         log.info(f"set_initial_options: {s['episode']}, {s['k_ch']}")
         print("%s:set_initial_options: " % (__name__), s)
@@ -188,12 +189,9 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         try:
             self.initial_scene_no = s['scene_no']
         except:
-            self.initial_scene_no = None
+            pass
 
-        # Geometry
         self.adjustSize()
-
-
 
 
     def event_current_scene_modified(self, modifications:dict):
@@ -461,12 +459,12 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.set_enabled(True)
 
         if len(scenes) > 0:
-            if self.initial_scene_no is not None:
-                log.info(f"select scene no. {self.initial_scene_no}")
+            if self.initial_scene_no != -1:
+                log.info(f"initial: select scene no. {self.initial_scene_no}")
                 self.tableWidget_scenes.selectRow(self.initial_scene_no)
-                self.initial_scene_no = None
+                self.initial_scene_no = -1
             else:
-                log.info("select scene no. 0")
+                log.info("initial: select scene no. 0")
                 self.tableWidget_scenes.selectRow(0)
 
         self.comboBox_episode.blockSignals(False)
