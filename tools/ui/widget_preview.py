@@ -32,7 +32,10 @@ from backend.frame_cache import Frame
 class PreviewWidget(QWidget):
     signal_wheel_event = Signal(QWheelEvent)
 
-    def __init__(self, parent: QWidget | None) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None
+    ) -> None:
         super().__init__(parent)
 
         self.frame: Frame = None
@@ -45,18 +48,6 @@ class PreviewWidget(QWidget):
         self.setSizePolicy(sizePolicy)
         self.setMinimumSize(QSize(300, 300))
         self.setStyleSheet(u"background-color: rgb(0, 0, 0);")
-
-        # layout = QVBoxLayout(self)
-        # layout.setContentsMargins(0, 0, 0, 0)
-        # layout.setSpacing(0)
-
-        # self.verticalLayout = QVBoxLayout(self)
-        # self.verticalLayout.setObjectName(u"verticalLayout")
-        # self.verticalSpacer = QSpacerItem(
-        #     20, 279, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding
-        # )
-
-        # self.verticalLayout.addItem(self.verticalSpacer)
 
 
     @staticmethod
@@ -73,7 +64,6 @@ class PreviewWidget(QWidget):
             frame.img = None
         self.frame = frame
         self.repaint()
-
 
 
     def paintEvent(self, event: QPaintEvent):

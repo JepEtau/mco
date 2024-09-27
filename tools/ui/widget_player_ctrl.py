@@ -31,12 +31,13 @@ from PySide6.QtWidgets import (
     QSlider,
 )
 from .ui.ui_widget_player_ctrl import Ui_PlayerControlWidget
-from backend._types import PlaylistProperties
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 if TYPE_CHECKING:
-    from tools.backend.replace_controller import ReplaceController
+    from backend.replace_controller import ReplaceController
+    from backend.geometry_controller import GeometryController
 
 from backend.frame_cache import Frame
+from backend._types import AppType
 
 
 class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
@@ -45,7 +46,12 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
     signal_slider_moved = Signal(int)
 
 
-    def __init__(self, parent: QWidget | None, controller) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None,
+        controller,
+        app_type: AppType
+    ) -> None:
         super().__init__(parent)
         self.setupUi(self)
 
@@ -84,6 +90,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.copied_frame_no = -1
         self.current_key_pressed = None
         self.preview_enabled: bool = True
+        self.app_type: AppType = app_type
 
 
         # Signals
@@ -91,7 +98,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.pushButton_loop.toggled.connect(self.event_loop_toggled)
         self.slider_frames.valueChanged.connect(self.event_slider_moved)
 
-        self.controller: ReplaceController = controller
+        self.controller: ReplaceController | GeometryController = controller
         self.controller.signal_ready_to_play.connect(
             self.event_refresh_slider
         )
@@ -149,29 +156,21 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.lineEdit_fno.setText(f"{no}")
         self.lineEdit_frame_index.setText(f"{i}")
 
-        if original_frame is not None:
-            self.lineEdit_fno.setStyleSheet(self.normal_style)
-            self.lineEdit_frame_no.setText(f"{frame.no}")
-            self.lineEdit_frame_no.setStyleSheet(self.replaced_style)
+        if self.app_type == 'replace':
+            if original_frame is not None:
+                self.lineEdit_fno.setStyleSheet(self.normal_style)
+                self.lineEdit_frame_no.setText(f"{frame.no}")
+                self.lineEdit_frame_no.setStyleSheet(self.replaced_style)
 
-        elif self.controller.is_frame_used_for_replace(frame):
-            self.lineEdit_fno.setStyleSheet(self.initial_style)
-            self.lineEdit_frame_no.setStyleSheet(self.normal_style)
-            self.lineEdit_frame_no.clear()
+            elif self.controller.is_frame_used_for_replace(frame):
+                self.lineEdit_fno.setStyleSheet(self.initial_style)
+                self.lineEdit_frame_no.setStyleSheet(self.normal_style)
+                self.lineEdit_frame_no.clear()
 
-        else:
-            self.lineEdit_fno.setStyleSheet(self.normal_style)
-            self.lineEdit_frame_no.setStyleSheet(self.normal_style)
-            self.lineEdit_frame_no.clear()
-
-
-    # def refresh(self, values:dict):
-    #     print(red("refresh"))
-    #     self.lineEdit_frame_no.setText(f"{values['frame_no']}")
-    #     self.lineEdit_frame_index.setText(f"{values['frame_index']}")
-    #     self.slider_frames.setMaximum(values['count'])
-    #     self.slider_frames.setTickPosition(values['position'])
-    #     self.refresh_status(values['status'])
+            else:
+                self.lineEdit_fno.setStyleSheet(self.normal_style)
+                self.lineEdit_frame_no.setStyleSheet(self.normal_style)
+                self.lineEdit_frame_no.clear()
 
 
     def refresh_status(self, status:str):
@@ -197,8 +196,6 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.slider_frames.blockSignals(True)
         self.move_slider_to(value)
         self.slider_frames.blockSignals(False)
-
-
 
 
     def set_playing_frame_properties(self, current_index):
@@ -265,7 +262,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         frame_no = self.frame_nos[frame_index]
         self.lineEdit_frame_no.setText(f"{frame_no}")
         self.lineEdit_frame_index.setText(f"-")
-        log.info(f"event, slider moved to frame {frame_no}")
+        # log.info(f"event, slider moved to frame {frame_no}")
         self.signal_slider_moved.emit(self.slider_frames.value())
 
 
@@ -297,7 +294,6 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             self.signal_button_pushed.emit('play')
 
 
-
     def event_stop(self):
         self.refresh_status('stopped')
         self.pushButton_play_pause.blockSignals(True)
@@ -309,6 +305,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.slider_frames.blockSignals(False)
         # self.slider_frames.setFocus()
         self.signal_button_pushed.emit('stop')
+
 
     def toggle_play_pause(self):
         log.info(f"Toggle play/pause, current status: {self.status}")
@@ -334,6 +331,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
     def event_loop_toggled(self, checked):
         pass
+
 
     def is_loop_enabled(self):
         return self.pushButton_loop.isChecked()
@@ -385,7 +383,6 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             return True
 
 
-
     def event_key_released(self, event:QKeyEvent) -> bool:
         key = event.key()
         if key == Qt.Key.Key_Shift:
@@ -417,6 +414,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             elif event.angleDelta().y() < 0:
                 self.set_slider_to_following_tick()
             return True
+
         else:
             # Select next/previous frame
             if event.angleDelta().y() > 0:
@@ -429,7 +427,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        verbose = True
+        verbose = False
         if event.type() == QEvent.Type.KeyPress:
             if verbose:
                 print(lightcyan(f"eventFilter: widget_{self.objectName()}: keypress {event.key()}"))
@@ -451,9 +449,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
                 return self._parent.keyPressEvent(event)
 
         elif event.type() == QEvent.Type.Wheel:
-            # print(lightcyan(f"eventFilter: widget_controls: wheel"))
             if self.event_wheel(event):
-                # print(f"\twheel: accepted")
                 event.accept()
                 return True
             else:
@@ -464,9 +460,3 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
                     return
 
         return super().eventFilter(watched, event)
-    # def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-    #     # print("  * eventFilter: widget_%s: " % (self.objectName()), event.type())
-    #     if event.type() == QEvent.Wheel:
-    #         return self.wheel_event(event)
-    #
-

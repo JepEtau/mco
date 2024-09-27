@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pprint import pprint
 from logger import log
 from import_parsers import *
-from backend._types import ReplaceAction, ReplaceActionType
+from typing import TYPE_CHECKING, Any
 from utils.p_print import *
 
 from PySide6.QtCore import (
@@ -21,21 +21,19 @@ from PySide6.QtWidgets import (
 )
 
 from .ui.ui_widget_replace import Ui_ReplaceWidget
-from typing import TYPE_CHECKING, Any
+from .stylesheet import set_stylesheet
 if TYPE_CHECKING:
-    from tools.backend.replace_controller import ReplaceController
-from .stylesheet import (
-    set_stylesheet,
-    set_widget_stylesheet,
-)
+    from backend.replace_controller import ReplaceController
+from backend._types import ReplaceAction
 from backend.frame_cache import Frame
+
+
 
 @dataclass(slots=True)
 class CurrentFrame:
     no: int
     frame: Frame
     original: Frame
-
 
 
 
@@ -86,7 +84,6 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.tableWidget_replace.clearContents()
         self.tableWidget_replace.setRowCount(0)
 
-
         self.alignment = [
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
             Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
@@ -118,14 +115,8 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.controller.signal_replacements_refreshed.connect(self.event_replace_list_refreshed)
         self.controller.signal_modified_scenes[list].connect(self.event_modified_scenes)
 
-        # self.controller.signal_is_saved[str].connect(self.event_is_saved)
-
-        # self.installEventFilter(self)
-
         set_stylesheet(self)
         self.adjustSize()
-
-
 
 
     def block_signals(self, enabled):

@@ -8,6 +8,7 @@ from PySide6.QtGui import (
 )
 
 
+AppType = Literal['replace', 'geometry', 'stabilization']
 
 @dataclass(slots=True)
 class Frame:

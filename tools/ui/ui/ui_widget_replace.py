@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_replace.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.2
+## Created by: Qt User Interface Compiler version 6.7.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -191,7 +191,7 @@ class Ui_ReplaceWidget(object):
         self.tableWidget_replace.setFrameShadow(QFrame.Shadow.Sunken)
         self.tableWidget_replace.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.tableWidget_replace.setEditTriggers(QAbstractItemView.EditTrigger.SelectedClicked)
-        self.tableWidget_replace.setProperty("showDropIndicator", False)
+        self.tableWidget_replace.setProperty(u"showDropIndicator", False)
         self.tableWidget_replace.setDragDropOverwriteMode(False)
         self.tableWidget_replace.setSelectionMode(QAbstractItemView.SelectionMode.ContiguousSelection)
         self.tableWidget_replace.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)

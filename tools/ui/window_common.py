@@ -31,75 +31,34 @@ from .stylesheet import (
 
 from .widget_player_ctrl import PlayerCtrlWidget
 from .widget_preview import PreviewWidget
-from .widget_replace import ReplaceWidget
 from .widget_selection import SelectionWidget
 
 from logger import log
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
-    from tools.backend.replace_controller import ReplaceController
-
+    from backend.common_controller import CommonController
+from backend._types import AppType
 from parsers import (
     db,
     get_fps,
 )
 
 
-class ReplaceWindow(QMainWindow):
+
+class CommonWindow(QMainWindow):
     signal_k_ep_p_refreshed = Signal(dict)
     signal_preview_modified = Signal(dict)
 
 
     def __init__(
         self,
-        ui=None,
-        controller: ReplaceController=None
+        controller = None,
+        app_type: AppType = '',
     ):
         super().__init__()
+        self.controller: type[CommonController] = controller
         self.widgets: dict[str, QWidget] = {}
-        self.controller: ReplaceController = controller
-
-        self.centralwidget = QWidget(self)
-        self.verticalLayout_2 = QVBoxLayout(self.centralwidget)
-        self.horizontalLayout = QHBoxLayout()
-        self.verticalLayout = QVBoxLayout()
-
-        set_stylesheet(self)
-
-        # Preview
-        self.widget_preview = PreviewWidget(self.centralwidget)
-        self.verticalLayout.addWidget(self.widget_preview)
-
-        # Player control
-        self.widget_player_ctrl = PlayerCtrlWidget(
-            self, controller, app_type='replace'
-        )
-        self.verticalLayout.addWidget(self.widget_player_ctrl)
-        self.horizontalLayout.addLayout(self.verticalLayout)
-
-        # self.widget_replace = ReplaceWidget(self.centralwidget)
-        # Replace
-        self.widget_replace: ReplaceWidget = ReplaceWidget(self, controller)
-        self.widgets['replace'] = self.widget_replace
-        self.horizontalLayout.addWidget(self.widget_replace)
-
-        # Selection
-        self.widget_selection = SelectionWidget(
-            self, controller, app_type='replace'
-        )
-        self.widgets['selection'] = self.widget_selection
-        self.horizontalLayout.addWidget(self.widget_selection)
-
-        self.verticalLayout_2.addLayout(self.horizontalLayout)
-        self.setCentralWidget(self.centralwidget)
-
-        self.widget_player_ctrl.signal_button_pushed[str].connect(
-            self.event_control_button_pressed
-        )
-        self.widget_player_ctrl.signal_slider_moved[int].connect(
-            self.event_move_to_frame_index
-        )
 
         self.current_frame_index = 0
         self.playing_frame_start_no = 0
@@ -108,11 +67,26 @@ class ReplaceWindow(QMainWindow):
         self.timer.stop()
         self.is_closing: bool = False
 
-        self.widget_replace.signal_preview_toggled[bool].connect(
-            self.preview_modified
+
+        self.app_type: AppType = app_type
+        self.centralwidget = QWidget(self)
+
+        # Common widgets
+        self.widget_preview = PreviewWidget(self.centralwidget)
+        self.widget_player_ctrl = PlayerCtrlWidget(
+            self, controller, app_type=app_type
         )
-        self.widget_replace.signal_frame_selected[int].connect(
-            self.event_move_to_frame_no
+        self.widget_selection = SelectionWidget(
+            self, controller, app_type=app_type
+        )
+
+        self.widgets['selection'] = self.widget_selection
+
+        self.widget_player_ctrl.signal_button_pushed[str].connect(
+            self.event_control_button_pressed
+        )
+        self.widget_player_ctrl.signal_slider_moved[int].connect(
+            self.event_move_to_frame_index
         )
 
         self.widget_player_ctrl.signal_slider_moved[int].connect(
@@ -122,9 +96,6 @@ class ReplaceWindow(QMainWindow):
         self.controller.signal_reload_frame.connect(self.event_reload_frame)
         self.controller.signal_error[str].connect(self.error_message)
 
-        self.show()
-        self.installEventFilter(self)
-
 
     def apply_user_preferences(self, user_preferences: dict):
         try:
@@ -132,7 +103,6 @@ class ReplaceWindow(QMainWindow):
             self.setGeometry(*w['geometry'])
         except:
             self.setGeometry(0,0,1920,1080)
-        self.widget_replace.apply_user_preferences(user_preferences)
         self.widget_selection.apply_user_preferences(user_preferences)
 
 
@@ -165,57 +135,23 @@ class ReplaceWindow(QMainWindow):
             return
         self.close()
 
-    def event_selection_scenes_refreshed(self):
-        pass
-
 
     def refresh_available_selection(self, selection: dict):
-        # self.widget_replace.
         print("refresh selection selection")
-        # pprint(selection)
         self.widget_selection.refresh_available_selection(selection)
-
-
-
-    def event_edition_started(self):
-        log.info(f"Edition started")
-        self.widget_selection.edition_started(True)
-
-
-    @Slot(bool)
-    def preview_modified(self, enabled: bool) -> None:
-        log.info(f"widget preview changed to {enabled}")
-
-        self.signal_preview_modified.emit({'enabled': enabled})
-
-        self.preview_enabled = enabled
-        self.widget_player_ctrl.set_preview_enabled(enabled)
-        self.display_frame()
-
-    # def get_preview_options(self):
-    #     log.info("get preview options")
-    #     preview_options = dict()
-    #     for e, w in self.widgets.items():
-    #         preview_options.update({e: w.get_preview_options()})
-    #     return preview_options
-
-
-    # def event_preview_options_consolidated(self, new_preview_settings):
-    #     # log.info("preview options have been consolidated, refresh widgets")
-    #     self.widget_replace.refresh_preview_options(new_preview_settings)
-    #     # self.widget_painter.refresh_preview_options(new_preview_settings)
 
 
     def display_frame(self):
         frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
-        self.widget_replace.set_current_frame(frame, original_frame)
         self.widget_player_ctrl.refresh_values(frame, original_frame)
         self.widget_preview.display_frame(frame)
+
 
     @Slot()
     def event_reload_frame(self):
         log.info("reload frame")
         self.display_frame()
+
 
     @Slot()
     def event_ready_to_play(self):
@@ -277,7 +213,7 @@ class ReplaceWindow(QMainWindow):
 
 
     def event_move_to_frame_index(self, frame_index):
-        log.info(f"move to frame {frame_index}")
+        # log.info(f"move to frame {frame_index}")
         self.current_frame_index = frame_index
         self.display_frame()
 
@@ -291,56 +227,8 @@ class ReplaceWindow(QMainWindow):
     @Slot(str)
     def error_message(self, message: str):
         msg = QMessageBox()
-        msg.setIcon(QMessageBox.Critical)
+        msg.setIcon(QMessageBox.Icon.Critical)
         msg.setText("Error")
         msg.setInformativeText(message)
         msg.setWindowTitle("Error")
         msg.exec_()
-
-
-    def keyPressEvent(self, event: QKeyEvent) -> None:
-        key = event.key()
-        modifiers = event.modifiers()
-        self.current_key_pressed = None
-        print(f"{__name__} received: {key}")
-
-        for w in (
-            self.widget_player_ctrl,
-            self.widget_replace,
-            # self.widget_preview,
-            self.widget_selection
-        ):
-            if w.event_key_pressed(event):
-                print(f"{__name__} {key} forwarded to {w.objectName()}")
-                return True
-        return super().keyPressEvent(event)
-
-
-    def keyReleaseEvent(self, event: QKeyEvent) -> None:
-        for w in (
-            self.widget_player_ctrl,
-            self.widget_replace,
-            # self.widget_preview,
-            self.widget_selection
-        ):
-            try:
-                w.event_key_released(event)
-            except:
-                pass
-
-        return super().keyReleaseEvent(event)
-
-
-
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.Wheel:
-            for w in (
-                self.widget_player_ctrl,
-                self.widget_replace,
-                # self.widget_preview,
-                # self.widget_selection
-            ):
-                if w.event_wheel(event):
-                    return True
-
-        return super().eventFilter(watched, event)

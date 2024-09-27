@@ -21,7 +21,6 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from backend._types import Selection
 from .stylesheet import (
     COLOR_PURPLE,
     COLOR_TEXT,
@@ -30,7 +29,14 @@ from .stylesheet import (
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from tools.backend.replace_controller import ReplaceController
+    from backend.replace_controller import ReplaceController
+    from backend.geometry_controller import GeometryController
+
+from backend._types import (
+    AppType,
+    Selection,
+)
+
 from utils.mco_types import Scene
 from .ui.ui_widget_selection import Ui_SelectionWidget
 from import_parsers import *
@@ -48,24 +54,25 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
     signal_selected_scene_changed = Signal(dict)
     signal_close = Signal()
 
-    def __init__(self, parent: QWidget | None, controller) -> None:
+    def __init__(
+        self,
+        parent: QWidget | None,
+        controller,
+        app_type: AppType
+    ) -> None:
         super().__init__()
         self.setupUi(self)
-        self.controller: ReplaceController = controller
+        self.controller: ReplaceController | GeometryController = controller
         self.setObjectName('selection')
 
         # Setup and patch ui
         self.setAutoFillBackground(True)
 
         # Internal variables
-        self.__parent = parent
+        self._parent = parent
         self.episodes_and_parts = {}
         self.comboBox_episode.clear()
         self.comboBox_part.clear()
-
-        # eps = [f"{ep}" for ep in range(1, 40)]
-        # self.comboBox_episode.addItems(eps)
-        # self.comboBox_part.addItems(all_chapter_keys())
 
         self.previous_position = None
         self.is_modified = False
@@ -315,7 +322,6 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.tableWidget_scenes.blockSignals(True)
 
         selection: Selection = self.controller.selection()
-
 
         # Episode
         k_ep = selection.k_ep
@@ -609,7 +615,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                 event.accept()
                 return True
             else:
-                return self.__parent.event_key_pressed(event)
+                return self._parent.event_key_pressed(event)
 
 
         if event.type() == QEvent.Type.KeyRelease:
@@ -618,7 +624,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                 event.accept()
                 return True
             else:
-                return self.__parent.event_key_released(event)
+                return self._parent.event_key_released(event)
 
         if event.type() == QEvent.Type.Wheel:
             if event.angleDelta().y() > 0:
