@@ -23,7 +23,11 @@ from utils.path_utils import absolute_path
 from video.concat_frames import get_video_filename
 
 
-def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
+def consolidate_scene(
+    scene: Scene,
+    watermark: bool = False,
+    evaluation: bool = False
+) -> None:
     """This procedure is used to simplify a single scene and add
     properties to process it: removes unecessary property, add
     paths to input/output files, update frames no. depending on edition, etc.
@@ -203,6 +207,16 @@ def consolidate_scene(scene: Scene, watermark: bool = False) -> None:
         if scene['task'].hashcode != '':
             suffix = f"_{scene['task'].hashcode}"
         suffix += f"_{task_name}"
+
+    # Append the model name to evaluate models: only for upscale task
+    if evaluation and task_name == 'upscale':
+        sequence: str = scene_filters[task_name].sequence
+        for t in (
+            ':cuda', ':trt', ':fp16', ':fp32'
+        ):
+            sequence.replace(t, '')
+        model_name=scene_filters['upscale'].sequence.split(',')[-1]
+        suffix = f"{suffix}_{model_name}"
 
     scene['task'].video_file = absolute_path(
         os.path.join(

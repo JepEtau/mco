@@ -70,6 +70,13 @@ def main():
         help="Watermark each scene with scene no."
     )
 
+    parser.add_argument(
+        "--eval",
+        action="store_true",
+        required=False,
+        help="Append the model name to the output filename"
+    )
+
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -125,7 +132,8 @@ def main():
         scene_max=arguments.scene_max,
         watermark=arguments.watermark,
         edition=arguments.edition,
-        debug=arguments.debug
+        debug=arguments.debug,
+        evaluation=arguments.eval,
     )
 
 

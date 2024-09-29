@@ -46,7 +46,8 @@ def upscale_scenes(
     scene_max: int = -1,
     watermark: bool = False,
     edition: str | None = None,
-    debug: bool = False
+    debug: bool = False,
+    evaluation: bool = False,
 ):
     k_ep = key(episode)
     k_ed = edition
@@ -104,7 +105,7 @@ def upscale_scenes(
             scene['task'] = ProcessingTask(name=task)
 
             # Generate frames for this scene
-            consolidate_scene(scene=scene, watermark=watermark)
+            consolidate_scene(scene=scene, watermark=watermark, evaluation=evaluation)
 
             if debug:
                 print(lightcyan("======================= consolidate scene for upscale ============================="))
