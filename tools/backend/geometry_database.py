@@ -5,19 +5,25 @@ from copy import copy, deepcopy
 from logger import log
 import os
 from pprint import pprint
-from import_parsers import *
-from utils.mco_types import Scene
+from ._types import Selection, TargetSceneGeometry
+from utils.mco_types import (
+    ChapterGeometry,
+    Scene,
+    SceneGeometry,
+    ChapterVideo,
+)
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from scene.src_scene import SrcScene
 from parsers import (
+    Chapter,
     credit_chapter_keys,
     db,
 )
 
 
 
-class ReplaceDatabase:
+class GeometryDatabase:
 
     def __init__(self) -> None:
         self._db: dict[str, dict[int, int]] = {}
@@ -34,44 +40,87 @@ class ReplaceDatabase:
         return f"{':'.join(key[:3])}:{key[-1]:03}"
 
 
+    def initialize(self, selection: Selection) -> None:
+        scenes: list[Scene] = selection.scenes
+        for scene in scenes:
+            # Use the primary scene to avoid conflicts between
+            # scenes which share the same scene as source
+            src_scene = scene['src'].primary_scene()
+            src_scene_key: str = self._key(src_scene)
+            if (
+                src_scene_key not in self._db
+                and 'geometry' in src_scene['scene']
+            ):
+                self._db[src_scene_key] = src_scene['scene']['geometry']
+
+        k_ep, k_ch = selection.k_ep, selection.k_ch
+
+        # TODO: verify this for g_asuivre and g_documentaire
+        chapter: ChapterVideo
+        if k_ch in ('g_debut', 'g_fin'):
+            chapter = db[k_ch]['video']
+            self._db[k_ch] = chapter['geometry']
+
+        else:
+            chapter = db[k_ep]['video']['target'][k_ch]
+            self._db[':'.join((k_ep, k_ch.replace('g_', '')))] = chapter['geometry']
+        pprint(self._db)
+
+    def clear(self) -> None:
+        self._db.clear()
+        self.modified_scenes.clear()
+        self.modified_src_scenes.clear()
+        self.history.clear()
+
+
     def get(self, src_scene: SrcScene, f_no: int, initial: bool=False) -> int:
-        """Returns the frame no. used to replace this frame
-        """
         scene: Scene = src_scene['scene']
         try:
             if initial:
-                return scene['replace'][f_no]
+                return scene['geometry'][f_no]
         except:
             pass
 
         _key = self._key(src_scene)
         try:
-            replace_dict = self._db[_key]
+            geometry_dict = self._db[_key]
         except:
             try:
-                self._db[_key] = deepcopy(scene['replace'])
+                self._db[_key] = deepcopy(scene['geometry'])
             except:
                 self._db[_key] = {}
-        replace_dict = self._db[_key]
+        geometry_dict = self._db[_key]
 
         return (
-            replace_dict[f_no]
-            if f_no in replace_dict
+            geometry_dict[f_no]
+            if f_no in geometry_dict
             else f_no
         )
 
 
-    def get_replacements(
+    def get_geometry(
         self,
         scene: Scene,
-    ) -> dict[int, dict[int, int]]:
-        scene_replace: dict[int, int] = {}
+    ) -> dict[int, TargetSceneGeometry]:
         scene_no: int = scene['no']
-        for src_scene in scene['src'].scenes():
-            _key = self._key(src_scene)
-            if _key in self._db:
-                scene_replace.update(self._db[_key])
-        return {scene_no: dict(sorted(scene_replace.items()))}
+        src_scene = scene['src'].primary_scene()
+        src_scene_key: str = self._key(src_scene)
+
+        k_ep: str = scene['dst']['k_ep']
+        k_ch: str = scene['dst']['k_ch']
+        chapter_geometry: ChapterGeometry
+        print(self._db.keys())
+        if k_ch in ('g_debut', 'g_fin'):
+            chapter_geometry = self._db[k_ch]
+        else:
+            chapter_geometry = self._db[':'.join((k_ep, k_ch.replace('g_', '')))]
+
+        return {
+            scene_no: TargetSceneGeometry(
+                chapter=chapter_geometry,
+                scene=self._db[src_scene_key]
+            )
+        }
 
 
     def _push_to_history(self):
@@ -83,32 +132,6 @@ class ReplaceDatabase:
         if len(self.history) > self.history_depth:
             self.history = self.history[1:]
 
-
-    def add(
-        self,
-        scene: Scene,
-        src_scene_key: str,
-        current: int,
-        by: int
-    ) -> None:
-        self._push_to_history()
-        replace_dict = self._db[src_scene_key]
-        if current != by:
-            replace_dict[current] = by
-        self.modified_src_scenes.add(src_scene_key)
-        self.modified_scenes.add(scene['no'])
-
-
-    def remove_multiple(self, scene: Scene, frame_nos: list[int]) -> None:
-        self._push_to_history()
-        for src_scene in scene['src'].scenes():
-            src_scene_key = self._key(src_scene)
-            if src_scene_key in self._db:
-                for f_no in frame_nos:
-                    if f_no in self._db[src_scene_key]:
-                        del self._db[src_scene_key][f_no]
-            self.modified_src_scenes.add(src_scene_key)
-        self.modified_scenes.add(scene['no'])
 
 
     def is_modified(self, scene: Scene) -> bool:

@@ -129,11 +129,17 @@ def main():
             k_ep_or_g = chapter if chapter in ('g_debut', 'g_fin') else k_ep
             _k_ed = 'k' if db[k_ep_or_g]['audio']['lang'] == 'fr' else 'f'
             print(f"  reference: {_k_ed}:{k_ep}:{chapter}")
-            for s in db[k_ep_or_g]['video'][_k_ed][chapter]['scenes']:
-                ref_count += s['count']
-
+            if _k_ed in db[k_ep_or_g]['video']:
+                for s in db[k_ep_or_g]['video'][_k_ed][chapter]['scenes']:
+                    ref_count += s['count']
+            else:
+                print("Ignore reference as it has not been parsed")
         print(f"  Reference: {ref_count}")
         print(f"  Target: {target_count}")
+
+        for scene in scenes:
+            print(lightcyan(f"Scene no. {scene['no']}"))
+            pprint(scene)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)

@@ -44,7 +44,7 @@ class Ui_GeometryWidget(object):
         self.frame.setFrameShape(QFrame.Shape.Panel)
         self.frame.setFrameShadow(QFrame.Shadow.Plain)
         self.verticalLayout_2 = QVBoxLayout(self.frame)
-        self.verticalLayout_2.setSpacing(6)
+        self.verticalLayout_2.setSpacing(12)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.verticalLayout_2.setContentsMargins(6, 6, 6, 6)
         self.horizontalLayout = QHBoxLayout()

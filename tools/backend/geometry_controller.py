@@ -8,14 +8,16 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from ._types import PlaylistProperties, ReplaceAction, Selection
+from tools.backend.geometry_database import GeometryDatabase
+
+from ._types import PlaylistProperties, ReplaceAction, Selection, TargetSceneGeometry
 from .replace_database import ReplaceDatabase
 from .frame_cache import FrameCache, Frame
 from .common_controller import CommonController
 from .user_preferences import UserPreferences
 from logger import log
 from ui.window_geometry import GeometryWindow
-from utils.mco_types import Scene
+from utils.mco_types import Scene, SceneGeometry
 from utils.p_print import *
 from parsers import (
     db,
@@ -27,7 +29,6 @@ class GeometryController(CommonController):
     signal_preview_options_consolidated = Signal(dict)
     signal_replacements_refreshed = Signal()
 
-
     def __init__(self):
         super().__init__()
 
@@ -35,8 +36,10 @@ class GeometryController(CommonController):
         self.user_preferences: UserPreferences = UserPreferences(tool='geometry')
 
         self.task_name: TaskName = 'lr'
-        # self.geometry_db = GeometryDatabase()
+        self.geometry_db = GeometryDatabase()
         self.frame_cache: FrameCache = FrameCache(replace_db=None)
+
+        self.selection_geometry: dict[int, TargetSceneGeometry] = {}
 
 
     def set_view(self, view: GeometryWindow):
@@ -48,6 +51,13 @@ class GeometryController(CommonController):
 
     def k_ep_p_changed(self, selection: Selection):
         super().k_ep_p_changed(selection)
+
+        # Let's consolidate all geometry from all scenes
+        log.info("Initialize geometry database")
+        self.geometry_db.clear()
+        self.geometry_db.initialize(self.selection())
+
+        self.signal_selection_modified.emit()
 
 
     def event_selected_scene_changed(self, selected: dict):
@@ -101,6 +111,17 @@ class GeometryController(CommonController):
         self.current_frame = None
         self.current_scene_no = selected['scenes'][0]
 
+        # Geometry
+        self.selection_geometry.clear()
+        for scene_no in selected['scenes']:
+            scene: Scene = self.scenes[scene_no]
+            self.selection_geometry.update(
+                self.geometry_db.get_geometry(scene)
+            )
+
+        pprint(self.selection_geometry)
+        import sys
+        sys.exit()
         # self.signal_preview_options_consolidated.emit(self.preview_options)
         self.signal_ready_to_play.emit()
 
@@ -112,3 +133,6 @@ class GeometryController(CommonController):
     def preview_modified(self, preview_settings: dict):
         self.preview_enabled = preview_settings['enabled']
 
+
+    def get_scene_geometry(self, frame: Frame) -> SceneGeometry:
+        self.selection_geometry[frame.scene_key]

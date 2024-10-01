@@ -189,7 +189,6 @@ class CommonController(QObject, metaclass=QMeta):
             task='lr',
             scenes=self.scenes,
         )
-        self.signal_selection_modified.emit()
 
 
     @abstractmethod

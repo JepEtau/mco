@@ -34,7 +34,7 @@ class ReplaceController(CommonController):
         self.current_task = ''
         self.replace_db = ReplaceDatabase()
         self.frame_cache: FrameCache = FrameCache(self.replace_db)
-        self.replacements: dict[int, dict[int, int]] = {}
+        self.selection_replacements: dict[int, dict[int, int]] = {}
 
 
     def set_view(self, view: ReplaceWindow):
@@ -51,6 +51,7 @@ class ReplaceController(CommonController):
 
     def k_ep_p_changed(self, selection: Selection):
         super().k_ep_p_changed(selection)
+        self.signal_selection_modified.emit()
         self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
 
 
@@ -105,10 +106,10 @@ class ReplaceController(CommonController):
         self.current_scene_no = selected['scenes'][0]
 
         # Replace
-        self.replacements.clear()
+        self.selection_replacements.clear()
         for scene_no in selected['scenes']:
             scene: Scene = self.scenes[scene_no]
-            self.replacements.update(
+            self.selection_replacements.update(
                 self.replace_db.get_replacements(scene)
             )
 
@@ -118,7 +119,7 @@ class ReplaceController(CommonController):
 
 
     def playlist_replacements(self) -> dict[int, dict[int, int]]:
-        return self.replacements
+        return self.selection_replacements
 
 
     def get_frame_at_index(self, index: int) -> tuple[Frame, Frame | None]:
@@ -149,7 +150,7 @@ class ReplaceController(CommonController):
 
     def is_frame_used_for_replace(self, frame: Frame) -> bool:
         scene_no = int(frame.scene_key.split(':')[-1])
-        return bool(frame.no in list(self.replacements[scene_no].values()))
+        return bool(frame.no in list(self.selection_replacements[scene_no].values()))
 
 
     @Slot(ReplaceAction)
@@ -177,8 +178,8 @@ class ReplaceController(CommonController):
         replace.current.by = replace.by.no
 
         print(self.replace_db.modified_scene_nos())
-        del self.replacements[scene_no]
-        self.replacements.update(self.replace_db.get_replacements(scene))
+        del self.selection_replacements[scene_no]
+        self.selection_replacements.update(self.replace_db.get_replacements(scene))
         self.signal_replacements_refreshed.emit()
         self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
@@ -193,8 +194,8 @@ class ReplaceController(CommonController):
             scene_no = int(scene_no)
             scene: Scene = self.scenes[scene_no]
             self.replace_db.remove_multiple(scene, frame_nos)
-            del self.replacements[scene_no]
-            self.replacements.update(self.replace_db.get_replacements(scene))
+            del self.selection_replacements[scene_no]
+            self.selection_replacements.update(self.replace_db.get_replacements(scene))
 
         for f in self.playlist_frames:
             if f.no in removed_frame_no:
@@ -212,10 +213,10 @@ class ReplaceController(CommonController):
     def event_replace_undo(self):
         log.info("undo signal received")
         self.replace_db.undo()
-        self.replacements.clear()
+        self.selection_replacements.clear()
         for scene_no in self.playlist_properties().scenes:
             scene: Scene = self.scenes[scene_no]
-            self.replacements.update(
+            self.selection_replacements.update(
                 self.replace_db.get_replacements(scene)
             )
         self.signal_replacements_refreshed.emit()
@@ -240,11 +241,11 @@ class ReplaceController(CommonController):
 
     def event_replace_discard(self):
         log.info("discard modifications requested")
-        self.replacements.clear()
+        self.selection_replacements.clear()
         for scene_no in self.playlist_properties().scenes:
             scene: Scene = self.scenes[scene_no]
             self.replace_db.discard(scene)
-            self.replacements.update(
+            self.selection_replacements.update(
                 self.replace_db.get_replacements(scene)
             )
         self.signal_replacements_refreshed.emit()

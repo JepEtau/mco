@@ -61,7 +61,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.pushButton_save.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.pushButton_discard.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        self.controller.signal_selection_modified[dict].connect(self.event_scenelist_modified)
+        self.controller.signal_selection_modified.connect(self.event_scenelist_modified)
 
         set_stylesheet(self)
         set_widget_stylesheet(self.label_message, 'message')
@@ -101,9 +101,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
 
     def apply_user_preferences(self, preferences: dict):
-        log.info("%s: set_initial_options" % (self.objectName()))
-        s = preferences[self.objectName()]
-
+        log.info(f"{self.objectName()}: set_initial_options")
         self.lineEdit_default_scene_crop_rectangle.clear()
 
         self.block_signals(True)
@@ -136,7 +134,6 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.set_edition_and_preview_enabled(True)
 
         # Geometry
-        self.move(s['geometry'][0], s['geometry'][1])
         self.adjustSize()
 
 
@@ -144,18 +141,22 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         return {}
 
 
-
     @Slot()
-    def event_refresh_scenelist(self):
+    def event_scenelist_modified(self):
+        log.info("to implement")
         log.info("directory has been parsed, refresh scene list")
         selection: Selection = self.controller.selection()
         self.groupBox_scene_geometry.setEnabled(True)
 
-        # ? Disable modification of scene geometry if there is only one shot ???
+
+    def set_edition_and_preview_enabled(self, enabled):
+        # TODO reactivate once completely verified
+        return
 
 
     def refresh_values(self, frame: Frame):
         # log.info("widget_geometry: refresh_values")
+        return
         geometry = frame['geometry']
         # print_lightgreen(geometry)
 

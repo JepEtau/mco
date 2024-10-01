@@ -173,7 +173,7 @@ def get_geometry_from_properties(properties_str: str) -> SceneGeometry:
         elif property_name == 'crop':
             # crop: x0, y0, x1, y1
             values = property_array_str[1].split(':')
-            geometry.crop = tuple([map(lambda x: int(x), values)])
+            geometry.crop = tuple(map(int, values))
             geometry.defined = True
 
         # Inner rect detection

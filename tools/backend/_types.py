@@ -2,13 +2,24 @@ from dataclasses import dataclass, field
 from typing import Literal
 
 import numpy as np
-from utils.mco_types import Scene
+from utils.mco_types import (
+    ChapterGeometry,
+    Scene,
+    SceneGeometry,
+)
 from PySide6.QtGui import (
     QPixmap,
 )
 
 
 AppType = Literal['replace', 'geometry', 'stabilization']
+
+
+@dataclass(slots=True)
+class TargetSceneGeometry:
+    chapter: ChapterGeometry
+    scene: SceneGeometry
+
 
 @dataclass(slots=True)
 class Frame:

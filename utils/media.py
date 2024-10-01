@@ -153,6 +153,7 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
         'pix_fmt': v_stream.get('pix_fmt', None),
         'color_range': v_stream.get('color_range', None),
         'color_space': v_stream.get('color_space', None),
+        'color_matrix': v_stream.get('color_matrix', None),
         'color_transfer': v_stream.get('color_transfer', None),
         'color_primaries': v_stream.get('color_primaries', None),
 
