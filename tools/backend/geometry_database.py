@@ -47,11 +47,11 @@ class GeometryDatabase:
             # scenes which share the same scene as source
             src_scene = scene['src'].primary_scene()
             src_scene_key: str = self._key(src_scene)
-            if (
-                src_scene_key not in self._db
-                and 'geometry' in src_scene['scene']
-            ):
-                self._db[src_scene_key] = src_scene['scene']['geometry']
+            if src_scene_key not in self._db:
+                if 'geometry' in src_scene['scene']:
+                    self._db[src_scene_key] = src_scene['scene']['geometry']
+                else:
+                    self._db[src_scene_key] = SceneGeometry()
 
         k_ep, k_ch = selection.k_ep, selection.k_ch
 
