@@ -214,8 +214,8 @@ def consolidate_scene(
         for t in (
             ':cuda', ':trt', ':fp16', ':fp32'
         ):
-            sequence.replace(t, '')
-        model_name=scene_filters['upscale'].sequence.split(',')[-1]
+            sequence = sequence.replace(t, '')
+        model_name=sequence.split(',')[-1]
         suffix = f"{suffix}_{model_name}"
 
     scene['task'].video_file = absolute_path(
