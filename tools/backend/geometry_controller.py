@@ -119,9 +119,6 @@ class GeometryController(CommonController):
                 self.geometry_db.get_geometry(scene)
             )
 
-        pprint(self.selection_geometry)
-        import sys
-        sys.exit()
         # self.signal_preview_options_consolidated.emit(self.preview_options)
         self.signal_ready_to_play.emit()
 
@@ -134,5 +131,9 @@ class GeometryController(CommonController):
         self.preview_enabled = preview_settings['enabled']
 
 
-    def get_scene_geometry(self, frame: Frame) -> SceneGeometry:
-        self.selection_geometry[frame.scene_key]
+    def get_scene_geometry(self, frame: Frame) -> TargetSceneGeometry:
+        print(lightcyan(f"get_scene_geometry: {frame.scene_key}, {frame.src_scene_key}"))
+        # self.scenes[frame.src_scene_key]
+        # pprint(self.selection_geometry.keys())
+        return self.selection_geometry[frame.src_scene_key]
+

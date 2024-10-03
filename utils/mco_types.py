@@ -145,7 +145,8 @@ class SceneGeometry:
     detection_params: DetectInnerRectParams = field(
         default_factory=DetectInnerRectParams
     )
-
+    use_autocrop: bool = False
+    autocrop: tuple[int, int, int, int] = field(default_factory=tuple)
 
     def __post_init__(self):
         # top, bottom, left, right

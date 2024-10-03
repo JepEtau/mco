@@ -116,7 +116,7 @@ class GeometryDatabase:
             chapter_geometry = self._db[':'.join((k_ep, k_ch.replace('g_', '')))]
 
         return {
-            scene_no: TargetSceneGeometry(
+            src_scene_key: TargetSceneGeometry(
                 chapter=chapter_geometry,
                 scene=self._db[src_scene_key]
             )

@@ -3,6 +3,7 @@ from pprint import pprint
 from logger import log
 from import_parsers import *
 from typing import TYPE_CHECKING, Any
+from utils.mco_types import DetectInnerRectParams, SceneGeometry
 from utils.p_print import *
 
 from PySide6.QtCore import (
@@ -28,7 +29,7 @@ from .stylesheet import (
 if TYPE_CHECKING:
     from backend.geometry_controller import GeometryController
 from backend.frame_cache import Frame
-from backend._types import Selection
+from backend._types import Selection, TargetSceneGeometry
 
 
 
@@ -85,13 +86,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         # self.pushButton_scene_resize_edition.blockSignals(enabled)
         self.pushButton_scene_resize_preview.blockSignals(enabled)
 
-        # Scene: default
-        self.lineEdit_default_scene_crop_rectangle.blockSignals(enabled)
-        self.checkBox_default_scene_keep_ratio.blockSignals(enabled)
-        self.checkBox_default_scene_fit_to_width.blockSignals(enabled)
-        self.pushButton_default_scene_discard.blockSignals(enabled)
-
-        # Scene: custom
+        # Scene
         self.lineEdit_scene_crop_rectangle.blockSignals(enabled)
         self.checkBox_scene_keep_ratio.blockSignals(enabled)
         self.checkBox_scene_fit_to_width.blockSignals(enabled)
@@ -99,10 +94,8 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
 
 
-
     def apply_user_preferences(self, preferences: dict):
         log.info(f"{self.objectName()}: set_initial_options")
-        self.lineEdit_default_scene_crop_rectangle.clear()
 
         self.block_signals(True)
         try:
@@ -155,125 +148,66 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
 
     def refresh_values(self, frame: Frame):
-        # log.info("widget_geometry: refresh_values")
-        return
-        geometry = frame['geometry']
-        # print_lightgreen(geometry)
+        target_geometry: TargetSceneGeometry = self.controller.get_scene_geometry(frame)
+        pprint(target_geometry)
 
-        # if geometry['error']:
-        #     self.label_message.setText("ERROR!")
-        # else:
-        #     self.label_message.clear()
+        if target_geometry.is_erroneous:
+            self.label_message.setText("ERROR!")
+        else:
+            self.label_message.clear()
 
-        # # Width before padding
-        # self.lineEdit_target_width.setText(str(geometry['target']['w']))
+        # Width before padding
+        self.lineEdit_target_width.setText(str(target_geometry.chapter.width))
 
-        # if frame['k_part'] in ['g_asuivre', 'g_documentaire']:
-        # #     self.groupBox_scene_geometry.setEnabled(False)
-        # #     # self.pushButton_target_width_copy_from_scene.setEnabled(False)
-        #     self.is_target_disabled = True
-        # else:
-        #     self.is_target_disabled = False
-        # self.groupBox_scene_geometry.setEnabled(True)
-        # # self.pushButton_target_width_copy_from_scene.setEnabled(True)
-
-
-        # # Default shot geometry
-        # try:
-        #     crop_top, crop_bottom, crop_left, crop_right = geometry['default']['crop']
-        #     crop_str = "t: %d, b: %d,  l: %d, r: %d" % (crop_top, crop_bottom, crop_left, crop_right)
-        #     self.lineEdit_default_scene_crop_rectangle.setText(crop_str)
-        # except:
-        #     self.lineEdit_default_scene_crop_rectangle.clear()
-
-        # self.checkBox_default_scene_keep_ratio.blockSignals(True)
-        # try:
-        #     keep_ratio = geometry['default']['keep_ratio']
-        #     self.checkBox_default_scene_keep_ratio.setChecked(keep_ratio)
-        # except:
-        #     self.checkBox_default_scene_keep_ratio.setChecked(False)
-        # self.checkBox_default_scene_keep_ratio.blockSignals(False)
-
-        # self.checkBox_default_scene_fit_to_width.blockSignals(True)
-        # try:
-        #     fit_to_width = geometry['default']['fit_to_width']
-        #     self.checkBox_default_scene_fit_to_width.setChecked(fit_to_width)
-        # except:
-        #     self.checkBox_default_scene_fit_to_width.setChecked(False)
-        # self.checkBox_default_scene_fit_to_width.blockSignals(False)
+        frame.scene_key
+        if frame.k_ep_ch_no[1] in ('g_asuivre', 'g_documentaire'):
+        #     self.groupBox_scene_geometry.setEnabled(False)
+        #     # self.pushButton_target_width_copy_from_scene.setEnabled(False)
+            self.is_target_disabled = True
+        else:
+            self.is_target_disabled = False
+        self.groupBox_scene_geometry.setEnabled(True)
+        # self.pushButton_target_width_copy_from_scene.setEnabled(True)
 
 
-        # # Shot geometry
-        # try:
-        #     crop_top, crop_bottom, crop_left, crop_right = geometry['shot']['crop']
-        #     crop_str = "t: %d, b: %d,  l: %d, r: %d" % (crop_top, crop_bottom, crop_left, crop_right)
-        #     self.lineEdit_scene_crop_rectangle.setText(crop_str)
-        # except:
-        #     self.lineEdit_scene_crop_rectangle.clear()
+        # Scene geometry
+        scene_geometry: SceneGeometry = target_geometry.scene
+        try:
+            t, b, l, r = scene_geometry.crop
+            self.lineEdit_scene_crop_rectangle.setText(f"t: {t}, b: {b},  l: {l}, r: {r}")
+        except:
+            self.lineEdit_scene_crop_rectangle.clear()
 
-        # self.checkBox_scene_keep_ratio.blockSignals(True)
-        # try:
-        #     keep_ratio = geometry['shot']['keep_ratio']
-        #     self.checkBox_scene_keep_ratio.setChecked(keep_ratio)
-        # except:
-        #     self.checkBox_scene_keep_ratio.setChecked(False)
-        # self.checkBox_scene_keep_ratio.blockSignals(False)
+        self.checkBox_scene_keep_ratio.blockSignals(True)
+        try:
+            keep_ratio = scene_geometry.keep_ratio
+            self.checkBox_scene_keep_ratio.setChecked(keep_ratio)
+        except:
+            self.checkBox_scene_keep_ratio.setChecked(False)
+        self.checkBox_scene_keep_ratio.blockSignals(False)
 
-        # self.checkBox_scene_fit_to_width.blockSignals(True)
-        # try:
-        #     fit_to_width = geometry['shot']['fit_to_width']
-        #     self.checkBox_scene_fit_to_width.setChecked(fit_to_width)
-        # except:
-        #     self.checkBox_scene_fit_to_width.setChecked(False)
-        # self.checkBox_scene_fit_to_width.blockSignals(False)
+        self.checkBox_scene_fit_to_width.blockSignals(True)
+        try:
+            fit_to_width = scene_geometry.fit_to_width
+            self.checkBox_scene_fit_to_width.setChecked(fit_to_width)
+        except:
+            self.checkBox_scene_fit_to_width.setChecked(False)
+        self.checkBox_scene_fit_to_width.blockSignals(False)
 
 
-        # # Select shot/default
-        # self.groupBox_default_scene_geometry.blockSignals(True)
-        # self.groupBox_scene_geometry.blockSignals(True)
-
-        # if geometry['shot'] is None:
-        #     # Use default geometry
-        #     self.groupBox_default_scene_geometry.setChecked(True)
-        #     self.groupBox_scene_geometry.setChecked(False)
-        # else:
-        #     # Use custom geometry
-        #     self.groupBox_default_scene_geometry.setChecked(False)
-        #     self.groupBox_scene_geometry.setChecked(True)
-
-        # self.groupBox_default_scene_geometry.blockSignals(False)
-        # self.groupBox_scene_geometry.blockSignals(False)
-
+        autocrop_params: DetectInnerRectParams = scene_geometry.detection_params
+        self.spinBox_threshold_min.setValue(autocrop_params.threshold_min)
+        self.spinBox_morph_kernel_radius.setValue(autocrop_params.morph_kernel_radius)
+        self.spinBox_erode_kernel_radius.setValue(autocrop_params.erode_kernel_radius)
+        self.spinBox_erode_iterations.setValue(autocrop_params.erode_iterations)
+        self.checkBox_do_add_borders.setChecked(autocrop_params.do_add_borders)
+        self.checkBox_use_as_crop_method.setChecked(scene_geometry.use_autocrop)
+        try:
+            t, b, l, r = scene_geometry.autocrop
+            self.lineEdit_scene_autocrop.setText(f"t: {t}, b: {b},  l: {l}, r: {r}")
+        except:
+            self.lineEdit_scene_autocrop.clear()
 
 
     def event_scene_selected(self, selected):
-        # Changed default <-> shot
-        self.groupBox_default_shot_geometry.blockSignals(True)
-        self.groupBox_shot_geometry.blockSignals(True)
-
-        # Change states: simulate radio buttons
-        if selected == 'default_shot':
-            state = self.groupBox_shot_geometry.isChecked()
-            self.groupBox_default_shot_geometry.setChecked(True)
-            self.groupBox_shot_geometry.setChecked(False)
-            if not state:
-                # No changes
-                self.groupBox_default_shot_geometry.blockSignals(False)
-                self.groupBox_shot_geometry.blockSignals(False)
-                return
-
-        elif selected == 'shot':
-            state = self.groupBox_default_shot_geometry.isChecked()
-            self.groupBox_shot_geometry.setChecked(True)
-            self.groupBox_default_shot_geometry.setChecked(False)
-            if not state:
-                # No changes
-                self.groupBox_default_shot_geometry.blockSignals(False)
-                self.groupBox_shot_geometry.blockSignals(False)
-                return
-
-        # Actions
-        self.event_is_modified(element='shot', event_type='select', parameter='shot', value=selected)
-
-        self.groupBox_default_shot_geometry.blockSignals(False)
-        self.groupBox_shot_geometry.blockSignals(False)
+        log.info("detected scene selection changed")

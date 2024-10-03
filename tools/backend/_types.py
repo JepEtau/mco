@@ -19,6 +19,7 @@ AppType = Literal['replace', 'geometry', 'stabilization']
 class TargetSceneGeometry:
     chapter: ChapterGeometry
     scene: SceneGeometry
+    is_erroneous: bool = False
 
 
 @dataclass(slots=True)
@@ -30,7 +31,15 @@ class Frame:
     by: int
     img: np.ndarray | None = None
     pixmap: QPixmap | None = None
+    _k_ep_ch_no: tuple[str, str, int] = ("", "", 0)
 
+    def __post_init__(self):
+        _k_ep_ch_no: list[str] = self.scene_key.split(':')
+        self._k_ep_ch_no = tuple(_k_ep_ch_no[:2] + [int(_k_ep_ch_no[2])])
+
+    @property
+    def k_ep_ch_no(self) -> tuple[str, str, str, int]:
+        return self._k_ep_ch_no
 
 
 @dataclass(slots=True)
