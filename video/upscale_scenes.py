@@ -138,7 +138,10 @@ def upscale_scenes(
                     filters.steps.append(model_key)
 
                 scenes_to_upscale.append(scene)
-                total_frames += scene['dst']['count'] - len(scene['src'].get_frame_replace().keys())
+                total_frames += (
+                    scene['src'].frame_count(exclude_loop=True)
+                    - len(scene['src'].get_frame_replace().keys())
+                )
 
         hashcode: str = calc_hash(hashes_str[:-1])
         basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task}_{hashcode}"

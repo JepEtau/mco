@@ -91,16 +91,19 @@ class SrcScenes:
                 elif e.frame_ref == 0:
                     e.frame_ref = src_scene['start']
 
-    def frame_count(self) -> int:
+
+    def frame_count(self, exclude_loop: bool = False) -> int:
         count: int = 0
         for src_scene in self._scenes:
             if src_scene['scene'] is None:
                 self._consolidate_scene(src_scene)
             count += src_scene['count']
 
-            if src_scene['effects'] is not None:
-                e: Effect = src_scene['effects'].get_effect('zoom_in')
-                count += e.loop if e is not None else 0
+            if not exclude_loop:
+                # Exception: do not count loop when upscaling
+                if src_scene['effects'] is not None:
+                    e: Effect = src_scene['effects'].get_effect('zoom_in')
+                    count += e.loop if e is not None else 0
 
         return count
 
