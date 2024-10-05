@@ -102,7 +102,7 @@ class CommonWindow(QMainWindow):
             w: list[int] = user_preferences['window']
             self.setGeometry(*w['geometry'])
         except:
-            self.setGeometry(0,0,1920,1080)
+            self.setGeometry(0, 0 , 1920, 1080)
         self.widget_selection.apply_user_preferences(user_preferences)
 
 

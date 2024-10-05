@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_selection.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.3
+## Created by: Qt User Interface Compiler version 6.7.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -141,7 +141,7 @@ class Ui_SelectionWidget(object):
         self.tableWidget_scenes.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.tableWidget_scenes.setSizeAdjustPolicy(QAbstractScrollArea.SizeAdjustPolicy.AdjustToContentsOnFirstShow)
         self.tableWidget_scenes.setEditTriggers(QAbstractItemView.EditTrigger.SelectedClicked)
-        self.tableWidget_scenes.setProperty(u"showDropIndicator", False)
+        self.tableWidget_scenes.setProperty("showDropIndicator", False)
         self.tableWidget_scenes.setDragDropOverwriteMode(False)
         self.tableWidget_scenes.setSelectionMode(QAbstractItemView.SelectionMode.ContiguousSelection)
         self.tableWidget_scenes.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -158,7 +158,7 @@ class Ui_SelectionWidget(object):
         self.tableWidget_scenes.verticalHeader().setMinimumSectionSize(24)
         self.tableWidget_scenes.verticalHeader().setDefaultSectionSize(24)
         self.tableWidget_scenes.verticalHeader().setHighlightSections(True)
-        self.tableWidget_scenes.verticalHeader().setProperty(u"showSortIndicator", False)
+        self.tableWidget_scenes.verticalHeader().setProperty("showSortIndicator", False)
         self.tableWidget_scenes.verticalHeader().setStretchLastSection(False)
 
         self.verticalLayout.addWidget(self.tableWidget_scenes)

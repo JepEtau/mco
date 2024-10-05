@@ -31,7 +31,6 @@ def get_video_chapter_frame_count(k_ep: str, k_ch: str) -> int:
 
 
         video_count = 0
-        scenes
         for s in scenes:
             video_count += s['dst']['count']
         if db_video['count'] != video_count:
@@ -152,12 +151,13 @@ def parse_video_target(
 
 def parse_video_target_g(
     db,
-    chapter: str,
+    k_ch: str,
     config: ConfigParser,
     k_section,
 ) -> None:
-    db_video: dict = db[chapter]['video']
+    db_video: dict = db[k_ch]['video']
     fps: float = get_fps(db)
+    k_ep: str = "ep99"
 
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option)
@@ -174,11 +174,22 @@ def parse_video_target_g(
             }
             continue
 
+        chapter_fadeout = 0
+        k_chapter_ed_src = None
+        start = None
+        end = -1
+
         # Walk through values
         properties = value_str.split(',')
 
         chapter_fadeout = 0
         for property in properties:
+            search_start_end = re.search(re.compile(r"(\d+):(-?\d+)"), property)
+            if search_start_end is not None:
+                start = int(search_start_end.group(1))
+                end = int(search_start_end.group(2))
+                continue
+
             search_fadeout = re.search(re.compile(r"fadeout=([0-9.]+)"), property)
             if search_fadeout is not None:
                 chapter_fadeout = int(float(search_fadeout.group(1)) * fps)
@@ -186,3 +197,24 @@ def parse_video_target_g(
                 db_video['effects'] = Effects([
                     Effect(name='fadeout', fade=chapter_fadeout)
                 ])
+
+            search_k_ed_src = re.search(re.compile(r"ed=([a-z]+[0-9]*)"), property)
+            if search_k_ed_src is not None:
+                k_chapter_ed_src = search_k_ed_src.group(1)
+                # sys.exit("found %s for %s:%s" % (k_chapter_ed_src, k_ep, k_chapter))
+                continue
+
+        nested_dict_set(db_video, dict(), k_ch)
+        ch_video: ChapterVideo = db_video[k_ch]
+        ch_video.update({
+            'effects': Effects(),
+            'start': start,
+            'end': end,
+            'count': (end - start) if end > 0 else -1,
+            'k_ed_src': k_chapter_ed_src,
+            'k_ep': k_ep,
+            'k_ch': k_ch,
+        })
+
+        if chapter_fadeout:
+            ch_video['effects'].append(Effect(name='fadeout', fade=chapter_fadeout))

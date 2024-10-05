@@ -95,12 +95,12 @@ def calculate_frame_count(scene: Scene) -> int:
 
     # For the scene which has a loop,
     # remove the loop in number of frames to upscale
-    if scene['task'].name == 'upscale':
-        s: Scene = scene['src'].primary_scene()
-        if 'effects' in s:
-            for name in ('zoom_in', 'zoom_out'):
-                if e := s['effects'].get_effect(name=name):
-                    count -= e.loop
+    # if scene['task'].name == 'upscale':
+    #     s: Scene = scene['src'].primary_scene()
+    #     if 'effects' in s:
+    #         for name in ('zoom_in', 'zoom_out'):
+    #             if e := s['effects'].get_effect(name=name):
+    #                 count -= e.loop
 
     print(red(f"calculate_frame_count: {scene['no']} -> {count}"))
     return count

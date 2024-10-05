@@ -137,9 +137,9 @@ def main():
         print(f"  Reference: {ref_count}")
         print(f"  Target: {target_count}")
 
-        for scene in scenes:
-            print(lightcyan(f"Scene no. {scene['no']}"))
-            pprint(scene)
+        # for scene in scenes:
+        #     print(lightcyan(f"Scene no. {scene['no']}"))
+        #     pprint(scene)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)

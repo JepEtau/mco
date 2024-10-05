@@ -255,6 +255,8 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter: str) -> None:
         sys.exit(red("error: %s.create_target_scenes: no scenes in src/dst %s:%s" % (__name__, k_ep, k_chapter)))
 
 
+
+
     # List the scene no which are defined in target
     if 'scenes' in target_chapter.keys():
         target_scene_nos = ([s['no'] for s in target_chapter['scenes']])

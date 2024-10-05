@@ -91,9 +91,14 @@ def parse_credit_target():
             elif k_section.startswith('scenes'):
                 lang = 'fr'
                 try:
-                    _, lang = k_section.split('.')
+                    k_section_chapter, lang = k_section.split('.')
                 except:
-                    pass
+                    k_section_chapter = k_section
+
+                # try:
+                #     _, k_chapter = k_section_chapter.split('_')
+                # except:
+                #     continue
 
                 db_video_target.update({
                     'k_ep': '',
