@@ -29,10 +29,13 @@ from ._keys import (
 from .p_print import (
     pprint_scene_mapping
 )
-
+from .filters import (
+    clean_ffmpeg_filter
+)
 
 __all__ = [
     "db",
+    "clean_ffmpeg_filter",
     "logger",
     "parse_database",
     "Database",

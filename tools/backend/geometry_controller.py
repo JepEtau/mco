@@ -1,4 +1,5 @@
 from __future__ import annotations
+from typing import Any
 from import_parsers import *
 
 from pprint import pprint
@@ -35,7 +36,7 @@ class GeometryController(CommonController):
         # Load saved preferences
         self.user_preferences: UserPreferences = UserPreferences(tool='geometry')
 
-        self.task_name: TaskName = 'lr'
+        self.task_name: TaskName = 'hr'
         self.geometry_db = GeometryDatabase()
         self.frame_cache: FrameCache = FrameCache(replace_db=None)
 
@@ -48,6 +49,8 @@ class GeometryController(CommonController):
         # self.view.widget_geometry.signal_undo.connect(self.event_geometry_undo)
         # self.view.widget_geometry.signal_save.connect(self.event_geometry_save)
         # self.view.widget_geometry.signal_discard.connect(self.event_geometry_discard)
+        self.view.widget_geometry.signal_geometry_modified.connect(self.event_geometry_modified)
+
 
     def k_ep_p_changed(self, selection: Selection):
         super().k_ep_p_changed(selection)
@@ -132,8 +135,12 @@ class GeometryController(CommonController):
 
 
     def get_scene_geometry(self, frame: Frame) -> TargetSceneGeometry:
-        print(lightcyan(f"get_scene_geometry: {frame.scene_key}, {frame.src_scene_key}"))
+        # print(lightcyan(f"get_scene_geometry: {frame.scene_key}, {frame.src_scene_key}"))
         # self.scenes[frame.src_scene_key]
         # pprint(self.selection_geometry.keys())
         return self.selection_geometry[frame.src_scene_key]
 
+
+    @Slot(dict)
+    def event_geometry_modified(self, modification: dict[str, Any]) -> None:
+        pprint(modification)

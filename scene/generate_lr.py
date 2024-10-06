@@ -52,6 +52,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         else np.uint16
     )
 
+    # Force to the same height to be able to mix different editions
     filter_complex: list[str] = []
     if h != 576 or w != 576:
         filter_complex = [

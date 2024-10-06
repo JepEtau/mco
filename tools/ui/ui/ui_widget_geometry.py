@@ -15,10 +15,11 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QCheckBox, QFormLayout, QFrame,
-    QGridLayout, QGroupBox, QHBoxLayout, QLabel,
-    QLayout, QLineEdit, QPushButton, QSizePolicy,
-    QSpacerItem, QSpinBox, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QCheckBox, QFormLayout,
+    QFrame, QGridLayout, QGroupBox, QHBoxLayout,
+    QLabel, QLayout, QLineEdit, QPushButton,
+    QSizePolicy, QSpacerItem, QSpinBox, QVBoxLayout,
+    QWidget)
 
 class Ui_GeometryWidget(object):
     def setupUi(self, GeometryWidget):
@@ -331,6 +332,7 @@ class Ui_GeometryWidget(object):
         self.spinBox_threshold_min.setObjectName(u"spinBox_threshold_min")
         self.spinBox_threshold_min.setMaximumSize(QSize(60, 16777215))
         self.spinBox_threshold_min.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.spinBox_threshold_min.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_threshold_min.setMaximum(127)
         self.spinBox_threshold_min.setValue(10)
 
@@ -345,6 +347,7 @@ class Ui_GeometryWidget(object):
         self.spinBox_morph_kernel_radius.setObjectName(u"spinBox_morph_kernel_radius")
         self.spinBox_morph_kernel_radius.setMaximumSize(QSize(60, 16777215))
         self.spinBox_morph_kernel_radius.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.spinBox_morph_kernel_radius.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_morph_kernel_radius.setMinimum(0)
         self.spinBox_morph_kernel_radius.setMaximum(11)
         self.spinBox_morph_kernel_radius.setValue(3)
@@ -360,6 +363,7 @@ class Ui_GeometryWidget(object):
         self.spinBox_erode_kernel_radius.setObjectName(u"spinBox_erode_kernel_radius")
         self.spinBox_erode_kernel_radius.setMaximumSize(QSize(60, 16777215))
         self.spinBox_erode_kernel_radius.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.spinBox_erode_kernel_radius.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_erode_kernel_radius.setMaximum(11)
 
         self.formLayout_3.setWidget(2, QFormLayout.FieldRole, self.spinBox_erode_kernel_radius)
@@ -373,6 +377,7 @@ class Ui_GeometryWidget(object):
         self.spinBox_erode_iterations.setObjectName(u"spinBox_erode_iterations")
         self.spinBox_erode_iterations.setMaximumSize(QSize(60, 16777215))
         self.spinBox_erode_iterations.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.spinBox_erode_iterations.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_erode_iterations.setMaximum(3)
         self.spinBox_erode_iterations.setValue(2)
 

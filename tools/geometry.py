@@ -17,8 +17,8 @@ if os.name == 'nt':
 def main():
 
     application = QApplication(sys.argv)
+    application.setStyle("Fusion")
     from logger import log
-
     from tools.backend.geometry_controller import GeometryController
     controller = GeometryController()
 

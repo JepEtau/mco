@@ -9,6 +9,7 @@ from PySide6.QtCore import (
     QEvent,
     QObject,
     Slot,
+    QPoint,
 )
 from PySide6.QtGui import (
     QKeyEvent,
@@ -65,7 +66,7 @@ class GeometryWindow(CommonWindow):
         self.main_layout = QVBoxLayout(self.main_widget)
         self.horizontalLayout = QHBoxLayout()
         self.verticalLayout = QVBoxLayout()
-        self.horizontalLayout.setSpacing(12)
+        self.horizontalLayout.setSpacing(6)
 
         set_stylesheet(self)
 
@@ -77,7 +78,7 @@ class GeometryWindow(CommonWindow):
         self.horizontalLayout.addLayout(self.verticalLayout)
 
         # Geometry
-        self.widget_geometry = GeometryWidget(self, controller)
+        self.widget_geometry: GeometryWidget = GeometryWidget(self, controller)
         self.widgets['geometry'] = self.widget_geometry
 
         self.verticalLayout_tool = QVBoxLayout()
@@ -102,7 +103,14 @@ class GeometryWindow(CommonWindow):
 
 
     def apply_user_preferences(self, user_preferences: dict):
-        super().apply_user_preferences(user_preferences)
+        try:
+            w: list[int] = user_preferences['window']
+            self.setGeometry(*w['geometry'])
+        except:
+            self.setGeometry(50, 50 , 1920, 1080)
+        # self.setGeometry(0, 0 , 1920, 1080)
+        # self.move(QPoint(100,100))
+        self.widget_selection.apply_user_preferences(user_preferences)
         self.widget_geometry.apply_user_preferences(user_preferences)
 
 
@@ -135,15 +143,19 @@ class GeometryWindow(CommonWindow):
     def display_frame(self):
         frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
         self.widget_player_ctrl.refresh_values(frame, original_frame)
+
+        self.widget_preview.set_geometry(self.controller.get_scene_geometry(frame))
         self.widget_preview.display_frame(frame)
         self.widget_geometry.refresh_values(frame)
+
+
 
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         key = event.key()
         modifiers = event.modifiers()
         self.current_key_pressed = None
-        print(f"{__name__} received: {key}")
+        # print(f"{__name__} received: {key}")
 
         for w in (
             self.widget_player_ctrl,
@@ -152,7 +164,7 @@ class GeometryWindow(CommonWindow):
             self.widget_selection
         ):
             if w.event_key_pressed(event):
-                print(f"{__name__} {key} forwarded to {w.objectName()}")
+                # print(f"{__name__} {key} forwarded to {w.objectName()}")
                 return True
         return super().keyPressEvent(event)
 
@@ -176,8 +188,8 @@ class GeometryWindow(CommonWindow):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.Wheel:
             for w in (
-                self.widget_player_ctrl,
                 self.widget_geometry,
+                self.widget_player_ctrl,
                 # self.widget_preview,
                 # self.widget_selection
             ):

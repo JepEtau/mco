@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pprint import pprint
 from logger import log
 from import_parsers import *
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Literal
 from utils.mco_types import DetectInnerRectParams, SceneGeometry
 from utils.p_print import *
 
@@ -39,7 +39,17 @@ class CurrentFrame:
     frame: Frame
     original: Frame
 
+_Parameters =  Literal[
+    'crop_top',
+    'crop_bottom',
+    'crop_left',
+    'crop_right',
+    'width'
+]
 
+_EventType = Literal[
+    'select', 'remove', 'set', 'discard'
+]
 
 class GeometryWidget(QWidget, Ui_GeometryWidget):
     signal_save = Signal()
@@ -47,6 +57,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
     signal_undo = Signal()
     signal_preview_toggled = Signal(bool)
     signal_edition_started = Signal()
+    signal_geometry_modified = Signal(dict)
 
 
     def __init__(self, ui, controller):
@@ -63,6 +74,8 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.pushButton_discard.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.controller.signal_selection_modified.connect(self.event_scenelist_modified)
+
+        self.current_key_pressed: Qt.Key | None = None
 
         set_stylesheet(self)
         set_widget_stylesheet(self.label_message, 'message')
@@ -149,7 +162,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
     def refresh_values(self, frame: Frame):
         target_geometry: TargetSceneGeometry = self.controller.get_scene_geometry(frame)
-        pprint(target_geometry)
+        # pprint(target_geometry)
 
         if target_geometry.is_erroneous:
             self.label_message.setText("ERROR!")
@@ -174,7 +187,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         scene_geometry: SceneGeometry = target_geometry.scene
         try:
             t, b, l, r = scene_geometry.crop
-            self.lineEdit_scene_crop_rectangle.setText(f"t: {t}, b: {b},  l: {l}, r: {r}")
+            self.lineEdit_scene_crop_rectangle.setText(f"t: {t}, b: {b}, l: {l}, r: {r}")
         except:
             self.lineEdit_scene_crop_rectangle.clear()
 
@@ -211,3 +224,118 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
     def event_scene_selected(self, selected):
         log.info("detected scene selection changed")
+
+
+    def event_is_modified(
+        self,
+        event_type: _EventType,
+        parameter: _Parameters,
+        value: int
+    ):
+        log.info("parameter has been modified: %s: %s, %d" % (event_type, parameter, value))
+        self.pushButton_discard.setEnabled(True)
+        self.pushButton_save.setEnabled(True)
+        if parameter == 'width':
+            self.pushButton_target_discard.setEnabled(True)
+            self.pushButton_target_save.setEnabled(True)
+
+        self.signal_geometry_modified.emit({
+            'type': event_type,
+            'parameter': parameter,
+            'value': value
+        })
+
+
+    def event_wheel(self, event: QWheelEvent) -> bool:
+        if self.current_key_pressed is not None:
+            modifiers = QApplication.keyboardModifiers()
+            # print(lightgrey(f"wheelEvent: key: {self.current_key_pressed}"))
+            # print(lightgrey(f"{modifiers}"))
+            if self.checkBox_use_as_crop_method.isChecked():
+                return True
+
+            parameter: _Parameters
+            if self.current_key_pressed == Qt.Key.Key_Z:
+                parameter = 'crop_top'
+            elif self.current_key_pressed == Qt.Key.Key_S:
+                parameter = 'crop_bottom'
+            elif self.current_key_pressed == Qt.Key.Key_Q:
+                parameter = 'crop_left'
+            elif self.current_key_pressed == Qt.Key.Key_D:
+                parameter = 'crop_right'
+            elif (
+                self.current_key_pressed == Qt.Key.Key_W
+                and not self.is_target_disabled
+            ):
+                parameter = 'width'
+            else:
+                return False
+
+            value = -1 if event.angleDelta().y() > 0 else +1
+            self.event_is_modified(
+                event_type='set',
+                parameter=parameter,
+                value=value
+            )
+            return True
+
+        return False
+
+
+    def event_key_released(self, event: QKeyEvent) -> bool:
+        self.current_key_pressed = None
+        return False
+
+
+    def event_key_pressed(self, event: QKeyEvent) -> bool:
+        key = event.key()
+        modifiers = event.modifiers()
+        verbose = False
+        if verbose:
+            print(green(f"widget_geometry: event_key_pressed: {key}"))
+
+        if key == Qt.Key.Key_Space:
+            if verbose:
+                print("main window: keyPressEvent")
+                log.info("Space key event detected")
+            return False
+
+        if modifiers & Qt.KeyboardModifier.ControlModifier:
+            if key == Qt.Key.Key_S:
+                if verbose:
+                    print(purple("Save geometry"))
+                self.event_save_modifications()
+                return True
+
+        # if modifiers & Qt.AltModifier:
+        #     if key == Qt.Key_S:
+        #         if self.current_key_pressed != Qt.Key_S:
+        #             self.signal_position_changed.emit('switch')
+        #         self.current_key_pressed = Qt.Key_S
+        #         return True
+        #     else:
+        #         return False
+
+        if key == Qt.Key.Key_F2:
+            if self.pushButton_set_preview.isEnabled():
+                self.pushButton_set_preview.toggle()
+                return True
+
+        # Edit crop dimensions
+        elif key in (Qt.Key.Key_Q, Qt.Key.Key_D, Qt.Key.Key_W):
+            self.current_key_pressed = key
+            return True
+
+        elif key == Qt.Key.Key_Z:
+            # if key != self.current_key_pressed:
+            #     self.signal_position_changed.emit('top')
+            self.current_key_pressed = key
+            return True
+
+        elif key == Qt.Key.Key_S:
+            # if key != self.current_key_pressed:
+            #     self.signal_position_changed.emit('bottom')
+            self.current_key_pressed = key
+            return True
+
+        return False

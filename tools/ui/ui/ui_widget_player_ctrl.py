@@ -25,9 +25,11 @@ class Ui_PlayerControlWidget(object):
     def setupUi(self, PlayerControlWidget):
         if not PlayerControlWidget.objectName():
             PlayerControlWidget.setObjectName(u"PlayerControlWidget")
-        PlayerControlWidget.resize(840, 79)
+        PlayerControlWidget.resize(822, 59)
         self.verticalLayout = QVBoxLayout(PlayerControlWidget)
+        self.verticalLayout.setSpacing(3)
         self.verticalLayout.setObjectName(u"verticalLayout")
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.slider_frames = CustomQSliderWidget(PlayerControlWidget)
@@ -73,7 +75,7 @@ class Ui_PlayerControlWidget(object):
         self.verticalLayout.addLayout(self.horizontalLayout_4)
 
         self.horizontalLayout_3 = QHBoxLayout()
-        self.horizontalLayout_3.setSpacing(12)
+        self.horizontalLayout_3.setSpacing(6)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.label_ed_ep_part = QLabel(PlayerControlWidget)
         self.label_ed_ep_part.setObjectName(u"label_ed_ep_part")

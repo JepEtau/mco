@@ -55,7 +55,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         super().__init__(parent)
         self.setupUi(self)
 
-        self.slider_frames.setMinimumSize(QSize(600, 30))
+        self.slider_frames.setMinimumSize(QSize(600, 20))
         self.slider_frames.setMaximumHeight(30)
         self.slider_frames.setMaximum(200)
         self.slider_frames.setOrientation(Qt.Horizontal)
@@ -341,7 +341,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         key = event.key()
         modifiers = event.modifiers()
         self.current_key_pressed = None
-        print(f"{__name__} key: {key}")
+        # print(f"{__name__} key: {key}")
 
         # action
         if key == Qt.Key.Key_Space:
@@ -381,7 +381,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         elif key == Qt.Key.Key_Down or key == Qt.Key.Key_PageDown:
             self.event_next_frame(10)
             return True
-
+        return False
 
     def event_key_released(self, event:QKeyEvent) -> bool:
         key = event.key()

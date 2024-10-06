@@ -3,17 +3,18 @@ from dataclasses import dataclass
 import math
 import os
 import subprocess
+import sys
 
 import numpy as np
 from import_parsers import *
 
 from collections import Counter, OrderedDict, UserDict
 from pprint import pprint
-from typing import Any
 
 from tools.backend.replace_database import ReplaceDatabase
 from utils.mco_types import Scene
 from utils.media import VideoInfo, extract_media_info
+from utils.p_print import red
 from utils.path_utils import path_split
 from utils.tools import ffmpeg_exe
 from utils.time_conversions import (
@@ -28,6 +29,8 @@ from PySide6.QtGui import (
 from parsers import (
     db,
     get_fps,
+    VideoSettings,
+    clean_ffmpeg_filter,
 )
 from ._types import Frame
 
@@ -76,10 +79,43 @@ class FrameCache:
                 print(f"  segment: {in_video_fp}, {start}, {count}")
 
                 if in_video_fp not in self.video_infos:
-                    self.video_infos[in_video_fp] = extract_media_info(
-                        src_scene['scene']['inputs']['progressive']['filepath']
-                    )['video']
+                    fp = src_scene['scene']['inputs']['progressive']['filepath']
+                    # specific to lr task: use a h264 video rather than the deinterlaced one
+                    # if scene['task'].name == 'lr':
+
+                    self.video_infos[in_video_fp] = extract_media_info(fp)['video']
                 vi: VideoInfo = self.video_infos[in_video_fp]
+                # print(red(fp))
+                # pprint(vi)
+                # sys.exit()
+                filter_complex: list[str] = []
+                in_h, in_w, in_c = vi['shape']
+                if scene['task'].name == 'lr':
+                    if h != 576 or w != 576:
+                        filter_complex = [
+                            "-filter_complex",
+                            f"[0:v]scale=768:576:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
+                            "-map", "[outv]"
+                        ]
+                else:
+                    if in_h < 1080:
+                        # pprint( db['common']['video_format'])
+                        # sys.exit()
+                        video_settings: VideoSettings = db['common']['video_format']['hr']
+                        pad: int = video_settings.pad
+                        pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=green"
+                        filter_complex = [
+                            "-filter_complex",
+                            clean_ffmpeg_filter(
+                                f"""[0:v]
+                                    scale={2*in_w}:{2*in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int,
+                                    {pad_filter}
+                                [outv]
+                                """
+                            ),
+                            "-map", "[outv]"
+                        ]
+                        in_h, in_w = 2 * (in_h + pad), 2 * (in_w + pad)
 
                 xtract_command: list[str] = [
                     ffmpeg_exe,
@@ -90,6 +126,7 @@ class FrameCache:
                     str(frame_to_sexagesimal(no=start,frame_rate=frame_rate)),
                     "-i", in_video_fp,
                     "-t", str(frame_to_s(no=count, frame_rate=frame_rate)),
+                    *filter_complex,
                     "-f", "image2pipe",
                     "-pix_fmt", 'bgr24',
                     "-vcodec", "rawvideo",
@@ -111,8 +148,8 @@ class FrameCache:
                     print(f"[E] Unexpected error: {type(e)}", flush=True)
 
                 # won't work except 8bit videos
-                pipe_img_nbytes: int = math.prod(vi['shape'])
-                shape = vi['shape']
+                pipe_img_nbytes: int = in_w * in_h * in_c
+                shape = (in_h, in_w, in_c)
                 in_dtype = np.uint8
                 src_scene_key: str = f"{':'.join(src_scene['k_ed_ep_ch_no'][:-1])}:{src_scene['k_ed_ep_ch_no'][-1]:03}"
                 for i in range(count):

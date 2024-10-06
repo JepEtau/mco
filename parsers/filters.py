@@ -22,7 +22,7 @@ def parser_strip(data: str) -> str:
     return data
 
 
-def _clean_filter(data: str) -> str:
+def clean_ffmpeg_filter(data: str) -> str:
     for c in ['\"', '\r', '\n', ' ']:
         data = data.replace(c, '')
     return data
@@ -62,7 +62,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
         # Convert filter str to a list of dict
         filters_str: str = config.get(k_section, k_option)
         filters: list[str] = (
-            _clean_filter(filters_str).split(';')
+            clean_ffmpeg_filter(filters_str).split(';')
         )
         filters = list([f for f in filters if f != ''])
         pprint(filters)

@@ -72,7 +72,9 @@ class CommonWindow(QMainWindow):
         self.centralwidget = QWidget(self)
 
         # Common widgets
-        self.widget_preview = PreviewWidget(self.centralwidget)
+        self.widget_preview = PreviewWidget(
+            self.centralwidget, app_type=app_type
+        )
         self.widget_player_ctrl = PlayerCtrlWidget(
             self, controller, app_type=app_type
         )
@@ -100,7 +102,7 @@ class CommonWindow(QMainWindow):
     def apply_user_preferences(self, user_preferences: dict):
         try:
             w: list[int] = user_preferences['window']
-            self.setGeometry(*w['geometry'])
+            self.setGeometry(*w[self.app_type])
         except:
             self.setGeometry(0, 0 , 1920, 1080)
         self.widget_selection.apply_user_preferences(user_preferences)
