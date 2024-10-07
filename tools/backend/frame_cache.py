@@ -103,7 +103,7 @@ class FrameCache:
                         # sys.exit()
                         video_settings: VideoSettings = db['common']['video_format']['hr']
                         pad: int = video_settings.pad
-                        pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=green"
+                        pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
                         filter_complex = [
                             "-filter_complex",
                             clean_ffmpeg_filter(
@@ -175,10 +175,10 @@ class FrameCache:
                 # Convert the 1st image of the scene to fasten the display
                 np_img: np.ndarray = self.scenes[scene_key][0].img
                 h, w, c = np_img.shape
-                self.scenes[scene_key][0].pixmap = QPixmap().fromImage(
-                    QImage(np_img, w, h, w * c, QImage.Format.Format_BGR888)
-                )
-                self.scenes[scene_key][0].img = None
+                # self.scenes[scene_key][0].pixmap = QPixmap().fromImage(
+                #     QImage(np_img, w, h, w * c, QImage.Format.Format_BGR888)
+                # )
+                self.scenes[scene_key][0].img = np_img
 
         return self.scenes[scene_key]
 

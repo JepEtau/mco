@@ -80,6 +80,7 @@ GeometryActionParameter =  Literal[
     'width',
     'fit_to_width',
     'keep_ratio',
+    'detection',
     'autocrop',
 ]
 

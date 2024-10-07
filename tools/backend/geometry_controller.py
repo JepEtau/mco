@@ -164,17 +164,32 @@ class GeometryController(CommonController):
         scene_no: int = int(self.current_frame.scene_key.split(':')[-1])
         scene: Scene = self.scenes[scene_no]
         self.geometry_db.update_scene_geometry(
-            scene, GeometryAction(type='set', parameter='autocrop', value=params)
+            scene, GeometryAction(type='set', parameter='detection', value=params)
         )
-        self.selection_geometry.update(self.geometry_db.get_geometry(scene))
 
         log.info("Start detecting inner rect")
+        coordinates: list[np.ndarray] = []
+
         for f in self.frame_cache.get(scene=scene):
             # start a thread for detection
-            coordinates, _ = detect_inner_rect(
+            coords, _ = detect_inner_rect(
                 img=f.img,
                 params=params
             )
-            print(coordinates)
+            coordinates.append(coords)
 
-        log.info("Ended")
+        h, w = f.img.shape[:2]
+
+        pprint(coordinates)
+        l, x1 = np.min(coordinates, axis=0)[:2]
+        t, y1 = np.max(coordinates, axis=0)[2:]
+        autocrop = [t,  h - y1, l, w - x1]
+        pprint(autocrop)
+        log.info("Ended:")
+
+        self.geometry_db.update_scene_geometry(
+            scene, GeometryAction(type='set', parameter='autocrop', value=autocrop)
+        )
+        self.selection_geometry.update(self.geometry_db.get_geometry(scene))
+
+        self.signal_reload_frame.emit()

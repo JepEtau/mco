@@ -72,7 +72,7 @@ class PreviewWidget(QWidget):
             frame.pixmap = QPixmap().fromImage(
                 QImage(frame.img, w, h, w * c, QImage.Format.Format_BGR888)
             )
-            frame.img = None
+            # frame.img = None
         self.frame = frame
         self.repaint()
 
@@ -138,7 +138,14 @@ class PreviewWidget(QWidget):
 
         if self.scene_geometry is not None:
             factor: float = h / ih
-            t, b, l, r = np.array(self.scene_geometry.scene.crop) * factor
+            has_autocrop: bool = (
+                len(self.scene_geometry.scene.autocrop) == 4
+                and all(v != 0 for v in self.scene_geometry.scene.autocrop)
+            )
+            if has_autocrop:
+                t, b, l, r = np.array(self.scene_geometry.scene.autocrop) * factor
+            else:
+                t, b, l, r = np.array(self.scene_geometry.scene.crop) * factor
 
             pen_width = 1
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)

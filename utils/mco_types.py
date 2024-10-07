@@ -128,7 +128,7 @@ class ChapterGeometry:
 
 @dataclass(slots=True)
 class DetectInnerRectParams:
-    threshold_min: float = 10
+    threshold_min: int = 10
     morph_kernel_radius: int = 3
     erode_kernel_radius: int = 0
     erode_iterations: int = 2
@@ -150,7 +150,7 @@ class SceneGeometry:
 
     def __post_init__(self):
         # top, bottom, left, right
-        self.crop = (0, 0, 0, 0)
+        self.crop = [0, 0, 0, 0]
         self._defined: bool = False
 
     @property

@@ -87,7 +87,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         # self.checkBox_do_add_borders.toggled[bool].connect(self.event_ac_params_changed)
 
         # self.checkBox_use_as_crop_method
-        self.pushButton_calculate.connect(self.event_calculate)
+        self.pushButton_calculate.released.connect(self.event_calculate)
         # self.pushButton_copy_to_scene
 
 
@@ -176,7 +176,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
     def refresh_values(self, frame: Frame):
         target_geometry: TargetSceneGeometry = self.controller.get_scene_geometry(frame)
-        # pprint(target_geometry)
+        pprint(target_geometry)
 
         if target_geometry.is_erroneous:
             self.label_message.setText("ERROR!")
@@ -234,6 +234,8 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             self.lineEdit_scene_autocrop.setText(f"t: {t}, b: {b},  l: {l}, r: {r}")
         except:
             self.lineEdit_scene_autocrop.clear()
+
+        self.pushButton_calculate.setEnabled(True)
 
 
     def event_scene_selected(self, selected):
@@ -329,13 +331,6 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             erode_iterations=self.spinBox_erode_iterations.value(),
             do_add_borders=self.checkBox_do_add_borders.isChecked(),
         )
-        # self.signal_geometry_modified.emit(
-        #     GeometryAction(
-        #         type='set',
-        #         parameter='autocrop',
-        #         value=ac_params
-        #     )
-        # )
         self.signal_detect_inner_rect.emit(ac_params)
 
 

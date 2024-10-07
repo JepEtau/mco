@@ -141,10 +141,11 @@ class GeometryDatabase:
         scene: Scene,
         modification: GeometryAction
     ) -> None:
-
-        self._push_to_history()
-
         parameter, value = modification.parameter, modification.value
+
+        if parameter != 'autocrop':
+            self._push_to_history()
+
         if parameter == 'width':
             k_ep: str = scene['dst']['k_ep']
             k_ch: str = scene['dst']['k_ch']
@@ -153,7 +154,9 @@ class GeometryDatabase:
                 chapter_geometry = self._db[k_ch]
             else:
                 chapter_geometry = self._db[':'.join((k_ep, k_ch.replace('g_', '')))]
-            chapter_geometry.width += value
+            new = chapter_geometry.width + value
+            if 1024 < new <= 1440:
+                chapter_geometry.width = new
 
         else:
             src_scene = scene['src'].primary_scene()
@@ -161,14 +164,18 @@ class GeometryDatabase:
             scene_geometry: SceneGeometry = self._db[src_scene_key]
 
             if parameter.startswith('crop_'):
+                i = 0
                 if parameter == 'crop_top':
-                    scene_geometry.crop[0] += value
+                    i = 0
                 elif parameter == 'crop_bottom':
-                    scene_geometry.crop[1] += value
+                    i = 1
                 elif parameter == 'crop_left':
-                    scene_geometry.crop[2] += value
+                    i = 2
                 elif parameter == 'crop_right':
-                    scene_geometry.crop[3] += value
+                    i = 3
+                new = scene_geometry.crop[i] +value
+                if 0 < new < 200:
+                    scene_geometry.crop[i] = new
 
             elif parameter == 'keep_ratio':
                 scene_geometry.keep_ratio = bool(value)
@@ -176,8 +183,11 @@ class GeometryDatabase:
             elif parameter == 'fit_to_width':
                 scene_geometry.fit_to_width = bool(value)
 
-            elif parameter == 'autocrop':
+            elif parameter == 'detection':
                 scene_geometry.detection_params = deepcopy(value)
+
+            elif parameter == 'autocrop':
+                scene_geometry.autocrop = deepcopy(value)
 
 
     def is_modified(self, scene: Scene) -> bool:

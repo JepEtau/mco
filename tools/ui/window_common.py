@@ -143,10 +143,10 @@ class CommonWindow(QMainWindow):
         self.widget_selection.refresh_available_selection(selection)
 
 
-    def display_frame(self):
-        frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
-        self.widget_player_ctrl.refresh_values(frame, original_frame)
-        self.widget_preview.display_frame(frame)
+    # def display_frame(self):
+    #     frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
+    #     self.widget_player_ctrl.refresh_values(frame, original_frame)
+    #     self.widget_preview.display_frame(frame)
 
 
     @Slot()
