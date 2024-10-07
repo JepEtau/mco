@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import partial
 from pprint import pprint
 from logger import log
 from import_parsers import *
@@ -29,7 +30,13 @@ from .stylesheet import (
 if TYPE_CHECKING:
     from backend.geometry_controller import GeometryController
 from backend.frame_cache import Frame
-from backend._types import Selection, TargetSceneGeometry
+from backend._types import (
+    GeometryAction,
+    GeometryActionParameter,
+    GeometryActionType,
+    Selection,
+    TargetSceneGeometry,
+)
 
 
 
@@ -39,17 +46,6 @@ class CurrentFrame:
     frame: Frame
     original: Frame
 
-_Parameters =  Literal[
-    'crop_top',
-    'crop_bottom',
-    'crop_left',
-    'crop_right',
-    'width'
-]
-
-_EventType = Literal[
-    'select', 'remove', 'set', 'discard'
-]
 
 class GeometryWidget(QWidget, Ui_GeometryWidget):
     signal_save = Signal()
@@ -57,7 +53,8 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
     signal_undo = Signal()
     signal_preview_toggled = Signal(bool)
     signal_edition_started = Signal()
-    signal_geometry_modified = Signal(dict)
+    signal_geometry_modified = Signal(GeometryAction)
+    signal_detect_inner_rect = Signal(DetectInnerRectParams)
 
 
     def __init__(self, ui, controller):
@@ -76,6 +73,23 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.controller.signal_selection_modified.connect(self.event_scenelist_modified)
 
         self.current_key_pressed: Qt.Key | None = None
+
+
+        self.checkBox_scene_keep_ratio.toggled[bool].connect(self.event_keep_ratio_changed)
+        self.checkBox_scene_fit_to_width.toggled[bool].connect(self.event_fit_to_width_changed)
+
+        # Autocrop
+        # Do not keep the history of modifications
+        # self.spinBox_erode_iterations.valueChanged.connect(self.event_ac_params_changed)
+        # self.spinBox_erode_kernel_radius.valueChanged.connect(self.event_ac_params_changed)
+        # self.spinBox_morph_kernel_radius.valueChanged.connect(self.event_ac_params_changed)
+        # self.spinBox_threshold_min.valueChanged.connect(self.event_ac_params_changed)
+        # self.checkBox_do_add_borders.toggled[bool].connect(self.event_ac_params_changed)
+
+        # self.checkBox_use_as_crop_method
+        self.pushButton_calculate.connect(self.event_calculate)
+        # self.pushButton_copy_to_scene
+
 
         set_stylesheet(self)
         set_widget_stylesheet(self.label_message, 'message')
@@ -226,24 +240,103 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         log.info("detected scene selection changed")
 
 
+
+    def event_fit_to_width_changed(self, is_checked: bool):
+        w_self = self.checkBox_scene_fit_to_width
+        w = self.checkBox_scene_keep_ratio
+
+        if not is_checked and not w.isChecked():
+            w_self.blockSignals(True)
+            w_self.setChecked(True)
+            w_self.blockSignals(False)
+            return
+
+        log.info(f"fit to width: {'true' if is_checked else 'false'}")
+        self.event_is_modified(
+            event_type='set',
+            parameter='fit_to_width',
+            value=is_checked
+        )
+
+
+    def event_keep_ratio_changed(self, is_checked: bool):
+        w = self.checkBox_scene_fit_to_width
+        w_self = self.checkBox_scene_keep_ratio
+
+        if not is_checked and not w.isChecked():
+            w_self.blockSignals(True)
+            w_self.setChecked(True)
+            w_self.blockSignals(False)
+            return
+
+        log.info(f"keep ratio: {'true' if is_checked else 'false'}")
+        self.event_is_modified(
+            event_type='set',
+            parameter='keep_ratio',
+            value=is_checked
+        )
+
+
     def event_is_modified(
         self,
-        event_type: _EventType,
-        parameter: _Parameters,
+        event_type: GeometryActionType,
+        parameter: GeometryActionParameter,
         value: int
     ):
-        log.info("parameter has been modified: %s: %s, %d" % (event_type, parameter, value))
+        # log.info(f"parameter has been modified: {event_type}: {parameter}, {value}")
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
         if parameter == 'width':
             self.pushButton_target_discard.setEnabled(True)
             self.pushButton_target_save.setEnabled(True)
 
-        self.signal_geometry_modified.emit({
-            'type': event_type,
-            'parameter': parameter,
-            'value': value
-        })
+        self.signal_geometry_modified.emit(
+            GeometryAction(
+                type=event_type,
+                parameter=parameter,
+                value=value
+            )
+        )
+
+
+    def event_ac_params_changed(self, arg: Any) -> None:
+        print("ac params modified")
+        self.pushButton_discard.setEnabled(True)
+        self.pushButton_save.setEnabled(True)
+        ac_params: DetectInnerRectParams = DetectInnerRectParams(
+            threshold_min=self.spinBox_threshold_min.value(),
+            morph_kernel_radius=self.spinBox_morph_kernel_radius.value(),
+            erode_kernel_radius=self.spinBox_erode_kernel_radius.value(),
+            erode_iterations=self.spinBox_erode_iterations.value(),
+            do_add_borders=self.checkBox_do_add_borders.isChecked(),
+        )
+        self.signal_geometry_modified.emit(
+            GeometryAction(
+                type='set',
+                parameter='autocrop',
+                value=ac_params
+            )
+        )
+
+    def event_calculate(self) -> None:
+        self.pushButton_calculate.setEnabled(False)
+        self.pushButton_discard.setEnabled(True)
+        self.pushButton_save.setEnabled(True)
+        ac_params: DetectInnerRectParams = DetectInnerRectParams(
+            threshold_min=self.spinBox_threshold_min.value(),
+            morph_kernel_radius=self.spinBox_morph_kernel_radius.value(),
+            erode_kernel_radius=self.spinBox_erode_kernel_radius.value(),
+            erode_iterations=self.spinBox_erode_iterations.value(),
+            do_add_borders=self.checkBox_do_add_borders.isChecked(),
+        )
+        # self.signal_geometry_modified.emit(
+        #     GeometryAction(
+        #         type='set',
+        #         parameter='autocrop',
+        #         value=ac_params
+        #     )
+        # )
+        self.signal_detect_inner_rect.emit(ac_params)
 
 
     def event_wheel(self, event: QWheelEvent) -> bool:
@@ -254,7 +347,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             if self.checkBox_use_as_crop_method.isChecked():
                 return True
 
-            parameter: _Parameters
+            parameter: GeometryActionParameter
             if self.current_key_pressed == Qt.Key.Key_Z:
                 parameter = 'crop_top'
             elif self.current_key_pressed == Qt.Key.Key_S:

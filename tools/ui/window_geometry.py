@@ -45,11 +45,6 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from backend.geometry_controller import GeometryController
 
-from parsers import (
-    db,
-    get_fps,
-)
-
 
 class GeometryWindow(CommonWindow):
     signal_k_ep_p_refreshed = Signal(dict)

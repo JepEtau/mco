@@ -139,14 +139,14 @@ class DetectInnerRectParams:
 class SceneGeometry:
     keep_ratio: bool = True
     fit_to_width: bool = False
-    crop: tuple[int, int, int, int] = field(default_factory=tuple)
+    crop: list[int, int, int, int] = field(default_factory=list)
     is_default: bool = True
     chapter: ChapterGeometry = field(default_factory=ChapterGeometry)
     detection_params: DetectInnerRectParams = field(
         default_factory=DetectInnerRectParams
     )
     use_autocrop: bool = False
-    autocrop: tuple[int, int, int, int] = field(default_factory=tuple)
+    autocrop: list[int, int, int, int] = field(default_factory=list)
 
     def __post_init__(self):
         # top, bottom, left, right

@@ -5,7 +5,12 @@ from copy import copy, deepcopy
 from logger import log
 import os
 from pprint import pprint
-from ._types import Selection, TargetSceneGeometry
+from ._types import (
+    GeometryAction,
+    GeometryActionParameter,
+    Selection,
+    TargetSceneGeometry,
+)
 from utils.mco_types import (
     ChapterGeometry,
     Scene,
@@ -49,7 +54,7 @@ class GeometryDatabase:
             src_scene_key: str = self._key(src_scene)
             if src_scene_key not in self._db:
                 if 'geometry' in src_scene['scene']:
-                    self._db[src_scene_key] = src_scene['scene']['geometry']
+                    self._db[src_scene_key] = deepcopy(src_scene['scene']['geometry'])
                 else:
                     self._db[src_scene_key] = SceneGeometry()
 
@@ -59,7 +64,7 @@ class GeometryDatabase:
         chapter: ChapterVideo
         if k_ch in ('g_debut', 'g_fin'):
             chapter = db[k_ch]['video']
-            self._db[k_ch] = chapter['geometry']
+            self._db[k_ch] = deepcopy(chapter['geometry'])
 
         else:
             chapter = db[k_ep]['video']['target'][k_ch]
@@ -102,14 +107,12 @@ class GeometryDatabase:
         self,
         scene: Scene,
     ) -> dict[int, TargetSceneGeometry]:
-        scene_no: int = scene['no']
         src_scene = scene['src'].primary_scene()
         src_scene_key: str = self._key(src_scene)
 
         k_ep: str = scene['dst']['k_ep']
         k_ch: str = scene['dst']['k_ch']
         chapter_geometry: ChapterGeometry
-        print(self._db.keys())
         if k_ch in ('g_debut', 'g_fin'):
             chapter_geometry = self._db[k_ch]
         else:
@@ -132,6 +135,49 @@ class GeometryDatabase:
         if len(self.history) > self.history_depth:
             self.history = self.history[1:]
 
+
+    def update_scene_geometry(
+        self,
+        scene: Scene,
+        modification: GeometryAction
+    ) -> None:
+
+        self._push_to_history()
+
+        parameter, value = modification.parameter, modification.value
+        if parameter == 'width':
+            k_ep: str = scene['dst']['k_ep']
+            k_ch: str = scene['dst']['k_ch']
+            chapter_geometry: ChapterGeometry
+            if k_ch in ('g_debut', 'g_fin'):
+                chapter_geometry = self._db[k_ch]
+            else:
+                chapter_geometry = self._db[':'.join((k_ep, k_ch.replace('g_', '')))]
+            chapter_geometry.width += value
+
+        else:
+            src_scene = scene['src'].primary_scene()
+            src_scene_key: str = self._key(src_scene)
+            scene_geometry: SceneGeometry = self._db[src_scene_key]
+
+            if parameter.startswith('crop_'):
+                if parameter == 'crop_top':
+                    scene_geometry.crop[0] += value
+                elif parameter == 'crop_bottom':
+                    scene_geometry.crop[1] += value
+                elif parameter == 'crop_left':
+                    scene_geometry.crop[2] += value
+                elif parameter == 'crop_right':
+                    scene_geometry.crop[3] += value
+
+            elif parameter == 'keep_ratio':
+                scene_geometry.keep_ratio = bool(value)
+
+            elif parameter == 'fit_to_width':
+                scene_geometry.fit_to_width = bool(value)
+
+            elif parameter == 'autocrop':
+                scene_geometry.detection_params = deepcopy(value)
 
 
     def is_modified(self, scene: Scene) -> bool:
@@ -173,50 +219,6 @@ class GeometryDatabase:
                 continue
             print ("to save")
 
-            k_ed, k_ep, k_ch, src_scene_no = src_scene_key.split(':')
-            # filepath
-            k = (
-                k_ch if k_ch in credit_chapter_keys()
-                else k_ep
-            )
-            replace_fp = os.path.join(
-                db['common']['directories']['config'], k, f"{k}_replace.ini"
-            )
-
-            # Parse the file
-            if os.path.exists(replace_fp):
-                config_replace = ConfigParser(dict_type=OrderedDict)
-                config_replace.read(replace_fp)
-            else:
-                config_replace = ConfigParser({}, OrderedDict)
-
-            # Update the config file, select section
-            k_section = '.'.join((k_ed, k_ep, k_ch, ))
-            _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][int(src_scene_no)]
-            initial_replace = _src_scene['replace']
-            # config_replace[k_section] = {}
-
-            for no in initial_replace:
-                if (
-                    config_replace.has_option(k_section, f"{no}")
-                    and no not in self._db[src_scene_key]
-                ):
-                    print(f"remove: {k_section}: {no}")
-                    config_replace.remove_option(k_section, f"{no}")
-
-            # Set new values
-            for no, by in self._db[src_scene_key].items():
-                if no != by:
-                    if not config_replace.has_section(k_section):
-                        config_replace.add_section(k_section)
-                    config_replace.set(k_section, f"{no}", f"{by}")
-
-            # Write to the database
-            with open(replace_fp, 'w') as config_file:
-                config_replace.write(config_file)
-
-            # Remove modified
-            _src_scene['replace'] = deepcopy(self._db[src_scene_key])
             self.modified_src_scenes.remove(src_scene_key)
 
         self.modified_scenes.remove(scene['no'])

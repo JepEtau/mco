@@ -4,6 +4,7 @@ from typing import Literal
 import numpy as np
 from utils.mco_types import (
     ChapterGeometry,
+    DetectInnerRectParams,
     Scene,
     SceneGeometry,
 )
@@ -69,4 +70,23 @@ class ReplaceAction:
     current: Frame | None
     by: Frame | int | None
 
+
+GeometryActionType = Literal['select', 'remove', 'set', 'discard']
+GeometryActionParameter =  Literal[
+    'crop_top',
+    'crop_bottom',
+    'crop_left',
+    'crop_right',
+    'width',
+    'fit_to_width',
+    'keep_ratio',
+    'autocrop',
+]
+
+
+@dataclass(slots=True)
+class GeometryAction:
+    type: GeometryActionType
+    parameter: GeometryActionParameter
+    value: int | bool | DetectInnerRectParams
 

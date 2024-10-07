@@ -1,5 +1,8 @@
 from __future__ import annotations
+import sys
 from typing import Any
+
+import numpy as np
 from import_parsers import *
 
 from pprint import pprint
@@ -9,10 +12,16 @@ from PySide6.QtCore import (
     Slot,
 )
 
+from nn_inference.toolbox.detect_inner_rect import detect_inner_rect
 from tools.backend.geometry_database import GeometryDatabase
 
-from ._types import PlaylistProperties, ReplaceAction, Selection, TargetSceneGeometry
-from .replace_database import ReplaceDatabase
+from ._types import (
+    DetectInnerRectParams,
+    GeometryAction,
+    PlaylistProperties,
+    Selection,
+    TargetSceneGeometry,
+)
 from .frame_cache import FrameCache, Frame
 from .common_controller import CommonController
 from .user_preferences import UserPreferences
@@ -50,6 +59,7 @@ class GeometryController(CommonController):
         # self.view.widget_geometry.signal_save.connect(self.event_geometry_save)
         # self.view.widget_geometry.signal_discard.connect(self.event_geometry_discard)
         self.view.widget_geometry.signal_geometry_modified.connect(self.event_geometry_modified)
+        self.view.widget_geometry.signal_detect_inner_rect.connect(self.event_detect_inner_rect)
 
 
     def k_ep_p_changed(self, selection: Selection):
@@ -127,7 +137,8 @@ class GeometryController(CommonController):
 
 
     def get_frame_at_index(self, index: int) -> tuple[Frame, Frame | None]:
-        return self.playlist_frames[index], None
+        self.current_frame = self.playlist_frames[index]
+        return self.current_frame, None
 
 
     def preview_modified(self, preview_settings: dict):
@@ -136,11 +147,34 @@ class GeometryController(CommonController):
 
     def get_scene_geometry(self, frame: Frame) -> TargetSceneGeometry:
         # print(lightcyan(f"get_scene_geometry: {frame.scene_key}, {frame.src_scene_key}"))
-        # self.scenes[frame.src_scene_key]
-        # pprint(self.selection_geometry.keys())
         return self.selection_geometry[frame.src_scene_key]
 
 
-    @Slot(dict)
-    def event_geometry_modified(self, modification: dict[str, Any]) -> None:
-        pprint(modification)
+    @Slot(GeometryAction)
+    def event_geometry_modified(self, modification: GeometryAction) -> None:
+        scene_no: int = int(self.current_frame.scene_key.split(':')[-1])
+        scene: Scene = self.scenes[scene_no]
+        self.geometry_db.update_scene_geometry(scene, modification)
+        self.selection_geometry.update(self.geometry_db.get_geometry(scene))
+        self.signal_reload_frame.emit()
+
+
+    @Slot(DetectInnerRectParams)
+    def event_detect_inner_rect(self, params: DetectInnerRectParams) -> None:
+        scene_no: int = int(self.current_frame.scene_key.split(':')[-1])
+        scene: Scene = self.scenes[scene_no]
+        self.geometry_db.update_scene_geometry(
+            scene, GeometryAction(type='set', parameter='autocrop', value=params)
+        )
+        self.selection_geometry.update(self.geometry_db.get_geometry(scene))
+
+        log.info("Start detecting inner rect")
+        for f in self.frame_cache.get(scene=scene):
+            # start a thread for detection
+            coordinates, _ = detect_inner_rect(
+                img=f.img,
+                params=params
+            )
+            print(coordinates)
+
+        log.info("Ended")
