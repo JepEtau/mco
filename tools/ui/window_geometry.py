@@ -26,6 +26,8 @@ from PySide6.QtWidgets import (
     QSizePolicy,
 )
 
+from backend._types import GeometryPreviewOptions
+
 from .window_common import CommonWindow
 from utils.p_print import red
 
@@ -92,6 +94,10 @@ class GeometryWindow(CommonWindow):
         self.widget_geometry.signal_preview_toggled[bool].connect(
             self.preview_modified
         )
+        self.widget_geometry.signal_preview_options_changed.connect(
+            self.preview_options_changed
+        )
+
 
         self.show()
         self.installEventFilter(self)
@@ -122,6 +128,13 @@ class GeometryWindow(CommonWindow):
         self.widget_player_ctrl.set_preview_enabled(enabled)
         self.display_frame()
 
+
+    @Slot(GeometryPreviewOptions)
+    def preview_options_changed(self) -> None:
+        self.widget_preview.set_preview_options(
+            self.widget_geometry.get_preview_options()
+        )
+
     # def get_preview_options(self):
     #     log.info("get preview options")
     #     preview_options = dict()
@@ -142,7 +155,6 @@ class GeometryWindow(CommonWindow):
         self.widget_preview.set_geometry(self.controller.get_scene_geometry(frame))
         self.widget_preview.display_frame(frame)
         self.widget_geometry.refresh_values(frame)
-
 
 
 

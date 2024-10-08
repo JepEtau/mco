@@ -34,6 +34,7 @@ from backend._types import (
     GeometryAction,
     GeometryActionParameter,
     GeometryActionType,
+    GeometryPreviewOptions,
     Selection,
     TargetSceneGeometry,
 )
@@ -55,7 +56,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
     signal_edition_started = Signal()
     signal_geometry_modified = Signal(GeometryAction)
     signal_detect_inner_rect = Signal(DetectInnerRectParams)
-
+    signal_preview_options_changed = Signal(GeometryPreviewOptions)
 
     def __init__(self, ui, controller):
         super().__init__(ui)
@@ -91,6 +92,21 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         # self.pushButton_copy_to_scene
 
         self.pushButton_save.released.connect(self.event_save)
+
+        # Edition/Preview
+        self.pushButton_target_width_edition.toggled[bool].connect(
+            partial(self.event_scene_preview_changed, 'target_preview')
+        )
+        self.pushButton_scene_crop_edition.toggled[bool].connect(
+            partial(self.event_scene_preview_changed, 'crop_edition')
+        )
+        self.pushButton_scene_crop_preview.toggled[bool].connect(
+            partial(self.event_scene_preview_changed, 'crop_preview')
+        )
+        self.pushButton_scene_resize_preview.toggled[bool].connect(
+            partial(self.event_scene_preview_changed, 'resize_preview')
+        )
+
 
         set_stylesheet(self)
         set_widget_stylesheet(self.label_message, 'message')
@@ -244,8 +260,34 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.pushButton_calculate.setEnabled(True)
 
 
-    def event_scene_selected(self, selected):
-        log.info("detected scene selection changed")
+    def get_preview_options(self) -> GeometryPreviewOptions:
+        preview_options: GeometryPreviewOptions = GeometryPreviewOptions(
+            allowed=self.is_edition_allowed,
+            final_preview=self.pushButton_set_preview.isChecked(),
+            width_edition=self.pushButton_target_width_edition.isChecked(),
+            crop_edition=self.pushButton_scene_crop_edition.isChecked(),
+            crop_preview=self.pushButton_scene_crop_preview.isChecked(),
+            resize_preview=self.pushButton_scene_resize_preview.isChecked(),
+        )
+        return preview_options
+
+
+    def event_scene_preview_changed(self, selected, value):
+        # A button has been clicked
+        # log.info("button [%s] clicked" % (selected))
+        # print_yellow("button [%s] clicked" % (selected))
+        # if selected == 'target_preview':
+        # elif selected == 'target_show_edition':
+        # elif selected == 'crop_edition':
+        # elif selected == 'crop_preview':
+        # elif selected == 'resize_preview':
+
+        # Disable final preview
+        self.pushButton_set_preview.blockSignals(True)
+        self.pushButton_set_preview.setChecked(False)
+        self.saved_preview_options = None
+        self.pushButton_set_preview.blockSignals(False)
+        self.signal_preview_options_changed.emit(self.get_preview_options())
 
 
 

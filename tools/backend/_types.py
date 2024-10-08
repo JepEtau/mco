@@ -91,3 +91,14 @@ class GeometryAction:
     parameter: GeometryActionParameter
     value: int | bool | DetectInnerRectParams
 
+
+
+@dataclass(slots=True)
+class GeometryPreviewOptions:
+    allowed: bool
+    final_preview: bool
+    width_edition: bool
+    crop_edition: bool
+    crop_preview: bool
+    resize_preview: bool
+

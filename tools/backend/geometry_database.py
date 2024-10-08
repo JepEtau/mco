@@ -173,7 +173,7 @@ class GeometryDatabase:
                 elif parameter == 'crop_right':
                     i = 3
                 new = scene_geometry.crop[i] +value
-                if 0 < new < 200:
+                if 0 <= new < 200:
                     scene_geometry.crop[i] = new
                 scene_geometry.use_default = False
 
@@ -293,7 +293,7 @@ class GeometryDatabase:
                 values.append(f"default=true")
 
             if not all([x==0 for x in scene_geometry.autocrop]):
-                values.append(f"autocrop={':'.join(map(str, scene_geometry.crop))}")
+                values.append(f"autocrop={':'.join(map(str, scene_geometry.autocrop))}")
                 if scene_geometry.use_autocrop:
                     values.append(f"use_autocrop=true")
 

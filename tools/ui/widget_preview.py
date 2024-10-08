@@ -28,10 +28,17 @@ from PySide6.QtWidgets import (
 import numpy as np
 from backend.frame_cache import Frame
 from backend._types import (
+    GeometryPreviewOptions,
     TargetSceneGeometry,
     AppType,
 )
 
+
+COLOR_PART_CROP_RECT = QColor(30, 230, 30)
+COLOR_CROP_RECT = QColor(230, 30, 30)
+COLOR_FINAL_RECT = QColor(0, 255, 0)
+COLOR_DISPLAY_RECT = QColor(255, 255, 255)
+PAD = 24
 
 class PreviewWidget(QWidget):
     signal_wheel_event = Signal(QWheelEvent)
@@ -54,7 +61,8 @@ class PreviewWidget(QWidget):
         self.setSizePolicy(sizePolicy)
         self.setMinimumSize(QSize(300, 300))
         self.setStyleSheet(u"background-color: rgb(0, 0, 0);")
-        self.scene_geometry: TargetSceneGeometry | None =  None
+        self.scene_geometry: TargetSceneGeometry | None = None
+        self.preview_options: GeometryPreviewOptions | None = None
 
 
     @staticmethod
@@ -64,6 +72,12 @@ class PreviewWidget(QWidget):
 
     def set_geometry(self, scene_geometry: TargetSceneGeometry):
         self.scene_geometry = scene_geometry
+
+
+    def set_preview_options(self, options: GeometryPreviewOptions) -> None:
+        self.preview_options: GeometryPreviewOptions = options
+        # Use the same geometry/frame
+        self.repaint()
 
 
     def display_frame(self, frame: Frame) -> None:
@@ -103,9 +117,9 @@ class PreviewWidget(QWidget):
             scaled = pixmap
 
         w, h = scaled.size().toTuple()
-        x0: int = (container_w - w) // 2
-        y0: int = (container_h - h) // 2
-        painter.drawPixmap(QPoint(x0, y0), scaled)
+        ix0: int = (container_w - w) // 2
+        iy0: int = (container_h - h) // 2
+        painter.drawPixmap(QPoint(ix0, iy0), scaled)
 
         if True:
             # For debug
@@ -134,10 +148,52 @@ class PreviewWidget(QWidget):
             painter.setPen(pen)
             painter.drawRect(self.rect().adjusted(0,0,-1,-1))
 
-
+        # Coordinates of center
+        xc0 = cx1 // 2
+        yc0 = cy1 // 2
 
         if self.scene_geometry is not None:
             factor: float = h / ih
+
+
+            # final 4:3 screen
+            screen_w, screen_h = 1440, 1080
+            x0: int = (container_w - screen_w) // 2
+            y0: int = (container_h - screen_h) // 2
+            pen_width = 1
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+            pen = QPen(COLOR_FINAL_RECT)
+            pen.setWidth(pen_width)
+            pen.setStyle(Qt.PenStyle.SolidLine)
+            painter.setPen(pen)
+            painter.drawRect(x0, y0, screen_w - 1, screen_h - 1)
+
+
+            # Chapter width
+            ch_w, ch_h = self.scene_geometry.chapter.width, 1080
+
+            ch_x0: int = xc0 - ch_w // 2
+            ch_x1: int = ch_x0 + ch_w
+
+            # x0: int = (container_w - ch_w) // 2
+            # y0: int = (container_h - screen_h) // 2
+            ch_y0 = iy0 + PAD
+            pen_width = 1
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+            pen = QPen(COLOR_PART_CROP_RECT)
+            pen.setWidth(pen_width)
+            pen.setStyle(Qt.PenStyle.SolidLine)
+            painter.setPen(pen)
+            painter.drawLine(
+                QPoint(ch_x0, iy0), QPoint(ch_x0, iy0 + ch_h - 1 + 2*PAD)
+            )
+            painter.drawLine(
+                QPoint(ch_x1, iy0), QPoint(ch_x1, iy0 + ch_h - 1 + 2*PAD)
+            )
+            # painter.drawRect(x0, y0, ch_w - 1, screen_h - 1)
+
+
+            # Crop
             has_autocrop: bool = (
                 len(self.scene_geometry.scene.autocrop) == 4
                 and all(v != 0 for v in self.scene_geometry.scene.autocrop)
@@ -149,40 +205,14 @@ class PreviewWidget(QWidget):
 
             pen_width = 1
             painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-            pen = QPen(QColor(220,128,0))
+            pen = QPen(COLOR_CROP_RECT)
             pen.setWidth(pen_width)
             pen.setStyle(Qt.PenStyle.SolidLine)
             painter.setPen(pen)
             painter.drawRect(
-                l + x0, t + y0,
+                l + ix0, t + iy0,
                 w - (l + r) - 1, h - (t + b) - 1
             )
-
-            # final 4:3 screen
-            screen_w, screen_h = 1440, 1080
-            x0: int = (container_w - screen_w) // 2
-            y0: int = (container_h - screen_h) // 2
-            pen_width = 1
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-            pen = QPen(QColor(0,128,220))
-            pen.setWidth(pen_width)
-            pen.setStyle(Qt.PenStyle.SolidLine)
-            painter.setPen(pen)
-            painter.drawRect(x0, y0, screen_w - 1, screen_h - 1)
-
-
-            # chapter width
-            ch_w, screen_h = self.scene_geometry.chapter.width, 1080
-            x0: int = (container_w - ch_w) // 2
-            y0: int = (container_h - screen_h) // 2
-            pen_width = 1
-            painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-            pen = QPen(QColor(0, 160 ,240))
-            pen.setWidth(pen_width)
-            pen.setStyle(Qt.PenStyle.SolidLine)
-            painter.setPen(pen)
-            painter.drawRect(x0, y0, ch_w - 1, screen_h - 1)
-
 
 
         painter.end()
