@@ -144,21 +144,14 @@ def parse_database(
                 already_parsed.append(k_ep_tmp)
 
 
-    # Parse the geometry for the target episode only
-    # Otherwise it is overwritten by the following episodes
-    if k_ep != 'ep00':
-        parse_geometry_configurations(k_ep_or_g=k_ep)
 
     # Génériques: debut/fin
-    for k_chapter_g in ['g_fin', 'g_debut']:
+    for k_chapter_g in ('g_debut', 'g_fin'):
         # Replaced frames
         parse_replace_configurations(k_ep_or_g=k_chapter_g)
 
         # Parameters used to stabilize
         # parse_stabilize_configurations(k_ep_or_g=k_chapter_g)
-
-        # Crop and resize
-        parse_geometry_configurations(k_ep_or_g=k_chapter_g)
 
         # Create scenes used for the generation
         consolidate_target_scenes_g(k_ep='', k_chapter=k_chapter_g)
@@ -174,13 +167,25 @@ def parse_database(
         for chapter in non_credit_chapter_keys():
             consolidate_target_scenes(k_ep=k_ep, k_chapter=chapter)
 
-        for k_chapter_g in ['g_asuivre', 'g_documentaire']:
+        for k_chapter_g in ('g_asuivre', 'g_documentaire'):
             parse_replace_configurations(k_ep_or_g=k_chapter_g)
             # parse_stabilize_configurations(k_ep_or_g=k_chapter_g)
             parse_geometry_configurations(k_ep_or_g=k_chapter_g)
-
             consolidate_target_scenes_g(k_ep=k_ep, k_chapter=k_chapter_g)
 
+    # Parse the geometry once all target scenes consolidated because
+    # the geometry refers to the destination and not the source
+    # bc of segment functionnality
+    if k_ep != 'ep00':
+        parse_geometry_configurations(k_ep_or_g=k_ep)
+        for k_chapter_g in credit_chapter_keys():
+            parse_geometry_configurations(k_ep_or_g=k_chapter_g)
+
+    else:
+        for k_chapter_g in ('g_debut', 'g_fin'):
+            parse_geometry_configurations(k_ep_or_g=k_chapter_g)
+
+    if k_ep != 'ep00':
         consolidate_av_sync(k_ep=k_ep)
         consolidate_av_tracks(k_ep=k_ep)
 

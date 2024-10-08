@@ -90,6 +90,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.pushButton_calculate.released.connect(self.event_calculate)
         # self.pushButton_copy_to_scene
 
+        self.pushButton_save.released.connect(self.event_save)
 
         set_stylesheet(self)
         set_widget_stylesheet(self.label_message, 'message')
@@ -172,6 +173,11 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
     def set_edition_and_preview_enabled(self, enabled):
         # TODO reactivate once completely verified
         return
+
+
+    @Slot()
+    def event_save(self) -> None:
+        self.signal_save.emit()
 
 
     def refresh_values(self, frame: Frame):
@@ -392,7 +398,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             if key == Qt.Key.Key_S:
                 if verbose:
                     print(purple("Save geometry"))
-                self.event_save_modifications()
+                self.event_save()
                 return True
 
         # if modifiers & Qt.AltModifier:

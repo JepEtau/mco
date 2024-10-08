@@ -39,6 +39,7 @@ class ReplaceController(CommonController):
 
     def set_view(self, view: ReplaceWindow):
         super().set_view(view)
+        self.view: ReplaceWindow
 
         self.view.widget_replace.signal_replace_modified[ReplaceAction].connect(self.event_frame_replaced)
         self.view.widget_replace.signal_replace_removed.connect(

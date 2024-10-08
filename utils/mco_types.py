@@ -123,7 +123,7 @@ class GenericSrc(TypedDict):
 
 @dataclass
 class ChapterGeometry:
-    width: int = -1
+    width: int = 1440
 
 
 @dataclass(slots=True)
@@ -140,17 +140,19 @@ class SceneGeometry:
     keep_ratio: bool = True
     fit_to_width: bool = False
     crop: list[int, int, int, int] = field(default_factory=list)
-    is_default: bool = True
+    use_default: bool = False
     chapter: ChapterGeometry = field(default_factory=ChapterGeometry)
     detection_params: DetectInnerRectParams = field(
         default_factory=DetectInnerRectParams
     )
+    custom_detection_params: bool = True
     use_autocrop: bool = False
     autocrop: list[int, int, int, int] = field(default_factory=list)
 
     def __post_init__(self):
         # top, bottom, left, right
         self.crop = [0, 0, 0, 0]
+        self.autocrop = [0, 0, 0, 0]
         self._defined: bool = False
 
     @property

@@ -61,7 +61,7 @@ def consolidate_scene(
     if k_ch in ['g_asuivre', 'g_documentaire']:
         # print("\t\t\tconsolidate_scene: get geometry from %s:%s:%s" % (k_ed, k_ep, k_ch[2:]))
         k_ep_dst = scene['dst']['k_ep']
-        ch_geometry: ChapterGeometry | None
+        ch_geometry: ChapterGeometry | None = None
         width: int = 0
         try:
             ch_geometry = db[k_ep_dst]['video']['target'][k_ch[2:]]['geometry']
@@ -70,9 +70,12 @@ def consolidate_scene(
             pass
         # ch_geometry: ChapterGeometry = db[k_ep]['video'][k_ed][k_ch]['geometry']
 
-        scene['geometry'] = SceneGeometry(
-            chapter=ch_geometry
-        )
+        if ch_geometry is None:
+            print(yellow(f"no geometry for chapter: {k_ch}"))
+        else:
+            scene['geometry'] = SceneGeometry(
+                chapter=ch_geometry
+            )
 
     else:
         k_ed_src, k_ep_src, k_ch_src, scene_no_src = primary_src_scene['k_ed_ep_ch_no']

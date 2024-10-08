@@ -55,12 +55,14 @@ class GeometryController(CommonController):
     def set_view(self, view: GeometryWindow):
         super().set_view(view)
 
+        self.view: GeometryWindow
+
         # self.view.widget_geometry.signal_undo.connect(self.event_geometry_undo)
         # self.view.widget_geometry.signal_save.connect(self.event_geometry_save)
         # self.view.widget_geometry.signal_discard.connect(self.event_geometry_discard)
         self.view.widget_geometry.signal_geometry_modified.connect(self.event_geometry_modified)
         self.view.widget_geometry.signal_detect_inner_rect.connect(self.event_detect_inner_rect)
-
+        self.view.widget_geometry.signal_save.connect(self.event_geometry_save)
 
     def k_ep_p_changed(self, selection: Selection):
         super().k_ep_p_changed(selection)
@@ -146,8 +148,8 @@ class GeometryController(CommonController):
 
 
     def get_scene_geometry(self, frame: Frame) -> TargetSceneGeometry:
-        # print(lightcyan(f"get_scene_geometry: {frame.scene_key}, {frame.src_scene_key}"))
-        return self.selection_geometry[frame.src_scene_key]
+        print(lightcyan(f"get_scene_geometry: {frame.scene_key}, {frame.src_scene_key}"))
+        return self.selection_geometry[frame.scene_key]
 
 
     @Slot(GeometryAction)
@@ -193,3 +195,17 @@ class GeometryController(CommonController):
         self.selection_geometry.update(self.geometry_db.get_geometry(scene))
 
         self.signal_reload_frame.emit()
+
+
+    @Slot()
+    def event_geometry_save(self):
+        print(f"selected scenes: {self.playlist_properties().scenes}")
+        print(self.geometry_db.modified_scene_nos())
+        for scene_no in self.playlist_properties().scenes:
+            print(f"save no.{scene_no}")
+            scene: Scene = self.current_selection.scenes[scene_no]
+            self.geometry_db.save(scene)
+
+        self.signal_is_saved.emit('geometry_db')
+        print(f"modified_scenes: {self.geometry_db.modified_scene_nos()}")
+        self.signal_modified_scenes.emit(self.geometry_db.modified_scene_nos())

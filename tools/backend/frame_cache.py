@@ -53,7 +53,8 @@ class FrameCache:
 
     @staticmethod
     def _key(scene: Scene) -> str:
-        return f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
+        k_ep_dst: str = scene['dst']['k_ep']
+        return f"{k_ep_dst if k_ep_dst else 'ep00'}:{scene['dst']['k_ch']}:{scene['no']:03}"
 
 
     def get(self, scene: Scene) -> list[Frame] | None:

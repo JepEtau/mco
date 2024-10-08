@@ -168,7 +168,7 @@ class ReplaceDatabase:
                 config_replace = ConfigParser({}, OrderedDict)
 
             # Update the config file, select section
-            k_section = '.'.join((k_ed, k_ep, k_ch, ))
+            k_section = '.'.join((k_ed, k_ep, k_ch))
             _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][int(src_scene_no)]
             initial_replace = _src_scene['replace']
             # config_replace[k_section] = {}
