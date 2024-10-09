@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>317</width>
-    <height>561</height>
+    <height>599</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -88,6 +88,25 @@
           </property>
           <property name="flat">
            <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="shortcut">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>8</pointsize>
+            <italic>false</italic>
+           </font>
+          </property>
+          <property name="text">
+           <string>(F2)</string>
           </property>
          </widget>
         </item>
@@ -205,13 +224,79 @@
          <bool>false</bool>
         </property>
         <layout class="QGridLayout" name="_2">
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_9">
-           <property name="lineWidth">
-            <number>0</number>
+         <item row="0" column="1">
+          <widget class="QPushButton" name="pushButton_target_width_edition">
+           <property name="focusPolicy">
+            <enum>Qt::FocusPolicy::NoFocus</enum>
            </property>
            <property name="text">
-            <string>width</string>
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../icons/grey/box-select.svg</normaloff>
+             <normalon>../../icons/blue/box-select.svg</normalon>
+             <disabledoff>../../icons/grey/box-select.svg</disabledoff>
+             <disabledon>../../icons/grey/box-select.svg</disabledon>../../icons/grey/box-select.svg</iconset>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="4">
+          <widget class="QPushButton" name="pushButton_target_discard">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::FocusPolicy::NoFocus</enum>
+           </property>
+           <property name="text">
+            <string extracomment="Undo (Ctrl-Z)"/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../icons/purple/undo.svg</normaloff>
+             <normalon>../../icons/purple/undo.svg</normalon>../../icons/purple/undo.svg</iconset>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="5">
+          <widget class="QPushButton" name="pushButton_target_save">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="focusPolicy">
+            <enum>Qt::FocusPolicy::NoFocus</enum>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../icons/purple/save.svg</normaloff>../../icons/purple/save.svg</iconset>
+           </property>
+           <property name="checkable">
+            <bool>false</bool>
+           </property>
+           <property name="autoDefault">
+            <bool>false</bool>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
            </property>
           </widget>
          </item>
@@ -249,79 +334,25 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="4">
-          <widget class="QPushButton" name="pushButton_target_discard">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="focusPolicy">
-            <enum>Qt::FocusPolicy::NoFocus</enum>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_9">
+           <property name="lineWidth">
+            <number>0</number>
            </property>
            <property name="text">
-            <string extracomment="Undo (Ctrl-Z)"/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../icons/purple/undo.svg</normaloff>
-             <normalon>../../icons/purple/undo.svg</normalon>../../icons/purple/undo.svg</iconset>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
+            <string>width</string>
            </property>
           </widget>
          </item>
-         <item row="0" column="1">
-          <widget class="QPushButton" name="pushButton_target_width_edition">
-           <property name="focusPolicy">
-            <enum>Qt::FocusPolicy::NoFocus</enum>
+         <item row="1" column="1">
+          <widget class="QLabel" name="shortcut_2">
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
            </property>
            <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../icons/grey/box-select.svg</normaloff>
-             <normalon>../../icons/blue/box-select.svg</normalon>
-             <disabledoff>../../icons/grey/box-select.svg</disabledoff>
-             <disabledon>../../icons/grey/box-select.svg</disabledon>../../icons/grey/box-select.svg</iconset>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="5">
-          <widget class="QPushButton" name="pushButton_target_save">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="focusPolicy">
-            <enum>Qt::FocusPolicy::NoFocus</enum>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../icons/purple/save.svg</normaloff>../../icons/purple/save.svg</iconset>
-           </property>
-           <property name="checkable">
-            <bool>false</bool>
-           </property>
-           <property name="autoDefault">
-            <bool>false</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
+            <string>(F3)</string>
            </property>
           </widget>
          </item>
@@ -349,27 +380,6 @@
          <bool>false</bool>
         </property>
         <layout class="QGridLayout" name="_3">
-         <item row="0" column="2">
-          <widget class="QPushButton" name="pushButton_scene_crop_preview">
-           <property name="focusPolicy">
-            <enum>Qt::FocusPolicy::NoFocus</enum>
-           </property>
-           <property name="text">
-            <string/>
-           </property>
-           <property name="icon">
-            <iconset>
-             <normaloff>../../icons/grey/eye.svg</normaloff>
-             <normalon>../../icons/blue/eye.svg</normalon>../../icons/grey/eye.svg</iconset>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="flat">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="3">
           <spacer name="horizontalSpacer_3">
            <property name="orientation">
@@ -386,8 +396,42 @@
            </property>
           </spacer>
          </item>
-         <item row="0" column="5">
-          <widget class="QPushButton" name="pushButton_scene_resize_preview">
+         <item row="1" column="1">
+          <widget class="QLabel" name="shortcut_3">
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>(F4)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="2">
+          <widget class="QLabel" name="shortcut_4">
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
+           </property>
+           <property name="text">
+            <string>(F5)</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_12">
+           <property name="lineWidth">
+            <number>0</number>
+           </property>
+           <property name="text">
+            <string>crop</string>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="2">
+          <widget class="QPushButton" name="pushButton_scene_crop_preview">
            <property name="focusPolicy">
             <enum>Qt::FocusPolicy::NoFocus</enum>
            </property>
@@ -417,13 +461,15 @@
            </property>
           </widget>
          </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_12">
-           <property name="lineWidth">
-            <number>0</number>
+         <item row="1" column="5">
+          <widget class="QLabel" name="shortcut_5">
+           <property name="font">
+            <font>
+             <pointsize>8</pointsize>
+            </font>
            </property>
            <property name="text">
-            <string>crop</string>
+            <string>(F6)</string>
            </property>
           </widget>
          </item>
@@ -445,6 +491,27 @@
            </property>
            <property name="autoDefault">
             <bool>false</bool>
+           </property>
+           <property name="flat">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="5">
+          <widget class="QPushButton" name="pushButton_scene_resize_preview">
+           <property name="focusPolicy">
+            <enum>Qt::FocusPolicy::NoFocus</enum>
+           </property>
+           <property name="text">
+            <string/>
+           </property>
+           <property name="icon">
+            <iconset>
+             <normaloff>../../icons/grey/eye.svg</normaloff>
+             <normalon>../../icons/blue/eye.svg</normalon>../../icons/grey/eye.svg</iconset>
+           </property>
+           <property name="checkable">
+            <bool>true</bool>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -499,8 +566,8 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="label_19">
+         <item row="0" column="0">
+          <widget class="QLabel" name="label_10">
            <property name="enabled">
             <bool>true</bool>
            </property>
@@ -508,9 +575,42 @@
             <number>0</number>
            </property>
            <property name="text">
-            <string>resize</string>
+            <string>crop</string>
            </property>
           </widget>
+         </item>
+         <item row="1" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_3">
+           <item>
+            <widget class="QCheckBox" name="checkBox_scene_keep_ratio">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="focusPolicy">
+              <enum>Qt::FocusPolicy::NoFocus</enum>
+             </property>
+             <property name="text">
+              <string>keep ratio</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QCheckBox" name="checkBox_scene_fit_to_width">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="focusPolicy">
+              <enum>Qt::FocusPolicy::NoFocus</enum>
+             </property>
+             <property name="text">
+              <string>fit_to_width</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
          </item>
          <item row="0" column="1">
           <widget class="QLineEdit" name="lineEdit_scene_crop_rectangle">
@@ -549,41 +649,8 @@
            </property>
           </widget>
          </item>
-         <item row="1" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_3">
-           <item>
-            <widget class="QCheckBox" name="checkBox_scene_keep_ratio">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="focusPolicy">
-              <enum>Qt::FocusPolicy::NoFocus</enum>
-             </property>
-             <property name="text">
-              <string>keep ratio</string>
-             </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QCheckBox" name="checkBox_scene_fit_to_width">
-             <property name="enabled">
-              <bool>true</bool>
-             </property>
-             <property name="focusPolicy">
-              <enum>Qt::FocusPolicy::NoFocus</enum>
-             </property>
-             <property name="text">
-              <string>fit_to_width</string>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="label_10">
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_19">
            <property name="enabled">
             <bool>true</bool>
            </property>
@@ -591,9 +658,75 @@
             <number>0</number>
            </property>
            <property name="text">
-            <string>crop</string>
+            <string>resize</string>
            </property>
           </widget>
+         </item>
+         <item row="3" column="1">
+          <layout class="QHBoxLayout" name="horizontalLayout_4">
+           <item>
+            <widget class="QLabel" name="shortcut_6">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>(R)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_5">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item>
+            <widget class="QLabel" name="shortcut_7">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="font">
+              <font>
+               <pointsize>8</pointsize>
+              </font>
+             </property>
+             <property name="text">
+              <string>(F)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <spacer name="horizontalSpacer_6">
+             <property name="orientation">
+              <enum>Qt::Orientation::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>20</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+          </layout>
          </item>
         </layout>
        </widget>
@@ -754,7 +887,7 @@
               </sizepolicy>
              </property>
              <property name="text">
-              <string>Calculate</string>
+              <string>Calculate (F7)</string>
              </property>
             </widget>
            </item>
@@ -836,7 +969,7 @@
             </widget>
            </item>
            <item>
-            <widget class="QCheckBox" name="checkBox_use_as_crop_method">
+            <widget class="QCheckBox" name="checkBox_use_autocrop">
              <property name="text">
               <string notr="true"/>
              </property>

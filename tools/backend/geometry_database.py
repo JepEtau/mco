@@ -166,14 +166,17 @@ class GeometryDatabase:
                 i = 0
                 if parameter == 'crop_top':
                     i = 0
+                    new = scene_geometry.crop[i] + value
                 elif parameter == 'crop_bottom':
                     i = 1
+                    new = scene_geometry.crop[i] - value
                 elif parameter == 'crop_left':
                     i = 2
+                    new = scene_geometry.crop[i] + value
                 elif parameter == 'crop_right':
                     i = 3
-                new = scene_geometry.crop[i] +value
-                if 0 <= new < 200:
+                    new = scene_geometry.crop[i] - value
+                if 0 <= new < 400:
                     scene_geometry.crop[i] = new
                 scene_geometry.use_default = False
 
@@ -194,6 +197,12 @@ class GeometryDatabase:
 
             elif parameter == 'autocrop':
                 scene_geometry.autocrop = deepcopy(value)
+
+            elif parameter == 'use_ac':
+                scene_geometry.use_autocrop = value
+
+            elif parameter == 'copy_ac_to_crop':
+                scene_geometry.crop = deepcopy(scene_geometry.autocrop)
 
             self.modified_scenes.add(scene_key)
 

@@ -113,6 +113,7 @@ class GeometryWindow(CommonWindow):
         # self.move(QPoint(100,100))
         self.widget_selection.apply_user_preferences(user_preferences)
         self.widget_geometry.apply_user_preferences(user_preferences)
+        self.preview_options_changed()
 
 
     def event_edition_started(self):

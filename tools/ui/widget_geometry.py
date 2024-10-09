@@ -106,35 +106,41 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.pushButton_scene_resize_preview.toggled[bool].connect(
             partial(self.event_scene_preview_changed, 'resize_preview')
         )
-
+        self.pushButton_set_preview.toggled[bool].connect(
+            self.event_final_scene_preview_changed
+        )
+        self.checkBox_use_autocrop.toggled[bool].connect(self.event_use_autocrop)
+        self.pushButton_copy_to_scene.released.connect(self.event_copy_to_scene)
 
         set_stylesheet(self)
         set_widget_stylesheet(self.label_message, 'message')
         self.adjustSize()
 
 
-    def block_signals(self, enabled):
-        self.pushButton_set_preview.blockSignals(enabled)
-        self.pushButton_discard.blockSignals(enabled)
-        self.pushButton_save.blockSignals(enabled)
+    def block_signals(self, block: bool):
+        self.pushButton_set_preview.blockSignals(block)
+        self.pushButton_discard.blockSignals(block)
+        self.pushButton_save.blockSignals(block)
 
         # Target
-        self.pushButton_target_width_edition.blockSignals(enabled)
+        self.pushButton_target_width_edition.blockSignals(block)
         # self.pushButton_target_width_copy_from_scene.blockSignals(enabled)
-        self.pushButton_target_discard.blockSignals(enabled)
-        self.pushButton_target_save.blockSignals(enabled)
+        self.pushButton_target_discard.blockSignals(block)
+        self.pushButton_target_save.blockSignals(block)
 
         # Scene
-        self.pushButton_scene_crop_edition.blockSignals(enabled)
-        self.pushButton_scene_crop_preview.blockSignals(enabled)
+        self.pushButton_scene_crop_edition.blockSignals(block)
+        self.pushButton_scene_crop_preview.blockSignals(block)
         # self.pushButton_scene_resize_edition.blockSignals(enabled)
-        self.pushButton_scene_resize_preview.blockSignals(enabled)
+        self.pushButton_scene_resize_preview.blockSignals(block)
 
         # Scene
-        self.lineEdit_scene_crop_rectangle.blockSignals(enabled)
-        self.checkBox_scene_keep_ratio.blockSignals(enabled)
-        self.checkBox_scene_fit_to_width.blockSignals(enabled)
-        self.pushButton_scene_discard.blockSignals(enabled)
+        self.lineEdit_scene_crop_rectangle.blockSignals(block)
+        self.checkBox_scene_keep_ratio.blockSignals(block)
+        self.checkBox_scene_fit_to_width.blockSignals(block)
+        self.pushButton_scene_discard.blockSignals(block)
+
+        self.checkBox_use_autocrop.blockSignals(block)
 
 
 
@@ -250,7 +256,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.spinBox_erode_kernel_radius.setValue(autocrop_params.erode_kernel_radius)
         self.spinBox_erode_iterations.setValue(autocrop_params.erode_iterations)
         self.checkBox_do_add_borders.setChecked(autocrop_params.do_add_borders)
-        self.checkBox_use_as_crop_method.setChecked(scene_geometry.use_autocrop)
+        self.checkBox_use_autocrop.setChecked(scene_geometry.use_autocrop)
         try:
             t, b, l, r = scene_geometry.autocrop
             self.lineEdit_scene_autocrop.setText(f"t: {t}, b: {b},  l: {l}, r: {r}")
@@ -270,6 +276,11 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             resize_preview=self.pushButton_scene_resize_preview.isChecked(),
         )
         return preview_options
+
+
+    @Slot()
+    def event_final_scene_preview_changed(self):
+        self.signal_preview_options_changed.emit(self.get_preview_options())
 
 
     def event_scene_preview_changed(self, selected, value):
@@ -368,6 +379,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             )
         )
 
+
     def event_calculate(self) -> None:
         self.pushButton_calculate.setEnabled(False)
         self.pushButton_discard.setEnabled(True)
@@ -382,12 +394,31 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.signal_detect_inner_rect.emit(ac_params)
 
 
+    def event_use_autocrop(self) -> None:
+        self.signal_geometry_modified.emit(
+            GeometryAction(
+                type='set',
+                parameter='use_ac',
+                value=self.checkBox_use_autocrop.isChecked(),
+            )
+        )
+
+    def event_copy_to_scene(self) -> None:
+        self.checkBox_use_autocrop.setChecked(False)
+        self.signal_geometry_modified.emit(
+            GeometryAction(
+                type='set',
+                parameter='copy_ac_to_crop',
+                value=True
+            )
+        )
+
     def event_wheel(self, event: QWheelEvent) -> bool:
         if self.current_key_pressed is not None:
             modifiers = QApplication.keyboardModifiers()
             # print(lightgrey(f"wheelEvent: key: {self.current_key_pressed}"))
             # print(lightgrey(f"{modifiers}"))
-            if self.checkBox_use_as_crop_method.isChecked():
+            if self.checkBox_use_autocrop.isChecked():
                 return True
 
             parameter: GeometryActionParameter
@@ -457,6 +488,22 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
                 self.pushButton_set_preview.toggle()
                 return True
 
+        elif key == Qt.Key.Key_F3:
+            self.pushButton_target_width_edition.toggle()
+            return True
+
+        elif key == Qt.Key.Key_F4:
+            self.pushButton_scene_crop_edition.toggle()
+            return True
+
+        elif key == Qt.Key.Key_F5:
+            self.pushButton_scene_crop_preview.toggle()
+            return True
+
+        elif key == Qt.Key.Key_F6:
+            self.pushButton_scene_resize_preview.toggle()
+            return True
+
         # Edit crop dimensions
         elif key in (Qt.Key.Key_Q, Qt.Key.Key_D, Qt.Key.Key_W):
             self.current_key_pressed = key
@@ -472,6 +519,23 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             # if key != self.current_key_pressed:
             #     self.signal_position_changed.emit('bottom')
             self.current_key_pressed = key
+            return True
+
+
+        elif key == Qt.Key.Key_R:
+            self.checkBox_scene_keep_ratio.toggle()
+            return True
+
+        elif key == Qt.Key.Key_F:
+            self.checkBox_scene_fit_to_width.toggle()
+            return True
+
+        elif key == Qt.Key.Key_F7:
+            self.pushButton_calculate.click()
+            return True
+
+        elif key == Qt.Key.Key_U:
+            self.checkBox_use_autocrop.click()
             return True
 
         return False

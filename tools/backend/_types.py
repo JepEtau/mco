@@ -31,7 +31,7 @@ class Frame:
     no: int
     by: int
     img: np.ndarray | None = None
-    pixmap: QPixmap | None = None
+    qimage: QPixmap | None = None
     _k_ep_ch_no: tuple[str, str, int] = ("", "", 0)
 
     def __post_init__(self):
@@ -82,6 +82,8 @@ GeometryActionParameter =  Literal[
     'keep_ratio',
     'detection',
     'autocrop',
+    'use_ac',
+    'copy_ac_to_crop'
 ]
 
 

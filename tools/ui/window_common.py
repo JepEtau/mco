@@ -151,7 +151,7 @@ class CommonWindow(QMainWindow):
 
     @Slot()
     def event_reload_frame(self):
-        log.info("reload frame")
+        # log.info("reload frame")
         self.display_frame()
 
 

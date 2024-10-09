@@ -190,7 +190,8 @@ class GeometryController(CommonController):
         log.info("Ended:")
 
         self.geometry_db.update_scene_geometry(
-            scene, GeometryAction(type='set', parameter='autocrop', value=autocrop)
+            scene,
+            GeometryAction(type='set', parameter='autocrop', value=autocrop)
         )
         self.selection_geometry.update(self.geometry_db.get_geometry(scene))
 
