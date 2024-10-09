@@ -172,11 +172,12 @@ class GeometryController(CommonController):
         log.info("Start detecting inner rect")
         coordinates: list[np.ndarray] = []
 
-        for f in self.frame_cache.get(scene=scene):
+        for i, f in enumerate(self.frame_cache.get(scene=scene)):
             # start a thread for detection
             coords, _ = detect_inner_rect(
                 img=f.img,
-                params=params
+                params=params,
+                index=i
             )
             coordinates.append(coords)
 
