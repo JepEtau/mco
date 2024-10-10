@@ -3,7 +3,9 @@ import os
 from pprint import pprint
 import sys
 from utils.hash import calc_hash
-from utils.mco_types import ChapterGeometry, ChapterVideo, Effect, Scene, SceneGeometry
+from utils.mco_types import (
+    ChapterGeometry, ChapterVideo, Effect, Effects, Scene, SceneGeometry,
+)
 from parsers import (
     db,
     Filter,
@@ -15,12 +17,14 @@ from parsers import (
 from utils.mco_utils import (
     get_cache_path,
     get_target_video,
+    is_first_scene,
     is_last_scene,
     nested_dict_set
 )
 from utils.p_print import *
 from utils.path_utils import absolute_path
 from video.concat_frames import get_video_filename
+from .src_scene import SrcScenes
 
 
 def consolidate_scene(
@@ -234,6 +238,7 @@ def consolidate_scene(
     # pprint(scene)
     # sys.exit()
     if is_last_scene(scene) and 'effects' in scene:
+        # TODO: clean this bc effects has been refactored
         print(yellow("last scene"))
         ch_video: ChapterVideo = get_target_video(scene)
         ch_effect: Effect = (
@@ -264,6 +269,17 @@ def consolidate_scene(
                     )
                 ])
             # verbose = True
+
+    if is_first_scene(scene):
+        ch_video: ChapterVideo = get_target_video(scene)
+        ch_effect = ch_video['effects'].get_effect('fadein')
+        if ch_effect is not None:
+            if 'effects' in scene:
+                sys.exit(red("error: already an effect in first scene"))
+            scene_effect: Effect = deepcopy(ch_effect)
+            scene_effect.frame_ref = scene['src'].first_frame_no()
+            scene['effects'] = Effects([scene_effect])
+
     if verbose:
         print(lightcyan("TO"))
         pprint(scene)

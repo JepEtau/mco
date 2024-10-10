@@ -32,21 +32,15 @@ def parse_chapter_sections(
         # print("\t%s:%s, properties:," % (k_ep, k_chapter), properties)
         for property in properties:
 
-            search_start_end = re.search(re.compile(r"(\d+):(\d+)"), property)
-            if search_start_end is not None:
+            if (search_start_end := re.search(re.compile(r"(\d+):(\d+)"), property)):
                 start = int(search_start_end.group(1))
                 end = int(search_start_end.group(2))
-                continue
 
-            search_fadein = re.search(re.compile(r"fadein=([0-9.]+)"), property)
-            if search_fadein is not None:
-                search_fadein = int(float(search_fadein.group(1)) * fps)
-                continue
+            elif (search_fadein := re.search(re.compile(r"fadein=([\d.]+)"), property)):
+                chapter_fadein = int(float(search_fadein.group(1)) * fps)
 
-            search_fadeout = re.search(re.compile(r"fadeout=([0-9.]+)"), property)
-            if search_fadeout is not None:
+            elif (search_fadeout := re.search(re.compile(r"fadeout=([\d.]+)"), property)):
                 chapter_fadeout = int(float(search_fadeout.group(1)) * fps)
-                continue
 
         if start is None:
             sys.exit("Error: parse_chapter_sections: start and end values are required for %s in episode file" % (k_chapter))
@@ -58,7 +52,8 @@ def parse_chapter_sections(
         })
         db_video[k_chapter]['effects'] = Effects(
             effects=[
-                Effect(name='loop_and_fadein', fade=chapter_fadein),
+                # Effect(name='loop_and_fadein', fade=chapter_fadein),
+                Effect(name='fadein', fade=chapter_fadein),
                 Effect(name='fadeout', fade=chapter_fadeout)
             ]
         )

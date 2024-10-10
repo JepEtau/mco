@@ -183,31 +183,29 @@ def parse_video_target_g(
         properties = value_str.split(',')
 
         chapter_fadeout = 0
+        db_video['effects'] = Effects()
+        effects: Effects = db_video['effects']
         for property in properties:
-            search_start_end = re.search(re.compile(r"(\d+):(-?\d+)"), property)
-            if search_start_end is not None:
+            if search_start_end := re.search(re.compile(r"(\d+):(-?\d+)"), property):
                 start = int(search_start_end.group(1))
                 end = int(search_start_end.group(2))
-                continue
 
-            search_fadeout = re.search(re.compile(r"fadeout=([0-9.]+)"), property)
-            if search_fadeout is not None:
-                chapter_fadeout = int(float(search_fadeout.group(1)) * fps)
+            elif result := re.search(re.compile(r"fadeout=([0-9.]+)"), property):
+                chapter_fadeout = int(float(result.group(1)) * fps)
+                effects.append(Effect(name='fadeout', fade=chapter_fadeout))
 
-                db_video['effects'] = Effects([
-                    Effect(name='fadeout', fade=chapter_fadeout)
-                ])
+            elif result := re.search(re.compile(r"fadein=([0-9.]+)"), property):
+                chapter_fadein = int(float(result.group(1)) * fps)
+                effects.append(Effect(name='fadein', fade=chapter_fadein))
 
-            search_k_ed_src = re.search(re.compile(r"ed=([a-z]+[0-9]*)"), property)
-            if search_k_ed_src is not None:
+            elif search_k_ed_src := re.search(re.compile(r"ed=([a-z]+[0-9]*)"), property):
                 k_chapter_ed_src = search_k_ed_src.group(1)
-                # sys.exit("found %s for %s:%s" % (k_chapter_ed_src, k_ep, k_chapter))
-                continue
+
 
         nested_dict_set(db_video, dict(), k_ch)
         ch_video: ChapterVideo = db_video[k_ch]
         ch_video.update({
-            'effects': Effects(),
+            'effects': effects,
             'start': start,
             'end': end,
             'count': (end - start) if end > 0 else -1,
@@ -215,6 +213,3 @@ def parse_video_target_g(
             'k_ep': k_ep,
             'k_ch': k_ch,
         })
-
-        if chapter_fadeout:
-            ch_video['effects'].append(Effect(name='fadeout', fade=chapter_fadeout))

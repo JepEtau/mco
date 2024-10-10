@@ -169,6 +169,7 @@ class Effect:
     name: Literal[
         'loop',
         'fadeout',
+        'fadein',
         'loop_and_fadeout',
         'loop_and_fadein',
         'watermark',
@@ -212,6 +213,7 @@ class Effects(list):
     def has_effect(self, name: Literal[
         'loop',
         'fadeout',
+        'fadein',
         'loop_and_fadeout',
         'loop_and_fadein',
         'watermark',
