@@ -307,10 +307,16 @@ def parse_target_scenelist(
                    segment_count = -1
 
                 elif k == 'segment':
-                    if (match := re.search(re.compile(r"(\d+):(\d+)"), v)):
-                        segment_start = int(match.group(1))
-                        segment_count = int(match.group(2))
+                    start_count = v.split(':')
+                    if start_count[0] == '':
+                        segment_start = -1
+                    else:
+                        segment_start = int(start_count[0])
 
+                    if start_count[1] == '':
+                        segment_count = -1
+                    else:
+                        segment_count = int(start_count[1])
 
                 elif k == 'effect':
                     print(f"effect: {v}")
@@ -389,14 +395,15 @@ def parse_target_scenelist(
                     #     # sys.exit()
 
             scene['src'].add_scene(
-                k_ed=k_ed,
-                k_ep=k_ep,
+                k_ed=k_ed if k_ed != '' else db_video_target['src']['k_ed'],
+                k_ep=k_ep if k_ep != '' else db_video_target['src']['k_ep'],
                 k_ch=k_ch,
                 no=current_scene_no if current_scene_no != -1 else scene_no,
                 start=segment_start,
                 count=segment_count,
                 effects=effects
             )
+
 
 def get_scene_from_frame_no(
     frame_no: int,

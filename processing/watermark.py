@@ -1,5 +1,7 @@
 from enum import Enum
 import os
+from pprint import pprint
+import sys
 import numpy as np
 from PIL import (
     Image as PilImage,
@@ -97,7 +99,7 @@ def _add_initial_scene_watermak(pil_image: PilImage.Image, scene: Scene, no: int
         color: tuple[int, int, int] = (0, 240, 0)
     else:
         src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no)['scene']
-        text: str = f"{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['no']:03} {src_scene['count']}"
+        text: str = f"{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['no']:03} {scene['src'].frame_count()}"
         color: tuple[int, int, int] = (255, 240, 0)
 
     font_size: int = 70

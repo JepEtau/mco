@@ -1,5 +1,7 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+from pprint import pprint
+import sys
 from typing import TypedDict
 from utils.mco_types import Effect, Effects, Scene
 from parsers import (
@@ -35,12 +37,20 @@ class SrcScenes:
         count: int,
         effects: Effects = None,
     ) -> None:
+        _scene = None
         try:
             _scene: Scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][no]
-            start = _scene['start'] if start == -1 else start
-            count = _scene['count'] if count == -1 else count
         except:
-            _scene = None
+            # print(f"no scene for {':'.join((k_ed, k_ep, k_ch, str(no)))}")
+            pass
+
+        if _scene is not None:
+            start = _scene['start'] if start == -1 else start
+            count = (
+                (_scene['count'] - (start - _scene['start']))
+                if count == -1
+                else count
+            )
 
         self._scenes.append(
             SrcScene(
@@ -76,11 +86,24 @@ class SrcScenes:
     def _consolidate_scene(self, src_scene: SrcScene) -> None:
         k_ed, k_ep, k_ch, no = src_scene['k_ed_ep_ch_no']
         _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][no]
+
+        start: int = _src_scene['start'] if src_scene['start'] == -1 else src_scene['start']
+        count: int = src_scene['count']
+        if count == -1:
+            count = _src_scene['count'] - (start - _src_scene['start'])
+
         src_scene.update({
             'scene': _src_scene,
-            'start': _src_scene['start'] if src_scene['start'] == -1 else src_scene['start'],
-            'count': _src_scene['count'] if src_scene['count'] == -1 else src_scene['count'],
+            'start': start,
+            'count': count,
         })
+
+
+        # if k_ch == 'g_fin':
+        #     print(f"to scene")
+        #     pprint(src_scene)
+        #     sys.exit()
+
 
         if src_scene['effects'] is not None:
             for e in src_scene['effects'].effects:
