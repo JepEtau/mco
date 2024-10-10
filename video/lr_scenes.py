@@ -94,7 +94,7 @@ def generate_lr_scenes(
             consolidate_scene(scene=scene, watermark=watermark)
 
             if debug:
-                print(lightcyan("======================= generate_lr_scenes: Scene ============================="))
+                print(lightcyan(f"======================= generate_{task}_scenes: Scene ============================="))
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
 

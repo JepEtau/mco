@@ -103,3 +103,18 @@ Notes:
     ```
 
 Note: g_asuivre not yet supported
+
+
+## (Simulate final version)
+Like lr but:
+- resize to 1080p (1440x1080)
+- add some effects (overlay)
+
+simulate_final.py
+
+What is not done:
+- NN upscale
+- stabilization
+- temporal filtering
+- color grade
+- final crop/resize

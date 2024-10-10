@@ -388,6 +388,22 @@ def parse_target_scenelist(
                                 extra_param=end_zoom_factor,
                             )
                         )
+
+                    elif (
+                        v.startswith('overlay')
+                        and (match := re.search(re.compile(r"([a-z_]+):([a-z_\d]+.png):(\d+):(\d+)"), v))
+                    ):
+                        if 'effects' not in scene or scene['effects'] is None:
+                            scene['effects'] = Effects()
+                        scene['effects'].append(
+                            Effect(
+                                name=match.group(1),
+                                frame_ref=int(match.group(3)),
+                                loop=int(match.group(4)),
+                                extra_param=match.group(2)
+                            )
+                        )
+
                     else:
                         print("failed")
                     # if k_ch == 'g_debut':

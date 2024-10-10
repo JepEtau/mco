@@ -163,19 +163,22 @@ class SceneGeometry:
     def defined(self, defined) -> None:
         self._defined = defined
 
+EffectName = Literal[
+    'loop',
+    'fadeout',
+    'fadein',
+    'loop_and_fadeout',
+    'loop_and_fadein',
+    'watermark',
+    'zoom_in',
+    'zoom_out',
+    'overlay'
+]
+
 
 @dataclass
 class Effect:
-    name: Literal[
-        'loop',
-        'fadeout',
-        'fadein',
-        'loop_and_fadeout',
-        'loop_and_fadein',
-        'watermark',
-        'zoom_in',
-        'zoom_out'
-    ]
+    name: EffectName
     frame_ref: int = 0
     loop: int = 0
     fade: int = 0
@@ -210,16 +213,7 @@ class Effects(list):
                 return True
         return False
 
-    def has_effect(self, name: Literal[
-        'loop',
-        'fadeout',
-        'fadein',
-        'loop_and_fadeout',
-        'loop_and_fadein',
-        'watermark',
-        'zoom_in',
-        'zoom_out'
-    ]) -> bool:
+    def has_effect(self, name: EffectName) -> bool:
         for e in self.effects:
             if e.name == name:
                 return True
@@ -228,11 +222,20 @@ class Effects(list):
     def append(self, object: Any) -> None:
         return self.effects.append(object)
 
-    def get_effect(self, name: str) -> Effect | None:
+    def get_effect(self, name: EffectName) -> Effect | None:
+        """Returns the first effect found
+        """
         for e in self.effects:
             if e.name == name:
                 return e
         return None
+
+    def get_effects(self, name: EffectName):
+        """yield avery effect
+        """
+        for e in self.effects:
+            if e.name == name:
+                yield e
 
 
 class RefScene(TypedDict):

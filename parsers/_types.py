@@ -23,6 +23,8 @@ TaskName = Literal[
     # 00_lr
     'lr',
 
+    'sim',
+
     'denoise',
 
     # Upscale and generate a 1080p imag for comparison

@@ -53,16 +53,25 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     )
 
     # Force to the same height to be able to mix different editions
+    dec_filter_complex: list[str] = []
     filter_complex: list[str] = []
-    if h != 576 or w != 576:
-        filter_complex = [
-            "-filter_complex", f"[0:v]scale=768:576:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
+    if scene['task'].name == 'sim':
+        out_video_shape = (1080, 1440, 3)
+        h, w = out_video_shape[:2]
+        dec_filter_complex = [
+            "-filter_complex", f"[0:v]scale={w}:{h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
             "-map", "[outv]"
         ]
+    else:
+        if h != 576 or w != 576:
+            filter_complex = [
+                "-filter_complex", f"[0:v]scale=768:576:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
+                "-map", "[outv]"
+            ]
 
     frame_rate: FrameRate = get_fps(db)
     vsettings: VideoSettings = scene['task'].video_settings
-    writer_command: list[str] = [
+    encoder_command: list[str] = [
         ffmpeg_exe,
         "-hide_banner",
         "-loglevel", "warning",
@@ -84,7 +93,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     encoder_subprocess: subprocess.Popen = None
     try:
         encoder_subprocess = subprocess.Popen(
-            writer_command,
+            encoder_command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -98,7 +107,6 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     print(lightcyan(f"Frames to produce: {to_produce}"))
     watermark: bool = do_watermark(scene=scene)
     for src in scene['src'].scenes():
-        print(red("BUUUUUUUUUUUUUUUUUUUGGGG: wrong start"))
         src_scene: Scene = src['scene']
         in_video_fp: str = src_scene['inputs']['progressive']['filepath']
         start: int = src['start']
@@ -112,11 +120,14 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
         h, w, c = in_video_info['shape']
         pipe_pixfmt = 'bgr24'
-        pipe_img_nbytes = math.prod(in_video_info['shape'])
         pipe_dtype = np.uint8
+        pipe_img_nbytes = math.prod(in_video_info['shape'])
         pipe_img_shape: tuple[int, int, int] = in_video_info['shape']
+        if scene['task'].name == 'sim':
+            pipe_img_nbytes = math.prod(out_video_shape)
+            pipe_img_shape: tuple[int, int, int] = out_video_shape
 
-        xtract_command: list[str] = [
+        decoder_command: list[str] = [
             ffmpeg_exe,
             "-hide_banner",
             "-loglevel", "warning",
@@ -130,6 +141,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             ),
             "-i", in_video_fp,
             "-t", str(frame_to_s(no=count, frame_rate=frame_rate)),
+            *dec_filter_complex,
             "-f", "image2pipe",
             "-pix_fmt", pipe_pixfmt,
             "-vcodec", "rawvideo",
@@ -139,7 +151,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         decoder_subprocess: subprocess.Popen = None
         try:
             decoder_subprocess = subprocess.Popen(
-                xtract_command,
+                decoder_command,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -147,6 +159,8 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         except Exception as e:
             print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
             return False
+
+        print(" ".join(decoder_command))
 
         # Replacements
         frame_replace = src_scene['replace']
@@ -212,19 +226,21 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                             no=out_frame.no
                         )
 
-                    out_frames = apply_effect(out_f_no, out_frame)
+                    out_frames = apply_effect(out_f_no, out_frame, out_i)
                     if isinstance(out_frames, list):
                         # print(yellow(f"\t{out_i}: send {len(out_frames)}"))
                         [encoder_subprocess.stdin.write(f.img) for f in out_frames]
                         produced += len(out_frames)
+                        out_i += len(out_frames)
+
                     else:
                         out_frame = out_frames
                         # print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
                         encoder_subprocess.stdin.write(out_frame.img)
                         produced += 1
+                        out_i += 1
 
                     out_f_no += 1
-                    out_i += 1
                     count -= 1
                 else:
                     break
@@ -233,7 +249,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     if is_last_scene(scene):
         if 'silence' in ch_video and ch_video['silence'] > 0:
             print(f"silence!!! {ch_video['silence']}")
-            img_black = np.zeros(in_video_info['shape'], dtype=pipe_out_dtype)
+            img_black = np.zeros(out_video_shape, dtype=pipe_out_dtype)
             [encoder_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
 
             produced += ch_video['silence']

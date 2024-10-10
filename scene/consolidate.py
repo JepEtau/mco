@@ -164,6 +164,7 @@ def consolidate_scene(
 
     # Store hashes
     scene_filters['lr'].hash = calc_hash(';'.join([deint_hashcode, replace_hash]))
+    scene_filters['sim'].hash = scene_filters['lr'].hash
     scene_filters['hr'].hash = upscale_hashcode
     scene_filters['upscale'].hash = upscale_hashcode
 
@@ -188,6 +189,8 @@ def consolidate_scene(
     # Output video settings
     _task_name: str = task_name
     if task_name == 'initial':
+        _task_name = 'lr'
+    elif task_name == 'sim':
         _task_name = 'lr'
 
     vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
@@ -274,11 +277,11 @@ def consolidate_scene(
         ch_video: ChapterVideo = get_target_video(scene)
         ch_effect = ch_video['effects'].get_effect('fadein')
         if ch_effect is not None:
-            if 'effects' in scene:
-                sys.exit(red("error: already an effect in first scene"))
+            if 'effects' not in scene:
+                scene['effects'] = Effects()
             scene_effect: Effect = deepcopy(ch_effect)
             scene_effect.frame_ref = scene['src'].first_frame_no()
-            scene['effects'] = Effects([scene_effect])
+            scene['effects'].append(scene_effect)
 
     if verbose:
         print(lightcyan("TO"))

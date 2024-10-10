@@ -138,8 +138,8 @@ def main():
         print(f"  Target: {target_count}")
 
         # pprint(chapter_video)
-        # print(lightcyan(f"Scene no. 0"))
-        # pprint(scenes[0])
+        print(lightcyan(f"Scene no. 0"))
+        pprint(scenes[0])
 
         # for scene in scenes:
         #     print(lightcyan(f"Scene no. {scene['no']}"))

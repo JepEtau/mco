@@ -16,7 +16,7 @@ from utils.media import VideoInfo, extract_media_info
 from utils.np_dtypes import np_to_float32, np_to_uint16, np_to_uint8
 from utils.p_print import *
 from utils.logger import main_logger
-from utils.mco_types import Effect, McoFrame, Scene
+from utils.mco_types import Effects, Effect, McoFrame, Scene
 from PIL import Image
 from parsers import (
     db,
@@ -26,11 +26,13 @@ from utils.tools import ffmpeg_exe
 
 
 cached_frame: McoFrame | None = None
+cached_overlay: McoFrame | None = None
 
 
 def apply_effect(
     out_f_no: int,
-    frame: McoFrame
+    frame: McoFrame,
+    out_i: int
 ) -> McoFrame | list[McoFrame]:
     scene: Scene = frame.scene
     out_frames: list[McoFrame] = []
@@ -400,27 +402,48 @@ def apply_effect(
 
     # Other effects
     # TODO: modify this to allow multiple effects?
-    # Currently, only the fist effect is applied
+    # Currently, only the first effect is applied
     if 'effects' in scene:
-        effect: Effect = scene['effects'].primary_effect()
-        if (
-            effect.name == 'loop'
-            and out_f_no == effect.frame_ref
-        ):
-            print(f"loop count = {effect.loop + 1}")
-            return [frame] * (effect.loop + 1)
+        effects: Effects = scene['effects']
+        # use primary effect if no overlay to not refcator rn
+        if effects.has_effect('overlay'):
+            for effect in effects.get_effects('overlay'):
+                global cached_overlay
+                if effect.frame_ref <= out_i <= effect.frame_ref + effect.loop:
+                    if cached_overlay is None:
+                        overlay_fp: str = os.path.join(
+                            db['common']['directories']['inputs'],
+                            'imgs',
+                            effect.extra_param
+                        )
+                        cached_overlay = McoFrame(out_i, load_image_fp32(filepath=overlay_fp))
 
-        elif (
-            effect.name == 'fadeout'
-            and out_f_no >= effect.frame_ref
-        ):
-            coef: float = float(out_f_no - effect.frame_ref) / effect.fade
-            img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
-            img_out: np.ndarray = cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0)
-            print(f"out_i: {out_f_no}, coef={coef:.06f}")
-            return McoFrame(no=frame.no, img=img_out)
+                    text = cached_overlay.img
+                    rgb_text = text[:,:,:3]
+                    alpha_text = text[:,:,3:]
+                    frame.img = np_to_uint8(
+                        (1.0 - alpha_text) * np_to_float32(frame.img)
+                        + alpha_text * rgb_text
+                    )
 
-        elif effect.name == 'loop_and_fadeout':
+                if out_i == effect.frame_ref + effect.loop:
+                    cached_overlay = None
+
+
+        if effect := effects.get_effect('loop'):
+            if out_f_no == effect.frame_ref:
+                print(f"loop count = {effect.loop + 1}")
+                return [frame] * (effect.loop + 1)
+
+        if effect := effects.get_effect('fadeout'):
+            if out_f_no >= effect.frame_ref:
+                coef: float = float(out_f_no - effect.frame_ref) / effect.fade
+                img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
+                img_out: np.ndarray = cv2.addWeighted(frame.img, 1 - coef, img_black, coef, 0)
+                print(f"out_i: {out_f_no}, coef={coef:.06f}")
+                return McoFrame(no=frame.no, img=img_out)
+
+        if effect := effects.get_effect('loop_and_fadeout'):
             fadeout_start = effect.frame_ref + effect.loop - effect.fade
             # print(f"fadeout_start= {fadeout_start}, out_f_no: {out_f_no}")
 
@@ -467,16 +490,14 @@ def apply_effect(
             # else:
             #     raise NotImplementedError(effect.name)
 
-        elif (
-            effect.name == 'fadein'
-            and out_f_no >= effect.frame_ref
-            and out_f_no <= effect.frame_ref + effect.fade
-        ):
-            coef: float = float(out_f_no - effect.frame_ref) / effect.fade
-            img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
-            img_out: np.ndarray = cv2.addWeighted(frame.img, coef, img_black, 1 - coef, 0)
-            print(f"out_i: {out_f_no}, coef={coef:.06f}")
-            return McoFrame(no=frame.no, img=img_out)
+
+        if effect := effects.get_effect('fadein'):
+            if effect.frame_ref <= out_f_no <= effect.frame_ref + effect.fade:
+                coef: float = float(out_f_no - effect.frame_ref) / effect.fade
+                img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
+                img_out: np.ndarray = cv2.addWeighted(frame.img, coef, img_black, 1 - coef, 0)
+                print(f"out_i: {out_f_no}, coef={coef:.06f}")
+                return McoFrame(no=frame.no, img=img_out)
 
         # else:
         #     raise NotImplementedError(effect.name)
