@@ -12,7 +12,7 @@ from parsers.helpers import get_fps
 from scene.consolidate import consolidate_scene
 from scene.src_scene import SrcScene
 from utils.images_io import load_image_fp32, write_image
-from utils.media import VideoInfo, extract_media_info
+from utils.media import VideoInfo, extract_media_info, FShape
 from utils.np_dtypes import np_to_float32, np_to_uint16, np_to_uint8
 from utils.p_print import *
 from utils.logger import main_logger
@@ -181,7 +181,7 @@ def apply_effect(
                 # Consolidate scene if not already done because we need its last image
                 global cached_frame
                 if 'task' not in previous_scene:
-                    print(f"consolidate scene {previous_scene['no']}")
+                    print(f"consolidate scene {previous_scene['no']} with task \'{scene['task'].name}\'")
                     previous_scene['task'] = ProcessingTask(name=scene['task'].name)
                     consolidate_scene(scene=previous_scene, watermark=False)
 
@@ -416,9 +416,22 @@ def apply_effect(
                             db['common']['directories']['inputs'], effect.extra_param[1]
                         )
                         overlay: np.ndarray = load_image_fp32(filepath=overlay_fp)
+
+                        # position and overlay use the final coordinates system#
+                        # -> resize to this resolution (lr task only)
+                        h, w = frame.img.shape[:2]
+                        if overlay.shape[0] != h:
+                            w_factor = w / 1440
+                            overlay: np.ndarray = cv2.resize(
+                                overlay,
+                                (int(overlay.shape[1] * w_factor), h),
+                                interpolation=cv2.INTER_LANCZOS4
+                            )
+                            x0 = int(x0  * w_factor)
+
                         overlay = cv2.copyMakeBorder(
                             overlay,
-                            0, 0, x0, frame.img.shape[1] - (overlay.shape[1] + x0),
+                            0, 0, x0, w - (overlay.shape[1] + x0),
                             borderType=cv2.BORDER_CONSTANT,
                         )
                         cached_overlay = McoFrame(no=out_i, img=overlay)
@@ -533,9 +546,19 @@ def extract_last_frame(scene: Scene, dtype: np.dtype = np.uint8) -> McoFrame:
         raise ValueError(red(f"Missing file: {in_video_fp}"))
 
     in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
-    pipe_img_nbytes = math.prod(in_video_info['shape'])
-    pipe_img_shape: tuple[int, int, int] = in_video_info['shape']
+    final_shape: FShape = in_video_info['shape']
+    decoder_filters: list[str] = []
+    if scene['task'].name == 'sim':
+        final_shape: FShape = (1080, 1440, 3)
+        h, w = final_shape[:2]
+        decoder_filters = [
+            "-filter_complex", f"[0:v]scale={w}:{h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
+            "-map", "[outv]"
+        ]
+    pipe_img_nbytes = math.prod(final_shape)
+    pipe_img_shape: FShape = final_shape
     pipe_dtype: np.dtype = dtype
+
     print(red("Error: extract_last_frame: fix this if task is not lr"))
     # frame_no: int = in_video_info['frame_count'] - 1
     frame_no: int = scene['src'].last_frame_no()
@@ -551,7 +574,7 @@ def extract_last_frame(scene: Scene, dtype: np.dtype = np.uint8) -> McoFrame:
         "-ss", str(frame_to_sexagesimal(no=frame_no, frame_rate=frame_rate)),
         "-i", in_video_fp,
         "-t", str(frame_to_s(no=1, frame_rate=frame_rate)),
-
+        *decoder_filters,
         "-f", "image2pipe",
         "-pix_fmt", 'bgr24' if dtype == np.uint8 else 'bgr48',
         "-vcodec", "rawvideo",
@@ -593,9 +616,6 @@ def extract_last_frame(scene: Scene, dtype: np.dtype = np.uint8) -> McoFrame:
             raise
 
     return McoFrame(frame_no, img, scene)
-
-
-
 
 
 

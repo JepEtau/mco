@@ -89,11 +89,18 @@ def parse_credit_target():
             # scenes
             #----------------------------------------------------
             elif k_section.startswith('scenes'):
-                lang = 'fr'
+                lang = ''
                 try:
                     k_section_chapter, lang = k_section.split('.')
                 except:
                     k_section_chapter = k_section
+
+                print(red(f"parse target scenes: {k_section}, lang: {lang}"))
+                if lang != db_audio_target['lang'] and lang != '':
+                    print(yellow(f"not for this version: {db_audio_target['lang']}"))
+                    continue
+                else:
+                    print(lightgreen(f"for this version: {db_audio_target['lang']}"))
 
                 # try:
                 #     _, k_chapter = k_section_chapter.split('_')
@@ -104,14 +111,16 @@ def parse_credit_target():
                     'k_ep': '',
                     'k_ch': k_chapter_g,
                     'k_ed_src': '',
-                    'scenes': []
                 })
-                if lang == db_audio_target['lang'] or k_section == 'video':
-                    parse_target_scenelist(
-                        db_video_target,
-                        config,
-                        k_section
-                    )
+                if 'scenes' not in db_video_target:
+                    db_video_target['scenes'] = []
+
+                parse_target_scenelist(
+                    db_video_target,
+                    config,
+                    k_section,
+                    language=db_audio_target['lang']
+                )
 
 
         # Source must be defined before consolidating

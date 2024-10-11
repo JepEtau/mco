@@ -223,7 +223,7 @@ def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
 def parse_target_scenelist(
     db_video_target: ChapterVideo,
     config: ConfigParser,
-    k_section,
+    k_section: str,
     language: str = 'fr'
 ) -> None:
 
@@ -254,19 +254,34 @@ def parse_target_scenelist(
 
         scene_properties: list[str] = value_str.split(',')
 
+        k_ed: str = db_video_target['k_ed_src']
+        k_ep: str = db_video_target['k_ep']
+        k_ch: str = db_video_target['k_ch']
+
+
         # Parse properties
         if len(scene_properties) > 0:
 
             # Append this scene to the list of scenes
+            append: bool = True
+            for i, s in enumerate(db_scenes):
+                if s['no'] == scene_no:
+                    if k_section.endswith(language):
+                        print(red(f"{scene_no} is already defined"))
+                        del db_scenes[i]
+                    else:
+                        append = False
+                    break
+            if not append:
+                continue
+
             db_scenes.append({
                 'no': scene_no,
                 'src': SrcScenes(),
             })
             scene: Scene = db_scenes[-1]
 
-            k_ed: str = db_video_target['k_ed_src']
-            k_ep: str = db_video_target['k_ep']
-            k_ch: str = db_video_target['k_ch']
+
 
             current_scene_no: int = -1
             segment_start: int = -1
@@ -354,36 +369,32 @@ def parse_target_scenelist(
                         # blend with last image from previous scene
                         if effects is None:
                             effects = Effects()
-                        name: str = match.group(1)
                         frame_ref: int = 0
-                        # use fade for blend out
-                        fade: int = int(match.group(2))
                         effects.append(
                             Effect(
-                                name=name,
+                                name=match.group(1),
                                 frame_ref=frame_ref,
-                                fade=fade,
+                                # use fade for blend out
+                                fade=int(match.group(2)),
                             )
                         )
                     elif (
                         v.startswith('title')
                         and (match := re.search(re.compile(
-                                r"([a-z_]+):(-?\d+):([\d+[.]*\d*):([\d+[.]*\d*)"
+                                r"([a-z_.]+):(-?\d+):([\d+[.]*\d*):([\d+[.]*\d*)"
                             ), v))
                     ):
-                        # blend with last image from previous scene
+                        # title=<frame_count>:<zoom_start>:<zoom_end>
                         if effects is None:
                             effects = Effects()
-                        name: str = match.group(1)
-                        loop: int = int(match.group(2))
                         start_zoom_factor = float(match.group(3))
                         end_zoom_factor = float(match.group(4))
                         effects.append(
                             Effect(
-                                name=name,
+                                name=match.group(1),
                                 frame_ref=frame_ref,
-                                loop=loop,
-                                fade=fade,
+                                loop=int(match.group(2)),
+                                fade=0,
                                 zoom_factor=start_zoom_factor,
                                 extra_param=end_zoom_factor,
                             )

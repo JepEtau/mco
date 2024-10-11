@@ -55,6 +55,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     # Force to the same height to be able to mix different editions
     dec_filter_complex: list[str] = []
     filter_complex: list[str] = []
+    out_video_shape = in_video_info['shape']
     if scene['task'].name == 'sim':
         out_video_shape = (1080, 1440, 3)
         h, w = out_video_shape[:2]
@@ -121,11 +122,8 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         h, w, c = in_video_info['shape']
         pipe_pixfmt = 'bgr24'
         pipe_dtype = np.uint8
-        pipe_img_nbytes = math.prod(in_video_info['shape'])
-        pipe_img_shape: tuple[int, int, int] = in_video_info['shape']
-        if scene['task'].name == 'sim':
-            pipe_img_nbytes = math.prod(out_video_shape)
-            pipe_img_shape: tuple[int, int, int] = out_video_shape
+        pipe_img_nbytes = math.prod(out_video_shape)
+        pipe_img_shape: tuple[int, int, int] = out_video_shape
 
         decoder_command: list[str] = [
             ffmpeg_exe,
