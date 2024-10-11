@@ -411,12 +411,17 @@ def apply_effect(
                 global cached_overlay
                 if effect.frame_ref <= out_i <= effect.frame_ref + effect.loop:
                     if cached_overlay is None:
+                        x0: int = effect.extra_param[0]
                         overlay_fp: str = os.path.join(
-                            db['common']['directories']['inputs'],
-                            'imgs',
-                            effect.extra_param
+                            db['common']['directories']['inputs'], effect.extra_param[1]
                         )
-                        cached_overlay = McoFrame(out_i, load_image_fp32(filepath=overlay_fp))
+                        overlay: np.ndarray = load_image_fp32(filepath=overlay_fp)
+                        overlay = cv2.copyMakeBorder(
+                            overlay,
+                            0, 0, x0, frame.img.shape[1] - (overlay.shape[1] + x0),
+                            borderType=cv2.BORDER_CONSTANT,
+                        )
+                        cached_overlay = McoFrame(no=out_i, img=overlay)
 
                     text = cached_overlay.img
                     rgb_text = text[:,:,:3]
@@ -496,7 +501,7 @@ def apply_effect(
                 coef: float = float(out_f_no - effect.frame_ref) / effect.fade
                 img_black = np.zeros(frame.img.shape, dtype=frame.img.dtype)
                 img_out: np.ndarray = cv2.addWeighted(frame.img, coef, img_black, 1 - coef, 0)
-                print(f"out_i: {out_f_no}, coef={coef:.06f}")
+                # print(f"out_i: {out_f_no}, coef={coef:.06f}")
                 return McoFrame(no=frame.no, img=img_out)
 
         # else:

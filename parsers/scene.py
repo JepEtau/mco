@@ -391,16 +391,17 @@ def parse_target_scenelist(
 
                     elif (
                         v.startswith('overlay')
-                        and (match := re.search(re.compile(r"([a-z_]+):([a-z_\d]+.png):(\d+):(\d+)"), v))
+                        and (match := re.search(re.compile(r"([a-z_]+):(\d+):([a-z_\d]+.png):(\d+):(\d+)"), v))
                     ):
+                        # overlay=<x_position>:<filename>:<start_frame_no>:<frame_count>
                         if 'effects' not in scene or scene['effects'] is None:
                             scene['effects'] = Effects()
                         scene['effects'].append(
                             Effect(
                                 name=match.group(1),
-                                frame_ref=int(match.group(3)),
-                                loop=int(match.group(4)),
-                                extra_param=match.group(2)
+                                frame_ref=int(match.group(4)),
+                                loop=int(match.group(5)),
+                                extra_param=(int(match.group(2)), match.group(3)),
                             )
                         )
 

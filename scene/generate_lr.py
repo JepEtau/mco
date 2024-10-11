@@ -113,7 +113,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         count: int = src['count']
         if to_produce < count:
             count = to_produce
-        print(f"extract {count} frames")
+        # print(f"extract {count} frames")
         to_produce -= count
 
         # Extract info from input video file
@@ -160,7 +160,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
             return False
 
-        print(" ".join(decoder_command))
+        # print(" ".join(decoder_command))
 
         # Replacements
         frame_replace = src_scene['replace']
