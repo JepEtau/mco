@@ -29,6 +29,14 @@ cached_frame: McoFrame | None = None
 cached_overlay: McoFrame | None = None
 
 
+def title_filepath() -> str:
+    filepath: str = os.path.join(
+        db['common']['directories']['inputs'],
+        f"title_{db['common']['settings']['language']}.png"
+    )
+    return filepath
+
+
 def apply_effect(
     out_f_no: int,
     frame: McoFrame,
@@ -79,11 +87,7 @@ def apply_effect(
                 if (effect := last_src_scene['effects'].get_effect('title')):
                     print(yellow("ADD TITLE"))
                     pprint(effect)
-                    title_fp: str = os.path.join(
-                        db['common']['directories']['inputs'],
-                        "title_fr.png"
-                    )
-                    initial_title_img: np.ndarray = load_image_fp32(title_fp)
+                    initial_title_img: np.ndarray = load_image_fp32(title_filepath())
                     start_factor: float = effect.zoom_factor
                     end_factor: float = effect.extra_param
 
@@ -225,12 +229,7 @@ def apply_effect(
                     if (effect := last_src_scene['effects'].get_effect('title')):
                         print(yellow("LOGO for blend"))
                         pprint(effect)
-
-                        title_fp: str = os.path.join(
-                            db['common']['directories']['inputs'],
-                            "title_fr.png"
-                        )
-                        initial_title_img: np.ndarray = load_image_fp32(title_fp)
+                        initial_title_img: np.ndarray = load_image_fp32(title_filepath())
                         in_h, in_w = initial_title_img.shape[:2]
                         print(f"title shape: {initial_title_img.shape}")
                         bgd_h, bgd_w = cached_frame.img.shape[:2]
@@ -307,12 +306,8 @@ def apply_effect(
                 else:
                     print(f"{out_f_no}: add title, zoom")
                     bgd_img = np_to_float32(frame.img)
-                    title_fp: str = os.path.join(
-                        db['common']['directories']['inputs'],
-                        "title_fr.png"
-                    )
                     bgd_h, bgd_w = bgd_img.shape[:2]
-                    initial_title_img: np.ndarray = load_image_fp32(title_fp)
+                    initial_title_img: np.ndarray = load_image_fp32(load_image_fp32(title_filepath()))
                     in_h, in_w = initial_title_img.shape[:2]
 
                     start_factor: float = effect.zoom_factor
