@@ -220,9 +220,9 @@ class GeometryDatabase:
     def modified_scene_nos(self) -> list[int]:
         modified: list[int] = []
         for k in self.modified_scenes:
-            if result := re.search(re.compile(r"(\d{3})"), k):
+            if result := re.search(re.compile(r":(\d{3})"), k):
                modified.append(int(result.group(1)))
-        return self.modified_scenes
+        return modified
 
 
     def undo(self) -> None:

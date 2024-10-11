@@ -23,26 +23,42 @@ TaskName = Literal[
     # 00_lr
     'lr',
 
+    # sim:
+    # - Use the deinterlaced video
+    # - resize to 1080p (1440x1080)
+    # - add the effects (overlay)
+    #   What is not done:
+    #   - NN upscale
+    #   - stabilization
+    #   - temporal filtering
+    #   - color grade
+    #   - final crop/resize
     'sim',
 
     'denoise',
 
-    # Upscale and generate a 1080p imag for comparison
+    # Upscale and generate a 1080p image for comparison
     'upscale',
 
     # Create video clips to be stabilized
     'hr',
 
-    # Upscaled and color grading, external tool
-    # Input: clips from upscale: hash?
-    # output: FFv1 8 or 16bit
-    # 03_restored
-    'restored',
-    'color',
+    # Stabilize video, external tool
+    'st',
 
-    # Finalize: temporal filter, geometry, fading
-    #   output: all params
-    # 04_final
+    # Temporal fix
+    #   get the video from stabilized or hr if not stabilized
+    #   and apply some temporal filtering
+    #     - open tf and compare metadata to st modified date
+    #     - apply filter if st changed
+    #     - test modified date: hr < st < tf
+    'tf',
+
+
+    # Color grading, external tool
+    'cg',
+
+    # Finalize: geometry, fading
     'final'
 ]
 
@@ -53,7 +69,6 @@ task_to_dirname: dict[TaskName, str] = {
     'lr': '01_lr',
     'upscale': '02_upscaled',
     'hr': '03_hr',
-    'restored': '04_restored',
     'final': '05_final',
 }
 
@@ -62,7 +77,6 @@ filter_name_to_dirname: dict[str, TaskName] = {
     'lr': 'lr',
     'upscale': 'upscaled',
     'hr': 'hr',
-    'restored': 'restored',
     'final': 'final',
 }
 

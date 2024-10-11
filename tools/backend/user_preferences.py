@@ -2,6 +2,8 @@ import os
 import os.path
 
 from pprint import pprint
+import sys
+from typing import Any
 
 from PySide6.QtCore import (
     QSettings,
@@ -20,10 +22,11 @@ class UserPreferences(QObject):
 
         self.editors = widget_list
 
-        self.settings = QSettings(
+        settings = QSettings(
             QSettings.Format.IniFormat,
             QSettings.Scope.UserScope,
             "mco", tool)
+        self.tool = tool
 
         # Default
         self.preferences = {
@@ -31,8 +34,8 @@ class UserPreferences(QObject):
             'selection': dict(),
         }
 
-        for editor in self.editors:
-            self.preferences.update({editor: dict()})
+        # for editor in self.editors:
+        #     self.preferences.update({editor: dict()})
 
         # Default geometry
         screens = QApplication.screens()
@@ -41,15 +44,15 @@ class UserPreferences(QObject):
         screen_height = screens[0].size().height()
 
         # (Mandatory) Main window
-        if self.settings.contains('window/screen'):
-            self.preferences['window']['screen'] = self.settings.value('window/screen')
+        if settings.contains('window/screen'):
+            self.preferences['window']['screen'] = settings.value('window/screen')
         else:
             self.preferences['window']['screen'] = 0
 
         self.preferences['window']['geometry'] = [0, 0, screen_width, screen_height]
         try:
             self.preferences['window']['geometry'] = list(
-                map(lambda x: int(x), self.settings.value('window/geometry').split(':'))
+                map(lambda x: int(x), settings.value('window/geometry').split(':'))
             )
         except:
             pass
@@ -57,31 +60,31 @@ class UserPreferences(QObject):
         # Selection
         try:
             self.preferences['selection']['edition'] = ''
-            if self.settings.contains('selection/edition'):
-                self.preferences['selection']['edition'] = self.settings.value('selection/edition')
+            if settings.contains('selection/edition'):
+                self.preferences['selection']['edition'] = settings.value('selection/edition')
         except:
             self.preferences['selection']['edition'] = ''
 
         self.preferences['selection']['episode'] = ''
-        if self.settings.contains('selection/episode'):
-            ep_no_str = self.settings.value('selection/episode')
+        if settings.contains('selection/episode'):
+            ep_no_str = settings.value('selection/episode')
             self.preferences['selection']['episode'] = ep_no_str if ep_no_str == '' else int(ep_no_str)
 
         self.preferences['selection']['k_ch'] = ''
-        if self.settings.contains('selection/part'):
-            self.preferences['selection']['k_ch'] = self.settings.value('selection/part')
+        if settings.contains('selection/part'):
+            self.preferences['selection']['k_ch'] = settings.value('selection/part')
 
         self.preferences['selection']['scene_no'] = 0
-        if self.settings.contains('selection/scene_no'):
-            if self.settings.value('selection/scene_no') != '':
-                self.preferences['selection']['scene_no'] = int(self.settings.value('selection/scene_no'))
+        if settings.contains('selection/scene_no'):
+            if settings.value('selection/scene_no') != '':
+                self.preferences['selection']['scene_no'] = int(settings.value('selection/scene_no'))
 
 
         # use the preferences save in the file
         for editor in self.editors:
             try:
                 self.preferences[editor]['geometry'] = list(map(lambda x: int(x),
-                    self.settings.value('%s/geometry' % (editor)).split(':')))
+                    settings.value('%s/geometry' % (editor)).split(':')))
                 if self.preferences[editor]['geometry'][0] > screen_width and screens_count < 2:
                     self.preferences[editor]['geometry'][0] -= screen_width
 
@@ -90,45 +93,73 @@ class UserPreferences(QObject):
                 if self.preferences[editor]['geometry'][1] < 0:
                     self.preferences[editor]['geometry'][1] = 0
 
-                self.preferences[editor]['widget'] =  self.settings.value('%s/widget' % (editor))
+                self.preferences[editor]['widget'] =  settings.value('%s/widget' % (editor))
             except:
                 print("preferences for widget [%s]cannot be loaded" % (editor))
                 pass
 
+        for group in settings.childGroups():
+            if group in ('selection', 'window'):
+                continue
+            settings.beginGroup(group)
+            self.preferences[group] = {}
+            for k in settings.childKeys():
+                print(k)
+                v: str = settings.value(k)
+                print(v)
+                if v == 'true':
+                    value = True
+                elif v == 'false':
+                    value = False
+                self.preferences[group][k] = value
+        pprint(self.preferences)
 
-    def save(self, preferences):
+
+
+    def save(self, preferences: dict[str, dict[str, Any] | str]):
         print(f"{__name__}.save preferences")
         pprint(preferences)
 
+        settings = QSettings(
+            QSettings.Format.IniFormat,
+            QSettings.Scope.UserScope,
+            "mco", self.tool)
+
         # (Mandatory) Viewer
-        self.settings.setValue(
+        settings.setValue(
             'window/geometry',
             ':'.join(map(lambda x: "%d" % (x), preferences['window']['geometry']))
         )
-        self.settings.setValue('window/screen', 0)
+        settings.setValue('window/screen', 0)
 
 
         # (Special) Selection
-        self.settings.setValue('selection/episode', preferences['selection']['episode'])
-        self.settings.setValue('selection/part', preferences['selection']['k_ch'])
+        settings.setValue('selection/episode', preferences['selection']['episode'])
+        settings.setValue('selection/part', preferences['selection']['k_ch'])
         try:
-            self.settings.setValue('selection/scene_no', preferences['selection']['scene_no'])
+            settings.setValue('selection/scene_no', preferences['selection']['scene_no'])
         except:
             pass
 
+        w = 'geometry'
+        if w in preferences:
+            settings.beginGroup(w)
+            for name, value in preferences['geometry'].items():
+                settings.setValue(name, value)
 
-        # Other widgets (editors)
-        for editor in self.editors:
-            if editor == 'selection':
-                # Selection is a special case because and already saved before
-                continue
-            try:
-                self.settings.setValue('%s/geometry' % (editor),
-                    ':'.join(map(lambda x: "%d" % (x), preferences[editor]['geometry'])))
-                self.settings.setValue('%s/widget' % (editor), preferences[editor]['widget'])
-            except:
-                print("preferences for widget [%s] cannot be saved" % (editor))
-                pass
+
+        # # Other widgets (editors)
+        # for editor in self.editors:
+        #     if editor == 'selection':
+        #         # Selection is a special case because and already saved before
+        #         continue
+        #     try:
+        #         settings.setValue('%s/geometry' % (editor),
+        #             ':'.join(map(lambda x: "%d" % (x), preferences[editor]['geometry'])))
+        #         settings.setValue('%s/widget' % (editor), preferences[editor]['widget'])
+        #     except:
+        #         print("preferences for widget [%s] cannot be saved" % (editor))
+        #         pass
 
 
     def get_preferences(self):

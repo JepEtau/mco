@@ -159,6 +159,8 @@ class GeometryController(CommonController):
         self.geometry_db.update_scene_geometry(scene, modification)
         self.selection_geometry.update(self.geometry_db.get_geometry(scene))
         self.signal_reload_frame.emit()
+        print(yellow(f"modified scenes: {self.geometry_db.modified_scene_nos()}"))
+        self.signal_modified_scenes.emit(self.geometry_db.modified_scene_nos())
 
 
     @Slot(DetectInnerRectParams)

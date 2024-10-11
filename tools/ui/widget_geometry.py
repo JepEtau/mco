@@ -149,18 +149,12 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
         self.block_signals(True)
         try:
-            w = preferences[self.objectName()]['widget']
-
-            self.pushButton_set_preview.blockSignals(True)
-            self.pushButton_set_preview.setChecked(w['final_preview'])
-            self.pushButton_set_preview.blockSignals(False)
-
-            self.pushButton_target_width_edition.setChecked(w['target']['width_edition'])
-
-            self.pushButton_scene_crop_edition.setChecked(w['scene']['crop_edition'])
-            self.pushButton_scene_crop_preview.setChecked(w['scene']['crop_preview'])
-            # self.pushButton_scene_resize_edition.setChecked(w['scene']['resize_edition'])
-            self.pushButton_scene_resize_preview.setChecked(w['scene']['resize_preview'])
+            w = preferences[self.objectName()]
+            self.pushButton_set_preview.setChecked( w['preview'])
+            self.pushButton_target_width_edition.setChecked(w['target_width'])
+            self.pushButton_scene_crop_edition.setChecked(w['crop_edition'])
+            self.pushButton_scene_crop_preview.setChecked(w['crop_preview'])
+            self.pushButton_scene_resize_preview.setChecked(w['resize_preview'])
 
         except:
             log.warning("cannot set initial options")
@@ -173,15 +167,21 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.block_signals(False)
 
         # Force enabled/disable to save the current states for all widgets
-        self.set_edition_and_preview_enabled(False)
-        self.set_edition_and_preview_enabled(True)
+        # self.set_edition_and_preview_enabled(False)
+        # self.set_edition_and_preview_enabled(True)
 
         # Geometry
         self.adjustSize()
 
 
     def get_user_preferences(self) -> dict[str, Any]:
-        return {}
+        return {
+            'preview': self.pushButton_set_preview.isChecked(),
+            'target_width': self.pushButton_target_width_edition.isChecked(),
+            'crop_edition': self.pushButton_scene_crop_edition.isChecked(),
+            'crop_preview': self.pushButton_scene_crop_preview.isChecked(),
+            'resize_preview': self.pushButton_scene_resize_preview.isChecked(),
+        }
 
 
     @Slot()

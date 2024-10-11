@@ -275,8 +275,10 @@ def consolidate_scene(
 
     if is_first_scene(scene):
         ch_video: ChapterVideo = get_target_video(scene)
-        ch_effect = ch_video['effects'].get_effect('fadein')
-        if ch_effect is not None:
+        if (
+            'effects' in ch_video
+            and (ch_effect := ch_video['effects'].get_effect('fadein'))
+        ):
             if 'effects' not in scene:
                 scene['effects'] = Effects()
             scene_effect: Effect = deepcopy(ch_effect)
