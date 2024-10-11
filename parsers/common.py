@@ -99,6 +99,8 @@ def parse_common_configuration(language:str=''):
             v = v.replace(c, '')
         directories[d] = v
 
+    directories['images'] = os.path.join(directories['inputs'], "img")
+
     root_path: str = absolute_path(
         os.path.join(__file__, os.pardir, os.pardir)
     )

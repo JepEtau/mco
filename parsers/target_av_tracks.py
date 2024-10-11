@@ -377,19 +377,24 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
         print(f"[I] consolidate_av_tracks: {k_chapter_c}: add video frames, video({video_count}) < audio ({audio_count})")
         loop_count = audio_count - video_count
         fade: int = min(loop_count, 25)
-        if (
-            'effects' in last_scene
-            and (effect := last_scene['effects'].get_effect('fadeout'))
-        ):
-            fade = effect.fade
-        last_scene['effects'] = Effects([
-            Effect(
-                name='loop_and_fadeout',
-                frame_ref=frame_no,
-                loop=loop_count,
-                fade=fade
+        if 'effects' not in last_scene:
+            last_scene['effects'] = Effects()
+        if (effect := last_scene['effects'].get_effect('fadeout')):
+            # Transform the fadeout effect in loop_and_fadeout
+            effect.name = 'loop_and_fadeout'
+            effect.frame_ref = frame_no
+            effect.loop = loop_count
+            effect.fade = fade
+        else:
+            last_scene['effects'].append(
+                Effect(
+                    name='loop_and_fadeout',
+                    frame_ref=frame_no,
+                    loop=loop_count,
+                    fade=fade,
+                )
             )
-        ])
+
         db_video['count'] += loop_count
         return
 

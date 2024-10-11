@@ -86,7 +86,15 @@ def calculate_frame_count(scene: Scene) -> int:
             count += ch_video['silence'] if 'silence' in ch_video else 0
 
         if 'effects' in scene:
-            count += scene['effects'].primary_effect().loop
+            for e_name in (
+                'loop',
+                'loop_and_fadein',
+                'loop_and_fadeout',
+                'zoom_in',
+                'zoom_out',
+            ):
+                if (e := scene['effects'].get_effect(e_name)):
+                    count += e.loop
 
         # src_scene: SrcScene = scene['src'].last_scene()
         # if 'effects' in src_scene and src_scene['effects'] is not None:

@@ -31,7 +31,7 @@ cached_overlay: McoFrame | None = None
 
 def title_filepath() -> str:
     filepath: str = os.path.join(
-        db['common']['directories']['inputs'],
+        db['common']['directories']['images'],
         f"title_{db['common']['settings']['language']}.png"
     )
     return filepath
@@ -307,7 +307,7 @@ def apply_effect(
                     print(f"{out_f_no}: add title, zoom")
                     bgd_img = np_to_float32(frame.img)
                     bgd_h, bgd_w = bgd_img.shape[:2]
-                    initial_title_img: np.ndarray = load_image_fp32(load_image_fp32(title_filepath()))
+                    initial_title_img: np.ndarray = load_image_fp32(title_filepath())
                     in_h, in_w = initial_title_img.shape[:2]
 
                     start_factor: float = effect.zoom_factor
@@ -323,16 +323,16 @@ def apply_effect(
                         loop_start = out_f_no - effect.frame_ref + last_src_scene['count'] - 1
                         loop_end = effect.loop
 
-                    print(f"for loop: start: {loop_start}, {loop_end}")
+                    # print(f"for loop: start: {loop_start}, {loop_end}")
                     for i in range(loop_start, loop_end):
                         print(yellow(f"  iteration no. {i}"))
                         step: float = float((i + out_f_no - effect.frame_ref)/ effect.loop)
                         factor: float = (start_factor * (1 - step) + end_factor * step)
-                        print(f"\n{out_f_no}: {step:.2f},  factor: {factor:.2f}")
+                        # print(f"\n{out_f_no}: {step:.2f},  factor: {factor:.2f}")
 
                         out_h, out_w = int(factor * in_h), int(factor * in_w)
-                        print(f"bgd shape: {bgd_img.shape}")
-                        print(f"{in_w}x{in_h} -> {out_w}x{out_h}")
+                        # print(f"bgd shape: {bgd_img.shape}")
+                        # print(f"{in_w}x{in_h} -> {out_w}x{out_h}")
                         title_img: np.ndarray = cv2.resize(
                             initial_title_img,
                             (out_w, out_h),
@@ -344,7 +344,7 @@ def apply_effect(
                             top = max(0, int((out_h - bgd_h) / 2))
                             left = max(0, int((out_w - bgd_w) / 2))
 
-                            print(f"crop: {top}, {left}")
+                            # print(f"crop: {top}, {left}")
                             title_img = np.ascontiguousarray(
                                 title_img[
                                     top : top + in_h,
@@ -352,7 +352,7 @@ def apply_effect(
                                     :
                                 ]
                             )
-                            print(f"  cropped_title: {title_img.shape}")
+                            # print(f"  cropped_title: {title_img.shape}")
 
                         # Add borders if overlay is < background
                         out_h, out_w = title_img.shape[:2]
@@ -360,7 +360,7 @@ def apply_effect(
                             top, left = (bgd_h - out_h) // 2, (bgd_w - out_w) // 2
                             bottom, right = bgd_h - (out_h + top), bgd_w - (out_w + left)
                             borders = [top, bottom, left, right]
-                            print(f"  borders: {borders}")
+                            # print(f"  borders: {borders}")
                             title_img: np.ndarray = cv2.copyMakeBorder(
                                 title_img,
                                 *borders,
@@ -368,12 +368,9 @@ def apply_effect(
                                 value=0
                             )
 
-                        print(f"foreground: {title_img.shape}")
-                        print(f"background: {bgd_img.shape}")
-
                         rgb_title_img = title_img[:,:,:3]
                         alpha = title_img[:,:,3:]
-                        print(f"alpha shape: {alpha.shape}")
+                        # print(f"alpha shape: {alpha.shape}")
                         out_frames.append(
                             McoFrame(
                                 no=frame.no,
@@ -386,7 +383,7 @@ def apply_effect(
                         )
 
                     if out_f_no == effect.frame_ref + effect.loop or do_return:
-                        print(lightcyan("cache frame"))
+                        # print(lightcyan("cache frame"))
                         cached_frame = out_frames[-1]
                         frame.img = cached_frame.img
 
@@ -408,7 +405,7 @@ def apply_effect(
                     if cached_overlay is None:
                         x0: int = effect.extra_param[0]
                         overlay_fp: str = os.path.join(
-                            db['common']['directories']['inputs'], effect.extra_param[1]
+                            db['common']['directories']['images'], effect.extra_param[1]
                         )
                         overlay: np.ndarray = load_image_fp32(filepath=overlay_fp)
 

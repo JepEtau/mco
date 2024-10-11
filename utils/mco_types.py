@@ -164,15 +164,15 @@ class SceneGeometry:
         self._defined = defined
 
 EffectName = Literal[
-    'loop',
-    'fadeout',
     'fadein',
-    'loop_and_fadeout',
+    'fadeout',
+    'loop',
     'loop_and_fadein',
+    'loop_and_fadeout',
+    'overlay'
     'watermark',
     'zoom_in',
     'zoom_out',
-    'overlay'
 ]
 
 
