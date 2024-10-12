@@ -157,7 +157,6 @@ class ReplaceController(CommonController):
     @Slot(ReplaceAction)
     def event_frame_replaced(self, replace: ReplaceAction):
         print(yellow("event_frame_replaced"))
-        pprint(replace)
 
         scene_no: int = int(replace.current.scene_key.split(':')[-1])
         # if isinstance(replace.by, Frame):

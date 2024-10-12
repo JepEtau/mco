@@ -38,7 +38,7 @@ def add_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | None:
     scene: Scene = frame.scene
     in_img: np.ndarray = frame.img
 
-    if scene['task'].name == 'initial':
+    if scene['task'].name in 'initial':
         text: str = f"""{scene['k_ed']}:{scene['k_ep']}:{scene['no']:03}{str(no).rjust(10)}"""
     else:
         src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no)['scene']
@@ -78,7 +78,7 @@ def add_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | None:
         align=alignment.value,
         fill=ink,
     )
-    if scene['task'].name in ('initial', 'lr'):
+    if scene['task'].name in ('initial'):
         _add_initial_scene_watermak(pil_image=pil_image, scene=scene, no=no)
     out_img: np.ndarray = np.array(pil_image)
 

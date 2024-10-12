@@ -64,16 +64,16 @@ class ReplaceWindow(QMainWindow):
         self.verticalLayout_2 = QVBoxLayout(self.centralwidget)
         self.horizontalLayout = QHBoxLayout()
         self.verticalLayout = QVBoxLayout()
-
+        app_type: str = 'replace'
         set_stylesheet(self)
 
         # Preview
-        self.widget_preview = PreviewWidget(self.centralwidget)
+        self.widget_preview = PreviewWidget(self.centralwidget, app_type=app_type)
         self.verticalLayout.addWidget(self.widget_preview)
 
         # Player control
         self.widget_player_ctrl = PlayerCtrlWidget(
-            self, controller, app_type='replace'
+            self, controller, app_type=app_type
         )
         self.verticalLayout.addWidget(self.widget_player_ctrl)
         self.horizontalLayout.addLayout(self.verticalLayout)
@@ -86,7 +86,7 @@ class ReplaceWindow(QMainWindow):
 
         # Selection
         self.widget_selection = SelectionWidget(
-            self, controller, app_type='replace'
+            self, controller, app_type=app_type
         )
         self.widgets['selection'] = self.widget_selection
         self.horizontalLayout.addWidget(self.widget_selection)

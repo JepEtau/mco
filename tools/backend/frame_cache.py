@@ -92,10 +92,11 @@ class FrameCache:
                 filter_complex: list[str] = []
                 in_h, in_w, in_c = vi['shape']
                 if scene['task'].name == 'lr':
-                    if h != 576 or w != 576:
+                    if in_h != 576 or in_w != 768:
+                        in_h, in_w = (576, 768)
                         filter_complex = [
                             "-filter_complex",
-                            f"[0:v]scale=768:576:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
+                            f"[0:v]scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
                             "-map", "[outv]"
                         ]
                 else:
