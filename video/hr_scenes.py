@@ -167,6 +167,7 @@ def generate_hr_scenes(
                 f.write(f"file \'{scene['task'].video_file}\' \n")
 
         # Output video file
+        raise ValueError("vcodec_to_extension")
         out_filename: str = f"_{chapter}_{scene_min}-{scene_max}.mkv"
         if chapter not in ('g_debut', 'g_fin'):
             out_filename = f"_{k_ep}{out_filename}"

@@ -144,7 +144,6 @@ def parse_database(
                 already_parsed.append(k_ep_tmp)
 
 
-
     # Génériques: debut/fin
     for k_chapter_g in ('g_debut', 'g_fin'):
         # Replaced frames
@@ -158,8 +157,7 @@ def parse_database(
 
         # Consolidate by aligning the A/V tracks of generiques
         consolidate_av_tracks(k_ep='', k_chapter=k_chapter_g)
-        # if k_chapter_g == 'g_fin':
-        #     sys.exit()
+
 
     # Consolidate database for the episode ONLY
     if k_ep != 'ep00':
@@ -172,6 +170,7 @@ def parse_database(
             # parse_stabilize_configurations(k_ep_or_g=k_chapter_g)
             parse_geometry_configurations(k_ep_or_g=k_chapter_g)
             consolidate_target_scenes_g(k_ep=k_ep, k_chapter=k_chapter_g)
+
 
     # Parse the geometry once all target scenes consolidated because
     # the geometry refers to the destination and not the source

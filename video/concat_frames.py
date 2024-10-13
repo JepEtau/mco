@@ -81,6 +81,9 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
     elif task_name == 'restored':
         folder_name = 'restored'
 
+    pprint(db['common'])
+    sys.exit("get_video_filename")
+
     return absolute_path(
         os.path.join(cache_dir, folder_name, f"{basename}{suffix}.mkv")
     )

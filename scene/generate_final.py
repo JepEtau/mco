@@ -27,7 +27,7 @@ from utils.path_utils import absolute_path, path_split
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from utils.media import VideoInfo, extract_media_info, str_to_video_codec
+from utils.media import VideoInfo, extract_media_info, str_to_video_codec, vcodec_to_extension
 
 
 
@@ -84,16 +84,19 @@ def get_output_video_filepath(scene: Scene, task_name: TaskName | None = None) -
         basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
 
     suffix: str = ""
-    if task_name != "restored":
+    if task_name not in ('hr', 'restored'):
         if scene['task'].hashcode != '':
             suffix = f"_{scene['task'].hashcode}"
         suffix += f"_{task_name}"
 
+    pprint(db['common'])
+    raise ValueError(red("get_output_video_filepath"))
+    ext: str = vcodec_to_extension['h264']
     return absolute_path(
         os.path.join(
             cache_path,
             f"scenes_{task_name}",
-            f"{basename}{suffix}.mkv"
+            f"{basename}{suffix}{ext}"
         )
     )
 
@@ -291,6 +294,8 @@ def generate_final_scene(
     if debug:
         # Draw rectangle
         print(f"debug: {in_w}x{in_h}, {len(debug_imgs)} images")
+        ext: str = [vsettings.codec]
+        raise NotImplementedError("vcodec_to_extension")
         debug_command: list[str] = [
             ffmpeg_exe,
             "-hide_banner",

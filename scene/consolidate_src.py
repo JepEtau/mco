@@ -8,6 +8,7 @@ from processing.deint import calc_deint_hash, get_qtgmc_args, get_template_scrip
 from utils.mco_utils import get_cache_path
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
+from utils.media import vcodec_to_extension
 from .filters import get_filters
 
 from typing import TYPE_CHECKING
@@ -79,7 +80,8 @@ def consolidate_src_scene(
 
     # Set the progressive filepath
     basename: str = path_split(scene['inputs']['interlaced']['filepath'])[1]
-    filename: str = f"{basename}_{deint_hashcode}.mkv"
+    ext: str = vcodec_to_extension['h264']
+    filename: str = f"{basename}_{deint_hashcode}{ext}"
     progressive_fp: str = os.path.join(
         db['common']['directories']['cache_progressive'],
         filename
@@ -107,11 +109,13 @@ def consolidate_src_scene(
         if scene['task'].hashcode != '':
             suffix = f"_{scene['task'].hashcode}"
         suffix += f"_{task_name}"
+
+    ext: str = vcodec_to_extension[vsettings.codec]
     scene['task'].video_file = absolute_path(
         os.path.join(
             cache_path,
             f"scenes_{scene['k_ed']}",
-            f"{basename}{suffix}.mkv"
+            f"{basename}{suffix}{ext}"
         )
     )
 

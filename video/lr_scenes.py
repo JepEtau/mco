@@ -129,6 +129,7 @@ def generate_lr_scenes(
             if k_ch in ('g_debut', 'g_fin')
             else db[k_ep]['cache_path']
         )
+        raise ValueError("vcodec_to_extension")
         ch_video['task'] = ProcessingTask(
             name=task,
             hashcode=hashcode,
@@ -193,6 +194,7 @@ def generate_lr_scenes(
         lang_str = '' if language == 'fr' else f"_{language}"
 
         # Concatenate video clips
+        raise ValueError("vcodec_to_extension")
         episode_video_filepath = os.path.join(
             db[k_ep]['cache_path'],
             "video",

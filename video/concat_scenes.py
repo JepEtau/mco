@@ -81,6 +81,9 @@ def concat_scenes(
 
         # Output video file
         os.makedirs(os.path.join(cache_directory, "video"), exist_ok=True)
+
+        pprint(db('common'))
+        raise ValueError("concat_scenes")
         out_video: str = os.path.join(
             cache_directory,
             "video",

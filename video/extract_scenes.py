@@ -111,6 +111,7 @@ def extract_scenes(
 
         hashcode: str = calc_hash(hashes_str[:-1])
         basename: str = f"{k_ed}_{k_ep}_{chapter}_{task}_{hashcode}"
+        raise ValueError("vcodec_to_extension")
         ch_video['task'] = ProcessingTask(
             name=task,
             hashcode=hashcode,

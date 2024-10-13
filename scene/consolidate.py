@@ -6,6 +6,7 @@ from utils.hash import calc_hash
 from utils.mco_types import (
     ChapterGeometry, ChapterVideo, Effect, Effects, Scene, SceneGeometry,
 )
+from utils.media import vcodec_to_extension
 from parsers import (
     db,
     Filter,
@@ -77,9 +78,7 @@ def consolidate_scene(
         if ch_geometry is None:
             print(yellow(f"no geometry for chapter: {k_ch}"))
         else:
-            scene['geometry'] = SceneGeometry(
-                chapter=ch_geometry
-            )
+            scene['geometry'] = SceneGeometry(chapter=ch_geometry)
 
     else:
         k_ed_src, k_ep_src, k_ch_src, scene_no_src = primary_src_scene['k_ed_ep_ch_no']
@@ -213,10 +212,10 @@ def consolidate_scene(
         basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
 
     suffix: str = ""
-    if task_name != "restored":
+    if task_name != "hr":
         if scene['task'].hashcode != '':
             suffix = f"_{scene['task'].hashcode}"
-        suffix += f"_{task_name}"
+    suffix += f"_{task_name}"
 
     # Append the model name to evaluate models: only for upscale task
     if evaluation and task_name == 'upscale':
@@ -228,12 +227,9 @@ def consolidate_scene(
         model_name=sequence.split(',')[-1]
         suffix = f"{suffix}_{model_name}"
 
+    ext: str = vcodec_to_extension[vsettings.codec]
     scene['task'].video_file = absolute_path(
-        os.path.join(
-            cache_path,
-            f"scenes_{task_name}",
-            f"{basename}{suffix}.mkv"
-        )
+        os.path.join(cache_path, f"scenes_{task_name}", f"{basename}{suffix}{ext}")
     )
 
     # Effects
@@ -288,5 +284,6 @@ def consolidate_scene(
     if verbose:
         print(lightcyan("TO"))
         pprint(scene)
+        print("End of scene consolidation")
         print(lightcyan("==============================================================================="))
         sys.exit()

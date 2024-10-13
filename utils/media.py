@@ -32,6 +32,16 @@ str_to_video_codec: dict[str, VideoCodec] = {
 }
 
 
+# Limit the containers
+vcodec_to_extension: dict[VideoCodec, str] = {
+    'h264': '.mkv',
+    'h265': '.mkv',
+    'ffv1': '.mkv',
+    'vp9': '.mkv',
+    'dnxhd': '.mxf',
+}
+
+
 class FieldOrder(Enum):
     PROGRESSIVE = 'progressive' # Progressive video
     TOP_FIELD_FIRST = 'tt'      # Interlaced video, top field coded and displayed first

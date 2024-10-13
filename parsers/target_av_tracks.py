@@ -365,7 +365,7 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
     print(f"  - audio_duration: {db_audio['duration']}")
     print(f"  - video_count : {video_count}")
     print(f"  - video_count (rounded): {db_video['count']}")
-    pprint(db_video)
+    # pprint(db_video)
 
     # Align audio and video duration
     scenes: list[Scene] = db_video['scenes']
@@ -374,7 +374,7 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
         # Frames shall be added: use the loop effect for this
         last_scene: Scene = scenes[-1]
         frame_no = last_scene['src'].last_frame_no()
-        print(f"[I] consolidate_av_tracks: {k_chapter_c}: add video frames, video({video_count}) < audio ({audio_count})")
+        print(f"  -> add video frames, video({video_count}) < audio ({audio_count})")
         loop_count = audio_count - video_count
         fade: int = min(loop_count, 25)
         if 'effects' not in last_scene:
@@ -396,11 +396,13 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
             )
 
         db_video['count'] += loop_count
+        print(f"  -> video_count: {db_video['count']}")
+        print(lightcyan(f"-----------------------------------------------------------"))
         return
 
     elif video_count > audio_count:
         # Add silence to the audio track by adding a new segment
-        print(f"[I] consolidate_av_tracks: {k_chapter_c}: add audio silence, video({video_count}) > audio ({audio_count})")
+        print(f"  -> add audio silence, video({video_count}) > audio ({audio_count})")
         video_duration = frame_to_ms(video_count, fps)
         audio_duration = db_audio['duration']
         silence_duration = video_duration - audio_duration
@@ -411,6 +413,7 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
         })
         db_audio['count'] = db_video['count']
         db_audio['duration'] += silence_duration
+    print(f"  -> audio: {db_audio['count']}")
 
     if (effect := db_video['effects'].get_effect('fadeout')):
         last_scene: Scene = scenes[-1]
@@ -425,6 +428,7 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
                 fade=effect.fade
             )
         )
+    print(lightcyan(f"-----------------------------------------------------------"))
 
     # elif video_count == audio_count:
     #     print(f"info: consolidate_av_tracks: %s: video(%d) = audio (%d)" % (k_chapter_c, video_count, audio_count))

@@ -12,6 +12,7 @@ import numpy as np
 
 from nn_inference.model_mgr import ModelManager
 from nn_inference.threads.t_decoder import VideoStreamInfo
+from parsers._types import VideoSettings
 from parsers.p_print import pprint_scene_mapping
 from processing.upscale import UpscalePipeline
 from scene.consolidate import consolidate_scene
@@ -20,7 +21,7 @@ from utils.hash import calc_hash
 from utils.mco_path import makedirs
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import is_up_to_date
-from utils.media import extract_media_info
+from utils.media import extract_media_info, vcodec_to_extension
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
@@ -88,12 +89,15 @@ def upscale_scenes(
         ch_video['task'] = ProcessingTask(name=task)
         if debug:
             print(f"\n<<<<<<<<<<<<<<<<<<<<< {k_ch} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+            # pprint(ch_video)
+            print(f"scene_no: {scene_no}, scenes range: {scene_min} -> {scene_max}")
 
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
         for scene in scenes:
             start_time = time.time()
             if scene_no != -1 and scene['no'] != scene_no:
+                print(f"skip scene no. {scene['no']}")
                 continue
             if scene_min != -1 and scene_max != -1:
                 if scene['no'] < scene_min or scene['no'] > scene_max:
@@ -150,11 +154,15 @@ def upscale_scenes(
             if k_ch in ('g_debut', 'g_fin')
             else db[k_ep]['cache_path']
         )
+
+        ch_vsettings: VideoSettings = db['common']['video_format'][task]
+        ext: str = vcodec_to_extension[ch_vsettings.codec]
         ch_video['task'] = ProcessingTask(
             name=task,
             hashcode=hashcode,
             concat_file=os.path.join(cache_path, "concat", f"{basename}.txt"),
-            video_file=os.path.join(cache_path, f"video_lr", f"{basename}.mkv"),
+            video_file=os.path.join(cache_path, f"video_lr", f"{basename}{ext}"),
+            video_settings=ch_vsettings,
         )
 
     print(f"Consolidated scenes: {time.time() - start_time_full:.03f}s")
