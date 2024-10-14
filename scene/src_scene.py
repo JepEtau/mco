@@ -164,6 +164,7 @@ class SrcScenes:
         for src_scene in self._scenes:
             if src_scene['scene'] is None:
                 self._consolidate_scene(src_scene)
+
             consolidate_src_scene(
                 scene=src_scene['scene'],
                 task_name=task_name,

@@ -165,13 +165,12 @@ class CommonController(QObject, metaclass=QMeta):
         ):
             parse_database(
                 episode=selection.k_ep,
-                lang='fr'
+                lang='fr',
             )
             consolidate_target(
                 k_ep=selection.k_ep,
                 task=self.task_name
             )
-
             self.parsed_episodes.append(selection.k_ep)
 
         # Get video db

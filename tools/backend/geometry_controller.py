@@ -39,13 +39,14 @@ class GeometryController(CommonController):
     signal_preview_options_consolidated = Signal(dict)
     signal_replacements_refreshed = Signal()
 
-    def __init__(self):
+    def __init__(self, lowres: bool = False):
         super().__init__()
 
         # Load saved preferences
         self.user_preferences: UserPreferences = UserPreferences(tool='geometry')
 
-        self.task_name: TaskName = 'hr'
+        self.lowres = lowres
+        self.task_name: TaskName = 'cg' if not lowres else 'lr'
         self.geometry_db = GeometryDatabase()
         self.frame_cache: FrameCache = FrameCache(replace_db=None)
 
@@ -63,6 +64,7 @@ class GeometryController(CommonController):
         self.view.widget_geometry.signal_geometry_modified.connect(self.event_geometry_modified)
         self.view.widget_geometry.signal_detect_inner_rect.connect(self.event_detect_inner_rect)
         self.view.widget_geometry.signal_save.connect(self.event_geometry_save)
+
 
     def k_ep_p_changed(self, selection: Selection):
         super().k_ep_p_changed(selection)

@@ -16,6 +16,15 @@ from .logger import main_logger
 
 
 
+def scene_id_str(scene: Scene) -> str:
+    scene_id: str = (
+        f"{scene['dst']['k_ch']}:{scene['no']:03}"
+        if scene['dst']['k_ch'] in ('g_debut', 'g_fin')
+        else f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']:03}"
+    )
+    return scene_id
+
+
 def is_up_to_date(scene: Scene) -> bool:
     for s in scene['src'].scenes():
         in_video_fp: str = s['scene']['inputs']['progressive']['filepath']
@@ -135,11 +144,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
 
     # Put all images in a single folder for start/end credits
     if k_ch_dst in ('g_debut', 'g_fin'):
-        return os.path.join(
-            cache_dir,
-            k_ch_dst,
-            f"{scene['no']:03}"
-        )
+        return os.path.join(cache_dir, k_ch_dst)
 
     if k_ch_dst in ('g_asuivre', 'g_documentaire'):
         # if out:

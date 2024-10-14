@@ -22,7 +22,7 @@ from parsers import (
     VideoSettings,
     TaskName,
 )
-from utils.mco_types import Scene
+from utils.mco_types import Scene, Inputs
 
 
 def consolidate_src_scene(

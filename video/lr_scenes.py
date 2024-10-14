@@ -87,10 +87,8 @@ def generate_lr_scenes(
 
             pprint_scene_mapping(scene)
 
-            # Set the last task
+            # Consolidate this scene
             scene['task'] = ProcessingTask(name=task)
-
-            # Generate frames for this scene
             consolidate_scene(scene=scene, watermark=watermark)
 
             if debug:

@@ -27,12 +27,22 @@ def common_argument_parser(
     )
 
     if add_language:
+        # parser.add_argument(
+        #     "--en",
+        #     action="store_true",
+        #     required=False,
+        #     help="English version"
+        # )
+
         parser.add_argument(
-            "--en",
-            action="store_true",
+            "--lang",
+            choices=['en', 'fr'],
             required=False,
-            help="English version"
+            default='fr',
+            help="Choose language"
         )
+
+
 
     parser.add_argument(
         "--debug",
