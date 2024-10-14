@@ -8,14 +8,14 @@ from parsers import parse_database
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
-from video.st_scenes import st_scenes
+from video.tf_scenes import tf_scenes
 
 
 
 def main():
     # Arguments
     parser: ArgumentParser = common_argument_parser(
-        description="Stabilization",
+        description="Temporal filters",
         add_language=True
     )
 
@@ -79,9 +79,9 @@ def main():
     elif scene_arg != '':
         scene_no: int = int(scene_arg)
 
-    task = 'st'
+    task = 'tf'
 
-    st_scenes(
+    tf_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
         scene_no=scene_no,

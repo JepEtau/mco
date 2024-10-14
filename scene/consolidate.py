@@ -44,7 +44,8 @@ def consolidate_scene(
 
     if task_name != '':
         scene['task'] = ProcessingTask(name=task_name)
-    task_name: TaskName = scene['task'].name
+    task: ProcessingTask = scene['task']
+    task_name: TaskName = task.name
 
     scene['src'].consolidate(task_name=task_name, watermark=False)
     primary_src_scene = scene['src'].primary_scene()
@@ -197,12 +198,12 @@ def consolidate_scene(
 
     vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
     if vsettings is not None:
-        scene['task'].video_settings = deepcopy(vsettings)
-        vsettings = scene['task'].video_settings
+        task.video_settings = deepcopy(vsettings)
+        vsettings = task.video_settings
         if task_name == 'hr':
             vsettings.pad = db['common']['video_format'][task_name].pad
-            vsettings.metadata['HR'] = scene['task'].hashcode
-    elif task_name == 'st':
+            vsettings.metadata['HR'] = task.hashcode
+    elif task_name in ('st', 'tf'):
         vsettings: VideoSettings = db['common']['video_format'].get('hr', None)
         vsettings.pad = 0
     else:
@@ -219,8 +220,8 @@ def consolidate_scene(
 
     suffix: str = ""
     if task_name != "hr":
-        if scene['task'].hashcode != '':
-            suffix = f"_{scene['task'].hashcode}"
+        if task.hashcode != '':
+            suffix = f"_{task.hashcode}"
     suffix += f"_{task_name}"
 
     # Append the model name to evaluate models: only for upscale task
@@ -241,18 +242,27 @@ def consolidate_scene(
     }
     prev_task_name: TaskName = previous[task_name]
     suffix: str = f"_hr_{task_name}" if task_name == 'st' else suffix
+    # TODO: when using python deshaker suffix shall not be changed
 
     ext: str = vcodec_to_extension[vsettings.codec]
-    scene['task'].video_file = absolute_path(
+    task.video_file = absolute_path(
         os.path.join(cache_path, f"scenes_{task_name}", f"{basename}{suffix}{ext}")
     )
 
     # Input file for this task
     if task_name in ('st', 'tf', 'cg', 'final'):
-        suffix: str = "_hr" if task_name == 'st' else ""
-        scene['task'].in_video_file = os.path.join(
-            scene['cache'], f"scenes_{prev_task_name}", f"{basename}_{prev_task_name}{ext}"
+        suffix: str = "hr_" if task_name == 'tf' else ""
+        task.in_video_file = os.path.join(
+            scene['cache'], f"scenes_{prev_task_name}", f"{basename}_{suffix}{prev_task_name}{ext}"
         )
+
+        # Add fallback input video filename bc some tasks may be not processed
+        if task_name == 'tf':
+            task.fallback_in_video_files['hr'] = os.path.join(
+            scene['cache'], f"scenes_hr", f"{basename}_hr{ext}"
+        )
+
+
 
     # Effects
     #---------------------------------------------------------------------------

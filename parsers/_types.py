@@ -100,6 +100,7 @@ class ProcessingTask:
     do_generate: bool = True
     video_settings: VideoSettings | None = None
     in_video_file: str = ''
+    fallback_in_video_files: dict[TaskName, str] = field(default_factory=dict)
 
 
 @dataclass
