@@ -13,6 +13,7 @@ from ._types import (
     Filter,
     TASK_NAMES,
     VideoSettings,
+    ColorSettings,
 )
 
 from .helpers import (
@@ -54,4 +55,5 @@ __all__ = [
     "TASK_NAMES",
     "VideoSettings",
     "pprint_scene_mapping",
+    "ColorSettings",
 ]

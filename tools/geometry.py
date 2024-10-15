@@ -1,13 +1,15 @@
-import signal
-import os
-import sys
 from argparse import ArgumentParser
+import os
+import signal
+import sys
+
+from PySide6.QtWidgets import QApplication
 
 sys.path.append(
     os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 )
+from parsers import TASK_NAMES
 
-from PySide6.QtWidgets import QApplication
 
 if os.name == 'nt':
     import ctypes
@@ -18,18 +20,20 @@ if os.name == 'nt':
 def main():
     parser: ArgumentParser = ArgumentParser()
     parser.add_argument(
-        "--lr",
-        action="store_true",
+        "--task_name",
+        "-t",
         required=False,
-        help="use lowres scenes"
+        choices=TASK_NAMES,
+        default='cg',
     )
+
     arguments = parser.parse_args()
 
     application = QApplication(sys.argv)
     application.setStyle("Fusion")
     from logger import log
     from tools.backend.geometry_controller import GeometryController
-    controller = GeometryController(lowres=arguments.lr)
+    controller = GeometryController(task_name=arguments.task_name)
 
     from ui.window_geometry import GeometryWindow
     main_window = GeometryWindow(controller=controller)

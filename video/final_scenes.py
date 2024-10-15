@@ -4,12 +4,14 @@ import os
 import time
 from pprint import pprint
 
+from parsers._types import VideoSettings
 from scene.consolidate import consolidate_scene
 from scene.generate_final import generate_final_scene
 from utils.hash import calc_hash
 from utils.logger import main_logger
 from utils.mco_types import Scene, ChapterVideo
-from utils.mco_utils import is_up_to_date
+from utils.mco_utils import is_up_to_date, scene_id_str
+from utils.media import vcodec_to_extension
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
@@ -27,22 +29,17 @@ from .concat_scenes import concat_scenes
 
 
 
-def generate_final_scenes(
+def final_scenes(
     episode: str,
     single_chapter: Chapter,
+    scene_no: int | None = None,
     task: TaskName = '',
     force: bool = False,
     simulation: bool = False,
-    scene_no: int = -1,
-    scene_min: int = -1,
-    scene_max: int = -1,
-    watermark: bool = False,
-    edition: str | None = None,
     debug: bool = False,
     stats: bool = False
 ):
     k_ep = key(episode)
-    k_ed = edition
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
 
     do_concatenate_video: bool = (
@@ -75,37 +72,37 @@ def generate_final_scenes(
         ch_video['task'] = ProcessingTask(name=task)
         if debug:
             print(f"\n<<<<<<<<<<<<<<<<<<<<< {k_ch} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+            print(f"scene_no: {scene_no}")
 
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
         for scene in scenes:
             start_time = time.time()
-            if scene_no != -1 and scene['no'] != scene_no:
+            if scene_no is not None and scene_no != -1 and scene['no'] != scene_no:
                 continue
-            if scene_min != -1 and scene_max != -1:
-                if scene['no'] < scene_min or scene['no'] > scene_max:
-                    continue
-
             pprint_scene_mapping(scene)
 
-            # Set the last task
-            scene['task'] = ProcessingTask(name=task)
-
-            # Generate frames for this scene
-            consolidate_scene(scene=scene, watermark=watermark)
+            # Consolidate this scene
+            consolidate_scene(scene, task_name=task)
+            scene_id: str = scene_id_str(scene)
 
             if debug:
-                print(lightcyan("======================= generate_lr_scenes: Scene ============================="))
+                print(lightcyan(f"======================= generate_{task}_scenes: {scene_id} ============================="))
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
 
-            if not simulation and not is_up_to_date(scene) or force:
-                result = generate_final_scene(scene=scene, force=force, debug=debug, stats=stats)
-                if not result:
-                    # pprint(db[scene['k_ep']]['video'][scene['k_ed']])
-                    raise RuntimeError(
-                        red(f"Failed processing scene: source: {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}")
-                    )
+            # if not simulation and not is_up_to_date(scene) or force:
+            result = generate_final_scene(
+                scene=scene,
+                force=force,
+                debug=debug,
+                stats=stats
+            )
+            if not result:
+                # pprint(db[scene['k_ep']]['video'][scene['k_ed']])
+                raise RuntimeError(
+                    red(f"Failed processing scene: source: {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}")
+                )
 
             # Calculate hash for the video
             hashes_str += f",{scene['task'].hashcode}"
@@ -124,19 +121,20 @@ def generate_final_scenes(
                 # sys.exit()
 
         hashcode: str = calc_hash(hashes_str[:-1])
-        basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task}_{hashcode}"
+        basename: str = f"{k_ep}_{k_ch}_{task}_{hashcode}"
         cache_path = (
             db[k_ch]['cache_path']
             if k_ch in ('g_debut', 'g_fin')
             else db[k_ep]['cache_path']
         )
 
-        raise ValueError("vcodec_to_extension")
+        vsettings: VideoSettings = db['common']['video_format']['final']
+        ext: str = vcodec_to_extension[vsettings.codec]
         ch_video['task'] = ProcessingTask(
             name=task,
             hashcode=hashcode,
             concat_file=os.path.join(cache_path, "concat", f"{basename}.txt"),
-            video_file=os.path.join(cache_path, f"video", f"{basename}.mkv"),
+            video_file=os.path.join(cache_path, f"video", f"{basename}{ext}"),
         )
     print(f"Generated scenes in {time.time() - start_time_full:.03f}s")
 

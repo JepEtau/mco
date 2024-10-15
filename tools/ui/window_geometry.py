@@ -166,13 +166,14 @@ class GeometryWindow(CommonWindow):
         # print(f"{__name__} received: {key}")
 
         for w in (
-            self.widget_player_ctrl,
             self.widget_geometry,
+            self.widget_player_ctrl,
             # self.widget_preview,
             self.widget_selection
         ):
             if w.event_key_pressed(event):
                 # print(f"{__name__} {key} forwarded to {w.objectName()}")
+                event.accept()
                 return True
         return super().keyPressEvent(event)
 
@@ -185,10 +186,11 @@ class GeometryWindow(CommonWindow):
             self.widget_selection
         ):
             try:
+                # print(f"{__name__} forwarded to {w.objectName()}")
                 w.event_key_released(event)
             except:
                 pass
-
+        event.accept()
         return super().keyReleaseEvent(event)
 
 

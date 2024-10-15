@@ -68,75 +68,23 @@ def consolidate_scene(
     k_ed: str = scene['dst']['k_ed']
     k_ch: str = scene['dst']['k_ch']
     if k_ch in ['g_asuivre', 'g_documentaire']:
-        # print("\t\t\tconsolidate_scene: get geometry from %s:%s:%s" % (k_ed, k_ep, k_ch[2:]))
-        k_ep_dst = scene['dst']['k_ep']
-        ch_geometry: ChapterGeometry | None = None
-        width: int = 0
-        try:
-            ch_geometry = db[k_ep_dst]['video']['target'][k_ch[2:]]['geometry']
-            width = ch_geometry.width
-        except:
-            pass
-        # ch_geometry: ChapterGeometry = db[k_ep]['video'][k_ed][k_ch]['geometry']
-
+        ch_geometry: ChapterGeometry = deepcopy(
+            db[scene['dst']['k_ep']]['video']['target'][k_ch[2:]]['geometry']
+        )
         if ch_geometry is None:
-            print(yellow(f"no geometry for chapter: {k_ch}"))
-        else:
-            scene['geometry'] = SceneGeometry(chapter=ch_geometry)
+            raise ValueError(yellow(f"no geometry for chapter: {k_ch}"))
+        scene['geometry'] = SceneGeometry(chapter=ch_geometry)
 
     else:
-        k_ed_src, k_ep_src, k_ch_src, scene_no_src = primary_src_scene['k_ed_ep_ch_no']
         if verbose:
             print(f"\t\t\tconsolidate_scene: get geometry for {k_ed}:{k_ep}:{k_ch}")
+        chapter: ChapterVideo | None = None
+        if k_ch in ('g_debut', 'g_fin'):
+            chapter = db[k_ch]['video']
+        else:
+            chapter = db[k_ep]['video']['target'][k_ch]
+        scene['geometry'].chapter = deepcopy(chapter['geometry'])
 
-        if 'geometry' in primary_src_scene['scene']:
-            scene['geometry'] = deepcopy(primary_src_scene['scene']['geometry'])
-
-            # Target geometry: width defined
-            chapter: ChapterVideo | None = None
-            try:
-                if k_ch in ('g_debut', 'g_fin'):
-                    chapter = db[k_ch]['video']
-                else:
-                    chapter = db[k_ep]['video']['target'][k_ch]
-            except:
-                pass
-            print(f"{k_ep}:{k_ch}")
-            print(f"{k_ed_src}:{k_ep_src}:{k_ch_src}:{scene_no_src}")
-
-            pprint(chapter['geometry'])
-            scene['geometry'].chapter = deepcopy(chapter['geometry'])
-            # Get default geometry for a scene
-            # scene_geometry: SceneGeometry =
-
-
-        # try:
-        #     default_scene_src_geometry = db[k_ep_src]['video'][k_ed_src][k_ch_src]['geometry']
-        #     default_scene_src_geometry['is_default'] = True
-        # except:
-        #     default_scene_src_geometry = {
-        #         'keep_ratio': True,
-        #         'fit_to_width': False,
-        #         'crop': [0] * 4,
-        #         'is_default': True
-        #     }
-
-        # # Get the customized geometry for a scene
-        # try:
-        #     scene_src_geometry = db[k_ep_src]['video'][k_ed_src][k_ch_src]['scenes'][scene_no_src]['geometry']['scene']
-        #     scene_src_geometry['is_default'] = False
-        # except:
-        #     scene_src_geometry = None
-
-        # if scene_src_geometry is not None:
-        #     # Use the customized
-        #     nested_dict_set(scene, scene_src_geometry, 'geometry', 'scene')
-        #     scene['geometry']['scene']['is_default'] = False
-        # else:
-        #     # Use the default because no customized defined
-        #     nested_dict_set(scene, default_scene_src_geometry, 'geometry', 'scene')
-        #     try: scene['geometry']['scene']['is_default'] = True
-        #     except: pass
 
     # Processing chain
     #---------------------------------------------------------------------------
@@ -203,7 +151,7 @@ def consolidate_scene(
         if task_name == 'hr':
             vsettings.pad = db['common']['video_format'][task_name].pad
             vsettings.metadata['HR'] = task.hashcode
-    elif task_name in ('st', 'tf'):
+    elif task_name in ('st', 'tf', 'cg'):
         vsettings: VideoSettings = db['common']['video_format'].get('hr', None)
         vsettings.pad = 0
     else:
@@ -240,12 +188,15 @@ def consolidate_scene(
         'cg': 'tf',
         'final': 'cg',
     }
-    prev_task_name: str = task_name
     if task_name in list(previous.keys()):
         prev_task_name: TaskName = previous[task_name]
-        suffix: str = f"_hr_{task_name}" if task_name == 'st' else suffix
+        if task_name == 'st':
+            suffix: str = f"_hr_{task_name}"
+        elif task_name == 'cg':
+            suffix: str = f"_tf_{task_name}"
         # TODO: when using python deshaker suffix shall not be changed
 
+    # Output file
     ext: str = vcodec_to_extension[vsettings.codec]
     task.video_file = absolute_path(
         os.path.join(cache_path, f"scenes_{task_name}", f"{basename}{suffix}{ext}")
@@ -253,17 +204,24 @@ def consolidate_scene(
 
     # Input file for this task
     if task_name in ('st', 'tf', 'cg', 'final'):
-        suffix: str = "hr_" if task_name == 'tf' else ""
+        suffix: str = ""
+        if task_name == 'tf':
+            suffix: str = "hr_"
+        elif task_name == 'final':
+            suffix: str = "tf_"
+
+        in_vsettings: VideoSettings = db['common']['video_format']['hr']
+        in_ext: str = vcodec_to_extension[in_vsettings.codec]
+
         task.in_video_file = os.path.join(
-            scene['cache'], f"scenes_{prev_task_name}", f"{basename}_{suffix}{prev_task_name}{ext}"
+            scene['cache'], f"scenes_{prev_task_name}", f"{basename}_{suffix}{prev_task_name}{in_ext}"
         )
 
         # Add fallback input video filename bc some tasks may be not processed
-        if task_name == 'tf':
+        if task_name in ('tf', 'final'):
             task.fallback_in_video_files['hr'] = os.path.join(
-            scene['cache'], f"scenes_hr", f"{basename}_hr{ext}"
-        )
-
+                scene['cache'], f"scenes_hr", f"{basename}_hr{in_ext}"
+            )
 
 
     # Effects

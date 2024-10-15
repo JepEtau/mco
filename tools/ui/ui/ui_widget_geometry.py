@@ -25,7 +25,7 @@ class Ui_GeometryWidget(object):
     def setupUi(self, GeometryWidget):
         if not GeometryWidget.objectName():
             GeometryWidget.setObjectName(u"GeometryWidget")
-        GeometryWidget.resize(317, 599)
+        GeometryWidget.resize(317, 627)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -397,6 +397,7 @@ class Ui_GeometryWidget(object):
         self.spinBox_threshold_min = QSpinBox(self.groupBox)
         self.spinBox_threshold_min.setObjectName(u"spinBox_threshold_min")
         self.spinBox_threshold_min.setMaximumSize(QSize(60, 16777215))
+        self.spinBox_threshold_min.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.spinBox_threshold_min.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.spinBox_threshold_min.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_threshold_min.setMaximum(127)
@@ -412,6 +413,7 @@ class Ui_GeometryWidget(object):
         self.spinBox_morph_kernel_radius = QSpinBox(self.groupBox)
         self.spinBox_morph_kernel_radius.setObjectName(u"spinBox_morph_kernel_radius")
         self.spinBox_morph_kernel_radius.setMaximumSize(QSize(60, 16777215))
+        self.spinBox_morph_kernel_radius.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.spinBox_morph_kernel_radius.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.spinBox_morph_kernel_radius.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_morph_kernel_radius.setMinimum(0)
@@ -428,6 +430,7 @@ class Ui_GeometryWidget(object):
         self.spinBox_erode_kernel_radius = QSpinBox(self.groupBox)
         self.spinBox_erode_kernel_radius.setObjectName(u"spinBox_erode_kernel_radius")
         self.spinBox_erode_kernel_radius.setMaximumSize(QSize(60, 16777215))
+        self.spinBox_erode_kernel_radius.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.spinBox_erode_kernel_radius.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.spinBox_erode_kernel_radius.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_erode_kernel_radius.setMaximum(11)
@@ -442,6 +445,7 @@ class Ui_GeometryWidget(object):
         self.spinBox_erode_iterations = QSpinBox(self.groupBox)
         self.spinBox_erode_iterations.setObjectName(u"spinBox_erode_iterations")
         self.spinBox_erode_iterations.setMaximumSize(QSize(60, 16777215))
+        self.spinBox_erode_iterations.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.spinBox_erode_iterations.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.spinBox_erode_iterations.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_erode_iterations.setMaximum(3)
@@ -457,6 +461,7 @@ class Ui_GeometryWidget(object):
         self.checkBox_do_add_borders = QCheckBox(self.groupBox)
         self.checkBox_do_add_borders.setObjectName(u"checkBox_do_add_borders")
         self.checkBox_do_add_borders.setMaximumSize(QSize(60, 16777215))
+        self.checkBox_do_add_borders.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.checkBox_do_add_borders.setText(u"")
 
         self.formLayout_3.setWidget(4, QFormLayout.FieldRole, self.checkBox_do_add_borders)
@@ -465,8 +470,16 @@ class Ui_GeometryWidget(object):
         self.pushButton_calculate.setObjectName(u"pushButton_calculate")
         sizePolicy2.setHeightForWidth(self.pushButton_calculate.sizePolicy().hasHeightForWidth())
         self.pushButton_calculate.setSizePolicy(sizePolicy2)
+        self.pushButton_calculate.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
-        self.formLayout_3.setWidget(5, QFormLayout.LabelRole, self.pushButton_calculate)
+        self.formLayout_3.setWidget(5, QFormLayout.FieldRole, self.pushButton_calculate)
+
+        self.pushButton_default = QPushButton(self.groupBox)
+        self.pushButton_default.setObjectName(u"pushButton_default")
+        self.pushButton_default.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_default.setText(u"default")
+
+        self.formLayout_3.setWidget(5, QFormLayout.LabelRole, self.pushButton_default)
 
 
         self.verticalLayout.addLayout(self.formLayout_3)
@@ -491,6 +504,7 @@ class Ui_GeometryWidget(object):
         self.pushButton_copy_to_scene.setObjectName(u"pushButton_copy_to_scene")
         sizePolicy2.setHeightForWidth(self.pushButton_copy_to_scene.sizePolicy().hasHeightForWidth())
         self.pushButton_copy_to_scene.setSizePolicy(sizePolicy2)
+        self.pushButton_copy_to_scene.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.horizontalLayout_2.addWidget(self.pushButton_copy_to_scene)
 
@@ -505,6 +519,7 @@ class Ui_GeometryWidget(object):
 
         self.checkBox_use_autocrop = QCheckBox(self.groupBox)
         self.checkBox_use_autocrop.setObjectName(u"checkBox_use_autocrop")
+        self.checkBox_use_autocrop.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.checkBox_use_autocrop.setText(u"")
 
         self.horizontalLayout_2.addWidget(self.checkBox_use_autocrop)

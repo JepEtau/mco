@@ -8,11 +8,11 @@ from parsers import (
     parse_database,
 )
 from utils.arg_parser import common_argument_parser
-from utils.logger import main_logger as main_logger
+from utils.logger import main_logger
 from utils.p_print import *
 from av_merge.combine_av import combine_av_tracks, concatenate_all
 from av_merge.chapters import add_chapters
-from video.final_scenes import generate_final_scenes
+from video.final_scenes import final_scenes
 
 
 
@@ -26,26 +26,10 @@ def main():
     parser.add_argument(
         "--scene",
         "-s",
-        type=int,
-        default=-1,
+        type=str,
+        default='',
         required=False,
         help="scene no. to process. Integer or frame value (e.g. 2450f)"
-    )
-
-    parser.add_argument(
-        "--scene_min",
-        type=int,
-        default=-1,
-        required=False,
-        help="starting scene no. to process"
-    )
-
-    parser.add_argument(
-        "--scene_max",
-        type=int,
-        default=-1,
-        required=False,
-        help="last scene no. to process"
     )
 
     parser.add_argument(
@@ -89,25 +73,31 @@ def main():
         print(f"Episode: {episode}")
     if chapter != '':
         print("Chapter: %s" % (chapter))
-    print(f"Language: {'en' if arguments.en else 'fr'}")
+    print(f"Language: {arguments.lang}")
     print("Tasks:")
     print("\t- parse database")
 
     # Parse database
-    parse_database(episode=episode, lang='en' if arguments.en else 'fr')
+    parse_database(episode=episode, lang=arguments.lang)
     gc.collect()
 
 
+    scene_no: int | None = None
+    scene_arg: str = arguments.scene
+    if scene_arg.endswith('f'):
+        raise NotImplementedError("scene_arg not yet implemented")
+        scene_no = frame_to_scene_no(int(scene_arg[:-1]))
+    elif scene_arg != '':
+        scene_no: int = int(scene_arg)
+
     task = 'final'
-    generate_final_scenes(
+    final_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
+        scene_no=scene_no,
         task=task,
         force=arguments.force,
         simulation=arguments.simulate,
-        scene_no=arguments.scene,
-        scene_min=arguments.scene_min,
-        scene_max=arguments.scene_max,
         debug=arguments.debug,
         stats=arguments.stats
     )

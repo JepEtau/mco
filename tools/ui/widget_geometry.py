@@ -74,6 +74,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.controller.signal_selection_modified.connect(self.event_scenelist_modified)
 
         self.current_key_pressed: Qt.Key | None = None
+        self.is_target_width_disabled: bool = False
 
 
         self.checkBox_scene_keep_ratio.toggled[bool].connect(self.event_keep_ratio_changed)
@@ -88,6 +89,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         # self.checkBox_do_add_borders.toggled[bool].connect(self.event_ac_params_changed)
 
         # self.checkBox_use_as_crop_method
+        self.pushButton_default.released.connect(self.event_default)
         self.pushButton_calculate.released.connect(self.event_calculate)
         # self.pushButton_copy_to_scene
 
@@ -204,7 +206,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
     def refresh_values(self, frame: Frame):
         target_geometry: TargetSceneGeometry = self.controller.get_scene_geometry(frame)
-        pprint(target_geometry)
+        # pprint(target_geometry)
 
         if target_geometry.is_erroneous:
             self.label_message.setText("ERROR!")
@@ -218,9 +220,9 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         if frame.k_ep_ch_no[1] in ('g_asuivre', 'g_documentaire'):
         #     self.groupBox_scene_geometry.setEnabled(False)
         #     # self.pushButton_target_width_copy_from_scene.setEnabled(False)
-            self.is_target_disabled = True
+            self.is_target_width_disabled = True
         else:
-            self.is_target_disabled = False
+            self.is_target_width_disabled = False
         self.groupBox_scene_geometry.setEnabled(True)
         # self.pushButton_target_width_copy_from_scene.setEnabled(True)
 
@@ -380,6 +382,16 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         )
 
 
+    def event_default(self) -> None:
+        ac_params: DetectInnerRectParams = DetectInnerRectParams()
+        self.spinBox_threshold_min.setValue(ac_params.threshold_min)
+        self.spinBox_morph_kernel_radius.setValue(ac_params.morph_kernel_radius)
+        self.spinBox_erode_kernel_radius.setValue(ac_params.erode_kernel_radius)
+        self.spinBox_erode_iterations.setValue(ac_params.erode_iterations)
+        self.checkBox_do_add_borders.setChecked(ac_params.do_add_borders)
+        self.event_ac_params_changed()
+
+
     def event_calculate(self) -> None:
         self.pushButton_calculate.setEnabled(False)
         self.pushButton_discard.setEnabled(True)
@@ -418,33 +430,33 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             modifiers = QApplication.keyboardModifiers()
             # print(lightgrey(f"wheelEvent: key: {self.current_key_pressed}"))
             # print(lightgrey(f"{modifiers}"))
-            if self.checkBox_use_autocrop.isChecked():
-                return True
+            use_ac: bool = self.checkBox_use_autocrop.isChecked()
 
-            parameter: GeometryActionParameter
-            if self.current_key_pressed == Qt.Key.Key_Z:
-                parameter = 'crop_top'
-            elif self.current_key_pressed == Qt.Key.Key_S:
-                parameter = 'crop_bottom'
-            elif self.current_key_pressed == Qt.Key.Key_Q:
-                parameter = 'crop_left'
-            elif self.current_key_pressed == Qt.Key.Key_D:
-                parameter = 'crop_right'
-            elif (
+            parameter: GeometryActionParameter = ''
+            if not use_ac:
+                if self.current_key_pressed == Qt.Key.Key_Z:
+                    parameter = 'crop_top'
+                elif self.current_key_pressed == Qt.Key.Key_S:
+                    parameter = 'crop_bottom'
+                elif self.current_key_pressed == Qt.Key.Key_Q:
+                    parameter = 'crop_left'
+                elif self.current_key_pressed == Qt.Key.Key_D:
+                    parameter = 'crop_right'
+
+            if (
                 self.current_key_pressed == Qt.Key.Key_W
-                and not self.is_target_disabled
+                and not self.is_target_width_disabled
             ):
                 parameter = 'width'
-            else:
-                return False
 
-            value = -1 if event.angleDelta().y() > 0 else +1
-            self.event_is_modified(
-                event_type='set',
-                parameter=parameter,
-                value=value
-            )
-            return True
+            if parameter:
+                value = -1 if event.angleDelta().y() > 0 else +1
+                self.event_is_modified(
+                    event_type='set',
+                    parameter=parameter,
+                    value=value
+                )
+                return True
 
         return False
 
@@ -505,7 +517,12 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             return True
 
         # Edit crop dimensions
-        elif key in (Qt.Key.Key_Q, Qt.Key.Key_D, Qt.Key.Key_W):
+        elif key in (Qt.Key.Key_Q, Qt.Key.Key_D):
+            self.current_key_pressed = key
+            return True
+
+        elif key == Qt.Key.Key_W:
+            # print(yellow("W key detected"))
             self.current_key_pressed = key
             return True
 
@@ -520,7 +537,6 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             #     self.signal_position_changed.emit('bottom')
             self.current_key_pressed = key
             return True
-
 
         elif key == Qt.Key.Key_R:
             self.checkBox_scene_keep_ratio.toggle()

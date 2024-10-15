@@ -130,7 +130,7 @@ class ChapterGeometry:
 class DetectInnerRectParams:
     threshold_min: int = 10
     morph_kernel_radius: int = 3
-    erode_kernel_radius: int = 0
+    erode_kernel_radius: int = 1
     erode_iterations: int = 2
     do_add_borders: bool = True
 

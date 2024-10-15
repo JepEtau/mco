@@ -39,14 +39,13 @@ class GeometryController(CommonController):
     signal_preview_options_consolidated = Signal(dict)
     signal_replacements_refreshed = Signal()
 
-    def __init__(self, lowres: bool = False):
+    def __init__(self, task_name: bool = False):
         super().__init__()
 
         # Load saved preferences
         self.user_preferences: UserPreferences = UserPreferences(tool='geometry')
 
-        self.lowres = lowres
-        self.task_name: TaskName = 'cg' if not lowres else 'lr'
+        self.task_name: TaskName = task_name
         self.geometry_db = GeometryDatabase()
         self.frame_cache: FrameCache = FrameCache(replace_db=None)
 
@@ -175,24 +174,35 @@ class GeometryController(CommonController):
 
         log.info("Start detecting inner rect")
         coordinates: list[np.ndarray] = []
-
+        pprint(params)
+        start_time: int = time.time()
         for i, f in enumerate(self.frame_cache.get(scene=scene)):
             # start a thread for detection
-            coords, _ = detect_inner_rect(
+            coords, dbg_img = detect_inner_rect(
                 img=f.img,
                 params=params,
-                index=i
+                index=i,
+                do_output_img=False,
             )
             coordinates.append(coords)
+            # if dbg_img is not None:
+            #     f.img = dbg_img
 
-        h, w = f.img.shape[:2]
+        elapsed_time = time.time() - start_time
+        in_h, in_w = f.img.shape[:2]
 
         pprint(coordinates)
-        l, x1 = np.min(coordinates, axis=0)[:2]
-        t, y1 = np.max(coordinates, axis=0)[2:]
-        autocrop = [t,  h - y1, l, w - x1]
-        pprint(autocrop)
-        log.info("Ended:")
+        print("min:", np.min(coordinates, axis=0))
+        print("max:", np.max(coordinates, axis=0))
+        print("in_shape:", f.img.shape[:2])
+        min_coords: np.ndarray = np.min(coordinates, axis=0)
+        max_coords: np.ndarray = np.max(coordinates, axis=0)
+        x0, x1 = max_coords[0], min_coords[1]
+        y0, y1 = max_coords[2], min_coords[3]
+        autocrop = [y0,  in_h - y1, x0, in_w - x1]
+        print(yellow("final, autocrop:"), f"{autocrop}")
+        print(f"executed in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:.1f}fps)")
+
 
         self.geometry_db.update_scene_geometry(
             scene,

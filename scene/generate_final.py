@@ -11,13 +11,15 @@ import numpy as np
 from nn_inference.toolbox.detect_inner_rect import DetectInnerRectParams, detect_inner_rect
 from nn_inference.toolbox.resize_to_4_3 import ConvertTo43Params, calculate_transformation_values, resize_to_4_3
 from parsers import (
+    ColorSettings,
     db,
-    VideoSettings,
+    ProcessingTask,
     TaskName,
+    VideoSettings,
 )
 from processing.effects import apply_effect
 from utils.logger import main_logger
-from utils.mco_types import McoFrame, Scene
+from utils.mco_types import McoFrame, Scene, SceneGeometry
 from utils.mco_utils import (
     is_up_to_date,
     run_simple_command
@@ -28,7 +30,6 @@ from utils.pxl_fmt import PIXEL_FORMAT
 from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
 from utils.media import VideoInfo, extract_media_info, str_to_video_codec, vcodec_to_extension
-
 
 
 def stdin_to_shared(
@@ -90,7 +91,8 @@ def get_output_video_filepath(scene: Scene, task_name: TaskName | None = None) -
         suffix += f"_{task_name}"
 
     pprint(db['common'])
-    raise ValueError(red("get_output_video_filepath"))
+    pprint(scene)
+    sys.exit()
     ext: str = vcodec_to_extension['h264']
     return absolute_path(
         os.path.join(
@@ -111,38 +113,48 @@ def generate_final_scene(
     debug_scene: bool = False
 
     scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
+    task: ProcessingTask =scene['task']
     out_video_fp: str = scene['task'].video_file
-
-    if is_up_to_date(scene) and not force:
-        return True
 
     # Output directory
     final_directory: str = path_split(scene['task'].video_file)[0]
     os.makedirs(final_directory, exist_ok=True)
 
-    # Input video clip
-    in_video_fp: str = get_output_video_filepath(scene, task_name='restored')
+
+    # In/out files
+    in_video_fp: str = scene['task'].in_video_file
     if not os.path.exists(in_video_fp):
         raise FileExistsError(red(f"{in_video_fp}: No such file or directory"))
-    in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
-    in_pipe_shape = in_video_info['shape']
-    in_h, in_w = in_pipe_shape[:2]
-    in_pipe_dtype: np.dtype = np.uint8
-    in_pipe_pixfmt: str = 'bgr24'
-    in_pipe_nbytes: int = math.prod(in_pipe_shape)
-    if PIXEL_FORMAT[in_video_info['pix_fmt']]['bpp'] > 8:
-        in_pipe_dtype = np.uint16
-        in_pipe_pixfmt = 'bgr48'
-        in_pipe_nbytes: int = 2 * math.prod(in_pipe_shape)
+    out_video_fp: str = scene['task'].video_file
+
+    if (
+        os.path.exists(out_video_fp)
+        and os.path.getmtime(in_video_fp) < os.path.getmtime(out_video_fp)
+        and not force
+    ):
+        # Already generated
+        print("already generated")
+        return True
 
     # Output video
-    out_video_fp: str = get_output_video_filepath(scene)
     vsettings: VideoSettings = scene['task'].video_settings
     out_pipe_dtype: np.dtype = np.uint8
     out_pipe_pixfmt: str = 'bgr24'
     if PIXEL_FORMAT[vsettings.pix_fmt]['bpp'] > 8:
         out_pipe_dtype = np.uint16
         out_pipe_pixfmt = 'bgr48'
+
+    # Input video scenes
+    in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+    in_pipe_shape = in_video_info['shape']
+    in_h, in_w = in_pipe_shape[:2]
+    in_pipe_dtype: np.dtype = out_pipe_dtype
+    in_pipe_pixfmt: str = out_pipe_pixfmt
+    in_pipe_nbytes: int = math.prod(in_pipe_shape)
+    # if PIXEL_FORMAT[in_video_info['pix_fmt']]['bpp'] > 8:
+    #     in_pipe_dtype = np.uint16
+    #     in_pipe_pixfmt = 'bgr48'
+    #     in_pipe_nbytes: int = 2 * math.prod(in_pipe_shape)
 
 
     print(f"IN: video file: {in_video_fp}")
@@ -160,13 +172,6 @@ def generate_final_scene(
 
 
     print(f"DST: frame_count: {scene['dst']['count']}")
-
-    ch_width = 1412
-    out_h, out_w = 1080, 1440
-    print(f"chapter: width: {ch_width}")
-    print(f"final dimension: {out_w}x{out_h}")
-
-    detect_inner_rect_params = scene['geometry'].detection_params
 
     if scene['dst']['count'] != in_video_info['frame_count']:
         if True:
@@ -206,12 +211,18 @@ def generate_final_scene(
         return False
 
 
+    # Scene geometry
+    geometry: SceneGeometry = scene['geometry']
+    ch_width = geometry.chapter.width
+    out_h, out_w = 1080, 1440
+    print(f"chapter: width: {ch_width}")
+    print(f"final dimension: {out_w}x{out_h}")
+
     coordinates: list[np.ndarray] = []
 
     ofc: int = int(3 * mp.cpu_count() / 4)
     locks = [mp.Lock() for _ in range(ofc + 1)]
     executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
-
 
     # Change pixel value range
     # Normalize pixel range
@@ -220,6 +231,8 @@ def generate_final_scene(
         num = float(np.iinfo(out_pipe_dtype).max)
         denum = float(np.iinfo(in_pipe_dtype).max)
         multiplier: float = num / denum
+    print(f"multiplier: {multiplier}")
+    pprint(geometry.detection_params)
 
 
     # Extract all images
@@ -227,6 +240,8 @@ def generate_final_scene(
     in_images: list[np.ndarray] = []
     write_index : int = 0
     debug_imgs: list[np.ndarray] = []
+
+    start_time: int = time.time()
     while remaining > 0:
         count = min(remaining, ofc)
 
@@ -242,7 +257,7 @@ def generate_final_scene(
                 out_pipe_dtype,
                 multiplier,
                 decoder_subprocess,
-                detect_inner_rect_params,
+                geometry.detection_params,
                 locks,
                 debug=debug_scene
             ),
@@ -252,33 +267,36 @@ def generate_final_scene(
             if coords is not None:
                 if filtered_coord(coordinates, coords):
                     coordinates.append(coords)
+                else:
+                    print(f"not valid coords: {coords}")
             if debug_img is not None:
                 debug_imgs.append(debug_img)
 
         remaining -= count
         write_index += count
-
-    # Get min rectangle of coordinates
-    x0, x1 = np.min(coordinates, axis=0)[:2]
-    y0, y1 = np.max(coordinates, axis=0)[2:]
-
     elapsed_time = time.time() - start_time
 
-    print(yellow("final:"))
-    print(f"({x0}, {y0}) -> ({x1}, {y1})")
-    print(f"executed in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:1}fps)")
+    pprint(coordinates)
+    print("min:", np.min(coordinates, axis=0))
+    print("max:", np.max(coordinates, axis=0))
+    min_coords: np.ndarray = np.min(coordinates, axis=0)
+    max_coords: np.ndarray = np.max(coordinates, axis=0)
+    x0, x1 = max_coords[0], min_coords[1]
+    y0, y1 = max_coords[2], min_coords[3]
+    autocrop = [y0,  in_h - y1, x0, in_w - x1]
+
+    print(yellow("final, autocrop:"), f"{autocrop}")
+    print(f"read/autocrop in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:.1f}fps)")
 
     # Update scene parameters for stats
-    # [top, bottom, left, right]
-    scene['geometry'].crop = (y0, in_h - y1, x0, in_w - x1)
-
     if stats:
+        print("stats")
         return True
 
     to_43_params: ConvertTo43Params = ConvertTo43Params(
-        crop=scene['geometry'].crop,
-        keep_ratio=True,
-        fit_to_width=False,
+        crop=autocrop if not geometry.use_autocrop else geometry.crop,
+        keep_ratio=geometry.keep_ratio,
+        fit_to_width=geometry.fit_to_width,
         final_height=out_h,
         scene_width=ch_width
     )
@@ -291,11 +309,9 @@ def generate_final_scene(
         verbose=True
     )
 
-    if debug:
+    if debug and debug_imgs:
         # Draw rectangle
         print(f"debug: {in_w}x{in_h}, {len(debug_imgs)} images")
-        ext: str = [vsettings.codec]
-        raise NotImplementedError("vcodec_to_extension")
         debug_command: list[str] = [
             ffmpeg_exe,
             "-hide_banner",
@@ -336,12 +352,18 @@ def generate_final_scene(
 
 
 
+    # Colorspace
+    colorspace: list[str] = []
+    for k, v in ColorSettings().__dict__.items():
+        colorspace.extend([f"-{k}:v", v])
+
     # Note: this could have be done with FFmpeg filter but as sson
     # as some effects could be used (loop, fade in, fadeout)
     if (
         ('effects' not in scene.keys() or not scene['effects'].has_effects())
         # and False
     ):
+        print(f"{scene_key}: no effects")
         filters: list[str] = []
 
         # (1)
@@ -412,6 +434,7 @@ def generate_final_scene(
             "-nostats",
             "-i", in_video_fp,
             *ffmpeg_filter,
+            *colorspace,
 
             "-vcodec", str_to_video_codec[vsettings.codec].value,
             "-pix_fmt", vsettings.pix_fmt,
@@ -432,13 +455,13 @@ def generate_final_scene(
         run_simple_command(encoder_command)
 
     else:
+        print(f"{scene_key} has effects")
         out_imgs: list[np.ndarray] = [
             resize_to_4_3(img, transformation=transformation)
             for img in in_images
         ]
         print(len(out_imgs))
         print(out_imgs[0].shape)
-
 
         encoder_command: list[str] = [
             ffmpeg_exe,
@@ -455,6 +478,7 @@ def generate_final_scene(
 
             "-vcodec", str_to_video_codec[vsettings.codec].value,
             "-pix_fmt", vsettings.pix_fmt,
+            *colorspace,
             *vsettings.codec_options
         ]
 
@@ -467,7 +491,7 @@ def generate_final_scene(
         # Output filename
         encoder_command.extend([out_video_fp, "-y"])
         os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
-        print(purple(f"[V] command: "), " ".join(encoder_command))
+        print(purple(f"[V] encoder command: "), " ".join(encoder_command))
 
         encoder_subproces: subprocess.Popen = None
         try:
@@ -491,7 +515,11 @@ def generate_final_scene(
                 scene=scene
             )
 
-            out_frames = apply_effect(out_f_no, out_frame)
+            out_frames = apply_effect(
+                out_f_no=out_f_no,
+                frame=out_frame,
+                out_i=i
+            )
             if isinstance(out_frames, list):
                 print(yellow(f"\t{produced}: send {len(out_frames)} frames"))
                 [encoder_subproces.stdin.write(f.img) for f in out_frames]
@@ -502,7 +530,7 @@ def generate_final_scene(
                 produced += 1
 
         stderr_bytes: bytes | None = None
-        _, stderr_bytes = debug_subproces.communicate(timeout=10)
+        _, stderr_bytes = encoder_subproces.communicate(timeout=10)
         if stderr_bytes is not None:
             stderr = stderr_bytes.decode('utf-8)')
             # TODO: parse the output file
