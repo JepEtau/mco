@@ -240,9 +240,11 @@ def consolidate_scene(
         'cg': 'tf',
         'final': 'cg',
     }
-    prev_task_name: TaskName = previous[task_name]
-    suffix: str = f"_hr_{task_name}" if task_name == 'st' else suffix
-    # TODO: when using python deshaker suffix shall not be changed
+    prev_task_name: str = task_name
+    if task_name in list(previous.keys()):
+        prev_task_name: TaskName = previous[task_name]
+        suffix: str = f"_hr_{task_name}" if task_name == 'st' else suffix
+        # TODO: when using python deshaker suffix shall not be changed
 
     ext: str = vcodec_to_extension[vsettings.codec]
     task.video_file = absolute_path(

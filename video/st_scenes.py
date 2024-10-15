@@ -110,78 +110,106 @@ def st_scenes(
 
 
             if evaluate:
-                for fp in (in_fp, out_fp):
-                    print(lightcyan(f"  input:"), f"{fp}")
-                    if not os.path.exists(in_fp):
-                        print(f"  does not exist, continue.")
-                        continue
+                convert_video_for_evaluation(
+                    [in_fp, out_fp],
+                    force=force,
+                    debug=debug
+                )
 
-                    dir, bn = path_split(fp)[:2]
-                    eval_dir: str = absolute_path( os.path.join(dir, os.pardir, "eval"))
-                    os.makedirs(eval_dir, exist_ok=True)
-                    out_h264_fp: str = os.path.join(eval_dir, f"{bn}.mkv")
-                    print(lightcyan(f"  output:"), f"{out_h264_fp}")
 
-                    # Do not regenerate if modified later
-                    # TODO verify nb of frames ?
-                    if os.path.exists(out_h264_fp) and not force:
-                        os.path.getmtime(out_h264_fp) > os.path.getmtime(in_fp)
-                        print(f"    already generated, continue.")
-                        continue
 
-                    ffmpeg_cmd: list[str] = [
-                        ffmpeg_exe,
-                        "-hide_banner",
-                        "-loglevel", "error",
-                        "-stats",
-                        "-i", fp,
-                        "-vcodec", "libx264",
-                        # "-preset", "slow",
-                        "-crf", "15",
-                        "-an", "-sn",
-                        out_h264_fp, "-y"
-                    ]
 
-                    if debug:
-                        print(lightcyan("FFmpeg command:"))
-                        print(lightgreen(' '.join(ffmpeg_cmd)))
 
-                    ffmpeg_subprocess: subprocess.Popen | None = None
-                    try:
-                        ffmpeg_subprocess = subprocess.Popen(
-                            ffmpeg_cmd,
-                            stdin=subprocess.DEVNULL,
-                            stdout=subprocess.DEVNULL,
-                            stderr=subprocess.PIPE,
-                        )
-                    except Exception as e:
-                        print(f"[E] Unexpected error: {type(e)}", flush=True)
 
-                    line: str = ''
-                    os.set_blocking(ffmpeg_subprocess.stderr.fileno(), False)
-                    print(f"Processing:")
-                    try:
-                        while True:
-                            line = ffmpeg_subprocess.stderr.readline().decode('utf-8')
-                            if line:
-                                print(f"  {line.strip()}", end='\r')
-                            if ffmpeg_subprocess.poll() is not None:
-                                break
-                    except:
-                        pass
-                    print()
 
-                    stderr_b: bytes | None = None
-                    try:
-                        # Arbitrary timeout value
-                        _, stderr_b = ffmpeg_subprocess.communicate(timeout=10)
-                    except:
-                        ffmpeg_subprocess.kill()
-                        return
 
-                    if stderr_b is not None:
-                        stderr = stderr_b.decode('utf-8)')
-                        if stderr:
-                            print(f"FFmpeg stderr:\n{stderr}")
-                        print()
+def convert_video_for_evaluation(
+    video_fp: str | list[str],
+    force: bool = False,
+    debug: bool = False,
+) -> None:
+    filepaths: list[str]
+    if isinstance(video_fp, str):
+        filepaths: list[str] = [video_fp]
+    else:
+        filepaths = video_fp
+
+    # debug this because it's wrong
+    for fp in filepaths:
+        print(lightcyan(f"  input:"), fp)
+        if not os.path.exists(fp):
+            print(f"  does not exist, continue.")
+            continue
+
+        dir, basename = path_split(fp)[:2]
+        eval_dir: str = absolute_path( os.path.join(dir, os.pardir, "eval"))
+        os.makedirs(eval_dir, exist_ok=True)
+        out_h264_fp: str = os.path.join(eval_dir, f"{basename}.mkv")
+        print(lightcyan(f"  output:"), out_h264_fp)
+
+        # Do not regenerate if modified later
+        # TODO verify nb of frames ?
+        if os.path.exists(out_h264_fp) and not force:
+            in_fp_mtime = os.path.getmtime(fp)
+            out_fp_mtime = os.path.getmtime(out_h264_fp)
+            if out_fp_mtime > in_fp_mtime:
+                print(f"    already converted, continue.")
+                continue
+
+        ffmpeg_cmd: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "error",
+            "-stats",
+            "-i", fp,
+            "-vcodec", "libx264",
+            "-pix_fmt", "yuv420p",
+            # "-preset", "slow",
+            "-crf", "15",
+            "-an", "-sn",
+            out_h264_fp, "-y"
+        ]
+
+        if debug:
+            print(lightcyan("FFmpeg command:"))
+            print(lightgreen(' '.join(ffmpeg_cmd)))
+
+        ffmpeg_subprocess: subprocess.Popen | None = None
+        try:
+            ffmpeg_subprocess = subprocess.Popen(
+                ffmpeg_cmd,
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.PIPE,
+            )
+        except Exception as e:
+            print(f"[E] Unexpected error: {type(e)}", flush=True)
+
+        line: str = ''
+        os.set_blocking(ffmpeg_subprocess.stderr.fileno(), False)
+        print(f"Converting to H264:")
+        try:
+            while True:
+                line = ffmpeg_subprocess.stderr.readline().decode('utf-8')
+                if line:
+                    print(f"  {line.strip()}", end='\r')
+                if ffmpeg_subprocess.poll() is not None:
+                    break
+        except:
+            pass
+        print()
+
+        stderr_b: bytes | None = None
+        try:
+            # Arbitrary timeout value
+            _, stderr_b = ffmpeg_subprocess.communicate(timeout=10)
+        except:
+            ffmpeg_subprocess.kill()
+            return
+
+        if stderr_b is not None:
+            stderr = stderr_b.decode('utf-8)')
+            if stderr:
+                print(f"FFmpeg stderr:\n{stderr}")
             print()
+    print()

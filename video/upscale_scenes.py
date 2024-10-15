@@ -91,7 +91,7 @@ def upscale_scenes(
         scenes: list[Scene] = ch_video['scenes']
         for scene in scenes:
             start_time = time.time()
-            if scene_no != -1 and scene['no'] != scene_no:
+            if scene_no is not None and scene_no != -1 and scene['no'] != scene_no:
                 print(f"skip scene no. {scene['no']}")
                 continue
             if scene_min != -1 and scene_max != -1:
