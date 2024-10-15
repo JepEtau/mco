@@ -290,8 +290,7 @@ class PreviewWidget(QWidget):
 
 
         if (
-            not preview.crop_edition
-            and preview.resize_preview
+            preview.resize_preview
             and not preview.width_edition
             and not preview.final_preview
         ):

@@ -14,7 +14,7 @@ from pprint import pprint
 from tools.backend.replace_database import ReplaceDatabase
 from utils.mco_types import Scene
 from utils.media import VideoInfo, extract_media_info
-from utils.p_print import red
+from utils.p_print import lightcyan, red
 from utils.path_utils import path_split
 from utils.tools import ffmpeg_exe
 from utils.time_conversions import (
@@ -59,7 +59,8 @@ class FrameCache:
 
     def get(self, scene: Scene) -> list[Frame] | None:
         # Extract frames from input video and strore them here
-        scene_key = self._key(scene)
+        scene_key: str = self._key(scene)
+        task_name: str = scene['task'].name
 
         if scene_key not in self.scenes:
             self.scenes[scene_key] = []
@@ -68,30 +69,41 @@ class FrameCache:
 
             total_count = scene['src'].frame_count()
             for src_scene in scene['src'].scenes():
-                print(f"extract {total_count} frames from: {src_scene['k_ed_ep_ch_no']}")
-                start = src_scene['start'] - src_scene['scene']['inputs']['progressive']['start']
+                print(lightcyan(f"extract {total_count} frames from: {src_scene['k_ed_ep_ch_no']}"))
                 count = src_scene['count']
-                in_video_fp: str = src_scene['scene']['inputs']['progressive']['filepath']
-                directory, basename, extension = path_split(in_video_fp)
-                in_video_fp = os.path.join(directory, f"{basename}_h264{extension}")
+                src_start: int = src_scene['start'] - src_scene['scene']['inputs']['progressive']['start']
+                start: int = 0
+                in_video_fp: str = scene['task'].video_file
+
+                if task_name == 'lr':
+                    # Do not use FFv1 because slow to decode
+                    in_video_fp = src_scene['scene']['inputs']['progressive']['filepath']
+                    directory, basename, extension = path_split(in_video_fp)
+                    in_video_fp = os.path.join(directory, f"{basename}_h264{extension}")
+                    start = src_start
+
                 if not os.path.exists(in_video_fp):
+                    print(red("Erroneous scene:"))
+                    pprint(scene)
+                    raise ValueError(f"{in_video_fp} does not exist")
                     return None
 
                 print(f"  segment: {in_video_fp}, {start}, {count}")
 
                 if in_video_fp not in self.video_infos:
-                    fp = src_scene['scene']['inputs']['progressive']['filepath']
+                    # fp = src_scene['scene']['inputs']['progressive']['filepath']
                     # specific to lr task: use a h264 video rather than the deinterlaced one
                     # if scene['task'].name == 'lr':
 
-                    self.video_infos[in_video_fp] = extract_media_info(fp)['video']
+                    self.video_infos[in_video_fp] = extract_media_info(in_video_fp)['video']
                 vi: VideoInfo = self.video_infos[in_video_fp]
                 # print(red(fp))
                 # pprint(vi)
                 # sys.exit()
                 filter_complex: list[str] = []
                 in_h, in_w, in_c = vi['shape']
-                if scene['task'].name == 'lr':
+                if task_name == 'lr' and self.replace_db is not None:
+                    print("low resolution, resize to 4:3")
                     if in_h != 576 or in_w != 768:
                         in_h, in_w = (576, 768)
                         filter_complex = [
@@ -99,25 +111,24 @@ class FrameCache:
                             f"[0:v]scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
                             "-map", "[outv]"
                         ]
-                else:
-                    if in_h < 1080:
-                        # pprint( db['common']['video_format'])
-                        # sys.exit()
-                        video_settings: VideoSettings = db['common']['video_format']['hr']
-                        pad: int = video_settings.pad
-                        pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
-                        filter_complex = [
-                            "-filter_complex",
-                            clean_ffmpeg_filter(
-                                f"""[0:v]
-                                    scale={2*in_w}:{2*in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int,
-                                    {pad_filter}
-                                [outv]
-                                """
-                            ),
-                            "-map", "[outv]"
-                        ]
-                        in_h, in_w = 2 * (in_h + pad), 2 * (in_w + pad)
+                elif in_h < 1080:
+                    # pprint( db['common']['video_format'])
+                    # sys.exit()
+                    video_settings: VideoSettings = db['common']['video_format']['hr']
+                    pad: int = video_settings.pad
+                    pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
+                    filter_complex = [
+                        "-filter_complex",
+                        clean_ffmpeg_filter(
+                            f"""[0:v]
+                                scale={2*in_w}:{2*in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int,
+                                {pad_filter}
+                            [outv]
+                            """
+                        ),
+                        "-map", "[outv]"
+                    ]
+                    in_h, in_w = 2 * (in_h + pad), 2 * (in_w + pad)
 
                 xtract_command: list[str] = [
                     ffmpeg_exe,
@@ -159,7 +170,7 @@ class FrameCache:
                         self.sub_process.stdout.read(pipe_img_nbytes),
                         dtype=in_dtype,
                     ).reshape(shape)
-                    f_no = start + src_scene['scene']['inputs']['progressive']['start'] + i
+                    f_no = src_start + src_scene['scene']['inputs']['progressive']['start'] + i
                     self.scenes[scene_key].append(
                         Frame(
                             i=i,

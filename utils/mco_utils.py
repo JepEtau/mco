@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dataclasses import dataclass
 import os
 from pprint import pprint
 import subprocess
@@ -162,16 +163,16 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
         )
 
 
-    # If last task is geometry, use the dst structure
-    if task_name == 'final':
-        output_path: str = os.path.join(
-            cache_dir,
-            scene['dst']['k_ep'],
-            k_ch_dst,
-            f"{scene['no']:03}"
-        )
+    # # If last task is geometry, use the dst structure
+    # if task_name == 'final':
+    #     output_path: str = os.path.join(
+    #         cache_dir,
+    #         scene['dst']['k_ep'],
+    #         k_ch_dst,
+    #         f"{scene['no']:03}"
+    #     )
 
-    elif task_name == 'initial':
+    if task_name == 'initial':
         # Work in the src directory
         output_path = os.path.join(
             cache_dir,
