@@ -127,7 +127,6 @@ def tf_scenes(
                     absolute_path("A:\\py_temporalfix\\py_temporalfix.py"),
                     "--input", in_fp,
                     "--output", out_fp,
-                    "--ffmpeg_args", "\"-colorspace:v bt709 -color_primaries:v bt709 -color_trc:v bt709\""
                 ]
                 print(lightcyan("pytf command:"))
                 print(lightgreen(' '.join(pytf_cmd)))
