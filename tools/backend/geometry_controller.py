@@ -149,7 +149,7 @@ class GeometryController(CommonController):
 
 
     def get_scene_geometry(self, frame: Frame) -> TargetSceneGeometry:
-        print(lightcyan(f"get_scene_geometry: {frame.scene_key}, {frame.src_scene_key}"))
+        # print(lightcyan(f"get_scene_geometry: {frame.scene_key}, {frame.src_scene_key}"))
         return self.selection_geometry[frame.scene_key]
 
 

@@ -99,6 +99,7 @@ class PreviewWidget(QWidget):
 
 
     def draw_widget_guides(self, painter: QPainter) -> None:
+        return
         cx1, cy1 = self.geometry().size().toTuple()
         pen_width = 1
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
@@ -146,7 +147,7 @@ class PreviewWidget(QWidget):
             all(v != 0 for v in scene_geometry.autocrop)
             and scene_geometry.use_autocrop
         ):
-            print(lightcyan("use autocrop"))
+            # print(lightcyan("use autocrop"))
             return scene_geometry.autocrop
         else:
             return scene_geometry.crop
