@@ -136,7 +136,7 @@ def consolidate_scenes(
                         verbose=True
                     )
 
-
-        scene_crops: np.ndarray = np.array(geometry_crops)
-        pprint(scene_crops)
+        if geometry_stats:
+            scene_crops: np.ndarray = np.array(geometry_crops)
+            pprint(scene_crops)
 
