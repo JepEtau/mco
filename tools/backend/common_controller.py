@@ -36,7 +36,7 @@ class CommonController(QObject, metaclass=QMeta):
     signal_selection_modified = Signal()
     signal_modified_scenes = Signal(list)
     signal_error = Signal(str)
-
+    signal_save_before_exit =  Signal()
 
     def __init__(self):
         super().__init__()
@@ -58,13 +58,14 @@ class CommonController(QObject, metaclass=QMeta):
 
 
     def exit(self):
-        # print("%s:exit" % (__name__))
+        print(f"{__name__}:exit")
         p = self.view.get_user_preferences()
         self.user_preferences.save(p)
         try:
             log.handlers[0].close()
         except:
             pass
+        self.view.close()
         # print("model: exit")
 
 

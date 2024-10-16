@@ -98,7 +98,6 @@ class GeometryWindow(CommonWindow):
             self.preview_options_changed
         )
 
-
         self.show()
         self.installEventFilter(self)
 

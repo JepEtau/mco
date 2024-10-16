@@ -14,7 +14,7 @@ from pprint import pprint
 from tools.backend.replace_database import ReplaceDatabase
 from utils.mco_types import Scene
 from utils.media import VideoInfo, extract_media_info
-from utils.p_print import lightcyan, red
+from utils.p_print import lightcyan, red, yellow
 from utils.path_utils import path_split
 from utils.tools import ffmpeg_exe
 from utils.time_conversions import (
@@ -83,10 +83,12 @@ class FrameCache:
                     start = src_start
 
                 if not os.path.exists(in_video_fp):
-                    print(red("Erroneous scene:"))
-                    pprint(scene)
-                    raise ValueError(f"{in_video_fp} does not exist")
-                    return None
+                    print(yellow(f"{in_video_fp} does not exist, fallback..."))
+                    if task_name == 'st':
+                        in_video_fp = scene['task'].fallback_in_video_files['hr']
+                if not os.path.exists(in_video_fp):
+                    sys.exit(red(f"missing {in_video_fp}"))
+
 
                 print(f"  segment: {in_video_fp}, {start}, {count}")
 

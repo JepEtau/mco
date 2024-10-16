@@ -21,6 +21,8 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from scene.consolidate import is_scene_stabilized
+
 from .stylesheet import (
     COLOR_PURPLE,
     COLOR_TEXT,
@@ -386,11 +388,11 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
 
                 elif column[0] == 'st.':
-                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f""))
+                    item_text: str = "x" if is_scene_stabilized(scene) else False
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
                     self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
                     self.tableWidget_scenes.item(row_no, column_no).setFlags(
                         Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
-
 
                 elif column[0] == 'g_d':
                     self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f""))

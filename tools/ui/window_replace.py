@@ -291,7 +291,7 @@ class ReplaceWindow(QMainWindow):
     @Slot(str)
     def error_message(self, message: str):
         msg = QMessageBox()
-        msg.setIcon(QMessageBox.Critical)
+        msg.setIcon(QMessageBox.Icon.Critical)
         msg.setText("Error")
         msg.setInformativeText(message)
         msg.setWindowTitle("Error")

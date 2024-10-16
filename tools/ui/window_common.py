@@ -97,6 +97,7 @@ class CommonWindow(QMainWindow):
         self.controller.signal_ready_to_play.connect(self.event_ready_to_play)
         self.controller.signal_reload_frame.connect(self.event_reload_frame)
         self.controller.signal_error[str].connect(self.error_message)
+        self.controller.signal_save_before_exit.connect(self.save_before_exit_message)
 
 
     def apply_user_preferences(self, user_preferences: dict):
@@ -122,14 +123,37 @@ class CommonWindow(QMainWindow):
         return preferences
 
 
+    @Slot()
+    def save_before_exit_message(self) -> None:
+        self.controller.signal_error[str].connect(self.error_message)
+        msg = QMessageBox()
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setText("Same scenes are not saved")
+        msg.setInformativeText("Do you want to exit without saving?")
+        msg.setWindowTitle("Warning")
+        msg.setStandardButtons(
+            QMessageBox.StandardButton.Cancel
+            | QMessageBox.StandardButton.Discard
+        )
+        answer: int = msg.exec_()
+        if answer == QMessageBox.StandardButton.Discard:
+            self.controller.exit(force=True)
+            print("Discard modifications")
+            self.close()
+
+        else:
+            self.is_closing = False
+
+
     def closeEvent(self, event):
         # print("closeEvent")
         # self.event_editor_action('exit')
         self.event_close()
+        event.ignore()
 
 
     def event_close(self):
-        # print("%s:event_close" % (__name__))
+        # print(f"{__name__}:event_close")
         if not self.is_closing:
             self.is_closing = True
             self.timer.stop()

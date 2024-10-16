@@ -28,6 +28,11 @@ from video.concat_frames import get_video_filename
 from .src_scene import SrcScenes
 
 
+def is_scene_stabilized(scene: Scene):
+    return os.path.isfile(scene['task'].fallback_in_video_files['st'])
+
+
+
 def consolidate_scene(
     scene: Scene,
     task_name: TaskName = '',
@@ -218,10 +223,12 @@ def consolidate_scene(
         )
 
         # Add fallback input video filename bc some tasks may be not processed
-        if task_name in ('tf', 'final'):
-            task.fallback_in_video_files['hr'] = os.path.join(
-                scene['cache'], f"scenes_hr", f"{basename}_hr{in_ext}"
-            )
+        if task_name in ('st', 'tf', 'final'):
+            task.fallback_in_video_files = {
+                'hr': os.path.join(scene['cache'], f"scenes_hr", f"{basename}_hr{in_ext}"),
+                'st': os.path.join(scene['cache'], f"scenes_st", f"{basename}_hr_st{in_ext}"),
+                'tf': os.path.join(scene['cache'], f"scenes_tf", f"{basename}_tf{in_ext}"),
+            }
 
 
     # Effects

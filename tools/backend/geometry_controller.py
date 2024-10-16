@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sys
-from typing import Any
+from typing import Any, override
 
 import numpy as np
 from import_parsers import *
@@ -63,6 +63,14 @@ class GeometryController(CommonController):
         self.view.widget_geometry.signal_geometry_modified.connect(self.event_geometry_modified)
         self.view.widget_geometry.signal_detect_inner_rect.connect(self.event_detect_inner_rect)
         self.view.widget_geometry.signal_save.connect(self.event_geometry_save)
+
+
+    @override
+    def exit(self, force: bool = False):
+        if len(self.geometry_db.modified_scene_nos()) > 0 and not force:
+            self.signal_save_before_exit.emit()
+        else:
+            super().exit()
 
 
     def k_ep_p_changed(self, selection: Selection):
