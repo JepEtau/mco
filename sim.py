@@ -73,12 +73,12 @@ def main():
         print(f"Episode: {episode}")
     if chapter != '':
         print("Chapter: %s" % (chapter))
-    print(f"Language: {'en' if arguments.en else 'fr'}")
+    print(f"Language: {arguments.lang}")
     print("Tasks:")
     print("\t- parse database")
 
     # Parse database
-    parse_database(episode=episode, lang='en' if arguments.en else 'fr')
+    parse_database(episode=episode, lang=arguments.lang)
     gc.collect()
 
 
@@ -87,7 +87,7 @@ def main():
     generate_lr_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
-        task=task,
+        task_name=task,
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=arguments.scene,

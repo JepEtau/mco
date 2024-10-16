@@ -29,7 +29,8 @@ from .src_scene import SrcScenes
 
 
 def is_scene_stabilized(scene: Scene):
-    return os.path.isfile(scene['task'].fallback_in_video_files['st'])
+    st_fp: str = scene['task'].fallback_in_video_files['st']
+    return os.path.isfile(st_fp) and not os.path.islink(st_fp)
 
 
 

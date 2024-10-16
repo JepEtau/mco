@@ -12,6 +12,7 @@ from utils.logger import main_logger
 from utils.p_print import *
 from av_merge.combine_av import combine_av_tracks, concatenate_all
 from av_merge.chapters import add_chapters
+from video.consolidate_scenes import consolidate_scenes
 from video.final_scenes import final_scenes
 
 
@@ -91,57 +92,14 @@ def main():
         scene_no: int = int(scene_arg)
 
     task = 'final'
-    final_scenes(
+    consolidate_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
         scene_no=scene_no,
-        task_name=task,
-        force=arguments.force,
-        simulation=arguments.simulate,
+        task=task,
         debug=arguments.debug,
-        stats=arguments.stats
+        symlink=True
     )
-
-    if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == -1:
-        # Merge audio and video files
-        combine_av_tracks(
-            episode=arguments.episode,
-            chapter=arguments.chapter,
-            task=task,
-            force=True,
-            simulation=arguments.simulate
-        )
-
-    if arguments.chapter == '':
-        for k in ('g_debut', 'g_fin'):
-            combine_av_tracks(
-                episode='',
-                chapter=k,
-                task=task,
-                force=True,
-                simulation=arguments.simulate
-            )
-
-        combine_av_tracks(
-            episode=arguments.episode,
-            chapter='',
-            task=task,
-            force=True,
-            simulation=arguments.simulate
-        )
-
-        # Merge video and audio stream from all parts (except g_debut and g_fin)
-        concatenate_all(
-            episode=arguments.episode,
-            task=task,
-            simulation=arguments.simulate
-        )
-
-        add_chapters(
-            episode=arguments.episode,
-            task=task,
-            simulation=arguments.simulate
-        )
 
 
 

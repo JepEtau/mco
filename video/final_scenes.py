@@ -33,7 +33,7 @@ def final_scenes(
     episode: str,
     single_chapter: Chapter,
     scene_no: int | None = None,
-    task: TaskName = '',
+    task_name: TaskName = '',
     force: bool = False,
     simulation: bool = False,
     debug: bool = False,
@@ -69,7 +69,7 @@ def final_scenes(
         if ch_video['count'] <= 0:
             continue
 
-        ch_video['task'] = ProcessingTask(name=task)
+        ch_video['task'] = ProcessingTask(name=task_name)
         if debug:
             print(f"\n<<<<<<<<<<<<<<<<<<<<< {k_ch} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
             print(f"scene_no: {scene_no}")
@@ -83,11 +83,11 @@ def final_scenes(
             pprint_scene_mapping(scene)
 
             # Consolidate this scene
-            consolidate_scene(scene, task_name=task)
+            consolidate_scene(scene, task_name=task_name)
             scene_id: str = scene_id_str(scene)
 
             if debug:
-                print(lightcyan(f"======================= generate_{task}_scenes: {scene_id} ============================="))
+                print(lightcyan(f"======================= generate_{task_name}_scenes: {scene_id} ============================="))
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
 
@@ -121,7 +121,7 @@ def final_scenes(
                 # sys.exit()
 
         hashcode: str = calc_hash(hashes_str[:-1])
-        basename: str = f"{k_ep}_{k_ch}_{task}_{hashcode}"
+        basename: str = f"{k_ep}_{k_ch}_{task_name}_{hashcode}"
         cache_path = (
             db[k_ch]['cache_path']
             if k_ch in ('g_debut', 'g_fin')
@@ -131,7 +131,7 @@ def final_scenes(
         vsettings: VideoSettings = db['common']['video_format']['final']
         ext: str = vcodec_to_extension[vsettings.codec]
         ch_video['task'] = ProcessingTask(
-            name=task,
+            name=task_name,
             hashcode=hashcode,
             concat_file=os.path.join(cache_path, "concat", f"{basename}.txt"),
             video_file=os.path.join(cache_path, f"video", f"{basename}{ext}"),
@@ -194,11 +194,12 @@ def final_scenes(
         lang_str = '' if language == 'fr' else f"_{language}"
 
         # Concatenate video clips
-        raise ValueError("vcodec_to_extension")
+        vsettings: VideoSettings = db['common']['video_format'][task_name]
+        ext: str = vcodec_to_extension[vsettings.codec]
         episode_video_filepath = os.path.join(
             db[k_ep]['cache_path'],
             "video",
-            f"{k_ep}_video{lang_str}.mkv"
+            f"{k_ep}_video{lang_str}{ext}"
         )
 
         # Force concatenation

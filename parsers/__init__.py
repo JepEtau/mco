@@ -34,6 +34,9 @@ from .filters import (
     clean_ffmpeg_filter
 )
 
+FINAL_HEIGHT: int = 1080
+FINAL_WIDTH: int = int(FINAL_HEIGHT * 4 / 3)
+
 __all__ = [
     "db",
     "clean_ffmpeg_filter",
@@ -56,4 +59,6 @@ __all__ = [
     "VideoSettings",
     "pprint_scene_mapping",
     "ColorSettings",
+    "FINAL_HEIGHT",
+    "FINAL_WIDTH",
 ]

@@ -4,6 +4,7 @@ from pprint import pprint
 from utils.mco_utils import run_simple_command
 from utils.mco_path import makedirs
 from utils.mco_types import Scene, ChapterVideo
+from utils.media import vcodec_to_extension
 from utils.logger import main_logger
 from utils.p_print import *
 from utils.tools import ffmpeg_exe
@@ -11,6 +12,7 @@ from parsers import (
     db,
     key,
     ProcessingTask,
+    VideoSettings,
 )
 
 
@@ -81,13 +83,13 @@ def concat_scenes(
 
         # Output video file
         os.makedirs(os.path.join(cache_directory, "video"), exist_ok=True)
-
-        pprint(db('common'))
-        raise ValueError("concat_scenes")
+        _task_name: str = 'lr' if task.name == 'sim' else task.name
+        vsettings: VideoSettings = db['common']['video_format'][_task_name]
+        ext: str = vcodec_to_extension[vsettings.codec]
         out_video: str = os.path.join(
             cache_directory,
             "video",
-            f"{prefix}_{hashcode}{suffix}{lang_str}.mkv"
+            f"{prefix}_{hashcode}{suffix}{lang_str}{ext}"
         )
 
         if verbose:
