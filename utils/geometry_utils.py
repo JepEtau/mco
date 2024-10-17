@@ -2,7 +2,6 @@ import numpy as np
 from nn_inference.toolbox.resize_to_4_3 import (
     calculate_transformation_values,
     ConvertTo43Params,
-    dimensions_from_crop,
     TransformationValues,
 )
 from parsers import (
@@ -18,68 +17,36 @@ from utils.mco_types import (
 from utils.media import VideoInfo, extract_media_info
 from utils.p_print import *
 
-# @dataclass
-class SceneStatGeometry:
+
+
+
+class SceneGeometryStat:
 
     def __init__(
         self,
         scene: Scene,
+        in_size: tuple[int, int] | None
     ) -> None:
         self.geometry: SceneGeometry = scene['geometry']
-        crop_values: list[int, int, int, int] = (
-            self.geometry.autocrop
-            if self.geometry.use_autocrop
-            else self.geometry.crop
-        )
         self._defined: bool = True
 
         vsettings: VideoSettings = db['common']['video_format']['hr']
-        if any([c <= vsettings.pad for c in crop_values]):
+        if any([c <= vsettings.pad for c in self.crop]):
             # Not valid:
             print(red("crop is missing"))
             self._defined = False
             return
 
-        # top, bottom, left, right
-        self._crop: tuple[int, int, int, int] = crop_values
-
-        try:
-            in_vi: VideoInfo = extract_media_info(scene['task'].in_video_file)['video']
-        except:
-            self._defined = False
+        if in_size is None:
             self._is_erroneous = True
+            self._defined = False
             return
 
-        # height, width
-        in_size: tuple[int, int] = in_vi['shape'][:2]
-
-        c_t, c_b, c_l, c_r, c_w, c_h = dimensions_from_crop(
-            in_size[1], in_size[0], crop_values
-        )
-        # print(cyan(f"-> cropped size ({c_w}, {c_h}). Crop values: [{c_t}, {c_b}, {c_l}, {c_r}]"))
-
         # Maximum width this scene can have. Width of the resized crop rectangle
-        self._max_width: int = int(c_w * FINAL_HEIGHT / c_h)
+        self.geometry.set_in_size(in_size)
+        self.in_size = in_size
 
-        to_43_params: ConvertTo43Params = ConvertTo43Params(
-            crop=crop_values,
-            keep_ratio=self.geometry.keep_ratio,
-            fit_to_width=self.geometry.fit_to_width,
-            final_height=FINAL_HEIGHT,
-            scene_width=scene['geometry'].chapter.width,
-        )
-
-        self.transformation: TransformationValues | None = None
-        try:
-            self.transformation = calculate_transformation_values(
-                in_w=in_size[1],
-                in_h=in_size[0],
-                out_w=FINAL_WIDTH,
-                params=to_43_params,
-                verbose=False
-            )
-        except:
-            pass
+        self.transformation: TransformationValues | None = self.geometry.calculate_transformation()
 
         self._is_erroneous: bool = bool(
             self.transformation is None
@@ -89,12 +56,16 @@ class SceneStatGeometry:
 
     @property
     def max_width(self) -> int:
-        return self._max_width
+        return self.geometry.max_width()
+
+
+    def resized_to(self) -> tuple[int, int]:
+        return self.transformation.resize_to
 
 
     @property
     def crop(self) -> tuple[int, int, int, int]:
-        return self._crop
+        return self.geometry.get_crop()
 
 
     def is_erroneous(self) -> bool:
@@ -105,21 +76,39 @@ class SceneStatGeometry:
         return self._defined
 
 
+    @property
     def keep_ratio(self) -> bool:
         return self.geometry.keep_ratio
 
 
+    @property
     def fit_to_width(self) -> bool:
         return self.geometry.fit_to_width
 
+
+    @property
+    def autocrop(self) -> bool:
+        return self.geometry.use_autocrop
+
+
+    def update(self, scene_geometry: SceneGeometry) -> None:
+        self.geometry: SceneGeometry = scene_geometry
+        scene_geometry.set_in_size(self.in_size)
+        self.transformation: TransformationValues | None = self.geometry.calculate_transformation()
+
+        self._is_erroneous: bool = bool(
+            self.transformation is None
+            or self.transformation.err_borders is not None
+        )
 
 
 
 class ChGeometryStats:
 
     def __init__(self) -> None:
-        self._scenes: dict[str, SceneStatGeometry] = {}
+        self._scenes: dict[str, SceneGeometryStat] = {}
         self._undefined_scenes: list[int] = []
+        self._sizes: dict[str, tuple[int, int]] = {}
 
 
     @staticmethod
@@ -128,7 +117,19 @@ class ChGeometryStats:
 
 
     def append(self, scene: Scene) -> None:
-        scene_stats: SceneStatGeometry = SceneStatGeometry(scene)
+        fp: str = scene['task'].in_video_file
+        if fp not in self._sizes.keys():
+            try:
+                in_vi: VideoInfo = extract_media_info(fp)['video']
+            except:
+                return
+
+            # height, width
+            self._sizes['fp'] = in_vi['shape'][:2]
+
+        scene_stats: SceneGeometryStat = SceneGeometryStat(
+            scene, self._sizes['fp']
+        )
         if scene_stats.is_defined():
             self._scenes[self._scene_key(scene)] = scene_stats
         else:
@@ -145,7 +146,7 @@ class ChGeometryStats:
         max_width_list: list[int] = list(
             [s.max_width for s in self._scenes.values() if s.is_defined()]
         )
-        return max(max_width_list) if max_width_list else -1
+        return max(max_width_list) if len(max_width_list) > 0 else -1
 
 
     def min_max_width_scene(self) -> tuple[int, int]:
@@ -187,26 +188,34 @@ class ChGeometryStats:
 
 
     def update(self, scene: Scene) -> None:
-        try:
-            del self._scenes[self._scene_key(scene)]
-        except:
-            pass
-        try:
+        if scene['no'] in self._undefined_scenes:
             self._undefined_scenes.remove(scene['no'])
-        except:
-            pass
             self.append(scene)
+
+        elif self._scene_key(scene) in self._scenes:
+            self._scenes[self._scene_key(scene)].update(
+                scene['geometry']
+            )
 
 
     def fit_to_width_scenes(self) -> tuple[int]:
         return sorted(list([
             int(k) for k, s in self._scenes.items()
-            if s.fit_to_width()
+            if s.fit_to_width
         ]))
 
 
     def anamorphic_scenes(self) -> tuple[int]:
         return sorted(list([
             int(k) for k, s in self._scenes.items()
-            if not s.keep_ratio()
+            if not s.keep_ratio
         ]))
+
+
+    def get(self, scene_no: int) -> SceneGeometryStat | None:
+        try:
+            return self._scenes[f"{scene_no:03}"]
+        except:
+            pass
+
+        return None

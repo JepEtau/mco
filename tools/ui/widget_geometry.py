@@ -119,7 +119,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.adjustSize()
 
 
-    def block_signals(self, block: bool):
+    def block_signals(self, block: bool) -> None:
         self.pushButton_set_preview.blockSignals(block)
         self.pushButton_discard.blockSignals(block)
         self.pushButton_save.blockSignals(block)
@@ -144,6 +144,15 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
         self.checkBox_use_autocrop.blockSignals(block)
 
+
+    def block_autocrop_signals(self, block: bool) -> None:
+        self.spinBox_threshold_min.blockSignals(block)
+        self.spinBox_morph_kernel_radius.blockSignals(block)
+        self.spinBox_erode_kernel_radius.blockSignals(block)
+        self.spinBox_erode_iterations.blockSignals(block)
+        self.checkBox_do_add_borders.blockSignals(block)
+        self.checkBox_use_autocrop.blockSignals(block)
+        self.pushButton_calculate.blockSignals(block)
 
 
     def apply_user_preferences(self, preferences: dict):
@@ -206,6 +215,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
     def refresh_values(self, frame: Frame):
         target_geometry: TargetSceneGeometry = self.controller.get_scene_geometry(frame)
+        print("refresh values")
         # pprint(target_geometry)
 
         if target_geometry.is_erroneous:
@@ -251,7 +261,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             self.checkBox_scene_fit_to_width.setChecked(False)
         self.checkBox_scene_fit_to_width.blockSignals(False)
 
-
+        self.block_autocrop_signals(True)
         autocrop_params: DetectInnerRectParams = scene_geometry.detection_params
         self.spinBox_threshold_min.setValue(autocrop_params.threshold_min)
         self.spinBox_morph_kernel_radius.setValue(autocrop_params.morph_kernel_radius)
@@ -266,6 +276,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             self.lineEdit_scene_autocrop.clear()
 
         self.pushButton_calculate.setEnabled(True)
+        self.block_autocrop_signals(False)
 
 
     def get_preview_options(self) -> GeometryPreviewOptions:
@@ -346,6 +357,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         parameter: GeometryActionParameter,
         value: int
     ):
+        log.info(f"geometry is modified: {event_type}: {parameter}, {value}")
         # log.info(f"parameter has been modified: {event_type}: {parameter}, {value}")
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)

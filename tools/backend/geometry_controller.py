@@ -14,6 +14,8 @@ from PySide6.QtCore import (
 
 from nn_inference.toolbox.detect_inner_rect import detect_inner_rect
 from tools.backend.geometry_database import GeometryDatabase
+from utils.geometry_utils import ChGeometryStats, SceneGeometryStat
+from video.consolidate_scenes import get_chapter_video
 
 from ._types import (
     DetectInnerRectParams,
@@ -27,7 +29,7 @@ from .common_controller import CommonController
 from .user_preferences import UserPreferences
 from logger import log
 from ui.window_geometry import GeometryWindow
-from utils.mco_types import Scene, SceneGeometry
+from utils.mco_types import ChapterVideo, Scene, SceneGeometry
 from utils.p_print import *
 from parsers import (
     db,
@@ -50,6 +52,7 @@ class GeometryController(CommonController):
         self.frame_cache: FrameCache = FrameCache(replace_db=None)
 
         self.selection_geometry: dict[int, TargetSceneGeometry] = {}
+        self.geometry_stats: ChGeometryStats = ChGeometryStats()
 
 
     def set_view(self, view: GeometryWindow):
@@ -78,8 +81,16 @@ class GeometryController(CommonController):
 
         # Let's consolidate all geometry from all scenes
         log.info("Initialize geometry database")
+        selection: Selection = self.selection()
         self.geometry_db.clear()
-        self.geometry_db.initialize(self.selection())
+        self.geometry_db.initialize(selection)
+
+        ch_video: ChapterVideo | None = get_chapter_video(
+            k_ep=selection.k_ep,
+            k_ch=selection.k_ch,
+        )
+        for scene in ch_video['scenes']:
+            self.geometry_stats.append(scene)
 
         self.signal_selection_modified.emit()
 
@@ -163,10 +174,16 @@ class GeometryController(CommonController):
 
     @Slot(GeometryAction)
     def event_geometry_modified(self, modification: GeometryAction) -> None:
+        print("geometry modification:", modification)
         scene_no: int = int(self.current_frame.scene_key.split(':')[-1])
         scene: Scene = self.scenes[scene_no]
         self.geometry_db.update_scene_geometry(scene, modification)
-        self.selection_geometry.update(self.geometry_db.get_geometry(scene))
+        new_geometry = self.geometry_db.get_geometry(scene)
+        self.selection_geometry.update(new_geometry)
+        k = list(new_geometry.keys())[0]
+        self.geometry_stats.update(
+            {'no': scene_no, 'geometry': new_geometry[k].scene}
+        )
         self.signal_reload_frame.emit()
         print(yellow(f"modified scenes: {self.geometry_db.modified_scene_nos()}"))
         self.signal_modified_scenes.emit(self.geometry_db.modified_scene_nos())
@@ -211,13 +228,16 @@ class GeometryController(CommonController):
         print(yellow("final, autocrop:"), f"{autocrop}")
         print(f"executed in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:.1f}fps)")
 
-
         self.geometry_db.update_scene_geometry(
             scene,
             GeometryAction(type='set', parameter='autocrop', value=autocrop)
         )
-        self.selection_geometry.update(self.geometry_db.get_geometry(scene))
 
+        new_geometry = self.geometry_db.get_geometry(scene)
+        k = list(new_geometry.keys())[0]
+        self.geometry_stats.update(
+            {'no': scene_no, 'geometry': new_geometry[k].scene}
+        )
         self.signal_reload_frame.emit()
 
 
@@ -233,3 +253,7 @@ class GeometryController(CommonController):
         self.signal_is_saved.emit('geometry_db')
         print(f"modified_scenes: {self.geometry_db.modified_scene_nos()}")
         self.signal_modified_scenes.emit(self.geometry_db.modified_scene_nos())
+
+
+    def scene_geometry_stats(self, scene_no: int) -> SceneGeometryStat | None:
+        return self.geometry_stats.get(scene_no)

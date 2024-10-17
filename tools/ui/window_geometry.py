@@ -152,7 +152,7 @@ class GeometryWindow(CommonWindow):
         frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
         self.widget_player_ctrl.refresh_values(frame, original_frame)
 
-        self.widget_preview.set_geometry(self.controller.get_scene_geometry(frame))
+        self.widget_preview.update_geometry(self.controller.get_scene_geometry(frame))
         self.widget_preview.display_frame(frame)
         self.widget_geometry.refresh_values(frame)
 

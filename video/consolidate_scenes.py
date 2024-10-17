@@ -17,6 +17,24 @@ from parsers import (
 )
 
 
+def get_chapter_video(k_ep: str, k_ch: str) -> ChapterVideo | None:
+    ch_video: ChapterVideo
+    if k_ch in ('g_debut', 'g_fin'):
+        ch_video = db[k_ch]['video']
+
+    elif k_ep == 'ep00':
+        sys.exit(red("Missing episode no."))
+
+    else:
+        ch_video = db[k_ep]['video']['target'][k_ch]
+
+    # Do not generate clip for unused chapters
+    if ch_video['count'] <= 0:
+        return None
+
+    return ch_video
+
+
 
 def consolidate_scenes(
     episode: str,
@@ -35,18 +53,8 @@ def consolidate_scenes(
 
     for k_ch in chapters:
 
-        ch_video: ChapterVideo
-        if k_ch in ('g_debut', 'g_fin'):
-            ch_video = db[k_ch]['video']
-
-        elif k_ep == 'ep00':
-            sys.exit(red("Missing episode no."))
-
-        else:
-            ch_video = db[k_ep]['video']['target'][k_ch]
-
-        # Do not generate clip for unused chapters
-        if ch_video['count'] <= 0:
+        ch_video: ChapterVideo | None = get_chapter_video(k_ep, k_ch)
+        if ch_video is None:
             continue
 
         ch_video['task'] = ProcessingTask(name=task)
@@ -93,7 +101,6 @@ def consolidate_scenes(
                             raise FileNotFoundError(red(f"{src_fp}"))
                         os.symlink(src_fp, fp)
 
-
         if geometry_stats:
             ch_geometry_stats: ChGeometryStats = ChGeometryStats()
             for scene in scenes:
@@ -105,3 +112,5 @@ def consolidate_scenes(
             print(f"MIN max width: {ch_geometry_stats.min_max_width_scene()}")
             print(f"fit to width: {ch_geometry_stats.fit_to_width_scenes()}")
             print(f"anamorphic: {ch_geometry_stats.anamorphic_scenes()}")
+
+

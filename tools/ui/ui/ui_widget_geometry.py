@@ -382,19 +382,19 @@ class Ui_GeometryWidget(object):
 
         self.verticalLayout_2.addWidget(self.groupBox_scene_geometry)
 
-        self.groupBox = QGroupBox(self.frame)
-        self.groupBox.setObjectName(u"groupBox")
-        self.verticalLayout = QVBoxLayout(self.groupBox)
+        self.groupBox_autocrop = QGroupBox(self.frame)
+        self.groupBox_autocrop.setObjectName(u"groupBox_autocrop")
+        self.verticalLayout = QVBoxLayout(self.groupBox_autocrop)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.formLayout_3 = QFormLayout()
         self.formLayout_3.setObjectName(u"formLayout_3")
         self.formLayout_3.setSizeConstraint(QLayout.SizeConstraint.SetDefaultConstraint)
-        self.label = QLabel(self.groupBox)
+        self.label = QLabel(self.groupBox_autocrop)
         self.label.setObjectName(u"label")
 
         self.formLayout_3.setWidget(0, QFormLayout.LabelRole, self.label)
 
-        self.spinBox_threshold_min = QSpinBox(self.groupBox)
+        self.spinBox_threshold_min = QSpinBox(self.groupBox_autocrop)
         self.spinBox_threshold_min.setObjectName(u"spinBox_threshold_min")
         self.spinBox_threshold_min.setMaximumSize(QSize(60, 16777215))
         self.spinBox_threshold_min.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -405,12 +405,12 @@ class Ui_GeometryWidget(object):
 
         self.formLayout_3.setWidget(0, QFormLayout.FieldRole, self.spinBox_threshold_min)
 
-        self.label_2 = QLabel(self.groupBox)
+        self.label_2 = QLabel(self.groupBox_autocrop)
         self.label_2.setObjectName(u"label_2")
 
         self.formLayout_3.setWidget(1, QFormLayout.LabelRole, self.label_2)
 
-        self.spinBox_morph_kernel_radius = QSpinBox(self.groupBox)
+        self.spinBox_morph_kernel_radius = QSpinBox(self.groupBox_autocrop)
         self.spinBox_morph_kernel_radius.setObjectName(u"spinBox_morph_kernel_radius")
         self.spinBox_morph_kernel_radius.setMaximumSize(QSize(60, 16777215))
         self.spinBox_morph_kernel_radius.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -422,12 +422,12 @@ class Ui_GeometryWidget(object):
 
         self.formLayout_3.setWidget(1, QFormLayout.FieldRole, self.spinBox_morph_kernel_radius)
 
-        self.label_3 = QLabel(self.groupBox)
+        self.label_3 = QLabel(self.groupBox_autocrop)
         self.label_3.setObjectName(u"label_3")
 
         self.formLayout_3.setWidget(2, QFormLayout.LabelRole, self.label_3)
 
-        self.spinBox_erode_kernel_radius = QSpinBox(self.groupBox)
+        self.spinBox_erode_kernel_radius = QSpinBox(self.groupBox_autocrop)
         self.spinBox_erode_kernel_radius.setObjectName(u"spinBox_erode_kernel_radius")
         self.spinBox_erode_kernel_radius.setMaximumSize(QSize(60, 16777215))
         self.spinBox_erode_kernel_radius.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -437,12 +437,12 @@ class Ui_GeometryWidget(object):
 
         self.formLayout_3.setWidget(2, QFormLayout.FieldRole, self.spinBox_erode_kernel_radius)
 
-        self.label_4 = QLabel(self.groupBox)
+        self.label_4 = QLabel(self.groupBox_autocrop)
         self.label_4.setObjectName(u"label_4")
 
         self.formLayout_3.setWidget(3, QFormLayout.LabelRole, self.label_4)
 
-        self.spinBox_erode_iterations = QSpinBox(self.groupBox)
+        self.spinBox_erode_iterations = QSpinBox(self.groupBox_autocrop)
         self.spinBox_erode_iterations.setObjectName(u"spinBox_erode_iterations")
         self.spinBox_erode_iterations.setMaximumSize(QSize(60, 16777215))
         self.spinBox_erode_iterations.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -453,12 +453,12 @@ class Ui_GeometryWidget(object):
 
         self.formLayout_3.setWidget(3, QFormLayout.FieldRole, self.spinBox_erode_iterations)
 
-        self.label_5 = QLabel(self.groupBox)
+        self.label_5 = QLabel(self.groupBox_autocrop)
         self.label_5.setObjectName(u"label_5")
 
         self.formLayout_3.setWidget(4, QFormLayout.LabelRole, self.label_5)
 
-        self.checkBox_do_add_borders = QCheckBox(self.groupBox)
+        self.checkBox_do_add_borders = QCheckBox(self.groupBox_autocrop)
         self.checkBox_do_add_borders.setObjectName(u"checkBox_do_add_borders")
         self.checkBox_do_add_borders.setMaximumSize(QSize(60, 16777215))
         self.checkBox_do_add_borders.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -466,7 +466,7 @@ class Ui_GeometryWidget(object):
 
         self.formLayout_3.setWidget(4, QFormLayout.FieldRole, self.checkBox_do_add_borders)
 
-        self.pushButton_calculate = QPushButton(self.groupBox)
+        self.pushButton_calculate = QPushButton(self.groupBox_autocrop)
         self.pushButton_calculate.setObjectName(u"pushButton_calculate")
         sizePolicy2.setHeightForWidth(self.pushButton_calculate.sizePolicy().hasHeightForWidth())
         self.pushButton_calculate.setSizePolicy(sizePolicy2)
@@ -474,7 +474,7 @@ class Ui_GeometryWidget(object):
 
         self.formLayout_3.setWidget(5, QFormLayout.FieldRole, self.pushButton_calculate)
 
-        self.pushButton_default = QPushButton(self.groupBox)
+        self.pushButton_default = QPushButton(self.groupBox_autocrop)
         self.pushButton_default.setObjectName(u"pushButton_default")
         self.pushButton_default.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.pushButton_default.setText(u"default")
@@ -484,7 +484,7 @@ class Ui_GeometryWidget(object):
 
         self.verticalLayout.addLayout(self.formLayout_3)
 
-        self.lineEdit_scene_autocrop = QLineEdit(self.groupBox)
+        self.lineEdit_scene_autocrop = QLineEdit(self.groupBox_autocrop)
         self.lineEdit_scene_autocrop.setObjectName(u"lineEdit_scene_autocrop")
         self.lineEdit_scene_autocrop.setEnabled(True)
         sizePolicy3.setHeightForWidth(self.lineEdit_scene_autocrop.sizePolicy().hasHeightForWidth())
@@ -500,7 +500,7 @@ class Ui_GeometryWidget(object):
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.horizontalLayout_2.setContentsMargins(-1, -1, -1, 0)
-        self.pushButton_copy_to_scene = QPushButton(self.groupBox)
+        self.pushButton_copy_to_scene = QPushButton(self.groupBox_autocrop)
         self.pushButton_copy_to_scene.setObjectName(u"pushButton_copy_to_scene")
         sizePolicy2.setHeightForWidth(self.pushButton_copy_to_scene.sizePolicy().hasHeightForWidth())
         self.pushButton_copy_to_scene.setSizePolicy(sizePolicy2)
@@ -512,12 +512,12 @@ class Ui_GeometryWidget(object):
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer_4)
 
-        self.label_6 = QLabel(self.groupBox)
+        self.label_6 = QLabel(self.groupBox_autocrop)
         self.label_6.setObjectName(u"label_6")
 
         self.horizontalLayout_2.addWidget(self.label_6)
 
-        self.checkBox_use_autocrop = QCheckBox(self.groupBox)
+        self.checkBox_use_autocrop = QCheckBox(self.groupBox_autocrop)
         self.checkBox_use_autocrop.setObjectName(u"checkBox_use_autocrop")
         self.checkBox_use_autocrop.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.checkBox_use_autocrop.setText(u"")
@@ -528,7 +528,7 @@ class Ui_GeometryWidget(object):
         self.verticalLayout.addLayout(self.horizontalLayout_2)
 
 
-        self.verticalLayout_2.addWidget(self.groupBox)
+        self.verticalLayout_2.addWidget(self.groupBox_autocrop)
 
 
         self.mainLayout.addWidget(self.frame)
@@ -570,7 +570,7 @@ class Ui_GeometryWidget(object):
         self.label_19.setText(QCoreApplication.translate("GeometryWidget", u"resize", None))
         self.shortcut_6.setText(QCoreApplication.translate("GeometryWidget", u"(R)", None))
         self.shortcut_7.setText(QCoreApplication.translate("GeometryWidget", u"(F)", None))
-        self.groupBox.setTitle(QCoreApplication.translate("GeometryWidget", u"Autocrop", None))
+        self.groupBox_autocrop.setTitle(QCoreApplication.translate("GeometryWidget", u"Autocrop", None))
         self.label.setText(QCoreApplication.translate("GeometryWidget", u"Threshold (min)", None))
         self.label_2.setText(QCoreApplication.translate("GeometryWidget", u"Morph kernel radius", None))
         self.label_3.setText(QCoreApplication.translate("GeometryWidget", u"Erode kernel radius", None))

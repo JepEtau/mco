@@ -4,6 +4,13 @@ from typing import Any, Literal, TypedDict, TYPE_CHECKING
 
 import numpy as np
 
+from nn_inference.toolbox.resize_to_4_3 import ConvertTo43Params, TransformationValues, calculate_transformation_values, dimensions_from_crop
+from utils.p_print import red
+
+# refactor this
+FINAL_HEIGHT: int = 1080
+FINAL_WIDTH: int = int(FINAL_HEIGHT * 4 / 3)
+
 
 if TYPE_CHECKING:
     from .images import Images
@@ -154,14 +161,70 @@ class SceneGeometry:
         self.crop = [0, 0, 0, 0]
         self.autocrop = [0, 0, 0, 0]
         self._defined: bool = False
+        self._in_size: tuple[int, int] | None = None
+        self.transformation: TransformationValues | None = None
+
 
     @property
     def defined(self) -> bool:
         return self._defined
 
+
     @defined.setter
     def defined(self, defined) -> None:
         self._defined = defined
+
+
+    def get_crop(self) -> list[int, int, int, int]:
+        """ top, bottom, left, right
+        """
+        crop_values: list[int, int, int, int] = (
+            self.autocrop
+            if self.use_autocrop
+            else self.crop
+        )
+        return crop_values
+
+
+    def max_width(self) -> int:
+        # Maximum width this scene can have. Width of the resized crop rectangle
+        c_t, c_b, c_l, c_r = self.get_crop()
+        c_h, c_w = self._in_size[0] - (c_t + c_b), self._in_size[1] - (c_l + c_r)
+        return int(c_w * FINAL_HEIGHT / c_h)
+
+
+    def set_in_size(self, in_size: tuple[int, int]) -> None:
+        """(h, w)
+        """
+        self._in_size = in_size
+
+
+    def calculate_transformation(self) -> TransformationValues | None :
+        to_43_params: ConvertTo43Params = ConvertTo43Params(
+            crop=self.get_crop(),
+            keep_ratio=self.keep_ratio,
+            fit_to_width=self.fit_to_width,
+            final_height=FINAL_HEIGHT,
+            scene_width=self.chapter.width,
+        )
+
+        if self._in_size is None:
+            raise ValueError(red("missing input size"))
+
+        try:
+            self.transformation = calculate_transformation_values(
+                in_w=self._in_size[1],
+                in_h=self._in_size[0],
+                out_w=FINAL_WIDTH,
+                params=to_43_params,
+                verbose=False
+            )
+        except:
+            pass
+
+        return self.transformation
+
+
 
 EffectName = Literal[
     'fadein',

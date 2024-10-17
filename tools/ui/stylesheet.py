@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 
 COLOR_PURPLE = QColor(140, 80, 160)
 COLOR_TEXT = QColor(220, 220, 220)
+COLOR_ERROR = QColor(255, 0, 0)
 
 
 def update_selected_widget_stylesheet(widget, is_selected:bool):

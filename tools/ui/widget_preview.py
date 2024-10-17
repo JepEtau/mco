@@ -77,8 +77,8 @@ class PreviewWidget(QWidget):
         return pixmap.scaled(factor * pixmap.width(), factor * pixmap.height())
 
 
-    def set_geometry(self, scene_geometry: TargetSceneGeometry):
-        print(lightcyan("set_geometry"))
+    def update_geometry(self, scene_geometry: TargetSceneGeometry):
+        print(lightcyan("update preview geometry"))
         self.scene_geometry = scene_geometry
 
 

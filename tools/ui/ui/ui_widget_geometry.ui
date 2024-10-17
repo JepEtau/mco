@@ -732,7 +732,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="groupBox">
+       <widget class="QGroupBox" name="groupBox_autocrop">
         <property name="title">
          <string>Autocrop</string>
         </property>

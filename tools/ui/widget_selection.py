@@ -9,6 +9,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
     QItemSelection,
+    QSize,
 )
 from PySide6.QtGui import (
     QBrush,
@@ -19,11 +20,14 @@ from PySide6.QtGui import (
 from PySide6.QtWidgets import (
     QTableWidgetItem,
     QWidget,
+    QAbstractItemView,
 )
 
 from scene.consolidate import is_scene_stabilized
+from utils.geometry_utils import SceneGeometryStat
 
 from .stylesheet import (
+    COLOR_ERROR,
     COLOR_PURPLE,
     COLOR_TEXT,
     set_stylesheet,
@@ -65,6 +69,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         super().__init__()
         self.setupUi(self)
         self.controller: ReplaceController | GeometryController = controller
+        self.app_type = app_type
         self.setObjectName('selection')
 
         # Setup and patch ui
@@ -98,21 +103,44 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             ['scene', 50, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter],
             ['src', 60, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
             ['start', 65, Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter],
-            ['count', 60, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
-            ['st.', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
-            ['fit', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
-            ['g_r', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
-            # ['err.', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
-            # ['st.',   30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
-            # ['geo.',    30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
-            # ['other',   60, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter],
+            ['count', 60, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter]
         ]
-        self.tableWidget_scenes.setColumnCount(len(self.columns))
-        for column_no, column in zip(range(len(self.columns)), self.columns):
-            self.tableWidget_scenes.horizontalHeaderItem(column_no).setText(column[0])
-            self.tableWidget_scenes.horizontalHeaderItem(column_no).setTextAlignment(column[2])
-            self.tableWidget_scenes.setColumnWidth(column_no, column[1])
 
+        if self.app_type == 'geometry':
+            # geometry
+            # - st
+            # - defined
+            # - ac
+            # - width
+            # - max_width
+            # - fit
+            # - ratio
+            # - anamorphic
+            self.columns.extend([
+                ['st', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+                ['def', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+                ['ac', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+                ['w', 60, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+                ['max_w', 60, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+                ['fit', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+                ['k.r.', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter],
+                ['err', 30, Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter]
+            ])
+
+
+        self.tableWidget_scenes.setColumnCount(len(self.columns))
+        for c_no, column in enumerate(self.columns):
+            self.tableWidget_scenes.setHorizontalHeaderItem(c_no, QTableWidgetItem())
+            self.tableWidget_scenes.horizontalHeaderItem(c_no).setText(column[0])
+            self.tableWidget_scenes.horizontalHeaderItem(c_no).setTextAlignment(column[2])
+            self.tableWidget_scenes.setColumnWidth(c_no, column[1])
+
+        self.tableWidget_scenes.setSelectionMode(
+            QAbstractItemView.SelectionMode.ContiguousSelection
+        )
+        self.tableWidget_scenes.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
 
         # Connect signals and filter events
         self.tableWidget_scenes.selectionModel().selectionChanged.connect(self.event_scene_selected)
@@ -121,7 +149,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.controller.signal_selection_modified.connect(
             self.event_refresh_scenelist
         )
-        self.controller.signal_modified_scenes[list].connect(self.refresh_modification_status)
+        self.controller.signal_modified_scenes[list].connect(self.refresh_modified_scenes)
         # self.controller.signal_current_scene_modified[dict].connect(self.event_current_scene_modified)
 
         self.set_enabled(True)
@@ -131,6 +159,13 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         # self.installEventFilter(self)
 
         # self.set_selected(False)
+
+        width = (
+            sum([c[1] for c in self.columns])
+            + self.verticalLayout.contentsMargins().left()
+            + self.verticalLayout.contentsMargins().right()
+        )
+        self.setMaximumSize(QSize(width, 16777215))
         self.adjustSize()
 
 
@@ -204,6 +239,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
 
     def event_current_scene_modified(self, modifications:dict):
+        print(red("event_current_scene_modified: modified!!!!!!!!"))
         self.tableWidget_scenes.blockSignals(True)
         row_no = self.tableWidget_scenes.currentRow()
 
@@ -240,7 +276,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
     def edition_started(self, is_started):
         row_no = self.tableWidget_scenes.currentRow()
-        # print(f"edition_started: {row_no} is_started: {is_started}")
+        print(f"edition_started: {row_no} is_started: {is_started}")
         item = self.tableWidget_scenes.item(row_no, 0)
         if is_started:
             self.tableWidget_scenes.item(row_no, 0).setForeground(QBrush(COLOR_PURPLE))
@@ -249,7 +285,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
 
     @Slot(list)
-    def refresh_modification_status(self, modified_scenes: list[int]):
+    def refresh_modified_scenes(self, modified_scenes: list[int]):
         # Something has been modified, disable selection until saving or discard
         log.info(f"refresh modification status, modified scenes: {modified_scenes}")
         for row_no in range(self.tableWidget_scenes.rowCount()):
@@ -259,8 +295,73 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             else:
                 self.tableWidget_scenes.item(row_no, 0).setText(scene_str)
 
+        scene_no: int = self.tableWidget_scenes.currentRow()
         self.set_enabled(bool(len(modified_scenes) == 0))
-        self.edition_started(bool(self.tableWidget_scenes.currentRow() in modified_scenes))
+        self.edition_started(bool(scene_no in modified_scenes))
+
+        if self.app_type == 'geometry':
+            print(f"selection: refresh: {scene_no}")
+            scene: Scene = self.controller.selection().scenes[scene_no]
+            row_no = scene_no
+
+            sc_geometry: SceneGeometryStat = self.controller.scene_geometry_stats(scene_no)
+            if sc_geometry is not None:
+                for column_no, column in enumerate(self.columns):
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+
+                    # Stabilized
+                    if column[0] == 'st':
+                        item_text: str = "x" if is_scene_stabilized(scene) else ""
+                        self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+
+                    # Is defined
+                    elif column[0] == 'def':
+                        item_text: str = "x" if sc_geometry is not None and sc_geometry.is_defined() else "-"
+                        self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+
+                    # autocrop
+                    elif column[0] == 'ac':
+                        item_text: str = "x" if sc_geometry is not None and sc_geometry.autocrop else ""
+                        # self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+                        item.setText(item_text)
+                        print(f"    refresh autocrop to [{item_text}]")
+
+                    # width
+                    elif column[0] == 'w':
+                        item_text: str = f"{sc_geometry.resized_to()[0]}" if sc_geometry is not None else ""
+                        self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+
+                    # max width
+                    elif column[0] == 'max_w':
+                        item_text: str = f"{sc_geometry.max_width}" if sc_geometry is not None else ""
+                        self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+
+                    # fit to width
+                    elif column[0] == 'fit':
+                        item_text: str = "x" if sc_geometry is not None and sc_geometry.fit_to_width else ""
+                        self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+
+                    # keep_ratio
+                    elif column[0] == 'k.r.':
+                        item_text: str = "x" if sc_geometry is not None and sc_geometry.keep_ratio else ""
+                        self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+
+                    elif column[0] == 'err':
+                        error: bool = bool(sc_geometry is None or sc_geometry.is_erroneous())
+                        item_text: str = "x" if error else ""
+                        self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+                        item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                        item.setFlags(
+                            Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+                        # self.tableWidget_scenes.item(row_no, 0).setData(Qt.ItemDataRole.FontRole, QColor.red())
+                        if error:
+                            # self.tableWidget_scenes.item(row_no, 0).setForeground(QBrush(QColor(255, 0, 0)))
+                            self.tableWidget_scenes.item(row_no, 0).setForeground(QBrush(COLOR_ERROR))
+
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
 
     def refresh_browsing_folder(self, episodes_and_parts:dict):
@@ -321,6 +422,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         # print("---")
         # sys.exit()
         # self.set_enabled(False)
+        self.tableWidget_scenes.selectionModel().blockSignals(True)
         self.tableWidget_scenes.blockSignals(True)
 
         selection: Selection = self.controller.selection()
@@ -349,14 +451,20 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.tableWidget_scenes.clearContents()
         self.tableWidget_scenes.setRowCount(0)
         row_no = 0
-        for k_scene, scene in enumerate(scenes):
+        for scene_no, scene in enumerate(scenes):
+            if self.app_type == 'geometry':
+                sc_geometry: SceneGeometryStat = self.controller.scene_geometry_stats(scene_no)
+            else:
+                sc_geometry = None
             self.tableWidget_scenes.insertRow(row_no)
 
-            for column_no, column in zip(range(len(self.columns)), self.columns):
+            for column_no, column in enumerate(self.columns):
+                item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
 
                 if column[0] == 'scene':
-                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f"{k_scene:03}"))
-                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f"{scene_no:03}"))
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setFlags(
                         Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
                 elif column[0] == 'src':
@@ -364,8 +472,9 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                     src_txt = f"{k_ed}:{k_ep}"
 
                     self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(src_txt))
-                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
                         Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
                 elif column[0] == 'start':
@@ -373,8 +482,9 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                         row_no, column_no,
                         QTableWidgetItem(f"{scene['src'].primary_scene()['start']}")
                     )
-                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
                         Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
                 elif column[0] == 'count':
@@ -382,85 +492,124 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                         row_no, column_no,
                         QTableWidgetItem(f"{scene['src'].frame_count()}")
                     )
-                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
                         Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
-
-                elif column[0] == 'st.':
-                    item_text: str = "x" if is_scene_stabilized(scene) else False
+                # Stabilized
+                elif column[0] == 'st':
+                    item_text: str = "x" if is_scene_stabilized(scene) else ""
                     self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
-                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
+                        Qt.ItemFlag.ItemIsSelectable
+                        | Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable
+                    )
+
+                # Is defined
+                elif column[0] == 'def':
+                    item_text: str = "x" if sc_geometry is not None and sc_geometry.is_defined() else "-"
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
                         Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                # autocrop
+                elif column[0] == 'ac':
+                    item_text: str = "x" if sc_geometry is not None and sc_geometry.autocrop else ""
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                # width
+                elif column[0] == 'w':
+                    item_text: str = f"{sc_geometry.resized_to()[0]}" if sc_geometry is not None else ""
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                # max width
+                elif column[0] == 'max_w':
+                    item_text: str = f"{sc_geometry.max_width}" if sc_geometry is not None else ""
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                # fit to width
+                elif column[0] == 'fit':
+                    item_text: str = "x" if sc_geometry is not None and sc_geometry.fit_to_width else ""
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                # keep_ratio
+                elif column[0] == 'k.r.':
+                    item_text: str = "x" if sc_geometry is not None and sc_geometry.keep_ratio else ""
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+
+                elif column[0] == 'err':
+                    error: bool = bool(sc_geometry is None or sc_geometry.is_erroneous())
+                    item_text: str = "x" if error else ""
+                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+                    # self.tableWidget_scenes.item(row_no, 0).setData(Qt.ItemDataRole.FontRole, QColor.red())
+                    if error:
+                        # self.tableWidget_scenes.item(row_no, 0).setForeground(QBrush(QColor(255, 0, 0)))
+                        self.tableWidget_scenes.item(row_no, 0).setForeground(QBrush(COLOR_ERROR))
 
                 elif column[0] == 'g_d':
                     self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f""))
-                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
                         Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
-                elif column[0] == 'fit':
-                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f""))
-                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
-                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
                 elif column[0] == 'r':
                     self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f""))
-                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
-                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
 
-                elif column[0] == 'err.':
-                    self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(f""))
-                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
-                    self.tableWidget_scenes.item(row_no, column_no).setFlags(
-                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
-
-                # elif column[0] == 'st.':
-                #     widget = QWidget()
-                #     __layout = QHBoxLayout(widget)
-                #     w = QCheckBox(widget)
-                #     w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                #     set_widget_stylesheet(w, 'small')
-                #     __layout.addWidget(w)
-                #     self.tableWidget_scenes.setCellWidget(row_no, column_no, widget)
-                #     self.tableWidget_scenes.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
-
-                # elif column[0] == 'geo.':
-                #     widget = QWidget()
-                #     __layout = QHBoxLayout(widget)
-                #     w = QCheckBox(widget)
-                #     w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                #     set_widget_stylesheet(w, 'small')
-                #     __layout.addWidget(w)
-                #     self.tableWidget_scenes.setCellWidget(row_no, column_no, widget)
-                #     self.tableWidget_scenes.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
-
-                # elif column[0] == 'other':
-                #     widget = QWidget()
-                #     __layout = QHBoxLayout(widget)
-                #     w = QCheckBox(widget)
-                #     w.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-                #     set_widget_stylesheet(w, 'small')
-                #     __layout.addWidget(w)
-                #     self.tableWidget_scenes.setCellWidget(row_no, column_no, widget)
-                #     self.tableWidget_scenes.cellWidget(row_no, column_no).setFocusPolicy(Qt.FocusPolicy.NoFocus)
                 try:
-                    self.tableWidget_scenes.item(row_no, column_no).setTextAlignment(column[2])
+                    item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
+                    item.setTextAlignment(column[2])
+                    item.setFlags(
+                        Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
                 except:
                     pass
 
             # Append invalid scenes
-            if scene['no'] in selection.invalid:
-                # If true, it means that all pictures are present in the folder
-                # Bug: this does not work
-                self.tableWidget_scenes.item(row_no, 0).setData(Qt.FontRole, QColor(Qt.red))
+            # if scene['no'] in selection.invalid:
+            #     # If true, it means that all pictures are present in the folder
+            #     # Bug: this does not work
+            #     self.tableWidget_scenes.item(row_no, 0).setData(Qt.FontRole, QColor(Qt.red))
             row_no += 1
 
-
         self.tableWidget_scenes.selectionModel().clearSelection()
+        self.tableWidget_scenes.setSelectionMode(
+            QAbstractItemView.SelectionMode.ContiguousSelection
+        )
+        self.tableWidget_scenes.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+
+        self.tableWidget_scenes.selectionModel().blockSignals(False)
         self.tableWidget_scenes.blockSignals(False)
 
         self.tableWidget_scenes.setEnabled(True)
@@ -538,17 +687,25 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
     def set_enabled(self, enabled: bool):
         log.info(f"set enabled to {enabled}")
+        print(purple(f"set selection enabled to {enabled}"))
         # if self.is_modified and enabled:
         #     # do not allow selection until all modifications are saved or discarded
         #     return
-        self.setEnabled(enabled)
+        # self.setEnabled(enabled)
         self.comboBox_episode.setEnabled(enabled)
         self.comboBox_part.setEnabled(enabled)
-
+        self.tableWidget_scenes.blockSignals(not enabled)
+        self.tableWidget_scenes.selectionModel().blockSignals(not enabled)
+        self.tableWidget_scenes.setSelectionMode(
+            QAbstractItemView.SelectionMode.ContiguousSelection
+            if enabled
+            else QAbstractItemView.SelectionMode.NoSelection
+        )
 
 
     def refresh_values(self, frame:dict):
         pass
+
 
     def get_preview_options(self):
         return None
