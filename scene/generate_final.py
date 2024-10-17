@@ -8,26 +8,25 @@ import subprocess
 import sys
 import time
 import numpy as np
-from nn_inference.toolbox.detect_inner_rect import DetectInnerRectParams, detect_inner_rect
-from nn_inference.toolbox.resize_to_4_3 import ConvertTo43Params, calculate_transformation_values, resize_to_4_3
+from processing.detect_inner_rect import detect_inner_rect
+from processing.resize_to_4_3 import ConvertTo43Params, calculate_transformation_values, resize_to_4_3
 from parsers import (
     ColorSettings,
     db,
     ProcessingTask,
+    SceneGeometry,
     TaskName,
     VideoSettings,
 )
 from processing.effects import apply_effect
 from utils.logger import main_logger
-from utils.mco_types import McoFrame, Scene, SceneGeometry
+from utils.mco_types import McoFrame, Scene
 from utils.mco_utils import (
-    is_up_to_date,
     run_simple_command
 )
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
 from utils.pxl_fmt import PIXEL_FORMAT
-from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
 from utils.media import VideoInfo, extract_media_info, str_to_video_codec, vcodec_to_extension
 

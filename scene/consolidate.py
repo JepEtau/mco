@@ -1,10 +1,11 @@
+from __future__ import annotations
 from copy import deepcopy
 import os
 from pprint import pprint
 import sys
 from utils.hash import calc_hash
 from utils.mco_types import (
-    ChapterGeometry, ChapterVideo, Effect, Effects, Scene, SceneGeometry,
+    ChapterVideo, Effect, Effects, Scene,
 )
 from utils.media import vcodec_to_extension
 from parsers import (
@@ -14,18 +15,17 @@ from parsers import (
     ProcessingTask,
     VideoSettings,
     TaskName,
+    ChapterGeometry,
+    SceneGeometry,
 )
 from utils.mco_utils import (
     get_cache_path,
     get_target_video,
     is_first_scene,
     is_last_scene,
-    nested_dict_set
 )
 from utils.p_print import *
 from utils.path_utils import absolute_path
-from video.concat_frames import get_video_filename
-from .src_scene import SrcScenes
 
 
 def is_scene_stabilized(scene: Scene):

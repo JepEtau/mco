@@ -16,20 +16,21 @@ from ._types import (
     TargetSceneGeometry,
 )
 from utils.mco_types import (
-    ChapterGeometry,
-    DetectInnerRectParams,
     Scene,
-    SceneGeometry,
     ChapterVideo,
 )
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from scene.src_scene import SrcScene
+
 from parsers import (
+    ChapterGeometry,
+    DetectInnerRectParams,
     Chapter,
     credit_chapter_keys,
     non_credit_chapter_keys,
     db,
+    SceneGeometry,
 )
 
 

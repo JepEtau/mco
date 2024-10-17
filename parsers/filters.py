@@ -1,10 +1,11 @@
+from __future__ import annotations
 from configparser import ConfigParser
 import sys
 import re
 from pprint import pprint
 from .helpers import nested_dict_set
 from utils.p_print import *
-from ._types import Filter, TASK_NAMES, TaskName, filter_name_to_dirname
+from ._types import Filter, TASK_NAMES, TaskName
 
 # ID used to identify stage
 FILTERS_IDS = [

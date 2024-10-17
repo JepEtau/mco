@@ -1,4 +1,4 @@
-
+from __future__ import annotations
 from collections import OrderedDict
 from configparser import ConfigParser
 import os

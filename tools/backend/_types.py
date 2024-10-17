@@ -1,17 +1,21 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import Literal, TYPE_CHECKING
 
 import numpy as np
 from utils.mco_types import (
-    ChapterGeometry,
-    DetectInnerRectParams,
     Scene,
-    SceneGeometry,
 )
 from PySide6.QtGui import (
     QPixmap,
 )
 
+if TYPE_CHECKING:
+    from parsers import (
+        ChapterGeometry,
+        DetectInnerRectParams,
+        SceneGeometry,
+    )
 
 AppType = Literal['replace', 'geometry', 'stabilization']
 

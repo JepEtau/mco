@@ -34,8 +34,21 @@ from .filters import (
     clean_ffmpeg_filter
 )
 
-FINAL_HEIGHT: int = 1080
-FINAL_WIDTH: int = int(FINAL_HEIGHT * 4 / 3)
+from .geometry import (
+    ChapterGeometry,
+    SceneGeometry,
+    DetectInnerRectParams,
+    FINAL_HEIGHT,
+    FINAL_WIDTH,
+)
+
+from .geometry_stats import (
+    SceneGeometryStat,
+    ChGeometryStats,
+)
+
+
+
 
 __all__ = [
     "db",
@@ -61,4 +74,10 @@ __all__ = [
     "ColorSettings",
     "FINAL_HEIGHT",
     "FINAL_WIDTH",
+
+    "ChapterGeometry",
+    "SceneGeometry",
+    "DetectInnerRectParams",
+    "SceneGeometryStat",
+    "ChGeometryStats",
 ]

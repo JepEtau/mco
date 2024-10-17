@@ -24,7 +24,6 @@ from PySide6.QtWidgets import (
 )
 
 from scene.consolidate import is_scene_stabilized
-from utils.geometry_utils import SceneGeometryStat
 
 from .stylesheet import (
     COLOR_ERROR,
@@ -49,7 +48,8 @@ from import_parsers import *
 from utils.p_print import *
 from parsers import (
     all_chapter_keys,
-    key
+    key,
+    SceneGeometryStat
 )
 
 

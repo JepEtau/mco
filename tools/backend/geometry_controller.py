@@ -1,6 +1,6 @@
 from __future__ import annotations
 import sys
-from typing import Any, override
+from typing import override
 
 import numpy as np
 from import_parsers import *
@@ -12,13 +12,11 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from nn_inference.toolbox.detect_inner_rect import detect_inner_rect
+from processing.detect_inner_rect import detect_inner_rect
 from tools.backend.geometry_database import GeometryDatabase
-from utils.geometry_utils import ChGeometryStats, SceneGeometryStat
 from video.consolidate_scenes import get_chapter_video
 
 from ._types import (
-    DetectInnerRectParams,
     GeometryAction,
     PlaylistProperties,
     Selection,
@@ -29,11 +27,14 @@ from .common_controller import CommonController
 from .user_preferences import UserPreferences
 from logger import log
 from ui.window_geometry import GeometryWindow
-from utils.mco_types import ChapterVideo, Scene, SceneGeometry
+from utils.mco_types import ChapterVideo, Scene
 from utils.p_print import *
 from parsers import (
     db,
-    TaskName
+    TaskName,
+    ChGeometryStats,
+    ChGeometryStats,
+    DetectInnerRectParams,
 )
 
 

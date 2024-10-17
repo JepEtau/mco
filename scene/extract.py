@@ -12,7 +12,6 @@ from parsers import (
 )
 from processing.watermark import add_watermark
 from scene.filters import do_watermark
-from utils.logger import main_logger
 from utils.mco_types import McoFrame, Scene
 from utils.mco_utils import run_simple_command
 from utils.p_print import *

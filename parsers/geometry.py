@@ -1,27 +1,156 @@
-
+from __future__ import annotations
 from copy import deepcopy
+from dataclasses import dataclass, field
 import re
 import sys
 import configparser
 import os
 import os.path
-from pathlib import (
-    Path,
-    PosixPath,
-)
 from pprint import pprint
 from typing import Any
 
-from utils.mco_types import ChapterGeometry, ChapterVideo, SceneGeometry, Scene
+from utils.mco_types import ChapterVideo, Scene
 from utils.path_utils import absolute_path
 
-from .credits import get_credits_dependencies
 from ._keys import all_chapter_keys
 from .logger import logger
-from .scene import get_scene_from_frame_no
-from .helpers import nested_dict_set
 from utils.p_print import *
 from ._db import db
+
+from processing.resize_to_4_3 import (
+    ConvertTo43Params,
+    TransformationValues,
+    calculate_transformation_values,
+)
+
+FINAL_HEIGHT: int = 1080
+FINAL_WIDTH: int = int(FINAL_HEIGHT * 4 / 3)
+
+
+@dataclass
+class ChapterGeometry:
+    width: int = 1440
+
+
+@dataclass(slots=True)
+class DetectInnerRectParams:
+    threshold_min: int = 10
+    morph_kernel_radius: int = 3
+    erode_kernel_radius: int = 1
+    erode_iterations: int = 2
+    do_add_borders: bool = True
+
+
+
+
+@dataclass
+class SceneGeometry:
+    keep_ratio: bool = True
+    fit_to_width: bool = False
+    crop: list[int, int, int, int] = field(default_factory=list)
+    use_default: bool = False
+    chapter: ChapterGeometry = field(default_factory=ChapterGeometry)
+    detection_params: DetectInnerRectParams = field(
+        default_factory=DetectInnerRectParams
+    )
+    custom_detection_params: bool = True
+    use_autocrop: bool = False
+    autocrop: list[int, int, int, int] = field(default_factory=list)
+
+    def __post_init__(self):
+        # top, bottom, left, right
+        self.crop = [0, 0, 0, 0]
+        self.autocrop = [0, 0, 0, 0]
+        self._defined: bool = False
+        self._in_size: tuple[int, int] | None = None
+        self.transformation: TransformationValues | None = None
+
+
+    @property
+    def defined(self) -> bool:
+        return self._defined
+
+
+    @defined.setter
+    def defined(self, defined) -> None:
+        self._defined = defined
+
+
+    def get_crop(self) -> list[int, int, int, int]:
+        """ top, bottom, left, right
+        """
+        crop_values: list[int, int, int, int] = (
+            self.autocrop
+            if self.use_autocrop
+            else self.crop
+        )
+        return crop_values
+
+
+    def max_width(self) -> int:
+        # Maximum width this scene can have. Width of the resized crop rectangle
+        c_t, c_b, c_l, c_r = self.get_crop()
+        c_h, c_w = self._in_size[0] - (c_t + c_b), self._in_size[1] - (c_l + c_r)
+        return int(c_w * FINAL_HEIGHT / c_h)
+
+
+    def set_in_size(self, in_size: tuple[int, int]) -> None:
+        """(h, w)
+        """
+        self._in_size = in_size
+
+
+    def calculate_transformation(self) -> TransformationValues | None :
+        to_43_params: ConvertTo43Params = ConvertTo43Params(
+            crop=self.get_crop(),
+            keep_ratio=self.keep_ratio,
+            fit_to_width=self.fit_to_width,
+            final_height=FINAL_HEIGHT,
+            scene_width=self.chapter.width,
+        )
+
+        if self._in_size is None:
+            raise ValueError(red("missing input size"))
+
+        try:
+            self.transformation = calculate_transformation_values(
+                in_w=self._in_size[1],
+                in_h=self._in_size[0],
+                out_w=FINAL_WIDTH,
+                params=to_43_params,
+                verbose=False
+            )
+        except:
+            pass
+
+        return self.transformation
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # n'utilise pas le no. de plan car en cas de modification de la
 # liste des plans (ajout ou suppression), il pourrait y avoir des décalages
@@ -102,79 +231,6 @@ def parse_geometry_configurations(k_ep_or_g: str):
         if 'geometry' not in db_video:
             db_video['geometry'] = ChapterGeometry()
 
-        # # if '.' not in k_section:
-        # #     sys.exit("__parse_curve_configurations: error, no edition,ep,chapter specified")
-        # k_ed, k_ep, k_chapter = section.split('.')
-        # if verbose:
-        #     print(orange(f"\tk_ep_or_g={k_ep_or_g};\t{k_ed}:{k_ep}:{k_chapter}"))
-        # for k_str in config.options(section):
-        #     if verbose:
-        #         print(f"\t\tk_str={k_str}")
-
-        #     if k_str == 'default':
-        #         # Default values for scenes of this chapter
-        #         properties = config.get(section, k_str)
-        #         if verbose:
-        #             print("\t\tproperties:", properties)
-
-        #         try:
-        #             nested_dict_set(
-        #                 db[k_ep]['video'],
-        #                 get_geometry_from_properties(properties),
-        #                 k_ed, k_chapter, 'geometry'
-        #             )
-        #         except:
-        #             print(orange(f"warning: {k_ep}:{k_ed}:{k_chapter}: video does not exist"))
-        #         # if verbose:
-        #         #     print("\t\tfinally:")
-        #         #     pprint(db[k_ep]['video'][k_ed][k_chapter]['geometry'])
-        #         #     sys.exit()
-
-        #     else:
-        #         # Custom values for a scene
-
-        #         # if the key is the start/middle of a scene
-        #         try:
-        #             frame_no = int(k_str)
-        #         except:
-        #             continue
-
-        #         # Get scene from scene
-        #         try:
-        #             src_scene = get_scene_from_frame_no(frame_no, k_ed=k_ed, k_ep=k_ep, k_chapter=k_chapter)
-        #         except:
-        #             # scenes not defined or unused
-        #             if verbose:
-        #                 logger.debug(
-        #                     orange(f"parse_geometry_configurations: ")
-        #                     + darkgrey(f"{k_ep}:{k_ed}:{k_chapter}: scene not found for frame no. {frame_no}")
-        #                 )
-        #             continue
-
-        #         if src_scene is not None and  frame_no != src_scene['start']:
-        #             logger.debug(
-        #                 orange(f"parse_geometry_configurations: ")
-        #                  + f"{frame_no} is not the start of {k_ed}:{k_ep}:{k_chapter}, no. {src_scene['no']:03}, {src_scene['start']}"
-        #             )
-        #         elif src_scene is None:
-        #             logger.debug(
-        #                 orange(f"parse_geometry_configurations: ")
-        #                  + darkgrey(f"{k_ep}:{k_ed}:{k_chapter}: scene not found for frame no. {frame_no}")
-        #             )
-        #             continue
-
-
-        # if k_section == 's.ep12.g_asuivre':
-        #     pprint(db['g_asuivre'])
-        #     pprint(db[k_ep]['video'][k_ed][k_chapter])
-        #     print(cyan(db['ep01']['video']['target']['g_asuivre'])
-        #     sys.exit()
-
-        # if k_ed==K_ED_DEBUG and k_ep==K_EP_DEBUG and k_chapter==K_chapter_DEBUG:
-        #     pprint(db[k_ep]['video'][k_ed][k_chapter])
-        #     sys.exit()
-    # if k_chapter==K_chapter_DEBUG:
-    #     pprint(db[k_ep_or_g]['target']['video'])
     if verbose and k_ep_or_g == 'g_debut':
         pprint(db_video)
         sys.exit()

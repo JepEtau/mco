@@ -1,4 +1,4 @@
-
+from __future__ import annotations
 from configparser import ConfigParser
 import os
 import os.path

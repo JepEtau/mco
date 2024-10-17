@@ -1,23 +1,16 @@
-import numpy as np
-from nn_inference.toolbox.resize_to_4_3 import (
-    calculate_transformation_values,
-    ConvertTo43Params,
-    TransformationValues,
-)
-from parsers import (
-    db,
-    FINAL_HEIGHT,
-    FINAL_WIDTH,
-    VideoSettings,
-)
-from utils.mco_types import (
-    Scene,
-    SceneGeometry,
-)
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from processing.resize_to_4_3 import TransformationValues
 from utils.media import VideoInfo, extract_media_info
-from utils.p_print import *
+from utils.p_print import red
 
+from .geometry import SceneGeometry
+from ._types import VideoSettings
+from ._db import db
 
+if TYPE_CHECKING:
+    from utils.mco_types import Scene
 
 
 class SceneGeometryStat:

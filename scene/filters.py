@@ -2,13 +2,16 @@ from __future__ import annotations
 from pprint import pprint
 import sys
 from utils.p_print import *
-from utils.mco_types import Scene
 from parsers import (
     db,
-    Filter,
-    VideoSettings,
 )
-
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utils.mco_types import Scene
+    from parsers import (
+        Filter,
+        VideoSettings,
+    )
 
 def get_ffmpeg_pad_filter(scene: Scene) -> list[str]:
     vsettings: VideoSettings = scene['task'].video_settings

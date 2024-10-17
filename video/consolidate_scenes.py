@@ -2,7 +2,6 @@ import sys
 import os
 from pprint import pprint
 from scene.consolidate import consolidate_scene
-from utils.geometry_utils import ChGeometryStats
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import scene_id_str
 from utils.p_print import *
@@ -14,6 +13,7 @@ from parsers import (
     TaskName,
     ProcessingTask,
     pprint_scene_mapping,
+    ChGeometryStats,
 )
 
 

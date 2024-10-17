@@ -35,7 +35,7 @@ from backend._types import (
     TargetSceneGeometry,
     AppType,
 )
-from utils.mco_types import SceneGeometry
+from parsers import SceneGeometry
 from utils.p_print import lightcyan, lightgreen, red, yellow
 
 

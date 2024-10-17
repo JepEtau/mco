@@ -1,13 +1,10 @@
 from __future__ import annotations
-from dataclasses import dataclass
 import os
 from pprint import pprint
 import subprocess
-import sys
 import time
 from scene.filters import do_watermark
-from scene.src_scene import SrcScene, SrcScenes
-from utils.mco_types import ChapterVideo, Effect, Scene
+from utils.mco_types import ChapterVideo, Scene
 from utils.media import VideoInfo, extract_media_info
 from utils.p_print import *
 from parsers import (

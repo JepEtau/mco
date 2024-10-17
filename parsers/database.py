@@ -1,3 +1,4 @@
+from __future__ import annotations
 from collections import OrderedDict
 import os
 from pprint import pprint

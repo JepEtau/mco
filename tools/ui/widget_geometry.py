@@ -4,7 +4,10 @@ from pprint import pprint
 from logger import log
 from import_parsers import *
 from typing import TYPE_CHECKING, Any, Literal
-from utils.mco_types import DetectInnerRectParams, SceneGeometry
+from parsers import (
+    DetectInnerRectParams,
+    SceneGeometry,
+)
 from utils.p_print import *
 
 from PySide6.QtCore import (
