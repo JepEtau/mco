@@ -1,6 +1,5 @@
 from pprint import pprint
 from logger import log
-from import_parsers import *
 from .stylesheet import (
     set_stylesheet,
     set_widget_stylesheet,

@@ -2,8 +2,7 @@ from dataclasses import dataclass
 from functools import partial
 from pprint import pprint
 from logger import log
-from import_parsers import *
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any
 from parsers import (
     DetectInnerRectParams,
     SceneGeometry,
@@ -20,7 +19,6 @@ from PySide6.QtGui import(
     QWheelEvent,
 )
 from PySide6.QtWidgets import (
-    QTableWidgetItem,
     QWidget,
     QApplication,
 )

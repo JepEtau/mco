@@ -1,7 +1,6 @@
 from pprint import pprint
 import sys
 import time
-from import_parsers import *
 from parsers import (
     db,
     TaskName,

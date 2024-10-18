@@ -5,7 +5,6 @@ from copy import copy, deepcopy
 from logger import log
 import os
 from pprint import pprint
-from import_parsers import *
 from utils.mco_types import Scene
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -72,8 +71,6 @@ class ReplaceDatabase:
                 count += len(self._db[_key].keys())
             elif 'replace' in src_scene['scene']:
                 count += len(src_scene['scene']['replace'].keys())
-            # print(lightcyan(f"scene: {_key}"))
-            # pprint(src_scene)
         return count
 
 

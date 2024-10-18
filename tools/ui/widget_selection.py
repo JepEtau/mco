@@ -44,7 +44,6 @@ from backend._types import (
 
 from utils.mco_types import Scene
 from .ui.ui_widget_selection import Ui_SelectionWidget
-from import_parsers import *
 from utils.p_print import *
 from parsers import (
     all_chapter_keys,

@@ -17,7 +17,7 @@ if TYPE_CHECKING:
         SceneGeometry,
     )
 
-AppType = Literal['replace', 'geometry', 'stabilization']
+AppType = Literal['replace', 'geometry', 'deshake']
 
 
 @dataclass(slots=True)

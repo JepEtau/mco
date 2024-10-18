@@ -1,14 +1,10 @@
 from __future__ import annotations
-from dataclasses import dataclass
-import math
 import os
 import subprocess
 import sys
-
 import numpy as np
-from import_parsers import *
 
-from collections import Counter, OrderedDict, UserDict
+from collections import OrderedDict
 from pprint import pprint
 
 from tools.backend.replace_database import ReplaceDatabase
@@ -18,13 +14,8 @@ from utils.p_print import lightcyan, red, yellow
 from utils.path_utils import path_split
 from utils.tools import ffmpeg_exe
 from utils.time_conversions import (
-    FrameRate,
     frame_to_s,
     frame_to_sexagesimal,
-)
-from PySide6.QtGui import (
-    QPixmap,
-    QImage,
 )
 from parsers import (
     db,
@@ -33,7 +24,6 @@ from parsers import (
     clean_ffmpeg_filter,
 )
 from ._types import Frame
-
 
 
 

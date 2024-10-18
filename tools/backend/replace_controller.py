@@ -1,5 +1,4 @@
 from __future__ import annotations
-from import_parsers import *
 
 from pprint import pprint
 import time

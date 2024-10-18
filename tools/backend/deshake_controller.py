@@ -12,32 +12,29 @@ from PySide6.QtCore import (
 )
 
 from processing.detect_inner_rect import detect_inner_rect
-from tools.backend.geometry_database import GeometryDatabase
+from tools.backend.deshake_database import DeshakeDatabase
 from video.consolidate_scenes import get_chapter_video
 
 from ._types import (
-    GeometryAction,
+    DeshakeAction,
     PlaylistProperties,
     Selection,
-    TargetSceneGeometry,
+    TargetSceneDeshake,
 )
 from .frame_cache import FrameCache, Frame
 from .common_controller import CommonController
 from .user_preferences import UserPreferences
 from logger import log
-from ui.window_geometry import GeometryWindow
+from ui.window_deshake import DeshakeWindow
 from utils.mco_types import ChapterVideo, Scene
 from utils.p_print import *
 from parsers import (
-    SceneGeometryStat,
     db,
     TaskName,
-    ChGeometryStats,
-    DetectInnerRectParams,
 )
 
 
-class GeometryController(CommonController):
+class DeshakeController(CommonController):
     signal_preview_options_consolidated = Signal(dict)
     signal_replacements_refreshed = Signal()
 
@@ -45,32 +42,31 @@ class GeometryController(CommonController):
         super().__init__()
 
         # Load saved preferences
-        self.user_preferences: UserPreferences = UserPreferences(tool='geometry')
+        self.user_preferences: UserPreferences = UserPreferences(tool='deshake')
 
         self.task_name: TaskName = task_name
-        self.geometry_db = GeometryDatabase()
+        self.deshake_db = DeshakeDatabase()
         self.frame_cache: FrameCache = FrameCache(replace_db=None)
 
-        self.selection_geometry: dict[int, TargetSceneGeometry] = {}
-        self.geometry_stats: ChGeometryStats = ChGeometryStats()
+        self.selection_deshake: dict[int, TargetSceneDeshake] = {}
 
 
-    def set_view(self, view: GeometryWindow):
+    def set_view(self, view: DeshakeWindow):
         super().set_view(view)
 
-        self.view: GeometryWindow
+        self.view: DeshakeWindow
 
-        # self.view.widget_geometry.signal_undo.connect(self.event_geometry_undo)
-        # self.view.widget_geometry.signal_save.connect(self.event_geometry_save)
-        # self.view.widget_geometry.signal_discard.connect(self.event_geometry_discard)
-        self.view.widget_geometry.signal_geometry_modified.connect(self.event_geometry_modified)
-        self.view.widget_geometry.signal_detect_inner_rect.connect(self.event_detect_inner_rect)
-        self.view.widget_geometry.signal_save.connect(self.event_geometry_save)
+        # self.view.widget_deshake.signal_undo.connect(self.event_deshake_undo)
+        # self.view.widget_deshake.signal_save.connect(self.event_deshake_save)
+        # self.view.widget_deshake.signal_discard.connect(self.event_deshake_discard)
+        self.view.widget_deshake.signal_deshake_modified.connect(self.event_deshake_modified)
+        self.view.widget_deshake.signal_detect_inner_rect.connect(self.event_detect_inner_rect)
+        self.view.widget_deshake.signal_save.connect(self.event_deshake_save)
 
 
     @override
     def exit(self, force: bool = False):
-        if len(self.geometry_db.modified_scene_nos()) > 0 and not force:
+        if len(self.deshake_db.modified_scene_nos()) > 0 and not force:
             self.signal_save_before_exit.emit()
         else:
             super().exit()
@@ -79,19 +75,11 @@ class GeometryController(CommonController):
     def k_ep_p_changed(self, selection: Selection):
         super().k_ep_p_changed(selection)
 
-        # Let's consolidate all geometry from all scenes
-        log.info("Initialize geometry database")
+        # Let's consolidate all deshake from all scenes
+        log.info("Initialize deshake database")
         selection: Selection = self.selection()
-        self.geometry_db.clear()
-        self.geometry_db.initialize(selection)
-
-        ch_video: ChapterVideo | None = get_chapter_video(
-            k_ep=selection.k_ep,
-            k_ch=selection.k_ch,
-        )
-        for scene in ch_video['scenes']:
-            self.geometry_stats.append(scene)
-
+        self.deshake_db.clear()
+        self.deshake_db.initialize(selection)
         self.signal_selection_modified.emit()
 
 
@@ -146,12 +134,12 @@ class GeometryController(CommonController):
         self.current_frame = None
         self.current_scene_no = selected['scenes'][0]
 
-        # Geometry
-        self.selection_geometry.clear()
+        # Deshake
+        self.selection_deshake.clear()
         for scene_no in selected['scenes']:
             scene: Scene = self.scenes[scene_no]
-            self.selection_geometry.update(
-                self.geometry_db.get_geometry(scene)
+            self.selection_deshake.update(
+                self.deshake_db.get_deshake(scene)
             )
 
         # self.signal_preview_options_consolidated.emit(self.preview_options)
@@ -167,35 +155,35 @@ class GeometryController(CommonController):
         self.preview_enabled = preview_settings['enabled']
 
 
-    def get_scene_geometry(self, frame: Frame) -> TargetSceneGeometry:
-        # print(lightcyan(f"get_scene_geometry: {frame.scene_key}, {frame.src_scene_key}"))
-        return self.selection_geometry[frame.scene_key]
+    def get_scene_deshake(self, frame: Frame) -> TargetSceneDeshake:
+        # print(lightcyan(f"get_scene_deshake: {frame.scene_key}, {frame.src_scene_key}"))
+        return self.selection_deshake[frame.scene_key]
 
 
-    @Slot(GeometryAction)
-    def event_geometry_modified(self, modification: GeometryAction) -> None:
-        print("geometry modification:", modification)
+    @Slot(DeshakeAction)
+    def event_deshake_modified(self, modification: DeshakeAction) -> None:
+        print("deshake modification:", modification)
         scene_no: int = int(self.current_frame.scene_key.split(':')[-1])
         scene: Scene = self.scenes[scene_no]
-        self.geometry_db.update_scene_geometry(scene, modification)
-        new_geometry = self.geometry_db.get_geometry(scene)
-        self.selection_geometry.update(new_geometry)
-        k = list(new_geometry.keys())[0]
-        self.geometry_stats.update(
-            {'no': scene_no, 'geometry': new_geometry[k].scene}
+        self.deshake_db.update_scene_deshake(scene, modification)
+        new_deshake = self.deshake_db.get_deshake(scene)
+        self.selection_deshake.update(new_deshake)
+        k = list(new_deshake.keys())[0]
+        self.deshake_stats.update(
+            {'no': scene_no, 'deshake': new_deshake[k].scene}
         )
         # TODO: update erroneous margins
         self.signal_reload_frame.emit()
-        print(yellow(f"modified scenes: {self.geometry_db.modified_scene_nos()}"))
-        self.signal_modified_scenes.emit(self.geometry_db.modified_scene_nos())
+        print(yellow(f"modified scenes: {self.deshake_db.modified_scene_nos()}"))
+        self.signal_modified_scenes.emit(self.deshake_db.modified_scene_nos())
 
 
     @Slot(DetectInnerRectParams)
     def event_detect_inner_rect(self, params: DetectInnerRectParams) -> None:
         scene_no: int = int(self.current_frame.scene_key.split(':')[-1])
         scene: Scene = self.scenes[scene_no]
-        self.geometry_db.update_scene_geometry(
-            scene, GeometryAction(type='set', parameter='detection', value=params)
+        self.deshake_db.update_scene_deshake(
+            scene, DeshakeAction(type='set', parameter='detection', value=params)
         )
 
         log.info("Start detecting inner rect")
@@ -227,32 +215,28 @@ class GeometryController(CommonController):
         print(yellow("final, autocrop:"), f"{autocrop}")
         print(f"executed in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:.1f}fps)")
 
-        self.geometry_db.update_scene_geometry(
+        self.deshake_db.update_scene_deshake(
             scene,
-            GeometryAction(type='set', parameter='autocrop', value=autocrop)
+            DeshakeAction(type='set', parameter='autocrop', value=autocrop)
         )
 
-        new_geometry = self.geometry_db.get_geometry(scene)
-        k = list(new_geometry.keys())[0]
-        self.geometry_stats.update(
-            {'no': scene_no, 'geometry': new_geometry[k].scene}
+        new_deshake = self.deshake_db.get_deshake(scene)
+        k = list(new_deshake.keys())[0]
+        self.deshake_stats.update(
+            {'no': scene_no, 'deshake': new_deshake[k].scene}
         )
         self.signal_reload_frame.emit()
 
 
     @Slot()
-    def event_geometry_save(self):
+    def event_deshake_save(self):
         print(f"selected scenes: {self.playlist_properties().scenes}")
-        print(self.geometry_db.modified_scene_nos())
+        print(self.deshake_db.modified_scene_nos())
         for scene_no in self.playlist_properties().scenes:
             print(f"save no.{scene_no}")
             scene: Scene = self.current_selection.scenes[scene_no]
-            self.geometry_db.save(scene)
+            self.deshake_db.save(scene)
 
-        self.signal_is_saved.emit('geometry_db')
-        print(f"modified_scenes: {self.geometry_db.modified_scene_nos()}")
-        self.signal_modified_scenes.emit(self.geometry_db.modified_scene_nos())
-
-
-    def scene_geometry_stats(self, scene_no: int) -> SceneGeometryStat | None:
-        return self.geometry_stats.get(scene_no)
+        self.signal_is_saved.emit('deshake_db')
+        print(f"modified_scenes: {self.deshake_db.modified_scene_nos()}")
+        self.signal_modified_scenes.emit(self.deshake_db.modified_scene_nos())

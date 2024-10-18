@@ -20,27 +20,27 @@ from PySide6.QtWidgets import (
     QSizePolicy,
 )
 
-from backend._types import GeometryPreviewOptions
+from backend._types import DeshakePreviewOptions
 from utils.p_print import red
 from logger import log
 from .stylesheet import set_stylesheet
-from .widget_geometry import GeometryWidget
+from .widget_deshake import DeshakeWidget
 from .window_common import CommonWindow
 
 if TYPE_CHECKING:
-    from backend.geometry_controller import GeometryController
+    from backend.deshake_controller import DeshakeController
 
 
-class GeometryWindow(CommonWindow):
+class DeshakeWindow(CommonWindow):
     signal_k_ep_p_refreshed = Signal(dict)
     signal_preview_modified = Signal(dict)
 
     def __init__(
         self,
-        controller: GeometryController = None
+        controller: DeshakeController = None
     ):
-        super().__init__(controller, 'geometry')
-        self.controller: GeometryController = controller
+        super().__init__(controller, 'deshake')
+        self.controller: DeshakeController = controller
 
         self.main_widget = QWidget(self)
         self.main_layout = QVBoxLayout(self.main_widget)
@@ -57,15 +57,15 @@ class GeometryWindow(CommonWindow):
         self.verticalLayout.addWidget(self.widget_player_ctrl)
         self.horizontalLayout.addLayout(self.verticalLayout)
 
-        # Geometry
-        self.widget_geometry: GeometryWidget = GeometryWidget(self, controller)
-        self.widgets['geometry'] = self.widget_geometry
+        # Deshake
+        self.widget_deshake: DeshakeWidget = DeshakeWidget(self, controller)
+        self.widgets['deshake'] = self.widget_deshake
 
         self.verticalLayout_tool = QVBoxLayout()
         self.verticalLayout_tool.addItem(
             QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         )
-        self.verticalLayout_tool.addWidget(self.widget_geometry)
+        self.verticalLayout_tool.addWidget(self.widget_deshake)
         self.horizontalLayout.addLayout(self.verticalLayout_tool)
 
         # Selection
@@ -74,10 +74,10 @@ class GeometryWindow(CommonWindow):
         self.main_layout.addLayout(self.horizontalLayout)
         self.setCentralWidget(self.main_widget)
 
-        self.widget_geometry.signal_preview_toggled[bool].connect(
+        self.widget_deshake.signal_preview_toggled[bool].connect(
             self.preview_modified
         )
-        self.widget_geometry.signal_preview_options_changed.connect(
+        self.widget_deshake.signal_preview_options_changed.connect(
             self.preview_options_changed
         )
 
@@ -88,13 +88,13 @@ class GeometryWindow(CommonWindow):
     def apply_user_preferences(self, user_preferences: dict):
         try:
             w: list[int] = user_preferences['window']
-            self.setGeometry(*w['geometry'])
+            self.setDeshake(*w['deshake'])
         except:
-            self.setGeometry(50, 50 , 1920, 1080)
-        # self.setGeometry(0, 0 , 1920, 1080)
+            self.setDeshake(50, 50 , 1920, 1080)
+        # self.setDeshake(0, 0 , 1920, 1080)
         # self.move(QPoint(100,100))
         self.widget_selection.apply_user_preferences(user_preferences)
-        self.widget_geometry.apply_user_preferences(user_preferences)
+        self.widget_deshake.apply_user_preferences(user_preferences)
         self.preview_options_changed()
 
 
@@ -112,10 +112,10 @@ class GeometryWindow(CommonWindow):
         self.display_frame()
 
 
-    @Slot(GeometryPreviewOptions)
+    @Slot(DeshakePreviewOptions)
     def preview_options_changed(self) -> None:
         self.widget_preview.set_preview_options(
-            self.widget_geometry.get_preview_options()
+            self.widget_deshake.get_preview_options()
         )
 
     # def get_preview_options(self):
@@ -128,16 +128,16 @@ class GeometryWindow(CommonWindow):
 
     # def event_preview_options_consolidated(self, new_preview_settings):
     #     # log.info("preview options have been consolidated, refresh widgets")
-    #     self.widget_geometry.refresh_preview_options(new_preview_settings)
+    #     self.widget_deshake.refresh_preview_options(new_preview_settings)
     #     # self.widget_painter.refresh_preview_options(new_preview_settings)
 
     def display_frame(self):
         frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
         self.widget_player_ctrl.refresh_values(frame, original_frame)
 
-        self.widget_preview.update_geometry(self.controller.get_scene_geometry(frame))
+        self.widget_preview.update_deshake(self.controller.get_scene_deshake(frame))
         self.widget_preview.display_frame(frame)
-        self.widget_geometry.refresh_values(frame)
+        self.widget_deshake.refresh_values(frame)
 
 
 
@@ -148,7 +148,7 @@ class GeometryWindow(CommonWindow):
         # print(f"{__name__} received: {key}")
 
         for w in (
-            self.widget_geometry,
+            self.widget_deshake,
             self.widget_player_ctrl,
             # self.widget_preview,
             self.widget_selection
@@ -163,7 +163,7 @@ class GeometryWindow(CommonWindow):
     def keyReleaseEvent(self, event: QKeyEvent) -> None:
         for w in (
             self.widget_player_ctrl,
-            self.widget_geometry,
+            self.widget_deshake,
             # self.widget_preview,
             self.widget_selection
         ):
@@ -180,7 +180,7 @@ class GeometryWindow(CommonWindow):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.Wheel:
             for w in (
-                self.widget_geometry,
+                self.widget_deshake,
                 self.widget_player_ctrl,
                 # self.widget_preview,
                 # self.widget_selection
