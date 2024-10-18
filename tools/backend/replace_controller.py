@@ -186,6 +186,10 @@ class ReplaceController(CommonController):
         self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
 
 
+    def get_nb_of_replacements(self, scene: Scene) -> int:
+        return self.replace_db.get_nb_of_replacements(scene)
+
+
     @Slot(dict)
     def event_replace_removed(self, remove_dict: dict[str, list[int]]) -> None:
         removed_frame_no: list[int] = []

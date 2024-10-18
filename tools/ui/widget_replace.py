@@ -269,10 +269,8 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             print(red("cannot paste to a frame whic is the source of other frames"))
             return False
 
-        print(yellow("copied:"))
-        pprint(self.copied)
-        print(yellow("paste to:"))
-        pprint(self.current_frame)
+        print(yellow("copied:"), self.copied.no)
+        print(yellow("paste to:"), self.current_frame.no)
 
         log.info(f"event: paste to {self.current_frame.no}")
         self.pushButton_discard.setEnabled(True)

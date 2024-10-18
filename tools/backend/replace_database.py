@@ -14,6 +14,7 @@ from parsers import (
     credit_chapter_keys,
     db,
 )
+from utils.p_print import *
 
 
 
@@ -61,10 +62,27 @@ class ReplaceDatabase:
         )
 
 
+    def get_nb_of_replacements(self, scene: Scene) -> int:
+        """Returns nb of replacements for this scene
+        """
+        count: int = 0
+        for src_scene in scene['src'].scenes():
+            _key = self._key(src_scene)
+            if _key in self._db:
+                count += len(self._db[_key].keys())
+            elif 'replace' in src_scene['scene']:
+                count += len(src_scene['scene']['replace'].keys())
+            # print(lightcyan(f"scene: {_key}"))
+            # pprint(src_scene)
+        return count
+
+
     def get_replacements(
         self,
         scene: Scene,
     ) -> dict[int, dict[int, int]]:
+        """Returns all replacement for this scene
+        """
         scene_replace: dict[int, int] = {}
         scene_no: int = scene['no']
         for src_scene in scene['src'].scenes():
