@@ -1,0 +1,75 @@
+{
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/db/ep01": false,
+        "**/db/ep02": false,
+        "**/db/ep03": false,
+        "**/db/ep04": true,
+        "**/db/ep05": true,
+        "**/db/ep06": false,
+        "**/db/ep07": true,
+        "**/db/ep08": true,
+        "**/db/ep09": true,
+        "**/db/ep10": false,
+        "**/db/ep11": false,
+        "**/db/ep12": true,
+        "**/db/ep13": true,
+        "**/db/ep14": true,
+        "**/db/ep15": true,
+        "**/db/ep16": true,
+        "**/db/ep17": true,
+        "**/db/ep18": true,
+        "**/db/ep19": true,
+        "**/db/ep20": true,
+        "**/db/ep21": true,
+        "**/db/ep22": true,
+        "**/db/ep23": true,
+        "**/db/ep24": true,
+        "**/db/ep25": false,
+        "**/db/ep26": true,
+        "**/db/ep27": true,
+        "**/db/ep28": true,
+        "**/db/ep29": true,
+        "**/db/ep30": true,
+        "**/db/ep31": true,
+        "**/db/ep32": true,
+        "**/db/ep33": true,
+        "**/db/ep34": true,
+        "**/db/ep35": true,
+        "**/db/ep36": true,
+        "**/db/ep37": true,
+        "**/db/ep38": true,
+        "**/db/ep39": false,
+        "**/cache": true,
+        "**/frames": true,
+        "**/*.mkv": true,
+        "**/*.mp4": true,
+        "**/*.png": true,
+        "**/*.ui": false,
+        "**/*.ffindex": true,
+        "**/external": true,
+        "**/*.exe": true,
+    },
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": false,
+    "files.trimTrailingWhitespace": true,
+
+    "[python]": {
+        "editor.rulers": [
+            90,
+            120
+        ],
+        // "editor.showUnused": false,
+    },
+
+    "python.analysis.packageIndexDepths": [
+        {
+            "name": "parsers",
+            "depth": 0
+        },
+        {
+            "name": "pynnlib",
+            "depth": 0
+        },
+    ]
+}
