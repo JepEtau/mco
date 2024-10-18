@@ -62,4 +62,14 @@
         // "editor.showUnused": false,
     },
 
+    "python.analysis.packageIndexDepths": [
+        {
+            "name": "parsers",
+            "depth": 0
+        },
+        {
+            "name": "pynnlib",
+            "depth": 0
+        },
+    ]
 }

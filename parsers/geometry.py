@@ -100,18 +100,19 @@ class SceneGeometry:
         self._in_size = in_size
 
 
-    def calculate_transformation(self) -> TransformationValues | None :
+    def calculate_transformation(self, ch_width: int | None = None) -> TransformationValues | None :
         to_43_params: ConvertTo43Params = ConvertTo43Params(
             crop=self.get_crop(),
             keep_ratio=self.keep_ratio,
             fit_to_width=self.fit_to_width,
             final_height=FINAL_HEIGHT,
-            scene_width=self.chapter.width,
+            scene_width=self.chapter.width if ch_width is None else ch_width,
         )
 
         if self._in_size is None:
             raise ValueError(red("missing input size"))
 
+        self.transformation = None
         try:
             self.transformation = calculate_transformation_values(
                 in_w=self._in_size[1],
@@ -126,6 +127,11 @@ class SceneGeometry:
         return self.transformation
 
 
+    def is_erroneous(self):
+        return bool(
+            self.transformation is None
+            or self.transformation.err_borders is not None
+        )
 
 
 

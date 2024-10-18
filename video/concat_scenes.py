@@ -27,7 +27,7 @@ def concat_scenes(
         scenes into a single video clips
     """
 
-    verbose: bool = False
+    verbose: bool = True
     if 'scenes' not in video:
         return
     scenes: list[Scene] = video['scenes']
@@ -61,7 +61,7 @@ def concat_scenes(
     # Last task is the suffix
     task: ProcessingTask = video['task']
     cache_directory: str = db[k_ep_or_g]['cache_path']
-    suffix = '' if task == '' else f"_{task.name}"
+    suffix = '' if task in ('', 'final') else f"_{task.name}"
     concat_fp: str = ''
 
     if len(scenes) > 1:
@@ -83,18 +83,22 @@ def concat_scenes(
 
         # Output video file
         os.makedirs(os.path.join(cache_directory, "video"), exist_ok=True)
-        _task_name: str = 'lr' if task.name == 'sim' else task.name
-        vsettings: VideoSettings = db['common']['video_format'][_task_name]
-        ext: str = vcodec_to_extension[vsettings.codec]
-        out_video: str = os.path.join(
-            cache_directory,
-            "video",
-            f"{prefix}_{hashcode}{suffix}{lang_str}{ext}"
-        )
+        pprint(video['task'])
+        out_video_fp: str = video['task'].video_file
+
+        # _task_name: str = 'lr' if task.name == 'sim' else task.name
+        # vsettings: VideoSettings = db['common']['video_format'][_task_name]
+        # ext: str = vcodec_to_extension[vsettings.codec]
+        # raise NotImplementedError
+        # out_video_fp: str = os.path.join(
+        #     cache_directory,
+        #     "video",
+        #     f"{prefix}{suffix}{lang_str}{ext}"
+        # )
 
         if verbose:
-            print(f"{k_ch}: concatenate scenes into a single clip: {out_video}")
-        main_logger.debug(f"\t{out_video}")
+            print(f"{k_ch}: concatenate scenes into a single clip: {out_video_fp}")
+        main_logger.debug(f"\t{out_video_fp}")
         # Concatenate scenes into a single video
         ffmpeg_command: list[str] = [
             ffmpeg_exe,
@@ -104,7 +108,7 @@ def concat_scenes(
             "-safe", "0",
             "-i", concat_fp,
             "-c", "copy",
-            "-y", out_video
+            "-y", out_video_fp
         ]
         if verbose:
             print(lightgrey(' '.join(ffmpeg_command)))
@@ -120,14 +124,14 @@ def concat_scenes(
             "concat",
             f"{prefix}_{hashcode}{suffix}.txt"
         )
-        out_video: str = os.path.join(
+        out_video_fp: str = os.path.join(
             cache_directory,
             "video",
             f"{prefix}_{hashcode}{suffix}{lang_str}.mkv"
         )
 
 
-    task.video_file = out_video
+    # task.video_file = out_video_fp
     task.concat_file = concat_fp
 
 

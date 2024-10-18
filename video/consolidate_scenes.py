@@ -39,7 +39,7 @@ def get_chapter_video(k_ep: str, k_ch: str) -> ChapterVideo | None:
 def consolidate_scenes(
     episode: str,
     single_chapter: Chapter,
-    scene_no: int | None = None,
+    scene_no: int = -1,
     task: TaskName = '',
     debug: bool = False,
     symlink: bool = False,
@@ -66,7 +66,7 @@ def consolidate_scenes(
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
         for scene in scenes:
-            if scene_no is not None and scene_no != -1 and scene['no'] != scene_no:
+            if scene_no != -1 and scene['no'] != scene_no:
                 continue
             pprint_scene_mapping(scene)
 
@@ -105,6 +105,7 @@ def consolidate_scenes(
             ch_geometry_stats: ChGeometryStats = ChGeometryStats()
             for scene in scenes:
                 ch_geometry_stats.append(scene)
+            print(f"chapter width: {ch_video['geometry'].width}")
             print(f"valid scenes: {ch_geometry_stats.valid_scenes()}")
             print(f"erroneous scenes: {ch_geometry_stats.erroneous_scenes()}")
             print(f"undefined scenes: {ch_geometry_stats.undefined_scenes()}")

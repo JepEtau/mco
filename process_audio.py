@@ -80,7 +80,7 @@ def main():
         print(f"Episode: {episode}")
     if chapter != '':
         print("Chapter: %s" % (chapter))
-    print(f"Language: {'en' if arguments.en else 'fr'}")
+    print(f"Language: {arguments.lang}")
     print("Tasks:")
     print("\t- parse database")
 
@@ -98,7 +98,7 @@ def main():
     elif process == 'generate':
         print("extract, generate")
 
-    stats = parse_database(episode=episode, lang='en' if arguments.en else 'fr')
+    stats = parse_database(episode=episode, lang=arguments.lang)
     gc.collect()
 
     # Process

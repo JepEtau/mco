@@ -26,8 +26,8 @@ def main():
     parser.add_argument(
         "--scene",
         "-s",
-        type=str,
-        default='',
+        type=int,
+        default=-1,
         required=False,
         help="scene no. to process. Integer or frame value (e.g. 2450f)"
     )
@@ -44,13 +44,6 @@ def main():
         action="store_true",
         required=False,
         help="Simulate the process"
-    )
-
-    parser.add_argument(
-        "--stats",
-        action="store_true",
-        required=False,
-        help="Statistics to find the dimension of the scene for each chapter"
     )
 
     arguments = parser.parse_args()
@@ -82,13 +75,7 @@ def main():
     gc.collect()
 
 
-    scene_no: int | None = None
-    scene_arg: str = arguments.scene
-    if scene_arg.endswith('f'):
-        raise NotImplementedError("scene_arg not yet implemented")
-        scene_no = frame_to_scene_no(int(scene_arg[:-1]))
-    elif scene_arg != '':
-        scene_no: int = int(scene_arg)
+    scene_no: int = arguments.scene
 
     task = 'final'
     final_scenes(
@@ -99,11 +86,10 @@ def main():
         force=arguments.force,
         simulation=arguments.simulate,
         debug=arguments.debug,
-        stats=arguments.stats
     )
 
-    if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == -1:
-        # Merge audio and video files
+
+    if arguments.chapter in ('g_debut', 'g_fin') and scene_no == -1:
         combine_av_tracks(
             episode=arguments.episode,
             chapter=arguments.chapter,

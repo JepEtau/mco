@@ -86,7 +86,7 @@ class ColorSettings:
     colorspace: str = 'bt709'
     color_primaries: str = 'bt709'
     color_trc: str = 'bt709'
-    color_range: str = 'tv'
+    color_range: str = 'limited'
 
 
 

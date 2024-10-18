@@ -9,19 +9,24 @@ import sys
 import time
 import numpy as np
 from processing.detect_inner_rect import detect_inner_rect
-from processing.resize_to_4_3 import ConvertTo43Params, calculate_transformation_values, resize_to_4_3
+from processing.resize_to_4_3 import ConvertTo43Params, TransformationValues, calculate_transformation_values, resize_to_4_3
 from parsers import (
+    FINAL_WIDTH,
     ColorSettings,
     db,
     ProcessingTask,
     SceneGeometry,
     TaskName,
     VideoSettings,
+    FINAL_HEIGHT,
 )
 from processing.effects import apply_effect
 from utils.logger import main_logger
-from utils.mco_types import McoFrame, Scene
+from utils.mco_types import McoFrame, Scene, ChapterVideo
 from utils.mco_utils import (
+    get_target_video,
+    is_first_scene,
+    is_last_scene,
     run_simple_command
 )
 from utils.p_print import *
@@ -31,7 +36,9 @@ from utils.tools import ffmpeg_exe
 from utils.media import VideoInfo, extract_media_info, str_to_video_codec, vcodec_to_extension
 
 
-def stdin_to_shared(
+
+
+def decode(
     i: int,
     in_size: int,
     in_pipe_dtype: np.dtype,
@@ -39,7 +46,33 @@ def stdin_to_shared(
     out_pipe_dtype: np.dtype,
     multiplier: float,
     ffmpeg_subprocess: subprocess.Popen,
-    detect_inner_rect_params,
+    lock_array: list[mp.Lock],
+) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
+    with lock_array[i]:
+        stream = ffmpeg_subprocess.stdout.read(in_size)
+        lock_array[i+1].release()
+    img = np.frombuffer(stream, dtype=in_pipe_dtype).reshape(in_pipe_shape)
+    in_img: np.ndarray = img
+    # print(f"convert: {in_pipe_dtype} -> {out_pipe_dtype} ({multiplier})")
+    if in_pipe_dtype != out_pipe_dtype:
+        if multiplier > 1:
+            in_img = img.astype(out_pipe_dtype)
+            in_img *= multiplier
+        elif multiplier < 1:
+            in_img = img * multiplier
+            in_img = in_img.astype(out_pipe_dtype)
+    return in_img
+
+
+def decode_and_ac_detect(
+    i: int,
+    in_size: int,
+    in_pipe_dtype: np.dtype,
+    in_pipe_shape: tuple[int],
+    out_pipe_dtype: np.dtype,
+    multiplier: float,
+    ffmpeg_subprocess: subprocess.Popen,
+    detect_params,
     lock_array: list[mp.Lock],
     debug: bool = False
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
@@ -59,7 +92,7 @@ def stdin_to_shared(
 
     coords, debug_img = detect_inner_rect(
         in_img,
-        detect_inner_rect_params,
+        detect_params,
         do_output_img=debug
     )
     # print(f"stdin_to_shared: {in_img.shape}, {in_pipe_dtype} -> {in_img.dtype}")
@@ -107,7 +140,6 @@ def generate_final_scene(
     scene: Scene,
     force: bool = False,
     debug: bool = False,
-    stats: bool = False
 ) -> bool:
     debug_scene: bool = False
 
@@ -118,7 +150,6 @@ def generate_final_scene(
     # Output directory
     final_directory: str = path_split(scene['task'].video_file)[0]
     os.makedirs(final_directory, exist_ok=True)
-
 
     # In/out files
     in_video_fp: str = scene['task'].in_video_file
@@ -155,25 +186,26 @@ def generate_final_scene(
     #     in_pipe_pixfmt = 'bgr48'
     #     in_pipe_nbytes: int = 2 * math.prod(in_pipe_shape)
 
+    print(lightcyan(f"Input:"))
+    print(f"  video file: {in_video_fp}")
+    print(f"  frame_count: {in_video_info['frame_count']}")
+    print(f"  dimensions: {in_w}x{in_h}")
+    print(f"  pixfmt: {in_video_info['pix_fmt']}")
+    print(f"  pipe dtype: {in_pipe_dtype}")
+    print(f"  pipe pixfmt: {in_pipe_pixfmt}")
+    print(f"  pipe nbytes: {in_pipe_nbytes}")
 
-    print(f"IN: video file: {in_video_fp}")
-    print(f"IN: frame_count: {in_video_info['frame_count']}")
-    print(f"IN: dimensions: {in_w}x{in_h}")
-    print(f"IN: pixfmt: {in_video_info['pix_fmt']}")
-    print(f"IN: pipe dtype: {in_pipe_dtype}")
-    print(f"IN: pipe pixfmt: {in_pipe_pixfmt}")
-    print(f"IN: pipe nbytes: {in_pipe_nbytes}")
-
-    print(f"OUT: video file: {out_video_fp}")
-    print(f"OUT: pixfmt: {vsettings.pix_fmt}")
-    print(f"OUT: pipe dtype: {out_pipe_dtype}")
-    print(f"OUT: pipe pixfmt: {out_pipe_pixfmt}")
+    print(lightcyan(f"Output:"))
+    print(f"  video file: {out_video_fp}")
+    print(f"  pixfmt: {vsettings.pix_fmt}")
+    print(f"  pipe dtype: {out_pipe_dtype}")
+    print(f"  pipe pixfmt: {out_pipe_pixfmt}")
 
 
-    print(f"DST: frame_count: {scene['dst']['count']}")
-
+    print(lightcyan(f"Processing:"))
+    print(f"  frame_count: {scene['dst']['count']}")
     if scene['dst']['count'] != in_video_info['frame_count']:
-        if True:
+        if False:
             print(red(
                 f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
             ))
@@ -182,132 +214,157 @@ def generate_final_scene(
                 f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
             ))
 
-    start_time: int = time.time()
-
-    # Decoder
-    d_command: list[str] = [
-        ffmpeg_exe,
-        "-hide_banner",
-        "-loglevel", "warning",
-        "-nostats",
-        "-i", in_video_fp,
-
-        "-f", "image2pipe",
-        "-pix_fmt", in_pipe_pixfmt,
-        "-vcodec", "rawvideo",
-        "-"
-    ]
-    decoder_subprocess: subprocess.Popen = None
-    try:
-        decoder_subprocess = subprocess.Popen(
-            d_command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-        )
-    except Exception as e:
-        print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
-        return False
-
-
     # Scene geometry
     geometry: SceneGeometry = scene['geometry']
+    geometry.set_in_size(in_pipe_shape[:2])
     ch_width = geometry.chapter.width
-    out_h, out_w = 1080, 1440
-    print(f"chapter: width: {ch_width}")
-    print(f"final dimension: {out_w}x{out_h}")
-
-    coordinates: list[np.ndarray] = []
-
-    ofc: int = int(3 * mp.cpu_count() / 4)
-    locks = [mp.Lock() for _ in range(ofc + 1)]
-    executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
-
-    # Change pixel value range
-    # Normalize pixel range
-    multiplier: float = 1.
-    if in_pipe_dtype != out_pipe_dtype:
-        num = float(np.iinfo(out_pipe_dtype).max)
-        denum = float(np.iinfo(in_pipe_dtype).max)
-        multiplier: float = num / denum
-    print(f"multiplier: {multiplier}")
-    pprint(geometry.detection_params)
-
-
-    # Extract all images
-    remaining: int = scene['dst']['count']
-    in_images: list[np.ndarray] = []
-    write_index : int = 0
+    out_h, out_w = FINAL_HEIGHT, FINAL_WIDTH
+    print(f"  chapter width: {ch_width}")
+    print(f"  final dimension: {out_w}x{out_h}")
     debug_imgs: list[np.ndarray] = []
 
-    start_time: int = time.time()
-    while remaining > 0:
-        count = min(remaining, ofc)
-
-        for l in locks:
-            l.acquire(block=False)
-        locks[0].release()
-        for img, coords, debug_img in executor.map(
-            lambda i: stdin_to_shared(
-                i,
-                in_pipe_nbytes,
-                in_pipe_dtype,
-                in_pipe_shape,
-                out_pipe_dtype,
-                multiplier,
-                decoder_subprocess,
-                geometry.detection_params,
-                locks,
-                debug=debug_scene
-            ),
-            range(count)
-        ):
-            in_images.append(img)
-            if coords is not None:
-                if filtered_coord(coordinates, coords):
-                    coordinates.append(coords)
-                else:
-                    print(f"not valid coords: {coords}")
-            if debug_img is not None:
-                debug_imgs.append(debug_img)
-
-        remaining -= count
-        write_index += count
-    elapsed_time = time.time() - start_time
-
-    pprint(coordinates)
-    print("min:", np.min(coordinates, axis=0))
-    print("max:", np.max(coordinates, axis=0))
-    min_coords: np.ndarray = np.min(coordinates, axis=0)
-    max_coords: np.ndarray = np.max(coordinates, axis=0)
-    x0, x1 = max_coords[0], min_coords[1]
-    y0, y1 = max_coords[2], min_coords[3]
-    autocrop = [y0,  in_h - y1, x0, in_w - x1]
-
-    print(yellow("final, autocrop:"), f"{autocrop}")
-    print(f"read/autocrop in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:.1f}fps)")
-
-    # Update scene parameters for stats
-    if stats:
-        print("stats")
-        return True
-
-    to_43_params: ConvertTo43Params = ConvertTo43Params(
-        crop=autocrop if not geometry.use_autocrop else geometry.crop,
-        keep_ratio=geometry.keep_ratio,
-        fit_to_width=geometry.fit_to_width,
-        final_height=out_h,
-        scene_width=ch_width
-    )
-    pprint(to_43_params)
-    transformation = calculate_transformation_values(
-        in_w=in_w,
-        in_h=in_h,
-        out_w=out_w,
-        params=to_43_params,
-        verbose=True
+    has_effects: bool = (
+        'effects' in scene.keys()
+        and scene['effects'].has_effects()
     )
 
+    # if geometry.use_autocrop and has_effects:
+    vsettings: VideoSettings = db['common']['video_format']['final']
+    do_decode: bool = (
+        (
+            geometry.use_autocrop
+            and any([c <= vsettings.pad for c in geometry.autocrop])
+        )
+        or has_effects
+    )
+    if do_decode:
+        d_command: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "warning",
+            "-nostats",
+            "-i", in_video_fp,
+
+            "-f", "image2pipe",
+            "-pix_fmt", in_pipe_pixfmt,
+            "-vcodec", "rawvideo",
+            "-"
+        ]
+        decoder_subprocess: subprocess.Popen = None
+        try:
+            decoder_subprocess = subprocess.Popen(
+                d_command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except Exception as e:
+            print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+            return False
+
+
+        coordinates: list[np.ndarray] = []
+
+        ofc: int = int(3 * mp.cpu_count() / 4)
+        locks = [mp.Lock() for _ in range(ofc + 1)]
+        executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
+
+        # Change pixel value range
+        # Normalize pixel range
+        multiplier: float = 1.
+        if in_pipe_dtype != out_pipe_dtype:
+            num = float(np.iinfo(out_pipe_dtype).max)
+            denum = float(np.iinfo(in_pipe_dtype).max)
+            multiplier: float = num / denum
+            print(f"multiplier: {multiplier}")
+
+        # Extract all images
+        remaining: int = scene['dst']['count']
+        in_images: list[np.ndarray] = []
+        write_index : int = 0
+
+        start_time: int = time.time()
+        if geometry.use_autocrop:
+            pprint(geometry.detection_params)
+            debug_imgs: list[np.ndarray] = []
+            while remaining > 0:
+                count = min(remaining, ofc)
+                for l in locks:
+                    l.acquire(block=False)
+                locks[0].release()
+                for img, coords, debug_img in executor.map(
+                    lambda i: decode_and_ac_detect(
+                        i,
+                        in_pipe_nbytes,
+                        in_pipe_dtype,
+                        in_pipe_shape,
+                        out_pipe_dtype,
+                        multiplier,
+                        decoder_subprocess,
+                        geometry.detection_params,
+                        locks,
+                        debug=debug_scene
+                    ),
+                    range(count)
+                ):
+                    in_images.append(img)
+                    if coords is not None:
+                        coordinates.append(coords)
+                        # if filtered_coord(coordinates, coords):
+                        #     coordinates.append(coords)
+                        # else:
+                        #     print(f"not valid coords: {coords}")
+                    if debug_img is not None:
+                        debug_imgs.append(debug_img)
+                remaining -= count
+                write_index += count
+            pprint(coordinates)
+            print("  min:", np.min(coordinates, axis=0))
+            print("  max:", np.max(coordinates, axis=0))
+            min_coords: np.ndarray = np.min(coordinates, axis=0)
+            max_coords: np.ndarray = np.max(coordinates, axis=0)
+            x0, x1 = max_coords[0], min_coords[1]
+            y0, y1 = max_coords[2], min_coords[3]
+            autocrop = [y0,  in_h - y1, x0, in_w - x1]
+
+            elapsed_time = time.time() - start_time
+            print(yellow("geometry, autocrop:"), f"{geometry.autocrop}")
+            print(yellow("final, autocrop:"), f"{autocrop}")
+
+
+            print(f"read/autocrop in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:.1f}fps)")
+            geometry.autocrop = autocrop
+
+        else:
+            while remaining > 0:
+                count = min(remaining, ofc)
+                for l in locks:
+                    l.acquire(block=False)
+                locks[0].release()
+                for img in executor.map(
+                    lambda i: decode(
+                        i,
+                        in_pipe_nbytes,
+                        in_pipe_dtype,
+                        in_pipe_shape,
+                        out_pipe_dtype,
+                        multiplier,
+                        decoder_subprocess,
+                        locks,
+                    ),
+                    range(count)
+                ):
+                    in_images.append(img)
+                remaining -= count
+                write_index += count
+
+
+    # Geometry transformations
+    transformation: TransformationValues = geometry.calculate_transformation()
+    pprint(transformation)
+    if transformation.err_borders is not None:
+        raise ValueError(red("Erroneous chapter width"))
+    # Create a video file for debug
     if debug and debug_imgs:
         # Draw rectangle
         print(f"debug: {in_w}x{in_h}, {len(debug_imgs)} images")
@@ -349,25 +406,28 @@ def generate_final_scene(
                 print(f"{scene_key} stderr:")
                 pprint(stderr)
 
-
-
-    # Colorspace
+    # Colorspace, output is x264 so it's working like that
     colorspace: list[str] = []
     for k, v in ColorSettings().__dict__.items():
         colorspace.extend([f"-{k}:v", v])
 
     # Note: this could have be done with FFmpeg filter but as sson
     # as some effects could be used (loop, fade in, fadeout)
-    if (
-        ('effects' not in scene.keys() or not scene['effects'].has_effects())
-        # and False
-    ):
+    ch_video: ChapterVideo = get_target_video(scene)
+    if is_first_scene(scene):
+        print(lightcyan("first scene"))
+        pprint(ch_video['avsync'])
+        if ch_video['avsync'] != 0:
+            raise NotImplementedError("avsync not yet supported")
+
+    if not has_effects:
         print(f"{scene_key}: no effects")
         filters: list[str] = []
 
         # (1)
-        w1, h1 = x1 - x0, y1 - y0
-        filters.append(f"crop={w1}:{h1}:{x0}:{y0}")
+        c_t, c_b, c_l, c_r = transformation.crop
+        w1, h1 = in_w - (c_l + c_r), in_h - (c_t + c_b)
+        filters.append(f"crop={w1}:{h1}:{c_l}:{c_t}")
 
         # (2)
         w2, h2 = transformation.resize_to
@@ -441,8 +501,8 @@ def generate_final_scene(
         ]
 
         # Add metadata
-        encoder_command.extend(["-movflags", "use_metadata_tags"])
         if len(vsettings.metadata.keys()):
+            encoder_command.extend(["-movflags", "use_metadata_tags"])
             for k, v in vsettings.metadata.items():
                 encoder_command.extend(["-metadata:s:v:0", f"{k}={v}"])
 
@@ -455,10 +515,11 @@ def generate_final_scene(
 
     else:
         print(f"{scene_key} has effects")
-        out_imgs: list[np.ndarray] = [
-            resize_to_4_3(img, transformation=transformation)
-            for img in in_images
-        ]
+        out_imgs: list[np.ndarray] = []
+        for out_img in executor.map(
+            lambda img: resize_to_4_3(img, transformation), in_images
+        ):
+            out_imgs.append(out_img)
         print(len(out_imgs))
         print(out_imgs[0].shape)
 
@@ -477,24 +538,24 @@ def generate_final_scene(
 
             "-vcodec", str_to_video_codec[vsettings.codec].value,
             "-pix_fmt", vsettings.pix_fmt,
-            *colorspace,
-            *vsettings.codec_options
+            *vsettings.codec_options,
+            *colorspace
         ]
 
         # Add metadata
-        encoder_command.extend(["-movflags", "use_metadata_tags"])
-        if len(vsettings.metadata.keys()):
-            for k, v in vsettings.metadata.items():
-                encoder_command.extend(["-metadata:s:v:0", f"{k}={v}"])
+        # encoder_command.extend(["-movflags", "use_metadata_tags"])
+        # if len(vsettings.metadata.keys()):
+        #     for k, v in vsettings.metadata.items():
+        #         encoder_command.extend(["-metadata:s:v:0", f"{k}={v}"])
 
         # Output filename
         encoder_command.extend([out_video_fp, "-y"])
         os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
         print(purple(f"[V] encoder command: "), " ".join(encoder_command))
 
-        encoder_subproces: subprocess.Popen = None
+        enc_subprocess: subprocess.Popen = None
         try:
-            encoder_subproces = subprocess.Popen(
+            enc_subprocess = subprocess.Popen(
                 encoder_command,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
@@ -521,15 +582,28 @@ def generate_final_scene(
             )
             if isinstance(out_frames, list):
                 print(yellow(f"\t{produced}: send {len(out_frames)} frames"))
-                [encoder_subproces.stdin.write(f.img) for f in out_frames]
+                [enc_subprocess.stdin.write(f.img) for f in out_frames]
                 produced += len(out_frames)
             else:
                 print(yellow(f"\t{produced}: send {out_frames.no}"))
-                encoder_subproces.stdin.write(out_frames.img)
+                enc_subprocess.stdin.write(out_frames.img)
                 produced += 1
 
+
+        print(f"produced {produced} frames")
+        if is_last_scene(scene):
+            if 'silence' in ch_video and ch_video['silence'] > 0:
+                print(f"silence!!! {ch_video['silence']}")
+                img_black = np.zeros(
+                    (FINAL_HEIGHT, FINAL_WIDTH, 3), dtype=out_pipe_dtype
+                )
+                [enc_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
+
+                produced += ch_video['silence']
+                print(f"produced w/ silence: {produced}")
+
         stderr_bytes: bytes | None = None
-        _, stderr_bytes = encoder_subproces.communicate(timeout=10)
+        _, stderr_bytes = enc_subprocess.communicate(timeout=10)
         if stderr_bytes is not None:
             stderr = stderr_bytes.decode('utf-8)')
             # TODO: parse the output file
@@ -537,11 +611,9 @@ def generate_final_scene(
                 print(f"{scene_key} stderr:")
                 pprint(stderr)
 
-        print(f"generated {produced} frames")
 
 
-    sys.exit()
-
+    return True
 
 
 def filtered_coord(coordinates: np.ndarray, coords: np.ndarray) -> bool:

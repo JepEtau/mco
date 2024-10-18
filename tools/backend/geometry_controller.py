@@ -30,6 +30,8 @@ from ui.window_geometry import GeometryWindow
 from utils.mco_types import ChapterVideo, Scene
 from utils.p_print import *
 from parsers import (
+    SceneGeometry,
+    SceneGeometryStat,
     db,
     TaskName,
     ChGeometryStats,
@@ -185,6 +187,7 @@ class GeometryController(CommonController):
         self.geometry_stats.update(
             {'no': scene_no, 'geometry': new_geometry[k].scene}
         )
+        # TODO: update erroneous margins
         self.signal_reload_frame.emit()
         print(yellow(f"modified scenes: {self.geometry_db.modified_scene_nos()}"))
         self.signal_modified_scenes.emit(self.geometry_db.modified_scene_nos())
@@ -204,15 +207,13 @@ class GeometryController(CommonController):
         start_time: int = time.time()
         for i, f in enumerate(self.frame_cache.get(scene=scene)):
             # start a thread for detection
-            coords, dbg_img = detect_inner_rect(
+            coords, _ = detect_inner_rect(
                 img=f.img,
                 params=params,
                 index=i,
                 do_output_img=False,
             )
             coordinates.append(coords)
-            # if dbg_img is not None:
-            #     f.img = dbg_img
 
         elapsed_time = time.time() - start_time
         in_h, in_w = f.img.shape[:2]

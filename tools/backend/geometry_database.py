@@ -126,6 +126,10 @@ class GeometryDatabase:
         }
 
 
+    def get_scene_geometry(self, scene: Scene) -> SceneGeometry:
+        return self._db[self._key(scene)]
+
+
     def _push_to_history(self):
         self.history.append({
             '_db': deepcopy(self._db),

@@ -1,5 +1,8 @@
 from __future__ import annotations
+from pprint import pprint
 from typing import TYPE_CHECKING
+
+import numpy as np
 
 from processing.resize_to_4_3 import TransformationValues
 from utils.media import VideoInfo, extract_media_info
@@ -88,11 +91,7 @@ class SceneGeometryStat:
         self.geometry: SceneGeometry = scene_geometry
         scene_geometry.set_in_size(self.in_size)
         self.transformation: TransformationValues | None = self.geometry.calculate_transformation()
-
-        self._is_erroneous: bool = bool(
-            self.transformation is None
-            or self.transformation.err_borders is not None
-        )
+        self._is_erroneous: bool = self.geometry.is_erroneous()
 
 
 

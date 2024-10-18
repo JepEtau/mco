@@ -309,13 +309,8 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                 for column_no, column in enumerate(self.columns):
                     item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
 
-                    # Stabilized
-                    if column[0] == 'st':
-                        item_text: str = "x" if is_scene_stabilized(scene) else ""
-                        self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
-
                     # Is defined
-                    elif column[0] == 'def':
+                    if column[0] == 'def':
                         item_text: str = "x" if sc_geometry is not None and sc_geometry.is_defined() else "-"
                         self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
 
@@ -499,7 +494,12 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
                 # Stabilized
                 elif column[0] == 'st':
-                    item_text: str = "x" if is_scene_stabilized(scene) else ""
+                    item_text: str = ""
+                    stab = is_scene_stabilized(scene)
+                    if stab is None:
+                        item_text = "?"
+                    elif stab:
+                        item_text = "x"
                     self.tableWidget_scenes.setItem(row_no, column_no, QTableWidgetItem(item_text))
                     item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
                     item.setTextAlignment(column[2])

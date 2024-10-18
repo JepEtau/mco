@@ -28,8 +28,11 @@ from utils.p_print import *
 from utils.path_utils import absolute_path
 
 
-def is_scene_stabilized(scene: Scene):
-    st_fp: str = scene['task'].fallback_in_video_files['st']
+def is_scene_stabilized(scene: Scene) -> bool | None:
+    try:
+        st_fp: str = scene['task'].fallback_in_video_files['st']
+    except:
+        return None
     return os.path.isfile(st_fp) and not os.path.islink(st_fp)
 
 

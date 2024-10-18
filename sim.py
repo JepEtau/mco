@@ -81,7 +81,7 @@ def main():
     parse_database(episode=episode, lang=arguments.lang)
     gc.collect()
 
-
+    scene_no: int = arguments.scene
     task = 'sim'
 
     generate_lr_scenes(
@@ -90,14 +90,15 @@ def main():
         task_name=task,
         force=arguments.force,
         simulation=arguments.simulate,
-        scene_no=arguments.scene,
+        scene_no=scene_no,
         watermark=arguments.watermark,
         debug=arguments.debug
     )
 
 
-    if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == -1:
-        # Merge audio and video files
+    print(lightcyan("Combine audio and video tracks"))
+    if arguments.chapter in ('g_debut', 'g_fin') and scene_no == -1:
+        print(lightcyan("Combine audio and video tracks:"), arguments.chapter)
         combine_av_tracks(
             episode=arguments.episode,
             chapter=arguments.chapter,

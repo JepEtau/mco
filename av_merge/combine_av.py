@@ -17,6 +17,7 @@ from utils.mco_path import makedirs
 from utils.p_print import *
 from utils.path_utils import absolute_path
 from utils.tools import ffprobe_exe, ffmpeg_exe
+from video.consolidate_scenes import get_chapter_video
 
 
 def get_video_duration(filename: str, integrity: bool = True) -> tuple[float, int]:
@@ -66,9 +67,9 @@ def combine_av_tracks(
         k_ep_or_g = chapter
     else:
         k_ep_or_g = ep_key(episode)
+    print(lightcyan("Combine audio and video tracks:"), f"{k_ep_or_g}")
 
     # Output filepath
-    print(lightgreen(f"Merge audio and video tracks:"), lightcyan(f"{k_ep_or_g}"))
     cache_path = db[k_ep_or_g]['cache_path']
 
     language: str = db[k_ep_or_g]['audio']['lang']
@@ -86,15 +87,10 @@ def combine_av_tracks(
 
     # Get nb of frames from video stream
     if k_ep_or_g in ('g_debut', 'g_fin'):
-        db_video: ChapterVideo = db[k_ep_or_g]['video']
-        video_filepath = os.path.join(
-            cache_path,
-            "video",
-            f"{k_ep_or_g}_video_{db_video['task'].hashcode}{suffix}{language}.mkv"
-        )
-
+        ch_video: ChapterVideo = get_chapter_video(episode, chapter)
+        video_fp: str = ch_video['task'].video_file
     else:
-        video_filepath = os.path.join(
+        video_fp = os.path.join(
             cache_path,
             "video",
             f"{k_ep_or_g}_video{language}.mkv"
@@ -103,16 +99,17 @@ def combine_av_tracks(
     video_frames_count: int = 0
     try:
         if not simulation:
-            _, video_frames_count = get_video_duration(video_filepath, integrity=False)
+            print(f"get video frame count: {video_fp}")
+            _, video_frames_count = get_video_duration(video_fp, integrity=False)
     except:
         pass
 
     # Get equivalent nb of frames from audio stream
-    audio_filepath = os.path.join(
+    audio_fp = os.path.join(
         db['common']['directories']['audio'],
         f"{k_ep_or_g}_audio{language}.{db['common']['settings']['audio_format']}"
     )
-    print(yellow(audio_filepath))
+    print(yellow(audio_fp))
     audio_frames_count: int = 0
     try:
         if not simulation:
@@ -121,8 +118,8 @@ def combine_av_tracks(
         k_ep_or_g: str = f"episode {episode}" if chapter == '' else chapter
         raise RuntimeError(f"No valid audio for {k_ep_or_g}")
 
-    print(f"\tvideo: {video_filepath}: {video_frames_count}")
-    print(f"\taudio: {audio_filepath}: {audio_frames_count}")
+    print(f"\tvideo: {video_fp}: {video_frames_count}")
+    print(f"\taudio: {audio_fp}: {audio_frames_count}")
     print(f"\tAV file: {audio_video_filepath}")
 
     # Cannot continue if nb of frames differ
@@ -134,8 +131,8 @@ def combine_av_tracks(
         ffmpeg_exe,
         "-hide_banner",
         "-loglevel", "warning",
-        "-i", video_filepath,
-        "-i", audio_filepath,
+        "-i", video_fp,
+        "-i", audio_fp,
         "-c:v", "copy",
         "-c:a", "copy",
         "-y", audio_video_filepath
