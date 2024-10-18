@@ -10,7 +10,7 @@ from utils.p_print import *
 from utils.tools import ffmpeg_exe
 from parsers import (
     db,
-    key,
+    ep_key,
     ProcessingTask,
     VideoSettings,
 )
@@ -33,7 +33,7 @@ def concat_scenes(
     scenes: list[Scene] = video['scenes']
     if not scenes:
         return
-    k_ep, k_ch = key(episode), chapter
+    k_ep, k_ch = ep_key(episode), chapter
     try:
         hashcode: str = video['task'].hashcode
     except:

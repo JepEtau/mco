@@ -7,7 +7,7 @@ from parsers import (
     db,
     Chapter,
     get_fps,
-    key,
+    ep_key,
     main_chapter_keys,
     ProcessingTask,
 )
@@ -110,7 +110,7 @@ def generate_video_concat_file(
         Returns:
           Concatenation file path
     """
-    k_ep, k_ch = key(episode), chapter
+    k_ep, k_ch = ep_key(episode), chapter
     verbose: bool = False
     main_logger.debug(f"create_video_concat_file {k_ep}:{k_ch}")
 

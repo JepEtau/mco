@@ -9,7 +9,7 @@ from parsers import (
     db,
     Chapter,
     all_chapter_keys,
-    key,
+    ep_key,
     TaskName,
     ProcessingTask,
     pprint_scene_mapping,
@@ -45,7 +45,7 @@ def consolidate_scenes(
     symlink: bool = False,
     geometry_stats: bool = False,
 ):
-    k_ep = key(episode)
+    k_ep = ep_key(episode)
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
 
     if k_ep == '' and single_chapter not in ('g_debut', 'g_fin'):

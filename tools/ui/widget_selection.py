@@ -48,7 +48,7 @@ from import_parsers import *
 from utils.p_print import *
 from parsers import (
     all_chapter_keys,
-    key,
+    ep_key,
     SceneGeometryStat
 )
 
@@ -634,7 +634,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         k_ep = ''
         selected_ep_str = self.comboBox_episode.currentText()
         if selected_ep_str not in ['', ' ']:
-            k_ep = key(int(self.comboBox_episode.currentText()))
+            k_ep = ep_key(int(self.comboBox_episode.currentText()))
 
         selection: Selection = Selection(
             k_ep=k_ep,

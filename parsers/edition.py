@@ -7,7 +7,7 @@ from pprint import pprint
 import re
 from utils.p_print import *
 from utils.path_utils import absolute_path, get_extension
-from ._keys import key
+from ._keys import ep_key
 from .logger import logger
 from ._db import db, database_path
 
@@ -96,7 +96,7 @@ def parse_editions(verbose=False):
                         if tmp.group(1) == folder:
                             # single episode or first episode in this file
                             ep_no = int(tmp.group(2))
-                            k_ep = key(ep_no)
+                            k_ep = ep_key(ep_no)
                             # Video with or w/out audio
                             extension: str = get_extension(filename)
                             if extension in (".mkv", ".mpg"):
@@ -108,7 +108,7 @@ def parse_editions(verbose=False):
                                 if tmp.group(3) is not None:
                                     # multiple episode in this file
                                     for i in range(ep_no+1, int(tmp.group(3))+1):
-                                        k_ep = key(i)
+                                        k_ep = ep_key(i)
                                         inputs['video'][k_ep] = filepath
                                         if k_ep not in inputs['audio']:
                                             # use this file by default as the audio src
@@ -119,7 +119,7 @@ def parse_editions(verbose=False):
                                 if tmp.group(3) is not None:
                                     # multiple episode in this file
                                     for i in range(ep_no+1, int(tmp.group(3))+1):
-                                        inputs['audio'][key(i)] = filepath
+                                        inputs['audio'][ep_key(i)] = filepath
                         else:
                             print("Error: prefix differs from edition %s vs %s" % (tmp.group(1), folder))
 

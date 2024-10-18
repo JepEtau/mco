@@ -10,7 +10,7 @@ from utils.time_conversions import (
 from parsers import (
     db,
     get_fps,
-    key,
+    ep_key,
     logger,
     main_chapter_keys,
 )
@@ -50,7 +50,7 @@ def generate_audio_track(
         return
 
     # Source
-    k_ed, k_ep = db_audio['src']['k_ed'], key(episode)
+    k_ed, k_ep = db_audio['src']['k_ed'], ep_key(episode)
     logger.debug(f"extract audio from {k_ed}:{k_ep}")
 
     # Extract audio file if needed

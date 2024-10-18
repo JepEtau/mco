@@ -1,7 +1,7 @@
 import os
 from parsers import (
     db,
-    key,
+    ep_key,
     TaskName,
     get_fps
 )
@@ -37,7 +37,7 @@ def add_chapters(
     task: TaskName,
     simulation:bool=False
 ) -> None:
-    k_ep: str = key(episode)
+    k_ep: str = ep_key(episode)
     fps = get_fps(db)
 
     # Add chapters to the video file

@@ -18,7 +18,7 @@ from parsers import (
     db,
     Chapter,
     all_chapter_keys,
-    key,
+    ep_key,
     TaskName,
     ProcessingTask,
     pprint_scene_mapping,
@@ -42,7 +42,7 @@ def generate_lr_scenes(
     edition: str | None = None,
     debug: bool = False
 ):
-    k_ep = key(episode)
+    k_ep = ep_key(episode)
     k_ed = edition
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
 

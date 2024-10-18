@@ -16,7 +16,7 @@ from parsers import (
     db,
     Chapter,
     all_chapter_keys,
-    key,
+    ep_key,
     TaskName,
     ProcessingTask,
 )
@@ -32,7 +32,7 @@ def st_scenes(
     force: bool = False,
     debug: bool = False,
 ):
-    k_ep = key(episode)
+    k_ep = ep_key(episode)
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
 
     do_concatenate_video: bool = (

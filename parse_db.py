@@ -9,7 +9,7 @@ from parsers import (
     db,
     Chapter,
     all_chapter_keys,
-    key,
+    ep_key,
     ProcessingTask,
     TaskName,
     pprint_scene_mapping,
@@ -90,7 +90,7 @@ def main():
 
     # print(db.keys())
     # pprint(db['common'])
-    k_ep = key(episode)
+    k_ep = ep_key(episode)
     task: TaskName = 'lr'
 
     single_chapter: Chapter = arguments.chapter

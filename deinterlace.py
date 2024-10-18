@@ -11,7 +11,7 @@ from typing import OrderedDict
 from parsers import (
     db,
     logger as parse_logger,
-    key,
+    ep_key,
     parse_database,
     all_chapter_keys,
     get_dependencies,
@@ -142,7 +142,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
     )
     gc.collect()
 
-    ep: str = key(episode)
+    ep: str = ep_key(episode)
     # Dependencies
     dependencies = get_dependencies(
         episode=ep,

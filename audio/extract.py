@@ -2,7 +2,7 @@ import os
 import sys
 from parsers import (
     db,
-    key,
+    ep_key,
     logger,
 )
 from utils.p_print import *
@@ -19,7 +19,7 @@ def extract_audio_track(
     force: bool = False
 ) -> str:
     print("Extracting audio from input files")
-    k_ep: str = key(episode)
+    k_ep: str = ep_key(episode)
 
     if chapter in ('g_debut', 'g_fin'):
         k_src = db[chapter]['audio']['src']['k_ep']

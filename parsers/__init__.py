@@ -21,7 +21,7 @@ from .helpers import (
 )
 from ._keys import (
     Chapter,
-    key,
+    ep_key,
     main_chapter_keys,
     credit_chapter_keys,
     all_chapter_keys,
@@ -56,7 +56,7 @@ __all__ = [
     "logger",
     "parse_database",
     "Database",
-    "key",
+    "ep_key",
     "main_chapter_keys",
     "credit_chapter_keys",
     "all_chapter_keys",

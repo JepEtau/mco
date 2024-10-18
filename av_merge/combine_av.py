@@ -5,7 +5,7 @@ import os
 from pprint import pprint
 from parsers import (
     db,
-    key,
+    ep_key,
     get_fps,
     TaskName
 )
@@ -65,7 +65,7 @@ def combine_av_tracks(
     if chapter in ('g_debut', 'g_fin') or episode is None:
         k_ep_or_g = chapter
     else:
-        k_ep_or_g = key(episode)
+        k_ep_or_g = ep_key(episode)
 
     # Output filepath
     print(lightgreen(f"Merge audio and video tracks:"), lightcyan(f"{k_ep_or_g}"))
@@ -153,7 +153,7 @@ def concatenate_all(
     task: TaskName,
     simulation: bool = False
 ) -> None:
-    k_ep: str = key(episode)
+    k_ep: str = ep_key(episode)
     print(lightgreen(f"Concatenate all A/V files:"), lightcyan(f"{k_ep}"))
 
     language = db[k_ep]['audio']['lang']

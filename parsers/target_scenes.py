@@ -14,7 +14,7 @@ from scene.src_scene import (
     SrcScenes
 )
 from ._db import db
-from ._types import key
+from ._types import ep_key
 
 
 def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
@@ -37,7 +37,7 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
         None
 
     """
-    k_ep = key(k_ep)
+    k_ep = ep_key(k_ep)
     K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = ['', '', 0]
     # K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = 'ep01', 'episode', 0
 
@@ -182,7 +182,7 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter: str) -> None:
     (opening, precedemment, asuivre, end)
     The total duration (in frames) is updated
     """
-    k_ep: str = key(k_ep)
+    k_ep: str = ep_key(k_ep)
     fps = get_fps(db)
     logger.debug(lightgreen(f"consolidate_target_scenes_g: {k_ep}:{k_chapter}"))
 

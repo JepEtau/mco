@@ -3,7 +3,7 @@ from configparser import ConfigParser
 import re
 import sys
 from ._keys import (
-    key,
+    ep_key,
     main_chapter_keys
 )
 from .helpers import(
@@ -122,7 +122,7 @@ def parse_audio_section(
     config: ConfigParser,
     k_section: str,
 ) -> None:
-    k_ep = key(episode)
+    k_ep = ep_key(episode)
     db_audio = db[k_ep]['audio']
     fps: float = get_fps(db)
 

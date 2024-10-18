@@ -23,7 +23,7 @@ from parsers import (
     db,
     Chapter,
     all_chapter_keys,
-    key,
+    ep_key,
     TaskName,
     ProcessingTask,
     Filter,
@@ -45,7 +45,7 @@ def upscale_scenes(
     debug: bool = False,
     evaluation: bool = False,
 ):
-    k_ep = key(episode)
+    k_ep = ep_key(episode)
     k_ed = edition
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
 

@@ -9,7 +9,7 @@ from audio import (
 )
 from parsers import (
     db,
-    key,
+    ep_key,
     logger,
     parse_database,
 )
@@ -169,7 +169,7 @@ def main():
 
     # Verify generated audio file
     if arguments.stats:
-        _episode = key(episode) if episode != 0 and chapter not in ('g_debut', 'g_fin') else None
+        _episode = ep_key(episode) if episode != 0 and chapter not in ('g_debut', 'g_fin') else None
         _chapter = chapter if _episode is not None else chapter
         print(f"\nVerify generated audio file: {_episode}:{_chapter}")
         frame_count = get_audio_frame_count(

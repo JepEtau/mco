@@ -6,7 +6,7 @@ import sys
 
 from utils.mco_types import ChapterVideo, Effect, Effects, Scene
 from ._keys import (
-    key,
+    ep_key,
     all_chapter_keys,
     non_credit_chapter_keys,
     main_chapter_keys,
@@ -47,7 +47,7 @@ def parse_video_target(
     config: ConfigParser,
     k_section,
 ) -> None:
-    k_ep: str = key(episode)
+    k_ep: str = ep_key(episode)
     db_video = db[k_ep]['video']['target']
     fps: float = get_fps(db)
 

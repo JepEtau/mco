@@ -3,12 +3,12 @@ from configparser import ConfigParser
 from pprint import pprint
 import re
 import sys
-from ._keys import all_chapter_keys, key
+from ._keys import all_chapter_keys, ep_key
 from utils.p_print import *
 from utils.mco_types import Effect, Effects, ChapterVideo, Scene
 from scene.src_scene import SrcScenes
 from ._db import db
-from ._keys import key
+from ._keys import ep_key
 
 
 
@@ -65,6 +65,7 @@ def parse_scenes(
                 if d[0] == 'filters':
                     # custom filter
                     scenes[scene_no]['filters_id'] = d[1]
+                    sys.exit("custom_filter")
 
                 elif d[0] == 'ed':
                     # edition that will be used to generate this scene
@@ -79,20 +80,20 @@ def parse_scenes(
                     src = d[1].split(':')
                     if len(src) == 3:
                         scenes[scene_no]['src'].update({
-                            'k_ep': key(int(src[0])),
+                            'k_ep': ep_key(int(src[0])),
                             'start': int(src[1]),
                             'count': int(src[2]),
                         })
                     elif len(src) == 2:
                         scenes[scene_no]['src'].update({
-                            'k_ep': key(int(src[0])),
+                            'k_ep': ep_key(int(src[0])),
                             'start': int(src[1]),
 # 2022-11-13: replacement does not work: to verify
                             'count': -1
                         })
                     else:
                         scenes[scene_no]['src'].update({
-                            'k_ep': key(int(src[0])),
+                            'k_ep': ep_key(int(src[0])),
                             'start': start,
 # 2022-11-13: replacement does not work: to verify
                             'count': -1
@@ -299,7 +300,7 @@ def parse_target_scenelist(
                     k_ed = v
 
                 elif k == 'ep':
-                    k_ep = key(int(v))
+                    k_ep = ep_key(int(v))
 
                 elif k == 'chapter':
                     if v in all_chapter_keys():

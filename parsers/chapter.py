@@ -4,7 +4,7 @@ import sys
 
 from utils.mco_types import Effect, Effects
 from .helpers import get_fps
-from ._keys import key
+from ._keys import ep_key
 
 
 
@@ -15,7 +15,7 @@ def parse_chapter_sections(
     config,
 ):
     k_section = 'chapters'
-    db_video = db[key(episode)]['video'][edition]
+    db_video = db[ep_key(episode)]['video'][edition]
     fps: float = get_fps(db)
 
     for k_chapter in config.options(k_section):

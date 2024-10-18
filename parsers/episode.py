@@ -32,7 +32,7 @@ from ._keys import (
     all_chapter_keys,
     main_chapter_keys,
     non_credit_chapter_keys,
-    key
+    ep_key
 )
 from .helpers import nested_dict_set
 from utils.p_print import *
@@ -49,7 +49,7 @@ def db_init_episodes(k_ed, ep_min: int = 1, ep_max: int = 39, force: bool = True
     inputs: dict = db['editions'][k_ed]['inputs']
 
     # Add specific episode nb when g_debut/g_fin are in separate input video
-    k_eps: list[str] = list(map(key, range(ep_min, min(40, ep_max+1))))
+    k_eps: list[str] = list(map(ep_key, range(ep_min, min(40, ep_max+1))))
     k_eps.append('ep99')
 
     for k_ep in k_eps:
@@ -93,7 +93,7 @@ def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
     language = db['common']['settings']['language']
 
     for no in range(ep_min, min(40, ep_max+1)):
-        k_ep = key(no)
+        k_ep = ep_key(no)
 
         nested_dict_set(db, {}, k_ep, 'video', 'common')
         db_ep_common = db[k_ep]['video']['common']
@@ -195,7 +195,7 @@ def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
 #===========================================================================
 def parse_episode(k_ed: str, k_ep: str | int):
     verbose = False
-    k_ep: str = key(k_ep)
+    k_ep: str = ep_key(k_ep)
 
     logger.debug(lightgreen(f"parse_episode: {k_ed}:{k_ep}"))
 
@@ -357,7 +357,7 @@ def get_episode_dependencies(
     this episode
 
     """
-    k_ep: str = key(episode)
+    k_ep: str = ep_key(episode)
     dependencies: OrderedDict[str, set] = OrderedDict()
     if k_ep == 'ep99':
         return dependencies

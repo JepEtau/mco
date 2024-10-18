@@ -7,7 +7,7 @@ import time
 from parsers import (
     db,
     logger,
-    key,
+    ep_key,
     get_fps,
 )
 from utils.p_print import *
@@ -86,7 +86,7 @@ def get_output_filepath(
         k = chapter
         logger.debug(lightgreen(f"{__name__}: {k}"))
     else:
-        k = key(episode)
+        k = ep_key(episode)
         logger.debug(lightgreen(f"{__name__}: {k}:{chapter}"))
 
     db_audio = db[k]['audio']

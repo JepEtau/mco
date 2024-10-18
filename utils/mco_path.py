@@ -8,7 +8,7 @@ from utils.mco_types import Scene
 from parsers import Chapter
 from utils.p_print import *
 from parsers import (
-    key, db, task_to_dirname, TaskName, TASK_NAMES
+    ep_key, db, task_to_dirname, TaskName, TASK_NAMES
 )
 from .logger import main_logger
 
@@ -20,7 +20,7 @@ def makedirs(
 ):
     """ Create a directory that contains all video clips or the concatenation files
     """
-    k_ep = key(episode)
+    k_ep = ep_key(episode)
     if k_ep in ['ep00', 'ep40']:
         return
 

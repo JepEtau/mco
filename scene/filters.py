@@ -40,6 +40,7 @@ def get_filters(scene: Scene) -> list[Filter]:
 
     if verbose:
         print(lightgreen(f"get filters from scene: {k_ed}:{k_ep}:{k_ch}, no. {scene['no']:03}, start: {scene['start']}"))
+        pprint(scene)
 
     if scene['filters_id'] == 'default':
         if verbose:
@@ -80,5 +81,8 @@ def get_filters(scene: Scene) -> list[Filter]:
         print(red(f"Error: no filters defined for {k_ed}:{k_ep}:{k_ch}, no. {scene['no']:03}"))
         sys.exit()
 
+    # if verbose:
+    #     pprint(filters)
+    #     raise NotImplementedError(f"it was filters for scene: {':'.join((k_ed, k_ep, k_ch))}")
     return filters
 

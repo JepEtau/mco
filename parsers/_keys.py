@@ -4,7 +4,7 @@
 from typing import Literal
 
 
-def key(value: int | str) -> str | None:
+def ep_key(value: int | str) -> str | None:
     if isinstance(value, int):
         return None if value == 0 else f"ep{value:02}"
     return value

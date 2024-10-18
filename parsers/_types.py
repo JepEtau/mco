@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Literal, get_args
-from ._keys import key
+from ._keys import ep_key
 
 
 class Db:
@@ -150,16 +150,16 @@ class Edition:
     v_files: dict[str, str]
 
     def get_audio_file(self, ep: int | str) -> str:
-        return self.a_files[key(ep)]
+        return self.a_files[ep_key(ep)]
 
     def get_video_file(self, ep: int | str) -> str:
-        return self.a_files[key(ep)]
+        return self.a_files[ep_key(ep)]
 
     def set_audio_file(self, ep: int | str) -> str:
-        return self.a_files[key(ep)]
+        return self.a_files[ep_key(ep)]
 
     def set_video_file(self, ep: int | str) -> str:
-        return self.a_files[key(ep)]
+        return self.a_files[ep_key(ep)]
 
 
 

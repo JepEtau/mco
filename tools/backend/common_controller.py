@@ -16,7 +16,7 @@ from utils.p_print import *
 from parsers import (
     parse_database,
     all_chapter_keys,
-    key,
+    ep_key,
     db,
     TaskName
 )
@@ -94,7 +94,7 @@ class CommonController(QObject, metaclass=QMeta):
     def get_available_episode_and_parts(self) -> dict[str, list]:
         episode_and_parts: dict[str, list] = {}
         for no in range(1, 40):
-            k_ep = key(no)
+            k_ep = ep_key(no)
             # if os.path.exists(os.path.join(path_cache, k_ep)):
             episode_and_parts[k_ep] = list(all_chapter_keys())
 
@@ -134,7 +134,7 @@ class CommonController(QObject, metaclass=QMeta):
         self.current_selection = Selection(
             k_ep='', k_ch=''
         )
-        k_ep = key(p['selection']['episode'])
+        k_ep = ep_key(p['selection']['episode'])
         k_ch: str = p['selection']['k_ch']
         new_selection: Selection = Selection(
             k_ep=k_ep if k_ep not in ('', 'ep') else 'ep01',
