@@ -1,120 +1,93 @@
 
 # MCO / MCoG: restoration
 
+## Cheat sheet
 
-## Installation
-- Install miniconda
-- Create a conda environment
+### Installation
 ```sh
-conda create -n m python==3.11.8
-```
-
-- Activate the environment
-```sh
+conda create -n m python==3.12.7
 conda activate mco
-```
-
-- **Install python packages**
-```sh
 pip install -r requirements.txt
-```
-- To upgrade packages (if needed): `pip install -r requirements.txt --upgrade`
-
-- **Install external tools**
-```sh
 python install.py
 ```
 
-## Usage
-- Activate the conda env
-- Run a python script
-- Options available for every script
-    - `--help`: print the help message and available options
-    - `--episode`: episode no.
-    - `--chapter`: process a specific chapter, may be ignored to process all chapters. Translation for english users.
-        - g_debut: opening credits
-        - precedemment: previously
-        - episode: episode
-        - g_asuivre: title of the 'to follow' chapter
-        - asuivre: to follow
-        - g_documentaire: title of the 'documentary' chapter
-        - documentaire: 'documentary'
-        - g_fin: end credits
-    - `--en`: english edition
-    - `--debug`: print the log
 
+### Tasks
 
-## 0. Verification: check database for corruption
-Examples:
-
-- Episode:
-```sh
-python parse_db.py --episode 1
-```
-- Opening credits:
+- Parse
 ```sh
 python parse_db.py --chapter g_debut
+python parse_db.py --chapter g_debut --en
+python parse_db.py --episode 1
 ```
-- Episode: for english edition
+
+- Audio
 ```sh
-python parse_db.py --episode 1 --en
+python audio.py --chapter g_debut
+python audio.py --chapter g_debut --en
+python audio.py --chapter g_fin
+python audio.py --episode 1
 ```
 
+- Simulate in lowres
+```sh
+python lr.py --watermark --chapter g_debut
+python lr.py --watermark --chapter g_fin
+python lr.py --watermark --episode 1
+```
 
-## 1. Generate audio tracks
-Examples:
-- Opening/Ending credits:
-    ```sh
-    python process_audio.py --chapter g_debut
-    python process_audio.py --chapter g_fin
-    ```
+- Simulate (1080p, no frame replace/upscale/deshake/color grading/geometry)
+```sh
+python sim.py --chapter g_debut
+python sim.py --chapter g_fin
+python sim.py --episode 1
+```
 
-- Episode:
-    ```sh
-    python process_audio.py --episode 1
-    ```
+- Upscale for comparisons
+```sh
+python upscale.py --chapter g_debut
+python upscale.py --chapter g_fin
+python upscale.py --episode 1
+```
 
-Notes:
-- The audio tracks of the opening/end credits are automatically generated when generating the audio of an episode
-- It is possible to overwrite the previously generated audio tracks by appending `--force` to the command line
+- Generate hr
+```sh
+python hr.py --chapter g_debut
+python hr.py --chapter g_fin
+python hr.py --episode 1
+```
 
+- Convert from DNxHD h264 video after stabilization for comparisons
+```sh
+python hr.py --chapter g_debut
+python hr.py --chapter g_fin
+python hr.py --episode 1
+```
 
-## (Generate Low Resolution video)
-- Opening/Ending credits
-    ```sh
-    python generate_lr.py --chapter g_debut
-    python generate_lr.py --chapter g_fin
-    ```
+- Temporal filtering
+```sh
+python tf.py --chapter g_debut
+python tf.py --chapter g_fin
+python tf.py --episode 1
+```
 
-- Episode
-    ```sh
-    python generate_lr.py --episode 1
-    ```
+- Create symbolic links for color grading
+```sh
+python symlink.py --chapter g_debut
+python symlink.py --chapter g_fin
+python symlink.py --episode 1
+```
 
-## 2. Upscale
-- Credits
-    ```sh
-    python upscale.py --chapter g_debut
-    ```
+- Validate geometry after color grading, print some stats
+```sh
+python geometry.py --chapter g_debut
+python geometry.py --chapter g_fin
+python geometry.py --episode 1
+```
 
-- Episode
-    ```sh
-    python generate_lr.py --episode 1
-    ```
-
-Note: g_asuivre not yet supported
-
-
-## (Simulate final version)
-Like lr but:
-- resize to 1080p (1440x1080)
-- add some effects (overlay)
-
-simulate_final.py
-
-What is not done:
-- NN upscale
-- stabilization
-- temporal filtering
-- color grade
-- final crop/resize
+- Final
+```sh
+python final.py --chapter g_debut
+python final.py --chapter g_fin
+python final.py --episode 1
+```
