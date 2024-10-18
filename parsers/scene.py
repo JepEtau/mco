@@ -12,6 +12,17 @@ from ._keys import ep_key
 
 
 
+def scene_key(scene: Scene) -> str:
+    if 'dst' in scene:
+        k_ch: str = scene['dst']['k_ch']
+        if k_ch in ('g_debut', 'g_fin'):
+            return f"{k_ch}:{scene['no']:03}"
+        return f"{scene['dst']['k_ep']}:{k_ch}:{scene['no']:03}"
+
+    # This is a source scene
+    return f"{scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}:{scene['no']:03}"
+
+
 def parse_scenes(
     k_ed: str,
     k_ep: str,

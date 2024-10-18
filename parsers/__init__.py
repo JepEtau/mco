@@ -47,6 +47,9 @@ from .geometry_stats import (
     ChGeometryStats,
 )
 
+from .scene import (
+    scene_key,
+)
 
 
 
@@ -72,6 +75,10 @@ __all__ = [
     "VideoSettings",
     "pprint_scene_mapping",
     "ColorSettings",
+
+    "scene_key",
+
+
     "FINAL_HEIGHT",
     "FINAL_WIDTH",
 

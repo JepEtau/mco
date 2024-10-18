@@ -73,16 +73,6 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
             # # Save images after this filter
             if f.startswith('*'):
                 f = f[1:]
-            #     task_filter.save = True
-
-            # # Get the node id
-            # if f.startswith('id:'):
-            #     result = re.match(re.compile(r"id:([a-z0-9_-]+),(.+)$"), f)
-            #     if result is not None:
-            #         step_dict['id'] = result.group(1)
-            #         f = result.group(2)
-            #     else:
-            #         sys.exit(red(f"Error parsing filters: [{f}]"))
 
             task_filter: Filter | None = None
             if (result := re.search(re.compile(r"^([a-z_]+):(.+)$"), f)):

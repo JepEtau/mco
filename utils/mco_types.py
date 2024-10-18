@@ -12,7 +12,8 @@ if TYPE_CHECKING:
         ProcessingTask,
         Filter,
         TaskName,
-        SceneGeometry
+        SceneGeometry,
+        ChapterGeometry,
     )
     from nn_inference.threads.t_decoder import VideoStreamInfo
     from scene.src_scene import SrcScenes
