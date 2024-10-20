@@ -8,7 +8,7 @@ from pathlib import (
 from pprint import pprint
 import sys
 
-from .scene import get_scene_from_frame_no
+from .scenes import get_scene_from_frame_no
 from .helpers import nested_dict_set
 from utils.p_print import *
 from ._db import db

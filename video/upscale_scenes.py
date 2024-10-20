@@ -1,4 +1,5 @@
 import math
+import re
 import numpy as np
 import subprocess
 import sys
@@ -11,6 +12,7 @@ from nn_inference.threads.t_decoder import VideoStreamInfo
 from parsers._types import VideoSettings
 from parsers.p_print import pprint_scene_mapping
 from processing.upscale import UpscalePipeline
+from processing import supported_filters
 from scene.consolidate import consolidate_scene
 from scene.src_scene import SrcScene
 from utils.hash import calc_hash
@@ -120,21 +122,49 @@ def upscale_scenes(
             if not is_up_to_date(scene) or force:
 
                 # Get all models
-                filters: Filter = scene['filters'][scene['task'].name]
+                scene_filters: Filter = scene['filters'][scene['task'].name]
                 src_scene: SrcScene = scene['src'].primary_scene()
-                if filters.sequence == '':
+                if scene_filters.sequence == '':
                     raise ValueError(red(
                         f"No filter defined for scene {src_scene['k_ed_ep_ch_no']}"
                     ))
 
-                if len(filters.steps) != 0:
+                if len(scene_filters.steps) != 0:
                     print(yellow(f"sequence already parsed: scene {src_scene['k_ed_ep_ch_no']}"))
+                pprint(scene_filters)
 
-                for model in filters.sequence.split(','):
+                # regex = rf"^({'|'.join(supported_filters)})"
+                for filter_str in scene_filters.sequence.split(','):
+                    # if (result := re.search(re.compile(regex), filter_str)):
+                    if filter_str.startswith(supported_filters):
+                        print(lightgreen("supported:"), filter_str)
+                        # filter_params = ()
+                        params: list[str] = filter_str.split("=")
+                        # scene_filters.steps.append((result.group(1),))
+                        filter_name = params[0]
+                        filter_params: str | float | None = None
+                        if len(params) is not None:
+                            filter_params = None
+
+                        if filter_name == 'resize':
+                            filter_params = float(params[1])
+                        elif len(params) == 1:
+                            filter_params = None
+                        else:
+                            filter_params = params[1]
+
+                        scene_filters.steps.append(
+                            (params[0], filter_params)
+                        )
+                        continue
+
+                    model: str = filter_str
                     model_key = model_manager.register(model)
                     if model_key is None:
                         raise ValueError(red(f"[E] {model} is not a valid model"))
-                    filters.steps.append(model_key)
+                    scene_filters.steps.append(model_key)
+
+                pprint(scene_filters)
 
                 scenes_to_upscale.append(scene)
                 total_frames += (
@@ -210,58 +240,11 @@ def upscale_scenes(
             pprint(scene)
             print(lightcyan("==============================================================================="))
 
-    if False:
-        command: str = [
-            ffmpeg_exe,
-            "-hide_banner",
-            "-loglevel", "warning",
-            "-nostats",
-            "-ss", "3:48",
-            "-i", scenes_to_upscale[0]['inputs']['progressive']['filepath'],
-            "-t", "1",
-            "-f", "image2pipe",
-            "-pix_fmt", 'bgr24',
-            "-vcodec", "rawvideo",
-            "-"
-        ]
-        print(' '.join(command))
-
-        sub_process: subprocess.Popen | None = None
-        try:
-            sub_process = subprocess.Popen(
-                command,
-                stdin=subprocess.PIPE,
-                stdout=subprocess.PIPE,
-                # stderr=sys.stdout,
-            )
-        except Exception as e:
-            print(f"[E] Unexpected error: {type(e)}", flush=True)
-
-        stdin_img_size = 768*576*3
-        in_dtype = np.uint8
-        i = 0
-        # print(f"img size: {stdin_img_size}")
-        while True:
-            try:
-                img: np.ndarray = np.frombuffer(
-                    sub_process.stdout.read(stdin_img_size),
-                    dtype=in_dtype
-                ).reshape((576, 768, 3))
-                # print(i)
-                # write_image(f"test{i:05}.png", img)
-                i += 1
-                # if i == 25:
-                #     break
-            except:
-                break
-
 
     device: str = 'cuda'
-    fp16: bool = True
 
     pipeline = UpscalePipeline(
         device,
-        fp16,
         scenes=scenes_to_upscale,
         total_frames=total_frames,
         debug=debug,

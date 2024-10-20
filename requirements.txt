@@ -3,3 +3,4 @@ rich
 scipy
 soundfile
 opencv-python
+PySide6_Essentials

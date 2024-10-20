@@ -14,18 +14,18 @@ if TYPE_CHECKING:
         VideoSettings,
     )
 
-def get_ffmpeg_pad_filter(scene: Scene) -> list[str]:
+def get_ffmpeg_pad_color_filter(scene: Scene) -> str:
     vsettings: VideoSettings = scene['task'].video_settings
+    color_params: str = "setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709"
+    # color_conv: str = "scale=in_color_matrix=bt601:out_color_matrix=bt709:flags=full_chroma_int+accurate_rnd"
 
-    ffmpeg_filter: list[str] = []
     if vsettings.pad != 0:
         pad: int = vsettings.pad
         pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
-        ffmpeg_filter: list[str] = [
-            "-filter_complex", f"[0:v]{pad_filter}[outv]",
-            "-map", "[outv]"
-        ]
-    return ffmpeg_filter
+        return f"{pad_filter}"
+
+    else:
+        return ""
 
 
 def do_watermark(scene: Scene) -> bool:
@@ -73,9 +73,9 @@ def get_filters(scene: Scene) -> list[Filter]:
         try:
             filters = chapter_video['filters'][scene['filters_id']]
         except:
-            print(red(f"Error: {s_key}, filter {scene['filters']} not found"))
             print(red(f"\tdefined filters: {list(chapter_video['filters'].keys())}"))
             print(orange(f"\tfallback: using default"))
+            raise ValueError(red(f"Error: {s_key}, filter {scene['filters']} not found"))
             filters = chapter_video['filters']['default']
     else:
         # This scene may default filters, but to be validated

@@ -14,12 +14,14 @@ from parsers import (
     TaskName,
     pprint_scene_mapping,
 )
+from scene.consolidate import consolidate_scene
 from utils.arg_parser import common_argument_parser
 from utils.mco_types import (
     Scene,
     ChapterVideo,
 )
 from utils.p_print import *
+from video.consolidate_scenes import get_chapter_video
 
 
 def main():
@@ -93,24 +95,11 @@ def main():
     k_ep = ep_key(episode)
     task: TaskName = 'lr'
 
-    single_chapter: Chapter = arguments.chapter
-    chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
+    k_ch: Chapter = arguments.chapter
+    chapters: Chapter = all_chapter_keys() if k_ch == '' else [k_ch]
     for chapter in chapters:
         print(lightcyan(f"{chapter}"))
-        chapter_video: ChapterVideo
-        if chapter in ('g_debut', 'g_fin'):
-            chapter_video = db[chapter]['video']
-        elif k_ep == 'ep00':
-            sys.exit(red("Missing episode no."))
-        elif chapter in db[k_ep]['video']['target']:
-            chapter_video = db[k_ep]['video']['target'][chapter]
-        else:
-            continue
-
-        if 'count' not in chapter_video:
-            pprint(chapter_video)
-        if chapter_video['count'] <= 0:
-            continue
+        chapter_video: ChapterVideo = get_chapter_video(k_ep, k_ch)
         chapter_video['task'] = ProcessingTask(name=task)
 
         # Walk through target scenes
@@ -137,9 +126,16 @@ def main():
         print(f"  Reference: {ref_count}")
         print(f"  Target: {target_count}")
 
+
         # pprint(chapter_video)
-        # print(lightcyan(f"Scene no. 0"))
-        # pprint(scenes[-1])
+        print(lightcyan(f"Scene no. 4"))
+        ch_video: ChapterVideo | None = get_chapter_video(k_ep, k_ch)
+        if ch_video is None:
+            continue
+
+        consolidate_scene(scenes[4], task_name=task)
+        pprint(ch_video.keys())
+        pprint(scenes[4])
 
         # for scene in scenes:
         #     print(lightcyan(f"Scene no. {scene['no']}"))

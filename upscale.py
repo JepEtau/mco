@@ -72,6 +72,7 @@ def main():
 
     parser.add_argument(
         "--eval",
+        "-e",
         action="store_true",
         required=False,
         help="Append the model name to the output filename"
@@ -97,7 +98,7 @@ def main():
         print(f"Episode: {episode}")
     if chapter != '':
         print("Chapter: %s" % (chapter))
-    print(f"Language: {'en' if arguments.en else 'fr'}")
+    print(f"Language: {arguments.lang}")
     print("Tasks:")
     print("\t- parse database")
 
@@ -106,7 +107,7 @@ def main():
         episode = arguments.episode
     parse_database(
         episode=episode,
-        lang='en' if arguments.en else 'fr',
+        lang=arguments.lang,
         edition=arguments.edition,
     )
     gc.collect()

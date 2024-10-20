@@ -120,7 +120,7 @@ class Filter:
     # id: str | None = None
     task_name: str = ''
     size: tuple[int, int] = ()
-    steps: list = field(default_factory=list)
+    steps: list[Any] = field(default_factory=list)
 
 
 @dataclass

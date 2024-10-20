@@ -11,4 +11,4 @@ python .\_utils\patch_ui.py --file .\ui\ui\ui_widget_selection.py
 :: pyside6-uic .\tools\logger\ui_logger.ui -o tools\logger\ui_logger.py
 :: python .\tools\resources\patch_ui.py --file .\tools\logger\ui_logger.py
 
-python geometry.py -t st
+python geometry.py -t cg

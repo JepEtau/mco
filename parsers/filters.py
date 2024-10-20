@@ -31,10 +31,13 @@ def clean_ffmpeg_filter(data: str) -> str:
 
 
 def parse_filters(db_video, config: ConfigParser, k_section: str):
+    """Only parse filters, no verifications.
+    This is done when consolidating the scene
+    """
     verbose = True
     if verbose:
         print(lightcyan(f"Parse_filters:"))
-        print(green(f"\tsection: {k_section}"))
+        print(green(f"  section: {k_section}"))
         if k_section.startswith('filters'):
             for k_option in config.options(k_section):
                 print(
@@ -51,15 +54,15 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
         sys.exit()
 
     for k_option in config.options(k_section):
-        if k_option != 'default' and not k_option.isdecimal():
-            # Not allowed
-            if verbose:
-                print(yellow("\tDiscarded"))
-            print(red(f"\tError: filter {k_section}/{k_option}"))
-            return
+        # if k_option != 'default' and not k_option.isdecimal():
+        #     # Not allowed
+        #     if verbose:
+        #         print(yellow("\tDiscarded"))
+        #     print(red(f"\tError: filter {k_section}/{k_option}"))
+        #     return
 
         if verbose:
-            print(green(f"\tparse filter {k_section}/{k_option}"))
+            print(green(f"\tparse filter {k_section}:{k_option}"))
         # Convert filter str to a list of dict
         filters_str: str = config.get(k_section, k_option)
         filters: list[str] = (
@@ -69,10 +72,6 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
         pprint(filters)
         scene_filters: dict[TaskName, Filter] = {}
         for f in filters:
-
-            # # Save images after this filter
-            if f.startswith('*'):
-                f = f[1:]
 
             task_filter: Filter | None = None
             if (result := re.search(re.compile(r"^([a-z_]+):(.+)$"), f)):
@@ -97,7 +96,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
                 raise ValueError("Unrecognized filter")
 
             if task_filter.task_name not in TASK_NAMES:
-                print(yellow(f"[W] {task_filter.task_name} is not a valid task name"))
+                print(red(f"[W] {task_filter.task_name} is not a valid task name"))
                 continue
 
             if task_filter.task_name is not None:

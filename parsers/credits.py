@@ -15,9 +15,12 @@ from typing import Literal
 from utils.mco_types import ChapterVideo
 from utils.path_utils import absolute_path
 from .audio import parse_audio_g
-from .scene import parse_target_scenelist
+from .scenes import parse_target_scenelist
 from .video_target import parse_video_target_g
-from ._keys import credit_chapter_keys
+from ._keys import (
+    credit_chapter_keys,
+    ep_key,
+)
 from utils.p_print import *
 from ._db import db
 
@@ -187,9 +190,9 @@ def parse_generiques(k_ed: str, verbose=False):
                     # Episode used as reference
                     if k_option == 'episode':
                         sys.exit("parse_generiques: to remove?")
-                        k_episode = 'ep%02d' % (int(value_str))
-                        db_generique['video']['ep'] = k_episode
-                        db_generique['video']['input'] = db['editions'][k_ed]['inputs'][k_episode]
+                        k_ep = ep_key(value_str)
+                        db_generique['video']['ep'] = k_ep
+                        db_generique['video']['input'] = db['editions'][k_ed]['inputs'][k_ep]
 
 
             # Audio

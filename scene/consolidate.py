@@ -2,6 +2,7 @@ from __future__ import annotations
 from copy import deepcopy
 import os
 from pprint import pprint
+import re
 import sys
 from utils.hash import calc_hash
 from utils.mco_types import (
@@ -188,8 +189,13 @@ def consolidate_scene(
             ':cuda', ':trt', ':fp16', ':fp32'
         ):
             sequence = sequence.replace(t, '')
-        model_name=sequence.split(',')[-1]
-        suffix = f"{suffix}_{model_name}"
+        suffix: str = ""
+        for s in sequence.split(','):
+            print(s)
+            if (result := re.search(re.compile(r"(.*)="), s)):
+                suffix += f"+{result.group(1)}"
+            else:
+                suffix += f"+{s}"
 
     previous = {
         'st': 'hr',

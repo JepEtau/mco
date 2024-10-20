@@ -581,11 +581,11 @@ def generate_final_scene(
                 out_i=i
             )
             if isinstance(out_frames, list):
-                print(yellow(f"\t{produced}: send {len(out_frames)} frames"))
+                # print(yellow(f"\t{produced}: send {len(out_frames)} frames"))
                 [enc_subprocess.stdin.write(f.img) for f in out_frames]
                 produced += len(out_frames)
             else:
-                print(yellow(f"\t{produced}: send {out_frames.no}"))
+                # print(yellow(f"\t{produced}: send {out_frames.no}"))
                 enc_subprocess.stdin.write(out_frames.img)
                 produced += 1
 

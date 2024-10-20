@@ -22,7 +22,7 @@ from .filters import (
     parse_filters,
 )
 from .chapter import parse_chapter_sections
-from .scene import (
+from .scenes import (
     consolidate_parsed_scenes,
     parse_scenes,
     parse_scenes_new,
@@ -200,7 +200,7 @@ def parse_episode(k_ed: str, k_ep: str | int):
     logger.debug(lightgreen(f"parse_episode: {k_ed}:{k_ep}"))
 
     # Open configuration file
-    filepath = absolute_path(os.path.join(
+    config_fp: str = absolute_path(os.path.join(
         db['common']['directories']['config'],
         k_ep,
         f"{k_ep}_{k_ed}.ini"
@@ -208,7 +208,7 @@ def parse_episode(k_ed: str, k_ep: str | int):
 
     # If the input video file has not been found, do not parse the config file
     if k_ed not in db[k_ep]['video']:
-        logger.debug(orange(f"\twarning: {k_ed}:{k_ep}: ignore missing file: {filepath}"))
+        logger.debug(orange(f"\twarning: {k_ed}:{k_ep}: ignore missing file: {config_fp}"))
         return
 
     # Video db for this edition
@@ -236,7 +236,7 @@ def parse_episode(k_ed: str, k_ep: str | int):
 
     # Parse configuration
     config = ConfigParser()
-    config.read(filepath)
+    config.read(config_fp)
     for k_section in config.sections():
         logger.debug(lightgrey("\tsection: %s" % (k_section)))
 
@@ -261,6 +261,7 @@ def parse_episode(k_ed: str, k_ep: str | int):
         # Filters
         #----------------------------------------------------
         elif k_section.startswith("filters"):
+            print(lightcyan(f"Parse config file:"), config_fp)
             parse_filters(db_video, config, k_section)
 
         # chapters: frame start and (end+1)

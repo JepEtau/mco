@@ -47,10 +47,12 @@ from .geometry_stats import (
     ChGeometryStats,
 )
 
-from .scene import (
+from .scenes import (
     scene_key,
 )
-
+from ._keys import (
+    ep_key
+)
 
 
 __all__ = [

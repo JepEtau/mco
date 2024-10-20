@@ -277,7 +277,7 @@ class ReplaceWindow(QMainWindow):
 
 
     def event_move_to_frame_index(self, frame_index):
-        log.info(f"move to frame {frame_index}")
+        # log.info(f"move to frame {frame_index}")
         self.current_frame_index = frame_index
         self.display_frame()
 

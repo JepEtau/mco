@@ -33,7 +33,6 @@ class UpscalePipeline(object):
     def __init__(
         self,
         device: str,
-        fp16: bool,
         scenes: list[Scene],
         total_frames: int,
         debug: bool,
@@ -43,7 +42,6 @@ class UpscalePipeline(object):
         # Decoder
         # ImageReaderParams
         self.device = device
-        self.fp16 = fp16
         self.simulation: bool = simulation
         self.scenes: list[Scene] = scenes
         self.total_frames = total_frames
@@ -59,23 +57,23 @@ class UpscalePipeline(object):
         for scene in scenes:
             # Verify that input videos to generate this scene have the same info
             vi: VideoStreamInfo = (
-                scene['src'].primary_scene()['scene']
-                ['inputs']['progressive']['info']
+                scene['src'].primary_scene()['scene']['inputs']['progressive']['info']
             )
             shape = [vi.img_shape[1], vi.img_shape[0]]
 
             for src_scene in scene['src'].scenes():
                 _vi: VideoStreamInfo = src_scene['scene']['inputs']['progressive']['info']
-                _shape = [_vi.img_shape[1], _vi.img_shape[0]]
-                if _shape != shape:
+                if (
+                    _vi.img_shape[1] != vi.img_shape[1]
+                    or _vi.img_shape[0] != vi.img_shape[0]
+                ):
                     raise ValueError(
                         f"{src_scene['k_ed_ep_ch_no']}:",
                         "input video must have the same resolution as the primary one"
                     )
 
             vi: VideoStreamInfo = (
-                scene['src'].primary_scene()['scene']
-                ['inputs']['progressive']['info']
+                scene['src'].primary_scene()['scene']['inputs']['progressive']['info']
             )
             nbytes: int = vi.img_nbytes * np.dtype(vi.img_dtype).itemsize
 
@@ -84,15 +82,30 @@ class UpscalePipeline(object):
 
             task_name = scene['task'].name
             filters: Filter = scene['filters'][task_name]
+
+            pprint(filters.steps)
+            print(f"initial shape: {shape}")
             scale: int = 1
+            for i, filter_param in enumerate(filters.steps):
+                if isinstance(filter_param, tuple | list):
+                    name, param = filter_param
+                    if name == 'resize':
+                        _scale = param
+                    elif name == 'resize_to':
+                        raise ValueError("not yet supported")
+                    else:
+                        continue
+                else:
+                    model_key = filter_param
+                    _scale = model_manager.get_scale(model_key)
+                    filters.steps[i] = model_manager.set_input_size(model_key, shape)
+                print(lightgreen(f"step {i}:"), shape, end='')
+                shape = list([int(x * _scale) for x in shape])
+                print(f"-> {shape} (scale: {_scale})")
+                scale = _scale * scale
+                # pprint(filters)
 
-            for i, model_key in enumerate(filters.steps):
-                _scale = model_manager.get_scale(model_key)
-                filters.steps[i] = model_manager.set_input_size(model_key, shape)
-                shape = list([x * _scale for x in shape])
-                scale *= _scale
-
-            out_nbytes = scale * scale * in_max_nbytes
+            out_nbytes = int(scale * scale * in_max_nbytes + 0.5)
             if PIXEL_FORMAT[scene['task'].video_settings.pix_fmt]['bpp'] > 8:
                 out_nbytes *= 2
             if out_nbytes > out_max_nbytes:
@@ -103,7 +116,6 @@ class UpscalePipeline(object):
         print(f"Max: in: {in_max_nbytes} bytes, out: {out_max_nbytes}")
         print(f"Scale: {scale}")
 
-        pprint(model_manager._shapes)
         model_manager.consolidate()
         model_manager.set_in_out_max_nbytes(in_max_nbytes, out_max_nbytes)
         print(model_manager)
