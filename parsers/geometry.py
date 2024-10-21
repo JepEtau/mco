@@ -9,6 +9,7 @@ import os.path
 from pprint import pprint
 from typing import Any
 
+from utils.hash import calc_hash
 from utils.mco_types import ChapterVideo, Scene
 from utils.path_utils import absolute_path
 
@@ -134,19 +135,22 @@ class SceneGeometry:
         )
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+    def hash(self) -> str:
+        params: str = f"{self.keep_ratio};{self.fit_to_width}"
+        if self.use_autocrop:
+            params += ";ac," + ','.join(list(
+                map(str, (
+                    self.detection_params.do_add_borders,
+                    self.detection_params.morph_kernel_radius,
+                    self.detection_params.erode_kernel_radius,
+                    self.detection_params.erode_iterations,
+                    self.detection_params.do_add_borders,
+                ))
+            ))
+        else:
+            params += f"{map(str, self.crop)}"
+        params += f";{self.chapter.width}"
+        return calc_hash(params)
 
 
 

@@ -232,7 +232,7 @@ def upscale_scenes(
                     frame_rate=in_video_info['frame_rate_r'],
                     metadata=in_video_info['metadata'],
                 )
-                scene['task'].video_settings.metadata = vinfos[in_media_path].metadata
+                scene['task'].video_settings.metadata.update(vinfos[in_media_path].metadata)
             progressive_input['info'] = vinfos[in_media_path]
 
         if debug:

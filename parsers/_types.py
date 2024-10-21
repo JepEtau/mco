@@ -35,8 +35,6 @@ TaskName = Literal[
     #   - final crop/resize
     'sim',
 
-    'denoise',
-
     # Upscale and generate a 1080p image for comparison
     'upscale',
 
@@ -53,7 +51,6 @@ TaskName = Literal[
     #     - apply filter if st changed
     #     - test modified date: hr < st < tf
     'tf',
-
 
     # Color grading, external tool
     'cg',

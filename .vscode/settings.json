@@ -71,5 +71,6 @@
             "name": "pynnlib",
             "depth": 0
         },
-    ]
+    ],
+    "python.REPL.enableREPLSmartSend": false
 }

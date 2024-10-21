@@ -4,6 +4,7 @@ from pprint import pprint
 import signal
 import sys
 from parsers import (
+    TASK_NAMES,
     parse_database,
     logger,
     db,
@@ -52,6 +53,25 @@ def main():
         help="Use this edition as source rather than the one selected in database"
     )
 
+    parser.add_argument(
+        "--task",
+        "-t",
+        choices=TASK_NAMES,
+        default='lr',
+        required=False,
+        help="task name"
+    )
+
+    parser.add_argument(
+        "--scene",
+        "-s",
+        type=int,
+        default=-1,
+        required=False,
+        help="scene no."
+    )
+
+
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -93,7 +113,7 @@ def main():
     # print(db.keys())
     # pprint(db['common'])
     k_ep = ep_key(episode)
-    task: TaskName = 'lr'
+    task: TaskName = arguments.task
 
     k_ch: Chapter = arguments.chapter
     chapters: Chapter = all_chapter_keys() if k_ch == '' else [k_ch]
@@ -123,19 +143,24 @@ def main():
                     ref_count += s['count']
             else:
                 print("Ignore reference as it has not been parsed")
+
         print(f"  Reference: {ref_count}")
         print(f"  Target: {target_count}")
 
 
         # pprint(chapter_video)
-        print(lightcyan(f"Scene no. 4"))
-        ch_video: ChapterVideo | None = get_chapter_video(k_ep, k_ch)
-        if ch_video is None:
-            continue
+        scene_no: int = arguments.scene
+        if scene_no != -1:
+            print(lightcyan(f"Scene no. {scene_no}"))
+            ch_video: ChapterVideo | None = get_chapter_video(k_ep, k_ch)
+            if ch_video is None:
+                continue
 
-        consolidate_scene(scenes[4], task_name=task)
-        pprint(ch_video.keys())
-        pprint(scenes[4])
+            consolidate_scene(scenes[scene_no], task_name=task)
+
+            pprint(ch_video.keys())
+            pprint(scenes[scene_no])
+
 
         # for scene in scenes:
         #     print(lightcyan(f"Scene no. {scene['no']}"))

@@ -11,7 +11,6 @@ from ._types import Filter, TASK_NAMES, TaskName
 FILTERS_IDS = [
     'deinterlace',
     'pre_upscale',
-    'denoise',
     'sharpen',
     'upscale'
 ]

@@ -1,8 +1,12 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
+from pprint import pprint
+import sys
 from typing import Any, Literal, TypedDict, TYPE_CHECKING
 
 import numpy as np
+
+from utils.hash import calc_hash
 
 
 if TYPE_CHECKING:
@@ -145,6 +149,20 @@ class Effect:
     zoom_factor: float = 0
     extra_param: Any | None = None
 
+    def hash(self) -> str:
+        params: str = ",".join([
+            str(v) for k, v in self.__dict__.items() if k != 'extra_param'
+        ])
+        _params: str = ""
+        if isinstance(self.extra_param, list | tuple):
+            _params = ",".join(map(str, self.extra_param))
+        elif isinstance(self.extra_param, dict):
+            _params = ",".join(f"{k}:{v}" for k, v in self.extra_param.items())
+        elif self.extra_param is not None:
+            _params = str(self.extra_param)
+        params += f",{_params}" if params else ""
+        return calc_hash(params)
+
 
 @dataclass
 class Effects(list):
@@ -196,6 +214,11 @@ class Effects(list):
         for e in self.effects:
             if e.name == name:
                 yield e
+
+    def hash(self) -> str:
+        if len(self.effects) == 0:
+            return ''
+        return calc_hash(';'.join(e.hash() for e in self.effects))
 
 
 class RefScene(TypedDict):
@@ -322,12 +345,10 @@ class ChapterVideo(TypedDict):
     k_ch: str
 
 
+
 @dataclass
 class VideoTrack:
     target: dict[Chapter, ChapterVideo] = field(default_factory=dict)
-
-
-
 
 
 

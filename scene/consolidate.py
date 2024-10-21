@@ -56,6 +56,7 @@ def consolidate_scene(
         scene['task'] = ProcessingTask(name=task_name)
     task: ProcessingTask = scene['task']
     task_name: TaskName = task.name
+    task_name_index: int = TASK_NAMES.index(task_name)
 
     scene['src'].consolidate(task_name=task_name, watermark=False)
     primary_src_scene = scene['src'].primary_scene()
@@ -109,33 +110,88 @@ def consolidate_scene(
         if t not in scene_filters:
             scene_filters[t] = Filter(task_name=t)
 
-    deint_hashcode = scene_filters['initial'].hash
+    # Effects
+    #---------------------------------------------------------------------------
+    if is_last_scene(scene) and 'effects' in scene:
+        ch_video: ChapterVideo = get_target_video(scene)
+        ch_effect: Effect = (
+            ch_video['effects'].primary_effect()
+            if 'effects' in ch_video
+            else None
+        )
+        scene_effect: Effect = scene['effects'].primary_effect()
+        if ch_effect is not None and 'fadeout' in ch_effect.name:
+            if scene_effect is not None and 'fadeout' in scene_effect.name:
+                # Patch fadeout
+                scene_effect.fade = min(
+                    max(scene_effect.fade, ch_effect.fade),
+                    scene['dst']['count'] + scene_effect.loop
+                )
+            elif scene_effect is None:
+                scene['effects'] = Effects([
+                    Effect(
+                        name='fadeout',
+                        frame_ref=scene['dst']['count'] - ch_effect.fade,
+                        fade= ch_effect.fade
+                    )
+                ])
+
+    if is_first_scene(scene):
+        ch_video: ChapterVideo = get_target_video(scene)
+        if (
+            'effects' in ch_video
+            and (ch_effect := ch_video['effects'].get_effect('fadein'))
+        ):
+            if 'effects' not in scene:
+                scene['effects'] = Effects()
+            scene_effect: Effect = deepcopy(ch_effect)
+            scene_effect.frame_ref = scene['src'].first_frame_no()
+            scene['effects'].append(scene_effect)
+
+
+
+    # Output video Settings
+    #---------------------------------------------------------------------------
+    _task_name: str = task_name
+    if task_name == 'initial':
+        _task_name = 'lr'
+    elif task_name == 'sim':
+        _task_name = 'lr'
+
+    in_vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
+    if in_vsettings is not None:
+        task.video_settings = deepcopy(in_vsettings)
+        vsettings = task.video_settings
+        if task_name == 'hr':
+            vsettings.pad = db['common']['video_format'][task_name].pad
+
+    elif task_name_index > TASK_NAMES.index('upscale'):
+        task.video_settings = deepcopy(db['common']['video_format'].get('hr', None))
+        vsettings = task.video_settings
+        vsettings.pad = 0
+
+    else:
+        raise ValueError(f"VideoSettings not defined for task: {task_name}")
+
+
+    # Hash code, metadata
+    #---------------------------------------------------------------------------
+
+    # Deinterlace
+    deint_hash = scene_filters['initial'].hash
+    vsettings.metadata['00_deint'] = scene_filters['initial'].hash
 
     # Replace
     replace_hash: str = ''
     frame_replace = scene['src'].get_frame_replace()
-    if len(frame_replace.keys()) != 0:
+    if len(frame_replace.keys()) > 0:
         replace_hash = ','.join([f"{k}:{v}" for k, v in frame_replace.items()])
+    vsettings.metadata['00_replace'] = calc_hash(replace_hash)
 
-    # Upscale
-    upscale_hashcode = calc_hash(';'.join([
-        deint_hashcode,
-        scene_filters['upscale'].sequence.replace('.pth', '')
-    ]))
-
-    # Store hashes
-    scene_filters['lr'].hash = calc_hash(';'.join([deint_hashcode, replace_hash]))
-    scene_filters['sim'].hash = scene_filters['lr'].hash
-    scene_filters['hr'].hash = upscale_hashcode
-    scene_filters['upscale'].hash = upscale_hashcode
-
-    # Update the scene task
-    scene['task'].hashcode = scene_filters[task_name].hash
-
+    # lowres
+    t_hash: str = calc_hash(';'.join([deint_hash, replace_hash]))
+    scene_filters['lr'].hash = t_hash
     if task_name == 'lr' and watermark:
-        # if 'effects' in scene:
-        #     scene['effects'] = Effects()
-        # scene['effects'].append(Effect(name='watermark'))
         sequence: str = scene['filters'][task_name].sequence
         scene['filters'][task_name].sequence = (
             f"{sequence};watermark"
@@ -143,29 +199,47 @@ def consolidate_scene(
             else "watermark"
         )
 
+    # upscale, hr
+    sequence: str = scene['filters']['upscale'].sequence
+    for i, f in enumerate(sequence.split(',')):
+        for s in ('.pth', '.onnx', '.safetensor'):
+            f = f.replace(s, '')
+        if task_name_index >= TASK_NAMES.index('upscale'):
+            vsettings.metadata[f"{i + 1:02}"] = f
+    scene_filters['upscale'].hash = t_hash
 
-    # Output
+    t_hash = calc_hash(f"{t_hash};{vsettings.pad}")
+    scene_filters['hr'].hash = t_hash
+
+    # TODO: append stabilization parameters
+    scene_filters['st'].hash = t_hash
+
+    # Temporal filters
+    t_hash = calc_hash(f"{t_hash};{scene['filters']['tf'].sequence}")
+    scene_filters['tf'].hash = t_hash
+
+    # Color grade
+    scene_filters['cg'].hash = t_hash
+
+    # Final: effects + geometry
+    t_hash = calc_hash(f"{t_hash};{scene['geometry'].hash()}")
+    t_effect_hash: str = ""
+    if ('effects' in scene and scene['effects'].has_effects()):
+        t_effect_hash = scene['effects'].hash()
+        t_hash = calc_hash(f"{t_hash};{t_effect_hash}")
+
+    scene_filters['final'].hash = t_hash
+
+    # For simulation, use lowres and effects
+    scene_filters['sim'].hash = calc_hash(
+        f"{scene_filters['lr'].hash};{t_effect_hash}"
+    )
+
+    vsettings.metadata['hash'] = scene_filters[task_name].hash
+
+
+    # Filenames
     #---------------------------------------------------------------------------
-
-    # Output video settings
-    _task_name: str = task_name
-    if task_name == 'initial':
-        _task_name = 'lr'
-    elif task_name == 'sim':
-        _task_name = 'lr'
-
-    vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
-    if vsettings is not None:
-        task.video_settings = deepcopy(vsettings)
-        vsettings = task.video_settings
-        if task_name == 'hr':
-            vsettings.pad = db['common']['video_format'][task_name].pad
-            vsettings.metadata['HR'] = task.hashcode
-    elif task_name in ('st', 'tf', 'cg'):
-        vsettings: VideoSettings = db['common']['video_format'].get('hr', None)
-        vsettings.pad = 0
-    else:
-        raise ValueError(f"VideoSettings not defined for task: {task_name}")
 
     # Output video filename
     _k_ed, _k_ep = primary_src_scene['k_ed_ep_ch_no'][:2]
@@ -240,55 +314,6 @@ def consolidate_scene(
                 'tf': os.path.join(scene['cache'], f"scenes_tf", f"{basename}_tf{in_ext}"),
             }
 
-
-    # Effects
-    #---------------------------------------------------------------------------
-    # pprint(scene)
-    # sys.exit()
-    if is_last_scene(scene) and 'effects' in scene:
-        # TODO: clean this bc effects has been refactored
-        print(yellow("last scene"))
-        ch_video: ChapterVideo = get_target_video(scene)
-        ch_effect: Effect = (
-            ch_video['effects'].primary_effect()
-            if 'effects' in ch_video
-            else None
-        )
-        scene_effect: Effect = scene['effects'].primary_effect()
-        pprint(ch_effect)
-        pprint(scene_effect)
-        if ch_effect is not None and 'fadeout' in ch_effect.name:
-            if scene_effect is not None and 'fadeout' in scene_effect.name:
-                # Patch fadeout
-                scene_effect.fade = min(
-                    max(scene_effect.fade, ch_effect.fade),
-                    scene['dst']['count'] + scene_effect.loop
-                )
-                # scene_effect.frame_ref = (
-                #     scene['src'].first_frame_no() + scene['dst']['count']
-                #     + scene_effect.loop - scene_effect.fade
-                # )
-            elif scene_effect is None:
-                scene['effects'] = Effects([
-                    Effect(
-                        name='fadeout',
-                        frame_ref=scene['dst']['count'] - ch_effect.fade,
-                        fade= ch_effect.fade
-                    )
-                ])
-            # verbose = True
-
-    if is_first_scene(scene):
-        ch_video: ChapterVideo = get_target_video(scene)
-        if (
-            'effects' in ch_video
-            and (ch_effect := ch_video['effects'].get_effect('fadein'))
-        ):
-            if 'effects' not in scene:
-                scene['effects'] = Effects()
-            scene_effect: Effect = deepcopy(ch_effect)
-            scene_effect.frame_ref = scene['src'].first_frame_no()
-            scene['effects'].append(scene_effect)
 
     if verbose:
         print(lightcyan("TO"))

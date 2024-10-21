@@ -77,9 +77,6 @@ def calculate_frame_count(scene: Scene) -> int:
     if task_name == 'initial':
         return scene['count']
 
-    if task_name == 'denoise':
-        return scene['dst']['count']
-
     count = scene['dst']['count']
     if task_name == 'lr':
         ch_video: ChapterVideo = get_target_video(scene)
