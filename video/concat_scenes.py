@@ -35,7 +35,7 @@ def concat_scenes(
         return
     k_ep, k_ch = ep_key(episode), chapter
     try:
-        hashcode: str = video['task'].hashcode
+        hashcode: str = video['task'].hash
     except:
         pprint(video)
         raise ValueError("concat_scenes")

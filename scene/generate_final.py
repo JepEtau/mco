@@ -12,6 +12,7 @@ from processing.detect_inner_rect import detect_inner_rect
 from processing.resize_to_4_3 import ConvertTo43Params, TransformationValues, calculate_transformation_values, resize_to_4_3
 from parsers import (
     FINAL_WIDTH,
+    TASK_NAMES,
     ColorSettings,
     db,
     ProcessingTask,
@@ -24,6 +25,8 @@ from processing.effects import apply_effect
 from utils.logger import main_logger
 from utils.mco_types import McoFrame, Scene, ChapterVideo
 from utils.mco_utils import (
+    calculate_frame_count,
+    ffmpeg_metadata,
     get_target_video,
     is_first_scene,
     is_last_scene,
@@ -100,41 +103,6 @@ def decode_and_ac_detect(
 
 
 
-def get_output_video_filepath(scene: Scene, task_name: TaskName | None = None) -> str:
-    if task_name is None:
-        task_name = scene['task'].name
-
-    k_ep: str = scene['dst']['k_ep']
-    k_ch: str = scene['dst']['k_ch']
-    primary_src_scene = scene['src'].primary_scene()
-
-    _k_ed, _k_ep = primary_src_scene['k_ed_ep_ch_no'][:2]
-    if k_ch in ('g_debut', 'g_fin'):
-        cache_path: str = db[k_ch]['cache_path']
-        basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
-    else:
-        cache_path: str = db[k_ep]['cache_path']
-        basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
-
-    suffix: str = ""
-    if task_name not in ('hr', 'restored'):
-        if scene['task'].hashcode != '':
-            suffix = f"_{scene['task'].hashcode}"
-        suffix += f"_{task_name}"
-
-    pprint(db['common'])
-    pprint(scene)
-    sys.exit()
-    ext: str = vcodec_to_extension['h264']
-    return absolute_path(
-        os.path.join(
-            cache_path,
-            f"scenes_{task_name}",
-            f"{basename}{suffix}{ext}"
-        )
-    )
-
-
 
 def generate_final_scene(
     scene: Scene,
@@ -144,30 +112,17 @@ def generate_final_scene(
     debug_scene: bool = False
 
     scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
-    task: ProcessingTask =scene['task']
-    out_video_fp: str = scene['task'].video_file
+    task: ProcessingTask = scene['task']
+
+    in_video_fp: str = task.in_video_file
+    out_video_fp: str = task.video_file
 
     # Output directory
-    final_directory: str = path_split(scene['task'].video_file)[0]
+    final_directory: str = path_split(out_video_fp)[0]
     os.makedirs(final_directory, exist_ok=True)
 
-    # In/out files
-    in_video_fp: str = scene['task'].in_video_file
-    if not os.path.exists(in_video_fp):
-        raise FileExistsError(red(f"{in_video_fp}: No such file or directory"))
-    out_video_fp: str = scene['task'].video_file
-
-    if (
-        os.path.exists(out_video_fp)
-        and os.path.getmtime(in_video_fp) < os.path.getmtime(out_video_fp)
-        and not force
-    ):
-        # Already generated
-        print("already generated")
-        return True
-
     # Output video
-    vsettings: VideoSettings = scene['task'].video_settings
+    vsettings: VideoSettings = task.video_settings
     out_pipe_dtype: np.dtype = np.uint8
     out_pipe_pixfmt: str = 'bgr24'
     if PIXEL_FORMAT[vsettings.pix_fmt]['bpp'] > 8:
@@ -229,7 +184,7 @@ def generate_final_scene(
     )
 
     # if geometry.use_autocrop and has_effects:
-    vsettings: VideoSettings = db['common']['video_format']['final']
+    vsettings: VideoSettings = task.video_settings
     do_decode: bool = (
         (
             geometry.use_autocrop
@@ -411,17 +366,19 @@ def generate_final_scene(
     for k, v in ColorSettings().__dict__.items():
         colorspace.extend([f"-{k}:v", v])
 
+    # Metadata
+    metadata: list[str] = ffmpeg_metadata(scene)
+
     # Note: this could have be done with FFmpeg filter but as sson
     # as some effects could be used (loop, fade in, fadeout)
     ch_video: ChapterVideo = get_target_video(scene)
     if is_first_scene(scene):
-        print(lightcyan("first scene"))
-        pprint(ch_video['avsync'])
+        print(lightcyan("first scene, avsync:"), ch_video['avsync'])
         if ch_video['avsync'] != 0:
             raise NotImplementedError("avsync not yet supported")
 
     if not has_effects:
-        print(f"{scene_key}: no effects")
+        print(f"{scene_key}: no effects, use FFmpeg to apply the final geometry")
         filters: list[str] = []
 
         # (1)
@@ -497,17 +454,11 @@ def generate_final_scene(
 
             "-vcodec", str_to_video_codec[vsettings.codec].value,
             "-pix_fmt", vsettings.pix_fmt,
-            *vsettings.codec_options
+            *vsettings.codec_options,
+            *metadata,
+
+            out_video_fp, "-y"
         ]
-
-        # Add metadata
-        if len(vsettings.metadata.keys()):
-            encoder_command.extend(["-movflags", "use_metadata_tags"])
-            for k, v in vsettings.metadata.items():
-                encoder_command.extend(["-metadata:s:v:0", f"{k}={v}"])
-
-        # Output filename
-        encoder_command.extend([out_video_fp, "-y"])
 
         os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
         print(purple(f"[V] command: "), " ".join(encoder_command))
@@ -539,17 +490,13 @@ def generate_final_scene(
             "-vcodec", str_to_video_codec[vsettings.codec].value,
             "-pix_fmt", vsettings.pix_fmt,
             *vsettings.codec_options,
-            *colorspace
+            *colorspace,
+            *metadata,
+            out_video_fp, "-y"
         ]
 
-        # Add metadata
-        # encoder_command.extend(["-movflags", "use_metadata_tags"])
-        # if len(vsettings.metadata.keys()):
-        #     for k, v in vsettings.metadata.items():
-        #         encoder_command.extend(["-metadata:s:v:0", f"{k}={v}"])
 
         # Output filename
-        encoder_command.extend([out_video_fp, "-y"])
         os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
         print(purple(f"[V] encoder command: "), " ".join(encoder_command))
 

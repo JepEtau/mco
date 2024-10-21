@@ -7,6 +7,7 @@ from pprint import pprint
 
 from parsers.p_print import pprint_scene_mapping
 from scene.consolidate import consolidate_scene
+from video.consolidate_scenes import get_chapter_video
 from .st_scenes import convert_video_for_evaluation
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import scene_id_str
@@ -27,7 +28,7 @@ def tf_scenes(
     episode: str,
     single_chapter: Chapter = '',
     scene_no: int | None = None,
-    task: TaskName = '',
+    task_name: TaskName = '',
     evaluate: bool = False,
     force: bool = False,
     debug: bool = False,
@@ -35,51 +36,33 @@ def tf_scenes(
     k_ep = ep_key(episode)
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
 
-    do_concatenate_video: bool = (
-        True
-        if single_chapter == '' # or single_chapter in ('g_debut', 'g_fin')
-        else False
-    )
-
     if k_ep == '' and single_chapter not in ('g_debut', 'g_fin'):
         raise ValueError(red("[E] episode must be set"))
 
-    start_time_full = time.time()
     for k_ch in chapters:
 
-        ch_video: ChapterVideo
-        if k_ch in ('g_debut', 'g_fin'):
-            ch_video = db[k_ch]['video']
-
-        elif k_ep == 'ep00':
-            sys.exit(red("Missing episode no."))
-
-        else:
-            ch_video = db[k_ep]['video']['target'][k_ch]
-
-        # Do not generate clip for unused chapters
-        if ch_video['count'] <= 0:
+        ch_video: ChapterVideo | None = get_chapter_video(k_ep, k_ch)
+        if ch_video is None:
             continue
 
-        ch_video['task'] = ProcessingTask(name=task)
+        ch_video['task'] = ProcessingTask(name=task_name)
         if debug:
             print(f"\n<<<<<<<<<<<<<<<<<<<<< {k_ch} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
-            # pprint(ch_video)
             print(f"scene_no: {scene_no}")
 
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
         for scene in scenes:
-            if scene_no is not None and scene_no != -1 and scene['no'] != scene_no:
+            if scene_no != -1 and scene['no'] != scene_no:
                 continue
             pprint_scene_mapping(scene)
 
             # Consolidate this scene
-            consolidate_scene(scene, task_name=task)
+            consolidate_scene(scene, task_name=task_name)
             scene_id: str = scene_id_str(scene)
 
             if debug:
-                print(lightcyan(f"======================= generate_{task}_scenes: Scene ============================="))
+                print(lightcyan(f"======================= generate_{task_name}_scenes: {scene_id} ============================="))
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
 
@@ -121,12 +104,23 @@ def tf_scenes(
             if do_process:
                 print(lightcyan(f"{scene_id}: temporal filtering"))
 
+                t_radius: int = 6
+                strength: int = 400
+                try:
+                    t_radius, strength = list(
+                        map(int, scene['filters'][task_name].sequence.split(','))
+                    )
+                except:
+                    pass
+
                 pytf_cmd: list[str] = [
                     sys.executable,
                     # absolute_path("~/github/py_temporalfix/py_temporalfix.py"),
                     absolute_path("A:\\py_temporalfix\\py_temporalfix.py"),
                     "--input", in_fp,
                     "--output", out_fp,
+                    "--t_radius", t_radius,
+                    "--strength", strength
                 ]
                 print(lightcyan("pytf command:"))
                 print(lightgreen(' '.join(pytf_cmd)))

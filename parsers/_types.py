@@ -100,7 +100,7 @@ class VideoSettings:
 @dataclass
 class ProcessingTask:
     name: TaskName
-    hashcode: str = ''
+    hash: str = ''
     concat_file: str = ''
     video_file: str = ''
     do_generate: bool = True

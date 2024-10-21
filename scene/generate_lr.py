@@ -16,6 +16,7 @@ from utils.logger import main_logger
 from utils.mco_types import ChapterVideo, McoFrame, Scene
 from utils.mco_utils import (
     calculate_frame_count,
+    ffmpeg_metadata,
     get_target_video,
     is_first_scene,
     is_last_scene,
@@ -72,6 +73,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
     frame_rate: FrameRate = get_fps(db)
     vsettings: VideoSettings = scene['task'].video_settings
+    metadata: list[str] = ffmpeg_metadata(scene)
     encoder_command: list[str] = [
         ffmpeg_exe,
         "-hide_banner",
@@ -89,6 +91,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         "-pix_fmt", vsettings.pix_fmt,
         "-vcodec", str_to_video_codec[vsettings.codec].value,
         *vsettings.codec_options,
+        *metadata,
         out_video_fp, "-y"
     ]
     encoder_subprocess: subprocess.Popen = None
@@ -105,7 +108,6 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
     produced: int = 0
     to_produce: int = scene['dst']['count']
-    print(lightcyan(f"Frames to produce: {to_produce}"))
     watermark: bool = do_watermark(scene=scene)
     for src in scene['src'].scenes():
         src_scene: Scene = src['scene']
@@ -167,14 +169,9 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         frame_cache.set_occurences(frame_occurences(frame_replace))
         frame_cache.set_exceptions(frames_to_replace)
 
-
-        from_cache: bool = False
-        # pprint(frames_to_replace)
-
         ch_video: ChapterVideo = get_target_video(scene)
         if is_first_scene(scene):
-            print(lightcyan("first scene"))
-            pprint(ch_video['avsync'])
+            print(lightcyan("first scene, avsync:"), ch_video['avsync'])
             if ch_video['avsync'] != 0:
                 raise NotImplementedError("avsync not yet supported")
 

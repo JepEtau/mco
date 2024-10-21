@@ -92,7 +92,7 @@ def upscale_scenes(
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
         for scene in scenes:
-            start_time = time.time()
+
             if scene_no is not None and scene_no != -1 and scene['no'] != scene_no:
                 print(f"skip scene no. {scene['no']}")
                 continue
@@ -115,7 +115,7 @@ def upscale_scenes(
 
 
             # Calculate hash for the video
-            hashes_str += f",{scene['task'].hashcode}"
+            hashes_str += f",{scene['task'].hash}"
 
             # Add models to the model manager
             # and add the scene to the list to upscale
@@ -184,7 +184,7 @@ def upscale_scenes(
         ext: str = vcodec_to_extension[ch_vsettings.codec]
         ch_video['task'] = ProcessingTask(
             name=task,
-            hashcode=hashcode,
+            hash=hashcode,
             concat_file=os.path.join(cache_path, "concat", f"{basename}.txt"),
             video_file=os.path.join(cache_path, f"video_lr", f"{basename}{ext}"),
             video_settings=ch_vsettings,

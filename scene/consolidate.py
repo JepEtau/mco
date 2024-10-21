@@ -235,7 +235,8 @@ def consolidate_scene(
         f"{scene_filters['lr'].hash};{t_effect_hash}"
     )
 
-    vsettings.metadata['hash'] = scene_filters[task_name].hash
+    task.hash = scene_filters[task_name].hash
+    vsettings.metadata['hash'] = task.hash
 
 
     # Filenames
@@ -251,9 +252,9 @@ def consolidate_scene(
         basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
 
     suffix: str = ""
-    if task_name != "hr":
-        if task.hashcode != '':
-            suffix = f"_{task.hashcode}"
+    if task_name not in ("hr", "final"):
+        if task.hash != '':
+            suffix = f"_{task.hash}"
     suffix += f"_{task_name}"
 
     # Append the model name to evaluate models: only for upscale task

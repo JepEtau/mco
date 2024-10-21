@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 from pprint import pprint
 import sys
 from utils.p_print import *
@@ -67,11 +68,13 @@ def get_filters(scene: Scene) -> list[Filter]:
 
     elif isinstance(scene['filters_id'], str):
         if debug:
-            print(lightgrey(f"\tcustom filter: {scene['filters']}"))
+            print(yellow(f"custom filter: {scene['filters']}"))
+
+        filters = deepcopy(chapter_video['filters']['default'])
 
         # This scene uses a custom filter defined in the 'filters' struct in this part
         try:
-            filters = chapter_video['filters'][scene['filters_id']]
+            filters.update(chapter_video['filters'][scene['filters_id']])
         except:
             print(red(f"\tdefined filters: {list(chapter_video['filters'].keys())}"))
             print(orange(f"\tfallback: using default"))

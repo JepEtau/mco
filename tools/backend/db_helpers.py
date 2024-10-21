@@ -64,7 +64,7 @@ def consolidate_target(
                 print(lightcyan("==============================================================================="))
 
             # Calculate hash for the video
-            hashes_str += f",{scene['task'].hashcode}"
+            hashes_str += f",{scene['task'].hash}"
 
             if debug:
                 elapsed = time.time() - start_time
@@ -82,7 +82,7 @@ def consolidate_target(
         hashcode: str = calc_hash(hashes_str[:-1])
         ch_video['task'] = ProcessingTask(
             name=task,
-            hashcode=hashcode,
+            hash=hashcode,
             concat_file="not_applicable",
             video_file="not_applicable",
         )

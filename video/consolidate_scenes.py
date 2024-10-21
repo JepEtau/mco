@@ -44,6 +44,7 @@ def consolidate_scenes(
     debug: bool = False,
     symlink: bool = False,
     geometry_stats: bool = False,
+    geometry_check: bool = False,
 ):
     k_ep = ep_key(episode)
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
@@ -100,6 +101,7 @@ def consolidate_scenes(
                         if not os.path.exists(src_fp):
                             raise FileNotFoundError(red(f"{src_fp}"))
                         os.symlink(src_fp, fp)
+
 
         if geometry_stats:
             ch_geometry_stats: ChGeometryStats = ChGeometryStats()

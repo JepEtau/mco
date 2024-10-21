@@ -3,14 +3,12 @@ import sys
 import os
 import time
 from pprint import pprint
-
 from scene.consolidate import consolidate_scene
 from scene.generate_lr import generate_lr_scene
 from utils.hash import calc_hash
-from utils.logger import main_logger
 from utils.media import vcodec_to_extension
 from utils.mco_types import Scene, ChapterVideo
-from utils.mco_utils import is_up_to_date
+from utils.mco_utils import is_final_up_to_date
 from utils.p_print import *
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
@@ -44,7 +42,6 @@ def generate_lr_scenes(
     debug: bool = False
 ):
     k_ep = ep_key(episode)
-    k_ed = edition
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
 
     if k_ep == '' and single_chapter not in ('g_debut', 'g_fin'):
@@ -78,21 +75,23 @@ def generate_lr_scenes(
             scene['task'] = ProcessingTask(name=task_name)
             consolidate_scene(scene=scene, watermark=watermark)
 
+            # Calculate hash for the video
+            hashes_str += f",{scene['task'].hash}"
+
             if debug:
                 print(lightcyan(f"======================= generate_{task_name}_scenes: Scene ============================="))
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
 
-            if not simulation and not is_up_to_date(scene) or force:
-                result = generate_lr_scene(scene=scene, force=force)
-                if not result:
-                    # pprint(db[scene['k_ep']]['video'][scene['k_ed']])
-                    raise RuntimeError(
-                        red(f"Failed processing scene: source: {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}")
-                    )
+            if not force and is_final_up_to_date(scene):
+                continue
 
-            # Calculate hash for the video
-            hashes_str += f",{scene['task'].hashcode}"
+            result = generate_lr_scene(scene=scene, force=force)
+            if not result:
+                # pprint(db[scene['k_ep']]['video'][scene['k_ed']])
+                raise RuntimeError(
+                    red(f"Failed processing scene: source: {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}")
+                )
 
             if debug:
                 elapsed = time.time() - start_time
@@ -119,7 +118,7 @@ def generate_lr_scenes(
         ext: str = vcodec_to_extension[vsettings.codec]
         ch_video['task'] = ProcessingTask(
             name=task_name,
-            hashcode=hashcode,
+            hash=hashcode,
             concat_file=os.path.join(cache_path, "concat", f"{basename}.txt"),
             video_file=os.path.join(cache_path, f"video", f"{basename}{ext}"),
         )

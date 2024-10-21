@@ -85,7 +85,7 @@ def main():
         episode=arguments.episode,
         single_chapter=arguments.chapter,
         scene_no=scene_no,
-        task=task,
+        task_name=task,
         evaluate=arguments.eval,
         force=arguments.force,
         debug=arguments.debug,

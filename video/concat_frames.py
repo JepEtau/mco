@@ -43,7 +43,7 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
     suffix: str = ''
     if task_name == '':
         task: ProcessingTask = scene['task']
-        hashcode: str = task.hashcode
+        hashcode: str = task.hash
         task_name = task.name
     else:
         hashcode: str = scene['filters'][task_name].hash

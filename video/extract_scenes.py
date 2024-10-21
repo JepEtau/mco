@@ -100,7 +100,7 @@ def extract_scenes(
                     )
 
             # Calculate hash for the video
-            hashes_str += f",{scene['task'].hashcode}"
+            hashes_str += f",{scene['task'].hash}"
 
             if debug:
                 elapsed = time.time() - start_time
@@ -114,7 +114,7 @@ def extract_scenes(
         raise ValueError("vcodec_to_extension")
         ch_video['task'] = ProcessingTask(
             name=task,
-            hashcode=hashcode,
+            hash=hashcode,
             concat_file=os.path.join(db[k_ep]['cache_path'], "concat", f"{basename}.txt"),
             video_file=os.path.join(db[k_ep]['cache_path'], f"scenes_{k_ed}", f"{basename}.mkv"),
         )

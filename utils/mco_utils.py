@@ -8,10 +8,29 @@ from utils.mco_types import ChapterVideo, Scene
 from utils.media import VideoInfo, extract_media_info
 from utils.p_print import *
 from parsers import (
-    db, task_to_dirname, TaskName, TASK_NAMES
+    VideoSettings, db, task_to_dirname, TaskName, TASK_NAMES, ProcessingTask
 )
 from .logger import main_logger
 
+
+def ffmpeg_metadata(scene: Scene) -> list[str]:
+    """Returns a list of params to be added to the FFmpeg
+    command line"""
+    has_effects: bool = (
+        'effects' in scene.keys()
+        and scene['effects'].has_effects()
+    )
+    vsettings: VideoSettings = scene['task'].video_settings
+
+    metadata: list[str] = []
+    if not has_effects:
+        metadata.extend(["-map_metadata", "-1"])
+
+    if len(vsettings.metadata.keys()):
+        metadata.extend(["-movflags", "use_metadata_tags"])
+        for k, v in vsettings.metadata.items():
+            metadata.extend(["-metadata:s:v:0", f"{k}={v}"])
+    return metadata
 
 
 def scene_id_str(scene: Scene) -> str:
@@ -24,10 +43,13 @@ def scene_id_str(scene: Scene) -> str:
 
 
 def is_up_to_date(scene: Scene) -> bool:
-    for s in scene['src'].scenes():
-        in_video_fp: str = s['scene']['inputs']['progressive']['filepath']
-        if not os.path.exists(in_video_fp):
-            raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
+    task: ProcessingTask = scene['task']
+
+    if TASK_NAMES.index(task.name) <= TASK_NAMES.index('hr'):
+        for s in scene['src'].scenes():
+            in_video_fp: str = s['scene']['inputs']['progressive']['filepath']
+            if not os.path.exists(in_video_fp):
+                raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
 
     out_video_fp: str = scene['task'].video_file
     if os.path.exists(out_video_fp):
@@ -42,6 +64,48 @@ def is_up_to_date(scene: Scene) -> bool:
             pass
 
     return False
+
+
+def is_final_up_to_date(scene: Scene) -> bool:
+    task: ProcessingTask = scene['task']
+
+    if TASK_NAMES.index(task.name) <= TASK_NAMES.index('hr'):
+        for s in scene['src'].scenes():
+            in_video_fp: str = s['scene']['inputs']['progressive']['filepath']
+            if not os.path.exists(in_video_fp):
+                raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
+    else:
+        in_video_fp: str = task.in_video_file
+
+    if not os.path.exists(in_video_fp):
+        raise FileExistsError(red(f"{in_video_fp}: No such file or directory"))
+
+    out_video_fp: str = task.video_file
+    if (
+        not os.path.exists(out_video_fp)
+        or os.path.getmtime(in_video_fp) > os.path.getmtime(out_video_fp)
+    ):
+        return False
+
+    try:
+        out_video_info: VideoInfo = extract_media_info(out_video_fp)['video']
+    except:
+        return False
+
+    print(yellow(f"scene: {calculate_frame_count(scene)}, out: {out_video_info['frame_count']}"))
+    if out_video_info['frame_count'] != calculate_frame_count(scene):
+        return False
+
+    if task.name in ('lr', 'sim', 'upscale', 'hr', 'final'):
+        try:
+            out_hash: str = out_video_info['metadata']['HASH']
+        except:
+            raise ValueError(red("no hash in output video"))
+
+        if out_hash != task.hash:
+            return False
+
+    return True
 
 
 def get_target_audio(scene: Scene):
@@ -78,11 +142,10 @@ def calculate_frame_count(scene: Scene) -> int:
         return scene['count']
 
     count = scene['dst']['count']
-    if task_name == 'lr':
+    if task_name in ('lr', 'sim', 'final'):
         ch_video: ChapterVideo = get_target_video(scene)
         if is_first_scene(scene):
-            print(lightcyan("first scene, avsync:"))
-            print(ch_video['avsync'])
+            print(lightcyan("first scene, avsync:"), ch_video['avsync'])
             if ch_video['avsync'] != 0:
                 raise NotImplementedError("avsync not yet supported")
 
