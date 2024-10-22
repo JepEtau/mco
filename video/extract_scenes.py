@@ -11,7 +11,9 @@ from utils.hash import calc_hash
 from utils.logger import main_logger
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import run_simple_command
+from utils.media import vcodec_to_extension
 from utils.p_print import *
+from utils.path_utils import path_split
 from utils.time_conversions import s_to_sexagesimal
 from utils.tools import ffmpeg_exe
 from parsers import (
@@ -20,7 +22,8 @@ from parsers import (
     all_chapter_keys,
     ep_key,
     TaskName,
-    ProcessingTask
+    ProcessingTask,
+    VideoSettings,
 )
 
 
@@ -50,11 +53,13 @@ def extract_scenes(
         )
         else False
     )
+    concatenate_clips = True
 
     start_time_full = time.time()
-    for chapter in chapters:
+
+    for k_ch in chapters:
         hashes_str = ''
-        ch_video: ChapterVideo = db[k_ep]['video'][k_ed][chapter]
+        ch_video: ChapterVideo = db[k_ep]['video'][k_ed][k_ch]
 
         # Do not generate clip for unused chapters
         if ch_video['count'] <= 0:
@@ -62,7 +67,7 @@ def extract_scenes(
 
         ch_video['task'] = ProcessingTask(name=task)
         if debug:
-            print(f"\n<<<<<<<<<<<<<<<<<<<<< {chapter} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+            print(f"\n<<<<<<<<<<<<<<<<<<<<< {k_ch} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
 
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
@@ -110,13 +115,27 @@ def extract_scenes(
                 ))
 
         hashcode: str = calc_hash(hashes_str[:-1])
-        basename: str = f"{k_ed}_{k_ep}_{chapter}_{task}_{hashcode}"
-        raise ValueError("vcodec_to_extension")
+        basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task}_{hashcode}"
+
+        k_ep_or_g: str = k_ch if k_ch in ('g_debut', 'g_fin') else k_ep
+        concat_fp: str =os.path.join(
+            db[k_ep_or_g]['cache_path'], "concat", f"{basename}.txt"
+        )
+        os.makedirs(path_split(concat_fp)[0], exist_ok=True)
+        with open(concat_fp, "w") as concat_file:
+            for scene in scenes:
+                concat_file.write(f"file \'{scene['task'].video_file}\' \n")
+
+        vsettings: VideoSettings = db['common']['video_format']['lr']
         ch_video['task'] = ProcessingTask(
             name=task,
             hash=hashcode,
-            concat_file=os.path.join(db[k_ep]['cache_path'], "concat", f"{basename}.txt"),
-            video_file=os.path.join(db[k_ep]['cache_path'], f"scenes_{k_ed}", f"{basename}.mkv"),
+            concat_file=concat_fp,
+            video_file=os.path.join(
+                db[k_ep_or_g]['cache_path'],
+                f"scenes_{k_ed}",
+                f"{basename}{vcodec_to_extension[vsettings.codec]}"
+            ),
         )
     print(f"Extracted scenes in {time.time() - start_time_full:.03f}s")
 
@@ -125,8 +144,8 @@ def extract_scenes(
 
     # Concatenate video clips from all chapters
     if concatenate_clips:
-        for chapter in chapters:
-            ch_video: ChapterVideo = db[k_ep]['video'][k_ed][chapter]
+        for k_ch in chapters:
+            ch_video: ChapterVideo = db[k_ep]['video'][k_ed][k_ch]
 
             out_video_file: str = ch_video['task'].video_file
             modified_time: int = 0
@@ -134,6 +153,7 @@ def extract_scenes(
                 modified_time = os.stat(out_video_file).st_mode
 
             do_concatenate: bool = False
+            pprint(ch_video['task'])
             with open(ch_video['task'].concat_file, "w") as f:
                 for scene in ch_video['scenes']:
                     out_filepath: str = scene['task'].video_file
@@ -164,13 +184,13 @@ def extract_scenes(
 
                 main_logger.debug(' '.join(ffmpeg_command))
                 run_simple_command(ffmpeg_command)
-                if not simulation:
-                    sub_process = subprocess.Popen(
-                        ffmpeg_command,
-                        stdin=subprocess.PIPE,
-                        stdout=sys.stdout,
-                        stderr=subprocess.STDOUT,
-                    )
+                # if not simulation:
+                #     sub_process = subprocess.Popen(
+                #         ffmpeg_command,
+                #         stdin=subprocess.PIPE,
+                #         stdout=sys.stdout,
+                #         stderr=subprocess.STDOUT,
+                #     )
 
     print(f"Total time: {time.time() - start_time_full:.03f}s")
 

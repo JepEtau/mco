@@ -442,7 +442,7 @@ def generate_final_scene(
 
         ffmpeg_filter: list[str] = [
             "-filter_complex",
-            f"[0:v]{filter_complex}[outv]",
+            f"[0:v]{filter_complex},setdar=4/3[outv]",
             "-map", "[outv]"
         ]
 
@@ -453,13 +453,12 @@ def generate_final_scene(
             "-nostats",
             "-i", in_video_fp,
             *ffmpeg_filter,
-            *colorspace,
 
             "-vcodec", str_to_video_codec[vsettings.codec].value,
             "-pix_fmt", vsettings.pix_fmt,
             *vsettings.codec_options,
+            *colorspace,
             *metadata,
-
             out_video_fp, "-y"
         ]
 

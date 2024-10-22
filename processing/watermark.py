@@ -78,7 +78,7 @@ def add_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | None:
         align=alignment.value,
         fill=ink,
     )
-    if scene['task'].name in ('initial'):
+    if scene['task'].name in ('initial', 'lr'):
         _add_initial_scene_watermak(pil_image=pil_image, scene=scene, no=no)
     out_img: np.ndarray = np.array(pil_image)
 
@@ -97,12 +97,19 @@ def _add_initial_scene_watermak(pil_image: PilImage.Image, scene: Scene, no: int
     if scene['task'].name == 'initial':
         text: str = f"{scene['k_ed']}:{scene['k_ep']}:{scene['no']:03} {scene['count']}"
         color: tuple[int, int, int] = (0, 240, 0)
+
     else:
+        # Add destination
         src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no)['scene']
-        text: str = f"{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['no']:03} {scene['src'].frame_count()}"
+        text: str = f"{scene['no']:03}({scene['src'].frame_count()}) <- {src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['no']:03}"
+        # if scene['dst']['k_ch'] in ('g_debut', 'g_fin'):
+        #     text: str = f"{scene['dst']['k_ch']}:{scene['no']:03} {scene['src'].frame_count()}"
+        # else:
+        #     text: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']:03} {scene['src'].frame_count()}"
+        # text: str = f"{scene['no']:03} ({scene['src'].frame_count()})"
         color: tuple[int, int, int] = (255, 240, 0)
 
-    font_size: int = 70
+    font_size: int = 48
     bold: bool = True
     italic: bool = False
     alignment: WatermarkAlignment = WatermarkAlignment.LEFT

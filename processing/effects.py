@@ -400,35 +400,36 @@ def apply_effect(
         # use primary effect if no overlay to not refcator rn
         if effects.has_effect('overlay'):
             for effect in effects.get_effects('overlay'):
-                global cached_overlay
+                # global cached_overlay
                 if effect.frame_ref <= out_i <= effect.frame_ref + effect.loop:
-                    if cached_overlay is None:
-                        x0: int = effect.extra_param[0]
-                        overlay_fp: str = os.path.join(
-                            db['common']['directories']['images'], effect.extra_param[1]
-                        )
-                        overlay: np.ndarray = load_image_fp32(filepath=overlay_fp)
+                    # if cached_overlay is None:
+                    x0: int = effect.extra_param[0]
+                    overlay_fp: str = os.path.join(
+                        db['common']['directories']['images'], effect.extra_param[1]
+                    )
+                    # print(lightcyan(f"load image: {overlay_fp}"))
+                    overlay: np.ndarray = load_image_fp32(filepath=overlay_fp)
 
-                        # position and overlay use the final coordinates system#
-                        # -> resize to this resolution (lr task only)
-                        h, w = frame.img.shape[:2]
-                        if overlay.shape[0] != h:
-                            w_factor = w / 1440
-                            overlay: np.ndarray = cv2.resize(
-                                overlay,
-                                (int(overlay.shape[1] * w_factor), h),
-                                interpolation=cv2.INTER_LANCZOS4
-                            )
-                            x0 = int(x0  * w_factor)
-
-                        overlay = cv2.copyMakeBorder(
+                    # position and overlay use the final coordinates system#
+                    # -> resize to this resolution (lr task only)
+                    h, w = frame.img.shape[:2]
+                    if overlay.shape[0] != h:
+                        w_factor = w / 1440
+                        overlay: np.ndarray = cv2.resize(
                             overlay,
-                            0, 0, x0, w - (overlay.shape[1] + x0),
-                            borderType=cv2.BORDER_CONSTANT,
+                            (int(overlay.shape[1] * w_factor), h),
+                            interpolation=cv2.INTER_LANCZOS4
                         )
-                        cached_overlay = McoFrame(no=out_i, img=overlay)
+                        x0 = int(x0  * w_factor)
 
-                    text = cached_overlay.img
+                    overlay = cv2.copyMakeBorder(
+                        overlay,
+                        0, 0, x0, w - (overlay.shape[1] + x0),
+                        borderType=cv2.BORDER_CONSTANT,
+                    )
+                    # cached_overlay = McoFrame(no=out_i, img=overlay)
+
+                    text = overlay
                     rgb_text = text[:,:,:3]
                     alpha_text = text[:,:,3:]
                     frame.img = np_to_uint8(
@@ -436,8 +437,8 @@ def apply_effect(
                         + alpha_text * rgb_text
                     )
 
-                if out_i == effect.frame_ref + effect.loop:
-                    cached_overlay = None
+                # if out_i >= effect.frame_ref + effect.loop:
+                #     cached_overlay = None
 
 
         if effect := effects.get_effect('loop'):
