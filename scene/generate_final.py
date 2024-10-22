@@ -192,6 +192,7 @@ def generate_final_scene(
         )
         or has_effects
     )
+
     if do_decode:
         d_command: list[str] = [
             ffmpeg_exe,
@@ -205,6 +206,8 @@ def generate_final_scene(
             "-vcodec", "rawvideo",
             "-"
         ]
+
+        print(purple(f"[V] Decoder"), ' '.join(d_command))
         decoder_subprocess: subprocess.Popen = None
         try:
             decoder_subprocess = subprocess.Popen(
@@ -498,7 +501,7 @@ def generate_final_scene(
 
         # Output filename
         os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
-        print(purple(f"[V] encoder command: "), " ".join(encoder_command))
+        print(purple(f"[V] Encoder: "), " ".join(encoder_command))
 
         enc_subprocess: subprocess.Popen = None
         try:
