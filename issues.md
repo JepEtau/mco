@@ -1,6 +1,9 @@
-# Fixed, to verify:
+# Fixed, to validate:
 - DNxHD tags not working (hr)
 - temporal filter: add metadat to generated video
+- final extract as rgb48 when modifying frames. currently some effects are made in fp32 so why not converting to fp32?
+    * scene: overlay, loop, fadeout, fadein,
+    * src_scene: blend, title, zoom_in, loop_and_fadeout
 
 
 # High priority
@@ -15,5 +18,5 @@
 - add full verification in geometry
 - add watermark to the final version
 
-(?) - final extract as rgb48 when modifying frames. currently some effects are made in fp32 so why not converting to fp32?
-
+(won't fix)
+- g_debut in lr
