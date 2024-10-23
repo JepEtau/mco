@@ -559,33 +559,64 @@ def generate_final_scene(
         convert_fct = np_to_uint16 if in_pipe_dtype == np.uint16 else np_to_uint8
 
         start_time: int = time.time()
-        for i in range(count):
-            print(f"{i}/{count}", end='\r')
-            in_img: np.ndarray = np.frombuffer(
-                d_subprocess.stdout.read(in_pipe_nbytes),
-                dtype=in_pipe_dtype
-            ).reshape(in_pipe_shape)
-            img: np.ndarray = resize_to_4_3(
-                np_to_float32(in_img),
-                transformation
-            )
+        remaining: int = count
+        ofc: int = min(count, int(3 * mp.cpu_count() / 4))
+        executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
 
+        def _resize_effects(
+            i: int,
+            in_img: np.ndarray,
+            convert_fct: callable,
+        ) -> list[np.ndarray]:
+            img: np.ndarray = resize_to_4_3(
+                np_to_float32(in_img), transformation
+            )
             out_f_no = scene['src'].first_frame_no() + i
             out_frame = McoFrame(no=out_f_no, img=img, scene=scene)
-            out_frames = apply_effect(
+            out_frames: list[McoFrame] | McoFrame = apply_effect(
                 out_f_no=out_f_no,
                 frame=out_frame,
                 out_i=i
             )
 
             if isinstance(out_frames, list):
-                # print(yellow(f"\t{produced}: send {len(out_frames)} frames"))
-                [e_subprocess.stdin.write(convert_fct(f.img)) for f in out_frames]
-                produced += len(out_frames)
+                out_frames: list[McoFrame]
+                return list([convert_fct(f.img)for f in out_frames])
             else:
-                # print(yellow(f"\t{produced}: send {out_frames.no}"))
-                e_subprocess.stdin.write(convert_fct(out_frames.img))
-                produced += 1
+                out_frames: McoFrame
+                return [convert_fct(out_frames.img)]
+
+
+            return out_frames
+
+        while remaining:
+            print(f"{count - remaining}/{count}", end='\r')
+
+            # Decode by batch
+            in_imgs: list[np.ndarray] = []
+            _count = min(remaining, ofc)
+            for _ in range(_count):
+                in_imgs.append(
+                    np.frombuffer(
+                        d_subprocess.stdout.read(in_pipe_nbytes),
+                        dtype=in_pipe_dtype
+                    ).reshape(in_pipe_shape)
+                )
+            remaining -= _count
+
+            # Resize and apply filters
+            out_images: list[np.ndarray] = []
+            for out in executor.map(
+                lambda args: _resize_effects(*args),
+                [(i, img, convert_fct) for i, img in enumerate(in_imgs)]
+
+            ):
+                out_images.extend(out)
+
+            # Send to encoder
+            [e_subprocess.stdin.write(out_img) for out_img in out_images]
+            produced += len(out_images)
+
 
         if is_last_scene(scene):
             if 'silence' in ch_video and ch_video['silence'] > 0:
