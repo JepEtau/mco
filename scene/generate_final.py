@@ -1,12 +1,16 @@
+from collections.abc import Callable, Iterable, Mapping
 from concurrent.futures import ThreadPoolExecutor
 import math
 import multiprocessing as mp
 from multiprocessing import Lock
 import os
 from pprint import pprint
+from queue import Queue
 import subprocess
 import sys
+from threading import Thread
 import time
+from typing import IO, Any
 from PIL import Image
 import cv2
 import numpy as np
@@ -103,7 +107,6 @@ def decode_and_ac_detect(
     )
     # print(f"stdin_to_shared: {in_img.shape}, {in_pipe_dtype} -> {in_img.dtype}")
     return in_img, coords, debug_img
-
 
 
 
@@ -555,18 +558,18 @@ def generate_final_scene(
 
         produced: int = 0
 
-        count: int = in_video_info['frame_count']
+        in_frame_count: int = in_video_info['frame_count']
         convert_fct = np_to_uint16 if in_pipe_dtype == np.uint16 else np_to_uint8
 
         start_time: int = time.time()
-        remaining: int = count
-        ofc: int = min(count, int(3 * mp.cpu_count() / 4))
+        remaining: int = in_frame_count
+        ofc: int = min(in_frame_count, int(3 * mp.cpu_count() / 4))
         executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
 
         def _resize_effects(
             i: int,
             in_img: np.ndarray,
-            convert_fct: callable,
+            convert_fct: Callable,
         ) -> list[np.ndarray]:
             img: np.ndarray = resize_to_4_3(
                 np_to_float32(in_img), transformation
@@ -587,46 +590,57 @@ def generate_final_scene(
                 return [convert_fct(out_frames.img)]
 
 
-            return out_frames
-
-        while remaining:
-            print(f"{count - remaining}/{count}", end='\r')
-
-            # Decode by batch
-            in_imgs: list[np.ndarray] = []
-            _count = min(remaining, ofc)
-            for _ in range(_count):
-                in_imgs.append(
+        def _d_thread(stream: IO, d_queue: Queue, frame_count: int):
+            for _ in range(frame_count):
+                d_queue.put(
                     np.frombuffer(
-                        d_subprocess.stdout.read(in_pipe_nbytes),
-                        dtype=in_pipe_dtype
+                        stream.read(in_pipe_nbytes), dtype=in_pipe_dtype
                     ).reshape(in_pipe_shape)
                 )
-            remaining -= _count
+
+        def _e_thread(stream: IO, e_queue: Queue):
+            while True:
+                out_img: np.ndarray = e_queue.get()
+                if out_img is None:
+                    break
+                stream.write(out_img)
+
+
+        d_queue: Queue = Queue(maxsize=ofc)
+        e_queue: Queue = Queue(maxsize=ofc * 2)
+        d_thread = Thread(target=_d_thread, args=(d_subprocess.stdout, d_queue, in_frame_count))
+        d_thread.start()
+        e_thread = Thread(target=_e_thread, args=(e_subprocess.stdin, e_queue))
+        e_thread.start()
+        while remaining:
+            print(f"{in_frame_count - remaining}/{in_frame_count}", end='\r')
+
+            # Decode by batch
+            count = min(ofc, remaining)
+            in_imgs: list[np.ndarray] = list([d_queue.get() for _ in range(count)])
+            remaining -= count
 
             # Resize and apply filters
             out_images: list[np.ndarray] = []
             for out in executor.map(
                 lambda args: _resize_effects(*args),
                 [(i, img, convert_fct) for i, img in enumerate(in_imgs)]
-
             ):
                 out_images.extend(out)
 
             # Send to encoder
-            [e_subprocess.stdin.write(out_img) for out_img in out_images]
+            [e_queue.put(out_img) for out_img in out_images]
             produced += len(out_images)
 
 
         if is_last_scene(scene):
             if 'silence' in ch_video and ch_video['silence'] > 0:
-                img_black = np.zeros(
-                    (FINAL_HEIGHT, FINAL_WIDTH, 3), dtype=in_pipe_dtype
-                )
-                [e_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
-
+                img_black = np.zeros((FINAL_HEIGHT, FINAL_WIDTH, 3), dtype=in_pipe_dtype)
+                [e_queue.put(img_black) for _ in range(ch_video['silence'])]
                 produced += ch_video['silence']
                 print(f"produced w/ silence: {produced}")
+        e_queue.put(None)
+        e_thread.join()
         elapsed_time = time.time() - start_time
         print(f"produced {produced} frames in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:.1f}fps)")
 
