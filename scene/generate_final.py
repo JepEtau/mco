@@ -110,6 +110,35 @@ def decode_and_ac_detect(
 
 
 
+
+def resize_and_effects(
+    i: int,
+    in_img: np.ndarray,
+    scene: Scene,
+    transformation,
+    convert_fct: Callable,
+) -> list[np.ndarray]:
+    img: np.ndarray = resize_to_4_3(
+        np_to_float32(in_img), transformation
+    )
+    out_f_no: int = scene['src'].first_frame_no() + i
+    out_frame = McoFrame(no=out_f_no, img=img, scene=scene)
+    out_frames: list[McoFrame] | McoFrame = apply_effect(
+        out_f_no=out_f_no,
+        frame=out_frame,
+        out_i=i
+    )
+
+    if isinstance(out_frames, list):
+        out_frames: list[McoFrame]
+        return list([convert_fct(f.img)for f in out_frames])
+    else:
+        out_frames: McoFrame
+        return [convert_fct(out_frames.img)]
+
+
+
+
 def generate_final_scene(
     scene: Scene,
     force: bool = False,
@@ -165,15 +194,10 @@ def generate_final_scene(
 
     print(lightcyan(f"Processing:"))
     print(f"  frame_count: {scene['dst']['count']}")
-    # if scene['dst']['count'] != in_video_info['frame_count']:
-    #     if False:
-    #         print(red(
-    #             f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
-    #         ))
-    #     else:
-    #         raise ValueError(red(
-    #             f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
-    #         ))
+    if in_video_info['frame_count'] < scene['dst']['count']:
+        raise ValueError(red(
+            f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
+        ))
 
     # Scene geometry
     geometry: SceneGeometry = scene['geometry']
@@ -509,7 +533,7 @@ def generate_final_scene(
         try:
             d_subprocess = subprocess.Popen(
                 d_command,
-                stdin=subprocess.PIPE,
+                stdin=subprocess.DEVNULL,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
             )
@@ -566,37 +590,18 @@ def generate_final_scene(
         ofc: int = min(in_frame_count, int(3 * mp.cpu_count() / 4))
         executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
 
-        def _resize_effects(
-            i: int,
-            in_img: np.ndarray,
-            convert_fct: Callable,
-        ) -> list[np.ndarray]:
-            img: np.ndarray = resize_to_4_3(
-                np_to_float32(in_img), transformation
-            )
-            out_f_no = scene['src'].first_frame_no() + i
-            out_frame = McoFrame(no=out_f_no, img=img, scene=scene)
-            out_frames: list[McoFrame] | McoFrame = apply_effect(
-                out_f_no=out_f_no,
-                frame=out_frame,
-                out_i=i
-            )
-
-            if isinstance(out_frames, list):
-                out_frames: list[McoFrame]
-                return list([convert_fct(f.img)for f in out_frames])
-            else:
-                out_frames: McoFrame
-                return [convert_fct(out_frames.img)]
 
 
-        def _d_thread(stream: IO, d_queue: Queue, frame_count: int):
-            for _ in range(frame_count):
-                d_queue.put(
-                    np.frombuffer(
-                        stream.read(in_pipe_nbytes), dtype=in_pipe_dtype
-                    ).reshape(in_pipe_shape)
-                )
+        def _d_thread(stream: IO, d_queue: Queue):
+            try:
+                while True:
+                    d_queue.put(
+                        np.frombuffer(
+                            stream.read(in_pipe_nbytes), dtype=in_pipe_dtype
+                        ).reshape(in_pipe_shape)
+                    )
+            except:
+                pass
 
         def _e_thread(stream: IO, e_queue: Queue):
             while True:
@@ -608,35 +613,54 @@ def generate_final_scene(
 
         d_queue: Queue = Queue(maxsize=ofc)
         e_queue: Queue = Queue(maxsize=ofc * 2)
-        d_thread = Thread(target=_d_thread, args=(d_subprocess.stdout, d_queue, in_frame_count))
+        d_thread = Thread(target=_d_thread, args=(d_subprocess.stdout, d_queue,))
+        e_thread = Thread(target=_e_thread, args=(e_subprocess.stdin, e_queue,))
         d_thread.start()
-        e_thread = Thread(target=_e_thread, args=(e_subprocess.stdin, e_queue))
         e_thread.start()
+        decoded: int = 0
         while remaining:
             print(f"{in_frame_count - remaining}/{in_frame_count}", end='\r')
 
             # Decode by batch
             count = min(ofc, remaining)
+            # in_imgs: list[np.ndarray] = list([
+            #     np.frombuffer(
+            #         d_subprocess.stdout.read(in_pipe_nbytes), dtype=in_pipe_dtype
+            #     ).reshape(in_pipe_shape)
+            #     for _ in range(count)
+            # ])
             in_imgs: list[np.ndarray] = list([d_queue.get() for _ in range(count)])
             remaining -= count
+            decoded += count
 
             # Resize and apply filters
             out_images: list[np.ndarray] = []
             for out in executor.map(
-                lambda args: _resize_effects(*args),
-                [(i, img, convert_fct) for i, img in enumerate(in_imgs)]
+                lambda args: resize_and_effects(*args),
+                [(decoded + i, img, scene, transformation, convert_fct)
+                for i, img in enumerate(in_imgs)]
             ):
                 out_images.extend(out)
+            # for i, img in enumerate(in_imgs):
+            #     out_images.extend(
+            #         resize_and_effects(
+            #             decoded + i, img, scene, transformation, convert_fct
+            #     )
+            # )
 
             # Send to encoder
             [e_queue.put(out_img) for out_img in out_images]
+            # for out_img in out_images:
+            #     e_subprocess.stdin.write(out_img)
+
             produced += len(out_images)
 
 
         if is_last_scene(scene):
             if 'silence' in ch_video and ch_video['silence'] > 0:
                 img_black = np.zeros((FINAL_HEIGHT, FINAL_WIDTH, 3), dtype=in_pipe_dtype)
-                [e_queue.put(img_black) for _ in range(ch_video['silence'])]
+                # [e_queue.put(img_black) for _ in range(ch_video['silence'])]
+                [e_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
                 produced += ch_video['silence']
                 print(f"produced w/ silence: {produced}")
         e_queue.put(None)
