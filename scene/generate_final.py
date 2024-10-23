@@ -196,7 +196,7 @@ def generate_final_scene(
     print(f"  frame_count: {scene['dst']['count']}")
     if in_video_info['frame_count'] < scene['dst']['count']:
         raise ValueError(red(
-            f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
+            f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']} ({in_video_fp})"
         ))
 
     # Scene geometry

@@ -22,8 +22,8 @@ def main():
     parser.add_argument(
         "--scene",
         "-s",
-        type=str,
-        default='',
+        type=int,
+        default=-1,
         required=False,
         help="scene no. to process. Integer or frame value (e.g. 2450f)"
     )
@@ -71,20 +71,13 @@ def main():
     parse_database(episode=episode, lang=arguments.lang)
     gc.collect()
 
-    scene_no: int | None = None
-    scene_arg: str = arguments.scene
-    if scene_arg.endswith('f'):
-        raise NotImplementedError("scene_arg not yet implemented")
-        scene_no = frame_to_scene_no(int(scene_arg[:-1]))
-    elif scene_arg != '':
-        scene_no: int = int(scene_arg)
 
     task = 'tf'
 
     tf_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
-        scene_no=scene_no,
+        scene_no=arguments.scene,
         task_name=task,
         evaluate=arguments.eval,
         force=arguments.force,

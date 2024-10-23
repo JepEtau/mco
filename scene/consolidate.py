@@ -252,7 +252,7 @@ def consolidate_scene(
         basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
 
     suffix: str = ""
-    if task_name not in ("hr", "final"):
+    if task_name not in ('hr', 'tf', 'final'):
         if task.hash != '':
             suffix = f"_{task.hash}"
     suffix += f"_{task_name}"

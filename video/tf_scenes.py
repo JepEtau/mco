@@ -27,7 +27,7 @@ from parsers import (
 def tf_scenes(
     episode: str,
     single_chapter: Chapter = '',
-    scene_no: int | None = None,
+    scene_no: int = -1,
     task_name: TaskName = '',
     evaluate: bool = False,
     force: bool = False,
@@ -119,8 +119,8 @@ def tf_scenes(
                     absolute_path("A:\\py_temporalfix\\py_temporalfix.py"),
                     "--input", in_fp,
                     "--output", out_fp,
-                    "--t_radius", t_radius,
-                    "--strength", strength
+                    "--t_radius", str(t_radius),
+                    "--strength", str(strength)
                 ]
                 print(lightcyan("pytf command:"))
                 print(lightgreen(' '.join(pytf_cmd)))

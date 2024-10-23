@@ -22,11 +22,11 @@ def get_ffmpeg_pad_color_filter(scene: Scene) -> str:
 
     if vsettings.pad != 0:
         pad: int = vsettings.pad
-        pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
+        pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black,{color_params}"
         return f"{pad_filter}"
 
     else:
-        return ""
+        return f"{color_params}"
 
 
 def do_watermark(scene: Scene) -> bool:
