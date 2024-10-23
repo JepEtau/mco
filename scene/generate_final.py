@@ -7,6 +7,8 @@ from pprint import pprint
 import subprocess
 import sys
 import time
+from PIL import Image
+import cv2
 import numpy as np
 from processing.detect_inner_rect import detect_inner_rect
 from processing.resize_to_4_3 import ConvertTo43Params, TransformationValues, calculate_transformation_values, resize_to_4_3
@@ -32,6 +34,7 @@ from utils.mco_utils import (
     is_last_scene,
     run_simple_command
 )
+from utils.np_dtypes import np_to_float32, np_to_uint16, np_to_uint8
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
 from utils.pxl_fmt import PIXEL_FORMAT
@@ -159,15 +162,15 @@ def generate_final_scene(
 
     print(lightcyan(f"Processing:"))
     print(f"  frame_count: {scene['dst']['count']}")
-    if scene['dst']['count'] != in_video_info['frame_count']:
-        if False:
-            print(red(
-                f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
-            ))
-        else:
-            raise ValueError(red(
-                f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
-            ))
+    # if scene['dst']['count'] != in_video_info['frame_count']:
+    #     if False:
+    #         print(red(
+    #             f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
+    #         ))
+    #     else:
+    #         raise ValueError(red(
+    #             f"[E] Erroneous frame count, waiting {scene['dst']['count']} but video has {in_video_info['frame_count']}"
+    #         ))
 
     # Scene geometry
     geometry: SceneGeometry = scene['geometry']
@@ -208,9 +211,9 @@ def generate_final_scene(
         ]
 
         print(purple(f"[V] Decoder"), ' '.join(d_command))
-        decoder_subprocess: subprocess.Popen = None
+        d_subprocess: subprocess.Popen = None
         try:
-            decoder_subprocess = subprocess.Popen(
+            d_subprocess = subprocess.Popen(
                 d_command,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
@@ -258,7 +261,7 @@ def generate_final_scene(
                         in_pipe_shape,
                         out_pipe_dtype,
                         multiplier,
-                        decoder_subprocess,
+                        d_subprocess,
                         geometry.detection_params,
                         locks,
                         debug=debug_scene
@@ -307,7 +310,7 @@ def generate_final_scene(
                         in_pipe_shape,
                         out_pipe_dtype,
                         multiplier,
-                        decoder_subprocess,
+                        d_subprocess,
                         locks,
                     ),
                     range(count)
@@ -446,7 +449,7 @@ def generate_final_scene(
             "-map", "[outv]"
         ]
 
-        encoder_command: list[str] = [
+        e_command: list[str] = [
             ffmpeg_exe,
             "-hide_banner",
             "-loglevel", "warning",
@@ -463,27 +466,63 @@ def generate_final_scene(
         ]
 
         os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
-        print(purple(f"[V] command: "), " ".join(encoder_command))
-        run_simple_command(encoder_command)
+        print(purple(f"[V] command: "), " ".join(e_command))
+        run_simple_command(e_command)
 
     else:
         print(f"{scene_key} has effects")
-        out_imgs: list[np.ndarray] = []
-        for out_img in executor.map(
-            lambda img: resize_to_4_3(img, transformation), in_images
-        ):
-            out_imgs.append(out_img)
-        print(len(out_imgs))
-        print(out_imgs[0].shape)
+        # out_imgs: list[np.ndarray] = []
+        # for out_img in executor.map(
+        #     lambda img: resize_to_4_3(img, transformation), in_images
+        # ):
+        #     out_imgs.append(out_img)
+        # print(len(out_imgs))
+        # print(out_imgs[0].shape)
 
-        encoder_command: list[str] = [
+        in_pipe_shape = in_pipe_shape
+        in_pipe_dtype: np.dtype = np.uint16 if in_video_info['bpp'] > 8 else np.uint8
+        in_pipe_pixfmt: str = 'bgr24' if in_pipe_dtype == np.uint8 else 'bgr48le'
+        in_pipe_nbytes: int = math.prod(in_pipe_shape) * np.dtype(in_pipe_dtype).itemsize
+        print(purple("Decoder:"))
+        print(f"  shape: {in_pipe_shape}")
+        print(f"  dtype: {in_pipe_dtype}")
+        print(f"  pixfmt: {in_pipe_pixfmt}")
+        print(f"  nbytes: {in_pipe_nbytes}")
+
+        d_command: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "warning",
+            "-nostats",
+            "-i", in_video_fp,
+
+            "-f", "image2pipe",
+            "-pix_fmt", in_pipe_pixfmt,
+            "-vcodec", "rawvideo",
+            "-"
+        ]
+        print(lightcyan(f"  command:"), ' '.join(d_command))
+        d_subprocess: subprocess.Popen = None
+        try:
+            d_subprocess = subprocess.Popen(
+                d_command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except Exception as e:
+            print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+            return False
+
+
+        e_command: list[str] = [
             ffmpeg_exe,
             "-hide_banner",
             "-loglevel", "warning",
             "-nostats",
 
             "-f", "rawvideo",
-            '-pixel_format', out_pipe_pixfmt,
+            '-pixel_format', in_pipe_pixfmt,
             '-video_size', f"{out_w}x{out_h}",
             "-r", str(vsettings.frame_rate),
 
@@ -500,15 +539,15 @@ def generate_final_scene(
 
         # Output filename
         os.makedirs(path_split(out_video_fp)[0], exist_ok=True)
-        print(purple(f"[V] Encoder: "), " ".join(encoder_command))
+        print(purple(f"[V] Encoder: "), " ".join(e_command))
 
-        enc_subprocess: subprocess.Popen = None
+        e_subprocess: subprocess.Popen = None
         try:
-            enc_subprocess = subprocess.Popen(
-                encoder_command,
+            e_subprocess = subprocess.Popen(
+                e_command,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
             )
         except Exception as e:
             print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
@@ -516,49 +555,58 @@ def generate_final_scene(
 
         produced: int = 0
 
-        for i, img in enumerate(out_imgs):
-            out_f_no = scene['src'].first_frame_no() + i
-            out_frame = McoFrame(
-                no=out_f_no,
-                img=img,
-                scene=scene
+        count: int = in_video_info['frame_count']
+        convert_fct = np_to_uint16 if in_pipe_dtype == np.uint16 else np_to_uint8
+
+        start_time: int = time.time()
+        for i in range(count):
+            print(f"{i}/{count}", end='\r')
+            in_img: np.ndarray = np.frombuffer(
+                d_subprocess.stdout.read(in_pipe_nbytes),
+                dtype=in_pipe_dtype
+            ).reshape(in_pipe_shape)
+            img: np.ndarray = resize_to_4_3(
+                np_to_float32(in_img),
+                transformation
             )
 
+            out_f_no = scene['src'].first_frame_no() + i
+            out_frame = McoFrame(no=out_f_no, img=img, scene=scene)
             out_frames = apply_effect(
                 out_f_no=out_f_no,
                 frame=out_frame,
                 out_i=i
             )
+
             if isinstance(out_frames, list):
                 # print(yellow(f"\t{produced}: send {len(out_frames)} frames"))
-                [enc_subprocess.stdin.write(f.img) for f in out_frames]
+                [e_subprocess.stdin.write(convert_fct(f.img)) for f in out_frames]
                 produced += len(out_frames)
             else:
                 # print(yellow(f"\t{produced}: send {out_frames.no}"))
-                enc_subprocess.stdin.write(out_frames.img)
+                e_subprocess.stdin.write(convert_fct(out_frames.img))
                 produced += 1
 
-
-        print(f"produced {produced} frames")
         if is_last_scene(scene):
             if 'silence' in ch_video and ch_video['silence'] > 0:
-                print(f"silence!!! {ch_video['silence']}")
                 img_black = np.zeros(
-                    (FINAL_HEIGHT, FINAL_WIDTH, 3), dtype=out_pipe_dtype
+                    (FINAL_HEIGHT, FINAL_WIDTH, 3), dtype=in_pipe_dtype
                 )
-                [enc_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
+                [e_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
 
                 produced += ch_video['silence']
                 print(f"produced w/ silence: {produced}")
+        elapsed_time = time.time() - start_time
+        print(f"produced {produced} frames in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:.1f}fps)")
 
-        stderr_bytes: bytes | None = None
-        _, stderr_bytes = enc_subprocess.communicate(timeout=10)
-        if stderr_bytes is not None:
-            stderr = stderr_bytes.decode('utf-8)')
+        stdout_bytes: bytes | None = None
+        stdout_bytes, _ = e_subprocess.communicate(timeout=10)
+        if stdout_bytes is not None:
+            stdout = stdout_bytes.decode('utf-8)')
             # TODO: parse the output file
-            if stderr != '':
-                print(f"{scene_key} stderr:")
-                pprint(stderr)
+            if stdout != '':
+                print(f"{scene_key} stdout:")
+                pprint(stdout)
 
 
 

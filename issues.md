@@ -15,6 +15,7 @@
 
 
 # Improvments (low priority)
+- use threads in final
 - add full verification in geometry
 - add watermark to the final version
 
