@@ -95,6 +95,7 @@ def consolidate_scenes(
 
                 for tn in ('st', 'tf'):
                     fp: str = scene['task'].fallback_in_video_files[tn]
+                    print(f"fp: {fp}")
                     if not os.path.exists(fp):
                         src_fp: str = scene['task'].fallback_in_video_files[previous[tn]]
                         print(lightcyan(f"create a symlink: "), f"{os.path.split(src_fp)[-1]} <- {os.path.split(fp)[-1]}")
