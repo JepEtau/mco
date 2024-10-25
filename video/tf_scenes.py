@@ -7,10 +7,13 @@ from pprint import pprint
 
 from parsers.p_print import pprint_scene_mapping
 from scene.consolidate import consolidate_scene
+from utils.media import VideoInfo, extract_media_info
+from utils.pxl_fmt import PIXEL_FORMAT
 from video.consolidate_scenes import get_chapter_video
 from .st_scenes import convert_video_for_evaluation
 from utils.mco_types import Scene, ChapterVideo
-from utils.mco_utils import scene_id_str
+from utils.mco_utils import ffmpeg_metadata, scene_id_str
+from utils.tools import ffmpeg_exe
 from utils.p_print import *
 from utils.path_utils import absolute_path
 from parsers import (
@@ -20,6 +23,7 @@ from parsers import (
     ep_key,
     TaskName,
     ProcessingTask,
+    VideoSettings,
 )
 
 
@@ -99,74 +103,211 @@ def tf_scenes(
                 print(yellow(f"{scene_id} has to be updated"))
                 do_process = True
 
+            if not do_process:
+                if evaluate:
+                    convert_video_for_evaluation(
+                        [in_fp, out_fp],
+                        force=force,
+                        debug=debug
+                    )
+                continue
 
             # Run temporalfilter
-            if do_process:
-                print(lightcyan(f"{scene_id}: temporal filtering"))
+            print(lightcyan(f"{scene_id}: temporal filtering"))
 
-                t_radius: int = 6
-                strength: int = 400
-                try:
-                    t_radius, strength = list(
-                        map(int, scene['filters'][task_name].sequence.split(','))
-                    )
-                except:
-                    pass
+            t_radius: int = 6
+            strength: int = 400
+            try:
+                t_radius, strength = list(
+                    map(int, scene['filters'][task_name].sequence.split(','))
+                )
+            except:
+                pass
 
-                pytf_cmd: list[str] = [
-                    sys.executable,
-                    # absolute_path("~/github/py_temporalfix/py_temporalfix.py"),
-                    absolute_path("A:\\py_temporalfix\\py_temporalfix.py"),
-                    "--input", in_fp,
-                    "--output", out_fp,
-                    "--t_radius", str(t_radius),
-                    "--strength", str(strength)
-                ]
-                print(lightcyan("pytf command:"))
-                print(lightgreen(' '.join(pytf_cmd)))
-
-                pytf_subprocess: subprocess.Popen | None = None
-                try:
-                    pytf_subprocess = subprocess.Popen(
-                        pytf_cmd,
-                        stdin=subprocess.DEVNULL,
-                        stdout=subprocess.PIPE,
-                        stderr=subprocess.PIPE,
-                    )
-                except Exception as e:
-                    print(f"[E] Unexpected error: {type(e)}", flush=True)
+            # From temporal fix
+            root_dir: str = os.path.dirname(
+                absolute_path("A:\\py_temporalfix\\py_temporalfix.py")
+            )
+            vspipe_exe: str = absolute_path(
+                os.path.join(root_dir, "external", "vspython", "VSPipe.exe")
+            )
+            vs_out_pix_fmt = 'yuv444p16le'
 
 
-                line: str = ''
-                os.set_blocking(pytf_subprocess.stderr.fileno(), False)
-                print(f"Apply temporal filters:")
-                try:
-                    while True:
-                        line = pytf_subprocess.stderr.readline().decode('utf-8')
-                        if line:
-                            print(f"  {line.strip()}", end='\r')
-                        if pytf_subprocess.poll() is not None:
-                            break
-                except:
-                    pass
-                # print()
-
-                # stdout_b: bytes | None = None
-                # try:
-                #     # Arbitrary timeout value
-                #     stdout_b, _ = pytf_subprocess.communicate(timeout=10)
-                # except:
-                #     pytf_subprocess.kill()
-                #     return
-
-                # if stdout_b is not None:
-                #     stdout = stdout_b.decode('utf-8)')
-                #     if stdout:
-                #         print(f"FFmpeg stdout:\n{stdout}")
-                #     print()
-            print()
+            # VSpipe command
+            vs_command: list[str] = [
+                vspipe_exe,
+                os.path.join(root_dir, "vstf.vpy"),
+                "--arg", f"input_fp=\"{in_fp}\"",
+                "--arg", f"tr={t_radius}",
+                "--arg", f"strength={strength}",
+                "--arg", f"pix_fmt={vs_out_pix_fmt}",
+                "-",
+            ]
+            if debug:
+                print(lightcyan("VS command:"))
+                print(lightgreen(' '.join(vs_command)))
 
 
+            in_vi: VideoInfo = extract_media_info(in_fp)['video']
+            f_rate = in_vi['frame_rate_r']
+            frame_rate = str(f_rate)
+            if isinstance(f_rate, tuple | list):
+                if f_rate[1] != 1:
+                    frame_rate = ":".join(map(str, f_rate))
+                else:
+                    frame_rate = str(f_rate[0])
+
+            h, w = in_vi['shape'][:2]
+            frame_count: int = in_vi['frame_count']
+            out_bpp: int = PIXEL_FORMAT[vs_out_pix_fmt]['bpp']
+            out_nbytes: int = h * w * out_bpp // 8
+            color_params: str = "setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709"
+
+            # Encoder command
+            vsettings: VideoSettings = scene['task'].video_settings
+            metadata: list[str] = ffmpeg_metadata(scene)
+            if debug:
+                pprint(vsettings)
+            encoder_command: list[str] = [
+                ffmpeg_exe,
+                "-hide_banner",
+                "-loglevel", "error",
+                "-stats",
+                '-f', 'rawvideo',
+                '-pixel_format', vs_out_pix_fmt,
+                '-video_size', f"{w}x{h}",
+                "-r", frame_rate,
+                '-i', 'pipe:0',
+                "-filter_complex", f"[0:v]{color_params}[outv]",
+                "-map", "[outv]",
+                "-vcodec", vsettings.codec,
+                *metadata,
+                *vsettings.codec_options,
+                "-pix_fmt", vsettings.pix_fmt,
+                "-color_range", "full",
+                "-y", out_fp
+            ]
+
+            # Encoder process
+            e_subprocess: subprocess.Popen | None = None
+            try:
+                e_subprocess = subprocess.Popen(
+                    encoder_command,
+                    stdin=subprocess.PIPE,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                )
+            except Exception as e:
+                sys.exit(red(f"[E] Unexpected error: {type(e)}"))
+            if e_subprocess is None:
+                sys.exit(red(f"[E] Encoder process is not started"))
+
+            # Clean environment for vspython
+            # vs_path: list[str] = []
+            forbidden_names: tuple[str] = (
+                'python',
+                'conda',
+                'vapoursynth',
+                'ffmpeg',
+            )
+
+            # Create path used by vs subprocess
+            vs_path: list[str] = []
+            sep: str = ";"
+            if sys.platform == "win32":
+                for dir in ("Scripts", "vs-scripts", "vs-plugins", ""):
+                    vs_path.insert(0, os.path.abspath(
+                        os.path.join(root_dir, "external", "vspython", dir)
+                    ))
+            vs_path.insert(0, root_dir)
+
+            # Clean environnment for vs
+            vs_env = os.environ.copy()
+            if sys.platform == 'win32':
+                del vs_env['PATH']
+                for k, v in vs_env.copy().items():
+                    k_lower, v_lower = k.lower(), v.lower()
+                    for n in forbidden_names:
+                        if n in k_lower:
+                            try:
+                                del vs_env[k]
+                            except:
+                                pass
+
+                        if n in v_lower:
+                            try:
+                                del vs_env[k]
+                            except:
+                                pass
+                vs_env['PATH'] = sep.join(vs_path)
+
+            # Vs process
+            vs_subprocess: subprocess.Popen | None = None
+            try:
+                vs_subprocess = subprocess.Popen(
+                    vs_command,
+                    stdin=subprocess.DEVNULL,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    env=vs_env,
+                )
+            except Exception as e:
+                print(f"[E] Unexpected error: {type(e)}", flush=True)
+
+
+
+            if debug:
+                print(lightcyan("vs_temporalfix command:"))
+                print(lightgreen(' '.join(vs_command)))
+                print(lightcyan("Pipe in:"))
+                print(f"  shape: {w}x{h}")
+                print(f"  nb of bytes: {out_nbytes}")
+                print(f"  frame_count: {frame_count}")
+
+                print(lightcyan("Encoder command:"))
+                print(lightgreen(' '.join(encoder_command)))
+
+            frame: bytes = None
+            line: str = ''
+            os.set_blocking(e_subprocess.stdout.fileno(), False)
+            os.set_blocking(vs_subprocess.stderr.fileno(), False)
+            print(f"Processing:")
+            try:
+                for _ in range(frame_count):
+                    # print(f"reading frame no. {i}", end="\r")
+                    frame: bytes = vs_subprocess.stdout.read(out_nbytes)
+                    if frame is None:
+                        print(red("None"))
+                    e_subprocess.stdin.write(frame)
+                    line = e_subprocess.stdout.readline().decode('utf-8')
+                    if line:
+                        print(line.strip(), end='\r', file=sys.stderr)
+                    line = vs_subprocess.stderr.readline().decode('utf-8')
+                    if line:
+                        print(line.strip(), end='\r', file=sys.stderr)
+                print()
+            except:
+                pass
+
+            stdout_b: bytes | None = None
+            stderr_b: bytes | None = None
+            try:
+                # Arbitrary timeout value
+                stdout_b, stderr_b = e_subprocess.communicate(timeout=10)
+            except:
+                e_subprocess.kill()
+                return
+
+            if stdout_b is not None:
+                stdout = stdout_b.decode('utf-8)')
+                if stdout:
+                    print(f"FFmpeg stdout:\n{stdout}")
+
+            if stderr_b is not None:
+                stderr = stderr_b.decode('utf-8)')
+                if stderr:
+                    print(f"FFmpeg stderr:\n{stderr}")
 
 
             if evaluate:
