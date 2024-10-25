@@ -275,7 +275,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
                 db_directories['cache_progressive'],
                 f"{path_split(in_media_path)[1]}_{hashcode}.mkv"
             )
-            ffmpeg_command: str = qtgmc_deint_command(
+            e_command: list[str] = qtgmc_deint_command(
                 in_video_info=in_video_info,
                 script=script_filepath,
                 qtgmc_args=qtgmc_args,
@@ -298,7 +298,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
                 f"{path_split(in_media_path)[1]}_{deint_algo}_{hashcode}.mkv"
             )
 
-            ffmpeg_command: str = deint_command(
+            e_command: str = deint_command(
                 in_video_info=in_video_info,
                 algo=deint_algo,
                 params=deint_params,
@@ -336,12 +336,12 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
 
         if arguments.debug:
             print(f"{hashcode} -> {filter_str}")
-            print(' '.join(ffmpeg_command))
+            print(' '.join(e_command))
 
         os.makedirs(db_directories['cache_progressive'], exist_ok=True)
         start_time: float = time.time()
         sub_process = subprocess.Popen(
-            ffmpeg_command,
+            e_command,
             stdin=subprocess.PIPE,
             stdout=sys.stdout,
             stderr=subprocess.STDOUT,

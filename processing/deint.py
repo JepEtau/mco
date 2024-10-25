@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 from utils.hash import calc_hash
 from utils.logger import main_logger
-from utils.media import FieldOrder, VideoInfo
+from utils.media import FieldOrder, FrameRate, VideoInfo
 from utils.p_print import *
 from utils.path_utils import absolute_path, get_extension
 from utils.pxl_fmt import PIXEL_FORMAT
@@ -447,36 +447,15 @@ def qtgmc_deint_command(
     ])
 
     # Frame rate
-    fps: float | int | tuple[int, int] = in_video_info['frame_rate_r']
-    # ffmpeg_command.extend([
-    #     "-r",
-    #     '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
-    # ])
+    fps: FrameRate = in_video_info['frame_rate_r']
     ffmpeg_command.extend([
-        "-r", "25"
-    ])
-    ffmpeg_command.extend([
-        "-pixel_format", "rgb24",
+        "-r", "/".join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
+
+        "-vf", "setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709",
+        "-pixel_format", "yuv422p10le",
+        "-color_range", "full",
         "-vcodec", "ffv1",
-    ])
 
-    # ffmpeg_command.extend([
-    #     "-pixel_format", "yuv444p",
-    #     "-vcodec", "libx264",
-    #     "-crf", "14",
-    #     "-preset", "slow",
-    #     "-tune", "stillimage"
-    # ])
-
-    # ffmpeg_command.extend([
-    #     "-pix_fmt", "yuv444p",
-    #     "-vcodec", "libx264",
-    #     "-preset", "slow",
-    #     "-crf", "10",
-    #     "-tune", "stillimage"
-    # ])
-
-    ffmpeg_command.extend([
         "-an",
         "-sn",
         "-map_chapters", "-1"
