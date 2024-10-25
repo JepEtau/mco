@@ -7,6 +7,7 @@ from pprint import pprint
 
 from parsers.p_print import pprint_scene_mapping
 from scene.consolidate import consolidate_scene
+from scene.filters import clean_fcomplex
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import scene_id_str
 from utils.p_print import *
@@ -156,15 +157,25 @@ def convert_video_for_evaluation(
                 print(f"    already converted, continue.")
                 continue
 
+
+        color_params: str = """
+            setparams=colorspace=bt709
+                :color_primaries=bt709
+                :color_trc=bt709
+        """
+
         ffmpeg_cmd: list[str] = [
             ffmpeg_exe,
             "-hide_banner",
             "-loglevel", "error",
             "-stats",
             "-i", fp,
+            # "-vf", clean_fcomplex(color_params)
+            # "-vf", "setparams=range='tv'",
+            "-color_range", "full",
             "-vcodec", "libx264",
             "-pix_fmt", "yuv420p",
-            # "-preset", "slow",
+            "-preset", "slow",
             "-crf", "15",
             "-an", "-sn",
             out_h264_fp, "-y"

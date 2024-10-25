@@ -247,8 +247,6 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
 
     def event_copy(self):
         self.copied = self.current_frame
-        print("copied")
-        pprint(self.copied)
         self.pushButton_paste.setEnabled(True)
 
 

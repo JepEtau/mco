@@ -159,7 +159,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         set_stylesheet(self)
 
         # Install events for this widget
-        # self.installEventFilter(self)
+        self.installEventFilter(self)
 
         # self.set_selected(False)
 
