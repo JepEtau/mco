@@ -442,19 +442,22 @@ def qtgmc_deint_command(
     # FFmpeg complex filter
     ffmpeg_filter = _clean_str(resize)
     ffmpeg_command.extend([
-        "-filter_complex", f"[0:v]{ffmpeg_filter}[outv]",
+        "-filter_complex", f"[0:v]{ffmpeg_filter},setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709[outv]",
         "-map", "[outv]"
     ])
 
     # Frame rate
     fps: FrameRate = in_video_info['frame_rate_r']
     ffmpeg_command.extend([
-        "-r", "/".join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
-
-        "-vf", "setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709",
+        # "-r", "/".join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
+        "-r", "25",
         "-pixel_format", "yuv422p10le",
+
+        # "-color_range", "full",
+        # "-vcodec", "ffv1",
+        "-vcodec", "dnxhd",
+        "-profile:v", "dnxhr_hqx",
         "-color_range", "full",
-        "-vcodec", "ffv1",
 
         "-an",
         "-sn",

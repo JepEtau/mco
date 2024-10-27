@@ -54,6 +54,11 @@ from ._keys import (
     ep_key
 )
 
+from .dsr import (
+    SceneDsr,
+    FrameDsr,
+    PatchDsr
+)
 
 __all__ = [
     "db",
@@ -89,4 +94,9 @@ __all__ = [
     "DetectInnerRectParams",
     "SceneGeometryStat",
     "ChGeometryStats",
+
+    "SceneDsr",
+    "FrameDsr",
+    "PatchDsr"
+
 ]

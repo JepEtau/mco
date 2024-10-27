@@ -258,7 +258,7 @@ def consolidate_scene(
     suffix += f"_{task_name}"
 
     # Append the model name to evaluate models: only for upscale task
-    if evaluation and task_name == 'upscale':
+    if task_name == 'upscale':
         sequence: str = scene_filters[task_name].sequence
         for t in (
             ':cuda', ':trt', ':fp16', ':fp32'
@@ -266,11 +266,11 @@ def consolidate_scene(
             sequence = sequence.replace(t, '')
         suffix: str = ""
         for s in sequence.split(','):
-            print(s)
             if (result := re.search(re.compile(r"(.*)="), s)):
-                suffix += f"+{result.group(1)}"
+                suffix += f"+{result.group(1)}" if suffix else f"{result.group(1)}"
             else:
-                suffix += f"+{s}"
+                suffix += f"+{s}" if suffix else s
+        suffix = f"__{suffix}"
 
     previous = {
         'st': 'hr',
@@ -291,6 +291,10 @@ def consolidate_scene(
     task.video_file = absolute_path(
         os.path.join(cache_path, f"scenes_{task_name}", f"{basename}{suffix}{ext}")
     )
+    if task_name == 'upscale':
+        task.video_file = absolute_path(
+            os.path.join(cache_path, f"scenes_{task_name}", f"{scene['no']:03}", f"{basename}{suffix}{ext}")
+        )
 
     # Input file for this task
     if task_name in ('st', 'tf', 'cg', 'final'):

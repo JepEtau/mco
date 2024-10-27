@@ -17,7 +17,7 @@ from ._db import db
 
 
 
-def consolidate_av_sync(k_ep):
+def consolidate_av_sync(k_ep: str):
     episode = db[k_ep]
     fps = get_fps(db)
     logger.debug(lightgreen(f"consolidate_av_sync"))
@@ -55,13 +55,19 @@ def consolidate_av_sync(k_ep):
         # Compare video count from audio_src and target
 
         try:
-            precedemment_video_count = (episode['video'][k_ed_audio_src]['episode']['scenes'][1]['start']
-                            - episode['video'][k_ed_audio_src]['precedemment']['scenes'][1]['start'])
-            precedemment_target_video_count = (video_track['episode']['scenes'][1]['start']
-                            - video_track['precedemment']['scenes'][1]['start'])
+            precedemment_video_count = (
+                episode['video'][k_ed_audio_src]['episode']['scenes'][1]['start']
+                - episode['video'][k_ed_audio_src]['precedemment']['scenes'][1]['start']
+            )
+            precedemment_target_video_count = (
+                video_track['episode']['scenes'][1]['start']
+                - video_track['precedemment']['scenes'][1]['start']
+            )
         except:
             pprint(episode['video'].keys())
-            sys.exit(f"{k_ep}:{k_chapter}: video scenes are not defined. They are required to calculate AV sync values.")
+            pprint(episode['video']['target'].keys())
+            pprint(episode['video']['target']['precedemment'])
+            raise ValueError(f"{k_ep}:{k_chapter}: video scenes are not defined. They are required to calculate AV sync values.")
         logger.debug(lightgrey(f"\tprecedemment to episode:"))
         logger.debug(lightgrey(f"\t\tvideo count ({k_ed_audio_src}): {precedemment_video_count}"))
         logger.debug(lightgrey(f"\t\tvideo count (target): {precedemment_target_video_count}"))

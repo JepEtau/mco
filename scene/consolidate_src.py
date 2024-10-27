@@ -81,7 +81,8 @@ def consolidate_src_scene(
 
     # Set the progressive filepath
     basename: str = path_split(scene['inputs']['interlaced']['filepath'])[1]
-    ext: str = vcodec_to_extension['h264']
+    vsettings: VideoSettings = db['common']['video_format']['initial']
+    ext: str = vcodec_to_extension[vsettings.codec]
     filename: str = f"{basename}_{deint_hashcode}{ext}"
     progressive_fp: str = os.path.join(
         db['common']['directories']['cache_progressive'],

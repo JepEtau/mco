@@ -8,7 +8,6 @@ trim(0, 0)
 
 ConvertToYUY2(interlaced=true)
 ColorYUV(levels="TV->PC")
-ConvertBits(bits=10)
 Colormatrix(mode="Rec.601->Rec.709", clamp=0, interlaced=true)
 QTGMC( \
     preset="Slower", \
@@ -19,4 +18,7 @@ QTGMC( \
 )
 
 SelectEven()
+ConvertToYUV422()
+ConvertBits(bits=10)
+
 Prefetch(4)

@@ -113,14 +113,16 @@ def main():
     # print(db.keys())
     # pprint(db['common'])
     k_ep = ep_key(episode)
-    task: TaskName = arguments.task
+    task_name: TaskName = arguments.task
 
-    k_ch: Chapter = arguments.chapter
-    chapters: Chapter = all_chapter_keys() if k_ch == '' else [k_ch]
-    for chapter in chapters:
-        print(lightcyan(f"{chapter}"))
+
+    chapters: Chapter = all_chapter_keys() if arguments.chapter == '' else [arguments.chapter]
+    for k_ch in chapters:
+        print(lightcyan(f"episode: {k_ep}, chapter: {k_ch}"))
         chapter_video: ChapterVideo = get_chapter_video(k_ep, k_ch)
-        chapter_video['task'] = ProcessingTask(name=task)
+        if chapter_video is None:
+            continue
+        chapter_video['task'] = ProcessingTask(name=task_name)
 
         # Walk through target scenes
         scenes: list[Scene] = chapter_video['scenes']
@@ -135,11 +137,11 @@ def main():
 
         if 'ref' not in scene:
             ref_count = 0
-            k_ep_or_g = chapter if chapter in ('g_debut', 'g_fin') else k_ep
+            k_ep_or_g = k_ch if k_ch in ('g_debut', 'g_fin') else k_ep
             _k_ed = 'k' if db[k_ep_or_g]['audio']['lang'] == 'fr' else 'f'
-            print(f"  reference: {_k_ed}:{k_ep}:{chapter}")
+            print(f"  reference: {_k_ed}:{k_ep}:{k_ch}")
             if _k_ed in db[k_ep_or_g]['video']:
-                for s in db[k_ep_or_g]['video'][_k_ed][chapter]['scenes']:
+                for s in db[k_ep_or_g]['video'][_k_ed][k_ch]['scenes']:
                     ref_count += s['count']
             else:
                 print("Ignore reference as it has not been parsed")
@@ -156,7 +158,7 @@ def main():
             if ch_video is None:
                 continue
 
-            consolidate_scene(scenes[scene_no], task_name=task)
+            consolidate_scene(scenes[scene_no], task_name=task_name)
 
             pprint(ch_video.keys())
             pprint(scenes[scene_no])

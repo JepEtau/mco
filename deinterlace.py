@@ -15,6 +15,7 @@ from parsers import (
     parse_database,
     all_chapter_keys,
     get_dependencies,
+    VideoSettings,
 )
 from processing.deint import (
     calc_deint_hash,
@@ -23,11 +24,16 @@ from processing.deint import (
     qtgmc_deint_command,
     g_deint_algorithms,
     get_qtgmc_args,
-    generate_avs_script
+    generate_avs_script,
 )
 from processing.decoder import decoder_frame_prop
 from utils.mco_types import Inputs
-from utils.media import VideoInfo, extract_media_info, get_media_info
+from utils.media import (
+    VideoInfo,
+    extract_media_info,
+    get_media_info,
+    vcodec_to_extension,
+)
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
 from utils.logger import main_logger
@@ -138,7 +144,8 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
     # Parse database
     parse_database(
         episode=episode,
-        lang='en' if arguments.en else 'fr'
+        lang='en' if arguments.en else 'fr',
+        edition=arguments.edition
     )
     gc.collect()
 
@@ -192,6 +199,8 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
     if arguments.debug:
         print(cyan("Dependencies"))
         pprint(in_videos)
+
+    vsettings: VideoSettings = db['common']['video_format']['initial']
 
     for in_video, value in in_videos.items():
         ed, ep = value['ed_ep']
@@ -273,7 +282,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             # Create the FFmpeg command
             out_filepath: str = os.path.join(
                 db_directories['cache_progressive'],
-                f"{path_split(in_media_path)[1]}_{hashcode}.mkv"
+                f"{path_split(in_media_path)[1]}_{hashcode}{vcodec_to_extension[vsettings.codec]}"
             )
             e_command: list[str] = qtgmc_deint_command(
                 in_video_info=in_video_info,
@@ -295,7 +304,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             # Other deinterlacers
             out_filepath: str = os.path.join(
                 db_directories['cache_progressive'],
-                f"{path_split(in_media_path)[1]}_{deint_algo}_{hashcode}.mkv"
+                f"{path_split(in_media_path)[1]}_{deint_algo}_{hashcode}{vcodec_to_extension[vsettings.codec]}"
             )
 
             e_command: str = deint_command(
@@ -309,21 +318,26 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
 
         print(cyan(f"Output:"), f"{out_filepath}")
         if os.path.exists(out_filepath):
-            out_video_info = extract_media_info(out_filepath)['video']
-            _trim_count: int = (
-                trim_count
-                if trim_count != -1
-                else in_video_info['frame_count'] - trim_start
-            )
-            main_logger.debug(
-                f"{out_filepath} already exists "
-                + f"asked: {_trim_count} vs "
-                + f"current video: {out_video_info['frame_count']}"
-            )
+            success: bool = True
+            try:
+                out_video_info = extract_media_info(out_filepath)['video']
+            except:
+                success = False
+            if success:
+                _trim_count: int = (
+                    trim_count
+                    if trim_count != -1
+                    else in_video_info['frame_count'] - trim_start
+                )
+                main_logger.debug(
+                    f"{out_filepath} already exists "
+                    + f"asked: {_trim_count} vs "
+                    + f"current video: {out_video_info['frame_count']}"
+                )
 
-            if out_video_info['frame_count'] == _trim_count or not arguments.check_duration:
-                print()
-                continue
+                if out_video_info['frame_count'] == _trim_count or not arguments.check_duration:
+                    print()
+                    continue
         else:
            main_logger.debug(f"{out_filepath} does not exist")
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Literal, TYPE_CHECKING
+from typing import Any, Literal, TYPE_CHECKING
 
 import numpy as np
 from utils.mco_types import (
@@ -108,3 +108,24 @@ class GeometryPreviewOptions:
     crop_preview: bool
     resize_preview: bool
 
+
+
+
+@dataclass(slots=True)
+class DsrProcessParams:
+    auto: bool
+
+
+DsrActionType = Literal['add', 'remove', 'set', 'discard']
+@dataclass(slots=True)
+class DsrAction:
+    type: DsrActionType
+    parameter: Any
+    value: Any
+
+
+@dataclass(slots=True)
+class DsrPreviewOptions:
+    final_preview: bool
+    edition: bool
+    mask: bool

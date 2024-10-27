@@ -3,7 +3,7 @@ from collections import OrderedDict
 import os
 from pprint import pprint
 import sys
-from typing import Literal
+from typing import Any, Literal
 from utils.p_print import *
 
 from .av_sync import consolidate_av_sync
@@ -144,6 +144,8 @@ def parse_database(
                 # parse_stabilize_configurations(k_ep_or_g=k_ep_tmp)
                 already_parsed.append(k_ep_tmp)
 
+    if edition != '':
+        return None
 
     # Génériques: debut/fin
     for k_chapter_g in ('g_debut', 'g_fin'):
@@ -185,6 +187,7 @@ def parse_database(
         for k_chapter_g in ('g_debut', 'g_fin'):
             parse_geometry_configurations(k_ep_or_g=k_chapter_g)
 
+    stats: dict[str, Any] | None = None
     if k_ep != 'ep00':
         consolidate_av_sync(k_ep=k_ep)
         consolidate_av_tracks(k_ep=k_ep)
