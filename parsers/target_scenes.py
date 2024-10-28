@@ -51,15 +51,16 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
     #     pprint(db['ep01']['video']['target'])
 
     k_ed_src = target_chapter['k_ed_src']
-    chapter_src: ChapterVideo = db[k_ep]['video'][k_ed_src][k_chapter]
+    src_chapter: ChapterVideo = db[k_ep]['video'][k_ed_src][k_chapter]
 
-    if chapter_src['count'] < 1:
+    pprint(src_chapter)
+    if src_chapter['count'] < 1:
         return
 
     # Verify that scenes are defined in src or target
     if (
         'scenes' not in target_chapter
-        and 'scenes' not in chapter_src
+        and 'scenes' not in src_chapter
     ):
         # Cannot consolidate because no scenes are defined
         sys.exit(f"error: consolidate_target_scenes: no scenes in {k_ep}:{k_chapter}")
@@ -76,7 +77,7 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
         target_chapter['scenes'] = []
 
     # Append scenes from src and sort
-    for scene_src in chapter_src['scenes']:
+    for scene_src in src_chapter['scenes']:
         if (
             'scene_count' in target_chapter
             and len(target_chapter['scenes']) == target_chapter['scene_count']
@@ -125,7 +126,7 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
     frame_count = 0
     for no, target_scene in enumerate(target_chapter['scenes']):
         if len(target_scene['src']) == 0:
-            in_scene: Scene = chapter_src['scenes'][no]
+            in_scene: Scene = src_chapter['scenes'][no]
             target_scene['src'].add_scene(
                 k_ed=k_ed_src,
                 k_ep=k_ep,

@@ -173,7 +173,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
     # Get all range to deinterlace for each dependency
     in_videos: OrderedDict[str, dict[str, set]] = OrderedDict()
     for k_ed in editions:
-        if k_ed not in dependencies:
+        if k_ed not in dependencies and k_ed != arguments.edition:
             continue
 
         if arguments.edition != '' and k_ed != arguments.edition:

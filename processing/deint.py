@@ -557,7 +557,8 @@ def deint_command(
     ])
     ffmpeg_filter = _clean_str(ffmpeg_filter)
 
-    raise SystemError("ADD dar to the video")
+    # raise SystemError("ADD dar to the video")
+    print(red("ADD dar to the video"))
 
     # Create the command
     ffmpeg_command: list[str] = [
