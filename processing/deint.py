@@ -598,8 +598,12 @@ def deint_command(
     ])
 
     ffmpeg_command.extend([
-        "-pixel_format", "bgr24",
-        "-vcodec", "ffv1",
+        # "-pixel_format", "bgr24",
+        # "-vcodec", "ffv1",
+        "-pix_fmt", "yuv422p10le",
+        "-vcodec", "dnxhd",
+        "-profile:v", "dnxhr_hqx",
+        "-color_range", "full",
     ])
 
     ffmpeg_command.extend([

@@ -18,6 +18,7 @@ if TYPE_CHECKING:
         TaskName,
         SceneGeometry,
         ChapterGeometry,
+        StabilizeParams,
     )
     from nn_inference.threads.t_decoder import VideoStreamInfo
     from scene.src_scene import SrcScenes
@@ -269,9 +270,8 @@ class Scene(TypedDict):
     # list of frames to replace
     replace: dict[int, int]
 
-    # contains parameters to deshake.
-    #   warning: stabilize = deshake. TODO correct this
-    deshake: dict
+    # contains parameters to stabilize.
+    stabilize: StabilizeParams
 
     # geometry applied to this. After consolidation, it contains
     # the width of the dst chapter.

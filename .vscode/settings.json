@@ -67,10 +67,10 @@
             "name": "parsers",
             "depth": 0
         },
-        {
-            "name": "pynnlib",
-            "depth": 0
-        },
+        // {
+        //     "name": "pynnlib",
+        //     "depth": 0
+        // },
     ],
     "python.REPL.enableREPLSmartSend": false
 }

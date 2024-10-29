@@ -60,6 +60,12 @@ from .dsr import (
     PatchDsr
 )
 
+from .stabilize import (
+    StabilizeSegment,
+    StabilizeMode,
+    StabilizeParams,
+)
+
 __all__ = [
     "db",
     "clean_ffmpeg_filter",
@@ -97,6 +103,13 @@ __all__ = [
 
     "SceneDsr",
     "FrameDsr",
-    "PatchDsr"
+    "PatchDsr",
+
+    "StabilizeSegment",
+    "StabilizeMode",
+    "StabilizeParams",
+
+
+
 
 ]

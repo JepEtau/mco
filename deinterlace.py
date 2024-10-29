@@ -114,6 +114,15 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         help="Ignore check before deinterlacing"
     )
 
+
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        required=False,
+        help="Deinterlace all episode"
+    )
+
+
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -188,6 +197,8 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
                     input['progressive']['start'],
                     input['progressive']['count']
                 )
+                if arguments.full:
+                    segment = (0, -1)
 
                 if fp not in in_videos:
                     in_videos[fp] = {

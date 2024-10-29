@@ -29,7 +29,7 @@ from .target_scenes import (
 from .target_av_tracks import consolidate_av_tracks
 from .geometry import parse_geometry_configurations
 from .replace import parse_replace_configurations
-# from .stabilize import parse_stabilize_configurations
+from .stabilize import parse_stabilize_configurations
 from ._keys import (
     credit_chapter_keys,
     non_credit_chapter_keys,
@@ -153,7 +153,7 @@ def parse_database(
         parse_replace_configurations(k_ep_or_g=k_chapter_g)
 
         # Parameters used to stabilize
-        # parse_stabilize_configurations(k_ep_or_g=k_chapter_g)
+        parse_stabilize_configurations(k_ep=k_ep, k_ch=k_chapter_g)
 
         # Create scenes used for the generation
         consolidate_target_scenes_g(k_ep='', k_chapter=k_chapter_g)
@@ -167,6 +167,8 @@ def parse_database(
     # if k_ep not in ('ep00', 'ep99'):
         for chapter in non_credit_chapter_keys():
             consolidate_target_scenes(k_ep=k_ep, k_chapter=chapter)
+        print(f"database, parse stabilization: {k_ep}")
+        parse_stabilize_configurations(k_ep=k_ep)
 
         for k_chapter_g in ('g_asuivre', 'g_documentaire'):
             parse_replace_configurations(k_ep_or_g=k_chapter_g)
