@@ -8,6 +8,8 @@ from parsers import (
     db,
 )
 from typing import Literal, TypedDict, TYPE_CHECKING
+
+from utils.p_print import *
 if TYPE_CHECKING:
     from parsers import (
         TaskName,
@@ -85,7 +87,11 @@ class SrcScenes:
 
     def _consolidate_scene(self, src_scene: SrcScene) -> None:
         k_ed, k_ep, k_ch, no = src_scene['k_ed_ep_ch_no']
-        _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][no]
+        try:
+            _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][no]
+        except:
+            pprint(db[k_ep]['video'][k_ed][k_ch]['scenes'])
+            raise ValueError(red(f"cannot access to scene no. {no}"))
 
         start: int = _src_scene['start'] if src_scene['start'] == -1 else src_scene['start']
         count: int = src_scene['count']
