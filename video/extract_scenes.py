@@ -25,12 +25,13 @@ from parsers import (
     ProcessingTask,
     VideoSettings,
 )
+from video.consolidate_scenes import get_chapter_video
 
 
 def extract_scenes(
     episode: str,
     single_chapter: Chapter = '',
-    task: TaskName = '',
+    task_name: TaskName = '',
     force: bool = False,
     simulation: bool = False,
     scene_no: int = -1,
@@ -49,25 +50,27 @@ def extract_scenes(
         True
         if (
             (scene_no == -1 and scene_min == -1 and scene_max == -1)
-            and task != 'initial'
+            and task_name != 'initial'
         )
         else False
     )
     concatenate_clips = True
 
     start_time_full = time.time()
-
     for k_ch in chapters:
-        hashes_str = ''
-        ch_video: ChapterVideo = db[k_ep]['video'][k_ed][k_ch]
-
-        # Do not generate clip for unused chapters
-        if ch_video['count'] <= 0:
+        hashes_str = ""
+        ch_video: ChapterVideo | None = None
+        try:
+            ch_video: ChapterVideo | None = db[k_ep]['video'][k_ed][k_ch]
+        except:
+            pass
+        if ch_video is None:
             continue
 
-        ch_video['task'] = ProcessingTask(name=task)
+        ch_video['task'] = ProcessingTask(name=task_name)
         if debug:
             print(f"\n<<<<<<<<<<<<<<<<<<<<< {k_ch} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
+            print(f"scene_no: {scene_no}")
 
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
@@ -97,7 +100,7 @@ def extract_scenes(
                 print(lightcyan("==============================================================================="))
 
             if not simulation:
-                result = extract_scene(scene=scene, force=force)
+                result = extract_scene(scene=scene, force=force, debug=debug)
                 if not result:
                     pprint(scene)
                     raise RuntimeError(
@@ -115,7 +118,7 @@ def extract_scenes(
                 ))
 
         hashcode: str = calc_hash(hashes_str[:-1])
-        basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task}_{hashcode}"
+        basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task_name}_{hashcode}"
 
         k_ep_or_g: str = k_ch if k_ch in ('g_debut', 'g_fin') else k_ep
         concat_fp: str =os.path.join(
@@ -128,7 +131,7 @@ def extract_scenes(
 
         vsettings: VideoSettings = db['common']['video_format']['lr']
         ch_video['task'] = ProcessingTask(
-            name=task,
+            name=task_name,
             hash=hashcode,
             concat_file=concat_fp,
             video_file=os.path.join(

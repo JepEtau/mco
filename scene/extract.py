@@ -22,7 +22,11 @@ from utils.media import VideoInfo, extract_media_info, str_to_video_codec
 
 
 
-def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> bool:
+def extract_scene(
+    scene: Scene,
+    force: bool = False,
+    debug: bool = False
+) -> bool:
     scene_key: str = f"{scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}:{scene['k_ch']}:{scene['no']}"
 
     in_video_fp: str = scene['inputs']['progressive']['filepath']
@@ -44,13 +48,19 @@ def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> boo
     if start < 0:
         raise ValueError(f"Error, start < 0 for scene {scene['no']}")
 
+    k_ed_ref = db['ep01']['audio']['src']['k_ed']
+    if scene['k_ed'] == k_ed_ref:
+        in_video_fp: str = scene['inputs']['interlaced']['filepath']
+        in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+        start: int = scene['start']
+
     # Output directory
     xtract_directory: str = path_split(scene['task'].video_file)[0]
     os.makedirs(xtract_directory, exist_ok=True)
 
     # Create FFmpeg command
     frame_rate: FrameRate = get_fps(db)
-    xtract_command: list[str] = [
+    d_command: list[str] = [
         ffmpeg_exe,
         "-hide_banner",
         "-loglevel", "warning",
@@ -63,7 +73,7 @@ def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> boo
 
     # Force to 576p to facilitate comparisons
     filter_complex: list[str] = []
-    if h != 576 or w != 576:
+    if h != 768 or w != 576:
         filter_complex = [
             "-filter_complex",
             f"[0:v]scale=768:576:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
@@ -75,7 +85,7 @@ def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> boo
         h, w, c = video_info['shape']
         pipe_pixfmt = 'bgr24'
         nbytes = math.prod(video_info['shape'])
-        xtract_command.extend([
+        d_command.extend([
             "-f", "image2pipe",
             "-pix_fmt", pipe_pixfmt,
             "-vcodec", "rawvideo",
@@ -103,14 +113,14 @@ def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> boo
         ]
 
         if debug:
-            print(lightgreen(" ".join(xtract_command)))
+            print(lightgreen(" ".join(d_command)))
             print(f"shape: {w}x{h}x{c}, nbytes: {nbytes}")
             print(blue(" ".join(writer_command)))
 
-        xtract_subproces: subprocess.Popen = None
+        d_subproces: subprocess.Popen = None
         try:
-            xtract_subproces = subprocess.Popen(
-                xtract_command,
+            d_subproces = subprocess.Popen(
+                d_command,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -133,11 +143,12 @@ def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> boo
 
         # Get image from pipe, add watermak and output to pipe
         for _ in range(count):
+            buffer = d_subproces.stdout.read(nbytes)
             in_img = np.frombuffer(
-                xtract_subproces.stdout.read(nbytes),
+                buffer,
                 dtype=np.uint8,
                 count=nbytes
-            ).reshape((h, w, 3))
+            ).reshape((h, w, c))
             out_img: np.ndarray = add_watermark(
                 McoFrame(no=frame_no, img=in_img, scene=scene),
                 no=frame_no
@@ -162,7 +173,7 @@ def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> boo
                 return False
 
     else:
-        xtract_command.extend([
+        d_command.extend([
             *filter_complex,
             "-pix_fmt", vsettings.pix_fmt,
             "-vcodec", str_to_video_codec[vsettings.codec].value,
@@ -170,8 +181,8 @@ def extract_scene(scene: Scene, force: bool = False, debug: bool = False) -> boo
             out_video_fp, "-y"
         ])
         if debug:
-            print(lightgrey(" ".join(xtract_command)))
-        return run_simple_command(xtract_command)
+            print(lightgrey(" ".join(d_command)))
+        return run_simple_command(d_command)
 
     return True
 

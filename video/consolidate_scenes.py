@@ -26,8 +26,10 @@ def get_chapter_video(k_ep: str, k_ch: str) -> ChapterVideo | None:
         sys.exit(red("Missing episode no."))
 
     else:
-        print(k_ep, k_ch)
         ch_video = db[k_ep]['video']['target'][k_ch]
+
+    if 'count' not in ch_video:
+        print(yellow(f"warning: not \'count\' in {k_ep}:{k_ch}"))
 
     # Do not generate clip for unused chapters
     if ch_video['count'] <= 0:
