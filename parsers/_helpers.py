@@ -17,6 +17,9 @@ def get_chapter_video(k_ep: str, k_ch: str) -> ChapterVideo | None:
         ch_video = db[k_ep]['video']['target'][k_ch]
 
     # Do not generate clip for unused chapters
+    if 'count' not in ch_video:
+        return None
+
     if ch_video['count'] <= 0:
         return None
 

@@ -153,7 +153,7 @@ def parse_database(
         parse_replace_configurations(k_ep_or_g=k_chapter_g)
 
         # Parameters used to stabilize
-        parse_stabilize_configurations(k_ep=k_ep, k_ch=k_chapter_g)
+        # parse_stabilize_configurations(k_ep=k_ep, k_ch=k_chapter_g)
 
         # Create scenes used for the generation
         consolidate_target_scenes_g(k_ep='', k_chapter=k_chapter_g)
@@ -176,6 +176,9 @@ def parse_database(
             parse_geometry_configurations(k_ep_or_g=k_chapter_g)
             consolidate_target_scenes_g(k_ep=k_ep, k_chapter=k_chapter_g)
 
+
+    for k_chapter_g in ('g_debut', 'g_fin'):
+        parse_stabilize_configurations(k_ep=k_ep, k_ch=k_chapter_g)
 
     # Parse the geometry once all target scenes consolidated because
     # the geometry refers to the destination and not the source

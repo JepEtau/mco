@@ -119,7 +119,7 @@ def verify_stabilize_segments(scene: Scene, segments: list[StabilizeSegment]):
     segment = segments[0]
     if segment.start < scene_start or segment.end >= scene_end:
         # Segment shall fit in scene
-        print(red(f"Error: segment [{segment.start}..{segment.end}]is not a part of the scene [{scene['start']}..{scene['start'] + scene['count']}]"))
+        print(red(f"Error: segment [{segment.start}..{segment.end}]is not a part of the scene [{scene_start}..{scene_end}]"))
         return False
 
     if (
@@ -255,7 +255,10 @@ def parse_stabilize_configurations(k_ep: str, k_ch: str = '') -> None:
             print(red(f"section {_k_ch} is not a valid chapter name"))
             continue
 
-        chapter_video: ChapterVideo = get_chapter_video(k_ep, _k_ch)
+        chapter_video: ChapterVideo | None = None
+        if not (chapter_video := get_chapter_video(k_ep, _k_ch)):
+            print(yellow(f"ignoring: {k_ep}:{_k_ch}"))
+            continue
 
         for scene_ed_str in config.options(_k_ch):
             if verbose:
