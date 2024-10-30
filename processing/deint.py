@@ -457,7 +457,7 @@ def qtgmc_deint_command(
         # "-vcodec", "ffv1",
         "-vcodec", "dnxhd",
         "-profile:v", "dnxhr_hqx",
-        "-color_range", "full",
+        "-color_range", "limited",
 
         "-an",
         "-sn",

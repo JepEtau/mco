@@ -7,7 +7,7 @@ AssumeTFF()
 trim(0, 0)
 
 ConvertToYUY2(interlaced=true)
-ColorYUV(levels="TV->PC")
+# ColorYUV(levels="TV->PC")
 Colormatrix(mode="Rec.601->Rec.709", clamp=0, interlaced=true)
 QTGMC( \
     preset="Slower", \
