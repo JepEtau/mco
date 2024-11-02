@@ -312,7 +312,7 @@ def consolidate_scene(
         )
 
         # Add fallback input video filename bc some tasks may be not processed
-        if task_name in ('st', 'tf', 'final'):
+        if task_name in ('st', 'tf', 'cg', 'final'):
             task.fallback_in_video_files = {
                 'hr': os.path.join(scene['cache'], f"scenes_hr", f"{basename}_hr{in_ext}"),
                 'st': os.path.join(scene['cache'], f"scenes_st", f"{basename}_hr_st{in_ext}"),

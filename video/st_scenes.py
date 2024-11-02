@@ -172,7 +172,7 @@ def convert_video_for_evaluation(
             "-i", fp,
             # "-vf", clean_fcomplex(color_params)
             # "-vf", "setparams=range='tv'",
-            "-color_range", "full",
+            "-color_range", "limited",
             "-vcodec", "libx264",
             "-pix_fmt", "yuv420p",
             "-preset", "slow",

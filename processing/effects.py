@@ -54,7 +54,7 @@ def apply_effect(
         # Append title
         if effect := last_src_scene['effects'].get_effect('zoom_in'):
             if out_f_no == effect.frame_ref:
-                print("ZOOOOM")
+                print(f"ZOOOOM of frame, shape={frame.img.shape}")
                 out_frames: list[McoFrame] = [frame]
                 in_h, in_w = frame.img.shape[:2]
                 for i in range (effect.loop):
@@ -203,7 +203,10 @@ def apply_effect(
                     # pprint(prev_last_src_scene)
 
                     # Previous scene used a zoom
-                    if 'effects' in prev_last_src_scene and prev_last_src_scene['effects'] is not None:
+                    if (
+                        'effects' in prev_last_src_scene
+                        and prev_last_src_scene['effects'] is not None
+                    ):
                         if prev_last_src_scene['effects'].has_effect('zoom_in'):
                             effect: Effect = prev_last_src_scene['effects'].get_effect('zoom_in')
 
@@ -232,12 +235,14 @@ def apply_effect(
 
                     # Add Logo to the cached frame
                     if (effect := last_src_scene['effects'].get_effect('title')):
-                        print(yellow("LOGO for blend"))
+                        print(yellow("LOGO for blend, "))
                         pprint(effect)
                         initial_title_img: np.ndarray = load_image_fp32(title_filepath())
                         in_h, in_w = initial_title_img.shape[:2]
                         print(f"  title shape: {initial_title_img.shape}")
                         bgd_h, bgd_w = cached_frame.img.shape[:2]
+                        print(f"  cache frame: {cached_frame.img.shape}")
+
                         out_h, out_w = int(effect.zoom_factor * in_h), int(effect.zoom_factor * in_w)
                         print(f"  resize to: {out_w}x{out_h}")
                         initial_title_img = cv2.resize(
@@ -590,13 +595,15 @@ def extract_last_frame_fp32(scene: Scene) -> McoFrame:
 
     decoder_filters: list[str] = []
     if scene['task'].name == 'sim':
-        frame_no: int = scene['src'].last_frame_no()
+        frame_no: int = scene['src'].last_frame_no()-1
         final_shape: FShape = (1080, 1440, 3)
         h, w = final_shape[:2]
         decoder_filters = [
             "-filter_complex", f"[0:v]scale={w}:{h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
             "-map", "[outv]"
         ]
+        # patch bpp to force as 16bit because we may use a 8bpp in sim
+        in_video_info['bpp'] = 16
 
     pipe_img_shape: FShape = final_shape
     pipe_dtype: np.dtype = (

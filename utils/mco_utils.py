@@ -58,10 +58,16 @@ def is_up_to_date(scene: Scene) -> bool:
         try:
             out_video_info: VideoInfo = extract_media_info(out_video_fp)['video']
             print(f"output scene file: {out_video_info['frame_count']}")
-            if out_video_info['frame_count'] == dst_frame_count:
-                return True
+            if out_video_info['frame_count'] != dst_frame_count:
+                return False
         except:
             pass
+
+        # TODO: check metadata
+        print(out_video_info['metadata'])
+        print(scene['task'].hash)
+
+        return True
 
     return False
 
@@ -163,11 +169,10 @@ def calculate_frame_count(scene: Scene) -> int:
                 if (e := scene['effects'].get_effect(e_name)):
                     count += e.loop
 
-        # src_scene: SrcScene = scene['src'].last_scene()
-        # if 'effects' in src_scene and src_scene['effects'] is not None:
-        #     zoom_effect: Effect = src_scene['effects'].get_effect('zoom_in')
-        #     count += zoom_effect.loop if zoom_effect is not None else 0
-
+    if task_name in ('upscale', 'hr'):
+        # Do not use the final frame count such as loop
+        # use the src scene count
+        count = scene['src'].frame_count(exclude_loop=True)
     # For the scene which has a loop,
     # remove the loop in number of frames to upscale
     # if scene['task'].name == 'upscale':

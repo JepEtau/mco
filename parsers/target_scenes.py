@@ -201,7 +201,7 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter: str) -> None:
     if k_chapter in ('g_debut', 'g_fin'):
         target_chapter: ChapterVideo = db[k_chapter]['video']
         if 'avsync' in target_chapter.keys():
-            print("############# consolidate_target_scenes_g: avsync shall not be reset to 0: %d" % (target_chapter['avsync']))
+            print(f"############# consolidate_target_scenes_g: avsync shall not be reset to 0: {target_chapter}")
             target_chapter.update({
                 'avsync': 0,
             })

@@ -85,18 +85,34 @@ def consolidate_scenes(
 
             # Create symbolic links
             if symlink:
-                for tn in ('tf', 'st'):
+                print(lightcyan(f"Create symlink for scene:"), scene_id)
+
+                previous: dict[TaskName, TaskName] = {}
+                if task == 'cg':
+                    # create symlink for color grading only
+                    previous = {
+                        'st': 'hr',
+                        'tf': 'st',
+                        'cg': 'tf',
+                    }
+                elif task == 'final':
+                    previous = {
+                        'st': 'hr',
+                        'tf': 'st',
+                        'cg': 'tf',
+                    }
+
+                for tn in previous.keys():
+                    if tn not in scene['task'].fallback_in_video_files:
+                        continue
                     fp: str = scene['task'].fallback_in_video_files[tn]
                     if os.path.exists(fp) and os.path.islink(fp):
                         print(lightcyan(f"remove symlink"), f"{fp}")
                         os.unlink(fp)
 
-                previous = {
-                    'st': 'hr',
-                    'tf': 'st',
-                }
-
-                for tn in ('st', 'tf'):
+                for tn in previous.keys():
+                    if tn not in scene['task'].fallback_in_video_files:
+                        continue
                     fp: str = scene['task'].fallback_in_video_files[tn]
                     print(f"fp: {fp}")
                     if not os.path.exists(fp):

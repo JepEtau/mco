@@ -15,7 +15,7 @@ from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import ffmpeg_metadata, scene_id_str
 from utils.tools import ffmpeg_exe
 from utils.p_print import *
-from utils.path_utils import absolute_path
+from utils.path_utils import absolute_path, path_split
 from parsers import (
     db,
     Chapter,
@@ -96,7 +96,7 @@ def tf_scenes(
                 out_mtime_str = datetime.fromtimestamp(out_mtime).strftime("%Y-%m-%d %H:%M:%S")
 
             if out_mtime_str == "-":
-                print(yellow(f"{scene_id}: temporal filtered scene is not generated"))
+                print(yellow(f"{scene_id}: temporal filtered scene has to be generated"))
                 do_process = True
 
             elif out_mtime < in_mtime or force:
@@ -158,11 +158,16 @@ def tf_scenes(
                 else:
                     frame_rate = str(f_rate[0])
 
-            h, w = in_vi['shape'][:2]
             frame_count: int = in_vi['frame_count']
-            out_bpp: int = PIXEL_FORMAT[vs_out_pix_fmt]['bpp']
+            if frame_count < 5:
+                print(yellow(f"Info: scene is too short, ignore ({frame_count})"))
+                continue
+            h, w = in_vi['shape'][:2]
+            out_bpp: int = PIXEL_FORMAT[vs_out_pix_fmt]['pipe_bpp']
             out_nbytes: int = h * w * out_bpp // 8
             color_params: str = "setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709"
+
+            os.makedirs(path_split(out_fp)[0], exist_ok=True)
 
             # Encoder command
             vsettings: VideoSettings = scene['task'].video_settings
@@ -185,7 +190,6 @@ def tf_scenes(
                 *metadata,
                 *vsettings.codec_options,
                 "-pix_fmt", vsettings.pix_fmt,
-                "-color_range", "full",
                 "-y", out_fp
             ]
 
@@ -275,8 +279,8 @@ def tf_scenes(
             print(f"Processing:")
             try:
                 for _ in range(frame_count):
-                    # print(f"reading frame no. {i}", end="\r")
                     frame: bytes = vs_subprocess.stdout.read(out_nbytes)
+                    # print(f"reading frame no. {i} {len(frame)}", end="\n\n")
                     if frame is None:
                         print(red("None"))
                     e_subprocess.stdin.write(frame)
@@ -288,14 +292,16 @@ def tf_scenes(
                         print(line.strip(), end='\r', file=sys.stderr)
                 print()
             except:
+                print(red("error while processing"))
                 pass
 
             stdout_b: bytes | None = None
             stderr_b: bytes | None = None
             try:
                 # Arbitrary timeout value
-                stdout_b, stderr_b = e_subprocess.communicate(timeout=10)
+                stdout_b, stderr_b = e_subprocess.communicate()
             except:
+                print(red("failed to terminate encoder"))
                 e_subprocess.kill()
                 return
 

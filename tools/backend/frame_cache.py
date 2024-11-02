@@ -69,7 +69,7 @@ class FrameCache:
                     # Do not use FFv1 because slow to decode
                     in_video_fp = src_scene['scene']['inputs']['progressive']['filepath']
                     directory, basename, extension = path_split(in_video_fp)
-                    in_video_fp = os.path.join(directory, f"{basename}_h264{extension}")
+                    in_video_fp = os.path.join(directory, f"{basename}{extension}")
                     start = src_start
 
                 if not os.path.exists(in_video_fp):
