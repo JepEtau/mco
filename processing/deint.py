@@ -299,6 +299,10 @@ def generate_avs_script(
                 found = True
             elif (search := re.search(re.compile(r"\s*FFVideoSource\(\s*source\s=\s*\"(.+)\""), line)):
                 found = True
+            elif (search := re.search(re.compile(r"\s*LWLibavVideoSource\(\s*\"(.+)\"\s*"), line)):
+                found = True
+            elif (search := re.search(re.compile(r"\s*LWLibavVideoSource\(\s*source\s=\s*\"(.+)\""), line)):
+                found = True
             if found:
                 lines[i] = line.replace(search.group(1), in_video_info['filepath'])
                 filepath_replaced = True
@@ -449,8 +453,8 @@ def qtgmc_deint_command(
     # Frame rate
     fps: FrameRate = in_video_info['frame_rate_r']
     ffmpeg_command.extend([
-        # "-r", "/".join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
-        "-r", "25",
+        # "-r", "30000/1001",
+        # "-frame_drop_threshold", "50",
         "-pixel_format", "yuv422p10le",
 
         # "-color_range", "full",
@@ -513,6 +517,9 @@ def deint_command(
 
     # Deinterlace algo/params
     ffmpeg_deint: str = ""
+    # pprint(in_video_info)
+    # sys.exit()
+    in_video_info['is_interlaced'] = True
     if in_video_info['is_interlaced']:
         deint_algo: str = algo
         deint_params: str = params
@@ -540,7 +547,7 @@ def deint_command(
 
     resize = f"""
         scale={in_w}:{in_h}:sws_flags=
-            bilinear
+            lanczos
             + full_chroma_int
             + full_chroma_inp
             + accurate_rnd
@@ -582,6 +589,11 @@ def deint_command(
     # Input file
     ffmpeg_command.extend(["-i", in_video_info['filepath']])
 
+
+    # ffmpeg_filter = ""
+    # ffmpeg_filter="fieldmatch=order=auto:combmatch=full,decimate"
+    # ffmpeg_command.extend(["-vf", "mpdecimate"])
+    # ffmpeg_command.extend(["-fps_mode", "passthrough"])
     # Add filters
     if ffmpeg_filter:
         ffmpeg_command.extend([
@@ -591,20 +603,26 @@ def deint_command(
 
     # Frame rate
     ##### FORCE TO 25 fps
-    fps = 25
-    ffmpeg_command.extend([
-        "-r",
-        '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
-    ])
-
-    ffmpeg_command.extend([
-        # "-pixel_format", "bgr24",
-        # "-vcodec", "ffv1",
-        "-pix_fmt", "yuv422p10le",
-        "-vcodec", "dnxhd",
-        "-profile:v", "dnxhr_hqx",
-        "-color_range", "full",
-    ])
+    # fps = 25
+    # ffmpeg_command.extend([
+    #     "-r",
+    #     '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
+    # ])
+    if True:
+        ffmpeg_command.extend([
+            # "-pixel_format", "bgr24",
+            # "-vcodec", "ffv1",
+            # "-fps_mode", "passthrough",
+            # "-frame_drop_threshold", "50",
+            "-pix_fmt", "yuv422p10le",
+            "-vcodec", "dnxhd",
+            "-profile:v", "dnxhr_hqx",
+        ])
+    else:
+        ffmpeg_command.extend([
+            "-pixel_format", "bgr24",
+            "-vcodec", "ffv1",
+        ])
 
     ffmpeg_command.extend([
         "-an",

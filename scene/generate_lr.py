@@ -28,7 +28,7 @@ from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from utils.media import VideoInfo, extract_media_info, str_to_video_codec
+from utils.media import VideoInfo, extract_media_info, frame_rate_dec, str_to_video_codec
 
 
 
@@ -45,8 +45,8 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
     # Out video clip
     in_video_fp = scene['src'].primary_scene()['scene']['inputs']['progressive']['filepath']
-    in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
-    h, w = in_video_info['shape'][:2]
+    in_vi: VideoInfo = extract_media_info(in_video_fp)['video']
+    h, w = in_vi['shape'][:2]
     pipe_pixfmt = 'bgr24'
     pipe_out_dtype = (
         np.uint8
@@ -57,7 +57,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     # Force to the same height to be able to mix different editions
     dec_filter_complex: list[str] = []
     filter_complex: list[str] = []
-    out_video_shape = in_video_info['shape']
+    out_video_shape = in_vi['shape']
     if scene['task'].name == 'sim':
         out_video_shape = (1080, 1440, 3)
         h, w = out_video_shape[:2]
@@ -72,7 +72,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                 "-map", "[outv]"
             ]
 
-    frame_rate: FrameRate = get_fps(db)
+    frame_rate: float = frame_rate_dec(in_vi['frame_rate_r'])
     vsettings: VideoSettings = scene['task'].video_settings
     metadata: list[str] = ffmpeg_metadata(scene)
     encoder_command: list[str] = [
@@ -121,8 +121,8 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         to_produce -= count
 
         # Extract info from input video file
-        in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
-        h, w, c = in_video_info['shape']
+        in_vi: VideoInfo = extract_media_info(in_video_fp)['video']
+        h, w, c = in_vi['shape']
         pipe_pixfmt = 'bgr24'
         pipe_dtype = np.uint8
         pipe_img_nbytes = math.prod(out_video_shape)

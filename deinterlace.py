@@ -75,6 +75,13 @@ def main():
     )
 
     parser.add_argument(
+        "--force",
+        action="store_true",
+        required=False,
+        help="force"
+    )
+
+    parser.add_argument(
         "--edition",
         "-ed",
         choices=['f', 'k', 's', 'j'],
@@ -272,7 +279,11 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             if template_script != '':
                 # Extract QTGMC arguments to create a hashcode
                 # and to add to the output video metadata
-                qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
+                qtgmc_args: OrderedDict[str, str] = {}
+                try:
+                    qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
+                except:
+                    print(yellow("failed to fetech QTGMC params"))
                 hashcode, filter_str = calc_deint_hash(qtgmc_args)
                 script_filepath: str = os.path.join(
                     db_directories['cache_progressive'],
@@ -341,14 +352,15 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
                     else in_video_info['frame_count'] - trim_start
                 )
                 main_logger.debug(
-                    f"{out_filepath} already exists "
+                    f"{out_filepath} already exists, "
                     + f"asked: {_trim_count} vs "
                     + f"current video: {out_video_info['frame_count']}"
                 )
 
                 if out_video_info['frame_count'] == _trim_count or not arguments.check_duration:
                     print()
-                    continue
+                    if not arguments.force:
+                       continue
         else:
            main_logger.debug(f"{out_filepath} does not exist")
 

@@ -91,6 +91,12 @@ class MediaInfo(TypedDict):
     subtitles: SubtitleInfo
 
 
+def frame_rate_dec(frame_rate: FrameRate) -> int | float:
+    if isinstance(frame_rate, int | float):
+        return frame_rate
+    if frame_rate[1] == 1:
+        return frame_rate[0]
+    return float(frame_rate[0]) / frame_rate[1]
 
 
 def get_video_resolution(video_filepath):

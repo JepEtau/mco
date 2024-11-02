@@ -9,7 +9,7 @@ from pprint import pprint
 
 from tools.backend.replace_database import ReplaceDatabase
 from utils.mco_types import Scene
-from utils.media import VideoInfo, extract_media_info
+from utils.media import VideoInfo, extract_media_info, frame_rate_dec
 from utils.p_print import lightcyan, red, yellow
 from utils.path_utils import path_split
 from utils.tools import ffmpeg_exe
@@ -89,8 +89,9 @@ class FrameCache:
 
                     self.video_infos[in_video_fp] = extract_media_info(in_video_fp)['video']
                 vi: VideoInfo = self.video_infos[in_video_fp]
-                # print(red(fp))
+                frame_rate: float = frame_rate_dec(vi['frame_rate_r'])
                 # pprint(vi)
+                # print(red(frame_rate))
                 # sys.exit()
                 filter_complex: list[str] = []
                 in_h, in_w, in_c = vi['shape']
