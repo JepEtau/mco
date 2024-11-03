@@ -399,6 +399,10 @@ def get_qtgmc_args(
     for k in keys:
         ordered_dict[k] = qtgmc_args[k]
 
+    for k in ('aWarpSharp2'):
+        if 'aWarpSharp2' in script:
+            ordered_dict[k] = 'true'
+
     return ordered_dict
 
 

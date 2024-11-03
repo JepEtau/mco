@@ -61,7 +61,7 @@ def is_up_to_date(scene: Scene) -> bool:
             if out_video_info['frame_count'] != dst_frame_count:
                 return False
         except:
-            pass
+            return False
 
         # TODO: check metadata
         print(out_video_info['metadata'])

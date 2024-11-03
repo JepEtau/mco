@@ -139,7 +139,7 @@ def upscale_scenes(
                     if filter_str.startswith(supported_filters):
                         print(lightgreen("supported:"), filter_str)
                         # filter_params = ()
-                        params: list[str] = filter_str.split("=")
+                        params: list[str] = filter_str.split("=", maxsplit=1)
                         # scene_filters.steps.append((result.group(1),))
                         filter_name = params[0]
                         filter_params: str | float | None = None

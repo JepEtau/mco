@@ -191,34 +191,9 @@ class UpscalePipeline(object):
             if thread is not None:
                 thread.set_inference_threads(i_threads)
 
-        # Create image writer thread
-        # w_thread_config: ImgWriterThreadConfig = ImgWriterThreadConfig(
-        #     cuda_stream=i_params.dtoh_cuda_stream,
-        #     tensor_dtype=i_params.tensor_dtype,
-        #     dtoh_mem=i_params.dtoh_mem,
-        #     img_shape=(), # i_video_info['shape'],
-        #     img_dtype=np.dtype(self.img_dtype).name,
-        #     img_c_order='bgr', # e_video_info['c_order'],
-        # )
-        # print("w_thread_config")
-        # pprint(w_thread_config)
-        # w_thread = ImgWriterThread(w_thread_config)
-        # try:
-        #     w_thread = ImgWriterThread(w_thread_config)
-        # except Exception as e:
-        #     print(red(f"[E] img_writer: {type(e)}"))
-        #     return True, 0, 0
-        # w_thread.setName("img_writer")
-        # w_thread.set_producer(i_thread)
-        # w_thread.set_consumer(e_thread)
-
-
         f_progress_thread = None
         f_progress_thread = ProgressThread(total=self.total_frames)
         e_thread.set_progress_thread(f_progress_thread)
-
-        # e_progress_thread = ProgressThread(total=self.video_count)
-        # e_thread.set_progress_bar(e_progress_thread)
 
         if self.simulation:
             return [0] * 4
@@ -253,28 +228,6 @@ class UpscalePipeline(object):
         ask_to_end: bool = False
         while True:
             if not decoding:
-                # inference_threads_ended = True
-                # if i_cuda_thread is not None and not i_cuda_thread.ended():
-                #     print(red("i_cuda_thread ended"))
-                #     inference_threads_ended = False
-                # if i_trt_thread is not None and not i_trt_thread.ended():
-                #     print(red("i_trt_thread ended"))
-                #     inference_threads_ended = False
-
-                # if inference_threads_ended and ask_to_end:
-                #     print(red("inference_threads_ended, send None to encoder threads"))
-                #     e_thread.put_frame(None)
-                #     ask_to_end = False
-
-                # inference_threads_ended = bool(
-                #     (i_cuda_thread is None or not i_cuda_thread.is_alive())
-                #     and (i_trt_thread is None or not i_trt_thread.is_alive())
-                # )
-                # print(
-                #     f"d_thread: {d_thread.is_alive()}",
-                #     f"e_thread: {e_thread.is_alive()}",
-                #     f"inference_threads_ended: {inference_threads_ended}"
-                # )
                 if e_thread.encoded == self.total_frames and ask_to_end:
                     e_thread.put_frame(None)
                     ask_to_end = False

@@ -20,5 +20,6 @@ QTGMC( \
 SelectEven()
 ConvertToYUV422()
 ConvertBits(bits=10)
+AssumeFPS(25)
 
 Prefetch(4)
