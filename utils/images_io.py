@@ -6,6 +6,7 @@ from pathlib import Path
 from pprint import pprint
 import cv2
 import numpy as np
+import torch
 from .np_dtypes import np_to_uint8
 
 from .np_dtypes import np_to_float32
@@ -14,7 +15,10 @@ CPU_COUNT: int = multiprocessing.cpu_count()
 
 
 
-def img_info(img: np.ndarray) -> str:
+def img_info(img: np.ndarray | torch.Tensor) -> str:
+    if isinstance(img, torch.Tensor):
+        return f"tensor: {img.shape}, {img.dtype}"
+
     h, w = img.shape[:2]
     range_str: str = f"[{np.min(img)} .. {np.max(img)}]"
     # range_str: str = (
