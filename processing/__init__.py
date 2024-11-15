@@ -1,19 +1,5 @@
 
 
-supported_filters: tuple[str] = (
-    "hqdn3d",
-    "nlmeans",
-    "resize_to",
-    "resize",
-    "unsharp",
-    "dilation",
-    "erosion",
-    "opening",
-    "closing",
-    "cas",
-    "edgedetect",
-)
-
 supported_ffmpeg_filters : tuple[str] = (
     "hqdn3d",
     "nlmeans",
@@ -29,3 +15,17 @@ supported_cv2_filters : tuple[str] = (
     "closing",
 )
 
+supported_cuda_filters : tuple[str] = (
+    "dilation",
+    "erosion",
+    "opening",
+    "closing",
+    "darker_thinner",
+)
+
+
+supported_filters: tuple[str] = (
+    supported_ffmpeg_filters
+    + supported_cv2_filters
+    + supported_cuda_filters
+)
