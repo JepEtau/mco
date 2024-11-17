@@ -21,6 +21,7 @@ supported_cuda_filters : tuple[str] = (
     "opening",
     "closing",
     "darker_thinner",
+    "resize",
 )
 
 

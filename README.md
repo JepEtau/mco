@@ -78,6 +78,8 @@ python symlink.py --chapter g_fin
 python symlink.py --episode 1
 ```
 
+- Color grading with DavinciResolve
+
 - Validate geometry after color grading, print some stats
 ```sh
 python geometry.py --chapter g_debut

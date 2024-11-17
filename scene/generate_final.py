@@ -112,7 +112,7 @@ def decode_and_ac_detect(
 
 
 def resize_and_effects(
-    i: int,
+    out_i: int,
     in_img: np.ndarray,
     scene: Scene,
     transformation,
@@ -121,12 +121,12 @@ def resize_and_effects(
     img: np.ndarray = resize_to_4_3(
         np_to_float32(in_img), transformation
     )
-    out_f_no: int = scene['src'].first_frame_no() + i
+    out_f_no: int = scene['src'].first_frame_no() + out_i
     out_frame = McoFrame(no=out_f_no, img=img, scene=scene)
     out_frames: list[McoFrame] | McoFrame = apply_effect(
         out_f_no=out_f_no,
         frame=out_frame,
-        out_i=i
+        out_i=out_i
     )
 
     if isinstance(out_frames, list):
@@ -588,7 +588,7 @@ def generate_final_scene(
         start_time: int = time.time()
         remaining: int = in_frame_count
         ofc: int = min(in_frame_count, int(3 * mp.cpu_count() / 4))
-        executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
+        # executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
 
 
 
@@ -631,22 +631,25 @@ def generate_final_scene(
             # ])
             in_imgs: list[np.ndarray] = list([d_queue.get() for _ in range(count)])
             remaining -= count
-            decoded += count
 
             # Resize and apply filters
             out_images: list[np.ndarray] = []
-            for out in executor.map(
-                lambda args: resize_and_effects(*args),
-                [(decoded + i, img, scene, transformation, convert_fct)
-                for i, img in enumerate(in_imgs)]
-            ):
-                out_images.extend(out)
+            with ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco') as executor:
+                for out in executor.map(
+                    lambda args: resize_and_effects(*args),
+                    [(decoded + i, img, scene, transformation, convert_fct)
+                    for i, img in enumerate(in_imgs)]
+                ):
+                    # print(out_i, flush = True)
+                    out_images.extend(out)
             # for i, img in enumerate(in_imgs):
             #     out_images.extend(
             #         resize_and_effects(
             #             decoded + i, img, scene, transformation, convert_fct
             #     )
             # )
+
+            decoded += count
 
             # Send to encoder
             [e_queue.put(out_img) for out_img in out_images]
@@ -659,8 +662,8 @@ def generate_final_scene(
         if is_last_scene(scene):
             if 'silence' in ch_video and ch_video['silence'] > 0:
                 img_black = np.zeros((FINAL_HEIGHT, FINAL_WIDTH, 3), dtype=in_pipe_dtype)
-                # [e_queue.put(img_black) for _ in range(ch_video['silence'])]
-                [e_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
+                [e_queue.put(img_black) for _ in range(ch_video['silence'])]
+                # [e_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
                 produced += ch_video['silence']
                 print(f"produced w/ silence: {produced}")
         e_queue.put(None)

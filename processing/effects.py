@@ -42,6 +42,8 @@ def apply_effect(
     frame: McoFrame,
     out_i: int
 ) -> McoFrame | list[McoFrame]:
+    # out_i is the index in the final scene from 0 to end
+    # out_f_no is the f_no from start of the src scene
     scene: Scene = frame.scene
     out_frames: list[McoFrame] = []
 
@@ -419,6 +421,7 @@ def apply_effect(
         if effects.has_effect('overlay'):
             for effect in effects.get_effects('overlay'):
                 # global cached_overlay
+                # print(f"[{effect.frame_ref}..{effect.frame_ref + effect.loop}] i = {out_i}")
                 if effect.frame_ref <= out_i <= effect.frame_ref + effect.loop:
                     # if cached_overlay is None:
                     x0: int = effect.extra_param[0]
@@ -479,7 +482,7 @@ def apply_effect(
                 elif frame.img.dtype == np.uint8:
                     img_out = np_to_uint8(img_out)
 
-                print(f"out_i: {out_f_no}, coef={coef:.06f}")
+                print(f"fadeout, out_i: {out_f_no}, coef={coef:.06f}")
                 return McoFrame(no=frame.no, img=img_out)
 
         if effect := effects.get_effect('loop_and_fadeout'):
@@ -501,7 +504,7 @@ def apply_effect(
                         img_out = np_to_uint16(img_out)
                     elif frame.img.dtype == np.uint8:
                         img_out = np_to_uint8(img_out)
-                    print(f"  out_i: {out_f_no}, coef={coef:.06f}")
+                    print(f"loop_and_fadeout, out_i: {out_f_no}, coef={coef:.06f}")
                     return McoFrame(no=frame.no, img=img_out)
 
                 elif out_f_no == effect.frame_ref:
