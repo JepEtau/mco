@@ -45,7 +45,7 @@ def add_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | None:
         text: str = f"""{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['no']:03}{str(no).rjust(10)}"""
 
     height: int = in_img.shape[0]
-    font_size: int = 20
+    font_size: int = 32
     bold: bool = False
     italic: bool = False
     alignment: WatermarkAlignment = WatermarkAlignment.LEFT
