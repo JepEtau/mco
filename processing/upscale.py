@@ -19,6 +19,7 @@ from parsers import Filter
 from utils.mco_types import Scene
 from utils.p_print import *
 from utils.pxl_fmt import PIXEL_FORMAT
+from processing import supported_filters
 
 
 
@@ -88,13 +89,14 @@ class UpscalePipeline(object):
             scale: int = 1
             for i, filter_param in enumerate(filters.steps):
                 if isinstance(filter_param, tuple | list):
+                    _scale: int = 1
                     name, param = filter_param
                     if name == 'resize':
                         _scale = param
                     elif name == 'resize_to':
                         raise ValueError("not yet supported")
-                    else:
-                        continue
+                    # elif name not in supported_filters:
+                    #     continue
                 else:
                     model_key = filter_param
                     _scale = model_manager.get_scale(model_key)
