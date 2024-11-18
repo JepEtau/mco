@@ -16,10 +16,10 @@ supported_cv2_filters : tuple[str] = (
 )
 
 supported_cuda_filters : tuple[str] = (
-    "dilation",
-    "erosion",
-    "opening",
-    "closing",
+    # "dilation",
+    # "erosion",
+    # "opening",
+    # "closing",
     "darker_thinner",
     "resize",
 )
