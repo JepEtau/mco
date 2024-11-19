@@ -42,9 +42,11 @@ from ._db import db
 def parse_database(
     episode: str | int,
     lang: Literal['en', 'fr'] = 'fr',
-    edition: str = ''
+    edition: str = '',
+    ignore_av_sync: bool = False
 ) -> dict[str, tuple[int]]:
-    """Return nb of frames of video and audio tracks"""
+    # Parse the database for a specified episode
+    # ignore avsync when called by a tool
 
     k_ep = f"ep{episode:02}" if isinstance(episode, int) else episode
     logger.debug(lightcyan(f"parse database", f"target: {k_ep}" if k_ep != "ep00" else ""))
@@ -191,6 +193,9 @@ def parse_database(
     else:
         for k_chapter_g in ('g_debut', 'g_fin'):
             parse_geometry_configurations(k_ep_or_g=k_chapter_g)
+
+    if ignore_av_sync:
+        return None
 
     stats: dict[str, Any] | None = None
     if k_ep != 'ep00':

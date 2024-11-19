@@ -100,7 +100,7 @@ def consolidate_av_sync(k_ep: str):
             # ep: 2, 13, 22
             print(red(f"\twarning: target vs source: erroneous frame count:"),
                     f"target: {episode_target_count}, src ({k_ed_audio_src}): {episode_src_count}")
-            sys.exit()
+            # sys.exit()
             avsync_episode = episode_target_count - episode_src_count
 
 

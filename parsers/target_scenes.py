@@ -120,7 +120,7 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
         print(red(f"Target: {len(target_chapter['scenes'])}, Reference: {len(ref_scenes)} scenes"))
         add_ref = False
         if k_chapter in ('episode'):
-            pprint(ref_scenes)
+            # pprint(ref_scenes)
             raise ValueError
 
     frame_count = 0

@@ -36,6 +36,7 @@ class FrameCache:
         super().__init__()
         self.scenes: OrderedDict[str, list[Frame]] = {}
         self.frame_count: int = 0
+        self.scene_keys: list[str] = []
 
         self.video_infos: dict[str, VideoInfo] = {}
         self.replace_db: ReplaceDatabase | None = replace_db
@@ -53,6 +54,11 @@ class FrameCache:
         task_name: str = scene['task'].name
 
         if scene_key not in self.scenes:
+            while self.frame_count > 800:
+                k = self.scene_keys.pop(0)
+                self.frame_count -= len(self.scenes[k])
+                del self.scenes[k]
+
             self.scenes[scene_key] = []
 
             frame_rate: float = get_fps(db)
@@ -185,6 +191,10 @@ class FrameCache:
                 #     QImage(np_img, w, h, w * c, QImage.Format.Format_BGR888)
                 # )
                 self.scenes[scene_key][0].img = np_img
+
+                self.frame_count += count
+                self.scene_keys.append(scene_key)
+                print(f"Number of frames in cache: {self.frame_count}")
 
         return self.scenes[scene_key]
 

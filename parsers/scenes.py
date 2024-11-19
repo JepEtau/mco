@@ -136,6 +136,7 @@ def parse_scenes_new(
         value_str: str = config.get(k_section, k_option).replace(' ','')
 
         scene_no = int(k_option)
+        value_str = value_str.split("#")[0]
         scene_properties: list[str] = value_str.split(',')
 
 
@@ -443,6 +444,10 @@ def parse_target_scenelist(
                 count=segment_count,
                 effects=effects
             )
+    if "asuivre" in k_section and k_ep == 'ep01':
+        pprint(db_video_target)
+        raise ValueError(k_section)
+
 
 
 def get_scene_from_frame_no(

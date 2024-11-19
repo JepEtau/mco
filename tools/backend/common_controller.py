@@ -154,6 +154,9 @@ class CommonController(QObject, metaclass=QMeta):
             print(lightcyan("----------------------- k_ep_p_changed -------------------------"))
             pprint(selection)
 
+        if selection.k_ch in ('g_debut', 'g_fin') and int(selection.k_ep[2:]) > 1:
+            selection.k_ch = 'episode'
+
         if ((selection.k_ep == '' and selection.k_ch == '')
             or (selection.k_ep != '' and selection.k_ch == '')):
             log.info(f"no selected episode/part")
@@ -167,6 +170,7 @@ class CommonController(QObject, metaclass=QMeta):
             parse_database(
                 episode=selection.k_ep,
                 lang='fr',
+                # ignore_av_sync=True
             )
             consolidate_target(
                 k_ep=selection.k_ep,
