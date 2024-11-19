@@ -293,7 +293,12 @@ def consolidate_scene(
     )
     if task_name == 'upscale':
         task.video_file = absolute_path(
-            os.path.join(cache_path, f"scenes_{task_name}", f"{scene['no']:03}", f"{basename}{suffix}{ext}")
+            os.path.join(
+                cache_path,
+                f"scenes_{task_name}",
+                # f"{scene['no']:03}",
+                f"{basename}{suffix}{ext}"
+            )
         )
 
     # Input file for this task
