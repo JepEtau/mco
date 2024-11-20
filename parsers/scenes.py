@@ -333,6 +333,21 @@ def parse_target_scenelist(
                         sys.exit(f"parse_target_scenelist: {v} is not recognized")
 
                 elif k == 'src':
+                    if current_scene_no != -1:
+                        scene['src'].add_scene(
+                            k_ed=k_ed,
+                            k_ep=k_ep,
+                            k_ch=k_ch,
+                            no=current_scene_no,
+                            start=segment_start,
+                            count=segment_count,
+                            backward=backward
+                        )
+                    segment_start = -1
+                    segment_count = -1
+                    current_scene_no = -1
+                    backward = False
+
                     if ed_ep_ch_scene := re.search(re.compile(r"([a-z]{1})?:*(\d{1,2}):([a-z_]+)?:*(\d+)?"), v):
                         if ed_ep_ch_scene.group(1) is not None:
                             k_ed = ed_ep_ch_scene.group(1)
@@ -344,6 +359,7 @@ def parse_target_scenelist(
                             scene_no = int(ed_ep_ch_scene.group(4))
                         except:
                             pass
+                        current_scene_no = scene_no
                     # raise ValueError(f"{k_ed}:{k_ep}:{k_ch}:{scene_no}")
 
                 elif k == 'scene':
