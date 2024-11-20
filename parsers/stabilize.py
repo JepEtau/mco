@@ -252,7 +252,7 @@ def parse_stabilize_configurations(k_ep: str, k_ch: str = '') -> None:
 
     for _k_ch in config.sections():
         if _k_ch not in all_chapter_keys():
-            print(red(f"section {_k_ch} is not a valid chapter name"))
+            print(red(f"stabilization: {_k_ch} is not a valid section name"))
             continue
 
         chapter_video: ChapterVideo | None = None

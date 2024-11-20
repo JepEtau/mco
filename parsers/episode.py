@@ -263,7 +263,8 @@ def parse_episode(k_ed: str, k_ep: str | int):
         # Filters
         #----------------------------------------------------
         elif k_section.startswith("filters"):
-            print(lightcyan(f"Parse config file:"), config_fp)
+            if verbose:
+                print(lightcyan(f"Parse config file:"), config_fp)
             parse_filters(db_video, config, k_section)
 
         # chapters: frame start and (end+1)

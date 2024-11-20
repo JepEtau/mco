@@ -39,23 +39,25 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
     """
     k_ep = ep_key(k_ep)
     K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = ['', '', 0]
-    # K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = 'ep01', 'episode', 0
+    K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = 'ep01', 'asuivre', 0
 
     if k_ep == 'ep99':
         return
 
     target_chapter: ChapterVideo = db[k_ep]['video']['target'][k_chapter]
 
-    # if k_chapter == 'episode':
-    #     print(yellow("consolidate_target_scenes:start"))
-    #     pprint(db['ep01']['video']['target'])
+    if k_chapter == 'asuivre':
+        print(yellow("consolidate_target_scenes:start"))
+        pprint(db['ep01']['video']['target'][k_chapter])
 
     k_ed_src = target_chapter['k_ed_src']
     src_chapter: ChapterVideo = db[k_ep]['video'][k_ed_src][k_chapter]
 
     pprint(src_chapter)
     if src_chapter['count'] < 1:
-        return
+        if k_chapter == 'asuivre':
+            print(yellow(f"{k_ed_src}::{k_chapter} is empty"))
+        # return
 
     # Verify that scenes are defined in src or target
     if (

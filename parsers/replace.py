@@ -25,7 +25,11 @@ def parse_replace_configurations(k_ep_or_g:str):
         print(lightgreen("parse_replace_configurations: %s" % (k_ep_or_g)))
 
     # Open configuration file
-    filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_replace.ini" % (k_ep_or_g))
+    filepath: str = os.path.join(
+        db['common']['directories']['config'],
+        k_ep_or_g,
+        f"{k_ep_or_g}_replace.ini"
+    )
     if filepath.startswith("~/"):
         filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
     if not os.path.exists(filepath):

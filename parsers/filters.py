@@ -33,7 +33,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
     """Only parse filters, no verifications.
     This is done when consolidating the scene
     """
-    verbose = True
+    verbose = False
     if verbose:
         print(lightcyan(f"Parse_filters:"))
         print(green(f"  section: {k_section}"))
@@ -68,7 +68,6 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
             clean_ffmpeg_filter(filters_str).split(';')
         )
         filters = list([f for f in filters if f != ''])
-        pprint(filters)
         scene_filters: dict[TaskName, Filter] = {}
         for f in filters:
 
