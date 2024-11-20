@@ -73,7 +73,9 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
 
     # List the scene no which are defined in target
     if 'scenes' in target_chapter.keys():
-        target_scene_nos = ([s['no'] for s in target_chapter['scenes']])
+        target_scene_nos = (
+            [s['no'] for s in target_chapter['scenes']]
+        )
     else:
         target_scene_nos = []
         target_chapter['scenes'] = []
@@ -109,7 +111,9 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
     # k_ed/k_ep/k_chapter:
     #       - related to the scene defined by the src structure
     #
-    k_ed_ref: str = 'f' if db[k_ep]['audio']['lang'] == 'en' else 'k'
+    k_ed_ref: str = (
+        'f' if db[k_ep]['audio']['lang'] == 'en' else 'k'
+    )
 
     if k_ep == 'ep01' and k_chapter in ('episode'):
         print(red("REWORK ep01 db"))

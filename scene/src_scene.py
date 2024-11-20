@@ -21,6 +21,7 @@ class SrcScene(TypedDict):
     scene: Scene
     start: int
     count: int
+    backward: bool
     k_ed_ep_ch_no: tuple[str, str, str, int]
     effects: Effects
 
@@ -38,6 +39,7 @@ class SrcScenes:
         start: int,
         count: int,
         effects: Effects = None,
+        backward: bool = False
     ) -> None:
         _scene = None
         try:
@@ -60,7 +62,8 @@ class SrcScenes:
                 start=start,
                 count=count,
                 k_ed_ep_ch_no=(k_ed, k_ep, k_ch, no),
-                effects=effects
+                effects=effects,
+                backward=backward
             )
         )
 
@@ -88,7 +91,7 @@ class SrcScenes:
     def _consolidate_scene(self, src_scene: SrcScene) -> None:
         k_ed, k_ep, k_ch, no = src_scene['k_ed_ep_ch_no']
         try:
-            _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][no]
+            _src_scene: Scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][no]
         except:
             pprint(db[k_ep]['video'][k_ed][k_ch]['scenes'])
             raise ValueError(red(f"cannot access to scene no. {src_scene['k_ed_ep_ch_no']}"))
@@ -97,6 +100,10 @@ class SrcScenes:
         count: int = src_scene['count']
         if count == -1:
             count = _src_scene['count'] - (start - _src_scene['start'])
+
+        if count < -1:
+            count = abs(count)
+            start = _src_scene['start'] + _src_scene['count'] - count
 
         src_scene.update({
             'scene': _src_scene,

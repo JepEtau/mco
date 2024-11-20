@@ -2,7 +2,6 @@
 
 supported_ffmpeg_filters : tuple[str] = (
     "hqdn3d",
-    "nlmeans",
     "unsharp",
     "cas",
     "edgedetect",
@@ -22,6 +21,7 @@ supported_cuda_filters : tuple[str] = (
     # "closing",
     "darker_thinner",
     "resize",
+    "nlmeans",
 )
 
 

@@ -1,3 +1,4 @@
+from collections import deque
 import math
 import os
 from pprint import pprint
@@ -182,6 +183,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         in_frame: McoFrame = None
         out_frame: McoFrame = None
         out_i: int = 0
+        backward_imgs: deque = deque()
         while count:
 
             in_frame: McoFrame = None
@@ -225,14 +227,21 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                     out_frames = apply_effect(out_f_no, out_frame, out_i)
                     if isinstance(out_frames, list):
                         # print(yellow(f"\t{out_i}: send {len(out_frames)}"))
-                        [encoder_subprocess.stdin.write(f.img) for f in out_frames]
+                        if src['backward']:
+                            for f in out_frames:
+                                backward_imgs.append(f.img)
+                        else:
+                            [encoder_subprocess.stdin.write(f.img) for f in out_frames]
                         produced += len(out_frames)
                         out_i += len(out_frames)
 
                     else:
                         out_frame = out_frames
                         # print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
-                        encoder_subprocess.stdin.write(out_frame.img)
+                        if src['backward']:
+                            backward_imgs.append(out_frame.img)
+                        else:
+                            encoder_subprocess.stdin.write(out_frame.img)
                         produced += 1
                         out_i += 1
 
@@ -240,6 +249,11 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                     count -= 1
                 else:
                     break
+
+        if backward_imgs:
+            count = len(backward_imgs)
+            for _ in range(count):
+                encoder_subprocess.stdin.write(backward_imgs.pop())
 
     print(f"produced: {produced}")
     if is_last_scene(scene):

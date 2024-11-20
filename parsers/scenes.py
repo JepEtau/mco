@@ -310,10 +310,8 @@ def parse_target_scenelist(
             current_scene_no: int = -1
             segment_start: int = -1
             segment_count: int = -1
+            backward: bool = False
             effects: Effects | None = None
-
-            _do_stop = False
-
             for p in scene_properties:
                 try:
                     k, v = p.split('=')
@@ -347,7 +345,6 @@ def parse_target_scenelist(
                         except:
                             pass
                     # raise ValueError(f"{k_ed}:{k_ep}:{k_ch}:{scene_no}")
-                        _do_stop = True
 
                 elif k == 'scene':
                    if current_scene_no != -1:
@@ -358,10 +355,16 @@ def parse_target_scenelist(
                            no=current_scene_no,
                            start=segment_start,
                            count=segment_count,
+                           backward=backward
                        )
                    current_scene_no = int(v)
                    segment_start = -1
                    segment_count = -1
+                   backward = False
+
+                elif k == 'backward':
+                    if v.lower() == "true":
+                        backward = True
 
                 elif k == 'segment':
                     start_count = v.split(':')
@@ -471,15 +474,9 @@ def parse_target_scenelist(
                 no=current_scene_no if current_scene_no != -1 else scene_no,
                 start=segment_start,
                 count=segment_count,
+                backward=backward,
                 effects=effects
             )
-
-        if _do_stop:
-            pprint(scene['src'])
-
-    if "asuivre" in k_section and k_ep == 'ep01':
-        pprint(db_video_target)
-        raise ValueError(k_section)
 
 
 

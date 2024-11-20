@@ -1,1 +1,3 @@
-- add an option to set the codec to FFv1 when deinterlacing video
+- generate episode 1 and compare to edition k
+- g_fin, scene 9, replace scunet by skimage's nlmeans
+
