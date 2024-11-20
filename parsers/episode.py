@@ -114,7 +114,7 @@ def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
             os.path.join(
                 db['common']['directories']['config'],
                 k_ep,
-                f"{k_ep}_target.ini"
+                f"{k_ep}.ini"
             )
         )
         if not os.path.exists(filepath):

@@ -33,7 +33,11 @@ def parse_credit_target():
     for k_chapter_g in credit_chapter_keys():
 
         # Open configuration file
-        filepath = os.path.join(db['common']['directories']['config'], k_chapter_g, "%s_target.ini" % (k_chapter_g))
+        filepath = os.path.join(
+            db['common']['directories']['config'],
+            k_chapter_g,
+            f"{k_chapter_g}.ini"
+        )
         if filepath.startswith("~/"):
             filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
         if not os.path.exists(filepath):

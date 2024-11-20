@@ -125,7 +125,7 @@ def parse_video_target(
             ch_video['effects'].append(Effect(name='fadeout', fade=chapter_fadeout))
 
     if k_ed_src is None:
-        sys.exit("error: parse_video_target_section: missing key \'source\' in target file %s_target.ini" % (k_ep))
+        sys.exit(f"error: parse_video_target_section: missing key \'source\' in target file {k_ep}.ini")
 
     for k_chapter in non_credit_chapter_keys():
         try:
