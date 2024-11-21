@@ -18,7 +18,7 @@ from utils.p_print import *
 from utils.path_utils import path_split
 from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from utils.media import VideoInfo, extract_media_info, str_to_video_codec
+from utils.media import VideoInfo, extract_media_info_mco, str_to_video_codec
 
 
 
@@ -33,11 +33,11 @@ def extract_scene(
     if not os.path.exists(in_video_fp):
         raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
     out_video_fp: str = scene['task'].video_file
-    in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+    in_video_info: VideoInfo = extract_media_info_mco(in_video_fp)['video']
 
     if not force:
         if os.path.exists(out_video_fp):
-            out_video_info: VideoInfo = extract_media_info(out_video_fp)['video']
+            out_video_info: VideoInfo = extract_media_info_mco(out_video_fp)['video']
             if out_video_info['frame_count'] == scene['count']:
                 return True
 
@@ -51,7 +51,7 @@ def extract_scene(
     k_ed_ref = db['ep01']['audio']['src']['k_ed']
     if scene['k_ed'] == k_ed_ref:
         in_video_fp: str = scene['inputs']['interlaced']['filepath']
-        in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+        in_video_info: VideoInfo = extract_media_info_mco(in_video_fp)['video']
         start: int = scene['start']
 
     # Output directory
@@ -81,7 +81,7 @@ def extract_scene(
         ]
 
     if do_watermark(scene=scene):
-        video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+        video_info: VideoInfo = extract_media_info_mco(in_video_fp)['video']
         h, w, c = video_info['shape']
         pipe_pixfmt = 'bgr24'
         nbytes = math.prod(video_info['shape'])

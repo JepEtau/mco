@@ -12,7 +12,7 @@ from parsers.helpers import get_fps
 from scene.consolidate import consolidate_scene
 from scene.src_scene import SrcScene
 from utils.images_io import load_image_fp32, write_image
-from utils.media import VideoInfo, extract_media_info, FShape
+from utils.media import VideoInfo, extract_media_info_mco, FShape
 from utils.np_dtypes import np_to_float32, np_to_uint16, np_to_uint8
 from utils.p_print import *
 from utils.logger import main_logger
@@ -592,7 +592,7 @@ def extract_last_frame_fp32(scene: Scene) -> McoFrame:
     if not os.path.exists(in_video_fp):
         raise ValueError(red(f"Missing file: {in_video_fp}"))
 
-    in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+    in_video_info: VideoInfo = extract_media_info_mco(in_video_fp)['video']
     final_shape: FShape = in_video_info['shape']
     frame_no: int = scene['dst']['count'] - 1
 

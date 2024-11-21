@@ -17,8 +17,8 @@ from scene.consolidate import consolidate_scene
 from scene.src_scene import SrcScene
 from utils.hash import calc_hash
 from utils.mco_types import Scene, ChapterVideo
-from utils.mco_utils import is_up_to_date
-from utils.media import extract_media_info, vcodec_to_extension
+from utils.mco_utils import is_up_to_date, extract_media_info_mco
+from utils.media import vcodec_to_extension
 from utils.p_print import *
 from utils.tools import ffmpeg_exe
 from parsers import (
@@ -212,7 +212,7 @@ def upscale_scenes(
             in_media_path = progressive_input['filepath']
             if in_media_path not in vinfos:
 
-                in_video_info = extract_media_info(in_media_path)['video']
+                in_video_info = extract_media_info_mco(in_media_path)['video']
                 # force output to rgb
                 d_c_order = 'rgb'
                 if in_video_info['bpp'] > 8:

@@ -7,7 +7,7 @@ from pprint import pprint
 
 from parsers.p_print import pprint_scene_mapping
 from scene.consolidate import consolidate_scene
-from utils.media import VideoInfo, extract_media_info
+from utils.media import VideoInfo, extract_media_info_mco
 from utils.pxl_fmt import PIXEL_FORMAT
 from video.consolidate_scenes import get_chapter_video
 from .st_scenes import convert_video_for_evaluation
@@ -149,7 +149,7 @@ def tf_scenes(
                 print(lightgreen(' '.join(vs_command)))
 
 
-            in_vi: VideoInfo = extract_media_info(in_fp)['video']
+            in_vi: VideoInfo = extract_media_info_mco(in_fp)['video']
             f_rate = in_vi['frame_rate_r']
             frame_rate = str(f_rate)
             if isinstance(f_rate, tuple | list):

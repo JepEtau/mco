@@ -9,7 +9,7 @@ from pprint import pprint
 
 from tools.backend.replace_database import ReplaceDatabase
 from utils.mco_types import Scene
-from utils.media import VideoInfo, extract_media_info, frame_rate_dec
+from utils.media import VideoInfo, extract_media_info_mco, frame_rate_dec
 from utils.p_print import lightcyan, red, yellow
 from utils.path_utils import path_split
 from utils.tools import ffmpeg_exe
@@ -93,7 +93,7 @@ class FrameCache:
                     # specific to lr task: use a h264 video rather than the deinterlaced one
                     # if scene['task'].name == 'lr':
 
-                    self.video_infos[in_video_fp] = extract_media_info(in_video_fp)['video']
+                    self.video_infos[in_video_fp] = extract_media_info_mco(in_video_fp)['video']
                 vi: VideoInfo = self.video_infos[in_video_fp]
                 frame_rate: float = frame_rate_dec(vi['frame_rate_r'])
                 # pprint(vi)

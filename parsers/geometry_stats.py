@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 
 from processing.resize_to_4_3 import TransformationValues
-from utils.media import VideoInfo, extract_media_info
+from utils.media import VideoInfo, extract_media_info_mco
 from utils.p_print import red
 
 from .geometry import SceneGeometry
@@ -112,7 +112,7 @@ class ChGeometryStats:
         fp: str = scene['task'].in_video_file
         if fp not in self._sizes.keys():
             try:
-                in_vi: VideoInfo = extract_media_info(fp)['video']
+                in_vi: VideoInfo = extract_media_info_mco(fp)['video']
             except:
                 return
 

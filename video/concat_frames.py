@@ -17,7 +17,7 @@ from utils.images import Images
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_path import makedirs
 from utils.mco_utils import run_simple_command
-from utils.media import VideoInfo, extract_media_info
+from utils.media import VideoInfo, extract_media_info_mco
 from utils.p_print import *
 from utils.logger import main_logger
 from utils.path_utils import absolute_path, path_split

@@ -43,7 +43,7 @@ from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.tools import ffmpeg_exe
-from utils.media import VideoInfo, extract_media_info, str_to_video_codec, vcodec_to_extension
+from utils.media import VideoInfo, extract_media_info_mco, str_to_video_codec, vcodec_to_extension
 
 
 
@@ -165,7 +165,7 @@ def generate_final_scene(
         out_pipe_pixfmt = 'bgr48'
 
     # Input video scenes
-    in_video_info: VideoInfo = extract_media_info(in_video_fp)['video']
+    in_video_info: VideoInfo = extract_media_info_mco(in_video_fp)['video']
     in_pipe_shape = in_video_info['shape']
     in_h, in_w = in_pipe_shape[:2]
     in_pipe_dtype: np.dtype = out_pipe_dtype

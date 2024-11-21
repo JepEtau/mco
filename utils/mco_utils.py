@@ -2,15 +2,23 @@ from __future__ import annotations
 import os
 from pprint import pprint
 import subprocess
+import sys
 import time
 from scene.filters import do_watermark
 from utils.mco_types import ChapterVideo, Scene
-from utils.media import VideoInfo, extract_media_info
+from utils.media import (
+    extract_media_info_mco,
+    FFmpegVideoCodec,
+    str_to_video_codec,
+    VideoInfo,
+)
 from utils.p_print import *
 from parsers import (
     VideoSettings, db, task_to_dirname, TaskName, TASK_NAMES, ProcessingTask
 )
 from .logger import main_logger
+
+
 
 
 def ffmpeg_metadata(scene: Scene) -> list[str]:
@@ -23,14 +31,25 @@ def ffmpeg_metadata(scene: Scene) -> list[str]:
     vsettings: VideoSettings = scene['task'].video_settings
 
     metadata: list[str] = []
-    if not has_effects:
-        metadata.extend(["-map_metadata", "-1"])
+    if str_to_video_codec[vsettings.codec] == FFmpegVideoCodec.DNXHD:
+        if len(vsettings.metadata.keys()):
+            for k, v in vsettings.metadata.items():
+                if not k.startswith("comment_"):
+                    k = f"comment_{k}"
+                metadata.extend(["-metadata", f"{k}={v}"])
 
-    if len(vsettings.metadata.keys()):
-        metadata.extend(["-movflags", "use_metadata_tags"])
-        for k, v in vsettings.metadata.items():
-            metadata.extend(["-metadata:s:v:0", f"{k}={v}"])
+    else:
+        if not has_effects:
+            metadata.extend(["-map_metadata", "-1"])
+
+        if len(vsettings.metadata.keys()):
+            metadata.extend(["-movflags", "use_metadata_tags"])
+            for k, v in vsettings.metadata.items():
+                if k.startswith("comment_"):
+                    k = k.replace("comment_", "")
+                metadata.extend(["-metadata:s:v:0", f"{k}={v}"])
     return metadata
+
 
 
 def scene_id_str(scene: Scene) -> str:
@@ -40,6 +59,7 @@ def scene_id_str(scene: Scene) -> str:
         else f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']:03}"
     )
     return scene_id
+
 
 
 def is_up_to_date(scene: Scene) -> bool:
@@ -56,7 +76,7 @@ def is_up_to_date(scene: Scene) -> bool:
         dst_frame_count: int = calculate_frame_count(scene)
         print(yellow(f"dst frame_count: {dst_frame_count}"))
         try:
-            out_video_info: VideoInfo = extract_media_info(out_video_fp)['video']
+            out_video_info: VideoInfo = extract_media_info_mco(out_video_fp)['video']
             print(f"output scene file: {out_video_info['frame_count']}")
             if out_video_info['frame_count'] != dst_frame_count:
                 return False
@@ -64,12 +84,22 @@ def is_up_to_date(scene: Scene) -> bool:
             return False
 
         # TODO: check metadata
+        print("is_up_to_date")
         print(out_video_info['metadata'])
-        print(scene['task'].hash)
+        print(task.hash)
+        try:
+            out_hash: str = out_video_info['metadata']['hash']
+        except:
+            raise ValueError(red("no hash in output video"))
+
+        if out_hash != task.hash:
+            print(yellow(f"hash differs: {out_hash}, should be {task.hash}"))
+            return False
 
         return True
 
     return False
+
 
 
 def is_final_up_to_date(scene: Scene) -> bool:
@@ -94,7 +124,7 @@ def is_final_up_to_date(scene: Scene) -> bool:
         return False
 
     try:
-        out_video_info: VideoInfo = extract_media_info(out_video_fp)['video']
+        out_video_info: VideoInfo = extract_media_info_mco(out_video_fp)['video']
     except:
         return False
 
@@ -102,13 +132,18 @@ def is_final_up_to_date(scene: Scene) -> bool:
     if out_video_info['frame_count'] != calculate_frame_count(scene):
         return False
 
+    print("is_final_up_to_date")
+    print(out_video_info['metadata'])
+    print(task.hash)
+
     if task.name in ('lr', 'sim', 'upscale', 'hr', 'final'):
         try:
-            out_hash: str = out_video_info['metadata']['HASH']
+            out_hash: str = out_video_info['metadata']['hash']
         except:
             raise ValueError(red("no hash in output video"))
 
         if out_hash != task.hash:
+            print(yellow(f"hash differs: {out_hash}, should be {task.hash}"))
             return False
 
     return True
@@ -182,7 +217,7 @@ def calculate_frame_count(scene: Scene) -> int:
     #             if e := s['effects'].get_effect(name=name):
     #                 count -= e.loop
 
-    print(red(f"calculate_frame_count: {scene['no']} -> {count}"))
+    # print(red(f"calculate_frame_count: {scene['no']} -> {count}"))
     return count
 
 

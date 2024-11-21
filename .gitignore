@@ -175,6 +175,7 @@ cython_debug/
 **/*.mkv
 **/*.vob
 **/*.mpg
+**/*.mxf
 cache/
 frames/
 external/*

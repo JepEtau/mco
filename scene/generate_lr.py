@@ -29,7 +29,7 @@ from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from utils.media import VideoInfo, extract_media_info, frame_rate_dec, str_to_video_codec
+from utils.media import VideoInfo, extract_media_info_mco, frame_rate_dec, str_to_video_codec
 
 
 
@@ -46,7 +46,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
     # Out video clip
     in_video_fp = scene['src'].primary_scene()['scene']['inputs']['progressive']['filepath']
-    in_vi: VideoInfo = extract_media_info(in_video_fp)['video']
+    in_vi: VideoInfo = extract_media_info_mco(in_video_fp)['video']
     h, w = in_vi['shape'][:2]
     pipe_pixfmt = 'bgr24'
     pipe_out_dtype = (
@@ -63,13 +63,15 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         out_video_shape = (1080, 1440, 3)
         h, w = out_video_shape[:2]
         dec_filter_complex = [
-            "-filter_complex", f"[0:v]scale={w}:{h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
+            "-filter_complex",
+            f"[0:v]scale={w}:{h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
             "-map", "[outv]"
         ]
     else:
         if h != 576 or w != 576:
             filter_complex = [
-                "-filter_complex", f"[0:v]scale=768:576:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
+                "-filter_complex",
+                f"[0:v]scale=768:576:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
                 "-map", "[outv]"
             ]
 
@@ -96,6 +98,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         *metadata,
         out_video_fp, "-y"
     ]
+    main_logger.info(f"Encoder command: {encoder_command}")
     encoder_subprocess: subprocess.Popen = None
     try:
         encoder_subprocess = subprocess.Popen(
@@ -122,7 +125,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         to_produce -= count
 
         # Extract info from input video file
-        in_vi: VideoInfo = extract_media_info(in_video_fp)['video']
+        in_vi: VideoInfo = extract_media_info_mco(in_video_fp)['video']
         h, w, c = in_vi['shape']
         pipe_pixfmt = 'bgr24'
         pipe_dtype = np.uint8
@@ -250,12 +253,13 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                 else:
                     break
 
+        del frame_cache
         if backward_imgs:
             count = len(backward_imgs)
             for _ in range(count):
                 encoder_subprocess.stdin.write(backward_imgs.pop())
 
-    print(f"produced: {produced}")
+    main_logger.info(f"produced: {produced}")
     if is_last_scene(scene):
         if 'silence' in ch_video and ch_video['silence'] > 0:
             print(f"silence!!! {ch_video['silence']}")

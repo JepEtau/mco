@@ -30,7 +30,7 @@ from processing.decoder import decoder_frame_prop
 from utils.mco_types import Inputs
 from utils.media import (
     VideoInfo,
-    extract_media_info,
+    extract_media_info_mco,
     get_media_info,
     vcodec_to_extension,
 )
@@ -237,10 +237,10 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             raise FileExistsError(red(f"Missing input file: edition: {ed}, episode: {ep}"))
         print(cyan(f"Input:"), f"{in_media_path}")
         try:
-            in_media_info = extract_media_info(in_media_path)
+            in_media_info = extract_media_info_mco(in_media_path)
         except:
             # debug:
-            extract_media_info(in_media_path)
+            extract_media_info_mco(in_media_path)
             sys.exit(f"[E] {in_media_path} is not a valid input media file")
         if arguments.debug:
             print(lightcyan("FFmpeg media info:"))
@@ -348,7 +348,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         if os.path.exists(out_filepath):
             success: bool = True
             try:
-                out_video_info = extract_media_info(out_filepath)['video']
+                out_video_info = extract_media_info_mco(out_filepath)['video']
             except:
                 success = False
             if success:
