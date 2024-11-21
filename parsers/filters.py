@@ -80,7 +80,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
                     sequence=result.group(2)
                 )
 
-            elif (result := re.search(re.compile(r"^([a-z]+)$"), f)):
+            elif (result := re.search(re.compile(r"^([a-z_]+)$"), f)):
                 # May use yes-pattern or no-pattern in the previous regex
                 # if result.group(1) not in TASK_NAMES:
                 #     raise ValueError(f"{result.group(1)} is not a valid task")
@@ -91,7 +91,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
 
             else:
                 pprint(filters)
-                raise ValueError("Unrecognized filter")
+                raise ValueError(f"Unrecognized filter: {f}")
 
             if task_filter.task_name not in TASK_NAMES:
                 print(red(f"[W] {task_filter.task_name} is not a valid task name"))

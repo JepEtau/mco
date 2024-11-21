@@ -266,7 +266,7 @@ def consolidate_scene(
             sequence = sequence.replace(t, '')
         suffix: str = ""
         for s in sequence.split(','):
-            if (result := re.search(re.compile(r"(.*)="), s)):
+            if result := re.search(re.compile(r"^([^=]*)="), s):
                 suffix += f"+{result.group(1)}" if suffix else f"{result.group(1)}"
             else:
                 suffix += f"+{s}" if suffix else s

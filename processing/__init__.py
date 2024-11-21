@@ -5,6 +5,11 @@ supported_ffmpeg_filters : tuple[str] = (
     "unsharp",
     "cas",
     "edgedetect",
+    "nlmeans",
+    "bm3d",
+    "atadenoise",
+    "removegrain",
+    "tmedian",
 )
 
 supported_cv2_filters : tuple[str] = (
@@ -21,7 +26,7 @@ supported_cuda_filters : tuple[str] = (
     # "closing",
     "darker_thinner",
     "resize",
-    "nlmeans",
+    "nlmeans_sk",
 )
 
 
