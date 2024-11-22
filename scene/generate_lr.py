@@ -26,7 +26,7 @@ from utils.mco_utils import (
     is_last_scene,
     is_up_to_date
 )
-from utils.np_dtypes import np_to_float32, np_to_uint8
+from utils.np_dtypes import np_to_float32, np_to_uint16, np_to_uint8
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
@@ -216,21 +216,22 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                         if masks is not None:
                             pprint(masks)
                             if True:
-                                out_img: np.ndarray = np_to_float32(img).reshape(in_shape)
+                                # out_img: np.ndarray = np_to_float32(img).reshape(in_shape)
+                                mask_img = np.ndarray = np.zeros(in_shape[:2], dtype=np.uint8)
                                 mask: DsrMask
                                 for mask in masks:
-                                    out_img = cv2.ellipse(
-                                        img=out_img,
+                                    mask_img = cv2.ellipse(
+                                        img=mask_img,
                                         center=mask.center,
                                         axes=mask.axes//2,
                                         angle=mask.angle,
                                         startAngle=0,
                                         endAngle=360,
-                                        color=(0, 255, 0),
+                                        color=255,
                                         thickness=-1
                                     )
-                                img = np.ascontiguousarray(np_to_uint8(out_img))
-                                write_image(f"mask_{in_f_no:04}_cv2.png", img)
+                                # img = np.ascontiguousarray(np_to_uint8(out_img))
+                                write_image(f"mask_{in_f_no:04}_mask.png", mask_img)
                             elif False:
                                 # no rotate
                                 pil_image = PilImage.fromarray(img.reshape(in_shape))
@@ -270,6 +271,34 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                                 np_mask: np.ndarray = np.array(pil_mask, dtype=np.float32)
 
                                 write_image(f"mask_{in_f_no:04}_pil.png", np_mask)
+
+                            # to try:
+                            # https://github.com/aGIToz/PyInpaint
+                            # https://github.com/Sanster/IOPaint
+                            # https://github.com/NVIDIA/partialconv
+                            # https://github.com/DmitryUlyanov/deep-image-prior
+                            # https://github.com/YaoFANGUK/video-subtitle-remover
+                            # https://theses.hal.science/tel-01136253v1/preview/Thesis_alasdair_newson_conforme.pdf#page=2
+                            #   https://perso.telecom-paristech.fr/gousseau/video_inpainting/
+
+                            radius = 5
+                            # cv2.INPAINT_NS
+                            in_img: np.ndarray = np_to_float32(img).reshape(in_shape)
+                            in_img = cv2.cvtColor(in_img, cv2.COLOR_BGR2YUV)
+                            b,g,r = cv2.split(in_img)
+                            out_bgr = []
+                            for p in (r,g,b):
+                                out_bgr.append(cv2.inpaint(
+                                    p,
+                                    inpaintMask=mask_img,
+                                    inpaintRadius=radius,
+                                    flags=cv2.INPAINT_TELEA
+                                ))
+                            out_img = cv2.merge(out_bgr)
+                            out_img = cv2.cvtColor(out_img, cv2.COLOR_YUV2BGR)
+                            write_image(f"mask_{in_f_no:04}_in.png", img)
+                            write_image(f"mask_{in_f_no:04}_out.png", out_img)
+                            img = out_img
 
                     in_frame: McoFrame = McoFrame(
                         no=in_f_no, img=img, scene=scene
