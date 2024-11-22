@@ -3,20 +3,23 @@ import math
 import os
 from pprint import pprint
 import subprocess
+import cv2
 import numpy as np
 from parsers import (
-    db,
-    get_fps,
     VideoSettings,
+    SceneDsr,
+    DsrMask,
 )
 from processing.effects import apply_effect
-from processing.frame_replace import ItemCache, frame_occurences, get_frames_to_remove
+from processing.frame_replace import (
+    ItemCache, frame_occurences, get_frames_to_remove
+)
 from processing.watermark import add_watermark
 from scene.filters import do_watermark
+from utils.images_io import write_image
 from utils.logger import main_logger
 from utils.mco_types import ChapterVideo, McoFrame, Scene
 from utils.mco_utils import (
-    calculate_frame_count,
     ffmpeg_metadata,
     get_target_video,
     is_first_scene,
@@ -27,11 +30,16 @@ from utils.np_dtypes import np_to_float32, np_to_uint8
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
-from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
+from utils.time_conversions import frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
-from utils.media import VideoInfo, extract_media_info_mco, frame_rate_dec, str_to_video_codec
-
-
+from utils.media import (
+    VideoInfo, extract_media_info_mco, frame_rate_dec, str_to_video_codec
+)
+from PIL import (
+    Image as PilImage,
+    ImageDraw,
+)
+import PIL
 
 def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
@@ -126,7 +134,8 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
         # Extract info from input video file
         in_vi: VideoInfo = extract_media_info_mco(in_video_fp)['video']
-        h, w, c = in_vi['shape']
+        in_shape = in_vi['shape']
+        h, w, c = in_shape
         pipe_pixfmt = 'bgr24'
         pipe_dtype = np.uint8
         pipe_img_nbytes = math.prod(out_video_shape)
@@ -174,6 +183,10 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         frame_cache.set_occurences(frame_occurences(frame_replace))
         frame_cache.set_exceptions(frames_to_replace)
 
+        # Dust and scratch removal
+        scene_dsr: SceneDsr = src_scene['dsr']
+        scene_dsr.set_frame_size((w, h))
+
         ch_video: ChapterVideo = get_target_video(scene)
         if is_first_scene(scene):
             print(lightcyan("first scene, avsync:"), ch_video['avsync'])
@@ -198,6 +211,66 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                 ).reshape(pipe_img_shape)
                 if in_f_no not in frames_to_replace:
                     # print(purple(f"Read frame no.{in_f_no}"))
+                    if scene_dsr is not None:
+                        masks: list[DsrMask]= scene_dsr.get(frame_no=in_f_no)
+                        if masks is not None:
+                            pprint(masks)
+                            if True:
+                                out_img: np.ndarray = np_to_float32(img).reshape(in_shape)
+                                mask: DsrMask
+                                for mask in masks:
+                                    out_img = cv2.ellipse(
+                                        img=out_img,
+                                        center=mask.center,
+                                        axes=mask.axes//2,
+                                        angle=mask.angle,
+                                        startAngle=0,
+                                        endAngle=360,
+                                        color=(0, 255, 0),
+                                        thickness=-1
+                                    )
+                                img = np.ascontiguousarray(np_to_uint8(out_img))
+                                write_image(f"mask_{in_f_no:04}_cv2.png", img)
+                            elif False:
+                                # no rotate
+                                pil_image = PilImage.fromarray(img.reshape(in_shape))
+                                pil_mask = ImageDraw.Draw(pil_image)
+                                for mask in masks:
+                                    mask: DsrMask
+                                    x0, y0 = mask.center - mask.axes // 2
+                                    x1, y1 = x0 + mask.axes[0], y0 + mask.axes[1]
+                                    pil_mask.ellipse(
+                                        xy=((x0, y0), (x1, y1)),
+                                        outline="green"
+                                    )
+                                    pil_image = pil_image.rotate(mask.angle, expand=True)
+                                    break
+                                # pil_image = pil_image.rotate(30, expand=True)
+
+                                out_img: np.ndarray = np.array(pil_image)
+                                img = np.ascontiguousarray(out_img)
+                            else:
+                                # worse than cv2
+                                mask: DsrMask = masks[0]
+                                pil_mask = PilImage.new(
+                                    'F', list(mask.axes + 10), color=0.
+                                )
+                                x0, y0 = 0,0
+                                x1, y1 = x0 + mask.axes[0], y0 + mask.axes[1]
+                                ImageDraw.Draw(pil_mask).ellipse(
+                                    xy=((x0, y0), (x1, y1)),
+                                    outline="white",
+                                    fill="white"
+                                )
+                                pil_mask = pil_mask.rotate(
+                                    mask.angle,
+                                    # resample=PilImage.Resampling.BILINEAR,
+                                    expand=True
+                                )
+                                np_mask: np.ndarray = np.array(pil_mask, dtype=np.float32)
+
+                                write_image(f"mask_{in_f_no:04}_pil.png", np_mask)
+
                     in_frame: McoFrame = McoFrame(
                         no=in_f_no, img=img, scene=scene
                     )

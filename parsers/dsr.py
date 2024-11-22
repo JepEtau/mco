@@ -25,34 +25,34 @@ PatchShape = Literal['ellipse', 'rect']
 
 
 @dataclass(slots=True)
-class DsrPatch:
+class DsrMask:
     shape: PatchShape
     # x, y, theta
-    coordinates: np.ndarray[float | int, float | int]
+    center: np.ndarray[float | int, float | int]
     # w, h
-    size: np.ndarray[float | int, float | int]
+    axes: np.ndarray[float | int, float | int]
     # in radian
-    theta: float
+    angle: float
 
     def get(self, size: np.ndarray[float, float]) -> Self:
-        return DsrPatch(
+        return DsrMask(
             self.shape,
-            np.round(self.coordinates * size).astype(int),
-            np.round(self.size * size).astype(int),
-            self.theta,
+            np.round(self.center * size).astype(int),
+            np.round(self.axes * size).astype(int),
+            self.angle,
         )
 
 
 
 @dataclass(slots=True)
-class Dsr:
-    _frames: dict[int, list[DsrPatch]] = field(default_factory=dict)
+class SceneDsr:
+    _frames: dict[int, list[DsrMask]] = field(default_factory=dict)
     _size: np.ndarray[float, float] = None
 
     def get(
         self,
         frame_no: int | None = None
-    ) -> list[DsrPatch] | dict[int, list[DsrPatch]] | None:
+    ) -> list[DsrMask] | dict[int, list[DsrMask]] | None:
         """Returns a list of frame's patch"""
         if frame_no is None:
             return self.get_all()
@@ -61,9 +61,9 @@ class Dsr:
         return None
 
 
-    def get_all(self) -> dict[int, list[DsrPatch]] | None:
+    def get_all(self) -> dict[int, list[DsrMask]] | None:
         """Returns a list of frame's patch"""
-        d: dict[int, list[DsrPatch]] = {}
+        d: dict[int, list[DsrMask]] = {}
         for frame_no, l in self._frames.items():
             d.update({frame_no: list([p.get(self._size) for p in l])})
         return d
@@ -81,11 +81,11 @@ class Dsr:
             self._frames[frame_no] = []
 
         self._frames[frame_no].append(
-            DsrPatch(
+            DsrMask(
                 shape=shape,
-                coordinates=np.array(coordinates, np.float32),
-                size=np.array(size, np.float32),
-                theta=theta,
+                center=np.array(coordinates, np.float32),
+                axes=np.array(size, np.float32),
+                angle=theta,
             )
         )
 
@@ -146,8 +146,8 @@ def parse_dsr_file(k_ep_or_g: str):
                 continue
 
             if 'dsr' not in scene:
-                scene['dsr'] = Dsr()
-            scene_dsr: Dsr = scene['dsr']
+                scene['dsr'] = SceneDsr()
+            scene_dsr: SceneDsr = scene['dsr']
 
             patches: list[str] = parser_strip(
                 config.get(k_section, frame_no_str)
@@ -174,4 +174,5 @@ def parse_dsr_file(k_ep_or_g: str):
             if scene is not None:
                 scene['dsr'].set_frame_size((720, 576))
                 pprint(scene['dsr'].get())
+                pprint(scene)
             # sys.exit()

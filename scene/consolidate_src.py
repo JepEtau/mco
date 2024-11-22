@@ -53,6 +53,7 @@ def consolidate_src_scene(
             scene_filters[t] = Filter(task_name=t)
     scene_filters['hr'] = scene_filters['upscale']
 
+
     # Deinterlace
     template_script: str = get_template_script(
         k_ep=k_ep,
@@ -61,6 +62,11 @@ def consolidate_src_scene(
     qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
     deint_hashcode, _ = calc_deint_hash(qtgmc_args)
     scene_filters['initial'].hash = deint_hashcode
+
+    if 'dsr' not in scene:
+        scene['dsr'] = None
+
+
 
     # Update the scene task
     scene['task'].hash = scene_filters[scene['task'].name].hash
@@ -74,10 +80,12 @@ def consolidate_src_scene(
             else "watermark"
         )
 
+
     # Inputs
     scene['cache'] = get_cache_path(scene)
     scene['inputs'] = deepcopy(db[k_ep]['video'][k_ed][k_ch]['inputs'])
     scene['inputs']['progressive']['cache'] = db['common']['directories']['cache_progressive']
+
 
     # Set the progressive filepath
     basename: str = path_split(scene['inputs']['interlaced']['filepath'])[1]
@@ -90,6 +98,7 @@ def consolidate_src_scene(
     )
     scene['inputs']['progressive']['filepath'] = progressive_fp
 
+
     # Output video settings
     _task_name: TaskName = 'lr'
     vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
@@ -98,6 +107,7 @@ def consolidate_src_scene(
         vsettings = scene['task'].video_settings
     else:
         raise ValueError(f"VideoSettings not defined for task: {task_name}")
+
 
     # Output video filename
     if k_ch in ('g_debut', 'g_fin'):
