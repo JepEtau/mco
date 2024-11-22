@@ -222,11 +222,12 @@ def parse_tracker(tracker_str:str):
 
 
 
-def parse_stabilize_configurations(k_ep: str, k_ch: str = '') -> None:
+def parse_stabilize_file(k_ep: str, k_ch: str = '') -> None:
     """The stabilize config file contains the parameters for each dst scene.
     """
-    verbose = True
-    print(red(f"parse_stabilize_configurations for {k_ep}:{k_ch}"))
+    verbose = False
+    if verbose:
+        print(lightcyan(f"parse_stabilize_configurations for {k_ep}:{k_ch}"))
 
     # Open configuration file
     k_ep_or_g: str = k_ch if k_ch in credit_chapter_keys() else k_ep
@@ -241,9 +242,6 @@ def parse_stabilize_configurations(k_ep: str, k_ch: str = '') -> None:
         sys.exit(f"not found {filepath}")
         return
 
-    if k_ep_or_g.startswith("g_"):
-        print(red("not parse generique yet"))
-
     # Parse the file
     config = configparser.ConfigParser()
     config.read(filepath)
@@ -252,12 +250,14 @@ def parse_stabilize_configurations(k_ep: str, k_ch: str = '') -> None:
 
     for _k_ch in config.sections():
         if _k_ch not in all_chapter_keys():
-            print(red(f"stabilization: {_k_ch} is not a valid section name"))
+            if verbose:
+                print(red(f"stabilization: {_k_ch} is not a valid section name"))
             continue
 
         chapter_video: ChapterVideo | None = None
         if not (chapter_video := get_chapter_video(k_ep, _k_ch)):
-            print(yellow(f"ignoring: {k_ep}:{_k_ch}"))
+            if verbose:
+                print(yellow(f"ignoring: {k_ep}:{_k_ch}"))
             continue
 
         for scene_ed_str in config.options(_k_ch):
@@ -271,7 +271,8 @@ def parse_stabilize_configurations(k_ep: str, k_ch: str = '') -> None:
 
             scene: Scene = chapter_video['scenes'][scene_no]
             if k_ed != scene['src'].primary_scene()['scene']['k_ed']:
-                print(yellow(f"ignoring scene {scene_no}, k_ed={k_ed}"))
+                if verbose:
+                    print(yellow(f"ignoring scene {scene_no}, k_ed={k_ed}"))
                 continue
 
             # Read and split parameters for this scene
@@ -294,7 +295,7 @@ def parse_stabilize_configurations(k_ep: str, k_ch: str = '') -> None:
                 print(lightblue(enabled_args))
             if enabled_args[0] == 'enable':
                 stabilize.enable = True if enabled_args[1] == 'true' else False
-            else:
+            elif verbose:
                 print(red("Error: parse_stabilize_configurations: enable value is missing"))
 
             if verbose:
@@ -306,8 +307,8 @@ def parse_stabilize_configurations(k_ep: str, k_ch: str = '') -> None:
             for segment in segments[1:]:
                 parameters = segment.split(':')
                 segment = StabilizeSegment()
-
-                pprint(parameters)
+                if verbose:
+                    pprint(parameters)
                 # stab, stab_parameters = extract_parameters(parameters[0])
                 # pprint(stab)
                 # pprint(stab_parameters)

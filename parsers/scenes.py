@@ -395,7 +395,7 @@ def parse_target_scenelist(
                         segment_count = int(start_count[1])
 
                 elif k == 'effect':
-                    print(f"effect: {v}")
+                    # print(f"effect: {v}")
                     # name, frame_ref, count, param
                     if (match := re.search(re.compile(
                         r"([a-z_]+):(-?\d+):(\d+):([\d+[.]*\d*)"
@@ -517,4 +517,5 @@ def get_scene_from_frame_no(
     # # pprint(db[k_ep_ref]['video'][k_ed][k_chapter]['scenes'])
     # sys.exit()
 
+    raise ValueError
     return None

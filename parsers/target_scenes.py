@@ -294,13 +294,13 @@ def consolidate_target_scenes_g(k_ep: int | str, k_chapter: str) -> None:
     k_ed_ref: str = 'f' if db[k_chapter]['audio']['lang'] == 'en' else 'k'
     # k_ed_src, k_ep_src = src_video['k_ed'], src_video['k_ep']
 
-    print(red(f"target scenes, reference: {k_ed_src}:{k_ep_src}:{k_chapter}"))
+    print(lightcyan(f"consolidate_target_scenes_g: reference: {k_ed_src}:{k_ep_src}:{k_chapter}"))
     # sys.exit()
     ref_scenes: list[Scene] = db[k_ep_src]['video'][k_ed_src][k_chapter]['scenes']
     add_ref: bool = True
     if len(ref_scenes) != len(target_chapter['scenes']):
-        print(f"reference: {k_ed_src}:{k_ep}:{k_chapter}")
-        print(red(f"Target: {len(target_chapter['scenes'])}, Reference: {len(ref_scenes)} scenes"))
+        print(f"  reference: {k_ed_src}:{k_ep}:{k_chapter}")
+        print(f"  target: {len(target_chapter['scenes'])}, Reference: {len(ref_scenes)} scenes")
         add_ref = False
 
     frame_count: int = 0

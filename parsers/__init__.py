@@ -34,6 +34,11 @@ from .filters import (
     clean_ffmpeg_filter
 )
 
+from .dsr import (
+    Dsr,
+    DsrPatch,
+)
+
 from .geometry import (
     ChapterGeometry,
     SceneGeometry,
@@ -52,12 +57,6 @@ from .scenes import (
 )
 from ._keys import (
     ep_key
-)
-
-from .dsr import (
-    SceneDsr,
-    FrameDsr,
-    PatchDsr
 )
 
 from .stabilize import (
@@ -101,15 +100,11 @@ __all__ = [
     "SceneGeometryStat",
     "ChGeometryStats",
 
-    "SceneDsr",
-    "FrameDsr",
-    "PatchDsr",
+    "Dsr",
+    "DsrPatch",
 
     "StabilizeSegment",
     "StabilizeMode",
     "StabilizeParams",
-
-
-
 
 ]

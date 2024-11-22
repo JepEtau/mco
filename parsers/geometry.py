@@ -9,13 +9,13 @@ import os.path
 from pprint import pprint
 from typing import Any
 
+from utils.p_print import *
 from utils.hash import calc_hash
 from utils.mco_types import ChapterVideo, Scene
 from utils.path_utils import absolute_path
 
 from ._keys import all_chapter_keys
 from .logger import logger
-from utils.p_print import *
 from ._db import db
 
 from processing.resize_to_4_3 import (
@@ -168,14 +168,14 @@ class SceneGeometry:
 # et plus rapide encore lorsque la partie est spécifiée; lors de l'écriture automatique
 # par l'éditeur, le no. de trame correspond à la 1ere trame du plan
 
-def parse_geometry_configurations(k_ep_or_g: str):
+def parse_geometry_file(k_ep_or_g: str) -> None:
     """ Parse configuration file which list the crop coordinates for each scene.
     TODO: it uses the first frame of a scene to identify the scene rather the index, so that
     a modification of scenes will not break anything
     """
     verbose = False
     if verbose:
-        print(lightgreen(f"parse_geometry_configurations: {k_ep_or_g}"))
+        print(lightgreen(f"parse_geometry_file: {k_ep_or_g}"))
 
     # Open configuration file
     filepath = absolute_path(
@@ -196,7 +196,7 @@ def parse_geometry_configurations(k_ep_or_g: str):
         if section not in all_chapter_keys():
             continue
         if verbose:
-            print(f"\tparse_geometry_configurations: chapter: {section}")
+            print(f"\parse_geometry_file: chapter: {section}")
 
         # Get db target video
         db_video: ChapterVideo

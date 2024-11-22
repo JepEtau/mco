@@ -318,7 +318,7 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
     - adding silences
     - adding frames (loop, loop and fadeout)
     """
-    logger.debug(lightgreen(f"consolidate_av_tracks_g_debut_end: {k_chapter_c}"))
+    print(lightgreen(f"  _consolidate_av_tracks_g_debut_end: {k_chapter_c}"))
     fps = get_fps(db)
     if k_chapter_c not in ('g_debut', 'g_fin'):
         return
@@ -341,8 +341,8 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
         audio_duration += db_audio['avsync']
     if 'silence' in db_audio:
         audio_duration += db_audio['silence']
-    print(f"audio duration: {audio_duration/1000:.03f}s")
-    print(f"audio count: {ms_to_frame(audio_duration, fps)}")
+    print(f"  audio duration: {audio_duration/1000:.03f}s")
+    print(f"  audio count: {ms_to_frame(audio_duration, fps)}")
 
     # Align audio track to a multiple of seconds
     rounded_audio_duration = 1000 * int(1 + float(audio_duration)/1000)

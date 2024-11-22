@@ -102,12 +102,12 @@ def parse_credit_target():
                 except:
                     k_section_chapter = k_section
 
-                print(red(f"parse target scenes: {k_section}, lang: {lang}"))
+                # print(red(f"parse target scenes: {k_section}, lang: {lang}"))
                 if lang != db_audio_target['lang'] and lang != '':
-                    print(yellow(f"not for this version: {db_audio_target['lang']}"))
+                    # print(yellow(f"not for this version: {db_audio_target['lang']}"))
                     continue
-                else:
-                    print(lightgreen(f"for this version: {db_audio_target['lang']}"))
+                # else:
+                #     print(lightgreen(f"for this version: {db_audio_target['lang']}"))
 
                 # try:
                 #     _, k_chapter = k_section_chapter.split('_')

@@ -27,9 +27,10 @@ from .target_scenes import (
     consolidate_target_scenes_g,
 )
 from .target_av_tracks import consolidate_av_tracks
-from .geometry import parse_geometry_configurations
-from .replace import parse_replace_configurations
-from .stabilize import parse_stabilize_configurations
+from .geometry import parse_geometry_file
+from .replace import parse_replace_file
+from .dsr import parse_dsr_file
+from .stabilize import parse_stabilize_file
 from ._keys import (
     credit_chapter_keys,
     non_credit_chapter_keys,
@@ -120,14 +121,14 @@ def parse_database(
             dependencies[k_ed] = list()
         dependencies[k_ed] = list(set(dependencies[k_ed] + v))
 
-    print(lightcyan("dependencies: "), dependencies)
+    logger.debug(lightcyan("dependencies: "), dependencies)
     if edition != '':
         if edition not in dependencies:
             dependencies[edition] = list()
         dependencies[edition].append(k_ep)
 
     # Parse episodes which are required (dependencies)
-    pprint(dependencies)
+    logger.debug(dependencies)
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in v:
             if k_ep_tmp == k_ep:
@@ -142,7 +143,8 @@ def parse_database(
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in dependencies[k_ed_tmp]:
             if k_ep_tmp not in already_parsed:
-                parse_replace_configurations(k_ep_or_g=k_ep_tmp)
+                parse_replace_file(k_ep_or_g=k_ep_tmp)
+                parse_dsr_file(k_ep_or_g=k_ep_tmp)
                 # parse_stabilize_configurations(k_ep_or_g=k_ep_tmp)
                 already_parsed.append(k_ep_tmp)
 
@@ -152,7 +154,8 @@ def parse_database(
     # Génériques: debut/fin
     for k_chapter_g in ('g_debut', 'g_fin'):
         # Replaced frames
-        parse_replace_configurations(k_ep_or_g=k_chapter_g)
+        parse_replace_file(k_ep_or_g=k_chapter_g)
+        parse_dsr_file(k_ep_or_g=k_chapter_g)
 
         # Parameters used to stabilize
         # parse_stabilize_configurations(k_ep=k_ep, k_ch=k_chapter_g)
@@ -170,29 +173,30 @@ def parse_database(
         for chapter in non_credit_chapter_keys():
             consolidate_target_scenes(k_ep=k_ep, k_chapter=chapter)
         print(f"database, parse stabilization: {k_ep}")
-        parse_stabilize_configurations(k_ep=k_ep)
+        parse_stabilize_file(k_ep=k_ep)
 
         for k_chapter_g in ('g_asuivre', 'g_documentaire'):
-            parse_replace_configurations(k_ep_or_g=k_chapter_g)
+            parse_replace_file(k_ep_or_g=k_chapter_g)
+            parse_dsr_file(k_ep_or_g=k_chapter_g)
             # parse_stabilize_configurations(k_ep_or_g=k_chapter_g)
-            parse_geometry_configurations(k_ep_or_g=k_chapter_g)
+            parse_geometry_file(k_ep_or_g=k_chapter_g)
             consolidate_target_scenes_g(k_ep=k_ep, k_chapter=k_chapter_g)
 
 
     for k_chapter_g in ('g_debut', 'g_fin'):
-        parse_stabilize_configurations(k_ep=k_ep, k_ch=k_chapter_g)
+        parse_stabilize_file(k_ep=k_ep, k_ch=k_chapter_g)
 
     # Parse the geometry once all target scenes consolidated because
     # the geometry refers to the destination and not the source
     # bc of segment functionnality
     if k_ep != 'ep00':
-        parse_geometry_configurations(k_ep_or_g=k_ep)
+        parse_geometry_file(k_ep_or_g=k_ep)
         for k_chapter_g in credit_chapter_keys():
-            parse_geometry_configurations(k_ep_or_g=k_chapter_g)
+            parse_geometry_file(k_ep_or_g=k_chapter_g)
 
     else:
         for k_chapter_g in ('g_debut', 'g_fin'):
-            parse_geometry_configurations(k_ep_or_g=k_chapter_g)
+            parse_geometry_file(k_ep_or_g=k_chapter_g)
 
     if ignore_av_sync:
         return None
@@ -224,12 +228,14 @@ def parse_database_for_study(k_ed, k_ep, k_chapter):
     db_init_episodes(k_ed=k_ed)
     parse_generiques(k_ed=k_ed)
     parse_episode(k_ed=k_ed, k_ep=k_ep)
-    parse_replace_configurations(k_ep_or_g=k_ep)
-    parse_geometry_configurations(k_ep_or_g=k_ep)
+    parse_replace_file(k_ep_or_g=k_ep)
+    parse_dsr_file(k_ep_or_g=k_ep)
+    parse_geometry_file(k_ep_or_g=k_ep)
 
     for k_p in ('g_debut', 'g_fin'):
-        parse_replace_configurations(k_ep_or_g=k_p)
-        parse_geometry_configurations(k_ep_or_g=k_p)
+        parse_replace_file(k_ep_or_g=k_p)
+        parse_dsr_file(k_ep_or_g=k_p)
+        parse_geometry_file(k_ep_or_g=k_p)
 
 
 def get_dependencies(
