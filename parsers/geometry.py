@@ -196,7 +196,7 @@ def parse_geometry_file(k_ep_or_g: str) -> None:
         if section not in all_chapter_keys():
             continue
         if verbose:
-            print(f"\parse_geometry_file: chapter: {section}")
+            print(f"parse_geometry_file: chapter: {section}")
 
         # Get db target video
         db_video: ChapterVideo
