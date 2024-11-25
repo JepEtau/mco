@@ -21,12 +21,12 @@ if TYPE_CHECKING:
     from utils.mco_types import Scene
 
 
-PatchShape = Literal['ellipse', 'rect']
+MaskShape = Literal['ellipse', 'rect']
 
 
 @dataclass(slots=True)
 class DsrMask:
-    shape: PatchShape
+    shape: MaskShape
     # x, y, theta
     center: np.ndarray[float | int, float | int]
     # w, h
@@ -72,7 +72,7 @@ class SceneDsr:
     def add(
         self,
         frame_no: int,
-        shape: PatchShape,
+        shape: MaskShape,
         coordinates: list[float, float] | tuple[float, float],
         size: list[float, float] | tuple[float, float],
         theta: float
@@ -113,10 +113,10 @@ def parse_dsr_file(k_ep_or_g: str):
     if not os.path.exists(filepath):
         return
 
-    print(f"{'|'.join(list(PatchShape.__args__))}")
+    print(f"{'|'.join(list(MaskShape.__args__))}")
     # shape:x:y:w:h:theta
     regex: re.Pattern = re.compile(
-        rf"({'|'.join(list(PatchShape.__args__))})=(\d*\.?\d*):(\d*\.?\d*):(\d*\.?\d*):(\d*\.?\d*):(-?\d*\.?\d*)"
+        rf"({'|'.join(list(MaskShape.__args__))})=(\d*\.?\d*):(\d*\.?\d*):(\d*\.?\d*):(\d*\.?\d*):(-?\d*\.?\d*)"
     )
 
     config = configparser.ConfigParser()

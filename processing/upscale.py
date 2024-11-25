@@ -161,7 +161,6 @@ class UpscalePipeline(object):
                 d_thread=d_thread,
                 e_thread=e_thread,
                 channels_last=channels_last,
-                skip_inference=False
             )
             try:
                 i_cuda_thread = InferenceThread(i_cuda_thread_config)

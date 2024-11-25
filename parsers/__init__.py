@@ -37,6 +37,7 @@ from .filters import (
 from .dsr import (
     SceneDsr,
     DsrMask,
+    MaskShape,
 )
 
 from .geometry import (
@@ -102,6 +103,7 @@ __all__ = [
 
     "SceneDsr",
     "DsrMask",
+    "MaskShape",
 
     "StabilizeSegment",
     "StabilizeMode",
