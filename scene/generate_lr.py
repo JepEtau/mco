@@ -272,14 +272,13 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
                                 write_image(f"mask_{in_f_no:04}_pil.png", np_mask)
 
-                            # to try:
-                            # https://github.com/aGIToz/PyInpaint
-                            # https://github.com/Sanster/IOPaint
-                            # https://github.com/NVIDIA/partialconv
-                            # https://github.com/DmitryUlyanov/deep-image-prior
-                            # https://github.com/YaoFANGUK/video-subtitle-remover
-                            # https://theses.hal.science/tel-01136253v1/preview/Thesis_alasdair_newson_conforme.pdf#page=2
-                            #   https://perso.telecom-paristech.fr/gousseau/video_inpainting/
+                            # lama    tres bon
+                            # ldm     lent et pas très bon
+                            # zits    mauvais sur les textures
+                            # mat     tres tres bon même sur les textures
+                            # fcf     pas bon sur les textures
+                            # cv2     ben non
+                            # migan   not really
 
                             radius = 5
                             # cv2.INPAINT_NS
