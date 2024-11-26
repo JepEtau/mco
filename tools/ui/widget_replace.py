@@ -302,15 +302,6 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.signal_replace_removed.emit(remove_dict)
 
 
-    def block_signals(self, enabled):
-        self.pushButton_copy.blockSignals(enabled)
-        self.pushButton_paste.blockSignals(enabled)
-        self.pushButton_remove.blockSignals(enabled)
-        self.pushButton_set_preview.blockSignals(enabled)
-        self.pushButton_discard.blockSignals(enabled)
-        self.pushButton_save.blockSignals(enabled)
-
-
     @Slot(list)
     def event_modified_scenes(self, modified_scenes: list[int]) -> None:
         enabled = True if len(modified_scenes) > 0 else False

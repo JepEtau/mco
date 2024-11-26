@@ -4,7 +4,7 @@ import logging
 from pprint import pprint
 import signal
 import sys
-from parsers import parse_database
+from parsers import parse_database, TaskName
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
@@ -120,7 +120,7 @@ def main():
     elif scene_arg != '':
         scene_no: int = int(scene_arg)
 
-    task = 'upscale'
+    task: TaskName = 'upscale'
 
     upscale_scenes(
         episode=arguments.episode,

@@ -8,9 +8,18 @@ from nn_inference.model_mgr import ModelManager
 
 from nn_inference.progress import ProgressThread
 from nn_inference.resource_mgr import ResourceManager
-from nn_inference.threads.t_decoder import DecoderThread, VideoStreamInfo
-from nn_inference.threads.t_encoder import EncoderThread
-from nn_inference.threads.t_inference import InferenceThread, InferenceThreadConfig
+from nn_inference.threads.t_decoder import (
+    DecoderThread,
+    VideoStreamInfo,
+    DecoderThreadConfig,
+)
+from nn_inference.threads.t_encoder import (
+    EncoderThread
+)
+from nn_inference.threads.t_inference import (
+    InferenceThread,
+    InferenceThreadConfig,
+)
 from nn_inference import (
     is_cuda_available,
     nnlogger,
@@ -19,7 +28,6 @@ from parsers import Filter
 from utils.mco_types import Scene
 from utils.p_print import *
 from utils.pxl_fmt import PIXEL_FORMAT
-from processing import supported_filters
 
 
 
@@ -136,15 +144,6 @@ class UpscalePipeline(object):
         print(yellow("DtoH memory:"))
         pprint(model_manager.dtoh_mem)
 
-        # Video decoder for each scene
-        try:
-            d_thread = DecoderThread(scenes=self.scenes)
-        except Exception as e:
-            d_thread = DecoderThread(scenes=self.scenes)
-            print(red(f"[E] decoder: {type(e)}"))
-            return True, 0, 0
-        d_thread.setName("decoder")
-
         # Create encoder thread
         try:
             e_thread = EncoderThread()
@@ -153,7 +152,18 @@ class UpscalePipeline(object):
             return True, 0, 0
         e_thread.setName("encoder")
 
-        # Create cuda inference thread
+        # Video decoder for each scene
+        d_thread_config: DecoderThreadConfig = DecoderThreadConfig(e_thread=e_thread)
+        try:
+            d_thread = DecoderThread(config=d_thread_config, scenes=self.scenes)
+        except Exception as e:
+            # Debug
+            d_thread = DecoderThread(scenes=self.scenes)
+            print(red(f"[E] decoder: {type(e)}"))
+            return True, 0, 0
+        d_thread.setName("decoder")
+
+        # Create CUDA inference thread
         i_cuda_thread: InferenceThread = None
         if model_manager.has_torch_models():
             i_cuda_thread_config: InferenceThreadConfig = InferenceThreadConfig(
@@ -184,6 +194,7 @@ class UpscalePipeline(object):
                 return True, 0, 0
             i_trt_thread.setName("trt_inference")
 
+        # Update each thread so that they obtain a pointer to consumer
         i_threads: dict[str, InferenceThread] = {
             'cuda': i_cuda_thread,
             'trt': i_trt_thread,
@@ -192,6 +203,7 @@ class UpscalePipeline(object):
             if thread is not None:
                 thread.set_inference_threads(i_threads)
 
+        # Progress bar
         f_progress_thread = None
         f_progress_thread = ProgressThread(total=self.total_frames)
         e_thread.set_progress_thread(f_progress_thread)
@@ -211,7 +223,6 @@ class UpscalePipeline(object):
             i_trt_thread,
             e_thread,
             f_progress_thread,
-            # e_progress_thread,
         ):
             if thread is not None:
                 ResourceManager().register_thread(thread)

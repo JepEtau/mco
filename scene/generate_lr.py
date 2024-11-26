@@ -3,8 +3,10 @@ import math
 import os
 from pprint import pprint
 import subprocess
+import sys
 import cv2
 import numpy as np
+import time
 from parsers import (
     VideoSettings,
     SceneDsr,
@@ -26,7 +28,7 @@ from utils.mco_utils import (
     is_last_scene,
     is_up_to_date
 )
-from utils.np_dtypes import np_to_float32, np_to_uint16, np_to_uint8
+from utils.np_dtypes import np_to_float32
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
@@ -40,6 +42,9 @@ from PIL import (
     ImageDraw,
 )
 import PIL
+from skimage.morphology import disk, binary_dilation
+from skimage.restoration import inpaint
+
 
 def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
@@ -186,6 +191,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         # Dust and scratch removal
         scene_dsr: SceneDsr = src_scene['dsr']
         scene_dsr.set_frame_size((w, h))
+        # scene_dsr.set_frame_size((1440, 1080))
 
         ch_video: ChapterVideo = get_target_video(scene)
         if is_first_scene(scene):
@@ -217,7 +223,8 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                             pprint(masks)
                             if True:
                                 # out_img: np.ndarray = np_to_float32(img).reshape(in_shape)
-                                mask_img = np.ndarray = np.zeros(in_shape[:2], dtype=np.uint8)
+                                # img = cv2.resize(img, (1440,1080))
+                                mask_img = np.ndarray = np.zeros(img.shape[:2], dtype=np.uint8)
                                 mask: DsrMask
                                 for mask in masks:
                                     mask_img = cv2.ellipse(
@@ -272,32 +279,36 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
                                 write_image(f"mask_{in_f_no:04}_pil.png", np_mask)
 
-                            # lama    tres bon
-                            # ldm     lent et pas très bon
-                            # zits    mauvais sur les textures
-                            # mat     tres tres bon même sur les textures
-                            # fcf     pas bon sur les textures
-                            # cv2     ben non
-                            # migan   not really
+                            # in_img: np.ndarray = np_to_float32(img).reshape(in_shape)
+                            # radius = 5
+                            # # cv2.INPAINT_NS
+                            # # in_img = cv2.cvtColor(in_img, cv2.COLOR_BGR2YUV)
+                            # b,g,r = cv2.split(in_img)
+                            # out_bgr = []
+                            # for p in (r,g,b):
+                            #     out_bgr.append(cv2.inpaint(
+                            #         p,
+                            #         inpaintMask=mask_img,
+                            #         inpaintRadius=radius,
+                            #         flags=cv2.INPAINT_TELEA
+                            #     ))
+                            # out_img = cv2.merge(out_bgr)
+                            # out_img = cv2.cvtColor(out_img, cv2.COLOR_YUV2BGR)
+                            start_time = time.time()
+                            radius: int = 5
+                            out_img = cv2.inpaint(
+                                img,
+                                inpaintMask=mask_img,
+                                inpaintRadius=radius,
+                                flags=cv2.INPAINT_TELEA
+                            )
+                            print(f"elapsed: {(time.time() - start_time) * 1000:.01f}ms")
 
-                            radius = 5
-                            # cv2.INPAINT_NS
-                            in_img: np.ndarray = np_to_float32(img).reshape(in_shape)
-                            in_img = cv2.cvtColor(in_img, cv2.COLOR_BGR2YUV)
-                            b,g,r = cv2.split(in_img)
-                            out_bgr = []
-                            for p in (r,g,b):
-                                out_bgr.append(cv2.inpaint(
-                                    p,
-                                    inpaintMask=mask_img,
-                                    inpaintRadius=radius,
-                                    flags=cv2.INPAINT_TELEA
-                                ))
-                            out_img = cv2.merge(out_bgr)
-                            out_img = cv2.cvtColor(out_img, cv2.COLOR_YUV2BGR)
                             write_image(f"mask_{in_f_no:04}_in.png", img)
                             write_image(f"mask_{in_f_no:04}_out.png", out_img)
                             img = out_img
+
+                            sys.exit()
 
                     in_frame: McoFrame = McoFrame(
                         no=in_f_no, img=img, scene=scene

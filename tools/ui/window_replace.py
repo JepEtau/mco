@@ -32,6 +32,7 @@ from .stylesheet import (
 from .widget_player_ctrl import PlayerCtrlWidget
 from .widget_preview import PreviewWidget
 from .widget_replace import ReplaceWidget
+from .widget_dsr import DsrWidget
 from .widget_selection import SelectionWidget
 
 from logger import log
@@ -78,11 +79,19 @@ class ReplaceWindow(QMainWindow):
         self.verticalLayout.addWidget(self.widget_player_ctrl)
         self.horizontalLayout.addLayout(self.verticalLayout)
 
+        self.verticalLayout_tool = QVBoxLayout()
+        self.horizontalLayout.addLayout(self.verticalLayout_tool)
+
         # self.widget_replace = ReplaceWidget(self.centralwidget)
         # Replace
         self.widget_replace: ReplaceWidget = ReplaceWidget(self, controller)
         self.widgets['replace'] = self.widget_replace
-        self.horizontalLayout.addWidget(self.widget_replace)
+        self.verticalLayout_tool.addWidget(self.widget_replace)
+
+
+        self.widget_dsr: DsrWidget = DsrWidget(self, controller)
+        self.widgets['dsr'] = self.widget_dsr
+        self.verticalLayout_tool.addWidget(self.widget_dsr)
 
         # Selection
         self.widget_selection = SelectionWidget(

@@ -1,5 +1,9 @@
 # TODO
 
+- determine HtoD sync memory size
+- do not use inpaint shape for HtoD/DtoH transfers
+- create oblong shape
+- replace mask dtype to torch.bool
 
 
 # Issues
