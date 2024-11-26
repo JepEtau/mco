@@ -87,10 +87,11 @@ def is_up_to_date(scene: Scene) -> bool:
         print("is_up_to_date")
         print(out_video_info['metadata'])
         print(task.hash)
+        out_hash: str = ""
         try:
-            out_hash: str = out_video_info['metadata']['hash']
+            out_hash = out_video_info['metadata']['hash']
         except:
-            raise ValueError(red("no hash in output video"))
+            print(red("no hash in output video"))
 
         if out_hash != task.hash:
             print(yellow(f"hash differs: {out_hash}, should be {task.hash}"))
