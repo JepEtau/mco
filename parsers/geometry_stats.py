@@ -109,7 +109,11 @@ class ChGeometryStats:
 
 
     def append(self, scene: Scene) -> None:
-        fp: str = scene['task'].in_video_file
+        try:
+            fp: str = scene['task'].in_video_file
+        except:
+            print(red("ChGeometryStats, task not found"))
+            pprint(scene)
         if fp not in self._sizes.keys():
             try:
                 in_vi: VideoInfo = extract_media_info_mco(fp)['video']

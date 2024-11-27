@@ -12,6 +12,7 @@
 
 
 ## High priority
+- correct "has_effects" in generate_final
 - Add grain at the end?
     noise=alls=14:allf=t+u
     noise=c0s=14:c0f=t+u

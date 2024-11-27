@@ -78,7 +78,7 @@ class PreviewWidget(QWidget):
 
 
     def update_geometry(self, scene_geometry: TargetSceneGeometry):
-        print(lightcyan("update preview geometry"))
+        # print(lightcyan("update preview geometry"))
         self.scene_geometry = scene_geometry
 
 

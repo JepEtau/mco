@@ -190,7 +190,8 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
         # Dust and scratch removal
         scene_dsr: FrameDsr = src_scene['dsr']
-        scene_dsr.set_frame_size((w, h))
+        if scene_dsr is not None:
+            scene_dsr.set_frame_size((w, h))
         # scene_dsr.set_frame_size((1440, 1080))
 
         ch_video: ChapterVideo = get_target_video(scene)

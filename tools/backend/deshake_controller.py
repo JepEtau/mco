@@ -16,10 +16,8 @@ from tools.backend.deshake_database import DeshakeDatabase
 from video.consolidate_scenes import get_chapter_video
 
 from ._types import (
-    DeshakeAction,
     PlaylistProperties,
     Selection,
-    TargetSceneDeshake,
 )
 from .frame_cache import FrameCache, Frame
 from .common_controller import CommonController
@@ -31,6 +29,7 @@ from utils.p_print import *
 from parsers import (
     db,
     TaskName,
+    DetectInnerRectParams,
 )
 
 
@@ -198,7 +197,8 @@ class DeshakeController(CommonController):
                 index=i,
                 do_output_img=False,
             )
-            coordinates.append(coords)
+            if coords is not None:
+                coordinates.append(coords)
 
         elapsed_time = time.time() - start_time
         in_h, in_w = f.img.shape[:2]

@@ -216,7 +216,6 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
     def refresh_values(self, frame: Frame):
         target_geometry: TargetSceneGeometry = self.controller.get_scene_geometry(frame)
-        print("refresh values")
         # pprint(target_geometry)
 
         if target_geometry.is_erroneous:
@@ -375,7 +374,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         )
 
 
-    def event_ac_params_changed(self, arg: Any) -> None:
+    def event_ac_params_changed(self) -> None:
         print("ac params modified")
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
@@ -406,7 +405,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
 
     def event_calculate(self) -> None:
-        self.pushButton_calculate.setEnabled(False)
+        # self.pushButton_calculate.setEnabled(False)
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
         ac_params: DetectInnerRectParams = DetectInnerRectParams(

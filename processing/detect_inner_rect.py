@@ -10,6 +10,17 @@ if TYPE_CHECKING:
     from parsers import DetectInnerRectParams
 
 
+def show_image(img, img_name:str='', ratio:float=1.0):
+    window_name = 'image' if img_name == '' else img_name
+    cv2.namedWindow(window_name)
+    if ratio != 1:
+        _img = cv2.resize(img.copy(), (0, 0), fx=ratio,fy=ratio) if img.shape[0] > 800 else img.copy()
+    else:
+        _img = img.copy()
+    cv2.moveWindow(window_name, 100, 100)
+    cv2.imshow(window_name, _img)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
 
 def _get_coordinates(coordinates: np.ndarray) -> tuple[int, int]:
@@ -48,6 +59,7 @@ def detect_inner_rect(
 ) -> tuple[np.ndarray, np.ndarray | None]:
     verbose = False
     debug: bool = True
+    # do_output_img = True
 
     # Optimize, simplify
     img: np.ndarray = np_to_uint8(img)
@@ -74,7 +86,7 @@ def detect_inner_rect(
 
     brightness_estimate = cv2.mean(gray_img)[0]
     contrast_estimate = gray_img.std()
-    # print(yellow(f"\tmean: {brightness_estimate}\tcontrast: {contrast_estimate}"))
+    print(yellow(f"\tmean: {brightness_estimate}\tcontrast: {contrast_estimate}"))
 
     if brightness_estimate < 25:
         try:
@@ -83,6 +95,9 @@ def detect_inner_rect(
             contrast_estimate = gray_img.std()
             print(yellow(f"\tcorrected, mean: {brightness_estimate}\tcontrast: {contrast_estimate}"))
         except:
+            gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
+            brightness_estimate = cv2.mean(gray_img)[0]
+            contrast_estimate = gray_img.std()
             print(red(f"Error: cannot apply automatic brightness&contrast"))
             return (0, 0, in_w, in_h), img if do_output_img else None
 
@@ -142,7 +157,7 @@ def detect_inner_rect(
     epsilon = 0.1 * cv2.arcLength(outer_contour, True)
     polygon: np.ndarray = cv2.approxPolyDP(outer_contour, epsilon, True)
 
-    if False:
+    if True:
         debug_img = cv2.cvtColor(gray_img_debug, cv2.COLOR_GRAY2BGR)
         cv2.drawContours(debug_img, [polygon], -1, (0, 255, 0), 1)
         cv2.imwrite(f"mask_{index:03}.png", debug_img)
@@ -180,13 +195,24 @@ def detect_inner_rect(
             show_image(img_debug, f"{i}")
 
     contour = polygon.reshape(len(polygon), 2)
-    x0, x1 = _get_coordinates(contour[:, 0:1])
-    y0, y1 = _get_coordinates(contour[:, 1:])
+    if len(contour.shape) > 2:
+        try:
+            x0, x1 = _get_coordinates(contour[:, 0:1])
+            y0, y1 = _get_coordinates(contour[:, 1:])
+        except:
+            print(red(f"Failed "))
+            print(contour)
+
+    else:
+        x, y, w, h = cv2.boundingRect(contour)
+        x0, x1 = x, x + w
+        y0, y1 = y, y + h
+
     coordinates = np.array([max(0, x - border) for x in (x0, x1, y0, y1)])
     if verbose:
         print(f"rect: {coordinates}")
 
-    if do_output_img:
+    if do_output_img and index == 132:
         out_img = np.copy(img)
         cv2.rectangle(out_img,
             (coordinates[0], coordinates[2]),
@@ -194,10 +220,29 @@ def detect_inner_rect(
             (0, 255, 0),
             1
         )
-        # if debug:
-        #     cv2.rectangle(img_debug, (x0 +1, y1+1), (x1-1, y0-1), (0,0,255), 2)
-        #     cv2.imwrite("mask_final.png", img_debug)
-        #     show_image(img_debug, f"{i}")
+        if debug:
+            img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
+
+            # Show all contours
+            print(polygon.shape[0])
+            for hierarchy_values, contour in zip(hierarchy[0], contours):
+                x, y, w, h = cv2.boundingRect(contour)
+                cv2.rectangle(img_debug,
+                    (x, y ), (x + w , y + h),
+                    (0, 0, 255), 1)
+                cv2.putText(img_debug,
+                    f"{hierarchy_values}",
+                    (x, y+10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5,
+                    (255,30,12), 2)
+            show_image(img_debug, f"{index}")
+
+
+
+
+            cv2.rectangle(img_debug, (x0 +1, y1+1), (x1-1, y0-1), (0,0,255), 2)
+            cv2.imwrite("mask_final.png", img_debug)
+            show_image(img_debug, f"{index}")
     else:
         out_img = np.ones(1)
 

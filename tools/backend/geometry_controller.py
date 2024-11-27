@@ -182,7 +182,7 @@ class GeometryController(CommonController):
         self.selection_geometry.update(new_geometry)
         k = list(new_geometry.keys())[0]
         self.geometry_stats.update(
-            {'no': scene_no, 'geometry': new_geometry[k].scene}
+            {'no': scene_no, 'geometry': new_geometry[k].scene, 'task': scene['task']}
         )
         # TODO: update erroneous margins
         self.signal_reload_frame.emit()
@@ -210,7 +210,8 @@ class GeometryController(CommonController):
                 index=i,
                 do_output_img=False,
             )
-            coordinates.append(coords)
+            if coords is not None:
+                coordinates.append(coords)
 
         elapsed_time = time.time() - start_time
         in_h, in_w = f.img.shape[:2]
@@ -221,6 +222,30 @@ class GeometryController(CommonController):
         print("in_shape:", f.img.shape[:2])
         min_coords: np.ndarray = np.min(coordinates, axis=0)
         max_coords: np.ndarray = np.max(coordinates, axis=0)
+        in_h, in_w = f.img.shape[:2]
+
+        consolidated_coordinates: list[np.ndarray] = []
+        for coord in coordinates:
+            if coord[0] > 1.2 * min_coords[0]:
+                print(f"(0) discard: {coord}")
+                continue
+
+            if (in_w - coord[1]) > 1.2 * (in_w - max_coords[1]):
+                print(f"(1) discard: {coord}")
+                continue
+
+            if coord[2] > 1.2 * min_coords[2]:
+                print(f"(2) discard: {coord}")
+                continue
+            consolidated_coordinates.append(coord)
+
+        print("consolidated")
+        print("min:", np.min(consolidated_coordinates, axis=0))
+        print("max:", np.max(consolidated_coordinates, axis=0))
+        print("in_shape:", f.img.shape[:2])
+        min_coords: np.ndarray = np.min(consolidated_coordinates, axis=0)
+        max_coords: np.ndarray = np.max(consolidated_coordinates, axis=0)
+
         x0, x1 = max_coords[0], min_coords[1]
         y0, y1 = max_coords[2], min_coords[3]
         autocrop = [y0,  in_h - y1, x0, in_w - x1]
@@ -235,7 +260,7 @@ class GeometryController(CommonController):
         new_geometry = self.geometry_db.get_geometry(scene)
         k = list(new_geometry.keys())[0]
         self.geometry_stats.update(
-            {'no': scene_no, 'geometry': new_geometry[k].scene}
+            {'no': scene_no, 'geometry': new_geometry[k].scene, 'task': scene['task']}
         )
         self.signal_reload_frame.emit()
 
