@@ -19,7 +19,7 @@ if TYPE_CHECKING:
         SceneGeometry,
         ChapterGeometry,
         StabilizeParams,
-        SceneDsr,
+        FrameDsr,
     )
     from nn_inference.threads.t_decoder import VideoStreamInfo
     from scene.src_scene import SrcScenes
@@ -269,7 +269,7 @@ class Scene(TypedDict):
     ref: RefScene
 
     # Dust and scratch removal
-    dsr: SceneDsr
+    dsr: FrameDsr
 
     # list of frames to replace
     replace: dict[int, int]

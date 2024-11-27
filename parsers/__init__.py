@@ -35,7 +35,7 @@ from .filters import (
 )
 
 from .dsr import (
-    SceneDsr,
+    FrameDsr,
     DsrMask,
     MaskShape,
 )
@@ -101,7 +101,7 @@ __all__ = [
     "SceneGeometryStat",
     "ChGeometryStats",
 
-    "SceneDsr",
+    "FrameDsr",
     "DsrMask",
     "MaskShape",
 

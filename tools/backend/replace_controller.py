@@ -7,8 +7,10 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from ._types import PlaylistProperties, ReplaceAction, Selection
+
+from ._types import DsrAction, DsrProcessParams, PlaylistProperties, ReplaceAction, Selection
 from .replace_database import ReplaceDatabase
+from .dsr_database import DsrDatabase
 from .frame_cache import FrameCache, Frame
 from .common_controller import CommonController
 from .user_preferences import UserPreferences
@@ -16,7 +18,9 @@ from logger import log
 from ui.window_replace import ReplaceWindow
 from utils.mco_types import Scene
 from utils.p_print import *
-
+from parsers import (
+    FrameDsr
+)
 
 
 class ReplaceController(CommonController):
@@ -32,14 +36,18 @@ class ReplaceController(CommonController):
 
         self.current_task = ''
         self.replace_db = ReplaceDatabase()
+        self.dsr_db = DsrDatabase()
         self.frame_cache: FrameCache = FrameCache(self.replace_db)
+
         self.selection_replacements: dict[int, dict[int, int]] = {}
+        self.selection_dsr: dict[int, FrameDsr] = {}
 
 
     def set_view(self, view: ReplaceWindow):
         super().set_view(view)
         self.view: ReplaceWindow
 
+        # Replace
         self.view.widget_replace.signal_replace_modified[ReplaceAction].connect(self.event_frame_replaced)
         self.view.widget_replace.signal_replace_removed.connect(
             self.event_replace_removed
@@ -47,6 +55,10 @@ class ReplaceController(CommonController):
         self.view.widget_replace.signal_undo.connect(self.event_replace_undo)
         self.view.widget_replace.signal_save.connect(self.event_replace_save)
         self.view.widget_replace.signal_discard.connect(self.event_replace_discard)
+
+        # Dsr
+        self.view.widget_dsr.signal_dsr_modified.connect(self.event_dsr_modified)
+        self.view.widget_dsr.signal_save.connect(self.event_dsr_save)
 
 
     def k_ep_p_changed(self, selection: Selection):
@@ -105,7 +117,7 @@ class ReplaceController(CommonController):
         self.current_frame = None
         self.current_scene_no = selected['scenes'][0]
 
-        # Replace
+        # Selection
         self.selection_replacements.clear()
         for scene_no in selected['scenes']:
             scene: Scene = self.scenes[scene_no]
@@ -142,6 +154,11 @@ class ReplaceController(CommonController):
                 self.get_index_from_frame_no(frame.by)
             ]
         return frame
+
+
+    def get_scene_dr(self, frame: Frame) -> FrameDsr:
+        # print(lightcyan(f"get_scene_dr: {frame.scene_key}, {frame.src_scene_key}"))
+        return self.selection_dsr[frame.scene_key]
 
 
     def preview_modified(self, preview_settings: dict):
@@ -183,10 +200,6 @@ class ReplaceController(CommonController):
         self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
         self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
-
-
-    def get_nb_of_replacements(self, scene: Scene) -> int:
-        return self.replace_db.get_nb_of_replacements(scene)
 
 
     @Slot(dict)
@@ -257,3 +270,57 @@ class ReplaceController(CommonController):
         self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
 
 
+
+
+    @Slot(DsrAction)
+    def event_dsr_modified(self, modification: DsrAction) -> None:
+        print("dsr modification:", modification)
+        scene_no: int = int(self.current_frame.scene_key.split(':')[-1])
+        scene: Scene = self.scenes[scene_no]
+        self.dsr_db.update_scene_dsr(scene, modification)
+        new_dsr = self.dsr_db.get_dsr(scene)
+        self.selection_dsr.update(new_dsr)
+        k = list(new_dsr.keys())[0]
+
+        # TODO: update erroneous margins
+        self.signal_reload_frame.emit()
+        print(yellow(f"modified scenes: {self.dsr_db.modified_scene_nos()}"))
+        self.signal_modified_scenes.emit(self.dsr_db.modified_scene_nos())
+
+
+    def get_nb_of_replacements(self, scene: Scene) -> int:
+        return self.replace_db.get_nb_of_replacements(scene)
+
+
+
+    @Slot(DsrProcessParams)
+    def event_process(self, params: DsrProcessParams) -> None:
+        scene_no: int = int(self.current_frame.scene_key.split(':')[-1])
+        scene: Scene = self.scenes[scene_no]
+        self.dsr_db.update_scene_dsr(
+            scene, DsrAction(type='set', parameter='detection', value=params)
+        )
+
+        log.info("Start detecting inner rect")
+        pprint(params)
+        start_time: int = time.time()
+
+
+        elapsed_time = time.time() - start_time
+        print(f"executed in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:.1f}fps)")
+
+        self.signal_reload_frame.emit()
+
+
+    @Slot()
+    def event_dsr_save(self):
+        print(f"selected scenes: {self.playlist_properties().scenes}")
+        print(self.dsr_db.modified_scene_nos())
+        for scene_no in self.playlist_properties().scenes:
+            print(f"save no.{scene_no}")
+            scene: Scene = self.current_selection.scenes[scene_no]
+            self.dsr_db.save(scene)
+
+        self.signal_is_saved.emit('dsr_db')
+        print(f"modified_scenes: {self.dsr_db.modified_scene_nos()}")
+        self.signal_modified_scenes.emit(self.dsr_db.modified_scene_nos())

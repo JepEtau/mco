@@ -1,4 +1,4 @@
-import ast
+from __future__ import annotations
 import configparser
 from dataclasses import dataclass, field
 import os
@@ -21,7 +21,7 @@ if TYPE_CHECKING:
     from utils.mco_types import Scene
 
 
-MaskShape = Literal['ellipse', 'rect']
+MaskShape = Literal['circle', 'ellipse', 'oblong']
 
 
 @dataclass(slots=True)
@@ -44,8 +44,8 @@ class DsrMask:
 
 
 
-@dataclass(slots=True)
-class SceneDsr:
+@dataclass
+class FrameDsr:
     _frames: dict[int, list[DsrMask]] = field(default_factory=dict)
     _size: np.ndarray[float, float] = None
 
@@ -146,8 +146,8 @@ def parse_dsr_file(k_ep_or_g: str):
                 continue
 
             if 'dsr' not in scene:
-                scene['dsr'] = SceneDsr()
-            scene_dsr: SceneDsr = scene['dsr']
+                scene['dsr'] = FrameDsr()
+            scene_dsr: FrameDsr = scene['dsr']
 
             patches: list[str] = parser_strip(
                 config.get(k_section, frame_no_str)

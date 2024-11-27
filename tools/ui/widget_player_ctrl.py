@@ -382,7 +382,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             return True
         return False
 
-    def event_key_released(self, event:QKeyEvent) -> bool:
+
+    def event_key_released(self, event: QKeyEvent) -> bool:
         key = event.key()
         if key == Qt.Key.Key_Shift:
             # log.info("shift key is released")
@@ -414,7 +415,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
                 self.set_slider_to_following_tick()
             return True
 
-        else:
+        elif self.current_key_pressed is None:
             # Select next/previous frame
             if event.angleDelta().y() > 0:
                 self.event_previous_frame()

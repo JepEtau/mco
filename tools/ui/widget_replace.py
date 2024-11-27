@@ -37,14 +37,15 @@ class CurrentFrame:
 
 
 class ReplaceWidget(QWidget, Ui_ReplaceWidget):
-    signal_replace_modified = Signal(ReplaceAction)
-    signal_replace_removed = Signal(dict)
-    signal_frame_selected = Signal(int)
     signal_save = Signal()
     signal_discard = Signal()
     signal_undo = Signal()
     signal_preview_toggled = Signal(bool)
     signal_edition_started = Signal()
+
+    signal_replace_modified = Signal(ReplaceAction)
+    signal_replace_removed = Signal(dict)
+    signal_frame_selected = Signal(int)
 
 
     def __init__(self, ui, controller):
@@ -323,12 +324,15 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             self.signal_save.emit()
 
 
+    def event_key_released(self, event: QKeyEvent) -> bool:
+        return False
+
 
     def event_key_pressed(self, event: QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
-        print(green(f"widget_replace: event_key_pressed: {key}"))
-        print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
+        # print(green(f"widget_replace: event_key_pressed: {key}"))
+        # print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
 
         if modifiers & Qt.KeyboardModifier.ControlModifier:
             if key == Qt.Key.Key_S:

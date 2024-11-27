@@ -24,8 +24,8 @@ class Ui_DsrWidget(object):
     def setupUi(self, DsrWidget):
         if not DsrWidget.objectName():
             DsrWidget.setObjectName(u"DsrWidget")
-        DsrWidget.resize(314, 352)
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        DsrWidget.resize(314, 363)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(DsrWidget.sizePolicy().hasHeightForWidth())
@@ -51,11 +51,8 @@ class Ui_DsrWidget(object):
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.pushButton_set_preview = QPushButton(self.frame)
         self.pushButton_set_preview.setObjectName(u"pushButton_set_preview")
-        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
-        sizePolicy2.setHorizontalStretch(0)
-        sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.pushButton_set_preview.sizePolicy().hasHeightForWidth())
-        self.pushButton_set_preview.setSizePolicy(sizePolicy2)
+        sizePolicy.setHeightForWidth(self.pushButton_set_preview.sizePolicy().hasHeightForWidth())
+        self.pushButton_set_preview.setSizePolicy(sizePolicy)
         self.pushButton_set_preview.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon = QIcon()
         icon.addFile(u"./icons/grey/eye.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
@@ -68,12 +65,13 @@ class Ui_DsrWidget(object):
 
         self.shortcut = QLabel(self.frame)
         self.shortcut.setObjectName(u"shortcut")
-        sizePolicy2.setHeightForWidth(self.shortcut.sizePolicy().hasHeightForWidth())
-        self.shortcut.setSizePolicy(sizePolicy2)
+        sizePolicy.setHeightForWidth(self.shortcut.sizePolicy().hasHeightForWidth())
+        self.shortcut.setSizePolicy(sizePolicy)
         font = QFont()
         font.setPointSize(8)
         font.setItalic(False)
         self.shortcut.setFont(font)
+        self.shortcut.setText(u"(F2)")
 
         self.horizontalLayout.addWidget(self.shortcut)
 
@@ -83,6 +81,7 @@ class Ui_DsrWidget(object):
 
         self.label_message = QLabel(self.frame)
         self.label_message.setObjectName(u"label_message")
+        self.label_message.setText(u"disabled")
 
         self.horizontalLayout.addWidget(self.label_message)
 
@@ -92,8 +91,8 @@ class Ui_DsrWidget(object):
 
         self.pushButton_discard = QPushButton(self.frame)
         self.pushButton_discard.setObjectName(u"pushButton_discard")
-        sizePolicy2.setHeightForWidth(self.pushButton_discard.sizePolicy().hasHeightForWidth())
-        self.pushButton_discard.setSizePolicy(sizePolicy2)
+        sizePolicy.setHeightForWidth(self.pushButton_discard.sizePolicy().hasHeightForWidth())
+        self.pushButton_discard.setSizePolicy(sizePolicy)
         self.pushButton_discard.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon1 = QIcon()
         icon1.addFile(u"./icons/purple/undo.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
@@ -106,8 +105,8 @@ class Ui_DsrWidget(object):
 
         self.pushButton_save = QPushButton(self.frame)
         self.pushButton_save.setObjectName(u"pushButton_save")
-        sizePolicy2.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
-        self.pushButton_save.setSizePolicy(sizePolicy2)
+        sizePolicy.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
+        self.pushButton_save.setSizePolicy(sizePolicy)
         self.pushButton_save.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon2 = QIcon()
         icon2.addFile(u"./icons/purple/save.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
@@ -124,19 +123,20 @@ class Ui_DsrWidget(object):
         self.gridLayout_2 = QGridLayout()
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.gridLayout_2.setSizeConstraint(QLayout.SizeConstraint.SetDefaultConstraint)
-        self.pushButton_scene_resize_preview_2 = QPushButton(self.frame)
-        self.pushButton_scene_resize_preview_2.setObjectName(u"pushButton_scene_resize_preview_2")
-        self.pushButton_scene_resize_preview_2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.pushButton_scene_resize_preview_2.setText(u"")
-        self.pushButton_scene_resize_preview_2.setIcon(icon)
-        self.pushButton_scene_resize_preview_2.setCheckable(True)
-        self.pushButton_scene_resize_preview_2.setFlat(True)
+        self.pushButton_mask_preview = QPushButton(self.frame)
+        self.pushButton_mask_preview.setObjectName(u"pushButton_mask_preview")
+        self.pushButton_mask_preview.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_mask_preview.setText(u"")
+        self.pushButton_mask_preview.setIcon(icon)
+        self.pushButton_mask_preview.setCheckable(True)
+        self.pushButton_mask_preview.setFlat(True)
 
-        self.gridLayout_2.addWidget(self.pushButton_scene_resize_preview_2, 0, 1, 1, 1)
+        self.gridLayout_2.addWidget(self.pushButton_mask_preview, 0, 1, 1, 1)
 
         self.label_9 = QLabel(self.frame)
         self.label_9.setObjectName(u"label_9")
         self.label_9.setLineWidth(0)
+        self.label_9.setText(u"mask")
 
         self.gridLayout_2.addWidget(self.label_9, 0, 0, 1, 1)
 
@@ -145,6 +145,7 @@ class Ui_DsrWidget(object):
         font1 = QFont()
         font1.setPointSize(8)
         self.shortcut_2.setFont(font1)
+        self.shortcut_2.setText(u"(F3)")
 
         self.gridLayout_2.addWidget(self.shortcut_2, 1, 1, 1, 1)
 
@@ -161,57 +162,69 @@ class Ui_DsrWidget(object):
         self.horizontalLayout_3 = QHBoxLayout()
         self.horizontalLayout_3.setSpacing(3)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
-        self.pushButton_3 = QPushButton(self.frame)
-        self.pushButton_3.setObjectName(u"pushButton_3")
-        self.pushButton_3.setMaximumSize(QSize(30, 16777215))
-        self.pushButton_3.setCheckable(True)
-        self.pushButton_3.setFlat(False)
+        self.pushButton_circle = QPushButton(self.frame)
+        self.pushButton_circle.setObjectName(u"pushButton_circle")
+        self.pushButton_circle.setMaximumSize(QSize(30, 16777215))
+        self.pushButton_circle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_circle.setText(u"circle")
+        self.pushButton_circle.setCheckable(True)
+        self.pushButton_circle.setFlat(False)
 
-        self.horizontalLayout_3.addWidget(self.pushButton_3)
+        self.horizontalLayout_3.addWidget(self.pushButton_circle)
 
-        self.pushButton_2 = QPushButton(self.frame)
-        self.pushButton_2.setObjectName(u"pushButton_2")
-        self.pushButton_2.setMaximumSize(QSize(30, 16777215))
-        self.pushButton_2.setCheckable(True)
-        self.pushButton_2.setFlat(False)
+        self.pushButton_ellipse = QPushButton(self.frame)
+        self.pushButton_ellipse.setObjectName(u"pushButton_ellipse")
+        self.pushButton_ellipse.setMaximumSize(QSize(30, 16777215))
+        self.pushButton_ellipse.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_ellipse.setText(u"ellipse")
+        self.pushButton_ellipse.setCheckable(True)
+        self.pushButton_ellipse.setFlat(False)
 
-        self.horizontalLayout_3.addWidget(self.pushButton_2)
+        self.horizontalLayout_3.addWidget(self.pushButton_ellipse)
 
-        self.pushButton = QPushButton(self.frame)
-        self.pushButton.setObjectName(u"pushButton")
-        self.pushButton.setMaximumSize(QSize(30, 16777215))
-        self.pushButton.setCheckable(True)
-        self.pushButton.setFlat(False)
+        self.pushButton_oblong = QPushButton(self.frame)
+        self.pushButton_oblong.setObjectName(u"pushButton_oblong")
+        self.pushButton_oblong.setMaximumSize(QSize(30, 16777215))
+        self.pushButton_oblong.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_oblong.setText(u"oblong")
+        self.pushButton_oblong.setCheckable(True)
+        self.pushButton_oblong.setFlat(False)
 
-        self.horizontalLayout_3.addWidget(self.pushButton)
+        self.horizontalLayout_3.addWidget(self.pushButton_oblong)
 
         self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout_3.addItem(self.horizontalSpacer_3)
 
-        self.pushButton_4 = QPushButton(self.frame)
-        self.pushButton_4.setObjectName(u"pushButton_4")
-        self.pushButton_4.setMaximumSize(QSize(30, 16777215))
-        self.pushButton_4.setCheckable(True)
-        self.pushButton_4.setFlat(False)
+        self.pushButton_yellow = QPushButton(self.frame)
+        self.pushButton_yellow.setObjectName(u"pushButton_yellow")
+        self.pushButton_yellow.setMaximumSize(QSize(30, 16777215))
+        self.pushButton_yellow.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_yellow.setText(u"yellow")
+        self.pushButton_yellow.setCheckable(True)
+        self.pushButton_yellow.setFlat(False)
 
-        self.horizontalLayout_3.addWidget(self.pushButton_4)
+        self.horizontalLayout_3.addWidget(self.pushButton_yellow)
 
-        self.pushButton_6 = QPushButton(self.frame)
-        self.pushButton_6.setObjectName(u"pushButton_6")
-        self.pushButton_6.setMaximumSize(QSize(30, 16777215))
-        self.pushButton_6.setCheckable(True)
-        self.pushButton_6.setFlat(False)
+        self.pushButton_red = QPushButton(self.frame)
+        self.pushButton_red.setObjectName(u"pushButton_red")
+        self.pushButton_red.setMaximumSize(QSize(30, 16777215))
+        self.pushButton_red.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_red.setText(u"red")
+        self.pushButton_red.setCheckable(True)
+        self.pushButton_red.setFlat(False)
 
-        self.horizontalLayout_3.addWidget(self.pushButton_6)
+        self.horizontalLayout_3.addWidget(self.pushButton_red)
 
-        self.pushButton_5 = QPushButton(self.frame)
-        self.pushButton_5.setObjectName(u"pushButton_5")
-        self.pushButton_5.setMaximumSize(QSize(30, 16777215))
-        self.pushButton_5.setCheckable(True)
-        self.pushButton_5.setFlat(False)
+        self.pushButton_cyan = QPushButton(self.frame)
+        self.pushButton_cyan.setObjectName(u"pushButton_cyan")
+        self.pushButton_cyan.setMaximumSize(QSize(30, 16777215))
+        self.pushButton_cyan.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_cyan.setText(u"cyan")
+        self.pushButton_cyan.setCheckable(True)
+        self.pushButton_cyan.setFlat(False)
 
-        self.horizontalLayout_3.addWidget(self.pushButton_5)
+        self.horizontalLayout_3.addWidget(self.pushButton_cyan)
 
 
         self.verticalLayout.addLayout(self.horizontalLayout_3)
@@ -219,20 +232,24 @@ class Ui_DsrWidget(object):
         self.horizontalLayout_4 = QHBoxLayout()
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.horizontalLayout_4.setContentsMargins(-1, -1, -1, 10)
-        self.lineEdit_2 = QLineEdit(self.frame)
-        self.lineEdit_2.setObjectName(u"lineEdit_2")
-        self.lineEdit_2.setMaximumSize(QSize(100, 16777215))
-        self.lineEdit_2.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.lineEdit_2.setReadOnly(True)
+        self.lineEdit_center = QLineEdit(self.frame)
+        self.lineEdit_center.setObjectName(u"lineEdit_center")
+        self.lineEdit_center.setMaximumSize(QSize(100, 16777215))
+        self.lineEdit_center.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.lineEdit_center.setText(u"(1440,1080)")
+        self.lineEdit_center.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lineEdit_center.setReadOnly(True)
 
-        self.horizontalLayout_4.addWidget(self.lineEdit_2)
+        self.horizontalLayout_4.addWidget(self.lineEdit_center)
 
-        self.lineEdit = QLineEdit(self.frame)
-        self.lineEdit.setObjectName(u"lineEdit")
-        self.lineEdit.setMaximumSize(QSize(100, 16777215))
-        self.lineEdit.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.lineEdit_geometry = QLineEdit(self.frame)
+        self.lineEdit_geometry.setObjectName(u"lineEdit_geometry")
+        self.lineEdit_geometry.setMaximumSize(QSize(100, 16777215))
+        self.lineEdit_geometry.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.lineEdit_geometry.setText(u"100x50, -45\u00b0")
+        self.lineEdit_geometry.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-        self.horizontalLayout_4.addWidget(self.lineEdit)
+        self.horizontalLayout_4.addWidget(self.lineEdit_geometry)
 
         self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -245,8 +262,8 @@ class Ui_DsrWidget(object):
         self.verticalLayout_2.addLayout(self.verticalLayout)
 
         self.tableWidget_dsr = QTableWidget(self.frame)
-        if (self.tableWidget_dsr.columnCount() < 5):
-            self.tableWidget_dsr.setColumnCount(5)
+        if (self.tableWidget_dsr.columnCount() < 4):
+            self.tableWidget_dsr.setColumnCount(4)
         __qtablewidgetitem = QTableWidgetItem()
         self.tableWidget_dsr.setHorizontalHeaderItem(0, __qtablewidgetitem)
         __qtablewidgetitem1 = QTableWidgetItem()
@@ -255,16 +272,20 @@ class Ui_DsrWidget(object):
         self.tableWidget_dsr.setHorizontalHeaderItem(2, __qtablewidgetitem2)
         __qtablewidgetitem3 = QTableWidgetItem()
         self.tableWidget_dsr.setHorizontalHeaderItem(3, __qtablewidgetitem3)
-        __qtablewidgetitem4 = QTableWidgetItem()
-        self.tableWidget_dsr.setHorizontalHeaderItem(4, __qtablewidgetitem4)
         if (self.tableWidget_dsr.rowCount() < 10):
             self.tableWidget_dsr.setRowCount(10)
+        __qtablewidgetitem4 = QTableWidgetItem()
+        self.tableWidget_dsr.setItem(0, 0, __qtablewidgetitem4)
         __qtablewidgetitem5 = QTableWidgetItem()
-        self.tableWidget_dsr.setItem(0, 1, __qtablewidgetitem5)
-        __qtablewidgetitem6 = QTableWidgetItem()
-        self.tableWidget_dsr.setItem(0, 3, __qtablewidgetitem6)
+        self.tableWidget_dsr.setItem(0, 2, __qtablewidgetitem5)
         self.tableWidget_dsr.setObjectName(u"tableWidget_dsr")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Expanding)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.tableWidget_dsr.sizePolicy().hasHeightForWidth())
+        self.tableWidget_dsr.setSizePolicy(sizePolicy2)
         self.tableWidget_dsr.setMinimumSize(QSize(300, 0))
+        self.tableWidget_dsr.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tableWidget_dsr.setFrameShape(QFrame.Shape.StyledPanel)
         self.tableWidget_dsr.setFrameShadow(QFrame.Shadow.Sunken)
         self.tableWidget_dsr.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -294,37 +315,23 @@ class Ui_DsrWidget(object):
 
     def retranslateUi(self, DsrWidget):
         self.pushButton_set_preview.setText("")
-        self.shortcut.setText(QCoreApplication.translate("DsrWidget", u"(F2)", None))
-        self.label_message.setText(QCoreApplication.translate("DsrWidget", u"disabled", None))
         self.pushButton_discard.setText("")
         self.pushButton_save.setText("")
-        self.label_9.setText(QCoreApplication.translate("DsrWidget", u"mask", None))
-        self.shortcut_2.setText(QCoreApplication.translate("DsrWidget", u"(F3)", None))
-        self.pushButton_3.setText(QCoreApplication.translate("DsrWidget", u"circle", None))
-        self.pushButton_2.setText(QCoreApplication.translate("DsrWidget", u"ellipse", None))
-        self.pushButton.setText(QCoreApplication.translate("DsrWidget", u"oblong", None))
-        self.pushButton_4.setText(QCoreApplication.translate("DsrWidget", u"yellow", None))
-        self.pushButton_6.setText(QCoreApplication.translate("DsrWidget", u"red", None))
-        self.pushButton_5.setText(QCoreApplication.translate("DsrWidget", u"cyan", None))
-        self.lineEdit_2.setText(QCoreApplication.translate("DsrWidget", u"(1440,1080)", None))
-        self.lineEdit.setText(QCoreApplication.translate("DsrWidget", u"100x50, -45\u00b0", None))
         ___qtablewidgetitem = self.tableWidget_dsr.horizontalHeaderItem(0)
-        ___qtablewidgetitem.setText(QCoreApplication.translate("DsrWidget", u"scene", None));
+        ___qtablewidgetitem.setText(QCoreApplication.translate("DsrWidget", u"frame", None));
         ___qtablewidgetitem1 = self.tableWidget_dsr.horizontalHeaderItem(1)
-        ___qtablewidgetitem1.setText(QCoreApplication.translate("DsrWidget", u"frame", None));
+        ___qtablewidgetitem1.setText(QCoreApplication.translate("DsrWidget", u"type", None));
         ___qtablewidgetitem2 = self.tableWidget_dsr.horizontalHeaderItem(2)
-        ___qtablewidgetitem2.setText(QCoreApplication.translate("DsrWidget", u"type", None));
+        ___qtablewidgetitem2.setText(QCoreApplication.translate("DsrWidget", u"coord.", None));
         ___qtablewidgetitem3 = self.tableWidget_dsr.horizontalHeaderItem(3)
-        ___qtablewidgetitem3.setText(QCoreApplication.translate("DsrWidget", u"coord.", None));
-        ___qtablewidgetitem4 = self.tableWidget_dsr.horizontalHeaderItem(4)
-        ___qtablewidgetitem4.setText(QCoreApplication.translate("DsrWidget", u"geometry", None));
+        ___qtablewidgetitem3.setText(QCoreApplication.translate("DsrWidget", u"geometry", None));
 
         __sortingEnabled = self.tableWidget_dsr.isSortingEnabled()
         self.tableWidget_dsr.setSortingEnabled(False)
-        ___qtablewidgetitem5 = self.tableWidget_dsr.item(0, 1)
-        ___qtablewidgetitem5.setText(QCoreApplication.translate("DsrWidget", u"123456", None));
-        ___qtablewidgetitem6 = self.tableWidget_dsr.item(0, 3)
-        ___qtablewidgetitem6.setText(QCoreApplication.translate("DsrWidget", u"(50,30) 500x20 -10\u00b0", None));
+        ___qtablewidgetitem4 = self.tableWidget_dsr.item(0, 0)
+        ___qtablewidgetitem4.setText(QCoreApplication.translate("DsrWidget", u"123456", None));
+        ___qtablewidgetitem5 = self.tableWidget_dsr.item(0, 2)
+        ___qtablewidgetitem5.setText(QCoreApplication.translate("DsrWidget", u"(50,30) 500x20 -10\u00b0", None));
         self.tableWidget_dsr.setSortingEnabled(__sortingEnabled)
 
         pass

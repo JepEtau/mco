@@ -30,7 +30,8 @@ from .stylesheet import (
 )
 
 from .widget_player_ctrl import PlayerCtrlWidget
-from .widget_preview import PreviewWidget
+# from .widget_preview import PreviewWidget
+from .widget_graphics_view import GraphicsViewWidget
 from .widget_replace import ReplaceWidget
 from .widget_dsr import DsrWidget
 from .widget_selection import SelectionWidget
@@ -44,7 +45,9 @@ if TYPE_CHECKING:
 from parsers import (
     db,
     get_fps,
+    MaskShape,
 )
+
 
 
 class ReplaceWindow(QMainWindow):
@@ -69,7 +72,15 @@ class ReplaceWindow(QMainWindow):
         set_stylesheet(self)
 
         # Preview
-        self.widget_preview = PreviewWidget(self.centralwidget, app_type=app_type)
+        # self.widget_preview = PreviewWidget(self.centralwidget, app_type=app_type)
+        self.widget_preview = GraphicsViewWidget(
+            parent=self.centralwidget,
+            main_window=self,
+            controller=controller,
+            app_type=app_type
+        )
+
+
         self.verticalLayout.addWidget(self.widget_preview)
 
         # Player control
@@ -311,16 +322,20 @@ class ReplaceWindow(QMainWindow):
         key = event.key()
         modifiers = event.modifiers()
         self.current_key_pressed = None
-        print(f"{__name__} received: {key}")
+        # print(f"{__name__} received: {key}")
 
-        for w in (
+        widgets = (
             self.widget_player_ctrl,
             self.widget_replace,
-            # self.widget_preview,
+            self.widget_preview,
             self.widget_selection
-        ):
+        )
+
+        for w in widgets:
             if w.event_key_pressed(event):
-                print(f"{__name__} {key} forwarded to {w.objectName()}")
+                for _w in widgets:
+                    if _w != w:
+                        _w.event_key_released(event)
                 return True
         return super().keyPressEvent(event)
 
@@ -329,7 +344,7 @@ class ReplaceWindow(QMainWindow):
         for w in (
             self.widget_player_ctrl,
             self.widget_replace,
-            # self.widget_preview,
+            self.widget_preview,
             self.widget_selection
         ):
             try:
@@ -344,12 +359,18 @@ class ReplaceWindow(QMainWindow):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.Wheel:
             for w in (
+                # self.widget_replace,
+                self.widget_preview,
                 self.widget_player_ctrl,
-                self.widget_replace,
-                # self.widget_preview,
                 # self.widget_selection
             ):
                 if w.event_wheel(event):
                     return True
 
         return super().eventFilter(watched, event)
+
+
+
+    # DSR
+    def get_current_shape(self) -> MaskShape:
+        return self.widget_dsr.get_current_shape()

@@ -21,7 +21,6 @@ if TYPE_CHECKING:
 
 from parsers import (
     db,
-    SceneDsr,
     FrameDsr,
     DsrMask,
 )
@@ -154,7 +153,7 @@ class DsrDatabase:
 
         print("modified scenes:", self.modified_scenes)
         k_scene = self._key(scene)
-        scene_dsr: SceneDsr = self._db[k_scene]
+        scene_dsr: FrameDsr = self._db[k_scene]
         k_ch: str = scene['dst']['k_ch']
         k_ep: str = scene['dst']['k_ep']
         k: str = k_ch if k_ch in ('g_debut', 'g_fin') else k_ep
