@@ -150,18 +150,16 @@ def apply_effect(
                         rgb_title_img = title_img[:,:,:3]
                         alpha = title_img[:,:,3:]
                         print(f"alpha shape: {alpha.shape}")
-                        f.img = np_to_uint8(
+                        f.img = (
                             (1.0 - alpha) * bgd_img
                             + alpha * rgb_title_img
                         )
 
                     for f in out_frames[end+1:]:
-                        bgd_img: np.ndarray = np_to_float32(f.img)
-                        f.img = np_to_uint8(
-                            (1.0 - alpha) * bgd_img
+                        f.img = (
+                            (1.0 - alpha) * f.img
                             + alpha * rgb_title_img
                         )
-
 
                 return out_frames
 
@@ -316,7 +314,7 @@ def apply_effect(
         # Add title to the frame, and loop the input frame if not enough frames
         # to add title
         elif effect := last_src_scene['effects'].get_effect('title'):
-            # print("add title")
+            print(f"({out_f_no}) add title")
             # pprint(effect)
             # sys.exit()
             if out_f_no >= effect.frame_ref:
@@ -345,7 +343,7 @@ def apply_effect(
 
                     # print(f"for loop: start: {loop_start}, {loop_end}")
                     for i in range(loop_start, loop_end):
-                        print(yellow(f"  iteration no. {i}"))
+                        print(yellow(f"  title loop, iteration no. {i}"))
                         step: float = float((i + out_f_no - effect.frame_ref)/ effect.loop)
                         factor: float = (start_factor * (1 - step) + end_factor * step)
                         # print(f"\n{out_f_no}: {step:.2f},  factor: {factor:.2f}")
@@ -408,9 +406,10 @@ def apply_effect(
                         )
 
                     if out_f_no == effect.frame_ref + effect.loop or do_return:
-                        # print(lightcyan("cache frame"))
+                        print(lightcyan("cache frame"))
                         cached_frame = out_frames[-1]
                         frame.img = cached_frame.img
+                        write_image("title_loop.png", frame.img)
 
                     # if do_return and
                     #     print("returns")
@@ -492,7 +491,7 @@ def apply_effect(
 
         if effect := effects.get_effect('loop_and_fadeout'):
             fadeout_start = effect.frame_ref + effect.loop - effect.fade
-            # print(f"fadeout_start= {fadeout_start}, out_f_no: {out_f_no}")
+            print(f"fadeout_start= {fadeout_start}, out_f_no: {out_f_no}")
 
             if effect.fade > effect.loop and out_f_no >= fadeout_start:
                 print(f"start @{out_f_no} (fadeout_start: {fadeout_start})")
@@ -532,12 +531,13 @@ def apply_effect(
             elif out_f_no == effect.frame_ref:
                 img_black: np.ndarray = np.zeros(frame.img.shape, dtype=np.float32)
                 count: int = effect.loop - effect.fade + 1 - len(out_frames)
+                # write_image("title_loop2.png", frame.img)
                 if effect.loop >= effect.fade:
                     out_frames.extend([frame] * count)
                 else:
                     out_frames.extend([frame])
 
-                in_img = np_to_float32(frame.img)
+                in_img = frame.img
                 for i in range (effect.fade):
                     coef: float = float(i) / effect.fade
                     print(f"  out_i: {out_f_no}, coef={coef:.06f}")
@@ -674,7 +674,7 @@ def extract_last_frame_fp32(scene: Scene) -> McoFrame:
     ).reshape(pipe_img_shape)
     img = np_to_float32(img)
 
-    write_image(filepath="extracted.png", img=np_to_uint8(img))
+    # write_image(filepath="extracted.png", img=np_to_uint8(img))
 
     stderr_bytes: bytes | None = None
     try:
