@@ -45,6 +45,8 @@ class DsrWidget(QWidget, Ui_DsrWidget):
     signal_dsr_modified = Signal(DsrAction)
     signal_dsr_removed = Signal(dict)
 
+    signal_shape_changed = Signal(str)
+
     def __init__(self, ui, controller):
         super().__init__(ui)
         self.setupUi(self)
@@ -60,7 +62,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         }
         self.shape_buttons['ellipse'].setChecked(True)
         for shape_name, b in self.shape_buttons.items():
-            b.pressed.connect(partial(self.event_shape_type_modified, shape_name))
+            b.clicked.connect(partial(self.event_shape_type_changed, shape_name))
 
         set_stylesheet(self)
         self.adjustSize()
@@ -90,7 +92,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         self.signal_preview_toggled.emit(is_checked)
 
 
-    def event_shape_type_modified(self, shape_name):
+    def event_shape_type_changed(self, shape_name: MaskShape):
         for b in self.shape_buttons.values():
             b.blockSignals(True)
 
@@ -101,6 +103,9 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         for b in self.shape_buttons.values():
             b.blockSignals(False)
 
+        print(f"current: shape: {shape_name}")
+        self.signal_shape_changed.emit(shape_name)
+
 
     def get_current_shape(self) -> MaskShape:
         for name, button in self.shape_buttons.items():
@@ -108,3 +113,29 @@ class DsrWidget(QWidget, Ui_DsrWidget):
                 return name
 
 
+    def set_shape(self, shape_name: MaskShape):
+        self.event_shape_type_changed(shape_name=shape_name)
+
+
+    def event_key_released(self, event: QKeyEvent) -> bool:
+        return False
+
+
+
+    def event_key_pressed(self, event: QKeyEvent) -> bool:
+        key, modifiers = event.key(), event.modifiers()
+        # print(f"{time.time()} {__name__}.event_key_pressed: {key}, modifiers={modifiers}")
+
+        if key == Qt.Key.Key_C:
+            self.pushButton_circle.click()
+            return True
+
+        elif key == Qt.Key.Key_E:
+            self.pushButton_ellipse.click()
+            return True
+
+        if key == Qt.Key.Key_O:
+            self.pushButton_oblong.click()
+            return True
+
+        return False

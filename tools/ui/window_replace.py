@@ -142,6 +142,10 @@ class ReplaceWindow(QMainWindow):
         self.controller.signal_reload_frame.connect(self.event_reload_frame)
         self.controller.signal_error[str].connect(self.error_message)
 
+        self.widget_dsr.signal_shape_changed.connect(
+            self.widget_preview.event_shape_changed
+        )
+
         self.show()
         self.installEventFilter(self)
 
@@ -328,7 +332,8 @@ class ReplaceWindow(QMainWindow):
             self.widget_player_ctrl,
             self.widget_replace,
             self.widget_preview,
-            self.widget_selection
+            self.widget_dsr,
+            self.widget_selection,
         )
 
         for w in widgets:
@@ -345,6 +350,7 @@ class ReplaceWindow(QMainWindow):
             self.widget_player_ctrl,
             self.widget_replace,
             self.widget_preview,
+            self.widget_dsr,
             self.widget_selection
         ):
             try:

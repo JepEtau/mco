@@ -82,7 +82,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.previous_position = None
         self.refresh_status('stopped')
         self.ticks = list()
-        self.is_shift_key_pressed = False
+        self.is_shift_key_pressed: bool = False
+        self.is_ctrl_key_pressed: bool = False
         self.frames_start = 0
         self.frame_nos = list()
 
@@ -364,6 +365,11 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             self.is_shift_key_pressed = True
             return True
 
+        elif key == Qt.Key.Key_Control:
+            print("Control")
+            self.is_ctrl_key_pressed = True
+            return False
+
         # modify slider value
         elif key in [Qt.Key.Key_Home, Qt.Key.Key_End]:
             self.slider_frames.keyPressEvent(event)
@@ -385,6 +391,9 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
     def event_key_released(self, event: QKeyEvent) -> bool:
         key = event.key()
+        if key == Qt.Key.Key_Control:
+            self.is_ctrl_key_pressed = False
+
         if key == Qt.Key.Key_Shift:
             # log.info("shift key is released")
             self.is_shift_key_pressed = False
@@ -407,6 +416,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             print("\controls: slider is disabled")
             return False
 
+
         if self.is_shift_key_pressed:
             # move to next/previous tick
             if event.angleDelta().y() > 0:
@@ -415,7 +425,10 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
                 self.set_slider_to_following_tick()
             return True
 
-        elif self.current_key_pressed is None:
+        elif (
+            self.current_key_pressed is None
+            and not self.is_ctrl_key_pressed
+        ):
             # Select next/previous frame
             if event.angleDelta().y() > 0:
                 self.event_previous_frame()
