@@ -186,8 +186,6 @@ class Effects(list):
     #     self.effects.append(effect)
 
     def has_effects(self) -> bool:
-        if len(self.effects) == 0:
-            return False
         for effect in self.effects:
             if effect.fade != 0 or effect.loop != 0:
                 return True

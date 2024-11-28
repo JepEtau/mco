@@ -14,7 +14,7 @@ from typing import IO, Any
 from PIL import Image
 import cv2
 import numpy as np
-from processing.detect_inner_rect import detect_inner_rect
+from processing.detect_inner_rect import calculate_autocrop_values, detect_inner_rect
 from processing.resize_to_4_3 import ConvertTo43Params, TransformationValues, calculate_transformation_values, resize_to_4_3
 from parsers import (
     FINAL_WIDTH,
@@ -116,7 +116,7 @@ def resize_and_effects(
     in_img: np.ndarray,
     scene: Scene,
     transformation,
-    convert_fct: Callable,
+    dtype_convert_fct: Callable,
 ) -> list[np.ndarray]:
     img: np.ndarray = resize_to_4_3(
         np_to_float32(in_img), transformation
@@ -131,10 +131,10 @@ def resize_and_effects(
 
     if isinstance(out_frames, list):
         out_frames: list[McoFrame]
-        return list([convert_fct(f.img)for f in out_frames])
+        return list([dtype_convert_fct(f.img)for f in out_frames])
     else:
         out_frames: McoFrame
-        return [convert_fct(out_frames.img)]
+        return [dtype_convert_fct(out_frames.img)]
 
 
 
@@ -176,29 +176,33 @@ def generate_final_scene(
     #     in_pipe_pixfmt = 'bgr48'
     #     in_pipe_nbytes: int = 2 * math.prod(in_pipe_shape)
 
-    print(lightcyan(f"Input:"))
-    print(f"  video file: {in_video_fp}")
-    print(f"  frame_count: {in_video_info['frame_count']}")
-    print(f"  dimensions: {in_w}x{in_h}")
-    print(f"  pixfmt: {in_video_info['pix_fmt']}")
-    print(f"  pipe dtype: {in_pipe_dtype}")
-    print(f"  pipe pixfmt: {in_pipe_pixfmt}")
-    print(f"  pipe nbytes: {in_pipe_nbytes}")
+    if debug:
+        print(lightcyan(f"Input:"))
+        print(f"  video file: {in_video_fp}")
+        print(f"  frame_count: {in_video_info['frame_count']}")
+        print(f"  dimensions: {in_w}x{in_h}")
+        print(f"  pixfmt: {in_video_info['pix_fmt']}")
+        print(f"  pipe dtype: {in_pipe_dtype}")
+        print(f"  pipe pixfmt: {in_pipe_pixfmt}")
+        print(f"  pipe nbytes: {in_pipe_nbytes}")
 
-    print(lightcyan(f"Output:"))
-    print(f"  video file: {out_video_fp}")
-    print(f"  pixfmt: {vsettings.pix_fmt}")
-    print(f"  pipe dtype: {out_pipe_dtype}")
-    print(f"  pipe pixfmt: {out_pipe_pixfmt}")
+        print(lightcyan(f"Output:"))
+        print(f"  video file: {out_video_fp}")
+        print(f"  pixfmt: {vsettings.pix_fmt}")
+        print(f"  pipe dtype: {out_pipe_dtype}")
+        print(f"  pipe pixfmt: {out_pipe_pixfmt}")
 
 
     print(lightcyan(f"Processing:"))
     print(f"  frame_count: {scene['dst']['count']}")
     src_frame_count: int = scene['src'].frame_count(exclude_loop=True)
     if in_video_info['frame_count'] < src_frame_count:
-        raise ValueError(red(
+        print(red(
             f"[E] Erroneous frame count, waiting {src_frame_count} but video has {in_video_info['frame_count']} ({in_video_fp})"
         ))
+        # raise ValueError(red(
+        #     f"[E] Erroneous frame count, waiting {src_frame_count} but video has {in_video_info['frame_count']} ({in_video_fp})"
+        # ))
 
     # Scene geometry
     geometry: SceneGeometry = scene['geometry']
@@ -209,13 +213,13 @@ def generate_final_scene(
     print(f"  final dimension: {out_w}x{out_h}")
     debug_imgs: list[np.ndarray] = []
 
+    # If dst has effect
     has_effects: bool = (
         'effects' in scene.keys()
         and scene['effects'].has_effects()
     )
-
-    # TODO correct this because src scenes have to be tested
-    has_effects = True
+    # or src
+    has_effects = has_effects or scene["src"].has_effects()
 
     # if geometry.use_autocrop and has_effects:
     vsettings: VideoSettings = task.video_settings
@@ -311,39 +315,8 @@ def generate_final_scene(
                         debug_imgs.append(debug_img)
                 remaining -= count
                 write_index += count
-            pprint(coordinates)
-            print("  min:", np.min(coordinates, axis=0))
-            print("  max:", np.max(coordinates, axis=0))
-            min_coords: np.ndarray = np.min(coordinates, axis=0)
-            max_coords: np.ndarray = np.max(coordinates, axis=0)
 
-
-            consolidated_coordinates: list[np.ndarray] = []
-            for coord in coordinates:
-                if coord[0] > 1.2 * min_coords[0]:
-                    print(f"(0) discard: {coord}")
-                    continue
-
-                if (in_w - coord[1]) > 1.2 * (in_w - max_coords[1]):
-                    print(f"(1) discard: {coord}")
-                    continue
-
-                if coord[2] > 1.2 * min_coords[2]:
-                    print(f"(2) discard: {coord}")
-                    continue
-                consolidated_coordinates.append(coord)
-
-            print("consolidated")
-            print("min:", np.min(consolidated_coordinates, axis=0))
-            print("max:", np.max(consolidated_coordinates, axis=0))
-            min_coords: np.ndarray = np.min(consolidated_coordinates, axis=0)
-            max_coords: np.ndarray = np.max(consolidated_coordinates, axis=0)
-
-
-            x0, x1 = max_coords[0], min_coords[1]
-            y0, y1 = max_coords[2], min_coords[3]
-            autocrop = [y0,  in_h - y1, x0, in_w - x1]
-
+            autocrop = calculate_autocrop_values(coordinates, in_pipe_shape[:2])
             elapsed_time = time.time() - start_time
             print(yellow("geometry, autocrop:"), f"{geometry.autocrop}")
             print(yellow("final, autocrop:"), f"{autocrop}")
@@ -612,7 +585,7 @@ def generate_final_scene(
         produced: int = 0
 
         in_frame_count: int = in_video_info['frame_count']
-        convert_fct = np_to_uint16 if in_pipe_dtype == np.uint16 else np_to_uint8
+        dtype_convert_fct = np_to_uint16 if in_pipe_dtype == np.uint16 else np_to_uint8
 
         start_time: int = time.time()
         remaining: int = in_frame_count
@@ -663,20 +636,23 @@ def generate_final_scene(
 
             # Resize and apply filters
             out_images: list[np.ndarray] = []
-            with ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco') as executor:
-                for out in executor.map(
-                    lambda args: resize_and_effects(*args),
-                    [(decoded + i, img, scene, transformation, convert_fct)
-                    for i, img in enumerate(in_imgs)]
-                ):
-                    # print(out_i, flush = True)
-                    out_images.extend(out)
-            # for i, img in enumerate(in_imgs):
-            #     out_images.extend(
-            #         resize_and_effects(
-            #             decoded + i, img, scene, transformation, convert_fct
-            #     )
-            # )
+            if scene['src'].has_effect('blend'):
+                print(lightcyan("blend effect"))
+                for i, img in enumerate(in_imgs):
+                    out_images.extend(
+                        resize_and_effects(
+                            decoded + i, img, scene, transformation, dtype_convert_fct
+                    )
+                )
+            else:
+                with ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco') as executor:
+                    for out in executor.map(
+                        lambda args: resize_and_effects(*args),
+                        [(decoded + i, img, scene, transformation, dtype_convert_fct)
+                        for i, img in enumerate(in_imgs)]
+                    ):
+                        # print(out_i, flush = True)
+                        out_images.extend(out)
 
             decoded += count
 

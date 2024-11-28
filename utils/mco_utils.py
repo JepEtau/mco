@@ -144,7 +144,7 @@ def is_final_up_to_date(scene: Scene) -> bool:
             raise ValueError(red("no hash in output video"))
 
         if out_hash != task.hash:
-            print(yellow(f"hash differs: {out_hash}, should be {task.hash}"))
+            print(yellow(f"final: hash differs: {out_hash}, should be {task.hash}"))
             return False
 
     return True

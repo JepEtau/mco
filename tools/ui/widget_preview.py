@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QSpacerItem,
     QSizePolicy,
+    QApplication,
 )
 
 import cv2
@@ -70,7 +71,9 @@ class PreviewWidget(QWidget):
         self.setStyleSheet(u"background-color: rgb(0, 0, 0);")
         self.scene_geometry: TargetSceneGeometry | None = None
         self.preview_options: GeometryPreviewOptions | None = None
-
+        self.fit_to_screen = False
+        if QApplication.screens()[0].size().height() < 1200:
+            self.fit_to_screen = True
 
     @staticmethod
     def _scale(pixmap: QPixmap, factor):
@@ -216,12 +219,21 @@ class PreviewWidget(QWidget):
         painter = QPainter()
         if not painter.begin(self):
             return
+        scale_factor = 0.75
 
         # qimage: QPixmap = self.frame.qimage
-        ih, iw, c = self.frame.img.shape
-        container_w, container_h = self.size().toTuple()
-        ix0: int = (container_w - iw) // 2
-        iy0: int = (container_h - ih) // 2
+        if not self.fit_to_screen:
+            ih, iw, c = self.frame.img.shape
+            container_w, container_h = self.size().toTuple()
+            ix0: int = (container_w - iw) // 2
+            iy0: int = (container_h - ih) // 2
+        else:
+            ih, iw, c = self.frame.img.shape
+            ih, iw = int(ih * scale_factor), int(iw * scale_factor)
+            container_w, container_h = self.size().toTuple()
+            ix0: int = (container_w - iw) // 2
+            iy0: int = (container_h - ih) // 2
+
 
         if self.app_type == 'replace':
             qimage = QImage(self.frame.img, iw, ih, iw * c, QImage.Format.Format_BGR888)
@@ -266,25 +278,57 @@ class PreviewWidget(QWidget):
                 _cw, _ch = pixmap.size().toTuple()
                 if  _cw != cw or _ch != ch:
                     print(red(f"Error: cropped {_cw}x{_ch} != {cw}x{ch}"))
-                painter.drawPixmap(
-                    QPoint(ix0 + l, iy0 + t),
-                    pixmap
-                )
+
+                if not self.fit_to_screen:
+                    painter.drawPixmap(
+                        QPoint(ix0 + l, iy0 + t),
+                        pixmap
+                    )
+                else:
+                    painter.drawPixmap(
+                        QPoint(ix0 + l, iy0 + t),
+                        pixmap.scaled(
+                            QSize(
+                                int(pixmap.size().width() * scale_factor),
+                                int(pixmap.size().height() * scale_factor)
+                            )
+                        )
+                    )
 
             elif preview.crop_edition:
                 qimage = QImage(self.frame.img, iw, ih, iw * c, QImage.Format.Format_BGR888)
                 pixmap: QPixmap = QPixmap().fromImage(qimage)
-                painter.drawPixmap(QPoint(ix0, iy0), pixmap)
+                if not self.fit_to_screen:
+                    painter.drawPixmap(QPoint(ix0, iy0), pixmap)
+                    painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+                    pen = QPen(COLOR_CROP_RECT)
+                    pen.setWidth(pen_width)
+                    pen.setStyle(Qt.PenStyle.SolidLine)
+                    painter.setPen(pen)
+                    painter.drawRect(
+                        ix0 + l - PEN_WIDTH, iy0 + t - PEN_WIDTH,
+                        cw + 2*PEN_WIDTH, ch + 2*PEN_WIDTH
+                    )
+                else:
+                    painter.drawPixmap(
+                        QPoint(ix0, iy0),
+                        pixmap.scaled(
+                            QSize(
+                                int(pixmap.size().width() * scale_factor),
+                                int(pixmap.size().height() * scale_factor)
+                            )
+                        )
+                    )
+                    painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+                    pen = QPen(COLOR_CROP_RECT)
+                    pen.setWidth(pen_width)
+                    pen.setStyle(Qt.PenStyle.SolidLine)
+                    painter.setPen(pen)
+                    painter.drawRect(
+                        ix0 + l - PEN_WIDTH, int((iy0 + t - PEN_WIDTH)),
+                        cw + 2*PEN_WIDTH, int((ch + 2 * PEN_WIDTH))
+                    )
 
-                painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
-                pen = QPen(COLOR_CROP_RECT)
-                pen.setWidth(pen_width)
-                pen.setStyle(Qt.PenStyle.SolidLine)
-                painter.setPen(pen)
-                painter.drawRect(
-                    ix0 + l - PEN_WIDTH, iy0 + t - PEN_WIDTH,
-                    cw + 2*PEN_WIDTH, ch + 2*PEN_WIDTH
-                )
             self.draw_widget_guides(painter)
             painter.end()
             return

@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from pprint import pprint
 import sys
 from typing import TypedDict
-from utils.mco_types import Effect, Effects, Scene
+from utils.mco_types import Effect, Effects, Scene, EffectName
 from parsers import (
     db,
 )
@@ -194,3 +194,20 @@ class SrcScenes:
         raise ValueError(f"Scene not found for frame no. {frame_no}")
         return None
 
+
+    def has_effects(self) -> bool:
+        for s in self._scenes:
+            if (s['effects'] is not None
+                and s['effects'].has_effects()
+            ):
+                return True
+        return False
+
+
+    def has_effect(self, name: EffectName) -> bool:
+        for s in self._scenes:
+            if (s['effects'] is not None
+                and s['effects'].has_effect(name)
+            ):
+                return True
+        return False

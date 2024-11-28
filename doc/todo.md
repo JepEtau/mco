@@ -12,14 +12,14 @@
 
 
 ## High priority
-- correct "has_effects" in generate_final
+- crop after title overlay
+
+
+## Middle priority
 - Add grain at the end?
     noise=alls=14:allf=t+u
     noise=c0s=14:c0f=t+u
     http://underpop.online.fr/f/ffmpeg/help/noise.htm.gz
-
-
-## Middle priority
 - temporal filter: add metadata to generated video
 - chaining fp32 / fp16 models
 

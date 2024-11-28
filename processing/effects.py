@@ -199,87 +199,91 @@ def apply_effect(
                 if cached_frame is None:
                     # Extract last frame
                     cached_frame = extract_last_frame_fp32(previous_scene)
-                    cached_img: np.ndarray = cached_frame.img
+                    cached_img: np.ndarray = cached_frame.img.copy()
 
-                    prev_last_src_scene: SrcScene = previous_scene['src'].last_scene()
-                    # pprint(prev_last_src_scene)
+                    if False:
+                        prev_last_src_scene: SrcScene = previous_scene['src'].last_scene()
+                        # pprint(prev_last_src_scene)
 
-                    # Previous scene used a zoom
-                    if (
-                        'effects' in prev_last_src_scene
-                        and prev_last_src_scene['effects'] is not None
-                    ):
-                        if prev_last_src_scene['effects'].has_effect('zoom_in'):
-                            effect: Effect = prev_last_src_scene['effects'].get_effect('zoom_in')
+                        # Previous scene used a zoom
+                        if (
+                            'effects' in prev_last_src_scene
+                            and prev_last_src_scene['effects'] is not None
+                        ):
+                            if prev_last_src_scene['effects'].has_effect('zoom_in'):
+                                effect: Effect = prev_last_src_scene['effects'].get_effect('zoom_in')
 
-                            factor: float = effect.zoom_factor
-                            print(lightcyan(f"factor = {factor}"))
-                            in_h, in_w = cached_img.shape[:2]
-                            out_h, out_w = int(factor * in_h), int(factor * in_w)
-                            # if scene['task'].name == 'lr':
-                            #     out_h = int(factor * in_h * in_h / 576)
-                            zoomed: np.ndarray = cv2.resize(
-                                cached_img,
+                                factor: float = effect.zoom_factor
+                                print(lightcyan(f"factor = {factor}"))
+                                in_h, in_w = cached_img.shape[:2]
+                                out_h, out_w = int(factor * in_h), int(factor * in_w)
+                                # if scene['task'].name == 'lr':
+                                #     out_h = int(factor * in_h * in_h / 576)
+                                zoomed: np.ndarray = cv2.resize(
+                                    cached_img,
+                                    (out_w, out_h),
+                                    interpolation=Image.Resampling.LANCZOS
+                                )
+
+                                # Crop to input image shape
+                                top, left = int((out_h - in_h) / 2), int((out_w - in_w) / 2)
+                                cached_img = np.ascontiguousarray(zoomed[
+                                    top : top + in_h,
+                                    left : left + in_w,
+                                    :
+                                ])
+
+                                # write_image("test.png", cached_img)
+                                cached_frame.img = np_to_float32(cached_img)
+
+
+                        print(yellow(f"cached_frame: {type(cached_frame)}"))
+                        # Add Logo to the cached frame
+                        if (effect := last_src_scene['effects'].get_effect('title')):
+                            print(yellow("LOGO for blend, "))
+                            pprint(effect)
+                            initial_title_img: np.ndarray = load_image_fp32(title_filepath())
+                            in_h, in_w = initial_title_img.shape[:2]
+                            print(f"  title shape: {initial_title_img.shape}")
+                            bgd_h, bgd_w = cached_frame.img.shape[:2]
+                            print(f"  cache frame: {cached_frame.img.shape}")
+
+                            out_h, out_w = int(effect.zoom_factor * in_h), int(effect.zoom_factor * in_w)
+                            print(f"  resize to: {out_w}x{out_h}")
+                            initial_title_img = cv2.resize(
+                                initial_title_img,
                                 (out_w, out_h),
-                                interpolation=Image.Resampling.LANCZOS
+                                interpolation=cv2.INTER_LANCZOS4
                             )
+                            print(f"  resized title shape: {initial_title_img.shape}")
+                            top, left = (bgd_h - out_h) // 2, (bgd_w - out_w) // 2
+                            bottom, right = bgd_h - (out_h + top), bgd_w - (out_w + left)
+                            borders = [top, bottom, left, right]
+                            print(f"  borders: {borders}")
+                            initial_title_img: np.ndarray = cv2.copyMakeBorder(
+                                initial_title_img,
+                                *borders,
+                                cv2.BORDER_CONSTANT,
+                                value=0
+                            )
+                            print(f"  bordered title shape: {initial_title_img.shape}")
+                            rgb_title_img = initial_title_img[:,:,:3]
+                            print(f"  resized title shape w/out transparency: {rgb_title_img.shape}")
+                            # write_image("test_rgb.png", np_to_uint8(rgb_title_img))
 
-                            # Crop to input image shape
-                            top, left = int((out_h - in_h) / 2), int((out_w - in_w) / 2)
-                            cached_img = np.ascontiguousarray(zoomed[
-                                top : top + in_h,
-                                left : left + in_w,
-                                :
-                            ])
+                            alpha = initial_title_img[:,:,3:]
+                            print(f"  alpha shape: {alpha.shape}")
+                            cached_frame.img = (
+                                (1.0 - alpha) * cached_frame.img
+                                + alpha * rgb_title_img
+                            )
+                            print(f"  cached img dtype: {cached_frame.img.dtype}")
+                            # write_image(f"test_{frame.no}.png", np_to_uint8(cached_frame.img))
 
-                    # write_image("test.png", cached_img)
-                    cached_frame.img = np_to_float32(cached_img)
 
-                    # Add Logo to the cached frame
-                    if (effect := last_src_scene['effects'].get_effect('title')):
-                        print(yellow("LOGO for blend, "))
-                        pprint(effect)
-                        initial_title_img: np.ndarray = load_image_fp32(title_filepath())
-                        in_h, in_w = initial_title_img.shape[:2]
-                        print(f"  title shape: {initial_title_img.shape}")
-                        bgd_h, bgd_w = cached_frame.img.shape[:2]
-                        print(f"  cache frame: {cached_frame.img.shape}")
-
-                        out_h, out_w = int(effect.zoom_factor * in_h), int(effect.zoom_factor * in_w)
-                        print(f"  resize to: {out_w}x{out_h}")
-                        initial_title_img = cv2.resize(
-                            initial_title_img,
-                            (out_w, out_h),
-                            interpolation=cv2.INTER_LANCZOS4
-                        )
-                        print(f"  resized title shape: {initial_title_img.shape}")
-                        top, left = (bgd_h - out_h) // 2, (bgd_w - out_w) // 2
-                        bottom, right = bgd_h - (out_h + top), bgd_w - (out_w + left)
-                        borders = [top, bottom, left, right]
-                        print(f"  borders: {borders}")
-                        initial_title_img: np.ndarray = cv2.copyMakeBorder(
-                            initial_title_img,
-                            *borders,
-                            cv2.BORDER_CONSTANT,
-                            value=0
-                        )
-                        print(f"  bordered title shape: {initial_title_img.shape}")
-                        rgb_title_img = initial_title_img[:,:,:3]
-                        print(f"  resized title shape w/out transparency: {rgb_title_img.shape}")
-                        # write_image("test_rgb.png", np_to_uint8(rgb_title_img))
-
-                        alpha = initial_title_img[:,:,3:]
-                        print(f"  alpha shape: {alpha.shape}")
-                        cached_frame.img = (
-                            (1.0 - alpha) * cached_frame.img
-                            + alpha * rgb_title_img
-                        )
-                        print(f"  cached img dtype: {cached_frame.img.dtype}")
+                            # sys.exit()
                         # write_image(f"test_{frame.no}.png", np_to_uint8(cached_frame.img))
 
-
-                    # sys.exit()
-                # write_image(f"test_{frame.no}.png", np_to_uint8(cached_frame.img))
                 out_img: np.ndarray = blend_images(
                     in_img=in_img,
                     layer=cached_frame.img,
@@ -300,6 +304,7 @@ def apply_effect(
 
             elif out_f_no == effect.frame_ref + effect.fade:
                 # Delete cached frame
+                print(yellow("delete cache frame"))
                 cached_frame = None
                 frames = frame
 
@@ -585,24 +590,27 @@ def coef_table(
 
 
 def extract_last_frame_fp32(scene: Scene) -> McoFrame:
-    in_video_fp = scene['task'].in_video_file
+    in_video_fp = scene['task'].video_file
     if scene['task'].name == 'sim':
         in_video_fp = scene['src'].last_scene()['scene']['inputs']['progressive']['filepath']
+    # pprint(scene['task'])
+    # sys.exit()
 
     if not os.path.exists(in_video_fp):
-        raise ValueError(red(f"Missing file: {in_video_fp}"))
+        raise ValueError(red(f"Missing file:", in_video_fp))
 
     in_video_info: VideoInfo = extract_media_info_mco(in_video_fp)['video']
     final_shape: FShape = in_video_info['shape']
-    frame_no: int = scene['dst']['count'] - 1
+    frame_no: int = in_video_info['frame_count'] - 1
 
     decoder_filters: list[str] = []
     if scene['task'].name == 'sim':
-        frame_no: int = scene['src'].last_frame_no()-1
+        frame_no: int = scene['src'].last_frame_no() - 1
         final_shape: FShape = (1080, 1440, 3)
         h, w = final_shape[:2]
         decoder_filters = [
-            "-filter_complex", f"[0:v]scale={w}:{h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
+            "-filter_complex",
+            f"[0:v]scale={w}:{h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
             "-map", "[outv]"
         ]
         # patch bpp to force as 16bit because we may use a 8bpp in sim
@@ -621,7 +629,7 @@ def extract_last_frame_fp32(scene: Scene) -> McoFrame:
 
     print(f"previous video input: {in_video_fp}")
     if not os.path.isfile(in_video_fp):
-        raise FileNotFoundError(red("Missing file: in_video_fp"))
+        raise FileNotFoundError(red("Missing file:", in_video_fp))
     print(f"  frame no. {frame_no}")
     print(f"  pipe pix fmt: {pipe_pix_fmt}")
     print(f"  pipe shape: {pipe_img_shape}")

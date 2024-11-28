@@ -148,17 +148,9 @@ class SceneGeometry:
                 ))
             ))
         else:
-            params += f"{map(str, self.crop)}"
+            params += f";{','.join(list(map(str, self.crop)))}"
         params += f";{self.chapter.width}"
         return calc_hash(params)
-
-
-
-
-
-
-
-
 
 
 
