@@ -59,7 +59,7 @@ def detect_inner_rect(
     index: int = 0
 ) -> tuple[np.ndarray, np.ndarray | None]:
     verbose = False
-    debug: bool = True
+    debug: bool = False
     # do_output_img = True
 
     # Optimize, simplify
@@ -158,7 +158,7 @@ def detect_inner_rect(
     epsilon = 0.1 * cv2.arcLength(outer_contour, True)
     polygon: np.ndarray = cv2.approxPolyDP(outer_contour, epsilon, True)
 
-    if True:
+    if False:
         debug_img = cv2.cvtColor(gray_img_debug, cv2.COLOR_GRAY2BGR)
         cv2.drawContours(debug_img, [polygon], -1, (0, 255, 0), 1)
         cv2.imwrite(f"mask_{index:03}.png", debug_img)
