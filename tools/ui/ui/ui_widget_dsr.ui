@@ -294,9 +294,17 @@
              <enum>Qt::FocusPolicy::NoFocus</enum>
             </property>
             <property name="text">
-             <string notr="true">circle</string>
+             <string notr="true"/>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>../../icons/grey/circle.svg</normaloff>
+              <normalon>../../icons/blue/circle.svg</normalon>../../icons/grey/circle.svg</iconset>
             </property>
             <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="autoExclusive">
              <bool>true</bool>
             </property>
             <property name="flat">
@@ -316,9 +324,17 @@
              <enum>Qt::FocusPolicy::NoFocus</enum>
             </property>
             <property name="text">
-             <string notr="true">ellipse</string>
+             <string notr="true"/>
+            </property>
+            <property name="icon">
+             <iconset>
+              <normaloff>../../icons/grey/ellipse.svg</normaloff>
+              <normalon>../../icons/blue/ellipse.svg</normalon>../../icons/grey/ellipse.svg</iconset>
             </property>
             <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="autoExclusive">
              <bool>true</bool>
             </property>
             <property name="flat">
@@ -341,6 +357,9 @@
              <string notr="true">oblong</string>
             </property>
             <property name="checkable">
+             <bool>true</bool>
+            </property>
+            <property name="autoExclusive">
              <bool>true</bool>
             </property>
             <property name="flat">
@@ -429,67 +448,6 @@
           </item>
          </layout>
         </item>
-        <item>
-         <layout class="QHBoxLayout" name="horizontalLayout_4">
-          <property name="bottomMargin">
-           <number>10</number>
-          </property>
-          <item>
-           <widget class="QLineEdit" name="lineEdit_center">
-            <property name="maximumSize">
-             <size>
-              <width>100</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="focusPolicy">
-             <enum>Qt::FocusPolicy::NoFocus</enum>
-            </property>
-            <property name="text">
-             <string notr="true">(1440,1080)</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QLineEdit" name="lineEdit_geometry">
-            <property name="maximumSize">
-             <size>
-              <width>100</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="focusPolicy">
-             <enum>Qt::FocusPolicy::NoFocus</enum>
-            </property>
-            <property name="text">
-             <string notr="true">100x50, -45°</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="horizontalSpacer_4">
-            <property name="orientation">
-             <enum>Qt::Orientation::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
-        </item>
        </layout>
       </item>
       <item>
@@ -566,17 +524,12 @@
         <row/>
         <column>
          <property name="text">
-          <string>frame</string>
+          <string>shape</string>
          </property>
         </column>
         <column>
          <property name="text">
-          <string>type</string>
-         </property>
-        </column>
-        <column>
-         <property name="text">
-          <string>coord.</string>
+          <string>center</string>
          </property>
         </column>
         <column>
@@ -584,12 +537,7 @@
           <string>geometry</string>
          </property>
         </column>
-        <item row="0" column="0">
-         <property name="text">
-          <string>123456</string>
-         </property>
-        </item>
-        <item row="0" column="2">
+        <item row="0" column="1">
          <property name="text">
           <string>(50,30) 500x20 -10°</string>
          </property>

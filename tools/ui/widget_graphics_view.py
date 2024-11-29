@@ -59,6 +59,7 @@ from parsers import (
     SceneGeometry,
     MaskShape,
 )
+from .widget_dsr import DsrShape
 from utils.p_print import lightcyan, lightgreen, red, yellow
 if TYPE_CHECKING:
     from backend.replace_controller import ReplaceController
@@ -84,17 +85,13 @@ FINAL_HEIGHT: int = 1080
 #         self.parent().parent().setPosition(event.scenePos().x())
 
 
-@dataclass(slots=True)
-class DsrShape:
-    shape: MaskShape
-    center: list[float | int, float | int]
-    axes: list[float | int, float | int]
-    angle: float
-    item: QGraphicsEllipseItem | None = None
-
 
 class GraphicsViewWidget(QGraphicsView):
     signal_wheel_event = Signal(QWheelEvent)
+
+    # DSR
+    signal_dsr_updated_event = Signal(list)
+
 
     def __init__(
         self,
@@ -163,9 +160,11 @@ class GraphicsViewWidget(QGraphicsView):
 
         self.shapes: list[DsrShape] = []
         self.new_shape: DsrShape | None = None
-        self.moving_shape: bool = False
+        self.modifying_shape: bool = False
 
         self.modified: bool = False
+
+
 
         self.installEventFilter(self)
 
@@ -309,12 +308,13 @@ class GraphicsViewWidget(QGraphicsView):
 
 
 
-    def start_moving_shape(self, selected: DsrShape) -> None:
+    def start_modifying_shape(self, selected: DsrShape) -> None:
         print(lightcyan("start moving shape"))
         # Remove from scene and list of shapes
         self._scene.removeItem(self.new_shape.item)
         self._scene.removeItem(selected.item)
         selected.item = None
+        # Save current shape to restore it if discarded
         self._saved_shape = deepcopy(selected)
 
         del selected.item
@@ -324,7 +324,7 @@ class GraphicsViewWidget(QGraphicsView):
         self.axes = self.new_shape.axes
         self.radius = self.new_shape.axes[0]
         self.angle = self.new_shape.angle
-        self.main_window.set_current_shape(self.new_shape.shape)
+        self.main_window.set_current_dsr_shape(self.new_shape.shape)
 
         # Get position and calculate offset from position to center of shape
         cursor_position: QPointF = self.mapToScene(self.current_position.toPoint())
@@ -350,12 +350,12 @@ class GraphicsViewWidget(QGraphicsView):
         self.new_shape.item = item
         self._scene.addItem(item)
 
-        self.moving_shape = True
+        self.modifying_shape = True
 
 
 
-    def discard_moving_shape(self, current_position: QPointF) -> None:
-        if not self.moving_shape:
+    def discard_modifying_shape(self, current_position: QPointF) -> None:
+        if not self.modifying_shape:
             return
 
         self.shapes.append(deepcopy(self._saved_shape))
@@ -379,12 +379,14 @@ class GraphicsViewWidget(QGraphicsView):
         self._scene.addItem(s.item)
 
         # Finally, new shape
-        self.moving_shape = False
+        self.modifying_shape = False
         self.cursor_offset = QPointF(0, 0)
         self.setCursor(Qt.CursorShape.ArrowCursor)
         self._scene.removeItem(self.new_shape.item)
         self.new_shape = None
         self.draw_shape(current_position)
+
+        self.signal_dsr_updated_event.emit(self.shapes)
 
 
     def draw_shape(self, cursor_position: QPointF) -> None:
@@ -395,7 +397,7 @@ class GraphicsViewWidget(QGraphicsView):
             cursor_position = cursor_position + self.cursor_offset
             x, y = cursor_position.toTuple()
 
-            shape_name: MaskShape = self.main_window.get_current_shape()
+            shape_name: MaskShape = self.main_window.get_current_dsr_shape()
             axes: tuple[float, float] = (
                 (self.radius, self.radius)
                 if shape_name == 'circle'
@@ -424,6 +426,23 @@ class GraphicsViewWidget(QGraphicsView):
             self._scene.addItem(self.new_shape.item)
 
             self.modified = True
+
+    def mouseDoubleClickEvent(self, event):
+        if self.new_shape is not None:
+            self.shapes.append(
+                DsrShape(
+                    shape=self.main_window.get_current_dsr_shape(),
+                    center=event.position().toTuple(),
+                    axes=self.new_shape.axes,
+                    angle=self.new_shape.angle,
+                    item=self.new_shape.item
+                )
+            )
+            self.new_shape = None
+            self.cursor_offset = QPointF(0, 0)
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.signal_dsr_updated_event.emit(self.shapes)
+        return super().mouseDoubleClickEvent(event)
 
 
     def mouseMoveEvent(self, event):
@@ -459,25 +478,24 @@ class GraphicsViewWidget(QGraphicsView):
             if self.new_shape is not None:
                 self.shapes.append(
                     DsrShape(
-                        shape=self.main_window.get_current_shape(),
+                        shape=self.main_window.get_current_dsr_shape(),
                         center=event.position().toTuple(),
                         axes=self.new_shape.axes,
                         angle=self.new_shape.angle,
                         item=self.new_shape.item
                     )
                 )
-                print("append shape:")
-                pprint(self.shapes[-1])
-
                 self.new_shape = None
                 self.cursor_offset = QPointF(0, 0)
                 self.setCursor(Qt.CursorShape.ArrowCursor)
+                self.signal_dsr_updated_event.emit(self.shapes)
 
-        elif self.moving_shape:
+
+        elif self.modifying_shape:
             center: QPointF = event.position() + self.cursor_offset
             self.shapes.append(
                 DsrShape(
-                    shape=self.main_window.get_current_shape(),
+                    shape=self.main_window.get_current_dsr_shape(),
                     center=center.toTuple(),
                     axes=self.new_shape.axes,
                     angle=self.new_shape.angle,
@@ -490,13 +508,14 @@ class GraphicsViewWidget(QGraphicsView):
             self.axes = s.axes
             self.radius = s.axes[0]
             self.angle = s.angle
-            self.main_window.set_current_shape(s.shape)
+            self.main_window.set_current_dsr_shape(s.shape)
 
             self.new_shape = None
             self.cursor_offset = QPointF(0, 0)
             self.setCursor(Qt.CursorShape.ArrowCursor)
 
-            self.moving_shape = False
+            self.modifying_shape = False
+            self.signal_dsr_updated_event.emit(self.shapes)
 
         else:
             # start moving shape
@@ -505,8 +524,9 @@ class GraphicsViewWidget(QGraphicsView):
                 if s.item.isUnderMouse():
                     print("under mouse")
                     is_mouse_over_shape = True
-                    self.start_moving_shape(s)
+                    self.start_modifying_shape(s)
                     del self.shapes[len(self.shapes) - i - 1]
+                    self.signal_dsr_updated_event.emit(self.shapes)
                     break
 
             if is_mouse_over_shape:
@@ -514,6 +534,7 @@ class GraphicsViewWidget(QGraphicsView):
 
 
                 self.setCursor(Qt.CursorShape.OpenHandCursor)
+
                 return True
 
         return super().mousePressEvent(event)
@@ -623,23 +644,6 @@ class GraphicsViewWidget(QGraphicsView):
                 self.modif_keys['angle'] = True
                 return True
 
-            elif key == Qt.Key.Key_S:
-                is_mouse_over_shape: bool = False
-                for i, s in enumerate(self.shapes):
-                    if s.item.isUnderMouse():
-                        print("under mouse")
-                        is_mouse_over_shape = True
-                        self.start_moving_shape(s)
-                        del self.shapes[i]
-                        break
-
-                if is_mouse_over_shape:
-                    print("selected a shape")
-                    self.setCursor(Qt.CursorShape.OpenHandCursor)
-                    return True
-
-                return True
-
             elif key in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
                 for i, s in enumerate(self.shapes):
                     if s.item.isUnderMouse():
@@ -649,10 +653,11 @@ class GraphicsViewWidget(QGraphicsView):
                         del self.shapes[i]
                         self.setCursor(Qt.CursorShape.ArrowCursor)
                         self.cursor_offset = QPoint(0, 0)
+                        self.signal_dsr_updated_event.emit(self.shapes)
                         return True
 
             elif key == Qt.Key.Key_Escape:
-                self.discard_moving_shape(self.current_position)
+                self.discard_modifying_shape(self.current_position)
                 return True
 
         return False
@@ -665,7 +670,7 @@ class GraphicsViewWidget(QGraphicsView):
                 # do not allow changing frame if modification is on going
                 return True
 
-            if self.modifying_index == -1:
+            if not self.main_window.is_dsr_modified():
                 print("not for this")
                 return False
 
@@ -676,7 +681,7 @@ class GraphicsViewWidget(QGraphicsView):
         elif event.angleDelta().y() < 0:
             diff = -1
 
-        shape_name: MaskShape = self.main_window.get_current_shape()
+        shape_name: MaskShape = self.main_window.get_current_dsr_shape()
         if shape_name == 'circle' and self.modif_keys['radius']:
             self.radius = min(max(self.radius + diff, 0), 20)
 

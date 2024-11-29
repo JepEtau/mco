@@ -31,7 +31,7 @@ from .stylesheet import (
 
 from .widget_player_ctrl import PlayerCtrlWidget
 # from .widget_preview import PreviewWidget
-from .widget_graphics_view import GraphicsViewWidget
+from .widget_graphics_view import DsrShape, GraphicsViewWidget
 from .widget_replace import ReplaceWidget
 from .widget_dsr import DsrWidget
 from .widget_selection import SelectionWidget
@@ -144,6 +144,9 @@ class ReplaceWindow(QMainWindow):
 
         self.widget_dsr.signal_shape_changed.connect(
             self.widget_preview.event_shape_changed
+        )
+        self.widget_preview.signal_dsr_updated_event.connect(
+            self.event_dsr_list_updated
         )
 
         self.show()
@@ -378,8 +381,18 @@ class ReplaceWindow(QMainWindow):
 
 
     # DSR
-    def get_current_shape(self) -> MaskShape:
+    def get_current_dsr_shape(self) -> MaskShape:
         return self.widget_dsr.get_current_shape()
 
-    def set_current_shape(self, shape_name: MaskShape) -> None:
+
+    def set_current_dsr_shape(self, shape_name: MaskShape) -> None:
         self.widget_dsr.force_current_shape(shape_name)
+
+
+    def event_dsr_list_updated(self, shapes: list[DsrShape]) -> None:
+        self.widget_dsr.refresh_dsr_list(shapes, event=True)
+        # self.widget_player_ctrl.setDisabled(True)
+
+
+    def is_dsr_modified(self) -> bool:
+        return self.widget_dsr.is_modified()
