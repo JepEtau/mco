@@ -32,6 +32,7 @@ from backend._types import DsrAction
 from parsers import (
     SceneGeometry,
     MaskShape,
+    DsrMask,
 )
 
 
@@ -60,11 +61,10 @@ class DsrWidget(QWidget, Ui_DsrWidget):
     signal_preview_toggled = Signal(bool)
     signal_edition_started = Signal()
 
-    signal_dsr_selected = Signal(DsrAction)
     signal_dsr_modified = Signal(DsrAction)
-    signal_dsr_removed = Signal(dict)
 
     signal_shape_changed = Signal(str)
+
 
     def __init__(self, ui, controller):
         super().__init__(ui)
@@ -105,6 +105,8 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         # self.tableWidget_dsr.installEventFilter(self)
 
         self._is_modified: bool = False
+        self.k_ed_ep_ch_no: str = ""
+        self.frame_no: int = 0
 
         set_stylesheet(self)
         self.adjustSize()
@@ -127,6 +129,16 @@ class DsrWidget(QWidget, Ui_DsrWidget):
 
     def get_user_preferences(self) -> dict[str, Any]:
         return {}
+
+
+    def set_original_frame_key(self, frame: Frame, original_frame: Frame) -> None:
+        if frame is None:
+            return
+        src_scene_key = frame.src_scene_key
+
+        self.k_ed_ep_ch_no = src_scene_key
+        self.frame_no = frame.no
+        print(red(f"set_original_frame_key: {self.k_ed_ep_ch_no}"))
 
 
     def event_set_preview_toggled(self, is_checked: bool=False):
@@ -208,6 +220,26 @@ class DsrWidget(QWidget, Ui_DsrWidget):
 
         if event:
             self._is_modified = True
+
+            regions: list[DsrMask] = []
+            for p in patches:
+                regions.append(
+                        DsrMask(
+                        shape=p.shape,
+                        center=p.center,
+                        axes=p.axes,
+                        angle=p.angle
+                    )
+                )
+
+            self.signal_dsr_modified.emit(
+                DsrAction(
+                    type='update',
+                    src_scene_key=self.k_ed_ep_ch_no,
+                    frame_no=self.frame_no,
+                    regions=regions
+                )
+            )
 
 
     def is_modified(self) -> bool:

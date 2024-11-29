@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         ChapterGeometry,
         DetectInnerRectParams,
         SceneGeometry,
+        DsrMask,
     )
 
 AppType = Literal['replace', 'geometry', 'deshake']
@@ -116,12 +117,13 @@ class DsrProcessParams:
     auto: bool
 
 
-DsrActionType = Literal['add', 'remove', 'set', 'discard']
+DsrActionType = Literal['update', 'undo']
 @dataclass(slots=True)
 class DsrAction:
     type: DsrActionType
-    parameter: Any
-    value: Any
+    src_scene_key: str
+    frame_no: int
+    regions: list[DsrMask]
 
 
 @dataclass(slots=True)

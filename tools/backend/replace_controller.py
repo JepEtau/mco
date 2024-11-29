@@ -53,18 +53,19 @@ class ReplaceController(CommonController):
             self.event_replace_removed
         )
         self.view.widget_replace.signal_undo.connect(self.event_replace_undo)
-        self.view.widget_replace.signal_save.connect(self.event_replace_save)
+        self.view.widget_replace.signal_save.connect(self.event_replace_dsr_save)
         self.view.widget_replace.signal_discard.connect(self.event_replace_discard)
 
         # Dsr
         self.view.widget_dsr.signal_dsr_modified.connect(self.event_dsr_modified)
-        self.view.widget_dsr.signal_save.connect(self.event_dsr_save)
+        self.view.widget_dsr.signal_undo.connect(self.event_dsr_undo)
+        self.view.widget_dsr.signal_discard.connect(self.event_dsr_discard)
 
 
     def k_ep_p_changed(self, selection: Selection):
         super().k_ep_p_changed(selection)
         self.signal_selection_modified.emit()
-        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
+        self.send_modified_scene_signal()
 
 
     def event_selected_scene_changed(self, selected: dict):
@@ -199,7 +200,7 @@ class ReplaceController(CommonController):
         self.signal_replacements_refreshed.emit()
         self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
-        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
+        self.send_modified_scene_signal()
 
 
     @Slot(dict)
@@ -222,7 +223,7 @@ class ReplaceController(CommonController):
         self.signal_replacements_refreshed.emit()
         self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
-        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
+        self.send_modified_scene_signal()
 
 
     @Slot()
@@ -237,21 +238,8 @@ class ReplaceController(CommonController):
             )
         self.signal_replacements_refreshed.emit()
         self.signal_reload_frame.emit()
-        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
+        self.send_modified_scene_signal()
 
-
-    @Slot()
-    def event_replace_save(self):
-        print(f"selected scenes: {self.playlist_properties().scenes}")
-        print(self.replace_db.modified_scene_nos())
-        for scene_no in self.playlist_properties().scenes:
-            print(f"save no.{scene_no}")
-            scene: Scene = self.current_selection.scenes[scene_no]
-            self.replace_db.save(scene)
-
-        self.signal_is_saved.emit('replace')
-        print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
-        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
 
 
 
@@ -267,30 +255,30 @@ class ReplaceController(CommonController):
         self.signal_replacements_refreshed.emit()
         self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
-        self.signal_modified_scenes.emit(self.replace_db.modified_scene_nos())
+        self.send_modified_scene_signal()
 
-
-
-
-    @Slot(DsrAction)
-    def event_dsr_modified(self, modification: DsrAction) -> None:
-        print("dsr modification:", modification)
-        scene_no: int = int(self.current_frame.scene_key.split(':')[-1])
-        scene: Scene = self.scenes[scene_no]
-        self.dsr_db.update_scene_dsr(scene, modification)
-        new_dsr = self.dsr_db.get_dsr(scene)
-        self.selection_dsr.update(new_dsr)
-        k = list(new_dsr.keys())[0]
-
-        # TODO: update erroneous margins
-        self.signal_reload_frame.emit()
-        print(yellow(f"modified scenes: {self.dsr_db.modified_scene_nos()}"))
-        self.signal_modified_scenes.emit(self.dsr_db.modified_scene_nos())
 
 
     def get_nb_of_replacements(self, scene: Scene) -> int:
         return self.replace_db.get_nb_of_replacements(scene)
 
+
+
+    @Slot(DsrAction)
+    def event_dsr_modified(self, modification: DsrAction) -> None:
+        print(yellow("dsr modification:"),
+              f"{modification.type}: {modification.src_scene_key}:{modification.frame_no}"
+        )
+        for r in modification.regions:
+            print(r)
+
+        if modification.type == 'update':
+            self.dsr_db.update_scene_dsr(
+                scene=self.current_scene(),
+                modification=modification
+            )
+        print(yellow(f"modified scenes: {self.dsr_db.modified_scene_nos()}"))
+        self.signal_modified_scenes.emit(self.dsr_db.modified_scene_nos())
 
 
     @Slot(DsrProcessParams)
@@ -312,15 +300,50 @@ class ReplaceController(CommonController):
         self.signal_reload_frame.emit()
 
 
+
     @Slot()
-    def event_dsr_save(self):
+    def event_dsr_undo(self):
+        log.info("undo signal received")
+        self.dsr_db.undo()
+        # ...
+        self.signal_reload_frame.emit()
+        self.send_modified_scene_signal()
+
+
+    @Slot()
+    def event_dsr_discard(self):
+        log.info("discard modifications requested")
+        # ...
+        self.signal_reload_frame.emit()
+        print(f"modified_scenes: {self.dsr_db.modified_scene_nos()}")
+        self.send_modified_scene_signal()
+
+
+
+    def send_modified_scene_signal(self):
+        modified_nos: list[int] = (
+            self.dsr_db.modified_scene_nos()
+            + self.replace_db.modified_scene_nos()
+        )
+        self.signal_modified_scenes.emit(list(set(modified_nos)))
+
+
+
+    @Slot()
+    def event_replace_dsr_save(self):
         print(f"selected scenes: {self.playlist_properties().scenes}")
+        print(self.replace_db.modified_scene_nos())
+        for scene_no in self.playlist_properties().scenes:
+            print(f"save no.{scene_no}")
+            scene: Scene = self.current_selection.scenes[scene_no]
+            self.replace_db.save(scene)
+
         print(self.dsr_db.modified_scene_nos())
         for scene_no in self.playlist_properties().scenes:
             print(f"save no.{scene_no}")
             scene: Scene = self.current_selection.scenes[scene_no]
             self.dsr_db.save(scene)
 
-        self.signal_is_saved.emit('dsr_db')
-        print(f"modified_scenes: {self.dsr_db.modified_scene_nos()}")
-        self.signal_modified_scenes.emit(self.dsr_db.modified_scene_nos())
+        self.signal_is_saved.emit('replace')
+        self.signal_is_saved.emit('dsr')
+        self.send_modified_scene_signal()

@@ -32,6 +32,7 @@ class DsrDatabase:
     def __init__(self) -> None:
         self._db: dict[str, dict[int, int]] = {}
         self.modified_scenes: set[str] = set()
+        self.modified_src_scenes: set[str] = set()
         self.history: list = []
         self.history_depth: int = 10
 
@@ -46,12 +47,13 @@ class DsrDatabase:
     def initialize(self, selection: Selection) -> None:
         scenes: list[Scene] = selection.scenes
         for scene in scenes:
-            self._db[self._key(scene)] = deepcopy(scene['dr'])
+            self._db[self._key(scene)] = deepcopy(scene['dsr'])
 
 
     def clear(self) -> None:
         self._db.clear()
         self.modified_scenes.clear()
+        self.modified_src_scenes: set[str] = set()
         self.history.clear()
 
 
@@ -59,21 +61,21 @@ class DsrDatabase:
         scene: Scene = src_scene['scene']
         try:
             if initial:
-                return scene['dr'][f_no]
+                return scene['dsr'][f_no]
         except:
             pass
 
         _key = self._key(src_scene)
         try:
-            dr_dict = self._db[_key]
+            dsr_dict = self._db[_key]
         except:
             try:
-                self._db[_key] = deepcopy(scene['dr'])
+                self._db[_key] = deepcopy(scene['dsr'])
             except:
                 self._db[_key] = {}
-        dr_dict = self._db[_key]
+        dsr_dict = self._db[_key]
 
-        return dr_dict[f_no] if f_no in dr_dict else f_no
+        return dsr_dict[f_no] if f_no in dsr_dict else f_no
 
 
     def _push_to_history(self):
@@ -90,50 +92,31 @@ class DsrDatabase:
         scene: Scene,
         modification: DsrAction
     ) -> None:
-        parameter, value = modification.parameter, modification.value
-
         self._push_to_history()
 
-        scene_key = self._key(scene)
+        src_scene_key = modification.src_scene_key
+        if src_scene_key not in self._db:
+            self._db[src_scene_key] = {}
 
-
-        # elif parameter == 'keep_ratio':
-        #     scene_dsr.keep_ratio = bool(value)
-
-        # elif parameter == 'fit_to_width':
-        #     scene_dsr.fit_to_width = bool(value)
-
-        # elif parameter == 'detection':
-        #     if modification.type == 'set':
-        #         scene_dsr.detection_params = deepcopy(value)
-        #         scene_dsr.custom_detection_params = True
-
-        #     elif modification.type == 'discard':
-        #         scene_dsr.detection_params = DetectInnerRectParams()
-        #         scene_dsr.custom_detection_params = False
-
-        # elif parameter == 'autocrop':
-        #     scene_dsr.autocrop = deepcopy(value)
-
-        # elif parameter == 'use_ac':
-        #     scene_dsr.use_autocrop = value
-
-        # elif parameter == 'copy_ac_to_crop':
-        #     scene_dsr.crop = deepcopy(scene_dsr.autocrop)
-
-        self.modified_scenes.add(scene_key)
+        self._db[src_scene_key][modification.frame_no] = (
+            modification.regions
+        )
+        self.modified_src_scenes.add(src_scene_key)
+        self.modified_scenes.add(scene['no'])
 
 
     def is_modified(self, scene: Scene) -> bool:
-        return bool(self._key(scene) in self.modified_scenes)
+        if scene['no'] in self.modified_scenes:
+            return True
+        for src_scene in scene['src'].scenes():
+            src_scene_key = self._key(src_scene)
+            if src_scene_key in self.modified_src_scenes:
+                return True
+        return False
 
 
     def modified_scene_nos(self) -> list[int]:
-        modified: list[int] = []
-        for k in self.modified_scenes:
-            if result := re.search(re.compile(r":(\d{3})"), k):
-               modified.append(int(result.group(1)))
-        return modified
+        return list(self.modified_scenes)
 
 
     def undo(self) -> None:
@@ -141,6 +124,7 @@ class DsrDatabase:
             log.info('get previous database')
             previous = self.history[-1]
             self._db = previous['_db']
+            self.modified_src_scenes = previous['modified_src_scenes']
             self.modified_scenes = previous['modified_scenes']
             self.history = self.history[:-1]
         else:
@@ -208,7 +192,7 @@ class DsrDatabase:
 
         # Remove modified
         if k_scene in self.modified_scenes:
-            scene['dr'] = deepcopy(self._db[k_scene])
+            scene['dsr'] = deepcopy(self._db[k_scene])
             self.modified_scenes.remove(k_scene)
 
         self.history.clear()
@@ -219,8 +203,10 @@ class DsrDatabase:
         if not self.is_modified(scene):
             return
 
-        k_scene = self._key(scene)
-        self._db[k_scene] = deepcopy(scene['dr'])
-        self.modified_scenes.remove(k_scene)
+        for src_scene in scene['src'].scenes():
+            src_scene_key = self._key(src_scene)
+            self._db[src_scene_key] = deepcopy(src_scene['scene']['replace'])
+            self.modified_src_scenes.remove(src_scene_key)
 
+        self.modified_scenes.remove(scene['no'])
         self.history.clear()

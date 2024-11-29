@@ -236,6 +236,7 @@ class ReplaceWindow(QMainWindow):
     def display_frame(self):
         frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
         self.widget_replace.set_current_frame(frame, original_frame)
+        self.widget_dsr.set_original_frame_key(frame, original_frame)
         self.widget_player_ctrl.refresh_values(frame, original_frame)
         self.widget_preview.display_frame(frame)
 
