@@ -380,3 +380,6 @@ class ReplaceWindow(QMainWindow):
     # DSR
     def get_current_shape(self) -> MaskShape:
         return self.widget_dsr.get_current_shape()
+
+    def set_current_shape(self, shape_name: MaskShape) -> None:
+        self.widget_dsr.force_current_shape(shape_name)

@@ -113,8 +113,14 @@ class DsrWidget(QWidget, Ui_DsrWidget):
                 return name
 
 
-    def set_shape(self, shape_name: MaskShape):
-        self.event_shape_type_changed(shape_name=shape_name)
+    def force_current_shape(self, shape_name: MaskShape):
+        self.block_signals(True)
+        for name, button in self.shape_buttons.items():
+            if name == shape_name:
+                button.setChecked(True)
+            else:
+                button.setChecked(False)
+        self.block_signals(False)
 
 
     def event_key_released(self, event: QKeyEvent) -> bool:
