@@ -296,7 +296,7 @@ def consolidate_scene(
             os.path.join(
                 cache_path,
                 f"scenes_{task_name}",
-                # f"{scene['no']:03}",
+                f"{scene['dst']['k_ch']}",
                 f"{basename}{suffix}{ext}"
             )
         )

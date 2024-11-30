@@ -113,6 +113,8 @@ def parse_database(
 
     # Add the reference
     if lang == 'fr':
+        if 'k' not in dependencies:
+            dependencies['k'] = []
         dependencies['k'].append('ep01')
 
     # Merge dependencies
