@@ -110,7 +110,7 @@ class UpscalePipeline(object):
                     _scale = model_manager.get_scale(model_key)
                     filters.steps[i] = model_manager.set_input_size(model_key, shape)
                 print(lightgreen(f"step {i}:"), shape, end='')
-                shape = list([int(x * _scale) for x in shape])
+                shape = list([int(((x * _scale) // 2) * 2) for x in shape])
                 print(f"-> {shape} (scale: {_scale})")
                 scale = _scale * scale
                 # pprint(filters)

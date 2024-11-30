@@ -78,7 +78,7 @@ def parse_scenes(
                 if d[0] == 'filters':
                     # custom filter
                     scenes[scene_no]['filters_id'] = d[1]
-                    sys.exit("custom_filter")
+                    raise ValueError(f"custom_filter: {scene_no}: {d}")
 
                 elif d[0] == 'ed':
                     # edition that will be used to generate this scene

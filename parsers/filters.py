@@ -91,7 +91,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
 
             else:
                 pprint(filters)
-                raise ValueError(f"Unrecognized filter: {f}")
+                raise ValueError(f"Unrecognized filter: {f} (k_chapter: {k_chapter})")
 
             if task_filter.task_name not in TASK_NAMES:
                 print(red(f"[W] {task_filter.task_name} is not a valid task name"))
