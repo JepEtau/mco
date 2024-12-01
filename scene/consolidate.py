@@ -18,6 +18,7 @@ from parsers import (
     TaskName,
     ChapterGeometry,
     SceneGeometry,
+    credit_chapter_keys,
 )
 from utils.mco_utils import (
     get_cache_path,
@@ -247,6 +248,9 @@ def consolidate_scene(
     if k_ch in ('g_debut', 'g_fin'):
         cache_path: str = db[k_ch]['cache_path']
         basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
+    elif k_ch in ('g_asuivre', 'g_documentaire'):
+        cache_path: str = db[k_ch]['cache_path']
+        basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
     else:
         cache_path: str = db[k_ep]['cache_path']
         basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
@@ -292,14 +296,12 @@ def consolidate_scene(
         os.path.join(cache_path, f"scenes_{task_name}", f"{basename}{suffix}{ext}")
     )
     if task_name == 'upscale':
-        task.video_file = absolute_path(
-            os.path.join(
-                cache_path,
-                f"scenes_{task_name}",
-                f"{scene['dst']['k_ch']}",
-                f"{basename}{suffix}{ext}"
-            )
+        cache_path: str = absolute_path(
+            os.path.join(cache_path, f"scenes_{task_name}")
         )
+        if k_ch not in credit_chapter_keys():
+            cache_path = os.path.join(cache_path, f"{scene['dst']['k_ch']}")
+        task.video_file = os.path.join(cache_path, f"{basename}{suffix}{ext}")
 
     # Input file for this task
     if task_name in ('st', 'tf', 'cg', 'final'):
