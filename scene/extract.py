@@ -48,11 +48,11 @@ def extract_scene(
     if start < 0:
         raise ValueError(f"Error, start < 0 for scene {scene['no']}")
 
-    k_ed_ref = db['ep01']['audio']['src']['k_ed']
-    if scene['k_ed'] == k_ed_ref:
-        in_video_fp: str = scene['inputs']['interlaced']['filepath']
-        in_video_info: VideoInfo = extract_media_info_mco(in_video_fp)['video']
-        start: int = scene['start']
+    # k_ed_ref = db['ep01']['audio']['src']['k_ed']
+    # if scene['k_ed'] == k_ed_ref:
+    #     in_video_fp: str = scene['inputs']['interlaced']['filepath']
+    #     in_video_info: VideoInfo = extract_media_info_mco(in_video_fp)['video']
+    #     start: int = scene['start']
 
     # Output directory
     xtract_directory: str = path_split(scene['task'].video_file)[0]

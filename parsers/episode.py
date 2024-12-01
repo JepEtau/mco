@@ -235,7 +235,6 @@ def parse_episode(k_ed: str, k_ep: str | int):
             }
         }, k_chapter, 'inputs')
 
-
     # Parse configuration
     config = ConfigParser()
     config.read(config_fp)

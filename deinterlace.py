@@ -84,7 +84,7 @@ def main():
     parser.add_argument(
         "--edition",
         "-ed",
-        choices=['f', 'k', 's', 'j'],
+        choices=['f', 'k', 's', 'j', 's0'],
         default='',
         required=False,
         help="deinterlace video of this edition only"

@@ -242,6 +242,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
     k_ch_dst: str = scene['dst']['k_ch'] if 'dst' in scene else scene['k_ch']
 
     # Put all images in a single folder for start/end credits
+
     if k_ch_dst in ('g_debut', 'g_fin'):
         return os.path.join(cache_dir, k_ch_dst)
 

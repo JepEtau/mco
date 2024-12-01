@@ -49,7 +49,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
     if (tmp := re.search(re.compile(r"^filters_([a-z_]+)[.]*([0-9]*)$"), k_section)):
         k_chapter = tmp.group(1)
     else:
-        print(red("parse_filters: error: [%s] is not a valid filter label" % (k_section)))
+        print(red(f"parse_filters: error: [{k_section}] is not a valid filter label"))
         sys.exit()
 
     for k_option in config.options(k_section):
@@ -90,8 +90,9 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
                 )
 
             else:
-                pprint(filters)
+                pprint(db_video)
                 raise ValueError(f"Unrecognized filter: {f} (k_chapter: {k_chapter})")
+
 
             if task_filter.task_name not in TASK_NAMES:
                 print(red(f"[W] {task_filter.task_name} is not a valid task name"))

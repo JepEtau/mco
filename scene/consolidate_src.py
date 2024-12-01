@@ -68,7 +68,6 @@ def consolidate_src_scene(
         scene['dsr'] = None
 
 
-
     # Update the scene task
     scene['task'].hash = scene_filters[scene['task'].name].hash
 
@@ -85,7 +84,9 @@ def consolidate_src_scene(
     # Inputs
     scene['cache'] = get_cache_path(scene)
     scene['inputs'] = deepcopy(db[k_ep]['video'][k_ed][k_ch]['inputs'])
-    scene['inputs']['progressive']['cache'] = db['common']['directories']['cache_progressive']
+    scene['inputs']['progressive']['cache'] = (
+        db['common']['directories']['cache_progressive']
+    )
 
 
     # Set the progressive filepath

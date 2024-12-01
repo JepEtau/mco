@@ -75,8 +75,8 @@ def parse_editions(verbose=False):
                 print(f"found folder(edition)=%s" % (folder))
             db_editions[folder] = {
                 'inputs': {
-                    'video': dict(),
-                    'audio': dict(),
+                    'video': {},
+                    'audio': {},
                 }
             }
 

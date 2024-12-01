@@ -187,9 +187,9 @@ def parse_scenes_new(
                 if d[0] == 'filters':
                     scenes[scene_no]['filters_id'] = d[1]
 
-    if k_ch == "asuivre" and k_ed not in ("s", "f", "k"):
-        pprint(scenes)
-        sys.exit(red(f"{k_ed_ep_ch}"))
+    # if k_ch == "asuivre" and k_ed not in ("s", "f", "k"):
+    #     pprint(scenes)
+    #     raise ValueError(red(f"{k_ed_ep_ch}"))
 
 
 def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:

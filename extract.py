@@ -39,7 +39,7 @@ def main():
     parser.add_argument(
         "--edition",
         "-ed",
-        choices=['f', 'k', 's', 'j'],
+        choices=['f', 'k', 's', 'j', 's0'],
         default='',
         required=True,
         help="Use this edition"

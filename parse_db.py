@@ -47,7 +47,7 @@ def main():
     parser.add_argument(
         "--edition",
         "-ed",
-        choices=['f', 'k', 's', 'j'],
+        choices=['f', 'k', 's', 'j', 's0'],
         default='',
         required=False,
         help="Use this edition as source rather than the one selected in database"
