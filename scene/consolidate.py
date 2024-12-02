@@ -251,15 +251,15 @@ def consolidate_scene(
     elif k_ch in ('g_asuivre', 'g_documentaire'):
         cache_path: str = db[k_ch]['cache_path']
         basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
-    elif k_ch == 'documentaire':
-        print("********************")
-        print(db['common']['directories']['cache_documentaire'])
-        cache_path: str = os.path.join(
-            db['common']['directories']['cache_documentaire'],
-            k_ep,
-        )
-        scene['cache'] = cache_path
-        basename = f"{k_ep}_{k_ch}_{scene['no']:03}"
+    # elif k_ch == 'documentaire':
+    #     print("********************")
+    #     print(db['common']['directories']['cache_documentaire'])
+    #     cache_path: str = os.path.join(
+    #         db['common']['directories']['cache_documentaire'],
+    #         k_ep,
+    #     )
+    #     scene['cache'] = cache_path
+    #
     else:
         cache_path: str = db[k_ep]['cache_path']
         basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
@@ -316,30 +316,38 @@ def consolidate_scene(
     if task_name in ('st', 'tf', 'cg', 'final'):
         suffix: str = ""
         if task_name == 'tf':
-            suffix: str = "hr_"
+            suffix = "hr_"
         elif task_name == 'final':
-            suffix: str = (
-                "hr_"
-                if k_ch == 'documentaire'
-                else "tf_"
-            )
+            suffix = "tf_"
 
         in_vsettings: VideoSettings = db['common']['video_format']['hr']
         in_ext: str = vcodec_to_extension[in_vsettings.codec]
 
-        task.in_video_file = os.path.join(
-            scene['cache'],
-            f"scenes_{prev_task_name}",
-            f"{basename}_{suffix}{prev_task_name}{in_ext}"
-        )
+        # In video file is different for documentaire as it is done separately
+        if k_ch == 'documentaire':
+            suffix = "hr_"
+            task.in_video_file = os.path.join(
+                db['common']['directories']['cache_documentaire'],
+                k_ep,
+                f"scenes_{prev_task_name}",
+                f"{k_ep}_{k_ch}_{scene['no']:03}_{suffix}{prev_task_name}{in_ext}"
+            )
+            # and not fallback
 
-        # Add fallback input video filename bc some tasks may be not processed
-        if task_name in ('st', 'tf', 'cg', 'final'):
-            task.fallback_in_video_files = {
-                'hr': os.path.join(scene['cache'], f"scenes_hr", f"{basename}_hr{in_ext}"),
-                'st': os.path.join(scene['cache'], f"scenes_st", f"{basename}_hr_st{in_ext}"),
-                'tf': os.path.join(scene['cache'], f"scenes_tf", f"{basename}_tf{in_ext}"),
-            }
+        else:
+            task.in_video_file = os.path.join(
+                scene['cache'],
+                f"scenes_{prev_task_name}",
+                f"{basename}_{suffix}{prev_task_name}{in_ext}"
+            )
+
+            # Add fallback input video filename bc some tasks may be not processed
+            if task_name in ('st', 'tf', 'cg', 'final'):
+                task.fallback_in_video_files = {
+                    'hr': os.path.join(scene['cache'], f"scenes_hr", f"{basename}_hr{in_ext}"),
+                    'st': os.path.join(scene['cache'], f"scenes_st", f"{basename}_hr_st{in_ext}"),
+                    'tf': os.path.join(scene['cache'], f"scenes_tf", f"{basename}_tf{in_ext}"),
+                }
 
 
     if verbose:
