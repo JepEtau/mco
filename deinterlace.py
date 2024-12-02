@@ -357,16 +357,16 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
                     if trim_count != -1
                     else in_video_info['frame_count'] - trim_start
                 )
-                main_logger.debug(
-                    f"{out_filepath} already exists, "
-                    + f"asked: {_trim_count} vs "
-                    + f"current video: {out_video_info['frame_count']}"
+                print(
+                    lightgreen(f"Already deinterlaced:"),
+                    f"required: {_trim_count}, deinterlaced: {out_video_info['frame_count']}"
                 )
 
-                if out_video_info['frame_count'] == _trim_count or not arguments.check_duration:
-                    print()
-                    if not arguments.force:
-                       continue
+                if out_video_info['frame_count'] == _trim_count:
+                    if arguments.force:
+                        print(lightcyan("Force extraction"))
+                    else:
+                        return
         else:
            main_logger.debug(f"{out_filepath} does not exist")
 
