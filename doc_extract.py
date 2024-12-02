@@ -206,13 +206,12 @@ def main():
     )
 
     stdout, stderr = sub_process.communicate()
-    if arguments.debug:
-        if stderr is not None:
-            for line in stderr.decode('utf-8').split('\n'):
-                print(line)
-        if stdout is not None:
-            for line in stdout.decode('utf-8').split('\n'):
-                print(line)
+    if stderr is not None:
+        for line in stderr.decode('utf-8').split('\n'):
+            print(line)
+    if stdout is not None:
+        for line in stdout.decode('utf-8').split('\n'):
+            print(line)
 
     print(cyan("Elapsed time"), f"{s_to_sexagesimal(time.time() - start_time)}")
 
