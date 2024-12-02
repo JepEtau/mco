@@ -1,13 +1,12 @@
 from argparse import ArgumentParser
-from copy import deepcopy
 import gc
-import logging
 import os
 from pprint import pprint
 import signal
 import subprocess
 import sys
 import time
+
 from parsers import (
     Chapter,
     db,
@@ -16,27 +15,26 @@ from parsers import (
     parse_episode,
     ProcessingTask,
     VideoSettings,
-    TaskName,
 )
-
 from scene.consolidate_src import consolidate_src_scene
-from utils.logger import main_logger as main_logger
-from utils.mco_utils import ffmpeg_metadata, get_cache_path
-from utils.p_print import *
 from utils.mco_types import (
     ChapterVideo,
-    Inputs,
     Scene,
 )
-from utils.path_utils import absolute_path, path_split
+from utils.mco_utils import ffmpeg_metadata
 from utils.media import (
-    VideoInfo,
     extract_media_info_mco,
-    get_media_info,
     vcodec_to_extension,
+    VideoInfo,
+)
+from utils.path_utils import absolute_path
+from utils.p_print import *
+from utils.time_conversions import (
+    FrameRate,
+    frame_to_sexagesimal,
+    s_to_sexagesimal,
 )
 from utils.tools import ffmpeg_exe
-from utils.time_conversions import frame_to_sexagesimal, s_to_sexagesimal
 
 
 
@@ -64,13 +62,6 @@ def main():
     )
 
     parser.add_argument(
-        "--debug",
-        action="store_true",
-        required=False,
-        help="debug"
-    )
-
-    parser.add_argument(
         "--force",
         action="store_true",
         required=False,
@@ -79,9 +70,6 @@ def main():
 
     arguments = parser.parse_args()
 
-    if arguments.debug:
-        main_logger.addHandler(logging.StreamHandler(sys.stdout))
-        main_logger.setLevel("DEBUG")
 
     episode: int = arguments.episode
     if episode == 0:
@@ -92,12 +80,10 @@ def main():
 
     k_ep = ep_key(episode)
     k_ch: Chapter = 'documentaire'
-    debug: bool = arguments.debug
     print(f"Episode: {episode}")
     print(f"Chapter: {k_ch}")
     print("Tasks:")
     print("  - parse database")
-
 
     # Parse database
     parse_database(episode=episode, edition=arguments.edition)
@@ -116,7 +102,6 @@ def main():
     else:
         k_ed = db[k_ep]['video']['target'][k_ch]['k_ed_src']
 
-    start_time_full = time.time()
     ch_video: ChapterVideo | None = None
     try:
         ch_video: ChapterVideo | None = db[k_ep]['video'][k_ed][k_ch]
@@ -133,18 +118,25 @@ def main():
     vsettings: VideoSettings = db['common']['video_format']['initial']
 
     # Output video filename
-    cache_path: str = db['common']['directories']['cache_documentaire']
+    cache_path: str = os.path.join(
+        db['common']['directories']['cache_documentaire'],
+        'progressive'
+    )
     os.makedirs(cache_path, exist_ok=True)
     out_filepath: str = os.path.join(
         cache_path,
-        'progressive',
-        f"{k_ed}_{k_ep}_{k_ch}_{scene['task'].hash}{vcodec_to_extension[vsettings.codec]}"
+        f"{k_ep}_{k_ch}_{k_ed}_{scene['task'].hash}{vcodec_to_extension[vsettings.codec]}"
     )
 
+    # Create folders for HR
+    hr_directory: str = os.path.join(
+        db['common']['directories']['cache_documentaire'], k_ep
+    )
+    os.makedirs(hr_directory, exist_ok=True)
 
     # Extract input video info
     in_video_info: VideoInfo = extract_media_info_mco(in_video_path)['video']
-    fps: float | int | tuple[int, int] = in_video_info['frame_rate_r']
+    fps: FrameRate = in_video_info['frame_rate_r']
 
     # Seek
     seek_start: int = ch_video['start']

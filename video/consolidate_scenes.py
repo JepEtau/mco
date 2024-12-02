@@ -1,6 +1,7 @@
 import sys
 import os
 from pprint import pprint
+from parsers._helpers import get_chapter_video
 from scene.consolidate import consolidate_scene
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import scene_id_str
@@ -15,27 +16,6 @@ from parsers import (
     pprint_scene_mapping,
     ChGeometryStats,
 )
-
-
-def get_chapter_video(k_ep: str, k_ch: str) -> ChapterVideo | None:
-    ch_video: ChapterVideo
-    if k_ch in ('g_debut', 'g_fin'):
-        ch_video = db[k_ch]['video']
-
-    elif k_ep == 'ep00':
-        sys.exit(red("Missing episode no."))
-
-    else:
-        ch_video = db[k_ep]['video']['target'][k_ch]
-
-    if 'count' not in ch_video:
-        print(yellow(f"warning: not \'count\' in {k_ep}:{k_ch}"))
-
-    # Do not generate clip for unused chapters
-    if ch_video['count'] <= 0:
-        return None
-
-    return ch_video
 
 
 

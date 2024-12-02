@@ -32,6 +32,7 @@ def ffmpeg_metadata(scene: Scene) -> list[str]:
 
     metadata: list[str] = []
     if str_to_video_codec[vsettings.codec] == FFmpegVideoCodec.DNXHD:
+        metadata.extend(["-map_metadata", "-1"])
         if len(vsettings.metadata.keys()):
             for k, v in vsettings.metadata.items():
                 if not k.startswith("comment_"):
