@@ -16,7 +16,6 @@ if TYPE_CHECKING:
     )
 
 
-# @dataclass(slots=True)
 class SrcScene(TypedDict):
     scene: Scene
     start: int

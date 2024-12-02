@@ -67,7 +67,7 @@ def is_up_to_date(scene: Scene) -> bool:
 
     if TASK_NAMES.index(task.name) <= TASK_NAMES.index('hr'):
         for s in scene['src'].scenes():
-            in_video_fp: str = s['scene']['inputs']['progressive']['filepath']
+            in_video_fp: str = s['scene']['inputs'].progressive().filepath
             if not os.path.exists(in_video_fp):
                 raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
 
@@ -108,7 +108,7 @@ def is_final_up_to_date(scene: Scene) -> bool:
 
     if TASK_NAMES.index(task.name) <= TASK_NAMES.index('hr'):
         for s in scene['src'].scenes():
-            in_video_fp: str = s['scene']['inputs']['progressive']['filepath']
+            in_video_fp: str = s['scene']['inputs'].progressive().filepath
             if not os.path.exists(in_video_fp):
                 raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
     else:

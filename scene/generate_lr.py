@@ -58,7 +58,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     os.makedirs(lr_directory, exist_ok=True)
 
     # Out video clip
-    in_video_fp = scene['src'].primary_scene()['scene']['inputs']['progressive']['filepath']
+    in_video_fp = scene['src'].primary_scene()['scene']['inputs'].progressive().filepath
     in_vi: VideoInfo = extract_media_info_mco(in_video_fp)['video']
     h, w = in_vi['shape'][:2]
     pipe_pixfmt = 'bgr24'
@@ -129,7 +129,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     watermark: bool = do_watermark(scene=scene)
     for src in scene['src'].scenes():
         src_scene: Scene = src['scene']
-        in_video_fp: str = src_scene['inputs']['progressive']['filepath']
+        in_video_fp: str = src_scene['inputs'].progressive().filepath()
         start: int = src['start']
         count: int = src['count']
         if to_produce < count:
@@ -154,7 +154,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             "-ss",
             str(
                 frame_to_sexagesimal(
-                    no=start - src_scene['inputs']['progressive']['start'],
+                    no=start - src_scene['inputs'].progressive().start,
                     frame_rate=frame_rate
                 )
             ),

@@ -29,7 +29,7 @@ def extract_scene(
 ) -> bool:
     scene_key: str = f"{scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}:{scene['k_ch']}:{scene['no']}"
 
-    in_video_fp: str = scene['inputs']['progressive']['filepath']
+    in_video_fp: str = scene['inputs'].progressive().filepath
     if not os.path.exists(in_video_fp):
         raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
     out_video_fp: str = scene['task'].video_file
@@ -41,7 +41,7 @@ def extract_scene(
             if out_video_info['frame_count'] == scene['count']:
                 return True
 
-    start: int = scene['start'] - scene['inputs']['progressive']['start']
+    start: int = scene['start'] - scene['inputs'].progressive().start
     count: int = scene['count']
     frame_no: int = scene['start']
     vsettings: VideoSettings = scene['task'].video_settings

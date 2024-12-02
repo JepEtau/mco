@@ -84,13 +84,12 @@ def consolidate_src_scene(
     # Inputs
     scene['cache'] = get_cache_path(scene)
     scene['inputs'] = deepcopy(db[k_ep]['video'][k_ed][k_ch]['inputs'])
-    scene['inputs']['progressive']['cache'] = (
-        db['common']['directories']['cache_progressive']
-    )
+    scene_inputs: Inputs = scene['inputs']
+    scene_inputs.progressive().cache = db['common']['directories']['cache_progressive']
 
 
     # Set the progressive filepath
-    basename: str = path_split(scene['inputs']['interlaced']['filepath'])[1]
+    basename: str = path_split(scene_inputs.interlaced.filepath)[1]
     vsettings: VideoSettings = db['common']['video_format']['initial']
     ext: str = vcodec_to_extension[vsettings.codec]
     filename: str = f"{basename}_{deint_hashcode}{ext}"
@@ -98,7 +97,7 @@ def consolidate_src_scene(
         db['common']['directories']['cache_progressive'],
         filename
     )
-    scene['inputs']['progressive']['filepath'] = progressive_fp
+    scene_inputs.progressive().filepath = progressive_fp
 
 
     # Output video settings

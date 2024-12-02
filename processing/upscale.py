@@ -66,12 +66,12 @@ class UpscalePipeline(object):
         for scene in scenes:
             # Verify that input videos to generate this scene have the same info
             vi: VideoStreamInfo = (
-                scene['src'].primary_scene()['scene']['inputs']['progressive']['info']
+                scene['src'].primary_scene()['scene']['inputs'].progressive().info
             )
             shape = [vi.img_shape[1], vi.img_shape[0]]
 
             for src_scene in scene['src'].scenes():
-                _vi: VideoStreamInfo = src_scene['scene']['inputs']['progressive']['info']
+                _vi: VideoStreamInfo = src_scene['scene']['inputs'].progressive().info
                 if (
                     _vi.img_shape[1] != vi.img_shape[1]
                     or _vi.img_shape[0] != vi.img_shape[0]
@@ -82,7 +82,7 @@ class UpscalePipeline(object):
                     )
 
             vi: VideoStreamInfo = (
-                scene['src'].primary_scene()['scene']['inputs']['progressive']['info']
+                scene['src'].primary_scene()['scene']['inputs'].progressive().info
             )
             nbytes: int = vi.img_nbytes * np.dtype(vi.img_dtype).itemsize
 

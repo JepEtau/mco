@@ -204,11 +204,11 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         for k_ep in dependencies[k_ed]:
             for k_c in all_chapter_keys():
                 input: Inputs = db[k_ep]['video'][k_ed][k_c]['inputs']
-                fp: str = input['interlaced']['filepath']
+                fp: str = input.interlaced.filepath
 
                 segment: tuple[int, int] = (
-                    input['progressive']['start'],
-                    input['progressive']['count']
+                    input.progressive().start,
+                    input.progressive().count
                 )
                 if arguments.full:
                     segment = (0, -1)

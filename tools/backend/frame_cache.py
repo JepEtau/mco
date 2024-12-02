@@ -67,13 +67,13 @@ class FrameCache:
             for src_scene in scene['src'].scenes():
                 print(lightcyan(f"extract {total_count} frames from: {src_scene['k_ed_ep_ch_no']}"))
                 count = src_scene['count']
-                src_start: int = src_scene['start'] - src_scene['scene']['inputs']['progressive']['start']
+                src_start: int = src_scene['start'] - src_scene['scene']['inputs'].progressive().start
                 start: int = 0
                 in_video_fp: str = scene['task'].video_file
 
                 if task_name == 'lr':
                     # Do not use FFv1 because slow to decode
-                    in_video_fp = src_scene['scene']['inputs']['progressive']['filepath']
+                    in_video_fp = src_scene['scene']['inputs'].progressive().filepath
                     directory, basename, extension = path_split(in_video_fp)
                     in_video_fp = os.path.join(directory, f"{basename}{extension}")
                     start = src_start
@@ -89,7 +89,7 @@ class FrameCache:
                 print(f"  segment: {in_video_fp}, {start}, {count}")
 
                 if in_video_fp not in self.video_infos:
-                    # fp = src_scene['scene']['inputs']['progressive']['filepath']
+                    # fp = src_scene['scene']['inputs'].progressive().filepath
                     # specific to lr task: use a h264 video rather than the deinterlaced one
                     # if scene['task'].name == 'lr':
 
@@ -169,7 +169,7 @@ class FrameCache:
                         self.sub_process.stdout.read(pipe_img_nbytes),
                         dtype=in_dtype,
                     ).reshape(shape)
-                    f_no = src_start + src_scene['scene']['inputs']['progressive']['start'] + i
+                    f_no = src_start + src_scene['scene']['inputs'].progressive().start + i
                     self.scenes[scene_key].append(
                         Frame(
                             i=i,

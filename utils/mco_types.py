@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pprint import pprint
 import sys
-from typing import Any, Literal, TypedDict, TYPE_CHECKING
+from typing import Any, Literal, Optional, TypedDict, TYPE_CHECKING, overload
 
 import numpy as np
 
@@ -42,21 +42,55 @@ class McoFrame:
     scene: Scene = None
 
 
+@dataclass
+class InterlacedInput:
+    filepath: str = ""
 
-class Inputs(TypedDict):
-    class Interlaced(TypedDict):
-        filepath: str
 
-    class Progressive(TypedDict):
-        filepath: str
-        cache: str
-        enable: bool
-        start: int
-        count: int
-        info: VideoStreamInfo
+@dataclass
+class ProgressiveInput:
+    filepath: str = ""
+    cache: str = ""
+    enable: bool = ""
+    start: int = ""
+    count: int = ""
+    info: VideoStreamInfo = ""
 
-    interlaced: Interlaced
-    progressive: Progressive
+
+class Inputs:
+    _interlaced: InterlacedInput
+    progressives: dict[Chapter | str, ProgressiveInput]
+
+    def __init__(self, interlaced: InterlacedInput, progressive: ProgressiveInput):
+        self._interlaced = interlaced
+        self.progressives = {'default': progressive}
+
+    @property
+    def interlaced(self) -> InterlacedInput:
+        return self._interlaced
+
+    @interlaced.setter
+    def interlaced(self, interlaced: InterlacedInput) -> None:
+        self._interlaced = interlaced
+
+
+    def progressive(self, k_ch: Chapter | None = None) -> ProgressiveInput:
+        if k_ch is None:
+            return self.progressives['default']
+        return self.progressives[k_ch]
+
+    @overload
+    def set_progressive(self, progressive: ProgressiveInput) -> None: ...
+    @overload
+    def set_progressive(self, k_ch: Chapter, progressive: ProgressiveInput) -> None: ...
+    def set_progressive(self,
+        k_ch: Optional[Chapter] = None,
+        progressive: Optional[ProgressiveInput] = None
+    ):
+        if k_ch is None:
+            self.progressives['default'] = progressive
+        else:
+            self.progressives[k_ch] = progressive
 
 
 # unless specified, timestamps and duration are in ms
@@ -289,10 +323,6 @@ class Scene(TypedDict):
 
     # struct which define the the input file
     inputs: Inputs
-        # 'progressive' : dict
-        #       'filepath' : str
-        #       'filepath' : str
-
 
     last_step: dict
         # 'hash'
@@ -339,6 +369,7 @@ class ChapterVideo(TypedDict):
     silence: int
 
     task: ProcessingTask
+    inputs: Inputs
 
     k_ed_src: str
 

@@ -592,7 +592,7 @@ def coef_table(
 def extract_last_frame_fp32(scene: Scene) -> McoFrame:
     in_video_fp = scene['task'].video_file
     if scene['task'].name == 'sim':
-        in_video_fp = scene['src'].last_scene()['scene']['inputs']['progressive']['filepath']
+        in_video_fp = scene['src'].last_scene()['scene']['inputs'].progressive().filepath
     # pprint(scene['task'])
     # sys.exit()
 
