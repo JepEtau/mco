@@ -40,6 +40,10 @@ from .dsr import (
     MaskShape,
 )
 
+from .episode import (
+    parse_episode
+)
+
 from .geometry import (
     ChapterGeometry,
     SceneGeometry,
@@ -71,6 +75,8 @@ __all__ = [
     "clean_ffmpeg_filter",
     "logger",
     "parse_database",
+    "parse_episode",
+
     "Database",
     "ep_key",
     "main_chapter_keys",

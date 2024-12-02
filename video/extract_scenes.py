@@ -25,7 +25,6 @@ from parsers import (
     ProcessingTask,
     VideoSettings,
 )
-from video.consolidate_scenes import get_chapter_video
 
 
 def extract_scenes(

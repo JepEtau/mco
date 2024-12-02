@@ -38,19 +38,16 @@ def parse_common_configuration(language:str=''):
         print(f"{filepath}")
     if not os.path.exists(filepath):
         sys.exit(f"Error: missing file: {filepath}")
-    try:
-        config_directories = ConfigParser()
-        config_directories.read(filepath)
 
-        for k_section in config_directories.sections():
-            db_common[k_section] = dict()
-            for _option in config_directories.options(k_section):
-                value = config_directories.get(k_section, _option)
-                db_common[k_section][_option] = value
-    except:
-        print("[E] parse_common_configuration: fichier de configuration non trouvé ou erroné: %s \n\n" % (filepath))
-        sys.exit("Unexpected error:", sys.exc_info()[0])
+    config_directories = ConfigParser()
+    config_directories.read(filepath)
 
+    # Get directories
+    for k_section in config_directories.sections():
+        db_common[k_section] = dict()
+        for _option in config_directories.options(k_section):
+            value = config_directories.get(k_section, _option)
+            db_common[k_section][_option] = value
 
     # Get common configuration file
     filepath = absolute_path(os.path.join(db_path, "common.ini"))
@@ -90,6 +87,8 @@ def parse_common_configuration(language:str=''):
         'cache_progressive',
         'cache_progressive_default',
         'cache_default',
+        'cache_documentaire',
+        'cache_documentaire_default',
         'hashes',
         'audio',
         'audio_default',
@@ -113,7 +112,12 @@ def parse_common_configuration(language:str=''):
         directories[d] = absolute_path(os.path.join(root_path, v))
 
     # Use default values
-    for d in ('cache', 'cache_progressive', 'audio'):
+    for d in (
+        'cache',
+        'cache_progressive',
+        'cache_documentaire',
+        'audio'
+    ):
         if not os.path.exists(directories[d]):
             directories[d] = absolute_path(os.path.join(directories[f"{d}_default"]))
         try:
