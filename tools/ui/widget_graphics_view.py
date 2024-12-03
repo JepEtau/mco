@@ -678,8 +678,8 @@ class GraphicsViewWidget(QGraphicsView):
 
 
     def draw_image(self):
-        print("viewport geometry:", self.viewport().geometry())
-        print("sceneRect geometry:", self.sceneRect())
+        # print("viewport geometry:", self.viewport().geometry())
+        # print("sceneRect geometry:", self.sceneRect())
         self.setSceneRect(0, 0, self.viewport().geometry().width(), self.viewport().geometry().height())
 
         verbose = True
@@ -719,7 +719,7 @@ class GraphicsViewWidget(QGraphicsView):
         #     painter.end()
         #     return
         img = self.frame.img
-        print(red(f"draw image {self.frame.no}"))
+        # print(red(f"draw image {self.frame.no}"))
         for shape in self.regions:
             self._scene.removeItem(shape.item)
         self.regions.clear()

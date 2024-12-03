@@ -76,12 +76,14 @@ class DsrDatabase:
         try:
             scene_dsr = self._db[_key]
         except:
-            try:
-                self._db[_key] = deepcopy(scene['dsr'])
-            except:
-                self._db[_key] = {}
-        scene_dsr = self._db[_key]
+            if (
+                'dsr' not in scene
+                or scene['dsr'] is None
+            ):
+                return []
+            self._db[_key] = deepcopy(scene['dsr'])
 
+        scene_dsr = self._db[_key]
         return scene_dsr.get(f_no)
 
 
@@ -184,18 +186,18 @@ class DsrDatabase:
             # Update the config file, select section
             k_section = '.'.join((k_ed, k_ep, k_ch))
             _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][int(src_scene_no)]
-            initial_dsr: SceneDsr = _src_scene['dsr']
+            initial_scene_dsr: SceneDsr = _src_scene['dsr']
 
              # Remove dsr that are not used anymore
             print("initial frames")
-            print(initial_dsr.get_all().keys())
-            for f_no in initial_dsr.get_all().keys():
-                if (
-                    config_dsr.has_option(k_section, f"{f_no}")
-                    and not self._db[src_scene_key].get(f_no)
-                ):
-                    print(f"remove: {k_section}: {f_no}")
-                    config_dsr.remove_option(k_section, f"{f_no}")
+            if initial_scene_dsr is not None:
+                for f_no in initial_scene_dsr.get_all().keys():
+                    if (
+                        config_dsr.has_option(k_section, f"{f_no}")
+                        and not self._db[src_scene_key].get(f_no)
+                    ):
+                        print(f"remove: {k_section}: {f_no}")
+                        config_dsr.remove_option(k_section, f"{f_no}")
 
             # Set new values
             for f_no, regions in self._db[src_scene_key].get_all().items():

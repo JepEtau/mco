@@ -106,7 +106,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
             'ellipse': self.pushButton_ellipse,
             'oblong': self.pushButton_oblong,
         }
-        self.shape_buttons['ellipse'].setChecked(True)
+        self.shape_buttons['circle'].setChecked(True)
         for shape_name, b in self.shape_buttons.items():
             b.clicked.connect(partial(self.event_shape_type_changed, shape_name))
 
