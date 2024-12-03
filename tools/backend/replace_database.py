@@ -156,7 +156,6 @@ class ReplaceDatabase:
         if not self.is_modified(scene):
             return
 
-        modified_src_scenes = copy(self.modified_src_scenes)
         for src_scene in scene['src'].scenes():
             src_scene_key = self._key(src_scene)
             print(f"SRC scene_key: {src_scene_key}", end=' ')
@@ -166,11 +165,7 @@ class ReplaceDatabase:
             print ("to save")
 
             k_ed, k_ep, k_ch, src_scene_no = src_scene_key.split(':')
-            # filepath
-            k = (
-                k_ch if k_ch in credit_chapter_keys()
-                else k_ep
-            )
+            k = k_ch if k_ch in credit_chapter_keys() else k_ep
             replace_fp = os.path.join(
                 db['common']['directories']['config'], k, f"{k}_replace.ini"
             )
@@ -186,22 +181,22 @@ class ReplaceDatabase:
             k_section = '.'.join((k_ed, k_ep, k_ch))
             _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][int(src_scene_no)]
             initial_replace = _src_scene['replace']
-            # config_replace[k_section] = {}
 
-            for no in initial_replace:
+            # Remove replacements that are not used anymore
+            for f_no in initial_replace:
                 if (
-                    config_replace.has_option(k_section, f"{no}")
-                    and no not in self._db[src_scene_key]
+                    config_replace.has_option(k_section, f"{f_no}")
+                    and f_no not in self._db[src_scene_key]
                 ):
-                    print(f"remove: {k_section}: {no}")
-                    config_replace.remove_option(k_section, f"{no}")
+                    print(f"remove: {k_section}: {f_no}")
+                    config_replace.remove_option(k_section, f"{f_no}")
 
             # Set new values
-            for no, by in self._db[src_scene_key].items():
-                if no != by:
+            for f_no, by in self._db[src_scene_key].items():
+                if f_no != by:
                     if not config_replace.has_section(k_section):
                         config_replace.add_section(k_section)
-                    config_replace.set(k_section, f"{no}", f"{by}")
+                    config_replace.set(k_section, f"{f_no}", f"{by}")
 
             # Write to the database
             with open(replace_fp, 'w') as config_file:

@@ -24,6 +24,7 @@ from parsers import (
     db,
     SceneDsr,
     DsrMask,
+    credit_chapter_keys,
 )
 
 
@@ -159,66 +160,72 @@ class DsrDatabase:
         if not self.is_modified(scene):
             return
 
-        print("modified scenes:", self.modified_scenes)
-        k_scene = self._key(scene)
-        scene_dsr: SceneDsr = self._db[k_scene]
-        k_ch: str = scene['dst']['k_ch']
-        k_ep: str = scene['dst']['k_ep']
-        k: str = k_ch if k_ch in ('g_debut', 'g_fin') else k_ep
-        dsr_fp = os.path.join(
-            db['common']['directories']['config'], k, f"{k}_dsr.ini"
-        )
+        for src_scene in scene['src'].scenes():
+            src_scene_key = self._key(src_scene)
+            print(f"SRC scene_key: {src_scene_key}", end=' ')
+            if src_scene_key not in self.modified_src_scenes:
+                print("not modified")
+                continue
+            print ("to save")
 
-        print(dsr_fp)
-        pprint(scene_dsr)
-        print(f"k_scene: {k_scene}")
-        print(f"section: {k_ch}")
+            k_ed, k_ep, k_ch, src_scene_no = src_scene_key.split(':')
+            k = k_ch if k_ch in credit_chapter_keys() else k_ep
+            dsr_fp = os.path.join(
+                db['common']['directories']['config'], k, f"{k}_dsr.ini"
+            )
 
-        # Parse the file
-        if os.path.exists(dsr_fp):
-            config_dsr = ConfigParser(dict_type=OrderedDict)
-            config_dsr.read(dsr_fp)
-        else:
-            config_dsr = ConfigParser({}, OrderedDict)
+            # Parse the file
+            if os.path.exists(dsr_fp):
+                config_dsr = ConfigParser(dict_type=OrderedDict)
+                config_dsr.read(dsr_fp)
+            else:
+                config_dsr = ConfigParser({}, OrderedDict)
 
-        # Select section
-        k_section: str = k_ch
-        if not config_dsr.has_section(k_section):
-            config_dsr.add_section(k_section)
+            # Update the config file, select section
+            k_section = '.'.join((k_ed, k_ep, k_ch))
+            _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][int(src_scene_no)]
+            initial_dsr: SceneDsr = _src_scene['dsr']
 
-        # Scene
-        if k_scene in self.modified_scenes:
-            scene_no: int = scene['no']
-            src_scene: Scene = scene['src'].primary_scene()['scene']
-            option: str = "_". join((
-                f"{scene_no:03}",
-                src_scene['k_ed'],
-                src_scene['k_ep'],
-                src_scene['k_ch'],
-                f"{src_scene['no']:03}"
-            ))
+             # Remove dsr that are not used anymore
+            print("initial frames")
+            print(initial_dsr.get_all().keys())
+            for f_no in initial_dsr.get_all().keys():
+                if (
+                    config_dsr.has_option(k_section, f"{f_no}")
+                    and not self._db[src_scene_key].get(f_no)
+                ):
+                    print(f"remove: {k_section}: {f_no}")
+                    config_dsr.remove_option(k_section, f"{f_no}")
 
-            # Scene
-            if config_dsr.has_option(k_section, option):
-                print(f"remove: {k_section}: {option}")
-                config_dsr.remove_option(k_section, option)
+            # Set new values
+            for f_no, regions in self._db[src_scene_key].get_all().items():
+                if not regions:
+                    continue
 
-            values: list[str] = []
+                if not config_dsr.has_section(k_section):
+                    config_dsr.add_section(k_section)
 
-            values_str: str = ", ".join(values)
-            print(lightgreen(values_str))
-            config_dsr.set(k_section, option, values_str)
+                scene_regions_str: str = ""
+                for region in regions:
+                    region_str = f"\n{region.shape} = "
+                    region_str += f"{','.join(map(str, (region.center)))}"
+                    region_str += f":{','.join(map(str, (region.axes)))}"
+                    region_str += f":{region.angle}"
+
+                    scene_regions_str += region_str
+
+                config_dsr.set(k_section, f"{f_no}", scene_regions_str)
+
+            # Write to the database
+            with open(dsr_fp, 'w') as config_file:
+                config_dsr.write(config_file)
 
 
-        # Write to the database
-        with open(dsr_fp, 'w') as config_file:
-            config_dsr.write(config_file)
+            # Remove modified
+            _src_scene['dsr'] = deepcopy(self._db[src_scene_key])
+            self.modified_src_scenes.remove(src_scene_key)
 
-        # Remove modified
-        if k_scene in self.modified_scenes:
-            scene['dsr'] = deepcopy(self._db[k_scene])
-            self.modified_scenes.remove(k_scene)
-
+        self.modified_scenes.remove(scene['no'])
         self.history.clear()
         print("done")
 
@@ -229,7 +236,9 @@ class DsrDatabase:
 
         for src_scene in scene['src'].scenes():
             src_scene_key = self._key(src_scene)
-            self._db[src_scene_key] = deepcopy(src_scene['scene']['replace'])
+            self._db[src_scene_key] = deepcopy(
+                src_scene['scene']['dsr']
+            )
             self.modified_src_scenes.remove(src_scene_key)
 
         self.modified_scenes.remove(scene['no'])

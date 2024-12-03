@@ -464,24 +464,19 @@ class GraphicsViewWidget(QGraphicsView):
         if modifiers & Qt.KeyboardModifier.ControlModifier:
             self.control_key_pressed = True
         else:
-            if key == Qt.Key.Key_S:
-                # Ignore key
-                # print(purple("Key S"))
-                return True
-
-            elif key == Qt.Key.Key_Z:
+            if key in (Qt.Key.Key_S, Qt.Key.Key_Z):
                 self.event_key_released(None)
                 self.modif_keys['radius'] = True
                 self.modif_keys['height'] = True
                 return True
 
-            elif key == Qt.Key.Key_D:
+            elif key == Qt.Key.Key_Q:
                 self.event_key_released(None)
                 self.modif_keys['radius'] = True
                 self.modif_keys['width'] = True
                 return True
 
-            elif key == Qt.Key.Key_Q:
+            elif key == Qt.Key.Key_D:
                 self.event_key_released(None)
                 self.modif_keys['angle'] = True
                 return True

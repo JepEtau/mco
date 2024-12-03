@@ -42,8 +42,8 @@ class DsrMask:
         w, h = size
         return DsrMask(
             self.shape,
-            int(self.center * w),
-            int(self.axes * h),
+            (int(self.center[0] * w), int(self.center[1] * w)),
+            (int(self.axes[0] * h), int(self.axes[1] * h)),
             self.angle,
         )
 
@@ -67,7 +67,7 @@ class SceneDsr:
 
 
     def get_all(self) -> dict[int, list[DsrMask]] | None:
-        """Returns a list of frame's patch"""
+        """Returns a list of region for each frame of the scene"""
         d: dict[int, list[DsrMask]] = {}
         for frame_no, l in self._frames.items():
             d.update({frame_no: list([p.get(self._size) for p in l])})
@@ -111,7 +111,7 @@ class SceneDsr:
 
     def set_frame_size(self, size: list[int, int] | tuple[int, int]) -> None:
         """Set the shape so that the get function returns absolute coordinates/size"""
-        self._size = np.array(size, dtype=np.float32)
+        self._size = size
 
 
 
@@ -135,7 +135,7 @@ def parse_dsr_file(k_ep_or_g: str):
     print(f"{'|'.join(list(MaskShape.__args__))}")
     # shape:x:y:w:h:theta
     regex: re.Pattern = re.compile(
-        rf"({'|'.join(list(MaskShape.__args__))})=(\d*\.?\d*):(\d*\.?\d*):(\d*\.?\d*):(\d*\.?\d*):(-?\d*\.?\d*)"
+        rf"({'|'.join(list(MaskShape.__args__))})\s*=\s*(\d*\.?\d*),(\d*\.?\d*):(\d*\.?\d*),(\d*\.?\d*):(-?\d*\.?\d*)"
     )
 
     config = configparser.ConfigParser()
@@ -168,14 +168,14 @@ def parse_dsr_file(k_ep_or_g: str):
                 scene['dsr'] = SceneDsr()
             scene_dsr: SceneDsr = scene['dsr']
 
-            regions: list[str] = parser_strip(
-                config.get(k_section, frame_no_str)
-            ).split(',')
+            regions: list[str] = (
+                config.get(k_section, frame_no_str).split('\n')
+            )
 
             for region_str in regions:
                 if verbose:
                     print(f"{frame_no} -> {region_str}")
-                if not region_str:
+                if not parser_strip(region_str):
                     continue
 
                 if region := re.search(regex, region_str):
@@ -186,12 +186,13 @@ def parse_dsr_file(k_ep_or_g: str):
                         size=(float(region.group(4)), float(region.group(5))),
                         theta=float(region.group(6)),
                     )
+                elif verbose:
+                    print(yellow("failed:"), region_str)
 
-            # scene['dsr'][frame_no] =
 
         # if verbose:
         #     if scene is not None:
         #         scene['dsr'].set_frame_size((720, 576))
         #         pprint(scene['dsr'].get())
         #         pprint(scene)
-        #     # sys.exit()
+        #     sys.exit()

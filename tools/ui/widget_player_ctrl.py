@@ -417,24 +417,33 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             return False
 
 
-        if self.is_shift_key_pressed:
-            # move to next/previous tick
-            if event.angleDelta().y() > 0:
-                self.set_slider_to_previous_tick()
-            elif event.angleDelta().y() < 0:
-                self.set_slider_to_following_tick()
-            return True
+        # if self.is_shift_key_pressed:
+        #     # move to next/previous tick
+        #     if event.angleDelta().y() > 0:
+        #         self.set_slider_to_previous_tick()
+        #     elif event.angleDelta().y() < 0:
+        #         self.set_slider_to_following_tick()
+        #     return True
 
-        elif (
-            self.current_key_pressed is None
-            and not self.is_ctrl_key_pressed
-        ):
+        # elif (
+        #     self.current_key_pressed is None
+        #     and not self.is_ctrl_key_pressed
+        # ):
+        #     # Select next/previous frame
+        #     if event.angleDelta().y() > 0:
+        #         self.event_previous_frame()
+        #     elif event.angleDelta().y() < 0:
+        #         self.event_next_frame()
+        #     return True
+
+        if self.is_shift_key_pressed:
             # Select next/previous frame
             if event.angleDelta().y() > 0:
                 self.event_previous_frame()
             elif event.angleDelta().y() < 0:
                 self.event_next_frame()
             return True
+
 
         return False
 
