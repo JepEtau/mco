@@ -61,6 +61,21 @@ class ReplaceDatabase:
         )
 
 
+    def scene_replacements(
+        self,
+        scene: Scene,
+    ) -> dict[int, dict[int, int]]:
+        """Returns all replacements for this scene
+        """
+        scene_replace: dict[int, int] = {}
+        scene_no: int = scene['no']
+        for src_scene in scene['src'].scenes():
+            _key = self._key(src_scene)
+            if _key in self._db:
+                scene_replace.update(self._db[_key])
+        return {scene_no: dict(sorted(scene_replace.items()))}
+
+
     def get_nb_of_replacements(self, scene: Scene) -> int:
         """Returns nb of replacements for this scene
         """
@@ -72,21 +87,6 @@ class ReplaceDatabase:
             elif 'replace' in src_scene['scene']:
                 count += len(src_scene['scene']['replace'].keys())
         return count
-
-
-    def get_replacements(
-        self,
-        scene: Scene,
-    ) -> dict[int, dict[int, int]]:
-        """Returns all replacement for this scene
-        """
-        scene_replace: dict[int, int] = {}
-        scene_no: int = scene['no']
-        for src_scene in scene['src'].scenes():
-            _key = self._key(src_scene)
-            if _key in self._db:
-                scene_replace.update(self._db[_key])
-        return {scene_no: dict(sorted(scene_replace.items()))}
 
 
     def _push_to_history(self):

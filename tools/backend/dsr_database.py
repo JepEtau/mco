@@ -3,6 +3,7 @@ from collections import OrderedDict
 from configparser import ConfigParser
 from copy import deepcopy
 import re
+import sys
 from logger import log
 import os
 from pprint import pprint
@@ -21,7 +22,7 @@ if TYPE_CHECKING:
 
 from parsers import (
     db,
-    FrameDsr,
+    SceneDsr,
     DsrMask,
 )
 
@@ -30,7 +31,7 @@ from parsers import (
 class DsrDatabase:
 
     def __init__(self) -> None:
-        self._db: dict[str, dict[int, int]] = {}
+        self._db: dict[str, SceneDsr] = {}
         self.modified_scenes: set[str] = set()
         self.modified_src_scenes: set[str] = set()
         self.history: list = []
@@ -44,10 +45,10 @@ class DsrDatabase:
         return f"{':'.join(key[:3])}:{key[-1]:03}"
 
 
-    def initialize(self, selection: Selection) -> None:
-        scenes: list[Scene] = selection.scenes
-        for scene in scenes:
-            self._db[self._key(scene)] = deepcopy(scene['dsr'])
+    # def initialize(self, selection: Selection) -> None:
+    #     scenes: list[Scene] = selection.scenes
+    #     for scene in scenes:
+    #         self._db[self._key(scene)] = deepcopy(scene['dsr'])
 
 
     def clear(self) -> None:
@@ -57,25 +58,46 @@ class DsrDatabase:
         self.history.clear()
 
 
-    def get(self, src_scene: SrcScene, f_no: int, initial: bool=False) -> int:
+    def get(
+        self,
+        src_scene: SrcScene,
+        f_no: int,
+        initial: bool = False
+    ) -> list[DsrMask]:
         scene: Scene = src_scene['scene']
         try:
             if initial:
-                return scene['dsr'][f_no]
+                return scene['dsr'].get(f_no)
         except:
             pass
 
         _key = self._key(src_scene)
         try:
-            dsr_dict = self._db[_key]
+            scene_dsr = self._db[_key]
         except:
             try:
                 self._db[_key] = deepcopy(scene['dsr'])
             except:
                 self._db[_key] = {}
-        dsr_dict = self._db[_key]
+        scene_dsr = self._db[_key]
 
-        return dsr_dict[f_no] if f_no in dsr_dict else f_no
+        return scene_dsr.get(f_no)
+
+
+    def get_scene_dsr(
+        self,
+        scene: Scene,
+    ) -> dict[int, SceneDsr]:
+        """Returns all dsr for this scene
+        """
+        scene_dsr: dict[int, SceneDsr] = {}
+        scene_no: int = scene['no']
+        for src_scene in scene['src'].scenes():
+            _key = self._key(src_scene)
+            if _key in self._db:
+                scene_dsr.update(self._db[_key].get_all())
+
+        return {scene_no: dict(sorted(scene_dsr.items()))}
 
 
     def _push_to_history(self):
@@ -94,11 +116,13 @@ class DsrDatabase:
     ) -> None:
         self._push_to_history()
 
-        src_scene_key = modification.src_scene_key
+        src_scene_key = modification.frame.src_scene_key
+        print(lightgreen("modification src scene:"), src_scene_key)
         if src_scene_key not in self._db:
-            self._db[src_scene_key] = {}
+            self._db[src_scene_key] = SceneDsr()
 
-        self._db[src_scene_key][modification.frame_no] = (
+        self._db[src_scene_key].set_regions(
+            modification.frame.no,
             modification.regions
         )
         self.modified_src_scenes.add(src_scene_key)
@@ -137,7 +161,7 @@ class DsrDatabase:
 
         print("modified scenes:", self.modified_scenes)
         k_scene = self._key(scene)
-        scene_dsr: FrameDsr = self._db[k_scene]
+        scene_dsr: SceneDsr = self._db[k_scene]
         k_ch: str = scene['dst']['k_ch']
         k_ep: str = scene['dst']['k_ep']
         k: str = k_ch if k_ch in ('g_debut', 'g_fin') else k_ep

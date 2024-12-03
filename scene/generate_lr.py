@@ -9,7 +9,7 @@ import numpy as np
 import time
 from parsers import (
     VideoSettings,
-    FrameDsr,
+    SceneDsr,
     DsrMask,
 )
 from processing.effects import apply_effect
@@ -189,7 +189,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         frame_cache.set_exceptions(frames_to_replace)
 
         # Dust and scratch removal
-        scene_dsr: FrameDsr = src_scene['dsr']
+        scene_dsr: SceneDsr = src_scene['dsr']
         if scene_dsr is not None:
             scene_dsr.set_frame_size((w, h))
         # scene_dsr.set_frame_size((1440, 1080))

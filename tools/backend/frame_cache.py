@@ -7,7 +7,8 @@ import numpy as np
 from collections import OrderedDict
 from pprint import pprint
 
-from tools.backend.replace_database import ReplaceDatabase
+from .dsr_database import DsrDatabase
+from .replace_database import ReplaceDatabase
 from utils.mco_types import Scene
 from utils.media import VideoInfo, extract_media_info_mco, frame_rate_dec
 from utils.p_print import lightcyan, red, yellow
@@ -32,6 +33,7 @@ class FrameCache:
     def __init__(
         self,
         replace_db: ReplaceDatabase | None = None,
+        dsr_db: DsrDatabase | None = None,
     ):
         super().__init__()
         self.scenes: OrderedDict[str, list[Frame]] = {}
@@ -40,6 +42,7 @@ class FrameCache:
 
         self.video_infos: dict[str, VideoInfo] = {}
         self.replace_db: ReplaceDatabase | None = replace_db
+        self.dsr_db: DsrDatabase | None = dsr_db
 
 
     @staticmethod
@@ -101,6 +104,8 @@ class FrameCache:
                 # sys.exit()
                 filter_complex: list[str] = []
                 in_h, in_w, in_c = vi['shape']
+
+                print(red("TODO: use task_name \'dsr\' in frame cache"))
                 if task_name == 'lr' and self.replace_db is not None:
                     print("low resolution, resize to 4:3")
                     if in_h != 576 or in_w != 768:
@@ -110,6 +115,7 @@ class FrameCache:
                             f"[0:v]scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
                             "-map", "[outv]"
                         ]
+
                 elif in_h < 1080:
                     # pprint( db['common']['video_format'])
                     # sys.exit()
@@ -181,7 +187,12 @@ class FrameCache:
                                 self.replace_db.get(src_scene=src_scene, f_no=f_no)
                                 if self.replace_db is not None
                                 else -1
-                            )
+                            ),
+                            dsr=(
+                                self.dsr_db.get(src_scene=src_scene, f_no=f_no)
+                                if self.dsr_db is not None
+                                else None
+                            ),
                         )
                     )
                 # Convert the 1st image of the scene to fasten the display

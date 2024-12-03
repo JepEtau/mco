@@ -31,7 +31,7 @@ from .stylesheet import (
 
 from .widget_player_ctrl import PlayerCtrlWidget
 # from .widget_preview import PreviewWidget
-from .widget_graphics_view import DsrShape, GraphicsViewWidget
+from .widget_graphics_view import DsrSceneRegion, GraphicsViewWidget
 from .widget_replace import ReplaceWidget
 from .widget_dsr import DsrWidget
 from .widget_selection import SelectionWidget
@@ -236,7 +236,7 @@ class ReplaceWindow(QMainWindow):
     def display_frame(self):
         frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
         self.widget_replace.set_current_frame(frame, original_frame)
-        self.widget_dsr.set_original_frame_key(frame, original_frame)
+        self.widget_dsr.set_current_frame(frame, original_frame)
         self.widget_player_ctrl.refresh_values(frame, original_frame)
         self.widget_preview.display_frame(frame)
 
@@ -390,7 +390,7 @@ class ReplaceWindow(QMainWindow):
         self.widget_dsr.force_current_shape(shape_name)
 
 
-    def event_dsr_list_updated(self, shapes: list[DsrShape]) -> None:
+    def event_dsr_list_updated(self, shapes: list[DsrSceneRegion]) -> None:
         self.widget_dsr.refresh_dsr_list(shapes, event=True)
         # self.widget_player_ctrl.setDisabled(True)
 

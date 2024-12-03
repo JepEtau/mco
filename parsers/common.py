@@ -123,6 +123,15 @@ def parse_common_configuration(language:str=''):
         except:
             pass
 
+    if sys.platform == 'linux':
+        d: str = 'cache_documentaire'
+        if not os.path.exists(directories[d]):
+            directories[d] = absolute_path(os.path.join(directories[f"{d}_default"]))
+        try:
+            del directories[f"{d}_default"]
+        except:
+            pass
+
     # Others
     #===========================================================================
 

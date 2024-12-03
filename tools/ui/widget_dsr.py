@@ -28,7 +28,7 @@ from .stylesheet import set_stylesheet
 if TYPE_CHECKING:
     from backend.replace_controller import ReplaceController
 from backend.frame_cache import Frame
-from backend._types import DsrAction
+from backend._types import CurrentFrame, DsrAction
 from parsers import (
     SceneGeometry,
     MaskShape,
@@ -38,13 +38,40 @@ from parsers import (
 
 
 @dataclass(slots=True)
-class DsrShape:
+class DsrSceneRegion:
     shape: MaskShape
     center: list[float | int, float | int]
     axes: list[float | int, float | int]
     angle: float
     item: QGraphicsEllipseItem | None = None
 
+    def map_to_scene(self, size: list[float, float]) -> DsrSceneRegion:
+        w, h = size
+        return DsrSceneRegion(
+            shape=self.shape,
+            center=[int(self.center[0] * w), int(self.center[1] * h)],
+            axes=[int(self.axes[0] * w), int(self.axes[1] * h)],
+            angle=self.angle,
+            item=self.item,
+        )
+
+    def copy(self) -> DsrSceneRegion:
+        return DsrSceneRegion(
+            shape=self.shape,
+            center=self.center,
+            axes=self.axes,
+            angle=self.angle,
+            item=self.item,
+        )
+
+
+def dsr_mask_to_scene(m: DsrMask) -> DsrSceneRegion:
+    return DsrSceneRegion(
+        shape=m.shape,
+        center=m.center,
+        axes=m.axes,
+        angle=m.angle,
+    )
 
 
 @dataclass(slots=True)
@@ -66,7 +93,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
     signal_shape_changed = Signal(str)
 
 
-    def __init__(self, ui, controller):
+    def __init__(self, ui, controller: ReplaceController):
         super().__init__(ui)
         self.setupUi(self)
 
@@ -103,10 +130,10 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         # Connect signals and filter events
         # self.tableWidget_dsr.selectionModel().selectionChanged.connect(self.event_shape_selected)
         # self.tableWidget_dsr.installEventFilter(self)
+        self.controller.signal_replacements_refreshed.connect(self.event_dsr_list_refreshed)
 
         self._is_modified: bool = False
-        self.k_ed_ep_ch_no: str = ""
-        self.frame_no: int = 0
+        self.current_frame: CurrentFrame | None = None
 
         set_stylesheet(self)
         self.adjustSize()
@@ -131,14 +158,13 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         return {}
 
 
-    def set_original_frame_key(self, frame: Frame, original_frame: Frame) -> None:
-        if frame is None:
-            return
-        src_scene_key = frame.src_scene_key
-
-        self.k_ed_ep_ch_no = src_scene_key
-        self.frame_no = frame.no
-        print(red(f"set_original_frame_key: {self.k_ed_ep_ch_no}"))
+    def set_current_frame(self, frame: Frame, original_frame: Frame) -> None:
+        if original_frame is not None:
+            self.current_frame = CurrentFrame(no=frame.by, frame=original_frame)
+        else:
+            self.current_frame = CurrentFrame(no=frame.no, frame=frame)
+        print(red(f"set_current_frame: {self.current_frame.no}"))
+        self.event_dsr_list_refreshed()
 
 
     def event_set_preview_toggled(self, is_checked: bool=False):
@@ -187,26 +213,43 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         return False
 
 
-    def refresh_dsr_list(self, patches: list[DsrShape], event: bool = False) -> None:
+    @Slot()
+    def event_dsr_list_refreshed(self):
+        print(lightcyan("event_dsr_list_refreshed"))
+        dsr_shapes: list[ DsrSceneRegion] = []
+        if self.current_frame is not None:
+            dsr_shapes = self.controller.playlist_dsr(
+                frame_no=self.current_frame.no
+            )
+        pprint(dsr_shapes)
+        self.refresh_dsr_list(
+            dsr_shapes=dsr_shapes,
+            event=False
+        )
+
+
+    def refresh_dsr_list(self, dsr_shapes: list[DsrSceneRegion], event: bool = False) -> None:
         self.tableWidget_dsr.clearContents()
         self.tableWidget_dsr.setRowCount(0)
-        for i, patch in enumerate(patches):
+        for i, region in enumerate(dsr_shapes):
             self.tableWidget_dsr.insertRow(i)
 
+            region.shape
+
             self.tableWidget_dsr.setItem(
-                i, 0, QTableWidgetItem(patch.shape)
+                i, 0, QTableWidgetItem(region.shape)
             )
-            center: str = f"({int(patch.center[0])}, {int(patch.center[1])})"
+            center: str = f"({region.center[0]:.03}, {region.center[1]:.03})"
             self.tableWidget_dsr.setItem(
                 i, 1,
                 QTableWidgetItem(center)
             )
 
             geometry: str = ""
-            if patch.shape == 'circle':
-                geometry = f"{patch.axes[0]}"
+            if region.shape == 'circle':
+                geometry = f"{region.axes[0]:.03}"
             else:
-                geometry = f"{patch.axes[0]}x{patch.axes[1]}, {patch.angle}°"
+                geometry = f"{region.axes[0]:.03}x{region.axes[1]:.03}, {region.angle}°"
             self.tableWidget_dsr.setItem(
                 i, 2,
                 QTableWidgetItem(geometry)
@@ -222,7 +265,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
             self._is_modified = True
 
             regions: list[DsrMask] = []
-            for p in patches:
+            for p in dsr_shapes:
                 regions.append(
                         DsrMask(
                         shape=p.shape,
@@ -235,8 +278,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
             self.signal_dsr_modified.emit(
                 DsrAction(
                     type='update',
-                    src_scene_key=self.k_ed_ep_ch_no,
-                    frame_no=self.frame_no,
+                    frame=self.current_frame.frame,
                     regions=regions
                 )
             )

@@ -35,6 +35,7 @@ class Frame:
     i: int
     no: int
     by: int
+    dsr: list[DsrMask] = field(default_factory=list)
     img: np.ndarray | None = None
     qimage: QPixmap | None = None
     _k_ep_ch_no: tuple[str, str, int] = ("", "", 0)
@@ -46,6 +47,13 @@ class Frame:
     @property
     def k_ep_ch_no(self) -> tuple[str, str, str, int]:
         return self._k_ep_ch_no
+
+
+@dataclass(slots=True)
+class CurrentFrame:
+    no: int
+    frame: Frame
+    original: Frame | None = None
 
 
 @dataclass(slots=True)
@@ -121,8 +129,7 @@ DsrActionType = Literal['update', 'undo']
 @dataclass(slots=True)
 class DsrAction:
     type: DsrActionType
-    src_scene_key: str
-    frame_no: int
+    frame: Frame
     regions: list[DsrMask]
 
 

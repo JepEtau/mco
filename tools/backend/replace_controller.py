@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from pprint import pprint
+import sys
 import time
 from PySide6.QtCore import (
     Signal,
     Slot,
 )
-
 
 from ._types import DsrAction, DsrProcessParams, PlaylistProperties, ReplaceAction, Selection
 from .replace_database import ReplaceDatabase
@@ -19,13 +19,15 @@ from ui.window_replace import ReplaceWindow
 from utils.mco_types import Scene
 from utils.p_print import *
 from parsers import (
-    FrameDsr
+    DsrMask,
+    SceneDsr,
 )
 
 
 class ReplaceController(CommonController):
     signal_preview_options_consolidated = Signal(dict)
     signal_replacements_refreshed = Signal()
+    signal_dsr_shapes_refreshed = Signal()
 
 
     def __init__(self):
@@ -37,10 +39,15 @@ class ReplaceController(CommonController):
         self.current_task = ''
         self.replace_db = ReplaceDatabase()
         self.dsr_db = DsrDatabase()
-        self.frame_cache: FrameCache = FrameCache(self.replace_db)
+        self.frame_cache: FrameCache = FrameCache(
+            self.replace_db,
+            self.dsr_db,
+        )
 
+        # scene_no: {frame_no: replaced_by}
         self.selection_replacements: dict[int, dict[int, int]] = {}
-        self.selection_dsr: dict[int, FrameDsr] = {}
+        # scene_no: dsr regions for each frame
+        self.selection_dsr: dict[int, SceneDsr] = {}
 
 
     def set_view(self, view: ReplaceWindow):
@@ -82,7 +89,7 @@ class ReplaceController(CommonController):
             return
 
         scene = self.current_scene()
-        print("selected:", selected)
+        print("event_selected_scene_changed, selected:", selected)
 
         # Create a list of frames for each selected scene
         frame_nos = []
@@ -118,15 +125,19 @@ class ReplaceController(CommonController):
         self.current_frame = None
         self.current_scene_no = selected['scenes'][0]
 
-        # Selection
+        # Selection: update replacements and dsr regions for each frame
         self.selection_replacements.clear()
         for scene_no in selected['scenes']:
             scene: Scene = self.scenes[scene_no]
             self.selection_replacements.update(
-                self.replace_db.get_replacements(scene)
+                self.replace_db.scene_replacements(scene)
+            )
+            self.selection_dsr.update(
+                self.dsr_db.get_scene_dsr(scene)
             )
 
         self.signal_replacements_refreshed.emit()
+        self.signal_dsr_shapes_refreshed.emit()
         # self.signal_preview_options_consolidated.emit(self.preview_options)
         self.signal_ready_to_play.emit()
 
@@ -157,7 +168,7 @@ class ReplaceController(CommonController):
         return frame
 
 
-    def get_scene_dr(self, frame: Frame) -> FrameDsr:
+    def get_scene_dsr(self, frame: Frame) -> SceneDsr:
         # print(lightcyan(f"get_scene_dr: {frame.scene_key}, {frame.src_scene_key}"))
         return self.selection_dsr[frame.scene_key]
 
@@ -196,8 +207,11 @@ class ReplaceController(CommonController):
 
         print(self.replace_db.modified_scene_nos())
         del self.selection_replacements[scene_no]
-        self.selection_replacements.update(self.replace_db.get_replacements(scene))
+        self.selection_replacements.update(
+            self.replace_db.scene_replacements(scene)
+        )
         self.signal_replacements_refreshed.emit()
+        self.signal_dsr_shapes_refreshed.emit()
         self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
         self.send_modified_scene_signal()
@@ -212,7 +226,7 @@ class ReplaceController(CommonController):
             scene: Scene = self.scenes[scene_no]
             self.replace_db.remove_multiple(scene, frame_nos)
             del self.selection_replacements[scene_no]
-            self.selection_replacements.update(self.replace_db.get_replacements(scene))
+            self.selection_replacements.update(self.replace_db.scene_replacements(scene))
 
         for f in self.playlist_frames:
             if f.no in removed_frame_no:
@@ -220,7 +234,9 @@ class ReplaceController(CommonController):
                 removed_frame_no.remove(f.by)
 
         print(self.replace_db.modified_scene_nos())
+        self.signal_dsr_shapes_refreshed.emit()
         self.signal_replacements_refreshed.emit()
+        self.signal_dsr_shapes_refreshed.emit()
         self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
         self.send_modified_scene_signal()
@@ -234,9 +250,10 @@ class ReplaceController(CommonController):
         for scene_no in self.playlist_properties().scenes:
             scene: Scene = self.scenes[scene_no]
             self.selection_replacements.update(
-                self.replace_db.get_replacements(scene)
+                self.replace_db.scene_replacements(scene)
             )
         self.signal_replacements_refreshed.emit()
+        self.signal_dsr_shapes_refreshed.emit()
         self.signal_reload_frame.emit()
         self.send_modified_scene_signal()
 
@@ -250,9 +267,10 @@ class ReplaceController(CommonController):
             scene: Scene = self.scenes[scene_no]
             self.replace_db.discard(scene)
             self.selection_replacements.update(
-                self.replace_db.get_replacements(scene)
+                self.replace_db.scene_replacements(scene)
             )
         self.signal_replacements_refreshed.emit()
+        self.signal_dsr_shapes_refreshed.emit()
         self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
         self.send_modified_scene_signal()
@@ -264,21 +282,45 @@ class ReplaceController(CommonController):
 
 
 
+    # DSR
+    def playlist_dsr(self, frame_no: int) -> list[DsrMask]:
+        # print(f"playlist_dsr:")
+        # pprint(self.selection_dsr)
+        if frame_no in self.selection_dsr[self.current_scene_no]:
+            return self.selection_dsr[self.current_scene_no][frame_no]
+        return []
+
+
     @Slot(DsrAction)
     def event_dsr_modified(self, modification: DsrAction) -> None:
+        scene_no: int = int(modification.frame.scene_key.split(':')[-1])
+        scene: Scene = self.scenes[scene_no]
+
         print(yellow("dsr modification:"),
-              f"{modification.type}: {modification.src_scene_key}:{modification.frame_no}"
+              f"{modification.type}: scene={scene_no}:{modification.frame.no}"
         )
         for r in modification.regions:
             print(r)
 
+        # pprint(self.selection_dsr[scene_no])
         if modification.type == 'update':
             self.dsr_db.update_scene_dsr(
-                scene=self.current_scene(),
-                modification=modification
+                scene=scene, modification=modification
             )
+        print(yellow(f"refresh selection scene no. {scene_no}"))
+        del self.selection_dsr[scene_no]
+        self.selection_dsr.update(
+            self.dsr_db.get_scene_dsr(scene=scene)
+        )
+        # self.selection_dsr.update(self.dsr_db.get_scene_dsr(scene))
+        print(yellow(f" -> "))
+        pprint(self.selection_dsr[scene_no])
+
+
+        self.signal_dsr_shapes_refreshed.emit()
         print(yellow(f"modified scenes: {self.dsr_db.modified_scene_nos()}"))
-        self.signal_modified_scenes.emit(self.dsr_db.modified_scene_nos())
+        self.send_modified_scene_signal()
+
 
 
     @Slot(DsrProcessParams)

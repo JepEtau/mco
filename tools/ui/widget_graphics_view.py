@@ -58,9 +58,10 @@ from backend._types import (
 from parsers import (
     SceneGeometry,
     MaskShape,
+    DsrMask,
 )
-from .widget_dsr import DsrShape
-from utils.p_print import lightcyan, lightgreen, red, yellow
+from .widget_dsr import DsrSceneRegion, dsr_mask_to_scene
+from utils.p_print import *
 if TYPE_CHECKING:
     from backend.replace_controller import ReplaceController
     from .window_replace import ReplaceWindow
@@ -106,7 +107,7 @@ class GraphicsViewWidget(QGraphicsView):
         self._parent = parent
         self.main_window = main_window
 
-        # self.controller: ReplaceController = controller
+        self.controller: ReplaceController = controller
         # self.ui = ui
         self.setObjectName('preview')
 
@@ -127,6 +128,7 @@ class GraphicsViewWidget(QGraphicsView):
 
         self.control_key_pressed = False
         self.image = None
+        self.img_size: list[float, float] | tuple[float, float] = (0, 0)
         self.is_repainting = False
 
 
@@ -143,10 +145,10 @@ class GraphicsViewWidget(QGraphicsView):
             'height': False,
             'angle': False,
         }
-        self.radius: int = 10
-        self.width: int = 30
-        self.height: int = 10
-        self.angle: float = 45
+        self.radius: int = 0.015
+        self.width: int = 0.025
+        self.height: int = 0.015
+        self.angle: float = 0
         # sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         # sizePolicy.setHorizontalStretch(0)
         # sizePolicy.setVerticalStretch(0)
@@ -158,8 +160,15 @@ class GraphicsViewWidget(QGraphicsView):
         # self.scene_geometry: TargetSceneGeometry | None = None
         # self.preview_options: GeometryPreviewOptions | None = None
 
-        self.shapes: list[DsrShape] = []
-        self.new_shape: DsrShape | None = None
+        self.regions: list[DsrSceneRegion] = []
+        self.default_region: DsrSceneRegion = DsrSceneRegion(
+            shape='circle',
+            center=(0.5, 0.5),
+            axes=(0.025, 0.015),
+            angle=0,
+            item=None
+        )
+        self.new_region: DsrSceneRegion = deepcopy(self.default_region)
         self.modifying_shape: bool = False
 
         self.modified: bool = False
@@ -185,18 +194,384 @@ class GraphicsViewWidget(QGraphicsView):
 
 
     def display_frame(self, frame: Frame) -> None:
-        # if frame.qimage is None:
-            # h, w, c = frame.img.shape
-            # frame.qimage = QImage(
-            #     frame.img, w, h, w * c, QImage.Format.Format_BGR888
-            # )
-            # frame.img = None
-        self.frame = frame
+        self.frame: Frame = frame
+        h, w = self.frame.img.shape[:2]
+        self.img_size = (float(w), float(h))
         self.draw_image()
 
 
     def repaint_frame(self):
         self.draw_image()
+
+
+
+    def add_region_to_scene(
+        self,
+        region: DsrMask | DsrSceneRegion
+    ) -> DsrSceneRegion:
+        # Convert from Mask to SceneSHape
+        if isinstance(region, DsrMask):
+            region: DsrSceneRegion = dsr_mask_to_scene(region)
+
+        # Draw/Add item to scene
+        s = region.map_to_scene(self.img_size)
+        x, y = s.center
+        axes = s.axes if s.shape != 'circle' else [s.axes[0], s.axes[0]]
+        item: QGraphicsEllipseItem = QGraphicsEllipseItem(
+            QRectF(x - axes[0], y - axes[1], 2 * axes[0]+1, 2 * axes[1]+1)
+        )
+        # item.setRotation(self.angle)
+        item.setOpacity(0.5)
+        item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
+        item.setBrush(QBrush(QColor("red")))
+        item.setPen(QPen(QColor("red")))
+        item.setTransformOriginPoint(x, y)
+        item.setRotation(s.angle)
+
+        region.item = item
+        self._scene.addItem(region.item)
+
+        return region
+
+
+    def start_modifying_shape(self, selected: DsrSceneRegion) -> None:
+        print(lightcyan("start moving shape"))
+        # Remove from scene and list of shapes
+        self._scene.removeItem(self.new_region.item)
+        self._scene.removeItem(selected.item)
+
+        # Save current shape to restore it if discarded
+        selected.item = None
+        self._saved_region = deepcopy(selected)
+
+        # Use selected shape as a new shape
+        self.new_region = selected.copy()
+        self.axes = self.new_region.axes
+        self.radius = self.new_region.axes[0]
+        self.angle = self.new_region.angle
+        self.main_window.set_current_dsr_shape(self.new_region.shape)
+
+        # Get position and calculate offset from position to center of shape
+        cursor_position: QPointF = self.mapToScene(self.current_position.toPoint())
+        self.cursor_offset = QPointF(*self.new_region.center) - cursor_position
+        print(f"shape center: {self.new_region.center}")
+        print(f"cursor_position: {cursor_position}")
+        print(f"cursor_offset: {self.cursor_offset}")
+
+        # Define a new item
+        cursor_position = cursor_position + self.cursor_offset
+        x, y = cursor_position.toTuple()
+
+        s = self.new_region.map_to_scene(self.img_size)
+        axes = s.axes
+        item: QGraphicsEllipseItem = QGraphicsEllipseItem(
+            QRectF(x - axes[0], y - axes[1], 2*axes[0]+1, 2*axes[1]+1)
+        )
+        item.setOpacity(0.5)
+        item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
+        item.setBrush(QBrush(QColor("red")))
+        item.setPen(QPen(QColor("red")))
+        item.setTransformOriginPoint(x, y)
+        item.setRotation(self.new_region.angle)
+        self.new_region.item = item
+        self._scene.addItem(item)
+
+        self.modifying_shape = True
+
+
+    def discard_modifying_shape(self, current_position: QPointF) -> None:
+        if not self.modifying_shape:
+            return
+
+        self.regions.append(deepcopy(self._saved_region))
+        print("Discard shape, restore shape:")
+        pprint(self.regions[-1])
+        self.add_region_to_scene(self.regions[-1])
+
+        # Finally, new shape
+        self.modifying_shape = False
+        self.cursor_offset = QPointF(0, 0)
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self._scene.removeItem(self.new_region.item)
+
+        self.new_region: DsrSceneRegion = deepcopy(self.default_region)
+        self.draw_new_region(current_position)
+
+        self.signal_dsr_updated_event.emit(self.regions)
+
+
+    def draw_new_region(self, cursor_position: QPointF) -> None:
+        if self.current_position is None:
+            return
+
+        if self.new_region.item is None:
+            cursor_position = cursor_position + self.cursor_offset
+            x, y = cursor_position.toTuple()
+            w, h = self.img_size
+
+            shape_name: MaskShape = self.main_window.get_current_dsr_shape()
+            axes: tuple[float, float] = (
+                (self.radius, self.radius * w / h)
+                if shape_name == 'circle'
+                else (self.width, self.height)
+            )
+
+            x0, y0 = x - axes[0] * w, y - axes[1] * h
+            item: QGraphicsEllipseItem = QGraphicsEllipseItem(
+                x0, y0, 2 * axes[0] * w, 2 * axes[1] * h
+            )
+            item.setOpacity(0.5)
+            item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
+            item.setBrush(QBrush(QColor("red")))
+            item.setPen(QPen(QColor("red")))
+            item.setTransformOriginPoint(x, y)
+            item.setRotation(self.angle)
+
+            self.new_region.item = item
+            self.new_region.shape = shape_name
+            self.new_region.center = (x/w, y/h)
+            self.new_region.axes = axes
+            self.new_region.angle = self.angle
+
+            # print(f"  moving: {self.new_region.center}, {self.new_region.axes}")
+            self._scene.addItem(self.new_region.item)
+
+            # self.modified = True
+
+
+    def mouseDoubleClickEvent(self, event):
+        if self.new_region is not None:
+            self.regions.append(self.new_region.copy())
+            self.cursor_offset = QPointF(0, 0)
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.new_region.item = None
+            self.signal_dsr_updated_event.emit(self.regions)
+        else:
+            raise ValueError("new_region is None")
+        return super().mouseDoubleClickEvent(event)
+
+
+    def mouseMoveEvent(self, event):
+        # print(f"mouseMoveEvent: {event.position()}")
+        self.current_position = self.mapToScene(event.position().toPoint())
+
+        # TODO: limit to image size
+        cursor_position = self.mapToScene(event.position().toPoint())
+        w, h = self.img_size
+        outside: bool = False
+        if cursor_position.x() > min(self.size().width(), w):
+            cursor_position.setX(min(self.size().width(), w))
+            outside = True
+        if cursor_position.y() > min(self.size().height(), h):
+            cursor_position.setY(min(self.size().height(), h))
+            outside = True
+
+        if self.new_region.item is not None:
+            self._scene.removeItem(self.new_region.item)
+            self.new_region.item = None
+
+        if not outside:
+            self.draw_new_region(
+                cursor_position=self.mapToScene(self.current_position.toPoint())
+            )
+
+        super().mouseMoveEvent(event)
+
+
+    def mousePressEvent(self, event):
+        # Append the shape to the list of patches
+        if self.control_key_pressed:
+            if self.new_region is not None:
+                self.regions.append(self.new_region.copy())
+                self.cursor_offset = QPointF(0, 0)
+                self.setCursor(Qt.CursorShape.ArrowCursor)
+                self.new_region.item = None
+                self.signal_dsr_updated_event.emit(self.regions)
+            else:
+                raise ValueError("new region is None")
+
+        elif self.modifying_shape:
+            center: QPointF = event.position() + self.cursor_offset
+            self.regions.append(
+                DsrSceneRegion(
+                    shape=self.main_window.get_current_dsr_shape(),
+                    center=center.toTuple(),
+                    axes=self.new_region.axes,
+                    angle=self.new_region.angle,
+                    item=self.new_region.item
+                )
+            )
+            print("shape moved:")
+            s = self.regions[-1]
+
+            self.axes = s.axes
+            self.radius = s.axes[0]
+            self.angle = s.angle
+            self.main_window.set_current_dsr_shape(s.shape)
+
+            # self.new_region.
+            self.cursor_offset = QPointF(0, 0)
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+
+            self.modifying_shape = False
+            self.signal_dsr_updated_event.emit(self.regions)
+
+        else:
+            # start moving shape
+            is_mouse_over_shape: bool = False
+            for i, s in enumerate(reversed(self.regions)):
+                if s.item.isUnderMouse():
+                    print("under mouse")
+                    is_mouse_over_shape = True
+                    self.start_modifying_shape(s)
+                    del self.regions[len(self.regions) - i - 1]
+                    self.signal_dsr_updated_event.emit(self.regions)
+                    break
+
+            if is_mouse_over_shape:
+                print("selected a shape")
+
+
+                self.setCursor(Qt.CursorShape.OpenHandCursor)
+
+                return True
+
+        return super().mousePressEvent(event)
+
+
+    def event_key_released(self, event: QKeyEvent) -> bool:
+        if event is None:
+            return
+
+        for k in self.modif_keys.keys():
+            self.modif_keys[k] = False
+
+        self.control_key_pressed = False
+
+        if event.modifiers() & Qt.KeyboardModifier.AltModifier:
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.is_alt_key_pressed = False
+
+        return False
+
+
+    def event_key_pressed(self, event: QKeyEvent) -> bool:
+        key, modifiers = event.key(), event.modifiers()
+        # print(f"{time.time()} {__name__}.event_key_pressed: {key}, modifiers={modifiers}")
+
+        self.is_alt_key_pressed = modifiers & Qt.KeyboardModifier.AltModifier
+
+        if modifiers & Qt.KeyboardModifier.ControlModifier:
+            self.control_key_pressed = True
+        else:
+            if key == Qt.Key.Key_S:
+                # Ignore key
+                # print(purple("Key S"))
+                return True
+
+            elif key == Qt.Key.Key_Z:
+                self.event_key_released(None)
+                self.modif_keys['radius'] = True
+                self.modif_keys['height'] = True
+                return True
+
+            elif key == Qt.Key.Key_D:
+                self.event_key_released(None)
+                self.modif_keys['radius'] = True
+                self.modif_keys['width'] = True
+                return True
+
+            elif key == Qt.Key.Key_Q:
+                self.event_key_released(None)
+                self.modif_keys['angle'] = True
+                return True
+
+            elif key in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
+                for i, s in enumerate(self.regions):
+                    if s.item.isUnderMouse():
+                        print("delete under mouse")
+                        self.modifying_index = -1
+                        self._scene.removeItem(s.item)
+                        del self.regions[i]
+                        self.setCursor(Qt.CursorShape.ArrowCursor)
+                        self.cursor_offset = QPoint(0, 0)
+                        self.signal_dsr_updated_event.emit(self.regions)
+                        return True
+
+            elif key == Qt.Key.Key_Escape:
+                self.discard_modifying_shape(self.current_position)
+                return True
+
+        return False
+
+
+    def event_wheel(self, event: QWheelEvent) -> bool:
+        if not any(self.modif_keys.values()):
+            # if self.shapes and self.modified:
+            #     # do not allow changing frame if modification is on going
+            #     return True
+
+            # if not self.main_window.is_dsr_modified():
+            #     print("not for this")
+            return False
+
+        # print(event.angleDelta().y())
+        diff: int = 0
+        if event.angleDelta().y() > 0:
+            diff = 1
+        elif event.angleDelta().y() < 0:
+            diff = -1
+
+        shape_name: MaskShape = self.main_window.get_current_dsr_shape()
+        w, h = self.img_size
+        if shape_name == 'circle' and self.modif_keys['radius']:
+            diff /= w
+            self.radius = min(max(self.radius + diff, 0), 0.25)
+
+        elif shape_name != 'circle':
+            if self.modif_keys['width']:
+                diff /= w
+                self.width = min(max(self.width + diff, 0), 0.25)
+
+            elif self.modif_keys['height']:
+                diff /= h
+                self.height = min(max(self.height + diff, 0), 0.25)
+
+            elif self.modif_keys['angle']:
+                self.angle = min(max(self.angle + 5 * diff, -90), 90)
+
+        self._scene.removeItem(self.new_region.item)
+        self.new_region.item = None
+        self.draw_new_region(
+            cursor_position=self.mapToScene(self.current_position.toPoint())
+        )
+
+        return True
+
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if event.type() == QEvent.Type.Wheel:
+            # print_lightcyan(f"eventFilter: widget_controls: wheel")
+            if self.event_wheel(event):
+                # print(f"\twheel: accepted")
+                event.accept()
+                return True
+            # else:
+            #     if self._parent.event_wheel(event):
+            #         event.accept()
+            #         return
+
+        return super().eventFilter(watched, event)
+
+
+    def event_shape_changed(self, shape_name: MaskShape) -> None:
+        if self.new_region is not None:
+            self._scene.removeItem(self.new_region.item)
+            self.new_region.item = None
+        self.draw_new_region(
+            cursor_position=self.mapToScene(self.current_position.toPoint())
+        )
+
 
 
     def draw_widget_guides(self, painter: QPainter) -> None:
@@ -307,239 +682,6 @@ class GraphicsViewWidget(QGraphicsView):
         return resized_img
 
 
-
-    def start_modifying_shape(self, selected: DsrShape) -> None:
-        print(lightcyan("start moving shape"))
-        # Remove from scene and list of shapes
-        self._scene.removeItem(self.new_shape.item)
-        self._scene.removeItem(selected.item)
-        selected.item = None
-        # Save current shape to restore it if discarded
-        self._saved_shape = deepcopy(selected)
-
-        del selected.item
-
-        # Use selected shape as a new shape
-        self.new_shape = deepcopy(selected)
-        self.axes = self.new_shape.axes
-        self.radius = self.new_shape.axes[0]
-        self.angle = self.new_shape.angle
-        self.main_window.set_current_dsr_shape(self.new_shape.shape)
-
-        # Get position and calculate offset from position to center of shape
-        cursor_position: QPointF = self.mapToScene(self.current_position.toPoint())
-        self.cursor_offset = QPointF(*self.new_shape.center) - cursor_position
-        print(f"shape center: {self.new_shape.center}")
-        print(f"cursor_position: {cursor_position}")
-        print(f"cursor_offset: {self.cursor_offset}")
-
-        # Define a new item
-        cursor_position = cursor_position + self.cursor_offset
-        x, y = cursor_position.toTuple()
-
-        axes = self.new_shape.axes
-        item: QGraphicsEllipseItem = QGraphicsEllipseItem(
-            QRectF(x - axes[0], y - axes[1], 2*axes[0]+1, 2*axes[1]+1)
-        )
-        item.setOpacity(0.5)
-        item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
-        item.setBrush(QBrush(QColor("red")))
-        item.setPen(QPen(QColor("red")))
-        item.setTransformOriginPoint(x, y)
-        item.setRotation(self.new_shape.angle)
-        self.new_shape.item = item
-        self._scene.addItem(item)
-
-        self.modifying_shape = True
-
-
-
-    def discard_modifying_shape(self, current_position: QPointF) -> None:
-        if not self.modifying_shape:
-            return
-
-        self.shapes.append(deepcopy(self._saved_shape))
-        print("Discard shape, restore shape:")
-        pprint(self.shapes[-1])
-
-        s: DsrShape = self.shapes[-1]
-        x, y = s.center
-        axes = s.axes
-        item: QGraphicsEllipseItem = QGraphicsEllipseItem(
-            QRectF(x - axes[0], y - axes[1], 2*axes[0]+1, 2*axes[1]+1)
-        )
-        # item.setRotation(self.angle)
-        item.setOpacity(0.5)
-        item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
-        item.setBrush(QBrush(QColor("red")))
-        item.setPen(QPen(QColor("red")))
-        item.setTransformOriginPoint(x, y)
-        item.setRotation(self.angle)
-        s.item = item
-        self._scene.addItem(s.item)
-
-        # Finally, new shape
-        self.modifying_shape = False
-        self.cursor_offset = QPointF(0, 0)
-        self.setCursor(Qt.CursorShape.ArrowCursor)
-        self._scene.removeItem(self.new_shape.item)
-        self.new_shape = None
-        self.draw_shape(current_position)
-
-        self.signal_dsr_updated_event.emit(self.shapes)
-
-
-    def draw_shape(self, cursor_position: QPointF) -> None:
-        if self.current_position is None:
-            return
-
-        if self.new_shape is None:
-            cursor_position = cursor_position + self.cursor_offset
-            x, y = cursor_position.toTuple()
-
-            shape_name: MaskShape = self.main_window.get_current_dsr_shape()
-            axes: tuple[float, float] = (
-                (self.radius, self.radius)
-                if shape_name == 'circle'
-                else (self.width, self.height)
-            )
-            center = [x + axes[0], y + axes[1]]
-
-            item: QGraphicsEllipseItem = QGraphicsEllipseItem(
-                QRectF(x - axes[0], y - axes[1], 2*axes[0]+1, 2*axes[1]+1)
-            )
-            # item.setRotation(self.angle)
-            item.setOpacity(0.5)
-            item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
-            item.setBrush(QBrush(QColor("red")))
-            item.setPen(QPen(QColor("red")))
-            item.setTransformOriginPoint(x, y)
-            item.setRotation(self.angle)
-
-            self.new_shape = DsrShape(
-                shape=shape_name,
-                center=center,
-                axes=axes,
-                item=item,
-                angle=self.angle,
-            )
-            self._scene.addItem(self.new_shape.item)
-
-            self.modified = True
-
-    def mouseDoubleClickEvent(self, event):
-        if self.new_shape is not None:
-            self.shapes.append(
-                DsrShape(
-                    shape=self.main_window.get_current_dsr_shape(),
-                    center=event.position().toTuple(),
-                    axes=self.new_shape.axes,
-                    angle=self.new_shape.angle,
-                    item=self.new_shape.item
-                )
-            )
-            self.new_shape = None
-            self.cursor_offset = QPointF(0, 0)
-            self.setCursor(Qt.CursorShape.ArrowCursor)
-            self.signal_dsr_updated_event.emit(self.shapes)
-        return super().mouseDoubleClickEvent(event)
-
-
-    def mouseMoveEvent(self, event):
-        # print(f"moving: {event.position()}")
-        self.current_position = self.mapToScene(event.position().toPoint())
-
-        # TODO: limit to image size
-        cursor_position = self.mapToScene(event.position().toPoint())
-        h, w = self.frame.img.shape[:2]
-        outside: bool = False
-        if cursor_position.x() > min(self.size().width(), w):
-            cursor_position.setX(min(self.size().width(), w))
-            outside = True
-        if cursor_position.y() > min(self.size().height(), h):
-            cursor_position.setY(min(self.size().height(), h))
-            outside = True
-
-        if self.new_shape is not None:
-            self._scene.removeItem(self.new_shape.item)
-            self.new_shape = None
-
-        if not outside:
-            self.draw_shape(
-                cursor_position=self.mapToScene(self.current_position.toPoint())
-            )
-
-        super().mouseMoveEvent(event)
-
-
-    def mousePressEvent(self, event):
-        # Append the shape to the list of patches
-        if self.control_key_pressed:
-            if self.new_shape is not None:
-                self.shapes.append(
-                    DsrShape(
-                        shape=self.main_window.get_current_dsr_shape(),
-                        center=event.position().toTuple(),
-                        axes=self.new_shape.axes,
-                        angle=self.new_shape.angle,
-                        item=self.new_shape.item
-                    )
-                )
-                self.new_shape = None
-                self.cursor_offset = QPointF(0, 0)
-                self.setCursor(Qt.CursorShape.ArrowCursor)
-                self.signal_dsr_updated_event.emit(self.shapes)
-
-
-        elif self.modifying_shape:
-            center: QPointF = event.position() + self.cursor_offset
-            self.shapes.append(
-                DsrShape(
-                    shape=self.main_window.get_current_dsr_shape(),
-                    center=center.toTuple(),
-                    axes=self.new_shape.axes,
-                    angle=self.new_shape.angle,
-                    item=self.new_shape.item
-                )
-            )
-            print("shape moved:")
-            s = self.shapes[-1]
-
-            self.axes = s.axes
-            self.radius = s.axes[0]
-            self.angle = s.angle
-            self.main_window.set_current_dsr_shape(s.shape)
-
-            self.new_shape = None
-            self.cursor_offset = QPointF(0, 0)
-            self.setCursor(Qt.CursorShape.ArrowCursor)
-
-            self.modifying_shape = False
-            self.signal_dsr_updated_event.emit(self.shapes)
-
-        else:
-            # start moving shape
-            is_mouse_over_shape: bool = False
-            for i, s in enumerate(reversed(self.shapes)):
-                if s.item.isUnderMouse():
-                    print("under mouse")
-                    is_mouse_over_shape = True
-                    self.start_modifying_shape(s)
-                    del self.shapes[len(self.shapes) - i - 1]
-                    self.signal_dsr_updated_event.emit(self.shapes)
-                    break
-
-            if is_mouse_over_shape:
-                print("selected a shape")
-
-
-                self.setCursor(Qt.CursorShape.OpenHandCursor)
-
-                return True
-
-        return super().mousePressEvent(event)
-
-
     def draw_image(self):
         print("viewport geometry:", self.viewport().geometry())
         print("sceneRect geometry:", self.sceneRect())
@@ -582,7 +724,15 @@ class GraphicsViewWidget(QGraphicsView):
         #     painter.end()
         #     return
         img = self.frame.img
+        print(red(f"draw image {self.frame.no}"))
+        for shape in self.regions:
+            self._scene.removeItem(shape.item)
+        self.regions.clear()
 
+        dsr_shapes = self.controller.playlist_dsr(frame_no=self.frame.no)
+        pprint(dsr_shapes)
+        for mask in dsr_shapes:
+            self.regions.append(self.add_region_to_scene(mask))
 
         initial_img_height, initial_img_width, c = img.shape
         img_height, img_width, c = img.shape
@@ -600,130 +750,4 @@ class GraphicsViewWidget(QGraphicsView):
 
         self.is_repainting = False
 
-
-
-    def event_key_released(self, event: QKeyEvent) -> bool:
-        if event is None:
-            return
-
-        for k in self.modif_keys.keys():
-            self.modif_keys[k] = False
-
-        self.control_key_pressed = False
-
-        if event.modifiers() & Qt.KeyboardModifier.AltModifier:
-            self.setCursor(Qt.CursorShape.ArrowCursor)
-            self.is_alt_key_pressed = False
-
-        return False
-
-
-    def event_key_pressed(self, event: QKeyEvent) -> bool:
-        key, modifiers = event.key(), event.modifiers()
-        # print(f"{time.time()} {__name__}.event_key_pressed: {key}, modifiers={modifiers}")
-
-        self.is_alt_key_pressed = modifiers & Qt.KeyboardModifier.AltModifier
-
-        if modifiers & Qt.KeyboardModifier.ControlModifier:
-            self.control_key_pressed = True
-        else:
-            if key == Qt.Key.Key_Z:
-                self.event_key_released(None)
-                self.modif_keys['radius'] = True
-                self.modif_keys['height'] = True
-                return True
-
-            elif key == Qt.Key.Key_D:
-                self.event_key_released(None)
-                self.modif_keys['radius'] = True
-                self.modif_keys['width'] = True
-                return True
-
-            elif key == Qt.Key.Key_Q:
-                self.event_key_released(None)
-                self.modif_keys['angle'] = True
-                return True
-
-            elif key in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
-                for i, s in enumerate(self.shapes):
-                    if s.item.isUnderMouse():
-                        print("delete under mouse")
-                        self.modifying_index = -1
-                        self._scene.removeItem(s.item)
-                        del self.shapes[i]
-                        self.setCursor(Qt.CursorShape.ArrowCursor)
-                        self.cursor_offset = QPoint(0, 0)
-                        self.signal_dsr_updated_event.emit(self.shapes)
-                        return True
-
-            elif key == Qt.Key.Key_Escape:
-                self.discard_modifying_shape(self.current_position)
-                return True
-
-        return False
-
-
-
-    def event_wheel(self, event: QWheelEvent) -> bool:
-        if not any(self.modif_keys.values()):
-            if self.shapes and self.modified:
-                # do not allow changing frame if modification is on going
-                return True
-
-            if not self.main_window.is_dsr_modified():
-                print("not for this")
-                return False
-
-        # print(event.angleDelta().y())
-        diff: int = 0
-        if event.angleDelta().y() > 0:
-            diff = 1
-        elif event.angleDelta().y() < 0:
-            diff = -1
-
-        shape_name: MaskShape = self.main_window.get_current_dsr_shape()
-        if shape_name == 'circle' and self.modif_keys['radius']:
-            self.radius = min(max(self.radius + diff, 0), 20)
-
-        elif shape_name != 'circle':
-            if self.modif_keys['width']:
-                self.width = min(max(self.width + diff, -90), 90)
-
-            elif self.modif_keys['height']:
-                self.height = min(max(self.height + diff, -90), 90)
-
-            elif self.modif_keys['angle']:
-                self.angle = min(max(self.angle + 5 * diff, -90), 90)
-
-        self._scene.removeItem(self.new_shape.item)
-        self.new_shape = None
-        self.draw_shape(
-            cursor_position=self.mapToScene(self.current_position.toPoint())
-        )
-
-        return True
-
-
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.Wheel:
-            # print_lightcyan(f"eventFilter: widget_controls: wheel")
-            if self.event_wheel(event):
-                # print(f"\twheel: accepted")
-                event.accept()
-                return True
-            # else:
-            #     if self._parent.event_wheel(event):
-            #         event.accept()
-            #         return
-
-        return super().eventFilter(watched, event)
-
-
-    def event_shape_changed(self, shape_name: MaskShape) -> None:
-        if self.new_shape is not None:
-            self._scene.removeItem(self.new_shape.item)
-            self.new_shape = None
-        self.draw_shape(
-            cursor_position=self.mapToScene(self.current_position.toPoint())
-        )
 

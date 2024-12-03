@@ -190,7 +190,7 @@ class CommonController(QObject, metaclass=QMeta):
         self.current_selection = Selection(
             k_ep=selection.k_ep,
             k_ch=selection.k_ch,
-            task='lr',
+            task=self.task_name,
             scenes=self.scenes,
         )
 

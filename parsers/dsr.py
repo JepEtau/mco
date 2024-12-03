@@ -3,11 +3,10 @@ import configparser
 from dataclasses import dataclass, field
 import os
 from pprint import pprint
+from PySide6.QtWidgets import QGraphicsEllipseItem
 import re
 import sys
 from typing import Literal, TYPE_CHECKING, Self
-
-import numpy as np
 
 from utils.p_print import *
 from utils.path_utils import absolute_path
@@ -28,26 +27,32 @@ MaskShape = Literal['circle', 'ellipse', 'oblong']
 class DsrMask:
     shape: MaskShape
     # x, y, theta
-    center: np.ndarray[float | int, float | int]
+    center: list[float | int, float | int]
     # w, h
-    axes: np.ndarray[float | int, float | int]
+    axes: list[float | int, float | int]
     # in radian
     angle: float
+    # Used by editor
+    item: QGraphicsEllipseItem | None = None
 
-    def get(self, size: np.ndarray[float, float]) -> Self:
+    def get(self, size: list[float, float] | None = None) -> Self:
+        if size is None:
+            return DsrMask(self.shape, self.center, self.axes, self.angle)
+
+        w, h = size
         return DsrMask(
             self.shape,
-            np.round(self.center * size).astype(int),
-            np.round(self.axes * size).astype(int),
+            int(self.center * w),
+            int(self.axes * h),
             self.angle,
         )
 
 
 
 @dataclass
-class FrameDsr:
+class SceneDsr:
     _frames: dict[int, list[DsrMask]] = field(default_factory=dict)
-    _size: np.ndarray[float, float] = None
+    _size: list[float, float] | None = None
 
     def get(
         self,
@@ -83,11 +88,25 @@ class FrameDsr:
         self._frames[frame_no].append(
             DsrMask(
                 shape=shape,
-                center=np.array(coordinates, np.float32),
-                axes=np.array(size, np.float32),
+                center=coordinates,
+                axes=size,
                 angle=theta,
             )
         )
+
+
+    def set_regions(self, frame_no: int, regions: list[DsrMask]) -> None:
+        self._frames[frame_no] = []
+        print(lightcyan(f"set_regions: {len(regions)}"))
+        for r in regions:
+            self._frames[frame_no].append(
+                DsrMask(
+                    shape=r.shape,
+                    center=r.center,
+                    axes=r.axes,
+                    angle=r.angle,
+                )
+            )
 
 
     def set_frame_size(self, size: list[int, int] | tuple[int, int]) -> None:
@@ -146,33 +165,33 @@ def parse_dsr_file(k_ep_or_g: str):
                 continue
 
             if 'dsr' not in scene:
-                scene['dsr'] = FrameDsr()
-            scene_dsr: FrameDsr = scene['dsr']
+                scene['dsr'] = SceneDsr()
+            scene_dsr: SceneDsr = scene['dsr']
 
-            patches: list[str] = parser_strip(
+            regions: list[str] = parser_strip(
                 config.get(k_section, frame_no_str)
             ).split(',')
 
-            for patch_str in patches:
+            for region_str in regions:
                 if verbose:
-                    print(f"{frame_no} -> {patch_str}")
-                if not patch_str:
+                    print(f"{frame_no} -> {region_str}")
+                if not region_str:
                     continue
 
-                if patch := re.search(regex, patch_str):
+                if region := re.search(regex, region_str):
                     scene_dsr.add(
                         frame_no=frame_no,
-                        shape=patch.group(1),
-                        coordinates=(float(patch.group(2)), float(patch.group(3))),
-                        size=(float(patch.group(4)), float(patch.group(5))),
-                        theta=float(patch.group(6)),
+                        shape=region.group(1),
+                        coordinates=(float(region.group(2)), float(region.group(3))),
+                        size=(float(region.group(4)), float(region.group(5))),
+                        theta=float(region.group(6)),
                     )
 
             # scene['dsr'][frame_no] =
 
-        if verbose:
-            if scene is not None:
-                scene['dsr'].set_frame_size((720, 576))
-                pprint(scene['dsr'].get())
-                pprint(scene)
-            # sys.exit()
+        # if verbose:
+        #     if scene is not None:
+        #         scene['dsr'].set_frame_size((720, 576))
+        #         pprint(scene['dsr'].get())
+        #         pprint(scene)
+        #     # sys.exit()
