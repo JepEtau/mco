@@ -50,7 +50,7 @@ def py_packages() -> tuple[PyPackage]:
         PyPackage(
             pretty_name="PyTorch",
             name="torch",
-            index_url="https://download.pytorch.org/whl/cu121",
+            index_url="https://download.pytorch.org/whl/cu124",
             uninstall_before=True,
         ),
         PyPackage(
@@ -72,7 +72,7 @@ def py_packages() -> tuple[PyPackage]:
         PyPackage(
             pretty_name="TorchVision",
             name="torchvision",
-            index_url="https://download.pytorch.org/whl/cu121",
+            index_url="https://download.pytorch.org/whl/cu124",
             uninstall_before=True,
         ),
         PyPackage(
