@@ -8,6 +8,7 @@ from parsers import (
     scene_key,
 )
 from typing import TYPE_CHECKING
+import warnings
 if TYPE_CHECKING:
     from utils.mco_types import Scene, ChapterVideo
     from parsers import (
@@ -61,17 +62,20 @@ def get_filters(scene: Scene) -> list[Filter]:
             'filters' not in chapter_video
             and scene['task'].name not in ('initial', 'lr')
         ):
-            sys.exit(print(red(f"Error: {s_key}: no available filters for task \'{scene['task'].name}\'")))
+            sys.exit(print(red(
+                f"Error: {s_key}: no available filters for task \'{scene['task'].name}\'"
+            )))
 
         try:
             filters = chapter_video['filters']['default']
         except:
             if scene['task'].name == 'initial':
                 return {}
-            else:
-                print(red(f"Error: default filter is not defined but required by {s_key}"))
-                pprint(scene)
-                sys.exit()
+            elif k_ch != 'documentaire':
+                warnings.warn(red(f"Error: default filter is not defined but required by {s_key}"))
+                return {}
+                # pprint(scene)
+                # sys.exit()
 
     elif isinstance(scene['filters_id'], str):
         if debug:

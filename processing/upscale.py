@@ -93,7 +93,8 @@ class UpscalePipeline(object):
             filters: Filter = scene['filters'][task_name]
 
             pprint(filters.steps)
-            print(f"initial shape: {shape}")
+            print(lightcyan(f"Calculate in/out shapes:"))
+            print(f"  initial shape: {shape}")
             scale: int = 1
             for i, filter_param in enumerate(filters.steps):
                 if isinstance(filter_param, tuple | list):
@@ -105,11 +106,13 @@ class UpscalePipeline(object):
                         raise ValueError("not yet supported")
                     # elif name not in supported_filters:
                     #     continue
+
                 else:
                     model_key = filter_param
                     _scale = model_manager.get_scale(model_key)
                     filters.steps[i] = model_manager.set_input_size(model_key, shape)
-                print(lightgreen(f"step {i}:"), shape, end='')
+
+                print(lightgreen(f"  step {i}:"), shape, end='')
                 shape = list([int(((x * _scale) // 2) * 2) for x in shape])
                 print(f"-> {shape} (scale: {_scale})")
                 scale = _scale * scale
