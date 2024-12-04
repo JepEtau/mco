@@ -60,7 +60,8 @@ def upscale_scenes(
 
     # List models and scenes to upscale
     model_manager = ModelManager()
-    scenes_to_upscale: dict[str, list[Scene]] = {}
+    scenes_to_upscale: list[Scene] = []
+    scenes_to_upscale_doc: list[Scene] = []
     total_frames: int = 0
 
     start_time_full = time.time()
@@ -118,8 +119,7 @@ def upscale_scenes(
             # Add models to the model manager
             # and add the scene to the list to upscale
             if not is_up_to_date(scene) or force:
-                if k_ch not in scenes_to_upscale:
-                    scenes_to_upscale[k_ch] = []
+
 
                 # Get all models
                 scene_filters: Filter = scene['filters'][scene['task'].name]
@@ -134,7 +134,12 @@ def upscale_scenes(
 
                 # Separate documentaire from other
                 # because it uses different upscalers
-                if k_ch != 'documentaire':
+                pprint(scene_filters)
+                if scene_filters.sequence == 'documentaire':
+                    # For documentary, there is no frame replace... yet
+                    scenes_to_upscale_doc.append(scene)
+                    total_frames += scene['src'].frame_count(exclude_loop=True)
+                else:
                     for filter_str in scene_filters.sequence.split(','):
                         if filter_str.startswith(supported_filters):
                             print(lightgreen("supported:"), filter_str)
@@ -163,16 +168,12 @@ def upscale_scenes(
                         scene_filters.steps.append(model_key)
                     pprint(scene_filters)
 
-                    scenes_to_upscale[k_ch].append(scene)
+                    scenes_to_upscale.append(scene)
                     total_frames += (
                         scene['src'].frame_count(exclude_loop=True)
                         - len(scene['src'].get_frame_replace().keys())
                     )
 
-                else:
-                    # For documentary, there is no frame replace... yet
-                    scenes_to_upscale[k_ch].append(scene)
-                    total_frames += scene['src'].frame_count(exclude_loop=True)
 
         hashcode: str = calc_hash(hashes_str[:-1])
         basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task}_{hashcode}"
@@ -194,17 +195,16 @@ def upscale_scenes(
 
     print(f"Consolidated scenes: {time.time() - start_time_full:.03f}s")
     print(f"Total number of scenes to upscale: {len(scenes_to_upscale)}")
+    print(f"Total number of scenes to upscale (doc): {len(scenes_to_upscale_doc)}")
     print(f"Total number of frames to upscale: {total_frames}")
 
     if model_manager.count():
         print(model_manager)
-    for k_ch, scenes in scenes_to_upscale.items():
-        if k_ch == 'documentaire':
-            continue
-        if scenes and model_manager.count() == 0:
-            raise ValueError(red("No models"))
 
-    if not scenes_to_upscale:
+    if scenes_to_upscale and model_manager.count() == 0:
+        raise ValueError(red("No models"))
+
+    if not scenes_to_upscale and not scenes_to_upscale_doc:
         print(f"No scenes to upscale")
         return
 
@@ -212,55 +212,55 @@ def upscale_scenes(
     # Extract video info before to optimize processing
     # avoid extracting multiple time info from the same input
     vinfos: dict[str, VideoStreamInfo] = {}
-    for k_ch, scenes in scenes_to_upscale.items():
-        for scene in scenes:
-            for src_scene in scene['src'].scenes():
-                progressive_input = src_scene['scene']['inputs'].progressive()
+    for scene in scenes_to_upscale + scenes_to_upscale_doc:
+        for src_scene in scene['src'].scenes():
+            progressive_input = src_scene['scene']['inputs'].progressive()
 
-                in_media_path = progressive_input.filepath
-                if in_media_path not in vinfos:
-                    in_video_info = extract_media_info_mco(in_media_path)['video']
-                    # Force output to rgb
-                    d_c_order = 'rgb'
-                    if in_video_info['bpp'] > 8:
-                        d_dtype = np.uint16
-                        pix_fmt = f"{d_c_order}48"
-                    else:
-                        d_dtype = np.uint8
-                        pix_fmt = f"{d_c_order}24"
-                    stdin_img_nbytes = math.prod(in_video_info['shape']) * np.dtype(d_dtype).itemsize
+            in_media_path = progressive_input.filepath
+            if in_media_path not in vinfos:
+                in_video_info = extract_media_info_mco(in_media_path)['video']
+                # Force output to rgb
+                d_c_order = 'rgb'
+                if in_video_info['bpp'] > 8:
+                    d_dtype = np.uint16
+                    pix_fmt = f"{d_c_order}48"
+                else:
+                    d_dtype = np.uint8
+                    pix_fmt = f"{d_c_order}24"
+                stdin_img_nbytes = math.prod(in_video_info['shape']) * np.dtype(d_dtype).itemsize
 
-                    vinfos[in_media_path] = VideoStreamInfo(
-                        img_dtype=d_dtype,
-                        img_c_order=d_c_order,
-                        img_shape=in_video_info['shape'],
-                        img_nbytes=stdin_img_nbytes,
-                        pix_fmt=pix_fmt,
-                        frame_rate=in_video_info['frame_rate_r'],
-                        metadata=in_video_info['metadata'],
-                    )
-                    scene['task'].video_settings.metadata.update(vinfos[in_media_path].metadata)
-                progressive_input.info = vinfos[in_media_path]
+                vinfos[in_media_path] = VideoStreamInfo(
+                    img_dtype=d_dtype,
+                    img_c_order=d_c_order,
+                    img_shape=in_video_info['shape'],
+                    img_nbytes=stdin_img_nbytes,
+                    pix_fmt=pix_fmt,
+                    frame_rate=in_video_info['frame_rate_r'],
+                    metadata=in_video_info['metadata'],
+                )
+                scene['task'].video_settings.metadata.update(vinfos[in_media_path].metadata)
+            progressive_input.info = vinfos[in_media_path]
 
-            if debug:
-                print(lightcyan("================================== Scene ======================================="))
-                pprint(scene)
-                print(lightcyan("==============================================================================="))
+        if debug:
+            print(lightcyan("================================== Scene ======================================="))
+            pprint(scene)
+            print(lightcyan("==============================================================================="))
+
 
 
     device: str = 'cuda'
+    pprint(scenes_to_upscale)
+    if scenes_to_upscale:
+        pipeline = UpscalePipeline(
+            device,
+            scenes=scenes_to_upscale,
+            total_frames=total_frames,
+            debug=debug,
+            simulation=simulation,
+        )
+        pipeline.run()
 
-    for k_ch, scenes in scenes_to_upscale.items():
-        if k_ch == 'documentaire':
-            upscale_documentaire(scenes=scenes, debug=debug)
-        else:
-            pipeline = UpscalePipeline(
-                device,
-                scenes=scenes,
-                total_frames=total_frames,
-                debug=debug,
-                simulation=simulation,
-            )
-            pipeline.run()
+    if scenes_to_upscale_doc:
+        upscale_documentaire(scenes=scenes_to_upscale_doc, debug=debug)
 
     print("done")
