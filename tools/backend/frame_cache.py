@@ -26,6 +26,9 @@ from parsers import (
 )
 from ._types import Frame
 
+from PySide6.QtWidgets import (
+    QApplication,
+)
 
 
 class FrameCache:
@@ -107,16 +110,21 @@ class FrameCache:
 
                 print(red("TODO: use task_name \'dsr\' in frame cache"))
                 if task_name == 'lr' and self.replace_db is not None:
-                    print("low resolution, resize to 4:3")
-                    if in_h != 576 or in_w != 768:
-                        in_h, in_w = (576, 768)
-                        filter_complex = [
-                            "-filter_complex",
-                            f"[0:v]scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
-                            "-map", "[outv]"
-                        ]
+                    factor: float = (
+                        1.5
+                        if QApplication.screens()[0].size().height()
+                        else 2
+                    )
+                    print(f"low resolution, upscale {factor}x")
+                    in_h, in_w = int(in_h * factor), int(in_w * factor)
+                    filter_complex = [
+                        "-filter_complex",
+                        f"[0:v]scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
+                        "-map", "[outv]"
+                    ]
 
                 elif in_h < 1080:
+                    raise ValueError(" < 1080p")
                     # pprint( db['common']['video_format'])
                     # sys.exit()
                     video_settings: VideoSettings = db['common']['video_format']['hr']
@@ -197,10 +205,6 @@ class FrameCache:
                     )
                 # Convert the 1st image of the scene to fasten the display
                 np_img: np.ndarray = self.scenes[scene_key][0].img
-                h, w, c = np_img.shape
-                # self.scenes[scene_key][0].pixmap = QPixmap().fromImage(
-                #     QImage(np_img, w, h, w * c, QImage.Format.Format_BGR888)
-                # )
                 self.scenes[scene_key][0].img = np_img
 
                 self.frame_count += count

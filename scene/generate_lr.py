@@ -57,38 +57,64 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     lr_directory: str = path_split(scene['task'].video_file)[0]
     os.makedirs(lr_directory, exist_ok=True)
 
-    # Out video clip
-    in_video_fp = scene['src'].primary_scene()['scene']['inputs'].progressive().filepath
+    # Pipe out video file
+    in_video_fp: str = (
+        scene['src']
+        .primary_scene()['scene']['inputs']
+        .progressive()
+        .filepath
+    )
     in_vi: VideoInfo = extract_media_info_mco(in_video_fp)['video']
-    h, w = in_vi['shape'][:2]
-    pipe_pixfmt = 'bgr24'
-    pipe_out_dtype = (
+    in_pipe_pixfmt = 'bgr24'
+    out_pipe_dtype = (
         np.uint8
-        if PIXEL_FORMAT[pipe_pixfmt]['bpp'] <= 8
+        if PIXEL_FORMAT[in_pipe_pixfmt]['bpp'] <= 8
         else np.uint16
     )
 
-    # Force to the same height to be able to mix different editions
+    # Force to the same height to be able to mix different editions when in sim
+    # otherwise upscale 2x when in lr
+    # consider that all src scenes have the same dimension
+    enc_filter_complex: list[str] = []
     dec_filter_complex: list[str] = []
-    filter_complex: list[str] = []
-    out_video_shape = in_vi['shape']
+    in_video_shape = in_vi['shape']
+    in_h, in_w, in_c = in_video_shape
     if scene['task'].name == 'sim':
-        out_video_shape = (1080, 1440, 3)
-        h, w = out_video_shape[:2]
+        in_video_shape = (1080, 1440, 3)
         dec_filter_complex = [
             "-filter_complex",
-            f"[0:v]scale={w}:{h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
+            f"[0:v]scale={in_w}:{in_h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
             "-map", "[outv]"
         ]
-    else:
-        if h != 576 or w != 576:
-            filter_complex = [
-                "-filter_complex",
-                f"[0:v]scale=768:576:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
-                "-map", "[outv]"
-            ]
+        in_video_shape = in_h, in_w, in_c
 
+    elif scene['task'].name == 'lr':
+        print(lightcyan("low resolution, upscale 2x"))
+        in_h, in_w = in_h * 2, in_w *2
+        dec_filter_complex = [
+            "-filter_complex",
+            f"[0:v]scale={in_w}:{in_h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
+            "-map", "[outv]"
+        ]
+        in_video_shape = in_h, in_w, in_c
+    # else:
+    #     if h != 576 or w != 576:
+    #         filter_complex = [
+    #             "-filter_complex",
+    #             f"[0:v]scale=768:576:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
+    #             "-map", "[outv]"
+    #         ]
+    out_video_shape = in_video_shape
+    out_h, out_w = out_video_shape[:2]
+
+    # Consider that all src scene have the same dimension
+    in_pipe_pixfmt = 'bgr24'
+    in_pipe_dtype = np.uint8
+    in_pipe_img_nbytes = math.prod(in_video_shape)
+    in_pipe_img_shape: tuple[int, int, int] = in_video_shape
     frame_rate: float = frame_rate_dec(in_vi['frame_rate_r'])
+
+    # Encoder subprocess
     vsettings: VideoSettings = scene['task'].video_settings
     metadata: list[str] = ffmpeg_metadata(scene)
     encoder_command: list[str] = [
@@ -98,12 +124,12 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         "-nostats",
 
         "-f", "rawvideo",
-        '-pixel_format', pipe_pixfmt,
-        '-video_size', f"{w}x{h}",
+        '-pixel_format', in_pipe_pixfmt,
+        '-video_size', f"{out_w}x{out_h}",
         "-r", str(frame_rate),
         "-i", "pipe:0",
 
-        *filter_complex,
+        *enc_filter_complex,
 
         "-pix_fmt", vsettings.pix_fmt,
         "-vcodec", str_to_video_codec[vsettings.codec].value,
@@ -111,7 +137,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         *metadata,
         out_video_fp, "-y"
     ]
-    main_logger.info(f"Encoder command: {encoder_command}")
+    print(lightcyan(f"Encoder:"), " ".join(encoder_command))
     encoder_subprocess: subprocess.Popen = None
     try:
         encoder_subprocess = subprocess.Popen(
@@ -137,15 +163,6 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         # print(f"extract {count} frames")
         to_produce -= count
 
-        # Extract info from input video file
-        in_vi: VideoInfo = extract_media_info_mco(in_video_fp)['video']
-        in_shape = in_vi['shape']
-        h, w, c = in_shape
-        pipe_pixfmt = 'bgr24'
-        pipe_dtype = np.uint8
-        pipe_img_nbytes = math.prod(out_video_shape)
-        pipe_img_shape: tuple[int, int, int] = out_video_shape
-
         decoder_command: list[str] = [
             ffmpeg_exe,
             "-hide_banner",
@@ -162,11 +179,11 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             "-t", str(frame_to_s(no=count, frame_rate=frame_rate)),
             *dec_filter_complex,
             "-f", "image2pipe",
-            "-pix_fmt", pipe_pixfmt,
+            "-pix_fmt", in_pipe_pixfmt,
             "-vcodec", "rawvideo",
             "-"
         ]
-
+        print(lightcyan(f"Decoder:"), " ".join(decoder_command))
         decoder_subprocess: subprocess.Popen = None
         try:
             decoder_subprocess = subprocess.Popen(
@@ -191,7 +208,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         # Dust and scratch removal
         scene_dsr: SceneDsr = src_scene['dsr']
         if scene_dsr is not None:
-            scene_dsr.set_frame_size((w, h))
+            scene_dsr.set_frame_size((in_w, in_h))
         # scene_dsr.set_frame_size((1440, 1080))
 
         ch_video: ChapterVideo = get_target_video(scene)
@@ -213,46 +230,56 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             while in_frame is None:
                 in_f_no += 1
                 img: np.ndarray = np.frombuffer(
-                    decoder_subprocess.stdout.read(pipe_img_nbytes),
-                    dtype=pipe_dtype,
-                ).reshape(pipe_img_shape)
+                    decoder_subprocess.stdout.read(in_pipe_img_nbytes),
+                    dtype=in_pipe_dtype,
+                ).reshape(in_pipe_img_shape)
                 if in_f_no not in frames_to_replace:
                     # print(purple(f"Read frame no.{in_f_no}"))
                     if scene_dsr is not None:
-                        masks: list[DsrMask]= scene_dsr.get(frame_no=in_f_no)
-                        if masks is not None:
-                            pprint(masks)
+                        regions: list[DsrMask]= scene_dsr.get(frame_no=in_f_no)
+                        if regions is not None:
+                            # pprint(regions)
                             if True:
                                 # out_img: np.ndarray = np_to_float32(img).reshape(in_shape)
                                 # img = cv2.resize(img, (1440,1080))
                                 mask_img = np.ndarray = np.zeros(img.shape[:2], dtype=np.uint8)
-                                mask: DsrMask
-                                for mask in masks:
-                                    mask_img = cv2.ellipse(
-                                        img=mask_img,
-                                        center=mask.center,
-                                        axes=mask.axes//2,
-                                        angle=mask.angle,
-                                        startAngle=0,
-                                        endAngle=360,
-                                        color=255,
-                                        thickness=-1
-                                    )
+                                region: DsrMask
+                                for region in regions:
+                                    if region.shape == 'circle':
+                                        mask_img = cv2.circle(
+                                            img=mask_img,
+                                            center=region.center,
+                                            radius=region.axes[1],
+                                            color=255,
+                                            thickness=-1
+                                        )
+
+                                    else:
+                                        mask_img = cv2.ellipse(
+                                            img=mask_img,
+                                            center=region.center,
+                                            axes=region.axes,
+                                            angle=region.angle,
+                                            startAngle=0,
+                                            endAngle=360,
+                                            color=255,
+                                            thickness=-1
+                                        )
                                 # img = np.ascontiguousarray(np_to_uint8(out_img))
-                                write_image(f"mask_{in_f_no:04}_mask.png", mask_img)
+                                # write_image(f"mask_{in_f_no:04}_mask.png", mask_img)
                             elif False:
                                 # no rotate
                                 pil_image = PilImage.fromarray(img.reshape(in_shape))
                                 pil_mask = ImageDraw.Draw(pil_image)
-                                for mask in masks:
-                                    mask: DsrMask
-                                    x0, y0 = mask.center - mask.axes // 2
-                                    x1, y1 = x0 + mask.axes[0], y0 + mask.axes[1]
+                                for region in regions:
+                                    region: DsrMask
+                                    x0, y0 = region.center - region.axes // 2
+                                    x1, y1 = x0 + region.axes[0], y0 + region.axes[1]
                                     pil_mask.ellipse(
                                         xy=((x0, y0), (x1, y1)),
                                         outline="green"
                                     )
-                                    pil_image = pil_image.rotate(mask.angle, expand=True)
+                                    pil_image = pil_image.rotate(region.angle, expand=True)
                                     break
                                 # pil_image = pil_image.rotate(30, expand=True)
 
@@ -260,19 +287,19 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                                 img = np.ascontiguousarray(out_img)
                             else:
                                 # worse than cv2
-                                mask: DsrMask = masks[0]
+                                region: DsrMask = regions[0]
                                 pil_mask = PilImage.new(
-                                    'F', list(mask.axes + 10), color=0.
+                                    'F', list(region.axes + 10), color=0.
                                 )
                                 x0, y0 = 0,0
-                                x1, y1 = x0 + mask.axes[0], y0 + mask.axes[1]
+                                x1, y1 = x0 + region.axes[0], y0 + region.axes[1]
                                 ImageDraw.Draw(pil_mask).ellipse(
                                     xy=((x0, y0), (x1, y1)),
                                     outline="white",
                                     fill="white"
                                 )
                                 pil_mask = pil_mask.rotate(
-                                    mask.angle,
+                                    region.angle,
                                     # resample=PilImage.Resampling.BILINEAR,
                                     expand=True
                                 )
@@ -295,6 +322,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                             #     ))
                             # out_img = cv2.merge(out_bgr)
                             # out_img = cv2.cvtColor(out_img, cv2.COLOR_YUV2BGR)
+
                             start_time = time.time()
                             radius: int = 5
                             out_img = cv2.inpaint(
@@ -303,13 +331,12 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                                 inpaintRadius=radius,
                                 flags=cv2.INPAINT_TELEA
                             )
-                            print(f"elapsed: {(time.time() - start_time) * 1000:.01f}ms")
+                            # print(f"elapsed: {(time.time() - start_time) * 1000:.01f}ms")
 
-                            write_image(f"mask_{in_f_no:04}_in.png", img)
-                            write_image(f"mask_{in_f_no:04}_out.png", out_img)
+                            # write_image(f"mask_{in_f_no:04}_in.png", img)
+                            # write_image(f"mask_{in_f_no:04}_out.png", out_img)
                             img = out_img
 
-                            sys.exit()
 
                     in_frame: McoFrame = McoFrame(
                         no=in_f_no, img=img, scene=scene
@@ -376,7 +403,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     if is_last_scene(scene):
         if 'silence' in ch_video and ch_video['silence'] > 0:
             print(f"silence!!! {ch_video['silence']}")
-            img_black = np.zeros(out_video_shape, dtype=pipe_out_dtype)
+            img_black = np.zeros(in_video_shape, dtype=out_pipe_dtype)
             [encoder_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
 
             produced += ch_video['silence']
