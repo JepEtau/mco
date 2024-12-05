@@ -5,14 +5,12 @@ import os
 from pprint import pprint
 from PySide6.QtWidgets import QGraphicsEllipseItem
 import re
-import sys
 from typing import Literal, TYPE_CHECKING, Self
 
 from utils.p_print import *
 from utils.path_utils import absolute_path
 from ._db import db
 from ._keys import all_chapter_keys
-from .logger import logger
 from .scenes import get_scene_from_frame_no
 from .filters import parser_strip
 
@@ -24,7 +22,7 @@ MaskShape = Literal['circle', 'ellipse', 'oblong']
 
 
 @dataclass(slots=True)
-class DsrMask:
+class DsrRegion:
     shape: MaskShape
     # x, y, theta
     center: list[float | int, float | int]
@@ -37,10 +35,10 @@ class DsrMask:
 
     def get(self, size: list[float, float] | None = None) -> Self:
         if size is None:
-            return DsrMask(self.shape, self.center, self.axes, self.angle)
+            return DsrRegion(self.shape, self.center, self.axes, self.angle)
 
         w, h = size
-        return DsrMask(
+        return DsrRegion(
             self.shape,
             (int(self.center[0] * w + 0.5), int(self.center[1] * h + 0.5)),
             (int(self.axes[0] * h + 0.5), int(self.axes[1] * h + 0.5)),
@@ -51,13 +49,13 @@ class DsrMask:
 
 @dataclass
 class SceneDsr:
-    _frames: dict[int, list[DsrMask]] = field(default_factory=dict)
+    _frames: dict[int, list[DsrRegion]] = field(default_factory=dict)
     _size: list[float, float] | None = None
 
     def get(
         self,
         frame_no: int | None = None
-    ) -> list[DsrMask] | dict[int, list[DsrMask]] | None:
+    ) -> list[DsrRegion] | dict[int, list[DsrRegion]] | None:
         """Returns a list of frame's patch"""
         if frame_no is None:
             return self.get_all()
@@ -66,9 +64,9 @@ class SceneDsr:
         return None
 
 
-    def get_all(self) -> dict[int, list[DsrMask]] | None:
+    def get_all(self) -> dict[int, list[DsrRegion]] | None:
         """Returns a list of region for each frame of the scene"""
-        d: dict[int, list[DsrMask]] = {}
+        d: dict[int, list[DsrRegion]] = {}
         for frame_no, l in self._frames.items():
             d.update({frame_no: list([p.get(self._size) for p in l])})
         return d
@@ -86,7 +84,7 @@ class SceneDsr:
             self._frames[frame_no] = []
 
         self._frames[frame_no].append(
-            DsrMask(
+            DsrRegion(
                 shape=shape,
                 center=coordinates,
                 axes=size,
@@ -95,12 +93,12 @@ class SceneDsr:
         )
 
 
-    def set_regions(self, frame_no: int, regions: list[DsrMask]) -> None:
+    def set_regions(self, frame_no: int, regions: list[DsrRegion]) -> None:
         self._frames[frame_no] = []
         print(lightcyan(f"set_regions: {len(regions)}"))
         for r in regions:
             self._frames[frame_no].append(
-                DsrMask(
+                DsrRegion(
                     shape=r.shape,
                     center=r.center,
                     axes=r.axes,
@@ -112,7 +110,6 @@ class SceneDsr:
     def set_frame_size(self, size: list[int, int] | tuple[int, int]) -> None:
         """Set the shape so that the get function returns absolute coordinates/size"""
         self._size = size
-
 
 
 
@@ -164,7 +161,7 @@ def parse_dsr_file(k_ep_or_g: str):
                     print(f"warning: parse_replace_configurations: scene not found for frame no. {frame_no} in {k_ed}:{k_ep}:{k_chapter}")
                 continue
 
-            if 'dsr' not in scene:
+            if scene['dsr'] is None:
                 scene['dsr'] = SceneDsr()
             scene_dsr: SceneDsr = scene['dsr']
 

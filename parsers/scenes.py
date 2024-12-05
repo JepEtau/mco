@@ -62,8 +62,8 @@ def parse_scenes(
             'count': count,
             'filters': None,
             'filters_id': 'default',
-            'curves': None,
             'replace': dict(),
+            'dsr': None
         }
         scenes.append(new_scene)
         # print(scene_properties)
@@ -175,6 +175,7 @@ def parse_scenes_new(
             'filters': None,
             'filters_id': 'default',
             'replace': dict(),
+            'dsr': None
         })
         # print(scene_properties)
         # print(db_scenes[-1])

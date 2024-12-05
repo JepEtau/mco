@@ -32,7 +32,7 @@ from backend._types import CurrentFrame, DsrAction
 from parsers import (
     SceneGeometry,
     MaskShape,
-    DsrMask,
+    DsrRegion,
 )
 
 
@@ -65,7 +65,7 @@ class DsrSceneRegion:
         )
 
 
-def dsr_mask_to_scene(m: DsrMask) -> DsrSceneRegion:
+def dsr_mask_to_scene(m: DsrRegion) -> DsrSceneRegion:
     return DsrSceneRegion(
         shape=m.shape,
         center=m.center,
@@ -264,10 +264,10 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         if event:
             self._is_modified = True
 
-            regions: list[DsrMask] = []
+            regions: list[DsrRegion] = []
             for p in dsr_shapes:
                 regions.append(
-                        DsrMask(
+                        DsrRegion(
                         shape=p.shape,
                         center=p.center,
                         axes=p.axes,

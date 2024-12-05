@@ -10,8 +10,9 @@ import time
 from parsers import (
     VideoSettings,
     SceneDsr,
-    DsrMask,
+    DsrRegion,
 )
+from processing.dsr import get_mask
 from processing.effects import apply_effect
 from processing.frame_replace import (
     ItemCache, frame_occurences, get_frames_to_remove
@@ -235,109 +236,23 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                 ).reshape(in_pipe_img_shape)
                 if in_f_no not in frames_to_replace:
                     # print(purple(f"Read frame no.{in_f_no}"))
-                    if scene_dsr is not None:
-                        regions: list[DsrMask]= scene_dsr.get(frame_no=in_f_no)
-                        if regions is not None:
-                            # pprint(regions)
-                            if True:
-                                # out_img: np.ndarray = np_to_float32(img).reshape(in_shape)
-                                # img = cv2.resize(img, (1440,1080))
-                                mask_img = np.ndarray = np.zeros(img.shape[:2], dtype=np.uint8)
-                                region: DsrMask
-                                for region in regions:
-                                    if region.shape == 'circle':
-                                        mask_img = cv2.circle(
-                                            img=mask_img,
-                                            center=region.center,
-                                            radius=region.axes[1],
-                                            color=255,
-                                            thickness=-1
-                                        )
-
-                                    else:
-                                        mask_img = cv2.ellipse(
-                                            img=mask_img,
-                                            center=region.center,
-                                            axes=region.axes,
-                                            angle=region.angle,
-                                            startAngle=0,
-                                            endAngle=360,
-                                            color=255,
-                                            thickness=-1
-                                        )
-                                # img = np.ascontiguousarray(np_to_uint8(out_img))
-                                # write_image(f"mask_{in_f_no:04}_mask.png", mask_img)
-                            elif False:
-                                # no rotate
-                                pil_image = PilImage.fromarray(img.reshape(in_shape))
-                                pil_mask = ImageDraw.Draw(pil_image)
-                                for region in regions:
-                                    region: DsrMask
-                                    x0, y0 = region.center - region.axes // 2
-                                    x1, y1 = x0 + region.axes[0], y0 + region.axes[1]
-                                    pil_mask.ellipse(
-                                        xy=((x0, y0), (x1, y1)),
-                                        outline="green"
-                                    )
-                                    pil_image = pil_image.rotate(region.angle, expand=True)
-                                    break
-                                # pil_image = pil_image.rotate(30, expand=True)
-
-                                out_img: np.ndarray = np.array(pil_image)
-                                img = np.ascontiguousarray(out_img)
-                            else:
-                                # worse than cv2
-                                region: DsrMask = regions[0]
-                                pil_mask = PilImage.new(
-                                    'F', list(region.axes + 10), color=0.
-                                )
-                                x0, y0 = 0,0
-                                x1, y1 = x0 + region.axes[0], y0 + region.axes[1]
-                                ImageDraw.Draw(pil_mask).ellipse(
-                                    xy=((x0, y0), (x1, y1)),
-                                    outline="white",
-                                    fill="white"
-                                )
-                                pil_mask = pil_mask.rotate(
-                                    region.angle,
-                                    # resample=PilImage.Resampling.BILINEAR,
-                                    expand=True
-                                )
-                                np_mask: np.ndarray = np.array(pil_mask, dtype=np.float32)
-
-                                write_image(f"mask_{in_f_no:04}_pil.png", np_mask)
-
-                            # in_img: np.ndarray = np_to_float32(img).reshape(in_shape)
-                            # radius = 5
-                            # # cv2.INPAINT_NS
-                            # # in_img = cv2.cvtColor(in_img, cv2.COLOR_BGR2YUV)
-                            # b,g,r = cv2.split(in_img)
-                            # out_bgr = []
-                            # for p in (r,g,b):
-                            #     out_bgr.append(cv2.inpaint(
-                            #         p,
-                            #         inpaintMask=mask_img,
-                            #         inpaintRadius=radius,
-                            #         flags=cv2.INPAINT_TELEA
-                            #     ))
-                            # out_img = cv2.merge(out_bgr)
-                            # out_img = cv2.cvtColor(out_img, cv2.COLOR_YUV2BGR)
-
-                            start_time = time.time()
-                            radius: int = 5
-                            out_img = cv2.inpaint(
-                                img,
-                                inpaintMask=mask_img,
-                                inpaintRadius=radius,
-                                flags=cv2.INPAINT_TELEA
-                            )
-                            # print(f"elapsed: {(time.time() - start_time) * 1000:.01f}ms")
-
-                            # write_image(f"mask_{in_f_no:04}_in.png", img)
-                            # write_image(f"mask_{in_f_no:04}_out.png", out_img)
-                            img = out_img
-
-
+                    mask_img: np.ndarray = get_mask(
+                        scene=src_scene,
+                        frame_no=in_f_no,
+                        shape=img.shape,
+                    )
+                    if mask_img is not None:
+                        # start_time = time.time()
+                        radius: int = 5
+                        img = cv2.inpaint(
+                            img,
+                            inpaintMask=mask_img,
+                            inpaintRadius=radius,
+                            flags=cv2.INPAINT_TELEA
+                        )
+                        # print(f"elapsed: {(time.time() - start_time) * 1000:.01f}ms")
+                        # write_image(f"mask_{in_f_no:04}_in.png", img)
+                        # write_image(f"mask_{in_f_no:04}_out.png", out_img)
                     in_frame: McoFrame = McoFrame(
                         no=in_f_no, img=img, scene=scene
                     )

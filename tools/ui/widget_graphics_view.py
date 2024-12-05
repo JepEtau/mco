@@ -58,7 +58,7 @@ from backend._types import (
 from parsers import (
     SceneGeometry,
     MaskShape,
-    DsrMask,
+    DsrRegion,
 )
 from .widget_dsr import DsrSceneRegion, dsr_mask_to_scene
 from utils.p_print import *
@@ -207,10 +207,10 @@ class GraphicsViewWidget(QGraphicsView):
 
     def add_region_to_scene(
         self,
-        region: DsrMask | DsrSceneRegion
+        region: DsrRegion | DsrSceneRegion
     ) -> DsrSceneRegion:
         # Convert from Mask to SceneSHape
-        if isinstance(region, DsrMask):
+        if isinstance(region, DsrRegion):
             region: DsrSceneRegion = dsr_mask_to_scene(region)
 
         # Draw/Add item to scene

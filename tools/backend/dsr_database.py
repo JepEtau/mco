@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 from parsers import (
     db,
     SceneDsr,
-    DsrMask,
+    DsrRegion,
     credit_chapter_keys,
 )
 
@@ -64,7 +64,7 @@ class DsrDatabase:
         src_scene: SrcScene,
         f_no: int,
         initial: bool = False
-    ) -> list[DsrMask]:
+    ) -> list[DsrRegion]:
         scene: Scene = src_scene['scene']
         try:
             if initial:
