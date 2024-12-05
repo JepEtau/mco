@@ -186,10 +186,10 @@ def tf_scenes(
                 '-i', 'pipe:0',
                 "-filter_complex", f"[0:v]{color_params}[outv]",
                 "-map", "[outv]",
-                "-vcodec", vsettings.codec,
-                *metadata,
-                *vsettings.codec_options,
                 "-pix_fmt", vsettings.pix_fmt,
+                "-vcodec", vsettings.codec,
+                *vsettings.codec_options,
+                *metadata,
                 "-y", out_fp
             ]
 
