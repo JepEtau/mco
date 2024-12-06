@@ -279,6 +279,7 @@ def parse_target_scenelist(
             except:
                 sys.exit(f"erroneous option {k_option} in section [{k_section}]")
 
+        value_str = value_str.split("#")[0]
         scene_properties: list[str] = value_str.split(',')
 
         k_ed: str = db_video_target['k_ed_src']

@@ -254,29 +254,24 @@ class GraphicsViewWidget(QGraphicsView):
         # Get position and calculate offset from position to center of shape
         cursor_position: QPointF = self.mapToScene(self.current_position.toPoint())
         self.cursor_offset = QPointF(*self.new_region.center) - cursor_position
-        print(f"shape center: {self.new_region.center}")
-        print(f"cursor_position: {cursor_position}")
-        print(f"cursor_offset: {self.cursor_offset}")
-
-        # Define a new item
-        cursor_position = cursor_position + self.cursor_offset
-        x, y = cursor_position.toTuple()
-
-        s = self.new_region.map_to_scene(self.img_size)
-        axes = s.axes
-        item: QGraphicsEllipseItem = QGraphicsEllipseItem(
-            QRectF(x - axes[0], y - axes[1], 2*axes[0]+1, 2*axes[1]+1)
+        w, h = self.img_size
+        self.cursor_offset = QPointF(
+            self.cursor_offset.x() / w,
+            self.cursor_offset.y() / h
         )
-        item.setOpacity(0.5)
-        item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
-        item.setBrush(QBrush(QColor("red")))
-        item.setPen(QPen(QColor("red")))
-        item.setTransformOriginPoint(x, y)
-        item.setRotation(self.new_region.angle)
-        self.new_region.item = item
-        self._scene.addItem(item)
+        print(f"  shape center: {self.new_region.center}")
+        print(f"  cursor_position: {cursor_position}")
+        print(f"  cursor_offset: {self.cursor_offset}")
 
+        # Modify center of the item
+        # w, h = self.img_size
+        # cursor_position = cursor_position + self.cursor_offset
+        # x, y = (cursor_position / self.w ).toTuple()
+
+        # self.new_region.center = (x, y)
         self.modifying_shape = True
+        self.add_region_to_scene(self.new_region)
+
 
 
     def discard_modifying_shape(self, current_position: QPointF) -> None:
@@ -306,6 +301,7 @@ class GraphicsViewWidget(QGraphicsView):
 
         if self.new_region.item is None:
             cursor_position = cursor_position + self.cursor_offset
+            # print(f"draw item at {cursor_position.toTuple()}, offset={self.cursor_offset.toTuple()}")
             x, y = cursor_position.toTuple()
             w, h = self.img_size
 
@@ -381,42 +377,24 @@ class GraphicsViewWidget(QGraphicsView):
     def mousePressEvent(self, event):
         # Append the shape to the list of patches
         if self.control_key_pressed:
-            if self.new_region is not None:
-                self.regions.append(self.new_region.copy())
-                self.cursor_offset = QPointF(0, 0)
-                self.setCursor(Qt.CursorShape.ArrowCursor)
-                self.new_region.item = None
-                self.signal_dsr_updated_event.emit(self.regions)
-            else:
-                raise ValueError("new region is None")
-
-        elif self.modifying_shape:
-            center: QPointF = event.position() + self.cursor_offset
-            self.regions.append(
-                DsrSceneRegion(
-                    shape=self.main_window.get_current_dsr_shape(),
-                    center=center.toTuple(),
-                    axes=self.new_region.axes,
-                    angle=self.new_region.angle,
-                    item=self.new_region.item
-                )
-            )
-            print("shape moved:")
-            s = self.regions[-1]
-
-            self.axes = s.axes
-            self.radius = s.axes[0]
-            self.angle = s.angle
-            self.main_window.set_current_dsr_shape(s.shape)
-
-            # self.new_region.
+            self.regions.append(self.new_region.copy())
             self.cursor_offset = QPointF(0, 0)
             self.setCursor(Qt.CursorShape.ArrowCursor)
-
+            self.new_region.item = None
             self.modifying_shape = False
             self.signal_dsr_updated_event.emit(self.regions)
 
-        else:
+        elif self.modifying_shape:
+            print("Moved")
+            self.modifying_shape = False
+            # center: QPointF = event.position() + self.cursor_offset
+            self.regions.append(self.new_region.copy())
+            self.cursor_offset = QPointF(0, 0)
+            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.new_region.item = None
+            self.signal_dsr_updated_event.emit(self.regions)
+
+        elif not self.modifying_shape:
             # start moving shape
             is_mouse_over_shape: bool = False
             for i, s in enumerate(reversed(self.regions)):

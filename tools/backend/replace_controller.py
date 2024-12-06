@@ -313,12 +313,12 @@ class ReplaceController(CommonController):
             self.dsr_db.get_scene_dsr(scene=scene)
         )
         # self.selection_dsr.update(self.dsr_db.get_scene_dsr(scene))
-        print(yellow(f" -> "))
-        pprint(self.selection_dsr[scene_no])
+        # print(yellow(f" -> "))
+        # pprint(self.selection_dsr[scene_no])
 
 
         self.signal_dsr_shapes_refreshed.emit()
-        print(yellow(f"modified scenes: {self.dsr_db.modified_scene_nos()}"))
+        # print(yellow(f"modified scenes: {self.dsr_db.modified_scene_nos()}"))
         self.send_modified_scene_signal()
 
 

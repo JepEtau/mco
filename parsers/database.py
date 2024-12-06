@@ -156,8 +156,7 @@ def parse_database(
     # Génériques: debut/fin
     for k_chapter_g in ('g_debut', 'g_fin'):
         # Replaced frames
-        parse_replace_file(k_ep_or_g=k_chapter_g)
-        parse_dsr_file(k_ep_or_g=k_chapter_g)
+        # parse_replace_file(k_ep_or_g=k_chapter_g)
 
         # Parameters used to stabilize
         # parse_stabilize_configurations(k_ep=k_ep, k_ch=k_chapter_g)
@@ -214,30 +213,6 @@ def parse_database(
 
     return stats
 
-
-def parse_database_for_study(k_ed, k_ep, k_chapter):
-    """
-        database: global database
-        k_ep: episode to generate
-        k_ed: if specified, only source will be used (study mode)
-    """
-
-    print("Parse database for study")
-    verbose = False
-
-    parse_common_configuration()
-    parse_editions()
-    db_init_episodes(k_ed=k_ed)
-    parse_generiques(k_ed=k_ed)
-    parse_episode(k_ed=k_ed, k_ep=k_ep)
-    parse_replace_file(k_ep_or_g=k_ep)
-    parse_dsr_file(k_ep_or_g=k_ep)
-    parse_geometry_file(k_ep_or_g=k_ep)
-
-    for k_p in ('g_debut', 'g_fin'):
-        parse_replace_file(k_ep_or_g=k_p)
-        parse_dsr_file(k_ep_or_g=k_p)
-        parse_geometry_file(k_ep_or_g=k_p)
 
 
 def get_dependencies(

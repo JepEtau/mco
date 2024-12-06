@@ -171,9 +171,8 @@ class DsrDatabase:
             print ("to save")
 
             k_ed, k_ep, k_ch, src_scene_no = src_scene_key.split(':')
-            k = k_ch if k_ch in credit_chapter_keys() else k_ep
             dsr_fp = os.path.join(
-                db['common']['directories']['config'], k, f"{k}_dsr.ini"
+                db['common']['directories']['config'], k_ep, f"{k_ep}_dsr.ini"
             )
 
             # Parse the file
