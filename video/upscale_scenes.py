@@ -7,7 +7,7 @@ import time
 
 from nn_inference.model_mgr import ModelManager
 from nn_inference.threads.t_decoder import VideoStreamInfo
-from nn_inference.toolbox.doc_upscale import upscale_documentaire
+from nn_inference.toolbox.upscale_doc import upscale_documentaire
 from parsers._types import VideoSettings
 from parsers.p_print import pprint_scene_mapping
 from processing.upscale import UpscalePipeline
@@ -261,6 +261,10 @@ def upscale_scenes(
         pipeline.run()
 
     if scenes_to_upscale_doc:
-        upscale_documentaire(scenes=scenes_to_upscale_doc, debug=debug)
+        upscale_documentaire(
+            scenes=scenes_to_upscale_doc,
+            debug=debug,
+            force=force
+        )
 
     print("done")
