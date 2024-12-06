@@ -114,7 +114,7 @@ class SceneDsr:
 
 
 def parse_dsr_file(k_ep_or_g: str):
-    verbose = True
+    verbose = False
     if verbose:
         print(lightgreen(f"parse_dsr_file: {k_ep_or_g}"))
 

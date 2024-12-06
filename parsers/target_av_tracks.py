@@ -1,6 +1,7 @@
 from __future__ import annotations
 import sys
 from pprint import pprint
+import warnings
 
 
 from parsers._keys import main_chapter_keys
@@ -76,9 +77,10 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
 
     elif db_video[k_chapter_c]['count'] > db_audio[k_chapter_c]['count']:
         # remove some frames
-        logger.debug(f"{k_chapter_c}: remove {db_video[k_chapter_c]['count']- db_audio[k_chapter_c]['count']} frames")
-        last_scene['count'] -= db_video[k_chapter_c]['count'] - db_audio[k_chapter_c]['count']
-        last_scene['dst']['count'] = last_scene['count']
+        to_remove: int = db_video[k_chapter_c]['count'] - db_audio[k_chapter_c]['count']
+        logger.debug(f"{k_chapter_c}: remove {to_remove} frames")
+        last_scene['src'].last_scene()['count'] -= to_remove
+        last_scene['dst']['count'] = last_scene['src'].last_scene()['count']
 
     db_video[k_chapter_c]['count'] = db_audio[k_chapter_c]['count']
     if k_ep == K_EP_DEBUG:
@@ -126,7 +128,7 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
             else:
                 db_audio[k_chapter]['duration'] = int(audio_count_rounded * 1000 / fps)
             audio_count = audio_count_rounded
-            print ("%s.consolidate_av_tracks: %s:%s: add a silence to round the audio duration: %d" % (__name__, k_ep, k_chapter, silence))
+            warnings.warn("%s.consolidate_av_tracks: %s:%s: add a silence to round the audio duration: %d" % (__name__, k_ep, k_chapter, silence))
 
         # Modify the real audio count to this new duration
         if k_chapter == 'episode':
@@ -234,12 +236,13 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
             logger.debug(green(f"Effects detected in {k_ep}:{k_chapter}"))
             print("====================================================")
             pprint(video['effects'])
-            for effect in video['effects']:
+            warnings.warn(red(" verify that the chapter effect is correctly taken into account when consolidating the first/last frame"))
+            for effect in video['effects'].effects:
             # effect: Effect = video['effects'].primary_effect()
-
+                break
                 if effect.name == 'loop_and_fadein':
                     raise RuntimeError("TODO to be corrected asap")
-                    fadein_count = video['effects'].primary_effect()
+                    fadein_count = video['effects'].primary_effect().count
                     logger.debug(f"\t{k_ep}:{k_chapter}, patch the first scene -> fadein: add effects")
                     # pprint(video)
                     # first_scene['src']['start'] += fadein_count
@@ -253,12 +256,11 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
                             fade=fadein_count
                         )
                     ])
-                    # logger.debug(first_scene)
-                    # sys.exit()
+
 
                 if 'fadeout' in effect.name and effect.fade > 0:
                     logger.debug(yellow(f"\t{k_ep}:{k_chapter} modify fadeout effect in db_video!"))
-
+                    # raise NotImplementedError("fadeout in chapter")
                     fadeout_count = effect.fade
                     if 'effects' in last_scene:
                         effect: Effect = last_scene['effects'].primary_effect()
@@ -433,7 +435,5 @@ def _consolidate_av_tracks_g_debut_end(db, k_ep, k_chapter_c):
 
     # elif video_count == audio_count:
     #     print(f"info: consolidate_av_tracks: %s: video(%d) = audio (%d)" % (k_chapter_c, video_count, audio_count))
-
-
 
 

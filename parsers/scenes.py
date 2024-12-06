@@ -364,7 +364,8 @@ def parse_target_scenelist(
                         current_scene_no = scene_no
                     # raise ValueError(f"{k_ed}:{k_ep}:{k_ch}:{scene_no}")
 
-                elif k == 'scene':
+                # Src scene
+                elif k in ('scene', 's'):
                    if current_scene_no != -1:
                        scene['src'].add_scene(
                            k_ed=k_ed,

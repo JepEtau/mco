@@ -1,4 +1,5 @@
 
+from pprint import pprint
 from ._keys import main_chapter_keys
 from utils.mco_types import Scene
 from .helpers import get_fps
@@ -68,6 +69,7 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
         if 'effects' in first_scene:
             effect = first_scene['effects'].primary_effect()
             if effect.name == 'loop_and_fadein':
+                pprint(effect)
                 loop_count += effect.loop
         chapter_frame_count += loop_count
 

@@ -46,14 +46,13 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
 
     target_chapter: ChapterVideo = db[k_ep]['video']['target'][k_chapter]
 
-    if k_chapter == 'asuivre':
-        print(yellow("consolidate_target_scenes:start"))
-        pprint(db['ep01']['video']['target'][k_chapter])
+    if k_chapter in ('precedemment', 'asuivre'):
+        print(yellow(f"consolidate_target_scenes: {k_chapter}"))
+        # pprint(db['ep01']['video']['target'][k_chapter])
 
     k_ed_src = target_chapter['k_ed_src']
     src_chapter: ChapterVideo = db[k_ep]['video'][k_ed_src][k_chapter]
 
-    pprint(src_chapter)
     if src_chapter['count'] < 1:
         if k_chapter == 'asuivre':
             print(yellow(f"{k_ed_src}::{k_chapter} is empty"))
@@ -123,7 +122,7 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
     add_ref: bool = True
     if len(ref_scenes) != len(target_chapter['scenes']):
         print(f"reference: {k_ed_src}:{k_ep}:{k_chapter}")
-        print(red(f"Target: {len(target_chapter['scenes'])}, Reference: {len(ref_scenes)} scenes"))
+        print(red(f"Target: {len(target_chapter['scenes'])}, Reference ({k_ed_ref}): {len(ref_scenes)} scenes"))
         add_ref = False
         if k_chapter in ('episode'):
             # pprint(ref_scenes)

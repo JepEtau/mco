@@ -150,7 +150,6 @@ def consolidate_scene(
             scene['effects'].append(scene_effect)
 
 
-
     # Output video Settings
     #---------------------------------------------------------------------------
     _task_name: str = task_name
