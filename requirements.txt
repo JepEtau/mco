@@ -11,3 +11,4 @@ onnxruntime
 timm
 einops
 scikit-image
+setuptools

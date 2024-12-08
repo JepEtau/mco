@@ -41,7 +41,7 @@ class DsrRegion:
         return DsrRegion(
             self.shape,
             (int(self.center[0] * w + 0.5), int(self.center[1] * h + 0.5)),
-            (int(self.axes[0] * h + 0.5), int(self.axes[1] * h + 0.5)),
+            (int(self.axes[0] * w + 0.5), int(self.axes[1] * h + 0.5)),
             self.angle,
         )
 

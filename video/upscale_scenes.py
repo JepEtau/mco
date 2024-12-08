@@ -249,7 +249,7 @@ def upscale_scenes(
 
 
     device: str = 'cuda'
-    pprint(scenes_to_upscale)
+    # pprint(scenes_to_upscale)
     if scenes_to_upscale:
         pipeline = UpscalePipeline(
             device,

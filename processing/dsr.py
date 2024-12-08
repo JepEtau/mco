@@ -4,9 +4,10 @@ from parsers import (
     DsrRegion,
 )
 from utils.mco_types import Scene
+from utils.p_print import red
 
 
-def get_mask(
+def generate_dsr_mask(
     scene: Scene,
     frame_no: int,
     shape: list[int, int] | tuple[int, int]
@@ -16,11 +17,16 @@ def get_mask(
 
     mask_img: np.ndarray | None = None
     regions: list[DsrRegion] = scene['dsr'].get(frame_no=frame_no)
+
     if regions is not None:
-        h, w = shape[:2]
-        mask_img = np.ndarray = np.zeros((h, w), dtype=np.uint8)
+        h, w = shape[2:] if len(shape) == 4 else shape[:2]
+        mask_img: np.ndarray = np.zeros((h, w), dtype=np.uint8)
         region: DsrRegion
         for region in regions:
+            # print(region)
+            # print(f"dsr shape: ({h}, {w})")
+            region = region.get(size=(w, h))
+            # print(region)
             if region.shape == 'circle':
                 mask_img = cv2.circle(
                     img=mask_img,
@@ -43,7 +49,7 @@ def get_mask(
                 )
 
             else:
-                raise NotImplementedError(f"Unsupported mask shape: {region.shape}")
+                print(red(f"Unsupported mask shape: {region.shape}"))
 
     return mask_img
 

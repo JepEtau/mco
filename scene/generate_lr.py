@@ -12,7 +12,7 @@ from parsers import (
     SceneDsr,
     DsrRegion,
 )
-from processing.dsr import get_mask
+from processing.dsr import generate_dsr_mask
 from processing.effects import apply_effect
 from processing.frame_replace import (
     ItemCache, frame_occurences, get_frames_to_remove
@@ -236,7 +236,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                 ).reshape(in_pipe_img_shape)
                 if in_f_no not in frames_to_replace:
                     # print(purple(f"Read frame no.{in_f_no}"))
-                    mask_img: np.ndarray = get_mask(
+                    mask_img: np.ndarray = generate_dsr_mask(
                         scene=src_scene,
                         frame_no=in_f_no,
                         shape=img.shape,

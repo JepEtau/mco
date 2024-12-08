@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import logging
+import math
 from pprint import pprint
 import sys
 import time
@@ -63,6 +64,7 @@ class UpscalePipeline(object):
 
         in_max_nbytes: int = 0
         out_max_nbytes: int = 0
+        in_max_sync_nbytes: int = 0
         for scene in scenes:
             # Verify that input videos to generate this scene have the same info
             vi: VideoStreamInfo = (
@@ -81,11 +83,12 @@ class UpscalePipeline(object):
                         "input video must have the same resolution as the primary one"
                     )
 
+            # Get HtoD max bytes.
+            # The decoder MUST NOT resize the input video
             vi: VideoStreamInfo = (
                 scene['src'].primary_scene()['scene']['inputs'].progressive().info
             )
             nbytes: int = vi.img_nbytes * np.dtype(vi.img_dtype).itemsize
-
             if nbytes > in_max_nbytes:
                 in_max_nbytes = nbytes
 
@@ -96,7 +99,9 @@ class UpscalePipeline(object):
             print(lightcyan(f"Calculate in/out shapes:"))
             print(f"  initial shape: {shape}")
             scale: int = 1
+            model_key: str = ""
             for i, filter_param in enumerate(filters.steps):
+                model_key = ""
                 if isinstance(filter_param, tuple | list):
                     _scale: int = 1
                     name, param = filter_param
@@ -118,19 +123,50 @@ class UpscalePipeline(object):
                 scale = _scale * scale
                 # pprint(filters)
 
+
+                # Calculate maximum nb of bytes for inpaint models
+                # print(red(model_key))
+                if (
+                    model_key
+                    and (model_manager.model(model_key)
+                        .arch
+                        .infer_type
+                        .type) == 'inpaint'
+                ):
+                    # scale = 1
+                    # Allocate memory for inpaint mask,
+                    # which is done synchronously.
+                    in_sync_nbytes = math.prod(shape)
+                    if in_sync_nbytes > in_max_sync_nbytes:
+                        in_max_sync_nbytes = in_sync_nbytes
+
+            # The encoder MUST NOT resize the video
+
+            # We can include all models because inpaint models have a scale of 1:1
             out_nbytes = int(scale * scale * in_max_nbytes + 0.5)
             if PIXEL_FORMAT[scene['task'].video_settings.pix_fmt]['bpp'] > 8:
                 out_nbytes *= 2
             if out_nbytes > out_max_nbytes:
                 out_max_nbytes = out_nbytes
 
-            print(f"Scene {scene['no']}, in: {nbytes} bytes, out: {out_nbytes}")
+        # if in_max_sync_nbytes > 0:
+        #     print(f"Scene {scene['no']} (inpaint), in: {nbytes} bytes, out: {out_nbytes}")
+        # else:
+        #     print(f"Scene {scene['no']}, in: {nbytes} bytes, out: {out_nbytes}")
 
         print(f"Max: in: {in_max_nbytes} bytes, out: {out_max_nbytes}")
-        print(f"Scale: {scale}")
+        print(f"Inpaint: mask: {in_max_sync_nbytes} bytes")
+        print(f"Total scale: {scale}")
 
         model_manager.consolidate()
         model_manager.set_in_out_max_nbytes(in_max_nbytes, out_max_nbytes)
+        # Consider that all inpaint models are executed by cuda provider
+        model_manager.set_sync_in_max_nbytes(
+            xprovider='cuda',
+            in_nbytes=in_max_sync_nbytes,
+            out_nbytes=0
+        )
+        model_manager.set_sync_dtypes(in_dtype=np.uint8, out_dtype=np.uint8)
         print(model_manager)
 
 
@@ -146,6 +182,8 @@ class UpscalePipeline(object):
         pprint(model_manager.htod_mem)
         print(yellow("DtoH memory:"))
         pprint(model_manager.dtoh_mem)
+        print(yellow("HtoD (sync) memory:"))
+        pprint(model_manager.htod_sync_memory('cuda'))
 
         # Create encoder thread
         try:
