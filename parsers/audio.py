@@ -138,7 +138,7 @@ def parse_audio_section(
         if k_option not in main_chapter_keys():
             continue
 
-        k_chapter = k_option
+        k_ch = k_option
         db_audio[k_option] = {
             'segments': list()
         }
@@ -167,7 +167,7 @@ def parse_audio_section(
 
             # Duration
             d = end - start
-            db_audio[k_chapter]['segments'].append({
+            db_audio[k_ch]['segments'].append({
                 'start': start,
                 'end': end,
                 'duration': d
@@ -198,20 +198,20 @@ def parse_audio_section(
                     search_k_ep_src = re.search(re.compile(r"src=([0-9]{1,2})"), properties[i])
                     if search_k_ep_src is not None:
                         k_ep_src = int(search_k_ep_src.group(1))
-                        db_audio[k_chapter]['segments'][-1]['k_ep'] = 'ep%02d' % (k_ep_src)
+                        db_audio[k_ch]['segments'][-1]['k_ep'] = 'ep%02d' % (k_ep_src)
                         continue
             else:
                 k_ep_src = -1
 
 
-        db_audio[k_chapter].update({
+        db_audio[k_ch].update({
             'fadein': chapter_fadein,
             'fadeout': chapter_fadeout,
             'fade_alg': chapter_fadeout_alg,
             'silence': chapter_silence,
-            'start': db_audio[k_chapter]['segments'][0]['start'],
+            'start': db_audio[k_ch]['segments'][0]['start'],
             'duration': duration,
-            'end': db_audio[k_chapter]['segments'][0]['start'] + d,
+            'end': db_audio[k_ch]['segments'][0]['start'] + d,
             'avsync': 0
         })
 

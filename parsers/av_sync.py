@@ -317,86 +317,36 @@ def consolidate_av_sync(k_ep: str):
         # #     sys.exit("calculate_av_sync: error: start of episode (%d) != start of 1st scene (%d)" % (
         # #         db_video['episode']['start'], db_video[k_chapter]['scenes'][0]['start']))
 
-    else:
-        # precedemment does not exist
-        tvideo_track['precedemment'].update({
-            'avsync': 0,
-            'count': 0,
-        })
+    # else:
+    #     # precedemment does not exist
+    #     tvideo_track['precedemment'].update({
+    #         'avsync': 0,
+    #         'count': 0,
+    #     })
 
-        # episode
-        k_ch = 'episode'
+    #     # episode
+    #     k_ch = 'episode'
 
-        # Get the start frame no. from the src ed.
-        k_ed_src = audio_track['src']['k_ed']
-        video_start = episode['video'][k_ed_src][k_ch]['start']
+    #     # Get the start frame no. from the src ed.
+    #     k_ed_src = audio_track['src']['k_ed']
+    #     video_start = episode['video'][k_ed_src][k_ch]['start']
 
-        avsync_ms = audio_track[k_ch]['start'] - frame_to_ms(video_start, fps)
-        # db_video[k_chapter].update({
-        #     'avsync': ms_to_frame(abs(avsync_ms), fps) if avsync_ms < 0 else 0
-        # })
-        if avsync_ms > 0:
-            db_target_video[k_ch]['avsync'] = 0
-            audio_track[k_ch]['avsync'] = abs(avsync_ms)
-        else:
-            # missing video frames, use fade_in
-            loop_count = ms_to_frame(abs(avsync_ms), fps)
-            nested_dict_set(db_target_video[k_ch], loop_count, 'effects', 'loop_and_fadein')
-            db_target_video[k_ch]['count'] += loop_count
+    #     avsync_ms = audio_track[k_ch]['start'] - frame_to_ms(video_start, fps)
+    #     # db_video[k_chapter].update({
+    #     #     'avsync': ms_to_frame(abs(avsync_ms), fps) if avsync_ms < 0 else 0
+    #     # })
+    #     if avsync_ms > 0:
+    #         db_target_video[k_ch]['avsync'] = 0
+    #         audio_track[k_ch]['avsync'] = abs(avsync_ms)
+    #     else:
+    #         # missing video frames, use fade_in
+    #         loop_count = ms_to_frame(abs(avsync_ms), fps)
+    #         nested_dict_set(db_target_video[k_ch], loop_count, 'effects', 'loop_and_fadein')
+    #         db_target_video[k_ch]['count'] += loop_count
 
-        logger.debug(lightgrey(f"\tcalculate_av_sync: avsync_ms: {avsync_ms}"))
-
-    k_ch = 'asuivre'
-    if k_ch in audio_track and audio_track[k_ch]['duration'] != 0:
-        # g_asuivre
-        k_chapter_g = 'g_asuivre'
-        audio_count = ms_to_frame(audio_track[k_chapter_g]['duration'], fps)
-        db_target_video[k_chapter_g].update({
-            'start': 0,
-            # 'count': audio_count,
-            'avsync': 0,
-        })
-
-        audio_track[k_chapter_g].update({
-            'avsync': 0,
-            'count': ms_to_frame(audio_track[k_chapter_g]['end'] - audio_track[k_chapter_g]['start'], fps)
-        })
-
-        # asuivre
-        db_target_video[k_ch]['avsync'] = 0
-        audio_count = ms_to_frame(audio_track[k_ch]['duration'], fps)
-        audio_track[k_ch].update({
-            'avsync': 0,
-            'count': audio_count
-        })
-    else:
-        tvideo_track['g_asuivre'].update({
-            'avsync': 0,
-            'count': 0,
-        })
-        tvideo_track[k_ch].update({
-            'avsync': 0,
-            'count': 0,
-        })
-
-        audio_track['g_asuivre'].update({
-            'avsync': 0,
-            'count': 0,
-        })
-        audio_track[k_ch].update({
-            'avsync': 0,
-            'count': 0,
-        })
+    #     logger.debug(lightgrey(f"\tcalculate_av_sync: avsync_ms: {avsync_ms}"))
 
 
-
-    # documentaire
-    k_ch = 'documentaire'
-    db_target_video[k_ch]['avsync'] = 0
-    audio_track[k_ch].update({
-        'avsync': 0,
-        # 'count': ms_to_frame(db_audio[k_chapter]['duration'], fps)
-    })
 
     # TODO remove the above modification of frames count once frame count is validate
     # Recalculte video count

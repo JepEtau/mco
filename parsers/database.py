@@ -204,7 +204,7 @@ def parse_database(
 
     stats: dict[str, Any] | None = None
     if k_ep != 'ep00':
-        consolidate_av_sync(k_ep=k_ep)
+        # consolidate_av_sync(k_ep=k_ep)
         consolidate_av_tracks(k_ep=k_ep)
 
         stats = pprint_episode(k_ep=k_ep)

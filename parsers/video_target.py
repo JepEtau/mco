@@ -68,8 +68,9 @@ def parse_video_target(
             continue
         k_chapter = k_option
 
-        chapter_fadein = 0
-        chapter_fadeout = 0
+
+        db_video['effects'] = Effects()
+        effects: Effects = db_video['effects']
         k_chapter_ed_src = None
         start = None
         end = -1
@@ -79,27 +80,20 @@ def parse_video_target(
         # logger.debug(f"\t{k_ep}:{k_chapter}, properties: ", properties)
         for property in properties:
 
-            search_start_end = re.search(re.compile(r"(\d+):(-?\d+)"), property)
-            if search_start_end is not None:
+            if search_start_end := re.search(re.compile(r"(\d+):(-?\d+)"), property):
                 start = int(search_start_end.group(1))
                 end = int(search_start_end.group(2))
-                continue
 
-            search_fadein = re.search(re.compile(r"fadein=([0-9.]+)"), property)
-            if search_fadein is not None:
+            elif search_fadein := re.search(re.compile(r"fadein=([0-9.]+)"), property):
                 chapter_fadein = int(float(search_fadein.group(1)) * fps)
-                continue
+                effects.append(Effect(name='fadein', fade=chapter_fadein))
 
-            search_fadeout = re.search(re.compile(r"fadeout=([0-9.]+)"), property)
-            if search_fadeout is not None:
+            if search_fadeout := re.search(re.compile(r"fadeout=([0-9.]+)"), property):
                 chapter_fadeout = int(float(search_fadeout.group(1)) * fps)
-                continue
+                effects.append(Effect(name='fadeout', fade=chapter_fadeout))
 
-            search_k_ed_src = re.search(re.compile(r"ed=([a-z]+[0-9]*)"), property)
-            if search_k_ed_src is not None:
+            if search_k_ed_src := re.search(re.compile(r"ed=([a-z]+[0-9]*)"), property):
                 k_chapter_ed_src = search_k_ed_src.group(1)
-                # sys.exit("found %s for %s:%s" % (k_chapter_ed_src, k_ep, k_chapter))
-                continue
 
         # if start is None:
         #     sys.exit("Error: parse_video_target_section: start and end values are required for %s:%s in target file" % (k_ep, k_chapter))
@@ -107,26 +101,16 @@ def parse_video_target(
         nested_dict_set(db_video, dict(), k_chapter)
         ch_video: ChapterVideo = db_video[k_chapter]
         ch_video.update({
-            'effects': Effects(),
+            'effects': effects,
             'start': start,
             'end': end,
             'count': (end - start) if end > 0 else -1,
             'k_ed_src': k_chapter_ed_src,
             'k_ep': k_ep,
             'k_ch': k_chapter,
+            'avsync': 0,
         })
 
-        if chapter_fadein:
-            logger.debug(lightcyan(f"fadein != 0: {k_chapter}"))
-            logger.debug(ch_video)
-            ch_video['effects'].append(
-                Effect(name='fadein', fade=chapter_fadein)
-            )
-
-        if chapter_fadeout:
-            ch_video['effects'].append(
-                Effect(name='fadeout', fade=chapter_fadeout)
-            )
 
     if k_ed_src is None:
         sys.exit(f"error: parse_video_target_section: missing key \'source\' in target file {k_ep}.ini")
@@ -178,7 +162,6 @@ def parse_video_target_g(
             }
             continue
 
-        chapter_fadeout = 0
         k_chapter_ed_src = None
         start = None
         end = -1
@@ -186,7 +169,6 @@ def parse_video_target_g(
         # Walk through values
         properties = value_str.split(',')
 
-        chapter_fadeout = 0
         db_video['effects'] = Effects()
         effects: Effects = db_video['effects']
         for property in properties:
