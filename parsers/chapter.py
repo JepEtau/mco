@@ -51,10 +51,14 @@ def parse_chapter_sections(
             'end': end,
             'count': (end - start) if end > 0 else -1,
         })
-        db_video[k_chapter]['effects'] = Effects(
-            effects=[
-                # Effect(name='loop_and_fadein', fade=chapter_fadein),
-                Effect(name='fadein', fade=chapter_fadein),
-                Effect(name='fadeout', fade=chapter_fadeout)
-            ]
-        )
+        db_video[k_chapter]['effects'] = Effects()
+        if chapter_fadein:
+            db_video[k_chapter]['effects'].append(
+                Effect(name='fadein', fade=chapter_fadein)
+            )
+
+        if chapter_fadeout:
+            db_video[k_chapter]['effects'].append(
+                Effect(name='fadein', fade=chapter_fadeout)
+            )
+

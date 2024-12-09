@@ -8,6 +8,7 @@ import cv2
 import numpy as np
 import time
 from parsers import (
+    db,
     VideoSettings,
     SceneDsr,
     DsrRegion,
@@ -38,13 +39,7 @@ from utils.tools import ffmpeg_exe
 from utils.media import (
     VideoInfo, extract_media_info_mco, frame_rate_dec, str_to_video_codec
 )
-from PIL import (
-    Image as PilImage,
-    ImageDraw,
-)
-import PIL
-from skimage.morphology import disk, binary_dilation
-from skimage.restoration import inpaint
+
 
 
 def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
@@ -90,8 +85,8 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         in_video_shape = in_h, in_w, in_c
 
     elif scene['task'].name == 'lr':
-        print(lightcyan("low resolution, upscale 2x"))
-        in_h, in_w = in_h * 2, in_w *2
+        print(lightcyan("low resolution, use same size"))
+        in_h, in_w = 540, 720
         dec_filter_complex = [
             "-filter_complex",
             f"[0:v]scale={in_w}:{in_h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
@@ -154,6 +149,11 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     produced: int = 0
     to_produce: int = scene['dst']['count']
     watermark: bool = do_watermark(scene=scene)
+
+    print(lightcyan("chapter effects:"))
+    pprint(db[scene['dst']['k_ep']]['video']['target'][scene['dst']['k_ch']]['effects'])
+
+    # Extract src scenes
     for src in scene['src'].scenes():
         src_scene: Scene = src['scene']
         in_video_fp: str = src_scene['inputs'].progressive().filepath

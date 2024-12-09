@@ -79,8 +79,8 @@ def consolidate_av_sync(k_ep: str):
         elif e_s0_vcount < e_s0_acount:
 
             loop_count = e_s0_acount - e_s0_vcount
-            # minimum between diff and 1.5s
-            fade = min(loop_count, int(2 * fps))
+            # minimum between diff and 2.5s
+            fade = min(loop_count, int(2.5 * fps))
             if 'effects' not in e_vchapter:
                 print(red("TODO: add default effects in chapter"))
                 e_vchapter['effects'] = Effects()
@@ -388,18 +388,7 @@ def consolidate_av_sync(k_ep: str):
             'count': 0,
         })
 
-    # g_documentaire
-    k_chapter_g = 'g_documentaire'
-    audio_count = ms_to_frame(audio_track[k_chapter_g]['duration'], fps)
-    audio_track[k_chapter_g].update({
-        'count': audio_count,
-        'avsync': 0
-    })
-    db_target_video[k_chapter_g].update({
-        'start': 0,
-        # 'count': audio_count,
-        'avsync': 0
-    })
+
 
     # documentaire
     k_ch = 'documentaire'

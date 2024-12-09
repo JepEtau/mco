@@ -119,10 +119,14 @@ def parse_video_target(
         if chapter_fadein:
             logger.debug(lightcyan(f"fadein != 0: {k_chapter}"))
             logger.debug(ch_video)
-            ch_video['effects'].append(Effect(name='fadein', fade=chapter_fadein))
+            ch_video['effects'].append(
+                Effect(name='fadein', fade=chapter_fadein)
+            )
 
         if chapter_fadeout:
-            ch_video['effects'].append(Effect(name='fadeout', fade=chapter_fadeout))
+            ch_video['effects'].append(
+                Effect(name='fadeout', fade=chapter_fadeout)
+            )
 
     if k_ed_src is None:
         sys.exit(f"error: parse_video_target_section: missing key \'source\' in target file {k_ep}.ini")

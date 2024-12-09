@@ -113,29 +113,44 @@ def consolidate_scene(
 
     # Effects
     #---------------------------------------------------------------------------
-    if is_last_scene(scene) and 'effects' in scene:
-        ch_video: ChapterVideo = get_target_video(scene)
-        ch_effect: Effect = (
-            ch_video['effects'].primary_effect()
-            if 'effects' in ch_video
-            else None
-        )
-        scene_effect: Effect = scene['effects'].primary_effect()
-        if ch_effect is not None and 'fadeout' in ch_effect.name:
-            if scene_effect is not None and 'fadeout' in scene_effect.name:
-                # Patch fadeout
-                scene_effect.fade = min(
-                    max(scene_effect.fade, ch_effect.fade),
-                    scene['dst']['count'] + scene_effect.loop
-                )
-            elif scene_effect is None:
+    ch_video: ChapterVideo = get_target_video(scene)
+    if is_last_scene(scene) and 'effects' in ch_video:
+        for effect_name in (
+            'fadeout',
+            'loop',
+            'loop_and_fadeout'
+        ):
+            if not ch_video['effects'].has_effect(effect_name):
+                continue
+
+            ch_effect: Effect = ch_video['effects'].get_effect(effect_name)
+
+            if 'effects' in scene and scene['effects'].has_effects():
+                pprint(scene['effects'])
+                continue
+                raise ValueError("last scene must not have an effect yet")
+
+            if effect_name == 'fadeout':
                 scene['effects'] = Effects([
                     Effect(
                         name='fadeout',
                         frame_ref=scene['dst']['count'] - ch_effect.fade,
-                        fade= ch_effect.fade
+                        fade=ch_effect.fade
                     )
                 ])
+            elif effect_name == 'loop_and_fadeout':
+                scene['effects'] = Effects([
+                    Effect(
+                        name='loop_and_fadeout',
+                        frame_ref=scene['dst']['count'] - ch_effect.loop,
+                        loop=ch_effect.loop,
+                        fade=ch_effect.fade
+                    )
+                ])
+            elif effect_name == 'loop':
+                raise NotImplementedError("loop effect not implemented yet")
+            pprint(scene['effects'])
+            # raise
 
     if is_first_scene(scene):
         ch_video: ChapterVideo = get_target_video(scene)

@@ -14,7 +14,7 @@ from utils.time_conversions import (
     frame_to_ms,
     ms_to_frame,
 )
-from utils.mco_types import Effect, Effects, Scene, ChapterVideo
+from utils.mco_types import ChapterAudio, Effect, Effects, Scene, ChapterVideo
 from ._db import db
 
 
@@ -39,34 +39,40 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
 
     # g_asuivre
     #---------------------------------------------------------------------------
-    if db_video['asuivre']['count'] != 0:
-        # Update the scene with the duration that is calculated in the audio structure
-        k_chapter_c = 'g_asuivre'
-        db_video[k_chapter_c]['count'] = db_audio[k_chapter_c]['count']
-        last_scene: Scene = db_video[k_chapter_c]['scenes'][-1]
+    if db_video['asuivre']['count']:
+        k_ch = 'g_asuivre'
+        ch_audio: ChapterAudio = db_audio[k_ch]
+        ch_video: ChapterVideo = db_video[k_ch]
+
+        ch_video['count'] = ch_audio['count']
+        last_scene: Scene = ch_video['scenes'][-1]
         last_scene['effects'] = Effects([
             Effect(
                 name='loop',
                 frame_ref=last_scene['src'].last_frame_no(),
-                loop=db_video[k_chapter_c]['count'] - last_scene['dst']['count']
+                loop=ch_video['count'] - last_scene['dst']['count']
             )
         ])
         if k_ep == K_EP_DEBUG:
-            print(f"\ndb_video: %s:\n--------------------------------------" % (k_chapter_c))
-            pprint(db_video[k_chapter_c])
+            print(f"\ndb_video: %s:\n--------------------------------------" % (k_ch))
+            pprint(ch_video)
 
 
     # g_documentaire
     #---------------------------------------------------------------------------
-    # Update the scene with the duration that is calculated in the audio structure
-    k_chapter_c = 'g_documentaire'
+    k_ch = 'g_documentaire'
+    ch_audio: ChapterAudio = db_audio[k_ch]
+    ch_video: ChapterVideo = db_video[k_ch]
 
-    last_scene = db_video[k_chapter_c]['scenes'][-1]
-    if db_audio[k_chapter_c]['count'] > db_video[k_chapter_c]['count']:
-        # Use last frame
+    ch_audio.update({'avsync': 0, 'count': ms_to_frame(ch_audio['duration'], fps)})
+    ch_video.update({'avsync': 0})
+
+    last_scene = ch_video['scenes'][-1]
+    if ch_audio['count'] > ch_video['count']:
+        # Use last frame to loop
         loop_start = last_scene['src'].last_frame_no()
-        loop_count = db_audio[k_chapter_c]['count'] - db_video[k_chapter_c]['count']
-        logger.debug(f"{k_chapter_c}: loop, last frame={loop_start}, {loop_count} frames")
+        loop_count = ch_audio['count'] - ch_video['count']
+        logger.debug(f"{k_ch}: loop, last frame={loop_start}, {loop_count} frames")
         last_scene['effects'] = Effects([
             Effect(
                 name='loop',
@@ -75,18 +81,52 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
             )
         ])
 
-    elif db_video[k_chapter_c]['count'] > db_audio[k_chapter_c]['count']:
-        # remove some frames
-        to_remove: int = db_video[k_chapter_c]['count'] - db_audio[k_chapter_c]['count']
-        logger.debug(f"{k_chapter_c}: remove {to_remove} frames")
+    elif ch_video['count'] > ch_audio['count']:
+        # Remove some frames
+        to_remove: int = ch_video['count'] - ch_audio['count']
+        logger.debug(f"{k_ch}: remove {to_remove} frames")
         last_scene['src'].last_scene()['count'] -= to_remove
         last_scene['dst']['count'] = last_scene['src'].last_scene()['count']
 
-    db_video[k_chapter_c]['count'] = db_audio[k_chapter_c]['count']
-    if k_ep == K_EP_DEBUG:
-        logger.debug(f"\ndb_video: %s:\n--------------------------------------" % (k_chapter_c))
-        pprint(db_video[k_chapter_c])
+    # audio frame count = video frame count
+    ch_video['count'] = ch_audio['count']
 
+    if k_ep == K_EP_DEBUG:
+        logger.debug(f"\ndb_video: %s:\n--------------------------------------" % (k_ch))
+        pprint(ch_video)
+
+
+
+
+    # documentaire
+    #---------------------------------------------------------------------------
+    k_ch = 'documentaire'
+    ch_audio: ChapterAudio = db_audio[k_ch]
+    ch_video: ChapterVideo = db_video[k_ch]
+
+    ch_audio.update({'avsync': 0})
+    ch_video.update({'avsync': 0})
+
+    # Round audio count to a multiple of 1000/fps ms
+    audio_duration = ch_audio['duration']
+    audio_count = ms_to_frame(audio_duration, fps)
+    audio_count_rounded = float(int((audio_duration * fps / 1000) + 0.5))
+    audio_count_float = (audio_duration * fps / 1000)
+    if audio_count_float != audio_count_rounded:
+        raise ValueError(f"consolidate_av_tracks: correct or remove this (add an audio segment), {k_ep}:{k_ch}")
+        # Add silence to the latest segment
+        s = ch_audio['segments'][-1]
+        silence = int(((audio_count_rounded - audio_count_float) * 1000 / fps) + 0.5)
+        if 'segments' in s.keys():
+            s['silence'] += silence
+        else:
+            s['silence'] = silence
+
+        ch_audio['duration'] = int(audio_count_rounded * 1000 / fps)
+        audio_count = audio_count_rounded
+        warnings.warn(f"consolidate_av_tracks: {k_ep}:{k_ch}: add a silence to round the audio duration: {silence}")
+    ch_audio['count'] = audio_count
+    video_count = ch_video['count'] + ch_video['avsync']
 
     # asuivre, documentaire
     #---------------------------------------------------------------------------
@@ -226,23 +266,23 @@ def consolidate_av_tracks(k_ep, k_chapter: str = '') -> None:
     # Add/modify effect of the first/last scene
     #---------------------------------------------------------------------------
     for k_chapter in ['episode', 'asuivre', 'documentaire']:
-        video: ChapterVideo = db_video[k_chapter]
-        if video['count'] < 1:
+        ch_video: ChapterVideo = db_video[k_chapter]
+        if ch_video['count'] < 1:
             continue
-        first_scene: Scene = video['scenes'][0]
-        last_scene: Scene = video['scenes'][-1]
+        first_scene: Scene = ch_video['scenes'][0]
+        last_scene: Scene = ch_video['scenes'][-1]
 
-        if 'effects' in video:
+        if 'effects' in ch_video:
             logger.debug(green(f"Effects detected in {k_ep}:{k_chapter}"))
             print("====================================================")
-            pprint(video['effects'])
+            pprint(ch_video['effects'])
             warnings.warn(red(" verify that the chapter effect is correctly taken into account when consolidating the first/last frame"))
-            for effect in video['effects'].effects:
+            for effect in ch_video['effects'].effects:
             # effect: Effect = video['effects'].primary_effect()
                 break
                 if effect.name == 'loop_and_fadein':
                     raise RuntimeError("TODO to be corrected asap")
-                    fadein_count = video['effects'].primary_effect().count
+                    fadein_count = ch_video['effects'].primary_effect().count
                     logger.debug(f"\t{k_ep}:{k_chapter}, patch the first scene -> fadein: add effects")
                     # pprint(video)
                     # first_scene['src']['start'] += fadein_count

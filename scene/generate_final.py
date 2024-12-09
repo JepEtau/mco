@@ -121,7 +121,7 @@ def resize_and_effects(
 ) -> list[np.ndarray]:
 
     # Resize before blending the frame from last scene to this one
-    if effect := scene['src'].last_scene()['effects'].get_effect('blend'):
+    if scene['src'].last_scene()['effects'].has_effect('blend'):
         img: np.ndarray = resize_to_4_3(
             np_to_float32(in_img), transformation
         )
