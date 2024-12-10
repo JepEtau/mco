@@ -1,4 +1,5 @@
 from __future__ import annotations
+from copy import deepcopy
 import sys
 from pprint import pprint
 import warnings
@@ -121,6 +122,12 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
         consolidate_last_scene_effect(ch_video, k_ep, k_ch)
     print(lightblue(f"{k_ep}:{k_ch}"), f"audio count: after: {ch_audio['count']}")
     print(lightblue(f"{k_ep}:{k_ch}"), f"video count: after: {ch_video['count']}")
+
+
+    # Report chapter effects (fadein) in first scene
+    consolidate_first_scene_effect(ch_video=ch_video)
+    warnings.warn("Consolidate first scene with loop_and_fadein")
+
 
 
     # g_asuivre
@@ -347,8 +354,7 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
         ch_video['count'] += loop_count
         print(f"  -> video_count: {ch_video['count']}")
         print(lightcyan(f"-----------------------------------------------------------"))
-        # raise
-        return
+
 
     elif video_count_silence > audio_count:
         # Add silence to the audio track by adding a new segment
@@ -383,8 +389,12 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
             )
         print(lightcyan(f"-----------------------------------------------------------"))
 
-    # elif video_count == audio_count:
-    #     print(f"info: consolidate_av_tracks: %s: video(%d) = audio (%d)" % (k_chapter_c, video_count, audio_count))
+    elif video_count == audio_count:
+        consolidate_last_scene_effect(ch_video=ch_video)
+
+
+    # Report chapter effects (fadein) in first scene, there is no loop in generiques
+    consolidate_first_scene_effect(ch_video=ch_video)
 
 
 
@@ -454,3 +464,17 @@ def consolidate_last_scene_effect(ch_video: ChapterVideo) -> None:
                 fade=ch_effect.fade
             )
         ])
+
+
+def consolidate_first_scene_effect(ch_video: ChapterVideo) -> None:
+    if ch_effect := ch_video['effects'].get_effect('fadein'):
+        first_scene: Scene = ch_video['scenes'][0]
+        effect = deepcopy(ch_effect)
+        effect.frame_ref = first_scene['src'].first_frame_no()
+        first_scene['effects'].append(effect)
+
+    elif ch_effect := ch_video['effects'].get_effect('loop_and_fadein'):
+        first_scene: Scene = ch_video['scenes'][0]
+        effect = deepcopy(ch_effect)
+        effect.frame_ref = first_scene['src'].first_frame_no()
+        first_scene['effects'].append(effect)
