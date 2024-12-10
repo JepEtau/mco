@@ -248,13 +248,15 @@ def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
 
 
 def parse_target_scenelist(
-    db_video_target: ChapterVideo,
+    ch_video: ChapterVideo,
     config: ConfigParser,
     k_section: str,
+    k_ep: str,
+    k_ch: str,
     language: str = 'fr'
 ) -> None:
 
-    db_scenes: list[Scene] = db_video_target['scenes']
+    db_scenes: list[Scene] = ch_video['scenes']
 
     for k_option in config.options(k_section):
         value_str: str = (
@@ -263,8 +265,8 @@ def parse_target_scenelist(
             .replace('\n','')
         )
 
-        if k_option == 'max':
-            db_video_target['scene_count'] = int(value_str) + 1
+        if k_option == 'count':
+            ch_video['scene_count'] = int(value_str)
             continue
 
         lang = language
@@ -282,10 +284,7 @@ def parse_target_scenelist(
         value_str = value_str.split("#")[0]
         scene_properties: list[str] = value_str.split(',')
 
-        k_ed: str = db_video_target['k_ed_src']
-        k_ep: str = db_video_target['k_ep']
-        k_ch: str = db_video_target['k_ch']
-
+        k_ed: str = ch_video['default_src']['k_ed']
 
         # Parse properties
         if len(scene_properties) > 0:
@@ -487,8 +486,8 @@ def parse_target_scenelist(
                     #     # sys.exit()
 
             scene['src'].add_scene(
-                k_ed=k_ed if k_ed != '' else db_video_target['src']['k_ed'],
-                k_ep=k_ep if k_ep != '' else db_video_target['src']['k_ep'],
+                k_ed=k_ed if k_ed != '' else ch_video['default_src']['k_ed'],
+                k_ep=k_ep if k_ep != '' else ch_video['default_src']['k_ep'],
                 k_ch=k_ch,
                 no=current_scene_no if current_scene_no != -1 else scene_no,
                 start=segment_start,

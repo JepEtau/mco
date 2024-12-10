@@ -173,7 +173,9 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         track='video'
     )
 
-    main_edition: str = db['ep01']['video']['target']['episode']['k_ed_src']
+    main_edition: str = (
+        db['ep01']['video']['target']['episode']['default_src']['k_ed']
+    )
     editions: list[str] = []
     [
         editions.append(ed)

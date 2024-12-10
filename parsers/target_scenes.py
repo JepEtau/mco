@@ -17,7 +17,7 @@ from ._db import db
 from ._types import ep_key
 
 
-def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
+def consolidate_target_scenes(k_ep: int | str, k_ch: str) -> None:
     """This procedure is used to consolidate chapter of an 'episode': it uses the 'replace'
     field to generate a new list of scenes in the 'common' structure of the 'episode'. This list
     will be used for processing instead of the list defined in the edition.
@@ -39,320 +39,306 @@ def consolidate_target_scenes(k_ep: int | str, k_chapter: str) -> None:
     """
     k_ep = ep_key(k_ep)
     K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = ['', '', 0]
-    K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = 'ep01', 'asuivre', 0
+    # K_EP_DEBUG, K_CHAPTER_DEBUG, SCENE_NO = 'ep01', 'asuivre', 0
 
     if k_ep == 'ep99':
         return
 
-    target_chapter: ChapterVideo = db[k_ep]['video']['target'][k_chapter]
+    ch_video: ChapterVideo = db[k_ep]['video']['target'][k_ch]
 
-    if k_chapter in ('precedemment', 'asuivre'):
-        print(yellow(f"consolidate_target_scenes: {k_chapter}"))
+    if k_ch in ('precedemment', 'asuivre'):
+        print(yellow(f"consolidate_target_scenes: {k_ch}"))
         # pprint(db['ep01']['video']['target'][k_chapter])
 
-    k_ed_src = target_chapter['k_ed_src']
-    src_chapter: ChapterVideo = db[k_ep]['video'][k_ed_src][k_chapter]
+    # Get the default source
+    default_src = ch_video['default_src']
+    k_ed_src, k_ep_src = default_src['k_ed'], default_src['k_ep']
+    ch_video_src: ChapterVideo = db[k_ep]['video'][k_ed_src][k_ch]
 
-    if src_chapter['count'] < 1:
-        if k_chapter == 'asuivre':
-            print(yellow(f"{k_ed_src}::{k_chapter} is empty"))
+    if ch_video_src['count'] < 1:
+        if k_ch not in ('asuivre', 'precedemment'):
+            print(yellow(f"{k_ed_src}::{k_ch} is empty"))
+            raise
         # return
 
     # Verify that scenes are defined in src or target
     if (
-        'scenes' not in target_chapter
-        and 'scenes' not in src_chapter
+        'scenes' not in ch_video
+        and 'scenes' not in ch_video_src
     ):
         # Cannot consolidate because no scenes are defined
-        sys.exit(f"error: consolidate_target_scenes: no scenes in {k_ep}:{k_chapter}")
+        sys.exit(f"error: consolidate_target_scenes: no scenes in {k_ep}:{k_ch}")
 
-    if k_ep==K_EP_DEBUG and k_chapter == K_CHAPTER_DEBUG:
-        pprint(target_chapter)
-        print(f"\ncreate_target_scenes: {k_ed_src}:{k_ep}:{k_chapter}")
+    if k_ep==K_EP_DEBUG and k_ch == K_CHAPTER_DEBUG:
+        pprint(ch_video)
+        print(f"\ncreate_target_scenes: {k_ed_src}:{k_ep}:{k_ch}")
 
     # List the scene no which are defined in target
-    if 'scenes' in target_chapter.keys():
+    if 'scenes' in ch_video.keys():
         target_scene_nos = (
-            [s['no'] for s in target_chapter['scenes']]
+            [s['no'] for s in ch_video['scenes']]
         )
     else:
         target_scene_nos = []
-        target_chapter['scenes'] = []
+        ch_video['scenes'] = []
 
     # Append scenes from src and sort
-    for scene_src in src_chapter['scenes']:
+    for scene_src in ch_video_src['scenes']:
         if (
-            'scene_count' in target_chapter
-            and len(target_chapter['scenes']) == target_chapter['scene_count']
+            'scene_count' in ch_video
+            and len(ch_video['scenes']) >= ch_video['scene_count']
         ):
             break
         if scene_src['no'] not in target_scene_nos:
-            target_chapter['scenes'].append(
+            ch_video['scenes'].append(
                 Scene(
                     no=scene_src['no'],
                     src=SrcScenes()
                 )
             )
-    target_chapter['scenes'] = sorted(target_chapter['scenes'], key=lambda s: s['no'])
-    if k_ep==K_EP_DEBUG and k_chapter == K_CHAPTER_DEBUG:
-        pprint(target_chapter)
+            ch_video['scenes'][-1]['src'].add_scene(
+                k_ed=k_ed_src,
+                k_ep=k_ep_src,
+                k_ch=k_ch,
+                no=scene_src['no'],
+                start=scene_src['start'],
+                count=scene_src['count'],
+            )
+
+    ch_video['scenes'] = sorted(ch_video['scenes'], key=lambda s: s['no'])
+    if k_ep==K_EP_DEBUG and k_ch == K_CHAPTER_DEBUG:
+        pprint(ch_video)
 
     # Consolidate each scene
-    # src:
-    #   if defined in target:
-    #       - define a ed/ep/chapter
-    #       - define a different scene
-    #       - define a different start/count of frames
-    #   else:
-    #       - use the values from the default src scene
-    # dst:
-    #       - define this ed/ep/chapter for this scene
-    # k_ed/k_ep/k_chapter:
-    #       - related to the scene defined by the src structure
-    #
-    k_ed_ref: str = (
-        'f' if db[k_ep]['audio']['lang'] == 'en' else 'k'
-    )
-
-    if k_ep == 'ep01' and k_chapter in ('episode'):
-        print(red("REWORK ep01 db"))
-        k_ed_ref = 'f'
-
-    ref_scenes: list[Scene] = db[k_ep]['video'][k_ed_ref][k_chapter]['scenes']
+    # TODO use audio source as ref
+    k_ed_ref: str = 'f' if db[k_ep]['audio']['lang'] == 'en' else 'k'
+    logger.debug(f"reference for {k_ep}:{k_ch}: {k_ed_ref}:{k_ep}:{k_ch}")
+    ref_scenes: list[Scene] = db[k_ep]['video'][k_ed_ref][k_ch]['scenes']
     add_ref: bool = True
-    if len(ref_scenes) != len(target_chapter['scenes']):
-        print(f"reference: {k_ed_src}:{k_ep}:{k_chapter}")
-        print(red(f"Target: {len(target_chapter['scenes'])}, Reference ({k_ed_ref}): {len(ref_scenes)} scenes"))
+    if len(ref_scenes) != len(ch_video['scenes']):
+        print(red(f"Target: {len(ch_video['scenes'])}, Reference ({k_ed_ref}): {len(ref_scenes)} scenes"))
         add_ref = False
-        if k_chapter in ('episode'):
+        if k_ch in ('precedemment', 'asuivre', 'reportage'):
             # pprint(ref_scenes)
             raise ValueError
 
     frame_count = 0
-    for no, target_scene in enumerate(target_chapter['scenes']):
-        if len(target_scene['src']) == 0:
-            in_scene: Scene = src_chapter['scenes'][no]
-            target_scene['src'].add_scene(
+    for no, scene in enumerate(ch_video['scenes']):
+        if len(scene['src']) == 0:
+            in_scene: Scene = ch_video_src['scenes'][no]
+            scene['src'].add_scene(
                 k_ed=k_ed_src,
                 k_ep=k_ep,
-                k_ch=k_chapter,
+                k_ch=k_ch,
                 no=in_scene['no'],
                 start=in_scene['start'],
                 count=in_scene['count'],
             )
 
-        target_scene['dst'] = {
+        scene['dst'] = {
             'k_ed': k_ed_src,
             'k_ep': k_ep,
-            'k_ch': k_chapter,
-            'count': target_scene['src'].frame_count()
+            'k_ch': k_ch,
+            'count': scene['src'].frame_count()
         }
 
         if add_ref:
-            target_scene['ref'] = RefScene(
-                no=ref_scenes[no]['no'],
-                start=ref_scenes[no]['start'],
-                count=ref_scenes[no]['count'],
+            ref_scene = ref_scenes[scene['no']]
+            scene['ref'] = RefScene(
+                no=ref_scene['no'],
+                start=ref_scene['start'],
+                count=ref_scene['count'],
             )
 
         # Calculate frames count
-        frame_count += target_scene['dst']['count']
+        frame_count += scene['dst']['count']
 
     # Number of frames without effects
-    target_chapter['count'] = frame_count
+    ch_video['count'] = frame_count
 
 
-    if k_ep == K_EP_DEBUG and k_chapter == K_CHAPTER_DEBUG:
+    if k_ep == K_EP_DEBUG and k_ch == K_CHAPTER_DEBUG:
         print(green("-------------------- after ----------------------------\n"))
         print("After consolidation, db_video_target:")
-        for k, v in target_chapter.items():
+        for k, v in ch_video.items():
             if k != 'scenes':
                 print(lightcyan(f"\t{k}"), end='\t')
                 print(v)
         print(green("-------------------- after ----------------------------\n"))
-        if 'scenes' in target_chapter.keys():
+        if 'scenes' in ch_video.keys():
             print(lightcyan("\tdb_video_target[scenes]"))
-            for s in target_chapter['scenes']:
+            for s in ch_video['scenes']:
                 print(lightcyan(f"\n{s['no']:03}"))
                 pprint(s)
-            pprint(target_chapter['scenes'][SCENE_NO])
+            pprint(ch_video['scenes'][SCENE_NO])
         # print("   start: %d" % (db_video_target['start']))
-        print("   count: %d" % (target_chapter['count']))
+        print("   count: %d" % (ch_video['count']))
         print("\n")
         # sys.exit()
 
 
 
-def consolidate_target_scenes_g(k_ep: int | str, k_chapter: str) -> None:
+def consolidate_target_scenes_g(k_ep: int | str, k_ch: str) -> None:
     """Generate the list of scenes which will be used for this credit
     (opening, precedemment, asuivre, end)
     The total duration (in frames) is updated
     """
     k_ep: str = ep_key(k_ep)
     fps = get_fps(db)
-    logger.debug(lightgreen(f"consolidate_target_scenes_g: {k_ep}:{k_chapter}"))
+    logger.debug(lightgreen(f"consolidate_target_scenes_g: {k_ep}:{k_ch}"))
 
     # Get the default source
-    src_video = db[k_chapter]['video']['src']
-    k_ed_src, k_ep_src = src_video['k_ed'], src_video['k_ep']
+    default_src = db[k_ch]['video']['default_src']
+    k_ed_src, k_ep_src = default_src['k_ed'], default_src['k_ep']
     try:
-        chapter_src: ChapterVideo = db[k_ep_src]['video'][k_ed_src][k_chapter]
+        ch_video_src: ChapterVideo = db[k_ep_src]['video'][k_ed_src][k_ch]
     except:
-        pprint(db[k_chapter])
+        pprint(db[k_ch])
         raise KeyError(f"Error: missing file from edition {k_ed_src}",
-                       f"cannot use {k_ep_src}:{k_chapter}")
+                       f"cannot use {k_ep_src}:{k_ch}")
 
+    ch_video: ChapterVideo
+    if k_ch in ('g_debut', 'g_fin'):
+        ch_video = db[k_ch]['video']
 
-    if k_chapter in ('g_debut', 'g_fin'):
-        target_chapter: ChapterVideo = db[k_chapter]['video']
-        if 'avsync' in target_chapter.keys():
-            print(f"############# consolidate_target_scenes_g: avsync shall not be reset to 0: {target_chapter}")
-            target_chapter.update({
-                'avsync': 0,
-            })
-        else:
-            target_chapter['avsync'] = 0
-
-    elif k_chapter == 'g_asuivre':
+    elif k_ch == 'g_asuivre':
         # Create a structure:
         #   this chapter was not yet defined because it depends on audio start/duration
         # print("create_target_scenes_g;: %s:%s:%s" % ('', k_ep, k_chapter_g))
         try:
-            db_audio = db[k_ep]['audio'][k_chapter]
+            ch_audio = db[k_ep]['audio'][k_ch]
         except:
-            sys.exit(f"error: {k_ep}:{k_chapter}: audio is not defined or erroneous")
-        db_audio['avsync'] = 0
-        db[k_ep]['video']['target'][k_chapter] = {
-            'start': 0,
-            'count': ms_to_frame(db_audio['duration'], fps),
-            'avsync': 0,
-            # 'dst': {
-            #     'k_ep': k_ep,
-            #     'k_ch': k_chapter_g,
-            # },
-        }
-        target_chapter = db[k_ep]['video']['target'][k_chapter]
+            sys.exit(f"error: {k_ep}:{k_ch}: audio is not defined or erroneous")
 
-    elif k_chapter == 'g_documentaire':
+        db[k_ep]['video']['target'][k_ch] = ChapterVideo(
+            start=0,
+            count=ms_to_frame(ch_audio['duration'], fps),
+            scenes=[],
+            # effects: Effects
+            # geometry: ChapterGeometry
+            avsync=0,
+            silence=0,
+            # task: ProcessingTask
+            # inputs: Inputs
+            # default_src: VideoSrc
+        )
+        ch_video = db[k_ep]['video']['target'][k_ch]
+        pprint(ch_video)
+
+    elif k_ch == 'g_documentaire':
         # Create the g_documentaire structure:
         #   this chapter was not yet defined because it depends on audio start/duration
-        db_audio: ChapterAudio = db[k_ep]['audio'][k_chapter]
-        try:
-            db_audio = db[k_ep]['audio'][k_chapter]
-        except:
-            sys.exit(f"error: {k_ep}:{k_chapter}: audio is not defined or erroneous")
-        audio_count = ms_to_frame(db_audio['duration'], fps)
-        db_audio.update({
-            'count': audio_count,
-            'avsync': 0,
-        })
-        db[k_ep]['video']['target'][k_chapter] = {
-            'start': ms_to_frame(db_audio['start'], fps),
-            'count': audio_count,
-            'avsync': 0,
-        }
-        target_chapter = db[k_ep]['video']['target'][k_chapter]
+        ch_audio: ChapterAudio = db[k_ep]['audio'][k_ch]
+        ch_audio['count'] = ms_to_frame(ch_audio['duration'], fps)
 
-
-    # Verify that scenes are defined in src or target
-    if (
-        'scenes' not in target_chapter.keys()
-        and 'scenes' not in chapter_src.keys()
-    ):
-        sys.exit(red("error: %s.create_target_scenes: no scenes in src/dst %s:%s" % (__name__, k_ep, k_chapter)))
-
-
-
+        db[k_ep]['video']['target'][k_ch] = ChapterVideo(
+            start=ms_to_frame(ch_audio['start'], fps),
+            count=ch_audio['count'],
+            scenes=[],
+            # effects: Effects
+            # geometry: ChapterGeometry
+            avsync=0,
+            silence=0,
+            # task: ProcessingTask
+            # inputs: Inputs
+            # default_src: VideoSrc
+        )
+        ch_video = db[k_ep]['video']['target'][k_ch]
+        pprint(ch_video)
 
     # List the scene no which are defined in target
-    if 'scenes' in target_chapter.keys():
-        target_scene_nos = ([s['no'] for s in target_chapter['scenes']])
-    else:
-        target_scene_nos = []
-        target_chapter['scenes'] = []
-
+    target_scene_nos = ([s['no'] for s in ch_video['scenes']])
 
     # Append scenes from src and sort
-    for scene_src in chapter_src['scenes']:
-        if (
-            'scene_count' in target_chapter
-            and len(target_chapter['scenes']) >= target_chapter['scene_count']
-        ):
-            break
-
-        if scene_src['no'] not in target_scene_nos:
-            target_chapter['scenes'].append(
-                Scene(
-                    no=scene_src['no'],
-                    src=SrcScenes()
-                )
+    scene_count: int = (
+        ch_video['scene_count']
+        if 'scene_count' in ch_video
+        else len(ch_video_src['scenes'])
+    )
+    for no in range(scene_count):
+        if no in target_scene_nos:
+            continue
+        print(f"add {no}")
+        scene_src: Scene = ch_video_src['scenes'][no]
+        ch_video['scenes'].append(
+            Scene(
+                no=scene_src['no'],
+                src=SrcScenes()
             )
-    target_chapter['scenes'] = sorted(target_chapter['scenes'], key=lambda s: s['no'])
+        )
+        ch_video['scenes'][-1]['src'].add_scene(
+            k_ed=k_ed_src,
+            k_ep=k_ep_src,
+            k_ch=k_ch,
+            no=scene_src['no'],
+            start=scene_src['start'],
+            count=scene_src['count'],
+        )
+    # if k_ch == 'g_fin':
+    #     pprint(ch_video['scenes'])
+    #     raise
+    ch_video['scenes'] = sorted(ch_video['scenes'], key=lambda s: s['no'])
 
+    k_ed_ref: str = 'f' if db[k_ch]['audio']['lang'] == 'en' else 'k'
+    k_ep_ref: str = 'ep01' if k_ch in ('g_debut', 'g_fin') else k_ep
 
-    k_ed_ref: str = 'f' if db[k_chapter]['audio']['lang'] == 'en' else 'k'
-    # k_ed_src, k_ep_src = src_video['k_ed'], src_video['k_ep']
+    # k_ed_ref: str = 's' if k_ch == 'g_fin' else k_ed_ref
+    # k_ep_ref: str = 'ep11' if k_ch == 'g_fin' else k_ep_ref
 
-    print(lightcyan(f"consolidate_target_scenes_g: reference: {k_ed_src}:{k_ep_src}:{k_chapter}"))
-    # sys.exit()
-    ref_scenes: list[Scene] = db[k_ep_src]['video'][k_ed_src][k_chapter]['scenes']
+    logger.debug(f"reference for {k_ch}: {k_ed_ref}:{k_ep_ref}:{k_ch}")
+    ref_scenes: list[Scene] = (
+        db[k_ep_ref]['video'][k_ed_ref][k_ch]['scenes']
+    )
     add_ref: bool = True
-    if len(ref_scenes) != len(target_chapter['scenes']):
-        print(f"  reference: {k_ed_src}:{k_ep}:{k_chapter}")
-        print(f"  target: {len(target_chapter['scenes'])}, Reference: {len(ref_scenes)} scenes")
+    if len(ref_scenes) != len(ch_video['scenes']):
+        print(f"reference: {k_ed_src}:{k_ep_ref}:{k_ch}")
+        print(red(f"Target: {len(ch_video['scenes'])}, Reference ({k_ed_ref}): {len(ref_scenes)} scenes"))
         add_ref = False
 
+    # Calculate frames to generate for each scene
     frame_count: int = 0
-    for no, target_scene in enumerate(target_chapter['scenes']):
-        # TODO: 'dst' count may be erroneous... to validate
-        if len(target_scene['src']) == 0:
-            in_scene: Scene = chapter_src['scenes'][no]
-            target_scene['src'].add_scene(
-                k_ed=k_ed_src,
-                k_ep=k_ep_src,
-                k_ch=k_chapter,
-                no=in_scene['no'],
-                start=in_scene['start'],
-                count=in_scene['count'],
-            )
-
-        target_scene['dst'] = {
-            'k_ed': k_ed_src,
+    for scene in ch_video['scenes']:
+        dst_frame = scene['src'].frame_count(exclude_loop=False)
+        scene['dst'] = {
             'k_ep': k_ep,
-            'k_ch': k_chapter,
-            'count': target_scene['src'].frame_count()
+            'k_ch': k_ch,
+            # 'k_ed': k_ed_ref,
+            'count': dst_frame
         }
+        frame_count += dst_frame
 
         if add_ref:
-            target_scene['ref'] = RefScene(
-                no=ref_scenes[no]['no'],
-                start=ref_scenes[no]['start'],
-                count=ref_scenes[no]['count'],
+            ref_scene = ref_scenes[scene['no']]
+            scene['ref'] = RefScene(
+                no=ref_scene['no'],
+                start=ref_scene['start'],
+                count=ref_scene['count'],
             )
 
-        frame_count += target_scene['dst']['count']
 
     # Number of frames without effects
-    target_chapter['count'] = frame_count
+    ch_video['count'] = frame_count
+
 
     # if target_chapter['scenes'][0]['dst']['k_ch'] == 'g_debut':
     #     pprint(target_chapter)
     #     sys.exit(f"<- {target_chapter['scenes'][0]['dst']['k_ch']}")
 
     # Effects
-    if k_chapter in ('g_debut', 'g_fin'):
-        target_chapter: ChapterVideo = db[k_chapter]['video']
-        if 'effects' in target_chapter:
-            last_scene = target_chapter['scenes'][-1]
+    # if k_ch in ('g_debut', 'g_fin'):
+    #     ch_video: ChapterVideo = db[k_ch]['video']
+    #     if 'effects' in ch_video:
+    #         last_scene = ch_video['scenes'][-1]
 
-            effect: Effect = target_chapter['effects'].primary_effect()
-            if 'fadeout' in effect.name:
-                fadeout_count: int = effect.fade
-                frame_no = last_scene['src'].last_frame_no()
-                last_scene['effects'] = Effects([
-                    Effect(
-                        name='fadeout',
-                        frame_ref=frame_no - fadeout_count + 1,
-                        fade=fadeout_count
-                    )
-                ])
+    #         effect: Effect = ch_video['effects'].primary_effect()
+    #         if 'fadeout' in effect.name:
+    #             fadeout_count: int = effect.fade
+    #             frame_no = last_scene['src'].last_frame_no()
+    #             last_scene['effects'] = Effects([
+    #                 Effect(
+    #                     name='fadeout',
+    #                     frame_ref=frame_no - fadeout_count + 1,
+    #                     fade=fadeout_count
+    #                 )
+    #             ])
+    # raise

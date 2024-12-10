@@ -12,7 +12,8 @@ import re
 from pprint import pprint
 from typing import Literal
 
-from utils.mco_types import ChapterVideo
+from .geometry import ChapterGeometry
+from utils.mco_types import AudioSrc, ChapterAudio, ChapterVideo, VideoSrc
 from utils.path_utils import absolute_path
 from .audio import parse_audio_g
 from .scenes import parse_target_scenelist
@@ -23,6 +24,8 @@ from ._keys import (
 )
 from utils.p_print import *
 from ._db import db
+from utils.mco_types import Effect, Effects
+
 
 
 def parse_credit_target():
@@ -47,16 +50,40 @@ def parse_credit_target():
 
         # Initialize structure for this generique
         db[k_chapter_g] = {
-            'video': {
-                'scenes': list()
-            },
-            'audio': dict(),
             'cache_path': os.path.join(db['common']['directories']['cache'], k_chapter_g),
         }
 
-        db_video_target = db[k_chapter_g]['video']
-        db_audio_target = db[k_chapter_g]['audio']
-        db_audio_target['lang'] = language
+        db[k_chapter_g]['audio'] = ChapterAudio(
+            start=0,
+            end=0,
+            duration=-1,
+            avsync=0,
+            silence=0,
+            fadein=0,
+            fadeout=0,
+            fade_alg='',
+            segments=[],
+            src=None,
+            lang=language,
+        )
+        ch_audio: ChapterAudio = db[k_chapter_g]['audio']
+
+
+        db[k_chapter_g]['video'] = ChapterVideo(
+            start=0,
+            end=0,
+            count=-1,
+            scenes=[],
+            effects=Effects(),
+            geometry=ChapterGeometry(),
+            avsync=0,
+            silence=0,
+            task=None,
+            inputs=None,
+            default_src=VideoSrc,
+        )
+        ch_video: ChapterVideo = db[k_chapter_g]['video']
+
 
         # Parse configuration
         config = ConfigParser()
@@ -72,11 +99,12 @@ def parse_credit_target():
                 except:
                     print(yellow(f"{filepath}: audio section naming to be reworked, default=fr"))
 
-                if lang == db_audio_target['lang']:
+                if lang == ch_audio['lang']:
                     parse_audio_g(
-                        db, k_chapter_g, config, k_section
+                        ch_audio=ch_audio,
+                        config=config,
+                        k_section=k_section,
                     )
-
 
             # Video
             #----------------------------------------------------
@@ -87,9 +115,12 @@ def parse_credit_target():
                 except:
                     pass
 
-                if lang == db_audio_target['lang'] or k_section == 'video':
+                if lang == ch_audio['lang'] or k_section == 'video':
                     parse_video_target_g(
-                        db, k_chapter_g, config, k_section
+                        ch_video=ch_video,
+                        config=config,
+                        k_section=k_section,
+                        k_ch=k_chapter_g,
                     )
 
 
@@ -103,7 +134,7 @@ def parse_credit_target():
                     k_section_chapter = k_section
 
                 # print(red(f"parse target scenes: {k_section}, lang: {lang}"))
-                if lang != db_audio_target['lang'] and lang != '':
+                if lang != ch_audio['lang'] and lang != '':
                     # print(yellow(f"not for this version: {db_audio_target['lang']}"))
                     continue
                 # else:
@@ -113,33 +144,14 @@ def parse_credit_target():
                 #     _, k_chapter = k_section_chapter.split('_')
                 # except:
                 #     continue
-
-                db_video_target.update({
-                    'k_ep': '',
-                    'k_ch': k_chapter_g,
-                    'k_ed_src': '',
-                })
-                if 'scenes' not in db_video_target:
-                    db_video_target['scenes'] = []
-
                 parse_target_scenelist(
-                    db_video_target,
+                    ch_video,
                     config,
                     k_section,
-                    language=db_audio_target['lang']
+                    k_ep='',
+                    k_ch=k_chapter_g,
+                    language=ch_audio['lang']
                 )
-
-
-        # Source must be defined before consolidating
-        try:
-            k_ed_src = db[k_chapter_g]['video']['src']['k_ed']
-            k_ep_src = db[k_chapter_g]['video']['src']['k_ep']
-        except:
-            pprint(db[k_chapter_g])
-            sys.exit(f"Error: {k_chapter_g}: k_ed:k_ep must be defined, "
-                     + f"missing \'source\' option in {filepath}, "
-                     + f"lang: {db_audio_target['lang']}")
-
 
 
 
@@ -219,12 +231,6 @@ def parse_generiques(k_ed: str, verbose=False):
                         })
 
 
-        # Set dimensions:
-        db_generique['dimensions'] = db['editions'][k_ed]['dimensions']
-
-
-
-
 def get_credits_dependencies(
     k_chapter_g: str = '',
     track: Literal['audio', 'video', 'all'] = 'all'
@@ -253,12 +259,11 @@ def get_credits_dependencies(
         chapter_video: ChapterVideo = db[k_chapter_g]['video']
 
         # Common chapter contains the source
-        if 'k_ep' in chapter_video['src']:
-            k_ed_src = chapter_video['src']['k_ed']
-            k_ep_src = chapter_video['src']['k_ep']
-            if k_ed_src not in dependencies.keys():
-                dependencies[k_ed_src] = set()
-            dependencies[k_ed_src].add(k_ep_src)
+        k_ed_src = chapter_video['default_src']['k_ed']
+        k_ep_src = chapter_video['default_src']['k_ep']
+        if k_ed_src not in dependencies.keys():
+            dependencies[k_ed_src] = set()
+        dependencies[k_ed_src].add(k_ep_src)
 
         # scenes
         if 'scenes' not in chapter_video:

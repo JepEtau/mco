@@ -76,8 +76,8 @@ def consolidate_scene(
 
     # Geometry
     #---------------------------------------------------------------------------
+    pprint(scene)
     k_ep: str = scene['dst']['k_ep']
-    k_ed: str = scene['dst']['k_ed']
     k_ch: str = scene['dst']['k_ch']
     if k_ch in ['g_asuivre', 'g_documentaire']:
         ch_geometry: ChapterGeometry = deepcopy(
@@ -89,7 +89,7 @@ def consolidate_scene(
 
     else:
         if verbose:
-            print(f"\t\t\tconsolidate_scene: get geometry for {k_ed}:{k_ep}:{k_ch}")
+            print(f"\t\t\tconsolidate_scene: get geometry for {k_ep}:{k_ch}")
         chapter: ChapterVideo | None = None
         if k_ch in ('g_debut', 'g_fin'):
             chapter = db[k_ch]['video']
@@ -113,56 +113,56 @@ def consolidate_scene(
 
     # Effects
     #---------------------------------------------------------------------------
-    ch_video: ChapterVideo = get_target_video(scene)
-    if is_last_scene(scene) and 'effects' in ch_video:
-        for effect_name in (
-            'fadeout',
-            'loop',
-            'loop_and_fadeout'
-        ):
-            if not ch_video['effects'].has_effect(effect_name):
-                continue
+    # ch_video: ChapterVideo = get_target_video(scene)
+    # if is_last_scene(scene) and 'effects' in ch_video:
+    #     for effect_name in (
+    #         'fadeout',
+    #         'loop',
+    #         'loop_and_fadeout'
+    #     ):
+    #         if not ch_video['effects'].has_effect(effect_name):
+    #             continue
 
-            ch_effect: Effect = ch_video['effects'].get_effect(effect_name)
+    #         ch_effect: Effect = ch_video['effects'].get_effect(effect_name)
 
-            if 'effects' in scene and scene['effects'].has_effects():
-                pprint(scene['effects'])
-                continue
-                raise ValueError("last scene must not have an effect yet")
+    #         if 'effects' in scene and scene['effects'].has_effects():
+    #             pprint(scene['effects'])
+    #             continue
+    #             raise ValueError("last scene must not have an effect yet")
 
-            if effect_name == 'fadeout':
-                scene['effects'] = Effects([
-                    Effect(
-                        name='fadeout',
-                        frame_ref=scene['dst']['count'] - ch_effect.fade,
-                        fade=ch_effect.fade
-                    )
-                ])
-            elif effect_name == 'loop_and_fadeout':
-                scene['effects'] = Effects([
-                    Effect(
-                        name='loop_and_fadeout',
-                        frame_ref=scene['dst']['count'] - ch_effect.loop,
-                        loop=ch_effect.loop,
-                        fade=ch_effect.fade
-                    )
-                ])
-            elif effect_name == 'loop':
-                raise NotImplementedError("loop effect not implemented yet")
-            pprint(scene['effects'])
-            # raise
+    #         if effect_name == 'fadeout':
+    #             scene['effects'] = Effects([
+    #                 Effect(
+    #                     name='fadeout',
+    #                     frame_ref=scene['dst']['count'] - ch_effect.fade,
+    #                     fade=ch_effect.fade
+    #                 )
+    #             ])
+    #         elif effect_name == 'loop_and_fadeout':
+    #             scene['effects'] = Effects([
+    #                 Effect(
+    #                     name='loop_and_fadeout',
+    #                     frame_ref=scene['dst']['count'] - ch_effect.loop,
+    #                     loop=ch_effect.loop,
+    #                     fade=ch_effect.fade
+    #                 )
+    #             ])
+    #         elif effect_name == 'loop':
+    #             raise NotImplementedError("loop effect not implemented yet")
+    #         pprint(scene['effects'])
+    #         # raise
 
-    if is_first_scene(scene):
-        ch_video: ChapterVideo = get_target_video(scene)
-        if (
-            'effects' in ch_video
-            and (ch_effect := ch_video['effects'].get_effect('fadein'))
-        ):
-            if 'effects' not in scene:
-                scene['effects'] = Effects()
-            scene_effect: Effect = deepcopy(ch_effect)
-            scene_effect.frame_ref = scene['src'].first_frame_no()
-            scene['effects'].append(scene_effect)
+    # if is_first_scene(scene):
+    #     ch_video: ChapterVideo = get_target_video(scene)
+    #     if (
+    #         'effects' in ch_video
+    #         and (ch_effect := ch_video['effects'].get_effect('fadein'))
+    #     ):
+    #         if 'effects' not in scene:
+    #             scene['effects'] = Effects()
+    #         scene_effect: Effect = deepcopy(ch_effect)
+    #         scene_effect.frame_ref = scene['src'].first_frame_no()
+    #         scene['effects'].append(scene_effect)
 
 
     # Output video Settings

@@ -14,10 +14,13 @@ from parsers import (
     ProcessingTask,
     TaskName,
     pprint_scene_mapping,
+    get_fps,
 )
+from parsers._helpers import get_chapter_audio
 from scene.consolidate import consolidate_scene
 from utils.arg_parser import common_argument_parser
 from utils.mco_types import (
+    ChapterAudio,
     Scene,
     ChapterVideo,
 )
@@ -97,13 +100,14 @@ def main():
     print("\t- parse database")
 
     # Parse database
-    parse_database(
+    dependencies = parse_database(
         episode=episode,
         lang='en' if arguments.en else 'fr'
     )
     gc.collect()
 
-
+    print(lightcyan("dependencies:"))
+    pprint(dependencies)
     # For inspection
     # db_ep: dict = g_database['ep01']
     # print(db_ep.keys())
@@ -119,13 +123,16 @@ def main():
     chapters: Chapter = all_chapter_keys() if arguments.chapter == '' else [arguments.chapter]
     for k_ch in chapters:
         print(lightcyan(f"episode: {k_ep}, chapter: {k_ch}"))
-        chapter_video: ChapterVideo = get_chapter_video(k_ep, k_ch)
-        if chapter_video is None:
+        ch_video: ChapterVideo = get_chapter_video(k_ep, k_ch)
+        ch_audio: ChapterAudio = get_chapter_audio(k_ep, k_ch)
+        if ch_audio is None:
             continue
-        chapter_video['task'] = ProcessingTask(name=task_name)
+        if ch_video is None:
+            continue
+        ch_video['task'] = ProcessingTask(name=task_name)
 
         # Walk through target scenes
-        scenes: list[Scene] = chapter_video['scenes']
+        scenes: list[Scene] = ch_video['scenes']
         target_count = 0
         ref_count: int = 0
         for scene in scenes:
@@ -137,20 +144,30 @@ def main():
 
         if 'ref' not in scene:
             ref_count = 0
-            k_ep_or_g = k_ch if k_ch in ('g_debut', 'g_fin') else k_ep
-            _k_ed = 'k' if db[k_ep_or_g]['audio']['lang'] == 'fr' else 'f'
-            print(f"  reference: {_k_ed}:{k_ep}:{k_ch}")
+            k_ep_or_g = 'ep01' if k_ch in ('g_debut', 'g_fin') else k_ep
+            _k_ed = (
+                'k'
+                if db[k_ep_or_g]['audio']['lang'] == 'fr'
+                else 'f'
+            )
+            print(f"  reference: {_k_ed}:{k_ep}:{k_ch} ({k_ep_or_g})")
             if _k_ed in db[k_ep_or_g]['video']:
                 for s in db[k_ep_or_g]['video'][_k_ed][k_ch]['scenes']:
                     ref_count += s['count']
             else:
                 print("Ignore reference as it has not been parsed")
 
+        print(lightcyan("last scene effect:"))
+        pprint(scenes[-1]['effects'])
+
+        if k_ch in ('g_debut', 'g_fin'):
+            if ch_video['silence']:
+                target_count += ch_video['silence']
         print(f"  Reference: {ref_count}")
+        print(f"  Audio: {ch_audio['count']}")
         print(f"  Target: {target_count}")
 
-
-        # pprint(chapter_video)
+        # pprint(ch_video)
         scene_no: int = arguments.scene
         if scene_no != -1:
             print(lightcyan(f"Scene no. {scene_no}"))

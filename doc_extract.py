@@ -92,15 +92,15 @@ def main():
     k_ed_ref: str = (
         arguments.edition
         if arguments.edition != ''
-        else db[k_ep]['video']['target'][k_ch]['k_ed_src']
+        else db[k_ep]['video']['target'][k_ch]['default_src']['k_ed']
     )
     print(f"  - edition: {k_ed_ref}")
 
     k_ed = k_ed_ref
-    if k_ed_ref != db[k_ep]['video']['target'][k_ch]['k_ed_src']:
+    if k_ed_ref != db[k_ep]['video']['target'][k_ch]['default_src']['k_ed']:
         parse_episode(k_ed=k_ed_ref, k_ep=k_ep)
     else:
-        k_ed = db[k_ep]['video']['target'][k_ch]['k_ed_src']
+        k_ed = db[k_ep]['video']['target'][k_ch]['default_src']['k_ed']
 
     ch_video: ChapterVideo | None = None
     try:

@@ -103,7 +103,11 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
             else:
                 print(f"TODO: rework filter: {k_section}")
 
-        nested_dict_set(db_video, scene_filters, k_chapter, 'filters', k_option)
+        nested_dict_set(
+            db_video,
+            keys=(k_chapter, 'filters', k_option),
+            o=scene_filters
+        )
 
         if verbose and k_option == '999':
             # used to debug complex processing chains

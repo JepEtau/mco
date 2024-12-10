@@ -1,5 +1,6 @@
 from __future__ import annotations
 from configparser import ConfigParser
+from pprint import pprint
 import re
 import sys
 from ._keys import (
@@ -10,43 +11,39 @@ from .helpers import(
     nested_dict_set,
     get_fps,
 )
+from ._db import db
 from utils.time_conversions import frame_to_ms
 from utils.p_print import *
-
+from utils.mco_types import AudioSrc, ChapterAudio
 
 # TODO: refactoring, what are the differences between generique and other chapters ?
 
 def parse_audio_g(
-    db: dict,
-    chapter: str,
+    ch_audio: ChapterAudio,
     config: ConfigParser,
-    k_section: str
+    k_section: str,
 ) -> None:
     # This function update the audio section
-    db_audio: str = db[chapter]['audio']
     fps = get_fps(db)
 
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option).replace(' ','')
+        print(k_option)
+        pprint(value_str)
 
         # Source: edition and episode for the audio track
         if k_option == 'source':
-            tmp = re.match(re.compile(r"([a-z_0-9]+):(ep[0-9]{2})"), value_str)
+            tmp = re.search(re.compile(r"([a-z_0-9]+):(ep[0-9]{2})"), value_str)
             if tmp is None:
                 sys.exit(red(f"Error: wrong value for {k_section}:{k_option} [{value_str}]"))
-            nested_dict_set(db_audio, {
-                    'k_ed': tmp.group(1),
-                    'k_ep': tmp.group(2),
-                },
-                'src'
-            )
+            ch_audio['src'] = AudioSrc(k_ed=tmp.group(1), k_ep=tmp.group(2))
             continue
 
         # Parse only supported sections
         if k_option not in ('g_debut', 'g_fin'):
             continue
 
-        db_audio['segments'] = list()
+        ch_audio['segments'] = []
         duration = 0
         avsync = 0
         chapter_silence = 0
@@ -68,7 +65,7 @@ def parse_audio_g(
 
             # Duration
             d = end - start
-            db_audio['segments'].append({
+            ch_audio['segments'].append({
                 'start': start,
                 'end': end,
                 'duration': d
@@ -82,7 +79,7 @@ def parse_audio_g(
                     search_gain = re.search(re.compile(r"gain=([0-9.]+)"), properties[i])
                     if search_gain is not None:
                         gain = float(search_gain.group(1))
-                        db_audio['segments'][-1]['gain'] = gain
+                        ch_audio['segments'][-1]['gain'] = gain
                         continue
 
                     # The following will be considered as properties for the whole chapter
@@ -101,19 +98,20 @@ def parse_audio_g(
         # and add silence (to the latest segment) to a multiple of frames
         # because we do not know the audio sample rate
 
-        db_audio.update({
+        ch_audio.update({
             'avsync': avsync,
             'silence': chapter_silence,
-            'start': db_audio['segments'][0]['start'],
+            'start': ch_audio['segments'][0]['start'],
             'duration': duration,
-            'end': db_audio['segments'][0]['start'] + d,
+            'end': ch_audio['segments'][0]['start'] + d,
         })
 
     try:
-        reference = db_audio['src']
+        reference = ch_audio['src']
     except:
-        sys.exit("Error: missing source option in audio section for a generique")
+        raise ValueError("Error: missing source option in audio section for a generique")
 
+    pprint(ch_audio)
 
 
 def parse_audio_section(
@@ -130,7 +128,7 @@ def parse_audio_section(
         value_str = config.get(k_section, k_option).replace(' ','')
 
         if k_option == 'source':
-            nested_dict_set(db_audio, value_str, 'src', 'k_ed')
+            nested_dict_set(db_audio, keys=('src', 'k_ed'), o=value_str)
             # print("detected source: %s" % (value_str))
             continue
 

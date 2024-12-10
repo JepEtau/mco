@@ -141,8 +141,11 @@ def parse_common_configuration(language:str=''):
     except:
         editions_to_discard = list()
         pass
-    nested_dict_set(db_common, editions_to_discard, 'editions', 'discard')
-
+    nested_dict_set(
+        db_common,
+        keys=('editions', 'discard'),
+        o=editions_to_discard,
+    )
     if verbose:
         pprint(db)
         sys.exit()

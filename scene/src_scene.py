@@ -95,7 +95,11 @@ class SrcScenes:
             pprint(db[k_ep]['video'][k_ed][k_ch]['scenes'])
             raise ValueError(red(f"cannot access to scene no. {src_scene['k_ed_ep_ch_no']}"))
 
-        start: int = _src_scene['start'] if src_scene['start'] == -1 else src_scene['start']
+        start: int = (
+            _src_scene['start']
+            if src_scene['start'] == -1
+            else src_scene['start']
+        )
         count: int = src_scene['count']
         if count == -1:
             count = _src_scene['count'] - (start - _src_scene['start'])

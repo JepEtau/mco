@@ -110,6 +110,7 @@ class AudioSegment(TypedDict):
 
 
 class ChapterAudio(TypedDict):
+    # unit: ms
     start: int
     end: int
     duration: int
@@ -126,6 +127,8 @@ class ChapterAudio(TypedDict):
     src: AudioSrc
     lang: Literal['fr', 'en']
 
+    # nb of frames
+    count: int
 
 
 
@@ -351,6 +354,11 @@ class DstScene(TypedDict):
     k_chapter: str
 
 
+class VideoSrc(TypedDict):
+    k_ed: str
+    k_ep: str
+
+
 class ChapterVideo(TypedDict):
     start: int
     end: int # Attention, this is the end+1 frame no.
@@ -371,11 +379,12 @@ class ChapterVideo(TypedDict):
     task: ProcessingTask
     inputs: Inputs
 
-    k_ed_src: str
+    # Default source when consolidating scenes
+    default_src: VideoSrc
 
-    # Episode, chapter: used to avoid too many arguments
-    k_ep: str
-    k_ch: str
+    # # Episode, chapter: used to avoid too many arguments
+    # k_ep: str
+    # k_ch: str
 
 
 

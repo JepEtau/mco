@@ -6,7 +6,6 @@ import sys
 from typing import Any, Literal
 from utils.p_print import *
 
-from .av_sync import consolidate_av_sync
 from .common import parse_common_configuration
 from .credits import (
     parse_credit_target,
@@ -25,8 +24,12 @@ from .logger import logger
 from .target_scenes import (
     consolidate_target_scenes,
     consolidate_target_scenes_g,
+
 )
-from .target_av_tracks import consolidate_av_tracks
+from .target_av_tracks import (
+    consolidate_av_tracks,
+    consolidate_av_tracks_g_debut_fin,
+)
 from .geometry import parse_geometry_file
 from .replace import parse_replace_file
 from .dsr import parse_dsr_file
@@ -162,17 +165,17 @@ def parse_database(
         # parse_stabilize_configurations(k_ep=k_ep, k_ch=k_chapter_g)
 
         # Create scenes used for the generation
-        consolidate_target_scenes_g(k_ep='', k_chapter=k_chapter_g)
+        consolidate_target_scenes_g(k_ep='', k_ch=k_chapter_g)
 
         # Consolidate by aligning the A/V tracks of generiques
-        consolidate_av_tracks(k_ep='', k_chapter=k_chapter_g)
+        consolidate_av_tracks_g_debut_fin(k_ch=k_chapter_g)
 
 
     # Consolidate database for the episode ONLY
     if k_ep != 'ep00':
     # if k_ep not in ('ep00', 'ep99'):
         for chapter in non_credit_chapter_keys():
-            consolidate_target_scenes(k_ep=k_ep, k_chapter=chapter)
+            consolidate_target_scenes(k_ep=k_ep, k_ch=chapter)
         print(f"database, parse stabilization: {k_ep}")
         parse_stabilize_file(k_ep=k_ep)
 
@@ -181,7 +184,7 @@ def parse_database(
             parse_dsr_file(k_ep_or_g=k_chapter_g)
             # parse_stabilize_configurations(k_ep_or_g=k_chapter_g)
             parse_geometry_file(k_ep_or_g=k_chapter_g)
-            consolidate_target_scenes_g(k_ep=k_ep, k_chapter=k_chapter_g)
+            consolidate_target_scenes_g(k_ep=k_ep, k_ch=k_chapter_g)
 
 
     for k_chapter_g in ('g_debut', 'g_fin'):
@@ -204,14 +207,13 @@ def parse_database(
 
     stats: dict[str, Any] | None = None
     if k_ep != 'ep00':
-        # consolidate_av_sync(k_ep=k_ep)
         consolidate_av_tracks(k_ep=k_ep)
 
         stats = pprint_episode(k_ep=k_ep)
     else:
         stats = pprint_g_debut_fin()
 
-    return stats
+    return stats, dependencies
 
 
 

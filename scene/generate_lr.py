@@ -316,7 +316,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
     main_logger.info(f"produced: {produced}")
     if is_last_scene(scene):
-        if 'silence' in ch_video and ch_video['silence'] > 0:
+        if 'silence' in ch_video and ch_video['silence']:
             print(f"silence!!! {ch_video['silence']}")
             img_black = np.zeros(in_video_shape, dtype=out_pipe_dtype)
             [encoder_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
