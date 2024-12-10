@@ -151,7 +151,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     watermark: bool = do_watermark(scene=scene)
 
     print(lightcyan("chapter effects:"))
-    pprint(db[scene['dst']['k_ep']]['video']['target'][scene['dst']['k_ch']]['effects'])
+    # pprint(db[scene['dst']['k_ep']]['video']['target'][scene['dst']['k_ch']]['effects'])
 
     # Extract src scenes
     for src in scene['src'].scenes():

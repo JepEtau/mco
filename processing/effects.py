@@ -471,8 +471,8 @@ def apply_effect(
 
         if effect := effects.get_effect('loop'):
             if out_f_no == effect.frame_ref:
-                print(f"loop count = {effect.loop + 1}")
-                return [frame] * (effect.loop + 1)
+                print(f"loop count = {effect.loop}")
+                return [frame] * (effect.loop)
 
         if effect := effects.get_effect('fadeout'):
             if out_i >= effect.frame_ref:
@@ -530,7 +530,7 @@ def apply_effect(
 
             elif out_f_no == effect.frame_ref:
                 img_black: np.ndarray = np.zeros(frame.img.shape, dtype=np.float32)
-                count: int = effect.loop - effect.fade + 1 - len(out_frames)
+                count: int = effect.loop - effect.fade - len(out_frames)
                 # write_image("title_loop2.png", frame.img)
                 if effect.loop >= effect.fade:
                     out_frames.extend([frame] * count)
