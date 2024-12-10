@@ -97,7 +97,7 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
         ch_video['effects'].append(
             Effect(
                 name='loop_and_fadein',
-                loop=loop_count,
+                loop=loop_count - 1,
                 fade=fade,
             )
         )
@@ -141,7 +141,7 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
             Effect(
                 name='loop',
                 frame_ref=last_scene['src'].last_frame_no(),
-                loop=ch_video['count']
+                loop=ch_video['count'] - 1
             )
         ])
         last_scene['dst']['count'] = ch_video['count']
@@ -280,12 +280,13 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
         audio_duration += ch_audio['silence']
 
     print(f"  audio duration (silence included): {audio_duration/1000:.03f}s")
-    print(f"  audio count: {ms_to_frame(audio_duration, fps)}")
+    initial_audio_count = ms_to_frame(audio_duration, fps)
+    print(f"  audio count: {initial_audio_count}")
 
     # Align audio track to a multiple of seconds
     rounded_audio_duration = 1000 * int(1 + float(audio_duration)/1000)
     audio_count = ms_to_frame(rounded_audio_duration, fps)
-    # print(f"rounded audio count: %d" % (audio_count))
+    print(f"rounded audio count: {audio_count}")
     if frame_to_ms(audio_count, fps) != audio_duration:
         ch_audio['segments'].append({
             'start': 0,
@@ -309,6 +310,7 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
     # Align audio and video duration
     scenes: list[Scene] = ch_video['scenes']
     ch_video['silence'] = ms_to_frame(ch_audio['silence'], fps)
+    ch_video['silence'] += (audio_count - initial_audio_count)
 
     video_count_silence = ch_video['count'] + ch_video['silence']
     if audio_count > video_count_silence:
@@ -321,7 +323,7 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
         fade: int = 25
         if (effect := ch_video['effects'].get_effect('fadeout')):
             fade = effect.fade
-        fade = min(loop_count, fade)
+
         if 'effects' not in last_scene:
             last_scene['effects'] = Effects()
 

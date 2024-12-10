@@ -75,24 +75,19 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     dec_filter_complex: list[str] = []
     in_video_shape = in_vi['shape']
     in_h, in_w, in_c = in_video_shape
-    if scene['task'].name == 'sim':
-        in_video_shape = (1080, 1440, 3)
+    if scene['task'].name in ('lr', 'sim'):
+        print(lightcyan("low resolution / sim, use same size"))
+        if scene['task'].name == 'lr':
+            in_h, in_w = 540, 720
+        else:
+            in_h, in_w = 1080, 1440
         dec_filter_complex = [
             "-filter_complex",
             f"[0:v]scale={in_w}:{in_h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
             "-map", "[outv]"
         ]
-        in_video_shape = in_h, in_w, in_c
+        in_video_shape = (in_h, in_w, in_c)
 
-    elif scene['task'].name == 'lr':
-        print(lightcyan("low resolution, use same size"))
-        in_h, in_w = 540, 720
-        dec_filter_complex = [
-            "-filter_complex",
-            f"[0:v]scale={in_w}:{in_h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
-            "-map", "[outv]"
-        ]
-        in_video_shape = in_h, in_w, in_c
     # else:
     #     if h != 576 or w != 576:
     #         filter_complex = [
@@ -284,12 +279,15 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
                     out_frames = apply_effect(out_f_no, out_frame, out_i)
                     if isinstance(out_frames, list):
-                        # print(yellow(f"\t{out_i}: send {len(out_frames)}"))
+                        print(yellow(f"\t{out_i}: send {len(out_frames)}"))
                         if src['backward']:
                             for f in out_frames:
                                 backward_imgs.append(f.img)
                         else:
-                            [encoder_subprocess.stdin.write(f.img) for f in out_frames]
+                            for f in out_frames:
+                                # print(lightcyan(f.img.shape))
+                                encoder_subprocess.stdin.write(f.img)
+
                         produced += len(out_frames)
                         out_i += len(out_frames)
 
@@ -299,6 +297,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                         if src['backward']:
                             backward_imgs.append(out_frame.img)
                         else:
+                            # print(lightcyan(out_frame.img.shape))
                             encoder_subprocess.stdin.write(out_frame.img)
                         produced += 1
                         out_i += 1

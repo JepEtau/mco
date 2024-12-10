@@ -56,7 +56,9 @@ def apply_effect(
         # Append title
         if effect := last_src_scene['effects'].get_effect('zoom_in'):
             if out_f_no == effect.frame_ref:
-                print(f"ZOOOOM of frame, shape={frame.img.shape}")
+                in_dtype: np.dtype = frame.img.dtype
+                print(f"ZOOOOM of frame, shape={frame.img.shape}, dtype={frame.img.dtype}")
+                pprint(effect)
                 out_frames: list[McoFrame] = [frame]
                 in_h, in_w = frame.img.shape[:2]
                 for i in range (effect.loop):
@@ -80,10 +82,9 @@ def apply_effect(
                         ]
                     )
                     # print(zoomed.shape)
-                    if frame.img.dtype == np.uint16:
-                        zoomed = np_to_uint16(zoomed)
-                    elif frame.img.dtype == np.uint8:
-                        zoomed = np_to_uint8(zoomed)
+                    if frame.img.dtype in (np.uint16, np.uint8):
+                        zoomed = np_to_float32(zoomed)
+
                     out_frames.append(McoFrame(
                         no=frame.no,
                         img=zoomed,
@@ -92,7 +93,6 @@ def apply_effect(
                 # Overlay title
                 if (effect := last_src_scene['effects'].get_effect('title')):
                     print(yellow("ADD TITLE"))
-                    pprint(effect)
                     initial_title_img: np.ndarray = load_image_fp32(title_filepath())
                     start_factor: float = effect.zoom_factor
                     end_factor: float = effect.extra_param
@@ -100,7 +100,9 @@ def apply_effect(
                     bgd_h, bgd_w = frame.img.shape[:2]
                     in_h, in_w = initial_title_img.shape[:2]
                     end: int = min(effect.loop, len(out_frames))
-                    for i, f in enumerate(out_frames[:end+1]):
+
+
+                    for i, f in enumerate(out_frames[:end + 1]):
                         bgd_img: np.ndarray = np_to_float32(f.img)
                         step: float = float(i / end)
                         factor: float = (start_factor * (1 - step) + end_factor * step)
@@ -144,22 +146,31 @@ def apply_effect(
                                 value=0
                             )
 
-                        print(f"foreground: {title_img.shape}")
-                        print(f"background: {bgd_img.shape}")
+                        print(f"foreground shape: {title_img.shape}")
+                        print(f"background shape: {bgd_img.shape}")
 
-                        rgb_title_img = title_img[:,:,:3]
-                        alpha = title_img[:,:,3:]
+                        rgb_title_img = np.clip(title_img[:,:,:3], 0, 1)
+                        alpha = np.clip(title_img[:,:,3:], 0, 1)
                         print(f"alpha shape: {alpha.shape}")
                         f.img = (
                             (1.0 - alpha) * bgd_img
                             + alpha * rgb_title_img
                         )
 
-                    for f in out_frames[end+1:]:
+                    print(f"alpha: {np.min(alpha)}..{np.max(alpha)}")
+                    print(f"rgb_title_img: {np.min(rgb_title_img)}..{np.max(rgb_title_img)}")
+                    for f in out_frames[end + 1:]:
                         f.img = (
                             (1.0 - alpha) * f.img
                             + alpha * rgb_title_img
                         )
+
+                if in_dtype == np.uint8:
+                    for f in out_frames:
+                        f.img = np_to_uint8(f.img)
+                elif in_dtype == np.uint16:
+                    for f in out_frames:
+                        f.img = np_to_uint16(f.img)
 
                 return out_frames
 
@@ -319,8 +330,9 @@ def apply_effect(
             # sys.exit()
             if out_f_no >= effect.frame_ref:
                 if out_f_no > effect.frame_ref + effect.loop:
-                    print(f"{out_f_no}: add title, loop")
                     frame.img = cached_frame.img
+                    print(f"{out_f_no}: add title, loop ({frame.img.shape}, {frame.img.dtype})")
+
                 else:
                     print(f"{out_f_no}: add title, zoom")
                     bgd_img = np_to_float32(frame.img)
@@ -343,9 +355,9 @@ def apply_effect(
 
                     # print(f"for loop: start: {loop_start}, {loop_end}")
                     for i in range(loop_start, loop_end):
-                        print(yellow(f"  title loop, iteration no. {i}"))
                         step: float = float((i + out_f_no - effect.frame_ref)/ effect.loop)
                         factor: float = (start_factor * (1 - step) + end_factor * step)
+                        print(yellow(f"  title loop, iteration no. {i}, factor={factor:.3f}"))
                         # print(f"\n{out_f_no}: {step:.2f},  factor: {factor:.2f}")
 
                         out_h, out_w = int(factor * in_h), int(factor * in_w)
@@ -386,12 +398,14 @@ def apply_effect(
                                 value=0
                             )
 
+                        title_img = np.clip(title_img, 0, 1, out=title_img)
                         rgb_title_img = title_img[:,:,:3]
                         alpha = title_img[:,:,3:]
                         # print(f"alpha shape: {alpha.shape}")
                         blended: np.ndarray = (
                             (1.0 - alpha) * bgd_img + alpha * rgb_title_img
                         )
+
                         if frame.img.dtype == np.uint16:
                             blended = np_to_uint16(blended)
                         elif frame.img.dtype == np.uint8:
@@ -406,11 +420,14 @@ def apply_effect(
                         )
 
                     if out_f_no == effect.frame_ref + effect.loop or do_return:
-                        print(lightcyan("cache frame"))
                         cached_frame = out_frames[-1]
                         frame.img = cached_frame.img
+                        print(lightcyan(f"cache frame, dtype={frame.img.dtype}"))
                         write_image("title_loop.png", frame.img)
 
+                    for f in out_frames:
+                        print(f.img.dtype)
+                    print(cached_frame.img.dtype)
                     # if do_return and
                     #     print("returns")
                     #     return out_frames
@@ -491,10 +508,10 @@ def apply_effect(
 
         if effect := effects.get_effect('loop_and_fadeout'):
             fadeout_start = effect.frame_ref + effect.loop - effect.fade
-            print(f"loop_and_fadeout= {fadeout_start}, out_f_no: {out_f_no}, out_i: {out_i}")
+            # print(f"loop_and_fadeout= {fadeout_start}, out_f_no: {out_f_no}, out_i: {out_i}")
 
             if effect.fade > effect.loop and out_f_no >= fadeout_start:
-                print(f"start @{out_f_no} (fadeout_start: {fadeout_start})")
+                # print(f"start @{out_f_no} (fadeout_start: {fadeout_start})")
                 # print(f"effect.frame_ref: {effect.frame_ref} vs {scene['dst']['start'] + scene['dst']['count']}")
                 img_black: np.ndarray = np.zeros(frame.img.shape, dtype=np.float32)
                 if out_f_no < effect.frame_ref:
@@ -529,15 +546,17 @@ def apply_effect(
                     return out_frames
 
             elif out_f_no == effect.frame_ref:
+                print(f"loop_and_fadeout= out_f_no = effect.frame_ref")
+                pprint(effect)
                 img_black: np.ndarray = np.zeros(frame.img.shape, dtype=np.float32)
-                count: int = effect.loop - effect.fade - len(out_frames)
+                count: int = effect.loop - effect.fade + 1 - len(out_frames)
                 # write_image("title_loop2.png", frame.img)
                 if effect.loop >= effect.fade:
                     out_frames.extend([frame] * count)
                 else:
                     out_frames.extend([frame])
 
-                in_img = frame.img
+                in_img = np_to_float32(frame.img)
                 for i in range (effect.fade):
                     coef: float = float(i) / effect.fade
                     print(f"  out_i: {out_f_no}, coef={coef:.06f}")
@@ -591,8 +610,8 @@ def coef_table(
 
 def extract_last_frame_fp32(scene: Scene) -> McoFrame:
     in_video_fp = scene['task'].video_file
-    if scene['task'].name == 'sim':
-        in_video_fp = scene['src'].last_scene()['scene']['inputs'].progressive().filepath
+    # if scene['task'].name == 'sim':
+    #     in_video_fp = scene['src'].last_scene()['scene']['inputs'].progressive().filepath
     # pprint(scene['task'])
     # sys.exit()
 
@@ -604,17 +623,17 @@ def extract_last_frame_fp32(scene: Scene) -> McoFrame:
     frame_no: int = in_video_info['frame_count'] - 1
 
     decoder_filters: list[str] = []
-    if scene['task'].name == 'sim':
-        frame_no: int = scene['src'].last_frame_no() - 1
-        final_shape: FShape = (1080, 1440, 3)
-        h, w = final_shape[:2]
-        decoder_filters = [
-            "-filter_complex",
-            f"[0:v]scale={w}:{h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
-            "-map", "[outv]"
-        ]
-        # patch bpp to force as 16bit because we may use a 8bpp in sim
-        in_video_info['bpp'] = 16
+    # if scene['task'].name == 'sim':
+    #     frame_no: int = scene['src'].last_frame_no() - 1
+    #     final_shape: FShape = (1080, 1440, 3)
+    #     h, w = final_shape[:2]
+    #     decoder_filters = [
+    #         "-filter_complex",
+    #         f"[0:v]scale={w}:{h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
+    #         "-map", "[outv]"
+    #     ]
+    #     # patch bpp to force as 16bit because we may use a 8bpp in sim
+    #     in_video_info['bpp'] = 16
 
     pipe_img_shape: FShape = final_shape
     pipe_dtype: np.dtype = (
@@ -622,10 +641,10 @@ def extract_last_frame_fp32(scene: Scene) -> McoFrame:
         else np.uint8
     )
     pipe_pix_fmt = 'bgr24' if pipe_dtype == np.uint8 else 'bgr48'
-    pipe_img_nbytes = int(math.prod(final_shape) * in_video_info['bpp'] / 8)
+    pipe_img_nbytes = int(math.prod(final_shape) * np.dtype(pipe_dtype).itemsize)
 
     print(red("Error: extract_last_frame: fix this if task is not lr"))
-
+    pprint(in_video_info)
 
     print(f"previous video input: {in_video_fp}")
     if not os.path.isfile(in_video_fp):
