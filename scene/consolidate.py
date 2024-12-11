@@ -262,18 +262,14 @@ def consolidate_scene(
     if k_ch in ('g_debut', 'g_fin'):
         cache_path: str = db[k_ch]['cache_path']
         basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
-    elif k_ch in ('g_asuivre', 'g_documentaire'):
+
+    elif (
+        k_ch in ('g_asuivre', 'g_documentaire')
+        and task_name not in ('lr', 'sim', 'final')
+    ):
         cache_path: str = db[k_ch]['cache_path']
         basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
-    # elif k_ch == 'documentaire':
-    #     print("********************")
-    #     print(db['common']['directories']['cache_documentaire'])
-    #     cache_path: str = os.path.join(
-    #         db['common']['directories']['cache_documentaire'],
-    #         k_ep,
-    #     )
-    #     scene['cache'] = cache_path
-    #
+
     else:
         cache_path: str = db[k_ep]['cache_path']
         basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"

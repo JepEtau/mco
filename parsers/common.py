@@ -111,12 +111,14 @@ def parse_common_configuration(language:str=''):
 
         directories[d] = absolute_path(os.path.join(root_path, v))
 
+    pprint(directories)
     # Use default values
     for d in (
         'cache',
-        'cache_progressive'
+        'cache_progressive',
+        'audio',
     ):
-        if not os.path.exists(directories[d]):
+        if not os.path.exists(directories[d]) or sys.platform == 'linux':
             directories[d] = absolute_path(os.path.join(directories[f"{d}_default"]))
         try:
             del directories[f"{d}_default"]
@@ -131,6 +133,15 @@ def parse_common_configuration(language:str=''):
             del directories[f"{d}_default"]
         except:
             pass
+
+    for k in (
+        'audio',
+        'cache',
+        'cache_documentaire',
+        'cache_progressive',
+    ):
+        os.makedirs(directories[k], exist_ok=True)
+
 
     # Others
     #===========================================================================

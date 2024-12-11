@@ -145,7 +145,11 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     to_produce: int = scene['dst']['count']
     watermark: bool = do_watermark(scene=scene)
 
-    print(lightcyan("chapter effects:"))
+    print(lightcyan("pipe:"))
+    print(f"  pixfmt: {in_pipe_pixfmt}")
+    print(f"  shape: {in_pipe_img_shape}")
+    print(f"  dtype: {in_pipe_dtype}")
+    print(f"  nbytes: {in_pipe_img_nbytes}")
     # pprint(db[scene['dst']['k_ep']]['video']['target'][scene['dst']['k_ch']]['effects'])
 
     # Extract src scenes
@@ -179,7 +183,9 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             "-vcodec", "rawvideo",
             "-"
         ]
+
         print(lightcyan(f"Decoder:"), " ".join(decoder_command))
+
         decoder_subprocess: subprocess.Popen = None
         try:
             decoder_subprocess = subprocess.Popen(
@@ -191,8 +197,6 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         except Exception as e:
             print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
             return False
-
-        # print(" ".join(decoder_command))
 
         # Replacements
         frame_replace = src_scene['replace']

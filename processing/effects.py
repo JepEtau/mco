@@ -101,6 +101,13 @@ def apply_effect(
                     in_h, in_w = initial_title_img.shape[:2]
                     end: int = min(effect.loop, len(out_frames))
 
+                    if scene['task'].name == 'lr':
+                        initial_title_img: np.ndarray = cv2.resize(
+                            initial_title_img,
+                            (in_w//2, in_h//2),
+                            interpolation=cv2.INTER_LANCZOS4
+                        )
+                        in_h, in_w = initial_title_img.shape[:2]
 
                     for i, f in enumerate(out_frames[:end + 1]):
                         bgd_img: np.ndarray = np_to_float32(f.img)
@@ -342,6 +349,14 @@ def apply_effect(
 
                     start_factor: float = effect.zoom_factor
                     end_factor: float = effect.extra_param
+                    if scene['task'].name == 'lr':
+                        initial_title_img: np.ndarray = cv2.resize(
+                            initial_title_img,
+                            (in_w//2, in_h//2),
+                            interpolation=cv2.INTER_LANCZOS4
+                        )
+                        in_h, in_w = initial_title_img.shape[:2]
+
 
                     loop_start, loop_end = 0, 1
                     do_return: bool = False
@@ -361,7 +376,7 @@ def apply_effect(
                         # print(f"\n{out_f_no}: {step:.2f},  factor: {factor:.2f}")
 
                         out_h, out_w = int(factor * in_h), int(factor * in_w)
-                        # print(f"bgd shape: {bgd_img.shape}")
+                        print(f"    bgd shape: {bgd_img.shape}")
                         # print(f"{in_w}x{in_h} -> {out_w}x{out_h}")
                         title_img: np.ndarray = cv2.resize(
                             initial_title_img,
@@ -370,6 +385,9 @@ def apply_effect(
                         )
 
                         # Crop if overlay is > background
+                        print(f"    initial_title_img: in_w, in_h: {in_w}, {in_h}")
+                        print(f"    title_img: out_w, out_h: {out_w}, {out_h}")
+                        print(f"    title_img: out_w, out_h: {out_w}, {out_h}")
                         if out_w > in_w or out_h > bgd_h:
                             top = max(0, int((out_h - bgd_h) / 2))
                             left = max(0, int((out_w - bgd_w) / 2))
@@ -382,7 +400,7 @@ def apply_effect(
                                     :
                                 ]
                             )
-                            # print(f"  cropped_title: {title_img.shape}")
+                            print(f"    cropped_title: {title_img.shape}")
 
                         # Add borders if overlay is < background
                         out_h, out_w = title_img.shape[:2]
@@ -390,13 +408,14 @@ def apply_effect(
                             top, left = (bgd_h - out_h) // 2, (bgd_w - out_w) // 2
                             bottom, right = bgd_h - (out_h + top), bgd_w - (out_w + left)
                             borders = [top, bottom, left, right]
-                            # print(f"  borders: {borders}")
+                            print(f"    add borders: {borders}")
                             title_img: np.ndarray = cv2.copyMakeBorder(
                                 title_img,
                                 *borders,
                                 cv2.BORDER_CONSTANT,
                                 value=0
                             )
+                        print(f"    title_img: {title_img.shape}")
 
                         title_img = np.clip(title_img, 0, 1, out=title_img)
                         rgb_title_img = title_img[:,:,:3]
@@ -583,9 +602,6 @@ def apply_effect(
                 elif frame.img.dtype == np.uint8:
                     img_out = np_to_uint8(img_out)
                 return McoFrame(no=frame.no, img=img_out)
-
-        else:
-            raise NotImplementedError(effect.name)
 
     return frame
 
