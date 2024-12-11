@@ -157,6 +157,13 @@ def main():
             else:
                 print("Ignore reference as it has not been parsed")
 
+        if 'effects' in scenes[0]:
+            print(lightcyan("first scene effect:"))
+            pprint(scenes[0]['effects'])
+
+        if ch_audio['avsync']:
+            print(lightcyan("first scene AVsync:"), ch_audio['avsync'])
+
         print(lightcyan("last scene effect:"))
         pprint(scenes[-1]['effects'])
 

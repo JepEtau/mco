@@ -76,7 +76,6 @@ def consolidate_scene(
 
     # Geometry
     #---------------------------------------------------------------------------
-    pprint(scene)
     k_ep: str = scene['dst']['k_ep']
     k_ch: str = scene['dst']['k_ch']
     if k_ch in ['g_asuivre', 'g_documentaire']:

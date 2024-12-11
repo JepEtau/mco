@@ -12,6 +12,7 @@ from parsers import (
     VideoSettings,
     SceneDsr,
     DsrRegion,
+    get_fps,
 )
 from processing.dsr import generate_dsr_mask
 from processing.effects import apply_effect
@@ -25,6 +26,7 @@ from utils.logger import main_logger
 from utils.mco_types import ChapterVideo, McoFrame, Scene
 from utils.mco_utils import (
     ffmpeg_metadata,
+    get_target_audio,
     get_target_video,
     is_first_scene,
     is_last_scene,
@@ -34,7 +36,7 @@ from utils.np_dtypes import np_to_float32
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
-from utils.time_conversions import frame_to_s, frame_to_sexagesimal
+from utils.time_conversions import frame_to_s, frame_to_sexagesimal, ms_to_frame
 from utils.tools import ffmpeg_exe
 from utils.media import (
     VideoInfo, extract_media_info_mco, frame_rate_dec, str_to_video_codec
@@ -320,11 +322,10 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     main_logger.info(f"produced: {produced}")
     if is_last_scene(scene):
         if 'silence' in ch_video and ch_video['silence']:
-            print(f"silence!!! {ch_video['silence']}")
+            silence: int = ch_video['silence']
             img_black = np.zeros(in_video_shape, dtype=out_pipe_dtype)
-            [encoder_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
-
-            produced += ch_video['silence']
+            [encoder_subprocess.stdin.write(img_black) for _ in range(silence)]
+            produced += silence
             print(f"produced w/ silence: {produced}")
 
 

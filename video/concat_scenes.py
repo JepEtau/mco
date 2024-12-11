@@ -83,7 +83,6 @@ def concat_scenes(
 
         # Output video file
         os.makedirs(os.path.join(cache_directory, "video"), exist_ok=True)
-        pprint(video['task'])
         out_video_fp: str = video['task'].video_file
 
         # _task_name: str = 'lr' if task.name == 'sim' else task.name
@@ -97,7 +96,10 @@ def concat_scenes(
         # )
 
         if verbose:
-            print(f"{k_ch}: concatenate scenes into a single clip: {out_video_fp}")
+            print(
+                lightcyan(f"Concatenate scenes into a single clip:"),
+                f"{k_ch}\n  {out_video_fp}"
+            )
         main_logger.debug(f"\t{out_video_fp}")
         # Concatenate scenes into a single video
         ffmpeg_command: list[str] = [

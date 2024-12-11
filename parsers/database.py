@@ -37,6 +37,7 @@ from .stabilize import parse_stabilize_file
 from ._keys import (
     credit_chapter_keys,
     non_credit_chapter_keys,
+    ep_key,
 )
 from ._db import db
 

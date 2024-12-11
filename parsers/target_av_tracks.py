@@ -67,6 +67,13 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
     k_ed_audio_src = db_audio['src']['k_ed']
     print(f"k_ed_audio_src: {k_ed_audio_src}")
 
+    print(lightcyan(f"----------------- Consolidate A/V tracks ------------------"))
+    print(f"chapter: {k_ch}")
+    print(f"  - audio_count: {ch_audio['count']}")
+    print(f"  - audio_duration: {ch_audio['duration']}")
+    print(f"  - video_count : {video_count}")
+    print(f"  - video_count (rounded): {ch_video['count']}")
+
     # First scene
     e_s0_vcount: int = ch_video['scenes'][0]['src'].frame_count()
     e_s0_acount: int = (
@@ -82,7 +89,7 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
         if db_video['precedemment']['count'] <= 0:
             print("add silence, use avsync")
             avsync: int = e_s0_vcount - e_s0_acount
-            ch_audio['segments'][0]['avsync'] = avsync
+            ch_audio['avsync'] = 1000. * avsync / fps
             pprint(ch_audio)
             ch_audio['count'] += avsync
 
@@ -126,6 +133,11 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
 
     # Report chapter effects (fadein) in first scene
     consolidate_first_scene_effect(ch_video=ch_video)
+
+    print(f"  -> video_count: {ch_video['count']}")
+    print(lightcyan(f"-----------------------------------------------------------"))
+
+    consolidate_silence(ch_video, ch_audio)
     warnings.warn("Consolidate first scene with loop_and_fadein")
 
 
@@ -182,6 +194,7 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
 
     print(lightblue(f"{k_ep}:{k_ch}"), f"audio count: after: {ch_audio['count']}")
     print(lightblue(f"{k_ep}:{k_ch}"), f"video count: after: {ch_video['count']}")
+    consolidate_silence(ch_video, ch_audio)
 
 
     # g_documentaire
@@ -249,6 +262,8 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
 
     if video_count == audio_count:
         consolidate_last_scene_effect(ch_video)
+
+    consolidate_silence(ch_video, ch_audio)
 
 
 
@@ -320,6 +335,9 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
     ch_video['silence'] += (audio_count - initial_audio_count)
 
     video_count_silence = ch_video['count'] + ch_video['silence']
+
+    # The following consildation are done for g_debut/g_fin
+    # because g_reporatge/g_asuivre video count uses audio count
     if audio_count > video_count_silence:
         # Frames shall be added: use the loop effect for this
         last_scene: Scene = scenes[-1]
@@ -397,6 +415,10 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
     consolidate_first_scene_effect(ch_video=ch_video)
 
 
+    if 'silence' in ch_audio and ch_audio['silence']:
+        ch_video['silence'] = ch_audio['count'] - ch_video['count']
+        print(f"add silence: {ch_video['silence']}")
+        # raise
 
 
 def check_audio_duration_multiple_of_frames(ch_audio: ChapterAudio) -> int:
@@ -466,6 +488,7 @@ def consolidate_last_scene_effect(ch_video: ChapterVideo) -> None:
         ])
 
 
+
 def consolidate_first_scene_effect(ch_video: ChapterVideo) -> None:
     if ch_effect := ch_video['effects'].get_effect('fadein'):
         first_scene: Scene = ch_video['scenes'][0]
@@ -478,3 +501,12 @@ def consolidate_first_scene_effect(ch_video: ChapterVideo) -> None:
         effect = deepcopy(ch_effect)
         effect.frame_ref = first_scene['src'].first_frame_no()
         first_scene['effects'].append(effect)
+
+
+
+def consolidate_silence(ch_video: ChapterVideo, ch_audio: ChapterVideo) -> None:
+    if 'silence' in ch_audio and ch_audio['silence']:
+        ch_video['silence'] = ms_to_frame(
+            ch_audio['silence'], frame_rate=get_fps(db)
+        )
+        print(f"add silence: {ch_video['silence']}")

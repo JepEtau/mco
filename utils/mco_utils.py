@@ -130,13 +130,15 @@ def is_final_up_to_date(scene: Scene) -> bool:
     except:
         return False
 
-    print(yellow(f"scene: {calculate_frame_count(scene)}, out: {out_video_info['frame_count']}"))
+    main_logger.debug(
+        f"{yellow("scene:")} {calculate_frame_count(scene)}{yellow("out file:")} {out_video_info['frame_count']}"
+    )
     if out_video_info['frame_count'] != calculate_frame_count(scene):
         return False
 
-    print("is_final_up_to_date")
-    print(out_video_info['metadata'])
-    print(task.hash)
+    main_logger.debug(
+        f"out metadata: {out_video_info['metadata']}, task hash: {task.hash}"
+    )
 
     if task.name in ('lr', 'sim', 'upscale', 'hr', 'final'):
         try:
@@ -195,16 +197,16 @@ def calculate_frame_count(scene: Scene) -> int:
         if is_last_scene(scene):
             count += ch_video['silence'] if 'silence' in ch_video else 0
 
-        if 'effects' in scene:
-            for e_name in (
-                'loop',
-                'loop_and_fadein',
-                'loop_and_fadeout',
-                'zoom_in',
-                'zoom_out',
-            ):
-                if (e := scene['effects'].get_effect(e_name)):
-                    count += e.loop
+        # if 'effects' in scene:
+        #     for e_name in (
+        #         'loop',
+        #         'loop_and_fadein',
+        #         'loop_and_fadeout',
+        #         'zoom_in',
+        #         'zoom_out',
+        #     ):
+        #         if (e := scene['effects'].get_effect(e_name)):
+        #             count += e.loop
 
     if task_name in ('upscale', 'hr'):
         # Do not use the final frame count such as loop

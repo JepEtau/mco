@@ -108,10 +108,8 @@ def parse_common_configuration(language:str=''):
     for d, v in directories.items():
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')
-
         directories[d] = absolute_path(os.path.join(root_path, v))
 
-    pprint(directories)
     # Use default values
     for d in (
         'cache',

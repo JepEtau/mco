@@ -146,12 +146,12 @@ def generate_video_concat_file(
             "concat",
             f"{suffix}{lang_str}.txt")
         concat_file = open(concat_fp, "w")
-        if True:
-            print(green(f"create_video_concat_file: {concat_fp}"))
+        print(green(f"  concatenation video file:"), concat_fp)
 
         if k_ep_or_g in ('g_debut', 'g_fin'):
-            video: ChapterVideo = db[k_ep_or_g]['video']
-            concat_file.write(f"file \'{video['task'].video_file}\' \n")
+            print(f"  chapter: {k_ep_or_g}")
+            ch_video: ChapterVideo = db[k_ep_or_g]['video']
+            concat_file.write(f"file \'{ch_video['task'].video_file}\' \n")
             audio = db[k_ep_or_g]['audio']
             # if 'silence' in audio and audio['silence'] > 0:
             #     silence_fp: str = os.path.join(
@@ -169,19 +169,21 @@ def generate_video_concat_file(
             #         p = p.replace('concat', 'video')
             #         concat_file.write(f"file \'{p}\' \n")
         else:
-            for _chapter in main_chapter_keys():
-                if chapter != '' and _chapter != chapter:
+            print(f"  episode: {k_ep_or_g}")
+
+            for k_ch in main_chapter_keys():
+                if chapter != '' and k_ch != chapter:
                     continue
 
-                video = db[k_ep]['video']['target'][_chapter]
-                if video['count'] == 0:
+                ch_audio: ChapterVideo = db[k_ep]['audio'][k_ch]
+                if not ch_audio['duration']:
                     continue
 
-                if len(video['scenes']) > 1:
-                    concat_file.write(f"file \'{video['task'].video_file}\' \n")
+                ch_video: ChapterVideo = db[k_ep]['video']['target'][k_ch]
+                if len(ch_video['scenes']) > 1:
+                    concat_file.write(f"file \'{ch_video['task'].video_file}\' \n")
                 else:
-                    pprint(video['scenes'][0])
-                    concat_file.write(f"file \'{video['scenes'][0]['task'].video_file}\' \n")
+                    concat_file.write(f"file \'{ch_video['scenes'][0]['task'].video_file}\' \n")
 
                 if chapter != '':
                     continue
