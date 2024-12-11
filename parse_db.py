@@ -164,8 +164,9 @@ def main():
         if ch_audio['avsync']:
             print(lightcyan("first scene AVsync:"), ch_audio['avsync'])
 
-        print(lightcyan("last scene effect:"))
-        pprint(scenes[-1]['effects'])
+        if 'effects' in scenes[-1]:
+            print(lightcyan("last scene effect:"))
+            pprint(scenes[-1]['effects'])
 
         if k_ch in ('g_debut', 'g_fin'):
             if ch_video['silence']:

@@ -23,7 +23,7 @@ def get_scene_no_from_frame_no(k_ed_ep_ch_no: list, frame_no: int) -> int:
     k_ed, k_ep, k_ch, _ = k_ed_ep_ch_no
     scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
     for s in scenes:
-        if s['start'] <= frame_no <= s['start'] + s['count']:
+        if s['start'] <= frame_no < s['start'] + s['count']:
             return s['no']
     raise ValueError(f"frame no. {frame_no} not found in {k_ed_ep_ch_no}")
 

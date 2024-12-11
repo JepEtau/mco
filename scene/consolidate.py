@@ -4,6 +4,7 @@ import os
 from pprint import pprint
 import re
 import sys
+from warnings import warn
 from utils.hash import calc_hash
 from utils.mco_types import (
     ChapterVideo, Effect, Effects, Scene,
@@ -94,7 +95,11 @@ def consolidate_scene(
             chapter = db[k_ch]['video']
         else:
             chapter = db[k_ep]['video']['target'][k_ch]
-        scene['geometry'].chapter = deepcopy(chapter['geometry'])
+        try:
+            scene['geometry'].chapter = deepcopy(chapter['geometry'])
+        except:
+            warn(f"no geometry defined for {k_ep}:{k_ch}")
+            scene['geometry'] = SceneGeometry()
 
 
     # Processing chain
