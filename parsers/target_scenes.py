@@ -2,6 +2,7 @@ from __future__ import annotations
 import sys
 from copy import deepcopy
 from pprint import pprint
+from warnings import warn
 
 from .logger import logger
 from .helpers import get_fps
@@ -15,6 +16,17 @@ from scene.src_scene import (
 )
 from ._db import db
 from ._types import ep_key
+
+
+
+def get_scene_no_from_frame_no(k_ed_ep_ch_no: list, frame_no: int) -> int:
+    k_ed, k_ep, k_ch, _ = k_ed_ep_ch_no
+    scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
+    for s in scenes:
+        if s['start'] <= frame_no <= s['start'] + s['count']:
+            return s['no']
+    raise ValueError(f"frame no. {frame_no} not found in {k_ed_ep_ch_no}")
+
 
 
 def consolidate_target_scenes(k_ep: int | str, k_ch: str) -> None:
@@ -82,6 +94,18 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: str) -> None:
         target_scene_nos = []
         ch_video['scenes'] = []
 
+    # Find scene no if not specified in target scene list
+    for scene in ch_video['scenes']:
+        for src_scene in scene['src'].scenes():
+            if src_scene['k_ed_ep_ch_no'][-1] == -1:
+                scene_no = get_scene_no_from_frame_no(
+                    src_scene['k_ed_ep_ch_no'],
+                    frame_no=src_scene['start']
+                )
+                src_scene['k_ed_ep_ch_no'] = tuple(
+                    list(src_scene['k_ed_ep_ch_no'])[:-1] + [scene_no]
+                )
+
     # Append scenes from src and sort
     for scene_src in ch_video_src['scenes']:
         if (
@@ -120,7 +144,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: str) -> None:
         add_ref = False
         if k_ch in ('precedemment', 'asuivre', 'reportage'):
             # pprint(ref_scenes)
-            raise ValueError
+            warn(f"{k_ch}: cannot add reference to each scene")
 
     frame_count = 0
     for no, scene in enumerate(ch_video['scenes']):
@@ -172,7 +196,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: str) -> None:
                 pprint(s)
             pprint(ch_video['scenes'][SCENE_NO])
         # print("   start: %d" % (db_video_target['start']))
-        print("   count: %d" % (ch_video['count']))
+        print(f"   count: {ch_video['count']}")
         print("\n")
         # sys.exit()
 
@@ -318,27 +342,3 @@ def consolidate_target_scenes_g(k_ep: int | str, k_ch: str) -> None:
 
     # Number of frames without effects
     ch_video['count'] = frame_count
-
-
-    # if target_chapter['scenes'][0]['dst']['k_ch'] == 'g_debut':
-    #     pprint(target_chapter)
-    #     sys.exit(f"<- {target_chapter['scenes'][0]['dst']['k_ch']}")
-
-    # Effects
-    # if k_ch in ('g_debut', 'g_fin'):
-    #     ch_video: ChapterVideo = db[k_ch]['video']
-    #     if 'effects' in ch_video:
-    #         last_scene = ch_video['scenes'][-1]
-
-    #         effect: Effect = ch_video['effects'].primary_effect()
-    #         if 'fadeout' in effect.name:
-    #             fadeout_count: int = effect.fade
-    #             frame_no = last_scene['src'].last_frame_no()
-    #             last_scene['effects'] = Effects([
-    #                 Effect(
-    #                     name='fadeout',
-    #                     frame_ref=frame_no - fadeout_count + 1,
-    #                     fade=fadeout_count
-    #                 )
-    #             ])
-    # raise

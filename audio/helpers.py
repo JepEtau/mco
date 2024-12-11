@@ -122,6 +122,6 @@ def get_audio_frame_count(episode: str, chapter: str) -> int:
 
     samples: float = buffer.shape[0]
     frame_count: int = int(fps * samples / float(sample_rate))
-    print(f"  {frame_count} frames")
+    print(f"    equivalent to {frame_count} frames")
 
     return frame_count

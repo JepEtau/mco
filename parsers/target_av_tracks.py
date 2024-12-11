@@ -52,7 +52,7 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
             add_loop_and_fadeout_effect(ch_video, ch_audio, k_ep, k_ch)
 
         else:
-            consolidate_last_scene_effect(ch_video, k_ep, k_ch)
+            consolidate_last_scene_effect(ch_video)
 
 
     # episode
@@ -492,12 +492,16 @@ def consolidate_last_scene_effect(ch_video: ChapterVideo) -> None:
 def consolidate_first_scene_effect(ch_video: ChapterVideo) -> None:
     if ch_effect := ch_video['effects'].get_effect('fadein'):
         first_scene: Scene = ch_video['scenes'][0]
+        if 'effects' not in first_scene:
+            first_scene['effects'] = Effects()
         effect = deepcopy(ch_effect)
         effect.frame_ref = first_scene['src'].first_frame_no()
         first_scene['effects'].append(effect)
 
     elif ch_effect := ch_video['effects'].get_effect('loop_and_fadein'):
         first_scene: Scene = ch_video['scenes'][0]
+        if 'effects' not in first_scene:
+            first_scene['effects'] = Effects()
         effect = deepcopy(ch_effect)
         effect.frame_ref = first_scene['src'].first_frame_no()
         first_scene['effects'].append(effect)

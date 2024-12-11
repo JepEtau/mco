@@ -99,7 +99,7 @@ def combine_av_tracks(
     video_frames_count: int = 0
     try:
         if not simulation:
-            print(f"get video frame count: {video_fp}")
+            print(f"  get video frame count: {video_fp}")
             _, video_frames_count = get_video_duration(video_fp, integrity=False)
     except:
         pass
@@ -109,7 +109,6 @@ def combine_av_tracks(
         db['common']['directories']['audio'],
         f"{k_ep_or_g}_audio{language}.{db['common']['settings']['audio_format']}"
     )
-    print(yellow(audio_fp))
     audio_frames_count: int = 0
     try:
         if not simulation:
@@ -118,9 +117,9 @@ def combine_av_tracks(
         k_ep_or_g: str = f"episode {episode}" if chapter == '' else chapter
         raise RuntimeError(f"No valid audio for {k_ep_or_g}")
 
-    print(f"\tvideo: {video_fp}: {video_frames_count}")
-    print(f"\taudio: {audio_fp}: {audio_frames_count}")
-    print(f"\tAV file: {audio_video_filepath}")
+    print(f"  video: {video_fp}: {video_frames_count}")
+    print(f"  audio: {audio_fp}: {audio_frames_count}")
+    print(f"  AV file: {audio_video_filepath}")
 
     # Cannot continue if nb of frames differ
     if audio_frames_count != video_frames_count and not simulation:

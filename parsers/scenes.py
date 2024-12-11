@@ -141,6 +141,7 @@ def parse_scenes_new(
 ) -> None:
     scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
     k_ed_ep_ch: str = f"{k_ed}:{k_ep}:{k_ch}"
+    print(f"Parse scene list: {k_ed_ep_ch}")
 
     for k_option in config.options(k_section):
         value_str: str = config.get(k_section, k_option).replace(' ','')
@@ -308,7 +309,7 @@ def parse_target_scenelist(
             })
             scene: Scene = db_scenes[-1]
 
-            current_scene_no: int = -1
+            current_scene_no: int | None = None
             segment_start: int = -1
             segment_count: int = -1
             backward: bool = False
@@ -334,7 +335,7 @@ def parse_target_scenelist(
                         sys.exit(f"parse_target_scenelist: {v} is not recognized")
 
                 elif k == 'src':
-                    if current_scene_no != -1:
+                    if current_scene_no is not None:
                         scene['src'].add_scene(
                             k_ed=k_ed,
                             k_ep=k_ep,
@@ -346,7 +347,7 @@ def parse_target_scenelist(
                         )
                     segment_start = -1
                     segment_count = -1
-                    current_scene_no = -1
+                    current_scene_no = None
                     backward = False
 
                     if ed_ep_ch_scene := re.search(re.compile(r"([a-z]{1})?:*(\d{1,2}):([a-z_]+)?:*(\d+)?"), v):
@@ -356,16 +357,19 @@ def parse_target_scenelist(
                         k_ch = ed_ep_ch_scene.group(3)
                         if k_ch not in main_chapter_keys():
                             raise ValueError(f"not valid chapter: {k_ch}")
-                        try:
+
+                        if ed_ep_ch_scene.group(4) is not None:
                             scene_no = int(ed_ep_ch_scene.group(4))
-                        except:
-                            pass
-                        current_scene_no = scene_no
-                    # raise ValueError(f"{k_ed}:{k_ep}:{k_ch}:{scene_no}")
+                            current_scene_no = scene_no
+                        else:
+                            # Find scene no from frame no
+                            current_scene_no = -1
+                    else:
+                        raise ValueError(v)
 
                 # Src scene
                 elif k in ('scene', 's'):
-                   if current_scene_no != -1:
+                    if current_scene_no is not None:
                        scene['src'].add_scene(
                            k_ed=k_ed,
                            k_ep=k_ep,
@@ -375,10 +379,10 @@ def parse_target_scenelist(
                            count=segment_count,
                            backward=backward
                        )
-                   current_scene_no = int(v)
-                   segment_start = -1
-                   segment_count = -1
-                   backward = False
+                    current_scene_no = int(v)
+                    segment_start = -1
+                    segment_count = -1
+                    backward = False
 
                 elif k == 'backward':
                     if v.lower() == "true":
@@ -489,7 +493,7 @@ def parse_target_scenelist(
                 k_ed=k_ed if k_ed != '' else ch_video['default_src']['k_ed'],
                 k_ep=k_ep if k_ep != '' else ch_video['default_src']['k_ep'],
                 k_ch=k_ch,
-                no=current_scene_no if current_scene_no != -1 else scene_no,
+                no=current_scene_no if current_scene_no is not None else scene_no,
                 start=segment_start,
                 count=segment_count,
                 backward=backward,
