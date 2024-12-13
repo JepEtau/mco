@@ -214,3 +214,12 @@ class SrcScenes:
             ):
                 return True
         return False
+
+
+    def get_edition(self) -> str:
+        k_eds: set[str] = set()
+        for s in self._scenes:
+            k_eds.add(s['scene']['k_ed'])
+        if len(k_eds) > 1:
+            raise ValueError(f"{':'.join(s['k_ed_ep_ch_no'])} uses mor than 1 edition: {k_eds}")
+        return k_eds.pop()

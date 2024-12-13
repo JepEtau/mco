@@ -18,10 +18,10 @@ def main():
     parser.add_argument(
         "--edition",
         "-ed",
-        choices=['f', 'k', 's'],
+        choices=('f', 'k', 's', 's0'),
         default='',
         required=False,
-        help="Use this edition as source rather than the one selected in database"
+        help="Filter by edition"
     )
 
     parser.add_argument(
@@ -108,7 +108,6 @@ def main():
     parse_database(
         episode=episode,
         lang=arguments.lang,
-        edition=arguments.edition,
     )
     gc.collect()
 

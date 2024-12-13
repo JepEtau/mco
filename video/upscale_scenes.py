@@ -7,7 +7,11 @@ import time
 
 from nn_inference.model_mgr import ModelManager
 from nn_inference.threads.t_decoder import VideoStreamInfo
-from nn_inference.toolbox.upscale_doc import upscale_documentaire
+if sys.platform == 'win32':
+    from nn_inference.toolbox.upscale_doc import upscale_documentaire
+else:
+    def upscale_documentaire(**args):
+        return
 from parsers._types import VideoSettings
 from parsers.p_print import pprint_scene_mapping
 from processing.upscale import UpscalePipeline
@@ -95,8 +99,13 @@ def upscale_scenes(
             if scene_no is not None and scene_no != -1 and scene['no'] != scene_no:
                 print(f"skip scene no. {scene['no']}")
                 continue
+
             if scene_min != -1 and scene_max != -1:
                 if scene['no'] < scene_min or scene['no'] > scene_max:
+                    continue
+
+            if k_ed is not None and k_ed:
+                if scene['src'].get_edition() != k_ed:
                     continue
 
             pprint_scene_mapping(scene)
@@ -116,10 +125,13 @@ def upscale_scenes(
             # Calculate hash for the video
             hashes_str += f",{scene['task'].hash}"
 
+            # Windows only
+            if sys.platform != 'win32':
+                continue
+
             # Add models to the model manager
             # and add the scene to the list to upscale
             if not is_up_to_date(scene) or force:
-
 
                 # Get all models
                 scene_filters: Filter = scene['filters'][scene['task'].name]
