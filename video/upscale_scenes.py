@@ -8,9 +8,9 @@ import time
 from nn_inference.model_mgr import ModelManager
 from nn_inference.threads.t_decoder import VideoStreamInfo
 if sys.platform == 'win32':
-    from nn_inference.toolbox.upscale_doc import upscale_documentaire
+    from nn_inference.toolbox.upscale_doc import upscale_doc
 else:
-    def upscale_documentaire(**args):
+    def upscale_doc(**args):
         return
 from parsers._types import VideoSettings
 from parsers.p_print import pprint_scene_mapping
@@ -144,10 +144,10 @@ def upscale_scenes(
                 if len(scene_filters.steps) != 0:
                     print(yellow(f"sequence already parsed: scene {src_scene['k_ed_ep_ch_no']}"))
 
-                # Separate documentaire from other
+                # Separate doc from other
                 # because it uses different upscalers
                 pprint(scene_filters)
-                if scene_filters.sequence == 'documentaire':
+                if scene_filters.sequence == 'doc':
                     # For documentary, there is no frame replace... yet
                     scenes_to_upscale_doc.append(scene)
                     total_frames += scene['src'].frame_count(exclude_loop=True)
@@ -273,7 +273,7 @@ def upscale_scenes(
         pipeline.run()
 
     if scenes_to_upscale_doc:
-        upscale_documentaire(
+        upscale_doc(
             scenes=scenes_to_upscale_doc,
             debug=debug,
             force=force

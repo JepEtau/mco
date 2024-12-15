@@ -74,7 +74,7 @@ class GeometryDatabase:
 
         k_ep, k_ch = selection.k_ep, selection.k_ch
 
-        # TODO: verify this for g_asuivre and g_documentaire
+        # TODO: verify this for g_asuivre and g_doc
         chapter: ChapterVideo
         k_ch_key: str = self._chapter_key(scenes[0])
         if k_ch in ('g_debut', 'g_fin'):

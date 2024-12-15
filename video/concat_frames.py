@@ -64,7 +64,7 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
         cache_dir = db[k_ch]['cache_path']
         basename = f"{k_ch}_{scene['no']:03}__{k_ed}_{scene['k_ep']}"
 
-    elif k_ch in ('g_asuivre', 'g_documentaire'):
+    elif k_ch in ('g_asuivre', 'g_doc'):
         cache_dir = db[scene['dst']['k_ep']]['cache_path']
         basename = f"{scene['dst']['k_ep']}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}"
 
@@ -73,11 +73,11 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
 
     folder_name: str = "video"
     if task_name == 'initial':
-        folder_name = f"scenes_{scene['k_ed']}"
+        folder_name = f"ed_{scene['k_ed']}"
     elif task_name == 'hr':
-        folder_name = 'scenes_hr'
+        folder_name = 'hr'
     elif task_name == 'lr':
-        folder_name = 'scenes_lr'
+        folder_name = 'lr'
     elif task_name == 'restored':
         folder_name = 'restored'
 
@@ -104,8 +104,8 @@ def generate_video_concat_file(
         - episode
         - g_asuivre
         - asuivre
-        - g_documentaire
-        - documentaire
+        - g_doc
+        - doc
 
         Returns:
           Concatenation file path

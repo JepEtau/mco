@@ -87,8 +87,8 @@ def parse_common_configuration(language:str=''):
         'cache_progressive',
         'cache_progressive_default',
         'cache_default',
-        'cache_documentaire',
-        'cache_documentaire_default',
+        'cache_doc',
+        'cache_doc_default',
         'hashes',
         'audio',
         'audio_default',
@@ -124,7 +124,7 @@ def parse_common_configuration(language:str=''):
             pass
 
     if sys.platform == 'linux':
-        d: str = 'cache_documentaire'
+        d: str = 'cache_doc'
         if not os.path.exists(directories[d]):
             directories[d] = absolute_path(os.path.join(directories[f"{d}_default"]))
         try:
@@ -135,7 +135,7 @@ def parse_common_configuration(language:str=''):
     for k in (
         'audio',
         'cache',
-        'cache_documentaire',
+        'cache_doc',
         'cache_progressive',
     ):
         os.makedirs(directories[k], exist_ok=True)

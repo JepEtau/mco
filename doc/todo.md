@@ -4,7 +4,7 @@
 - do not use inpaint shape for HtoD/DtoH transfers
 - replace mask dtype to torch.bool
 
-- script to upscale documentaires
+- script to upscale docs
 
 
 # Issues

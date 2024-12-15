@@ -135,7 +135,7 @@ def extract_scenes(
             concat_file=concat_fp,
             video_file=os.path.join(
                 db[k_ep_or_g]['cache_path'],
-                f"scenes_{k_ed}",
+                f"ed_{k_ed}",
                 f"{basename}{vcodec_to_extension[vsettings.codec]}"
             ),
         )

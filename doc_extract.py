@@ -79,7 +79,7 @@ def main():
         sys.exit(red("Episode must be between 1 and 39"))
 
     k_ep = ep_key(episode)
-    k_ch: Chapter = 'documentaire'
+    k_ch: Chapter = 'doc'
     print(f"Episode: {episode}")
     print(f"Chapter: {k_ch}")
     print("Tasks:")
@@ -89,6 +89,7 @@ def main():
     parse_database(episode=episode, edition=arguments.edition)
     gc.collect()
 
+    # Extract full chapter
     k_ed_ref: str = (
         arguments.edition
         if arguments.edition != ''
@@ -106,7 +107,7 @@ def main():
     try:
         ch_video: ChapterVideo | None = db[k_ep]['video'][k_ed][k_ch]
     except:
-        raise ValueError(f"no documentaire in {k_ed}:{k_ep}")
+        raise ValueError(f"no doc in {k_ed}:{k_ep}")
 
     # Consolidate a src scene to use task settings
     scene: Scene = ch_video['scenes'][0]
@@ -119,7 +120,7 @@ def main():
 
     # Output video filename
     cache_path: str = os.path.join(
-        db['common']['directories']['cache_documentaire'],
+        db['common']['directories']['cache_doc'],
         'progressive'
     )
     os.makedirs(cache_path, exist_ok=True)
@@ -130,7 +131,7 @@ def main():
 
     # Create folders for HR
     hr_directory: str = os.path.join(
-        db['common']['directories']['cache_documentaire'], k_ep
+        db['common']['directories']['cache_doc'], k_ep
     )
     os.makedirs(hr_directory, exist_ok=True)
 

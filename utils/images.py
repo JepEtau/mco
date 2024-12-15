@@ -70,7 +70,7 @@ class Images:
         #     return imgs
         in_base: str = scene['cache']
         out_base: str = scene['cache']
-        if scene['k_ch'] in ('g_asuivre', 'g_documentaire'):
+        if scene['k_ch'] in ('g_asuivre', 'g_doc'):
             in_base = get_cache_path(scene)
             in_dirname = get_dirname(scene)[0]
             if scene['task'].name == 'hr':
@@ -125,7 +125,7 @@ class Images:
         return self._scene['out_frames']
 
     #     scene = self._scene
-    #     if scene['k_ch'] in ('g_asuivre', 'g_documentaire'):
+    #     if scene['k_ch'] in ('g_asuivre', 'g_doc'):
     #         in_base = get_cache_path(scene)
     #         in_dirname = get_dirname(scene)[0]
     #         if scene['task'].name == 'hr':

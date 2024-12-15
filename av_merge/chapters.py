@@ -28,7 +28,7 @@ CHAPTER_NAMES: dict[str, tuple[str]] = {
         "Précédemment",
         "Episode",
         "A suivre",
-        "Documentaire",
+        "doc",
         "Générique de fin",
     ],
 }
@@ -110,7 +110,7 @@ def add_chapters(
         audio_duration += db[k_ep]['audio'][k_ch]['silence']
         count += ms_to_frame(audio_duration, fps)
 
-    k_ch = 'documentaire'
+    k_ch = 'doc'
     # print(f"{chapter}: {count}")
     index += 1
     chapters_file.write(f"CHAPTER0{index}={frame_to_sexagesimal(count, fps)}0\n")

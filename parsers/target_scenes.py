@@ -249,8 +249,8 @@ def consolidate_target_scenes_g(k_ep: int | str, k_ch: str) -> None:
         ch_video = db[k_ep]['video']['target'][k_ch]
         pprint(ch_video)
 
-    elif k_ch == 'g_documentaire':
-        # Create the g_documentaire structure:
+    elif k_ch == 'g_doc':
+        # Create the g_doc structure:
         #   this chapter was not yet defined because it depends on audio start/duration
         ch_audio: ChapterAudio = db[k_ep]['audio'][k_ch]
         ch_audio['count'] = ms_to_frame(ch_audio['duration'], fps)

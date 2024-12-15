@@ -5,6 +5,7 @@ from pprint import pprint
 import re
 import sys
 from warnings import warn
+from scene.helpers import set_doc_out_filepath_
 from utils.hash import calc_hash
 from utils.mco_types import (
     ChapterVideo, Effect, Effects, Scene,
@@ -79,7 +80,7 @@ def consolidate_scene(
     #---------------------------------------------------------------------------
     k_ep: str = scene['dst']['k_ep']
     k_ch: str = scene['dst']['k_ch']
-    if k_ch in ['g_asuivre', 'g_documentaire']:
+    if k_ch in ['g_asuivre', 'g_doc']:
         ch_geometry: ChapterGeometry = deepcopy(
             db[scene['dst']['k_ep']]['video']['target'][k_ch[2:]]['geometry']
         )
@@ -114,59 +115,6 @@ def consolidate_scene(
     for t in TASK_NAMES:
         if t not in scene_filters:
             scene_filters[t] = Filter(task_name=t)
-
-    # Effects
-    #---------------------------------------------------------------------------
-    # ch_video: ChapterVideo = get_target_video(scene)
-    # if is_last_scene(scene) and 'effects' in ch_video:
-    #     for effect_name in (
-    #         'fadeout',
-    #         'loop',
-    #         'loop_and_fadeout'
-    #     ):
-    #         if not ch_video['effects'].has_effect(effect_name):
-    #             continue
-
-    #         ch_effect: Effect = ch_video['effects'].get_effect(effect_name)
-
-    #         if 'effects' in scene and scene['effects'].has_effects():
-    #             pprint(scene['effects'])
-    #             continue
-    #             raise ValueError("last scene must not have an effect yet")
-
-    #         if effect_name == 'fadeout':
-    #             scene['effects'] = Effects([
-    #                 Effect(
-    #                     name='fadeout',
-    #                     frame_ref=scene['dst']['count'] - ch_effect.fade,
-    #                     fade=ch_effect.fade
-    #                 )
-    #             ])
-    #         elif effect_name == 'loop_and_fadeout':
-    #             scene['effects'] = Effects([
-    #                 Effect(
-    #                     name='loop_and_fadeout',
-    #                     frame_ref=scene['dst']['count'] - ch_effect.loop,
-    #                     loop=ch_effect.loop,
-    #                     fade=ch_effect.fade
-    #                 )
-    #             ])
-    #         elif effect_name == 'loop':
-    #             raise NotImplementedError("loop effect not implemented yet")
-    #         pprint(scene['effects'])
-    #         # raise
-
-    # if is_first_scene(scene):
-    #     ch_video: ChapterVideo = get_target_video(scene)
-    #     if (
-    #         'effects' in ch_video
-    #         and (ch_effect := ch_video['effects'].get_effect('fadein'))
-    #     ):
-    #         if 'effects' not in scene:
-    #             scene['effects'] = Effects()
-    #         scene_effect: Effect = deepcopy(ch_effect)
-    #         scene_effect.frame_ref = scene['src'].first_frame_no()
-    #         scene['effects'].append(scene_effect)
 
 
     # Output video Settings
@@ -260,107 +208,98 @@ def consolidate_scene(
 
     # Filenames
     #---------------------------------------------------------------------------
-
-    # Output video filename
-    _k_ed, _k_ep = primary_src_scene['k_ed_ep_ch_no'][:2]
-    if k_ch in ('g_debut', 'g_fin'):
-        cache_path: str = db[k_ch]['cache_path']
-        basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
-
-    elif (
-        k_ch in ('g_asuivre', 'g_documentaire')
-        and task_name not in ('lr', 'sim', 'final')
-    ):
-        cache_path: str = db[k_ch]['cache_path']
-        basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
+    if k_ch == 'doc':
+        set_doc_out_filepath_(scene)
 
     else:
-        cache_path: str = db[k_ep]['cache_path']
-        basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
+        # Output video filename
+        _k_ed, _k_ep = primary_src_scene['k_ed_ep_ch_no'][:2]
+        if k_ch in ('g_debut', 'g_fin'):
+            cache_path: str = db[k_ch]['cache_path']
+            basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
 
-    suffix: str = ""
-    if task_name not in ('hr', 'tf', 'final'):
-        if task.hash != '':
-            suffix = f"_{task.hash}"
-    suffix += f"_{task_name}"
-
-    # Append the model name to evaluate models: only for upscale task
-    if task_name == 'upscale':
-        sequence: str = scene_filters[task_name].sequence
-        for t in (
-            ':cuda', ':trt', ':fp16', ':fp32'
+        elif (
+            k_ch in ('g_asuivre', 'g_doc')
+            and task_name not in ('lr', 'sim', 'final')
         ):
-            sequence = sequence.replace(t, '')
-        suffix: str = ""
-        for s in sequence.split(','):
-            if result := re.search(re.compile(r"^([^=]*)="), s):
-                suffix += f"+{result.group(1)}" if suffix else f"{result.group(1)}"
-            else:
-                suffix += f"+{s}" if suffix else s
-        suffix = f"__{suffix}"
-
-    previous = {
-        'st': 'hr',
-        'tf': 'st',
-        'cg': 'tf',
-        'final': 'cg',
-    }
-    if task_name in list(previous.keys()):
-        prev_task_name: TaskName = previous[task_name]
-        if task_name == 'st':
-            suffix: str = f"_hr_{task_name}"
-        elif task_name == 'cg':
-            suffix: str = f"_tf_{task_name}"
-        # TODO: when using python deshaker suffix shall not be changed
-
-    # Output file
-    ext: str = vcodec_to_extension[vsettings.codec]
-    task.video_file = absolute_path(
-        os.path.join(cache_path, f"scenes_{task_name}", f"{basename}{suffix}{ext}")
-    )
-    if task_name == 'upscale':
-        cache_path: str = absolute_path(
-            os.path.join(cache_path, f"scenes_{task_name}")
-        )
-        if k_ch not in credit_chapter_keys():
-            cache_path = os.path.join(cache_path, f"{scene['dst']['k_ch']}")
-        task.video_file = os.path.join(cache_path, f"{basename}{suffix}{ext}")
-
-    # Input file for this task
-    if task_name in ('st', 'tf', 'cg', 'final'):
-        suffix: str = ""
-        if task_name == 'tf':
-            suffix = "hr_"
-        elif task_name == 'final':
-            suffix = "tf_"
-
-        in_vsettings: VideoSettings = db['common']['video_format']['hr']
-        in_ext: str = vcodec_to_extension[in_vsettings.codec]
-
-        # In video file is different for documentaire as it is done separately
-        if k_ch == 'documentaire':
-            suffix = "hr_"
-            task.in_video_file = os.path.join(
-                db['common']['directories']['cache_documentaire'],
-                k_ep,
-                f"scenes_{prev_task_name}",
-                f"{k_ep}_{k_ch}_{scene['no']:03}_{suffix}{prev_task_name}{in_ext}"
-            )
-            # and not fallback
+            cache_path: str = db[k_ch]['cache_path']
+            basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
 
         else:
+            cache_path: str = db[k_ep]['cache_path']
+            basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
+
+        suffix: str = ""
+        if task_name not in ('hr', 'tf', 'final'):
+            if task.hash != '':
+                suffix = f"_{task.hash}"
+        suffix += f"_{task_name}"
+
+        # Append the model name to evaluate models: only for upscale task
+        if task_name == 'upscale':
+            sequence: str = scene_filters[task_name].sequence
+            for t in (
+                ':cuda', ':trt', ':fp16', ':fp32'
+            ):
+                sequence = sequence.replace(t, '')
+            suffix: str = ""
+            for s in sequence.split(','):
+                if result := re.search(re.compile(r"^([^=]*)="), s):
+                    suffix += f"+{result.group(1)}" if suffix else f"{result.group(1)}"
+                else:
+                    suffix += f"+{s}" if suffix else s
+            suffix = f"__{suffix}"
+
+        previous = {
+            'st': 'hr',
+            'tf': 'st',
+            'cg': 'tf',
+            'final': 'cg',
+        }
+        if task_name in list(previous.keys()):
+            prev_task_name: TaskName = previous[task_name]
+            if task_name == 'st':
+                suffix: str = f"_hr_{task_name}"
+            elif task_name == 'cg':
+                suffix: str = f"_tf_{task_name}"
+            # TODO: when using python deshaker suffix shall not be changed
+
+        # Output file
+        ext: str = vcodec_to_extension[vsettings.codec]
+        task.video_file = absolute_path(
+            os.path.join(cache_path, f"{task_name}", f"{basename}{suffix}{ext}")
+        )
+        if task_name == 'upscale':
+            cache_path: str = absolute_path(
+                os.path.join(cache_path, f"{task_name}")
+            )
+            if k_ch not in credit_chapter_keys():
+                cache_path = os.path.join(cache_path, f"{scene['dst']['k_ch']}")
+            task.video_file = os.path.join(cache_path, f"{basename}{suffix}{ext}")
+
+        # Input file for this task
+        if task_name in ('st', 'tf', 'cg', 'final'):
+            suffix: str = ""
+            if task_name == 'tf':
+                suffix = "hr_"
+            elif task_name == 'final':
+                suffix = "tf_"
+
+            in_vsettings: VideoSettings = db['common']['video_format']['hr']
+            in_ext: str = vcodec_to_extension[in_vsettings.codec]
+
             task.in_video_file = os.path.join(
                 scene['cache'],
-                f"scenes_{prev_task_name}",
+                f"{prev_task_name}",
                 f"{basename}_{suffix}{prev_task_name}{in_ext}"
             )
 
             # Add fallback input video filename bc some tasks may be not processed
             if task_name in ('st', 'tf', 'cg', 'final'):
                 task.fallback_in_video_files = {
-                    'hr': os.path.join(scene['cache'], f"scenes_hr", f"{basename}_hr{in_ext}"),
-                    'st': os.path.join(scene['cache'], f"scenes_st", f"{basename}_hr_st{in_ext}"),
-                    'tf': os.path.join(scene['cache'], f"scenes_tf", f"{basename}_tf{in_ext}"),
+                    'hr': os.path.join(scene['cache'], f"hr", f"{basename}_hr{in_ext}"),
+                    'st': os.path.join(scene['cache'], f"st", f"{basename}_hr_st{in_ext}"),
+                    'tf': os.path.join(scene['cache'], f"tf", f"{basename}_tf{in_ext}"),
                 }
 
 

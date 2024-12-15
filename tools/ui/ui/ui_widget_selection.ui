@@ -137,12 +137,12 @@
           </item>
           <item>
            <property name="text">
-            <string>g_documentaire</string>
+            <string>g_doc</string>
            </property>
           </item>
           <item>
            <property name="text">
-            <string>documentaire</string>
+            <string>doc</string>
            </property>
           </item>
           <item>

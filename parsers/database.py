@@ -180,7 +180,7 @@ def parse_database(
         print(f"database, parse stabilization: {k_ep}")
         parse_stabilize_file(k_ep=k_ep)
 
-        for k_chapter_g in ('g_asuivre', 'g_documentaire'):
+        for k_chapter_g in ('g_asuivre', 'g_doc'):
             parse_replace_file(k_ep_or_g=k_chapter_g)
             parse_dsr_file(k_ep_or_g=k_chapter_g)
             # parse_stabilize_configurations(k_ep_or_g=k_chapter_g)

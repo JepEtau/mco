@@ -295,11 +295,11 @@ def parse_episode(k_ed: str, k_ep: str | int):
                 db_video_chapter['scenes'] = []
                 if k_option == 'scenes':
                     if k_section in ['episode',
-                                    'documentaire',
+                                    'doc',
                                     'g_debut',
                                     'g_fin',
                                     'g_asuivre',
-                                    'g_documentaire']:
+                                    'g_doc']:
                         parse_scenes(k_ed, k_ep, k_ch, value_str)
 
                     elif k_section in ['precedemment', 'asuivre']:

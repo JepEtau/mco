@@ -227,7 +227,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.lineEdit_target_width.setText(str(target_geometry.chapter.width))
 
         frame.scene_key
-        if frame.k_ep_ch_no[1] in ('g_asuivre', 'g_documentaire'):
+        if frame.k_ep_ch_no[1] in ('g_asuivre', 'g_doc'):
         #     self.groupBox_scene_geometry.setEnabled(False)
         #     # self.pushButton_target_width_copy_from_scene.setEnabled(False)
             self.is_target_width_disabled = True

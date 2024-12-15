@@ -71,7 +71,7 @@ def get_filters(scene: Scene) -> list[Filter]:
         except:
             if scene['task'].name == 'initial':
                 return {}
-            elif k_ch != 'documentaire':
+            elif k_ch != 'doc':
                 warnings.warn(red(f"Error: default filter is not defined but required by {s_key}"))
                 return {}
                 # pprint(scene)

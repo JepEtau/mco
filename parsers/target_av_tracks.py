@@ -198,9 +198,9 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
     consolidate_silence(ch_video, ch_audio)
 
 
-    # g_documentaire
+    # g_doc
     #---------------------------------------------------------------------------
-    k_ch = 'g_documentaire'
+    k_ch = 'g_doc'
     ch_audio: ChapterAudio = db_audio[k_ch]
     ch_video: ChapterVideo = db_video[k_ch]
 
@@ -237,9 +237,9 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
 
 
 
-    # documentaire
+    # doc
     #---------------------------------------------------------------------------
-    k_ch = 'documentaire'
+    k_ch = 'doc'
     ch_audio: ChapterAudio = db_audio[k_ch]
     ch_video: ChapterVideo = db_video[k_ch]
     audio_count = check_audio_duration_multiple_of_frames(ch_audio)

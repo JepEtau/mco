@@ -31,7 +31,7 @@ def parse_scenes(
 ) -> None:
     """This procedure parse a string wich contains the list of scenes
         and update the structure of the db.
-        Used for 'episodes' and 'documentaire'
+        Used for 'episodes' and 'doc'
     """
     scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
     for scene_no, scene in enumerate(scenes_str.split()):

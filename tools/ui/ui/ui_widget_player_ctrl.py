@@ -150,7 +150,7 @@ class Ui_PlayerControlWidget(object):
         PlayerControlWidget.setWindowTitle(QCoreApplication.translate("PlayerControlWidget", u"Form", None))
         self.pushButton_play_pause.setText("")
         self.pushButton_loop.setText("")
-        self.label_ed_ep_part.setText(QCoreApplication.translate("PlayerControlWidget", u"s:ep11:g_documentaire:999", None))
+        self.label_ed_ep_part.setText(QCoreApplication.translate("PlayerControlWidget", u"s:ep11:g_doc:999", None))
         self.lineEdit_fno.setText(QCoreApplication.translate("PlayerControlWidget", u"123456", None))
         self.lineEdit_frame_no.setText(QCoreApplication.translate("PlayerControlWidget", u"123456", None))
         self.lineEdit_frame_index.setText(QCoreApplication.translate("PlayerControlWidget", u"123456", None))

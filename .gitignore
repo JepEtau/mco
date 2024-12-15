@@ -184,3 +184,4 @@ external/*
 profiling.bat
 result.json
 concat*.bat
+davinci/

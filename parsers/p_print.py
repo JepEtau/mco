@@ -146,7 +146,7 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
         # pprint(db[k_ep])
 
     # Append silences
-    for k_ch in ['episode', 'asuivre', 'documentaire']:
+    for k_ch in ['episode', 'asuivre', 'doc']:
         silence_count = ms_to_frame(db[k_ep]['audio'][k_ch]['silence'], fps)
         audio_count += silence_count
         video_count += silence_count

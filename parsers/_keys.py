@@ -15,8 +15,8 @@ Chapter = Literal[
     'episode',
     'g_asuivre',
     'asuivre',
-    'g_documentaire',
-    'documentaire',
+    'g_doc',
+    'doc',
     'g_debut',
     'g_fin',
 ]
@@ -25,7 +25,7 @@ _credits: tuple[str] = (
     'g_debut',
     'g_fin',
     'g_asuivre',
-    'g_documentaire'
+    'g_doc'
 )
 
 _main_chapters: tuple[str] = (
@@ -33,8 +33,8 @@ _main_chapters: tuple[str] = (
     'episode',
     'g_asuivre',
     'asuivre',
-    'g_documentaire',
-    'documentaire'
+    'g_doc',
+    'doc'
 )
 
 _all_chapters: tuple[str] = (
@@ -43,8 +43,8 @@ _all_chapters: tuple[str] = (
     'episode',
     'g_asuivre',
     'asuivre',
-    'g_documentaire',
-    'documentaire',
+    'g_doc',
+    'doc',
     'g_fin'
 )
 
@@ -52,7 +52,7 @@ _non_credit_chapters: tuple[str] = (
     'precedemment',
     'episode',
     'asuivre',
-    'documentaire'
+    'doc'
 )
 
 

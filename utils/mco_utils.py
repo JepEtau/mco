@@ -241,7 +241,11 @@ def nested_dict_set(d: dict, o: object, *keys) -> None:
 
 def get_cache_path(scene: Scene, out: bool=False) -> str:
     task_name: TaskName = scene['task'].name
-    cache_dir: str = db['common']['directories']['cache']
+    cache_dir: str = (
+        db['common']['directories']['cache']
+        if 'dst' not in scene or scene['dst']['k_ch'] != 'doc'
+        else db['common']['directories']['cache_doc']
+    )
     k_ch_dst: str = scene['dst']['k_ch'] if 'dst' in scene else scene['k_ch']
 
     # Put all images in a single folder for start/end credits
@@ -249,7 +253,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
     if k_ch_dst in ('g_debut', 'g_fin'):
         return os.path.join(cache_dir, k_ch_dst)
 
-    if k_ch_dst in ('g_asuivre', 'g_documentaire'):
+    if k_ch_dst in ('g_asuivre', 'g_doc'):
         # if out:
         #     return os.path.join(
         #         cache_dir,

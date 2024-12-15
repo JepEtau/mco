@@ -111,7 +111,7 @@ def main():
         sys.exit(red("Episode must be between 1 and 39"))
 
     k_ep = ep_key(episode)
-    k_ch: Chapter = 'documentaire'
+    k_ch: Chapter = 'doc'
     scene_no: int = arguments.scene
     debug: bool = arguments.debug
     print(f"Episode: {episode}")
@@ -131,7 +131,7 @@ def main():
 
     # Output directory
     out_cache_dir: str = os.path.join(
-        db['common']['directories']['cache_documentaire'], k_ep, "scenes_hr"
+        db['common']['directories']['cache_doc'], k_ep, "hr"
     )
     os.makedirs(out_cache_dir, exist_ok=True)
 
@@ -160,7 +160,7 @@ def main():
 
 
         if debug:
-            print(lightcyan(f"======================= split documentaire: {scene_id} ============================="))
+            print(lightcyan(f"======================= split doc: {scene_id} ============================="))
             pprint(scene)
             print(lightcyan("==============================================================================="))
 
@@ -180,7 +180,7 @@ def main():
 
         # Input upscaled video filename
         in_cache_dir: str = os.path.join(
-            db['common']['directories']['cache_documentaire'], k_ep
+            db['common']['directories']['cache_doc'], k_ep
         )
         in_video_fp: str = os.path.join(
             in_cache_dir,

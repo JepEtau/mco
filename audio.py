@@ -125,7 +125,7 @@ def main():
             )
 
     elif chapter != '':
-        # precedemment, episode, g_asuivre, asuivre, g_documentaire, documentaire
+        # precedemment, episode, g_asuivre, asuivre, g_doc, doc
         if process == 'extract':
             extract_audio_track(
                 episode=episode,
