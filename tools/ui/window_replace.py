@@ -327,10 +327,8 @@ class ReplaceWindow(QMainWindow):
 
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        key = event.key()
-        modifiers = event.modifiers()
+        # print(f"{__name__} received: {event.key()}")
         self.current_key_pressed = None
-        # print(f"{__name__} received: {key}")
 
         widgets = (
             self.widget_player_ctrl,
@@ -361,7 +359,6 @@ class ReplaceWindow(QMainWindow):
                 w.event_key_released(event)
             except:
                 pass
-
         return super().keyReleaseEvent(event)
 
 

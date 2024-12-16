@@ -96,7 +96,8 @@ GeometryActionParameter =  Literal[
     'detection',
     'autocrop',
     'use_ac',
-    'copy_ac_to_crop'
+    'copy_ac_to_crop',
+    'multiple'
 ]
 
 
@@ -104,7 +105,7 @@ GeometryActionParameter =  Literal[
 class GeometryAction:
     type: GeometryActionType
     parameter: GeometryActionParameter
-    value: int | bool | DetectInnerRectParams
+    value: int | bool | DetectInnerRectParams | dict
 
 
 

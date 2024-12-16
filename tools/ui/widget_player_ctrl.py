@@ -83,7 +83,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.refresh_status('stopped')
         self.ticks = list()
         self.is_shift_key_pressed: bool = False
-        self.is_ctrl_key_pressed: bool = False
+        # self.is_ctrl_key_pressed: bool = False
         self.frames_start = 0
         self.frame_nos = list()
 
@@ -365,10 +365,10 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             self.is_shift_key_pressed = True
             return True
 
-        elif key == Qt.Key.Key_Control:
-            print("Control")
-            self.is_ctrl_key_pressed = True
-            return False
+        # elif key == Qt.Key.Key_Control:
+        #     print("Control")
+        #     self.is_ctrl_key_pressed = True
+        #     return False
 
         # modify slider value
         elif key in [Qt.Key.Key_Home, Qt.Key.Key_End]:
@@ -391,8 +391,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
     def event_key_released(self, event: QKeyEvent) -> bool:
         key = event.key()
-        if key == Qt.Key.Key_Control:
-            self.is_ctrl_key_pressed = False
+        # if key == Qt.Key.Key_Control:
+        #     self.is_ctrl_key_pressed = False
 
         if key == Qt.Key.Key_Shift:
             # log.info("shift key is released")

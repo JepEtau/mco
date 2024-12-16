@@ -191,19 +191,21 @@ def parse_geometry_file(k_ep_or_g: str) -> None:
             print(f"parse_geometry_file: chapter: {section}")
 
         # Get db target video
-        db_video: ChapterVideo
+        ch_video: ChapterVideo
         if k_ep_or_g in ('g_debut', 'g_fin'):
-            db_video = db[k_ep_or_g]['video']
+            ch_video = db[k_ep_or_g]['video']
         else:
-            db_video = db[k_ep_or_g]['video']['target'][section]
+            ch_video = db[k_ep_or_g]['video']['target'][section]
 
         # for each option
         for k_str in config.options(section):
             if verbose:
                 print(f"\t\tk_str=[{k_str}]")
 
-            if k_str == 'width':
-                db_video['geometry'] = ChapterGeometry(int(config.get(section, 'width')))
+            if k_str == 'width' and section in all_chapter_keys():
+                ch_video['geometry'] = ChapterGeometry(
+                    int(config.get(section, 'width'))
+                )
 
             if result := re.search(re.compile(r"(\d{3})_([afkjs])_(ep\d{2})_([a-z_]+)_(\d{3})"), k_str):
                 scene_no: int = int(result.group(1))
@@ -211,7 +213,7 @@ def parse_geometry_file(k_ep_or_g: str) -> None:
                 k_ep_src: str = result.group(3)
                 k_ch_src: str = result.group(4)
                 scene_no_src: int = int(result.group(5))
-                scene: Scene = db_video['scenes'][scene_no]
+                scene: Scene = ch_video['scenes'][scene_no]
                 src_scene: Scene = scene['src'].primary_scene()['scene']
                 if (
                     src_scene['k_ed'] != k_ed_src
@@ -226,15 +228,15 @@ def parse_geometry_file(k_ep_or_g: str) -> None:
                 properties = config.get(section, k_str)
                 scene['geometry'] = get_geometry_from_properties(properties)
 
-        for scene in db_video['scenes']:
+        for scene in ch_video['scenes']:
             if 'geometry' not in scene:
                 scene['geometry'] = SceneGeometry(use_default=True)
 
-        if 'geometry' not in db_video:
-            db_video['geometry'] = ChapterGeometry()
+        if 'geometry' not in ch_video:
+            ch_video['geometry'] = ChapterGeometry()
 
     if verbose and k_ep_or_g == 'g_debut':
-        pprint(db_video)
+        pprint(ch_video)
         sys.exit()
 
 

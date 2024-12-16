@@ -149,6 +149,19 @@ class GeometryDatabase:
         if parameter != 'autocrop':
             self._push_to_history()
 
+
+        if (
+            modification.type == 'set'
+            and parameter == 'multiple'
+        ):
+            scene_key: str = self._key(scene)
+            scene_geometry: SceneGeometry = self._db[scene_key]
+            scene_geometry.crop = value['crop']
+            scene_geometry.keep_ratio = value['keep_ratio']
+            scene_geometry.fit_to_width = value['fit_to_width']
+            scene_geometry.defined = True
+            self.modified_scenes.add(scene_key)
+
         if parameter == 'width':
             if (
                 scene['dst']['k_ch'] not in non_credit_chapter_keys()
@@ -209,6 +222,7 @@ class GeometryDatabase:
             elif parameter == 'copy_ac_to_crop':
                 scene_geometry.crop = deepcopy(scene_geometry.autocrop)
 
+            scene_geometry.defined = True
             self.modified_scenes.add(scene_key)
 
 

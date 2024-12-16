@@ -73,8 +73,8 @@ class PreviewWidget(QWidget):
         self.scene_geometry: TargetSceneGeometry | None = None
         self.preview_options: GeometryPreviewOptions | None = None
         self.fit_to_screen = False
-        if QApplication.screens()[0].size().height() < 1200:
-            self.fit_to_screen = True
+        # if QApplication.screens()[0].size().height() < 1200:
+        #     self.fit_to_screen = True
 
     @staticmethod
     def _scale(pixmap: QPixmap, factor):
@@ -222,17 +222,15 @@ class PreviewWidget(QWidget):
         if not painter.begin(self):
             return
 
-        scale_factor = 1.
-        # scale_factor = 0.75
-
-        # qimage: QPixmap = self.frame.qimage
         if not self.fit_to_screen:
-            print(yellow("fit to screen"))
+            scale_factor = 1.
             ih, iw, c = self.frame.img.shape
             container_w, container_h = self.size().toTuple()
             ix0: int = (container_w - iw) // 2
             iy0: int = (container_h - ih) // 2
         else:
+            print(yellow("fit to screen"))
+            scale_factor = 0.75
             ih, iw, c = self.frame.img.shape
             ih, iw = int(ih * scale_factor), int(iw * scale_factor)
             container_w, container_h = self.size().toTuple()
@@ -276,9 +274,14 @@ class PreviewWidget(QWidget):
 
             # Crop rect
             if preview.crop_preview:
-                cropped_img: np.ndarray = np.ascontiguousarray(self.frame.img[t:ih-b,l:iw-r,:])
+                cropped_img: np.ndarray = np.ascontiguousarray(
+                    self.frame.img[t:ih-b,l:iw-r,:]
+                )
                 pixmap: QPixmap = QPixmap().fromImage(
-                    QImage(cropped_img, cw, ch, cw * c, QImage.Format.Format_BGR888)
+                    QImage(
+                        cropped_img, cw, ch, cw * c,
+                        QImage.Format.Format_BGR888
+                    )
                 )
                 _cw, _ch = pixmap.size().toTuple()
                 if  _cw != cw or _ch != ch:
@@ -301,7 +304,9 @@ class PreviewWidget(QWidget):
                     )
 
             elif preview.crop_edition:
-                qimage = QImage(self.frame.img, iw, ih, iw * c, QImage.Format.Format_BGR888)
+                qimage = QImage(
+                    self.frame.img, iw, ih, iw * c, QImage.Format.Format_BGR888
+                )
                 pixmap: QPixmap = QPixmap().fromImage(qimage)
                 if not self.fit_to_screen:
                     painter.drawPixmap(QPoint(ix0, iy0), pixmap)
@@ -453,12 +458,21 @@ class PreviewWidget(QWidget):
 
 
         # else...
+        h, w, c = self.frame.img.shape
         pixmap: QPixmap = QPixmap().fromImage(
-            QImage(self.frame.img, iw, ih, iw * c, QImage.Format.Format_BGR888)
+            QImage(self.frame.img, w, h, w * c, QImage.Format.Format_BGR888)
         )
         ix0: int = (container_w - iw) // 2
         iy0: int = (container_h - ih) // 2
-        painter.drawPixmap(QPoint(ix0, iy0), pixmap)
+        # print(red(f"finally {iw}x{ih} (c={c}) @ ({ix0},{iy0})"))
+        painter.drawPixmap(QPoint(ix0, iy0),
+            pixmap.scaled(
+                QSize(
+                    int(pixmap.size().width() * scale_factor),
+                    int(pixmap.size().height() * scale_factor)
+                )
+            )
+        )
 
         self.draw_widget_guides(painter)
         painter.end()

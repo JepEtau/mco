@@ -49,6 +49,7 @@ def set_doc_out_filepath_(scene: Scene) -> None:
         suffix = f"__{suffix}"
 
     doc_previous_task: dict[str, str] = {
+        'lr': 'initial',
         'hr': 'initial',
         'cg': 'hr',
         'final': 'cg',
