@@ -207,10 +207,12 @@ def main():
 
         # Add padding
         in_h, in_w = in_video_info['shape'][:2]
-        pad: int = vsettings.pad
-        filters: list[str] = [
-            f"pad={in_w + 2 * pad}:{in_h + 2 * pad}:{pad}:{pad}:black"
-        ]
+        if task_name == 'hr':
+            pad: int = vsettings.pad
+            filters: list[str] = [
+                f"pad={in_w + 2 * pad}:{in_h + 2 * pad}:{pad}:{pad}:black"
+            ]
+
         filter_complex: str = ','.join(filters)
         for c in (' ', '\n', '\r', '\t'):
             filter_complex = filter_complex.replace(c, '')

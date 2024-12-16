@@ -148,6 +148,9 @@ class SrcScenes:
 
 
     def last_frame_no(self) -> int:
+        """Return the last frame no of the scene.
+        Do not forget to add 1 to calculate the number of frames
+        """
         last_scene = self._scenes[-1]
         return last_scene['start'] + last_scene['count'] - 1
 

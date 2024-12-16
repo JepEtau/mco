@@ -7,11 +7,11 @@ import time
 
 from nn_inference.model_mgr import ModelManager
 from nn_inference.threads.t_decoder import VideoStreamInfo
-if sys.platform == 'win32':
-    from nn_inference.toolbox.upscale_doc import upscale_doc
-else:
-    def upscale_doc(**args):
-        return
+from nn_inference.toolbox.upscale_doc import (
+    upscale_doc_scenes,
+    upscale_doc_chapter,
+)
+
 from parsers._types import VideoSettings
 from parsers.p_print import pprint_scene_mapping
 from processing.upscale import UpscalePipeline
@@ -38,7 +38,7 @@ from parsers import (
 def upscale_scenes(
     episode: str,
     single_chapter: Chapter = '',
-    task: TaskName = '',
+    task_name: TaskName = '',
     force: bool = False,
     simulation: bool = False,
     scene_no: int | None = None,
@@ -86,11 +86,20 @@ def upscale_scenes(
         if ch_video['count'] <= 0:
             continue
 
-        ch_video['task'] = ProcessingTask(name=task)
+        ch_video['task'] = ProcessingTask(name=task_name)
         if debug:
             print(f"\n<<<<<<<<<<<<<<<<<<<<< {k_ch} >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>")
             # pprint(ch_video)
             print(f"scene_no: {scene_no}, scenes range: {scene_min} -> {scene_max}")
+
+        if k_ch == 'doc':
+            upscale_doc_chapter(
+                ch_video=ch_video,
+                debug=debug,
+                force=force
+            )
+            continue
+
 
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
@@ -111,7 +120,7 @@ def upscale_scenes(
             pprint_scene_mapping(scene)
 
             # Set the last task
-            scene['task'] = ProcessingTask(name=task)
+            scene['task'] = ProcessingTask(name=task_name)
 
             # Generate frames for this scene
             consolidate_scene(scene=scene, watermark=watermark, evaluation=evaluation)
@@ -188,17 +197,17 @@ def upscale_scenes(
 
 
         hashcode: str = calc_hash(hashes_str[:-1])
-        basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task}_{hashcode}"
+        basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task_name}_{hashcode}"
         cache_path = (
             db[k_ch]['cache_path']
             if k_ch in ('g_debut', 'g_fin')
             else db[k_ep]['cache_path']
         )
 
-        ch_vsettings: VideoSettings = db['common']['video_format'][task]
+        ch_vsettings: VideoSettings = db['common']['video_format'][task_name]
         ext: str = vcodec_to_extension[ch_vsettings.codec]
         ch_video['task'] = ProcessingTask(
-            name=task,
+            name=task_name,
             hash=hashcode,
             concat_file=os.path.join(cache_path, "concat", f"{basename}.txt"),
             video_file=os.path.join(cache_path, f"video_lr", f"{basename}{ext}"),
@@ -259,7 +268,6 @@ def upscale_scenes(
             print(lightcyan("==============================================================================="))
 
 
-
     device: str = 'cuda'
     # pprint(scenes_to_upscale)
     if scenes_to_upscale:
@@ -272,11 +280,11 @@ def upscale_scenes(
         )
         pipeline.run()
 
-    if scenes_to_upscale_doc:
-        upscale_doc(
-            scenes=scenes_to_upscale_doc,
-            debug=debug,
-            force=force
-        )
+    # if scenes_to_upscale_doc:
+    #     upscale_doc_scenes(
+    #         scenes=scenes_to_upscale_doc,
+    #         debug=debug,
+    #         force=force
+    #     )
 
     print("done")

@@ -268,7 +268,11 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
             f"{scene['no']:03}"
         )
 
-
+    if k_ch_dst in ('doc'):
+        return os.path.join(
+            cache_dir,
+            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
+        )
     # # If last task is geometry, use the dst structure
     # if task_name == 'final':
     #     output_path: str = os.path.join(
@@ -287,13 +291,21 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
             f"{scene['no']:03}"
         )
 
+    elif task_name == 'upscale':
+        # Work in the src directory
+        output_path = os.path.join(
+            cache_dir,
+            scene['k_ep'],
+            task_name,
+            f"{scene['no']:03}"
+        )
+
     else:
         # Otherwise, use the src directory
         #  because these frames are used by multiple episodes
         output_path: str = os.path.join(
             cache_dir,
             scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
-            k_ch_dst,
             f"{scene['no']:03}"
         )
 

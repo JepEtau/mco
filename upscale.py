@@ -124,7 +124,7 @@ def main():
     upscale_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
-        task=task,
+        task_name=task,
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=scene_no,
