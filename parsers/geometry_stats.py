@@ -6,7 +6,7 @@ import numpy as np
 
 from processing.resize_to_4_3 import TransformationValues
 from utils.media import VideoInfo, extract_media_info_mco
-from utils.p_print import red
+from utils.p_print import *
 
 from .geometry import SceneGeometry
 from ._types import VideoSettings
@@ -27,11 +27,13 @@ class SceneGeometryStat:
         self._defined: bool = True
 
         vsettings: VideoSettings = db['common']['video_format']['hr']
-        if any([c <= vsettings.pad for c in self.crop]):
+        if not self.geometry.defined:
             # Not valid:
-            print(red("crop is missing"))
+            print(red("crop is missing:"), f"{scene['no']}")
             self._defined = False
             return
+        else:
+            print(lightgreen("defined crop"), f"{scene['no']}")
 
         if in_size is None:
             self._is_erroneous = True

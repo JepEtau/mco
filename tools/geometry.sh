@@ -15,3 +15,4 @@ python ./_utils/patch_ui.py --file ./ui/ui/ui_widget_selection.py
 
 export NO_AT_BRIDGE=1
 python geometry.py -t cg
+# python geometry.py -t cg -ch doc -ep 1

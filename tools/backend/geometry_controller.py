@@ -31,6 +31,7 @@ from utils.p_print import *
 from parsers import (
     SceneGeometryStat,
     db,
+    ep_key,
     TaskName,
     ChGeometryStats,
     DetectInnerRectParams,
@@ -41,7 +42,12 @@ class GeometryController(CommonController):
     signal_preview_options_consolidated = Signal(dict)
     signal_replacements_refreshed = Signal()
 
-    def __init__(self, task_name: bool = False):
+    def __init__(
+        self,
+        task_name: bool = False,
+        ep_no: int = 0,
+        k_ch: str = ''
+    ):
         super().__init__()
 
         # Load saved preferences
@@ -53,6 +59,13 @@ class GeometryController(CommonController):
 
         self.selection_geometry: dict[int, TargetSceneGeometry] = {}
         self.geometry_stats: ChGeometryStats = ChGeometryStats()
+
+        self.forced_selection: dict[str, str | int] | None = None
+        if ep_no != 0 and k_ch != '':
+            self.forced_selection = dict(
+                k_ep=ep_key(ep_no),
+                k_ch=k_ch
+            )
 
 
     def set_view(self, view: GeometryWindow):

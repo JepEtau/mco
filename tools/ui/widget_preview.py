@@ -37,6 +37,7 @@ from backend._types import (
     AppType,
 )
 from parsers import SceneGeometry
+from utils.images_io import write_image
 from utils.p_print import lightcyan, lightgreen, red, yellow
 
 
@@ -98,6 +99,7 @@ class PreviewWidget(QWidget):
             # )
             # frame.img = None
         self.frame = frame
+        # write_image(f"test.png", frame.img)
         self.repaint()
 
 
@@ -219,10 +221,13 @@ class PreviewWidget(QWidget):
         painter = QPainter()
         if not painter.begin(self):
             return
-        scale_factor = 0.75
+
+        scale_factor = 1.
+        # scale_factor = 0.75
 
         # qimage: QPixmap = self.frame.qimage
         if not self.fit_to_screen:
+            print(yellow("fit to screen"))
             ih, iw, c = self.frame.img.shape
             container_w, container_h = self.size().toTuple()
             ix0: int = (container_w - iw) // 2

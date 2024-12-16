@@ -104,7 +104,7 @@ class FrameCache:
                 frame_rate: float = frame_rate_dec(vi['frame_rate_r'])
                 # pprint(vi)
                 # print(red(frame_rate))
-                # sys.exit()
+                # raise
                 filter_complex: list[str] = []
                 in_h, in_w, in_c = vi['shape']
 
@@ -175,14 +175,14 @@ class FrameCache:
 
                 # won't work except 8bit videos
                 pipe_img_nbytes: int = in_w * in_h * in_c
-                shape = (in_h, in_w, in_c)
+                pipe_in_shape = (in_h, in_w, in_c)
                 in_dtype = np.uint8
                 src_scene_key: str = f"{':'.join(src_scene['k_ed_ep_ch_no'][:-1])}:{src_scene['k_ed_ep_ch_no'][-1]:03}"
                 for i in range(count):
                     img: np.ndarray = np.frombuffer(
                         self.sub_process.stdout.read(pipe_img_nbytes),
                         dtype=in_dtype,
-                    ).reshape(shape)
+                    ).reshape(pipe_in_shape)
                     f_no = src_start + src_scene['scene']['inputs'].progressive().start + i
                     self.scenes[scene_key].append(
                         Frame(

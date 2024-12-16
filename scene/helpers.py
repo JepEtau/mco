@@ -31,11 +31,7 @@ def set_doc_out_filepath_(scene: Scene) -> None:
     scene_filters = scene['filters']
     vsettings: VideoSettings = task.video_settings
 
-    suffix: str = ""
-    if task_name not in ('hr', 'final'):
-        if task.hash != '':
-            suffix = f"_{task.hash}"
-    suffix += f"_{task_name}"
+    # suffix: str = f"_{task_name}"
 
     # Append the model name to evaluate models: only for upscale task
     if task_name == 'upscale':
@@ -53,24 +49,37 @@ def set_doc_out_filepath_(scene: Scene) -> None:
         suffix = f"__{suffix}"
 
     doc_previous_task: dict[str, str] = {
-        'hr': 'st',
-        'st': 'lr',
+        'hr': 'initial',
         'cg': 'hr',
         'final': 'cg',
     }
-    if task_name in list(doc_previous_task.keys()):
-        prev_task_name: TaskName = doc_previous_task[task_name]
-        if task_name == 'st':
-            suffix: str = f"_lr_{task_name}"
+    prev_task_name: TaskName = doc_previous_task[task_name]
+
+    # In/out files
+    basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}__{primary_src_scene['k_ed_ep_ch_no'][0]}"
+
+    # Input file for this task
+    suffix = "hr_" if task_name in ('final') else ""
+    in_vsettings: VideoSettings = db['common']['video_format']['hr']
+    in_ext: str = vcodec_to_extension[in_vsettings.codec]
+    task.in_video_file = os.path.join(
+        db['common']['directories']['cache_doc'],
+        k_ep,
+        f"{prev_task_name}",
+        f"{basename}_{suffix}{prev_task_name}{in_ext}"
+    )
 
     # Output file
-    basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}__{primary_src_scene['k_ed_ep_ch_no'][0]}"
+    suffix = "hr_" if task_name in ('cg', 'final') else ""
     ext: str = vcodec_to_extension[vsettings.codec]
     task.video_file = absolute_path(
         os.path.join(
             db['common']['directories']['cache_doc'],
             k_ep,
             task_name,
-            f"{basename}{suffix}{ext}"
+            f"{basename}_{suffix}{task_name}{ext}"
         )
     )
+
+    # No fallback
+

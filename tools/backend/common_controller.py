@@ -50,6 +50,7 @@ class CommonController(QObject, metaclass=QMeta):
         self.playlist_frames: list[Frame] = []
 
         self.current_selection: Selection = None
+        self.forced_selection: dict[str, str | int] | None = None
         self.current_scene_no: int = 0
         self.current_frame: Frame | None = None
 
@@ -140,6 +141,11 @@ class CommonController(QObject, metaclass=QMeta):
             k_ep=k_ep if k_ep not in ('', 'ep') else 'ep01',
             k_ch=k_ch if k_ch != '' else 'g_debut',
         )
+
+        if self.forced_selection is not None:
+            new_selection.k_ep = self.forced_selection['k_ep']
+            new_selection.k_ch = self.forced_selection['k_ch']
+
         self.k_ep_p_changed(new_selection)
 
 
