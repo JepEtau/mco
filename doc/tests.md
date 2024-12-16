@@ -116,3 +116,10 @@ cls; python .\pynference.py --input D:\mco\cache\progressive\j_ep06_7e784ec_mpg.
 cls; python .\pynference.py --input A:\mco\outputs\j_ep06_7e784ec_mpg_scunet_color_real_gan.mkv --output A:\mco\outputs\j_ep06_7e784ec_mpg_scunet_color_real_gan_2x-DigitalFilmV5-Lite.mkv --model A:\ml_models\2x-DigitalFilmV5-Lite.pth --trt --fp16
 
 
+
+ffmpeg -ss 0:22:58.760 -i D:\mco\cache\progressive\k_ep17_c37d117.mxf  -t 10.64 -c:v copy D:\mco\cache\g_doc\k_ep17_g_doc.mxf -y
+
+
+1378,76
+22:58.76
+266 -> 10,64
