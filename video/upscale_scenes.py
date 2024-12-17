@@ -59,8 +59,17 @@ def upscale_scenes(
         else False
     )
 
-    if k_ep == '' and single_chapter not in ('g_debut', 'g_fin'):
+    if (
+        (k_ep is None or k_ep in ('', 0))
+        and single_chapter not in ('g_debut', 'g_fin', 'g_doc')
+    ):
         raise ValueError(red("[E] episode must be set"))
+
+    print(f"upscale_scenes: {edition}:{episode}:{single_chapter}")
+    if single_chapter in ('g_doc'):
+        pprint(db['ep01']['video']['target'].keys())
+    # print(k_ep)
+    # raise
 
     # List models and scenes to upscale
     model_manager = ModelManager()
@@ -135,8 +144,8 @@ def upscale_scenes(
             hashes_str += f",{scene['task'].hash}"
 
             # Windows only
-            if sys.platform != 'win32':
-                continue
+            # if sys.platform != 'win32':
+            #     continue
 
             # Add models to the model manager
             # and add the scene to the list to upscale
@@ -156,44 +165,57 @@ def upscale_scenes(
                 # Separate doc from other
                 # because it uses different upscalers
                 pprint(scene_filters)
-                if scene_filters.sequence == 'doc':
-                    # For documentary, there is no frame replace... yet
-                    scenes_to_upscale_doc.append(scene)
-                    total_frames += scene['src'].frame_count(exclude_loop=True)
-                else:
-                    for filter_str in scene_filters.sequence.split(','):
-                        if filter_str.startswith(supported_filters):
-                            print(lightgreen("supported:"), filter_str)
-                            params: list[str] = filter_str.split("=", maxsplit=1)
-                            filter_name = params[0]
-                            filter_params: str | float | None = None
-                            if len(params) is not None:
-                                filter_params = None
+                # if scene_filters.sequence == 'doc':
+                #     # For documentary, there is no frame replace... yet
+                #     scenes_to_upscale_doc.append(scene)
+                #     total_frames += scene['src'].frame_count(exclude_loop=True)
+                # else:
+                for filter_str in scene_filters.sequence.split(','):
+                    if filter_str.startswith(supported_filters):
+                        print(lightgreen("supported:"), filter_str)
+                        params: list[str] = filter_str.split("=", maxsplit=1)
+                        filter_name = params[0]
+                        filter_params: str | float | None = None
+                        if len(params) is not None:
+                            filter_params = None
 
-                            if filter_name == 'resize':
-                                filter_params = float(params[1])
-                            elif len(params) == 1:
-                                filter_params = None
-                            else:
-                                filter_params = params[1]
+                        if filter_name == 'resize':
+                            filter_params = float(params[1])
+                        elif len(params) == 1:
+                            filter_params = None
+                        else:
+                            filter_params = params[1]
 
-                            scene_filters.steps.append(
-                                (params[0], filter_params)
-                            )
-                            continue
+                        scene_filters.steps.append(
+                            (params[0], filter_params)
+                        )
+                        continue
 
-                        model: str = filter_str
-                        model_key = model_manager.register(model)
-                        if model_key is None:
-                            raise ValueError(red(f"[E] {model} is not a valid model"))
-                        scene_filters.steps.append(model_key)
-                    pprint(scene_filters)
+                    # Doc model must not be followed by any model
+                    elif filter_str.startswith('mco_doc'):
+                        # Save the output as intermediary file -> patch this file
+                        scene['task'].fallback_in_video_files['hr'] = scene['task'].video_file
+                        scene['task'].video_file = (
+                            scene['task'].video_file.replace("_hr", "_hr_tmp")
+                        )
+                        scene['task'].in_video_file = scene['task'].video_file
+                        scenes_to_upscale_doc.append(scene)
+                        break
 
+                    model: str = filter_str
+                    model_key = model_manager.register(model)
+                    if model_key is None:
+                        raise ValueError(red(f"[E] {model} is not a valid model"))
+                    scene_filters.steps.append(model_key)
+                print(lightcyan(f"Scene {scene['no']} filters:"))
+                pprint(scene_filters)
+
+                if scene['dst']['k_ch'] not in ('g_doc', 'doc'):
                     scenes_to_upscale.append(scene)
-                    total_frames += (
-                        scene['src'].frame_count(exclude_loop=True)
-                        - len(scene['src'].get_frame_replace().keys())
-                    )
+                total_frames += (
+                    scene['src'].frame_count(exclude_loop=True)
+                    - len(scene['src'].get_frame_replace().keys())
+                )
 
 
         hashcode: str = calc_hash(hashes_str[:-1])
@@ -234,6 +256,9 @@ def upscale_scenes(
     # avoid extracting multiple time info from the same input
     vinfos: dict[str, VideoStreamInfo] = {}
     for scene in scenes_to_upscale + scenes_to_upscale_doc:
+        if sys.platform != 'win32':
+            break
+
         for src_scene in scene['src'].scenes():
             progressive_input = src_scene['scene']['inputs'].progressive()
 
@@ -263,7 +288,7 @@ def upscale_scenes(
             progressive_input.info = vinfos[in_media_path]
 
         if debug:
-            print(lightcyan("================================== Scene ======================================="))
+            print(lightcyan(f"========================= Scene {scene['no']} ================================="))
             pprint(scene)
             print(lightcyan("==============================================================================="))
 
@@ -280,11 +305,11 @@ def upscale_scenes(
         )
         pipeline.run()
 
-    # if scenes_to_upscale_doc:
-    #     upscale_doc_scenes(
-    #         scenes=scenes_to_upscale_doc,
-    #         debug=debug,
-    #         force=force
-    #     )
+    if scenes_to_upscale_doc:
+        upscale_doc_scenes(
+            scenes=scenes_to_upscale_doc,
+            debug=debug,
+            force=force
+        )
 
     print("done")

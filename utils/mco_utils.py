@@ -73,6 +73,16 @@ def is_up_to_date(scene: Scene) -> bool:
                 raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
 
     out_video_fp: str = scene['task'].video_file
+    check_metdata: bool = True
+
+    # For g_doc patch because it's a pipeline which use
+    if (
+        scene['dst']['k_ch'] in ('g_doc', 'doc')
+        and task.name in ('hr', 'upscale')
+        and "mco_doc" in scene['filters'][task.name].sequence
+    ):
+        check_metdata = False
+
     if os.path.exists(out_video_fp):
         dst_frame_count: int = calculate_frame_count(scene)
         print(yellow(f"dst frame_count: {dst_frame_count}"))
@@ -84,19 +94,19 @@ def is_up_to_date(scene: Scene) -> bool:
         except:
             return False
 
-        # TODO: check metadata
-        print("is_up_to_date")
-        print(out_video_info['metadata'])
-        print(task.hash)
-        out_hash: str = ""
-        try:
-            out_hash = out_video_info['metadata']['hash']
-        except:
-            print(red("no hash in output video"))
+        if check_metdata:
+            print("is_up_to_date")
+            print(out_video_info['metadata'])
+            print(task.hash)
+            out_hash: str = ""
+            try:
+                out_hash = out_video_info['metadata']['hash']
+            except:
+                print(red("no hash in output video"))
 
-        if out_hash != task.hash:
-            print(yellow(f"hash differs: {out_hash}, should be {task.hash}"))
-            return False
+            if out_hash != task.hash:
+                print(yellow(f"hash differs: {out_hash}, should be {task.hash}"))
+                return False
 
         return True
 
