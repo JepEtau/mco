@@ -4,6 +4,8 @@ from copy import deepcopy
 from pprint import pprint
 from warnings import warn
 
+from .geometry import ChapterGeometry, parse_geometry_file
+
 from .logger import logger
 from .helpers import get_fps
 from utils.p_print import *
@@ -268,7 +270,6 @@ def consolidate_target_scenes_g(k_ep: int | str, k_ch: str) -> None:
             # default_src: VideoSrc
         )
         ch_video = db[k_ep]['video']['target'][k_ch]
-        pprint(ch_video)
 
     # List the scene no which are defined in target
     target_scene_nos = ([s['no'] for s in ch_video['scenes']])
@@ -342,3 +343,25 @@ def consolidate_target_scenes_g(k_ep: int | str, k_ch: str) -> None:
 
     # Number of frames without effects
     ch_video['count'] = frame_count
+
+
+    if k_ch in ('g_asuivre', 'g_doc'):
+        parse_geometry_file(k_ep_or_g=k_ep, k_ch=k_ch)
+        # print("____")
+        # pprint(db[k_ep]['video']['target'][k_ch[2:]]['geometry'])
+        # raise
+
+        # width: int = db[k_ep]['video']['target'][k_ch[2:]]['geometry'].width
+        # for scene in ch_video['scenes']:
+        #     if 'geometry' in scene:
+        #         scene['geometry'].chapter.width = width
+        #         ch_video['geometry'] = ChapterGeometry(width=width)
+        #     else:
+        #         print(f"target: {k_ep}:{k_ch}")
+        #         pprint(scene)
+        #         raise ValueError(f"no width defined in {k_ep}:{k_ch[2:]}")
+
+            # if k_ch == 'g_doc':
+            #     # pprint(scene['src'].primary_scene()['scene'])
+            #     pprint(scene['geometry'])
+            #     raise

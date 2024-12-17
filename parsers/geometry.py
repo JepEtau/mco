@@ -160,23 +160,36 @@ class SceneGeometry:
 # et plus rapide encore lorsque la partie est spécifiée; lors de l'écriture automatique
 # par l'éditeur, le no. de trame correspond à la 1ere trame du plan
 
-def parse_geometry_file(k_ep_or_g: str) -> None:
+def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
     """ Parse configuration file which list the crop coordinates for each scene.
     TODO: it uses the first frame of a scene to identify the scene rather the index, so that
     a modification of scenes will not break anything
     """
-    verbose = False
+    verbose = True
     if verbose:
         print(lightgreen(f"parse_geometry_file: {k_ep_or_g}"))
 
     # Open configuration file
-    filepath = absolute_path(
-            os.path.join(
-            db['common']['directories']['config'],
-            k_ep_or_g,
-            f"{k_ep_or_g}_geometry.ini"
+    if k_ch in ('g_asuivre', 'g_doc'):
+        # raise ValueError(f"k_ep_or_g: {k_ep_or_g}, k_ch: {k_ch}")
+        ch_video = db[k_ep_or_g]['video']['target'][k_ch]
+        _k_ed, _k_ep, _k_ch, _ = ch_video['scenes'][0]['src'].primary_scene()['k_ed_ep_ch_no']
+        filepath = absolute_path(
+                os.path.join(
+                db['common']['directories']['config'],
+                _k_ep,
+                f"{_k_ep}_geometry.ini"
+            )
         )
-    )
+    else:
+        filepath = absolute_path(
+                os.path.join(
+                db['common']['directories']['config'],
+                k_ep_or_g,
+                f"{k_ep_or_g}_geometry.ini"
+            )
+        )
+
     if not os.path.exists(filepath):
         return
 
@@ -235,9 +248,9 @@ def parse_geometry_file(k_ep_or_g: str) -> None:
         if 'geometry' not in ch_video:
             ch_video['geometry'] = ChapterGeometry()
 
-    if verbose and k_ep_or_g == 'g_debut':
+    if verbose and k_ep_or_g == 'g_doc':
         pprint(ch_video)
-        sys.exit()
+        raise
 
 
 def get_geometry_from_properties(properties_str: str) -> SceneGeometry:

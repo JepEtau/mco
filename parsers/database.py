@@ -4,6 +4,7 @@ import os
 from pprint import pprint
 import sys
 from typing import Any, Literal
+from utils.mco_types import ChapterVideo
 from utils.p_print import *
 
 from .common import parse_common_configuration
@@ -184,9 +185,8 @@ def parse_database(
             parse_replace_file(k_ep_or_g=k_chapter_g)
             parse_dsr_file(k_ep_or_g=k_chapter_g)
             # parse_stabilize_configurations(k_ep_or_g=k_chapter_g)
-            parse_geometry_file(k_ep_or_g=k_chapter_g)
-            consolidate_target_scenes_g(k_ep=k_ep, k_ch=k_chapter_g)
-
+            # consolidate_target_scenes_g(k_ep=k_ep, k_ch=k_chapter_g)
+            # parse_geometry_file(k_ep_or_g=k_chapter_g)
 
     for k_chapter_g in ('g_debut', 'g_fin'):
         parse_stabilize_file(k_ep=k_ep, k_ch=k_chapter_g)
@@ -197,11 +197,15 @@ def parse_database(
     if k_ep != 'ep00':
         parse_geometry_file(k_ep_or_g=k_ep)
         for k_chapter_g in credit_chapter_keys():
-            parse_geometry_file(k_ep_or_g=k_chapter_g)
 
+            if k_chapter_g in ('g_doc', 'g_asuivre'):
+                consolidate_target_scenes_g(k_ep=k_ep, k_ch=k_chapter_g)
+            else:
+                parse_geometry_file(k_ep_or_g=k_chapter_g)
     else:
         for k_chapter_g in ('g_debut', 'g_fin'):
             parse_geometry_file(k_ep_or_g=k_chapter_g)
+
 
     if ignore_av_sync:
         return None

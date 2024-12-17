@@ -96,7 +96,7 @@ def detect_inner_rect(
             contrast_estimate = gray_img.std()
             print(yellow(f"\tcorrected, mean: {brightness_estimate}\tcontrast: {contrast_estimate}"))
         except:
-            gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
+            # gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
             brightness_estimate = cv2.mean(gray_img)[0]
             contrast_estimate = gray_img.std()
             print(red(f"Error: cannot apply automatic brightness&contrast"))
@@ -265,17 +265,21 @@ def calculate_autocrop_values(
     max_coords: np.ndarray = np.max(coordinates, axis=0)
     in_h, in_w = in_shape
 
+    coord0_min = 1.5 * max(min_coords[0], 3)
+    coord2_min = 1.5 * min(min_coords[2], 3)
+    w_max = 1.5 * ((in_w - max_coords[1]) + 3)
+    print(f"coord0_min={coord0_min}, coord2_min={coord2_min}, w_max={w_max}")
     consolidated_coordinates: list[np.ndarray] = []
     for coord in coordinates:
-        if coord[0] > 1.5 * min_coords[0]:
+        if coord[0] > coord0_min:
             print(f"(0) discard: {coord}")
             continue
 
-        if (in_w - coord[1]) > 1.5 * (in_w - max_coords[1]):
-            print(f"(1) discard: {coord}")
+        if (in_w - coord[1] + 2) > w_max:
+            print(f"(1) discard: {coord} ({(in_w - coord[1])} > {w_max})")
             continue
 
-        if coord[2] > 1.5 * min_coords[2]:
+        if coord[2] > coord2_min:
             print(f"(2) discard: {coord}")
             continue
         consolidated_coordinates.append(coord)

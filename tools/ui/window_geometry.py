@@ -146,14 +146,14 @@ class GeometryWindow(CommonWindow):
         self.current_key_pressed = None
 
         widgets = (
-            self.widget_player_ctrl,
             self.widget_geometry,
+            self.widget_player_ctrl,
             self.widget_selection,
         )
 
         for w in widgets:
             if w.event_key_pressed(event):
-                print(f"sent to {w}")
+                # print(f"sent to {w}")
                 for _w in widgets:
                     if _w != w:
                         _w.event_key_released(event)
@@ -180,7 +180,7 @@ class GeometryWindow(CommonWindow):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.Wheel:
             for w in (
-                # self.widget_geometry,
+                self.widget_geometry,
                 self.widget_player_ctrl,
                 # self.widget_preview,
                 # self.widget_selection

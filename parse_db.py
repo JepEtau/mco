@@ -175,7 +175,7 @@ def main():
         print(f"  Audio: {ch_audio['count']}")
         print(f"  Target: {target_count}")
 
-        # pprint(ch_video)
+        pprint(ch_video)
         scene_no: int = arguments.scene
         if scene_no != -1:
             print(lightcyan(f"Scene no. {scene_no}"))

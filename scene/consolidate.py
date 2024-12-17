@@ -86,7 +86,7 @@ def consolidate_scene(
         )
         if ch_geometry is None:
             raise ValueError(yellow(f"no geometry for chapter: {k_ch}"))
-        scene['geometry'] = SceneGeometry(chapter=ch_geometry)
+        scene['geometry'].chapter = ch_geometry
 
     else:
         if verbose:
@@ -208,7 +208,7 @@ def consolidate_scene(
 
     # Filenames
     #---------------------------------------------------------------------------
-    if k_ch == 'doc':
+    if k_ch in ('g_doc', 'doc'):
         set_doc_out_filepath_(scene)
 
     else:

@@ -436,7 +436,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         #         self.event_next_frame()
         #     return True
 
-        if self.is_shift_key_pressed:
+        if self.is_shift_key_pressed or self.app_type=='geometry':
             # Select next/previous frame
             if event.angleDelta().y() > 0:
                 self.event_previous_frame()

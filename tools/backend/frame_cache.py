@@ -75,7 +75,7 @@ class FrameCache:
                 count = src_scene['count']
                 src_start: int = src_scene['start'] - src_scene['scene']['inputs'].progressive().start
                 start: int = 0
-                in_video_fp: str = scene['task'].video_file
+                in_video_fp: str = scene['task'].in_video_file
 
                 if task_name == 'lr':
                     # Do not use FFv1 because slow to decode
@@ -89,7 +89,7 @@ class FrameCache:
                     if task_name == 'st':
                         in_video_fp = scene['task'].fallback_in_video_files['hr']
                 if not os.path.exists(in_video_fp):
-                    sys.exit(red(f"missing {in_video_fp}"))
+                    raise ValueError(red(f"frame cache: missing {in_video_fp}"))
 
 
                 print(f"  segment: {in_video_fp}, {start}, {count}")

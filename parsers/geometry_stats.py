@@ -1,6 +1,7 @@
 from __future__ import annotations
 from pprint import pprint
 from typing import TYPE_CHECKING
+from warnings import warn
 
 import numpy as np
 
@@ -120,6 +121,7 @@ class ChGeometryStats:
             try:
                 in_vi: VideoInfo = extract_media_info_mco(fp)['video']
             except:
+                warn(red(f"Failed opening {fp}"))
                 return
 
             # height, width
