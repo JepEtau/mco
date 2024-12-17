@@ -1,12 +1,13 @@
+from argparse import ArgumentParser
 import signal
 import os
 import sys
+from PySide6.QtWidgets import QApplication
 
 sys.path.append(
     os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 )
-
-from PySide6.QtWidgets import QApplication
+from parsers import TASK_NAMES
 
 if os.name == 'nt':
     import ctypes
@@ -15,12 +16,22 @@ if os.name == 'nt':
 
 
 def main():
+    parser: ArgumentParser = ArgumentParser()
+    parser.add_argument(
+        "--task_name",
+        "-t",
+        required=False,
+        choices=TASK_NAMES,
+        default='hr',
+    )
+
+    arguments = parser.parse_args()
 
     application = QApplication(sys.argv)
     from logger import log
 
     from tools.backend.replace_controller import ReplaceController
-    controller = ReplaceController()
+    controller = ReplaceController(task_name=arguments.task_name)
 
     from ui.window_replace import ReplaceWindow
     main_window = ReplaceWindow(controller=controller)

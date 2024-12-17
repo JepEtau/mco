@@ -21,6 +21,7 @@ from utils.p_print import *
 from parsers import (
     DsrRegion,
     SceneDsr,
+    TaskName
 )
 
 
@@ -29,14 +30,17 @@ class ReplaceController(CommonController):
     signal_replacements_refreshed = Signal()
     signal_dsr_shapes_refreshed = Signal()
 
-
-    def __init__(self):
+    def __init__(
+        self,
+        task_name: bool = False,
+    ):
         super().__init__()
 
         # Load saved preferences
         self.user_preferences: UserPreferences = UserPreferences(tool='replace')
 
         self.current_task = ''
+        self.task_name: TaskName = task_name
         self.replace_db = ReplaceDatabase()
         self.dsr_db = DsrDatabase()
         self.frame_cache: FrameCache = FrameCache(

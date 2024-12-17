@@ -84,6 +84,9 @@ class FrameCache:
                     in_video_fp = os.path.join(directory, f"{basename}{extension}")
                     start = src_start
 
+                if task_name in ('upscale', 'hr'):
+                    in_video_fp: str = scene['task'].video_file
+
                 if not os.path.exists(in_video_fp):
                     print(yellow(f"{in_video_fp} does not exist, fallback..."))
                     if task_name == 'st':
@@ -120,6 +123,16 @@ class FrameCache:
                     filter_complex = [
                         "-filter_complex",
                         f"[0:v]scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
+                        "-map", "[outv]"
+                    ]
+
+                if task_name == 'hr':
+                    video_settings: VideoSettings = db['common']['video_format']['hr']
+                    pad: int = video_settings.pad
+                    in_h, in_w = int(in_h - 2 * pad), int(in_w - 2 * pad)
+                    filter_complex = [
+                        "-filter_complex",
+                        f"[0:v]crop={in_w}:{in_h}:{pad}:{pad}[outv]",
                         "-map", "[outv]"
                     ]
 

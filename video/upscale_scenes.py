@@ -210,8 +210,8 @@ def upscale_scenes(
                 print(lightcyan(f"Scene {scene['no']} filters:"))
                 pprint(scene_filters)
 
-                if scene['dst']['k_ch'] not in ('g_doc', 'doc'):
-                    scenes_to_upscale.append(scene)
+                # if scene['dst']['k_ch'] not in ('g_doc', 'doc'):
+                scenes_to_upscale.append(scene)
                 total_frames += (
                     scene['src'].frame_count(exclude_loop=True)
                     - len(scene['src'].get_frame_replace().keys())
