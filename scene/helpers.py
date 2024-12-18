@@ -20,7 +20,7 @@ from utils.p_print import *
 from utils.path_utils import absolute_path
 
 # Task order:
-#   initial -> lr (with pad) - > lr_st -> hr -> cg -> final
+#   initial -> hr -> cg -> final
 
 def set_doc_out_filepath_(scene: Scene) -> None:
     k_ep, k_ch = scene['dst']['k_ep'], scene['dst']['k_ch']
@@ -56,8 +56,8 @@ def set_doc_out_filepath_(scene: Scene) -> None:
     }
     prev_task_name: TaskName = doc_previous_task[task_name]
 
-    # Cache path
-    cache_doc: str = os.path.abspath(
+    # Cache path, in/out files
+    in_cache_doc: str = os.path.abspath(
         os.path.join(
             db['common']['directories']['cache_doc'],
             os.pardir,
@@ -65,34 +65,47 @@ def set_doc_out_filepath_(scene: Scene) -> None:
             k_ep
         )
     )
-    # In/out files
-    basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}__{primary_src_scene['k_ed_ep_ch_no'][0]}"
+    out_cache_doc = in_cache_doc
+    in_basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}__{primary_src_scene['k_ed_ep_ch_no'][0]}"
+    out_basename = in_basename
 
+
+    # Specific to g_doc (asuivre should follow the same way)
     if scene['dst']['k_ch'] == 'g_doc' :
-        # Cache path
-        cache_doc: str = os.path.abspath(os.path.join(cache_doc, os.pardir))
-        # In/out files
+        in_cache_doc = os.path.abspath(os.path.join(in_cache_doc, os.pardir))
         _k_ed, _k_ep, _k_ch, _no = primary_src_scene['k_ed_ep_ch_no']
-        basename: str = f"{_k_ch}_{_no:03}__{_k_ed}_{_k_ep}"
+        in_basename: str = f"{_k_ch}_{_no:03}__{_k_ed}_{_k_ep}"
+        out_basename = in_basename
+
+        # Cache path
+        if task_name == 'final':
+            out_cache_doc = os.path.join(
+                db['common']['directories']['cache'], k_ep
+            )
+            # In/out files
+            _k_ed, _k_ep, _k_ch, _no = primary_src_scene['k_ed_ep_ch_no']
+            out_basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
+
 
     # Input file for this task
     suffix = "hr_" if task_name in ('final') else ""
     in_vsettings: VideoSettings = db['common']['video_format']['hr']
     in_ext: str = vcodec_to_extension[in_vsettings.codec]
     task.in_video_file = os.path.join(
-        cache_doc,
+        in_cache_doc,
         f"{prev_task_name}",
-        f"{basename}_{suffix}{prev_task_name}{in_ext}"
+        f"{in_basename}_{suffix}{prev_task_name}{in_ext}"
     )
 
+
     # Output file
-    suffix = "hr_" if task_name in ('cg', 'final') else ""
+    suffix = "hr_" if task_name == 'cg' else ""
     ext: str = vcodec_to_extension[vsettings.codec]
     task.video_file = absolute_path(
         os.path.join(
-            cache_doc,
+            out_cache_doc,
             task_name,
-            f"{basename}_{suffix}{task_name}{ext}"
+            f"{out_basename}_{suffix}{task_name}{ext}"
         )
     )
 

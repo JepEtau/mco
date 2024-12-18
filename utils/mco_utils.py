@@ -63,7 +63,7 @@ def scene_id_str(scene: Scene) -> str:
 
 
 
-def is_up_to_date(scene: Scene) -> bool:
+def is_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
     task: ProcessingTask = scene['task']
 
     if TASK_NAMES.index(task.name) <= TASK_NAMES.index('hr'):
@@ -108,6 +108,8 @@ def is_up_to_date(scene: Scene) -> bool:
                 print(yellow(f"hash differs: {out_hash}, should be {task.hash}"))
                 return False
 
+        if display_msg:
+            print(lightgreen(f"    already rendered:"), out_video_fp)
         return True
 
     return False
@@ -141,7 +143,7 @@ def is_final_up_to_date(scene: Scene) -> bool:
         return False
 
     main_logger.debug(
-        f"{yellow("scene:")} {calculate_frame_count(scene)}{yellow("out file:")} {out_video_info['frame_count']}"
+        f"{yellow("scene:")} {calculate_frame_count(scene)}, {yellow("rendered:")} {out_video_info['frame_count']}"
     )
     if out_video_info['frame_count'] != calculate_frame_count(scene):
         return False

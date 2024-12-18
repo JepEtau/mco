@@ -149,7 +149,7 @@ def upscale_scenes(
 
             # Add models to the model manager
             # and add the scene to the list to upscale
-            if not is_up_to_date(scene) or force:
+            if not is_up_to_date(scene, display_msg=True) or force:
 
                 # Get all models
                 scene_filters: Filter = scene['filters'][scene['task'].name]
