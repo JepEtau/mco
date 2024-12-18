@@ -26,6 +26,9 @@ def clean_fcomplex(line: str) -> str:
 
 
 def get_ffmpeg_pad_filter(scene: Scene) -> str:
+    if scene['dst']['k_ch'] == 'g_doc':
+        return ""
+
     vsettings: VideoSettings = scene['task'].video_settings
     # color_conv: str = "scale=in_color_matrix=bt601:out_color_matrix=bt709:flags=full_chroma_int+accurate_rnd"
 
@@ -34,7 +37,7 @@ def get_ffmpeg_pad_filter(scene: Scene) -> str:
         pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
         return f"{pad_filter}"
 
-    return f""
+    return ""
 
 
 def do_watermark(scene: Scene) -> bool:

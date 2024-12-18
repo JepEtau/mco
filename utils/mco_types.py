@@ -271,7 +271,7 @@ class Scene(TypedDict):
 
     k_ed: str
     k_ep: str
-    k_chapter: str
+    k_ch: str
 
     # Scene no. start frame no. and frame count of this scene
     no: int

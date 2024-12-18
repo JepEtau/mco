@@ -58,12 +58,7 @@ def set_doc_out_filepath_(scene: Scene) -> None:
 
     # Cache path, in/out files
     in_cache_doc: str = os.path.abspath(
-        os.path.join(
-            db['common']['directories']['cache_doc'],
-            os.pardir,
-            k_ch,
-            k_ep
-        )
+        os.path.join(db['common']['directories']['cache_doc'], os.pardir, k_ch, k_ep)
     )
     out_cache_doc = in_cache_doc
     in_basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}__{primary_src_scene['k_ed_ep_ch_no'][0]}"
@@ -71,18 +66,20 @@ def set_doc_out_filepath_(scene: Scene) -> None:
 
 
     # Specific to g_doc (asuivre should follow the same way)
-    if scene['dst']['k_ch'] == 'g_doc' :
-        in_cache_doc = os.path.abspath(os.path.join(in_cache_doc, os.pardir))
+    if scene['dst']['k_ch'] == 'g_doc':
         _k_ed, _k_ep, _k_ch, _no = primary_src_scene['k_ed_ep_ch_no']
         in_basename: str = f"{_k_ch}_{_no:03}__{_k_ed}_{_k_ep}"
         out_basename = in_basename
 
         # Cache path
+        in_cache_doc = os.path.abspath(os.path.join(in_cache_doc, os.pardir))
+        out_cache_doc = in_cache_doc
         if task_name == 'final':
-            out_cache_doc = os.path.join(
-                db['common']['directories']['cache'], k_ep
+            out_cache_doc: str = os.path.abspath(
+                os.path.join(
+                    db['common']['directories']['cache_doc'], os.pardir, k_ch, k_ep
+                )
             )
-            # In/out files
             _k_ed, _k_ep, _k_ch, _no = primary_src_scene['k_ed_ep_ch_no']
             out_basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
 
@@ -101,6 +98,7 @@ def set_doc_out_filepath_(scene: Scene) -> None:
     # Output file
     suffix = "hr_" if task_name == 'cg' else ""
     ext: str = vcodec_to_extension[vsettings.codec]
+
     task.video_file = absolute_path(
         os.path.join(
             out_cache_doc,
@@ -108,6 +106,12 @@ def set_doc_out_filepath_(scene: Scene) -> None:
             f"{out_basename}_{suffix}{task_name}{ext}"
         )
     )
+
+    if scene['dst']['k_ch'] == 'g_doc' and task_name == 'final':
+        task.video_file = absolute_path(
+            os.path.join(out_cache_doc, f"{out_basename}_{suffix}{task_name}{ext}")
+        )
+
 
     # No fallback
 

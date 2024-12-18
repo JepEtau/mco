@@ -79,7 +79,7 @@ def final_scenes(
                 print(lightcyan("==============================================================================="))
 
             # if not simulation and not is_up_to_date(scene) or force:
-            if is_final_up_to_date(scene) and not force:
+            if is_final_up_to_date(scene, display_msg=True) and not force:
                 continue
 
             result = generate_final_scene(
@@ -116,11 +116,20 @@ def final_scenes(
 
         vsettings: VideoSettings = db['common']['video_format']['final']
         ext: str = vcodec_to_extension[vsettings.codec]
+        out_video_file: str = os.path.join(cache_path, f"video", f"{basename}{ext}")
+        if k_ch == "doc":
+            out_video_file: str = os.path.join(
+                db['common']['directories']['cache_doc'],
+                k_ep,
+                task_name,
+                f"{basename}{ext}"
+            )
+
         ch_video['task'] = ProcessingTask(
             name=task_name,
             hash=hashcode,
             concat_file=os.path.join(cache_path, "concat", f"{basename}.txt"),
-            video_file=os.path.join(cache_path, f"video", f"{basename}{ext}"),
+            video_file=out_video_file,
         )
 
     print(f"Generated scenes in {time.time() - start_time_full:.03f}s")

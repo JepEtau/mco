@@ -109,14 +109,14 @@ def is_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
                 return False
 
         if display_msg:
-            print(lightgreen(f"    already rendered:"), out_video_fp)
+            print(lightgreen(f"      already rendered:"), out_video_fp)
         return True
 
     return False
 
 
 
-def is_final_up_to_date(scene: Scene) -> bool:
+def is_final_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
     task: ProcessingTask = scene['task']
 
     if TASK_NAMES.index(task.name) <= TASK_NAMES.index('hr'):
@@ -135,6 +135,8 @@ def is_final_up_to_date(scene: Scene) -> bool:
         not os.path.exists(out_video_fp)
         or os.path.getmtime(in_video_fp) > os.path.getmtime(out_video_fp)
     ):
+        if display_msg:
+            print(lightgreen(f"        render, reason:"), "input is newer")
         return False
 
     try:
@@ -162,6 +164,8 @@ def is_final_up_to_date(scene: Scene) -> bool:
             print(yellow(f"final: hash differs: {out_hash}, should be {task.hash}"))
             return False
 
+    if display_msg:
+        print(lightgreen(f"        already rendered:"), out_video_fp)
     return True
 
 

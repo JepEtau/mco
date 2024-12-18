@@ -266,7 +266,7 @@ def calculate_autocrop_values(
     in_h, in_w = in_shape
 
     coord0_min = 1.5 * max(min_coords[0], 3)
-    coord2_min = 1.5 * min(min_coords[2], 3)
+    coord2_min = 1.5 * max(min_coords[2], 3)
     w_max = 1.5 * ((in_w - max_coords[1]) + 3)
     print(f"coord0_min={coord0_min}, coord2_min={coord2_min}, w_max={w_max}")
     consolidated_coordinates: list[np.ndarray] = []

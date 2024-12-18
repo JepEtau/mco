@@ -296,14 +296,18 @@ class GeometryDatabase:
                 config_geometry = ConfigParser({}, OrderedDict)
 
             if chapter_geometry is not None:
+                k_section: str = k_ch
+                if not config_geometry.has_section(k_section):
+                    config_geometry.add_section(k_section)
+
                 option = 'width'
                 if config_geometry.has_option(k_section, option):
                     print(f"remove: {k_section}: {option}")
                     config_geometry.remove_option(k_section, option)
                 config_geometry.set(k_section, option, f"{chapter_geometry.width}")
 
-            with open(geometry_fp, 'w') as config_file:
-                config_geometry.write(config_file)
+                with open(geometry_fp, 'w') as config_file:
+                    config_geometry.write(config_file)
 
         else:
             # video_src: VideoSrc = db[k_ep]['video']['target'][k_ch]['default_src']

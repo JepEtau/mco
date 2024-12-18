@@ -142,7 +142,7 @@ class GeometryWindow(CommonWindow):
 
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        print(f"{__name__} received: {event.key()}, modifier {event.modifiers()}")
+        # print(f"{__name__} received: {event.key()}, modifier {event.modifiers()}")
         self.current_key_pressed = None
 
         widgets = (
