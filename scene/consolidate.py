@@ -5,7 +5,10 @@ from pprint import pprint
 import re
 import sys
 from warnings import warn
-from scene.helpers import set_doc_out_filepath_
+from scene.helpers import (
+    set_doc_filepath_,
+    set_g_asuivre_filepath_,
+)
 from utils.hash import calc_hash
 from utils.mco_types import (
     ChapterVideo, Effect, Effects, Scene,
@@ -209,7 +212,10 @@ def consolidate_scene(
     # Filenames
     #---------------------------------------------------------------------------
     if k_ch in ('g_doc', 'doc'):
-        set_doc_out_filepath_(scene)
+        set_doc_filepath_(scene)
+
+    if k_ch == 'g_asuivre':
+        set_g_asuivre_filepath_(scene)
 
     else:
         # Output video filename

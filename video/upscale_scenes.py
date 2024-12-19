@@ -256,8 +256,6 @@ def upscale_scenes(
     # avoid extracting multiple time info from the same input
     vinfos: dict[str, VideoStreamInfo] = {}
     for scene in scenes_to_upscale + scenes_to_upscale_doc:
-        if sys.platform != 'win32':
-            break
 
         for src_scene in scene['src'].scenes():
             progressive_input = src_scene['scene']['inputs'].progressive()
