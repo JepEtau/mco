@@ -579,7 +579,7 @@ def generate_final_scene(
             ffmpeg_exe,
             "-hide_banner",
             "-loglevel", "warning",
-            "-nostats",
+            "-stats",
 
             "-f", "rawvideo",
             '-pixel_format', in_pipe_pixfmt,
@@ -588,8 +588,8 @@ def generate_final_scene(
 
             "-i", "pipe:0",
 
-            "-vcodec", str_to_video_codec[vsettings.codec].value,
             "-pix_fmt", vsettings.pix_fmt,
+            "-vcodec", str_to_video_codec[vsettings.codec].value,
             *vsettings.codec_options,
             *colorspace,
             *metadata,
@@ -636,18 +636,35 @@ def generate_final_scene(
             except:
                 pass
 
-        def _e_thread(stream: IO, e_queue: Queue):
+        def _e_thread(
+            e_subprocess: subprocess.Popen,
+            # stream: IO,
+            e_queue: Queue
+        ):
+            stream: IO = e_subprocess.stdin
+            os.set_blocking(e_subprocess.stdout.fileno(), False)
+            line = e_subprocess.stdout.readline().decode('utf-8')
+            if line:
+                print(line.strip(), end='\r', file=sys.stdout)
+
             while True:
                 out_img: np.ndarray = e_queue.get()
                 if out_img is None:
                     break
+                print(f"{out_img.shape}, {out_img.dtype}")
                 stream.write(out_img)
+
+                # if e_subprocess.poll() is None:
+                #     break
+                line = e_subprocess.stdout.readline().decode('utf-8')
+                if line:
+                    print(line.strip(), end='\r', file=sys.stdout)
 
 
         d_queue: Queue = Queue(maxsize=ofc)
         e_queue: Queue = Queue(maxsize=ofc * 2)
         d_thread = Thread(target=_d_thread, args=(d_subprocess.stdout, d_queue,))
-        e_thread = Thread(target=_e_thread, args=(e_subprocess.stdin, e_queue,))
+        e_thread = Thread(target=_e_thread, args=(e_subprocess, e_queue,))
         d_thread.start()
         e_thread.start()
         decoded: int = 0
@@ -683,6 +700,7 @@ def generate_final_scene(
                         for i, img in enumerate(in_imgs)]
                     ):
                         # print(out_i, flush = True)
+                        print(f"resized to: {out[0].shape}")
                         out_images.extend(out)
 
             decoded += count

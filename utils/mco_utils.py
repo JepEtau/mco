@@ -4,6 +4,7 @@ from pprint import pprint
 import subprocess
 import sys
 import time
+from warnings import warn
 from scene.filters import do_watermark
 from utils.mco_types import ChapterVideo, Scene
 from utils.media import (
@@ -158,7 +159,8 @@ def is_final_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
         try:
             out_hash: str = out_video_info['metadata']['hash']
         except:
-            raise ValueError(red("no hash in output video"))
+            warn(red("no hash in output video"))
+            return False
 
         if out_hash != task.hash:
             print(yellow(f"final: hash differs: {out_hash}, should be {task.hash}"))

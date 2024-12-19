@@ -21,6 +21,7 @@ class FFmpegVideoCodec(Enum):
     VP9 = "libvpx-vp9"
     FFV1 = "ffv1"
     DNXHD = "dnxhd"
+    HEVC_NVENC = "hevc_nvenc"
 
 
 str_to_video_codec: dict[str, FFmpegVideoCodec] = {
@@ -29,6 +30,7 @@ str_to_video_codec: dict[str, FFmpegVideoCodec] = {
     'ffv1': FFmpegVideoCodec.FFV1,
     'vp9': FFmpegVideoCodec.VP9,
     'dnxhd': FFmpegVideoCodec.DNXHD,
+    "hevc_nvenc": FFmpegVideoCodec.HEVC_NVENC,
 }
 
 
@@ -39,6 +41,7 @@ vcodec_to_extension: dict[FFmpegVideoCodec, str] = {
     'ffv1': '.mkv',
     'vp9': '.mkv',
     'dnxhd': '.mxf',
+    "hevc_nvenc": ".mkv",
 }
 
 

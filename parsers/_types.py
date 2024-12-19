@@ -56,7 +56,7 @@ TaskName = Literal[
     'final'
 ]
 
-TASK_NAMES: list[str] = get_args(TaskName)
+TASK_NAMES: list[TaskName] = get_args(TaskName)
 
 task_to_dirname: dict[TaskName, str] = {
     'initial': '00_initial',

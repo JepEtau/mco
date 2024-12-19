@@ -214,7 +214,7 @@ def consolidate_scene(
     if k_ch in ('g_doc', 'doc'):
         set_doc_filepath_(scene)
 
-    if k_ch == 'g_asuivre':
+    elif k_ch == 'g_asuivre':
         set_g_asuivre_filepath_(scene)
 
     else:

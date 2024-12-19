@@ -183,7 +183,17 @@ def parse_common_configuration(language:str=''):
             continue
 
         vformat = config_general[section]
-        options: str = vformat.get('codec_options', '').replace('\"', '')
+        options: str = (
+            vformat
+            .get('codec_options', '')
+            .replace('\"', '')
+            .replace('\n', ' ')
+            .replace('  ', ' ')
+            .strip()
+        )
+        if task == 'final':
+            pprint(options)
+            # raise
         db_common['video_format'][task] = VideoSettings(
             codec=vformat.get('codec', ''),
             codec_options=options.split(' ') if options else [],
