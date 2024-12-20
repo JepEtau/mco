@@ -286,7 +286,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
             f"{scene['no']:03}"
         )
 
-    if k_ch_dst in ('doc'):
+    if k_ch_dst == 'doc' and task_name != 'initial':
         return os.path.join(
             cache_dir,
             scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
@@ -305,8 +305,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
         output_path = os.path.join(
             cache_dir,
             scene['k_ep'],
-            k_ch_dst,
-            f"{scene['no']:03}"
+            f"ed_{scene['k_ed']}",
         )
 
     elif task_name == 'upscale':

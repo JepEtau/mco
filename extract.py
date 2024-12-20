@@ -31,6 +31,7 @@ def main():
 
     parser.add_argument(
         "--chapter",
+        "-ch",
         choices=all_chapter_keys(),
         default='',
         required=False,
