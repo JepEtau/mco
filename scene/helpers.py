@@ -26,6 +26,7 @@ from utils.path_utils import absolute_path
 _doc_previous_task: dict[str, str] = {
     'lr': 'initial',
     'hr': 'initial',
+    'tf': 'hr',
     'cg': 'hr',
     'final': 'cg',
 }
@@ -118,12 +119,20 @@ def set_doc_filepath_(scene: Scene) -> None:
 
     if scene['dst']['k_ch'] == 'g_doc' and task_name == 'final':
         task.video_file = absolute_path(
-            os.path.join(out_cache_doc, f"{out_basename}_{suffix}{task_name}{ext}")
+            os.path.join(
+                db['common']['directories']['cache_doc'],
+                os.pardir,
+                k_ch,
+                task_name,
+                f"{out_basename}_{suffix}{task_name}{ext}"
+            )
         )
 
-
-    # No fallback
-
+        # Fallback to tf if not mco_doc
+        if not 'mco_doc' in scene_filters['hr'].sequence:
+            task.fallback_in_video_files['tf'] = task.in_video_file.replace("_hr_", "_tf_")
+            if not os.path.exists(task.in_video_file):
+                task.in_video_file = task.fallback_in_video_files['tf']
 
 
 
@@ -207,10 +216,14 @@ def set_g_asuivre_filepath_(scene: Scene) -> None:
 
     if scene['dst']['k_ch'] == 'g_asuivre' and task_name == 'final':
         task.video_file = absolute_path(
-            os.path.join(out_cache_doc, f"{out_basename}_{suffix}{task_name}{ext}")
+            os.path.join(
+                db['common']['directories']['cache_doc'],
+                os.pardir,
+                k_ch,
+                task_name,
+                f"{out_basename}_{suffix}{task_name}{ext}"
+            )
         )
-
-
     # No fallback
 
 

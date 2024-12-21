@@ -43,6 +43,7 @@ from utils.np_dtypes import np_to_float32, np_to_uint16, np_to_uint8
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
 from utils.pxl_fmt import PIXEL_FORMAT
+from utils.time_conversions import frame_to_s
 from utils.tools import ffmpeg_exe
 from utils.media import VideoInfo, extract_media_info_mco, str_to_video_codec, vcodec_to_extension
 
@@ -251,6 +252,10 @@ def generate_final_scene(
     )
     # or src
     has_effects = has_effects or scene["src"].has_effects()
+
+    # Deactivate loop for g_asuivre
+    if scene['dst']['k_ch'] == 'g_asuivre':
+        has_effects = False
 
     # if geometry.use_autocrop and has_effects:
     vsettings: VideoSettings = task.video_settings
@@ -509,12 +514,23 @@ def generate_final_scene(
             "-map", "[outv]"
         ]
 
+        # Loop has been already done in hr for g_asuivre
+        seek_count: list[float] = []
+        if scene['dst']['k_ch'] == 'g_asuivre':
+            seek_count = [
+                "-t", f"{frame_to_s(
+                    scene['dst']['count'], frame_rate=in_video_info['frame_rate_r']
+                )}"
+            ]
+
         e_command: list[str] = [
             ffmpeg_exe,
             "-hide_banner",
             "-loglevel", "warning",
             "-nostats",
             "-i", in_video_fp,
+            *seek_count,
+
             *ffmpeg_filter,
 
             "-vcodec", str_to_video_codec[vsettings.codec].value,
@@ -651,7 +667,6 @@ def generate_final_scene(
                 out_img: np.ndarray = e_queue.get()
                 if out_img is None:
                     break
-                print(f"{out_img.shape}, {out_img.dtype}")
                 stream.write(out_img)
 
                 # if e_subprocess.poll() is None:
@@ -690,8 +705,8 @@ def generate_final_scene(
                     out_images.extend(
                         resize_and_effects(
                             decoded + i, img, scene, transformation, dtype_convert_fct
+                        )
                     )
-                )
             else:
                 with ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco') as executor:
                     for out in executor.map(
@@ -700,7 +715,6 @@ def generate_final_scene(
                         for i, img in enumerate(in_imgs)]
                     ):
                         # print(out_i, flush = True)
-                        print(f"resized to: {out[0].shape}")
                         out_images.extend(out)
 
             decoded += count

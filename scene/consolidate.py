@@ -78,6 +78,12 @@ def consolidate_scene(
     scene['cache'] = get_cache_path(scene)
     # os.path.join(db['common']['directories']['cache'], k_ep, k_ch, "%03d" % (scene['no']))
 
+    # Effects
+    #---------------------------------------------------------------------------
+    if scene['dst']['k_ch'] == 'g_asuivre' and task_name in ('hr', 'upscale'):
+        effect = scene['effects'].get_effect('loop')
+        effect.loop = 99
+        scene['dst']['count'] = effect.loop
 
     # Geometry
     #---------------------------------------------------------------------------

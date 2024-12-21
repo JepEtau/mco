@@ -120,6 +120,9 @@ cls; python .\pynference.py --input A:\mco\outputs\j_ep06_7e784ec_mpg_scunet_col
 ffmpeg -ss 0:22:58.760 -i D:\mco\cache\progressive\k_ep17_c37d117.mxf  -t 10.64 -c:v copy D:\mco\cache\g_doc\k_ep17_g_doc.mxf -y
 
 
+ffmpeg -ss 0:23:00 -i A:\mco\inputs\b\b_ep01_video.mkv  -t 2:50 -c:v hevc_nvenc -profile:v main -pix_fmt yuv420p -b_ref_mode disabled -tag:v hvc1 -g 30 -preset p7 -tune hq -rc constqp -qp 17 -rc-lookahead 20 -spatial_aq 1 -aq-strength 15 -b:v 0 -an -sn b_ep01_doc.mkv -y
+
+
 1378,76
 22:58.76
 266 -> 10,64
