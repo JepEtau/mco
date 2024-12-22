@@ -146,6 +146,7 @@ def parse_scenes_new(
     for k_option in config.options(k_section):
         value_str: str = config.get(k_section, k_option).replace(' ','')
 
+        # print(f"{k_section} -> {k_option}")
         scene_no = int(k_option)
         value_str = value_str.split("#")[0]
         scene_properties: list[str] = value_str.split(',')

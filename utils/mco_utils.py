@@ -312,7 +312,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
         # Work in the src directory
         output_path = os.path.join(
             cache_dir,
-            scene['k_ep'],
+            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
             task_name,
             f"{scene['no']:03}"
         )
@@ -322,8 +322,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
         #  because these frames are used by multiple episodes
         output_path: str = os.path.join(
             cache_dir,
-            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
-            f"{scene['no']:03}"
+            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep']
         )
 
     return output_path

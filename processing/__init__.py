@@ -10,6 +10,7 @@ supported_ffmpeg_filters : tuple[str] = (
     "atadenoise",
     "removegrain",
     "tmedian",
+    "bilateral",
 )
 
 supported_cv2_filters : tuple[str] = (
@@ -17,6 +18,7 @@ supported_cv2_filters : tuple[str] = (
     "erosion",
     "opening",
     "closing",
+    "cv2_bilateral",
 )
 
 supported_cuda_filters : tuple[str] = (
