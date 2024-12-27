@@ -3,7 +3,7 @@ from configparser import ConfigParser
 from pprint import pprint
 import re
 import sys
-from ._keys import all_chapter_keys, main_chapter_keys, ep_key
+from ._keys import all_chapter_keys, main_chapter_keys, ep_key, Chapter
 from utils.p_print import *
 from utils.mco_types import Effect, Effects, ChapterVideo, Scene
 from scene.src_scene import SrcScene, SrcScenes
@@ -33,6 +33,7 @@ def parse_scenes(
         and update the structure of the db.
         Used for 'episodes' and 'doc'
     """
+    raise NotImplementedError(f"deprecated: {k_ed}:{k_ep}:{k_ch}")
     scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
     for scene_no, scene in enumerate(scenes_str.split()):
         # print(scene)
@@ -135,7 +136,7 @@ def parse_scenes(
 def parse_scenes_new(
     k_ed: str,
     k_ep: str,
-    k_ch: str,
+    k_ch: Chapter,
     config,
     k_section: str,
 ) -> None:
@@ -162,6 +163,8 @@ def parse_scenes_new(
             else:
                 end = start
             count = end - start
+            if k_ch == 'doc':
+                count += 1
         else:
             start = int(scene_properties[0])
             count = 0
@@ -380,6 +383,7 @@ def parse_target_scenelist(
                            count=segment_count,
                            backward=backward
                        )
+                    print(v)
                     current_scene_no = int(v)
                     segment_start = -1
                     segment_count = -1
@@ -389,7 +393,7 @@ def parse_target_scenelist(
                     if v.lower() == "true":
                         backward = True
 
-                elif k == 'segment':
+                elif k in ('segment', 'sg'):
                     start_count = v.split(':')
                     if start_count[0] == '':
                         segment_start = -1
