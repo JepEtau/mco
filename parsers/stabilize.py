@@ -239,7 +239,7 @@ def parse_stabilize_file(k_ep: str, k_ch: str = '') -> None:
         )
     )
     if not os.path.exists(filepath):
-        sys.exit(f"not found {filepath}")
+        print(f"not found: {filepath}")
         return
 
     # Parse the file

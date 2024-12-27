@@ -49,10 +49,13 @@ def parse_database(
     episode: str | int,
     lang: Literal['en', 'fr'] = 'fr',
     edition: str = '',
-    ignore_av_sync: bool = False
+    ignore_av_sync: bool = False,
+    avsync_stats: bool = False
 ) -> dict[str, tuple[int]]:
     # Parse the database for a specified episode
     # ignore avsync when called by a tool
+    # avsync_stats: to con,solidate AV sync only -> ignore geometry, ....
+
 
     k_ep = f"ep{episode:02}" if isinstance(episode, int) else episode
     logger.debug(lightcyan(f"parse database", f"target: {k_ep}" if k_ep != "ep00" else ""))
@@ -195,7 +198,8 @@ def parse_database(
     # the geometry refers to the destination and not the source
     # bc of segment functionnality
     if k_ep != 'ep00':
-        parse_geometry_file(k_ep_or_g=k_ep)
+        if not avsync_stats:
+            parse_geometry_file(k_ep_or_g=k_ep)
         for k_chapter_g in credit_chapter_keys():
 
             if k_chapter_g in ('g_doc', 'g_asuivre'):

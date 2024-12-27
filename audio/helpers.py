@@ -9,6 +9,7 @@ from parsers import (
     logger,
     ep_key,
     get_fps,
+    Chapter,
 )
 from utils.p_print import *
 
@@ -81,15 +82,15 @@ def get_output_filepath(
     episode: str | int | None = None,
     chapter: str | None = None,
 ) -> tuple[str, str]:
-    k: str = ''
+    k_ep_or_ch: str = ''
     if chapter in ('g_debut', 'g_fin') or episode is None:
-        k = chapter
-        logger.debug(lightgreen(f"{__name__}: {k}"))
+        k_ep_or_ch = chapter
+        logger.debug(lightgreen(f"{__name__}: {k_ep_or_ch}"))
     else:
-        k = ep_key(episode)
-        logger.debug(lightgreen(f"{__name__}: {k}:{chapter}"))
+        k_ep_or_ch = ep_key(episode)
+        logger.debug(lightgreen(f"{__name__}: {k_ep_or_ch}:{chapter}"))
 
-    db_audio = db[k]['audio']
+    db_audio = db[k_ep_or_ch]['audio']
 
     # Working dir, maybe customized
     out_directory = os.path.join(db['common']['directories']['audio'])
@@ -99,11 +100,11 @@ def get_output_filepath(
 
     # Output filename
     suffix = f"_{db_audio['lang']}" if db_audio['lang'] != 'fr' else ''
-    out_filename = f"{k}_audio{suffix}.{db['common']['settings']['audio_format']}"
+    out_filename = f"{k_ep_or_ch}_audio{suffix}.{db['common']['settings']['audio_format']}"
     out_filepath = os.path.join(out_directory, out_filename)
 
-    logger.debug(f"  {k}, {out_filepath}")
-    return k, out_filepath
+    logger.debug(f"  {k_ep_or_ch}, {out_filepath}")
+    return k_ep_or_ch, out_filepath
 
 
 
