@@ -11,6 +11,7 @@ supported_ffmpeg_filters : tuple[str] = (
     "removegrain",
     "tmedian",
     "bilateral",
+    "noise",
 )
 
 supported_cv2_filters : tuple[str] = (

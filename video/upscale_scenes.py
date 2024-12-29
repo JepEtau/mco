@@ -101,13 +101,13 @@ def upscale_scenes(
             # pprint(ch_video)
             print(f"scene_no: {scene_no}, scenes range: {scene_min} -> {scene_max}")
 
-        if k_ch == 'doc':
-            upscale_doc_chapter(
-                ch_video=ch_video,
-                debug=debug,
-                force=force
-            )
-            continue
+        # if k_ch == 'doc':
+        #     upscale_doc_chapter(
+        #         ch_video=ch_video,
+        #         debug=debug,
+        #         force=force
+        #     )
+        #     continue
 
 
         # Walk through target scenes
@@ -115,7 +115,7 @@ def upscale_scenes(
         for scene in scenes:
 
             if scene_no is not None and scene_no != -1 and scene['no'] != scene_no:
-                print(f"skip scene no. {scene['no']}")
+                # print(f"skip scene no. {scene['no']}")
                 continue
 
             if scene_min != -1 and scene_max != -1:

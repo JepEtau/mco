@@ -142,7 +142,7 @@ def parse_scenes_new(
 ) -> None:
     scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
     k_ed_ep_ch: str = f"{k_ed}:{k_ep}:{k_ch}"
-    print(f"Parse scene list: {k_ed_ep_ch}")
+    # print(f"Parse scene list: {k_ed_ep_ch}")
 
     for k_option in config.options(k_section):
         value_str: str = config.get(k_section, k_option).replace(' ','')

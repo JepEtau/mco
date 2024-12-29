@@ -165,7 +165,8 @@ class ReplaceDatabase:
             print ("to save")
 
             k_ed, k_ep, k_ch, src_scene_no = src_scene_key.split(':')
-            k = k_ch if k_ch in credit_chapter_keys() else k_ep
+            # k = k_ch if k_ch in credit_chapter_keys() else k_ep
+            k = k_ep
             replace_fp = os.path.join(
                 db['common']['directories']['config'], k, f"{k}_replace.ini"
             )
