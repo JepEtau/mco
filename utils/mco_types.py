@@ -2,7 +2,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pprint import pprint
 import sys
-from typing import Any, Literal, TypedDict, TYPE_CHECKING
+from typing import Any, Literal, Optional, TypedDict, TYPE_CHECKING, overload
 
 import numpy as np
 
@@ -18,6 +18,8 @@ if TYPE_CHECKING:
         TaskName,
         SceneGeometry,
         ChapterGeometry,
+        StabilizeParams,
+        SceneDsr,
     )
     from nn_inference.threads.t_decoder import VideoStreamInfo
     from scene.src_scene import SrcScenes
@@ -40,21 +42,55 @@ class McoFrame:
     scene: Scene = None
 
 
+@dataclass
+class InterlacedInput:
+    filepath: str = ""
 
-class Inputs(TypedDict):
-    class Interlaced(TypedDict):
-        filepath: str
 
-    class Progressive(TypedDict):
-        filepath: str
-        cache: str
-        enable: bool
-        start: int
-        count: int
-        info: VideoStreamInfo
+@dataclass
+class ProgressiveInput:
+    filepath: str = ""
+    cache: str = ""
+    enable: bool = ""
+    start: int = ""
+    count: int = ""
+    info: VideoStreamInfo = ""
 
-    interlaced: Interlaced
-    progressive: Progressive
+
+class Inputs:
+    _interlaced: InterlacedInput
+    progressives: dict[Chapter | str, ProgressiveInput]
+
+    def __init__(self, interlaced: InterlacedInput, progressive: ProgressiveInput):
+        self._interlaced = interlaced
+        self.progressives = {'default': progressive}
+
+    @property
+    def interlaced(self) -> InterlacedInput:
+        return self._interlaced
+
+    @interlaced.setter
+    def interlaced(self, interlaced: InterlacedInput) -> None:
+        self._interlaced = interlaced
+
+
+    def progressive(self, k_ch: Chapter | None = None) -> ProgressiveInput:
+        if k_ch is None:
+            return self.progressives['default']
+        return self.progressives[k_ch]
+
+    @overload
+    def set_progressive(self, progressive: ProgressiveInput) -> None: ...
+    @overload
+    def set_progressive(self, k_ch: Chapter, progressive: ProgressiveInput) -> None: ...
+    def set_progressive(self,
+        k_ch: Optional[Chapter] = None,
+        progressive: Optional[ProgressiveInput] = None
+    ):
+        if k_ch is None:
+            self.progressives['default'] = progressive
+        else:
+            self.progressives[k_ch] = progressive
 
 
 # unless specified, timestamps and duration are in ms
@@ -74,6 +110,7 @@ class AudioSegment(TypedDict):
 
 
 class ChapterAudio(TypedDict):
+    # unit: ms
     start: int
     end: int
     duration: int
@@ -90,6 +127,8 @@ class ChapterAudio(TypedDict):
     src: AudioSrc
     lang: Literal['fr', 'en']
 
+    # nb of frames
+    count: int
 
 
 
@@ -184,8 +223,6 @@ class Effects(list):
     #     self.effects.append(effect)
 
     def has_effects(self) -> bool:
-        if len(self.effects) == 0:
-            return False
         for effect in self.effects:
             if effect.fade != 0 or effect.loop != 0:
                 return True
@@ -234,7 +271,7 @@ class Scene(TypedDict):
 
     k_ed: str
     k_ep: str
-    k_chapter: str
+    k_ch: str
 
     # Scene no. start frame no. and frame count of this scene
     no: int
@@ -266,12 +303,14 @@ class Scene(TypedDict):
 
     ref: RefScene
 
+    # Dust and scratch removal
+    dsr: SceneDsr
+
     # list of frames to replace
     replace: dict[int, int]
 
-    # contains parameters to deshake.
-    #   warning: stabilize = deshake. TODO correct this
-    deshake: dict
+    # contains parameters to stabilize.
+    stabilize: StabilizeParams
 
     # geometry applied to this. After consolidation, it contains
     # the width of the dst chapter.
@@ -287,10 +326,6 @@ class Scene(TypedDict):
 
     # struct which define the the input file
     inputs: Inputs
-        # 'progressive' : dict
-        #       'filepath' : str
-        #       'filepath' : str
-
 
     last_step: dict
         # 'hash'
@@ -319,6 +354,11 @@ class DstScene(TypedDict):
     k_chapter: str
 
 
+class VideoSrc(TypedDict):
+    k_ed: str
+    k_ep: str
+
+
 class ChapterVideo(TypedDict):
     start: int
     end: int # Attention, this is the end+1 frame no.
@@ -337,12 +377,14 @@ class ChapterVideo(TypedDict):
     silence: int
 
     task: ProcessingTask
+    inputs: Inputs
 
-    k_ed_src: str
+    # Default source when consolidating scenes
+    default_src: VideoSrc
 
-    # Episode, chapter: used to avoid too many arguments
-    k_ep: str
-    k_ch: str
+    # # Episode, chapter: used to avoid too many arguments
+    # k_ep: str
+    # k_ch: str
 
 
 

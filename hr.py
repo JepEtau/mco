@@ -83,6 +83,10 @@ def main():
     print("\t- parse database")
 
     # Parse database
+    #   use ep01 for generiques if not specified
+    if chapter in ('g_doc', 'g_asuivre') and episode in (0, ''):
+        episode = 'ep01'
+
     parse_database(episode=episode, lang=arguments.lang)
     gc.collect()
 
@@ -97,9 +101,9 @@ def main():
     task = 'hr'
 
     upscale_scenes(
-        episode=arguments.episode,
-        single_chapter=arguments.chapter,
-        task=task,
+        episode=episode,
+        single_chapter=chapter,
+        task_name=task,
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=scene_no,
@@ -109,7 +113,6 @@ def main():
         edition=None,
         debug=arguments.debug
     )
-
 
 
 if __name__ == "__main__":

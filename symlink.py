@@ -6,6 +6,7 @@ import signal
 import sys
 from parsers import (
     parse_database,
+    TaskName,
 )
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger
@@ -27,8 +28,8 @@ def main():
     parser.add_argument(
         "--scene",
         "-s",
-        type=str,
-        default='',
+        type=int,
+        default=-1,
         required=False,
         help="scene no. to process. Integer or frame value (e.g. 2450f)"
     )
@@ -53,6 +54,14 @@ def main():
         required=False,
         help="Statistics to find the dimension of the scene for each chapter"
     )
+
+    parser.add_argument(
+        "--cg",
+        action="store_true",
+        required=False,
+        help="Create symlinks for color grading"
+    )
+
 
     arguments = parser.parse_args()
 
@@ -82,20 +91,11 @@ def main():
     parse_database(episode=episode, lang=arguments.lang)
     gc.collect()
 
-
-    scene_no: int | None = None
-    scene_arg: str = arguments.scene
-    if scene_arg.endswith('f'):
-        raise NotImplementedError("scene_arg not yet implemented")
-        scene_no = frame_to_scene_no(int(scene_arg[:-1]))
-    elif scene_arg != '':
-        scene_no: int = int(scene_arg)
-
-    task = 'final'
+    task: TaskName = 'cg' if arguments.cg else 'final'
     consolidate_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
-        scene_no=scene_no,
+        scene_no=arguments.scene,
         task=task,
         debug=arguments.debug,
         symlink=True

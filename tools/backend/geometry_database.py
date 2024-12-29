@@ -18,6 +18,7 @@ from ._types import (
 from utils.mco_types import (
     Scene,
     ChapterVideo,
+    VideoSrc,
 )
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
@@ -74,15 +75,18 @@ class GeometryDatabase:
 
         k_ep, k_ch = selection.k_ep, selection.k_ch
 
-        # TODO: verify this for g_asuivre and g_documentaire
-        chapter: ChapterVideo
+        # TODO: verify this for g_asuivre and g_doc
+        ch_video: ChapterVideo
         k_ch_key: str = self._chapter_key(scenes[0])
         if k_ch in ('g_debut', 'g_fin'):
-            chapter = db[k_ch]['video']
+            ch_video = db[k_ch]['video']
         else:
-            chapter = db[k_ep]['video']['target'][k_ch]
-        pprint(chapter)
-        self._db[k_ch_key] = deepcopy(chapter['geometry'])
+            ch_video = db[k_ep]['video']['target'][k_ch]
+        pprint(ch_video)
+        print(f"initialize geometry database: {k_ep}:{k_ch} (k_ch_key: {k_ch_key})")
+        if 'geometry' not in ch_video:
+            ch_video['geometry'] = ChapterGeometry()
+        self._db[k_ch_key] = deepcopy(ch_video['geometry'])
 
 
     def clear(self) -> None:
@@ -149,6 +153,19 @@ class GeometryDatabase:
         if parameter != 'autocrop':
             self._push_to_history()
 
+
+        if (
+            modification.type == 'set'
+            and parameter == 'multiple'
+        ):
+            scene_key: str = self._key(scene)
+            scene_geometry: SceneGeometry = self._db[scene_key]
+            scene_geometry.crop = value['crop']
+            scene_geometry.keep_ratio = value['keep_ratio']
+            scene_geometry.fit_to_width = value['fit_to_width']
+            scene_geometry.defined = True
+            self.modified_scenes.add(scene_key)
+
         if parameter == 'width':
             if (
                 scene['dst']['k_ch'] not in non_credit_chapter_keys()
@@ -209,6 +226,7 @@ class GeometryDatabase:
             elif parameter == 'copy_ac_to_crop':
                 scene_geometry.crop = deepcopy(scene_geometry.autocrop)
 
+            scene_geometry.defined = True
             self.modified_scenes.add(scene_key)
 
 
@@ -268,6 +286,46 @@ class GeometryDatabase:
         print(f"k_scene: {k_scene}")
         print(f"section: {k_ch}")
 
+
+        # Chapter: use destination episode
+        if k_ch not in ('g_asuivre', 'g_doc'):
+            if os.path.exists(geometry_fp):
+                config_geometry = ConfigParser(dict_type=OrderedDict)
+                config_geometry.read(geometry_fp)
+            else:
+                config_geometry = ConfigParser({}, OrderedDict)
+
+            if chapter_geometry is not None:
+                k_section: str = k_ch
+                if not config_geometry.has_section(k_section):
+                    config_geometry.add_section(k_section)
+
+                option = 'width'
+                if config_geometry.has_option(k_section, option):
+                    print(f"remove: {k_section}: {option}")
+                    config_geometry.remove_option(k_section, option)
+                config_geometry.set(k_section, option, f"{chapter_geometry.width}")
+
+                with open(geometry_fp, 'w') as config_file:
+                    config_geometry.write(config_file)
+
+        else:
+            # video_src: VideoSrc = db[k_ep]['video']['target'][k_ch]['default_src']
+            # pprint(db[k_ep]['video']['target'][k_ch])
+            pprint(scene)
+            _k_ep = scene['src'].primary_scene()['k_ed_ep_ch_no'][1]
+            geometry_fp = os.path.join(
+                db['common']['directories']['config'], _k_ep, f"{_k_ep}_geometry.ini"
+            )
+
+        print(geometry_fp)
+        pprint(scene_geometry)
+        pprint(chapter_geometry)
+        print(f"k_ch_key: {k_ch_key}")
+        print(f"k_scene: {k_scene}")
+        print(f"section: {k_ch}")
+
+
         # Parse the file
         if os.path.exists(geometry_fp):
             config_geometry = ConfigParser(dict_type=OrderedDict)
@@ -324,15 +382,6 @@ class GeometryDatabase:
             values_str: str = ", ".join(values)
             print(lightgreen(values_str))
             config_geometry.set(k_section, option, values_str)
-
-        # Chapter
-        if chapter_geometry is not None:
-            option = 'width'
-            if config_geometry.has_option(k_section, option):
-                print(f"remove: {k_section}: {option}")
-                config_geometry.remove_option(k_section, option)
-            config_geometry.set(k_section, option, f"{chapter_geometry.width}")
-
 
         # Write to the database
         with open(geometry_fp, 'w') as config_file:

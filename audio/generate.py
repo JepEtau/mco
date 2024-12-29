@@ -43,7 +43,7 @@ def generate_audio_track(
     # Use a specific function
     if k in ('g_debut', 'g_fin'):
         _generate_audio_track_g(
-            chapter=k,
+            k_ch=k,
             out_filepath=out_filepath,
             force=force,
         )
@@ -98,7 +98,7 @@ def generate_audio_track(
         # Add silence for A/V sync
         if db_audio[k]['avsync'] > 0:
             samples_count = int(db_audio[k]['avsync'] * sample_rate)
-            logger.debug(f"\t  avsync: {samples_count} (({ms_to_frame(samples_count/sample_rate, fps):.1f}f")
+            logger.debug(f"\t  avsync: {db_audio[k]['avsync']} -> {samples_count} (({ms_to_frame(samples_count/sample_rate, fps):.1f}f")
             out_left_channel = np.append(out_left_channel, np.full(abs(samples_count), 0, dtype=in_track_dtype))
             if channel_count > 1:
                 out_right_channel = np.append(out_right_channel, np.full(abs(samples_count), 0, dtype=in_track_dtype))
@@ -252,7 +252,7 @@ def generate_audio_track(
 
 
 def _generate_audio_track_g(
-    chapter: str,
+    k_ch: str,
     out_filepath: str,
     force: bool = False
 ) -> None:
@@ -266,24 +266,24 @@ def _generate_audio_track_g(
         None
 
     """
-    if chapter not in ('g_debut', 'g_fin'):
-        sys.exit(red(f"Error: {__name__}: do not use this function for chapter {chapter}"))
+    if k_ch not in ('g_debut', 'g_fin'):
+        sys.exit(red(f"Error: {__name__}: do not use this function for chapter {k_ch}"))
 
-    logger.debug(lightgreen(f"{__name__}: {chapter}"))
+    logger.debug(lightgreen(f"{__name__}: {k_ch}"))
 
     # Source
-    db_audio: dict = db[chapter]['audio']
-    k_ed: str = db_audio['src']['k_ed']
-    k_ep: str = db_audio['src']['k_ep']
+    ch_audio: dict = db[k_ch]['audio']
+    k_ed: str = ch_audio['src']['k_ed']
+    k_ep: str = ch_audio['src']['k_ep']
 
     # Read audio file, extract audio file if needed
     in_filepath: str = extract_audio_track(
         episode=k_ep,
-        chapter=chapter,
+        chapter=k_ch,
         edition=k_ed,
         force=force
     )
-    print(f"{chapter}: generate audio track")
+    print(f"{k_ch}: generate audio track")
 
     channel_count, sample_rate, in_track, duration = read_audio(in_filepath)
     sample_rate = int(sample_rate / 1000)
@@ -306,12 +306,12 @@ def _generate_audio_track_g(
     in_track_dtype = in_left_channel.dtype
 
     # Add the audio for this part
-    start = int(db[chapter]['audio']['start'] * sample_rate)
-    end = int(db[chapter]['audio']['end'] * sample_rate)
+    start = int(db[k_ch]['audio']['start'] * sample_rate)
+    end = int(db[k_ch]['audio']['end'] * sample_rate)
 
     # Add silence for A/V sync
-    if db_audio['avsync'] > 0:
-        samples_count = int(db_audio['avsync'] * sample_rate)
+    if ch_audio['avsync'] > 0:
+        samples_count = int(ch_audio['avsync'] * sample_rate)
         logger.debug(f"\t  avsync: ({samples_count})")
         out_left_channel = np.append(
             out_left_channel,
@@ -324,7 +324,7 @@ def _generate_audio_track_g(
         )
 
     # Concatenate segments
-    for s in db_audio['segments']:
+    for s in ch_audio['segments']:
         start: int = int(s['start'] * sample_rate)
         end: int = int(s['end'] * sample_rate)
 
@@ -363,9 +363,9 @@ def _generate_audio_track_g(
                     out_right_channel, np.full(samples_count, 0, dtype=in_track_dtype)
                 )
 
-    # Add a silence between 2 chapters. This shall be defined in the common section
-    if 'silence' in db_audio and db_audio['silence'] != 0:
-        samples_count = int(db_audio['silence'] * sample_rate)
+    # Add a silence between 2 chapters
+    if 'silence' in ch_audio and ch_audio['silence'] != 0:
+        samples_count = int(ch_audio['silence'] * sample_rate)
         logger.debug(f"\tsilence: ({samples_count})")
         out_left_channel = np.append(out_left_channel, np.full(samples_count, 0, dtype=in_track_dtype))
         if channel_count > 1:

@@ -3,6 +3,7 @@ from datetime import (
     timedelta,
 )
 import math
+import sys
 from typing import TypeAlias
 
 
@@ -30,7 +31,7 @@ def frame_to_sexagesimal(no: int, frame_rate: FrameRate) -> str:
     else:
         s = float(no) / float(frame_rate)
     frac, s = math.modf(s)
-    return f"{timedelta(seconds=int(s))}.{int(1000 * frac):03}"
+    return f"{timedelta(seconds=int(s))}.{int(1000 * frac + 0.5):03}"
 
 
 def ms_to_frame(ms: float, frame_rate: FrameRate) -> int:

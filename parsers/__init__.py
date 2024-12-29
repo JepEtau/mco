@@ -34,6 +34,16 @@ from .filters import (
     clean_ffmpeg_filter
 )
 
+from .dsr import (
+    SceneDsr,
+    DsrRegion,
+    MaskShape,
+)
+
+from .episode import (
+    parse_episode
+)
+
 from .geometry import (
     ChapterGeometry,
     SceneGeometry,
@@ -54,12 +64,19 @@ from ._keys import (
     ep_key
 )
 
+from .stabilize import (
+    StabilizeSegment,
+    StabilizeMode,
+    StabilizeParams,
+)
 
 __all__ = [
     "db",
     "clean_ffmpeg_filter",
     "logger",
     "parse_database",
+    "parse_episode",
+
     "Database",
     "ep_key",
     "main_chapter_keys",
@@ -89,4 +106,13 @@ __all__ = [
     "DetectInnerRectParams",
     "SceneGeometryStat",
     "ChGeometryStats",
+
+    "SceneDsr",
+    "DsrRegion",
+    "MaskShape",
+
+    "StabilizeSegment",
+    "StabilizeMode",
+    "StabilizeParams",
+
 ]

@@ -1,6 +1,14 @@
 numpy==1.26.4
+requests
 rich
 scipy
 soundfile
 opencv-python
 PySide6_Essentials
+cupy_cuda12x
+onnx
+onnxruntime
+timm
+einops
+scikit-image
+setuptools

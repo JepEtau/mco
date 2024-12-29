@@ -75,8 +75,8 @@ def parse_editions(verbose=False):
                 print(f"found folder(edition)=%s" % (folder))
             db_editions[folder] = {
                 'inputs': {
-                    'video': dict(),
-                    'audio': dict(),
+                    'video': {},
+                    'audio': {},
                 }
             }
 
@@ -162,21 +162,6 @@ def parse_editions(verbose=False):
             del db_editions[k_ed]
             # print(f"warning: {__name__}: remove edition {k_ed}")
             continue
-
-        # Consolidate dimensions
-        if 'dimensions' in edition.keys():
-            # Custom dimensions used for this edition
-            # Merge manually, update do not update sub-dict
-            for k in db_common['dimensions']:
-                if k not in edition['dimensions'].keys():
-                    edition['dimensions'][k] = db_common['dimensions'][k]
-                else:
-                    for kk in db_common['dimensions'][k].keys():
-                        if kk not in edition['dimensions'][k]:
-                            edition['dimensions'][k][kk] = db_common['dimensions'][k][kk]
-        else:
-            # Create a simple link (do not copy)
-            edition['dimensions'] = db_common['dimensions']
 
         db_editions['available'].append(k_ed)
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Literal, TYPE_CHECKING
+from typing import Any, Literal, TYPE_CHECKING
 
 import numpy as np
 from utils.mco_types import (
@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         ChapterGeometry,
         DetectInnerRectParams,
         SceneGeometry,
+        DsrRegion,
     )
 
 AppType = Literal['replace', 'geometry', 'deshake']
@@ -34,6 +35,7 @@ class Frame:
     i: int
     no: int
     by: int
+    dsr: list[DsrRegion] = field(default_factory=list)
     img: np.ndarray | None = None
     qimage: QPixmap | None = None
     _k_ep_ch_no: tuple[str, str, int] = ("", "", 0)
@@ -45,6 +47,13 @@ class Frame:
     @property
     def k_ep_ch_no(self) -> tuple[str, str, str, int]:
         return self._k_ep_ch_no
+
+
+@dataclass(slots=True)
+class CurrentFrame:
+    no: int
+    frame: Frame
+    original: Frame | None = None
 
 
 @dataclass(slots=True)
@@ -87,7 +96,8 @@ GeometryActionParameter =  Literal[
     'detection',
     'autocrop',
     'use_ac',
-    'copy_ac_to_crop'
+    'copy_ac_to_crop',
+    'multiple'
 ]
 
 
@@ -95,7 +105,7 @@ GeometryActionParameter =  Literal[
 class GeometryAction:
     type: GeometryActionType
     parameter: GeometryActionParameter
-    value: int | bool | DetectInnerRectParams
+    value: int | bool | DetectInnerRectParams | dict
 
 
 
@@ -108,3 +118,24 @@ class GeometryPreviewOptions:
     crop_preview: bool
     resize_preview: bool
 
+
+
+
+@dataclass(slots=True)
+class DsrProcessParams:
+    auto: bool
+
+
+DsrActionType = Literal['update', 'undo']
+@dataclass(slots=True)
+class DsrAction:
+    type: DsrActionType
+    frame: Frame
+    regions: list[DsrRegion]
+
+
+@dataclass(slots=True)
+class DsrPreviewOptions:
+    final_preview: bool
+    edition: bool
+    mask: bool

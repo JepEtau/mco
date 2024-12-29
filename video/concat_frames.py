@@ -17,7 +17,7 @@ from utils.images import Images
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_path import makedirs
 from utils.mco_utils import run_simple_command
-from utils.media import VideoInfo, extract_media_info
+from utils.media import VideoInfo, extract_media_info_mco
 from utils.p_print import *
 from utils.logger import main_logger
 from utils.path_utils import absolute_path, path_split
@@ -64,7 +64,7 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
         cache_dir = db[k_ch]['cache_path']
         basename = f"{k_ch}_{scene['no']:03}__{k_ed}_{scene['k_ep']}"
 
-    elif k_ch in ('g_asuivre', 'g_documentaire'):
+    elif k_ch in ('g_asuivre', 'g_doc'):
         cache_dir = db[scene['dst']['k_ep']]['cache_path']
         basename = f"{scene['dst']['k_ep']}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}"
 
@@ -73,11 +73,11 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
 
     folder_name: str = "video"
     if task_name == 'initial':
-        folder_name = f"scenes_{scene['k_ed']}"
+        folder_name = f"ed_{scene['k_ed']}"
     elif task_name == 'hr':
-        folder_name = 'scenes_hr'
+        folder_name = 'hr'
     elif task_name == 'lr':
-        folder_name = 'scenes_lr'
+        folder_name = 'lr'
     elif task_name == 'restored':
         folder_name = 'restored'
 
@@ -104,8 +104,8 @@ def generate_video_concat_file(
         - episode
         - g_asuivre
         - asuivre
-        - g_documentaire
-        - documentaire
+        - g_doc
+        - doc
 
         Returns:
           Concatenation file path
@@ -146,12 +146,12 @@ def generate_video_concat_file(
             "concat",
             f"{suffix}{lang_str}.txt")
         concat_file = open(concat_fp, "w")
-        if True:
-            print(green(f"create_video_concat_file: {concat_fp}"))
+        print(green(f"  concatenation video file:"), concat_fp)
 
         if k_ep_or_g in ('g_debut', 'g_fin'):
-            video: ChapterVideo = db[k_ep_or_g]['video']
-            concat_file.write(f"file \'{video['task'].video_file}\' \n")
+            print(f"  chapter: {k_ep_or_g}")
+            ch_video: ChapterVideo = db[k_ep_or_g]['video']
+            concat_file.write(f"file \'{ch_video['task'].video_file}\' \n")
             audio = db[k_ep_or_g]['audio']
             # if 'silence' in audio and audio['silence'] > 0:
             #     silence_fp: str = os.path.join(
@@ -169,19 +169,21 @@ def generate_video_concat_file(
             #         p = p.replace('concat', 'video')
             #         concat_file.write(f"file \'{p}\' \n")
         else:
-            for _chapter in main_chapter_keys():
-                if chapter != '' and _chapter != chapter:
+            print(f"  episode: {k_ep_or_g}")
+
+            for k_ch in main_chapter_keys():
+                if chapter != '' and k_ch != chapter:
                     continue
 
-                video = db[k_ep]['video']['target'][_chapter]
-                if video['count'] == 0:
+                ch_audio: ChapterVideo = db[k_ep]['audio'][k_ch]
+                if not ch_audio['duration']:
                     continue
 
-                if len(video['scenes']) > 1:
-                    concat_file.write(f"file \'{video['task'].video_file}\' \n")
+                ch_video: ChapterVideo = db[k_ep]['video']['target'][k_ch]
+                if len(ch_video['scenes']) > 1:
+                    concat_file.write(f"file \'{ch_video['task'].video_file}\' \n")
                 else:
-                    pprint(video['scenes'][0])
-                    concat_file.write(f"file \'{video['scenes'][0]['task'].video_file}\' \n")
+                    concat_file.write(f"file \'{ch_video['scenes'][0]['task'].video_file}\' \n")
 
                 if chapter != '':
                     continue

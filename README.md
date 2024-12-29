@@ -50,6 +50,13 @@ python upscale.py --chapter g_fin
 python upscale.py --episode 1
 ```
 
+- Upscaled version used to remove dust and scratches
+```sh
+python dsr.py --chapter g_debut
+python dsr.py --chapter g_fin
+python dsr.py --episode 1
+```
+
 - Generate hr
 ```sh
 python hr.py --chapter g_debut
@@ -77,6 +84,8 @@ python symlink.py --chapter g_debut
 python symlink.py --chapter g_fin
 python symlink.py --episode 1
 ```
+
+- Color grading with DavinciResolve
 
 - Validate geometry after color grading, print some stats
 ```sh

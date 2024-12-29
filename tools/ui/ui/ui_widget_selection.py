@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_selection.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.7.3
+## Created by: Qt User Interface Compiler version 6.8.1
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -182,8 +182,8 @@ class Ui_SelectionWidget(object):
         self.comboBox_part.setItemText(2, QCoreApplication.translate("SelectionWidget", u"episode", None))
         self.comboBox_part.setItemText(3, QCoreApplication.translate("SelectionWidget", u"g_asuivre", None))
         self.comboBox_part.setItemText(4, QCoreApplication.translate("SelectionWidget", u"asuivre", None))
-        self.comboBox_part.setItemText(5, QCoreApplication.translate("SelectionWidget", u"g_documentaire", None))
-        self.comboBox_part.setItemText(6, QCoreApplication.translate("SelectionWidget", u"documentaire", None))
+        self.comboBox_part.setItemText(5, QCoreApplication.translate("SelectionWidget", u"g_doc", None))
+        self.comboBox_part.setItemText(6, QCoreApplication.translate("SelectionWidget", u"doc", None))
         self.comboBox_part.setItemText(7, QCoreApplication.translate("SelectionWidget", u"g_fin", None))
 
         self.pushButton_save.setText("")

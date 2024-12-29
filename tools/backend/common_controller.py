@@ -50,6 +50,7 @@ class CommonController(QObject, metaclass=QMeta):
         self.playlist_frames: list[Frame] = []
 
         self.current_selection: Selection = None
+        self.forced_selection: dict[str, str | int] | None = None
         self.current_scene_no: int = 0
         self.current_frame: Frame | None = None
 
@@ -140,6 +141,11 @@ class CommonController(QObject, metaclass=QMeta):
             k_ep=k_ep if k_ep not in ('', 'ep') else 'ep01',
             k_ch=k_ch if k_ch != '' else 'g_debut',
         )
+
+        if self.forced_selection is not None:
+            new_selection.k_ep = self.forced_selection['k_ep']
+            new_selection.k_ch = self.forced_selection['k_ch']
+
         self.k_ep_p_changed(new_selection)
 
 
@@ -154,6 +160,9 @@ class CommonController(QObject, metaclass=QMeta):
             print(lightcyan("----------------------- k_ep_p_changed -------------------------"))
             pprint(selection)
 
+        if selection.k_ch in ('g_debut', 'g_fin') and int(selection.k_ep[2:]) > 1:
+            selection.k_ch = 'episode'
+
         if ((selection.k_ep == '' and selection.k_ch == '')
             or (selection.k_ep != '' and selection.k_ch == '')):
             log.info(f"no selected episode/part")
@@ -167,6 +176,7 @@ class CommonController(QObject, metaclass=QMeta):
             parse_database(
                 episode=selection.k_ep,
                 lang='fr',
+                # ignore_av_sync=True
             )
             consolidate_target(
                 k_ep=selection.k_ep,
@@ -186,7 +196,7 @@ class CommonController(QObject, metaclass=QMeta):
         self.current_selection = Selection(
             k_ep=selection.k_ep,
             k_ch=selection.k_ch,
-            task='lr',
+            task=self.task_name,
             scenes=self.scenes,
         )
 

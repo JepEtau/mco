@@ -52,6 +52,8 @@ def consolidate_src_scene(
         if t not in scene_filters:
             scene_filters[t] = Filter(task_name=t)
     scene_filters['hr'] = scene_filters['upscale']
+    scene_filters['dsr'] = scene_filters['upscale']
+
 
     # Deinterlace
     template_script: str = get_template_script(
@@ -61,6 +63,10 @@ def consolidate_src_scene(
     qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
     deint_hashcode, _ = calc_deint_hash(qtgmc_args)
     scene_filters['initial'].hash = deint_hashcode
+
+    if 'dsr' not in scene:
+        scene['dsr'] = None
+
 
     # Update the scene task
     scene['task'].hash = scene_filters[scene['task'].name].hash
@@ -74,20 +80,69 @@ def consolidate_src_scene(
             else "watermark"
         )
 
+
     # Inputs
     scene['cache'] = get_cache_path(scene)
     scene['inputs'] = deepcopy(db[k_ep]['video'][k_ed][k_ch]['inputs'])
-    scene['inputs']['progressive']['cache'] = db['common']['directories']['cache_progressive']
+    scene_inputs: Inputs = scene['inputs']
+    scene_inputs.progressive().cache = db['common']['directories']['cache_progressive']
+
+
+    # if k_ch == 'doc':
+    #     # Task order:
+    #     #   initial -> lr (with pad) - > lr_st -> hr -> cg -> final
+    #     scene['cache'] = os.path.join(
+    #         db['common']['directories']['cache_doc'], k_ep
+    #     )
+
+    #     doc_previous_task: dict[str, str] = {
+    #         'lr': 'initial',
+    #         'st': 'initial',
+    #         'hr': 'st',
+    #         'cg': 'hr',
+    #         'final': 'cg',
+    #     }
+    #     cache_dir: str = scene['cache']
+    #     prev_task_name: str = doc_previous_task[task_name]
+    #     suffix = prev_task_name
+    #     vsettings: VideoSettings = db['common']['video_format'][task_name]
+    #     if task_name == 'hr':
+    #         suffix = f"_lr_st"
+    #         vsettings: VideoSettings = db['common']['video_format']['initial']
+    #     ext: str = vcodec_to_extension[vsettings.codec]
+
+        # (
+        #     os.path.join(
+        #         scene['cache'],
+        #         'initial',
+        #         f"{k_ed}_{k_ep}_{k_ch}_{scene['no']:03}{suffix}{ext}"
+        #     )
+        # )
+
+    #     if task_name in ('hr'):
+    #         scene['task'].fallback_in_video_files['hr'] = (
+    #             os.path.join(
+    #                 cache_dir,
+    #                 doc_previous_task[doc_previous_task[task_name]],
+    #                 f"{k_ed}_{k_ep}_{k_ch}_{scene['no']:03}_lr{ext}"
+    #             )
+    #         )
 
     # Set the progressive filepath
-    basename: str = path_split(scene['inputs']['interlaced']['filepath'])[1]
-    ext: str = vcodec_to_extension['h264']
+    basename: str = path_split(scene_inputs.interlaced.filepath)[1]
+    vsettings: VideoSettings = db['common']['video_format']['initial']
+    ext: str = vcodec_to_extension[vsettings.codec]
     filename: str = f"{basename}_{deint_hashcode}{ext}"
     progressive_fp: str = os.path.join(
         db['common']['directories']['cache_progressive'],
         filename
     )
-    scene['inputs']['progressive']['filepath'] = progressive_fp
+    scene_inputs.progressive().filepath = progressive_fp
+
+    # Input video filepath
+    if task_name in ('hr', 'upscale'):
+        scene['task'].in_video_file = scene_inputs.progressive().filepath
+
 
     # Output video settings
     _task_name: TaskName = 'lr'
@@ -98,11 +153,12 @@ def consolidate_src_scene(
     else:
         raise ValueError(f"VideoSettings not defined for task: {task_name}")
 
+
     # Output video filename
     if k_ch in ('g_debut', 'g_fin'):
         cache_path: str = db[k_ch]['cache_path']
     else:
-        cache_path: str = db[k_ep]['cache_path']
+        cache_path: str = get_cache_path(scene)
 
     basename = f"{k_ed}_{k_ep}_{k_ch}_{scene['no']:03}"
     suffix: str = ""
@@ -115,14 +171,13 @@ def consolidate_src_scene(
     scene['task'].video_file = absolute_path(
         os.path.join(
             cache_path,
-            f"scenes_{scene['k_ed']}",
             f"{basename}{suffix}{ext}"
         )
     )
 
     if verbose:
         print(lightgreen("Consolidate scene:"))
-        print(lightcyan("================================== Scene ======================================="))
+        print(lightcyan("=============================== Src Scene ====================================="))
         pprint(scene)
         print(lightcyan("-------------------------------------------------------------------------------"))
         sys.exit()

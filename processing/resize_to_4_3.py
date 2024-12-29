@@ -3,7 +3,7 @@ import cv2
 from dataclasses import dataclass
 import numpy as np
 from pprint import pprint
-from processing.resize import PillowResizeAlgorithm, pillow_resize
+from processing.resize import PillowResizeAlgorithm, np_to_float32, pillow_resize
 from utils.p_print import *
 from PIL import Image
 
@@ -232,9 +232,6 @@ def calculate_transformation_values(
     return transformations
 
 
-
-
-
 def resize_to_4_3(
     img: np.ndarray,
     transformation: TransformationValues,
@@ -249,24 +246,24 @@ def resize_to_4_3(
     h1, w1 = cropped_img.shape[:2]
 
     # (2)
-    # resized_img: np.ndarray = pillow_resize(
-    #     f_no,
-    #     cropped_img,
-    #     transformation.resize_to[0],
-    #     transformation.resize_to[1],
-    #     PillowResizeAlgorithm['lanczos'],
-    # )
+
     h2, w2 = transformation.resize_to
     interpolation_alg: str = (
         'lanczos' if w2 > w1 or h2 > h1
         else 'bicubic'
     )
-    pimg = Image.fromarray(cropped_img)
-    pimg = pimg.resize(
-        transformation.resize_to,
-        resample=PillowResizeAlgorithm[interpolation_alg],
+    # pimg = Image.fromarray(cropped_img)
+    # pimg = pimg.resize(
+    #     transformation.resize_to,
+    #     resample=PillowResizeAlgorithm[interpolation_alg],
+    # )
+    # resized_img = np.asarray(pimg)
+    resized_img: np.ndarray = pillow_resize(
+        cropped_img,
+        transformation.resize_to[0],
+        transformation.resize_to[1],
+        PillowResizeAlgorithm['lanczos'],
     )
-    resized_img = np.asarray(pimg)
 
     # (3)
     crop_2 = transformation.crop_2

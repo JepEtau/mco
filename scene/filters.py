@@ -8,6 +8,7 @@ from parsers import (
     scene_key,
 )
 from typing import TYPE_CHECKING
+import warnings
 if TYPE_CHECKING:
     from utils.mco_types import Scene, ChapterVideo
     from parsers import (
@@ -15,9 +16,20 @@ if TYPE_CHECKING:
         VideoSettings,
     )
 
-def get_ffmpeg_pad_color_filter(scene: Scene) -> str:
+
+def clean_fcomplex(line: str) -> str:
+    cleaned: str = line
+    for c in ('\\', '\"', ' ', '\r', '\n'):
+        cleaned = cleaned.replace(c, '')
+    return cleaned.strip()
+
+
+
+def get_ffmpeg_pad_filter(scene: Scene) -> str:
+    if scene['dst']['k_ch'] == 'g_doc':
+        return ""
+
     vsettings: VideoSettings = scene['task'].video_settings
-    color_params: str = "setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709"
     # color_conv: str = "scale=in_color_matrix=bt601:out_color_matrix=bt709:flags=full_chroma_int+accurate_rnd"
 
     if vsettings.pad != 0:
@@ -25,8 +37,7 @@ def get_ffmpeg_pad_color_filter(scene: Scene) -> str:
         pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
         return f"{pad_filter}"
 
-    else:
-        return ""
+    return ""
 
 
 def do_watermark(scene: Scene) -> bool:
@@ -52,19 +63,22 @@ def get_filters(scene: Scene) -> list[Filter]:
         # This scene uses default filters. Use the one defined in the part
         if (
             'filters' not in chapter_video
-            and scene['task'].name != 'initial'
+            and scene['task'].name not in ('initial', 'lr')
         ):
-            sys.exit(print(red(f"Error: {s_key}: no available filters")))
+            sys.exit(print(red(
+                f"Error: {s_key}: no available filters for task \'{scene['task'].name}\'"
+            )))
 
         try:
             filters = chapter_video['filters']['default']
         except:
             if scene['task'].name == 'initial':
                 return {}
-            else:
-                print(red(f"Error: default filter is not defined but required by {s_key}"))
-                pprint(scene)
-                sys.exit()
+            elif k_ch != 'doc':
+                warnings.warn(red(f"Error: default filter is not defined but required by {s_key}"))
+                return {}
+                # pprint(scene)
+                # sys.exit()
 
     elif isinstance(scene['filters_id'], str):
         if debug:

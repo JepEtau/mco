@@ -13,8 +13,12 @@ from .helpers import nested_dict_set
 from utils.p_print import *
 from ._db import db
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from utils.mco_types import Scene
 
-def parse_replace_configurations(k_ep_or_g:str):
+
+def parse_replace_file(k_ep_or_g:str) -> None:
     """ Parse configuration file
     It will returns the replaced frame for each frame. This is mainly edited in video
     editor
@@ -22,10 +26,14 @@ def parse_replace_configurations(k_ep_or_g:str):
     verbose = False
 
     if verbose:
-        print(lightgreen("parse_replace_configurations: %s" % (k_ep_or_g)))
+        print(lightgreen("parse_replace_file: %s" % (k_ep_or_g)))
 
     # Open configuration file
-    filepath = os.path.join(db['common']['directories']['config'], k_ep_or_g, "%s_replace.ini" % (k_ep_or_g))
+    filepath: str = os.path.join(
+        db['common']['directories']['config'],
+        k_ep_or_g,
+        f"{k_ep_or_g}_replace.ini"
+    )
     if filepath.startswith("~/"):
         filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
     if not os.path.exists(filepath):
@@ -37,9 +45,9 @@ def parse_replace_configurations(k_ep_or_g:str):
     config.read(filepath)
     for k_section in config.sections():
         if verbose:
-            print(blue("\tk_section:%s" % (k_section)))
+            print(blue(f"\tk_section:{k_section}"))
         if '.' not in k_section:
-            sys.exit("parse_replace_configurations: error, no edition,ep,chapter specified")
+            raise ValueError("parse_replace_file: error, no edition,ep,chapter specified")
         k_ed, k_ep, k_chapter = k_section.split('.')
 
         for frame_no_str in config.options(k_section):
@@ -48,32 +56,32 @@ def parse_replace_configurations(k_ep_or_g:str):
 
             # Get scene from frame no.
             if verbose:
-                print("\tsearch %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_chapter))
+                print(f"\tsearch {frame_no} in {k_ed}:{k_ep}:{k_chapter}")
 
             try:
-                scene = get_scene_from_frame_no(frame_no, k_ed=k_ed, k_ep=k_ep, k_chapter=k_chapter)
+                scene: Scene = get_scene_from_frame_no(
+                    frame_no, k_ed=k_ed, k_ep=k_ep, k_chapter=k_chapter
+                )
             except:
                 if verbose:
-                    print("warning: parse_replace_configurations: scene not found for frame no. %d in %s:%s:%s" % (
-                        frame_no, k_ed, k_ep, k_chapter))
-                scene = None
+                    print(f"warning: parse_replace_file: scene not found for frame no. {frame_no} in {k_ed}:{k_ep}:{k_chapter}")
+                continue
 
-            if scene is not None:
-                try:
-                    scene['replace'][frame_no] = new_frame_no
-                except:
-                    scene['replace'] = {frame_no: new_frame_no}
+            if 'replace' not in scene:
+                scene['replace'] = {}
+            scene['replace'][frame_no] = new_frame_no
 
-                # TODO verify circular definition
-                replace_list = list(scene['replace'].keys())
-                for v in scene['replace'].values():
-                    if v in replace_list:
-                        sys.exit("error: circular reference: frame no. %d in %s:%s:%s" % (v, k_ed, k_ep, k_chapter))
+            # TODO? verify circular definition
+            replace_list = list(scene['replace'].keys())
+            for v in scene['replace'].values():
+                if v in replace_list:
+                    raise ValueError("error: circular reference: frame no. %d in %s:%s:%s" % (v, k_ed, k_ep, k_chapter))
 
         if verbose:
+            # For debug only
             if scene is not None:
                 pprint(scene['replace'])
-            sys.exit
+            sys.exit()
 
 
 

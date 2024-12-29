@@ -15,6 +15,7 @@ from parsers import (
     parse_database,
     all_chapter_keys,
     get_dependencies,
+    VideoSettings,
 )
 from processing.deint import (
     calc_deint_hash,
@@ -23,11 +24,16 @@ from processing.deint import (
     qtgmc_deint_command,
     g_deint_algorithms,
     get_qtgmc_args,
-    generate_avs_script
+    generate_avs_script,
 )
 from processing.decoder import decoder_frame_prop
 from utils.mco_types import Inputs
-from utils.media import VideoInfo, extract_media_info, get_media_info
+from utils.media import (
+    VideoInfo,
+    extract_media_info_mco,
+    get_media_info,
+    vcodec_to_extension,
+)
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
 from utils.logger import main_logger
@@ -69,9 +75,16 @@ def main():
     )
 
     parser.add_argument(
+        "--force",
+        action="store_true",
+        required=False,
+        help="force"
+    )
+
+    parser.add_argument(
         "--edition",
         "-ed",
-        choices=['f', 'k', 's', 'j'],
+        choices=['f', 'k', 's', 'j', 's0'],
         default='',
         required=False,
         help="deinterlace video of this edition only"
@@ -108,6 +121,15 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         help="Ignore check before deinterlacing"
     )
 
+
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        required=False,
+        help="Deinterlace all episode"
+    )
+
+
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -138,7 +160,8 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
     # Parse database
     parse_database(
         episode=episode,
-        lang='en' if arguments.en else 'fr'
+        lang='en' if arguments.en else 'fr',
+        edition=arguments.edition
     )
     gc.collect()
 
@@ -150,13 +173,20 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         track='video'
     )
 
-    main_edition: str = db['ep01']['video']['target']['episode']['k_ed_src']
+    main_edition: str = (
+        db['ep01']['video']['target']['episode']['default_src']['k_ed']
+    )
     editions: list[str] = []
     [
         editions.append(ed)
         for ed in [main_edition] + list(dependencies.keys())
         if ed not in editions
     ]
+
+    if arguments.edition not in dependencies:
+        dependencies[arguments.edition] = [f"ep{arguments.episode:02}"]
+    if arguments.edition not in editions:
+        editions.append(arguments.edition)
 
     if arguments.debug:
         print(cyan("Dependencies"))
@@ -165,8 +195,9 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
 
     # Get all range to deinterlace for each dependency
     in_videos: OrderedDict[str, dict[str, set]] = OrderedDict()
+
     for k_ed in editions:
-        if k_ed not in dependencies:
+        if k_ed not in dependencies and k_ed != arguments.edition:
             continue
 
         if arguments.edition != '' and k_ed != arguments.edition:
@@ -175,12 +206,14 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         for k_ep in dependencies[k_ed]:
             for k_c in all_chapter_keys():
                 input: Inputs = db[k_ep]['video'][k_ed][k_c]['inputs']
-                fp: str = input['interlaced']['filepath']
+                fp: str = input.interlaced.filepath
 
                 segment: tuple[int, int] = (
-                    input['progressive']['start'],
-                    input['progressive']['count']
+                    input.progressive().start,
+                    input.progressive().count
                 )
+                if arguments.full:
+                    segment = (0, -1)
 
                 if fp not in in_videos:
                     in_videos[fp] = {
@@ -193,6 +226,8 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         print(cyan("Dependencies"))
         pprint(in_videos)
 
+    vsettings: VideoSettings = db['common']['video_format']['initial']
+
     for in_video, value in in_videos.items():
         ed, ep = value['ed_ep']
         # if arguments.edition != '' and ed != arguments.edition:
@@ -204,10 +239,10 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             raise FileExistsError(red(f"Missing input file: edition: {ed}, episode: {ep}"))
         print(cyan(f"Input:"), f"{in_media_path}")
         try:
-            in_media_info = extract_media_info(in_media_path)
+            in_media_info = extract_media_info_mco(in_media_path)
         except:
             # debug:
-            extract_media_info(in_media_path)
+            extract_media_info_mco(in_media_path)
             sys.exit(f"[E] {in_media_path} is not a valid input media file")
         if arguments.debug:
             print(lightcyan("FFmpeg media info:"))
@@ -252,7 +287,11 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             if template_script != '':
                 # Extract QTGMC arguments to create a hashcode
                 # and to add to the output video metadata
-                qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
+                qtgmc_args: OrderedDict[str, str] = {}
+                try:
+                    qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
+                except:
+                    print(yellow("failed to fetech QTGMC params"))
                 hashcode, filter_str = calc_deint_hash(qtgmc_args)
                 script_filepath: str = os.path.join(
                     db_directories['cache_progressive'],
@@ -273,9 +312,9 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             # Create the FFmpeg command
             out_filepath: str = os.path.join(
                 db_directories['cache_progressive'],
-                f"{path_split(in_media_path)[1]}_{hashcode}.mkv"
+                f"{path_split(in_media_path)[1]}_{hashcode}{vcodec_to_extension[vsettings.codec]}"
             )
-            ffmpeg_command: str = qtgmc_deint_command(
+            e_command: list[str] = qtgmc_deint_command(
                 in_video_info=in_video_info,
                 script=script_filepath,
                 qtgmc_args=qtgmc_args,
@@ -295,10 +334,10 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             # Other deinterlacers
             out_filepath: str = os.path.join(
                 db_directories['cache_progressive'],
-                f"{path_split(in_media_path)[1]}_{deint_algo}_{hashcode}.mkv"
+                f"{path_split(in_media_path)[1]}_{deint_algo}_{hashcode}{vcodec_to_extension[vsettings.codec]}"
             )
 
-            ffmpeg_command: str = deint_command(
+            e_command: str = deint_command(
                 in_video_info=in_video_info,
                 algo=deint_algo,
                 params=deint_params,
@@ -309,21 +348,27 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
 
         print(cyan(f"Output:"), f"{out_filepath}")
         if os.path.exists(out_filepath):
-            out_video_info = extract_media_info(out_filepath)['video']
-            _trim_count: int = (
-                trim_count
-                if trim_count != -1
-                else in_video_info['frame_count'] - trim_start
-            )
-            main_logger.debug(
-                f"{out_filepath} already exists "
-                + f"asked: {_trim_count} vs "
-                + f"current video: {out_video_info['frame_count']}"
-            )
+            success: bool = True
+            try:
+                out_video_info = extract_media_info_mco(out_filepath)['video']
+            except:
+                success = False
+            if success:
+                _trim_count: int = (
+                    trim_count
+                    if trim_count != -1
+                    else in_video_info['frame_count'] - trim_start
+                )
+                print(
+                    lightgreen(f"Already deinterlaced:"),
+                    f"required: {_trim_count}, deinterlaced: {out_video_info['frame_count']}"
+                )
 
-            if out_video_info['frame_count'] == _trim_count or not arguments.check_duration:
-                print()
-                continue
+                if out_video_info['frame_count'] == _trim_count:
+                    if arguments.force:
+                        print(lightcyan("Force extraction"))
+                    else:
+                        return
         else:
            main_logger.debug(f"{out_filepath} does not exist")
 
@@ -336,12 +381,12 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
 
         if arguments.debug:
             print(f"{hashcode} -> {filter_str}")
-            print(' '.join(ffmpeg_command))
+            print(' '.join(e_command))
 
         os.makedirs(db_directories['cache_progressive'], exist_ok=True)
         start_time: float = time.time()
         sub_process = subprocess.Popen(
-            ffmpeg_command,
+            e_command,
             stdin=subprocess.PIPE,
             stdout=sys.stdout,
             stderr=subprocess.STDOUT,

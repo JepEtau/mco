@@ -20,6 +20,7 @@ def common_argument_parser(
 
     parser.add_argument(
         "--chapter",
+        "-ch",
         choices=all_chapter_keys(),
         default='',
         required=False,

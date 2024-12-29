@@ -175,6 +175,7 @@ cython_debug/
 **/*.mkv
 **/*.vob
 **/*.mpg
+**/*.mxf
 cache/
 frames/
 external/*
@@ -183,3 +184,4 @@ external/*
 profiling.bat
 result.json
 concat*.bat
+davinci/

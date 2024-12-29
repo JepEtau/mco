@@ -159,7 +159,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         set_stylesheet(self)
 
         # Install events for this widget
-        # self.installEventFilter(self)
+        self.installEventFilter(self)
 
         # self.set_selected(False)
 
@@ -762,7 +762,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
     def event_key_pressed(self, event: QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
-        if modifiers & Qt.ControlModifier:
+        if modifiers & Qt.KeyboardModifier.ControlModifier:
             if key == Qt.Key.Key_A:
                 self.tableWidget_scenes.selectAll()
                 return True

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from functools import partial
 from pprint import pprint
+import re
 from logger import log
 from typing import TYPE_CHECKING, Any
 from parsers import (
@@ -76,7 +77,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
         self.current_key_pressed: Qt.Key | None = None
         self.is_target_width_disabled: bool = False
-
+        self.copied_values: dict | None = None
 
         self.checkBox_scene_keep_ratio.toggled[bool].connect(self.event_keep_ratio_changed)
         self.checkBox_scene_fit_to_width.toggled[bool].connect(self.event_fit_to_width_changed)
@@ -216,7 +217,6 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
     def refresh_values(self, frame: Frame):
         target_geometry: TargetSceneGeometry = self.controller.get_scene_geometry(frame)
-        print("refresh values")
         # pprint(target_geometry)
 
         if target_geometry.is_erroneous:
@@ -228,7 +228,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.lineEdit_target_width.setText(str(target_geometry.chapter.width))
 
         frame.scene_key
-        if frame.k_ep_ch_no[1] in ('g_asuivre', 'g_documentaire'):
+        if frame.k_ep_ch_no[1] in ('g_asuivre', 'g_doc'):
         #     self.groupBox_scene_geometry.setEnabled(False)
         #     # self.pushButton_target_width_copy_from_scene.setEnabled(False)
             self.is_target_width_disabled = True
@@ -315,7 +315,6 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.signal_preview_options_changed.emit(self.get_preview_options())
 
 
-
     def event_fit_to_width_changed(self, is_checked: bool):
         w_self = self.checkBox_scene_fit_to_width
         w = self.checkBox_scene_keep_ratio
@@ -375,7 +374,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         )
 
 
-    def event_ac_params_changed(self, arg: Any) -> None:
+    def event_ac_params_changed(self) -> None:
         print("ac params modified")
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
@@ -406,7 +405,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
 
     def event_calculate(self) -> None:
-        self.pushButton_calculate.setEnabled(False)
+        # self.pushButton_calculate.setEnabled(False)
         self.pushButton_discard.setEnabled(True)
         self.pushButton_save.setEnabled(True)
         ac_params: DetectInnerRectParams = DetectInnerRectParams(
@@ -428,6 +427,7 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
             )
         )
 
+
     def event_copy_to_scene(self) -> None:
         self.checkBox_use_autocrop.setChecked(False)
         self.signal_geometry_modified.emit(
@@ -437,6 +437,49 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
                 value=True
             )
         )
+
+
+    def copy_crop_values(self) -> None:
+        self.copied_values = dict(
+            crop=self.lineEdit_scene_crop_rectangle.text(),
+            fit_to_width=self.checkBox_scene_fit_to_width.isChecked(),
+            keep_ratio=self.checkBox_scene_keep_ratio.isChecked(),
+        )
+
+
+    def paste_crop_values(self) -> None:
+        if self.copied_values is None:
+            return
+
+        self.block_signals(True)
+        self.lineEdit_scene_crop_rectangle.setText(
+            self.copied_values['crop']
+        )
+        self.checkBox_scene_fit_to_width.setChecked(
+            self.copied_values['fit_to_width']
+        )
+        self.checkBox_scene_keep_ratio.setChecked(
+            self.copied_values['keep_ratio']
+        )
+        self.block_signals(False)
+
+        if crop_values := re.search(
+            re.compile(r"(\d+)[^\d]*(\d+)[^\d]*(\d+)[^\d]*(\d+)[^\d]*"),
+            self.copied_values['crop']
+        ):
+            crop = list(map(int, crop_values.groups()))
+            self.signal_geometry_modified.emit(
+                GeometryAction(
+                    type='set',
+                    parameter='multiple',
+                    value={
+                        'crop': crop,
+                        'fit_to_width': self.copied_values['fit_to_width'],
+                        'keep_ratio': self.copied_values['keep_ratio'],
+                    }
+                )
+            )
+
 
     def event_wheel(self, event: QWheelEvent) -> bool:
         if self.current_key_pressed is not None:
@@ -484,20 +527,28 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         modifiers = event.modifiers()
         verbose = False
         if verbose:
-            print(green(f"widget_geometry: event_key_pressed: {key}"))
-
-        if key == Qt.Key.Key_Space:
-            if verbose:
-                print("main window: keyPressEvent")
-                log.info("Space key event detected")
-            return False
+            print(green(f"widget_geometry: event_key_pressed: {key}, modifier: {modifiers}"))
 
         if modifiers & Qt.KeyboardModifier.ControlModifier:
+            print("geometry modifier")
             if key == Qt.Key.Key_S:
                 if verbose:
                     print(purple("Save geometry"))
                 self.event_save()
                 return True
+
+            elif key == Qt.Key.Key_C:
+                print(purple("Copy"))
+                self.copy_crop_values()
+                return True
+
+            elif key == Qt.Key.Key_V:
+                print(purple("Paste"))
+                self.paste_crop_values()
+                return True
+
+            self.setFocus()
+            return False
 
         # if modifiers & Qt.AltModifier:
         #     if key == Qt.Key_S:
@@ -508,7 +559,13 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         #     else:
         #         return False
 
-        if key == Qt.Key.Key_F2:
+        if key == Qt.Key.Key_Space:
+            if verbose:
+                print("main window: keyPressEvent")
+                log.info("Space key event detected")
+            return False
+
+        elif key == Qt.Key.Key_F2:
             if self.pushButton_set_preview.isEnabled():
                 self.pushButton_set_preview.toggle()
                 return True

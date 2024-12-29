@@ -1,4 +1,5 @@
 
+from pprint import pprint
 from ._keys import main_chapter_keys
 from utils.mco_types import Scene
 from .helpers import get_fps
@@ -16,12 +17,12 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
 
     if False:
         # print last scene of every part
-        for k_chapter in K_PARTS_ORDERED:
-            print(f"{k_chapter}")
-            db_video = db[k_ep]['target']['video'][k_chapter]
-            if db_video['count'] == 0:
+        for k_ch in K_PARTS_ORDERED:
+            print(f"{k_ch}")
+            ch_video = db[k_ep]['target']['video'][k_ch]
+            if ch_video['count'] == 0:
                 continue
-            print("  ", db_video['scenes'][-1])
+            print("  ", ch_video['scenes'][-1])
 
     print(lightcyan("\n                "), end='')
     print(lightcyan("Video".rjust(10)), end='')
@@ -38,26 +39,26 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
     print(lightcyan(""))
     audio_count: int = 0
     video_count: int = 0
-    for k_chapter in main_chapter_keys():
-        db_video = db[k_ep]['video']['target'][k_chapter]
-        db_audio = db[k_ep]['audio'][k_chapter]
+    for k_ch in main_chapter_keys():
+        ch_video = db[k_ep]['video']['target'][k_ch]
+        db_audio = db[k_ep]['audio'][k_ch]
         frame_count = 0
-        print(lightcyan("  %s" % (k_chapter.ljust(14))), end='')
+        print(lightcyan("  %s" % (k_ch.ljust(14))), end='')
 
-        if db_video['count'] < 1:
+        if ch_video['count'] < 1:
             print("%s%s" % ("0".rjust(12), "0".rjust(8)))
             continue
 
         # print(red(db_video['count']))
 
-        chapter_frame_count = db_video['avsync']
+        ch_frame_count = ch_video['avsync']
 
-        first_scene: Scene = db_video['scenes'][0]
-        for scene in db_video['scenes']:
+        first_scene: Scene = ch_video['scenes'][0]
+        for scene in ch_video['scenes']:
             frame_count += scene['dst']['count']
-        last_scene: Scene = db_video['scenes'][-1]
+        last_scene: Scene = ch_video['scenes'][-1]
 
-        chapter_frame_count += frame_count
+        ch_frame_count += frame_count
 
         loop_count: int = 0
         if 'effects' in last_scene:
@@ -68,15 +69,16 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
         if 'effects' in first_scene:
             effect = first_scene['effects'].primary_effect()
             if effect.name == 'loop_and_fadein':
+                pprint(effect)
                 loop_count += effect.loop
-        chapter_frame_count += loop_count
+        # ch_frame_count += loop_count
 
         video_silence = 0
         try:
-            video_silence = db_video['silence']
+            video_silence = ch_video['silence']
         except:
             pass
-        chapter_frame_count += video_silence
+        ch_frame_count += video_silence
 
         audio_duration = 0
         audio_duration +=  db_audio['avsync']
@@ -92,7 +94,7 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
         #     audio_duration += db_audio['silence']
 
         # total frames count
-        tmp_str = f"{chapter_frame_count}"
+        tmp_str = f"{ch_frame_count}"
         print(f"{tmp_str.rjust(10)}", end='')
 
         # total audio count
@@ -100,7 +102,7 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
         print(f"{tmp_str.rjust(10)}", end='')
 
         # avsync audio
-        tmp_str = f"{ms_to_frame(db_audio['avsync'], fps)}/{db_video['avsync']}"
+        tmp_str = f"{ms_to_frame(db_audio['avsync'], fps)}/{ch_video['avsync']}"
         print(f"{tmp_str.rjust(8)}", end='')
 
         # audio silence
@@ -135,7 +137,7 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
         print("")
 
         audio_count += ms_to_frame(audio_duration, fps)
-        video_count += chapter_frame_count
+        video_count += ch_frame_count
 
         # print(">>> db_audio")
         # pprint(db_audio)
@@ -144,11 +146,10 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
         # pprint(db[k_ep])
 
     # Append silences
-    for k_chapter in ['episode', 'asuivre', 'documentaire']:
-        silence_count = ms_to_frame(db[k_ep]['audio'][k_chapter]['silence'], fps)
+    for k_ch in ['episode', 'asuivre', 'doc']:
+        silence_count = ms_to_frame(db[k_ep]['audio'][k_ch]['silence'], fps)
         audio_count += silence_count
-        # silence_count = db[k_ep]['video']['target'][k_chapter]['silence']
-        # video_count += silence_count
+        video_count += silence_count
 
     print("")
     print(green(f" Audio track: {audio_count}"))
@@ -206,13 +207,14 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
             frame_count += scene['dst']['count']
         last_scene: Scene = video_track['scenes'][-1]
 
+        chapter_frame_count = frame_count
         loop_count: int = 0
         if 'effects' in last_scene:
             print(last_scene['effects'])
             effect = last_scene['effects'].primary_effect()
             if 'loop' in effect.name:
                 loop_count = effect.loop
-        chapter_frame_count = frame_count + loop_count
+        # chapter_frame_count = frame_count + loop_count
 
         chapter_frame_count += video_track['avsync']
 

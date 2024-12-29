@@ -38,19 +38,16 @@ def parse_common_configuration(language:str=''):
         print(f"{filepath}")
     if not os.path.exists(filepath):
         sys.exit(f"Error: missing file: {filepath}")
-    try:
-        config_directories = ConfigParser()
-        config_directories.read(filepath)
 
-        for k_section in config_directories.sections():
-            db_common[k_section] = dict()
-            for _option in config_directories.options(k_section):
-                value = config_directories.get(k_section, _option)
-                db_common[k_section][_option] = value
-    except:
-        print("[E] parse_common_configuration: fichier de configuration non trouvé ou erroné: %s \n\n" % (filepath))
-        sys.exit("Unexpected error:", sys.exc_info()[0])
+    config_directories = ConfigParser()
+    config_directories.read(filepath)
 
+    # Get directories
+    for k_section in config_directories.sections():
+        db_common[k_section] = dict()
+        for _option in config_directories.options(k_section):
+            value = config_directories.get(k_section, _option)
+            db_common[k_section][_option] = value
 
     # Get common configuration file
     filepath = absolute_path(os.path.join(db_path, "common.ini"))
@@ -90,6 +87,8 @@ def parse_common_configuration(language:str=''):
         'cache_progressive',
         'cache_progressive_default',
         'cache_default',
+        'cache_doc',
+        'cache_doc_default',
         'hashes',
         'audio',
         'audio_default',
@@ -109,17 +108,38 @@ def parse_common_configuration(language:str=''):
     for d, v in directories.items():
         for c in ['\"', '\r', '\n']:
             v = v.replace(c, '')
-
         directories[d] = absolute_path(os.path.join(root_path, v))
 
     # Use default values
-    for d in ('cache', 'cache_progressive', 'audio'):
+    for d in (
+        'cache',
+        'cache_progressive',
+        'audio',
+    ):
+        if not os.path.exists(directories[d]) or sys.platform == 'linux':
+            directories[d] = absolute_path(os.path.join(directories[f"{d}_default"]))
+        try:
+            del directories[f"{d}_default"]
+        except:
+            pass
+
+    if sys.platform == 'linux':
+        d: str = 'cache_doc'
         if not os.path.exists(directories[d]):
             directories[d] = absolute_path(os.path.join(directories[f"{d}_default"]))
         try:
             del directories[f"{d}_default"]
         except:
             pass
+
+    for k in (
+        'audio',
+        'cache',
+        'cache_doc',
+        'cache_progressive',
+    ):
+        os.makedirs(directories[k], exist_ok=True)
+
 
     # Others
     #===========================================================================
@@ -130,8 +150,11 @@ def parse_common_configuration(language:str=''):
     except:
         editions_to_discard = list()
         pass
-    nested_dict_set(db_common, editions_to_discard, 'editions', 'discard')
-
+    nested_dict_set(
+        db_common,
+        keys=('editions', 'discard'),
+        o=editions_to_discard,
+    )
     if verbose:
         pprint(db)
         sys.exit()
@@ -160,7 +183,17 @@ def parse_common_configuration(language:str=''):
             continue
 
         vformat = config_general[section]
-        options: str = vformat.get('codec_options', '').replace('\"', '')
+        options: str = (
+            vformat
+            .get('codec_options', '')
+            .replace('\"', '')
+            .replace('\n', ' ')
+            .replace('  ', ' ')
+            .strip()
+        )
+        if task == 'final':
+            pprint(options)
+            # raise
         db_common['video_format'][task] = VideoSettings(
             codec=vformat.get('codec', ''),
             codec_options=options.split(' ') if options else [],

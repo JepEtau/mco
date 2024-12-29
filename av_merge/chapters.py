@@ -1,4 +1,5 @@
 import os
+from pprint import pprint
 from parsers import (
     db,
     ep_key,
@@ -27,7 +28,7 @@ CHAPTER_NAMES: dict[str, tuple[str]] = {
         "Précédemment",
         "Episode",
         "A suivre",
-        "Documentaire",
+        "doc",
         "Générique de fin",
     ],
 }
@@ -75,54 +76,54 @@ def add_chapters(
     chapters_file.write(f"CHAPTER0{index}NAME={CHAPTER_NAMES[language][0]}\n")
     count += db['g_debut']['audio']['count']
 
-    chapter = 'precedemment'
-    if db[k_ep]['audio'][chapter]['count'] > 0:
+    k_ch = 'precedemment'
+    if db[k_ep]['audio'][k_ch]['duration'] > 0:
         index += 1
         chapters_file.write(f"CHAPTER0{index}={frame_to_sexagesimal(count, fps)}0\n")
         chapters_file.write(f"CHAPTER0{index}NAME={CHAPTER_NAMES[language][1]}\n")
 
-        video_count = db[k_ep]['video']['target'][chapter]['avsync']
-        video_count += db[k_ep]['video']['target'][chapter]['count']
+        video_count = db[k_ep]['video']['target'][k_ch]['avsync']
+        video_count += db[k_ep]['video']['target'][k_ch]['count']
         # video_count += ms_to_frame(db['g_debut']['audio'][chapter]['silence'], fps)
         count += video_count
 
-    chapter = 'episode'
+    k_ch = 'episode'
     # print(f"{chapter}: {count}")
     index += 1
     chapters_file.write(f"CHAPTER0{index}={frame_to_sexagesimal(count, fps)}0\n")
     chapters_file.write(f"CHAPTER0{index}NAME={CHAPTER_NAMES[language][2]}\n")
-    video_count = db[k_ep]['video']['target'][chapter]['avsync']
-    video_count += db[k_ep]['video']['target'][chapter]['count']
-    video_count += ms_to_frame(db[k_ep]['audio'][chapter]['silence'], fps)
+    video_count = db[k_ep]['video']['target'][k_ch]['avsync']
+    video_count += db[k_ep]['video']['target'][k_ch]['count']
+    video_count += ms_to_frame(db[k_ep]['audio'][k_ch]['silence'], fps)
     count += video_count
 
-    chapter = 'asuivre'
+    k_ch = 'asuivre'
     # print(f"{chapter}: {count}")
-    if db[k_ep]['audio'][chapter]['count'] > 0:
+    if db[k_ep]['audio'][k_ch]['duration'] > 0:
         index += 1
         chapters_file.write(f"CHAPTER0{index}={frame_to_sexagesimal(count, fps)}0\n")
         chapters_file.write(f"CHAPTER0{index}NAME={CHAPTER_NAMES[language][3]}\n")
 
-        audio_duration = db[k_ep]['audio']['g_'+chapter]['avsync']
-        audio_duration += db[k_ep]['audio']['g_'+chapter]['duration']
-        audio_duration += db[k_ep]['audio'][chapter]['duration']
-        audio_duration += db[k_ep]['audio'][chapter]['silence']
+        audio_duration = db[k_ep]['audio']['g_'+k_ch]['avsync']
+        audio_duration += db[k_ep]['audio']['g_'+k_ch]['duration']
+        audio_duration += db[k_ep]['audio'][k_ch]['duration']
+        audio_duration += db[k_ep]['audio'][k_ch]['silence']
         count += ms_to_frame(audio_duration, fps)
 
-    chapter = 'documentaire'
+    k_ch = 'doc'
     # print(f"{chapter}: {count}")
     index += 1
     chapters_file.write(f"CHAPTER0{index}={frame_to_sexagesimal(count, fps)}0\n")
     chapters_file.write(f"CHAPTER0{index}NAME={CHAPTER_NAMES[language][4]}\n")
 
-    audio_duration = db[k_ep]['audio']['g_'+chapter]['avsync']
-    audio_duration += db[k_ep]['audio']['g_'+chapter]['duration']
-    audio_duration += db[k_ep]['audio'][chapter]['duration']
-    audio_duration += db[k_ep]['audio'][chapter]['silence']
+    audio_duration = db[k_ep]['audio']['g_'+k_ch]['avsync']
+    audio_duration += db[k_ep]['audio']['g_'+k_ch]['duration']
+    audio_duration += db[k_ep]['audio'][k_ch]['duration']
+    audio_duration += db[k_ep]['audio'][k_ch]['silence']
     count += ms_to_frame(audio_duration, fps)
 
     index += 1
-    chapter = 'g_fin'
+    k_ch = 'g_fin'
     # print(f"{chapter}: {count}")
     chapters_file.write(f"CHAPTER0{index}={frame_to_sexagesimal(count, fps)}0\n")
     chapters_file.write(f"CHAPTER0{index}NAME={CHAPTER_NAMES[language][5]}\n")

@@ -27,13 +27,29 @@ def main():
         default='cg',
     )
 
+    parser.add_argument(
+        "-ep",
+        required=False,
+        type=int,
+        default=0,
+    )
+
+    parser.add_argument(
+        "-ch",
+        required=False,
+        type=str,
+        default='',
+    )
+
     arguments = parser.parse_args()
 
     application = QApplication(sys.argv)
     application.setStyle("Fusion")
     from logger import log
     from tools.backend.geometry_controller import GeometryController
-    controller = GeometryController(task_name=arguments.task_name)
+    controller = GeometryController(
+        task_name=arguments.task_name, ep_no=arguments.ep, k_ch=arguments.ch
+    )
 
     from ui.window_geometry import GeometryWindow
     main_window = GeometryWindow(controller=controller)

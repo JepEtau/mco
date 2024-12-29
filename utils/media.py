@@ -15,30 +15,33 @@ ChannelOrder = Literal['rgb', 'bgr']
 FShape = tuple[int, int, int]
 
 
-class VideoCodec(Enum):
+class FFmpegVideoCodec(Enum):
     H264 = "libx264"
     H265 = "libx265"
     VP9 = "libvpx-vp9"
     FFV1 = "ffv1"
     DNXHD = "dnxhd"
+    HEVC_NVENC = "hevc_nvenc"
 
 
-str_to_video_codec: dict[str, VideoCodec] = {
-    'h264': VideoCodec.H264,
-    'h265': VideoCodec.H265,
-    'ffv1': VideoCodec.FFV1,
-    'vp9': VideoCodec.VP9,
-    'dnxhd': VideoCodec.DNXHD,
+str_to_video_codec: dict[str, FFmpegVideoCodec] = {
+    'h264': FFmpegVideoCodec.H264,
+    'h265': FFmpegVideoCodec.H265,
+    'ffv1': FFmpegVideoCodec.FFV1,
+    'vp9': FFmpegVideoCodec.VP9,
+    'dnxhd': FFmpegVideoCodec.DNXHD,
+    "hevc_nvenc": FFmpegVideoCodec.HEVC_NVENC,
 }
 
 
 # Limit the containers
-vcodec_to_extension: dict[VideoCodec, str] = {
+vcodec_to_extension: dict[FFmpegVideoCodec, str] = {
     'h264': '.mkv',
     'h265': '.mkv',
     'ffv1': '.mkv',
     'vp9': '.mkv',
     'dnxhd': '.mxf',
+    "hevc_nvenc": ".mkv",
 }
 
 
@@ -91,6 +94,12 @@ class MediaInfo(TypedDict):
     subtitles: SubtitleInfo
 
 
+def frame_rate_dec(frame_rate: FrameRate) -> int | float:
+    if isinstance(frame_rate, int | float):
+        return frame_rate
+    if frame_rate[1] == 1:
+        return frame_rate[0]
+    return float(frame_rate[0]) / frame_rate[1]
 
 
 def get_video_resolution(video_filepath):
@@ -173,15 +182,50 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
     }
 
     if isinstance(video_info['metadata'], dict):
-        tags_to_remove: tuple[str] = (
-            'duration', 'encoder', 'creation_time', 'handler_name', 'vendor_id'
+        tags_to_discard: tuple[str] = (
+            'duration',
+            'encoder',
+            'creation_time',
+            'handler_name',
+            'vendor_id',
+            'file_package_umid'
         )
+        tag_name: str
         for tag_name in list(video_info['metadata'].keys()).copy():
-            if tag_name.lower() in tags_to_remove:
+            if tag_name.lower() in tags_to_discard:
                 try:
                     del video_info['metadata'][tag_name]
                 except:
                     pass
+
+    # Tags for DNxHD / DNxHR are stored in format struct
+    if video_info['codec'] == 'dnxhd':
+        tags_to_discard: tuple[str] = (
+            'application_platform',
+            'company_name',
+            'generation_uid',
+            'material_package_umid',
+            'operational_pattern_ul',
+            'product_name',
+            'product_uid',
+            'product_version',
+            'product_version_num',
+            'timecode',
+            'toolkit_version_num',
+            'uid',
+        )
+
+        tags: dict[str, str]
+        if tags := media_info['format']['tags']:
+            tag_name: str
+            for tag_name in list(tags.keys()).copy():
+                if tag_name.lower() in tags_to_discard:
+                    try:
+                        del video_info['metadata'][tag_name]
+                    except:
+                        pass
+                    continue
+                video_info['metadata'][tag_name] = tags[tag_name]
 
     # Is interlaced?
     if (fo := v_stream.get('field_order', None)):
@@ -235,3 +279,23 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
         audio=audio_info,
         subtitles=subs_info
     )
+
+
+# Specific to MCO
+def extract_media_info_mco(media_filepath: str) -> MediaInfo:
+    media_info: MediaInfo = extract_media_info(media_filepath)
+
+    # Patch metadata
+    #   to remove "comment_" when the codec is DNxHD/DNxHR
+    metadata: dict[str, str] = media_info['video']['metadata']
+    for k in list(metadata.keys()).copy():
+        k_lower = k.lower()
+        if k_lower.startswith('comment_'):
+            metadata[k_lower.replace("comment_", "")] = metadata[k]
+        else:
+            metadata[k_lower] = metadata[k]
+        del metadata[k]
+
+    return media_info
+
+

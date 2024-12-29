@@ -7,9 +7,10 @@ import numpy as np
 from collections import OrderedDict
 from pprint import pprint
 
-from tools.backend.replace_database import ReplaceDatabase
+from .dsr_database import DsrDatabase
+from .replace_database import ReplaceDatabase
 from utils.mco_types import Scene
-from utils.media import VideoInfo, extract_media_info
+from utils.media import VideoInfo, extract_media_info_mco, frame_rate_dec
 from utils.p_print import lightcyan, red, yellow
 from utils.path_utils import path_split
 from utils.tools import ffmpeg_exe
@@ -25,6 +26,9 @@ from parsers import (
 )
 from ._types import Frame
 
+from PySide6.QtWidgets import (
+    QApplication,
+)
 
 
 class FrameCache:
@@ -32,13 +36,16 @@ class FrameCache:
     def __init__(
         self,
         replace_db: ReplaceDatabase | None = None,
+        dsr_db: DsrDatabase | None = None,
     ):
         super().__init__()
         self.scenes: OrderedDict[str, list[Frame]] = {}
         self.frame_count: int = 0
+        self.scene_keys: list[str] = []
 
         self.video_infos: dict[str, VideoInfo] = {}
         self.replace_db: ReplaceDatabase | None = replace_db
+        self.dsr_db: DsrDatabase | None = dsr_db
 
 
     @staticmethod
@@ -53,6 +60,11 @@ class FrameCache:
         task_name: str = scene['task'].name
 
         if scene_key not in self.scenes:
+            while self.frame_count > 800:
+                k = self.scene_keys.pop(0)
+                self.frame_count -= len(self.scenes[k])
+                del self.scenes[k]
+
             self.scenes[scene_key] = []
 
             frame_rate: float = get_fps(db)
@@ -61,49 +73,71 @@ class FrameCache:
             for src_scene in scene['src'].scenes():
                 print(lightcyan(f"extract {total_count} frames from: {src_scene['k_ed_ep_ch_no']}"))
                 count = src_scene['count']
-                src_start: int = src_scene['start'] - src_scene['scene']['inputs']['progressive']['start']
+                src_start: int = src_scene['start'] - src_scene['scene']['inputs'].progressive().start
                 start: int = 0
-                in_video_fp: str = scene['task'].video_file
+                in_video_fp: str = scene['task'].in_video_file
 
                 if task_name == 'lr':
                     # Do not use FFv1 because slow to decode
-                    in_video_fp = src_scene['scene']['inputs']['progressive']['filepath']
+                    in_video_fp = src_scene['scene']['inputs'].progressive().filepath
                     directory, basename, extension = path_split(in_video_fp)
-                    in_video_fp = os.path.join(directory, f"{basename}_h264{extension}")
+                    in_video_fp = os.path.join(directory, f"{basename}{extension}")
                     start = src_start
+
+                if task_name in ('upscale', 'hr'):
+                    in_video_fp: str = scene['task'].video_file
 
                 if not os.path.exists(in_video_fp):
                     print(yellow(f"{in_video_fp} does not exist, fallback..."))
                     if task_name == 'st':
                         in_video_fp = scene['task'].fallback_in_video_files['hr']
                 if not os.path.exists(in_video_fp):
-                    sys.exit(red(f"missing {in_video_fp}"))
+                    raise ValueError(red(f"frame cache: missing {in_video_fp}"))
 
 
                 print(f"  segment: {in_video_fp}, {start}, {count}")
 
                 if in_video_fp not in self.video_infos:
-                    # fp = src_scene['scene']['inputs']['progressive']['filepath']
+                    # fp = src_scene['scene']['inputs'].progressive().filepath
                     # specific to lr task: use a h264 video rather than the deinterlaced one
                     # if scene['task'].name == 'lr':
 
-                    self.video_infos[in_video_fp] = extract_media_info(in_video_fp)['video']
+                    self.video_infos[in_video_fp] = extract_media_info_mco(in_video_fp)['video']
                 vi: VideoInfo = self.video_infos[in_video_fp]
-                # print(red(fp))
+                frame_rate: float = frame_rate_dec(vi['frame_rate_r'])
                 # pprint(vi)
-                # sys.exit()
+                # print(red(frame_rate))
+                # raise
                 filter_complex: list[str] = []
                 in_h, in_w, in_c = vi['shape']
+
+                print(red("TODO: use task_name \'dsr\' in frame cache"))
                 if task_name == 'lr' and self.replace_db is not None:
-                    print("low resolution, resize to 4:3")
-                    if in_h != 576 or in_w != 768:
-                        in_h, in_w = (576, 768)
-                        filter_complex = [
-                            "-filter_complex",
-                            f"[0:v]scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
-                            "-map", "[outv]"
-                        ]
+                    factor: float = (
+                        1.5
+                        if QApplication.screens()[0].size().height()
+                        else 2
+                    )
+                    print(f"low resolution, upscale {factor}x")
+                    in_h, in_w = int(in_h * factor), int(in_w * factor)
+                    filter_complex = [
+                        "-filter_complex",
+                        f"[0:v]scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
+                        "-map", "[outv]"
+                    ]
+
+                if task_name == 'hr':
+                    video_settings: VideoSettings = db['common']['video_format']['hr']
+                    pad: int = video_settings.pad
+                    in_h, in_w = int(in_h - 2 * pad), int(in_w - 2 * pad)
+                    filter_complex = [
+                        "-filter_complex",
+                        f"[0:v]crop={in_w}:{in_h}:{pad}:{pad}[outv]",
+                        "-map", "[outv]"
+                    ]
+
                 elif in_h < 1080:
+                    raise ValueError(" < 1080p")
                     # pprint( db['common']['video_format'])
                     # sys.exit()
                     video_settings: VideoSettings = db['common']['video_format']['hr']
@@ -154,15 +188,15 @@ class FrameCache:
 
                 # won't work except 8bit videos
                 pipe_img_nbytes: int = in_w * in_h * in_c
-                shape = (in_h, in_w, in_c)
+                pipe_in_shape = (in_h, in_w, in_c)
                 in_dtype = np.uint8
                 src_scene_key: str = f"{':'.join(src_scene['k_ed_ep_ch_no'][:-1])}:{src_scene['k_ed_ep_ch_no'][-1]:03}"
                 for i in range(count):
                     img: np.ndarray = np.frombuffer(
                         self.sub_process.stdout.read(pipe_img_nbytes),
                         dtype=in_dtype,
-                    ).reshape(shape)
-                    f_no = src_start + src_scene['scene']['inputs']['progressive']['start'] + i
+                    ).reshape(pipe_in_shape)
+                    f_no = src_start + src_scene['scene']['inputs'].progressive().start + i
                     self.scenes[scene_key].append(
                         Frame(
                             i=i,
@@ -174,16 +208,21 @@ class FrameCache:
                                 self.replace_db.get(src_scene=src_scene, f_no=f_no)
                                 if self.replace_db is not None
                                 else -1
-                            )
+                            ),
+                            dsr=(
+                                self.dsr_db.get(src_scene=src_scene, f_no=f_no)
+                                if self.dsr_db is not None
+                                else None
+                            ),
                         )
                     )
                 # Convert the 1st image of the scene to fasten the display
                 np_img: np.ndarray = self.scenes[scene_key][0].img
-                h, w, c = np_img.shape
-                # self.scenes[scene_key][0].pixmap = QPixmap().fromImage(
-                #     QImage(np_img, w, h, w * c, QImage.Format.Format_BGR888)
-                # )
                 self.scenes[scene_key][0].img = np_img
+
+                self.frame_count += count
+                self.scene_keys.append(scene_key)
+                print(f"Number of frames in cache: {self.frame_count}")
 
         return self.scenes[scene_key]
 

@@ -9,7 +9,7 @@ from typing import Any, Literal
 
 from utils.hash import calc_hash
 from utils.logger import main_logger
-from utils.media import FieldOrder, VideoInfo
+from utils.media import FieldOrder, FrameRate, VideoInfo
 from utils.p_print import *
 from utils.path_utils import absolute_path, get_extension
 from utils.pxl_fmt import PIXEL_FORMAT
@@ -299,6 +299,10 @@ def generate_avs_script(
                 found = True
             elif (search := re.search(re.compile(r"\s*FFVideoSource\(\s*source\s=\s*\"(.+)\""), line)):
                 found = True
+            elif (search := re.search(re.compile(r"\s*LWLibavVideoSource\(\s*\"(.+)\"\s*"), line)):
+                found = True
+            elif (search := re.search(re.compile(r"\s*LWLibavVideoSource\(\s*source\s=\s*\"(.+)\""), line)):
+                found = True
             if found:
                 lines[i] = line.replace(search.group(1), in_video_info['filepath'])
                 filepath_replaced = True
@@ -395,6 +399,10 @@ def get_qtgmc_args(
     for k in keys:
         ordered_dict[k] = qtgmc_args[k]
 
+    for k in ('aWarpSharp2'):
+        if 'aWarpSharp2' in script:
+            ordered_dict[k] = 'true'
+
     return ordered_dict
 
 
@@ -442,41 +450,23 @@ def qtgmc_deint_command(
     # FFmpeg complex filter
     ffmpeg_filter = _clean_str(resize)
     ffmpeg_command.extend([
-        "-filter_complex", f"[0:v]{ffmpeg_filter}[outv]",
+        "-filter_complex", f"[0:v]{ffmpeg_filter},setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709[outv]",
         "-map", "[outv]"
     ])
 
     # Frame rate
-    fps: float | int | tuple[int, int] = in_video_info['frame_rate_r']
-    # ffmpeg_command.extend([
-    #     "-r",
-    #     '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
-    # ])
+    fps: FrameRate = in_video_info['frame_rate_r']
     ffmpeg_command.extend([
-        "-r", "25"
-    ])
-    ffmpeg_command.extend([
-        "-pixel_format", "rgb24",
-        "-vcodec", "ffv1",
-    ])
+        # "-r", "30000/1001",
+        # "-frame_drop_threshold", "50",
+        "-pixel_format", "yuv422p10le",
 
-    # ffmpeg_command.extend([
-    #     "-pixel_format", "yuv444p",
-    #     "-vcodec", "libx264",
-    #     "-crf", "14",
-    #     "-preset", "slow",
-    #     "-tune", "stillimage"
-    # ])
+        # "-color_range", "full",
+        # "-vcodec", "ffv1",
+        "-vcodec", "dnxhd",
+        "-profile:v", "dnxhr_hqx",
+        "-color_range", "limited",
 
-    # ffmpeg_command.extend([
-    #     "-pix_fmt", "yuv444p",
-    #     "-vcodec", "libx264",
-    #     "-preset", "slow",
-    #     "-crf", "10",
-    #     "-tune", "stillimage"
-    # ])
-
-    ffmpeg_command.extend([
         "-an",
         "-sn",
         "-map_chapters", "-1"
@@ -531,6 +521,9 @@ def deint_command(
 
     # Deinterlace algo/params
     ffmpeg_deint: str = ""
+    # pprint(in_video_info)
+    # sys.exit()
+    in_video_info['is_interlaced'] = True
     if in_video_info['is_interlaced']:
         deint_algo: str = algo
         deint_params: str = params
@@ -558,7 +551,7 @@ def deint_command(
 
     resize = f"""
         scale={in_w}:{in_h}:sws_flags=
-            bilinear
+            lanczos
             + full_chroma_int
             + full_chroma_inp
             + accurate_rnd
@@ -575,7 +568,8 @@ def deint_command(
     ])
     ffmpeg_filter = _clean_str(ffmpeg_filter)
 
-    raise SystemError("ADD dar to the video")
+    # raise SystemError("ADD dar to the video")
+    print(red("ADD dar to the video"))
 
     # Create the command
     ffmpeg_command: list[str] = [
@@ -599,6 +593,11 @@ def deint_command(
     # Input file
     ffmpeg_command.extend(["-i", in_video_info['filepath']])
 
+
+    # ffmpeg_filter = ""
+    # ffmpeg_filter="fieldmatch=order=auto:combmatch=full,decimate"
+    # ffmpeg_command.extend(["-vf", "mpdecimate"])
+    # ffmpeg_command.extend(["-fps_mode", "passthrough"])
     # Add filters
     if ffmpeg_filter:
         ffmpeg_command.extend([
@@ -608,16 +607,26 @@ def deint_command(
 
     # Frame rate
     ##### FORCE TO 25 fps
-    fps = 25
-    ffmpeg_command.extend([
-        "-r",
-        '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
-    ])
-
-    ffmpeg_command.extend([
-        "-pixel_format", "bgr24",
-        "-vcodec", "ffv1",
-    ])
+    # fps = 25
+    # ffmpeg_command.extend([
+    #     "-r",
+    #     '/'.join(map(str, fps)) if isinstance(fps, tuple | list) else f"{fps}"
+    # ])
+    if True:
+        ffmpeg_command.extend([
+            # "-pixel_format", "bgr24",
+            # "-vcodec", "ffv1",
+            # "-fps_mode", "passthrough",
+            # "-frame_drop_threshold", "50",
+            "-pix_fmt", "yuv422p10le",
+            "-vcodec", "dnxhd",
+            "-profile:v", "dnxhr_hqx",
+        ])
+    else:
+        ffmpeg_command.extend([
+            "-pixel_format", "bgr24",
+            "-vcodec", "ffv1",
+        ])
 
     ffmpeg_command.extend([
         "-an",

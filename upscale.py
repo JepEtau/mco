@@ -4,7 +4,7 @@ import logging
 from pprint import pprint
 import signal
 import sys
-from parsers import parse_database
+from parsers import parse_database, TaskName
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
@@ -18,10 +18,10 @@ def main():
     parser.add_argument(
         "--edition",
         "-ed",
-        choices=['f', 'k', 's'],
+        choices=('f', 'k', 's', 's0'),
         default='',
         required=False,
-        help="Use this edition as source rather than the one selected in database"
+        help="Filter by edition"
     )
 
     parser.add_argument(
@@ -108,7 +108,6 @@ def main():
     parse_database(
         episode=episode,
         lang=arguments.lang,
-        edition=arguments.edition,
     )
     gc.collect()
 
@@ -120,12 +119,12 @@ def main():
     elif scene_arg != '':
         scene_no: int = int(scene_arg)
 
-    task = 'upscale'
+    task: TaskName = 'upscale'
 
     upscale_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
-        task=task,
+        task_name=task,
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=scene_no,

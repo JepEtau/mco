@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass
 from pprint import pprint
 from logger import log
@@ -23,31 +24,23 @@ from .ui.ui_widget_replace import Ui_ReplaceWidget
 from .stylesheet import set_stylesheet
 if TYPE_CHECKING:
     from backend.replace_controller import ReplaceController
-from backend._types import ReplaceAction
+from backend._types import ReplaceAction, CurrentFrame
 from backend.frame_cache import Frame
 
 
-
-@dataclass(slots=True)
-class CurrentFrame:
-    no: int
-    frame: Frame
-    original: Frame
-
-
-
 class ReplaceWidget(QWidget, Ui_ReplaceWidget):
-    signal_replace_modified = Signal(ReplaceAction)
-    signal_replace_removed = Signal(dict)
-    signal_frame_selected = Signal(int)
     signal_save = Signal()
     signal_discard = Signal()
     signal_undo = Signal()
     signal_preview_toggled = Signal(bool)
     signal_edition_started = Signal()
 
+    signal_replace_modified = Signal(ReplaceAction)
+    signal_replace_removed = Signal(dict)
+    signal_frame_selected = Signal(int)
 
-    def __init__(self, ui, controller):
+
+    def __init__(self, ui, controller: ReplaceController):
         super().__init__(ui)
         self.setupUi(self)
 
@@ -225,7 +218,6 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             self.lineEdit_replaced_by.setText(str(frame.no))
             self.pushButton_remove.setEnabled(True)
             src_frame_no = original_frame.no
-            self.current_frame = frame
 
         else:
             # self.lineEdit_frame_no.clear()
@@ -247,8 +239,6 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
 
     def event_copy(self):
         self.copied = self.current_frame
-        print("copied")
-        pprint(self.copied)
         self.pushButton_paste.setEnabled(True)
 
 
@@ -304,15 +294,6 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         self.signal_replace_removed.emit(remove_dict)
 
 
-    def block_signals(self, enabled):
-        self.pushButton_copy.blockSignals(enabled)
-        self.pushButton_paste.blockSignals(enabled)
-        self.pushButton_remove.blockSignals(enabled)
-        self.pushButton_set_preview.blockSignals(enabled)
-        self.pushButton_discard.blockSignals(enabled)
-        self.pushButton_save.blockSignals(enabled)
-
-
     @Slot(list)
     def event_modified_scenes(self, modified_scenes: list[int]) -> None:
         enabled = True if len(modified_scenes) > 0 else False
@@ -334,12 +315,15 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             self.signal_save.emit()
 
 
+    def event_key_released(self, event: QKeyEvent) -> bool:
+        return False
+
 
     def event_key_pressed(self, event: QKeyEvent) -> bool:
         key = event.key()
         modifiers = event.modifiers()
-        print(green(f"widget_replace: event_key_pressed: {key}"))
-        print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
+        # print(green(f"widget_replace: event_key_pressed: {key}"))
+        # print("%s.event_key_pressed: %d, modifiers=" % (__name__, key), modifiers)
 
         if modifiers & Qt.KeyboardModifier.ControlModifier:
             if key == Qt.Key.Key_S:

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 import logging
+import math
 from pprint import pprint
 import sys
 import time
@@ -8,9 +9,18 @@ from nn_inference.model_mgr import ModelManager
 
 from nn_inference.progress import ProgressThread
 from nn_inference.resource_mgr import ResourceManager
-from nn_inference.threads.t_decoder import DecoderThread, VideoStreamInfo
-from nn_inference.threads.t_encoder import EncoderThread
-from nn_inference.threads.t_inference import InferenceThread, InferenceThreadConfig
+from nn_inference.threads.t_decoder import (
+    DecoderThread,
+    VideoStreamInfo,
+    DecoderThreadConfig,
+)
+from nn_inference.threads.t_encoder import (
+    EncoderThread
+)
+from nn_inference.threads.t_inference import (
+    InferenceThread,
+    InferenceThreadConfig,
+)
 from nn_inference import (
     is_cuda_available,
     nnlogger,
@@ -54,15 +64,16 @@ class UpscalePipeline(object):
 
         in_max_nbytes: int = 0
         out_max_nbytes: int = 0
+        in_max_sync_nbytes: int = 0
         for scene in scenes:
             # Verify that input videos to generate this scene have the same info
             vi: VideoStreamInfo = (
-                scene['src'].primary_scene()['scene']['inputs']['progressive']['info']
+                scene['src'].primary_scene()['scene']['inputs'].progressive().info
             )
             shape = [vi.img_shape[1], vi.img_shape[0]]
 
             for src_scene in scene['src'].scenes():
-                _vi: VideoStreamInfo = src_scene['scene']['inputs']['progressive']['info']
+                _vi: VideoStreamInfo = src_scene['scene']['inputs'].progressive().info
                 if (
                     _vi.img_shape[1] != vi.img_shape[1]
                     or _vi.img_shape[0] != vi.img_shape[0]
@@ -72,11 +83,12 @@ class UpscalePipeline(object):
                         "input video must have the same resolution as the primary one"
                     )
 
+            # Get HtoD max bytes.
+            # The decoder MUST NOT resize the input video
             vi: VideoStreamInfo = (
-                scene['src'].primary_scene()['scene']['inputs']['progressive']['info']
+                scene['src'].primary_scene()['scene']['inputs'].progressive().info
             )
             nbytes: int = vi.img_nbytes * np.dtype(vi.img_dtype).itemsize
-
             if nbytes > in_max_nbytes:
                 in_max_nbytes = nbytes
 
@@ -84,40 +96,77 @@ class UpscalePipeline(object):
             filters: Filter = scene['filters'][task_name]
 
             pprint(filters.steps)
-            print(f"initial shape: {shape}")
+            print(lightcyan(f"Calculate in/out shapes:"))
+            print(f"  initial shape: {shape}")
             scale: int = 1
+            model_key: str = ""
             for i, filter_param in enumerate(filters.steps):
+                model_key = ""
                 if isinstance(filter_param, tuple | list):
+                    _scale: int = 1
                     name, param = filter_param
                     if name == 'resize':
                         _scale = param
                     elif name == 'resize_to':
                         raise ValueError("not yet supported")
-                    else:
-                        continue
+                    # elif name not in supported_filters:
+                    #     continue
+
                 else:
                     model_key = filter_param
                     _scale = model_manager.get_scale(model_key)
                     filters.steps[i] = model_manager.set_input_size(model_key, shape)
-                print(lightgreen(f"step {i}:"), shape, end='')
-                shape = list([int(x * _scale) for x in shape])
+
+                print(lightgreen(f"  step {i}:"), shape, end='')
+                shape = list([int(((x * _scale) // 2) * 2) for x in shape])
                 print(f"-> {shape} (scale: {_scale})")
                 scale = _scale * scale
                 # pprint(filters)
 
+
+                # Calculate maximum nb of bytes for inpaint models
+                # print(red(model_key))
+                if (
+                    model_key
+                    and (model_manager.model(model_key)
+                        .arch
+                        .infer_type
+                        .type) == 'inpaint'
+                ):
+                    # scale = 1
+                    # Allocate memory for inpaint mask,
+                    # which is done synchronously.
+                    in_sync_nbytes = math.prod(shape)
+                    if in_sync_nbytes > in_max_sync_nbytes:
+                        in_max_sync_nbytes = in_sync_nbytes
+
+            # The encoder MUST NOT resize the video
+
+            # We can include all models because inpaint models have a scale of 1:1
             out_nbytes = int(scale * scale * in_max_nbytes + 0.5)
             if PIXEL_FORMAT[scene['task'].video_settings.pix_fmt]['bpp'] > 8:
                 out_nbytes *= 2
             if out_nbytes > out_max_nbytes:
                 out_max_nbytes = out_nbytes
 
-            print(f"Scene {scene['no']}, in: {nbytes} bytes, out: {out_nbytes}")
+        # if in_max_sync_nbytes > 0:
+        #     print(f"Scene {scene['no']} (inpaint), in: {nbytes} bytes, out: {out_nbytes}")
+        # else:
+        #     print(f"Scene {scene['no']}, in: {nbytes} bytes, out: {out_nbytes}")
 
         print(f"Max: in: {in_max_nbytes} bytes, out: {out_max_nbytes}")
-        print(f"Scale: {scale}")
+        print(f"Inpaint: mask: {in_max_sync_nbytes} bytes")
+        print(f"Total scale: {scale}")
 
         model_manager.consolidate()
         model_manager.set_in_out_max_nbytes(in_max_nbytes, out_max_nbytes)
+        # Consider that all inpaint models are executed by cuda provider
+        model_manager.set_sync_in_max_nbytes(
+            xprovider='cuda',
+            in_nbytes=in_max_sync_nbytes,
+            out_nbytes=0
+        )
+        model_manager.set_sync_dtypes(in_dtype=np.uint8, out_dtype=np.uint8)
         print(model_manager)
 
 
@@ -133,15 +182,8 @@ class UpscalePipeline(object):
         pprint(model_manager.htod_mem)
         print(yellow("DtoH memory:"))
         pprint(model_manager.dtoh_mem)
-
-        # Video decoder for each scene
-        try:
-            d_thread = DecoderThread(scenes=self.scenes)
-        except Exception as e:
-            d_thread = DecoderThread(scenes=self.scenes)
-            print(red(f"[E] decoder: {type(e)}"))
-            return True, 0, 0
-        d_thread.setName("decoder")
+        print(yellow("HtoD (sync) memory:"))
+        pprint(model_manager.htod_sync_memory('cuda'))
 
         # Create encoder thread
         try:
@@ -151,7 +193,18 @@ class UpscalePipeline(object):
             return True, 0, 0
         e_thread.setName("encoder")
 
-        # Create cuda inference thread
+        # Video decoder for each scene
+        d_thread_config: DecoderThreadConfig = DecoderThreadConfig(e_thread=e_thread)
+        try:
+            d_thread = DecoderThread(config=d_thread_config, scenes=self.scenes)
+        except Exception as e:
+            # Debug
+            d_thread = DecoderThread(scenes=self.scenes)
+            print(red(f"[E] decoder: {type(e)}"))
+            return True, 0, 0
+        d_thread.setName("decoder")
+
+        # Create CUDA inference thread
         i_cuda_thread: InferenceThread = None
         if model_manager.has_torch_models():
             i_cuda_thread_config: InferenceThreadConfig = InferenceThreadConfig(
@@ -159,7 +212,6 @@ class UpscalePipeline(object):
                 d_thread=d_thread,
                 e_thread=e_thread,
                 channels_last=channels_last,
-                skip_inference=False
             )
             try:
                 i_cuda_thread = InferenceThread(i_cuda_thread_config)
@@ -183,6 +235,7 @@ class UpscalePipeline(object):
                 return True, 0, 0
             i_trt_thread.setName("trt_inference")
 
+        # Update each thread so that they obtain a pointer to consumer
         i_threads: dict[str, InferenceThread] = {
             'cuda': i_cuda_thread,
             'trt': i_trt_thread,
@@ -191,34 +244,10 @@ class UpscalePipeline(object):
             if thread is not None:
                 thread.set_inference_threads(i_threads)
 
-        # Create image writer thread
-        # w_thread_config: ImgWriterThreadConfig = ImgWriterThreadConfig(
-        #     cuda_stream=i_params.dtoh_cuda_stream,
-        #     tensor_dtype=i_params.tensor_dtype,
-        #     dtoh_mem=i_params.dtoh_mem,
-        #     img_shape=(), # i_video_info['shape'],
-        #     img_dtype=np.dtype(self.img_dtype).name,
-        #     img_c_order='bgr', # e_video_info['c_order'],
-        # )
-        # print("w_thread_config")
-        # pprint(w_thread_config)
-        # w_thread = ImgWriterThread(w_thread_config)
-        # try:
-        #     w_thread = ImgWriterThread(w_thread_config)
-        # except Exception as e:
-        #     print(red(f"[E] img_writer: {type(e)}"))
-        #     return True, 0, 0
-        # w_thread.setName("img_writer")
-        # w_thread.set_producer(i_thread)
-        # w_thread.set_consumer(e_thread)
-
-
+        # Progress bar
         f_progress_thread = None
         f_progress_thread = ProgressThread(total=self.total_frames)
         e_thread.set_progress_thread(f_progress_thread)
-
-        # e_progress_thread = ProgressThread(total=self.video_count)
-        # e_thread.set_progress_bar(e_progress_thread)
 
         if self.simulation:
             return [0] * 4
@@ -235,7 +264,6 @@ class UpscalePipeline(object):
             i_trt_thread,
             e_thread,
             f_progress_thread,
-            # e_progress_thread,
         ):
             if thread is not None:
                 ResourceManager().register_thread(thread)
@@ -253,28 +281,6 @@ class UpscalePipeline(object):
         ask_to_end: bool = False
         while True:
             if not decoding:
-                # inference_threads_ended = True
-                # if i_cuda_thread is not None and not i_cuda_thread.ended():
-                #     print(red("i_cuda_thread ended"))
-                #     inference_threads_ended = False
-                # if i_trt_thread is not None and not i_trt_thread.ended():
-                #     print(red("i_trt_thread ended"))
-                #     inference_threads_ended = False
-
-                # if inference_threads_ended and ask_to_end:
-                #     print(red("inference_threads_ended, send None to encoder threads"))
-                #     e_thread.put_frame(None)
-                #     ask_to_end = False
-
-                # inference_threads_ended = bool(
-                #     (i_cuda_thread is None or not i_cuda_thread.is_alive())
-                #     and (i_trt_thread is None or not i_trt_thread.is_alive())
-                # )
-                # print(
-                #     f"d_thread: {d_thread.is_alive()}",
-                #     f"e_thread: {e_thread.is_alive()}",
-                #     f"inference_threads_ended: {inference_threads_ended}"
-                # )
                 if e_thread.encoded == self.total_frames and ask_to_end:
                     e_thread.put_frame(None)
                     ask_to_end = False

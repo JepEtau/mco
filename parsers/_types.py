@@ -27,16 +27,13 @@ TaskName = Literal[
     # - Use the deinterlaced video
     # - resize to 1080p (1440x1080)
     # - add the effects (overlay)
-    #   What is not done:
-    #   - NN upscale
-    #   - stabilization
-    #   - temporal filtering
-    #   - color grade
-    #   - final crop/resize
     'sim',
 
-    # Upscale and generate a 1080p image for comparison
+    # Upscale and generate a 1080p image for comparisons
     'upscale',
+
+    # Create n upscale version without replace and dsr
+    'dsr',
 
     # Create video clips to be stabilized
     'hr',
@@ -59,7 +56,7 @@ TaskName = Literal[
     'final'
 ]
 
-TASK_NAMES: list[str] = get_args(TaskName)
+TASK_NAMES: list[TaskName] = get_args(TaskName)
 
 task_to_dirname: dict[TaskName, str] = {
     'initial': '00_initial',
@@ -73,6 +70,7 @@ filter_name_to_dirname: dict[str, TaskName] = {
     'initial': 'initial',
     'lr': 'lr',
     'upscale': 'upscaled',
+    'dsr': 'dsr',
     'hr': 'hr',
     'final': 'final',
 }

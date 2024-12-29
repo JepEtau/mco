@@ -33,7 +33,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
     """Only parse filters, no verifications.
     This is done when consolidating the scene
     """
-    verbose = True
+    verbose = False
     if verbose:
         print(lightcyan(f"Parse_filters:"))
         print(green(f"  section: {k_section}"))
@@ -49,7 +49,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
     if (tmp := re.search(re.compile(r"^filters_([a-z_]+)[.]*([0-9]*)$"), k_section)):
         k_chapter = tmp.group(1)
     else:
-        print(red("parse_filters: error: [%s] is not a valid filter label" % (k_section)))
+        print(red(f"parse_filters: error: [{k_section}] is not a valid filter label"))
         sys.exit()
 
     for k_option in config.options(k_section):
@@ -68,7 +68,6 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
             clean_ffmpeg_filter(filters_str).split(';')
         )
         filters = list([f for f in filters if f != ''])
-        pprint(filters)
         scene_filters: dict[TaskName, Filter] = {}
         for f in filters:
 
@@ -81,7 +80,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
                     sequence=result.group(2)
                 )
 
-            elif (result := re.search(re.compile(r"^([a-z]+)$"), f)):
+            elif (result := re.search(re.compile(r"^([a-z_]+)$"), f)):
                 # May use yes-pattern or no-pattern in the previous regex
                 # if result.group(1) not in TASK_NAMES:
                 #     raise ValueError(f"{result.group(1)} is not a valid task")
@@ -91,8 +90,9 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
                 )
 
             else:
-                pprint(filters)
-                raise ValueError("Unrecognized filter")
+                pprint(db_video)
+                raise ValueError(f"Unrecognized filter: {f} (k_chapter: {k_chapter})")
+
 
             if task_filter.task_name not in TASK_NAMES:
                 print(red(f"[W] {task_filter.task_name} is not a valid task name"))
@@ -103,7 +103,11 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
             else:
                 print(f"TODO: rework filter: {k_section}")
 
-        nested_dict_set(db_video, scene_filters, k_chapter, 'filters', k_option)
+        nested_dict_set(
+            db_video,
+            keys=(k_chapter, 'filters', k_option),
+            o=scene_filters
+        )
 
         if verbose and k_option == '999':
             # used to debug complex processing chains

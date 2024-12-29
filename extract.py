@@ -31,6 +31,7 @@ def main():
 
     parser.add_argument(
         "--chapter",
+        "-ch",
         choices=all_chapter_keys(),
         default='',
         required=False,
@@ -39,7 +40,7 @@ def main():
     parser.add_argument(
         "--edition",
         "-ed",
-        choices=['f', 'k', 's', 'j'],
+        choices=['f', 'k', 's', 'j', 's0'],
         default='',
         required=True,
         help="Use this edition"
@@ -136,7 +137,7 @@ def main():
     extract_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
-        task='initial',
+        task_name='initial',
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=arguments.scene,

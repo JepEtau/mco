@@ -158,11 +158,11 @@ def generate_lr_scenes(
         lang_str = '' if language == 'fr' else f"_{language}"
 
         # Concatenate video clips
-        raise ValueError("vcodec_to_extension")
+        ext: str = vcodec_to_extension[vsettings.codec]
         episode_video_filepath = os.path.join(
             db[k_ep]['cache_path'],
             "video",
-            f"{k_ep}_video{lang_str}.mkv"
+            f"{k_ep}_video{lang_str}{ext}"
         )
 
         # Force concatenation

@@ -9,13 +9,13 @@ import os.path
 from pprint import pprint
 from typing import Any
 
+from utils.p_print import *
 from utils.hash import calc_hash
 from utils.mco_types import ChapterVideo, Scene
 from utils.path_utils import absolute_path
 
 from ._keys import all_chapter_keys
 from .logger import logger
-from utils.p_print import *
 from ._db import db
 
 from processing.resize_to_4_3 import (
@@ -148,17 +148,9 @@ class SceneGeometry:
                 ))
             ))
         else:
-            params += f"{map(str, self.crop)}"
+            params += f";{','.join(list(map(str, self.crop)))}"
         params += f";{self.chapter.width}"
         return calc_hash(params)
-
-
-
-
-
-
-
-
 
 
 
@@ -168,23 +160,36 @@ class SceneGeometry:
 # et plus rapide encore lorsque la partie est spécifiée; lors de l'écriture automatique
 # par l'éditeur, le no. de trame correspond à la 1ere trame du plan
 
-def parse_geometry_configurations(k_ep_or_g: str):
+def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
     """ Parse configuration file which list the crop coordinates for each scene.
     TODO: it uses the first frame of a scene to identify the scene rather the index, so that
     a modification of scenes will not break anything
     """
-    verbose = False
+    verbose = True
     if verbose:
-        print(lightgreen(f"parse_geometry_configurations: {k_ep_or_g}"))
+        print(lightgreen(f"parse_geometry_file: {k_ep_or_g}"))
 
     # Open configuration file
-    filepath = absolute_path(
-            os.path.join(
-            db['common']['directories']['config'],
-            k_ep_or_g,
-            f"{k_ep_or_g}_geometry.ini"
+    if k_ch in ('g_asuivre', 'g_doc'):
+        # raise ValueError(f"k_ep_or_g: {k_ep_or_g}, k_ch: {k_ch}")
+        ch_video = db[k_ep_or_g]['video']['target'][k_ch]
+        _k_ed, _k_ep, _k_ch, _ = ch_video['scenes'][0]['src'].primary_scene()['k_ed_ep_ch_no']
+        filepath = absolute_path(
+                os.path.join(
+                db['common']['directories']['config'],
+                _k_ep,
+                f"{_k_ep}_geometry.ini"
+            )
         )
-    )
+    else:
+        filepath = absolute_path(
+                os.path.join(
+                db['common']['directories']['config'],
+                k_ep_or_g,
+                f"{k_ep_or_g}_geometry.ini"
+            )
+        )
+
     if not os.path.exists(filepath):
         return
 
@@ -196,22 +201,24 @@ def parse_geometry_configurations(k_ep_or_g: str):
         if section not in all_chapter_keys():
             continue
         if verbose:
-            print(f"\tparse_geometry_configurations: chapter: {section}")
+            print(f"parse_geometry_file: chapter: {section}")
 
         # Get db target video
-        db_video: ChapterVideo
+        ch_video: ChapterVideo
         if k_ep_or_g in ('g_debut', 'g_fin'):
-            db_video = db[k_ep_or_g]['video']
+            ch_video = db[k_ep_or_g]['video']
         else:
-            db_video = db[k_ep_or_g]['video']['target'][section]
+            ch_video = db[k_ep_or_g]['video']['target'][section]
 
         # for each option
         for k_str in config.options(section):
             if verbose:
                 print(f"\t\tk_str=[{k_str}]")
 
-            if k_str == 'width':
-                db_video['geometry'] = ChapterGeometry(int(config.get(section, 'width')))
+            if k_str == 'width' and section in all_chapter_keys():
+                ch_video['geometry'] = ChapterGeometry(
+                    int(config.get(section, 'width'))
+                )
 
             if result := re.search(re.compile(r"(\d{3})_([afkjs])_(ep\d{2})_([a-z_]+)_(\d{3})"), k_str):
                 scene_no: int = int(result.group(1))
@@ -219,7 +226,7 @@ def parse_geometry_configurations(k_ep_or_g: str):
                 k_ep_src: str = result.group(3)
                 k_ch_src: str = result.group(4)
                 scene_no_src: int = int(result.group(5))
-                scene: Scene = db_video['scenes'][scene_no]
+                scene: Scene = ch_video['scenes'][scene_no]
                 src_scene: Scene = scene['src'].primary_scene()['scene']
                 if (
                     src_scene['k_ed'] != k_ed_src
@@ -234,16 +241,16 @@ def parse_geometry_configurations(k_ep_or_g: str):
                 properties = config.get(section, k_str)
                 scene['geometry'] = get_geometry_from_properties(properties)
 
-        for scene in db_video['scenes']:
+        for scene in ch_video['scenes']:
             if 'geometry' not in scene:
                 scene['geometry'] = SceneGeometry(use_default=True)
 
-        if 'geometry' not in db_video:
-            db_video['geometry'] = ChapterGeometry()
+        if 'geometry' not in ch_video:
+            ch_video['geometry'] = ChapterGeometry()
 
-    if verbose and k_ep_or_g == 'g_debut':
-        pprint(db_video)
-        sys.exit()
+    if verbose and k_ep_or_g == 'g_doc':
+        pprint(ch_video)
+        raise
 
 
 def get_geometry_from_properties(properties_str: str) -> SceneGeometry:

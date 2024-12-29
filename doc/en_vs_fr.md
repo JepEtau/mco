@@ -7,7 +7,7 @@
 
 * Episode 1
     - episode: scene no. 0 is longer
-    - documentaire: additional scene
+    - doc: additional scene
 
 * Episode 2: same
 * Episode 3: same

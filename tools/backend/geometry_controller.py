@@ -11,7 +11,7 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from processing.detect_inner_rect import detect_inner_rect
+from processing.detect_inner_rect import calculate_autocrop_values, detect_inner_rect
 from tools.backend.geometry_database import GeometryDatabase
 from video.consolidate_scenes import get_chapter_video
 
@@ -31,6 +31,7 @@ from utils.p_print import *
 from parsers import (
     SceneGeometryStat,
     db,
+    ep_key,
     TaskName,
     ChGeometryStats,
     DetectInnerRectParams,
@@ -41,7 +42,12 @@ class GeometryController(CommonController):
     signal_preview_options_consolidated = Signal(dict)
     signal_replacements_refreshed = Signal()
 
-    def __init__(self, task_name: bool = False):
+    def __init__(
+        self,
+        task_name: bool = False,
+        ep_no: int = 0,
+        k_ch: str = ''
+    ):
         super().__init__()
 
         # Load saved preferences
@@ -53,6 +59,13 @@ class GeometryController(CommonController):
 
         self.selection_geometry: dict[int, TargetSceneGeometry] = {}
         self.geometry_stats: ChGeometryStats = ChGeometryStats()
+
+        self.forced_selection: dict[str, str | int] | None = None
+        if ep_no != 0 and k_ch != '':
+            self.forced_selection = dict(
+                k_ep=ep_key(ep_no),
+                k_ch=k_ch
+            )
 
 
     def set_view(self, view: GeometryWindow):
@@ -182,7 +195,7 @@ class GeometryController(CommonController):
         self.selection_geometry.update(new_geometry)
         k = list(new_geometry.keys())[0]
         self.geometry_stats.update(
-            {'no': scene_no, 'geometry': new_geometry[k].scene}
+            {'no': scene_no, 'geometry': new_geometry[k].scene, 'task': scene['task']}
         )
         # TODO: update erroneous margins
         self.signal_reload_frame.emit()
@@ -210,20 +223,12 @@ class GeometryController(CommonController):
                 index=i,
                 do_output_img=False,
             )
-            coordinates.append(coords)
+            if coords is not None:
+                coordinates.append(coords)
 
         elapsed_time = time.time() - start_time
-        in_h, in_w = f.img.shape[:2]
+        autocrop = calculate_autocrop_values(coordinates, f.img.shape[:2])
 
-        pprint(coordinates)
-        print("min:", np.min(coordinates, axis=0))
-        print("max:", np.max(coordinates, axis=0))
-        print("in_shape:", f.img.shape[:2])
-        min_coords: np.ndarray = np.min(coordinates, axis=0)
-        max_coords: np.ndarray = np.max(coordinates, axis=0)
-        x0, x1 = max_coords[0], min_coords[1]
-        y0, y1 = max_coords[2], min_coords[3]
-        autocrop = [y0,  in_h - y1, x0, in_w - x1]
         print(yellow("final, autocrop:"), f"{autocrop}")
         print(f"executed in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:.1f}fps)")
 
@@ -235,7 +240,7 @@ class GeometryController(CommonController):
         new_geometry = self.geometry_db.get_geometry(scene)
         k = list(new_geometry.keys())[0]
         self.geometry_stats.update(
-            {'no': scene_no, 'geometry': new_geometry[k].scene}
+            {'no': scene_no, 'geometry': new_geometry[k].scene, 'task': scene['task']}
         )
         self.signal_reload_frame.emit()
 

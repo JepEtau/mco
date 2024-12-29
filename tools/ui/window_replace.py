@@ -30,8 +30,10 @@ from .stylesheet import (
 )
 
 from .widget_player_ctrl import PlayerCtrlWidget
-from .widget_preview import PreviewWidget
+# from .widget_preview import PreviewWidget
+from .widget_graphics_view import DsrSceneRegion, GraphicsViewWidget
 from .widget_replace import ReplaceWidget
+from .widget_dsr import DsrWidget
 from .widget_selection import SelectionWidget
 
 from logger import log
@@ -43,7 +45,9 @@ if TYPE_CHECKING:
 from parsers import (
     db,
     get_fps,
+    MaskShape,
 )
+
 
 
 class ReplaceWindow(QMainWindow):
@@ -68,7 +72,15 @@ class ReplaceWindow(QMainWindow):
         set_stylesheet(self)
 
         # Preview
-        self.widget_preview = PreviewWidget(self.centralwidget, app_type=app_type)
+        # self.widget_preview = PreviewWidget(self.centralwidget, app_type=app_type)
+        self.widget_preview = GraphicsViewWidget(
+            parent=self.centralwidget,
+            main_window=self,
+            controller=controller,
+            app_type=app_type
+        )
+
+
         self.verticalLayout.addWidget(self.widget_preview)
 
         # Player control
@@ -78,11 +90,19 @@ class ReplaceWindow(QMainWindow):
         self.verticalLayout.addWidget(self.widget_player_ctrl)
         self.horizontalLayout.addLayout(self.verticalLayout)
 
+        self.verticalLayout_tool = QVBoxLayout()
+        self.horizontalLayout.addLayout(self.verticalLayout_tool)
+
         # self.widget_replace = ReplaceWidget(self.centralwidget)
         # Replace
         self.widget_replace: ReplaceWidget = ReplaceWidget(self, controller)
         self.widgets['replace'] = self.widget_replace
-        self.horizontalLayout.addWidget(self.widget_replace)
+        self.verticalLayout_tool.addWidget(self.widget_replace)
+
+
+        self.widget_dsr: DsrWidget = DsrWidget(self, controller)
+        self.widgets['dsr'] = self.widget_dsr
+        self.verticalLayout_tool.addWidget(self.widget_dsr)
 
         # Selection
         self.widget_selection = SelectionWidget(
@@ -121,6 +141,13 @@ class ReplaceWindow(QMainWindow):
         self.controller.signal_ready_to_play.connect(self.event_ready_to_play)
         self.controller.signal_reload_frame.connect(self.event_reload_frame)
         self.controller.signal_error[str].connect(self.error_message)
+
+        self.widget_dsr.signal_shape_changed.connect(
+            self.widget_preview.event_shape_changed
+        )
+        self.widget_preview.signal_dsr_updated_event.connect(
+            self.event_dsr_list_updated
+        )
 
         self.show()
         self.installEventFilter(self)
@@ -209,6 +236,7 @@ class ReplaceWindow(QMainWindow):
     def display_frame(self):
         frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
         self.widget_replace.set_current_frame(frame, original_frame)
+        self.widget_dsr.set_current_frame(frame, original_frame)
         self.widget_player_ctrl.refresh_values(frame, original_frame)
         self.widget_preview.display_frame(frame)
 
@@ -299,19 +327,22 @@ class ReplaceWindow(QMainWindow):
 
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        key = event.key()
-        modifiers = event.modifiers()
+        # print(f"{__name__} received: {event.key()}")
         self.current_key_pressed = None
-        print(f"{__name__} received: {key}")
 
-        for w in (
+        widgets = (
             self.widget_player_ctrl,
             self.widget_replace,
-            # self.widget_preview,
-            self.widget_selection
-        ):
+            self.widget_preview,
+            self.widget_dsr,
+            self.widget_selection,
+        )
+
+        for w in widgets:
             if w.event_key_pressed(event):
-                print(f"{__name__} {key} forwarded to {w.objectName()}")
+                for _w in widgets:
+                    if _w != w:
+                        _w.event_key_released(event)
                 return True
         return super().keyPressEvent(event)
 
@@ -320,14 +351,14 @@ class ReplaceWindow(QMainWindow):
         for w in (
             self.widget_player_ctrl,
             self.widget_replace,
-            # self.widget_preview,
+            self.widget_preview,
+            self.widget_dsr,
             self.widget_selection
         ):
             try:
                 w.event_key_released(event)
             except:
                 pass
-
         return super().keyReleaseEvent(event)
 
 
@@ -335,12 +366,31 @@ class ReplaceWindow(QMainWindow):
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
         if event.type() == QEvent.Type.Wheel:
             for w in (
+                # self.widget_replace,
+                self.widget_preview,
                 self.widget_player_ctrl,
-                self.widget_replace,
-                # self.widget_preview,
                 # self.widget_selection
             ):
                 if w.event_wheel(event):
                     return True
 
         return super().eventFilter(watched, event)
+
+
+
+    # DSR
+    def get_current_dsr_shape(self) -> MaskShape:
+        return self.widget_dsr.get_current_shape()
+
+
+    def set_current_dsr_shape(self, shape_name: MaskShape) -> None:
+        self.widget_dsr.force_current_shape(shape_name)
+
+
+    def event_dsr_list_updated(self, shapes: list[DsrSceneRegion]) -> None:
+        self.widget_dsr.refresh_dsr_list(shapes, event=True)
+        # self.widget_player_ctrl.setDisabled(True)
+
+
+    def is_dsr_modified(self) -> bool:
+        return self.widget_dsr.is_modified()

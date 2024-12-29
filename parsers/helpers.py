@@ -5,7 +5,7 @@ def get_fps(db: dict) -> float:
     return float(db['common']['settings']['fps'])
 
 
-def nested_dict_set(d: dict, o: object, *keys) -> None:
+def nested_dict_set(d: dict, keys: tuple[str], o: object) -> None:
     nested_d = d
     for k in keys:
         if k == keys[-1]:

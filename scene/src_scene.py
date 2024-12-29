@@ -3,22 +3,24 @@ from dataclasses import dataclass, field
 from pprint import pprint
 import sys
 from typing import TypedDict
-from utils.mco_types import Effect, Effects, Scene
+from utils.mco_types import Effect, Effects, Scene, EffectName
 from parsers import (
     db,
 )
 from typing import Literal, TypedDict, TYPE_CHECKING
+
+from utils.p_print import *
 if TYPE_CHECKING:
     from parsers import (
         TaskName,
     )
 
 
-# @dataclass(slots=True)
 class SrcScene(TypedDict):
     scene: Scene
     start: int
     count: int
+    backward: bool
     k_ed_ep_ch_no: tuple[str, str, str, int]
     effects: Effects
 
@@ -36,6 +38,7 @@ class SrcScenes:
         start: int,
         count: int,
         effects: Effects = None,
+        backward: bool = False
     ) -> None:
         _scene = None
         try:
@@ -58,7 +61,8 @@ class SrcScenes:
                 start=start,
                 count=count,
                 k_ed_ep_ch_no=(k_ed, k_ep, k_ch, no),
-                effects=effects
+                effects=effects,
+                backward=backward
             )
         )
 
@@ -85,12 +89,24 @@ class SrcScenes:
 
     def _consolidate_scene(self, src_scene: SrcScene) -> None:
         k_ed, k_ep, k_ch, no = src_scene['k_ed_ep_ch_no']
-        _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][no]
+        try:
+            _src_scene: Scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][no]
+        except:
+            pprint(db[k_ep]['video'][k_ed][k_ch]['scenes'])
+            raise ValueError(red(f"cannot access to scene no. {src_scene['k_ed_ep_ch_no']}"))
 
-        start: int = _src_scene['start'] if src_scene['start'] == -1 else src_scene['start']
+        start: int = (
+            _src_scene['start']
+            if src_scene['start'] == -1
+            else src_scene['start']
+        )
         count: int = src_scene['count']
         if count == -1:
             count = _src_scene['count'] - (start - _src_scene['start'])
+
+        if count < -1:
+            count = abs(count)
+            start = _src_scene['start'] + _src_scene['count'] - count
 
         src_scene.update({
             'scene': _src_scene,
@@ -132,6 +148,9 @@ class SrcScenes:
 
 
     def last_frame_no(self) -> int:
+        """Return the last frame no of the scene.
+        Do not forget to add 1 to calculate the number of frames
+        """
         last_scene = self._scenes[-1]
         return last_scene['start'] + last_scene['count'] - 1
 
@@ -181,3 +200,29 @@ class SrcScenes:
         raise ValueError(f"Scene not found for frame no. {frame_no}")
         return None
 
+
+    def has_effects(self) -> bool:
+        for s in self._scenes:
+            if (s['effects'] is not None
+                and s['effects'].has_effects()
+            ):
+                return True
+        return False
+
+
+    def has_effect(self, name: EffectName) -> bool:
+        for s in self._scenes:
+            if (s['effects'] is not None
+                and s['effects'].has_effect(name)
+            ):
+                return True
+        return False
+
+
+    def get_edition(self) -> str:
+        k_eds: set[str] = set()
+        for s in self._scenes:
+            k_eds.add(s['scene']['k_ed'])
+        if len(k_eds) > 1:
+            raise ValueError(f"{':'.join(s['k_ed_ep_ch_no'])} uses mor than 1 edition: {k_eds}")
+        return k_eds.pop()

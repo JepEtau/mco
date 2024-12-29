@@ -142,20 +142,21 @@ class GeometryWindow(CommonWindow):
 
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        key = event.key()
-        modifiers = event.modifiers()
+        # print(f"{__name__} received: {event.key()}, modifier {event.modifiers()}")
         self.current_key_pressed = None
-        # print(f"{__name__} received: {key}")
 
-        for w in (
+        widgets = (
             self.widget_geometry,
             self.widget_player_ctrl,
-            # self.widget_preview,
-            self.widget_selection
-        ):
+            self.widget_selection,
+        )
+
+        for w in widgets:
             if w.event_key_pressed(event):
-                # print(f"{__name__} {key} forwarded to {w.objectName()}")
-                event.accept()
+                # print(f"sent to {w}")
+                for _w in widgets:
+                    if _w != w:
+                        _w.event_key_released(event)
                 return True
         return super().keyPressEvent(event)
 
@@ -172,7 +173,6 @@ class GeometryWindow(CommonWindow):
                 w.event_key_released(event)
             except:
                 pass
-        event.accept()
         return super().keyReleaseEvent(event)
 
 

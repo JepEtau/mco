@@ -11,7 +11,12 @@ import sys
 from pprint import pprint
 from typing import Literal
 
-from utils.mco_types import ChapterVideo
+from utils.mco_types import (
+    ChapterVideo,
+    Inputs,
+    InterlacedInput,
+    ProgressiveInput
+)
 
 from .logger import logger
 
@@ -65,10 +70,9 @@ def db_init_episodes(k_ed, ep_min: int = 1, ep_max: int = 39, force: bool = True
         for k_chapter in all_chapter_keys():
             nested_dict_set(
                 db,
-                {
-                    'replace': {},
-                },
-                k_ep, 'video', k_ed, k_chapter
+                (k_ep, 'video', k_ed, k_chapter),
+                {'replace': {}},
+
             )
 
         # Set the video input file
@@ -95,16 +99,16 @@ def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
     for no in range(ep_min, min(40, ep_max+1)):
         k_ep = ep_key(no)
 
-        nested_dict_set(db, {}, k_ep, 'video', 'common')
+        nested_dict_set(db, keys=(k_ep, 'video', 'common'), o={})
         db_ep_common = db[k_ep]['video']['common']
 
         # Define a video target struct
-        nested_dict_set(db, {}, k_ep, 'video', 'target')
+        nested_dict_set(db, (k_ep, 'video', 'target'), o={})
         db_video_target = db[k_ep]['video']['target']
 
         # Audio target: there is no audio src, use the 'audio'
         # struct as the target
-        nested_dict_set(db, {}, k_ep, 'audio')
+        nested_dict_set(db, (k_ep, 'audio'), o={})
         db_audio_target = db[k_ep]['audio']
         db_audio_target['lang'] = language
 
@@ -114,7 +118,7 @@ def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
             os.path.join(
                 db['common']['directories']['config'],
                 k_ep,
-                f"{k_ep}_target.ini"
+                f"{k_ep}.ini"
             )
         )
         if not os.path.exists(filepath):
@@ -129,62 +133,66 @@ def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
             # Audio
             #----------------------------------------------------
             if k_section.startswith('audio'):
-                lang = 'fr'
+                language = 'fr'
                 try:
-                    _, lang = k_section.split('.')
+                    _, language = k_section.split('.')
                 except:
                     print(yellow(f"{filepath}: audio section naming to be reworked, default=fr"))
                     pass
 
-                if lang == db_audio_target['lang']:
+                if language == db_audio_target['lang']:
                     parse_audio_section(db, k_ep, config, k_section)
 
 
             # Video
             #----------------------------------------------------
             elif k_section.startswith('video'):
-                lang = 'fr'
+                language = 'fr'
                 try:
-                    _, lang = k_section.split('.')
+                    _, language = k_section.split('.')
                 except:
                     pass
 
-                if lang == db_audio_target['lang'] or k_section == 'video':
+                if language == db_audio_target['lang'] or k_section == 'video':
+                    # print(lightcyan(f"parse target video section: {k_ep}, {k_section}"))
                     parse_video_target(
                         db,
-                        episode=k_ep,
+                        k_ep=k_ep,
                         config=config,
                         k_section=k_section,
                     )
 
-
             # scenes
             #----------------------------------------------------
             elif k_section.startswith('scenes'):
-                lang = 'fr'
+
+
+                language = 'fr'
                 try:
-                    k_section_chapter, lang = k_section.split('.')
+                    k_section_chapter, language = k_section.split('.')
                 except:
                     k_section_chapter = k_section
 
                 try:
-                    _, k_chapter = k_section_chapter.split('_')
+                    _, k_ch = k_section_chapter.split('_')
                 except:
                     continue
 
-                ch_video = db_video_target[k_chapter]
-                ch_video.update({
-                    'k_ep': k_ep,
-                    'k_ch': k_chapter,
-                    'scenes': []
-                })
+                ch_video = db_video_target[k_ch]
+                # ch_video.update({
+                #     # 'k_ep': k_ep,
+                #     # 'k_ch': k_chapter,
+                #     'scenes': []
+                # })
 
-                if lang == db_audio_target['lang']:
+                if language == db_audio_target['lang']:
                     parse_target_scenelist(
                         ch_video,
                         config,
                         k_section,
-                        lang
+                        k_ep=k_ep,
+                        k_ch=k_ch,
+                        language=language,
                     )
 
 
@@ -221,18 +229,19 @@ def parse_episode(k_ed: str, k_ep: str | int):
         input_filepath = db['editions'][k_ed]['inputs']['video'][k_ep]
     except:
         pass
-    for k_chapter in all_chapter_keys():
-        nested_dict_set(db_video, {
-            'interlaced': {
-                'filepath': input_filepath,
-            },
-            'progressive': {
-                'enable': False,
-                'start': 0,
-                'count': -1,
-            }
-        }, k_chapter, 'inputs')
+    for k_ch in all_chapter_keys():
+        if k_ch not in db_video[k_ch]:
+            db_video[k_ch] = ChapterVideo()
 
+        db_video[k_ch]['inputs'] = Inputs(
+            InterlacedInput(input_filepath),
+            ProgressiveInput(
+                filepath="",
+                enable=True,
+                start=0,
+                count=-1,
+            )
+        )
 
     # Parse configuration
     config = ConfigParser()
@@ -248,20 +257,19 @@ def parse_episode(k_ed: str, k_ep: str | int):
                 value_str = value_str.replace(' ','')
                 logger.debug("\t\t%s=%s" % (k_option, value_str))
 
-                if k_option == 'ffv1' and value_str in ['yes', 'true']:
-                    # Use ffv1 generated by avisynth (progressive video)
-                    for k_chapter in all_chapter_keys():
-                        db_video[k_chapter]['inputs']['progressive']['enable'] = True
-                elif k_option == 'range':
-                    (start, end) = list(map(lambda x: int(x), value_str.split(':')))
-                    for k_chapter in all_chapter_keys():
-                        db_video[k_chapter]['inputs']['progressive']['start'] = start
-                        db_video[k_chapter]['inputs']['progressive']['count'] = end - start if end != -1 else end
+                for k_ch in all_chapter_keys():
+                    if k_option == 'range':
+                        (start, end) = list(map(lambda x: int(x), value_str.split(':')))
+                        for k_ch in all_chapter_keys():
+                            ch_inputs: Inputs = db_video[k_ch]['inputs']
+                            ch_inputs.progressive().start = start
+                            ch_inputs.progressive().count = end - start if end != -1 else end
 
         # Filters
         #----------------------------------------------------
         elif k_section.startswith("filters"):
-            print(lightcyan(f"Parse config file:"), config_fp)
+            if verbose:
+                print(lightcyan(f"Parse config file:"), config_fp)
             parse_filters(db_video, config, k_section)
 
         # chapters: frame start and (end+1)
@@ -277,71 +285,70 @@ def parse_episode(k_ed: str, k_ep: str | int):
         # chapters: scenes and other properties (previous format)
         #----------------------------------------------------
         elif k_section in all_chapter_keys():
-            k_chapter = k_section
+            k_ch = k_section
             for k_option in config.options(k_section):
                 value_str = config.get(k_section, k_option)
                 value_str = value_str.replace(' ','')
 
                 # scenes
-                db_video_chapter = db_video[k_chapter]
+                db_video_chapter = db_video[k_ch]
                 db_video_chapter['scenes'] = []
                 if k_option == 'scenes':
-                    if k_section in ['episode',
-                                    'documentaire',
-                                    'g_debut',
-                                    'g_fin',
-                                    'g_asuivre',
-                                    'g_documentaire']:
-                        parse_scenes(k_ed, k_ep, k_chapter, value_str)
+                    if k_section in (
+                        'episode',
+                        'doc',
+                        'g_debut',
+                        'g_fin',
+                        'g_asuivre',
+                        'g_doc'
+                    ):
+                        parse_scenes(k_ed, k_ep, k_ch, value_str)
 
                     elif k_section in ['precedemment', 'asuivre']:
                         # precedemment and asuivre are different as some scenes
                         # may be replaced
                         # TODO rework as the function/parameteres are the same!
-                        parse_scenes(k_ed, k_ep, k_chapter, value_str)
+                        parse_scenes(k_ed, k_ep, k_ch, value_str)
 
 
         # chapters: scenes (new format)
         #----------------------------------------------------
         elif k_section.startswith('scenes_'):
-            k_chapter = k_section[len('scenes_'):]
-            if k_chapter not in all_chapter_keys():
+            k_ch = k_section[len('scenes_'):]
+            if k_ch not in all_chapter_keys():
                 continue
-            db_video[k_chapter]['scenes'] = []
-            parse_scenes_new(k_ed, k_ep, k_chapter, config, k_section)
-
-
-    # Set dimensions
-    #  TODO is this really needed?
-    nested_dict_set(db[k_ep]['video'], db['editions'][k_ed]['dimensions'], 'dimensions')
+            db_video[k_ch]['scenes'] = []
+            parse_scenes_new(k_ed, k_ep, k_ch, config, k_section)
 
 
     # Calculate durations for each chapters based on scenes duration
     for k_p in all_chapter_keys():
         consolidate_parsed_scenes(k_ed=k_ed, k_ep=k_ep, k_chapter=k_p)
 
+
     # Consolidate inputs dict
-    for k_chapter in all_chapter_keys():
+    for k_ch in all_chapter_keys():
         try:
-            if db_video[k_chapter]['count'] == -1:
+            if db_video[k_ch]['count'] == -1:
                 continue
         except:
             continue
 
-        chapter_video: dict = db_video[k_chapter]
+        chapter_video: dict = db_video[k_ch]
 
         # Skip if progressive shall not be used
-        input_progressive = db_video[k_chapter]['inputs']['progressive']
-        if not input_progressive['enable']:
+        progressive: ProgressiveInput = db_video[k_ch]['inputs'].progressive()
+        if not progressive.enable:
+            raise ValueError(f"{k_ch} must be progressive")
             continue
 
         # Force disable if this chapter is not in progressive file
         chapter_end = chapter_video['start'] + chapter_video['count']
-        progressive_end = input_progressive['start'] + input_progressive['count']
-        if chapter_video['start'] < input_progressive['start']:
-            input_progressive['enable'] = False
-        elif (input_progressive['count'] != -1 and progressive_end < chapter_end):
-            input_progressive['enable'] = False
+        progressive_end = progressive.start + progressive.count
+        if chapter_video['start'] < progressive.start:
+            progressive.enable = False
+        elif (progressive.count != -1 and progressive_end < chapter_end):
+            progressive.enable = False
 
     if verbose:
         if k_ed == 'f' and k_ep == 'ep01':
@@ -365,11 +372,11 @@ def get_episode_dependencies(
     target_video: dict = db[k_ep]['video']['target']
 
     # Common chapter
-    for chapter in main_chapter_keys():
-        if chapter not in target_video:
+    for k_ch in main_chapter_keys():
+        if k_ch not in target_video:
             continue
 
-        chapter_video: ChapterVideo = target_video[chapter]
+        chapter_video: ChapterVideo = target_video[k_ch]
         if 'scenes' in chapter_video:
             for scene in chapter_video['scenes']:
                 for k_ed, k_eps in scene['src'].get_dependencies().items():
@@ -379,14 +386,14 @@ def get_episode_dependencies(
                         dependencies[k_ed].add(k_ep)
 
     # Edition used as the default source
-    for chapter in non_credit_chapter_keys():
-        k_ed_src = target_video[chapter]['k_ed_src']
+    for k_ch in non_credit_chapter_keys():
+        k_ed_src = target_video[k_ch]['default_src']['k_ed']
 
         if track in ('video', 'all'):
             try:
-                chapter_video = db[k_ep]['video'][k_ed_src][chapter]
+                chapter_video = db[k_ep]['video'][k_ed_src][k_ch]
             except:
-                sys.exit(red(f"error: {k_ed_src}:{k_ep}:{chapter}: missing input file"))
+                sys.exit(red(f"error: {k_ed_src}:{k_ep}:{k_ch}: missing input file"))
             if 'scenes' in chapter_video.keys():
                 scenes = chapter_video['scenes']
                 for scene in scenes:
@@ -403,9 +410,9 @@ def get_episode_dependencies(
         if track in ('audio', 'all'):
             k_ed_dep = db[k_ep]['audio']['src']['k_ed']
             try:
-                db_audio = db[k_ep]['audio'][chapter]
+                db_audio = db[k_ep]['audio'][k_ch]
             except:
-                sys.exit(red(f"error: {k_ed_src}:{k_ep}:{chapter}: missing input file"))
+                sys.exit(red(f"error: {k_ed_src}:{k_ep}:{k_ch}: missing input file"))
 
             for segment in db_audio['segments']:
                 if 'k_ep' in segment and segment['k_ep'] != k_ep:

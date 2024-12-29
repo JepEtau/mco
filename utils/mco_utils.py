@@ -2,15 +2,24 @@ from __future__ import annotations
 import os
 from pprint import pprint
 import subprocess
+import sys
 import time
+from warnings import warn
 from scene.filters import do_watermark
 from utils.mco_types import ChapterVideo, Scene
-from utils.media import VideoInfo, extract_media_info
+from utils.media import (
+    extract_media_info_mco,
+    FFmpegVideoCodec,
+    str_to_video_codec,
+    VideoInfo,
+)
 from utils.p_print import *
 from parsers import (
     VideoSettings, db, task_to_dirname, TaskName, TASK_NAMES, ProcessingTask
 )
 from .logger import main_logger
+
+
 
 
 def ffmpeg_metadata(scene: Scene) -> list[str]:
@@ -23,14 +32,26 @@ def ffmpeg_metadata(scene: Scene) -> list[str]:
     vsettings: VideoSettings = scene['task'].video_settings
 
     metadata: list[str] = []
-    if not has_effects:
+    if str_to_video_codec[vsettings.codec] == FFmpegVideoCodec.DNXHD:
         metadata.extend(["-map_metadata", "-1"])
+        if len(vsettings.metadata.keys()):
+            for k, v in vsettings.metadata.items():
+                if not k.startswith("comment_"):
+                    k = f"comment_{k}"
+                metadata.extend(["-metadata", f"{k}={v}"])
 
-    if len(vsettings.metadata.keys()):
-        metadata.extend(["-movflags", "use_metadata_tags"])
-        for k, v in vsettings.metadata.items():
-            metadata.extend(["-metadata:s:v:0", f"{k}={v}"])
+    else:
+        if not has_effects:
+            metadata.extend(["-map_metadata", "-1"])
+
+        if len(vsettings.metadata.keys()):
+            metadata.extend(["-movflags", "use_metadata_tags"])
+            for k, v in vsettings.metadata.items():
+                if k.startswith("comment_"):
+                    k = k.replace("comment_", "")
+                metadata.extend(["-metadata:s:v:0", f"{k}={v}"])
     return metadata
+
 
 
 def scene_id_str(scene: Scene) -> str:
@@ -42,36 +63,66 @@ def scene_id_str(scene: Scene) -> str:
     return scene_id
 
 
-def is_up_to_date(scene: Scene) -> bool:
+
+def is_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
     task: ProcessingTask = scene['task']
 
     if TASK_NAMES.index(task.name) <= TASK_NAMES.index('hr'):
         for s in scene['src'].scenes():
-            in_video_fp: str = s['scene']['inputs']['progressive']['filepath']
+            in_video_fp: str = s['scene']['inputs'].progressive().filepath
             if not os.path.exists(in_video_fp):
                 raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
 
     out_video_fp: str = scene['task'].video_file
+    check_metdata: bool = True
+
+    # For g_doc patch because it's a pipeline which use
+    if (
+        scene['dst']['k_ch'] in ('g_doc', 'doc')
+        and task.name in ('hr', 'upscale')
+        and "mco_doc" in scene['filters'][task.name].sequence
+    ):
+        check_metdata = False
+
     if os.path.exists(out_video_fp):
         dst_frame_count: int = calculate_frame_count(scene)
         print(yellow(f"dst frame_count: {dst_frame_count}"))
         try:
-            out_video_info: VideoInfo = extract_media_info(out_video_fp)['video']
+            out_video_info: VideoInfo = extract_media_info_mco(out_video_fp)['video']
             print(f"output scene file: {out_video_info['frame_count']}")
-            if out_video_info['frame_count'] == dst_frame_count:
-                return True
+            if out_video_info['frame_count'] != dst_frame_count:
+                return False
         except:
-            pass
+            return False
+
+        if check_metdata:
+            print("is_up_to_date")
+            print(out_video_info['metadata'])
+            print(task.hash)
+            out_hash: str = ""
+            try:
+                out_hash = out_video_info['metadata']['hash']
+            except:
+                print(red("no hash in output video"))
+
+            if out_hash != task.hash:
+                print(yellow(f"hash differs: {out_hash}, should be {task.hash}"))
+                return False
+
+        if display_msg:
+            print(lightgreen(f"      already rendered:"), out_video_fp)
+        return True
 
     return False
 
 
-def is_final_up_to_date(scene: Scene) -> bool:
+
+def is_final_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
     task: ProcessingTask = scene['task']
 
     if TASK_NAMES.index(task.name) <= TASK_NAMES.index('hr'):
         for s in scene['src'].scenes():
-            in_video_fp: str = s['scene']['inputs']['progressive']['filepath']
+            in_video_fp: str = s['scene']['inputs'].progressive().filepath
             if not os.path.exists(in_video_fp):
                 raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
     else:
@@ -85,26 +136,38 @@ def is_final_up_to_date(scene: Scene) -> bool:
         not os.path.exists(out_video_fp)
         or os.path.getmtime(in_video_fp) > os.path.getmtime(out_video_fp)
     ):
+        if display_msg:
+            print(lightgreen(f"        render, reason:"), "input is newer")
         return False
 
     try:
-        out_video_info: VideoInfo = extract_media_info(out_video_fp)['video']
+        out_video_info: VideoInfo = extract_media_info_mco(out_video_fp)['video']
     except:
         return False
 
-    print(yellow(f"scene: {calculate_frame_count(scene)}, out: {out_video_info['frame_count']}"))
+    main_logger.debug(
+        f"{yellow("scene:")} {calculate_frame_count(scene)}, {yellow("rendered:")} {out_video_info['frame_count']}"
+    )
     if out_video_info['frame_count'] != calculate_frame_count(scene):
         return False
 
+    main_logger.debug(
+        f"out metadata: {out_video_info['metadata']}, task hash: {task.hash}"
+    )
+
     if task.name in ('lr', 'sim', 'upscale', 'hr', 'final'):
         try:
-            out_hash: str = out_video_info['metadata']['HASH']
+            out_hash: str = out_video_info['metadata']['hash']
         except:
-            raise ValueError(red("no hash in output video"))
-
-        if out_hash != task.hash:
+            warn(red("no hash in output video"))
             return False
 
+        if out_hash != task.hash:
+            print(yellow(f"final: hash differs: {out_hash}, should be {task.hash}"))
+            return False
+
+    if display_msg:
+        print(lightgreen(f"        already rendered:"), out_video_fp)
     return True
 
 
@@ -152,22 +215,21 @@ def calculate_frame_count(scene: Scene) -> int:
         if is_last_scene(scene):
             count += ch_video['silence'] if 'silence' in ch_video else 0
 
-        if 'effects' in scene:
-            for e_name in (
-                'loop',
-                'loop_and_fadein',
-                'loop_and_fadeout',
-                'zoom_in',
-                'zoom_out',
-            ):
-                if (e := scene['effects'].get_effect(e_name)):
-                    count += e.loop
+        # if 'effects' in scene:
+        #     for e_name in (
+        #         'loop',
+        #         'loop_and_fadein',
+        #         'loop_and_fadeout',
+        #         'zoom_in',
+        #         'zoom_out',
+        #     ):
+        #         if (e := scene['effects'].get_effect(e_name)):
+        #             count += e.loop
 
-        # src_scene: SrcScene = scene['src'].last_scene()
-        # if 'effects' in src_scene and src_scene['effects'] is not None:
-        #     zoom_effect: Effect = src_scene['effects'].get_effect('zoom_in')
-        #     count += zoom_effect.loop if zoom_effect is not None else 0
-
+    if task_name in ('upscale', 'hr'):
+        # Do not use the final frame count such as loop
+        # use the src scene count
+        count = scene['src'].frame_count(exclude_loop=True)
     # For the scene which has a loop,
     # remove the loop in number of frames to upscale
     # if scene['task'].name == 'upscale':
@@ -177,7 +239,7 @@ def calculate_frame_count(scene: Scene) -> int:
     #             if e := s['effects'].get_effect(name=name):
     #                 count -= e.loop
 
-    print(red(f"calculate_frame_count: {scene['no']} -> {count}"))
+    # print(red(f"calculate_frame_count: {scene['no']} -> {count}"))
     return count
 
 
@@ -197,14 +259,19 @@ def nested_dict_set(d: dict, o: object, *keys) -> None:
 
 def get_cache_path(scene: Scene, out: bool=False) -> str:
     task_name: TaskName = scene['task'].name
-    cache_dir: str = db['common']['directories']['cache']
+    cache_dir: str = (
+        db['common']['directories']['cache']
+        if 'dst' not in scene or scene['dst']['k_ch'] != 'doc'
+        else db['common']['directories']['cache_doc']
+    )
     k_ch_dst: str = scene['dst']['k_ch'] if 'dst' in scene else scene['k_ch']
 
     # Put all images in a single folder for start/end credits
+
     if k_ch_dst in ('g_debut', 'g_fin'):
         return os.path.join(cache_dir, k_ch_dst)
 
-    if k_ch_dst in ('g_asuivre', 'g_documentaire'):
+    if k_ch_dst in ('g_asuivre', 'g_doc'):
         # if out:
         #     return os.path.join(
         #         cache_dir,
@@ -219,7 +286,11 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
             f"{scene['no']:03}"
         )
 
-
+    if k_ch_dst == 'doc' and task_name != 'initial':
+        return os.path.join(
+            cache_dir,
+            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
+        )
     # # If last task is geometry, use the dst structure
     # if task_name == 'final':
     #     output_path: str = os.path.join(
@@ -234,7 +305,15 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
         output_path = os.path.join(
             cache_dir,
             scene['k_ep'],
-            k_ch_dst,
+            f"ed_{scene['k_ed']}",
+        )
+
+    elif task_name == 'upscale':
+        # Work in the src directory
+        output_path = os.path.join(
+            cache_dir,
+            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
+            task_name,
             f"{scene['no']:03}"
         )
 
@@ -243,9 +322,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
         #  because these frames are used by multiple episodes
         output_path: str = os.path.join(
             cache_dir,
-            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
-            k_ch_dst,
-            f"{scene['no']:03}"
+            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep']
         )
 
     return output_path
