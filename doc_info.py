@@ -6,6 +6,8 @@ from pprint import pprint
 import signal
 import sys
 from typing import Literal
+
+import numpy as np
 from parsers import (
     TASK_NAMES,
     parse_database,
@@ -68,8 +70,8 @@ def main():
 
     doc_stats: dict[str, dict[StatsKeys, int | str | list]] = {}
     k_ch = 'doc'
-    for ep_no in range(1, 40):
-    # for ep_no in range(2, 3):
+    # for ep_no in range(1, 40):
+    for ep_no in range(4, 5):
         k_ep = ep_key(ep_no)
         parse_database(
             episode=k_ep,
@@ -140,17 +142,32 @@ def main():
             print(yellow(f"  missing {missing_framecount}"))
             print(f"  removed {stats['total_removed']}")
             if stats['audio'] > stats['origin_video']:
-                print(red(
+                print(yellow(
                     f"  missing {stats['audio'] - stats['origin_video']} frames in original video, verify audio"
                 ))
         if stats['se_loops']:
             print(f"  Added {stats['se_loops']} frames")
         if missing_framecount > stats['se_loops']:
-            print(yellow(f"  still missing {missing_framecount - stats['se_loops']}"))
+            print(red(f"  still missing {missing_framecount - stats['se_loops']}"))
+
+            se_mapping: np.ndarray = np.zeros((len(stats['gaps']), 2), dtype=int)
+            for i, n in enumerate(stats['gaps']):
+                if not n:
+                    continue
+                se_mapping[i - 1][1] = min(n, int(n/2))
+                se_mapping[i][0] = n - se_mapping[i - 1][1]
+
+            # pprint(se_mapping)
+            for i in range(len(stats['gaps'])):
+                if se_mapping[i][0] != 0 or se_mapping[i][1] != 0:
+                    print(f"{i:02} = , se_loop={se_mapping[i][0]}:{se_mapping[i][1]}")
+                else:
+                    print(f"{i:02} =")
+
         elif missing_framecount == stats['se_loops']:
             print(lightgreen(f"  {k_ep}: same frame count"))
         else:
-            print(green(f"  {k_ep}: info: too many frames {stats['se_loops'] - missing_framecount}"))
+            print(green(f"  {k_ep}: info: too many frames: {stats['se_loops'] - missing_framecount}"))
 
         print()
 
