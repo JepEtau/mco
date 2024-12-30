@@ -52,9 +52,10 @@ def parse_database(
     ignore_av_sync: bool = False,
     avsync_stats: bool = False
 ) -> dict[str, tuple[int]]:
-    # Parse the database for a specified episode
-    # ignore avsync when called by a tool
-    # avsync_stats: to con,solidate AV sync only -> ignore geometry, ....
+    """Parse the database for a specified episode
+        - ignore avsync when called by a tool or for stats before aligning AV channels
+        - avsync_stats: to consolidate AV sync only -> ignore geometry, ....
+    """
 
 
     k_ep = f"ep{episode:02}" if isinstance(episode, int) else episode
@@ -69,29 +70,12 @@ def parse_database(
     # Initialize dictionary for episodes per edition
     for k in db['editions']['available']:
         db_init_episodes(k_ed=k)
-        # logger.debug(f"db_init_episodes: {db[k_ep]['video'].keys()}")
 
     for k in db['editions']['available']:
         parse_generiques(k_ed=k, verbose=False)
-    # logger.debug("parse_generiques: ")
-    # print("------------------------------------")
-    # for k_chapter_g in credit_chapter_keys():
-    #     print("--------------- %s ---------------------" % (k_chapter_g))
-    #     pprint(db[k_chapter_g])
-    # print("------------------------------------")
-    # sys.exit()
 
-    # Parse database file which contains common settings for all episodes
+    # Parse targets
     parse_episodes_target()
-    # if True:
-    #     print("parse_episodes_target")
-    #     print("-------------- %s ------------------" % (k_ep))
-    #     pprint(db[k_ep]['video']['target'])
-    #     print("------------------------------------")
-    #     sys.exit()
-
-
-    # Parse database file used for the target
     parse_credit_target()
 
     # Create a dict of dependencies for generiques
@@ -146,7 +130,6 @@ def parse_database(
                 continue
             logger.debug(lightgrey(f"parse dependency: {k_ed_tmp}:{k_ep_tmp}"))
             parse_episode(k_ed=k_ed_tmp, k_ep=k_ep_tmp)
-
 
     # Parse other config files for each dependency
     already_parsed = list()

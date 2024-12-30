@@ -93,9 +93,9 @@ def main():
 
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # Deactivated:
-        # https://vscode.dev/github/JepEtau/mco/blob/dev/parsers/target_av_tracks.py#L49-L50
-        # https://vscode.dev/github/JepEtau/mco/blob/dev/parsers/target_av_tracks.py#L124
-        # https://vscode.dev/github/JepEtau/mco/blob/dev/parsers/geometry.py#L211-L212
+        # https://vscode.dev/github/JepEtau/mco_dev/blob/dev/parsers/target_av_tracks.py#L49-L50
+        # https://vscode.dev/github/JepEtau/mco_dev/blob/dev/parsers/target_av_tracks.py#L124
+        # https://vscode.dev/github/JepEtau/mco_dev/blob/dev/parsers/geometry.py#L211-L212
 
 
     print(lightcyan("precedemment"))

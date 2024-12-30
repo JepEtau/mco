@@ -28,8 +28,6 @@ def parse_audio_g(
 
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option).replace(' ','')
-        print(k_option)
-        pprint(value_str)
 
         # Source: edition and episode for the audio track
         if k_option == 'source':
@@ -111,7 +109,6 @@ def parse_audio_g(
     except:
         raise ValueError("Error: missing source option in audio section for a generique")
 
-    pprint(ch_audio)
 
 
 def parse_audio_section(

@@ -133,6 +133,7 @@ def parse_scenes(
         sys.exit()
 
 
+
 def parse_scenes_new(
     k_ed: str,
     k_ep: str,
@@ -189,13 +190,29 @@ def parse_scenes_new(
         if len(scene_properties) > 1:
             for p in scene_properties:
                 d = p.split('=')
+                k: str = d[0]
                 # Custom filter
-                if d[0] == 'filters':
+                if k == 'filters':
                     scenes[scene_no]['filters_id'] = d[1]
+
+                elif k == 'se_loop':
+                    # Extend this scene by looping on 1st frame / last frame
+                    start_end = d[1].split(':')
+                    scenes[scene_no]['effects'] = Effects([
+                        Effect(
+                            name='se_loop',
+                            extra_param=(
+                                int(start_end[0]) if start_end[0] else 0,
+                                int(start_end[1]) if start_end[1] else 0
+                            )
+                        )
+                    ])
+
 
     # if k_ch == "asuivre" and k_ed not in ("s", "f", "k"):
     #     pprint(scenes)
     #     raise ValueError(red(f"{k_ed_ep_ch}"))
+
 
 
 def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
@@ -260,6 +277,7 @@ def parse_target_scenelist(
     k_ch: str,
     language: str = 'fr'
 ) -> None:
+    # This is valable for all EXCEPT doc which uses the declared src scene
 
     db_scenes: list[Scene] = ch_video['scenes']
 
@@ -383,7 +401,6 @@ def parse_target_scenelist(
                            count=segment_count,
                            backward=backward
                        )
-                    print(v)
                     current_scene_no = int(v)
                     segment_start = -1
                     segment_count = -1

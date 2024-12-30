@@ -100,7 +100,6 @@ def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
         k_ep = ep_key(no)
 
         nested_dict_set(db, keys=(k_ep, 'video', 'common'), o={})
-        db_ep_common = db[k_ep]['video']['common']
 
         # Define a video target struct
         nested_dict_set(db, (k_ep, 'video', 'target'), o={})

@@ -146,7 +146,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: str) -> None:
         add_ref = False
         if k_ch in ('precedemment', 'asuivre', 'reportage'):
             # pprint(ref_scenes)
-            warn(f"{k_ch}: cannot add reference to each scene")
+            warn(f"{k_ch}: cannot add reference to every scenes")
 
     frame_count = 0
     for no, scene in enumerate(ch_video['scenes']):

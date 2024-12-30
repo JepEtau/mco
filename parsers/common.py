@@ -191,9 +191,7 @@ def parse_common_configuration(language:str=''):
             .replace('  ', ' ')
             .strip()
         )
-        if task == 'final':
-            pprint(options)
-            # raise
+
         db_common['video_format'][task] = VideoSettings(
             codec=vformat.get('codec', ''),
             codec_options=options.split(' ') if options else [],
