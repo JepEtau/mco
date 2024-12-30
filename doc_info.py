@@ -24,6 +24,7 @@ from scene.consolidate import consolidate_scene
 from utils.arg_parser import common_argument_parser
 from utils.mco_types import (
     ChapterAudio,
+    Effect,
     Scene,
     ChapterVideo,
 )
@@ -36,7 +37,8 @@ StatsKeys = Literal[
     'k_ed_src',
     'origin_video',
     'total_removed',
-    'gaps'
+    'gaps',
+    'se_loops'
 ]
 
 def main():
@@ -66,8 +68,8 @@ def main():
 
     doc_stats: dict[str, dict[StatsKeys, int | str | list]] = {}
     k_ch = 'doc'
-    # for ep_no in range(1, 40):
-    for ep_no in range(2, 3):
+    for ep_no in range(1, 40):
+    # for ep_no in range(2, 3):
         k_ep = ep_key(ep_no)
         parse_database(
             episode=k_ep,
@@ -93,16 +95,22 @@ def main():
 
         removed_frames = 0
         gaps: list[int] = [0]
+        se_loops: int = 0
         for k in range(1, len(ch_src_video['scenes'])):
-            current_scene: Scene = ch_src_video['scenes'][k]
+            scene: Scene = ch_src_video['scenes'][k]
             delta: int = (
-                current_scene['start']
+                scene['start']
                 - (ch_src_video['scenes'][k-1]['start'] + ch_src_video['scenes'][k-1]['count'])
             )
             removed_frames += delta
             gaps.append(delta)
 
-            pprint(current_scene)
+            # pprint(scene)
+
+            if 'effects' in scene and scene['effects'].has_effect('se_loop'):
+                e: Effect = scene['effects'].get_effect('se_loop')
+                se_loops += sum(e.extra_param)
+
 
 
         doc_stats[k_ep] = {
@@ -111,7 +119,8 @@ def main():
             'k_ed_src': ch_video['default_src']['k_ed'],
             'origin_video': origin_video_count,
             'total_removed': removed_frames,
-            'gaps': gaps
+            'gaps': gaps,
+            'se_loops': se_loops,
         }
         if ch_audio['avsync'] != 0 or ch_video['avsync'] != 0:
             raise ValueError(red(f"Error: {k_ep}: avsync!=0 ({ch_audio['avsync']})"))
@@ -134,6 +143,16 @@ def main():
                 print(red(
                     f"  missing {stats['audio'] - stats['origin_video']} frames in original video, verify audio"
                 ))
+        if stats['se_loops']:
+            print(f"  Added {stats['se_loops']} frames")
+        if missing_framecount > stats['se_loops']:
+            print(yellow(f"  still missing {missing_framecount - stats['se_loops']}"))
+        elif missing_framecount == stats['se_loops']:
+            print(lightgreen(f"  {k_ep}: same frame count"))
+        else:
+            print(green(f"  {k_ep}: info: too many frames {stats['se_loops'] - missing_framecount}"))
+
+        print()
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)
