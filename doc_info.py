@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from collections.abc import Sequence
 from copy import deepcopy
 import gc
 import logging
@@ -45,22 +46,9 @@ StatsKeys = Literal[
 
 def main():
     # Arguments
-    parser = ArgumentParser(description="For doc consolidation")
-
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        required=False,
-        help="debug"
+    parser = common_argument_parser(
+        description="For doc consolidation"
     )
-
-    parser.add_argument(
-        "--en",
-        action="store_true",
-        required=False,
-        help="English version"
-    )
-
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -69,9 +57,13 @@ def main():
 
 
     doc_stats: dict[str, dict[StatsKeys, int | str | list]] = {}
-    k_ch = 'doc'
-    # for ep_no in range(1, 40):
-    for ep_no in range(4, 5):
+    k_ch: Chapter = 'doc'
+    ep_no: int = arguments.episode
+    episodes: Sequence = range(1, 40)
+    if ep_no != 0:
+        episodes: Sequence = range(ep_no, ep_no + 1)
+
+    for ep_no in episodes:
         k_ep = ep_key(ep_no)
         parse_database(
             episode=k_ep,
@@ -98,21 +90,21 @@ def main():
         removed_frames = 0
         gaps: list[int] = [0]
         se_loops: int = 0
-        for k in range(1, len(ch_src_video['scenes'])):
+        for k in range(0, len(ch_src_video['scenes'])):
             scene: Scene = ch_src_video['scenes'][k]
-            delta: int = (
-                scene['start']
-                - (ch_src_video['scenes'][k-1]['start'] + ch_src_video['scenes'][k-1]['count'])
-            )
-            removed_frames += delta
-            gaps.append(delta)
+            if k >= 1:
+                delta: int = (
+                    scene['start']
+                    - (ch_src_video['scenes'][k-1]['start'] + ch_src_video['scenes'][k-1]['count'])
+                )
+                removed_frames += delta
+                gaps.append(delta)
 
             # pprint(scene)
 
             if 'effects' in scene and scene['effects'].has_effect('se_loop'):
                 e: Effect = scene['effects'].get_effect('se_loop')
                 se_loops += sum(e.extra_param)
-
 
 
         doc_stats[k_ep] = {
@@ -129,9 +121,9 @@ def main():
 
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # Deactivated:
-        # https://vscode.dev/github/JepEtau/mco_dev/blob/dev/parsers/target_av_tracks.py#L49-L50
-        # https://vscode.dev/github/JepEtau/mco_dev/blob/dev/parsers/target_av_tracks.py#L124
-        # https://vscode.dev/github/JepEtau/mco_dev/blob/dev/parsers/geometry.py#L211-L212
+        # parsers/target_av_tracks.py#L49-L50
+        # parsers/target_av_tracks.py#L124
+        # parsers/geometry.py#L211-L212
 
 
     for k_ep, stats in doc_stats.items():
@@ -150,19 +142,23 @@ def main():
         if missing_framecount > stats['se_loops']:
             print(red(f"  still missing {missing_framecount - stats['se_loops']}"))
 
-            se_mapping: np.ndarray = np.zeros((len(stats['gaps']), 2), dtype=int)
-            for i, n in enumerate(stats['gaps']):
-                if not n:
-                    continue
-                se_mapping[i - 1][1] = min(n, int(n/2))
-                se_mapping[i][0] = n - se_mapping[i - 1][1]
+            if not stats['se_loops']:
+                se_mapping: np.ndarray = np.zeros((len(stats['gaps']), 2), dtype=int)
+                for i, n in enumerate(stats['gaps']):
+                    if not n:
+                        continue
+                    # se_mapping[i][0] = min(n, int(n/2 + 0.5))
+                    se_mapping[i - 1][1] = min(n, int(n/2 + 0.5))
+                    se_mapping[i][0] = n - se_mapping[i - 1][1]
+                    # se_mapping[i][0] = n - se_mapping[i - 1][1]
 
-            # pprint(se_mapping)
-            for i in range(len(stats['gaps'])):
-                if se_mapping[i][0] != 0 or se_mapping[i][1] != 0:
-                    print(f"{i:02} = , se_loop={se_mapping[i][0]}:{se_mapping[i][1]}")
-                else:
-                    print(f"{i:02} =")
+                # pprint(se_mapping)
+                for i in range(len(stats['gaps'])):
+                    if se_mapping[i][0] != 0 or se_mapping[i][1] != 0:
+                        start, end = se_mapping[i]
+                        print(f"{i:02} =, se_loop={start if start else ''}:{end if end else ''}")
+                    else:
+                        print(f"{i:02} = ")
 
         elif missing_framecount == stats['se_loops']:
             print(lightgreen(f"  {k_ep}: same frame count"))

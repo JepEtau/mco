@@ -30,7 +30,6 @@ def get_video_chapter_frame_count(k_ep: str, k_ch: str) -> int:
             if db_video['count'] != scenes[0]['count']:
                 sys.exit(red(f"consolidate_av_tracks : {k_ep}:{k_ch} todo: correct and remove this as this shall not occur: end"))
 
-
         video_count = 0
         for s in scenes:
             video_count += s['dst']['count']

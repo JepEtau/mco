@@ -279,6 +279,7 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
     - adding frames (loop, loop and fadeout)
     """
     print(lightgreen(f"  _consolidate_av_tracks_g_debut_end: {k_ch}"))
+    print(f"  language: {db[k_ch]['audio']['lang']}")
     fps = get_fps(db)
     if k_ch not in ('g_debut', 'g_fin'):
         return

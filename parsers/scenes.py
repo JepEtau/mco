@@ -3,6 +3,7 @@ from configparser import ConfigParser
 from pprint import pprint
 import re
 import sys
+from warnings import warn
 from ._keys import all_chapter_keys, main_chapter_keys, ep_key, Chapter
 from utils.p_print import *
 from utils.mco_types import Effect, Effects, ChapterVideo, Scene
@@ -317,7 +318,7 @@ def parse_target_scenelist(
             for i, s in enumerate(db_scenes):
                 if s['no'] == scene_no:
                     if k_section.endswith(language):
-                        print(red(f"{scene_no} is already defined"))
+                        warn(yellow(f"{scene_no} is already defined, it will be replaced"))
                         del db_scenes[i]
                     else:
                         append = False
@@ -521,7 +522,6 @@ def parse_target_scenelist(
                 backward=backward,
                 effects=effects
             )
-
 
 
 def get_scene_from_frame_no(

@@ -30,13 +30,9 @@ from video.consolidate_scenes import get_chapter_video
 
 def main():
     # Arguments
-    parser = common_argument_parser(description="Parse the database")
-
-    parser.add_argument(
-        "--en",
-        action="store_true",
-        required=False,
-        help="English version"
+    parser = common_argument_parser(
+        description="Parse the database",
+        add_language=True,
     )
 
     parser.add_argument(
@@ -95,15 +91,12 @@ def main():
         print(f"Episode: {episode}")
     if chapter != '':
         print("Chapter: %s" % (chapter))
-    print(f"Language: {'en' if arguments.en else 'fr'}")
+    print(f"Language: {arguments.lang}")
     print("Tasks:")
     print("\t- parse database")
 
     # Parse database
-    dependencies = parse_database(
-        episode=episode,
-        lang='en' if arguments.en else 'fr'
-    )
+    dependencies = parse_database(episode=episode, lang=arguments.lang)
     gc.collect()
 
     print(lightcyan("dependencies:"))
@@ -175,7 +168,7 @@ def main():
         print(f"  Audio: {ch_audio['count']}")
         print(f"  Target: {target_count}")
 
-        pprint(ch_video)
+        # pprint(ch_video)
         scene_no: int = arguments.scene
         if scene_no != -1:
             print(lightcyan(f"Scene no. {scene_no}"))
