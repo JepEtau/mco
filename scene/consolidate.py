@@ -24,6 +24,7 @@ from parsers import (
     ChapterGeometry,
     SceneGeometry,
     credit_chapter_keys,
+    Chapter,
 )
 from utils.mco_utils import (
     get_cache_path,
@@ -67,6 +68,15 @@ def consolidate_scene(
     scene['src'].consolidate(task_name=task_name, watermark=False)
     primary_src_scene = scene['src'].primary_scene()
 
+    k_ep: str = scene['dst']['k_ep']
+    k_ch: Chapter = scene['dst']['k_ch']
+
+    lang: str = 'fr'
+    if k_ch in ('g_debut', 'g_fin'):
+        lang = db[k_ch]['audio']['lang']
+    else:
+        lang = db[k_ep]['audio']['lang']
+
     if verbose:
         print(lightgreen("Consolidate scene:"))
         print(lightcyan("================================== Scene ======================================="))
@@ -80,15 +90,13 @@ def consolidate_scene(
 
     # Effects
     #---------------------------------------------------------------------------
-    if scene['dst']['k_ch'] == 'g_asuivre' and task_name in ('hr', 'upscale'):
+    if k_ch == 'g_asuivre' and task_name in ('hr', 'upscale'):
         effect = scene['effects'].get_effect('loop')
         effect.loop = 99
         scene['dst']['count'] = effect.loop
 
     # Geometry
     #---------------------------------------------------------------------------
-    k_ep: str = scene['dst']['k_ep']
-    k_ch: str = scene['dst']['k_ch']
     if k_ch in ['g_asuivre', 'g_doc']:
         ch_geometry: ChapterGeometry = deepcopy(
             db[scene['dst']['k_ep']]['video']['target'][k_ch[2:]]['geometry']
@@ -278,6 +286,9 @@ def consolidate_scene(
 
         # Output file
         ext: str = vcodec_to_extension[vsettings.codec]
+        if task_name == 'final' and lang != 'fr':
+            suffix += f"_{lang}"
+
         task.video_file = absolute_path(
             os.path.join(cache_path, f"{task_name}", f"{basename}{suffix}{ext}")
         )

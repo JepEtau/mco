@@ -1,10 +1,12 @@
 # TODO
 
+
+## low
 - determine HtoD sync memory size
 - do not use inpaint shape for HtoD/DtoH transfers
 - replace mask dtype to torch.bool
 
-- script to upscale docs
+
 
 
 # Issues
@@ -28,6 +30,11 @@
 ## Improvments (low priority)
 - add full verification in geometry
 - add watermark to the final version
+
+
+## Maybe an issue
+- if 'en' target scene is a segment of a scene and this scene is also defined in fr target scenes
+
 
 (won't fix)
 - g_debut in lr

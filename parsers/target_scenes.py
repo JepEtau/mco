@@ -159,6 +159,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: str) -> None:
                 no=in_scene['no'],
                 start=in_scene['start'],
                 count=in_scene['count'],
+                effects=in_scene['effects']
             )
 
         scene['dst'] = {
@@ -328,7 +329,7 @@ def consolidate_target_scenes_g(k_ep: int | str, k_ch: str) -> None:
             'k_ep': k_ep,
             'k_ch': k_ch,
             # 'k_ed': k_ed_ref,
-            'count': dst_frame
+            'count': dst_frame,
         }
         frame_count += dst_frame
 

@@ -28,6 +28,7 @@ from parsers import (
     FINAL_HEIGHT,
 )
 from processing.effects import apply_effect
+from scene.src_scene import SrcScene
 from utils.images_io import img_info
 from utils.logger import main_logger
 from utils.mco_types import McoFrame, Scene, ChapterVideo
@@ -43,7 +44,7 @@ from utils.np_dtypes import np_to_float32, np_to_uint16, np_to_uint8
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
 from utils.pxl_fmt import PIXEL_FORMAT
-from utils.time_conversions import frame_to_s
+from utils.time_conversions import frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
 from utils.media import VideoInfo, extract_media_info_mco, str_to_video_codec, vcodec_to_extension
 
@@ -227,6 +228,25 @@ def generate_final_scene(
 
     print(lightcyan(f"Processing:"))
     print(f"  frame_count: {scene['dst']['count']}")
+    # pprint(scene)
+
+    # Same src for en/fr
+    src_seek_start: int = 0
+    src_seek_count: int = 0
+    if (
+        scene['dst']['k_ch'] in ('g_debut', 'g_fin')
+        and db[scene['dst']['k_ch']]['audio']['lang'] == 'en'
+    ):
+        src_scene: SrcScene = scene['src'].primary_scene()['scene']
+        src_seek_start = scene['src'].first_frame_no() - src_scene['start']
+        src_seek_count = scene['dst']['count']
+
+        print(yellow(f"src seek start: {src_seek_start}"))
+        print(yellow(f"src seek count: {src_seek_count}"))
+        if src_seek_count == scene['dst']['count'] and src_seek_start == 0:
+            src_seek_count = 0
+
+
     src_frame_count: int = scene['src'].frame_count(exclude_loop=True)
     if in_video_info['frame_count'] < src_frame_count:
         print(red(
@@ -267,13 +287,31 @@ def generate_final_scene(
         or has_effects
     )
 
+
+    # Src seek
+    src_seek_start_args = (
+        ["-ss", f"{frame_to_sexagesimal(src_seek_start, frame_rate=in_video_info['frame_rate_r'])}"]
+        if src_seek_start and src_seek_count
+        else []
+    )
+    src_seek_count_args = (
+        ["-t", f"{frame_to_s(src_seek_count, frame_rate=in_video_info['frame_rate_r'])}"]
+        if src_seek_count
+        else []
+    )
+
+    print(yellow(src_seek_start_args))
+    print(yellow(src_seek_count_args))
+
     if do_decode:
         d_command: list[str] = [
             ffmpeg_exe,
             "-hide_banner",
             "-loglevel", "warning",
             "-nostats",
+            *src_seek_start_args,
             "-i", in_video_fp,
+            *src_seek_count_args,
 
             "-f", "image2pipe",
             "-pix_fmt", in_pipe_pixfmt,
@@ -448,6 +486,7 @@ def generate_final_scene(
         if ch_video['avsync'] != 0:
             raise NotImplementedError("avsync not yet supported")
 
+    # Not effects, use FFmpeg only
     if not has_effects:
         print(f"{scene_key}: no effects, use FFmpeg to apply the final geometry")
         filters: list[str] = []
@@ -523,13 +562,18 @@ def generate_final_scene(
                 )}"
             ]
 
+        if src_seek_count_args and seek_count:
+            raise ValueError("Can't have both seek values")
+
         e_command: list[str] = [
             ffmpeg_exe,
             "-hide_banner",
             "-loglevel", "warning",
             "-nostats",
+            *src_seek_start_args,
             "-i", in_video_fp,
             *seek_count,
+            *src_seek_count_args,
 
             *ffmpeg_filter,
 
@@ -545,6 +589,7 @@ def generate_final_scene(
         print(purple(f"[V] command: "), " ".join(e_command))
         run_simple_command(e_command)
 
+    # Effects, must decode->process->encode
     else:
         print(f"{scene_key} has effects")
         # out_imgs: list[np.ndarray] = []
@@ -570,7 +615,9 @@ def generate_final_scene(
             "-hide_banner",
             "-loglevel", "warning",
             "-nostats",
+            *src_seek_start_args,
             "-i", in_video_fp,
+            *src_seek_count_args,
 
             "-f", "image2pipe",
             "-pix_fmt", in_pipe_pixfmt,
@@ -632,6 +679,9 @@ def generate_final_scene(
         produced: int = 0
 
         in_frame_count: int = in_video_info['frame_count']
+        # The dst may use a common src scene: g_fin (english), precedemment? asuivre?
+        if src_seek_count:
+            in_frame_count = src_seek_count
         dtype_convert_fct = np_to_uint16 if in_pipe_dtype == np.uint16 else np_to_uint8
 
         start_time: int = time.time()

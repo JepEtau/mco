@@ -11,6 +11,7 @@ from ._keys import (
     all_chapter_keys,
     non_credit_chapter_keys,
     main_chapter_keys,
+    Chapter,
 )
 from .helpers import (
     get_fps,
@@ -22,7 +23,9 @@ from ._db import db
 from .geometry import ChapterGeometry
 
 
-def get_video_chapter_frame_count(k_ep: str, k_ch: str) -> int:
+def get_video_chapter_frame_count(k_ep: str, k_ch: Chapter) -> int:
+    video_count: str = 0
+
     if k_ch in ('g_debut', 'g_fin'):
         db_video = db[k_ch]['video']
         scenes: list[Scene] = db_video['scenes']
@@ -30,11 +33,37 @@ def get_video_chapter_frame_count(k_ep: str, k_ch: str) -> int:
             if db_video['count'] != scenes[0]['count']:
                 sys.exit(red(f"consolidate_av_tracks : {k_ep}:{k_ch} todo: correct and remove this as this shall not occur: end"))
 
-        video_count = 0
         for s in scenes:
             video_count += s['dst']['count']
         if db_video['count'] != video_count:
             sys.exit(red(f"consolidate_av_tracks : error: {k_ep}:{k_ch} consolidate has not been done before: why?"))
+        return video_count
+
+    elif k_ch == 'doc':
+        print(k_ep)
+        print(k_ch)
+        ch_video = db[k_ep]['video']['target'][k_ch]
+        scenes: list[Scene] = ch_video['scenes']
+        for s in scenes:
+            print(s['src'].frame_count())
+            # print(s['dst']['count'])
+            # print(s['src'].primary_scene()['effects'])
+            # print()
+            video_count += s['src'].frame_count()
+
+        # for s in scenes:
+        #     primary_src_scene = s['src'].primary_scene()['scene']
+        #     if 'effects' in primary_src_scene:
+        #         e: Effect = primary_src_scene['effects'].get_effect('se_loop')
+        #         if e is not None:
+        #             video_count += sum(e.extra_param)
+
+        #     # print(s['src'].frame_count())
+        #     # print(s['dst']['count'])
+        #     print(['effects'])
+        #     print()
+
+        # pprint(db[k_ep]['video']['target'][k_ch])
         return video_count
 
     raise NotImplementedError(":".join((k_ep, k_ch)))

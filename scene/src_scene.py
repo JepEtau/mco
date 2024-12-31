@@ -138,6 +138,16 @@ class SrcScenes:
                 self._consolidate_scene(src_scene)
             count += src_scene['count']
 
+            if (
+                'effects' in src_scene['scene']
+                and src_scene['scene']['effects'] is not None
+            ):
+                e: Effect = src_scene['scene']['effects'].get_effect('se_loop')
+                if e is not None:
+                    print(yellow(e))
+                    count += sum(e.extra_param)
+
+
             if not exclude_loop:
                 # Exception: do not count loop when upscaling
                 if src_scene['effects'] is not None:
