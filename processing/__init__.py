@@ -29,7 +29,8 @@ supported_cuda_filters : tuple[str] = (
     # "closing",
     "darker_thinner",
     "resize",
-    "nlmeans_sk",
+    "gaussian_noise",
+    # "nlmeans_sk",
 )
 
 

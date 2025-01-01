@@ -307,6 +307,9 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
     # Add silence because audio track is generated with this
     if 'silence' in ch_audio:
         audio_duration += ch_audio['silence']
+    else:
+        pprint(ch_audio)
+        raise
 
     print(f"  audio duration (silence included): {audio_duration/1000:.03f}s")
     initial_audio_count = ms_to_frame(audio_duration, fps)
@@ -341,19 +344,19 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
     ch_video['silence'] = ms_to_frame(ch_audio['silence'], fps)
     ch_video['silence'] += (audio_count - initial_audio_count)
 
-    video_count_silence = ch_video['count'] + ch_video['silence']
+    video_and_silence_count = ch_video['count'] + ch_video['silence']
 
-    print(f"  video_count_silence: {video_count_silence} vs audio_count: {audio_count}")
+    print(f"  video+silence: {video_and_silence_count} vs audio_count: {audio_count}")
     # raise
 
     # The following consildation are done for g_debut/g_fin
     # because g_reporatge/g_asuivre video count uses audio count
-    if audio_count > video_count_silence:
+    if audio_count > video_and_silence_count:
         # Frames shall be added: use the loop effect for this
         last_scene: Scene = scenes[-1]
         frame_no = last_scene['src'].last_frame_no()
-        print(f"  -> add video frames, video({video_count_silence}) < audio ({audio_count})")
-        loop_count = audio_count - video_count_silence
+        print(f"  -> add video frames, video({video_and_silence_count}) < audio ({audio_count})")
+        loop_count = audio_count - video_and_silence_count
 
         fade: int = 25
         if (effect := ch_video['effects'].get_effect('fadeout')):
@@ -386,11 +389,11 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
         print(lightcyan(f"-----------------------------------------------------------"))
 
 
-    elif video_count_silence > audio_count:
+    elif video_and_silence_count > audio_count:
         # Add silence to the audio track by adding a new segment
         raise
-        print(f"  -> add audio silence, video({video_count_silence}) > audio ({audio_count})")
-        video_duration = frame_to_ms(video_count_silence, fps)
+        print(f"  -> add audio silence, video({video_and_silence_count}) > audio ({audio_count})")
+        video_duration = frame_to_ms(video_and_silence_count, fps)
         audio_duration = ch_audio['duration']
         silence_duration = video_duration - audio_duration
         ch_audio['segments'].append({
