@@ -420,9 +420,11 @@ def apply_upscale_effects(
             # Zoom in frame and generate a sequence of frames
             # Append title
             if effect := last_src_scene['effects'].get_effect('zoom_in'):
-                if out_f_no == effect.frame_ref:
+                print(f"out_i: {out_i}")
+                # pprint(effect)
+                if out_i == effect.frame_ref:
                     in_dtype: np.dtype = frame.img.dtype
-                    # print(f"ZOOOOM of frame {effect.frame_ref}, shape={frame.img.shape}, dtype={frame.img.dtype}")
+                    print(f"ZOOOOM of frame {effect.frame_ref}, shape={frame.img.shape}, dtype={frame.img.dtype}")
                     initial_img = frame.img
                     if in_dtype != np.float32:
                         initial_img: np.ndarray = np_to_float32(frame.img)
@@ -432,7 +434,7 @@ def apply_upscale_effects(
                     for i in range(effect.loop):
                         # Recalulate factor at every iteration: linear
                         factor: float = 1 + ((effect.zoom_factor - 1) * (i + 1)) / effect.loop
-                        # print(lightcyan(f"factor = {factor}"))
+                        print(lightcyan(f"factor = {factor}"))
                         out_h, out_w = int(factor * in_h), int(factor * in_w)
                         zoomed: np.ndarray = cv2.resize(
                             initial_img,
@@ -458,8 +460,9 @@ def apply_upscale_effects(
 
                         out_frames.append(McoFrame(
                             no=frame.no,
-                            img=zoomed,
+                            img=np.ascontiguousarray(zoomed),
                         ))
+                    print(f": {len(out_frames)}")
                     return out_frames
 
     return [frame]

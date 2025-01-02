@@ -234,7 +234,7 @@ def generate_final_scene(
     src_seek_start: int = 0
     src_seek_count: int = 0
     if (
-        scene['dst']['k_ch'] in ('g_debut', 'g_fin')
+        scene['dst']['k_ch'] in ('g_fin',)
         and db[scene['dst']['k_ch']]['audio']['lang'] == 'en'
     ):
         src_scene: SrcScene = scene['src'].primary_scene()['scene']

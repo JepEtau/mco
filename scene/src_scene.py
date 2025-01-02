@@ -133,7 +133,9 @@ class SrcScenes:
             if src_scene['effects'].has_effect('title'):
                 e: Effect = src_scene['effects'].get_effect('title')
                 if src_scene['effects'].has_effect('zoom_in'):
-                    e.frame_ref = src_scene['count']
+                    e.frame_ref = src_scene['count'] - 1
+                    e = src_scene['effects'].get_effect('zoom_in')
+                    e.frame_ref = src_scene['count'] - 1
                 else:
                     e.frame_ref = 0
                     if e.loop <= 0:

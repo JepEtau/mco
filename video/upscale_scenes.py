@@ -212,10 +212,11 @@ def upscale_scenes(
 
                 # if scene['dst']['k_ch'] not in ('g_doc', 'doc'):
                 scenes_to_upscale.append(scene)
-                total_frames += (
-                    scene['src'].frame_count(exclude_loop=True)
-                    - len(scene['src'].get_frame_replace().keys())
-                )
+                # total_frames += (
+                #     scene['src'].frame_count(exclude_loop=True)
+                #     - len(scene['src'].get_frame_replace().keys())
+                # )
+                total_frames += scene['dst']['count']
 
 
         hashcode: str = calc_hash(hashes_str[:-1])
