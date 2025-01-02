@@ -85,7 +85,7 @@ def is_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
         check_metdata = False
 
     if os.path.exists(out_video_fp):
-        dst_frame_count: int = calculate_frame_count(scene)
+        dst_frame_count: int = calculate_scene_frame_count(scene)
         print(yellow(f"dst frame_count: {dst_frame_count}"))
         try:
             out_video_info: VideoInfo = extract_media_info_mco(out_video_fp)['video']
@@ -146,9 +146,9 @@ def is_final_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
         return False
 
     main_logger.debug(
-        f"{yellow("scene:")} {calculate_frame_count(scene)}, {yellow("rendered:")} {out_video_info['frame_count']}"
+        f"{yellow("scene:")} {calculate_scene_frame_count(scene)}, {yellow("rendered:")} {out_video_info['frame_count']}"
     )
-    if out_video_info['frame_count'] != calculate_frame_count(scene):
+    if out_video_info['frame_count'] != calculate_scene_frame_count(scene):
         return False
 
     main_logger.debug(
@@ -197,7 +197,7 @@ def is_last_scene(scene: Scene) -> bool:
     return bool(scene is get_target_video(scene)['scenes'][-1])
 
 
-def calculate_frame_count(scene: Scene) -> int:
+def calculate_scene_frame_count(scene: Scene) -> int:
     count: int = 0
     task_name: TaskName = scene['task'].name
 
@@ -212,6 +212,7 @@ def calculate_frame_count(scene: Scene) -> int:
             if ch_video['avsync'] != 0:
                 raise NotImplementedError("avsync not yet supported")
 
+        # Add silence if last scene of a chapter
         if is_last_scene(scene):
             count += ch_video['silence'] if 'silence' in ch_video else 0
 
@@ -229,7 +230,7 @@ def calculate_frame_count(scene: Scene) -> int:
     if task_name in ('upscale', 'hr'):
         # Do not use the final frame count such as loop
         # use the src scene count
-        count = scene['src'].frame_count(exclude_loop=True)
+        count = scene['src'].frame_count(exclude_loop=False)
     # For the scene which has a loop,
     # remove the loop in number of frames to upscale
     # if scene['task'].name == 'upscale':

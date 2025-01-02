@@ -178,6 +178,7 @@ EffectName = Literal[
     'zoom_out',
     # Extend by looping on 1st/last frame: used by doc
     'se_loop',
+    'title',
 ]
 
 

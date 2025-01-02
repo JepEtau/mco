@@ -164,6 +164,9 @@ def main():
         if k_ch in ('g_debut', 'g_fin'):
             if ch_video['silence']:
                 target_count += ch_video['silence']
+        if ch_video['silence']:
+            print(lightcyan("video silence:"), ch_video['silence'])
+
         print(f"  Reference: {ref_count}")
         print(f"  Audio: {ch_audio['count']}")
         print(f"  Target: {target_count}")

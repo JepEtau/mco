@@ -33,7 +33,7 @@ from utils.images_io import img_info
 from utils.logger import main_logger
 from utils.mco_types import McoFrame, Scene, ChapterVideo
 from utils.mco_utils import (
-    calculate_frame_count,
+    calculate_scene_frame_count,
     ffmpeg_metadata,
     get_target_video,
     is_first_scene,
@@ -638,6 +638,12 @@ def generate_final_scene(
             return False
 
 
+        codec: str = str_to_video_codec[vsettings.codec].value
+        codec_options: list[str] = vsettings.codec_options
+        if sys.platform != 'win32':
+            codec = 'libx264'
+            codec_options = []
+
         e_command: list[str] = [
             ffmpeg_exe,
             "-hide_banner",
@@ -652,8 +658,8 @@ def generate_final_scene(
             "-i", "pipe:0",
 
             "-pix_fmt", vsettings.pix_fmt,
-            "-vcodec", str_to_video_codec[vsettings.codec].value,
-            *vsettings.codec_options,
+            "-vcodec", codec,
+            *codec_options,
             *colorspace,
             *metadata,
             out_video_fp, "-y"
@@ -678,7 +684,8 @@ def generate_final_scene(
 
         produced: int = 0
 
-        in_frame_count: int = in_video_info['frame_count']
+        # in_frame_count: int = in_video_info['frame_count']
+        in_frame_count: int = scene['dst']['count']
         # The dst may use a common src scene: g_fin (english), precedemment? asuivre?
         if src_seek_count:
             in_frame_count = src_seek_count
@@ -688,7 +695,6 @@ def generate_final_scene(
         remaining: int = in_frame_count
         ofc: int = min(in_frame_count, int(3 * mp.cpu_count() / 4))
         # executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
-
 
 
         def _d_thread(stream: IO, d_queue: Queue):
@@ -701,6 +707,7 @@ def generate_final_scene(
                     )
             except:
                 pass
+
 
         def _e_thread(
             e_subprocess: subprocess.Popen,
@@ -733,24 +740,18 @@ def generate_final_scene(
         d_thread.start()
         e_thread.start()
         decoded: int = 0
+        print(lightcyan(f"remaining: {remaining}"))
         while remaining:
             print(f"{in_frame_count - remaining}/{in_frame_count}", end='\r')
 
             # Decode by batch
             count = min(ofc, remaining)
-            # in_imgs: list[np.ndarray] = list([
-            #     np.frombuffer(
-            #         d_subprocess.stdout.read(in_pipe_nbytes), dtype=in_pipe_dtype
-            #     ).reshape(in_pipe_shape)
-            #     for _ in range(count)
-            # ])
             in_imgs: list[np.ndarray] = list([d_queue.get() for _ in range(count)])
             remaining -= count
 
             # Resize and apply filters
             out_images: list[np.ndarray] = []
             if scene['src'].has_effect('blend'):
-                print(lightcyan("blend effect"))
                 for i, img in enumerate(in_imgs):
                     out_images.extend(
                         resize_and_effects(
@@ -771,11 +772,7 @@ def generate_final_scene(
 
             # Send to encoder
             [e_queue.put(out_img) for out_img in out_images]
-            # for out_img in out_images:
-            #     e_subprocess.stdin.write(out_img)
-
             produced += len(out_images)
-
 
         if is_last_scene(scene):
             if 'silence' in ch_video and ch_video['silence'] > 0:

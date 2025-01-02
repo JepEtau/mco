@@ -130,6 +130,18 @@ class SrcScenes:
                 elif e.frame_ref == 0:
                     e.frame_ref = src_scene['start']
 
+            if src_scene['effects'].has_effect('title'):
+                e: Effect = src_scene['effects'].get_effect('title')
+                if src_scene['effects'].has_effect('zoom_in'):
+                    e.frame_ref = src_scene['count']
+                else:
+                    e.frame_ref = 0
+                    if e.loop <= 0:
+                        e.loop = 1
+
+            if e := src_scene['effects'].get_effect('fadein'):
+                e.frame_ref = 0
+
 
     def frame_count(self, exclude_loop: bool = False) -> int:
         count: int = 0

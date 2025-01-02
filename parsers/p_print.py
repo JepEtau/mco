@@ -273,6 +273,7 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
         print("")
         print(green(f" Audio track: {audio_count}"))
         print(green(f" Video track: {video_count}"))
+        print(green(f"  + Video silence: {video_track['silence']}"))
         print("")
 
         frames[k_chapter_g] = (video_count, audio_count)
