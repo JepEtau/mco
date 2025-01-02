@@ -9,6 +9,9 @@ from nn_inference.model_mgr import ModelManager
 
 from nn_inference.progress import ProgressThread
 from nn_inference.resource_mgr import ResourceManager
+from nn_inference.threads.t_cpu_decoder import CpuDecoderThread
+from nn_inference.threads.t_cpu_encoder import CpuEncoderThread
+from nn_inference.threads.t_cpu_inference import CpuInferenceThread, CpuInferenceThreadConfig
 from nn_inference.threads.t_decoder import (
     DecoderThread,
     VideoStreamInfo,
@@ -171,12 +174,14 @@ class UpscalePipeline(object):
 
 
     def run(self) -> tuple[bool, int, float, float]:
+        if not is_cuda_available():
+            return self.run_cpu()
+
         # Params and settings
         channels_last: bool = False
 
         model_manager: ModelManager = ModelManager()
-        if is_cuda_available():
-            model_manager.initialize_sessions()
+        model_manager.initialize_sessions()
 
         print(yellow("HtoD memory:"))
         pprint(model_manager.htod_mem)
@@ -198,8 +203,6 @@ class UpscalePipeline(object):
         try:
             d_thread = DecoderThread(config=d_thread_config, scenes=self.scenes)
         except Exception as e:
-            # Debug
-            d_thread = DecoderThread(scenes=self.scenes)
             print(red(f"[E] decoder: {type(e)}"))
             return True, 0, 0
         d_thread.setName("decoder")
@@ -334,3 +337,123 @@ class UpscalePipeline(object):
 
         return err, encoded, elapsed, total_elapsed
 
+
+
+    def run_cpu(self) -> tuple[bool, int, float, float]:
+        # Create encoder thread
+        try:
+            e_thread = CpuEncoderThread()
+        except Exception as e:
+            print(red(f"[E] encoder: {type(e)}"))
+            return True, 0, 0
+        e_thread.setName("encoder")
+
+        # Video decoder for each scene
+        d_thread_config: DecoderThreadConfig = DecoderThreadConfig(e_thread=e_thread)
+        try:
+            d_thread = CpuDecoderThread(config=d_thread_config, scenes=self.scenes)
+        except Exception as e:
+            print(red(f"[E] decoder: {type(e)}"))
+            return True, 0, 0
+        d_thread.setName("decoder")
+
+        # Create CUDA inference thread
+        i_thread_config: CpuInferenceThreadConfig = CpuInferenceThreadConfig(
+            d_thread=d_thread,
+            e_thread=e_thread,
+            resize_scale=2,
+        )
+        i_thread: CpuInferenceThread = CpuInferenceThread(i_thread_config)
+
+        for thread in (d_thread, i_thread):
+            if thread is not None:
+                thread.set_inference_threads({'cpu': i_thread})
+
+        # Progress bar
+        f_progress_thread = None
+        f_progress_thread = ProgressThread(total=self.total_frames)
+        e_thread.set_progress_thread(f_progress_thread)
+
+        if self.simulation:
+            return [0] * 4
+
+        # Verbose
+        d_thread.verbose = False
+        e_thread.verbose = False
+
+        # Start all threads
+        d_thread.set_produce_flag()
+        for thread in (
+            d_thread,
+            i_thread,
+            e_thread,
+            f_progress_thread,
+        ):
+            if thread is not None:
+                ResourceManager().register_thread(thread)
+                thread.start()
+
+        # Run until the end
+        elapsed: float = 0.
+        total_elapsed: float = 0.
+
+        decoding: bool = True
+        err: bool = False
+
+        start_time = 0
+        real_start = time.time()
+        ask_to_end: bool = False
+        while True:
+            if not decoding:
+                if e_thread.encoded == self.total_frames and ask_to_end:
+                    e_thread.put_frame(None)
+                    ask_to_end = False
+
+                if (
+                    not d_thread.is_alive()
+                    # and inference_threads_ended
+                    and not e_thread.is_alive()
+                ):
+                    current_time: float = time.time()
+                    total_elapsed = current_time - real_start
+                    if f_progress_thread is not None:
+                        elapsed = f_progress_thread.elapsed()
+                    else:
+                        elapsed = current_time - start_time
+                    encoded = e_thread.encoded
+                    break
+                time.sleep(0.0001)
+                continue
+
+            time.sleep(0.0001)
+            if not d_thread.is_alive() and decoding:
+                # print("[V][C] decoder has ended")
+                err, message = d_thread.error_encountered()
+                if err:
+                    print(red(message))
+                    break
+                else:
+                    decoding = False
+                    ask_to_end = True
+
+            time.sleep(0.0001)
+            if not e_thread.is_alive() and d_thread.is_alive():
+                print(red("Error: the encoder encountered an unexpected error"))
+                err, encoded, total_elapsed = True, 0, 0
+                break
+
+            time.sleep(0.001)
+
+        # Stop remaining threads if not already stopped (error cases)
+        for thread in (i_thread,):
+            if thread is not None:
+                thread.put_frame(None)
+                time.sleep(0.001)
+
+        for thread in (d_thread, i_thread, e_thread):
+            if thread is not None:
+                thread.stop()
+        if f_progress_thread is not None:
+            f_progress_thread.stop()
+
+        return err, encoded, elapsed, total_elapsed
