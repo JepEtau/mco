@@ -1,5 +1,6 @@
 from __future__ import annotations
 from configparser import ConfigParser
+from copy import deepcopy
 from pprint import pprint
 import re
 import sys
@@ -319,6 +320,9 @@ def parse_target_scenelist(
                 if s['no'] == scene_no:
                     if k_section.endswith(language):
                         warn(yellow(f"{scene_no} is already defined, it will be replaced"))
+                        if 'overwritten_scenes' not in ch_video:
+                            ch_video['overwritten_scenes'] = {}
+                        ch_video['overwritten_scenes'][scene_no] = deepcopy(db_scenes[i])
                         del db_scenes[i]
                     else:
                         append = False

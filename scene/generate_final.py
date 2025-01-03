@@ -26,6 +26,7 @@ from parsers import (
     TaskName,
     VideoSettings,
     FINAL_HEIGHT,
+    Chapter,
 )
 from processing.effects import apply_effect
 from scene.src_scene import SrcScene
@@ -237,15 +238,20 @@ def generate_final_scene(
         scene['dst']['k_ch'] in ('g_fin',)
         and db[scene['dst']['k_ch']]['audio']['lang'] == 'en'
     ):
-        src_scene: SrcScene = scene['src'].primary_scene()['scene']
-        src_seek_start = scene['src'].first_frame_no() - src_scene['start']
-        src_seek_count = scene['dst']['count']
+        # Validated on g_fin only
+        k_ch: Chapter = scene['dst']['k_ch']
+        overwritten_scenes: dict[int, Scene] = db[k_ch]['video']['overwritten_scenes']
+        if scene['no'] in overwritten_scenes:
+            original_scene = overwritten_scenes[scene['no']]
+            original_start: int = original_scene['src'].primary_scene()['start']
+            src_seek_start = scene['src'].primary_scene()['start'] - original_start
+            src_seek_count = scene['dst']['count']
+            if src_seek_count == scene['src'].primary_scene()['count'] and src_seek_start == 0:
+                src_seek_count = 0
 
-        print(yellow(f"src seek start: {src_seek_start}"))
-        print(yellow(f"src seek count: {src_seek_count}"))
-        if src_seek_count == scene['dst']['count'] and src_seek_start == 0:
-            src_seek_count = 0
-
+            print(yellow(f"{scene['no']} is overwritten"))
+            print(yellow(f"src seek start: {src_seek_start}"))
+            print(yellow(f"src seek count: {src_seek_count}"))
 
     src_frame_count: int = scene['src'].frame_count(exclude_loop=True)
     if in_video_info['frame_count'] < src_frame_count:
@@ -470,6 +476,13 @@ def generate_final_scene(
                 print(f"{scene_key} stderr:")
                 pprint(stderr)
 
+    # Codec
+    codec: str = str_to_video_codec[vsettings.codec].value
+    codec_options: list[str] = vsettings.codec_options
+    if sys.platform != 'win32':
+        codec = 'libx264'
+        codec_options = []
+
     # Colorspace, output is x264 so it's working like that
     colorspace: list[str] = []
     for k, v in ColorSettings().__dict__.items():
@@ -577,9 +590,9 @@ def generate_final_scene(
 
             *ffmpeg_filter,
 
-            "-vcodec", str_to_video_codec[vsettings.codec].value,
             "-pix_fmt", vsettings.pix_fmt,
-            *vsettings.codec_options,
+            "-vcodec", codec,
+            *codec_options,
             *colorspace,
             *metadata,
             out_video_fp, "-y"
@@ -636,13 +649,6 @@ def generate_final_scene(
         except Exception as e:
             print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
             return False
-
-
-        codec: str = str_to_video_codec[vsettings.codec].value
-        codec_options: list[str] = vsettings.codec_options
-        if sys.platform != 'win32':
-            codec = 'libx264'
-            codec_options = []
 
         e_command: list[str] = [
             ffmpeg_exe,

@@ -389,6 +389,8 @@ class ChapterVideo(TypedDict):
     # k_ep: str
     # k_ch: str
 
+    overwritten_scenes: dict[int, Scene]
+
 
 
 @dataclass
