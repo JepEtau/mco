@@ -95,7 +95,10 @@ def main():
             if k >= 1:
                 delta: int = (
                     scene['start']
-                    - (ch_src_video['scenes'][k-1]['start'] + ch_src_video['scenes'][k-1]['count'])
+                    - (
+                        ch_src_video['scenes'][k-1]['start']
+                        + ch_src_video['scenes'][k-1]['count']
+                    )
                 )
                 removed_frames += delta
                 gaps.append(delta)
@@ -106,10 +109,15 @@ def main():
                 e: Effect = scene['effects'].get_effect('se_loop')
                 se_loops += sum(e.extra_param)
 
+        # Calculate initial frame count
+        src_count: int = 0
+        for s in ch_video['scenes']:
+            for src_s in s['src'].scenes():
+                src_count += src_s['count']
 
         doc_stats[k_ep] = {
             'audio': int(ch_audio['duration'] * get_fps(db) / 1000),
-            'video': ch_video['count'],
+            'video': src_count,
             'k_ed_src': ch_video['default_src']['k_ed'],
             'origin_video': origin_video_count,
             'total_removed': removed_frames,

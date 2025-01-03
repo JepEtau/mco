@@ -8,6 +8,7 @@ import time
 from nn_inference.model_mgr import ModelManager
 from nn_inference.threads.t_decoder import VideoStreamInfo
 from nn_inference.toolbox.upscale_doc import (
+    consolidate_initial_doc,
     upscale_doc_scenes,
     upscale_doc_chapter,
 )
@@ -210,13 +211,13 @@ def upscale_scenes(
                 print(lightcyan(f"Scene {scene['no']} filters:"))
                 pprint(scene_filters)
 
-                # if scene['dst']['k_ch'] not in ('g_doc', 'doc'):
-                scenes_to_upscale.append(scene)
+                if scene['dst']['k_ch'] != 'doc':
+                    scenes_to_upscale.append(scene)
                 # total_frames += (
                 #     scene['src'].frame_count(exclude_loop=True)
                 #     - len(scene['src'].get_frame_replace().keys())
                 # )
-                total_frames += scene['dst']['count']
+                    total_frames += scene['dst']['count']
 
 
         hashcode: str = calc_hash(hashes_str[:-1])
@@ -245,8 +246,9 @@ def upscale_scenes(
     if model_manager.count():
         print(model_manager)
 
-    if scenes_to_upscale and model_manager.count() == 0:
-        raise ValueError(red("No models"))
+    if not scenes_to_upscale_doc:
+        if scenes_to_upscale and model_manager.count() == 0:
+            raise ValueError(red("No models"))
 
     if not scenes_to_upscale and not scenes_to_upscale_doc:
         print(f"No scenes to upscale")
@@ -304,7 +306,8 @@ def upscale_scenes(
         )
         pipeline.run()
 
-    if scenes_to_upscale_doc:
+    elif scenes_to_upscale_doc:
+        consolidate_initial_doc(ch_video, debug=debug)
         upscale_doc_scenes(
             scenes=scenes_to_upscale_doc,
             debug=debug,
