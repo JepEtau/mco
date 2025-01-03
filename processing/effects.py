@@ -405,12 +405,12 @@ def apply_upscale_effects(
     if scene['dst']['k_ch'] == 'doc':
         src_scene: SrcScene = scene['src'].primary_scene()['scene']
         if 'effects' in src_scene and src_scene['effects'].has_effect('se_loop'):
-            e: Effect = src_scene['effects'].get_effect('se_loop')
+            effect: Effect = src_scene['effects'].get_effect('se_loop')
             if out_i == 0 and effect.extra_param[0]:
                 return [frame] * (effect.extra_param[0] + 1)
 
             if out_i == src_scene['count'] - 1 and effect.extra_param[1]:
-                return [frame] * (effect.extra_param[0] + 1)
+                return [frame] * (effect.extra_param[1] + 1)
 
 
     # Only for g_debut. to reduce number of tests, discard this if not g_debut

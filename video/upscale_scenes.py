@@ -211,12 +211,13 @@ def upscale_scenes(
                 print(lightcyan(f"Scene {scene['no']} filters:"))
                 pprint(scene_filters)
 
-                if scene['dst']['k_ch'] != 'doc':
+                if scene['dst']['k_ch'] == 'doc':
+                    if 'mco_doc' not in scene_filters.sequence:
+                        scenes_to_upscale.append(scene)
+                        total_frames += scene['dst']['count']
+
+                else:
                     scenes_to_upscale.append(scene)
-                # total_frames += (
-                #     scene['src'].frame_count(exclude_loop=True)
-                #     - len(scene['src'].get_frame_replace().keys())
-                # )
                     total_frames += scene['dst']['count']
 
 
