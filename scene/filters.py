@@ -49,7 +49,7 @@ def get_filters(scene: Scene) -> list[Filter]:
     debug: bool = False
     s_key: str = scene_key(scene)
     k_ed, k_ep, k_ch = scene['k_ed'], scene['k_ep'], scene['k_ch']
-    chapter_video: ChapterVideo = db[k_ep]['video'][k_ed][k_ch]
+    ch_video: ChapterVideo = db[k_ep]['video'][k_ed][k_ch]
 
     if debug:
         print(lightgreen(f"get filters from scene: {s_key}, start: {scene['start']}"))
@@ -62,15 +62,16 @@ def get_filters(scene: Scene) -> list[Filter]:
 
         # This scene uses default filters. Use the one defined in the part
         if (
-            'filters' not in chapter_video
+            'filters' not in ch_video
             and scene['task'].name not in ('initial', 'lr')
         ):
-            sys.exit(print(red(
+            pprint(scene)
+            raise ValueError(red(
                 f"Error: {s_key}: no available filters for task \'{scene['task'].name}\'"
-            )))
+            ))
 
         try:
-            filters = chapter_video['filters']['default']
+            filters = ch_video['filters']['default']
         except:
             if scene['task'].name == 'initial':
                 return {}
@@ -84,16 +85,16 @@ def get_filters(scene: Scene) -> list[Filter]:
         if debug:
             print(yellow(f"custom filter: {scene['filters']}"))
 
-        filters = deepcopy(chapter_video['filters']['default'])
+        filters = deepcopy(ch_video['filters']['default'])
 
         # This scene uses a custom filter defined in the 'filters' struct in this part
         try:
-            filters.update(chapter_video['filters'][scene['filters_id']])
+            filters.update(ch_video['filters'][scene['filters_id']])
         except:
-            print(red(f"\tdefined filters: {list(chapter_video['filters'].keys())}"))
+            print(red(f"\tdefined filters: {list(ch_video['filters'].keys())}"))
             print(orange(f"\tfallback: using default"))
             raise ValueError(red(f"Error: {s_key}, filter {scene['filters']} not found"))
-            filters = chapter_video['filters']['default']
+            filters = ch_video['filters']['default']
     else:
         # This scene may default filters, but to be validated
         print(red(f"Error: no filters defined for {s_key}"))

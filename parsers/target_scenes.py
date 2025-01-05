@@ -17,7 +17,7 @@ from scene.src_scene import (
     SrcScenes
 )
 from ._db import db
-from ._types import ep_key
+from ._keys import ep_key, scene_no_str
 
 
 
@@ -195,7 +195,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: str) -> None:
         if 'scenes' in ch_video.keys():
             print(lightcyan("\tdb_video_target[scenes]"))
             for s in ch_video['scenes']:
-                print(lightcyan(f"\n{s['no']:03}"))
+                print(lightcyan(f"\n{scene_no_str(s)}"))
                 pprint(s)
             pprint(ch_video['scenes'][SCENE_NO])
         # print("   start: %d" % (db_video_target['start']))

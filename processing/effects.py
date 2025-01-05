@@ -714,7 +714,7 @@ def blend_images(
 #     else:
 #         output_filepath = os.path.join(db[k_ep_dst]['cache_path'], k_ch_dst)
 #     output_filepath = os.path.join(output_filepath,
-#         f"{scene['no']:03}", f"{step_no:02}")
+#         f"{scene_no_str(scene)}", f"{step_no:02}")
 #     if not os.path.exists(output_filepath):
 #         os.makedirs(output_filepath)
 #     print(lightgrey(f"\toutput_filepath: {output_filepath}"))

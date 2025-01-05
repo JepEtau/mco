@@ -152,7 +152,7 @@ def detect_inner_rect(
                     (x, y+10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                     (255,30,12), 2)
-                cv2.imwrite(f"mask_{index:03}.png", debug_img)
+                cv2.imwrite(f"mask_{index:05}.png", debug_img)
             break
 
     epsilon = 0.1 * cv2.arcLength(outer_contour, True)
@@ -161,7 +161,7 @@ def detect_inner_rect(
     if False:
         debug_img = cv2.cvtColor(gray_img_debug, cv2.COLOR_GRAY2BGR)
         cv2.drawContours(debug_img, [polygon], -1, (0, 255, 0), 1)
-        cv2.imwrite(f"mask_{index:03}.png", debug_img)
+        cv2.imwrite(f"mask_{index:05}.png", debug_img)
         # show_image(img_debug, f"{i}")
 
     if polygon.shape[0] < 4:

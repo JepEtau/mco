@@ -15,7 +15,13 @@ from utils.media import (
 )
 from utils.p_print import *
 from parsers import (
-    VideoSettings, db, task_to_dirname, TaskName, TASK_NAMES, ProcessingTask
+    VideoSettings,
+    db,
+    task_to_dirname,
+    TaskName,
+    TASK_NAMES,
+    ProcessingTask,
+    scene_no_str,
 )
 from .logger import main_logger
 
@@ -288,11 +294,18 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
             f"{scene['no']:03}"
         )
 
-    if k_ch_dst == 'doc' and task_name != 'initial':
-        return os.path.join(
-            cache_dir,
-            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
-        )
+    if k_ch_dst == 'doc':
+        if task_name == 'initial':
+            return os.path.join(
+                cache_dir,
+                scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
+            )
+        else:
+            return os.path.join(
+                cache_dir,
+                scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
+            )
+
     # # If last task is geometry, use the dst structure
     # if task_name == 'final':
     #     output_path: str = os.path.join(
@@ -369,6 +382,7 @@ def get_out_directory(scene: Scene):
     task_name: TaskName = scene['task'].name
     dirname: str = task_to_dirname[task_name]
     cache_dir: str = db['common']['directories']['cache']
+    s_no_str = scene_no_str(scene)
 
     if (
         scene['task'].name in 'lr'
@@ -381,19 +395,14 @@ def get_out_directory(scene: Scene):
 
     # Put all images in a single folder for 'génériques'
     if scene['k_ch'] in ('g_debut', 'g_fin'):
-        return os.path.join(
-            cache_dir,
-            scene['k_ch'],
-            f"{scene['no']:03}",
-            dirname,
-        )
+        return os.path.join(cache_dir, scene['k_ch'], s_no_str, dirname)
 
     if scene['k_ch'] in ('g_reportage', 'g_asuivre'):
         output_path = os.path.join(
             cache_dir,
             scene['k_ep'],
             scene['k_ch'],
-            f"{scene['no']:03}",
+            s_no_str,
             dirname,
         )
 
@@ -402,7 +411,7 @@ def get_out_directory(scene: Scene):
             cache_dir,
             scene['dst']['k_ep'],
             scene['dst']['k_ch'],
-            f"{scene['no']:03}",
+            s_no_str,
             dirname,
         )
 
@@ -412,17 +421,19 @@ def get_out_directory(scene: Scene):
             cache_dir,
             scene['k_ep'],
             scene['k_ch'],
-            f"{scene['no']:03}",
+            s_no_str,
             dirname
         )
 
     else:
         # Work in the src directory
+        raise NotImplementedError(red("changed src no format"))
+        _s_no_str = scene_no_str(scene['src'])
         output_path = os.path.join(
             cache_dir,
             scene['k_ep'],
             scene['k_ch'],
-            f"{scene['src']['no']:03}",
+            _s_no_str,
             dirname
         )
     return output_path

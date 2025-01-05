@@ -1,7 +1,18 @@
+from __future__ import annotations
+from typing import Literal, TYPE_CHECKING
+if TYPE_CHECKING:
+    from utils.mco_types import Scene
 
 
+def scene_no_str(scene: Scene) -> str:
+    if (
+        ('dst' in scene and scene['dst']['k_ch'] == 'episode')
+        or 'k_ch' in scene and scene['k_ch'] == 'episode'
+    ):
+        return f"{scene['no']:03}"
 
-from typing import Literal
+    return f"{scene['no']:02}"
+
 
 
 def ep_key(value: int | str) -> str | None:

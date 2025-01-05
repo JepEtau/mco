@@ -24,6 +24,7 @@ from parsers import (
     Chapter,
     credit_chapter_keys,
     db,
+    scene_no_str,
 )
 
 
@@ -265,11 +266,11 @@ class DeshakeDatabase:
             scene_no: int = scene['no']
             src_scene: Scene = scene['src'].primary_scene()['scene']
             option: str = "_". join((
-                f"{scene_no:03}",
+                scene_no_str(scene),
                 src_scene['k_ed'],
                 src_scene['k_ep'],
                 src_scene['k_ch'],
-                f"{src_scene['no']:03}"
+                scene_no_str(src_scene)
             ))
 
             # Scene

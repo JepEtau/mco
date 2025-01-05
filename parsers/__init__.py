@@ -61,7 +61,8 @@ from .scenes import (
     scene_key,
 )
 from ._keys import (
-    ep_key
+    ep_key,
+    scene_no_str
 )
 
 from .stabilize import (
@@ -79,6 +80,7 @@ __all__ = [
 
     "Database",
     "ep_key",
+    "scene_no_str",
     "main_chapter_keys",
     "credit_chapter_keys",
     "all_chapter_keys",

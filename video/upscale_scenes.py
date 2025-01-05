@@ -9,6 +9,7 @@ from nn_inference.model_mgr import ModelManager
 from nn_inference.threads.t_decoder import VideoStreamInfo
 from nn_inference.toolbox.upscale_doc import (
     consolidate_initial_doc,
+    consolidate_initial_doc_scenes,
     upscale_doc_scenes,
     upscale_doc_chapter,
 )
@@ -140,7 +141,6 @@ def upscale_scenes(
                 pprint(scene)
                 print(lightcyan("==============================================================================="))
 
-
             # Calculate hash for the video
             hashes_str += f",{scene['task'].hash}"
 
@@ -197,11 +197,16 @@ def upscale_scenes(
                         # Save the output as intermediary file -> patch this file
                         scene['task'].fallback_in_video_files['hr'] = scene['task'].video_file
                         scene['task'].video_file = (
-                            scene['task'].video_file.replace("_hr", "_hr_tmp")
+                            scene['task'].video_file.replace("_hr", "_hr_tpz")
                         )
                         scene['task'].in_video_file = scene['task'].video_file
                         scenes_to_upscale_doc.append(scene)
                         break
+
+                    elif filter_str.startswith('dvr'):
+                        scenes_to_upscale_doc.append(scene)
+                        break
+
 
                     model: str = filter_str
                     model_key = model_manager.register(model)
@@ -212,7 +217,10 @@ def upscale_scenes(
                 pprint(scene_filters)
 
                 if scene['dst']['k_ch'] == 'doc':
-                    if 'mco_doc' not in scene_filters.sequence:
+                    if (
+                        'mco_doc' not in scene_filters.sequence
+                        and 'dvr' not in scene_filters.sequence
+                    ):
                         scenes_to_upscale.append(scene)
                         total_frames += scene['dst']['count']
 
@@ -308,11 +316,19 @@ def upscale_scenes(
         pipeline.run()
 
     elif scenes_to_upscale_doc:
-        consolidate_initial_doc(ch_video, debug=debug)
-        upscale_doc_scenes(
-            scenes=scenes_to_upscale_doc,
-            debug=debug,
-            force=force
+        # consolidate_initial_doc_scenes(ch_video=ch_video)
+        filters: Filter = (
+            ch_video['scenes'][0]['filters'][task_name]
+            if scene_no is None
+            else ch_video['scenes'][scene_no]['filters'][task_name]
         )
+
+        if 'mco_doc' in filters.sequence:
+            # consolidate_initial_doc(ch_video, debug=debug)
+            upscale_doc_scenes(
+                scenes=scenes_to_upscale_doc,
+                debug=debug,
+                force=force
+            )
 
     print("done")

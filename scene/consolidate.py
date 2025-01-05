@@ -25,6 +25,7 @@ from parsers import (
     SceneGeometry,
     credit_chapter_keys,
     Chapter,
+    scene_no_str,
 )
 from utils.mco_utils import (
     get_cache_path,
@@ -64,6 +65,8 @@ def consolidate_scene(
     task: ProcessingTask = scene['task']
     task_name: TaskName = task.name
     task_name_index: int = TASK_NAMES.index(task_name)
+
+    s_no_str = scene_no_str(scene)
 
     scene['src'].consolidate(task_name=task_name, watermark=False)
     primary_src_scene = scene['src'].primary_scene()
@@ -116,7 +119,8 @@ def consolidate_scene(
         try:
             scene['geometry'].chapter = deepcopy(chapter['geometry'])
         except:
-            warn(f"no geometry defined for {k_ep}:{k_ch}")
+            if task_name == 'final':
+                raise ValueError(f"no geometry defined for {k_ep}:{k_ch}")
             scene['geometry'] = SceneGeometry()
 
 
@@ -236,18 +240,18 @@ def consolidate_scene(
         _k_ed, _k_ep = primary_src_scene['k_ed_ep_ch_no'][:2]
         if k_ch in ('g_debut', 'g_fin'):
             cache_path: str = db[k_ch]['cache_path']
-            basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
+            basename = f"{k_ch}_{s_no_str}__{_k_ed}_{_k_ep}"
 
         elif (
             k_ch in ('g_asuivre', 'g_doc')
             and task_name not in ('lr', 'sim', 'final')
         ):
             cache_path: str = db[k_ch]['cache_path']
-            basename = f"{k_ch}_{scene['no']:03}__{_k_ed}_{_k_ep}"
+            basename = f"{k_ch}_{s_no_str}__{_k_ed}_{_k_ep}"
 
         else:
             cache_path: str = db[k_ep]['cache_path']
-            basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
+            basename = f"{k_ep}_{k_ch}_{s_no_str}__{_k_ed}"
 
         suffix: str = ""
         if task_name not in ('hr', 'tf', 'final'):
@@ -331,4 +335,4 @@ def consolidate_scene(
         pprint(scene)
         print("End of scene consolidation")
         print(lightcyan("==============================================================================="))
-        sys.exit()
+        raise

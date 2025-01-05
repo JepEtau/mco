@@ -15,6 +15,7 @@ from parsers import (
     TaskName,
     TASK_NAMES,
     ProcessingTask,
+    scene_no_str,
 )
 from utils.p_print import *
 from utils.path_utils import absolute_path
@@ -24,6 +25,7 @@ from utils.path_utils import absolute_path
 
 
 _doc_previous_task: dict[str, str] = {
+    'initial': '',
     'lr': 'initial',
     'hr': 'initial',
     'tf': 'hr',
@@ -47,7 +49,7 @@ def set_doc_filepath_(scene: Scene) -> None:
     # _task_name: str = 'lr' if task_name in ('initial', 'sim') else task_name
     scene_filters = scene['filters']
     vsettings: VideoSettings = task.video_settings
-
+    s_no_str = scene_no_str(scene)
 
     # Append the model name to evaluate models: only for upscale task
     if task_name == 'upscale':
@@ -67,17 +69,22 @@ def set_doc_filepath_(scene: Scene) -> None:
 
     # Cache path, in/out files
     in_cache_doc: str = os.path.abspath(
-        os.path.join(db['common']['directories']['cache_doc'], os.pardir, k_ch, k_ep)
+        os.path.join(
+            db['common']['directories']['cache_doc'],
+            os.pardir,
+            k_ch,
+            k_ep
+        )
     )
     out_cache_doc = in_cache_doc
-    in_basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}__{primary_src_scene['k_ed_ep_ch_no'][0]}"
+    in_basename: str = f"{k_ep}_{k_ch}_{s_no_str}__{primary_src_scene['k_ed_ep_ch_no'][0]}"
     out_basename = in_basename
 
 
     # Specific to g_doc (asuivre should follow the same way)
     if scene['dst']['k_ch'] == 'g_doc':
         _k_ed, _k_ep, _k_ch, _no = primary_src_scene['k_ed_ep_ch_no']
-        in_basename: str = f"{_k_ch}_{_no:03}__{_k_ed}_{_k_ep}"
+        in_basename: str = f"{_k_ch}_{_no:02}__{_k_ed}_{_k_ep}"
         out_basename = in_basename
 
         # Cache path
@@ -90,18 +97,23 @@ def set_doc_filepath_(scene: Scene) -> None:
                 )
             )
             _k_ed, _k_ep, _k_ch, _no = primary_src_scene['k_ed_ep_ch_no']
-            out_basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
+            out_basename: str = f"{k_ep}_{k_ch}_{s_no_str}__{_k_ed}"
 
 
     # Input file for this task
     prev_task_name: TaskName = _doc_previous_task[task_name]
-    suffix = "hr_" if task_name in ('final') else ""
+    suffix = "_hr_" if task_name in ('final') else ""
     in_vsettings: VideoSettings = db['common']['video_format']['hr']
     in_ext: str = vcodec_to_extension[in_vsettings.codec]
+    suffix = (
+        f"{suffix}{prev_task_name}"
+        if task_name not in ('upscale', 'hr')
+        else ""
+    )
     task.in_video_file = os.path.join(
         in_cache_doc,
         f"{prev_task_name}",
-        f"{in_basename}_{suffix}{prev_task_name}{in_ext}"
+        f"{in_basename}{suffix}{in_ext}"
     )
 
 
@@ -109,11 +121,17 @@ def set_doc_filepath_(scene: Scene) -> None:
     suffix = "hr_" if task_name == 'cg' else ""
     ext: str = vcodec_to_extension[vsettings.codec]
 
+    # For doc in hr, add a suffix to mix different sources
+    suffix2: str = ''
+    if k_ch == 'doc' and task_name == 'hr':
+        if 'mco_doc' in scene_filters['hr'].sequence:
+            suffix2 += f"_tpz"
+
     task.video_file = absolute_path(
         os.path.join(
             out_cache_doc,
             task_name,
-            f"{out_basename}_{suffix}{task_name}{ext}"
+            f"{out_basename}_{suffix}{task_name}{suffix2}{ext}"
         )
     )
 
@@ -144,7 +162,7 @@ def set_g_asuivre_filepath_(scene: Scene) -> None:
     # _task_name: str = 'lr' if task_name in ('initial', 'sim') else task_name
     scene_filters = scene['filters']
     vsettings: VideoSettings = task.video_settings
-
+    s_no_str = scene_no_str(scene)
 
     # Append the model name to evaluate models: only for upscale task
     if task_name == 'upscale':
@@ -167,14 +185,14 @@ def set_g_asuivre_filepath_(scene: Scene) -> None:
         os.path.join(db['common']['directories']['cache_doc'], os.pardir, k_ch, k_ep)
     )
     out_cache_doc = in_cache_doc
-    in_basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}__{primary_src_scene['k_ed_ep_ch_no'][0]}"
+    in_basename: str = f"{k_ep}_{k_ch}_{s_no_str}__{primary_src_scene['k_ed_ep_ch_no'][0]}"
     out_basename = in_basename
 
 
     # Specific to g_doc (asuivre should follow the same way)
     if scene['dst']['k_ch'] == 'g_asuivre':
         _k_ed, _k_ep, _k_ch, _no = primary_src_scene['k_ed_ep_ch_no']
-        in_basename: str = f"{_k_ch}_{_no:03}__{_k_ed}_{_k_ep}"
+        in_basename: str = f"{_k_ch}_{_no:02}__{_k_ed}_{_k_ep}"
         out_basename = in_basename
 
         # Cache path
@@ -187,7 +205,7 @@ def set_g_asuivre_filepath_(scene: Scene) -> None:
                 )
             )
             _k_ed, _k_ep, _k_ch, _no = primary_src_scene['k_ed_ep_ch_no']
-            out_basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}__{_k_ed}"
+            out_basename: str = f"{k_ep}_{k_ch}_{s_no_str}__{_k_ed}"
 
 
     # Input file for this task

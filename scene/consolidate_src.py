@@ -22,6 +22,7 @@ from parsers import (
     ProcessingTask,
     VideoSettings,
     TaskName,
+    scene_no_str,
 )
 from utils.mco_types import Scene, Inputs
 
@@ -115,7 +116,7 @@ def consolidate_src_scene(
         #     os.path.join(
         #         scene['cache'],
         #         'initial',
-        #         f"{k_ed}_{k_ep}_{k_ch}_{scene['no']:03}{suffix}{ext}"
+        #         f"{k_ed}_{k_ep}_{k_ch}_{scene_no_str(scene)}{suffix}{ext}"
         #     )
         # )
 
@@ -124,7 +125,7 @@ def consolidate_src_scene(
     #             os.path.join(
     #                 cache_dir,
     #                 doc_previous_task[doc_previous_task[task_name]],
-    #                 f"{k_ed}_{k_ep}_{k_ch}_{scene['no']:03}_lr{ext}"
+    #                 f"{k_ed}_{k_ep}_{k_ch}_{scene_no_str(scene)}_lr{ext}"
     #             )
     #         )
 
@@ -160,7 +161,7 @@ def consolidate_src_scene(
     else:
         cache_path: str = get_cache_path(scene)
 
-    basename = f"{k_ed}_{k_ep}_{k_ch}_{scene['no']:03}"
+    basename = f"{k_ed}_{k_ep}_{k_ch}_{scene_no_str(scene)}"
     suffix: str = ""
     if task_name != "restored":
         if scene['task'].hash != '':

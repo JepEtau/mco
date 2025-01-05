@@ -14,7 +14,7 @@ from utils.images import Image
 from utils.images_io import load_image, write_image
 from utils.mco_types import Scene, McoFrame
 from utils.tools import font_dir
-from parsers import db
+from parsers import db, scene_no_str
 
 
 _FONT_PATH: tuple[tuple[str]] = (
@@ -37,12 +37,12 @@ def add_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | None:
 
     scene: Scene = frame.scene
     in_img: np.ndarray = frame.img
-
+    sno_str = scene_no_str(scene)
     if scene['task'].name in 'initial':
-        text: str = f"""{scene['k_ed']}:{scene['k_ep']}:{scene['no']:03}{str(no).rjust(10)}"""
+        text: str = f"""{scene['k_ed']}:{scene['k_ep']}:{sno_str}{str(no).rjust(10)}"""
     else:
         src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no)['scene']
-        text: str = f"""{src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['no']:03}{str(no).rjust(10)}"""
+        text: str = f"""{src_scene['k_ed']}:{src_scene['k_ep']}:{sno_str}{str(no).rjust(10)}"""
 
     height: int = in_img.shape[0]
     font_size: int = 32
@@ -91,22 +91,23 @@ def add_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | None:
 
 
 def _add_initial_scene_watermak(pil_image: PilImage.Image, scene: Scene, no: int) -> None:
+    sno_str = scene_no_str(scene)
 
     height: int = pil_image.height
 
     if scene['task'].name == 'initial':
-        text: str = f"{scene['k_ed']}:{scene['k_ep']}:{scene['no']:03} {scene['count']}"
+        text: str = f"{scene['k_ed']}:{scene['k_ep']}:{sno_str} {scene['count']}"
         color: tuple[int, int, int] = (0, 240, 0)
 
     else:
         # Add destination
         src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no)['scene']
-        text: str = f"{scene['no']:03}({scene['src'].frame_count()}) <- {src_scene['k_ed']}:{src_scene['k_ep']}:{src_scene['no']:03}"
+        text: str = f"{sno_str}({scene['src'].frame_count()}) <- {src_scene['k_ed']}:{src_scene['k_ep']}:{src_sno_str}"
         # if scene['dst']['k_ch'] in ('g_debut', 'g_fin'):
-        #     text: str = f"{scene['dst']['k_ch']}:{scene['no']:03} {scene['src'].frame_count()}"
+        #     text: str = f"{scene['dst']['k_ch']}:{sno_str} {scene['src'].frame_count()}"
         # else:
-        #     text: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']:03} {scene['src'].frame_count()}"
-        # text: str = f"{scene['no']:03} ({scene['src'].frame_count()})"
+        #     text: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{sno_str} {scene['src'].frame_count()}"
+        # text: str = f"{sno_str} ({scene['src'].frame_count()})"
         color: tuple[int, int, int] = (255, 240, 0)
 
     font_size: int = 48

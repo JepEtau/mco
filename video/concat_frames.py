@@ -10,6 +10,7 @@ from parsers import (
     ep_key,
     main_chapter_keys,
     ProcessingTask,
+    scene_no_str,
 )
 from parsers import TaskName
 from processing.black_frame import generate_black_frame
@@ -62,14 +63,14 @@ def get_video_filename(scene: Scene, task_name: TaskName = '') -> str:
     cache_dir: str = db[k_ep]['cache_path']
     if k_ch in ('g_debut', 'g_fin'):
         cache_dir = db[k_ch]['cache_path']
-        basename = f"{k_ch}_{scene['no']:03}__{k_ed}_{scene['k_ep']}"
+        basename = f"{k_ch}_{scene_no_str(scene)}__{k_ed}_{scene['k_ep']}"
 
     elif k_ch in ('g_asuivre', 'g_doc'):
         cache_dir = db[scene['dst']['k_ep']]['cache_path']
-        basename = f"{scene['dst']['k_ep']}_{k_ch}_{0:03}__{k_ed}_{scene['src']['k_ep']}"
+        basename = f"{scene['dst']['k_ep']}_{k_ch}_00__{k_ed}_{scene['src']['k_ep']}"
 
     else:
-        basename = f"{k_ep}_{k_ch}_{scene['no']:03}__{k_ed}"
+        basename = f"{k_ep}_{k_ch}_{scene_no_str(scene)}__{k_ed}"
 
     folder_name: str = "video"
     if task_name == 'initial':
