@@ -296,10 +296,19 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
 
     if k_ch_dst == 'doc':
         if task_name == 'initial':
-            return os.path.join(
-                cache_dir,
-                scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
-            )
+            if 'dst' in scene:
+                return os.path.join(
+                    cache_dir,
+                    scene['dst']['k_ep'],
+                )
+
+            else:
+                # Extract doc for scene identification (src scene)
+                return os.path.join(
+                    cache_dir,
+                    scene['k_ep'],
+                    f"ed_{scene['k_ed']}"
+                )
         else:
             return os.path.join(
                 cache_dir,

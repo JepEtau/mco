@@ -181,4 +181,4 @@ def consolidate_src_scene(
         print(lightcyan("=============================== Src Scene ====================================="))
         pprint(scene)
         print(lightcyan("-------------------------------------------------------------------------------"))
-        sys.exit()
+        raise
