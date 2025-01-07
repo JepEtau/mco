@@ -26,7 +26,11 @@ def extract_audio_track(
         k_ed = db[chapter]['audio']['src']['k_ed']
     else:
         k_src = k_ep
-        k_ed = db[k_src]['audio']['src']['k_ed'] if edition == '' else edition
+        k_ed = (
+            db[k_src]['audio']['src']['k_ed']
+            if edition == ''
+            else edition
+        )
 
     logger.debug(lightgreen(f"{__name__}: {k_ed}:{k_src}:{chapter}"))
 
