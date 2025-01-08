@@ -239,104 +239,16 @@ class UpscalePipeline(object):
             i_trt_thread.setName("trt_inference")
 
         # Update each thread so that they obtain a pointer to consumer
-        i_threads: dict[str, InferenceThread] = {
+        i_thread_dict: dict[str, InferenceThread] = {
             'cuda': i_cuda_thread,
             'trt': i_trt_thread,
         }
-        for thread in (d_thread, i_cuda_thread, i_trt_thread):
-            if thread is not None:
-                thread.set_inference_threads(i_threads)
 
-        # Progress bar
-        f_progress_thread = None
-        f_progress_thread = ProgressThread(total=self.total_frames)
-        e_thread.set_progress_thread(f_progress_thread)
-
-        if self.simulation:
-            return [0] * 4
-
-        # Verbose
-        d_thread.verbose = False
-        e_thread.verbose = False
-
-        # Start all threads
-        d_thread.set_produce_flag()
-        for thread in (
-            d_thread,
-            i_cuda_thread,
-            i_trt_thread,
-            e_thread,
-            f_progress_thread,
-        ):
-            if thread is not None:
-                ResourceManager().register_thread(thread)
-                thread.start()
-
-        # Run until the end
-        elapsed: float = 0.
-        total_elapsed: float = 0.
-
-        decoding: bool = True
-        err: bool = False
-
-        start_time = 0
-        real_start = time.time()
-        ask_to_end: bool = False
-        while True:
-            if not decoding:
-                if e_thread.encoded == self.total_frames and ask_to_end:
-                    e_thread.put_frame(None)
-                    ask_to_end = False
-
-                if (
-                    not d_thread.is_alive()
-                    # and inference_threads_ended
-                    and not e_thread.is_alive()
-                ):
-                    current_time: float = time.time()
-                    total_elapsed = current_time - real_start
-                    if f_progress_thread is not None:
-                        elapsed = f_progress_thread.elapsed()
-                    else:
-                        elapsed = current_time - start_time
-                    encoded = e_thread.encoded
-                    break
-                time.sleep(0.0001)
-                continue
-
-            time.sleep(0.0001)
-            if not d_thread.is_alive() and decoding:
-                # print("[V][C] decoder has ended")
-                err, message = d_thread.error_encountered()
-                if err:
-                    print(red(message))
-                    break
-                else:
-                    decoding = False
-                    ask_to_end = True
-
-            time.sleep(0.0001)
-            if not e_thread.is_alive() and d_thread.is_alive():
-                print(red("Error: the encoder encountered an unexpected error"))
-                err, encoded, total_elapsed = True, 0, 0
-                break
-
-            time.sleep(0.001)
-
-        # Stop remaining threads if not already stopped (error cases)
-        for thread in (i_cuda_thread, i_trt_thread):
-            if thread is not None:
-                thread.put_frame(None)
-                time.sleep(0.001)
-
-        for thread in (d_thread, i_cuda_thread, i_trt_thread, e_thread):
-            if thread is not None:
-                thread.stop()
-        if f_progress_thread is not None:
-            f_progress_thread.stop()
-
-        return err, encoded, elapsed, total_elapsed
-
+        return self._run(
+            d_thread=d_thread,
+            i_thread_dict=i_thread_dict,
+            e_thread=e_thread
+        )
 
 
     def run_cpu(self) -> tuple[bool, int, float, float]:
@@ -363,11 +275,27 @@ class UpscalePipeline(object):
             e_thread=e_thread,
             resize_scale=2,
         )
-        i_thread: CpuInferenceThread = CpuInferenceThread(i_thread_config)
+        i_thread_dict = {'cpu': CpuInferenceThread(i_thread_config)}
 
-        for thread in (d_thread, i_thread):
+        return self._run(
+            d_thread=d_thread,
+            i_thread_dict=i_thread_dict,
+            e_thread=e_thread
+        )
+
+
+
+    def _run(
+        self,
+        d_thread: DecoderThread | CpuDecoderThread,
+        i_thread_dict: dict[str, InferenceThread | CpuInferenceThread],
+        e_thread: EncoderThread | CpuEncoderThread,
+    ) -> tuple[bool, int, float, float]:
+
+        i_threads = list(i_thread_dict.values())
+        for thread in (d_thread, *i_threads):
             if thread is not None:
-                thread.set_inference_threads({'cpu': i_thread})
+                thread.set_inference_threads(i_thread_dict)
 
         # Progress bar
         f_progress_thread = None
@@ -385,7 +313,7 @@ class UpscalePipeline(object):
         d_thread.set_produce_flag()
         for thread in (
             d_thread,
-            i_thread,
+            *i_threads,
             e_thread,
             f_progress_thread,
         ):
@@ -439,7 +367,7 @@ class UpscalePipeline(object):
                     break
                 else:
                     # Send a poison pill in each inference thread
-                    for thread in (i_thread,):
+                    for thread in i_threads:
                         thread.put_frame(None)
                     decoding = False
                     ask_to_end = True
@@ -454,13 +382,13 @@ class UpscalePipeline(object):
             time.sleep(0.001)
 
         # Stop remaining threads if not already stopped (error cases)
-        for thread in (i_thread,):
+        for thread in i_threads:
             if thread is not None and thread.is_alive():
                 print(f"[V][C] sent a poison pill at the end because still inference threads")
                 thread.put_frame(None)
                 time.sleep(0.001)
 
-        for thread in (d_thread, i_thread, e_thread):
+        for thread in (d_thread, *i_threads, e_thread):
             if thread is not None:
                 thread.stop()
 
@@ -468,3 +396,4 @@ class UpscalePipeline(object):
             f_progress_thread.stop()
 
         return err, encoded, elapsed, total_elapsed
+
