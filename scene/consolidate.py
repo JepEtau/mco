@@ -96,7 +96,7 @@ def consolidate_scene(
     if k_ch == 'g_asuivre' and task_name in ('hr', 'upscale'):
         effect = scene['effects'].get_effect('loop')
         effect.loop = 99
-        scene['dst']['count'] = effect.loop
+        scene['dst']['count'] = effect.loop + 1
 
     # Geometry
     #---------------------------------------------------------------------------
@@ -106,6 +106,8 @@ def consolidate_scene(
         )
         if ch_geometry is None:
             raise ValueError(yellow(f"no geometry for chapter: {k_ch}"))
+        if 'geometry' not in scene:
+            scene['geometry'] = SceneGeometry()
         scene['geometry'].chapter = ch_geometry
 
     else:

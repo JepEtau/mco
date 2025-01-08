@@ -405,15 +405,19 @@ class UpscalePipeline(object):
         ask_to_end: bool = False
         while True:
             if not decoding:
+                # All frames encoded, send poison pill to all inference threads
                 if e_thread.encoded == self.total_frames and ask_to_end:
+                    print("[V][C] All frames encoded, send poison pill to encoder")
                     e_thread.put_frame(None)
                     ask_to_end = False
 
+                # Encoding has ended
                 if (
                     not d_thread.is_alive()
                     # and inference_threads_ended
                     and not e_thread.is_alive()
                 ):
+                    print("[V][C] All frames encoded, encoder has ended")
                     current_time: float = time.time()
                     total_elapsed = current_time - real_start
                     if f_progress_thread is not None:
@@ -426,15 +430,20 @@ class UpscalePipeline(object):
                 continue
 
             time.sleep(0.0001)
+            # Detect end of decoding
             if not d_thread.is_alive() and decoding:
-                # print("[V][C] decoder has ended")
+                print("[V][C] decoder has ended")
                 err, message = d_thread.error_encountered()
                 if err:
                     print(red(message))
                     break
                 else:
+                    # Send a poison pill in each inference thread
+                    for thread in (i_thread,):
+                        thread.put_frame(None)
                     decoding = False
                     ask_to_end = True
+                    print(f"[V][C] wait for {self.total_frames} to be encoded")
 
             time.sleep(0.0001)
             if not e_thread.is_alive() and d_thread.is_alive():
@@ -446,13 +455,15 @@ class UpscalePipeline(object):
 
         # Stop remaining threads if not already stopped (error cases)
         for thread in (i_thread,):
-            if thread is not None:
+            if thread is not None and thread.is_alive():
+                print(f"[V][C] sent a poison pill at the end because still inference threads")
                 thread.put_frame(None)
                 time.sleep(0.001)
 
         for thread in (d_thread, i_thread, e_thread):
             if thread is not None:
                 thread.stop()
+
         if f_progress_thread is not None:
             f_progress_thread.stop()
 
