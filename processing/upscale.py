@@ -367,8 +367,10 @@ class UpscalePipeline(object):
                     break
                 else:
                     # Send a poison pill in each inference thread
-                    for thread in i_threads:
-                        thread.put_frame(None)
+                    # for thread in i_threads:
+                    #     if thread is not None:
+                    #         print(f"[V][C] sent posion pill to {thread.name}")
+                    #         thread.put_frame(None)
                     decoding = False
                     ask_to_end = True
                     print(f"[V][C] wait for {self.total_frames} to be encoded")

@@ -1,20 +1,20 @@
 
-@REM python .\doc_extract_scenes.py 2
-@REM python .\doc_extract_scenes.py 3
-@REM python .\doc_extract_scenes.py 4
-@REM python .\doc_extract_scenes.py 5
-@REM python .\doc_extract_scenes.py 6
-@REM python .\doc_extract_scenes.py 7
-@REM python .\doc_extract_scenes.py 8
-@REM python .\doc_extract_scenes.py 9
-@REM python .\doc_extract_scenes.py 10
-@REM python .\doc_extract_scenes.py 11
-@REM python .\doc_extract_scenes.py 12
-@REM python .\doc_extract_scenes.py 13
-@REM python .\doc_extract_scenes.py 14
+@REM python .\hr.py -ch doc -ep 2
+@REM python .\hr.py -ch doc -ep 3
+@REM python .\hr.py -ch doc -ep 4
+@REM python .\hr.py -ch doc -ep 5
+@REM python .\hr.py -ch doc -ep 6
+@REM python .\hr.py -ch doc -ep 7
+@REM python .\hr.py -ch doc -ep 8
+@REM python .\hr.py -ch doc -ep 9
+@REM python .\hr.py -ch doc -ep 10
+@REM python .\hr.py -ch doc -ep 11
+@REM python .\hr.py -ch doc -ep 12
+@REM python .\hr.py -ch doc -ep 13
+@REM python .\hr.py -ch doc -ep 14
 @REM python .\hr.py -ch doc -ep 15
-@REM python .\hr.py -ch doc -ep 16
-@REM python .\hr.py -ch doc -ep 17
+python .\hr.py -ch doc -ep 16
+python .\hr.py -ch doc -ep 17
 python .\hr.py -ch doc -ep 18
 python .\hr.py -ch doc -ep 19
 python .\hr.py -ch doc -ep 20

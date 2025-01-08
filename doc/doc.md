@@ -1,3 +1,6 @@
+# Scenes à redéterminer:
+- ep 09, no. 2
+
 
 # ep01
 topaz
@@ -18,3 +21,5 @@ openproteus: best
 topaz:
 davinci resolve:
 openproteus:
+
+
