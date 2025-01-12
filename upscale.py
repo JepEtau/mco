@@ -18,7 +18,7 @@ def main():
     parser.add_argument(
         "--edition",
         "-ed",
-        choices=('f', 'k', 's', 's0'),
+        choices=('j', 'f', 'k', 's', 's0'),
         default='',
         required=False,
         help="Filter by edition"
@@ -35,6 +35,7 @@ def main():
 
     parser.add_argument(
         "--scene_min",
+        "-smin",
         type=int,
         default=-1,
         required=False,
@@ -43,6 +44,7 @@ def main():
 
     parser.add_argument(
         "--scene_max",
+        "-smax",
         type=int,
         default=-1,
         required=False,
@@ -71,11 +73,11 @@ def main():
     )
 
     parser.add_argument(
-        "--eval",
-        "-e",
+        "--compare",
+        "-c",
         action="store_true",
         required=False,
-        help="Append the model name to the output filename"
+        help="Append original scene no in the filename"
     )
 
     arguments = parser.parse_args()
@@ -103,8 +105,8 @@ def main():
     print("\t- parse database")
 
     # Parse database
-    if arguments.edition != '':
-        episode = arguments.episode
+    # if arguments.edition != '':
+    #     episode = arguments.episode
     parse_database(
         episode=episode,
         lang=arguments.lang,
@@ -133,7 +135,7 @@ def main():
         watermark=arguments.watermark,
         edition=arguments.edition,
         debug=arguments.debug,
-        evaluation=arguments.eval,
+        compare=arguments.compare,
     )
 
 

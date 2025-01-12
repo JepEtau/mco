@@ -50,7 +50,7 @@ def consolidate_scene(
     scene: Scene,
     task_name: TaskName = '',
     watermark: bool = False,
-    evaluation: bool = False
+    compare: bool = False
 ) -> None:
     """This procedure is used to simplify a single scene and add
     properties to process it: removes unecessary property, add
@@ -147,6 +147,8 @@ def consolidate_scene(
         _task_name = 'lr'
     elif task_name == 'sim':
         _task_name = 'lr'
+    elif task_name == 'upscale':
+        _task_name = 'final'
 
     in_vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
     if in_vsettings is not None:
@@ -270,11 +272,18 @@ def consolidate_scene(
                 sequence = sequence.replace(t, '')
             suffix: str = ""
             for s in sequence.split(','):
-                if result := re.search(re.compile(r"^([^=]*)="), s):
-                    suffix += f"+{result.group(1)}" if suffix else f"{result.group(1)}"
+                if result := re.search(re.compile(r"^([^=]*)=(.*)"), s):
+                    _s = result.group(1)
+                    if ("darker" in s or "unsharp" in s):
+                        _s += f"_{result.group(2).replace(':', '_')}"
+                    suffix += f"+{_s}" if suffix else f"{_s}"
                 else:
                     suffix += f"+{s}" if suffix else s
-            suffix = f"__{suffix}"
+            if compare:
+                # use the first scene no
+                suffix = f"_{scene['src'].primary_scene()['k_ed_ep_ch_no'][-1]:03}_{suffix}"
+            else:
+                suffix = f"__{suffix}"
 
         previous = {
             'st': 'hr',

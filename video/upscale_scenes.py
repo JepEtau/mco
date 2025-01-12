@@ -49,7 +49,7 @@ def upscale_scenes(
     watermark: bool = False,
     edition: str | None = None,
     debug: bool = False,
-    evaluation: bool = False,
+    compare: bool = False,
 ):
     k_ep = ep_key(episode)
     k_ed = edition
@@ -120,8 +120,8 @@ def upscale_scenes(
                 # print(f"skip scene no. {scene['no']}")
                 continue
 
-            if scene_min != -1 and scene_max != -1:
-                if scene['no'] < scene_min or scene['no'] > scene_max:
+            if scene_min != -1:
+                if scene['no'] < scene_min:
                     continue
 
             if k_ed is not None and k_ed:
@@ -134,7 +134,7 @@ def upscale_scenes(
             scene['task'] = ProcessingTask(name=task_name)
 
             # Generate frames for this scene
-            consolidate_scene(scene=scene, watermark=watermark, evaluation=evaluation)
+            consolidate_scene(scene=scene, watermark=watermark, compare=compare)
 
             if debug:
                 print(lightcyan("======================= consolidate scene for upscale ============================="))

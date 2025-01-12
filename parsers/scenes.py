@@ -194,10 +194,10 @@ def parse_scenes_new(
                 d = p.split('=')
                 k: str = d[0]
                 # Custom filter
-                if k == 'filters':
+                if k == "filters" or k == "f":
                     scenes[scene_no]['filters_id'] = d[1]
 
-                elif k == 'se_loop':
+                elif k == "se_loop":
                     # Extend this scene by looping on 1st frame / last frame
                     start_end = d[1].split(':')
                     scenes[scene_no]['effects'] = Effects([

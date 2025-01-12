@@ -134,7 +134,7 @@ def main():
         watermark=arguments.watermark,
         edition=arguments.edition,
         debug=arguments.debug,
-        evaluation=arguments.eval,
+        compare=arguments.eval,
     )
 
 
