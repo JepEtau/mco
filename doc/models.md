@@ -87,3 +87,21 @@ ep01_episode_023__j__2x_Pooh_V4_Candidate_2_422k+scunet_color_real_gan+darker_th
 
 - ajouter +0.2 en brightness n'améliore pas
 
+
+- resize avant digitalfilm enlève mieux les défauts sans trop enlever les détails: celà permet d'éviter des artéfacts temporels
+
+
+- scène 4: f=d: darker 0.6 -> 0.8 risque d'artéfacts de couleurs (s129 à tester?)
+
+
+# ep01 s9
+ld_anime skr > dv5
+scunet+pooh
+
+resize/pooh/resize moins bon que sans resize
+
+scunet avant ld est meilleur qu'après
+
+2x_Pooh_V4_Candidate fait très artificiel même si l'affiche est nettement meilleure
+
+- 1x_Anime1080Fixer_SuperUltraCompact est très intéressant
