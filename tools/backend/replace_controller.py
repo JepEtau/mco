@@ -237,7 +237,6 @@ class ReplaceController(CommonController):
                 f.by = f.no
                 removed_frame_no.remove(f.by)
 
-        print(self.replace_db.modified_scene_nos())
         self.signal_dsr_shapes_refreshed.emit()
         self.signal_replacements_refreshed.emit()
         self.signal_dsr_shapes_refreshed.emit()
@@ -336,7 +335,6 @@ class ReplaceController(CommonController):
         )
 
         log.info("Start detecting inner rect")
-        pprint(params)
         start_time: int = time.time()
 
 

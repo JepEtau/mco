@@ -163,13 +163,17 @@ class DsrWidget(QWidget, Ui_DsrWidget):
             self.current_frame = CurrentFrame(no=frame.by, frame=original_frame)
         else:
             self.current_frame = CurrentFrame(no=frame.no, frame=frame)
-        print(red(f"set_current_frame: {self.current_frame.no}"))
+        # print(red(f"set_current_frame: {self.current_frame.no}"))
         self.event_dsr_list_refreshed()
 
 
     def event_set_preview_toggled(self, is_checked: bool=False):
         log.info(f"widget preview changed to {is_checked}")
         self.signal_preview_toggled.emit(is_checked)
+
+
+    def set_edition(self, enabled: bool):
+        self.pushButton_set_edition.setEnabled(not enabled)
 
 
     def event_shape_type_changed(self, shape_name: MaskShape):
@@ -215,13 +219,13 @@ class DsrWidget(QWidget, Ui_DsrWidget):
 
     @Slot()
     def event_dsr_list_refreshed(self):
-        print(lightcyan("event_dsr_list_refreshed"))
+        # print(lightcyan("event_dsr_list_refreshed"))
         dsr_shapes: list[ DsrSceneRegion] = []
         if self.current_frame is not None:
             dsr_shapes = self.controller.playlist_dsr(
                 frame_no=self.current_frame.no
             )
-        pprint(dsr_shapes)
+        # pprint(dsr_shapes)
         self.refresh_dsr_list(
             dsr_shapes=dsr_shapes,
             event=False

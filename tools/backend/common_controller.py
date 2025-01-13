@@ -125,6 +125,7 @@ class CommonController(QObject, metaclass=QMeta):
         # Force refresh of preview options
         p = self.user_preferences.get_preferences()
         view.apply_user_preferences(p)
+        print("preferences: set_view")
         pprint(p)
 
 

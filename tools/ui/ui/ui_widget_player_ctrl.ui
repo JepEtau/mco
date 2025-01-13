@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>822</width>
-    <height>59</height>
+    <height>84</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
-    <number>3</number>
+    <number>9</number>
    </property>
    <property name="leftMargin">
     <number>0</number>
@@ -42,7 +42,7 @@
        <property name="minimumSize">
         <size>
          <width>750</width>
-         <height>30</height>
+         <height>50</height>
         </size>
        </property>
       </widget>

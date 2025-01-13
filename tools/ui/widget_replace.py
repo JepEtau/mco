@@ -24,6 +24,7 @@ from .ui.ui_widget_replace import Ui_ReplaceWidget
 from .stylesheet import set_stylesheet
 if TYPE_CHECKING:
     from backend.replace_controller import ReplaceController
+    from .window_replace import ReplaceWindow
 from backend._types import ReplaceAction, CurrentFrame
 from backend.frame_cache import Frame
 
@@ -40,12 +41,12 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
     signal_frame_selected = Signal(int)
 
 
-    def __init__(self, ui, controller: ReplaceController):
-        super().__init__(ui)
+    def __init__(self, parent: ReplaceWindow, controller: ReplaceController):
+        super().__init__(parent)
         self.setupUi(self)
 
         self.controller: ReplaceController = controller
-        self.ui = ui
+        self._parent = parent
         self.setObjectName('replace')
 
         # Internal variables
@@ -186,6 +187,7 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
 
         self.tableWidget_replace.selectionModel().clearSelection()
         self.tableWidget_replace.blockSignals(False)
+        self._parent.set_focus()
         self.tableWidget_replace.setEnabled(True)
 
 
@@ -203,6 +205,7 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             return
         # log.info(f"selected frame at row={row_no}, column {row_no}")
         frame_no = int(self.tableWidget_replace.item(row_no, column_no).text())
+        self._parent.set_focus()
         self.signal_frame_selected.emit(frame_no)
 
 
@@ -269,6 +272,8 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
             current=self.current_frame.frame,
             by=self.copied.frame,
         )
+        self.tableWidget_replace.clearFocus()
+        self.clearFocus()
         self.signal_replace_modified.emit(replace_action)
 
 
@@ -333,25 +338,38 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
 
             elif key == Qt.Key.Key_C:
                 self.event_copy()
+                self.clearFocus()
                 return True
 
             elif key == Qt.Key.Key_V:
                 self.event_paste()
+                self.clearFocus()
                 return True
 
             elif key == Qt.Key.Key_Z:
                 self.event_undo()
+                self.clearFocus()
                 return True
 
         if key == Qt.Key.Key_F2:
             if self.pushButton_set_preview.isEnabled():
                 self.pushButton_set_preview.toggle()
+                self.clearFocus()
                 return True
 
+        elif key in (Qt.Key.Key_Home, Qt.Key.Key_End):
+            return False
+
         if QApplication.focusObject() is self.tableWidget_replace:
+            self.clearFocus()
+            print("table_rep")
+            print(key)
             if key == Qt.Key.Key_Delete:
                 self.event_remove()
                 return True
+
+            elif key in (Qt.Key.Key_End, Qt.Key.Key_HomePage):
+                return False
 
         # elif key == Qt.Key_R:
         #     new_index = self.controller.get_next_replaced_frame_index(index=self.slider_frames.value())
@@ -361,6 +379,5 @@ class ReplaceWidget(QWidget, Ui_ReplaceWidget):
         return False
 
 
-    def wheelEvent(self, event: QWheelEvent) -> None:
-        return True
-        return super().wheelEvent(event)
+    def wheelEvent(self, event: QKeyEvent) -> bool:
+        return self._parent.wheelEvent(event)

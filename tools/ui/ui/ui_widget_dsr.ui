@@ -127,9 +127,50 @@
          </spacer>
         </item>
         <item>
-         <widget class="QLabel" name="label_message">
+         <widget class="QPushButton" name="pushButton_set_edition">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="focusPolicy">
+           <enum>Qt::FocusPolicy::NoFocus</enum>
+          </property>
           <property name="text">
-           <string notr="true">disabled</string>
+           <string/>
+          </property>
+          <property name="icon">
+           <iconset>
+            <normaloff>../../icons/grey/edit_off.svg</normaloff>
+            <normalon>../../icons/blue/edit.svg</normalon>
+            <disabledoff>../../icons/blue/edit.svg</disabledoff>
+            <disabledon>../../icons/blue/edit.svg</disabledon>../../icons/grey/edit_off.svg</iconset>
+          </property>
+          <property name="checkable">
+           <bool>true</bool>
+          </property>
+          <property name="flat">
+           <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="shortcut_3">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="font">
+           <font>
+            <pointsize>8</pointsize>
+            <italic>false</italic>
+           </font>
+          </property>
+          <property name="text">
+           <string notr="true">(F3)</string>
           </property>
          </widget>
         </item>

@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_player_ctrl.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.8.1
+## Created by: Qt User Interface Compiler version 6.7.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -25,9 +25,9 @@ class Ui_PlayerControlWidget(object):
     def setupUi(self, PlayerControlWidget):
         if not PlayerControlWidget.objectName():
             PlayerControlWidget.setObjectName(u"PlayerControlWidget")
-        PlayerControlWidget.resize(822, 59)
+        PlayerControlWidget.resize(822, 84)
         self.verticalLayout = QVBoxLayout(PlayerControlWidget)
-        self.verticalLayout.setSpacing(3)
+        self.verticalLayout.setSpacing(9)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_4 = QHBoxLayout()
@@ -39,7 +39,7 @@ class Ui_PlayerControlWidget(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.slider_frames.sizePolicy().hasHeightForWidth())
         self.slider_frames.setSizePolicy(sizePolicy)
-        self.slider_frames.setMinimumSize(QSize(750, 30))
+        self.slider_frames.setMinimumSize(QSize(750, 50))
 
         self.horizontalLayout_4.addWidget(self.slider_frames)
 

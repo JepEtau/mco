@@ -82,7 +82,6 @@ class GeometryDatabase:
             ch_video = db[k_ch]['video']
         else:
             ch_video = db[k_ep]['video']['target'][k_ch]
-        pprint(ch_video)
         print(f"initialize geometry database: {k_ep}:{k_ch} (k_ch_key: {k_ch_key})")
         if 'geometry' not in ch_video:
             ch_video['geometry'] = ChapterGeometry()

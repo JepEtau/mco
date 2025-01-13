@@ -3,6 +3,8 @@ from copy import copy, deepcopy
 from dataclasses import dataclass
 from pprint import pprint
 import time
+from logger import log
+
 from typing import TYPE_CHECKING
 from PySide6.QtCore import (
     Qt,
@@ -96,7 +98,7 @@ class GraphicsViewWidget(QGraphicsView):
 
     def __init__(
         self,
-        parent: QWidget | None,
+        parent: QWidget | ReplaceWindow,
         main_window: ReplaceWindow,
         controller,
         app_type: AppType,
@@ -232,6 +234,13 @@ class GraphicsViewWidget(QGraphicsView):
         self._scene.addItem(region.item)
 
         return region
+
+
+    def set_patch_edition(self, enabled: bool):
+        if not enabled:
+            self._scene.removeItem(self.new_region.item)
+            self.new_region = None
+
 
 
     def start_modifying_shape(self, selected: DsrSceneRegion) -> None:
@@ -478,14 +487,32 @@ class GraphicsViewWidget(QGraphicsView):
         return False
 
 
-    def event_wheel(self, event: QWheelEvent) -> bool:
-        if not any(self.modif_keys.values()):
-            # if self.shapes and self.modified:
-            #     # do not allow changing frame if modification is on going
-            #     return True
+    def wheelEvent(self, event: QKeyEvent) -> bool:
+        return self._parent.wheelEvent(event)
 
-            # if not self.main_window.is_dsr_modified():
-            #     print("not for this")
+
+    def event_wheel(self, event: QWheelEvent) -> bool:
+        log.info("graphics viewevent_wheel")
+        if (
+            not self._parent.is_editing_patches()
+            or not any(self.modif_keys.values())
+        ):
+            print(f"\tnot for self: editing{self._parent.is_editing_patches()}, any key: {any(self.modif_keys.values())}")
+            return False
+
+
+        #     # if self.shapes and self.modified:
+        #     #     # do not allow changing frame if modification is on going
+        #     #     return True
+
+        #     # if not self.main_window.is_dsr_modified():
+        #     #     print("not for this")
+        if not any(self.modif_keys.values()):
+            # print(f"no other key, is_editing_patches: {self._parent.is_editing_patches()}")
+            # if not self._parent.is_editing_patches():
+            #     print(f"not modifying")
+            #     return False
+            print("\tnot for self, no modifying keys")
             return False
 
         # print(event.angleDelta().y())
@@ -522,19 +549,19 @@ class GraphicsViewWidget(QGraphicsView):
         return True
 
 
-    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.Wheel:
-            # print_lightcyan(f"eventFilter: widget_controls: wheel")
-            if self.event_wheel(event):
-                # print(f"\twheel: accepted")
-                event.accept()
-                return True
-            # else:
-            #     if self._parent.event_wheel(event):
-            #         event.accept()
-            #         return
+    # def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+    #     if event.type() == QEvent.Type.Wheel:
+    #         print(lightcyan(time.time()), f"graphics view, eventFilter: wheel")
+    #         if self.event_wheel(event):
+    #             # print(f"\twheel: accepted")
+    #             event.accept()
+    #             return True
+    #         # else:
+    #         #     if self._parent.event_wheel(event):
+    #         #         event.accept()
+    #         #         return
 
-        return super().eventFilter(watched, event)
+    #     return super().eventFilter(watched, event)
 
 
     def event_shape_changed(self, shape_name: MaskShape) -> None:
@@ -703,7 +730,6 @@ class GraphicsViewWidget(QGraphicsView):
         self.regions.clear()
 
         dsr_shapes = self.controller.playlist_dsr(frame_no=self.frame.no)
-        pprint(dsr_shapes)
         for mask in dsr_shapes:
             self.regions.append(self.add_region_to_scene(mask))
 

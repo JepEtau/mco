@@ -1,4 +1,6 @@
+from __future__ import annotations
 from pprint import pprint
+import time
 from logger import log
 from .stylesheet import (
     set_stylesheet,
@@ -34,6 +36,7 @@ from typing import TYPE_CHECKING, Any, Literal
 if TYPE_CHECKING:
     from backend.replace_controller import ReplaceController
     from backend.geometry_controller import GeometryController
+    from .window_replace import ReplaceWindow
 
 from backend.frame_cache import Frame
 from backend._types import AppType
@@ -47,7 +50,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
     def __init__(
         self,
-        parent: QWidget | None,
+        parent: QWidget | ReplaceWindow,
         controller,
         app_type: AppType
     ) -> None:
@@ -61,7 +64,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.slider_frames.setTickPosition(QSlider.NoTicks)
         self.slider_frames.setTickInterval(1)
         self.slider_frames.setFocusPolicy(Qt.NoFocus)
-
+        self.setFocusPolicy(Qt.NoFocus)
 
         self.icon_play = QIcon()
         self.icon_play.addFile("./icons/blue/play.svg", QSize(), QIcon.Normal, QIcon.Off)
@@ -108,6 +111,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
         set_stylesheet(self)
         set_widget_stylesheet(self.label_ed_ep_part)
+        self.slider_frames.update_stylesheet()
 
         self.normal_style: str = self.lineEdit_frame_no.styleSheet()
         self.replaced_style: str = self.normal_style.replace("rgb(220, 220, 220)", "yellow")
@@ -267,12 +271,13 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
 
 
     def event_previous_frame(self, delta=1):
-        # log.info("event_previous_frame: %d" % (self.slider_frames.value()))
+        log.info(f"event_previous_frame: {self.slider_frames.value()}")
         self.move_slider_to(
             max(0, self.slider_frames.value() - delta))
 
 
     def event_next_frame(self, delta=1):
+        log.info(f"event_next_frame: {self.slider_frames.value()}")
         self.move_slider_to(
             min(self.slider_frames.value() + delta, self.slider_frames.maximum()))
 
@@ -361,9 +366,15 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             return False
 
         elif key == Qt.Key.Key_Shift:
-            # log.info("shift key is pressed")
             self.is_shift_key_pressed = True
-            return True
+            print("widget player: shift key pressed")
+            # if self._parent.is_editing_patches():
+            # #     # log.info("shift key is pressed")
+            #     print("editing, do not modify current frame")
+            #     return False
+
+        if self._parent.is_editing_patches() and not self.is_shift_key_pressed:
+            return False
 
         # elif key == Qt.Key.Key_Control:
         #     print("Control")
@@ -375,9 +386,11 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             self.slider_frames.keyPressEvent(event)
             return True
         elif key == Qt.Key.Key_Left:
+            log.info("key_pressed: pressed frame")
             self.event_previous_frame()
             return True
         elif key == Qt.Key.Key_Right:
+            log.info("key_pressed: next frame")
             self.event_next_frame()
             return True
         elif key == Qt.Key.Key_Up or key == Qt.Key.Key_PageUp:
@@ -397,14 +410,16 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         if key == Qt.Key.Key_Shift:
             # log.info("shift key is released")
             self.is_shift_key_pressed = False
+            print("widget player: shift key released")
             self.current_key_pressed = None
             return True
         return False
 
 
     def event_wheel(self, event: QWheelEvent) -> bool:
+        log.info("wheel event")
         if not self.slider_frames.isEnabled():
-            print("\controls: slider is disabled")
+            print("controls: slider is disabled")
             return False
 
         # # Do not accept event if not in paused mode
@@ -413,7 +428,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         #     return True
 
         if self.status not in ['paused', 'stopped']:
-            print("\controls: slider is disabled")
+            print("controls: slider is disabled")
             return False
 
 
@@ -436,15 +451,22 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         #         self.event_next_frame()
         #     return True
 
-        if self.is_shift_key_pressed or self.app_type=='geometry':
+
+        print(f"player control, editing: {self._parent.is_editing_patches()}, shift key: {self.is_shift_key_pressed}")
+        if (
+            self.app_type=='geometry'
+            or not self._parent.is_editing_patches()
+            or (self._parent.is_editing_patches() and self.is_shift_key_pressed)
+        ):
             # Select next/previous frame
+            log.info("not editing or shift key")
             if event.angleDelta().y() > 0:
                 self.event_previous_frame()
             elif event.angleDelta().y() < 0:
                 self.event_next_frame()
             return True
 
-
+        print("player ctrl, not for self")
         return False
 
 
@@ -471,6 +493,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
                 return self._parent.keyPressEvent(event)
 
         elif event.type() == QEvent.Type.Wheel:
+            print(lightcyan(time.time()), f"player ctrl, eventFilter: wheel")
+
             if self.event_wheel(event):
                 event.accept()
                 return True

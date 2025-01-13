@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_replace.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.8.1
+## Created by: Qt User Interface Compiler version 6.7.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -54,6 +54,7 @@ class Ui_ReplaceWidget(object):
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.pushButton_set_preview.sizePolicy().hasHeightForWidth())
         self.pushButton_set_preview.setSizePolicy(sizePolicy1)
+        self.pushButton_set_preview.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon = QIcon()
         icon.addFile(u"./icons/grey/eye.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         icon.addFile(u"./icons/blue/eye.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
@@ -87,6 +88,7 @@ class Ui_ReplaceWidget(object):
         self.pushButton_save.setObjectName(u"pushButton_save")
         sizePolicy1.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
         self.pushButton_save.setSizePolicy(sizePolicy1)
+        self.pushButton_save.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon2 = QIcon()
         icon2.addFile(u"./icons/purple/save.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.pushButton_save.setIcon(icon2)
@@ -112,6 +114,7 @@ class Ui_ReplaceWidget(object):
         self.pushButton_copy = QPushButton(self.groupBox_replace)
         self.pushButton_copy.setObjectName(u"pushButton_copy")
         self.pushButton_copy.setMaximumSize(QSize(70, 16777215))
+        self.pushButton_copy.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon3 = QIcon()
         icon3.addFile(u"./icons/blue/copy.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         self.pushButton_copy.setIcon(icon3)
@@ -128,6 +131,7 @@ class Ui_ReplaceWidget(object):
         self.lineEdit_frame_no.setSizePolicy(sizePolicy2)
         self.lineEdit_frame_no.setMinimumSize(QSize(60, 0))
         self.lineEdit_frame_no.setMaximumSize(QSize(70, 16777215))
+        self.lineEdit_frame_no.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.lineEdit_frame_no.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.lineEdit_frame_no.setReadOnly(True)
 
@@ -135,6 +139,7 @@ class Ui_ReplaceWidget(object):
 
         self.pushButton_paste = QPushButton(self.groupBox_replace)
         self.pushButton_paste.setObjectName(u"pushButton_paste")
+        self.pushButton_paste.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon4 = QIcon()
         icon4.addFile(u"./icons/grey/arrow-left.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         icon4.addFile(u"./icons/blue/arrow-left.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
@@ -148,6 +153,7 @@ class Ui_ReplaceWidget(object):
         sizePolicy2.setHeightForWidth(self.lineEdit_replaced_by.sizePolicy().hasHeightForWidth())
         self.lineEdit_replaced_by.setSizePolicy(sizePolicy2)
         self.lineEdit_replaced_by.setMaximumSize(QSize(70, 16777215))
+        self.lineEdit_replaced_by.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.lineEdit_replaced_by.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.lineEdit_replaced_by.setReadOnly(True)
 
@@ -155,6 +161,7 @@ class Ui_ReplaceWidget(object):
 
         self.pushButton_remove = QPushButton(self.groupBox_replace)
         self.pushButton_remove.setObjectName(u"pushButton_remove")
+        self.pushButton_remove.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         icon5 = QIcon()
         icon5.addFile(u"./icons/grey/eraser.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
         icon5.addFile(u"./icons/blue/eraser.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
@@ -187,6 +194,7 @@ class Ui_ReplaceWidget(object):
         sizePolicy3.setVerticalStretch(0)
         sizePolicy3.setHeightForWidth(self.tableWidget_replace.sizePolicy().hasHeightForWidth())
         self.tableWidget_replace.setSizePolicy(sizePolicy3)
+        self.tableWidget_replace.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.tableWidget_replace.setFrameShape(QFrame.Shape.StyledPanel)
         self.tableWidget_replace.setFrameShadow(QFrame.Shadow.Sunken)
         self.tableWidget_replace.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)

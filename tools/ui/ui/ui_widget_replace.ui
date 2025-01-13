@@ -81,6 +81,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="focusPolicy">
+           <enum>Qt::FocusPolicy::NoFocus</enum>
+          </property>
           <property name="text">
            <string/>
           </property>
@@ -147,6 +150,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="focusPolicy">
+           <enum>Qt::FocusPolicy::NoFocus</enum>
+          </property>
           <property name="text">
            <string/>
           </property>
@@ -208,6 +214,9 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="focusPolicy">
+            <enum>Qt::FocusPolicy::NoFocus</enum>
+           </property>
            <property name="text">
             <string/>
            </property>
@@ -240,6 +249,9 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="focusPolicy">
+            <enum>Qt::FocusPolicy::NoFocus</enum>
+           </property>
            <property name="text">
             <string>123456</string>
            </property>
@@ -253,6 +265,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="pushButton_paste">
+           <property name="focusPolicy">
+            <enum>Qt::FocusPolicy::NoFocus</enum>
+           </property>
            <property name="text">
             <string/>
            </property>
@@ -280,6 +295,9 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="focusPolicy">
+            <enum>Qt::FocusPolicy::NoFocus</enum>
+           </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
@@ -290,6 +308,9 @@
          </item>
          <item>
           <widget class="QPushButton" name="pushButton_remove">
+           <property name="focusPolicy">
+            <enum>Qt::FocusPolicy::NoFocus</enum>
+           </property>
            <property name="text">
             <string/>
            </property>
@@ -313,6 +334,9 @@
           <horstretch>0</horstretch>
           <verstretch>0</verstretch>
          </sizepolicy>
+        </property>
+        <property name="focusPolicy">
+         <enum>Qt::FocusPolicy::NoFocus</enum>
         </property>
         <property name="frameShape">
          <enum>QFrame::Shape::StyledPanel</enum>

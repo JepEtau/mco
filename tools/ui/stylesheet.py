@@ -1,3 +1,4 @@
+from __future__ import annotations
 from PySide6.QtCore import Qt
 from PySide6.QtGui import (
     QColor,
@@ -20,6 +21,9 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QSlider,
 )
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ui.widget_custom_qslider import CustomQSliderWidget
 
 # icons:
 #   blue:       rgb(51, 102, 204)   #3366CC
@@ -235,6 +239,27 @@ def set_widget_stylesheet(widget, widget_type=''):
             }
             QLineEdit:disabled {
                 color: rgb(60, 60, 60);
+            }
+        """)
+
+
+    from ui.widget_custom_qslider import CustomQSliderWidget
+    if type(widget) is CustomQSliderWidget:
+        widget.setStyleSheet("""
+            CustomQSliderWidget {
+                background-color: rgb(35, 35, 35);
+                color: rgb(220, 220, 220);
+            }
+            CustomQSliderWidget::item:disabled {
+                background-color: rgb(35, 35, 35);
+                color: rgb(60, 60, 60);
+            }
+            CustomQSliderWidget::handle:horizontal {
+                border: 5px solid rgb(51, 102, 204);
+                border-radius: 5px;
+                width: 30px;
+                height: 40px;
+                margin: -24px -12px;
             }
         """)
 
@@ -515,15 +540,23 @@ def set_stylesheet(widget):
         """)
 
 
-    # QSlider
-    for w in widget.findChildren(QSlider, options=Qt.FindChildrenRecursively):
-        w.setStyleSheet("""
-            QSlider {
-                background-color: rgb(35, 35, 35);
-                color: rgb(220, 220, 220);
-            }
-            QSlider::item:disabled {
-                background-color: rgb(35, 35, 35);
-                color: rgb(60, 60, 60);
-            }
-        """)
+    # # QSlider
+    # for w in widget.findChildren(QSlider, options=Qt.FindChildrenRecursively):
+    #     w.setStyleSheet("""
+    #         QSlider {
+    #             background-color: rgb(35, 35, 35);
+    #             color: rgb(220, 220, 220);
+    #         }
+    #         QSlider::item:disabled {
+    #             background-color: rgb(35, 35, 35);
+    #             color: rgb(60, 60, 60);
+    #         }
+    #         QSlider::handle:horizontal {
+    #             width: 25px;
+    #             height: 25px;
+    #         }
+    #         QSlider::groove:horizontal {
+    #             width: 25px;
+    #             height: 25px;
+    #         }
+    #     """)

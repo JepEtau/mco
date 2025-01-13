@@ -104,14 +104,13 @@ class UserPreferences(QObject):
             settings.beginGroup(group)
             self.preferences[group] = {}
             for k in settings.childKeys():
-                print(k)
                 v: str = settings.value(k)
-                print(v)
                 if v == 'true':
                     value = True
                 elif v == 'false':
                     value = False
                 self.preferences[group][k] = value
+        print("loaded preferences:")
         pprint(self.preferences)
 
 

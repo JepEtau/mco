@@ -88,14 +88,13 @@ class FrameCache:
                     in_video_fp: str = scene['task'].video_file
 
                 if not os.path.exists(in_video_fp):
-                    print(yellow(f"{in_video_fp} does not exist, fallback..."))
                     if task_name == 'st':
                         in_video_fp = scene['task'].fallback_in_video_files['hr']
-                if not os.path.exists(in_video_fp):
-                    raise ValueError(red(f"frame cache: missing {in_video_fp}"))
-
+                    print(yellow(f"{in_video_fp} does not exist, fallback to"), in_video_fp)
 
                 print(f"  segment: {in_video_fp}, {start}, {count}")
+                if not os.path.exists(in_video_fp):
+                    raise ValueError(red(f"frame cache: missing {in_video_fp}"))
 
                 if in_video_fp not in self.video_infos:
                     # fp = src_scene['scene']['inputs'].progressive().filepath
@@ -136,25 +135,24 @@ class FrameCache:
                         "-map", "[outv]"
                     ]
 
-                elif in_h < 1080:
-                    raise ValueError(" < 1080p")
-                    # pprint( db['common']['video_format'])
-                    # sys.exit()
-                    video_settings: VideoSettings = db['common']['video_format']['hr']
-                    pad: int = video_settings.pad
-                    pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
-                    filter_complex = [
-                        "-filter_complex",
-                        clean_ffmpeg_filter(
-                            f"""[0:v]
-                                scale={2*in_w}:{2*in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int,
-                                {pad_filter}
-                            [outv]
-                            """
-                        ),
-                        "-map", "[outv]"
-                    ]
-                    in_h, in_w = 2 * (in_h + pad), 2 * (in_w + pad)
+                # elif in_h < 1080:
+                #     # raise ValueError(" < 1080p")
+                #     # # pprint( db['common']['video_format'])
+                #     # # sys.exit()
+                #     pad: int = db['common']['video_format']['hr'].pad
+                #     pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
+                #     filter_complex = [
+                #         "-filter_complex",
+                #         clean_ffmpeg_filter(
+                #             f"""[0:v]
+                #                 scale={2*in_w}:{2*in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int,
+                #                 {pad_filter}
+                #             [outv]
+                #             """
+                #         ),
+                #         "-map", "[outv]"
+                #     ]
+                #     in_h, in_w = 2 * (in_h + pad), 2 * (in_w + pad)
 
                 xtract_command: list[str] = [
                     ffmpeg_exe,

@@ -23,7 +23,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
 )
 
-from utils.p_print import red
+from utils.p_print import lightcyan, red
 
 from .stylesheet import (
     set_stylesheet,
@@ -74,7 +74,7 @@ class ReplaceWindow(QMainWindow):
         # Preview
         # self.widget_preview = PreviewWidget(self.centralwidget, app_type=app_type)
         self.widget_preview = GraphicsViewWidget(
-            parent=self.centralwidget,
+            parent=self,
             main_window=self,
             controller=controller,
             app_type=app_type
@@ -148,6 +148,8 @@ class ReplaceWindow(QMainWindow):
         self.widget_preview.signal_dsr_updated_event.connect(
             self.event_dsr_list_updated
         )
+
+        self.set_editing_patches(False)
 
         self.show()
         self.installEventFilter(self)
@@ -326,9 +328,24 @@ class ReplaceWindow(QMainWindow):
         msg.exec_()
 
 
+    def is_editing_patches(self) -> bool:
+        return self._is_editing_patches
+
+    def set_editing_patches(self, enabled: bool) -> None:
+        self._is_editing_patches = enabled
+        self.widget_dsr.set_edition(self._is_editing_patches)
+
+    def toggle_editing_patches(self) -> None:
+        self._is_editing_patches = not self._is_editing_patches
+        self.widget_dsr.set_edition(self._is_editing_patches)
+
+
     def keyPressEvent(self, event: QKeyEvent) -> None:
         # print(f"{__name__} received: {event.key()}")
         self.current_key_pressed = None
+
+        if event.key() == Qt.Key.Key_F3:
+            self.toggle_editing_patches()
 
         widgets = (
             self.widget_player_ctrl,
@@ -362,20 +379,43 @@ class ReplaceWindow(QMainWindow):
         return super().keyReleaseEvent(event)
 
 
+    def wheelEvent(self, event: QKeyEvent) -> bool:
+        log.info("main wheel event")
+        widgets = (
+            self.widget_dsr,
+            self.widget_preview,
+            self.widget_player_ctrl,
+        )
+
+        for w in widgets:
+            try:
+                for _w in widgets:
+                    if _w != w:
+                        _w.event_wheel(event)
+                return True
+            except:
+                pass
+        return super().wheelEvent(event)
+
+
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-        if event.type() == QEvent.Type.Wheel:
-            for w in (
-                # self.widget_replace,
-                self.widget_preview,
-                self.widget_player_ctrl,
-                # self.widget_selection
-            ):
-                if w.event_wheel(event):
-                    return True
+        # if event.type() == QEvent.Type.Wheel:
+        #     for w in (
+        #         # self.widget_replace,
+        #         self.widget_preview,
+        #         self.widget_player_ctrl,
+        #         # self.widget_selection
+        #     ):
+        #         print(lightcyan(f"{time.time()}: window eventFilter"))
+        #         if w.event_wheel(event):
+        #             return True
 
         return super().eventFilter(watched, event)
 
+
+    def set_focus(self) -> None:
+        self.setFocus()
 
 
     # DSR

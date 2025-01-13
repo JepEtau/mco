@@ -187,7 +187,6 @@ class DeshakeController(CommonController):
 
         log.info("Start detecting inner rect")
         coordinates: list[np.ndarray] = []
-        pprint(params)
         start_time: int = time.time()
         for i, f in enumerate(self.frame_cache.get(scene=scene)):
             # start a thread for detection

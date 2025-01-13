@@ -1,7 +1,9 @@
+from __future__ import annotations
 from copy import copy
 from pprint import pprint
 import sys
 from logger import log
+
 from PySide6.QtCore import (
     QEvent,
     QObject,
@@ -36,6 +38,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from backend.replace_controller import ReplaceController
     from backend.geometry_controller import GeometryController
+    from .window_replace import ReplaceWindow
+
 
 from backend._types import (
     AppType,
@@ -61,7 +65,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
     def __init__(
         self,
-        parent: QWidget | None,
+        parent: QWidget | ReplaceWindow,
         controller,
         app_type: AppType
     ) -> None:
@@ -168,6 +172,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             + self.verticalLayout.contentsMargins().left()
             + self.verticalLayout.contentsMargins().right()
         )
+        width +=30
         self.setMaximumSize(QSize(width, 16777215))
         self.adjustSize()
 
@@ -275,8 +280,6 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
 
 
-
-
     def edition_started(self, is_started):
         row_no = self.tableWidget_scenes.currentRow()
         print(f"edition_started: {row_no} is_started: {is_started}")
@@ -365,6 +368,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             item.setTextAlignment(column[2])
             item.setFlags(
                 Qt.ItemFlag.ItemIsSelectable|Qt.ItemFlag.ItemIsEnabled & ~Qt.ItemFlag.ItemIsEditable)
+        self._parent.set_focus()
 
 
     def refresh_browsing_folder(self, episodes_and_parts:dict):
@@ -643,6 +647,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
         self.comboBox_episode.blockSignals(False)
         self.comboBox_part.blockSignals(False)
+        self._parent.set_focus()
 
 
 
@@ -664,6 +669,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         self.comboBox_part.blockSignals(True)
 
         self.signal_ep_p_changed.emit(selection)
+        self._parent.set_focus()
         return True
 
 
@@ -699,6 +705,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             'k_ch': self.comboBox_part.currentText(),
             'scenes': selected_scene_nos
         }
+        self._parent.set_focus()
         self.signal_selected_scene_changed.emit(selected_scenes)
 
 
@@ -740,6 +747,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             self.tableWidget_scenes.selectRow(row_no)
         except:
             pass
+        self._parent.set_focus()
 
 
     def select_previous_scene(self):
@@ -755,6 +763,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             self.tableWidget_scenes.selectRow(row_no)
         except:
             pass
+        self._parent.set_focus()
 
 
 
@@ -807,6 +816,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                 self.select_previous_scene()
             else:
                 self.select_next_scene()
+            self._parent.set_focus()
             event.accept()
             return True
 
