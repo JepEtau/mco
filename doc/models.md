@@ -105,3 +105,7 @@ scunet avant ld est meilleur qu'après
 2x_Pooh_V4_Candidate fait très artificiel même si l'affiche est nettement meilleure
 
 - 1x_Anime1080Fixer_SuperUltraCompact est très intéressant
+
+
+# ep01 s254
+- tried FULL range rather than tv range: worst
