@@ -126,3 +126,14 @@ ffmpeg -ss 0:23:00 -i A:\mco\inputs\b\b_ep01_video.mkv  -t 2:50 -c:v hevc_nvenc 
 1378,76
 22:58.76
 266 -> 10,64
+
+
+
+ffmpeg -i N:\cache\ep01\upscale\episode\ep01_episode_009__f_009_scunet_color_real_gan+2x_LD-Anime_Skr_v1.0+1x_Anime1080Fixer_SuperUltraCompact+darker_thinner_0.8_0.3_REF.mkv -i N:\cache\ep01\upscale\episode\ep01_episode_009__f_009_2x_Pooh_V4_Candidate_2_422k+scunet_color_real_gan+1x_Anime1080Fixer_SuperUltraCompact.mkv -filter_complex [0:v][1:v]blend=all_mode='overlay':all_opacity=0.7[outv] -map [outv] -vcodec hevc_nvenc -profile:v main -b_ref_mode disabled -tag:v hvc1 -g 30 -preset p7 -tune hq -rc constqp -qp 17 -rc-lookahead 20 -spatial_aq 1 -aq-strength 15 -b:v 0 -pix_fmt yuv420p -color_range limited -y N:\cache\ep01\upscale\episode\blended.mkv
+
+
+cls; ffmpeg -i N:\cache\ep01\upscale\episode\ep01_episode_009__f_009_scunet_color_real_gan+2x_LD-Anime_Skr_v1.0+1x_Anime1080Fixer_SuperUltraCompact+darker_thinner_0.8_0.3_REF.mkv -i N:\cache\ep01\upscale\episode\ep01_episode_009__f_009_2x_Pooh_V4_Candidate_2_422k+scunet_color_real_gan+1x_Anime1080Fixer_SuperUltraCompact.mkv -filter_complex "[0:v]format=yuva444p,colorchannelmixer=aa=0.5[in0];[1:v]format=yuva444p,colorchannelmixer=aa=0.5[in1];[in0][in1]overlay[outv]" -map [outv] -vcodec hevc_nvenc -profile:v main -b_ref_mode disabled -tag:v hvc1 -g 30 -preset p7 -tune hq -rc constqp -qp 17 -rc-lookahead 20 -spatial_aq 1 -aq-strength 15 -b:v 0 -pix_fmt yuv420p -color_range limited -y N:\cache\ep01\upscale\episode\blended_0.5.mkv
+
+
+
+cls; ffmpeg -i N:\cache\ep01\upscale\episode\ep01_episode_020__f_020_2x_Pooh_V4_Candidate_2_422k+scunet_color_real_gan+1x_Anime1080Fixer_SuperUltraCompact.mkv -i N:\cache\ep01\upscale\episode\ep01_episode_020__f_020_scunet_color_real_gan+2x_LD-Anime_Skr_v1.0+1x_Anime1080Fixer_SuperUltraCompact+darker_thinner_0.8_0.3.mkv -filter_complex "[0:v]format=yuva444p,colorchannelmixer=aa=0.5[in0];[1:v]format=yuva444p,colorchannelmixer=aa=0.5[in1];[in0][in1]overlay[outv]" -map [outv] -vcodec hevc_nvenc -profile:v main -b_ref_mode disabled -tag:v hvc1 -g 30 -preset p7 -tune hq -rc constqp -qp 17 -rc-lookahead 20 -spatial_aq 1 -aq-strength 15 -b:v 0 -pix_fmt yuv420p -color_range limited -y N:\cache\ep01\upscale\episode\020_blended_0.5.mkv
