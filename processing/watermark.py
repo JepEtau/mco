@@ -110,7 +110,7 @@ def _add_initial_scene_watermak(pil_image: PilImage.Image, scene: Scene, no: int
         # text: str = f"{sno_str} ({scene['src'].frame_count()})"
         color: tuple[int, int, int] = (255, 240, 0)
 
-    font_size: int = 48
+    font_size: int = 64
     bold: bool = True
     italic: bool = False
     alignment: WatermarkAlignment = WatermarkAlignment.LEFT
