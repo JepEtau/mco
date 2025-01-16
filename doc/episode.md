@@ -3,11 +3,12 @@
     * fondus? <- oui, modifier l'édition f?
 
 - ep02
-    * fondus à enlever: k, j
+    * ~~vérifier scènes: j, k, f~~
+    * ~~consolider~~
 
 - ep03
-    * ~~vérifier les scènes j~~
-    * fondus à enlever: k
+    * vérifier scènes: j, k, f
+    * consolider
 
 - ep04
     * ~~scene j: done~~
