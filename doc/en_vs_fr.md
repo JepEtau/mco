@@ -10,7 +10,7 @@
     - doc: additional scene
 
 * Episode 2: same
-* Episode 3: same
+* Episode 3: different @ s284
 * Episode 4: same
 * Episode 5: same
 * Episode 6: same

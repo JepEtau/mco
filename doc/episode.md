@@ -3,12 +3,25 @@
     * fondus? <- oui, modifier l'édition f?
 
 - ep02
-    * ~~vérifier scènes: j, k, f~~
-    * ~~consolider~~
+    * vérifier scènes
+        + [x] j
+        + [x] k
+        + [x] f
+    * [x] consolider j vs k
+    * [x] consolider f vs k
 
 - ep03
-    * vérifier scènes: j, k, f
-    * consolider
+    * vérifier scènes
+        + [x] j
+        + [x] k
+        + [x] f
+    * [x] consolider j vs k
+    * [x] consolider f vs k
 
 - ep04
-    * ~~scene j: done~~
+    * vérifier scènes
+        + [x] j
+        + [x] k
+        + [ ] f
+    * [ ] consolider j vs k
+    * [ ] consolider f vs k
