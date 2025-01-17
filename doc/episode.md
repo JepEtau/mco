@@ -23,5 +23,13 @@
         + [x] j
         + [x] k
         + [ ] f
+    * [x] consolider j vs k
+    * [ ] consolider f vs k
+
+- ep05
+    * vérifier scènes
+        + [x] j
+        + [ ] k
+        + [ ] f
     * [ ] consolider j vs k
     * [ ] consolider f vs k
