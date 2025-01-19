@@ -4,6 +4,7 @@ import logging
 from pprint import pprint
 import signal
 import sys
+import winsound
 from parsers import parse_database
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
@@ -17,6 +18,14 @@ def main():
     parser: ArgumentParser = common_argument_parser(
         description="Generate the HR scenes",
         add_language=True
+    )
+    parser.add_argument(
+        "--edition",
+        "-ed",
+        choices=('j', 'f', 'k', 's', 's0'),
+        default='',
+        required=False,
+        help="Filter by edition"
     )
 
     parser.add_argument(
@@ -110,10 +119,11 @@ def main():
         scene_min=arguments.scene_min,
         scene_max=arguments.scene_max,
         watermark=False,
-        edition=None,
+        edition=arguments.edition,
         debug=arguments.debug
     )
 
+    winsound.Beep(frequency=440, duration=200)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)

@@ -45,4 +45,16 @@ def common_argument_parser(
         help="debug"
     )
 
+
+
+    parser.add_argument(
+        "--compare",
+        "-c",
+        action="store_true",
+        required=False,
+        help="ignored except for upscale: append original scene no in the filename"
+    )
+
+
+
     return parser

@@ -9,6 +9,7 @@ from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
 from video.upscale_scenes import upscale_scenes
+import winsound
 
 
 
@@ -72,14 +73,6 @@ def main():
         help="Watermark each scene with scene no."
     )
 
-    parser.add_argument(
-        "--compare",
-        "-c",
-        action="store_true",
-        required=False,
-        help="Append original scene no in the filename"
-    )
-
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -138,7 +131,7 @@ def main():
         compare=arguments.compare,
     )
 
-
+    winsound.Beep(frequency=440, duration=200)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)

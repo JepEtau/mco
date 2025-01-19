@@ -109,3 +109,10 @@ scunet avant ld est meilleur qu'après
 
 # ep01 s254
 - tried FULL range rather than tv range: worst
+
+
+
+# ep01 s20
+- ne pas faire de resize autour de scunet si ld_anime_skr
+- eviter plus que 0.6,0.1 pour darker thinner avec ld_anime_skr
+- 1x-AnimeUndeint-Compact peut être intéressant
