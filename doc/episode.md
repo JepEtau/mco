@@ -1,6 +1,11 @@
 # Scene detection
 - ep01
-    * fondus? <- oui, modifier l'édition f?
+    * vérifier scènes
+        + [x] j
+        + [x] k
+        + [x] f
+    * [x] consolider j vs k
+    * [x] consolider f vs k
 
 - ep02
     * vérifier scènes
@@ -22,14 +27,14 @@
     * vérifier scènes
         + [x] j
         + [x] k
-        + [ ] f
+        + [x] f
     * [x] consolider j vs k
     * [ ] consolider f vs k
 
 - ep05
     * vérifier scènes
         + [x] j
-        + [ ] k
-        + [ ] f
+        + [x] k
+        + [x] f
     * [ ] consolider j vs k
     * [ ] consolider f vs k
