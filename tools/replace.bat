@@ -8,4 +8,4 @@ python .\_utils\patch_ui.py --file .\ui\ui\ui_widget_replace.py
 pyside6-uic .\ui\ui\ui_widget_selection.ui         -o .\ui\ui\ui_widget_selection.py
 python .\_utils\patch_ui.py --file .\ui\ui\ui_widget_selection.py
 
-python .\replace.py
+python .\replace.py -t lr
