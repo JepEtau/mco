@@ -341,6 +341,7 @@ def parse_target_scenelist(
             segment_count: int = -1
             backward: bool = False
             effects: Effects | None = None
+            _k_ep: str = k_ep
             for p in scene_properties:
                 try:
                     k, v = p.split('=')
@@ -380,7 +381,7 @@ def parse_target_scenelist(
                     if ed_ep_ch_scene := re.search(re.compile(r"([a-z]{1})?:*(\d{1,2}):([a-z_]+)?:*(\d+)?"), v):
                         if ed_ep_ch_scene.group(1) is not None:
                             k_ed = ed_ep_ch_scene.group(1)
-                        k_ep = ep_key(int(ed_ep_ch_scene.group(2)))
+                        _k_ep = ep_key(int(ed_ep_ch_scene.group(2)))
                         k_ch = ed_ep_ch_scene.group(3)
                         if k_ch not in main_chapter_keys():
                             raise ValueError(f"not valid chapter: {k_ch}")
@@ -399,7 +400,7 @@ def parse_target_scenelist(
                     if current_scene_no is not None:
                        scene['src'].add_scene(
                            k_ed=k_ed,
-                           k_ep=k_ep,
+                           k_ep=_k_ep,
                            k_ch=k_ch,
                            no=current_scene_no,
                            start=segment_start,
@@ -518,7 +519,7 @@ def parse_target_scenelist(
 
             scene['src'].add_scene(
                 k_ed=k_ed if k_ed != '' else ch_video['default_src']['k_ed'],
-                k_ep=k_ep if k_ep != '' else ch_video['default_src']['k_ep'],
+                k_ep=_k_ep if _k_ep != '' else ch_video['default_src']['k_ep'],
                 k_ch=k_ch,
                 no=current_scene_no if current_scene_no is not None else scene_no,
                 start=segment_start,

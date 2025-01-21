@@ -15,4 +15,24 @@
 
 # ep05
 + [x] precedemment
++ [x] asuivre
+
+# ep06
++ [x] precedemment
++ [ ] asuivre
+
+# ep07
++ [ ] precedemment
++ [ ] asuivre
+
+# ep08
++ [ ] precedemment
++ [ ] asuivre
+
+# ep09
++ [ ] precedemment
++ [ ] asuivre
+
+# ep10
++ [ ] precedemment
 + [ ] asuivre
