@@ -35,7 +35,8 @@ def np_to_uint16(img: np.ndarray) -> np.ndarray:
         TODO: evaluate in place clip
     """
     if img.dtype == np.float32:
-        return (img.clip(0, 1) * 65535).astype(np.uint16)
+        # return (img.clip(0, 1) * 65535).astype(np.uint16)
+        return (img * 65535).astype(np.uint16)
 
     if img.dtype == np.uint8:
         return (img * 257).astype(np.uint16)
@@ -54,7 +55,8 @@ def np_to_uint8(img: np.ndarray) -> np.ndarray:
         TODO: evaluate in place clip
     """
     if img.dtype == np.float32:
-        return (img.clip(0, 1) * 255).astype(np.uint8)
+        # return (img.clip(0, 1) * 255).astype(np.uint8)
+        return (img * 255).astype(np.uint8)
 
     elif img.dtype == np.uint16:
         return (img // 257).astype(np.uint8)
