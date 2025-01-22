@@ -210,6 +210,14 @@ def parse_scenes_new(
                         )
                     ])
 
+                elif k == "decimate" or k == "d":
+                    # cannot mix decimate and se_loop
+                    scenes[scene_no]['effects'] = Effects([
+                        Effect(
+                            name='decimate',
+                            extra_param=[int(d[1]) if len(d) > 1 else 5, 0]
+                        )
+                    ])
 
     # if k_ch == "asuivre" and k_ed not in ("s", "f", "k"):
     #     pprint(scenes)
@@ -259,10 +267,15 @@ def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
                 scene['count'] = scenes[i+1]['start'] - scene['start']
 
         if 'effects' in scene:
-            effect: Effect = scene['effects'].primary_effect()
-            if effect.name == 'loop':
-                frames_count += effect.loop
+            effects: Effects = scene['effects']
+            if e := effects.get_effect('loop'):
+                frames_count += e.loop
                 sys.exit("%s: add loop duration" % (__name__))
+
+            if e := effects.get_effect('decimate'):
+                factor: int = e.extra_param[0]
+                e.extra_param[1] = scene['count']
+                scene['count'] =  int(scene['count'] * (factor - 1 ) / factor + 0.5)
 
         if scene['count'] <= 0 and i < len(scenes) - 1:
             sys.exit(red(f"Error: {k_ed}:{k_ep}:{k_chapter}: scene no. {scene['no']:03d}, length (scene['count']) < 0"))

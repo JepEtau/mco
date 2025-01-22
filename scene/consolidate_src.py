@@ -89,46 +89,6 @@ def consolidate_src_scene(
     scene_inputs.progressive().cache = db['common']['directories']['cache_progressive']
 
 
-    # if k_ch == 'doc':
-    #     # Task order:
-    #     #   initial -> lr (with pad) - > lr_st -> hr -> cg -> final
-    #     scene['cache'] = os.path.join(
-    #         db['common']['directories']['cache_doc'], k_ep
-    #     )
-
-    #     doc_previous_task: dict[str, str] = {
-    #         'lr': 'initial',
-    #         'st': 'initial',
-    #         'hr': 'st',
-    #         'cg': 'hr',
-    #         'final': 'cg',
-    #     }
-    #     cache_dir: str = scene['cache']
-    #     prev_task_name: str = doc_previous_task[task_name]
-    #     suffix = prev_task_name
-    #     vsettings: VideoSettings = db['common']['video_format'][task_name]
-    #     if task_name == 'hr':
-    #         suffix = f"_lr_st"
-    #         vsettings: VideoSettings = db['common']['video_format']['initial']
-    #     ext: str = vcodec_to_extension[vsettings.codec]
-
-        # (
-        #     os.path.join(
-        #         scene['cache'],
-        #         'initial',
-        #         f"{k_ed}_{k_ep}_{k_ch}_{scene_no_str(scene)}{suffix}{ext}"
-        #     )
-        # )
-
-    #     if task_name in ('hr'):
-    #         scene['task'].fallback_in_video_files['hr'] = (
-    #             os.path.join(
-    #                 cache_dir,
-    #                 doc_previous_task[doc_previous_task[task_name]],
-    #                 f"{k_ed}_{k_ep}_{k_ch}_{scene_no_str(scene)}_lr{ext}"
-    #             )
-    #         )
-
     # Set the progressive filepath
     basename: str = path_split(scene_inputs.interlaced.filepath)[1]
     vsettings: VideoSettings = db['common']['video_format']['initial']

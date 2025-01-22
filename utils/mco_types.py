@@ -179,6 +179,7 @@ EffectName = Literal[
     # Extend by looping on 1st/last frame: used by doc
     'se_loop',
     'title',
+    'decimate',
 ]
 
 

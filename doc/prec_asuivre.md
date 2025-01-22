@@ -19,14 +19,14 @@
 
 # ep06
 + [x] precedemment
-+ [ ] asuivre
++ [x] asuivre
 
 # ep07
-+ [ ] precedemment
++ [x] precedemment
 + [ ] asuivre
 
 # ep08
-+ [ ] precedemment
++ [x] precedemment
 + [ ] asuivre
 
 # ep09
