@@ -282,8 +282,11 @@ def extract_media_info(media_filepath: str) -> MediaInfo:
 
 
 # Specific to MCO
-def extract_media_info_mco(media_filepath: str) -> MediaInfo:
-    media_info: MediaInfo = extract_media_info(media_filepath)
+def extract_media_info_mco(media_filepath: str) -> MediaInfo | None:
+    try:
+        media_info: MediaInfo = extract_media_info(media_filepath)
+    except:
+        return None
 
     # Patch metadata
     #   to remove "comment_" when the codec is DNxHD/DNxHR

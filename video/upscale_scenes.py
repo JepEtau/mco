@@ -5,7 +5,10 @@ import os
 from pprint import pprint
 import time
 
+import torch
+from nn_inference.progress import ProgressThread
 from nn_inference.model_mgr import ModelManager
+from nn_inference.resource_mgr import ResourceManager
 from nn_inference.threads.t_decoder import VideoStreamInfo
 from nn_inference.toolbox.upscale_doc import (
     consolidate_initial_doc,
@@ -74,7 +77,6 @@ def upscale_scenes(
     # raise
 
     # List models and scenes to upscale
-    model_manager = ModelManager()
     scenes_to_upscale: list[Scene] = []
     scenes_to_upscale_doc: list[Scene] = []
     total_frames: int = 0
@@ -111,6 +113,8 @@ def upscale_scenes(
         #     )
         #     continue
 
+        # For optimization, cache input video info to avoid doing this at every scene
+        cached_video_info: dict[str, VideoStreamInfo] = {}
 
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
@@ -151,82 +155,37 @@ def upscale_scenes(
             # Add models to the model manager
             # and add the scene to the list to upscale
             if not is_up_to_date(scene, display_msg=True) or force:
+                scenes_to_upscale.append(scene)
+                total_frames += scene['dst']['count']
 
-                # Get all models
-                scene_filters: Filter = scene['filters'][scene['task'].name]
-                src_scene: SrcScene = scene['src'].primary_scene()
-                if scene_filters.sequence == '':
-                    raise ValueError(red(
-                        f"No filter defined for scene {src_scene['k_ed_ep_ch_no']}"
-                    ))
+                # Parse input video, but do this only if needed
+                for src_scene in scene['src'].scenes():
+                    progressive_input = src_scene['scene']['inputs'].progressive()
 
-                if len(scene_filters.steps) != 0:
-                    print(yellow(f"sequence already parsed: scene {src_scene['k_ed_ep_ch_no']}"))
-
-                # Separate doc from other
-                # because it uses different upscalers
-                pprint(scene_filters)
-                # if scene_filters.sequence == 'doc':
-                #     # For documentary, there is no frame replace... yet
-                #     scenes_to_upscale_doc.append(scene)
-                #     total_frames += scene['src'].frame_count(exclude_loop=True)
-                # else:
-                for filter_str in scene_filters.sequence.split(','):
-                    if filter_str.startswith(supported_filters):
-                        print(lightgreen("supported:"), filter_str)
-                        params: list[str] = filter_str.split("=", maxsplit=1)
-                        filter_name = params[0]
-                        filter_params: str | float | None = None
-                        if len(params) is not None:
-                            filter_params = None
-
-                        if filter_name == 'resize':
-                            filter_params = float(params[1])
-                        elif len(params) == 1:
-                            filter_params = None
+                    in_media_path = progressive_input.filepath
+                    if in_media_path not in cached_video_info:
+                        in_video_info = extract_media_info_mco(in_media_path)['video']
+                        # Force output to rgb
+                        d_c_order = 'rgb'
+                        if in_video_info['bpp'] > 8:
+                            d_dtype = np.uint16
+                            pix_fmt = f"{d_c_order}48"
                         else:
-                            filter_params = params[1]
+                            d_dtype = np.uint8
+                            pix_fmt = f"{d_c_order}24"
+                        stdin_img_nbytes = math.prod(in_video_info['shape']) * np.dtype(d_dtype).itemsize
 
-                        scene_filters.steps.append(
-                            (params[0], filter_params)
+                        cached_video_info[in_media_path] = VideoStreamInfo(
+                            img_dtype=d_dtype,
+                            img_c_order=d_c_order,
+                            img_shape=in_video_info['shape'],
+                            img_nbytes=stdin_img_nbytes,
+                            pix_fmt=pix_fmt,
+                            frame_rate=in_video_info['frame_rate_r'],
+                            metadata=in_video_info['metadata'],
                         )
-                        continue
-
-                    # Doc model must not be followed by any model
-                    elif filter_str.startswith('mco_doc'):
-                        # Save the output as intermediary file -> patch this file
-                        scene['task'].fallback_in_video_files['hr'] = scene['task'].video_file
-                        scene['task'].video_file = (
-                            scene['task'].video_file.replace("_hr", "_hr_tpz")
-                        )
-                        scene['task'].in_video_file = scene['task'].video_file
-                        scenes_to_upscale_doc.append(scene)
-                        break
-
-                    elif filter_str.startswith('dvr'):
-                        scenes_to_upscale_doc.append(scene)
-                        break
-
-
-                    model: str = filter_str
-                    model_key = model_manager.register(model)
-                    if model_key is None:
-                        raise ValueError(red(f"[E] {model} is not a valid model"))
-                    scene_filters.steps.append(model_key)
-                print(lightcyan(f"Scene {scene['no']} filters:"))
-                pprint(scene_filters)
-
-                if scene['dst']['k_ch'] == 'doc':
-                    if (
-                        'mco_doc' not in scene_filters.sequence
-                        and 'dvr' not in scene_filters.sequence
-                    ):
-                        scenes_to_upscale.append(scene)
-                        total_frames += scene['dst']['count']
-
-                else:
-                    scenes_to_upscale.append(scene)
-                    total_frames += scene['dst']['count']
+                        scene['task'].video_settings.metadata.update(cached_video_info[in_media_path].metadata)
+                    progressive_input.info = cached_video_info[in_media_path]
 
 
         hashcode: str = calc_hash(hashes_str[:-1])
@@ -247,88 +206,126 @@ def upscale_scenes(
             video_settings=ch_vsettings,
         )
 
-    print(f"Consolidated scenes: {time.time() - start_time_full:.03f}s")
-    print(f"Total number of scenes to upscale: {len(scenes_to_upscale)}")
-    print(f"Total number of scenes to upscale (doc): {len(scenes_to_upscale_doc)}")
-    print(f"Total number of frames to upscale: {total_frames}")
+    print(lightcyan(f"Consolidated scenes:"), f"{time.time() - start_time_full:.03f}s")
+    print(lightcyan(f"Total number of scenes to upscale:"), f"{len(scenes_to_upscale)}")
+    print(lightcyan(f"Total number of frames to upscale:"), f"{total_frames}")
 
-    if model_manager.count():
-        print(model_manager)
+    # Create a progress bar
+    f_progress_thread: ProgressThread | None = None
+    if total_frames:
+        f_progress_thread = ProgressThread(total=total_frames)
+        ResourceManager().register_thread(f_progress_thread)
+        f_progress_thread.start()
 
-    if not scenes_to_upscale_doc:
-        if scenes_to_upscale and model_manager.count() == 0:
-            raise ValueError(red("No models"))
+    # Now upscale scenes
+    for scene in scenes_to_upscale:
+        # Get all models
+        model_manager = ModelManager()
+        scene_filters: Filter = scene['filters'][scene['task'].name]
+        src_scene: SrcScene = scene['src'].primary_scene()
+        if scene_filters.sequence == '':
+            raise ValueError(red(
+                f"No filter defined for scene {src_scene['k_ed_ep_ch_no']}"
+            ))
+
+        if len(scene_filters.steps) != 0:
+            print(yellow(f"sequence already parsed: scene {src_scene['k_ed_ep_ch_no']}"))
+
+        # Separate doc from other
+        # because it uses different upscalers
+        # pprint(scene_filters)
+        # if scene_filters.sequence == 'doc':
+        #     # For documentary, there is no frame replace... yet
+        #     scenes_to_upscale_doc.append(scene)
+        #     total_frames += scene['src'].frame_count(exclude_loop=True)
+        # else:
+        for filter_str in scene_filters.sequence.split(','):
+            if filter_str.startswith(supported_filters):
+                print(lightgreen("supported:"), filter_str)
+                params: list[str] = filter_str.split("=", maxsplit=1)
+                filter_name = params[0]
+                filter_params: str | float | None = None
+                if len(params) is not None:
+                    filter_params = None
+
+                if filter_name == 'resize':
+                    filter_params = float(params[1])
+                elif len(params) == 1:
+                    filter_params = None
+                else:
+                    filter_params = params[1]
+
+                scene_filters.steps.append((params[0], filter_params))
+                continue
+
+            # Doc model must not be followed by any model
+            elif filter_str.startswith('mco_doc'):
+                # Save the output as intermediary file -> patch this file
+                scene['task'].fallback_in_video_files['hr'] = scene['task'].video_file
+                scene['task'].video_file = (
+                    scene['task'].video_file.replace("_hr", "_hr_tpz")
+                )
+                scene['task'].in_video_file = scene['task'].video_file
+                scenes_to_upscale_doc.append(scene)
+                break
+
+            elif filter_str.startswith('dvr'):
+                scenes_to_upscale_doc.append(scene)
+                break
+
+            model: str = filter_str
+            model_key = model_manager.register(model)
+            if model_key is None:
+                raise ValueError(red(f"[E] {model} is not a valid model"))
+            scene_filters.steps.append(model_key)
+        # print(lightcyan(f"Scene {scene['no']} filters:"))
+        # pprint(scene_filters)
+
+
+        if model_manager.count():
+            print(model_manager)
+
+        pipeline = UpscalePipeline(
+            device="cuda:0",
+            scene=scene,
+            model_manager=model_manager,
+            progress_thread=f_progress_thread,
+            debug=debug,
+            simulation=simulation,
+        )
+        err, encoded = pipeline.run()
+
+        # Delete modele manager, memory allocation, empty cache
+        del model_manager
+        torch.cuda.empty_cache()
+
+    if f_progress_thread is not None:
+        f_progress_thread.put(0, force=True)
+        total_elapsed: float = f_progress_thread.elapsed()
+        f_progress_thread.stop()
+
+    if scenes_to_upscale_doc:
+        print(f"Total number of scenes to upscale (doc): {len(scenes_to_upscale_doc)}")
+        for scene in scenes_to_upscale_doc:
+
+            # consolidate_initial_doc_scenes(ch_video=ch_video)
+            filters: Filter = (
+                ch_video['scenes'][0]['filters'][task_name]
+                if scene_no is None
+                else ch_video['scenes'][scene_no]['filters'][task_name]
+            )
+
+            if 'mco_doc' in filters.sequence:
+                # consolidate_initial_doc(ch_video, debug=debug)
+                upscale_doc_scenes(
+                    scenes=scenes_to_upscale_doc,
+                    debug=debug,
+                    force=force
+                )
 
     if not scenes_to_upscale and not scenes_to_upscale_doc:
         print(f"No scenes to upscale")
         return
 
-
-    # Extract video info before to optimize processing
-    # avoid extracting multiple time info from the same input
-    vinfos: dict[str, VideoStreamInfo] = {}
-    for scene in scenes_to_upscale + scenes_to_upscale_doc:
-
-        for src_scene in scene['src'].scenes():
-            progressive_input = src_scene['scene']['inputs'].progressive()
-
-            in_media_path = progressive_input.filepath
-            if in_media_path not in vinfos:
-                in_video_info = extract_media_info_mco(in_media_path)['video']
-                # Force output to rgb
-                d_c_order = 'rgb'
-                if in_video_info['bpp'] > 8:
-                    d_dtype = np.uint16
-                    pix_fmt = f"{d_c_order}48"
-                else:
-                    d_dtype = np.uint8
-                    pix_fmt = f"{d_c_order}24"
-                stdin_img_nbytes = math.prod(in_video_info['shape']) * np.dtype(d_dtype).itemsize
-
-                vinfos[in_media_path] = VideoStreamInfo(
-                    img_dtype=d_dtype,
-                    img_c_order=d_c_order,
-                    img_shape=in_video_info['shape'],
-                    img_nbytes=stdin_img_nbytes,
-                    pix_fmt=pix_fmt,
-                    frame_rate=in_video_info['frame_rate_r'],
-                    metadata=in_video_info['metadata'],
-                )
-                scene['task'].video_settings.metadata.update(vinfos[in_media_path].metadata)
-            progressive_input.info = vinfos[in_media_path]
-
-        if debug:
-            print(lightcyan(f"========================= Scene {scene['no']} ================================="))
-            pprint(scene)
-            print(lightcyan("==============================================================================="))
-
-
-    device: str = 'cuda'
-    # pprint(scenes_to_upscale)
-    if scenes_to_upscale:
-        pipeline = UpscalePipeline(
-            device,
-            scenes=scenes_to_upscale,
-            total_frames=total_frames,
-            debug=debug,
-            simulation=simulation,
-        )
-        pipeline.run()
-
-    elif scenes_to_upscale_doc:
-        # consolidate_initial_doc_scenes(ch_video=ch_video)
-        filters: Filter = (
-            ch_video['scenes'][0]['filters'][task_name]
-            if scene_no is None
-            else ch_video['scenes'][scene_no]['filters'][task_name]
-        )
-
-        if 'mco_doc' in filters.sequence:
-            # consolidate_initial_doc(ch_video, debug=debug)
-            upscale_doc_scenes(
-                scenes=scenes_to_upscale_doc,
-                debug=debug,
-                force=force
-            )
 
     print("done")

@@ -46,8 +46,9 @@ class UpscalePipeline(object):
     def __init__(
         self,
         device: str,
-        scenes: list[Scene],
-        total_frames: int,
+        scene: Scene,
+        model_manager: ModelManager,
+        progress_thread: ProgressThread,
         debug: bool,
         simulation: bool = False,
     ) -> None:
@@ -56,101 +57,98 @@ class UpscalePipeline(object):
         # ImageReaderParams
         self.device = device
         self.simulation: bool = simulation
-        self.scenes: list[Scene] = scenes
-        self.total_frames = total_frames
+        self.scene: Scene = scene
+        self.f_progress_thread: ProgressThread = progress_thread
+        self.model_manager: ModelManager = model_manager
 
         nnlogger.addHandler(logging.StreamHandler(sys.stdout))
         nnlogger.setLevel("DEBUG")
 
-        # GPU memory, list shapes for each model, create a list of steps
-        model_manager: ModelManager = ModelManager()
-
         in_max_nbytes: int = 0
         out_max_nbytes: int = 0
         in_max_sync_nbytes: int = 0
-        for scene in scenes:
-            # Verify that input videos to generate this scene have the same info
-            vi: VideoStreamInfo = (
-                scene['src'].primary_scene()['scene']['inputs'].progressive().info
-            )
-            shape = [vi.img_shape[1], vi.img_shape[0]]
+        # Verify that input videos to generate this scene have the same info
+        vi: VideoStreamInfo = (
+            scene['src'].primary_scene()['scene']['inputs'].progressive().info
+        )
+        shape = [vi.img_shape[1], vi.img_shape[0]]
 
-            for src_scene in scene['src'].scenes():
-                _vi: VideoStreamInfo = src_scene['scene']['inputs'].progressive().info
-                if (
-                    _vi.img_shape[1] != vi.img_shape[1]
-                    or _vi.img_shape[0] != vi.img_shape[0]
-                ):
-                    raise ValueError(
-                        f"{src_scene['k_ed_ep_ch_no']}:",
-                        "input video must have the same resolution as the primary one"
-                    )
+        for src_scene in scene['src'].scenes():
+            _vi: VideoStreamInfo = src_scene['scene']['inputs'].progressive().info
+            if (
+                _vi.img_shape[1] != vi.img_shape[1]
+                or _vi.img_shape[0] != vi.img_shape[0]
+            ):
+                raise ValueError(
+                    f"{src_scene['k_ed_ep_ch_no']}:",
+                    "input video must have the same resolution as the primary one"
+                )
 
-            # Get HtoD max bytes.
-            # The decoder MUST NOT resize the input video
-            vi: VideoStreamInfo = (
-                scene['src'].primary_scene()['scene']['inputs'].progressive().info
-            )
-            nbytes: int = vi.img_nbytes * np.dtype(vi.img_dtype).itemsize
-            if nbytes > in_max_nbytes:
-                in_max_nbytes = nbytes
+        # Get HtoD max bytes.
+        # The decoder MUST NOT resize the input video
+        vi: VideoStreamInfo = (
+            scene['src'].primary_scene()['scene']['inputs'].progressive().info
+        )
+        nbytes: int = vi.img_nbytes * np.dtype(vi.img_dtype).itemsize
+        if nbytes > in_max_nbytes:
+            in_max_nbytes = nbytes
 
-            task_name = scene['task'].name
-            filters: Filter = scene['filters'][task_name]
+        task_name = scene['task'].name
+        filters: Filter = scene['filters'][task_name]
 
-            pprint(filters.steps)
-            print(lightcyan(f"Calculate in/out shapes:"))
-            print(f"  initial shape: {shape}")
-            scale: int = 1
-            model_key: str = ""
-            for i, filter_param in enumerate(filters.steps):
-                model_key = ""
-                if isinstance(filter_param, tuple | list):
-                    _scale: int = 1
-                    name, param = filter_param
-                    if name == 'resize':
-                        _scale = param
-                    elif name == 'resize_to':
-                        raise ValueError("not yet supported")
-                    # elif name not in supported_filters:
-                    #     continue
+        pprint(filters.steps)
+        print(lightcyan(f"Calculate in/out shapes:"))
+        print(f"  initial shape: {shape}")
+        scale: int = 1
+        model_key: str = ""
+        for i, filter_param in enumerate(filters.steps):
+            model_key = ""
+            if isinstance(filter_param, tuple | list):
+                _scale: int = 1
+                name, param = filter_param
+                if name == 'resize':
+                    _scale = param
+                elif name == 'resize_to':
+                    raise ValueError("not yet supported")
+                # elif name not in supported_filters:
+                #     continue
 
-                else:
-                    model_key = filter_param
-                    _scale = model_manager.get_scale(model_key)
-                    filters.steps[i] = model_manager.set_input_size(model_key, shape)
+            else:
+                model_key = filter_param
+                _scale = model_manager.get_scale(model_key)
+                filters.steps[i] = model_manager.set_input_size(model_key, shape)
 
-                print(lightgreen(f"  step {i}:"), shape, end='')
-                shape = list([int(((x * _scale) // 2) * 2) for x in shape])
-                print(f"-> {shape} (scale: {_scale})")
-                scale = _scale * scale
-                # pprint(filters)
+            print(lightgreen(f"  step {i}:"), shape, end='')
+            shape = list([int(((x * _scale) // 2) * 2) for x in shape])
+            print(f"-> {shape} (scale: {_scale})")
+            scale = _scale * scale
+            # pprint(filters)
 
 
-                # Calculate maximum nb of bytes for inpaint models
-                # print(red(model_key))
-                if (
-                    model_key
-                    and (model_manager.model(model_key)
-                        .arch
-                        .infer_type
-                        .type) == 'inpaint'
-                ):
-                    # scale = 1
-                    # Allocate memory for inpaint mask,
-                    # which is done synchronously.
-                    in_sync_nbytes = math.prod(shape)
-                    if in_sync_nbytes > in_max_sync_nbytes:
-                        in_max_sync_nbytes = in_sync_nbytes
+            # Calculate maximum nb of bytes for inpaint models
+            # print(red(model_key))
+            if (
+                model_key
+                and (model_manager.model(model_key)
+                    .arch
+                    .infer_type
+                    .type) == 'inpaint'
+            ):
+                # scale = 1
+                # Allocate memory for inpaint mask,
+                # which is done synchronously.
+                in_sync_nbytes = math.prod(shape)
+                if in_sync_nbytes > in_max_sync_nbytes:
+                    in_max_sync_nbytes = in_sync_nbytes
 
-            # The encoder MUST NOT resize the video
+        # The encoder MUST NOT resize the video
 
-            # We can include all models because inpaint models have a scale of 1:1
-            out_nbytes = int(scale * scale * in_max_nbytes + 0.5)
-            if PIXEL_FORMAT[scene['task'].video_settings.pix_fmt]['bpp'] > 8:
-                out_nbytes *= 2
-            if out_nbytes > out_max_nbytes:
-                out_max_nbytes = out_nbytes
+        # We can include all models because inpaint models have a scale of 1:1
+        out_nbytes = int(scale * scale * in_max_nbytes + 0.5)
+        if PIXEL_FORMAT[scene['task'].video_settings.pix_fmt]['bpp'] > 8:
+            out_nbytes *= 2
+        if out_nbytes > out_max_nbytes:
+            out_max_nbytes = out_nbytes
 
         # if in_max_sync_nbytes > 0:
         #     print(f"Scene {scene['no']} (inpaint), in: {nbytes} bytes, out: {out_nbytes}")
@@ -173,14 +171,14 @@ class UpscalePipeline(object):
         print(model_manager)
 
 
-    def run(self) -> tuple[bool, int, float, float]:
+    def run(self) -> tuple[bool, int]:
         if not is_cuda_available():
             return self.run_cpu()
 
         # Params and settings
         channels_last: bool = False
 
-        model_manager: ModelManager = ModelManager()
+        model_manager: ModelManager = self.model_manager
         model_manager.initialize_sessions()
 
         print(yellow("HtoD memory:"))
@@ -199,9 +197,12 @@ class UpscalePipeline(object):
         e_thread.setName("encoder")
 
         # Video decoder for each scene
-        d_thread_config: DecoderThreadConfig = DecoderThreadConfig(e_thread=e_thread)
+        d_thread_config: DecoderThreadConfig = DecoderThreadConfig(
+            e_thread=e_thread,
+            model_manager=model_manager,
+        )
         try:
-            d_thread = DecoderThread(config=d_thread_config, scenes=self.scenes)
+            d_thread = DecoderThread(config=d_thread_config, scene=self.scene)
         except Exception as e:
             print(red(f"[E] decoder: {type(e)}"))
             return True, 0, 0
@@ -251,7 +252,7 @@ class UpscalePipeline(object):
         )
 
 
-    def run_cpu(self) -> tuple[bool, int, float, float]:
+    def run_cpu(self) -> tuple[bool, int]:
         # Create encoder thread
         try:
             e_thread = CpuEncoderThread()
@@ -261,11 +262,17 @@ class UpscalePipeline(object):
         e_thread.setName("encoder")
 
         # Video decoder for each scene
-        d_thread_config: DecoderThreadConfig = DecoderThreadConfig(e_thread=e_thread)
+        d_thread_config: DecoderThreadConfig = DecoderThreadConfig(
+            e_thread=e_thread,
+            model_manager=self.model_manager,
+        )
         try:
-            d_thread = CpuDecoderThread(config=d_thread_config, scenes=self.scenes)
+            d_thread = CpuDecoderThread(
+                config=d_thread_config,
+                scene=self.scene
+            )
         except Exception as e:
-            print(red(f"[E] decoder: {type(e)}"))
+            print(red(f"[E] CPU decoder: {type(e)}"))
             return True, 0, 0
         d_thread.setName("decoder")
 
@@ -284,13 +291,12 @@ class UpscalePipeline(object):
         )
 
 
-
     def _run(
         self,
         d_thread: DecoderThread | CpuDecoderThread,
         i_thread_dict: dict[str, InferenceThread | CpuInferenceThread],
         e_thread: EncoderThread | CpuEncoderThread,
-    ) -> tuple[bool, int, float, float]:
+    ) -> tuple[bool, int]:
 
         i_threads = list(i_thread_dict.values())
         for thread in (d_thread, *i_threads):
@@ -298,8 +304,7 @@ class UpscalePipeline(object):
                 thread.set_inference_threads(i_thread_dict)
 
         # Progress bar
-        f_progress_thread = None
-        f_progress_thread = ProgressThread(total=self.total_frames)
+        f_progress_thread = self.f_progress_thread
         e_thread.set_progress_thread(f_progress_thread)
 
         if self.simulation:
@@ -315,26 +320,21 @@ class UpscalePipeline(object):
             d_thread,
             *i_threads,
             e_thread,
-            f_progress_thread,
         ):
             if thread is not None:
                 ResourceManager().register_thread(thread)
                 thread.start()
 
-        # Run until the end
-        elapsed: float = 0.
-        total_elapsed: float = 0.
 
         decoding: bool = True
         err: bool = False
 
-        start_time = 0
-        real_start = time.time()
         ask_to_end: bool = False
+        framecount: int = self.scene['dst']['count']
         while True:
             if not decoding:
                 # All frames encoded, send poison pill to all inference threads
-                if e_thread.encoded == self.total_frames and ask_to_end:
+                if e_thread.encoded == framecount and ask_to_end:
                     print("[V][C] All frames encoded, send poison pill to encoder")
                     e_thread.put_frame(None)
                     ask_to_end = False
@@ -346,12 +346,6 @@ class UpscalePipeline(object):
                     and not e_thread.is_alive()
                 ):
                     print("[V][C] All frames encoded, encoder has ended")
-                    current_time: float = time.time()
-                    total_elapsed = current_time - real_start
-                    if f_progress_thread is not None:
-                        elapsed = f_progress_thread.elapsed()
-                    else:
-                        elapsed = current_time - start_time
                     encoded = e_thread.encoded
                     break
                 time.sleep(0.0001)
@@ -373,29 +367,26 @@ class UpscalePipeline(object):
                     #         thread.put_frame(None)
                     decoding = False
                     ask_to_end = True
-                    print(f"[V][C] wait for {self.total_frames} to be encoded")
+                    print(f"[V][C] wait for {framecount} to be encoded")
 
             time.sleep(0.0001)
             if not e_thread.is_alive() and d_thread.is_alive():
                 print(red("Error: the encoder encountered an unexpected error"))
-                err, encoded, total_elapsed = True, 0, 0
+                err = True
                 break
 
-            time.sleep(0.001)
+            time.sleep(0.0001)
 
         # Stop remaining threads if not already stopped (error cases)
         for thread in i_threads:
             if thread is not None and thread.is_alive():
                 print(f"[V][C] sent a poison pill at the end because still inference threads")
                 thread.put_frame(None)
-                time.sleep(0.001)
+                time.sleep(0.0001)
 
         for thread in (d_thread, *i_threads, e_thread):
             if thread is not None:
                 thread.stop()
 
-        if f_progress_thread is not None:
-            f_progress_thread.stop()
-
-        return err, encoded, elapsed, total_elapsed
+        return err, encoded
 

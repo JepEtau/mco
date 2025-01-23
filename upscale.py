@@ -9,8 +9,10 @@ from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
 from video.upscale_scenes import upscale_scenes
-import winsound
-
+try:
+    import winsound
+except ImportError:
+    pass
 
 
 def main():
@@ -131,7 +133,8 @@ def main():
         compare=arguments.compare,
     )
 
-    winsound.Beep(frequency=440, duration=200)
+    if sys.platform == "win":
+        winsound.Beep(frequency=440, duration=200)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)

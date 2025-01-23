@@ -94,12 +94,16 @@ def is_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
         # dst_frame_count: int = calculate_scene_frame_count(scene)
         dst_frame_count = scene['dst']['count']
         print(yellow(f"dst frame_count: {dst_frame_count}"))
+        out_video_info: VideoInfo | None =  None
         try:
-            out_video_info: VideoInfo = extract_media_info_mco(out_video_fp)['video']
+            out_video_info = extract_media_info_mco(out_video_fp)['video']
             print(f"output scene file: {out_video_info['frame_count']}")
             if out_video_info['frame_count'] != dst_frame_count:
                 return False
         except:
+            return False
+
+        if out_video_info is None:
             return False
 
         if check_metdata:
