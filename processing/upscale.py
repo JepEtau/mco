@@ -18,7 +18,8 @@ from nn_inference.threads.t_decoder import (
     DecoderThreadConfig,
 )
 from nn_inference.threads.t_encoder import (
-    EncoderThread
+    EncoderThread,
+    EncoderThreadConfig
 )
 from nn_inference.threads.t_inference import (
     InferenceThread,
@@ -189,8 +190,11 @@ class UpscalePipeline(object):
         pprint(model_manager.htod_sync_memory('cuda'))
 
         # Create encoder thread
+        e_thread_config: EncoderThreadConfig = EncoderThreadConfig(
+            model_manager=model_manager,
+        )
         try:
-            e_thread = EncoderThread()
+            e_thread = EncoderThread(config=e_thread_config)
         except Exception as e:
             print(red(f"[E] encoder: {type(e)}"))
             return True, 0, 0
@@ -216,6 +220,7 @@ class UpscalePipeline(object):
                 d_thread=d_thread,
                 e_thread=e_thread,
                 channels_last=channels_last,
+                model_manager=model_manager,
             )
             try:
                 i_cuda_thread = InferenceThread(i_cuda_thread_config)
@@ -231,6 +236,7 @@ class UpscalePipeline(object):
                 execution_provider='trt',
                 d_thread=d_thread,
                 e_thread=e_thread,
+                model_manager=model_manager,
             )
             try:
                 i_trt_thread = InferenceThread(i_trt_thread_config)
@@ -328,6 +334,7 @@ class UpscalePipeline(object):
 
         decoding: bool = True
         err: bool = False
+        encoded: int = 0
 
         ask_to_end: bool = False
         framecount: int = self.scene['dst']['count']
