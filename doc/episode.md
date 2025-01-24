@@ -83,10 +83,32 @@
 * [x] consolider j vs k
 * [x] consolider f vs k
 * [x] precedemment
-* [ ] asuivre
+* [x] asuivre
 
 
 # ep09
+* vérifier scènes
+    + [x] j
+    + [x] k
+    + [x] f
+* [x] consolider j vs k
+* [x] consolider f vs k
+* [x] precedemment
+* [x] asuivre
+
+
+# ep10
+* vérifier scènes
+    + [x] j
+    + [x] k
+    + [-] f
+* [x] consolider j vs k
+* [-] consolider f vs k
+* [x] precedemment
+* [x] asuivre
+
+
+# ep11
 * vérifier scènes
     + [ ] j
     + [ ] k
@@ -97,7 +119,7 @@
 * [ ] asuivre
 
 
-# ep10
+# ep12
 * vérifier scènes
     + [ ] j
     + [ ] k
