@@ -110,10 +110,10 @@
 
 # ep11
 * vérifier scènes
-    + [ ] j
-    + [ ] k
+    + [x] j
+    + [x] k
     + [ ] f
-* [ ] consolider j vs k
+* [x] consolider j vs k
 * [ ] consolider f vs k
 * [x] precedemment
 * [ ] asuivre
@@ -126,5 +126,5 @@
     + [ ] f
 * [ ] consolider j vs k
 * [ ] consolider f vs k
-* [ ] precedemment
+* [x] precedemment
 * [ ] asuivre
