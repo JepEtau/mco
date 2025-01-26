@@ -5,6 +5,7 @@ from pprint import pprint
 import sys
 import time
 import numpy as np
+import torch
 from nn_inference.model_mgr import ModelManager
 
 from nn_inference.progress import ProgressThread
@@ -119,9 +120,19 @@ class UpscalePipeline(object):
                 _scale = model_manager.get_scale(model_key)
                 filters.steps[i] = model_manager.set_input_size(model_key, shape)
 
-            print(lightgreen(f"  step {i}:"), shape, end='')
+            print(
+                lightgreen(f"  step {i}:"),
+                (
+                    f"{model_manager.model(model_key).arch_name}".ljust(22)
+                    if model_key
+                    else f"{name}".ljust(22)
+                ),
+                shape,
+                end=''
+            )
+
             shape = list([int(((x * _scale) // 2) * 2) for x in shape])
-            print(f"-> {shape} (scale: {_scale})")
+            print(f" -> {shape} (scale: {_scale})")
             scale = _scale * scale
             # pprint(filters)
 
@@ -312,6 +323,9 @@ class UpscalePipeline(object):
         # Progress bar
         f_progress_thread = self.f_progress_thread
         e_thread.set_progress_thread(f_progress_thread)
+        if not f_progress_thread.is_running:
+            f_progress_thread.start()
+
 
         if self.simulation:
             return [0] * 4
@@ -394,6 +408,8 @@ class UpscalePipeline(object):
         for thread in (d_thread, *i_threads, e_thread):
             if thread is not None:
                 thread.stop()
+
+        torch.cuda.empty_cache()
 
         return err, encoded
 

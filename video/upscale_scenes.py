@@ -215,7 +215,6 @@ def upscale_scenes(
     if total_frames:
         f_progress_thread = ProgressThread(total=total_frames)
         ResourceManager().register_thread(f_progress_thread)
-        f_progress_thread.start()
 
     # Now upscale scenes
     for scene in scenes_to_upscale:
