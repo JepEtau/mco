@@ -112,14 +112,25 @@
 * vérifier scènes
     + [x] j
     + [x] k
-    + [ ] f
+    + [-] f
 * [x] consolider j vs k
-* [ ] consolider f vs k
+* [-] consolider f vs k
+* [x] precedemment
+* [x] asuivre
+
+
+# ep12
+* vérifier scènes
+    + [x] j
+    + [x] k
+    + [-] f
+* [x] consolider j vs k
+* [-] consolider f vs k
 * [x] precedemment
 * [ ] asuivre
 
 
-# ep12
+# ep13
 * vérifier scènes
     + [ ] j
     + [ ] k
@@ -127,4 +138,59 @@
 * [ ] consolider j vs k
 * [ ] consolider f vs k
 * [x] precedemment
+* [ ] asuivre
+
+
+# ep14
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep15
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep16
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep17
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep18
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
 * [ ] asuivre
