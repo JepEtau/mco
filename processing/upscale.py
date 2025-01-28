@@ -193,12 +193,13 @@ class UpscalePipeline(object):
         model_manager: ModelManager = self.model_manager
         model_manager.initialize_sessions()
 
-        print(yellow("HtoD memory:"))
-        pprint(model_manager.htod_mem)
-        print(yellow("DtoH memory:"))
-        pprint(model_manager.dtoh_mem)
-        print(yellow("HtoD (sync) memory:"))
-        pprint(model_manager.htod_sync_memory('cuda'))
+        if False:
+            print(yellow("HtoD memory:"))
+            pprint(model_manager.htod_mem)
+            print(yellow("DtoH memory:"))
+            pprint(model_manager.dtoh_mem)
+            print(yellow("HtoD (sync) memory:"))
+            pprint(model_manager.htod_sync_memory('cuda'))
 
         # Create encoder thread
         e_thread_config: EncoderThreadConfig = EncoderThreadConfig(
