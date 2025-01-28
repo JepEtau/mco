@@ -292,7 +292,12 @@ def pprint_scene_mapping(scene: Scene) -> None:
         print(lightgreen(" ..."), end='')
 
     print(f"  <- ", end='')
-    print(f"{scene['dst']['count']}".rjust(4), end='  ')
+    _str: str = ""
+    if 'ref' in scene and scene['ref']['count'] == scene['dst']['count']:
+        _str = f"{scene['dst']['count']}".rjust(4)
+    else:
+        _str = yellow(f"{scene['dst']['count']}".rjust(4))
+    print(_str, end='  ')
 
     for s in scene['src'].scenes():
         _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']

@@ -17,7 +17,7 @@ from scene.src_scene import (
     SrcScenes
 )
 from ._db import db
-from ._keys import ep_key, scene_no_str
+from ._keys import Chapter, ep_key, scene_no_str
 
 
 
@@ -31,7 +31,7 @@ def get_scene_no_from_frame_no(k_ed_ep_ch_no: list, frame_no: int) -> int:
 
 
 
-def consolidate_target_scenes(k_ep: int | str, k_ch: str) -> None:
+def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter) -> None:
     """This procedure is used to consolidate chapter of an 'episode': it uses the 'replace'
     field to generate a new list of scenes in the 'common' structure of the 'episode'. This list
     will be used for processing instead of the list defined in the edition.
@@ -143,7 +143,8 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: str) -> None:
     add_ref: bool = True
     if len(ref_scenes) != len(ch_video['scenes']):
         print(red(f"Target: {len(ch_video['scenes'])}, Reference ({k_ed_ref}): {len(ref_scenes)} scenes"))
-        add_ref = False
+        if k_ch != 'episode':
+            add_ref = False
         if k_ch in ('precedemment', 'asuivre', 'reportage'):
             # pprint(ref_scenes)
             warn(f"{k_ch}: cannot add reference to every scenes")
