@@ -170,7 +170,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter) -> None:
             'count': scene['src'].frame_count()
         }
 
-        if add_ref:
+        if add_ref and scene['no'] < len(ref_scenes):
             ref_scene = ref_scenes[scene['no']]
             scene['ref'] = RefScene(
                 no=ref_scene['no'],
