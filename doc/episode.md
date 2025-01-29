@@ -165,6 +165,17 @@
 
 # ep16
 * vérifier scènes
+    + [x] j
+    + [x] k
+    + [/] f
+* [x] consolider j vs k
+* [/] consolider f vs k
+* [x] precedemment
+* [x] asuivre
+
+
+# ep17
+* vérifier scènes
     + [ ] j
     + [ ] k
     + [ ] f
@@ -174,7 +185,7 @@
 * [ ] asuivre
 
 
-# ep17
+# ep18
 * vérifier scènes
     + [ ] j
     + [ ] k
@@ -185,7 +196,18 @@
 * [ ] asuivre
 
 
-# ep18
+# ep19
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep20
 * vérifier scènes
     + [ ] j
     + [ ] k
