@@ -1,3 +1,4 @@
+import gc
 import math
 import numpy as np
 import sys
@@ -295,7 +296,9 @@ def upscale_scenes(
         err, encoded = pipeline.run()
 
         # Delete modele manager, memory allocation, empty cache
+        model_manager.clean()
         del model_manager
+        gc.collect()
         torch.cuda.empty_cache()
 
     if f_progress_thread is not None:
