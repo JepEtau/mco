@@ -71,7 +71,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter) -> None:
 
     if ch_video_src['count'] < 1:
         if k_ch not in ('asuivre', 'precedemment'):
-            print(yellow(f"{k_ed_src}::{k_ch} is empty"))
+            print(yellow(f"{k_ed_src}:{k_ep}:{k_ch} is empty"))
             raise
         # return
 

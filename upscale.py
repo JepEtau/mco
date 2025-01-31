@@ -4,7 +4,17 @@ import logging
 from pprint import pprint
 import signal
 import sys
-from parsers import parse_database, TaskName
+from parsers import (
+    Chapter,
+    db,
+    ep_key,
+    parse_database,
+    TaskName,
+)
+from parsers.dsr import parse_dsr_file
+from parsers.geometry import parse_geometry_file
+from parsers.replace import parse_replace_file
+from parsers.target_scenes import consolidate_target_scenes
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
@@ -102,11 +112,21 @@ def main():
     # Parse database
     # if arguments.edition != '':
     #     episode = arguments.episode
+    k_ch: Chapter = arguments.chapter
+
     parse_database(
         episode=episode,
         lang=arguments.lang,
     )
     gc.collect()
+
+    # next_episode: str = ep_key(episode+1)
+    # consolidate_target_scenes(k_ep=next_episode, k_ch='episode')
+    # parse_geometry_file(k_ep_or_g=next_episode, k_ch='episode')
+    # parse_replace_file(k_ep_or_g=next_episode, k_ch='episode')
+    # parse_dsr_file(k_ep_or_g=next_episode)
+    # pprint(db[next_episode]['video']['target']['episode']['scenes'])
+    # sys.exit()
 
     scene_no: int | None = None
     scene_arg: str = arguments.scene
@@ -120,7 +140,7 @@ def main():
 
     upscale_scenes(
         episode=arguments.episode,
-        single_chapter=arguments.chapter,
+        single_chapter=k_ch,
         task_name=task,
         force=arguments.force,
         simulation=arguments.simulate,
