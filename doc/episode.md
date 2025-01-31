@@ -204,10 +204,21 @@
 * [x] consolider j vs k
 * [/] consolider f vs k
 * [x] precedemment
-* [ ] asuivre
+* [x] asuivre
 
 
 # ep20
+* vérifier scènes
+    + [x] j
+    + [x] k
+    + [/] f
+* [x] consolider j vs k
+* [/] consolider f vs k
+* [x] precedemment
+* [ ] asuivre
+
+
+# ep21
 * vérifier scènes
     + [ ] j
     + [ ] k
@@ -216,3 +227,125 @@
 * [ ] consolider f vs k
 * [x] precedemment
 * [ ] asuivre
+
+
+# ep22
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep23
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep24
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep25
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep26
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep27
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep28
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep29
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep30
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep31
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep32
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
