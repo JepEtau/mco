@@ -226,16 +226,16 @@
 * [x] consolider j vs k
 * [/] consolider f vs k
 * [x] precedemment
-* [ ] asuivre
+* [x] asuivre
 
 
 # ep22
 * vérifier scènes
-    + [ ] j
-    + [ ] k
-    + [ ] f
-* [ ] consolider j vs k
-* [ ] consolider f vs k
+    + [x] j
+    + [x] k
+    + [/] f
+* [/] consolider j vs k
+* [x] consolider f vs k
 * [x] precedemment
 * [ ] asuivre
 
@@ -247,7 +247,7 @@
     + [ ] f
 * [ ] consolider j vs k
 * [ ] consolider f vs k
-* [ ] precedemment
+* [x] precedemment
 * [ ] asuivre
 
 
