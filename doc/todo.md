@@ -1,35 +1,22 @@
-# TODO
+## FIXED, to validate:
 
 
-## low
-- determine HtoD sync memory size
-- do not use inpaint shape for HtoD/DtoH transfers
-- replace mask dtype to torch.bool
-
-
-
-
-# Issues
-
-## Fixed, to validate:
-
-
-## High priority
-- crop after title overlay
-
-
-## Middle priority
-- Add grain at the end?
-    noise=alls=14:allf=t+u
-    noise=c0s=14:c0f=t+u
-    http://underpop.online.fr/f/ffmpeg/help/noise.htm.gz
-- temporal filter: add metadata to generated video
+## HIGH priority
 - chaining fp32 / fp16 models
+
+
+## MIDDLE priority
+- inpaint: determine HtoD sync memory size ?
+
 
 
 ## Improvments (low priority)
 - add full verification in geometry
 - add watermark to the final version
+
+- temporal filter: add metadata to generated video
+
+
 
 
 ## Maybe an issue
@@ -38,3 +25,22 @@
 
 (won't fix)
 - g_debut in lr
+- crop after title overlay
+~~- Add grain at the end?~~
+    ~~noise=alls=14:allf=t+u~~
+    ~~noise=c0s=14:c0f=t+u~~
+    ~~ http://underpop.online.fr/f/ffmpeg/help/noise.htm.gz ~~
+    -> *use davinci resolve*
+
+
+
+## New archs
+https://github.com/rewaifu/resselt/
+
+ATD: https://github.com/LabShuHangGU/Adaptive-Token-Dictionary
+RGT: https://github.com/zhengchen1999/RGT
+
+
+AnimeSRv2
+
+handheldSR: https://github.com/Jamy-L/Handheld-Multi-Frame-Super-Resolution
