@@ -6,11 +6,12 @@
 
 
 ## MIDDLE priority
+- DPIR: allow noise parameter
+
+
+
+## LOW priority and improvments
 - inpaint: determine HtoD sync memory size ?
-
-
-
-## Improvments (low priority)
 - add full verification in geometry
 - add watermark to the final version
 
