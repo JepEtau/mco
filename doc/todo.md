@@ -39,12 +39,13 @@
 https://github.com/rewaifu/resselt/
 
 - sisr
-    * ATD: https://github.com/LabShuHangGU/Adaptive-Token-Dictionary
+    *~~ATD: https://github.com/LabShuHangGU/Adaptive-Token-Dictionary~~
     * (RGT: https://github.com/zhengchen1999/RGT)
 
 - video
     * AnimeSRv2
     * handheldSR: https://github.com/Jamy-L/Handheld-Multi-Frame-Super-Resolution
 
+
 - algorithms
-    * polyblur: https://github.com/teboli/polyblur
+    * ~~polyblur: https://github.com/teboli/polyblur~~
