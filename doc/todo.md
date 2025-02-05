@@ -35,13 +35,16 @@
 
 
 
-## New archs
+## New archs / algorithms
 https://github.com/rewaifu/resselt/
 
-ATD: https://github.com/LabShuHangGU/Adaptive-Token-Dictionary
-RGT: https://github.com/zhengchen1999/RGT
+- sisr
+    * ATD: https://github.com/LabShuHangGU/Adaptive-Token-Dictionary
+    * (RGT: https://github.com/zhengchen1999/RGT)
 
+- video
+    * AnimeSRv2
+    * handheldSR: https://github.com/Jamy-L/Handheld-Multi-Frame-Super-Resolution
 
-AnimeSRv2
-
-handheldSR: https://github.com/Jamy-L/Handheld-Multi-Frame-Super-Resolution
+- algorithms
+    * polyblur: https://github.com/teboli/polyblur
