@@ -250,8 +250,17 @@ def upscale_scenes(
 
                 if filter_name == 'resize':
                     filter_params = float(params[1])
+
+                elif filter_name == 'rotate90':
+                    filter_params = (
+                        int(params[1])
+                        if len(params) > 1
+                        else 1
+                    )
+
                 elif len(params) == 1:
                     filter_params = None
+
                 else:
                     filter_params = params[1]
 

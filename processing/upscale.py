@@ -110,8 +110,14 @@ class UpscalePipeline(object):
                 name, param = filter_param
                 if name == 'resize':
                     _scale = param
+
                 elif name == 'resize_to':
                     raise ValueError("not yet supported")
+
+                elif name == 'rotate90':
+                    if param not in (2, 4):
+                        shape = [shape[1], shape[0]]
+
                 # elif name not in supported_filters:
                 #     continue
 
