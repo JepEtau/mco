@@ -303,15 +303,15 @@
 TODO !!!! vérifier av synchro car trop de diff d'une ou 2 frames sur des scènes éloignées!!!
 * [/] consolider f vs k
 * [x] precedemment
-* [ ] asuivre
+* [x] asuivre
 
 
 # ep29
 * vérifier scènes
-    + [ ] j
-    + [ ] k
+    + [x] j
+    + [x] k
     + [ ] f
-* [ ] consolider j vs k
+* [x] consolider j vs k
 * [ ] consolider f vs k
 * [x] precedemment
 * [ ] asuivre
@@ -319,12 +319,12 @@ TODO !!!! vérifier av synchro car trop de diff d'une ou 2 frames sur des scène
 
 # ep30
 * vérifier scènes
-    + [ ] j
-    + [ ] k
+    + [x] j
+    + [x] k
     + [ ] f
-* [ ] consolider j vs k
+* [x] consolider j vs k
 * [ ] consolider f vs k
-* [ ] precedemment
+* [x] precedemment
 * [ ] asuivre
 
 
