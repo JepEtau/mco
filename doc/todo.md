@@ -49,9 +49,10 @@ https://github.com/rewaifu/resselt/
     * basicVSR++    https://github.com/ckkelvinchan/BasicVSR_PlusPlus
     * FTVSR         https://github.com/researchmm/FTVSR
     * EGVSR         https://github.com/Thmen/EGVSR
-    * APISR         https://github.com/Kiteretsu77/APISR
+    * ~~APISR~~     https://github.com/Kiteretsu77/APISR
     * CAVSR         https://github.com/aprBlue/CAVSR
     * handheldSR    https://github.com/Jamy-L/Handheld-Multi-Frame-Super-Resolution
+    * RethinkVSRAlignment   https://github.com/XPixelGroup/RethinkVSRAlignment
 
 - algorithms
     * ~~polyblur: https://github.com/teboli/polyblur~~
