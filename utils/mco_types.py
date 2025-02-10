@@ -180,6 +180,7 @@ EffectName = Literal[
     'se_loop',
     'title',
     'decimate',
+    'decimate_2',
 ]
 
 

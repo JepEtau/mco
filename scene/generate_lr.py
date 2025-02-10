@@ -164,6 +164,23 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             count = to_produce
         # print(f"extract {count} frames")
         to_produce -= count
+        to_extract: int = count
+
+        # Decimate
+        factor: int = 0
+        factor_2_mod: int = 0
+        if 'effects' in src_scene:
+            if e := src_scene['effects'].get_effect('decimate'):
+                factor, _ = e.extra_param
+                print(yellow(f"decimate:"), f"{src_scene['no']}: {count}")
+                to_extract = int(count * factor / (factor - 1) )
+            elif e := src_scene['effects'].get_effect('decimate_2'):
+                factor, factor_2_mod = e.extra_param
+                to_extract = int(factor_2_mod * count * factor / (factor - 1))
+                print(yellow(f"decimate_2:"), f"{src_scene['no']}: {factor_2_mod}")
+                pprint(src_scene)
+
+        # raise ValueError(f"to_extract: {to_extract}")
 
         decoder_command: list[str] = [
             ffmpeg_exe,
@@ -178,7 +195,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                 )
             ),
             "-i", in_video_fp,
-            "-t", str(frame_to_s(no=count, frame_rate=frame_rate)),
+            "-t", str(frame_to_s(no=to_extract, frame_rate=frame_rate)),
             *dec_filter_complex,
             "-f", "image2pipe",
             "-pix_fmt", in_pipe_pixfmt,
@@ -207,6 +224,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         frame_cache.set_occurences(frame_occurences(frame_replace))
         frame_cache.set_exceptions(frames_to_replace)
 
+
         # Dust and scratch removal
         scene_dsr: SceneDsr = src_scene['dsr']
         if scene_dsr is not None:
@@ -225,7 +243,12 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         in_frame: McoFrame = None
         out_frame: McoFrame = None
         out_i: int = 0
+
+        # backward
         backward_imgs: deque = deque()
+        # decimate
+        decimate_index: int = 0
+        decimate_index2: int = 0
         while count:
 
             in_frame: McoFrame = None
@@ -258,22 +281,31 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                         no=in_f_no, img=img, scene=scene
                     )
 
+            # decimate
+            decimate_index += 1
+            if factor != 0 and (decimate_index % factor) == 0:
+                decimate_index = 0
+                out_f_no += 1
+                continue
+            if factor_2_mod:
+                decimate_index2 = (decimate_index2 + 1) % factor_2_mod
+                if decimate_index2:
+                    out_f_no += 1
+                    continue
+
             out_frame = None
+            frame_cache.add(in_f_no, in_frame)
             while True:
                 f_no = frame_replace[out_f_no] if out_f_no in frame_replace else out_f_no
                 out_frame = None
 
                 from_cache = False
-
                 if f_no == in_f_no:
                     out_frame = in_frame
 
                 elif f_no in frame_cache:
                     out_frame = frame_cache[f_no]
                     from_cache = True
-
-                elif in_f_no not in frame_cache:
-                    frame_cache.add(in_f_no, in_frame)
 
                 if out_frame is not None:
 

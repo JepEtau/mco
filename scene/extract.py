@@ -44,11 +44,17 @@ def extract_scene(
     start: int = scene['start'] - scene['inputs'].progressive().start
     count: int = scene['count']
 
+    # Decimate
     factor: int = 0
+    factor_2_mod: int = 0
     if 'effects' in scene:
         if e := scene['effects'].get_effect('decimate'):
-            factor, count = e.extra_param
+            factor, _ = e.extra_param
             print(yellow(f"decimate:"), f"{scene['no']}: {count}")
+        elif e := scene['effects'].get_effect('decimate_2'):
+            factor, factor_2_mod = e.extra_param
+            print(yellow(f"decimate_2:"), f"{scene['no']}: {factor_2_mod}")
+            pprint(scene)
 
     frame_no: int = scene['start']
     vsettings: VideoSettings = scene['task'].video_settings
@@ -151,6 +157,7 @@ def extract_scene(
         # Get image from pipe, add watermak and output to pipe
         index: int = 0
         out_i: int = 0
+        factor_2_i: int = 0
         for i in range(count):
             buffer = d_subproces.stdout.read(nbytes)
             in_img = np.frombuffer(
@@ -168,6 +175,10 @@ def extract_scene(
             if factor != 0 and (index % factor) == 0:
                 index = 0
                 continue
+            if factor_2_mod:
+                factor_2_i = (factor_2_i + 1) % factor_2_mod
+                if factor_2_i:
+                    continue
 
             writer_subproces.stdin.write(np.ascontiguousarray(out_img))
 

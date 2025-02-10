@@ -210,12 +210,21 @@ def parse_scenes_new(
                         )
                     ])
 
-                elif k == "decimate" or k == "d":
+                elif k == 'decimate' or k == 'd':
                     # cannot mix decimate and se_loop
                     scenes[scene_no]['effects'] = Effects([
                         Effect(
                             name='decimate',
                             extra_param=[int(d[1]) if len(d) > 1 else 5, 0]
+                        )
+                    ])
+
+                elif k == 'decimate2' or k == 'd2':
+                    # cannot mix decimate and se_loop
+                    scenes[scene_no]['effects'] = Effects([
+                        Effect(
+                            name='decimate_2',
+                            extra_param=[int(d[1]) if len(d) > 1 else 5, 2]
                         )
                     ])
 
@@ -276,6 +285,12 @@ def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
                 factor: int = e.extra_param[0]
                 e.extra_param[1] = scene['count']
                 scene['count'] =  int(scene['count'] * (factor - 1 ) / factor + 0.5)
+
+            elif e := effects.get_effect('decimate_2'):
+                pprint(scene)
+                factor: int = e.extra_param[0]
+                # e.extra_param[1] = scene['count']
+                scene['count'] =  int((scene['count'] * (factor - 1 ) / factor + 0.5) / e.extra_param[1])
 
         if scene['count'] <= 0 and i < len(scenes) - 1:
             sys.exit(red(f"Error: {k_ed}:{k_ep}:{k_chapter}: scene no. {scene['no']:03d}, length (scene['count']) < 0"))
