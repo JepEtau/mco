@@ -44,15 +44,27 @@ https://github.com/rewaifu/resselt/
 
 - video
     * ~~AnimeSRv2~~
-    * RVRT          https://github.com/JingyunLiang/RVRT
-    * IART          https://github.com/kai422/IART
-    * basicVSR++    https://github.com/ckkelvinchan/BasicVSR_PlusPlus
-    * FTVSR         https://github.com/researchmm/FTVSR
-    * EGVSR         https://github.com/Thmen/EGVSR
-    * ~~APISR~~     https://github.com/Kiteretsu77/APISR
-    * CAVSR         https://github.com/aprBlue/CAVSR
-    * handheldSR    https://github.com/Jamy-L/Handheld-Multi-Frame-Super-Resolution
-    * RethinkVSRAlignment   https://github.com/XPixelGroup/RethinkVSRAlignment
+    * RVRT (1x, 4x)         https://github.com/JingyunLiang/RVRT
+    * IART (4x)             https://github.com/kai422/IART
+        use SPyNet still
+    * ~~basicVSR++~~        https://github.com/ckkelvinchan/BasicVSR_PlusPlus
+        no support, missing source code for 2x
+        but still good
+    * FTVSR (4x)            https://github.com/researchmm/FTVSR
+        basé sur mmedit... grrr derriere IART
+    * ~~EGVSR~~             https://github.com/Thmen/EGVSR
+        not clear enough, old
+    * ~~APISR~~             https://github.com/Kiteretsu77/APISR
+        sisr, tester modèles?
+    * CAVSR                 https://github.com/aprBlue/CAVSR
+        n'utilise pas SPyNet mais autre chose...
+    * EvTexture (4x)        https://github.com/dachunkai/evtexture
+    * handheldSR            https://github.com/Jamy-L/Handheld-Multi-Frame-Super-Resolution
+    * PSRT-recurrent        https://github.com/XPixelGroup/RethinkVSRAlignment
+        SPyNet mais intéressant
+    * CFDVSR                https://github.com/house-leo/cfdvsr
+        auteur considère que mieux que CFDVSR
+    * TMP                   https://github.com/xtudbxk/TMP
 
 - algorithms
     * ~~polyblur: https://github.com/teboli/polyblur~~
