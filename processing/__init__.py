@@ -32,6 +32,7 @@ supported_cuda_filters : tuple[str] = (
     # "closing",
     "darker_thinner",
     "resize",
+    "resize_to",
     "gaussian_noise",
     "rotate90",
     "unsharp_mask",

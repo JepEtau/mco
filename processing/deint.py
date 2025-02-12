@@ -431,26 +431,39 @@ def qtgmc_deint_command(
     # Avisynth+ file
     ffmpeg_command.extend(["-i", script])
 
-    # Resize with SAR
-    in_h, in_w = in_video_info['shape'][:2]
-    if in_video_info['sar'][0] >= in_video_info['sar'][1]:
-        in_w = int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)
-    else:
-        in_h = int((in_h * float(in_video_info['sar'][1]) / in_video_info['sar'][0]) + 0.5)
+    resize: str = ""
+    if False:
+        # Resize with SAR
+        in_h, in_w = in_video_info['shape'][:2]
+        if in_video_info['sar'][0] >= in_video_info['sar'][1]:
+            in_w = int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)
+        else:
+            in_h = int((in_h * float(in_video_info['sar'][1]) / in_video_info['sar'][0]) + 0.5)
 
-    resize = f"""
-        scale={in_w}:{in_h}:sws_flags=
-            bilinear
-            + full_chroma_int
-            + full_chroma_inp
-            + accurate_rnd
-            + bitexact
-    """
+        resize = f"""
+            scale={in_w}:{in_h}:sws_flags=
+                bilinear
+                + full_chroma_int
+                + full_chroma_inp
+                + accurate_rnd
+                + bitexact
+        """
+
+    colorspace: str = "setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709"
+
+    ## FFmpeg filter
+    ffmpeg_filter = ','.join([
+        s for s in (
+            resize,
+            colorspace
+        ) if len(s) != 0
+    ])
+    ffmpeg_filter = _clean_str(ffmpeg_filter)
 
     # FFmpeg complex filter
-    ffmpeg_filter = _clean_str(resize)
     ffmpeg_command.extend([
-        "-filter_complex", f"[0:v]{ffmpeg_filter},setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709[outv]",
+        "-filter_complex",
+        f"[0:v]{ffmpeg_filter}[outv]",
         "-map", "[outv]"
     ])
 
@@ -543,20 +556,23 @@ def deint_command(
             ffmpeg_deint = f"{ffmpeg_deint}"
 
     # Resize with SAR
-    in_h, in_w = in_video_info['shape'][:2]
-    if in_video_info['sar'][0] >= in_video_info['sar'][1]:
-        in_w = int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)
-    else:
-        in_h = int((in_h * float(in_video_info['sar'][1]) / in_video_info['sar'][0]) + 0.5)
+    resize: str = ""
+    if False:
+        in_h, in_w = in_video_info['shape'][:2]
 
-    resize = f"""
-        scale={in_w}:{in_h}:sws_flags=
-            lanczos
-            + full_chroma_int
-            + full_chroma_inp
-            + accurate_rnd
-            + bitexact
-    """
+        if in_video_info['sar'][0] >= in_video_info['sar'][1]:
+            in_w = int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)
+        else:
+            in_h = int((in_h * float(in_video_info['sar'][1]) / in_video_info['sar'][0]) + 0.5)
+
+        resize = f"""
+            scale={in_w}:{in_h}:sws_flags=
+                lanczos
+                + full_chroma_int
+                + full_chroma_inp
+                + accurate_rnd
+                + bitexact
+        """
 
     ## FFmpeg filter
     ffmpeg_filter = ','.join([

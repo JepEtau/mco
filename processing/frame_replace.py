@@ -4,7 +4,7 @@ from pprint import pprint
 import sys
 from typing import Any
 
-from utils.p_print import yellow
+from utils.p_print import *
 
 
 def frame_occurences(replacements: dict[int, int]) -> dict[int, int]:
@@ -35,27 +35,27 @@ class ItemCache(UserDict):
 
     def __getitem__(self, key: Any) -> Any:
         if self.verbose:
-            print(f"ImageCache: GET {key}")
+            print(darkgrey(f"ImageCache: GET {key}"))
         if key not in self.data:
             return None
         item = super().__getitem__(key)
         if item is not None:
             self.cached[key] -= 1
             if self.verbose:
-                print(f"  try removing {key}: {self.cached[key]}")
+                print(darkgrey(f"  try removing {key}: {self.cached[key]}"))
             if self.cached[key] <= 0:
                 del self.cached[key]
                 del self.data[key]
                 if self.verbose:
                     print("  Delete item from cache")
         elif self.verbose:
-            print(f"  ImageCache: not in cache")
+            print(darkgrey(f"  ImageCache: not in cache"))
         return item
 
 
     def __setitem__(self, key: Any, item: Any) -> None:
         if self.verbose:
-            print(f"  ImageCache: Add {key}")
+            print(darkgrey(f"  ImageCache: Add {key}"))
         if key in self.exceptions:
             if self.verbose:
                 print("  not cacheable, discard")
@@ -63,11 +63,11 @@ class ItemCache(UserDict):
         if key not in self.cached:
             self.cached[key] = self.occurences[key] + 1
             if self.verbose:
-                print(f"  set cached item of {key} to {self.cached[key]}")
+                print(darkgrey(f"  set cached item of {key} to {self.cached[key]}"))
         else:
             self.cached[key] += 1
             if self.verbose:
-                print(f"  add cached item of {key} -> {self.cached[key]}")
+                print(darkgrey(f"  add cached item of {key} -> {self.cached[key]}"))
         return super().__setitem__(key, item)
 
 

@@ -112,7 +112,8 @@ class UpscalePipeline(object):
                     _scale = param
 
                 elif name == 'resize_to':
-                    raise ValueError("not yet supported")
+                    w, h = map(int, param.split(":")[:2])
+                    shape = [w, h]
 
                 elif name == 'rotate90':
                     if param not in (2, 4):
