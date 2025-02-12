@@ -123,7 +123,10 @@ class UpscalePipeline(object):
 
             else:
                 model_key = filter_param
-                _scale = model_manager.get_scale(model_key)
+                try:
+                    _scale = model_manager.get_scale(model_key)
+                except:
+                    raise ValueError(f"no valid scale for {model_key}")
                 filters.steps[i] = model_manager.set_input_size(model_key, shape)
 
             print(

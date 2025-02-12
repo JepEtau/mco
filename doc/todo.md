@@ -38,33 +38,82 @@
 ## New archs / algorithms
 https://github.com/rewaifu/resselt/
 
+status:
+    module
+    intégré
+    testé
+    done
+
+
 - sisr
     *~~ATD:         https://github.com/LabShuHangGU/Adaptive-Token-Dictionary~~
     * (RGT:         https://github.com/zhengchen1999/RGT)
 
 - video
     * ~~AnimeSRv2~~
+        done
+
     * RVRT (1x, 4x)         https://github.com/JingyunLiang/RVRT
+        intégré
+
     * IART (4x)             https://github.com/kai422/IART
         use SPyNet still
+
     * ~~basicVSR++~~        https://github.com/ckkelvinchan/BasicVSR_PlusPlus
         no support, missing source code for 2x
         but still good
-    * FTVSR (4x)            https://github.com/researchmm/FTVSR
+
+    * ~~FTVSR (4x)~~        https://github.com/researchmm/FTVSR
         basé sur mmedit... grrr derriere IART
+        slow according to TMP vsr
+        to old
+        no valid comparisons with other
+
     * ~~EGVSR~~             https://github.com/Thmen/EGVSR
         not clear enough, old
+
     * ~~APISR~~             https://github.com/Kiteretsu77/APISR
         sisr, tester modèles?
+
     * CAVSR                 https://github.com/aprBlue/CAVSR
         n'utilise pas SPyNet mais autre chose...
+        better than basicvsr++, ftvsr
+
     * EvTexture (4x)        https://github.com/dachunkai/evtexture
+
     * handheldSR            https://github.com/Jamy-L/Handheld-Multi-Frame-Super-Resolution
+
     * PSRT-recurrent        https://github.com/XPixelGroup/RethinkVSRAlignment
         SPyNet mais intéressant
+
     * CFDVSR                https://github.com/house-leo/cfdvsr
-        auteur considère que mieux que CFDVSR
+        non publié, auteur considère que mieux que les autres....
+
     * TMP                   https://github.com/xtudbxk/TMP
+
+
+- Optical Flow
+    * unimatch (GMflow+)    https://github.com/autonomousvision/unimatch
+        intégré
+
+    * GMflow                https://github.com/haofeixu/gmflow
+        module
+
+    * VideoFlow             https://github.com/XiaoyuShi97/VideoFlow
+        more video than the others
+
+    * FlowFormer++          https://github.com/XiaoyuShi97/FlowFormerPlusPlus
+
+    * FlowFormer            https://github.com/drinkingcoder/FlowFormer-Official
+
+    * Raft
+        intégré
+
+
+
+
+
+
 
 - algorithms
     * ~~polyblur: https://github.com/teboli/polyblur~~

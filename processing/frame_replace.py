@@ -30,7 +30,7 @@ class ItemCache(UserDict):
         self.occurences: Counter = Counter()
         self.cached: Counter = Counter()
         self.exceptions: set = set()
-        self.verbose: bool = False
+        self.verbose: bool = verbose
 
 
     def __getitem__(self, key: Any) -> Any:
@@ -74,7 +74,7 @@ class ItemCache(UserDict):
     def set_occurences(self, replacements: dict[int, int]) -> None:
         """Save a counter of times a frame will be retrieved
         """
-        self.occurences = Counter(replacements.values())
+        self.occurences = frame_occurences(replacements)
         if self.verbose:
             print(yellow("set occurences"))
             pprint(self.occurences)

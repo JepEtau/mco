@@ -325,10 +325,32 @@ TODO !!!! vérifier av synchro car trop de diff d'une ou 2 frames sur des scène
 * [x] consolider j vs k
 * [ ] consolider f vs k
 * [x] precedemment
-* [ ] asuivre
+* [x] asuivre
 
 
 # ep31
+* vérifier scènes
+    + [x] j
+    + [x] k
+    + [/] f
+* [x] consolider j vs k
+* [/] consolider f vs k
+* [x] precedemment
+* [x] asuivre
+
+
+# ep32
+* vérifier scènes
+    + [x] j
+    + [x] k
+    + [/] f
+* [x] consolider j vs k
+* [/] consolider f vs k
+* [x] precedemment
+* [ ] asuivre
+
+
+# ep33
 * vérifier scènes
     + [ ] j
     + [ ] k
@@ -339,7 +361,7 @@ TODO !!!! vérifier av synchro car trop de diff d'une ou 2 frames sur des scène
 * [ ] asuivre
 
 
-# ep32
+# ep34
 * vérifier scènes
     + [ ] j
     + [ ] k
@@ -349,3 +371,57 @@ TODO !!!! vérifier av synchro car trop de diff d'une ou 2 frames sur des scène
 * [ ] precedemment
 * [ ] asuivre
 
+
+# ep35
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep36
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep37
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep38
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
+
+
+# ep39
+* vérifier scènes
+    + [ ] j
+    + [ ] k
+    + [ ] f
+* [ ] consolider j vs k
+* [ ] consolider f vs k
+* [ ] precedemment
+* [ ] asuivre
