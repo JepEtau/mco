@@ -50,6 +50,8 @@ status:
     * (RGT:         https://github.com/zhengchen1999/RGT)
     * MST++         https://github.com/caiyuanhao1998/MST-plus-plus
         Spectral Recovery Challenge
+    * TTSR          https://github.com/researchmm/TTSR
+
 
 - video
     * ~~basicVSR++~~        https://github.com/ckkelvinchan/BasicVSR_PlusPlus
@@ -99,6 +101,11 @@ status:
 
     * CFDVSR                https://github.com/house-leo/cfdvsr
         non publié, auteur considère que mieux que les autres....
+
+    * TTVSR                 https://github.com/researchmm/TTVSR
+        inference function might be interesting
+
+    * VQD-SR                https://github.com/researchmm/vqd-sr
 
 
 - Optical Flow
