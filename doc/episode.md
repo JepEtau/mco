@@ -352,11 +352,12 @@ TODO !!!! vérifier av synchro car trop de diff d'une ou 2 frames sur des scène
 
 # ep33
 * vérifier scènes
-    + [ ] j
-    + [ ] k
-    + [ ] f
+    + [x] j
+    + [x] k
+    + [/] f
 * [ ] consolider j vs k
-* [ ] consolider f vs k
+    !!! AVsync !!!!
+* [/] consolider f vs k
 * [x] precedemment
 * [ ] asuivre
 

@@ -40,25 +40,18 @@ https://github.com/rewaifu/resselt/
 
 status:
     module
-    intégré
-    testé
+    integrated
+    tested
     done
 
 
 - sisr
     *~~ATD:         https://github.com/LabShuHangGU/Adaptive-Token-Dictionary~~
     * (RGT:         https://github.com/zhengchen1999/RGT)
+    * MST++         https://github.com/caiyuanhao1998/MST-plus-plus
+        Spectral Recovery Challenge
 
 - video
-    * ~~AnimeSRv2~~
-        done
-
-    * RVRT (1x, 4x)         https://github.com/JingyunLiang/RVRT
-        intégré
-
-    * IART (4x)             https://github.com/kai422/IART
-        use SPyNet still
-
     * ~~basicVSR++~~        https://github.com/ckkelvinchan/BasicVSR_PlusPlus
         no support, missing source code for 2x
         but still good
@@ -73,41 +66,60 @@ status:
         not clear enough, old
 
     * ~~APISR~~             https://github.com/Kiteretsu77/APISR
-        sisr, tester modèles?
+        sisr, tester modèles? beurk
+
+    * ~~handheldSR~~        https://github.com/Jamy-L/Handheld-Multi-Frame-Super-Resolution
+        reported as slow af
+
+    * ~~AnimeSRv2~~
+        __done__
+
+    * RVRT (1x, 4x)         https://github.com/JingyunLiang/RVRT
+        __integrated__
+
+    * IART (4x)             https://github.com/kai422/IART
+        use SPyNet still
+        __integrated__
 
     * CAVSR                 https://github.com/aprBlue/CAVSR
         n'utilise pas SPyNet mais autre chose...
         better than basicvsr++, ftvsr
+        __integrated__
 
     * EvTexture (4x)        https://github.com/dachunkai/evtexture
-
-    * handheldSR            https://github.com/Jamy-L/Handheld-Multi-Frame-Super-Resolution
+        __integrated__
 
     * PSRT-recurrent        https://github.com/XPixelGroup/RethinkVSRAlignment
         SPyNet mais intéressant
+        __integrated__
+
+    * TMP                   https://github.com/xtudbxk/TMP
+        __integrated__
+
 
     * CFDVSR                https://github.com/house-leo/cfdvsr
         non publié, auteur considère que mieux que les autres....
 
-    * TMP                   https://github.com/xtudbxk/TMP
-
 
 - Optical Flow
     * unimatch (GMflow+)    https://github.com/autonomousvision/unimatch
-        intégré
+        __integrated__
 
     * GMflow                https://github.com/haofeixu/gmflow
-        module
+        __module__
+        not possible to differentiate GMflow from unimatch
 
     * VideoFlow             https://github.com/XiaoyuShi97/VideoFlow
-        more video than the others
+        /
 
     * FlowFormer++          https://github.com/XiaoyuShi97/FlowFormerPlusPlus
+        /
 
     * FlowFormer            https://github.com/drinkingcoder/FlowFormer-Official
+        /
 
     * Raft
-        intégré
+        __integrated__
 
 
 
