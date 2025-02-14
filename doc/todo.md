@@ -51,7 +51,6 @@ status:
     * MST++                 https://github.com/caiyuanhao1998/MST-plus-plus
         Spectral Recovery Challenge
     * TTSR                  https://github.com/researchmm/TTSR
-    * indi-debanding        https://github.com/ksasso1028/indi-debanding
 
 
 - video
