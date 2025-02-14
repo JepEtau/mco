@@ -300,7 +300,7 @@
     + [x] k
     + [/] f
 * [x] consolider j vs k
-TODO !!!! vérifier av synchro car trop de diff d'une ou 2 frames sur des scènes éloignées!!!
+    TODO vérifier av synchro car trop de diff d'une ou 2 frames sur des scènes éloignées!!!
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
@@ -356,10 +356,10 @@ TODO !!!! vérifier av synchro car trop de diff d'une ou 2 frames sur des scène
     + [x] k
     + [/] f
 * [ ] consolider j vs k
-    !!! AVsync !!!!
+    TODO AVsync !!!!
 * [/] consolider f vs k
 * [x] precedemment
-* [ ] asuivre
+* [x] asuivre
 
 
 # ep34
@@ -375,12 +375,13 @@ TODO !!!! vérifier av synchro car trop de diff d'une ou 2 frames sur des scène
 
 # ep35
 * vérifier scènes
-    + [ ] j
-    + [ ] k
-    + [ ] f
+    + [x] j
+    + [x] k
+    + [/] f
 * [ ] consolider j vs k
-* [ ] consolider f vs k
-* [ ] precedemment
+    TODO correct decimate for 084
+* [/] consolider f vs k
+* [x] precedemment
 * [ ] asuivre
 
 

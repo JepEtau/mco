@@ -46,11 +46,12 @@ status:
 
 
 - sisr
-    *~~ATD:         https://github.com/LabShuHangGU/Adaptive-Token-Dictionary~~
-    * (RGT:         https://github.com/zhengchen1999/RGT)
-    * MST++         https://github.com/caiyuanhao1998/MST-plus-plus
+    * ~~ATD~~               https://github.com/LabShuHangGU/Adaptive-Token-Dictionary
+    * ~~RGT~~               https://github.com/zhengchen1999/RGT
+    * MST++                 https://github.com/caiyuanhao1998/MST-plus-plus
         Spectral Recovery Challenge
-    * TTSR          https://github.com/researchmm/TTSR
+    * TTSR                  https://github.com/researchmm/TTSR
+    * indi-debanding        https://github.com/ksasso1028/indi-debanding
 
 
 - video
@@ -127,10 +128,6 @@ status:
 
     * Raft
         __integrated__
-
-
-
-
 
 
 
