@@ -347,7 +347,7 @@ TODO !!!! vérifier av synchro car trop de diff d'une ou 2 frames sur des scène
 * [x] consolider j vs k
 * [/] consolider f vs k
 * [x] precedemment
-* [ ] asuivre
+* [x] asuivre
 
 
 # ep33
@@ -364,12 +364,12 @@ TODO !!!! vérifier av synchro car trop de diff d'une ou 2 frames sur des scène
 
 # ep34
 * vérifier scènes
-    + [ ] j
-    + [ ] k
-    + [ ] f
-* [ ] consolider j vs k
-* [ ] consolider f vs k
-* [ ] precedemment
+    + [x] j
+    + [x] k
+    + [/] f
+* [x] consolider j vs k
+* [/] consolider f vs k
+* [x] precedemment
 * [ ] asuivre
 
 
