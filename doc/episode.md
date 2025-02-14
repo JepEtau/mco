@@ -370,7 +370,7 @@
 * [x] consolider j vs k
 * [/] consolider f vs k
 * [x] precedemment
-* [ ] asuivre
+* [x] asuivre
 
 
 # ep35
@@ -392,7 +392,7 @@
     + [ ] f
 * [ ] consolider j vs k
 * [ ] consolider f vs k
-* [ ] precedemment
+* [x] precedemment
 * [ ] asuivre
 
 
