@@ -130,6 +130,13 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
     )
 
 
+    parser.add_argument(
+        "--resize_with_sar",
+        action="store_true",
+        required=False,
+        help="Resize with SAR"
+    )
+
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -315,10 +322,11 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
                 f"{path_split(in_media_path)[1]}_{hashcode}{vcodec_to_extension[vsettings.codec]}"
             )
             e_command: list[str] = qtgmc_deint_command(
-                in_video_info=in_video_info,
+                in_vi=in_video_info,
                 script=script_filepath,
                 qtgmc_args=qtgmc_args,
-                out_filepath=out_filepath
+                out_filepath=out_filepath,
+                resize_with_sar=arguments.resize_with_sar,
             )
 
         else:
@@ -338,12 +346,13 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
             )
 
             e_command: str = deint_command(
-                in_video_info=in_video_info,
+                in_vi=in_video_info,
                 algo=deint_algo,
                 params=deint_params,
                 trim_start=trim_start,
                 trim_count=trim_count,
-                out_filepath=out_filepath
+                out_filepath=out_filepath,
+                resize_with_sar=arguments.resize_with_sar,
             )
 
         print(cyan(f"Output:"), f"{out_filepath}")

@@ -416,10 +416,11 @@ def calc_deint_hash(args_dict: OrderedDict[str, str]) -> tuple[str, str]:
 
 
 def qtgmc_deint_command(
-    in_video_info: VideoInfo,
+    in_vi: VideoInfo,
     script: str,
     qtgmc_args: dict[str, str],
-    out_filepath: str
+    out_filepath: str,
+    resize_with_sar: bool = False,
 ) -> list[str]:
     ffmpeg_command: list[str] = [
         ffmpeg_exe,
@@ -431,14 +432,16 @@ def qtgmc_deint_command(
     # Avisynth+ file
     ffmpeg_command.extend(["-i", script])
 
+    # Aspect ratio
     resize: str = ""
-    if False:
+    aspect_ratio: str = ""
+    if resize_with_sar:
         # Resize with SAR
-        in_h, in_w = in_video_info['shape'][:2]
-        if in_video_info['sar'][0] >= in_video_info['sar'][1]:
-            in_w = int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)
+        in_h, in_w = in_vi['shape'][:2]
+        if in_vi['sar'][0] >= in_vi['sar'][1]:
+            in_w = int((in_w * float(in_vi['sar'][0]) / in_vi['sar'][1]) + 0.5)
         else:
-            in_h = int((in_h * float(in_video_info['sar'][1]) / in_video_info['sar'][0]) + 0.5)
+            in_h = int((in_h * float(in_vi['sar'][1]) / in_vi['sar'][0]) + 0.5)
 
         resize = f"""
             scale={in_w}:{in_h}:sws_flags=
@@ -448,6 +451,20 @@ def qtgmc_deint_command(
                 + accurate_rnd
                 + bitexact
         """
+    elif in_vi["dar"]:
+        sar_dar: list[str] = []
+        # if 'sar' in in_vi:
+        #     sar : str = '/'.join(map(str, in_vi['sar']))
+        #     if sar != "1/1":
+        #         sar_dar.append(f"setsar={sar}")
+
+        if 'dar' in in_vi:
+            dar : str = '/'.join(map(str, in_vi['dar']))
+            if dar != "1/1":
+                sar_dar.append(f"setdar={dar}")
+
+        if sar_dar:
+            aspect_ratio = ",".join(sar_dar)
 
     colorspace: str = "setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709"
 
@@ -455,7 +472,8 @@ def qtgmc_deint_command(
     ffmpeg_filter = ','.join([
         s for s in (
             resize,
-            colorspace
+            colorspace,
+            aspect_ratio,
         ) if len(s) != 0
     ])
     ffmpeg_filter = _clean_str(ffmpeg_filter)
@@ -468,7 +486,7 @@ def qtgmc_deint_command(
     ])
 
     # Frame rate
-    fps: FrameRate = in_video_info['frame_rate_r']
+    fps: FrameRate = in_vi['frame_rate_r']
     ffmpeg_command.extend([
         # "-r", "30000/1001",
         # "-frame_drop_threshold", "50",
@@ -505,15 +523,16 @@ def qtgmc_deint_command(
 
 
 def deint_command(
-    in_video_info: VideoInfo,
+    in_vi: VideoInfo,
     algo: str,
     params: str,
     out_filepath: str,
     trim_start: int = 0,
     trim_count: int = -1,
+    resize_with_sar: bool = False,
 ) -> list[str]:
-    in_pix_fmt = in_video_info['pix_fmt']
-    fps: float | int | tuple[int, int] = in_video_info['frame_rate_r']
+    in_pix_fmt = in_vi['pix_fmt']
+    fps: float | int | tuple[int, int] = in_vi['frame_rate_r']
 
     # Chroma interpolation
     chroma_interpolation: str = ""
@@ -536,8 +555,8 @@ def deint_command(
     ffmpeg_deint: str = ""
     # pprint(in_video_info)
     # sys.exit()
-    in_video_info['is_interlaced'] = True
-    if in_video_info['is_interlaced']:
+    in_vi['is_interlaced'] = True
+    if in_vi['is_interlaced']:
         deint_algo: str = algo
         deint_params: str = params
 
@@ -555,15 +574,16 @@ def deint_command(
         if ffmpeg_deint:
             ffmpeg_deint = f"{ffmpeg_deint}"
 
-    # Resize with SAR
+    # Aspect ratio
     resize: str = ""
-    if False:
-        in_h, in_w = in_video_info['shape'][:2]
+    aspect_ratio: str = ""
+    if resize_with_sar:
+        in_h, in_w = in_vi['shape'][:2]
 
-        if in_video_info['sar'][0] >= in_video_info['sar'][1]:
-            in_w = int((in_w * float(in_video_info['sar'][0]) / in_video_info['sar'][1]) + 0.5)
+        if in_vi['sar'][0] >= in_vi['sar'][1]:
+            in_w = int((in_w * float(in_vi['sar'][0]) / in_vi['sar'][1]) + 0.5)
         else:
-            in_h = int((in_h * float(in_video_info['sar'][1]) / in_video_info['sar'][0]) + 0.5)
+            in_h = int((in_h * float(in_vi['sar'][1]) / in_vi['sar'][0]) + 0.5)
 
         resize = f"""
             scale={in_w}:{in_h}:sws_flags=
@@ -573,6 +593,20 @@ def deint_command(
                 + accurate_rnd
                 + bitexact
         """
+    elif in_vi["dar"]:
+        sar_dar: list[str] = []
+        if 'sar' in in_vi:
+            sar : str = '/'.join(map(str, in_vi['sar']))
+            if sar != "1/1":
+                sar_dar.append(f"setsar={sar}")
+
+        if 'dar' in in_vi:
+            dar : str = '/'.join(map(str, in_vi['dar']))
+            if dar != "1/1":
+                sar_dar.append(f"setdar={dar}")
+
+        if sar_dar:
+            aspect_ratio = ",".join(sar_dar)
 
     ## FFmpeg filter
     ffmpeg_filter = ','.join([
@@ -580,12 +614,16 @@ def deint_command(
             ffmpeg_deint,
             chroma_interpolation,
             resize,
+            aspect_ratio,
         ) if len(s) != 0
     ])
     ffmpeg_filter = _clean_str(ffmpeg_filter)
 
     # raise SystemError("ADD dar to the video")
     print(red("ADD dar to the video"))
+
+    if resize_with_sar and in_vi["dar"]:
+        raise NotImplementedError
 
     # Create the command
     ffmpeg_command: list[str] = [
@@ -597,8 +635,8 @@ def deint_command(
 
     # Seek
     main_logger.debug(f"trim: start: {trim_start}, count: {trim_count}")
-    if trim_count != -1 and trim_start + trim_count > in_video_info['frame_count']:
-        raise ValueError(f"Erroneous trim value: {trim_start+trim_count} > {in_video_info['frame_count']}")
+    if trim_count != -1 and trim_start + trim_count > in_vi['frame_count']:
+        raise ValueError(f"Erroneous trim value: {trim_start+trim_count} > {in_vi['frame_count']}")
 
     if trim_start:
         ffmpeg_command.extend(["-ss", frame_to_sexagesimal(trim_start, fps)])
@@ -607,7 +645,7 @@ def deint_command(
         ffmpeg_command.extend(["-t", frame_to_sexagesimal(trim_count, fps)])
 
     # Input file
-    ffmpeg_command.extend(["-i", in_video_info['filepath']])
+    ffmpeg_command.extend(["-i", in_vi['filepath']])
 
 
     # ffmpeg_filter = ""

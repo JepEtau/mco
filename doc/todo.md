@@ -107,6 +107,8 @@ status:
 
     * VQD-SR                https://github.com/researchmm/vqd-sr
 
+    * BSVD                  https://github.com/ChenyangQiQi/BSVD
+
 
 - Optical Flow
     * unimatch (GMflow+)    https://github.com/autonomousvision/unimatch

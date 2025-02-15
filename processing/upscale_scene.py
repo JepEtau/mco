@@ -412,15 +412,22 @@ class UpscalePipeline(object):
         # Stop remaining threads if not already stopped (error cases)
         for thread in i_threads:
             if thread is not None and thread.is_alive():
-                print(f"[V][C] sent a poison pill at the end because still inference threads")
-                thread.put_frame(None)
-                time.sleep(0.0001)
+                # print(f"[V][C] sent a poison pill at the end because still inference threads")
+                thread.stop(force=True)
+                while thread.is_alive():
+                    time.sleep(0.02)
+
 
         for thread in (d_thread, *i_threads, e_thread):
-            if thread is not None:
-                thread.stop()
+            if thread is not None and thread.is_alive():
+                thread.stop(force=True)
+                time.sleep(0.5)
 
         torch.cuda.empty_cache()
+
+        for thread in (d_thread, *i_threads, e_thread):
+            if thread is not None and thread.is_alive():
+                print(red(f"Error: {thread.name} is still alive"))
 
         return err, encoded
 

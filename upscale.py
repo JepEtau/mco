@@ -153,7 +153,8 @@ def main():
         compare=arguments.compare,
     )
 
-    if sys.platform == "win":
+    print("beep")
+    if sys.platform == "win32":
         winsound.Beep(frequency=440, duration=200)
 
 if __name__ == "__main__":

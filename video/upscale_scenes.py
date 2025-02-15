@@ -20,7 +20,7 @@ from nn_inference.toolbox.upscale_doc import (
 
 from parsers._types import VideoSettings
 from parsers.p_print import pprint_scene_mapping
-from processing.upscale import UpscalePipeline
+from processing.upscale_scene import UpscalePipeline
 from processing import supported_filters
 from scene.consolidate import consolidate_scene
 from scene.src_scene import SrcScene
@@ -313,7 +313,12 @@ def upscale_scenes(
     if f_progress_thread is not None:
         f_progress_thread.put(0, force=True)
         total_elapsed: float = f_progress_thread.elapsed()
-        f_progress_thread.stop()
+        while True:
+            if f_progress_thread is not None and f_progress_thread.is_alive():
+                f_progress_thread.stop(force=True)
+                time.sleep(0.1)
+            else:
+                break
 
     if scenes_to_upscale_doc:
         print(f"Total number of scenes to upscale (doc): {len(scenes_to_upscale_doc)}")
