@@ -50,7 +50,6 @@ status:
     * ~~RGT~~               https://github.com/zhengchen1999/RGT
     * MST++                 https://github.com/caiyuanhao1998/MST-plus-plus
         Spectral Recovery Challenge
-    * TTSR                  https://github.com/researchmm/TTSR
 
 
 - video

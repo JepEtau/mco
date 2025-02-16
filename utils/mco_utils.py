@@ -336,6 +336,13 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
             f"ed_{scene['k_ed']}",
         )
 
+    elif task_name == 'lr':
+        output_path = os.path.join(
+            cache_dir,
+            scene['k_ep'],
+            "lr",
+        )
+
     elif task_name == 'upscale':
         # Work in the src directory
         output_path = os.path.join(

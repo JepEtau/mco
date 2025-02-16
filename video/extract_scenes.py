@@ -89,7 +89,7 @@ def extract_scenes(
             # Consolidate this scene
             consolidate_src_scene(
                 scene=scene,
-                task_name='initial',
+                task_name=task_name,
                 watermark=watermark
             )
 

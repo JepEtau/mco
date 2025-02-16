@@ -19,6 +19,7 @@ supported_cv2_filters : tuple[str] = (
     "opening",
     "closing",
     "cv2_bilateral",
+    "cv2_nlmeans",
 )
 
 supported_cpu_filters : tuple[str] = (
