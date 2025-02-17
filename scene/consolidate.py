@@ -267,7 +267,7 @@ def consolidate_scene(
         if task_name == 'upscale':
             sequence: str = scene_filters[task_name].sequence
             for t in (
-                ':cuda', ':trt', ':fp16', ':fp32'
+                ':cuda', ':trt', ':fp16', ':fp32', ':bf16'
             ):
                 sequence = sequence.replace(t, '')
             suffix: str = ""
