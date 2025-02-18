@@ -404,7 +404,7 @@ class ModelManager:
                 self.torch_session.infer_stream = self.torch_infer_stream
                 self.torch_session.initialize(
                     device=self.device,
-                    fp16=bool(m.dtype == 'fp16'),
+                    dtype=m.dtype,
                     memalloc=False,
                     in_max_shape=None,
                     warmup=False,
@@ -415,7 +415,7 @@ class ModelManager:
                 self.trt_session.infer_stream = self.trt_cuda_stream
                 self.trt_session.initialize(
                     device=self.device,
-                    fp16=bool(m.dtype == 'fp16'),
+                    dtype=m.dtype,
                     memalloc=False,
                     in_max_shape=None,
                     create_streams=False,

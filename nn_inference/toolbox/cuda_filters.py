@@ -47,24 +47,25 @@ def darker_thinner_(
 
     darker_thinner = DarkerThinner(**args)
 
-    if isinstance(frame.tensor, Tensor):
+    if isinstance(frame.tensor, cp.ndarray):
         raise NotImplementedError("not supported input tensor for darker_thinner_")
         darker_thinner.to(frame.tensor.device)
         if frame.tensor.dtype == torch.float16:
             darker_thinner.half()
         frame.tensor = darker_thinner(frame.tensor)
 
-    elif isinstance(frame.tensor, cp.ndarray):
+    elif isinstance(frame.tensor, Tensor):
         if verbose:
             print(purple(f"[V][F]   darker_thinner_"))
 
         in_x: Tensor = frame.tensor
+        dtype: torch.dtype = in_x.dtype
         if verbose:
             print(purple(f"[V][F]     in_x"), f"{in_x.shape}, {in_x.dtype}")
 
+        in_x = in_x.to(dtype=torch.float16)
         darker_thinner.to(in_x.device)
-        if in_x.dtype == torch.float16:
-            darker_thinner.half()
+        darker_thinner.half()
 
         if verbose:
             print(purple(f"[V][F]     in_x"), f"{in_x.shape}, {in_x.dtype}")
@@ -72,6 +73,7 @@ def darker_thinner_(
         if verbose:
             print(purple(f"[V][F]     out_x"), f"{out_x.shape}, {out_x.dtype}")
 
+        out_x = out_x.to(dtype=dtype)
         frame.tensor = torch.clamp(out_x.contiguous(), 0, 1.0)
 
     return frame

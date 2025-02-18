@@ -6,6 +6,7 @@ from pynnlib import (
     PytorchModel,
     PyTorchSession,
 )
+from pynnlib.nn_types import Idtype
 from pynnlib.utils.cp_tensor import (
     MemcpyKind,
     to_nchw_cp,
@@ -68,12 +69,12 @@ class PyTorchCuPySession(PyTorchSession):
     def initialize(
         self,
         device: str,
-        fp16: bool = False,
+        dtype: Idtype = 'fp16',
         memalloc: bool = True,
         in_max_shape: tuple[int, int, int] | None = None,
         warmup: bool = False
     ) -> None:
-        super().initialize(device=device, fp16=fp16, warmup=warmup)
+        super().initialize(device=device, dtype=dtype, warmup=warmup)
 
         if "cuda" in self.device:
             self._process_fct = self.process_cupy

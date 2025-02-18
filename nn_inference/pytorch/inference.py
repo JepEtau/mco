@@ -31,7 +31,7 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
     print(blue(f"[V][I][TORCH] PyTorch InferenceThread"))
     in_queue: Queue = self.in_queue
     channels_last: bool = False
-
+    verbose = False
     # if channels_last:
     #     model = model.to(memory_format=torch.channels_last)
 
@@ -64,7 +64,7 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
                 if frame.tensor is not None:
                     if do_copy:
                         in_tensor: Tensor = frame.tensor.clone()
-                        self.producer.set_produce_flag()
+                        # self.producer.set_produce_flag()
                     else:
                         in_tensor = frame.tensor
 
@@ -78,7 +78,7 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
 
                     # Convert to correct datatype
                     session: NnModelSession = model_manager.session(model_key)
-                    in_tensor = in_tensor.to(dtype=session.torch_dtype)
+                    in_tensor = in_tensor.to(dtype=session.dtype)
 
                 else:
                     in_tensor = None
@@ -87,12 +87,13 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
                 model: NnModel = model_manager.model(model_key)
                 module = model.module
                 action: str = 'none'
+                out_torch_tensor: Tensor
                 if model.arch.infer_type.type == 'simple':
                     # Perform inference
-                    out_torch_tensor: Tensor = module(in_tensor)
+                    out_torch_tensor = module(in_tensor)
 
                 elif model.arch.infer_type.type == 'inpaint':
-                    out_torch_tensor: Tensor = perform_inpaint_inference(
+                    out_torch_tensor = perform_inpaint_inference(
                         frame,
                         in_tensor,
                         model_manager,
@@ -127,13 +128,13 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
                         memory_format=torch.contiguous_format
                     )
 
-
                 time.sleep(0.0001)
                 infer_stream.synchronize()
 
                 # From torch to CuPy format
                 # if verbose:
                 #     print(blue(f"{verbose_prefix} out tensor: {out_tensor.data.ptr}, {out_tensor.shape}, {out_tensor.dtype}, {out_tensor.nbytes}"))
+                frame.tensor = out_torch_tensor
                 frame.step_no += 1
                 verbose_prefix: str = f"[V][I][TORCH][{frame.step_no}]"
 

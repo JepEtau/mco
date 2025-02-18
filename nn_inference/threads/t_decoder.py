@@ -338,7 +338,8 @@ class DecoderThread(BaseThread):
                     d_img: Tensor = htod_transfer(
                         htod_mem=htod_mem,
                         img_buffer=img_buffer,
-                        img_shape=img_shape
+                        img_shape=img_shape,
+                        cuda_stream=cuda_stream,
                     )
 
                     # cp.ndarray image to tensor
@@ -370,9 +371,6 @@ class DecoderThread(BaseThread):
                         # print(yellow(f"Last frame: {frame.f_no}"))
                         frame.last = True
 
-                    # Wait -> run other threads
-                    time.sleep(0.00001)
-                    cuda_stream.synchronize()
 
                     # Execute synchronous filters.
                     # TODO: later, use a separate thread for this

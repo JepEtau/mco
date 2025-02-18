@@ -56,10 +56,14 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             session: TensorRtSession = self.model_manager.session(model_key)
             context, engine = session.context, session.engine
 
-            # Prepare output tensor in same device
+            # Input tensor
             in_tensor = frame.tensor
-            scale = session.model.scale
             n, c, in_h, in_w = in_tensor.shape
+            in_tensor = in_tensor.to(dtype=session.dtype)
+            in_tensor = torch.ravel(in_tensor)
+
+            # Prepare output tensor in same device
+            scale = session.model.scale
             out_tensor_shape = (n, c, in_h * scale, in_w * scale)
             out_tensor: torch.Tensor = torch.empty(
                 out_tensor_shape,
@@ -68,13 +72,11 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             )
 
             # Perform simple inference
-            in_tensor = torch.ravel(in_tensor)
             bindings = [in_tensor.data_ptr(), out_tensor.data_ptr()]
             for i in range(engine.num_io_tensors):
                 context.set_tensor_address(engine.get_tensor_name(i), bindings[i])
             context.execute_async_v3(stream_handle=cuda_stream.cuda_stream)
 
-            out_tensor = out_tensor.reshape(out_tensor_shape)
             frame.tensor = torch.clamp_(out_tensor, 0., 1.)
 
             # if verbose:

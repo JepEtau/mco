@@ -91,7 +91,7 @@ class UpscalePipeline(object):
         vi: VideoStreamInfo = (
             scene['src'].primary_scene()['scene']['inputs'].progressive().info
         )
-        nbytes: int = vi.img_nbytes * np.dtype(vi.img_dtype).itemsize
+        nbytes: int = vi.img_nbytes
         if nbytes > in_max_nbytes:
             in_max_nbytes = nbytes
 
@@ -166,7 +166,7 @@ class UpscalePipeline(object):
         # The encoder MUST NOT resize the video
 
         # We can include all models because inpaint models have a scale of 1:1
-        out_nbytes = int(scale * scale * in_max_nbytes + 0.5)
+        out_nbytes = math.prod(shape) * vi.img_shape[2]
         if PIXEL_FORMAT[scene['task'].video_settings.pix_fmt]['bpp'] > 8:
             out_nbytes *= 2
         if out_nbytes > out_max_nbytes:
