@@ -4,7 +4,7 @@ import math
 from typing import Any
 import cupy as cp
 import numpy as np
-
+from torch import Tensor, UntypedStorage
 from utils.media import FShape
 
 
@@ -15,7 +15,7 @@ cp.cuda.set_pinned_memory_allocator(pinned_memory_pool.malloc)
 
 @dataclass
 class HostDeviceMemory:
-    host: Any
+    host: UntypedStorage
     device: Any
     nbytes: int
 

@@ -8,7 +8,7 @@ import subprocess
 from threading import Event, Lock
 import time
 import torch
-from torch import Tensor
+from torch import Tensor, UntypedStorage
 from typing import TYPE_CHECKING
 
 from nn_inference.threads.t_encoder import EncoderThread
@@ -102,6 +102,7 @@ class DecoderThread(BaseThread):
         return self._decoded
 
 
+    @torch.inference_mode()
     def run(self) -> None:
         verbose: bool = False
 
@@ -113,7 +114,7 @@ class DecoderThread(BaseThread):
 
         scene: Scene = self.scene
 
-        with cuda_stream:
+        with torch.cuda.stream(cuda_stream):
             # Calculate number of frames to generate, this might differ
             # from the destination: do not process frames with effects
             to_produce: int = calculate_scene_frame_count(scene)
@@ -289,11 +290,11 @@ class DecoderThread(BaseThread):
                     # print(lightcyan(f"  in: {in_f_no}, waiting for {f_no}"))
 
                     # if not cached, decode a new frame
-                    img_buffer: np.ndarray = None
+                    img_buffer: Tensor = None
                     while f_no not in frame_cache:
-                        img_buffer: np.ndarray = np.frombuffer(
+                        img_buffer: Tensor = torch.frombuffer(
                             self.sub_process.stdout.read(pipe_img_nbytes),
-                            dtype=in_dtype,
+                            dtype=torch.uint8,
                         )
                         # print(f"decoded no. {decoded_f_no}: {decoded+1}/{src_count}: {len(img_buffer)}")
 
@@ -335,20 +336,58 @@ class DecoderThread(BaseThread):
                         break
 
                     # HtoD transfer
-                    d_img: Tensor = htod_transfer(
-                        htod_mem=htod_mem,
-                        img_buffer=img_buffer,
-                        img_shape=img_shape,
-                        cuda_stream=cuda_stream,
-                    )
+                    # d_img: Tensor = htod_transfer(
+                    #     htod_mem=htod_mem,
+                    #     img_buffer=img_buffer,
+                    #     img_shape=img_shape,
+                    #     cuda_stream=cuda_stream,
+                    # )
+                    print("storage memory")
+                    print(f"h_mem: 0x{htod_mem.host.data_ptr():0X}")
+                    print(htod_mem.host.nbytes())
 
+                    print(f"img_buffer = {len(img_buffer)}")
+
+                    typed_storage: UntypedStorage = htod_mem.host[0:len(img_buffer)]
+                    print(f"typed_storage: 0x{typed_storage.data_ptr():0X}")
+                    print(typed_storage.nbytes())
+
+                    print("img_buffer")
+                    print(img_buffer.size())
+                    print(img_buffer.stride())
+                    h_mem = torch.as_strided(
+                        torch.Tensor(typed_storage),
+                        size=(img_buffer.size()[0],),
+                        stride=img_buffer.stride()
+                    )
+                    print(f"h_mem: 0x{h_mem.data_ptr():0X}, {h_mem.shape}")
+
+
+                    print(h_mem.shape)
+                    print(h_mem.dtype)
+                    print(img_buffer.shape)
+                    print(img_buffer.dtype)
+
+                    # # Step 3: Reinterpret the untyped storage as uint8
+                    # uint8_tensor = torch.Tensor(untyped_storage).to(torch.uint8)
+
+                    # # Step 4: View the uint8 tensor (without copying)
+                    # # You can use .as_strided() to reinterpret it without copying
+                    # uint8_view = uint8_tensor.as_strided(uint8_tensor.size(), uint8_tensor.stride())
+
+                    h_mem.copy_(img_buffer)
+                    d_img = h_mem.cuda(non_blocking=True)
+
+                    time.sleep(0.0001)
+                    cuda_stream.synchronize()
+
+                    d_img = d_tensor.reshape(img_shape)
                     # cp.ndarray image to tensor
                     d_tensor: Tensor = img_to_tensor(
                         d_img=d_img,
                         dtype=session.dtype,
                         flip_r_b=flip_r_b,
                     )
-
 
                     # d_tensor = cp.clip(d_tensor + 0.2, 0, 1.)
 

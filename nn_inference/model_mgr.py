@@ -20,6 +20,7 @@ from pynnlib import (
     NnFrameworkType,
     set_cupy_cuda_device,
     TrtEngine,
+    np_dtype_to_torch,
 )
 from .cupy_utils import HostDeviceMemory, allocate_memory
 
@@ -381,7 +382,7 @@ class ModelManager:
 
         # Create streams
         set_cupy_cuda_device(self.device)
-        self.htod_cuda_stream = cp.cuda.stream.Stream(non_blocking=True)
+        self.htod_cuda_stream = torch.cuda.Stream(self.device)
         self.dtoh_cuda_stream = cp.cuda.stream.Stream(non_blocking=True)
         if self.has_torch_models():
             self.torch_infer_stream = torch.cuda.Stream(self.device)
@@ -446,11 +447,18 @@ class ModelManager:
 
         # Allocate Host memory
         # self.htod_mem = torch.empty(1000, 1000, dtype=torch.float32, pin_memory=True)
-        self.htod_mem = allocate_memory(
-            shape=(self.in_max_nbytes, 1, 1),
-            dtype=self.in_dtype,
-            stream=self.htod_cuda_stream
+        htod_tensor: Tensor = torch.empty(
+            (self.in_max_nbytes // 4 + 1 , 1),
+            dtype=torch.uint32,
+            pin_memory=True
         )
+        self.htod_mem = HostDeviceMemory(
+            host=htod_tensor.untyped_storage(),
+            device=None,
+            nbytes=self.in_max_nbytes
+        )
+
+
         self.dtoh_mem = allocate_memory(
             shape=(self.out_max_nbytes, 1, 1),
             dtype=self.out_dtype,
@@ -468,7 +476,7 @@ class ModelManager:
             # HtoD pin memory
             if mem.in_max_nbytes:
                 print(f"  HtoD: {mem.in_max_nbytes}")
-                mem.htod_mem = allocate_memory(
+                allocate_memory(
                     shape=(mem.in_max_nbytes, 1, 1),
                     dtype=mem.in_dtype,
                     stream=self.htod_cuda_stream_sync

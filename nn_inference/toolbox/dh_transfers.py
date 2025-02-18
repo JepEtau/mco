@@ -23,7 +23,6 @@ def htod_transfer(
     htod_mem: HostDeviceMemory,
     img_buffer: np.ndarray,
     img_shape: tuple[int, int, int],
-    cuda_stream,
 ) -> Tensor:
     h_mem: np.ndarray = np.frombuffer(
         htod_mem.host,
@@ -37,9 +36,6 @@ def htod_transfer(
         memptr=htod_mem.device.data
     )
     d_cp_tensor.set(h_mem)
-    time.sleep(0.0001)
-    cuda_stream.synchronize()
-
     d_cp_tensor.astype(img_buffer.dtype)
     d_cp_tensor = d_cp_tensor.reshape(img_shape)
     d_torch_tensor: Tensor = from_dlpack(d_cp_tensor.toDlpack())
