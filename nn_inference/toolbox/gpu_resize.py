@@ -1,0 +1,44 @@
+import cupy as cp
+from typing import Optional
+import torch
+from torch import Tensor
+from torch import from_dlpack, to_dlpack
+import torch.nn.functional as F
+
+from nn_inference.resource_mgr import NnFrame
+from utils.p_print import *
+
+
+
+def gpu_resize_(
+    frame: NnFrame,
+    scale_factor: Optional[float | int | list[float]] = None,
+    out_size: Optional[list[int, int]] = None,
+    interpolation_method: str = "bilinear",
+) -> NnFrame:
+    in_x: Tensor = frame.tensor
+    if isinstance(scale_factor, float):
+        out_size: list[int, int] = list(
+            [int(((x * scale_factor) // 2 ) * 2) for x in in_x.shape[2:]]
+        )
+
+    out_x: Tensor = F.interpolate(
+        input=in_x,
+        size=out_size,
+        mode=interpolation_method,
+        align_corners=False,
+        antialias=bool(interpolation_method in ('bilinear', 'bicubic'))
+    )
+    frame.tensor = torch.clamp_(out_x.contiguous(), 0, 1.0)
+
+    return frame
+
+
+
+def gpu_resize_to_(
+    frame: NnFrame,
+    params: str,
+    interpolation_method: str = "bilinear",
+) -> NnFrame:
+    w, h = map(int, params.split(":")[:2])
+    return gpu_resize_(frame, out_size=(h, w))
