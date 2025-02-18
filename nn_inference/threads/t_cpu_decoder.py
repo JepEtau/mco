@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from scene.src_scene import SrcScene
     from parsers import Filter
 
-from nn_inference.resource_mgr import NnFrame, RlgThread
+from nn_inference.resource_mgr import NnFrame, BaseThread
 from nn_inference.model_mgr import ModelManager
 
 from utils.mco_types import Scene, Inputs
@@ -45,7 +45,7 @@ class CpuDecoderThreadConfig:
 
 
 
-class CpuDecoderThread(RlgThread):
+class CpuDecoderThread(BaseThread):
     def __init__(
         self,
         config: CpuDecoderThreadConfig,

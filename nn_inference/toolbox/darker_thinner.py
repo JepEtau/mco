@@ -50,6 +50,8 @@ class DarkerThinner(nn.Module):
         # R = 1 * Y + 1.28033 * V
         # G = 1 * Y + -0.21482 * U - 0.38059 * V
         # B = 1 * Y + 2.12798 * U
+
+        # BUG wrong order of coefs!
         self.rgb_to_y = torch.tensor(
             [0.114, 0.587, 0.299],
             # [0.0722, 0.7152, 0.2126],
@@ -127,6 +129,7 @@ class DarkerThinner(nn.Module):
         yp: Tensor = torch.tensordot(x, self.rgb_to_y, dims=([1], [0]))
         yp = yp.unsqueeze(0)
 
+        # BUG use bilinear
         h, w = yp.shape[2:]
         yp_2x: Tensor = F.interpolate(
             input=yp,

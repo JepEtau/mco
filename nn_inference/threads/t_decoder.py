@@ -39,7 +39,7 @@ from pynnlib import (
     NnModelSession,
 )
 from nn_inference.model_mgr import ModelManager
-from nn_inference.resource_mgr import NnFrame, RlgThread
+from nn_inference.resource_mgr import NnFrame, BaseThread
 if is_cuda_available():
     from nn_inference import HostDeviceMemory
 
@@ -75,7 +75,7 @@ class DecoderThreadConfig:
 
 
 
-class DecoderThread(RlgThread):
+class DecoderThread(BaseThread):
     def __init__(
         self,
         config: DecoderThreadConfig,

@@ -8,7 +8,7 @@ import subprocess
 import sys
 from threading import Event
 import torch
-from nn_inference.resource_mgr import NnFrame, RlgThread
+from nn_inference.resource_mgr import NnFrame, BaseThread
 from utils.images_io import write_image
 from utils.mco_types import Scene
 from utils.media import ChannelOrder, FShape
@@ -40,7 +40,7 @@ class ImgWriterThreadConfig(TypedDict):
 
 
 
-class ImgWriterThread(RlgThread):
+class ImgWriterThread(BaseThread):
     def __init__(
         self,
         config: ImgWriterThreadConfig,

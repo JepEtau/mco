@@ -11,7 +11,7 @@ from pynnlib import (
     flip_r_b_channels,
     to_nchw,
 )
-from ..resource_mgr import NnFrame, RlgThread
+from ..resource_mgr import NnFrame, BaseThread
 from nn_inference import HostDeviceMemory
 from utils.p_print import *
 from utils.images_io import load_image
@@ -28,7 +28,7 @@ class ImgReaderThreadConfig(TypedDict):
 
 
 
-class ImgReaderThread(RlgThread):
+class ImgReaderThread(BaseThread):
     def __init__(
         self,
         config: ImgReaderThreadConfig

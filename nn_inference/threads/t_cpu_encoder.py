@@ -10,7 +10,7 @@ import torch
 from typing import Callable
 
 from parsers import VideoSettings
-from nn_inference.resource_mgr import NnFrame, RlgThread
+from nn_inference.resource_mgr import NnFrame, BaseThread
 from nn_inference.toolbox.filtering import get_encoder_ffmpeg_filters
 from processing.effects import apply_upscale_effects
 from processing.frame_replace import (
@@ -30,7 +30,7 @@ from utils.tools import ffmpeg_exe
 
 
 
-class CpuEncoderThread(RlgThread):
+class CpuEncoderThread(BaseThread):
     def __init__(self) -> None:
         super().__init__()
         self._stop_event: Event = Event()

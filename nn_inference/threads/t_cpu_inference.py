@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 from utils.p_print import *
 
-from nn_inference.resource_mgr import NnFrame, RlgThread
+from nn_inference.resource_mgr import NnFrame, BaseThread
 from nn_inference.threads.t_cpu_decoder import CpuDecoderThread
 from nn_inference.threads.t_cpu_encoder import CpuEncoderThread
 
@@ -24,7 +24,7 @@ class CpuInferenceThreadConfig:
 
 
 
-class CpuInferenceThread(RlgThread):
+class CpuInferenceThread(BaseThread):
     def __init__(
         self,
         config: CpuInferenceThreadConfig

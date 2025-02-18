@@ -31,7 +31,7 @@ class NnFrame:
 
 
 
-class RlgThread(abc.ABC, Thread):
+class BaseThread(abc.ABC, Thread):
     def __init__(self,
         group: None = None,
         target: Callable[..., object] | None = None,
@@ -46,8 +46,8 @@ class RlgThread(abc.ABC, Thread):
         self._error_msg: str = ''
         self._verbose: bool = False
 
-        self.producer: Type[RlgThread] | None = None
-        self.consumer: Type[RlgThread] | None = None
+        self.producer: Type[BaseThread] | None = None
+        self.consumer: Type[BaseThread] | None = None
         self.progress_thread: ProgressThread | None  = None
         self._processing: bool = True
 
@@ -71,11 +71,11 @@ class RlgThread(abc.ABC, Thread):
         pass
 
 
-    def set_producer(self, producer: Type[RlgThread]) -> None:
+    def set_producer(self, producer: Type[BaseThread]) -> None:
         self.producer = producer
 
 
-    def set_consumer(self, consumer: Type[RlgThread]) -> None:
+    def set_consumer(self, consumer: Type[BaseThread]) -> None:
         self.consumer = consumer
 
 
@@ -117,7 +117,7 @@ class ResourceManager(metaclass=Singleton):
     # Simplified  class of ResourceManager
 
     def __init__(self) -> None:
-        self._threads: dict[str, RlgThread] = {}
+        self._threads: dict[str, BaseThread] = {}
         self._progesses: list[Progress] = []
 
 
@@ -133,7 +133,7 @@ class ResourceManager(metaclass=Singleton):
         self.clean()
 
 
-    def register_thread(self, thread: RlgThread) -> None:
+    def register_thread(self, thread: BaseThread) -> None:
         if thread.name not in self._threads:
             self._threads[thread.name] = thread
 

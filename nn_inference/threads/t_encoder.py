@@ -18,7 +18,7 @@ from nn_inference.toolbox.dh_transfers import (
 )
 from parsers import VideoSettings
 from nn_inference.model_mgr import ModelManager
-from nn_inference.resource_mgr import NnFrame, RlgThread
+from nn_inference.resource_mgr import NnFrame, BaseThread
 from nn_inference.toolbox.filtering import apply_cpu_filters_, get_encoder_ffmpeg_filters
 from processing.effects import apply_effect, apply_upscale_effects
 from scene.filters import do_watermark, get_ffmpeg_pad_filter, clean_fcomplex
@@ -43,11 +43,11 @@ class EncoderThreadConfig:
     model_manager: ModelManager
 
 
-class EncoderThread(RlgThread):
+class EncoderThread(BaseThread):
     def __init__(
-            self,
-            config: EncoderThreadConfig
-        ) -> None:
+        self,
+        config: EncoderThreadConfig
+    ) -> None:
         super().__init__()
         self._stop_event: Event = Event()
         self.in_queue: Queue = Queue(3)

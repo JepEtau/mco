@@ -9,7 +9,7 @@ from utils.p_print import *
 
 from nn_inference.model_mgr import ModelManager
 from nn_inference.pytorch.inference import perform_torch_inference
-from nn_inference.resource_mgr import NnFrame, RlgThread
+from nn_inference.resource_mgr import NnFrame, BaseThread
 from nn_inference.threads.t_decoder import DecoderThread
 from nn_inference.threads.t_encoder import EncoderThread
 from pynnlib import (
@@ -29,7 +29,7 @@ class InferenceThreadConfig:
 
 
 
-class InferenceThread(RlgThread):
+class InferenceThread(BaseThread):
     def __init__(
         self,
         config: InferenceThreadConfig
