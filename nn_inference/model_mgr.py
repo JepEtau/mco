@@ -402,8 +402,6 @@ class ModelManager:
                 self.torch_session.initialize(
                     device=self.device,
                     dtype=m.dtype,
-                    memalloc=False,
-                    in_max_shape=None,
                     warmup=False,
                 )
 
@@ -413,9 +411,6 @@ class ModelManager:
                 self.trt_session.initialize(
                     device=self.device,
                     dtype=m.dtype,
-                    memalloc=False,
-                    in_max_shape=None,
-                    create_streams=False,
                     warmup=False,
                 )
 
