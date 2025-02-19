@@ -182,7 +182,8 @@ class UpscalePipeline(object):
         print(f"Total scale: {scale}")
 
         model_manager.consolidate()
-        model_manager.set_in_out_max_nbytes(in_max_nbytes, out_max_nbytes)
+        model_manager.set_in_out_max_nbytes(in_max_nbytes, out_nbytes)
+
         # Consider that all inpaint models are executed by cuda provider
         model_manager.set_sync_in_max_nbytes(
             xprovider='cuda',

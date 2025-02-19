@@ -14,6 +14,7 @@ from typing import Callable
 
 from nn_inference.toolbox.dh_transfers import (
     dtoh_transfer,
+    dtoh_transfer_torch,
     tensor_to_img,
 )
 from parsers import VideoSettings
@@ -67,7 +68,8 @@ class EncoderThread(BaseThread):
             raise ModuleNotFoundError("No cuda device")
 
         cuda_stream = self.model_manager.dtoh_cuda_stream
-        dtoh_mem: HostDeviceMemory = self.model_manager.dtoh_mem
+        htod_mem: Tensor = self.model_manager.dtoh_host_mem
+
 
         in_queue: Queue = self.in_queue
         writer_subprocess: subprocess.Popen | None = None
@@ -87,7 +89,7 @@ class EncoderThread(BaseThread):
         received: int = 0
         # try:
         if True:
-            with cuda_stream:
+            with torch.cuda.stream(cuda_stream):
                 while not self._stop_event.is_set():
                     # Wait for a frame or a poison pill
                     input = in_queue.get(block=True)
@@ -226,38 +228,44 @@ class EncoderThread(BaseThread):
                             print(f"[E] Unexpected error: {type(e)}", flush=True)
 
 
-                    # Get tensor from frame
+                    # Transform a 4D tensor to a 3D tensor (h, w, c)
                     if verbose:
                         print(
                             purple(f"[V][E] Received no. {received}:"),
                             f"{frame.tensor.shape}, {frame.tensor.dtype}, {frame.tensor.shape}"
                         )
 
-                    d_tensor = frame.tensor
-
-                    d_img: np.ndarray = tensor_to_img(
-                        tensor=d_tensor,
+                    d_img: torch.tensor = tensor_to_img(
+                        tensor=frame.tensor,
                         dtype=stdin_dtype,
                         flip_r_b=flip_r_b,
                     )
 
-                    out_img: np.ndarray = dtoh_transfer(
-                        dtoh_mem=dtoh_mem,
+
+                    # Move to CPU
+
+                    # out_img: np.ndarray = dtoh_transfer(
+                    #     dtoh_mem=dtoh_mem,
+                    #     d_img=d_img,
+                    #     out_dtype=stdin_dtype,
+                    #     cuda_stream=cuda_stream,
+                    # ).reshape(d_img.shape)
+
+                    out_img: np.ndarray = dtoh_transfer_torch(
+                        host_mem=htod_mem,
                         d_img=d_img,
-                        out_dtype=stdin_dtype,
                         cuda_stream=cuda_stream,
-                    ).reshape(d_img.shape)
+                    )
 
                     in_f_no: int = frame.f_no
 
                     # Apply additionnal filters exectuted by the cpu
-                    frame.tensor = out_img
                     # if frame.step_no < len(frame.sequence):
                     #     apply_cpu_filters_(frame)
 
                     in_frame: McoFrame = McoFrame(
-                        no=frame.f_no,
-                        img=frame.tensor,
+                        no=in_f_no,
+                        img=out_img,
                         scene=scene
                     )
                     if verbose:

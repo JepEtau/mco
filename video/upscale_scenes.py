@@ -20,7 +20,7 @@ from nn_inference.toolbox.upscale_doc import (
 
 from parsers._types import VideoSettings
 from parsers.p_print import pprint_scene_mapping
-from processing.upscale_scene import UpscalePipeline
+from scene.upscale_scene import UpscalePipeline
 from processing import supported_filters
 from scene.consolidate import consolidate_scene
 from scene.src_scene import SrcScene

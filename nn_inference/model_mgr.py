@@ -89,14 +89,14 @@ class ModelManager:
         self.out_max_nbytes: int = 0
         self.out_dtype: np.dtype = np.uint16
 
-        self.htod_cuda_stream = None
-        self.dtoh_cuda_stream = None
+        self.htod_cuda_stream: torch.cuda.Stream  = None
+        self.dtoh_cuda_stream: torch.cuda.Stream  = None
         self.torch_infer_stream: torch.cuda.Stream = None
-        self.trt_cuda_stream = None
+        self.trt_cuda_stream: torch.cuda.Stream  = None
 
-        self.htod_mem: HostDeviceMemory | None = None
+        self.htod_host_mem: Tensor | None = None
         # self.htod_mem: Tensor | None = None
-        self.dtoh_mem: HostDeviceMemory | None = None
+        self.dtoh_host_mem: Tensor | None = None
 
         # Memory used for synchronous operations
         self.sync_memory: dict[str, _SyncMemory] = {
@@ -383,7 +383,7 @@ class ModelManager:
         # Create streams
         set_cupy_cuda_device(self.device)
         self.htod_cuda_stream = torch.cuda.Stream(self.device)
-        self.dtoh_cuda_stream = cp.cuda.stream.Stream(non_blocking=True)
+        self.dtoh_cuda_stream = torch.cuda.Stream(self.device)
         if self.has_torch_models():
             self.torch_infer_stream = torch.cuda.Stream(self.device)
         if self.has_trt_models():
@@ -391,7 +391,7 @@ class ModelManager:
 
         # Allocate memory for each stream
         self.allocate_memory()
-        self.allocate_sync_memory()
+        # self.allocate_sync_memory()
 
         # For each session don not allocate memory because already done here.
         # This permits to use the same memory area whatever the session type
@@ -447,22 +447,22 @@ class ModelManager:
 
         # Allocate Host memory
         # self.htod_mem = torch.empty(1000, 1000, dtype=torch.float32, pin_memory=True)
-        htod_tensor: Tensor = torch.empty(
-            (self.in_max_nbytes // 4 + 1 , 1),
-            dtype=torch.uint32,
+        self.htod_host_mem: Tensor = torch.empty(
+            self.in_max_nbytes,
+            dtype=torch.uint8,
             pin_memory=True
         )
-        self.htod_mem = HostDeviceMemory(
-            host=htod_tensor.untyped_storage(),
-            device=None,
-            nbytes=self.in_max_nbytes
-        )
+        # self.htod_mem = HostDeviceMemory(
+        #     host=htod_tensor.untyped_storage(),
+        #     device=None,
+        #     nbytes=self.in_max_nbytes
+        # )
 
 
-        self.dtoh_mem = allocate_memory(
-            shape=(self.out_max_nbytes, 1, 1),
-            dtype=self.out_dtype,
-            stream=self.dtoh_cuda_stream
+        self.dtoh_host_mem: Tensor = torch.empty(
+            self.out_max_nbytes,
+            dtype=torch.uint8,
+            pin_memory=True
         )
         # print(f"Allocated memory:\n  HtoD: {self.htod_mem}\n  DtoH: {self.dtoh_mem}")
 

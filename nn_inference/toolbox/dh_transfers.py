@@ -17,12 +17,15 @@ from pynnlib import (
     to_nchw,
     np_dtype_to_torch,
 )
+from utils.p_print import red
+
 
 
 def htod_transfer(
     htod_mem: HostDeviceMemory,
     img_buffer: np.ndarray,
     img_shape: tuple[int, int, int],
+    cuda_stream,
 ) -> Tensor:
     h_mem: np.ndarray = np.frombuffer(
         htod_mem.host,
@@ -36,10 +39,33 @@ def htod_transfer(
         memptr=htod_mem.device.data
     )
     d_cp_tensor.set(h_mem)
+
+    time.sleep(0.0001)
+    cuda_stream.synchronize()
+
     d_cp_tensor.astype(img_buffer.dtype)
     d_cp_tensor = d_cp_tensor.reshape(img_shape)
-    d_torch_tensor: Tensor = from_dlpack(d_cp_tensor.toDlpack())
-    return d_torch_tensor
+    return d_cp_tensor
+
+
+
+def htod_transfer_torch(
+    host_mem: Tensor,
+    img_buffer: Tensor,
+    img_shape: tuple[int, int, int],
+    cuda_stream: torch.cuda.Stream,
+    device: str = "cuda:0",
+) -> Tensor:
+    host_mem.copy_(img_buffer, non_blocking=True)
+    d_tensor: Tensor = host_mem.to(device=device)
+
+    time.sleep(0.0001)
+    cuda_stream.synchronize()
+
+    if not d_tensor.is_contiguous():
+        raise ValueError(red("[E] Tensor is not contiguous cannot use view"))
+    return d_tensor.view(img_shape)
+
 
 
 
@@ -68,8 +94,22 @@ def dtoh_transfer(
         dtype=out_dtype,
         count=math.prod(out_shape)
     )
-
     return out_img
+
+
+def dtoh_transfer_torch(
+    host_mem: Tensor,
+    d_img: Tensor,
+    cuda_stream: torch.cuda.Stream,
+) -> np.ndarray:
+    out_shape: tuple[int, int, int] = d_img.shape
+    host_mem.copy_(d_img.ravel(), non_blocking=True)
+
+    time.sleep(0.0001)
+    cuda_stream.synchronize()
+
+    return host_mem.view(out_shape).numpy()
+
 
 
 
@@ -106,11 +146,11 @@ def tensor_to_img(
     flip_r_b: bool = False,
 ) -> Tensor:
 
-    torch_ndarray: Tensor = to_hwc(tensor)
+    d_img: Tensor = to_hwc(tensor)
     if flip_r_b:
-        torch_ndarray = flip_r_b_channels(torch_ndarray)
+        d_img = flip_r_b_channels(d_img)
 
-    torch_ndarray = torch.clamp(torch_ndarray, 0., 1.0)
+    d_img = torch.clamp(d_img, 0., 1.0)
 
     multiplier: float = 1.
     tensor_dtype: torch.dtype = tensor.dtype
@@ -128,11 +168,11 @@ def tensor_to_img(
         multiplier: float = num / denum
 
     if multiplier != 1.:
-        torch_ndarray = torch_ndarray.to(dtype=torch.float32, copy=False)
-        torch_ndarray = torch_ndarray * multiplier
+        d_img = d_img.to(dtype=torch.float32, copy=False)
+        d_img = d_img * multiplier
 
-    torch_ndarray = torch_ndarray.to(dtype=np_dtype_to_torch[dtype])
+    d_img = d_img.to(dtype=np_dtype_to_torch[dtype])
 
-    return torch_ndarray
+    return d_img
 
 
