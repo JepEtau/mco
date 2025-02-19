@@ -1,6 +1,6 @@
 import math
 import time
-from nn_inference.cupy_utils import HostDeviceMemory, allocate_memory
+from nn_inference.cupy_utils import HostDeviceMemory
 from nn_inference.resource_mgr import NnFrame, Singleton
 from skimage.restoration import denoise_nl_means
 import numpy as np

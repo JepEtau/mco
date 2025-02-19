@@ -177,7 +177,7 @@ class UpscalePipeline(object):
         # else:
         #     print(f"Scene {scene['no']}, in: {nbytes} bytes, out: {out_nbytes}")
 
-        print(f"Max: in: {in_max_nbytes} bytes, out: {out_max_nbytes}")
+        print(f"Pinned memory: in: {in_max_nbytes} bytes, out: {out_nbytes}")
         print(f"Inpaint: mask: {in_max_sync_nbytes} bytes")
         print(f"Total scale: {scale}")
 

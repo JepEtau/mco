@@ -15,7 +15,6 @@ from nn_inference.threads.t_encoder import EncoderThread
 from nn_inference.toolbox.dh_transfers import (
     htod_transfer_torch,
     img_to_tensor,
-    htod_transfer,
 )
 from nn_inference.toolbox.filtering import apply_cuda_filters_, get_decoder_ffmpeg_filters, get_encoder_ffmpeg_filters
 
@@ -38,6 +37,7 @@ if TYPE_CHECKING:
 from pynnlib import (
     is_cuda_available,
     NnModelSession,
+    np_dtype_to_torch,
 )
 from nn_inference.model_mgr import ModelManager
 from nn_inference.resource_mgr import NnFrame, BaseThread
@@ -185,7 +185,7 @@ class DecoderThread(BaseThread):
 
                 # Input stream
                 img_shape: FShape = in_video_info.img_shape
-                img_dtype: np.dtype = in_video_info.img_dtype
+                img_dtype: np.dtype = np_dtype_to_torch[in_video_info.img_dtype]
                 pipe_img_nbytes = in_video_info.img_nbytes
 
                 # Generate the decoder command line
@@ -295,7 +295,7 @@ class DecoderThread(BaseThread):
                     while f_no not in frame_cache:
                         img_buffer: Tensor = torch.frombuffer(
                             self.sub_process.stdout.read(pipe_img_nbytes),
-                            dtype=img_dtype,
+                            dtype=torch.uint8,
                         )
                         # print(f"decoded no. {decoded_f_no}: {decoded+1}/{src_count}: {len(img_buffer)}")
 
@@ -347,6 +347,7 @@ class DecoderThread(BaseThread):
                     d_img: Tensor = htod_transfer_torch(
                         host_mem=htod_mem,
                         img_buffer=img_buffer,
+                        img_dtype=img_dtype,
                         img_shape=img_shape,
                         cuda_stream=cuda_stream
                     )

@@ -28,7 +28,6 @@ if TYPE_CHECKING:
 
 def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
     print(cyan(f"[V][I][TRT] TensorRT InferenceThread"))
-    verbose=False
     in_queue: Queue = self.in_queue
     cuda_stream = self.model_manager.trt_cuda_stream
     scale: int = 1
@@ -49,25 +48,28 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
 
             # Get model and session
             model_key: str = frame.sequence[frame.step_no]
-            if verbose:
-                verbose_prefix: str = f"[V][I][TRT][{frame.step_no}]"
-                print(blue(f"{verbose_prefix} model: {model_key}"))
-
             session: TensorRtSession = self.model_manager.session(model_key)
             context, engine = session.context, session.engine
+
+            if verbose:
+                verbose_prefix: str = f"[V][I][TRT][{frame.step_no}]"
+                print(blue(f"{verbose_prefix} model: {model_key}, dtype:{session.dtype}"))
+
 
             # Input tensor
             in_tensor = frame.tensor
             n, c, in_h, in_w = in_tensor.shape
             in_tensor = in_tensor.to(dtype=session.dtype)
             in_tensor = torch.ravel(in_tensor)
+            if verbose:
+                print(blue(f"{verbose_prefix} in tensor dtype:{in_tensor.dtype}"))
 
             # Prepare output tensor in same device
             scale = session.model.scale
             out_tensor_shape = (n, c, in_h * scale, in_w * scale)
             out_tensor: torch.Tensor = torch.empty(
                 out_tensor_shape,
-                dtype=in_tensor.dtype,
+                dtype=session.dtype,
                 device=in_tensor.device
             )
 
@@ -80,7 +82,7 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             frame.tensor = torch.clamp_(out_tensor, 0., 1.)
 
             # if verbose:
-            #     print(cyan(f"{verbose_prefix} out tensor: {out_tensor.data.ptr}, {out_tensor.shape}, {out_tensor.dtype}, {out_tensor.nbytes}"))
+            #     print(cyan(f"{verbose_prefix} out tensor: {out_tensor.data_ptr()}, {out_tensor.shape}, {out_tensor.dtype}, {out_tensor.nbytes}"))
             frame.step_no += 1
 
             time.sleep(0.0001)
@@ -93,7 +95,6 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
                     apply_cuda_filters_(
                         frame, verbose=verbose, cuda_stream=torch_cuda_stream
                     )
-
 
             # No more operation with input tensor
             # TODO: study if it can be done before.
@@ -111,7 +112,7 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
                 if verbose:
                     print(
                         cyan(f"{verbose_prefix} send to encoder"),
-                        f"{type(frame.tensor)}{frame.tensor.data.ptr}, {frame.tensor.shape}, {frame.tensor.dtype}, {frame.tensor_shape}"
+                        f"{type(frame.tensor)}{frame.tensor.data_ptr()}, {frame.tensor.shape}, {frame.tensor.dtype}"
                     )
                 consumer = e_thread
 

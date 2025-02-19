@@ -123,7 +123,7 @@ class ImgReaderThread(BaseThread):
 
                 remaining_frame_count -= 1
                 if verbose:
-                    print(f"[V][D] ({lightgreen(f_no)}) ({remaining_frame_count}) Put tensor in queue: {d_tensor.data.ptr}, {d_tensor.shape}, {d_tensor.dtype}")
+                    print(f"[V][D] ({lightgreen(f_no)}) ({remaining_frame_count}) Put tensor in queue: {d_tensor.data_ptr()}, {d_tensor.shape}, {d_tensor.dtype}")
                 f_no += 1
 
                 frame.tensor = d_tensor

@@ -59,7 +59,6 @@ def darker_thinner_(
             print(purple(f"[V][F]   darker_thinner_"))
 
         in_x: Tensor = frame.tensor
-        dtype: torch.dtype = in_x.dtype
         if verbose:
             print(purple(f"[V][F]     in_x"), f"{in_x.shape}, {in_x.dtype}")
 
@@ -73,7 +72,6 @@ def darker_thinner_(
         if verbose:
             print(purple(f"[V][F]     out_x"), f"{out_x.shape}, {out_x.dtype}")
 
-        out_x = out_x.to(dtype=dtype)
         frame.tensor = torch.clamp(out_x.contiguous(), 0, 1.0)
 
     return frame

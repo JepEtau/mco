@@ -52,6 +52,7 @@ def htod_transfer(
 def htod_transfer_torch(
     host_mem: Tensor,
     img_buffer: Tensor,
+    img_dtype: torch.dtype,
     img_shape: tuple[int, int, int],
     cuda_stream: torch.cuda.Stream,
     device: str = "cuda:0",
@@ -64,7 +65,7 @@ def htod_transfer_torch(
 
     if not d_tensor.is_contiguous():
         raise ValueError(red("[E] Tensor is not contiguous cannot use view"))
-    return d_tensor.view(img_shape)
+    return d_tensor.view(dtype=img_dtype).view(img_shape)
 
 
 

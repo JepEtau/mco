@@ -21,12 +21,12 @@ from pynnlib import (
     set_cupy_cuda_device,
     TrtEngine,
     np_dtype_to_torch,
+    TensorRtSession,
 )
-from .cupy_utils import HostDeviceMemory, allocate_memory
+from .cupy_utils import HostDeviceMemory
 
 if is_tensorrt_available():
     import tensorrt as trt
-    from .tensorrt.session_cupy import TensorRtCupySession
 
 if is_cuda_available():
     from .pytorch.session_cupy import PyTorchCuPySession
@@ -282,7 +282,6 @@ class ModelManager:
         """Convert models to TRT engines
         """
         _keys: list[str] = list(self._shapes.keys())
-
         print(yellow("consolidate:"))
         pprint(self._shapes)
         for model_key, sizes in self._shapes.items():
@@ -292,7 +291,7 @@ class ModelManager:
                 model: ModelInfo = self._models_by_keys[model_key]
                 print(f"  convert to TensorRT, ",
                     f"onnx opset={self.opset}, ",
-                    f"datatype={model.dtype}",
+                    f"dtype={model.dtype}",
                     f"size: {size_key}"
                 )
                 start_time = time.time()
@@ -377,11 +376,8 @@ class ModelManager:
         # Set custom sessions
         if is_cuda_available():
             nnlib.set_session_constructor(NnFrameworkType.PYTORCH, PyTorchCuPySession)
-        if is_tensorrt_available():
-            nnlib.set_session_constructor(NnFrameworkType.TENSORRT, TensorRtCupySession)
 
         # Create streams
-        set_cupy_cuda_device(self.device)
         self.htod_cuda_stream = torch.cuda.Stream(self.device)
         self.dtoh_cuda_stream = torch.cuda.Stream(self.device)
         if self.has_torch_models():
@@ -399,7 +395,7 @@ class ModelManager:
         for m in self._models_by_keys.values():
             m.session = nnlib.session(m.model)
 
-            print(lightgreen(f"initialize {m.session.model.arch_name} { m.model.fwk_type}"))
+            print(lightgreen(f"initialize {m.session.model.arch_name} {m.model.fwk_type}"))
             if m.model.fwk_type == NnFrameworkType.PYTORCH:
                 self.torch_session: PyTorchCuPySession = m.session
                 self.torch_session.infer_stream = self.torch_infer_stream
@@ -412,7 +408,7 @@ class ModelManager:
                 )
 
             elif m.model.fwk_type == NnFrameworkType.TENSORRT:
-                self.trt_session: TensorRtCupySession = m.session
+                self.trt_session: TensorRtSession = m.session
                 self.trt_session.infer_stream = self.trt_cuda_stream
                 self.trt_session.initialize(
                     device=self.device,
@@ -424,7 +420,6 @@ class ModelManager:
                 )
 
                 engine: TrtEngine = self.trt_session.engine
-                out_tensor_dtype: cp.dtype = self.trt_session.out_tensor_dtype
                 in_tensor_name: str = ''
                 for idx in range(engine.num_io_tensors):
                     tensor_name: str = engine.get_tensor_name(idx)

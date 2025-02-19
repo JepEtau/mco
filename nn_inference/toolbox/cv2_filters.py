@@ -2,7 +2,7 @@ import math
 import time
 
 import cv2
-from nn_inference.cupy_utils import HostDeviceMemory, allocate_memory
+from nn_inference.cupy_utils import HostDeviceMemory
 from nn_inference.resource_mgr import NnFrame, Singleton
 import numpy as np
 import cupy as cp

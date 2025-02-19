@@ -22,6 +22,7 @@ def gpu_resize_(
             [int(((x * scale_factor) // 2 ) * 2) for x in in_x.shape[2:]]
         )
 
+    in_x = in_x.to(dtype=torch.float16)
     out_x: Tensor = F.interpolate(
         input=in_x,
         size=out_size,

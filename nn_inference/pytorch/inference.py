@@ -133,7 +133,7 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
 
                 # From torch to CuPy format
                 # if verbose:
-                #     print(blue(f"{verbose_prefix} out tensor: {out_tensor.data.ptr}, {out_tensor.shape}, {out_tensor.dtype}, {out_tensor.nbytes}"))
+                #     print(blue(f"{verbose_prefix} out tensor: {out_tensor.data_ptr()}, {out_tensor.shape}, {out_tensor.dtype}, {out_tensor.nbytes}"))
                 frame.tensor = out_torch_tensor
                 frame.step_no += 1
                 verbose_prefix: str = f"[V][I][TORCH][{frame.step_no}]"
