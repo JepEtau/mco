@@ -6,7 +6,6 @@ import numpy as np
 import torch
 from torch import (
     Tensor,
-    from_dlpack,
     to_dlpack,
 )
 from nn_inference.cupy_utils import HostDeviceMemory

@@ -1,6 +1,7 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass, field
+import warnings
 import cupy as cp
 import numpy as np
 from pprint import pprint
@@ -54,7 +55,7 @@ from utils.time_conversions import (
 )
 from utils.tools import ffmpeg_exe
 
-
+warnings.filterwarnings("ignore", category=UserWarning, message=".*frombuffer.*")
 
 @dataclass
 class VideoStreamInfo:
@@ -299,7 +300,7 @@ class DecoderThread(BaseThread):
                         )
                         # print(f"decoded no. {decoded_f_no}: {decoded+1}/{src_count}: {len(img_buffer)}")
 
-                        # Throw this frame away if is replaced
+                        # Throw this frame away if replaced
                         if (
                             decoded_f_no in frames_to_replace
                             and task_name != 'dsr'
@@ -322,9 +323,6 @@ class DecoderThread(BaseThread):
                     out_i += 1
                     in_f_no += 1
 
-                    # if in_img is None:
-                    #     raise ValueError("input image is none")
-
                     # Wait until resource (GPU) is available
                     self._lock.acquire(blocking=True)
                     if self._stop_event.is_set():
@@ -344,6 +342,7 @@ class DecoderThread(BaseThread):
                     #     img_shape=img_shape,
                     #     cuda_stream=cuda_stream,
                     # )
+                    #  returns an image (h,w,c) with dtype the datatype of the pipe
                     d_img: Tensor = htod_transfer_torch(
                         host_mem=htod_mem,
                         img_buffer=img_buffer,
@@ -352,9 +351,7 @@ class DecoderThread(BaseThread):
                         cuda_stream=cuda_stream
                     )
 
-
-                    # cp.ndarray image to tensor
-                    # use the dtype of the first session following
+                    # Use the dtype of the first session following
                     # All filters between decoder and the next session will use this dtype
                     d_tensor: Tensor = img_to_tensor(
                         d_img=d_img,
@@ -366,10 +363,11 @@ class DecoderThread(BaseThread):
                     frame: NnFrame = NnFrame(
                         f_no=f_no,
                         tensor=d_tensor,
+                        last=False,
+
                         scene=scene,
                         src_scene=src_scene,
-                        # TODO remove deepcopy
-                        sequence=deepcopy(filter_steps),
+                        sequence=filter_steps,
                         step_no=start_step_no,
                         encoder_step_no=encoder_step_no,
                     )
@@ -408,8 +406,8 @@ class DecoderThread(BaseThread):
                             model_manager.xprovider(frame.sequence[step_no])
                         ]
                         consumer.put_frame(frame)
-                    remaining -= 1
 
+                    remaining -= 1
                     f_index += 1
 
                     # All frames of the scene have been decoded and sent to consumer
