@@ -1,7 +1,6 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass
-import cupy as cp
 import numpy as np
 from pprint import pprint
 import subprocess
@@ -14,7 +13,7 @@ from nn_inference.toolbox.filtering import get_decoder_ffmpeg_filters
 
 from .t_cpu_encoder import CpuEncoderThread
 from .t_decoder import VideoStreamInfo
-from processing.frame_replace import ItemCache, frame_occurences, get_frames_to_cache, get_frames_to_remove
+from processing.frame_replace import ItemCache, get_frames_to_cache, get_frames_to_remove
 from scene.filters import clean_fcomplex
 from utils.mco_utils import calculate_scene_frame_count
 if TYPE_CHECKING:

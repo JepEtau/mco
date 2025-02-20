@@ -2,22 +2,22 @@ from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass, field
 import warnings
-import cupy as cp
 import numpy as np
 from pprint import pprint
 import subprocess
 from threading import Event, Lock
-import time
 import torch
-from torch import Tensor, UntypedStorage
+from torch import Tensor
 from typing import TYPE_CHECKING
 
 from nn_inference.threads.t_encoder import EncoderThread
 from nn_inference.toolbox.dh_transfers import (
-    htod_transfer_torch,
-    img_to_tensor,
+    htod_transfer,
 )
-from nn_inference.toolbox.filtering import apply_cuda_filters_, get_decoder_ffmpeg_filters, get_encoder_ffmpeg_filters
+from nn_inference.toolbox.filtering import (
+    apply_cuda_filters_,
+    get_decoder_ffmpeg_filters,
+)
 
 from .t_helpers import (
     get_encoder_step_no,
@@ -25,7 +25,6 @@ from .t_helpers import (
 )
 from processing.frame_replace import (
     ItemCache,
-    frame_occurences,
     get_frames_to_cache,
     get_frames_to_remove,
 )
@@ -36,15 +35,12 @@ if TYPE_CHECKING:
     from scene.src_scene import SrcScene
     from parsers import Filter
 from pynnlib import (
-    is_cuda_available,
     NnModelSession,
     np_dtype_to_torch,
+    img_to_tensor,
 )
 from nn_inference.model_mgr import ModelManager
 from nn_inference.resource_mgr import NnFrame, BaseThread
-if is_cuda_available():
-    from nn_inference import HostDeviceMemory
-
 from utils.mco_types import Scene, Inputs
 from utils.media import ChannelOrder, FShape
 from utils.p_print import *
@@ -55,7 +51,7 @@ from utils.time_conversions import (
 )
 from utils.tools import ffmpeg_exe
 
-warnings.filterwarnings("ignore", category=UserWarning, message=".*frombuffer.*")
+warnings.filterwarnings("ignore", category=UserWarning, message=".*non-writable tensors.*")
 
 @dataclass
 class VideoStreamInfo:
@@ -82,6 +78,7 @@ class DecoderThread(BaseThread):
         self,
         config: DecoderThreadConfig,
         scene: Scene,
+        device: str = "cuda:0",
     ) -> None:
         super().__init__()
         self._stop_event: Event = Event()
@@ -93,6 +90,7 @@ class DecoderThread(BaseThread):
         self.i_threads: dict[str, InferenceThread] = None
         self._decoded: int = 0
         self.config: DecoderThreadConfig = config
+        self.device: str = device
 
 
     def set_inference_threads(self, i_threads: dict[str, InferenceThread]):
@@ -109,8 +107,14 @@ class DecoderThread(BaseThread):
         verbose: bool = False
 
         model_manager: ModelManager = self.config.model_manager
-        cuda_stream = model_manager.htod_cuda_stream
-        htod_mem: Tensor = model_manager.htod_host_mem
+        # Create a cuda stream and allocate Host memory
+        cuda_stream: torch.cuda.Stream = torch.cuda.Stream(model_manager.device)
+        vpi_nbytes = model_manager.in_nbytes
+        host_mem: Tensor = torch.empty(
+            vpi_nbytes,
+            dtype=torch.uint8,
+            pin_memory=True
+        )
 
         e_thread: EncoderThread = self.config.e_thread
 
@@ -335,16 +339,9 @@ class DecoderThread(BaseThread):
                         break
 
                     # HtoD transfer
-                    # old cupy
-                    # d_img: Tensor = htod_transfer(
-                    #     htod_mem=htod_mem,
-                    #     img_buffer=img_buffer,
-                    #     img_shape=img_shape,
-                    #     cuda_stream=cuda_stream,
-                    # )
-                    #  returns an image (h,w,c) with dtype the datatype of the pipe
-                    d_img: Tensor = htod_transfer_torch(
-                        host_mem=htod_mem,
+                    #   returns an image (h,w,c) with dtype the datatype of the pipe
+                    d_img: Tensor = htod_transfer(
+                        host_mem=host_mem,
                         img_buffer=img_buffer,
                         img_dtype=img_dtype,
                         img_shape=img_shape,

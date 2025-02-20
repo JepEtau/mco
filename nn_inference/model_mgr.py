@@ -84,9 +84,9 @@ class ModelManager:
         self._opset: int = 20
         self._device: str = "cuda:0"
 
-        self.in_max_nbytes: int = 0
+        self.in_nbytes: int = 0
         self.in_dtype: np.dtype = np.uint16
-        self.out_max_nbytes: int = 0
+        self.out_nbytes: int = 0
         self.out_dtype: np.dtype = np.uint16
 
         self.htod_cuda_stream: torch.cuda.Stream  = None
@@ -346,8 +346,8 @@ class ModelManager:
 
 
     def set_in_out_max_nbytes(self, in_nbytes: int, out_nbytes: int):
-        self.in_max_nbytes = in_nbytes
-        self.out_max_nbytes = out_nbytes
+        self.in_nbytes = in_nbytes
+        self.out_nbytes = out_nbytes
 
 
     def set_dtypes(self, in_dtype: np.dtype, out_dtype: np.dtype) -> None:
@@ -378,8 +378,6 @@ class ModelManager:
             nnlib.set_session_constructor(NnFrameworkType.PYTORCH, PyTorchCuPySession)
 
         # Create streams
-        self.htod_cuda_stream = torch.cuda.Stream(self.device)
-        self.dtoh_cuda_stream = torch.cuda.Stream(self.device)
         if self.has_torch_models():
             self.torch_infer_stream = torch.cuda.Stream(self.device)
         if self.has_trt_models():
@@ -430,18 +428,18 @@ class ModelManager:
 
 
     def allocate_memory(self) -> None:
-        if self.in_max_nbytes == 0 or self.out_max_nbytes == 0:
+        if self.in_nbytes == 0 or self.out_nbytes == 0:
             raise ValueError(
-                f"Cannot allocate memory: in: {self.in_max_nbytes}B, out: {self.out_max_nbytes}B"
+                f"Cannot allocate memory: in: {self.in_nbytes}B, out: {self.out_nbytes}B"
             )
 
         # Allocate Host memory
         # self.htod_mem = torch.empty(1000, 1000, dtype=torch.float32, pin_memory=True)
-        self.htod_host_mem: Tensor = torch.empty(
-            self.in_max_nbytes,
-            dtype=torch.uint8,
-            pin_memory=True
-        )
+        # self.htod_host_mem: Tensor = torch.empty(
+        #     self.in_max_nbytes,
+        #     dtype=torch.uint8,
+        #     pin_memory=True
+        # )
         # self.htod_mem = HostDeviceMemory(
         #     host=htod_tensor.untyped_storage(),
         #     device=None,
@@ -449,11 +447,11 @@ class ModelManager:
         # )
 
 
-        self.dtoh_host_mem: Tensor = torch.empty(
-            self.out_max_nbytes,
-            dtype=torch.uint8,
-            pin_memory=True
-        )
+        # self.dtoh_host_mem: Tensor = torch.empty(
+        #     self.out_max_nbytes,
+        #     dtype=torch.uint8,
+        #     pin_memory=True
+        # )
         # print(f"Allocated memory:\n  HtoD: {self.htod_mem}\n  DtoH: {self.dtoh_mem}")
 
 

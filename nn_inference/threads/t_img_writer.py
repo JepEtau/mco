@@ -1,32 +1,19 @@
 from dataclasses import dataclass
-import math
-import os
-import cupy as cp
 import numpy as np
 from pprint import pprint
 from queue import Queue
-import subprocess
-import sys
 from threading import Event
 import torch
 from torch import Tensor
 from nn_inference.resource_mgr import NnFrame, BaseThread
-from nn_inference.toolbox.dh_transfers import dtoh_transfer_torch, tensor_to_img
+from nn_inference.toolbox.dh_transfers import dtoh_transfer
 from utils.images_io import write_image
-from utils.mco_types import Scene
-from utils.media import ChannelOrder, FShape
-from typing import Any, Callable, Type, TypedDict
-
-from pynnlib import (
-    is_cuda_available,
-    flip_r_b_channels,
-    MemcpyKind,
-    to_hwc,
-)
-from nn_inference import HostDeviceMemory
+from typing import Callable
 from utils.p_print import *
-from utils.path_utils import path_split
 from nn_inference.model_mgr import ModelManager
+from pynnlib import (
+    tensor_to_img,
+)
 
 @dataclass(slots=True)
 class ImgWriterThreadConfig:
@@ -61,7 +48,6 @@ class ImgWriterThread(BaseThread):
         in_queue: Queue = self.in_queue
 
         # Default settings
-        img_pixfmt: str = 'rgb24'
         img_dtype: np.dtype = np.uint8
         flip_r_b: bool = True
 
@@ -84,7 +70,7 @@ class ImgWriterThread(BaseThread):
                     dtype=img_dtype,
                     flip_r_b=flip_r_b,
                 )
-                out_img: np.ndarray = dtoh_transfer_torch(
+                out_img: np.ndarray = dtoh_transfer(
                     host_mem=htod_mem,
                     d_img=d_img,
                     cuda_stream=cuda_stream,

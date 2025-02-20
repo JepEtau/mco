@@ -1,6 +1,5 @@
 from collections import deque
 from dataclasses import dataclass
-import cupy as cp
 import os
 import numpy as np
 from pprint import pprint
@@ -13,8 +12,7 @@ from torch import Tensor
 from typing import Callable
 
 from nn_inference.toolbox.dh_transfers import (
-    dtoh_transfer_torch,
-    tensor_to_img,
+    dtoh_transfer,
 )
 from parsers import VideoSettings
 from nn_inference.model_mgr import ModelManager
@@ -33,6 +31,7 @@ from utils.tools import ffmpeg_exe
 
 from pynnlib import (
     is_cuda_available,
+    tensor_to_img,
 )
 
 @dataclass(slots=True)
@@ -63,9 +62,15 @@ class EncoderThread(BaseThread):
         if not is_cuda_available():
             raise ModuleNotFoundError("No cuda device")
 
-        cuda_stream = self.model_manager.dtoh_cuda_stream
-        htod_mem: Tensor = self.model_manager.dtoh_host_mem
-
+        model_manager: ModelManager = self.model_manager
+        # Create a cuda stream and allocate Host memory
+        cuda_stream: torch.cuda.Stream = torch.cuda.Stream(model_manager.device)
+        vpi_nbytes = model_manager.out_nbytes
+        host_mem: Tensor = torch.empty(
+            vpi_nbytes,
+            dtype=torch.uint8,
+            pin_memory=True
+        )
 
         in_queue: Queue = self.in_queue
         writer_subprocess: subprocess.Popen | None = None
@@ -236,25 +241,16 @@ class EncoderThread(BaseThread):
                         flip_r_b=flip_r_b,
                     )
 
-
                     # Move to CPU
-
-                    # out_img: np.ndarray = dtoh_transfer(
-                    #     dtoh_mem=dtoh_mem,
-                    #     d_img=d_img,
-                    #     out_dtype=stdin_dtype,
-                    #     cuda_stream=cuda_stream,
-                    # ).reshape(d_img.shape)
-
-                    out_img: np.ndarray = dtoh_transfer_torch(
-                        host_mem=htod_mem,
+                    out_img: np.ndarray = dtoh_transfer(
+                        host_mem=host_mem,
                         d_img=d_img,
                         cuda_stream=cuda_stream,
                     )
 
                     in_f_no: int = frame.f_no
 
-                    # Apply additionnal filters exectuted by the cpu
+                    # Apply additionnal filters executed by the cpu
                     # if frame.step_no < len(frame.sequence):
                     #     apply_cpu_filters_(frame)
 

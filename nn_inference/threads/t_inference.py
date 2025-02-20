@@ -2,7 +2,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 import queue
 from queue import Queue
-import sys
 from threading import Event
 from typing import Literal
 from utils.p_print import *

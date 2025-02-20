@@ -1,6 +1,5 @@
 from collections import deque
 import math
-import cupy as cp
 import numpy as np
 from pprint import pprint
 from threading import Event, Lock
