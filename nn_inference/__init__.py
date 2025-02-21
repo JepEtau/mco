@@ -33,7 +33,6 @@ __all__ = [
     "InferenceThreadConfig",
     "ImgWriterThreadConfig",
 
-    "HostDeviceMemory",
     "is_cuda_available",
     "nnlogger",
 ]

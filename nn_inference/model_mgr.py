@@ -382,25 +382,3 @@ class ModelManager:
             raise ValueError(
                 f"Cannot allocate memory: in: {self.in_nbytes}B, out: {self.out_nbytes}B"
             )
-
-        # Allocate Host memory
-        # self.htod_mem = torch.empty(1000, 1000, dtype=torch.float32, pin_memory=True)
-        # self.htod_host_mem: Tensor = torch.empty(
-        #     self.in_max_nbytes,
-        #     dtype=torch.uint8,
-        #     pin_memory=True
-        # )
-        # self.htod_mem = HostDeviceMemory(
-        #     host=htod_tensor.untyped_storage(),
-        #     device=None,
-        #     nbytes=self.in_max_nbytes
-        # )
-
-
-        # self.dtoh_host_mem: Tensor = torch.empty(
-        #     self.out_max_nbytes,
-        #     dtype=torch.uint8,
-        #     pin_memory=True
-        # )
-        # print(f"Allocated memory:\n  HtoD: {self.htod_mem}\n  DtoH: {self.dtoh_mem}")
-

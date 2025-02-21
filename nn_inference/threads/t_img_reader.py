@@ -11,14 +11,12 @@ from pynnlib import (
     to_nchw,
 )
 from ..resource_mgr import NnFrame, BaseThread
-from nn_inference import HostDeviceMemory
 from utils.p_print import *
 from utils.images_io import load_image
 
 
 
 class ImgReaderThreadConfig(TypedDict):
-    htod_mem: HostDeviceMemory
     frames: deque
     # Write to GPU
     cuda_stream: Any
@@ -54,8 +52,7 @@ class ImgReaderThread(BaseThread):
 
         # Tensor
         tensor_dtype = self.config['tensor_dtype']
-        htod_mem: HostDeviceMemory = self.config['htod_mem']
-        d_tensor = htod_mem.device
+        d_tensor = ...
         frames: deque = self.config['frames']
 
         # Image reader is BGR, inference in RGB
