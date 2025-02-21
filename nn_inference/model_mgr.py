@@ -4,9 +4,7 @@ import os
 from pprint import pprint
 import time
 from typing import Literal
-import cupy as cp
 import numpy as np
-from torch import Tensor
 
 from pynnlib import (
     Idtype,
@@ -18,18 +16,14 @@ from pynnlib import (
     is_cuda_available,
     is_tensorrt_available,
     NnFrameworkType,
-    set_cupy_cuda_device,
     TrtEngine,
-    np_dtype_to_torch,
     TensorRtSession,
+    PyTorchSession
 )
-from .cupy_utils import HostDeviceMemory
 
 if is_tensorrt_available():
     import tensorrt as trt
 
-if is_cuda_available():
-    from .pytorch.session_cupy import PyTorchCuPySession
 
 import torch
 from utils.p_print import *
@@ -63,16 +57,6 @@ class ModelInfo:
     session: NnModelSession = None
 
 
-@dataclass
-class _SyncMemory:
-    in_max_nbytes: int = 0
-    out_max_nbytes: int = 0
-    in_dtype: np.dtype = 0
-    out_dtype: np.dtype = 0
-    htod_mem: HostDeviceMemory | None = None
-    dtoh_mem: HostDeviceMemory | None = None
-
-
 
 # class ModelManager(metaclass=Singleton):
 class ModelManager:
@@ -89,30 +73,14 @@ class ModelManager:
         self.out_nbytes: int = 0
         self.out_dtype: np.dtype = np.uint16
 
-        self.htod_cuda_stream: torch.cuda.Stream  = None
-        self.dtoh_cuda_stream: torch.cuda.Stream  = None
         self.torch_infer_stream: torch.cuda.Stream = None
         self.trt_cuda_stream: torch.cuda.Stream  = None
-
-        self.htod_host_mem: Tensor | None = None
-        # self.htod_mem: Tensor | None = None
-        self.dtoh_host_mem: Tensor | None = None
-
-        # Memory used for synchronous operations
-        self.sync_memory: dict[str, _SyncMemory] = {
-            'cuda': _SyncMemory(),
-            'torch': _SyncMemory(),
-        }
 
 
     def clean(self):
         print(red("clean ModelManager"))
         del self.trt_cuda_stream
-        del self.htod_cuda_stream
-        del self.dtoh_cuda_stream
         del self.torch_infer_stream
-        for v in self.sync_memory.values():
-            del v
         for m in self._models_by_keys.values():
             del m.model
             try:
@@ -326,24 +294,6 @@ class ModelManager:
             del self._models_by_keys[k]
 
 
-    def set_sync_in_max_nbytes(
-        self,
-        xprovider: Literal['cuda', 'trt'],
-        in_nbytes: int = 0,
-        out_nbytes: int = 0,
-    ) -> None:
-        """Allocate some memory"""
-        # the execution provider is required
-        # because the stream used for transfers uses different cuda streams
-        self.sync_memory[xprovider].in_max_nbytes = in_nbytes
-        self.sync_memory[xprovider].out_max_nbytes = out_nbytes
-
-
-    def set_sync_dtypes(self, in_dtype: np.dtype, out_dtype: np.dtype) -> None:
-        for v in self.sync_memory.values():
-            v.in_dtype = in_dtype
-            v.out_dtype = out_dtype
-
 
     def set_in_out_max_nbytes(self, in_nbytes: int, out_nbytes: int):
         self.in_nbytes = in_nbytes
@@ -374,8 +324,8 @@ class ModelManager:
         # torch.backends.cudnn.benchmark = False
 
         # Set custom sessions
-        if is_cuda_available():
-            nnlib.set_session_constructor(NnFrameworkType.PYTORCH, PyTorchCuPySession)
+        # if is_cuda_available():
+        #     nnlib.set_session_constructor(NnFrameworkType.PYTORCH, PyTorchCuPySession)
 
         # Create streams
         if self.has_torch_models():
@@ -395,7 +345,7 @@ class ModelManager:
 
             print(lightgreen(f"initialize {m.session.model.arch_name} {m.model.fwk_type}"))
             if m.model.fwk_type == NnFrameworkType.PYTORCH:
-                self.torch_session: PyTorchCuPySession = m.session
+                self.torch_session: PyTorchSession = m.session
                 self.torch_session.infer_stream = self.torch_infer_stream
                 self.torch_session.initialize(
                     device=self.device,
@@ -454,35 +404,3 @@ class ModelManager:
         # )
         # print(f"Allocated memory:\n  HtoD: {self.htod_mem}\n  DtoH: {self.dtoh_mem}")
 
-
-    def allocate_sync_memory(self) -> None:
-        """Allocate memory for synchronous models (inpaint)
-        """
-        self.htod_cuda_stream_sync = cp.cuda.stream.Stream(non_blocking=False)
-        for xprovider, mem in self.sync_memory.items():
-            print(f"[{xprovider}] allocate sync memory:")
-            # HtoD pin memory
-            if mem.in_max_nbytes:
-                print(f"  HtoD: {mem.in_max_nbytes}")
-                allocate_memory(
-                    shape=(mem.in_max_nbytes, 1, 1),
-                    dtype=mem.in_dtype,
-                    stream=self.htod_cuda_stream_sync
-                )
-
-            # DtoH pin memory
-            if mem.out_max_nbytes:
-                print(f"  DtoH: {mem.out_max_nbytes}")
-                mem.dtoh_mem = allocate_memory(
-                    shape=(mem.out_max_nbytes, 1, 1),
-                    dtype=mem.out_dtype,
-                    stream=self.htod_cuda_stream_sync
-                )
-
-
-    def htod_sync_memory(self, xprovider: Literal['cuda', 'trt']) -> HostDeviceMemory:
-        return self.sync_memory[xprovider].htod_mem
-
-
-    def dtoh_sync_memory(self, xprovider: Literal['cuda', 'trt']) -> HostDeviceMemory:
-        return self.sync_memory[xprovider].dtoh_mem

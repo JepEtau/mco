@@ -2,14 +2,11 @@ from __future__ import annotations
 from copy import copy
 from pprint import pprint
 import time
-import cupy as cp
 from queue import Queue
-import numpy as np
 import torch
 from torch import Tensor
 from typing import TYPE_CHECKING
 
-from nn_inference.model_mgr import ModelManager
 from nn_inference.pytorch.inpaint_inference import perform_inpaint_inference
 from nn_inference.pytorch.temporal_inference import perform_temporal_inference
 from nn_inference.resource_mgr import NnFrame
@@ -131,7 +128,6 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
                 time.sleep(0.0001)
                 infer_stream.synchronize()
 
-                # From torch to CuPy format
                 # if verbose:
                 #     print(blue(f"{verbose_prefix} out tensor: {out_tensor.data_ptr()}, {out_tensor.shape}, {out_tensor.dtype}, {out_tensor.nbytes}"))
                 frame.tensor = out_torch_tensor

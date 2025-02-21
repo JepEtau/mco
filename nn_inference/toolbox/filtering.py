@@ -14,7 +14,6 @@ from .cv2_filters import (
     cv2_bilateral_,
     cv2_nlmeans_,
 )
-from .nlmeans_sk import nlmeans_sk
 from utils.p_print import *
 from .gpu_resize import (
     gpu_resize_,

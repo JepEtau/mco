@@ -10,10 +10,6 @@ from pynnlib import (
 )
 
 if is_cuda_available():
-    from .cupy_utils import (
-        HostDeviceMemory
-    )
-
     from .threads.t_img_reader import (
         ImgReaderThreadConfig,
         ImgReaderThread,

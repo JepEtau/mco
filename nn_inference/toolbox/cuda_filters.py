@@ -1,9 +1,6 @@
 import torch
 from torch import Tensor
-from torch import from_dlpack, to_dlpack
 import torch.nn.functional as F
-
-import cupy as cp
 from torchvision.transforms.v2 import GaussianNoise
 from .darker_thinner import DarkerThinner
 
@@ -47,32 +44,24 @@ def darker_thinner_(
 
     darker_thinner = DarkerThinner(**args)
 
-    if isinstance(frame.tensor, cp.ndarray):
-        raise NotImplementedError("not supported input tensor for darker_thinner_")
-        darker_thinner.to(frame.tensor.device)
-        if frame.tensor.dtype == torch.float16:
-            darker_thinner.half()
-        frame.tensor = darker_thinner(frame.tensor)
+    if verbose:
+        print(purple(f"[V][F]   darker_thinner_"))
 
-    elif isinstance(frame.tensor, Tensor):
-        if verbose:
-            print(purple(f"[V][F]   darker_thinner_"))
+    in_x: Tensor = frame.tensor
+    if verbose:
+        print(purple(f"[V][F]     in_x"), f"{in_x.shape}, {in_x.dtype}")
 
-        in_x: Tensor = frame.tensor
-        if verbose:
-            print(purple(f"[V][F]     in_x"), f"{in_x.shape}, {in_x.dtype}")
+    in_x = in_x.to(dtype=torch.float16)
+    darker_thinner.to(in_x.device)
+    darker_thinner.half()
 
-        in_x = in_x.to(dtype=torch.float16)
-        darker_thinner.to(in_x.device)
-        darker_thinner.half()
+    if verbose:
+        print(purple(f"[V][F]     in_x"), f"{in_x.shape}, {in_x.dtype}")
+    out_x: Tensor = darker_thinner(in_x)
+    if verbose:
+        print(purple(f"[V][F]     out_x"), f"{out_x.shape}, {out_x.dtype}")
 
-        if verbose:
-            print(purple(f"[V][F]     in_x"), f"{in_x.shape}, {in_x.dtype}")
-        out_x: Tensor = darker_thinner(in_x)
-        if verbose:
-            print(purple(f"[V][F]     out_x"), f"{out_x.shape}, {out_x.dtype}")
-
-        frame.tensor = torch.clamp(out_x.contiguous(), 0, 1.0)
+    frame.tensor = torch.clamp(out_x.contiguous(), 0, 1.0)
 
     return frame
 

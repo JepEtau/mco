@@ -1,9 +1,7 @@
-import cupy as cp
 from typing import Optional
 import torch
-from torch import Tensor
-from torch import from_dlpack, to_dlpack
 import torch.nn.functional as F
+from torch import Tensor
 
 from nn_inference.resource_mgr import NnFrame
 from utils.p_print import *

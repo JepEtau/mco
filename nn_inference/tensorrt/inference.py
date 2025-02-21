@@ -1,13 +1,9 @@
 from __future__ import annotations
-from copy import copy
-import math
 import time
-import cupy as cp
 from queue import Queue
 import torch
 from typing import TYPE_CHECKING
 
-from nn_inference.model_mgr import ModelManager
 from nn_inference.resource_mgr import NnFrame
 from nn_inference.threads.t_decoder import DecoderThread
 from nn_inference.threads.t_encoder import EncoderThread
