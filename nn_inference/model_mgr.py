@@ -55,6 +55,7 @@ class ModelInfo:
     key: str = ""
     model: NnModel | None = None
     session: NnModelSession = None
+    static: bool = True
 
 
 
@@ -173,8 +174,8 @@ class ModelManager:
             dtype = 'fp32'
         elif 'bf16' in infos[1:]:
             dtype = 'bf16'
-
         xprovider: str = 'cuda' if 'cuda' in infos[1:] else 'trt'
+        static: bool = bool('static' in infos[1:])
 
         if not is_cuda_available():
             xprovider = 'stub'
@@ -194,6 +195,7 @@ class ModelManager:
                 dtype=dtype,
                 xprovider=xprovider,
                 key=model_key,
+                static=static,
             )
             _nested_dict_set(self._models, _model, name, xprovider, dtype)
             self._models_by_keys[model_key] = self._models[name][xprovider][dtype]
@@ -250,22 +252,27 @@ class ModelManager:
         """Convert models to TRT engines
         """
         _keys: list[str] = list(self._shapes.keys())
-        print(yellow("consolidate:"))
+        print(yellow("Consolidate models, convert from torch to TRT engines:"))
         pprint(self._shapes)
         for model_key, sizes in self._shapes.items():
-            print(lightcyan(f"model: {model_key}"))
-            print(f"  sizes: {sizes}")
             for size_key in sizes:
                 model: ModelInfo = self._models_by_keys[model_key]
                 print(f"  convert to TensorRT, ",
                     f"onnx opset={self.opset}, ",
                     f"dtype={model.dtype}",
-                    f"size: {size_key}"
+                    f"size: {size_key}",
+                    f"static: {model.static}"
                 )
                 start_time = time.time()
+
+                # Force to static or fixed
                 shape_strategy: ShapeStrategy = ShapeStrategy(
+                    static=model.static,
                     opt_size = tuple(map(int, size_key.split('x')))
                 )
+                shape_strategy.min_size = shape_strategy.opt_size
+                shape_strategy.max_size = shape_strategy.opt_size
+
                 trt_model: TrtModel = nnlib.convert_to_tensorrt(
                     model=model.model,
                     shape_strategy=shape_strategy,
@@ -292,7 +299,6 @@ class ModelManager:
 
         for k in _keys:
             del self._models_by_keys[k]
-
 
 
     def set_in_out_max_nbytes(self, in_nbytes: int, out_nbytes: int):
@@ -343,7 +349,7 @@ class ModelManager:
         for m in self._models_by_keys.values():
             m.session = nnlib.session(m.model)
 
-            print(lightgreen(f"initialize {m.session.model.arch_name} {m.model.fwk_type}"))
+            print(lightgreen(f"Initialize {m.session.model.arch_name} {m.model.fwk_type}"))
             if m.model.fwk_type == NnFrameworkType.PYTORCH:
                 self.torch_session: PyTorchSession = m.session
                 self.torch_session.infer_stream = self.torch_infer_stream

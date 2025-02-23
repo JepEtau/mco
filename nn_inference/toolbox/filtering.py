@@ -3,6 +3,8 @@ from pprint import pprint
 import time
 from typing import Any
 
+import torch
+
 from nn_inference.resource_mgr import NnFrame
 from .cuda_filters import (
     gaussian_noise_,
@@ -42,7 +44,7 @@ _cuda_functions: dict[str, Callable[..., object]] = {
 
 def apply_cuda_filters_(
     frame: NnFrame,
-    cuda_stream,
+    cuda_stream: torch.cuda.Stream,
     verbose: bool = False
 ) -> None:
     """Inline modification of the frame"""

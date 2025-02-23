@@ -67,7 +67,7 @@ class ImgWriterThread(BaseThread):
                 frame: NnFrame = input
                 d_img: torch.tensor = tensor_to_img(
                     tensor=frame.tensor,
-                    dtype=img_dtype,
+                    img_dtype=img_dtype,
                     flip_r_b=flip_r_b,
                 )
                 out_img: np.ndarray = dtoh_transfer(

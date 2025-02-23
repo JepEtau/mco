@@ -46,7 +46,7 @@ class EncoderThread(BaseThread):
     ) -> None:
         super().__init__()
         self._stop_event: Event = Event()
-        self.in_queue: Queue = Queue(3)
+        self.in_queue: Queue = Queue(1)
         self._encoded: int = 0
         self.model_manager = config.model_manager
 
@@ -237,7 +237,7 @@ class EncoderThread(BaseThread):
 
                     d_img: torch.tensor = tensor_to_img(
                         tensor=frame.tensor,
-                        dtype=stdin_dtype,
+                        img_dtype=stdin_dtype,
                         flip_r_b=flip_r_b,
                     )
 

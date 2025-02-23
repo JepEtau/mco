@@ -8,7 +8,7 @@ import numpy as np
 import torch
 from nn_inference.model_mgr import ModelManager
 
-from nn_inference.progress import ProgressThread
+from nn_inference.threads.t_progress import ProgressThread
 from nn_inference.resource_mgr import ResourceManager
 from nn_inference.threads.t_cpu_decoder import CpuDecoderThread
 from nn_inference.threads.t_cpu_encoder import CpuEncoderThread
@@ -181,16 +181,10 @@ class UpscalePipeline(object):
         print(f"Inpaint: mask: {in_max_sync_nbytes} bytes")
         print(f"Total scale: {scale}")
 
+        model_manager.opset = 20
         model_manager.consolidate()
         model_manager.set_in_out_max_nbytes(in_max_nbytes, out_nbytes)
 
-        # Consider that all inpaint models are executed by cuda provider
-        model_manager.set_sync_in_max_nbytes(
-            xprovider='cuda',
-            in_nbytes=in_max_sync_nbytes,
-            out_nbytes=0
-        )
-        model_manager.set_sync_dtypes(in_dtype=np.uint8, out_dtype=np.uint8)
         print(model_manager)
 
 
@@ -344,6 +338,9 @@ class UpscalePipeline(object):
 
         # Verbose
         d_thread.verbose = False
+        for t in i_threads:
+            if t is not None:
+                t.verbose = True
         e_thread.verbose = False
 
         # Start all threads

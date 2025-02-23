@@ -7,7 +7,7 @@ from typing import Literal
 from utils.p_print import *
 
 from nn_inference.model_mgr import ModelManager
-from nn_inference.pytorch.inference import perform_torch_inference
+from nn_inference.threads.torch_inference import perform_torch_inference
 from nn_inference.resource_mgr import NnFrame, BaseThread
 from nn_inference.threads.t_decoder import DecoderThread
 from nn_inference.threads.t_encoder import EncoderThread
@@ -36,7 +36,7 @@ class InferenceThread(BaseThread):
         super().__init__()
         self._stop_event = Event()
         self._stop_event.clear()
-        self.in_queue: Queue = Queue(2)
+        self.in_queue: Queue = Queue(1)
         self.config: InferenceThreadConfig = config
         self.i_threads: dict[str, InferenceThread] = None
         self.model_manager: ModelManager = config.model_manager
@@ -56,7 +56,7 @@ class InferenceThread(BaseThread):
 
         elif self.config.execution_provider == 'trt':
             if is_tensorrt_available():
-                from nn_inference.tensorrt.inference import perform_tensorrt_inference
+                from .trt_inference import perform_tensorrt_inference
                 perform_tensorrt_inference(self, verbose)
 
         else:

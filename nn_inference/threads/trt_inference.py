@@ -9,19 +9,16 @@ from nn_inference.threads.t_decoder import DecoderThread
 from nn_inference.threads.t_encoder import EncoderThread
 from nn_inference.threads.t_helpers import patch_next_step_no_
 from nn_inference.toolbox.filtering import apply_cuda_filters_
-from pynnlib import (
-    is_tensorrt_available,
-    NnModel,
-)
+from pynnlib import is_tensorrt_available
 if is_tensorrt_available():
     from pynnlib.nn_tensor_rt.inference.session import TensorRtSession
     import tensorrt as trt
 from utils.p_print import *
 if TYPE_CHECKING:
-    from ..threads.t_inference import InferenceThread
+    from .t_inference import InferenceThread
 
 
-
+@torch.inference_mode()
 def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
     print(cyan(f"[V][I][TRT] TensorRT InferenceThread"))
     in_queue: Queue = self.in_queue
@@ -31,7 +28,6 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
     d_thread: DecoderThread = self.config.d_thread
     e_thread: EncoderThread = self.config.e_thread
 
-    # try:
     with torch.cuda.stream(cuda_stream):
         while not self._stop_event.is_set():
             if verbose:
@@ -40,7 +36,6 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             if input is None or self._stop_event.is_set():
                 break
             frame: NnFrame = input
-
 
             # Get model and session
             model_key: str = frame.sequence[frame.step_no]
@@ -78,7 +73,7 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
                 context.set_tensor_address(engine.get_tensor_name(i), bindings[i])
             context.execute_async_v3(stream_handle=cuda_stream.cuda_stream)
 
-            frame.tensor = torch.clamp_(out_tensor, 0., 1.)
+            frame.tensor = torch.clamp(out_tensor, 0., 1.)
 
             # if verbose:
             #     print(cyan(f"{verbose_prefix} out tensor: {out_tensor.data_ptr()}, {out_tensor.shape}, {out_tensor.dtype}, {out_tensor.nbytes}"))
@@ -88,12 +83,11 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             cuda_stream.synchronize()
 
             # Apply cuda filters until next inference or decoder
-            with torch.inference_mode():
-                torch_cuda_stream = torch.cuda.Stream()
-                with torch.cuda.stream(torch_cuda_stream):
-                    apply_cuda_filters_(
-                        frame, verbose=verbose, cuda_stream=torch_cuda_stream
-                    )
+            # torch_cuda_stream = torch.cuda.Stream()
+            # with torch.cuda.stream(torch_cuda_stream):
+            apply_cuda_filters_(
+                frame, verbose=verbose, cuda_stream=cuda_stream
+            )
 
             # No more operation with input tensor
             # TODO: study if it can be done before.
@@ -125,7 +119,4 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             consumer.put_frame(frame)
 
     print(cyan(f"[V][I][TRT] Ended"))
-    # except Exception as e:
-    #     print(f"[E] Failed to add a frame to the inference: {type(e)}", flush=True)
-
 

@@ -7,8 +7,12 @@ opencv-python
 PySide6_Essentials
 onnx
 onnxruntime
-timm
 einops
 scikit-image
 setuptools
 fastrlock
+tensorrt==10.7.0
+safetensors
+
+# to remove timm, remove also:
+#   pip uninstall pyyaml colorama tqdm huggingface_hub timm -y

@@ -12,7 +12,7 @@ from rich.progress import (
     TaskProgressColumn,
     TimeElapsedColumn,
 )
-from .resource_mgr import ResourceManager, BaseThread
+from ..resource_mgr import ResourceManager, BaseThread
 from utils.p_print import *
 from utils.path_utils import path_split
 

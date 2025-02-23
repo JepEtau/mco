@@ -51,10 +51,8 @@ class DarkerThinner(nn.Module):
         # G = 1 * Y + -0.21482 * U - 0.38059 * V
         # B = 1 * Y + 2.12798 * U
 
-        # BUG wrong order of coefs!
         self.rgb_to_y = torch.tensor(
-            [0.114, 0.587, 0.299],
-            # [0.0722, 0.7152, 0.2126],
+            [0.299, 0.587, 0.114],
             dtype=dtype,
             requires_grad=False
         )

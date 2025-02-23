@@ -352,14 +352,14 @@ class DecoderThread(BaseThread):
                     # All filters between decoder and the next session will use this dtype
                     d_tensor: Tensor = img_to_tensor(
                         d_img=d_img,
-                        dtype=session.dtype,
+                        tensor_dtype=session.dtype,
                         flip_r_b=flip_r_b,
                     )
 
                     # Create a frame object
                     frame: NnFrame = NnFrame(
                         f_no=f_no,
-                        tensor=d_tensor,
+                        tensor=d_tensor.clone(),
                         last=False,
 
                         scene=scene,

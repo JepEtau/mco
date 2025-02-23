@@ -34,7 +34,7 @@ class CpuEncoderThread(BaseThread):
     def __init__(self) -> None:
         super().__init__()
         self._stop_event: Event = Event()
-        self.in_queue: Queue = Queue(2)
+        self.in_queue: Queue = Queue(1)
         self._encoded: int = 0
 
 

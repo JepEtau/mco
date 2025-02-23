@@ -11,7 +11,7 @@ from torch import Tensor
 if TYPE_CHECKING:
     from utils.mco_types import Scene
     from scene.src_scene import SrcScene
-    from nn_inference.progress import ProgressThread
+    from nn_inference.threads.t_progress import ProgressThread
 
 
 @dataclass(slots=True)

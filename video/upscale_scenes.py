@@ -7,7 +7,7 @@ from pprint import pprint
 import time
 
 import torch
-from nn_inference.progress import ProgressThread
+from nn_inference.threads.t_progress import ProgressThread
 from nn_inference.model_mgr import ModelManager
 from nn_inference.resource_mgr import ResourceManager
 from nn_inference.threads.t_decoder import VideoStreamInfo

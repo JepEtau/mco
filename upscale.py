@@ -65,6 +65,7 @@ def main():
     )
 
     parser.add_argument(
+        "-f",
         "--force",
         action="store_true",
         required=False,

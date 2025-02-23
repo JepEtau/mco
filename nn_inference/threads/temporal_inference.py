@@ -9,7 +9,7 @@ import torch
 import torch.nn.functional as F
 
 from nn_inference.model_mgr import ModelManager
-from nn_inference.pytorch.animesr import animesr_inference
+from nn_inference.threads.animesr import animesr_inference
 from nn_inference.resource_mgr import NnFrame, Singleton
 from processing.dsr import generate_dsr_mask
 from pynnlib.utils.torch_tensor import to_nchw

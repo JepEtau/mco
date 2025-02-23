@@ -3,8 +3,10 @@ import numpy as np
 import torch
 from torch import Tensor
 from utils.p_print import red
+from pynnlib import torch_dtype_to_np
 
 
+@torch.inference_mode()
 def htod_transfer(
     host_mem: Tensor,
     img_buffer: Tensor,
@@ -25,6 +27,7 @@ def htod_transfer(
 
 
 
+@torch.inference_mode()
 def dtoh_transfer(
     host_mem: Tensor,
     d_img: Tensor,
@@ -40,25 +43,26 @@ def dtoh_transfer(
 
 
 
+@torch.inference_mode()
 def dtoh_transfer_sync(
     host_mem: Tensor,
     d_img: Tensor,
 ) -> np.ndarray:
     """Synchronous transfer from GPU to CPU.
     """
-    out_shape: tuple[int, int, int] = d_img.shape
-    host_mem.copy_(d_img.ravel(), non_blocking=False)
-    return host_mem.view(out_shape).numpy()
+    host_mem.copy_(d_img, non_blocking=False)
+    return host_mem.numpy()
 
 
 
+@torch.inference_mode()
 def htod_transfer_sync(
     host_mem: Tensor,
     h_img: Tensor,
     device: str = "cuda:0",
 ) -> Tensor:
     host_mem.copy_(
-        np.ascontiguousarray(h_img), non_blocking=False
+        torch.from_numpy(np.ascontiguousarray(h_img)), non_blocking=False
     )
-    d_img: Tensor = host_mem.to(device=device)
+    d_img: Tensor = host_mem.detach().to(device=device)
     return d_img
