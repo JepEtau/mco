@@ -86,10 +86,10 @@ def extract_scene(
 
     # Force to 576p to facilitate comparisons
     filter_complex: list[str] = []
-    if h != 640 or w != 40:
+    if h != 640 or w != 480:
         filter_complex = [
             "-filter_complex",
-            f"[0:v]scale=640:480:sws_flags=bilinear+accurate_rnd+bitexact+full_chroma_int[outv]",
+            f"[0:v]scale=640:480:sws_flags=bilinear+accurate_rnd+bitexact+full_chroma_int,setsar=1[outv]",
             "-map", "[outv]"
         ]
 

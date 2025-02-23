@@ -13,10 +13,10 @@ class Db:
 
 
 TaskName = Literal[
-    # Deinterlace the input video:
-    'initial',
+    'deinterlace',  # progressive
+    'initial',      # ?
+    'extract',      # h264/yuv420p for scene detection video comparison
 
-    # Create a low resolution video for edition only
     # Uses the final video mounting
     # Uses the frames to replace/duplicates to remove, etc.
     # Test purpose only, prefix = lr

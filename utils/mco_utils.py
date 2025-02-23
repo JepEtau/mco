@@ -328,7 +328,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
     #         f"{scene['no']:03}"
     #     )
 
-    if task_name == 'initial':
+    if task_name in ('initial', 'extract'):
         # Work in the src directory
         output_path = os.path.join(
             cache_dir,
