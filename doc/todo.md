@@ -130,6 +130,14 @@ status:
         __integrated__
 
 
+- segmentation
+    * InSPyReNet            https://github.com/plemeri/InSPyReNet
+
+    * TRACER-B7             https://github.com/Karel911/TRACER
+        __module__ (partial)
+
+    * BiRefNet              https://github.com/ZhengPeng7/BiRefNet
+
 
 - algorithms
     * ~~polyblur: https://github.com/teboli/polyblur~~
