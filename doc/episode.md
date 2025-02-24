@@ -387,22 +387,22 @@
 
 # ep36
 * vérifier scènes
-    + [ ] j
-    + [ ] k
-    + [ ] f
-* [ ] consolider j vs k
-* [ ] consolider f vs k
+    + [x] j
+    + [x] k
+    + [/] f
+* [x] consolider j vs k
+* [/] consolider f vs k
 * [x] precedemment
 * [ ] asuivre
 
 
 # ep37
 * vérifier scènes
-    + [ ] j
-    + [ ] k
-    + [ ] f
-* [ ] consolider j vs k
-* [ ] consolider f vs k
+    + [x] j
+    + [X] k
+    + [/] f
+* [x] consolider j vs k
+* [/] consolider f vs k
 * [ ] precedemment
 * [ ] asuivre
 
