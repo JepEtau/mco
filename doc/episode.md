@@ -294,6 +294,7 @@
 * [x] precedemment
 * [x] asuivre
 
+
 # ep28
 * vérifier scènes
     + [x] j
@@ -409,21 +410,21 @@
 
 # ep38
 * vérifier scènes
-    + [ ] j
-    + [ ] k
-    + [ ] f
-* [ ] consolider j vs k
-* [ ] consolider f vs k
+    + [x] j
+    + [x] k
+    + [/] f
+* [x] consolider j vs k
+* [/] consolider f vs k
 * [ ] precedemment
 * [ ] asuivre
 
 
 # ep39
 * vérifier scènes
-    + [ ] j
-    + [ ] k
-    + [ ] f
-* [ ] consolider j vs k
-* [ ] consolider f vs k
+    + [x] j
+    + [x] k
+    + [/] f
+* [x] consolider j vs k
+* [/] consolider f vs k
 * [ ] precedemment
 * [ ] asuivre
