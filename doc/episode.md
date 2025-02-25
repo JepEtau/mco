@@ -379,11 +379,10 @@
     + [x] j
     + [x] k
     + [/] f
-* [ ] consolider j vs k
-    TODO correct decimate for 084
+* [x] consolider j vs k
 * [/] consolider f vs k
 * [x] precedemment
-* [ ] asuivre
+* [x] asuivre
 
 
 # ep36
@@ -394,7 +393,7 @@
 * [x] consolider j vs k
 * [/] consolider f vs k
 * [x] precedemment
-* [ ] asuivre
+* [x] asuivre
 
 
 # ep37
@@ -404,8 +403,8 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [ ] precedemment
-* [ ] asuivre
+* [x] precedemment
+* [x] asuivre
 
 
 # ep38
@@ -415,8 +414,8 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [ ] precedemment
-* [ ] asuivre
+* [x] precedemment
+* [x] asuivre
 
 
 # ep39
@@ -426,5 +425,5 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [ ] precedemment
-* [ ] asuivre
+* [x] precedemment
+
