@@ -110,12 +110,19 @@ status:
 
 
 - Optical Flow
+
+    * FlowNet2              https://github.com/NVIDIA/flownet2-pytorch
+
+    * FlowNet               https://github.com/ClementPinard/FlowNetPytorch
+
     * unimatch (GMflow+)    https://github.com/autonomousvision/unimatch
         __integrated__
+        slow
 
     * GMflow                https://github.com/haofeixu/gmflow
         __module__
         not possible to differentiate GMflow from unimatch
+        slow
 
     * VideoFlow             https://github.com/XiaoyuShi97/VideoFlow
         /

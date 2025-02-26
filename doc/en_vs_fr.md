@@ -23,13 +23,13 @@
 * Episode 13: en +6 frames in episode, avsync should be enough
 * Episode 14: same
 * Episode 15: same
-* Episode 16: same (except frame shift on "precedemment", avsync to be set)
+* Episode 16: same
 * Episode 17: same
 * Episode 18: same
 * Episode 19: same
 * Episode 20: same
 * Episode 21: same
-* Episode 22: same (frame shift from "to_follow" to the end)
+* Episode 22: same
 * Episode 23: same
 * Episode 24: same (!!! k has wider scenes)
 * Episode 25: same
