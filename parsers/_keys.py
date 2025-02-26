@@ -21,6 +21,10 @@ def ep_key(value: int | str) -> str | None:
     return value
 
 
+def ep_no(key: str) -> int:
+    return int(key[2:])
+
+
 Chapter = Literal[
     'precedemment',
     'episode',

@@ -1,6 +1,11 @@
 
 # MCO / MCoG: restoration
 
+
+- tasks:
+    * extract: extract each scene from progressive and resize to 640x480, h264, yuv420p
+
+
 ## Cheat sheet
 
 ### Installation
