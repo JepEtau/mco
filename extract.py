@@ -56,6 +56,7 @@ def main():
     )
 
     parser.add_argument(
+        "-smin",
         "--scene_min",
         type=int,
         default=-1,
@@ -64,6 +65,7 @@ def main():
     )
 
     parser.add_argument(
+        "-smax",
         "--scene_max",
         type=int,
         default=-1,

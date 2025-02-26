@@ -77,9 +77,10 @@ def extract_scenes(
             start_time = time.time()
             if scene_no != -1 and scene['no'] != scene_no:
                 continue
-            if scene_min != -1 and scene_max != -1:
-                if scene['no'] < scene_min or scene['no'] > scene_max:
-                    continue
+            if scene_min != -1 and scene['no'] < scene_min:
+                continue
+            if scene_max != -1 and scene['no'] > scene_max:
+                continue
 
             print(
                 lightgreen(f"  {scene['no']: 3}: {scene['start']: 6}".ljust(14)),
