@@ -5,7 +5,7 @@ import re
 import sys
 from warnings import warn
 
-from utils.mco_types import ChapterVideo, Effect, Effects, Scene, VideoSrc
+from utils.mco_types import ChapterVideo,  Scene, VideoSrc
 from ._keys import (
     ep_key,
     all_chapter_keys,
@@ -13,6 +13,7 @@ from ._keys import (
     main_chapter_keys,
     Chapter,
 )
+from .effects import Effect, Effects
 from .helpers import (
     get_fps,
     nested_dict_set,

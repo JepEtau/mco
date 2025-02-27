@@ -6,7 +6,6 @@ from pprint import pprint
 
 from scene.consolidate import consolidate_scene
 from scene.generate_final import generate_final_scene
-from utils.hash import calc_hash
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import is_final_up_to_date, scene_id_str
 from utils.media import vcodec_to_extension
@@ -17,6 +16,7 @@ from parsers import (
     db,
     Chapter,
     all_chapter_keys,
+    calc_hash,
     ep_key,
     TaskName,
     ProcessingTask,

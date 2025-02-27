@@ -40,6 +40,12 @@ from .dsr import (
     MaskShape,
 )
 
+from .effects import (
+    Effect,
+    EffectName,
+    Effects,
+)
+
 from .episode import (
     parse_episode
 )
@@ -55,6 +61,10 @@ from .geometry import (
 from .geometry_stats import (
     SceneGeometryStat,
     ChGeometryStats,
+)
+
+from .hash import (
+    calc_hash,
 )
 
 from .scenes import (
@@ -116,5 +126,11 @@ __all__ = [
     "StabilizeSegment",
     "StabilizeMode",
     "StabilizeParams",
+
+    "Effect",
+    "EffectName",
+    "Effects",
+
+    "calc_hash",
 
 ]

@@ -5,11 +5,9 @@ from pprint import pprint
 import re
 import sys
 from warnings import warn
-from utils.hash import calc_hash
 from utils.mco_types import Scene
 from utils.media import vcodec_to_extension
 from parsers import (
-    credit_chapter_keys,
     db,
     VideoSettings,
     TaskName,

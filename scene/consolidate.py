@@ -9,9 +9,9 @@ from scene.helpers import (
     set_doc_filepath_,
     set_g_asuivre_filepath_,
 )
-from utils.hash import calc_hash
+from parsers.hash import calc_hash
 from utils.mco_types import (
-    ChapterVideo, Effect, Effects, Scene,
+    ChapterVideo, Scene,
 )
 from utils.media import vcodec_to_extension
 from parsers import (
@@ -26,6 +26,7 @@ from parsers import (
     credit_chapter_keys,
     Chapter,
     scene_no_str,
+    calc_hash,
 )
 from utils.mco_utils import (
     get_cache_path,

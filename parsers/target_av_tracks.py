@@ -15,8 +15,9 @@ from utils.time_conversions import (
     frame_to_ms,
     ms_to_frame,
 )
-from utils.mco_types import ChapterAudio, Effect, Effects, Scene, ChapterVideo
+from utils.mco_types import ChapterAudio, Scene, ChapterVideo
 from ._db import db
+from .effects import Effect, Effects
 
 
 

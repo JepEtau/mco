@@ -5,7 +5,6 @@ import time
 from pprint import pprint
 from scene.consolidate import consolidate_scene
 from scene.generate_lr import generate_lr_scene
-from utils.hash import calc_hash
 from utils.media import vcodec_to_extension
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import is_final_up_to_date
@@ -21,6 +20,7 @@ from parsers import (
     ProcessingTask,
     pprint_scene_mapping,
     VideoSettings,
+    calc_hash,
 )
 from video.consolidate_scenes import get_chapter_video
 from .concat_frames import generate_video_concat_file

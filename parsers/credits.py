@@ -24,7 +24,7 @@ from ._keys import (
 )
 from utils.p_print import *
 from ._db import db
-from utils.mco_types import Effect, Effects
+from .effects import Effects
 
 
 

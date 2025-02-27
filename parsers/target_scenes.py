@@ -11,13 +11,14 @@ from .helpers import get_fps
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
 from utils.mco_types import (
-    ChapterAudio, Effect, Effects, RefScene, Scene, ChapterVideo,
+    ChapterAudio, RefScene, Scene, ChapterVideo,
 )
 from scene.src_scene import (
     SrcScenes
 )
 from ._db import db
 from ._keys import Chapter, ep_key, scene_no_str
+from .effects import Effect, Effects
 
 
 

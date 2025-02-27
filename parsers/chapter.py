@@ -2,7 +2,7 @@ from __future__ import annotations
 import re
 import sys
 
-from utils.mco_types import Effect, Effects
+from .effects import Effect, Effects
 from .helpers import get_fps
 from ._keys import ep_key
 

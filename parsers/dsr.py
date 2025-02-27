@@ -154,7 +154,7 @@ def parse_dsr_file(k_ep_or_g: str):
 
             try:
                 scene: Scene = get_scene_from_frame_no(
-                    frame_no, k_ed=k_ed, k_ep=k_ep, k_chapter=k_chapter
+                    frame_no, k_ed=k_ed, k_ep=k_ep, k_ch=k_chapter
                 )
             except:
                 if verbose:

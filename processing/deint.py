@@ -7,7 +7,6 @@ import re
 import sys
 from typing import Any, Literal
 
-from utils.hash import calc_hash
 from utils.logger import main_logger
 from utils.media import FieldOrder, FrameRate, VideoInfo
 from utils.p_print import *
@@ -15,7 +14,7 @@ from utils.path_utils import absolute_path, get_extension
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.time_conversions import frame_to_sexagesimal
 from utils.tools import ffmpeg_exe, avs_dir, nnedi3_weights
-from parsers import db
+from parsers import db, calc_hash
 
 g_deint_algorithms = [
     'nnedi',

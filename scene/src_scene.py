@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from pprint import pprint
 import sys
 from typing import TypedDict
-from utils.mco_types import Effect, Effects, Scene, EffectName
+from utils.mco_types import Scene
 from parsers import (
     db,
 )
@@ -13,6 +13,9 @@ from utils.p_print import *
 if TYPE_CHECKING:
     from parsers import (
         TaskName,
+        Effect,
+        Effects,
+        EffectName,
     )
 
 

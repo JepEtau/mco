@@ -44,8 +44,8 @@ def replace_scene_bounds_(k_ep: str) -> None:
             sr[frame_no] = new_frame_no
 
         elif new_frame_no in sr and sr[new_frame_no] == frame_no:
-            print(yellow(f"{frame_no} is used as ref, ignore"))
-            pprint(sr)
+            print(darkgrey(f"[I] (start) {frame_no} is used as ref, ignore:"), sr)
+            pass
 
         else:
             print("unknow error")
@@ -65,8 +65,8 @@ def replace_scene_bounds_(k_ep: str) -> None:
             sr[frame_no] = new_frame_no
 
         elif new_frame_no in sr and sr[new_frame_no] == frame_no:
-            print(yellow(f"{frame_no} is used as ref, ignore"))
-            pprint(sr)
+            print(darkgrey(f"[I] (end) {frame_no} is used as ref, ignore:"), sr)
+            pass
 
         else:
             # Should never happen
@@ -120,7 +120,7 @@ def parse_replace_file(k_ep_or_g:str) -> None:
 
             try:
                 scene: Scene = get_scene_from_frame_no(
-                    frame_no, k_ed=k_ed, k_ep=k_ep, k_chapter=k_chapter
+                    frame_no, k_ed=k_ed, k_ep=k_ep, k_ch=k_chapter
                 )
                 if verbose:
                     print(f"{scene['no']}")

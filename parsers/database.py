@@ -20,8 +20,8 @@ from .episode import (
     db_init_episodes,
     parse_episode,
 )
-from .p_print import pprint_episode, pprint_g_debut_fin
 from .logger import logger
+from .loop import parse_loop_file
 from .target_scenes import (
     consolidate_target_scenes,
     consolidate_target_scenes_g,
@@ -41,8 +41,7 @@ from ._keys import (
     ep_key,
 )
 from ._db import db
-
-
+from .p_print import pprint_episode, pprint_g_debut_fin
 
 
 def parse_database(
@@ -137,6 +136,7 @@ def parse_database(
         for k_ep_tmp in dependencies[k_ed_tmp]:
             if k_ep_tmp not in already_parsed:
                 parse_replace_file(k_ep_or_g=k_ep_tmp)
+                parse_loop_file(k_ep=k_ep_tmp, verbose=True)
                 parse_dsr_file(k_ep_or_g=k_ep_tmp)
                 # parse_stabilize_configurations(k_ep_or_g=k_ep_tmp)
                 already_parsed.append(k_ep_tmp)

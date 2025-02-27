@@ -7,7 +7,6 @@ from pprint import pprint
 
 from scene.consolidate_src import consolidate_src_scene
 from scene.extract import extract_scene
-from utils.hash import calc_hash
 from utils.logger import main_logger
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import run_simple_command
@@ -24,6 +23,7 @@ from parsers import (
     TaskName,
     ProcessingTask,
     VideoSettings,
+    calc_hash,
 )
 
 

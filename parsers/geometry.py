@@ -10,13 +10,13 @@ from pprint import pprint
 from typing import Any
 
 from utils.p_print import *
-from utils.hash import calc_hash
 from utils.mco_types import ChapterVideo, Scene
 from utils.path_utils import absolute_path
 
 from ._keys import all_chapter_keys
 from .logger import logger
 from ._db import db
+from .hash import calc_hash
 
 from processing.resize_to_4_3 import (
     ConvertTo43Params,

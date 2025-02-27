@@ -4,6 +4,7 @@ import time
 from parsers import (
     db,
     TaskName,
+    calc_hash,
     ep_key,
     Chapter,
     all_chapter_keys,
@@ -14,7 +15,6 @@ from utils.mco_types import Scene, ChapterVideo
 from utils.p_print import *
 from scene.consolidate import consolidate_scene
 from utils.time_conversions import s_to_sexagesimal
-from utils.hash import calc_hash
 
 
 def consolidate_target(

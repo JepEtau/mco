@@ -24,7 +24,6 @@ from scene.upscale_scene import UpscalePipeline
 from processing import supported_filters
 from scene.consolidate import consolidate_scene
 from scene.src_scene import SrcScene
-from utils.hash import calc_hash
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import is_up_to_date, extract_media_info_mco
 from utils.media import vcodec_to_extension
@@ -37,6 +36,7 @@ from parsers import (
     TaskName,
     ProcessingTask,
     Filter,
+    calc_hash,
 )
 
 

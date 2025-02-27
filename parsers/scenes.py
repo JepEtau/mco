@@ -5,12 +5,14 @@ from pprint import pprint
 import re
 import sys
 from warnings import warn
-from ._keys import all_chapter_keys, main_chapter_keys, ep_key, Chapter
 from utils.p_print import *
-from utils.mco_types import Effect, Effects, ChapterVideo, Scene
+from utils.mco_types import ChapterVideo, Scene
 from scene.src_scene import SrcScene, SrcScenes
 from ._db import db
-from ._keys import ep_key
+from ._keys import (
+    ep_key, all_chapter_keys, main_chapter_keys, ep_key, Chapter
+)
+from .effects import Effect, Effects
 
 
 
@@ -561,10 +563,9 @@ def get_scene_from_frame_no(
     frame_no: int,
     k_ed: str,
     k_ep: str,
-    k_chapter: str
+    k_ch: str
 ) -> Scene | None:
-    # print("get_scene_from_frame_no: %d in %s:%s:%s" % (frame_no, k_ed, k_ep, k_chapter))
-    scenes: list[Scene] = db[k_ep]['video'][k_ed][k_chapter]['scenes']
+    scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
     for scene in scenes:
         if scene is None:
             continue
@@ -572,11 +573,5 @@ def get_scene_from_frame_no(
         if scene['start'] <= frame_no < (scene['start'] + scene['count']):
             return scene
 
-    # print("\nWarning: %s:get_scene_from_frame_no: not found, frame no. %d in %s:%s:%s continue" % (__name__, frame_no, k_ed, k_ep, k_chapter))
-    # pprint_video(db[k_ep]['video'][k_ed][k_chapter], ignore='')
-    # print("-----------------------------------------------")
-    # # pprint(db[k_ep_ref]['video'][k_ed][k_chapter]['scenes'])
-    # sys.exit()
-
-    raise ValueError
+    # raise ValueError
     return None
