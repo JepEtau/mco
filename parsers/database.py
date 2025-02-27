@@ -138,7 +138,7 @@ def parse_database(
         for k_ep_tmp in dependencies[k_ed_tmp]:
             if k_ep_tmp not in already_parsed:
                 parse_replace_file(k_ep_or_g=k_ep_tmp)
-                parse_loop_file(k_ep=k_ep_tmp, verbose=True)
+                parse_loop_file(k_ep=k_ep_tmp, verbose=False)
                 parse_dsr_file(k_ep_or_g=k_ep_tmp)
                 # parse_stabilize_configurations(k_ep_or_g=k_ep_tmp)
                 already_parsed.append(k_ep_tmp)
@@ -166,7 +166,7 @@ def parse_database(
     # if k_ep not in ('ep00', 'ep99'):
         for chapter in non_credit_chapter_keys():
             consolidate_target_scenes(k_ep=k_ep, k_ch=chapter)
-        print(f"database, parse stabilization: {k_ep}")
+        # print(f"database, parse stabilization: {k_ep}")
         parse_stabilize_file(k_ep=k_ep)
 
         for k_chapter_g in ('g_asuivre', 'g_doc'):
@@ -201,7 +201,7 @@ def parse_database(
 
     stats: dict[str, Any] | None = None
     if k_ep != 'ep00':
-        consolidate_av_tracks(k_ep=k_ep)
+        consolidate_av_tracks(k_ep=k_ep, verbose=True)
 
         stats = pprint_episode(k_ep=k_ep)
     else:

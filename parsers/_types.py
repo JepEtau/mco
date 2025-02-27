@@ -8,12 +8,8 @@ if TYPE_CHECKING:
     from .vsettings import VideoSettings
 
 
-
 class Db:
     common: dict
-
-
-
 
 
 TaskName = Literal[

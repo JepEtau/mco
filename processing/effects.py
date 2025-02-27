@@ -17,10 +17,12 @@ from utils.media import VideoInfo, extract_media_info_mco, FShape
 from utils.np_dtypes import np_to_float32, np_to_uint16, np_to_uint8
 from utils.p_print import *
 from utils.logger import main_logger
-from utils.mco_types import Effects, Effect, McoFrame, Scene
+from utils.mco_types import McoFrame, Scene
 from PIL import Image
 from parsers import (
     db,
+    Effect,
+    Effects,
 )
 from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
@@ -56,8 +58,8 @@ def apply_effect(
         # Blend image with previous frame
         if effect := last_src_scene['effects'].get_effect('blend'):
 
-            if out_f_no >= effect.frame_ref and out_f_no < effect.frame_ref + effect.fade:
-                blend_factor = 1 - float(out_f_no - effect.frame_ref ) / effect.fade
+            if out_f_no >= effect.f_ref and out_f_no < effect.f_ref + effect.fade:
+                blend_factor = 1 - float(out_f_no - effect.f_ref ) / effect.fade
                 # print(f"BLEND {out_f_no}, factor: {blend_factor}")
                 k_ch = scene['dst']['k_ch']
                 if k_ch != 'g_debut':
@@ -178,7 +180,7 @@ def apply_effect(
                     scene=scene
                 )
 
-            elif out_f_no == effect.frame_ref + effect.fade:
+            elif out_f_no == effect.f_ref + effect.fade:
                 # Delete cached frame
                 print(yellow("delete cache frame"))
                 cached_frame = None
@@ -192,7 +194,7 @@ def apply_effect(
         # Add title to the frame, and loop the input frame if not enough frames
         # to add title
         elif effect := last_src_scene['effects'].get_effect('title'):
-            start_no: int = effect.frame_ref
+            start_no: int = effect.f_ref
 
             if out_i >= start_no:
                 print(yellow(f"{out_i} add title ({out_f_no})"))
@@ -300,7 +302,7 @@ def apply_effect(
             for effect in effects.get_effects('overlay'):
                 # global cached_overlay
                 # print(f"[{effect.frame_ref}..{effect.frame_ref + effect.loop}] i = {out_i}")
-                if effect.frame_ref <= out_i <= effect.frame_ref + effect.loop:
+                if effect.f_ref <= out_i <= effect.f_ref + effect.loop:
                     # if cached_overlay is None:
                     x0: int = effect.extra_param[0]
                     overlay_fp: str = os.path.join(
@@ -396,7 +398,7 @@ def apply_upscale_effects(
         for effect in scene_effects.effects:
             if (
                 effect.name in ('loop', 'loop_and_fadeout', 'loop_and_fadein')
-                and out_f_no == effect.frame_ref
+                and out_f_no == effect.f_ref
             ):
                 return [frame] * (effect.loop + 1)
 
@@ -422,9 +424,9 @@ def apply_upscale_effects(
             if effect := last_src_scene['effects'].get_effect('zoom_in'):
                 print(f"out_i: {out_i}")
                 # pprint(effect)
-                if out_i == effect.frame_ref:
+                if out_i == effect.f_ref:
                     in_dtype: np.dtype = frame.img.dtype
-                    print(f"ZOOOOM of frame {effect.frame_ref}, shape={frame.img.shape}, dtype={frame.img.dtype}")
+                    print(f"ZOOOOM of frame {effect.f_ref}, shape={frame.img.shape}, dtype={frame.img.dtype}")
                     initial_img = frame.img
                     if in_dtype != np.float32:
                         initial_img: np.ndarray = np_to_float32(frame.img)

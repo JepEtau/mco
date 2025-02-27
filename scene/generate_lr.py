@@ -55,6 +55,9 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     lr_directory: str = path_split(scene['task'].video_file)[0]
     os.makedirs(lr_directory, exist_ok=True)
 
+    # Video settings
+    vsettings: VideoSettings = scene['task'].video_settings
+
     # Pipe out video file
     in_video_fp: str = (
         scene['src']
@@ -78,6 +81,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     in_video_shape = in_vi['shape']
     in_h, in_w, in_c = in_video_shape
     if scene['task'].name in ('lr', 'sim'):
+        raise NotImplementedError("to be corrected with vsettings/size")
         print(lightcyan("low resolution / sim, use same size"))
         if scene['task'].name == 'lr':
             in_h, in_w = 540, 720
@@ -90,13 +94,17 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         ]
         in_video_shape = (in_h, in_w, in_c)
 
-    # else:
-    #     if h != 576 or w != 576:
-    #         filter_complex = [
-    #             "-filter_complex",
-    #             f"[0:v]scale=768:576:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
-    #             "-map", "[outv]"
-    #         ]
+    # Resize to have the same resolution whatever the source
+    if vsettings.size is not None:
+        in_w, in_h = vsettings.size
+        dec_filter_complex = [
+            "-filter_complex",
+            f"[0:v]scale={in_w}:{in_h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
+            "-map", "[outv]"
+        ]
+        in_video_shape = (in_h, in_w, in_c)
+
+
     out_video_shape = in_video_shape
     out_h, out_w = out_video_shape[:2]
 
@@ -108,7 +116,6 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     frame_rate: float = frame_rate_dec(in_vi['frame_rate_r'])
 
     # Encoder subprocess
-    vsettings: VideoSettings = scene['task'].video_settings
     metadata: list[str] = ffmpeg_metadata(scene)
     encoder_command: list[str] = [
         ffmpeg_exe,
@@ -180,7 +187,6 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                 print(yellow(f"decimate_2:"), f"{src_scene['no']}: {factor_2_mod}")
                 pprint(src_scene)
 
-        # raise ValueError(f"to_extract: {to_extract}")
 
         decoder_command: list[str] = [
             ffmpeg_exe,
@@ -224,12 +230,19 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         frame_cache.set_occurences(frame_occurences(frame_replace))
         frame_cache.set_exceptions(frames_to_replace)
 
-
         # Dust and scratch removal
         scene_dsr: SceneDsr = src_scene['dsr']
         if scene_dsr is not None:
             scene_dsr.set_frame_size((in_w, in_h))
-        # scene_dsr.set_frame_size((1440, 1080))
+
+        # Replace a segment by a loop
+        replace_by_loop: bool = True
+        if src_scene['effects'].has_effect(name='replace_by_loop'):
+            replace_by_loop = True
+            loops: list[tuple] = []
+            for loop in src_scene['effects'].get_effects(name='replace_by_loop'):
+                loops.append(loop.start, loop.start + loop.loop, loop.f_ref)
+
 
         ch_video: ChapterVideo = get_target_video(scene)
         if is_first_scene(scene):
@@ -246,6 +259,7 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
 
         # backward
         backward_imgs: deque = deque()
+
         # decimate
         decimate_index: int = 0
         decimate_index2: int = 0
@@ -258,6 +272,12 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
                     decoder_subprocess.stdout.read(in_pipe_img_nbytes),
                     dtype=in_pipe_dtype,
                 ).reshape(in_pipe_img_shape)
+
+                if replace_by_loop:
+                    for l in loops:
+
+
+
                 if in_f_no not in frames_to_replace:
                     # print(purple(f"Read frame no.{in_f_no}"))
                     mask_img: np.ndarray = generate_dsr_mask(

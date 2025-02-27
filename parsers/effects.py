@@ -26,7 +26,7 @@ EffectName = Literal[
 @dataclass
 class Effect:
     name: EffectName
-    frame_ref: int = 0
+    f_ref: int = 0
     start: int = 0
     loop: int = 0
     fade: int = 0

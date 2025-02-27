@@ -113,10 +113,9 @@ class SceneDsr:
 
 
 
-def parse_dsr_file(k_ep_or_g: str):
-    verbose = False
+def parse_dsr_file(k_ep_or_g: str, verbose: bool = False):
     if verbose:
-        print(lightgreen(f"parse_dsr_file: {k_ep_or_g}"))
+        print(lightgrey(f"parse_dsr_file: {k_ep_or_g}"))
 
     # Open configuration file
     filepath = absolute_path(
@@ -129,7 +128,8 @@ def parse_dsr_file(k_ep_or_g: str):
     if not os.path.exists(filepath):
         return
 
-    print(f"{'|'.join(list(MaskShape.__args__))}")
+    if verbose:
+        print(f"  {'|'.join(list(MaskShape.__args__))}")
     # shape:x:y:w:h:theta
     regex: re.Pattern = re.compile(
         rf"({'|'.join(list(MaskShape.__args__))})\s*=\s*(\d*\.?\d*),(\d*\.?\d*):(\d*\.?\d*),(\d*\.?\d*):(-?\d*\.?\d*)"

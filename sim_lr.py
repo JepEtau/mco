@@ -5,7 +5,9 @@ from pprint import pprint
 import signal
 import sys
 from parsers import (
+    ep_key,
     parse_database,
+    TaskName,
 )
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
@@ -23,99 +25,63 @@ def main():
         add_language=True,
     )
 
-    parser.add_argument(
-        "--edition",
-        "-ed",
-        choices=['f', 'k', 's'],
-        default='',
-        required=False,
-        help="Use this edition as source rather than the one selected in database"
-    )
-
-    parser.add_argument(
-        "--scene",
-        "-s",
-        type=int,
-        default=-1,
-        required=False,
-        help="scene no. to process. Integer or frame value (e.g. 2450f)"
-    )
-
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        required=False,
-        help="Overwrite"
-    )
-
-    parser.add_argument(
-        "--simulate",
-        action="store_true",
-        required=False,
-        help="Simulate the process"
-    )
-
-    parser.add_argument(
-        "--watermark",
-        action="store_true",
-        required=False,
-        help="Watermark each scene with scene no."
-    )
-
     arguments = parser.parse_args()
 
     if arguments.debug:
         main_logger.addHandler(logging.StreamHandler(sys.stdout))
         main_logger.setLevel("DEBUG")
 
-    episode: int = arguments.episode
+    ep_no: int = arguments.episode
     chapter: str = arguments.chapter
-    if episode == 0 and chapter == '':
+    if ep_no == 0 and chapter == '':
         sys.exit("Error: at least an episode or a chapter shall be specified")
 
-    if episode < 0 or episode > 39:
+    if ep_no < 0 or ep_no > 39:
         sys.exit(red("Episode must be between 1 and 39"))
 
     if chapter in ('g_debut', 'g_fin'):
-        episode = 0
-    if episode != 0:
-        print(f"Episode: {episode}")
+        ep_no = 0
+    if ep_no != 0:
+        print(f"Episode: {ep_no}")
     if chapter != '':
         print(f"Chapter: {chapter}")
     print(f"Language: {arguments.lang}")
     print("Tasks:")
     print("\t- parse database")
 
+    k_ep: str = ep_key(ep_no)
+
     # Parse database
-    parse_database(episode=episode, lang=arguments.lang)
+    parse_database(episode=k_ep, lang=arguments.lang)
     gc.collect()
 
 
-    task = 'lr'
+    task: TaskName = 'sim_lr'
 
     generate_lr_scenes(
-        episode=arguments.episode,
+        episode=k_ep,
         single_chapter=arguments.chapter,
         task_name=task,
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=arguments.scene,
+        scene_min=arguments.scene_min,
+        scene_max=arguments.scene_max,
         watermark=arguments.watermark,
-        edition=arguments.edition,
         debug=arguments.debug
     )
 
-
+    # Merge audio and video files of 'g_debut' and 'g_fin' and no scene
     if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == -1:
-        # Merge audio and video files
         combine_av_tracks(
-            episode=arguments.episode,
+            episode=k_ep,
             chapter=arguments.chapter,
             task=task,
             force=True,
             simulation=arguments.simulate
         )
 
+    # Don't merge if chapter is specified
     if arguments.chapter == '':
         for k in ('g_debut', 'g_fin'):
             combine_av_tracks(
@@ -127,7 +93,7 @@ def main():
             )
 
         combine_av_tracks(
-            episode=arguments.episode,
+            episode=k_ep,
             chapter='',
             task=task,
             force=True,
@@ -136,13 +102,13 @@ def main():
 
         # Merge video and audio stream from all parts (except g_debut and g_fin)
         concatenate_all(
-            episode=arguments.episode,
+            episode=k_ep,
             task=task,
             simulation=arguments.simulate
         )
 
         add_chapters(
-            episode=arguments.episode,
+            episode=k_ep,
             task=task,
             simulation=arguments.simulate
         )

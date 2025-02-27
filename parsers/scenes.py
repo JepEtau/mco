@@ -129,7 +129,7 @@ def parse_scenes(
                         effect.extend([0] * 3)
                     name, ref, loop, fade = effect[:3]
                     scenes[scene_no]['effects'] = Effects([
-                        Effect(name=name, frame_ref=ref, loop=loop, fade=fade)
+                        Effect(name=name, f_ref=ref, loop=loop, fade=fade)
                     ])
 
     if k_ch == "asuivre":
@@ -481,7 +481,7 @@ def parse_target_scenelist(
                         effects.append(
                             Effect(
                                 name=name,
-                                frame_ref=frame_ref,
+                                f_ref=frame_ref,
                                 loop=loop,
                                 fade=fade,
                                 zoom_factor=zoom_factor
@@ -498,7 +498,7 @@ def parse_target_scenelist(
                         effects.append(
                             Effect(
                                 name=match.group(1),
-                                frame_ref=frame_ref,
+                                f_ref=frame_ref,
                                 # use fade for blend out
                                 fade=int(match.group(2)),
                             )
@@ -517,7 +517,7 @@ def parse_target_scenelist(
                         effects.append(
                             Effect(
                                 name=match.group(1),
-                                frame_ref=frame_ref,
+                                f_ref=frame_ref,
                                 loop=int(match.group(2)),
                                 fade=0,
                                 zoom_factor=start_zoom_factor,
@@ -535,7 +535,7 @@ def parse_target_scenelist(
                         scene['effects'].append(
                             Effect(
                                 name=match.group(1),
-                                frame_ref=int(match.group(4)),
+                                f_ref=int(match.group(4)),
                                 loop=int(match.group(5)),
                                 extra_param=(int(match.group(2)), match.group(3)),
                             )

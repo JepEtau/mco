@@ -32,7 +32,7 @@ def get_scene_no_from_frame_no(k_ed_ep_ch_no: list, frame_no: int) -> int:
 
 
 
-def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter) -> None:
+def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = False) -> None:
     """This procedure is used to consolidate chapter of an 'episode': it uses the 'replace'
     field to generate a new list of scenes in the 'common' structure of the 'episode'. This list
     will be used for processing instead of the list defined in the edition.
@@ -62,7 +62,8 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter) -> None:
     ch_video: ChapterVideo = db[k_ep]['video']['target'][k_ch]
 
     if k_ch in ('precedemment', 'asuivre'):
-        print(yellow(f"consolidate_target_scenes: {k_ch}"))
+        if verbose:
+            print(darkgrey(f"[I] consolidate_target_scenes: {k_ch}"))
         # pprint(db['ep01']['video']['target'][k_chapter])
 
     # Get the default source
@@ -144,10 +145,11 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter) -> None:
     add_ref: bool = True
     if len(ref_scenes) != len(ch_video['scenes']):
         print(red(f"Target: {len(ch_video['scenes'])}, Reference ({k_ed_ref}): {len(ref_scenes)} scenes"))
+
         if k_ch != 'episode':
             add_ref = False
+
         if k_ch in ('precedemment', 'asuivre', 'reportage'):
-            # pprint(ref_scenes)
             warn(f"{k_ch}: cannot add reference to every scenes")
 
     frame_count = 0
@@ -207,7 +209,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter) -> None:
 
 
 
-def consolidate_target_scenes_g(k_ep: int | str, k_ch: str) -> None:
+def consolidate_target_scenes_g(k_ep: int | str, k_ch: str, verbose: bool = False) -> None:
     """Generate the list of scenes which will be used for this credit
     (opening, precedemment, asuivre, end)
     The total duration (in frames) is updated
@@ -252,7 +254,8 @@ def consolidate_target_scenes_g(k_ep: int | str, k_ch: str) -> None:
             # default_src: VideoSrc
         )
         ch_video = db[k_ep]['video']['target'][k_ch]
-        pprint(ch_video)
+        if verbose:
+            print(lightgrey(f"consolidate_target_scenes_g: {k_ep}:{k_ch}"), ch_video)
 
     elif k_ch == 'g_doc':
         # Create the g_doc structure:
@@ -286,7 +289,6 @@ def consolidate_target_scenes_g(k_ep: int | str, k_ch: str) -> None:
     for no in range(scene_count):
         if no in target_scene_nos:
             continue
-        print(f"add {no}")
         scene_src: Scene = ch_video_src['scenes'][no]
         ch_video['scenes'].append(
             Scene(

@@ -143,7 +143,7 @@ def consolidate_scene(
 
     # Output video Settings
     #---------------------------------------------------------------------------
-    _task_name: str = task_name
+    _task_name: TaskName = task_name
     if task_name == 'initial':
         _task_name = 'lr'
     elif task_name == 'sim':
@@ -184,7 +184,7 @@ def consolidate_scene(
     # lowres
     t_hash: str = calc_hash(';'.join([deint_hash, replace_hash]))
     scene_filters['lr'].hash = t_hash
-    if task_name == 'lr' and watermark:
+    if watermark and task_name in ('extract', 'lr', 'sim_lr'):
         sequence: str = scene['filters'][task_name].sequence
         scene['filters'][task_name].sequence = (
             f"{sequence};watermark"

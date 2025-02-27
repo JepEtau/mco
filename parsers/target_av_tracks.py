@@ -21,11 +21,13 @@ from .effects import Effect, Effects
 
 
 
-def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
+def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
     fps = get_frame_rate()
 
     logger.debug(lightgreen(f"consolidate_av_tracks: {k_ep}"))
-    K_EP_DEBUG, K_CHAPTER_DEBUG = [''] *2
+    if verbose:
+        print(f"[I] consolidate_av_tracks: {k_ep}:{k_ch}")
+    K_EP_DEBUG, K_CHAPTER_DEBUG = '', ''
     # K_EP_DEBUG = 'ep05'
     # K_CHAPTER_DEBUG = 'precedemment'
     try:
@@ -47,54 +49,83 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
         video_count = ch_video['count']
 
         if video_count > audio_count:
-            # raise ValueError(red(f"{k_ep}:{k_ch} too many frames"))
-            warnings.warn(red(f"{k_ep}:{k_ch} too many frames"))
+            raise ValueError(red(f"{k_ep}:{k_ch} too many frames"))
 
         elif audio_count > video_count:
+            print(yellow(f"[W] {k_ep}:{k_ch} add loop and fadeout"))
             add_loop_and_fadeout_effect(ch_video, ch_audio, k_ep, k_ch)
 
         else:
-            consolidate_last_scene_effect(ch_video)
+            consolidate_last_scene_effect(ch_video, verbose=verbose)
+
+    else:
+        print(darkgrey(f"[I] No chapter: \'{k_ch}\'"))
 
 
     # episode
     #---------------------------------------------------------------------------
     k_ch = 'episode'
+    # audio/video targets:
     ch_audio: ChapterAudio = db_audio[k_ch]
     ch_video: ChapterVideo = db_video[k_ch]
+
     audio_count = check_audio_duration_multiple_of_frames(ch_audio)
     ch_audio['count'] = audio_count
     video_count = ch_video['count']
 
     k_ed_audio_src = db_audio['src']['k_ed']
-    print(f"k_ed_audio_src: {k_ed_audio_src}")
 
     print(lightcyan(f"----------------- Consolidate A/V tracks ------------------"))
+    print(f"k_ed_audio_src: {k_ed_audio_src}")
     print(f"chapter: {k_ch}")
     print(f"  - audio_count: {ch_audio['count']}")
     print(f"  - audio_duration: {ch_audio['duration']}")
     print(f"  - video_count : {video_count}")
     print(f"  - video_count (rounded): {ch_video['count']}")
 
-    # First scene
-    e_s0_vcount: int = ch_video['scenes'][0]['src'].frame_count()
+
+    #   episode: 1st scene
+    #---------------------------------------------------------------------------
+    print(lightblue(f"{k_ep}:{k_ch} First scene"))
+    # First scenes
+    #   Let's use the first 3 scenes because sometimes replaced by other edition
+    #   and nb of frames might differ. e.g. episode 1
+    e_s0_vcount: int = sum(
+        [ch_video['scenes'][i]['src'].frame_count() for i in range(3)]
+    )
     e_s0_acount: int = (
-        db[k_ep]['video'][k_ed_audio_src]['episode']['scenes'][1]['start']
+        db[k_ep]['video'][k_ed_audio_src]['episode']['scenes'][3]['start']
         - ms_to_frame(ch_audio['start'], fps)
     )
-    print(f"Target: episode, 1st scene video count: {e_s0_vcount}, must be {e_s0_acount}")
+    print(f"Target: episode, 3 first scene video count: {e_s0_vcount}, must be {e_s0_acount}")
 
     if e_s0_vcount > e_s0_acount:
-        warnings.warn(yellow(f"{k_ep}:{k_ch} scene 0 is too long ({e_s0_vcount} > {e_s0_acount})"))
+        print(yellow(f"[W] {k_ep}:{k_ch} first scenes are too long ({e_s0_vcount} > {e_s0_acount})"))
+        to_remove: int = e_s0_vcount - e_s0_acount
 
-        # Too many frames, add silence only for episode 1 (no precedemment)
+        # Too many frames, add silence and fadein only for episode 1
+        # (no precedemment)
         if db_video['precedemment']['count'] <= 0:
-            print("add silence, use avsync")
-            avsync: int = e_s0_vcount - e_s0_acount
+            avsync: int = to_remove // 2
+            print(f"[I]  add silence, use avsync: {avsync}")
             ch_audio['avsync'] = 1000. * avsync / fps
-            pprint(ch_audio)
             ch_audio['count'] += avsync
+            to_remove -= avsync
 
+        print(f"[I]  remove frames and fadein: {to_remove}")
+        src_scene: Scene = ch_video['scenes'][0]['src'].primary_scene()
+        src_scene['start'] += to_remove
+        src_scene['count'] -= to_remove
+        ch_video['count'] -= to_remove
+        if 'effects' not in ch_video:
+            ch_video['effects'] = Effects()
+        ch_video['effects'].append(
+            Effect(
+                name='fadein',
+                loop=to_remove - 1,
+                fade=to_remove,
+            )
+        )
 
     elif e_s0_vcount < e_s0_acount:
         loop_count = e_s0_acount - e_s0_vcount
@@ -114,62 +145,67 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
         video_count += loop_count
         logger.debug(f"Fade in and loop at the beginning of the episode: {loop_count}, fade={fade}")
 
+        raise ValueError("TO DO")
 
     video_count = ch_video['count']
     audio_count = ch_audio['count']
 
-    # Last scene
-    print(lightblue(f"{k_ep}:{k_ch}"), f"audio count: before: {ch_audio['count']}")
-    print(lightblue(f"{k_ep}:{k_ch}"), f"video count: before: {ch_video['count']}")
+    #   episode: last scene
+    #---------------------------------------------------------------------------
+    print(lightblue(f"{k_ep}:{k_ch} Last scene"))
+
+    print(f" before")
+    print(f"  - audio count: before: {ch_audio['count']}")
+    print(f"  - video count: before: {ch_video['count']}")
     if video_count > audio_count:
         # raise ValueError(red(f"{k_ep}:{k_ch} too many frames"))
         warnings.warn(red(f"{k_ep}:{k_ch} too many frames"))
 
     elif audio_count > video_count:
         add_loop_and_fadeout_effect(ch_video, ch_audio, k_ep, k_ch)
+        print(f"[I]  add loop and fadeout")
 
     else:
-        consolidate_last_scene_effect(ch_video, k_ep, k_ch)
-    print(lightblue(f"{k_ep}:{k_ch}"), f"audio count: after: {ch_audio['count']}")
-    print(lightblue(f"{k_ep}:{k_ch}"), f"video count: after: {ch_video['count']}")
+        consolidate_last_scene_effect(ch_video, verbose=verbose)
+    print(f" after")
+    print(f"  - audio count: after: {ch_audio['count']}")
+    print(f"  - video count: after: {ch_video['count']}")
 
 
     # Report chapter effects (fadein) in first scene
     consolidate_first_scene_effect(ch_video=ch_video)
 
     print(f"  -> video_count: {ch_video['count']}")
+    consolidate_silence(ch_video, ch_audio, verbose=verbose)
     print(lightcyan(f"-----------------------------------------------------------"))
-
-    consolidate_silence(ch_video, ch_audio)
-    warnings.warn("Consolidate first scene with loop_and_fadein")
 
 
 
     # g_asuivre
     #---------------------------------------------------------------------------
     if db_video['asuivre']['count']:
+        print(lightblue(f"{k_ep}:{k_ch} g_asuivre"))
         k_ch = 'g_asuivre'
         ch_audio: ChapterAudio = db_audio[k_ch]
         ch_video: ChapterVideo = db_video[k_ch]
         audio_count = check_audio_duration_multiple_of_frames(ch_audio)
         ch_audio['count'] = audio_count
-
-        print(ch_video['count'])
-        pprint(ch_audio)
-
         ch_video['count'] = ch_audio['count']
         last_scene: Scene = ch_video['scenes'][-1]
         last_scene['effects'] = Effects([
             Effect(
                 name='loop',
-                frame_ref=last_scene['src'].last_frame_no(),
+                f_ref=last_scene['src'].last_frame_no(),
                 loop=ch_video['count'] - 1
             )
         ])
         last_scene['dst']['count'] = ch_video['count']
+        print(f"  video count: {last_scene['dst']['count']}")
         if k_ep == K_EP_DEBUG:
             print(f"\ndb_video: %s:\n--------------------------------------" % (k_ch))
             pprint(ch_video)
+    else:
+        print(darkgrey(f"[I] No chapter: \'{k_ch}\'"))
 
 
     # asuivre
@@ -181,8 +217,10 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
     ch_audio['count'] = audio_count
     video_count = ch_video['count']
 
-    print(lightblue(f"{k_ep}:{k_ch}"), f"audio count: before: {ch_audio['count']}")
-    print(lightblue(f"{k_ep}:{k_ch}"), f"video count: before: {ch_video['count']}")
+    print(lightblue(f"{k_ep}:{k_ch}"))
+    print(f" before")
+    print(f"  - audio count: before: {ch_audio['count']}")
+    print(f"  - video count: before: {ch_video['count']}")
 
     if audio_count > video_count:
         print("add_loop_and_fadeout_effect")
@@ -194,11 +232,13 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
 
     else:
         print("consolidate_last_scene_effect")
-        consolidate_last_scene_effect(ch_video)
+        consolidate_last_scene_effect(ch_video, verbose=verbose)
 
-    print(lightblue(f"{k_ep}:{k_ch}"), f"audio count: after: {ch_audio['count']}")
-    print(lightblue(f"{k_ep}:{k_ch}"), f"video count: after: {ch_video['count']}")
+    print(f" after")
+    print(f" - audio count: after: {ch_audio['count']}")
+    print(f" - video count: after: {ch_video['count']}")
     consolidate_silence(ch_video, ch_audio)
+    print(lightcyan(f"-----------------------------------------------------------"))
 
 
     # g_doc
@@ -210,15 +250,18 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
     ch_audio['count'] = ms_to_frame(ch_audio['duration'], fps)
     last_scene = ch_video['scenes'][-1]
 
+    print(lightblue(f"{k_ep}:{k_ch}"))
+
     if ch_audio['count'] > ch_video['count']:
         # Use last frame to loop
         loop_start = last_scene['src'].last_frame_no()
         loop_count = ch_audio['count'] - ch_video['count']
+        print(darkgrey(f"[I] Loop on last frame: {loop_count}"))
         logger.debug(f"{k_ch}: loop, last frame={loop_start}, {loop_count} frames")
         last_scene['effects'] = Effects([
             Effect(
                 name='loop',
-                frame_ref=loop_start,
+                f_ref=loop_start,
                 loop=loop_count
             )
         ])
@@ -227,17 +270,15 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
     elif ch_video['count'] > ch_audio['count']:
         # Remove some frames: patch src
         to_remove: int = ch_video['count'] - ch_audio['count']
+        print(darkgrey(f"[I] Remove some frames: {to_remove}"))
         logger.debug(f"{k_ch}: remove {to_remove} frames")
         last_scene['src'].last_scene()['count'] -= to_remove
         last_scene['dst']['count'] = last_scene['src'].last_scene()['count']
 
-    # audio frame count = video frame count
+    else:
+        print(darkgrey(f"[I] Same duration: {ch_video['count']}f"))
+
     ch_video['count'] = ch_audio['count']
-
-    if k_ep == K_EP_DEBUG:
-        logger.debug(f"\ndb_video: %s:\n--------------------------------------" % (k_ch))
-        pprint(ch_video)
-
 
 
     # doc
@@ -249,12 +290,14 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
     ch_audio['count'] = audio_count
     video_count = get_video_chapter_frame_count(k_ep, k_ch)
 
-    print(lightblue(f"{k_ep}:{k_ch}"), f"audio count: before: {ch_audio['count']}")
-    print(lightblue(f"{k_ep}:{k_ch}"), f"video count: before: {video_count}")
+    print(lightblue(f"{k_ep}:{k_ch}"))
+    print(f" before")
+    print(f"  - audio count: before: {ch_audio['count']}")
+    print(f"  - video count: before: {ch_video['count']}")
 
     if audio_count > video_count:
         add_loop_and_fadeout_effect(ch_video, ch_audio, k_ep, k_ch)
-        raise
+        raise ValueError("must not loop and fadeout")
 
     elif video_count > audio_count:
         # Remove frames
@@ -270,21 +313,30 @@ def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
         raise ValueError(f"remove frames")
 
     if video_count == audio_count:
-        consolidate_last_scene_effect(ch_video)
-
-    consolidate_silence(ch_video, ch_audio)
+        consolidate_last_scene_effect(ch_video, verbose=verbose)
 
 
+    print(f" after")
+    print(f" - audio count: after: {ch_audio['count']}")
+    print(f" - video count: after: {ch_video['count']}")
 
-def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
+    consolidate_silence(ch_video, ch_audio, verbose=verbose)
+    print(lightcyan(f"-----------------------------------------------------------"))
+
+
+
+
+
+def consolidate_av_tracks_g_debut_fin(k_ch: str, verbose: bool = False) -> None:
     """This function compares the audio and video tracks of a generique
     It aligns these 2 durations by:
     - adding silences
     - adding frames (loop, loop and fadeout)
     """
-    print(lightgreen(f"  _consolidate_av_tracks_g_debut_end: {k_ch}"))
-    print(f"  language: {db[k_ch]['audio']['lang']}")
-    fps = get_frame_rate()
+    if verbose:
+        print(darkgrey(f"[I] consolidate_av_tracks_g_debut_fin: {k_ch}"))
+        print(f"  language: {db[k_ch]['audio']['lang']}")
+    frame_rate = get_frame_rate()
     if k_ch not in ('g_debut', 'g_fin'):
         return
 
@@ -312,42 +364,47 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
         pprint(ch_audio)
         raise
 
-    print(f"  audio duration (silence included): {audio_duration/1000:.03f}s")
-    initial_audio_count = ms_to_frame(audio_duration, fps)
-    print(f"  audio count: {initial_audio_count}")
+    if verbose:
+        print(f"  audio duration (silence included): {audio_duration/1000:.03f}s")
+    initial_audio_count = ms_to_frame(audio_duration, frame_rate)
+    if verbose:
+        print(f"  audio count: {initial_audio_count}")
 
     # Align audio track to a multiple of seconds
     rounded_audio_duration = 1000 * int(1 + float(audio_duration)/1000)
-    audio_count = ms_to_frame(rounded_audio_duration, fps)
-    print(f"rounded audio count: {audio_count}")
-    if frame_to_ms(audio_count, fps) != audio_duration:
+    audio_count = ms_to_frame(rounded_audio_duration, frame_rate)
+    if verbose:
+        print(f"rounded audio count: {audio_count}")
+    if frame_to_ms(audio_count, frame_rate) != audio_duration:
         ch_audio['segments'].append({
             'start': 0,
             'end': 0,
-            'silence': frame_to_ms(audio_count, fps) - audio_duration
+            'silence': frame_to_ms(audio_count, frame_rate) - audio_duration
         })
 
     # Update audio duration and nb of frames
     ch_audio['count'] = audio_count
-    ch_audio['duration'] = frame_to_ms(audio_count, fps)
+    ch_audio['duration'] = frame_to_ms(audio_count, frame_rate)
 
 
-    print(lightcyan(f"----------------- Consolidate A/V tracks ------------------"))
-    print(f"chapter: {k_ch}")
-    print(f"  - audio_count: {ch_audio['count']}")
-    print(f"  - audio_duration: {ch_audio['duration']}")
-    print(f"  - video_count : {video_count}")
-    print(f"  - video_count (rounded): {ch_video['count']}")
+    if verbose:
+        print(lightcyan(f"----------------- Consolidate A/V tracks ------------------"))
+        print(f"chapter: {k_ch}")
+        print(f"  - audio_count: {ch_audio['count']}")
+        print(f"  - audio_duration: {ch_audio['duration']}")
+        print(f"  - video_count : {video_count}")
+        print(f"  - video_count (rounded): {ch_video['count']}")
     # pprint(db_video)
 
     # Align audio and video duration
     scenes: list[Scene] = ch_video['scenes']
-    ch_video['silence'] = ms_to_frame(ch_audio['silence'], fps)
+    ch_video['silence'] = ms_to_frame(ch_audio['silence'], frame_rate)
     ch_video['silence'] += (audio_count - initial_audio_count)
 
     video_and_silence_count = ch_video['count'] + ch_video['silence']
 
-    print(f"  video+silence: {video_and_silence_count} vs audio_count: {audio_count}")
+    if verbose:
+        print(f"  video + silence: {video_and_silence_count} vs audio_count: {audio_count}")
     # raise
 
     # The following consildation are done for g_debut/g_fin
@@ -356,7 +413,8 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
         # Frames shall be added: use the loop effect for this
         last_scene: Scene = scenes[-1]
         frame_no = last_scene['src'].last_frame_no()
-        print(f"  -> add video frames, video({video_and_silence_count}) < audio ({audio_count})")
+        if verbose:
+            print(f"  -> add video frames, video({video_and_silence_count}) < audio ({audio_count})")
         loop_count = audio_count - video_and_silence_count
 
         fade: int = 25
@@ -370,7 +428,7 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
         if effect := last_scene['effects'].get_effect('fadeout'):
             warnings.warn(red("consolidate_av_tracks_g_debut_fin - verify this"))
             effect.name = 'loop_and_fadeout'
-            effect.frame_ref = frame_no
+            effect.f_ref = frame_no
             effect.loop = loop_count
             effect.fade = fade
 
@@ -378,7 +436,7 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
             last_scene['effects'].append(
                 Effect(
                     name='loop_and_fadeout',
-                    frame_ref=frame_no,
+                    f_ref=frame_no,
                     loop=loop_count,
                     fade=fade,
                 )
@@ -386,15 +444,16 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
 
         last_scene['dst']['count'] += loop_count
         ch_video['count'] += loop_count
-        print(f"  -> video_count: {ch_video['count']}")
-        print(lightcyan(f"-----------------------------------------------------------"))
+        if verbose:
+            print(f"  -> video_count: {ch_video['count']}")
+            print(lightcyan(f"-----------------------------------------------------------"))
 
 
     elif video_and_silence_count > audio_count:
         # Add silence to the audio track by adding a new segment
         raise
         print(f"  -> add audio silence, video({video_and_silence_count}) > audio ({audio_count})")
-        video_duration = frame_to_ms(video_and_silence_count, fps)
+        video_duration = frame_to_ms(video_and_silence_count, frame_rate)
         audio_duration = ch_audio['duration']
         silence_duration = video_duration - audio_duration
         ch_audio['segments'].append({
@@ -416,7 +475,7 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
             last_scene['effects'].append(
                 Effect(
                     name='fadeout',
-                    frame_ref=frame_no,
+                    f_ref=frame_no,
                     loop=0,
                     fade=effect.fade
                 )
@@ -425,6 +484,8 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
 
 
     elif video_count == audio_count:
+        if verbose:
+            print(f"  - audio = video = {audio_count}")
         consolidate_last_scene_effect(ch_video=ch_video)
 
 
@@ -434,7 +495,8 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
 
     if 'silence' in ch_audio and ch_audio['silence']:
         ch_video['silence'] = ch_audio['count'] - ch_video['count']
-        print(f"add silence: {ch_video['silence']}")
+        if verbose:
+            print(f"add silence: {ch_video['silence']}")
         # raise
 
 
@@ -474,15 +536,16 @@ def add_loop_and_fadeout_effect(
     )
     last_scene: Scene = ch_video['scenes'][-1]
     loop_count: int = audio_count - video_count
+
+    # Reuse part's fade if already defined in config files
     ch_fade: int = 0
     if ch_video['effects'].has_effect('fadeout'):
         ch_fade = ch_video['effects'].get_effect('fadeout').fade
-        # if ch_fade > loop_count:
-        #     raise ValueError(f"ch fade ({ch_fade}) is > loop {loop_count}")
+
     last_scene['effects'] = Effects([
         Effect(
             name='loop_and_fadeout',
-            frame_ref=last_scene['src'].last_frame_no(),
+            f_ref=last_scene['src'].last_frame_no(),
             loop=loop_count,
             fade=max(ch_fade, min(loop_count, 25))
         )
@@ -492,17 +555,22 @@ def add_loop_and_fadeout_effect(
 
 
 
-def consolidate_last_scene_effect(ch_video: ChapterVideo) -> None:
+def consolidate_last_scene_effect(
+    ch_video: ChapterVideo,
+    verbose: bool = False,
+) -> None:
     # Get fadeout from chapter and put it in last scene
     if ch_effect := ch_video['effects'].get_effect('fadeout'):
         last_scene: Scene = ch_video['scenes'][-1]
         last_scene['effects'] = Effects([
             Effect(
                 name='fadeout',
-                frame_ref=last_scene['dst']['count'] - ch_effect.fade,
+                f_ref=last_scene['dst']['count'] - ch_effect.fade,
                 fade=ch_effect.fade
             )
         ])
+        if verbose:
+            print(darkgrey(f"[I] add fadeout effect: {ch_effect.fade}"))
 
 
 
@@ -512,7 +580,7 @@ def consolidate_first_scene_effect(ch_video: ChapterVideo) -> None:
         if 'effects' not in first_scene:
             first_scene['effects'] = Effects()
         effect = deepcopy(ch_effect)
-        effect.frame_ref = first_scene['src'].first_frame_no()
+        effect.f_ref = first_scene['src'].first_frame_no()
         first_scene['effects'].append(effect)
 
     elif ch_effect := ch_video['effects'].get_effect('loop_and_fadein'):
@@ -520,14 +588,19 @@ def consolidate_first_scene_effect(ch_video: ChapterVideo) -> None:
         if 'effects' not in first_scene:
             first_scene['effects'] = Effects()
         effect = deepcopy(ch_effect)
-        effect.frame_ref = first_scene['src'].first_frame_no()
+        effect.f_ref = first_scene['src'].first_frame_no()
         first_scene['effects'].append(effect)
 
 
 
-def consolidate_silence(ch_video: ChapterVideo, ch_audio: ChapterVideo) -> None:
+def consolidate_silence(
+    ch_video: ChapterVideo,
+    ch_audio: ChapterVideo,
+    verbose: bool = False
+) -> None:
     if 'silence' in ch_audio and ch_audio['silence']:
         ch_video['silence'] = ms_to_frame(
             ch_audio['silence'], frame_rate=get_frame_rate()
         )
-        print(f"add silence: {ch_video['silence']}")
+        if verbose:
+            print(darkgrey(f"[I] add silence: {ch_video['silence']}"))

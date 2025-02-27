@@ -42,7 +42,11 @@ def generate_lr_scenes(
     debug: bool = False
 ):
     k_ep = ep_key(episode)
-    chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
+    chapters: Chapter = (
+        all_chapter_keys()
+        if single_chapter == ''
+        else [single_chapter]
+    )
 
     if k_ep == '' and single_chapter not in ('g_debut', 'g_fin'):
         raise ValueError(red("[E] episode must be set"))
@@ -65,9 +69,10 @@ def generate_lr_scenes(
             start_time = time.time()
             if scene_no != -1 and scene['no'] != scene_no:
                 continue
-            if scene_min != -1 and scene_max != -1:
-                if scene['no'] < scene_min or scene['no'] > scene_max:
-                    continue
+            if scene_min != -1 and scene['no'] < scene_min:
+                continue
+            if scene_max != -1 and scene['no'] > scene_max:
+                continue
 
             pprint_scene_mapping(scene)
 
@@ -86,12 +91,13 @@ def generate_lr_scenes(
             if not force and is_final_up_to_date(scene):
                 continue
 
-            result = generate_lr_scene(scene=scene, force=force)
-            if not result:
-                # pprint(db[scene['k_ep']]['video'][scene['k_ed']])
-                raise RuntimeError(
-                    red(f"Failed processing scene: source: {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}")
-                )
+            if not simulation:
+                result = generate_lr_scene(scene=scene, force=force)
+                if not result:
+                    # pprint(db[scene['k_ep']]['video'][scene['k_ed']])
+                    raise RuntimeError(
+                        red(f"Failed processing scene: source: {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}")
+                    )
 
             if debug:
                 elapsed = time.time() - start_time
@@ -114,7 +120,7 @@ def generate_lr_scenes(
             basename: str = f"{k_ep}_{k_ch}_{task_name}_{hashcode}"
             cache_path: str = db[k_ep]['cache_path']
 
-        vsettings: VideoSettings = db['vsettings']['lr']
+        vsettings: VideoSettings = db['vsettings'][task_name]
         ext: str = vcodec_to_extension[vsettings.codec]
         ch_video['task'] = ProcessingTask(
             name=task_name,
@@ -136,7 +142,7 @@ def generate_lr_scenes(
         concat_scenes(
             episode=k_ep,
             chapter=k_ch,
-            video=ch_video,
+            ch_video=ch_video,
             force=force,
             simulation=simulation
         )

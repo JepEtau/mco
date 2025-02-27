@@ -24,6 +24,7 @@ from ._keys import (
     credit_chapter_keys,
     all_chapter_keys,
     non_credit_chapter_keys,
+    scene_no_str,
 )
 from .p_print import (
     pprint_scene_mapping
@@ -67,10 +68,6 @@ from .hash import (
 
 from .scenes import (
     scene_key,
-)
-from ._keys import (
-    ep_key,
-    scene_no_str
 )
 
 from .vsettings import (

@@ -41,7 +41,8 @@ def parse_loop_file(k_ep: str, k_ch: Chapter = "", verbose: bool = False) -> Non
         )
     )
     if not os.path.exists(filepath):
-        print(f"Loop configuration not found: {filepath}")
+        if verbose:
+            print(f"[I] Loop configuration not found: {filepath}")
         return
 
     # Parse the file
@@ -92,9 +93,10 @@ def parse_loop_file(k_ep: str, k_ch: Chapter = "", verbose: bool = False) -> Non
                     src_scene['start']
                     + (int(result.group(1)) if result.group(1) else 0)
                 )
-                end = (
-                    src_scene['start']
-                    + (int(result.group(2)) if result.group(2) else src_scene['count'])
+                loop = (
+                    int(result.group(2))
+                    if result.group(2)
+                    else src_scene['count'] - start
                 )
                 f_ref = (
                     int(result.group(3))
@@ -105,7 +107,7 @@ def parse_loop_file(k_ep: str, k_ch: Chapter = "", verbose: bool = False) -> Non
                 if verbose:
                     print(darkgrey(
                         f"[I] {k_ed}:{k_ep}:{k_ch}:{src_scene['no']:03} "
-                        + f"{result.groups()} -> {start}, {end}, {f_ref}"
+                        + f"{result.groups()} -> {start}, {loop}, {f_ref}"
                     ))
 
 
@@ -117,14 +119,11 @@ def parse_loop_file(k_ep: str, k_ch: Chapter = "", verbose: bool = False) -> Non
                     Effect(
                         name='replace_by_loop',
                         start=start,
-                        frame_ref=f_ref,
-                        loop=end-start,
+                        f_ref=f_ref,
+                        loop=loop,
                     )
                 )
 
                 if verbose:
                     print(darkgrey("[I] Added effect:"))
                     pprint(src_scene)
-
-
-    raise

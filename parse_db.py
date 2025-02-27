@@ -61,16 +61,6 @@ def main():
         help="task name"
     )
 
-    parser.add_argument(
-        "--scene",
-        "-s",
-        type=int,
-        default=-1,
-        required=False,
-        help="scene no."
-    )
-
-
     arguments = parser.parse_args()
 
     if arguments.debug:

@@ -147,7 +147,7 @@ def final_scenes(
         concat_scenes(
             episode=k_ep,
             chapter=k_ch,
-            video=ch_video,
+            ch_video=ch_video,
             force=force,
             simulation=simulation
         )

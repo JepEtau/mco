@@ -41,30 +41,11 @@ def get_video_chapter_frame_count(k_ep: str, k_ch: Chapter) -> int:
         return video_count
 
     elif k_ch == 'doc':
-        print(k_ep)
-        print(k_ch)
         ch_video = db[k_ep]['video']['target'][k_ch]
         scenes: list[Scene] = ch_video['scenes']
         for s in scenes:
-            print(s['src'].frame_count())
-            # print(s['dst']['count'])
-            # print(s['src'].primary_scene()['effects'])
-            # print()
             video_count += s['src'].frame_count()
 
-        # for s in scenes:
-        #     primary_src_scene = s['src'].primary_scene()['scene']
-        #     if 'effects' in primary_src_scene:
-        #         e: Effect = primary_src_scene['effects'].get_effect('se_loop')
-        #         if e is not None:
-        #             video_count += sum(e.extra_param)
-
-        #     # print(s['src'].frame_count())
-        #     # print(s['dst']['count'])
-        #     print(['effects'])
-        #     print()
-
-        # pprint(db[k_ep]['video']['target'][k_ch])
         return video_count
 
     raise NotImplementedError(":".join((k_ep, k_ch)))

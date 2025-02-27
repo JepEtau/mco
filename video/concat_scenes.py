@@ -19,31 +19,27 @@ from parsers import (
 def concat_scenes(
     episode: str,
     chapter: str,
-    video: ChapterVideo,
+    ch_video: ChapterVideo,
     force: bool=False,
-    simulation: bool=False
+    simulation: bool=False,
+    verbose: bool = False,
 ) -> None:
     """Generate a concatenate file that lists
         scenes into a single video clips
     """
-
-    verbose: bool = True
-    if 'scenes' not in video:
+    if 'scenes' not in ch_video:
         return
-    scenes: list[Scene] = video['scenes']
+    scenes: list[Scene] = ch_video['scenes']
     if not scenes:
         return
     k_ep, k_ch = ep_key(episode), chapter
     try:
-        hashcode: str = video['task'].hash
+        hashcode: str = ch_video['task'].hash
     except:
-        pprint(video)
+        pprint(ch_video)
         raise ValueError("concat_scenes")
 
     main_logger.debug(lightcyan(f"\nConcatenate scenes: {k_ep}:{k_ch}"))
-
-    # if verbose:
-    #     pprint(video_files)
 
     if k_ch in ('g_debut', 'g_fin'):
         prefix = f"{k_ch}_video"
@@ -59,7 +55,7 @@ def concat_scenes(
     makedirs(episode, chapter, 'concat')
 
     # Last task is the suffix
-    task: ProcessingTask = video['task']
+    task: ProcessingTask = ch_video['task']
     cache_directory: str = db[k_ep_or_g]['cache_path']
     suffix = '' if task in ('', 'final') else f"_{task.name}"
     concat_fp: str = ''
@@ -78,12 +74,15 @@ def concat_scenes(
             # hash = scene['task'].hash
             # p = filepath.replace('.txt', f"_{hash}{suffix}.mkv")
             # p = p.replace('concat', 'video')
-            concat_file.write(f"file \'{scene['task'].video_file}\' \n")
+            if 'task' in scene:
+                concat_file.write(f"file \'{scene['task'].video_file}\' \n")
+            elif verbose:
+                print(darkgrey(f"[I] ignore scene no. {scene['no']}"))
         concat_file.close()
 
         # Output video file
         os.makedirs(os.path.join(cache_directory, "video"), exist_ok=True)
-        out_video_fp: str = video['task'].video_file
+        out_video_fp: str = ch_video['task'].video_file
 
         # _task_name: str = 'lr' if task.name == 'sim' else task.name
         # vsettings: VideoSettings = db['vsettings'][_task_name]
@@ -95,11 +94,11 @@ def concat_scenes(
         #     f"{prefix}{suffix}{lang_str}{ext}"
         # )
 
-        if verbose:
-            print(
-                lightcyan(f"Concatenate scenes into a single clip:"),
-                f"{k_ch}\n  {out_video_fp}"
-            )
+        # if verbose:
+        print(
+            lightcyan(f"Concatenate scenes into a single clip:"),
+            f"{k_ch}\n  {out_video_fp}"
+        )
         main_logger.debug(f"\t{out_video_fp}")
         # Concatenate scenes into a single video
         ffmpeg_command: list[str] = [
@@ -112,8 +111,8 @@ def concat_scenes(
             "-c", "copy",
             "-y", out_video_fp
         ]
-        if verbose:
-            print(lightgrey(' '.join(ffmpeg_command)))
+        # if verbose:
+        print(lightgrey(' '.join(ffmpeg_command)))
 
         main_logger.debug(' '.join(ffmpeg_command))
         if not simulation:
