@@ -16,7 +16,7 @@ from parsers import (
     ProcessingTask,
     TaskName,
     pprint_scene_mapping,
-    get_fps,
+    get_frame_rate,
 )
 from parsers._helpers import get_chapter_audio
 from scene.consolidate import consolidate_scene
@@ -70,7 +70,7 @@ def main():
         if 'count' in ch_audio and ch_audio['count'] != 0:
             precedemment[k_ep] = {
                 'avsync': ch_audio['avsync'],
-                'count': int(ch_audio['duration'] * get_fps(db) / 1000),
+                'count': int(ch_audio['duration'] * get_frame_rate() / 1000),
             }
             if ch_audio['count'] != precedemment[k_ep]['count']:
                 raise ValueError(red(f"Error: {k_ep}: {ch_audio['count']} vs {precedemment[k_ep]['count']}"))
@@ -83,7 +83,7 @@ def main():
         if 'count' in ch_audio and ch_audio['count'] != 0:
             asuivre[k_ep] = {
                 'avsync': ch_audio['avsync'],
-                'count': int(ch_audio['duration'] * get_fps(db) / 1000),
+                'count': int(ch_audio['duration'] * get_frame_rate() / 1000),
             }
             if ch_audio['count'] != asuivre[k_ep]['count']:
                 raise ValueError(red(f"Error: {k_ep}: {ch_audio['count']} vs {precedemment[k_ep]['count']}"))

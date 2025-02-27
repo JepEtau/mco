@@ -3,7 +3,7 @@ import re
 import sys
 
 from .effects import Effect, Effects
-from .helpers import get_fps
+from .helpers import get_frame_rate
 from ._keys import ep_key
 
 
@@ -16,7 +16,7 @@ def parse_chapter_sections(
 ):
     k_section = 'chapters'
     db_video = db[ep_key(episode)]['video'][edition]
-    fps: float = get_fps(db)
+    fps: float = get_frame_rate()
 
     for k_chapter in config.options(k_section):
         value_str = config.get(k_section, k_chapter)

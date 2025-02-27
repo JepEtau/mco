@@ -91,7 +91,7 @@ def consolidate_src_scene(
 
     # Set the progressive filepath
     basename: str = path_split(scene_inputs.interlaced.filepath)[1]
-    vsettings: VideoSettings = db['common']['video_format']['deinterlace']
+    vsettings: VideoSettings = db['vsettings']['deinterlace']
     ext: str = vcodec_to_extension[vsettings.codec]
     filename: str = f"{basename}_{deint_hashcode}{ext}"
     progressive_fp: str = os.path.join(
@@ -111,7 +111,7 @@ def consolidate_src_scene(
         if task_name in ('lr', 'deinterlace', 'initial', 'extract')
         else 'initial'
     )
-    vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
+    vsettings: VideoSettings = db['vsettings'].get(_task_name, None)
     if vsettings is not None:
         scene['task'].video_settings = deepcopy(vsettings)
         vsettings = scene['task'].video_settings

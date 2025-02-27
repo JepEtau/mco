@@ -9,7 +9,7 @@ from utils.time_conversions import (
 )
 from parsers import (
     db,
-    get_fps,
+    get_frame_rate,
     ep_key,
     logger,
     main_chapter_keys,
@@ -32,7 +32,7 @@ def generate_audio_track(
     """
     k, out_filepath = get_output_filepath(episode, chapter)
 
-    fps = get_fps(db)
+    fps = get_frame_rate()
     db_audio = db[k]['audio']
 
     if os.path.exists(out_filepath) and not force:

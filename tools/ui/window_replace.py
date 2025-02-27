@@ -44,7 +44,7 @@ if TYPE_CHECKING:
 
 from parsers import (
     db,
-    get_fps,
+    get_frame_rate,
     MaskShape,
 )
 
@@ -263,7 +263,7 @@ class ReplaceWindow(QMainWindow):
             self.widget_selection.set_enabled(False)
             log.info("start playing")
             speed = self.widget_player_ctrl.get_playing_speed()
-            self.timer_delay = int(1000/(get_fps(db)*speed))
+            self.timer_delay = int(1000/(get_frame_rate()*speed))
             self.timer.start(self.timer_delay, Qt.TimerType.PreciseTimer, self)
             self.now = time.time()
 

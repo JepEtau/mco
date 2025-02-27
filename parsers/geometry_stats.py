@@ -10,11 +10,11 @@ from utils.media import VideoInfo, extract_media_info_mco
 from utils.p_print import *
 
 from .geometry import SceneGeometry
-from ._types import VideoSettings
 from ._db import db
 
 if TYPE_CHECKING:
     from utils.mco_types import Scene
+    from .vsettings import VideoSettings
 
 
 class SceneGeometryStat:
@@ -27,7 +27,7 @@ class SceneGeometryStat:
         self.geometry: SceneGeometry = scene['geometry']
         self._defined: bool = True
 
-        vsettings: VideoSettings = db['common']['video_format']['hr']
+        vsettings: VideoSettings = db['vsettings']['hr']
         if not self.geometry.defined:
             # Not valid:
             print(red("crop is missing:"), f"{scene['no']}")

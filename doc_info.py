@@ -20,7 +20,7 @@ from parsers import (
     ProcessingTask,
     TaskName,
     pprint_scene_mapping,
-    get_fps,
+    get_frame_rate,
 )
 from parsers._helpers import get_chapter_audio
 from scene.consolidate import consolidate_scene
@@ -116,7 +116,7 @@ def main():
                 src_count += src_s['count']
 
         doc_stats[k_ep] = {
-            'audio': int(ch_audio['duration'] * get_fps(db) / 1000),
+            'audio': int(ch_audio['duration'] * get_frame_rate() / 1000),
             'video': src_count,
             'k_ed_src': ch_video['default_src']['k_ed'],
             'origin_video': origin_video_count,

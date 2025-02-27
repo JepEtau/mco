@@ -129,7 +129,7 @@ def extract_scenes(
             for scene in scenes:
                 concat_file.write(f"file \'{scene['task'].video_file}\' \n")
 
-        vsettings: VideoSettings = db['common']['video_format']['lr']
+        vsettings: VideoSettings = db['vsettings']['lr']
         ch_video['task'] = ProcessingTask(
             name=task_name,
             hash=hashcode,

@@ -12,7 +12,7 @@ from parsers import (
     VideoSettings,
     SceneDsr,
     DsrRegion,
-    get_fps,
+    get_frame_rate,
 )
 from processing.dsr import generate_dsr_mask
 from processing.effects import apply_effect

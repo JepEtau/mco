@@ -42,6 +42,7 @@ from ._keys import (
 )
 from ._db import db
 from .p_print import pprint_episode, pprint_g_debut_fin
+from .vsettings import parse_video_settings
 
 
 def parse_database(
@@ -62,6 +63,7 @@ def parse_database(
 
     # Parse and merge dictionaries -> common configuration
     parse_common_configuration(language=lang)
+    parse_video_settings(verbose=False)
 
     # Parse editions: folders, files and additional settings: dimension
     parse_editions()

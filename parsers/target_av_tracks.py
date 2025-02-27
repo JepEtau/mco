@@ -7,7 +7,7 @@ import warnings
 
 from parsers._keys import main_chapter_keys
 from parsers.video_target import get_video_chapter_frame_count
-from .helpers import get_fps, nested_dict_set
+from .helpers import get_frame_rate, nested_dict_set
 from .logger import logger
 from utils.p_print import *
 from utils.time_conversions import (
@@ -22,7 +22,7 @@ from .effects import Effect, Effects
 
 
 def consolidate_av_tracks(k_ep, k_ch: str = '') -> None:
-    fps = get_fps(db)
+    fps = get_frame_rate()
 
     logger.debug(lightgreen(f"consolidate_av_tracks: {k_ep}"))
     K_EP_DEBUG, K_CHAPTER_DEBUG = [''] *2
@@ -284,7 +284,7 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
     """
     print(lightgreen(f"  _consolidate_av_tracks_g_debut_end: {k_ch}"))
     print(f"  language: {db[k_ch]['audio']['lang']}")
-    fps = get_fps(db)
+    fps = get_frame_rate()
     if k_ch not in ('g_debut', 'g_fin'):
         return
 
@@ -439,7 +439,7 @@ def consolidate_av_tracks_g_debut_fin(k_ch: str) -> None:
 
 
 def check_audio_duration_multiple_of_frames(ch_audio: ChapterAudio) -> int:
-    fps = get_fps(db)
+    fps = get_frame_rate()
     audio_duration: float = ch_audio['duration']
     audio_count = ms_to_frame(audio_duration, fps)
     audio_count_rounded = float(int((audio_duration * fps / 1000) + 0.5))
@@ -528,6 +528,6 @@ def consolidate_first_scene_effect(ch_video: ChapterVideo) -> None:
 def consolidate_silence(ch_video: ChapterVideo, ch_audio: ChapterVideo) -> None:
     if 'silence' in ch_audio and ch_audio['silence']:
         ch_video['silence'] = ms_to_frame(
-            ch_audio['silence'], frame_rate=get_fps(db)
+            ch_audio['silence'], frame_rate=get_frame_rate()
         )
         print(f"add silence: {ch_video['silence']}")

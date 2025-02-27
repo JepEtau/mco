@@ -2,7 +2,7 @@
 from pprint import pprint
 from ._keys import main_chapter_keys
 from utils.mco_types import Scene
-from .helpers import get_fps
+from .helpers import get_frame_rate
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
 from ._db import db
@@ -10,7 +10,7 @@ from ._db import db
 
 def pprint_episode(k_ep) -> dict[str, tuple[int]]:
     """Return nb of frames of video and audio tracks"""
-    fps = get_fps(db)
+    fps = get_frame_rate()
 
     # Do not show silences to fit terminal width
     show_silence: bool = True
@@ -166,7 +166,7 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
     # Do not show silences to fit terminal width
     show_silence: bool = True
 
-    fps = get_fps(db)
+    fps = get_frame_rate()
 
     if False:
         # print last scene of every part

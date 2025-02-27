@@ -6,7 +6,7 @@ from pprint import pprint
 from parsers import (
     db,
     ep_key,
-    get_fps,
+    get_frame_rate,
     TaskName
 )
 from utils.logger import main_logger
@@ -21,7 +21,7 @@ from video.consolidate_scenes import get_chapter_video
 
 
 def get_video_duration(filename: str, integrity: bool = True) -> tuple[float, int]:
-    fps = get_fps(db)
+    fps = get_frame_rate()
 
     command: list[str] = [ffprobe_exe, "-hide_banner"]
     if integrity:

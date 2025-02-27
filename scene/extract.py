@@ -7,7 +7,7 @@ import sys
 import numpy as np
 from parsers import (
     db,
-    get_fps,
+    get_frame_rate,
     VideoSettings,
 )
 from processing.watermark import add_watermark
@@ -72,7 +72,7 @@ def extract_scene(
     os.makedirs(xtract_directory, exist_ok=True)
 
     # Create FFmpeg command
-    frame_rate: FrameRate = get_fps(db)
+    frame_rate: FrameRate = get_frame_rate()
     d_command: list[str] = [
         ffmpeg_exe,
         "-hide_banner",

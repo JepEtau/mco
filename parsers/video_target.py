@@ -15,7 +15,7 @@ from ._keys import (
 )
 from .effects import Effect, Effects
 from .helpers import (
-    get_fps,
+    get_frame_rate,
     nested_dict_set,
 )
 from .logger import logger
@@ -109,7 +109,7 @@ def parse_video_target(
     k_section,
 ) -> None:
     db_video = db[k_ep]['video']['target']
-    fps: float = get_fps(db)
+    fps: float = get_frame_rate()
 
     logger.debug(lightgreen(f"parse_video_target: {k_ep}"))
     k_ed_src: str = ''
@@ -187,7 +187,7 @@ def parse_video_target_g(
     k_section: str,
     k_ch: str,
 ) -> None:
-    fps: float = get_fps(db)
+    fps: float = get_frame_rate()
     k_ep: str = "ep99"
 
     for k_option in config.options(k_section):

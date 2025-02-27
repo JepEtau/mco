@@ -7,7 +7,7 @@ from warnings import warn
 from .geometry import ChapterGeometry, parse_geometry_file
 
 from .logger import logger
-from .helpers import get_fps
+from .helpers import get_frame_rate
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
 from utils.mco_types import (
@@ -213,7 +213,7 @@ def consolidate_target_scenes_g(k_ep: int | str, k_ch: str) -> None:
     The total duration (in frames) is updated
     """
     k_ep: str = ep_key(k_ep)
-    fps = get_fps(db)
+    fps = get_frame_rate()
     logger.debug(lightgreen(f"consolidate_target_scenes_g: {k_ep}:{k_ch}"))
 
     # Get the default source

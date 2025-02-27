@@ -9,7 +9,7 @@ from ._keys import (
 )
 from .helpers import(
     nested_dict_set,
-    get_fps,
+    get_frame_rate,
 )
 from ._db import db
 from utils.time_conversions import frame_to_ms
@@ -24,7 +24,7 @@ def parse_audio_g(
     k_section: str,
 ) -> None:
     # This function update the audio section
-    fps = get_fps(db)
+    fps = get_frame_rate()
 
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option).replace(' ','')
@@ -119,7 +119,7 @@ def parse_audio_section(
 ) -> None:
     k_ep = ep_key(episode)
     db_audio = db[k_ep]['audio']
-    fps: float = get_fps(db)
+    fps: float = get_frame_rate()
 
     for k_option in config.options(k_section):
         value_str = config.get(k_section, k_option).replace(' ','')

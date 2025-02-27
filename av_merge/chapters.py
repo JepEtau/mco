@@ -4,7 +4,7 @@ from parsers import (
     db,
     ep_key,
     TaskName,
-    get_fps
+    get_frame_rate
 )
 from utils.mco_utils import run_simple_command
 from utils.path_utils import absolute_path
@@ -39,7 +39,7 @@ def add_chapters(
     simulation:bool=False
 ) -> None:
     k_ep: str = ep_key(episode)
-    fps = get_fps(db)
+    fps = get_frame_rate()
 
     # Add chapters to the video file
     language = db[k_ep]['audio']['lang']

@@ -7,7 +7,7 @@ from .logger import logger
 from ._keys import (
     main_chapter_keys,
 )
-from .audio import get_fps
+from .audio import get_frame_rate
 from .helpers import nested_dict_set
 from utils.p_print import *
 from utils.time_conversions import (
@@ -21,7 +21,7 @@ from ._db import db
 
 def consolidate_av_sync(k_ep: str):
     episode = db[k_ep]
-    fps = get_fps(db)
+    fps = get_frame_rate()
     logger.debug(lightgreen(f"consolidate_av_sync"))
 
     if ('audio' not in episode or 'video' not in episode):

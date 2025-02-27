@@ -88,7 +88,7 @@ def _get_consolidated_progressive_fp(ch_video: ChapterVideo) -> str:
     scenes: list[Scene] = ch_video['scenes']
     first_scene: Scene = scenes[0]
 
-    vsettings: VideoSettings = db['common']['video_format']['initial']
+    vsettings: VideoSettings = db['vsettings']['initial']
 
     # Output video filename
     k_ed, k_ep, k_ch, _ = first_scene['src'].primary_scene()['k_ed_ep_ch_no']
@@ -183,7 +183,7 @@ def upscale_doc_scene(
 
         # # Add padding
         # in_h, in_w = in_video_info['shape'][:2]
-        vsettings: VideoSettings = db['common']['video_format'][task_name]
+        vsettings: VideoSettings = db['vsettings'][task_name]
         # if task_name == 'hr' and scene['dst']['k_ch'] != 'g_doc':
         #     pad: int = vsettings.pad
         #     filter_complex += (
@@ -312,7 +312,7 @@ def upscale_doc_chapter(
     ch_seek_count: int = ch_count
 
     # vsettings: VideoSettings = scene['task'].video_settings
-    vsettings: VideoSettings = db['common']['video_format'][task_name]
+    vsettings: VideoSettings = db['vsettings'][task_name]
     k_ed, k_ep, k_ch = src_scene['k_ed_ep_ch_no'][:3]
 
     # Output filepath
@@ -519,7 +519,7 @@ def consolidate_initial_doc(
 
     # Input video file
     in_video_fp: str = first_scene['src'].primary_scene()['scene']['task'].in_video_file
-    vsettings: VideoSettings = db['common']['video_format']['initial']
+    vsettings: VideoSettings = db['vsettings']['initial']
 
     # Output video filename
     out_video_fp: str = _get_consolidated_progressive_fp(ch_video)
@@ -727,7 +727,7 @@ def consolidate_initial_doc_scenes(
 
         # Input video file
         in_video_fp: str = src_scene['inputs'].progressive().filepath
-        vsettings: VideoSettings = db['common']['video_format']['hr']
+        vsettings: VideoSettings = db['vsettings']['hr']
 
         # Output video filename
         k_ed, k_ep, k_ch, _ = primary_src_scene['k_ed_ep_ch_no']

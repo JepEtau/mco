@@ -114,7 +114,7 @@ def final_scenes(
             basename: str = f"{k_ep}_{k_ch}_{task_name}_{hashcode}"
             cache_path: str = db[k_ep]['cache_path']
 
-        vsettings: VideoSettings = db['common']['video_format']['final']
+        vsettings: VideoSettings = db['vsettings']['final']
         ext: str = vcodec_to_extension[vsettings.codec]
         out_video_file: str = os.path.join(cache_path, f"video", f"{basename}{ext}")
         if k_ch == "doc":
@@ -169,7 +169,7 @@ def final_scenes(
         lang_str = '' if language == 'fr' else f"_{language}"
 
         # Concatenate video clips
-        vsettings: VideoSettings = db['common']['video_format'][task_name]
+        vsettings: VideoSettings = db['vsettings'][task_name]
         ext: str = vcodec_to_extension[vsettings.codec]
         episode_video_filepath = os.path.join(
             db[k_ep]['cache_path'],

@@ -2,14 +2,8 @@ from __future__ import annotations
 from configparser import ConfigParser
 import os
 import os.path
-from pathlib import (
-    Path,
-    PosixPath,
-)
 from pprint import pprint
 import sys
-
-from ._types import TASK_NAMES, VideoSettings
 from .helpers import (
     nested_dict_set,
 )
@@ -175,27 +169,3 @@ def parse_common_configuration(language:str=''):
         db_common['settings']['language'] = language
 
 
-    # Video formats
-    db_common['video_format'] = {}
-    for task in TASK_NAMES:
-        section: str = f"video_settings_{task}"
-        if section not in config_general.sections():
-            continue
-
-        vformat = config_general[section]
-        options: str = (
-            vformat
-            .get('codec_options', '')
-            .replace('\"', '')
-            .replace('\n', ' ')
-            .replace('  ', ' ')
-            .strip()
-        )
-
-        db_common['video_format'][task] = VideoSettings(
-            codec=vformat.get('codec', ''),
-            codec_options=options.split(' ') if options else [],
-            pix_fmt=vformat.get('pix_fmt', ''),
-            frame_rate=db_common['settings']['fps'],
-            pad=int(vformat.get('pad', '0')),
-        )

@@ -86,7 +86,7 @@ def concat_scenes(
         out_video_fp: str = video['task'].video_file
 
         # _task_name: str = 'lr' if task.name == 'sim' else task.name
-        # vsettings: VideoSettings = db['common']['video_format'][_task_name]
+        # vsettings: VideoSettings = db['vsettings'][_task_name]
         # ext: str = vcodec_to_extension[vsettings.codec]
         # raise NotImplementedError
         # out_video_fp: str = os.path.join(

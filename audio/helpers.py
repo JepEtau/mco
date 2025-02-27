@@ -8,7 +8,7 @@ from parsers import (
     db,
     logger,
     ep_key,
-    get_fps,
+    get_frame_rate,
     Chapter,
 )
 from utils.p_print import *
@@ -110,7 +110,7 @@ def get_output_filepath(
 
 def get_audio_frame_count(episode: str, chapter: str) -> int:
     k, out_filepath = get_output_filepath(episode, chapter)
-    fps = get_fps(db)
+    fps = get_frame_rate()
 
     print(lightgrey(f"  {k}: {out_filepath}"))
 

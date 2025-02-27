@@ -1,8 +1,12 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Literal, get_args
+from typing import TYPE_CHECKING, Any, Literal, get_args
 from ._keys import ep_key
+
+if TYPE_CHECKING:
+    from .vsettings import VideoSettings
+
 
 
 class Db:
@@ -15,13 +19,15 @@ class Db:
 TaskName = Literal[
     'deinterlace',  # progressive
     'initial',      # ?
-    'extract',      # h264/yuv420p for scene detection video comparison
 
-    # Uses the final video mounting
-    # Uses the frames to replace/duplicates to remove, etc.
-    # Test purpose only, prefix = lr
-    # 00_lr
+    # h264/yuv420p for scene detection,
+    'extract',
+
+    # extract scenes from progressive, used to test upscale
     'lr',
+
+    # simulate the final episode: in lr to fasten the tests
+    'sim_lr',
 
     # sim:
     # - Use the deinterlaced video
@@ -76,23 +82,6 @@ filter_name_to_dirname: dict[str, TaskName] = {
 }
 
 
-@dataclass
-class ColorSettings:
-    colorspace: str = 'bt709'
-    color_primaries: str = 'bt709'
-    color_trc: str = 'bt709'
-    color_range: str = 'limited'
-
-
-
-@dataclass
-class VideoSettings:
-    codec: str
-    codec_options: list[str]
-    pix_fmt: str
-    frame_rate: int
-    pad: int = 0
-    metadata: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass

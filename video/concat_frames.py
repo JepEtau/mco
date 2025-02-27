@@ -6,7 +6,7 @@ import numpy as np
 from parsers import (
     db,
     Chapter,
-    get_fps,
+    get_frame_rate,
     ep_key,
     main_chapter_keys,
     ProcessingTask,

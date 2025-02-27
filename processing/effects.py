@@ -9,7 +9,7 @@ import numpy as np
 import cv2
 from pprint import pprint
 from parsers._types import ProcessingTask
-from parsers.helpers import get_fps
+from parsers.helpers import get_frame_rate
 from scene.consolidate import consolidate_scene
 from scene.src_scene import SrcScene
 from utils.images_io import load_image_fp32, write_image
@@ -533,7 +533,7 @@ def extract_last_frame_fp32(scene: Scene) -> McoFrame:
     print(f"  pipe dtype: {pipe_dtype}")
     print(f"  pipe nbytes: {pipe_img_nbytes}")
 
-    frame_rate: FrameRate = get_fps(db)
+    frame_rate: FrameRate = get_frame_rate()
     dec_command: list[str] = [
         ffmpeg_exe,
         "-hide_banner",

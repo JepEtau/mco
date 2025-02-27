@@ -197,7 +197,7 @@ def upscale_scenes(
             else db[k_ep]['cache_path']
         )
 
-        ch_vsettings: VideoSettings = db['common']['video_format'][task_name]
+        ch_vsettings: VideoSettings = db['vsettings'][task_name]
         ext: str = vcodec_to_extension[ch_vsettings.codec]
         ch_video['task'] = ProcessingTask(
             name=task_name,

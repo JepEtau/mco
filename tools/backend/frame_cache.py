@@ -20,7 +20,7 @@ from utils.time_conversions import (
 )
 from parsers import (
     db,
-    get_fps,
+    get_frame_rate,
     VideoSettings,
     clean_ffmpeg_filter,
 )
@@ -67,7 +67,7 @@ class FrameCache:
 
             self.scenes[scene_key] = []
 
-            frame_rate: float = get_fps(db)
+            frame_rate: float = get_frame_rate()
 
             total_count = scene['src'].frame_count()
             for src_scene in scene['src'].scenes():
@@ -126,7 +126,7 @@ class FrameCache:
                     ]
 
                 if task_name == 'hr':
-                    video_settings: VideoSettings = db['common']['video_format']['hr']
+                    video_settings: VideoSettings = db['vsettings']['hr']
                     pad: int = video_settings.pad
                     in_h, in_w = int(in_h - 2 * pad), int(in_w - 2 * pad)
                     filter_complex = [
@@ -137,9 +137,9 @@ class FrameCache:
 
                 # elif in_h < 1080:
                 #     # raise ValueError(" < 1080p")
-                #     # # pprint( db['common']['video_format'])
+                #     # # pprint( db['vsettings'])
                 #     # # sys.exit()
-                #     pad: int = db['common']['video_format']['hr'].pad
+                #     pad: int = db['vsettings']['hr'].pad
                 #     pad_filter: str = f"pad=w=iw+{2*pad}:h={2*pad}+ih:x={pad}:y={pad}:color=black"
                 #     filter_complex = [
                 #         "-filter_complex",

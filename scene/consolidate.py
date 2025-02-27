@@ -151,15 +151,15 @@ def consolidate_scene(
     elif task_name == 'upscale':
         _task_name = 'final'
 
-    in_vsettings: VideoSettings = db['common']['video_format'].get(_task_name, None)
+    in_vsettings: VideoSettings = db['vsettings'].get(_task_name, None)
     if in_vsettings is not None:
         task.video_settings = deepcopy(in_vsettings)
         vsettings = task.video_settings
         if task_name == 'hr':
-            vsettings.pad = db['common']['video_format'][task_name].pad
+            vsettings.pad = db['vsettings'][task_name].pad
 
     elif task_name_index > TASK_NAMES.index('upscale'):
-        task.video_settings = deepcopy(db['common']['video_format'].get('hr', None))
+        task.video_settings = deepcopy(db['vsettings'].get('hr', None))
         vsettings = task.video_settings
         vsettings.pad = 0
 
@@ -324,7 +324,7 @@ def consolidate_scene(
             elif task_name == 'final':
                 suffix = "tf_"
 
-            in_vsettings: VideoSettings = db['common']['video_format']['hr']
+            in_vsettings: VideoSettings = db['vsettings']['hr']
             in_ext: str = vcodec_to_extension[in_vsettings.codec]
 
             task.in_video_file = os.path.join(

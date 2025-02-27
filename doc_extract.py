@@ -116,7 +116,7 @@ def main():
 
     # Input
     in_video_path: str = absolute_path(scene['inputs'].progressive().filepath)
-    vsettings: VideoSettings = db['common']['video_format']['initial']
+    vsettings: VideoSettings = db['vsettings']['initial']
 
     # Output video filename
     cache_path: str = os.path.join(
@@ -147,7 +147,7 @@ def main():
     _scene = {
         'task': ProcessingTask(
             name='initial',
-            video_settings=db['common']['video_format']['initial']
+            video_settings=db['vsettings']['initial']
         )
     }
     _scene['task'].video_settings.metadata = {

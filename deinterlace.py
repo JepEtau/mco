@@ -233,7 +233,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         print(cyan("Dependencies"))
         pprint(in_videos)
 
-    vsettings: VideoSettings = db['common']['video_format']['initial']
+    vsettings: VideoSettings = db['vsettings']['initial']
 
     for in_video, value in in_videos.items():
         ed, ep = value['ed_ep']

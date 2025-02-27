@@ -114,7 +114,7 @@ def generate_lr_scenes(
             basename: str = f"{k_ep}_{k_ch}_{task_name}_{hashcode}"
             cache_path: str = db[k_ep]['cache_path']
 
-        vsettings: VideoSettings = db['common']['video_format']['lr']
+        vsettings: VideoSettings = db['vsettings']['lr']
         ext: str = vcodec_to_extension[vsettings.codec]
         ch_video['task'] = ProcessingTask(
             name=task_name,

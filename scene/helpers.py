@@ -101,7 +101,7 @@ def set_doc_filepath_(scene: Scene) -> None:
     # Input file for this task
     prev_task_name: TaskName = _doc_previous_task[task_name]
     suffix = "_hr_" if task_name in ('final') else ""
-    in_vsettings: VideoSettings = db['common']['video_format']['hr']
+    in_vsettings: VideoSettings = db['vsettings']['hr']
     in_ext: str = vcodec_to_extension[in_vsettings.codec]
     suffix = (
         f"{suffix}{prev_task_name}"
@@ -209,7 +209,7 @@ def set_g_asuivre_filepath_(scene: Scene) -> None:
     # Input file for this task
     prev_task_name: TaskName = _g_asuivre_previous_task[task_name]
     suffix = "hr_" if task_name in ('final') else ""
-    in_vsettings: VideoSettings = db['common']['video_format']['hr']
+    in_vsettings: VideoSettings = db['vsettings']['hr']
     in_ext: str = vcodec_to_extension[in_vsettings.codec]
     task.in_video_file = os.path.join(
         in_cache_doc,

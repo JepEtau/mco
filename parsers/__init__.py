@@ -12,12 +12,10 @@ from ._types import (
     task_to_dirname,
     Filter,
     TASK_NAMES,
-    VideoSettings,
-    ColorSettings,
 )
 
 from .helpers import (
-    get_fps,
+    get_frame_rate,
 )
 from ._keys import (
     Chapter,
@@ -75,6 +73,11 @@ from ._keys import (
     scene_no_str
 )
 
+from .vsettings import (
+    VideoSettings,
+    ColorSettings,
+)
+
 from .stabilize import (
     StabilizeSegment,
     StabilizeMode,
@@ -96,7 +99,7 @@ __all__ = [
     "all_chapter_keys",
     "non_credit_chapter_keys",
     "Chapter",
-    "get_fps",
+    "get_frame_rate",
     "get_dependencies",
     "TaskName",
     "ProcessingTask",
