@@ -132,7 +132,7 @@ def consolidate_scene(
 
     # Get filters used by this scene: use the filters from the first src scene
     # all src scenes MUST have the same filters. Assume that's the case
-    scene['filters'] = deepcopy(primary_src_scene['scene']['filters'])
+    scene['filters'] = deepcopy(primary_src_scene.scene['filters'])
 
     # consolidate_scene_filters: add missing filters
     scene_filters = scene['filters']

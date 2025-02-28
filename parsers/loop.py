@@ -73,7 +73,7 @@ def parse_loop_file(k_ep: str, k_ch: Chapter = "", verbose: bool = False) -> Non
                 f_no, k_ed=k_ed, k_ep=k_ep, k_ch=k_ch
             )
             if src_scene is None:
-                print(yellow(f"[W] parse_loop_file: scene not found for frame no. {f_no} in {k_ed}:{k_ep}:{k_ch}"))
+                # print(yellow(f"[W] parse_loop_file: scene not found for frame no. {f_no} in {k_ed}:{k_ep}:{k_ch}"))
                 continue
 
             # verify that scene no. didn't change

@@ -86,6 +86,7 @@ def generate_lr_scenes(
             if debug:
                 print(lightcyan(f"======================= generate_{task_name}_scenes: Scene ============================="))
                 pprint(scene)
+                # print(scene['src'])
                 print(lightcyan("==============================================================================="))
 
             if not force and is_final_up_to_date(scene):

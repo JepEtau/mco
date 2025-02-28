@@ -130,9 +130,11 @@ def parse_database(
                 # Do not parse this episode another time
                 continue
             logger.debug(lightgrey(f"parse dependency: {k_ed_tmp}:{k_ep_tmp}"))
+            print(lightgrey(f"parse dependency: {k_ed_tmp}:{k_ep_tmp}"))
             parse_episode(k_ed=k_ed_tmp, k_ep=k_ep_tmp)
 
     # Parse other config files for each dependency
+    pprint(dependencies)
     already_parsed = list()
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in dependencies[k_ed_tmp]:

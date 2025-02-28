@@ -41,7 +41,7 @@ def add_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | None:
     if scene['task'].name in 'initial':
         text: str = f"""{scene['k_ed']}:{scene['k_ep']}:{sno_str}{str(no).rjust(10)}"""
     else:
-        src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no)['scene']
+        src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no).scene
         text: str = f"""{src_scene['k_ed']}:{src_scene['k_ep']}:{sno_str}{str(no).rjust(10)}"""
 
     height: int = in_img.shape[0]

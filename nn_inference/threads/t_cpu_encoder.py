@@ -13,8 +13,8 @@ from parsers import VideoSettings
 from nn_inference.resource_mgr import NnFrame, BaseThread
 from nn_inference.toolbox.filtering import get_encoder_ffmpeg_filters
 from processing.effects import apply_upscale_effects
-from processing.frame_replace import (
-    ItemCache,
+from processing.frame_cache import (
+    FrameCache,
     get_frames_to_remove,
 )
 from pynnlib.import_libs import is_cuda_available
@@ -247,13 +247,13 @@ class CpuEncoderThread(BaseThread):
                     # Do not replace frames as this video
                     # will be used to remove dust, scratches
                     # and set the frames to be replaced
-                    frame_cache: ItemCache = ItemCache()
+                    frame_cache: FrameCache = FrameCache()
                     frame_replace: list | dict[int, int] = []
                     if frame.scene['task'].name != 'dsr':
                         frame_replace = src_scene['replace']
                         frames_to_replace: list[int] = get_frames_to_remove(frame_replace)
-                        frame_cache.set_occurences(frame_replace)
-                        frame_cache.set_exceptions(frames_to_replace)
+                        frame_cache.set_replaced_frames(frame_replace)
+                        frame_cache._set_exceptions(frames_to_replace)
 
                     start: int = src_scene['start']
 

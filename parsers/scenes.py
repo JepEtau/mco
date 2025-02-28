@@ -264,6 +264,9 @@ def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
         return
 
     # Update each scene durations
+    # if k_ep =='ep28' and k_ed =='j':
+    #     pprint(db_video['scenes'])
+    #     raise
     scenes: list[Scene] = db_video['scenes']
     frames_count: int = 0
     for i, scene in enumerate(scenes):
@@ -283,16 +286,18 @@ def consolidate_parsed_scenes(k_ed, k_ep, k_chapter) -> None:
                 frames_count += e.loop
                 sys.exit("%s: add loop duration" % (__name__))
 
-            if e := effects.get_effect('decimate'):
-                factor: int = e.extra_param[0]
-                e.extra_param[1] = scene['count']
-                scene['count'] =  int(scene['count'] * (factor - 1 ) / factor + 0.5)
+            # if e := effects.get_effect('decimate'):
+            #     print(f"decimate: {k_ed}:{k_ep}:{k_chapter}:{scene['no']}")
+            #     pprint(scene)
+            #     raise
+            #     factor: int = e.extra_param[0]
+            #     e.extra_param[1] = scene['count']
+            #     scene['count'] =  int(scene['count'] * (factor - 1 ) / factor + 0.5)
 
-            elif e := effects.get_effect('decimate_2'):
-                pprint(scene)
-                factor: int = e.extra_param[0]
-                # e.extra_param[1] = scene['count']
-                scene['count'] =  int((scene['count'] * (factor - 1 ) / factor + 0.5) / e.extra_param[1])
+            # elif e := effects.get_effect('decimate_2'):
+            #     factor: int = e.extra_param[0]
+            #     # e.extra_param[1] = scene['count']
+            #     scene['count'] =  int((scene['count'] * (factor - 1 ) / factor + 0.5) / e.extra_param[1])
 
         if scene['count'] <= 0 and i < len(scenes) - 1:
             sys.exit(red(f"Error: {k_ed}:{k_ep}:{k_chapter}: scene no. {scene['no']:03d}, length (scene['count']) < 0"))
@@ -445,6 +450,7 @@ def parse_target_scenelist(
                 elif k == 'backward':
                     if v.lower() == "true":
                         backward = True
+                        raise
 
                 elif k in ('segment', 'sg'):
                     start_count = v.split(':')
@@ -565,6 +571,9 @@ def get_scene_from_frame_no(
     k_ep: str,
     k_ch: str
 ) -> Scene | None:
+    if 'scenes'not in db[k_ep]['video'][k_ed][k_ch]:
+        return None
+
     scenes: list[Scene] = db[k_ep]['video'][k_ed][k_ch]['scenes']
     for scene in scenes:
         if scene is None:

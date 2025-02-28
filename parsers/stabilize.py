@@ -270,7 +270,7 @@ def parse_stabilize_file(k_ep: str, k_ch: str = '') -> None:
             k_ed: str = scene_ed[1]
 
             scene: Scene = chapter_video['scenes'][scene_no]
-            if k_ed != scene['src'].primary_scene()['scene']['k_ed']:
+            if k_ed != scene['src'].primary_scene().scene['k_ed']:
                 if verbose:
                     print(yellow(f"ignoring scene {scene_no}, k_ed={k_ed}"))
                 continue

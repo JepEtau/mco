@@ -227,7 +227,7 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
                 k_ch_src: str = result.group(4)
                 scene_no_src: int = int(result.group(5))
                 scene: Scene = ch_video['scenes'][scene_no]
-                src_scene: Scene = scene['src'].primary_scene()['scene']
+                src_scene: Scene = scene['src'].primary_scene().scene
                 if (
                     src_scene['k_ed'] != k_ed_src
                     or src_scene['k_ep'] != k_ep_src

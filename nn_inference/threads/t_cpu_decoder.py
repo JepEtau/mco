@@ -13,7 +13,7 @@ from nn_inference.toolbox.filtering import get_decoder_ffmpeg_filters
 
 from .t_cpu_encoder import CpuEncoderThread
 from .t_decoder import VideoStreamInfo
-from processing.frame_replace import ItemCache, get_frames_to_cache, get_frames_to_remove
+from processing.frame_cache import FrameCache, get_frames_to_cache, get_frames_to_remove
 from scene.filters import clean_fcomplex
 from utils.mco_utils import calculate_scene_frame_count
 if TYPE_CHECKING:
@@ -202,14 +202,8 @@ class CpuDecoderThread(BaseThread):
             # Frame replacement
             src_f_replace = src_scene['replace']
             if task_name != 'dsr':
-                frames_to_replace: list[int] = get_frames_to_remove(src_f_replace)
-                frames_to_cache: list[int] = get_frames_to_cache(src_f_replace)
-                frame_cache: ItemCache = ItemCache(verbose=True)
-                frame_cache.set_occurences(src_f_replace)
-                frame_cache.set_exceptions(frames_to_replace)
-                if verbose:
-                    print(lightgreen(f"[V][D] Frames to replace"), frames_to_replace)
-                    print(lightgreen(f"[V][D] Frames to cache"), frames_to_cache)
+                frame_cache: FrameCache = FrameCache(verbose=False)
+                frame_cache.set_replaced_frames(src_f_replace)
 
             # Backward scene....
             src_scene['backward'] = src['backward']
@@ -223,6 +217,7 @@ class CpuDecoderThread(BaseThread):
             f_index: int = 0
             in_f_no: int = src_start - 1
             out_f_no: int = src_start
+            decoded_f_no: int = in_f_no
 
             print(f"decoder: scene: {remaining} from {src_start}, remaining src scenes: {rem_src_scene}")
             while (
@@ -242,16 +237,19 @@ class CpuDecoderThread(BaseThread):
                     in_f_no += 1
                     remaining -= 1
 
-                    # Throw this frame away if is replaced
+                    # Throw this frame away if replaced
                     if (
-                        in_f_no in frames_to_replace
+                        frame_cache.to_replace(decoded_f_no)
                         and task_name != 'dsr'
                     ):
                         print(lightgreen(f"[V][D] Discard {in_f_no}"))
                         img_buffer = None
                     # We have an img_buffer or nothing if no more frame to extract
+                    else:
+                        frame_cache.add(in_f_no, img_buffer)
 
-                frame_cache.add(in_f_no, img_buffer)
+                    decoded_f_no += 1
+                    decoded += 1
 
                 # Get the frame no to be used
                 in_img = None

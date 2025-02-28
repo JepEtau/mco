@@ -1,36 +1,19 @@
-from collections import Counter, UserDict, deque
-from copy import deepcopy
+from collections import Counter, UserDict
 from pprint import pprint
-import sys
 from typing import Any
-
 from utils.p_print import *
 
 
-def frame_occurences(replacements: dict[int, int]) -> dict[int, int]:
-    """Returns the occurence of use for each frame used to
-        replace another one"""
-    counter: Counter = Counter(replacements.values())
-    return counter
 
-
-def get_frames_to_remove(replacements: dict[int, int]) -> list[int]:
-    return sorted(replacements.keys())
-
-
-
-def get_frames_to_cache(replacements: dict[int, int]) -> deque[int]:
-    return deque(sorted(set(replacements.values())))
-
-
-
-class ItemCache(UserDict):
+class FrameCache(UserDict):
     def __init__(self, verbose: bool = False):
         super().__init__()
         self.occurences: Counter = Counter()
         self.cached: Counter = Counter()
         self.exceptions: set = set()
         self.verbose: bool = verbose
+        self.replacements: dict[int, int] = []
+        self.segments: list[tuple[int, int, int]] = []
 
 
     def __getitem__(self, key: Any) -> Any:
@@ -71,18 +54,10 @@ class ItemCache(UserDict):
         return super().__setitem__(key, item)
 
 
-    def set_occurences(self, replacements: dict[int, int]) -> None:
-        """Save a counter of times a frame will be retrieved
-        """
-        self.occurences = frame_occurences(replacements)
-        if self.verbose:
-            print(yellow("set occurences"))
-            pprint(self.occurences)
-
-
-    def set_exceptions(self, exceptions: set[int] | list[int]) -> None:
+    def _set_exceptions(self) -> None:
         """Do not cache the frames that will be replaced. save the keys
         """
+        exceptions: set[int] | list[int] = list(self.replacements.keys())
         if isinstance(exceptions, set):
             self.exceptions = exceptions
         else:
@@ -90,6 +65,17 @@ class ItemCache(UserDict):
         if self.verbose:
             print(yellow("set exceptions"))
             pprint(self.exceptions)
+
+
+    def set_replaced_frames(self, replacements: dict[int, int]) -> None:
+        """Save a counter of times a frame will be retrieved
+        """
+        self.replacements = replacements
+        self.occurences: Counter = Counter(replacements.values())
+        if self.verbose:
+            print(yellow("set occurences"))
+            pprint(self.occurences)
+        self._set_exceptions()
 
 
     def add(self, key: Any, item: Any, set_occurence: bool = True) -> None:
@@ -105,3 +91,35 @@ class ItemCache(UserDict):
         self.__setitem__(key, item)
         # if not set_occurence:
         #     self.occurences[key] -= 1
+
+
+    def add_loop_segment(self, segment: tuple[int, int, int]) -> None:
+        """segment: (start, loop, ref)
+        """
+        start, loop, ref = segment
+        # start, end (inc.), frame used as ref
+        self.segments.append(
+            (start, start + loop, ref)
+        )
+
+
+    def to_replace(self, f_no: int) -> bool:
+        if f_no in self.replacements:
+            return True
+
+        for s in self.segments:
+            if s[0] <= f_no <= s[1] and f_no != s[2]:
+                return True
+
+        return False
+
+
+    def get_out_f_no(self, f_no: int) -> int:
+        for s in self.segments:
+            if s[0] <= f_no <= s[1]:
+                return s[2]
+
+        if f_no in self.replacements:
+            return self.replacements[f_no]
+
+        return f_no

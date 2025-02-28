@@ -114,8 +114,8 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
 
         print(f"[I]  remove frames and fadein: {to_remove}")
         src_scene: Scene = ch_video['scenes'][0]['src'].primary_scene()
-        src_scene['start'] += to_remove
-        src_scene['count'] -= to_remove
+        src_scene.start += to_remove
+        src_scene.count -= to_remove
         ch_video['count'] -= to_remove
         if 'effects' not in ch_video:
             ch_video['effects'] = Effects()
@@ -145,7 +145,7 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
         video_count += loop_count
         logger.debug(f"Fade in and loop at the beginning of the episode: {loop_count}, fade={fade}")
 
-        raise ValueError("TO DO")
+        warnings.warn(red(f"Fade in and loop at the beginning of the episode: {loop_count}, fade={fade}"))
 
     video_count = ch_video['count']
     audio_count = ch_audio['count']

@@ -92,7 +92,7 @@ class Effects(list):
         return None
 
     def get_effects(self, name: EffectName):
-        """yield avery effect
+        """yield every effect
         """
         for e in self.effects:
             if e.name == name:

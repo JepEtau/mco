@@ -152,13 +152,10 @@ def parse_dsr_file(k_ep_or_g: str, verbose: bool = False):
             if verbose:
                 print(f"\tsearch {frame_no} in {k_ed}:{k_ep}:{k_chapter}")
 
-            try:
-                scene: Scene = get_scene_from_frame_no(
-                    frame_no, k_ed=k_ed, k_ep=k_ep, k_ch=k_chapter
-                )
-            except:
-                if verbose:
-                    print(f"warning: parse_replace_configurations: scene not found for frame no. {frame_no} in {k_ed}:{k_ep}:{k_chapter}")
+            scene: Scene = get_scene_from_frame_no(
+                frame_no, k_ed=k_ed, k_ep=k_ep, k_ch=k_chapter
+            )
+            if scene is None:
                 continue
 
             if scene['dsr'] is None:

@@ -23,6 +23,9 @@ def replace_scene_bounds_(k_ep: str) -> None:
     # edition 'j' only
     k_ed: str = 'j'
     k_chapter: Chapter = 'episode'
+    if 'scenes' not in db[k_ep]['video'][k_ed][k_chapter]:
+        print(red(f"no scenes for {k_ed}:{k_ep}:{k_chapter}"))
+        return
     try:
         scenes: list[Scene] = db[k_ep]['video'][k_ed][k_chapter]['scenes']
     except:
@@ -118,15 +121,10 @@ def parse_replace_file(k_ep_or_g:str) -> None:
             if verbose:
                 print(f"\tsearch {frame_no} in {k_ed}:{k_ep}:{k_chapter} -> scene no.", end="")
 
-            try:
-                scene: Scene = get_scene_from_frame_no(
-                    frame_no, k_ed=k_ed, k_ep=k_ep, k_ch=k_chapter
-                )
-                if verbose:
-                    print(f"{scene['no']}")
-            except:
-                if verbose:
-                    print(f"warning: parse_replace_file: scene not found for frame no. {frame_no} in {k_ed}:{k_ep}:{k_chapter}")
+            scene: Scene = get_scene_from_frame_no(
+                frame_no, k_ed=k_ed, k_ep=k_ep, k_ch=k_chapter
+            )
+            if scene is None:
                 continue
 
             if 'replace' not in scene:

@@ -23,10 +23,8 @@ from .t_helpers import (
     get_encoder_step_no,
     get_first_nnmodel_step_no,
 )
-from processing.frame_replace import (
-    ItemCache,
-    get_frames_to_cache,
-    get_frames_to_remove,
+from processing.frame_cache import (
+    FrameCache,
 )
 from scene.filters import clean_fcomplex
 from utils.mco_utils import calculate_scene_frame_count
@@ -251,14 +249,8 @@ class DecoderThread(BaseThread):
                 # Frame replacement
                 src_f_replace = src_scene['replace']
                 if task_name != 'dsr':
-                    frames_to_replace: list[int] = get_frames_to_remove(src_f_replace)
-                    frames_to_cache: list[int] = get_frames_to_cache(src_f_replace)
-                    frame_cache: ItemCache = ItemCache(verbose=False)
-                    frame_cache.set_occurences(src_f_replace)
-                    frame_cache.set_exceptions(frames_to_replace)
-                    if verbose:
-                        print(lightgreen(f"[V][D] Frames to replace"), frames_to_replace)
-                        print(lightgreen(f"[V][D] Frames to cache"), frames_to_cache)
+                    frame_cache: FrameCache = FrameCache(verbose=False)
+                    frame_cache.set_replaced_frames(src_f_replace)
 
                 # Backward scene....
                 src_scene['backward'] = src['backward']
@@ -271,28 +263,27 @@ class DecoderThread(BaseThread):
                 # in_f_no is incremented before reading in pipe
                 in_f_no: int = src_start
                 f_index: int = 0
-                f_no: int = in_f_no
-                decoded_f_no: int = in_f_no
+                d_f_no: int = src_start
                 decoded: int = 0
+
+                # f_no is the frame no. to send to the encoder
+                f_no: int = src_start
 
                 # print(f"decoder: scene: {remaining} from {src_start}, remaining src scenes: {rem_src_scene}")
                 while (
                     not self._stop_event.is_set()
+                    and decoded < src_count
                     and remaining > 0
                 ):
                     # print(lightgreen("[V][D] Read input stream"))
                     # We discard all frames that will be replaced
                     if in_f_no >= src_start + src_count:
-                        # print("BREAAAAAAK")
+                        print("BREAAAAAAK")
                         self.release()
                         break
 
-                    # Get out frame_no
-                    f_no = (
-                        src_f_replace[in_f_no]
-                        if in_f_no in src_f_replace
-                        else in_f_no
-                    )
+                    # Get frame_no to send to the consumer
+                    f_no = frame_cache.get_out_f_no(in_f_no)
                     # print(lightcyan(f"  in: {in_f_no}, waiting for {f_no}"))
 
                     # if not cached, decode a new frame
@@ -306,14 +297,14 @@ class DecoderThread(BaseThread):
 
                         # Throw this frame away if replaced
                         if (
-                            decoded_f_no in frames_to_replace
+                            frame_cache.to_replace(in_f_no)
                             and task_name != 'dsr'
                         ):
-                            print(f"  discard: {decoded_f_no}")
+                            print(f"  discard: {d_f_no}")
                         else:
-                            frame_cache.add(decoded_f_no, img_buffer)
+                            frame_cache.add(d_f_no, img_buffer)
 
-                        decoded_f_no += 1
+                        d_f_no += 1
                         decoded += 1
 
                     # f_no is in cache

@@ -63,7 +63,7 @@ def get_filters(scene: Scene) -> list[Filter]:
         # This scene uses default filters. Use the one defined in the part
         if (
             'filters' not in ch_video
-            and scene['task'].name not in ('initial', 'lr')
+            and scene['task'].name not in ('initial', 'lr', 'sim_lr', 'sim_hr')
         ):
             pprint(scene)
             raise ValueError(red(

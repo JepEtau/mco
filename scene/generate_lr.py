@@ -7,6 +7,8 @@ import sys
 import cv2
 import numpy as np
 import time
+from nn_inference.resource_mgr import NnFrame
+from nn_inference.threads.t_decoder import VideoStreamInfo
 from parsers import (
     db,
     VideoSettings,
@@ -16,15 +18,15 @@ from parsers import (
 )
 from processing.dsr import generate_dsr_mask
 from processing.effects import apply_effect
-from processing.frame_replace import (
-    ItemCache, frame_occurences, get_frames_to_remove
-)
+from processing.frame_cache import FrameCache
 from processing.watermark import add_watermark
 from scene.filters import do_watermark
+from scene.src_scene import SrcScene
 from utils.images_io import write_image
 from utils.logger import main_logger
-from utils.mco_types import ChapterVideo, McoFrame, Scene
+from utils.mco_types import ChapterVideo, Inputs, McoFrame, Scene
 from utils.mco_utils import (
+    calculate_scene_frame_count,
     ffmpeg_metadata,
     get_target_audio,
     get_target_video,
@@ -36,100 +38,79 @@ from utils.np_dtypes import np_to_float32
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
-from utils.time_conversions import frame_to_s, frame_to_sexagesimal, ms_to_frame
+from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal, ms_to_frame
 from utils.tools import ffmpeg_exe
 from utils.media import (
     VideoInfo, extract_media_info_mco, frame_rate_dec, str_to_video_codec
 )
 
 
-
-def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
+def generate_lr_scene(
+    scene: Scene,
+    force: bool = False,
+    verbose: bool = False
+) -> bool:
     scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
     out_video_fp: str = scene['task'].video_file
 
     if is_up_to_date(scene) and not force:
         return True
 
-    # Output directory
-    lr_directory: str = path_split(scene['task'].video_file)[0]
-    os.makedirs(lr_directory, exist_ok=True)
-
-    # Video settings
-    vsettings: VideoSettings = scene['task'].video_settings
-
-    # Pipe out video file
+    # Specific to lr/sim: get input shape to set encoder vi
     in_video_fp: str = (
         scene['src']
-        .primary_scene()['scene']['inputs']
+        .primary_scene()
+        .scene['inputs']
         .progressive()
         .filepath
     )
     in_vi: VideoInfo = extract_media_info_mco(in_video_fp)['video']
-    in_pipe_pixfmt = 'bgr24'
-    out_pipe_dtype = (
-        np.uint8
-        if PIXEL_FORMAT[in_pipe_pixfmt]['bpp'] <= 8
-        else np.uint16
-    )
+    in_h, in_w, c = in_vi['shape']
 
-    # Force to the same height to be able to mix different editions when in sim
-    # otherwise upscale 2x when in lr
-    # consider that all src scenes have the same dimension
-    enc_filter_complex: list[str] = []
-    dec_filter_complex: list[str] = []
-    in_video_shape = in_vi['shape']
-    in_h, in_w, in_c = in_video_shape
-    if scene['task'].name in ('lr', 'sim'):
-        raise NotImplementedError("to be corrected with vsettings/size")
-        print(lightcyan("low resolution / sim, use same size"))
-        if scene['task'].name == 'lr':
-            in_h, in_w = 540, 720
-        else:
-            in_h, in_w = 1080, 1440
-        dec_filter_complex = [
-            "-filter_complex",
-            f"[0:v]scale={in_w}:{in_h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
-            "-map", "[outv]"
-        ]
-        in_video_shape = (in_h, in_w, in_c)
 
-    # Resize to have the same resolution whatever the source
+    # Encoder
+    #-------------------------------------------------------------------------------------
+    # Output video settings
+    vsettings: VideoSettings = scene['task'].video_settings
+
+    # Pipe and other values for subprocess
+    out_w, out_h = in_w, in_h
     if vsettings.size is not None:
-        in_w, in_h = vsettings.size
-        dec_filter_complex = [
-            "-filter_complex",
-            f"[0:v]scale={in_w}:{in_h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
-            "-map", "[outv]"
-        ]
-        in_video_shape = (in_h, in_w, in_c)
-
-
-    out_video_shape = in_video_shape
-    out_h, out_w = out_video_shape[:2]
-
-    # Consider that all src scene have the same dimension
-    in_pipe_pixfmt = 'bgr24'
-    in_pipe_dtype = np.uint8
-    in_pipe_img_nbytes = math.prod(in_video_shape)
-    in_pipe_img_shape: tuple[int, int, int] = in_video_shape
-    frame_rate: float = frame_rate_dec(in_vi['frame_rate_r'])
-
-    # Encoder subprocess
+        out_w, out_h = vsettings.size
+    e_pipe_dtype: np.dtype = np.uint8
+    # (
+    #     np.uint8
+    #     if PIXEL_FORMAT[in_pipe_pixfmt]['bpp'] <= 8
+    #     else np.uint16
+    # )
+    e_pixel_format: str = "bgr24" if e_pipe_dtype == np.uint8 else "bgr48"
+    frame_rate: float = frame_rate_dec(vsettings.frame_rate)
     metadata: list[str] = ffmpeg_metadata(scene)
-    encoder_command: list[str] = [
+
+    to_produce: int = calculate_scene_frame_count(scene)
+
+    # Output directory
+    lr_directory: str = path_split(scene['task'].video_file)[0]
+    os.makedirs(lr_directory, exist_ok=True)
+
+    print(lightcyan("Encoder:"))
+    print(f"   to produce: {to_produce}")
+    print("  pipe:")
+    print(f"    dtype: {e_pipe_dtype}")
+    print(f"    pixfmt: {e_pixel_format}")
+    print(f"    size: {out_w}x{out_h}")
+
+    e_command: list[str] = [
         ffmpeg_exe,
         "-hide_banner",
         "-loglevel", "warning",
         "-nostats",
 
         "-f", "rawvideo",
-        '-pixel_format', in_pipe_pixfmt,
+        '-pixel_format', e_pixel_format,
         '-video_size', f"{out_w}x{out_h}",
         "-r", str(frame_rate),
         "-i", "pipe:0",
-
-        *enc_filter_complex,
 
         "-pix_fmt", vsettings.pix_fmt,
         "-vcodec", str_to_video_codec[vsettings.codec].value,
@@ -137,11 +118,11 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         *metadata,
         out_video_fp, "-y"
     ]
-    print(lightcyan(f"Encoder:"), " ".join(encoder_command))
-    encoder_subprocess: subprocess.Popen = None
+    print(lightcyan(f"  e_command:"), " ".join(e_command))
+    e_subprocess: subprocess.Popen = None
     try:
-        encoder_subprocess = subprocess.Popen(
-            encoder_command,
+        e_subprocess = subprocess.Popen(
+            e_command,
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -150,28 +131,69 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
         return False
 
-    produced: int = 0
-    to_produce: int = scene['dst']['count']
-    watermark: bool = do_watermark(scene=scene)
+    encoder: Encoder = Encoder(
+        scene=scene,
+        e_subprocess=e_subprocess,
+    )
 
-    print(lightcyan("pipe:"))
-    print(f"  pixfmt: {in_pipe_pixfmt}")
-    print(f"  shape: {in_pipe_img_shape}")
-    print(f"  dtype: {in_pipe_dtype}")
-    print(f"  nbytes: {in_pipe_img_nbytes}")
-    # pprint(db[scene['dst']['k_ep']]['video']['target'][scene['dst']['k_ch']]['effects'])
+
+    # Decoder (common)
+    #-------------------------------------------------------------------------------------
+
+    # Resize to have the same resolution whatever the source
+    dec_filter_complex: list[str] = []
+    if out_w != in_w or out_h != in_h:
+        in_w, in_h = out_w, out_h
+        dec_filter_complex = [
+            "-filter_complex",
+            f"[0:v]scale={out_w}:{out_h}:sws_flags=bicubic+accurate_rnd+bitexact+full_chroma_int[outv]",
+            "-map", "[outv]"
+        ]
+
+    # TODO change to rgb48 if sim_hr
+    in_pipe_pixfmt = 'bgr24'
+    img_shape = (in_h, in_w, c)
+    img_dtype: np.dtype = np.uint8
+    pipe_img_nbytes = math.prod(img_shape)
+    frame_rate: float = frame_rate_dec(in_vi['frame_rate_r'])
+
+    # A scene may use multiple segments from different scenes
+    remaining_src_scenes = len(scene['src'].scenes())
+
+    print(lightcyan("Decoder:"))
+    print(f"  nb of src scenes: {remaining_src_scenes}")
+    print(f"  to produce: {to_produce}")
+
+    print("  pipe:")
+    print(f"    pixfmt: {in_pipe_pixfmt}")
+    print(f"    shape: {img_shape}")
+    print(f"    dtype: {img_dtype}")
+    print(f"    nbytes: {pipe_img_nbytes}")
+
+
+    # Decode / Encode
+    #-------------------------------------------------------------------------------------
+    remaining: int = to_produce
+    out_i: int = 0
+    produced: int = 0
 
     # Extract src scenes
     for src in scene['src'].scenes():
-        src_scene: Scene = src['scene']
-        in_video_fp: str = src_scene['inputs'].progressive().filepath
-        start: int = src['start']
-        count: int = src['count']
-        if to_produce < count:
-            count = to_produce
-        # print(f"extract {count} frames")
-        to_produce -= count
-        to_extract: int = count
+        src_scene: SrcScene = src.scene
+        src_scene_inputs: Inputs = src_scene['inputs']
+        in_video_fp: str = src_scene_inputs.progressive().filepath
+
+        src_start, src_count = src.start, src.count
+        if to_produce < src_count:
+            src_count = to_produce
+
+        to_decode: int = src_count
+
+        # Path the src scene so that the encoder receive the correct frame no.
+        # TODO: verify that this will not impact the other scene when using the
+        # same src
+        src.scene['start'] = src_start
+        src.scene['count'] = src_count
 
         # Decimate
         factor: int = 0
@@ -179,16 +201,18 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
         if 'effects' in src_scene:
             if e := src_scene['effects'].get_effect('decimate'):
                 factor, _ = e.extra_param
-                print(yellow(f"decimate:"), f"{src_scene['no']}: {count}")
-                to_extract = int(count * factor / (factor - 1) )
+                print(yellow(f"  decimate:"), f"{src_scene['no']}: {src_count}")
+                # to_decode = int(src_count * factor / (factor - 1) )
+
             elif e := src_scene['effects'].get_effect('decimate_2'):
                 factor, factor_2_mod = e.extra_param
-                to_extract = int(factor_2_mod * count * factor / (factor - 1))
-                print(yellow(f"decimate_2:"), f"{src_scene['no']}: {factor_2_mod}")
+                # to_decode = int(factor_2_mod * src_count * factor / (factor - 1))
+                print(yellow(f"  decimate_2:"), f"{src_scene['no']}: {factor_2_mod}")
                 pprint(src_scene)
 
-
-        decoder_command: list[str] = [
+        # FFmpeg command
+        frame_rate: FrameRate = in_vi['frame_rate_r']
+        d_command: list[str] = [
             ffmpeg_exe,
             "-hide_banner",
             "-loglevel", "warning",
@@ -196,25 +220,26 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             "-ss",
             str(
                 frame_to_sexagesimal(
-                    no=start - src_scene['inputs'].progressive().start,
+                    no=src_start - src_scene_inputs.progressive().start,
                     frame_rate=frame_rate
                 )
             ),
             "-i", in_video_fp,
-            "-t", str(frame_to_s(no=to_extract, frame_rate=frame_rate)),
+            "-t", str(frame_to_s(no=to_decode, frame_rate=frame_rate)),
             *dec_filter_complex,
             "-f", "image2pipe",
             "-pix_fmt", in_pipe_pixfmt,
             "-vcodec", "rawvideo",
             "-"
         ]
+        print(lightcyan(f"  scene no. {scene['no']}"))
+        print(f"    to extract: {to_decode}")
+        print(lightcyan(f"  d_command:"), " ".join(d_command))
 
-        print(lightcyan(f"Decoder:"), " ".join(decoder_command))
-
-        decoder_subprocess: subprocess.Popen = None
+        d_subprocess: subprocess.Popen = None
         try:
-            decoder_subprocess = subprocess.Popen(
-                decoder_command,
+            d_subprocess = subprocess.Popen(
+                d_command,
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
@@ -223,160 +248,262 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
             return False
 
-        # Replacements
-        frame_replace = src_scene['replace']
-        frames_to_replace: list[int] = get_frames_to_remove(frame_replace)
-        frame_cache: ItemCache = ItemCache()
-        frame_cache.set_occurences(frame_occurences(frame_replace))
-        frame_cache.set_exceptions(frames_to_replace)
+        # Frame replacement
+        src_f_replace = src_scene['replace']
+        frame_cache: FrameCache = FrameCache(verbose=False)
+        frame_cache.set_replaced_frames(src_f_replace)
+        print(f"    replacements:")
+        pprint(frame_cache.replacements)
+
+        # Replace a segment by a loop
+        replace_by_loop: bool = False
+        if (
+            'effects' in src_scene
+            and src_scene['effects'].has_effect(name='replace_by_loop')
+        ):
+            replace_by_loop = True
+            for loop in src_scene['effects'].get_effects(name='replace_by_loop'):
+                frame_cache.add_loop_segment(
+                    (loop.start, loop.loop, loop.f_ref)
+                )
+            print(f"    loops:")
+            pprint(frame_cache.segments)
 
         # Dust and scratch removal
         scene_dsr: SceneDsr = src_scene['dsr']
         if scene_dsr is not None:
             scene_dsr.set_frame_size((in_w, in_h))
 
-        # Replace a segment by a loop
-        replace_by_loop: bool = True
-        if src_scene['effects'].has_effect(name='replace_by_loop'):
-            replace_by_loop = True
-            loops: list[tuple] = []
-            for loop in src_scene['effects'].get_effects(name='replace_by_loop'):
-                loops.append(loop.start, loop.start + loop.loop, loop.f_ref)
-
-
+        # Verify not supported feature
         ch_video: ChapterVideo = get_target_video(scene)
         if is_first_scene(scene):
             print(lightcyan("first scene, avsync:"), ch_video['avsync'])
             if ch_video['avsync'] != 0:
                 raise NotImplementedError("avsync not yet supported")
 
-        in_f_no: int = start - 1
-        out_f_no: int = start
-
-        in_frame: McoFrame = None
-        out_frame: McoFrame = None
-        out_i: int = 0
-
-        # backward
-        backward_imgs: deque = deque()
-
-        # decimate
-        decimate_index: int = 0
-        decimate_index2: int = 0
-        while count:
-
-            in_frame: McoFrame = None
-            while in_frame is None:
-                in_f_no += 1
-                img: np.ndarray = np.frombuffer(
-                    decoder_subprocess.stdout.read(in_pipe_img_nbytes),
-                    dtype=in_pipe_dtype,
-                ).reshape(in_pipe_img_shape)
-
-                if replace_by_loop:
-                    for l in loops:
+        # Decode
 
 
+        # decoder frame no.
+        decoded: int = 0
+        d_f_no: int = src_start
+        f_index: int = 0
 
-                if in_f_no not in frames_to_replace:
-                    # print(purple(f"Read frame no.{in_f_no}"))
-                    mask_img: np.ndarray = generate_dsr_mask(
-                        scene=src_scene,
-                        frame_no=in_f_no,
-                        shape=img.shape,
-                    )
-                    if mask_img is not None:
-                        # start_time = time.time()
-                        radius: int = 5
-                        img = cv2.inpaint(
-                            img,
-                            inpaintMask=mask_img,
-                            inpaintRadius=radius,
-                            flags=cv2.INPAINT_TELEA
-                        )
-                        # print(f"elapsed: {(time.time() - start_time) * 1000:.01f}ms")
-                        # write_image(f"mask_{in_f_no:04}_in.png", img)
-                        # write_image(f"mask_{in_f_no:04}_out.png", out_img)
-                    in_frame: McoFrame = McoFrame(
-                        no=in_f_no, img=img, scene=scene
-                    )
+        # f_no is the frame no. to send to the encoder
+        f_no: int = src_start
 
-            # decimate
-            decimate_index += 1
-            if factor != 0 and (decimate_index % factor) == 0:
-                decimate_index = 0
-                out_f_no += 1
-                continue
-            if factor_2_mod:
-                decimate_index2 = (decimate_index2 + 1) % factor_2_mod
-                if decimate_index2:
-                    out_f_no += 1
-                    continue
+        # Number of src scenes to use
+        remaining_src_scenes -= 1
 
-            out_frame = None
-            frame_cache.add(in_f_no, in_frame)
-            while True:
-                f_no = frame_replace[out_f_no] if out_f_no in frame_replace else out_f_no
-                out_frame = None
+        while to_decode and remaining > 0:
+            _in_f_no = src_start + f_index
+            if _in_f_no >= src_start + src_count:
+                print("BREAAAAAAK but why?")
+                break
 
-                from_cache = False
-                if f_no == in_f_no:
-                    out_frame = in_frame
+            # Get frame_no to send to the consumer
+            f_no = frame_cache.get_out_f_no(_in_f_no)
+            # if f_no != d_f_no:
+            print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, waiting for {f_no}"))
 
-                elif f_no in frame_cache:
-                    out_frame = frame_cache[f_no]
-                    from_cache = True
+            # if not cached, decode a new frame
+            img_buffer: np.ndarray = None
+            while f_no not in frame_cache:
+                img_buffer: np.ndarray = np.frombuffer(
+                    d_subprocess.stdout.read(pipe_img_nbytes),
+                    dtype=np.uint8,
+                )
 
-                if out_frame is not None:
-
-                    if watermark:
-                        out_frame.img = add_watermark(
-                            frame=out_frame,
-                            no=out_frame.no
-                        )
-
-                    out_frames = apply_effect(out_f_no, out_frame, out_i)
-                    if isinstance(out_frames, list):
-                        print(yellow(f"\t{out_i}: send {len(out_frames)}"))
-                        if src['backward']:
-                            for f in out_frames:
-                                backward_imgs.append(f.img)
-                        else:
-                            for f in out_frames:
-                                # print(lightcyan(f.img.shape))
-                                encoder_subprocess.stdin.write(f.img)
-
-                        produced += len(out_frames)
-                        out_i += len(out_frames)
-
-                    else:
-                        out_frame = out_frames
-                        # print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
-                        if src['backward']:
-                            backward_imgs.append(out_frame.img)
-                        else:
-                            # print(lightcyan(out_frame.img.shape))
-                            encoder_subprocess.stdin.write(out_frame.img)
-                        produced += 1
-                        out_i += 1
-
-                    out_f_no += 1
-                    count -= 1
+                # Throw this frame away if replaced
+                if frame_cache.to_replace(d_f_no):
+                    print(f"      discard: {d_f_no}")
                 else:
-                    break
+                    frame_cache.add(d_f_no, img_buffer)
 
-        del frame_cache
-        if backward_imgs:
-            count = len(backward_imgs)
-            for _ in range(count):
-                encoder_subprocess.stdin.write(backward_imgs.pop())
+                d_f_no += 1
+                to_decode -= 1
+
+            # f_no is in cache
+            if f_no in frame_cache:
+                img_buffer = frame_cache[f_no]
+            else:
+                raise RuntimeError(f"missing frame: {f_no}")
+
+            if remaining < 0 or img_buffer is None:
+                raise ValueError(red("remaining < 0 or img_buffer is None"))
+
+            img: np.ndarray = img_buffer.astype(img_dtype).reshape(img_shape)
+
+            # Create a frame object
+            frame: NnFrame = NnFrame(
+                f_no=f_no,
+                tensor=img,
+                last=False,
+
+                scene=scene,
+                src_scene=src_scene,
+            )
+
+            # Tag it as last frame if no other src scene to decode
+            # and this is the last frame of this src scene
+            if remaining_src_scenes == 0 and remaining == 1:
+                print(yellow(f"  Tag last frame: {frame.f_no}"))
+                frame.last = True
+
+            # Send to encoder...
+            encoder.encode_frame(frame)
+
+            remaining -= 1
+            f_index += 1
+
+            # All frames of the scene have been decoded and sent to consumer
+            if to_produce == 0:
+                print("all frames to be decoded have been decoded")
+                # break
+
+        # remaining source no
+        print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
+        if remaining_src_scenes == 0:
+            break
+
+
+        # raise
+        # # in_f_no is incremented before reading in pipe
+        # d_virtual_f_no: int = src_start
+        # f_index: int = 0
+        # f_no: int = d_virtual_f_no
+        # d_f_no: int = d_virtual_f_no
+        # decoded: int = 0
+
+        # out_f_no: int = src_start
+
+        # in_frame: McoFrame = None
+        # out_frame: McoFrame = None
+        # out_i: int = 0
+
+        # # backward
+        # backward_imgs: deque = deque()
+
+        # # decimate
+        # decimate_index: int = 0
+        # decimate_index2: int = 0
+        # while (
+        #     decoded < src_count
+        #     and remaining > 0
+        # ):
+
+        #     in_frame: McoFrame = None
+        #     while in_frame is None:
+        #         d_virtual_f_no += 1
+        #         img: np.ndarray = np.frombuffer(
+        #             d_subprocess.stdout.read(in_pipe_img_nbytes),
+        #             dtype=img_dtype,
+        #         ).reshape(img_shape)
+
+        #         # if replace_by_loop:
+        #         #     for l in loops:
+
+
+
+        #         if d_virtual_f_no not in frames_to_replace:
+        #             # print(purple(f"Read frame no.{in_f_no}"))
+        #             mask_img: np.ndarray = generate_dsr_mask(
+        #                 scene=src_scene,
+        #                 frame_no=d_virtual_f_no,
+        #                 shape=img.shape,
+        #             )
+        #             if mask_img is not None:
+        #                 # start_time = time.time()
+        #                 radius: int = 5
+        #                 img = cv2.inpaint(
+        #                     img,
+        #                     inpaintMask=mask_img,
+        #                     inpaintRadius=radius,
+        #                     flags=cv2.INPAINT_TELEA
+        #                 )
+        #                 # print(f"elapsed: {(time.time() - start_time) * 1000:.01f}ms")
+        #                 # write_image(f"mask_{in_f_no:04}_in.png", img)
+        #                 # write_image(f"mask_{in_f_no:04}_out.png", out_img)
+        #             in_frame: McoFrame = McoFrame(
+        #                 no=d_virtual_f_no, img=img, scene=scene
+        #             )
+
+        #     # decimate
+        #     decimate_index += 1
+        #     if factor != 0 and (decimate_index % factor) == 0:
+        #         decimate_index = 0
+        #         out_f_no += 1
+        #         continue
+        #     if factor_2_mod:
+        #         decimate_index2 = (decimate_index2 + 1) % factor_2_mod
+        #         if decimate_index2:
+        #             out_f_no += 1
+        #             continue
+
+        #     out_frame = None
+        #     frame_cache.add(d_virtual_f_no, in_frame)
+        #     while True:
+        #         f_no = frame_replace[out_f_no] if out_f_no in frame_replace else out_f_no
+        #         out_frame = None
+
+        #         from_cache = False
+        #         if f_no == d_virtual_f_no:
+        #             out_frame = in_frame
+
+        #         elif f_no in frame_cache:
+        #             out_frame = frame_cache[f_no]
+        #             from_cache = True
+
+        #         if out_frame is not None:
+
+        #             if watermark:
+        #                 out_frame.img = add_watermark(
+        #                     frame=out_frame,
+        #                     no=out_frame.no
+        #                 )
+
+        #             out_frames = apply_effect(out_f_no, out_frame, out_i)
+        #             if isinstance(out_frames, list):
+        #                 print(yellow(f"\t{out_i}: send {len(out_frames)}"))
+        #                 if src['backward']:
+        #                     for f in out_frames:
+        #                         backward_imgs.append(f.img)
+        #                 else:
+        #                     for f in out_frames:
+        #                         # print(lightcyan(f.img.shape))
+        #                         e_subprocess.stdin.write(f.img)
+
+        #                 produced += len(out_frames)
+        #                 out_i += len(out_frames)
+
+        #             else:
+        #                 out_frame = out_frames
+        #                 # print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
+        #                 if src['backward']:
+        #                     backward_imgs.append(out_frame.img)
+        #                 else:
+        #                     # print(lightcyan(out_frame.img.shape))
+        #                     e_subprocess.stdin.write(out_frame.img)
+        #                 produced += 1
+        #                 out_i += 1
+
+        #             out_f_no += 1
+        #             src_count -= 1
+        #         else:
+        #             break
+
+        # del frame_cache
+        # if backward_imgs:
+        #     src_count = len(backward_imgs)
+        #     for _ in range(src_count):
+        #         e_subprocess.stdin.write(backward_imgs.pop())
 
     main_logger.info(f"produced: {produced}")
     if is_last_scene(scene):
         if 'silence' in ch_video and ch_video['silence']:
             silence: int = ch_video['silence']
-            img_black = np.zeros(in_video_shape, dtype=out_pipe_dtype)
-            [encoder_subprocess.stdin.write(img_black) for _ in range(silence)]
+            img_black = np.zeros(img_shape, dtype=e_pipe_dtype)
+            [e_subprocess.stdin.write(img_black) for _ in range(silence)]
             produced += silence
             print(f"produced w/ silence: {produced}")
 
@@ -384,9 +511,9 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
     stderr_bytes: bytes | None = None
     try:
         # Arbitrary timeout value
-        _, stderr_bytes = encoder_subprocess.communicate(timeout=10)
+        _, stderr_bytes = e_subprocess.communicate(timeout=60)
     except:
-        encoder_subprocess.kill()
+        e_subprocess.kill()
         return False
 
     if stderr_bytes is not None:
@@ -398,3 +525,36 @@ def generate_lr_scene(scene: Scene, force: bool = False) -> bool:
             return False
     return True
 
+
+
+class Encoder:
+    def __init__(
+        self,
+        scene: Scene,
+        e_subprocess: subprocess.Popen,
+    ):
+        self.e_index: int = 0
+        self.scene: Scene = scene
+        self.e_subprocess: subprocess.Popen = e_subprocess
+        self.watermark: bool = do_watermark(scene=scene)
+
+    def encode_frame(self, frame: NnFrame) -> None:
+
+        print(lightgreen(f"    ({self.e_index}) encode: {frame.f_no}"))
+
+        out_img = frame.tensor
+        mco_frame = McoFrame(
+            no=frame.f_no,
+            img=out_img,
+            scene=self.scene
+        )
+        # Effects only on np.ndarray
+        if self.watermark:
+            out_img: np.ndarray = add_watermark(
+                frame=mco_frame,
+                no=frame.f_no
+            )
+
+        self.e_subprocess.stdin.write(out_img)
+
+        self.e_index += 1
