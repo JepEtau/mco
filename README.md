@@ -12,8 +12,8 @@ Retrouvez-moi sur:
 
 
 il faut environ 8 heures à mon PC pour générer un épisode avec un modèle.<br/>
-Je teste environ 10/15 modèles.<br/>
-et mes prochaines expérimentations prendront environ 16 heures.<br/><br/>
+Je teste environ 15/20 workflow par épisode; 1 ou plusieurs modèles par workflow.<br/>
+et mes prochaines expérimentations prendront environ 16 heures par épisode.<br/><br/>
 **Toute contribution me permettra de pouvoir financer des outils hardware plus puissants** pour effectuer ce travail:<br/>
 un CPU récent, un GPU de dernière génération, des SSD,<br/>
 un panel DaVinci pour la correction colorimétrique,<br/>
