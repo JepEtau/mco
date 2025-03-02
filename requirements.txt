@@ -13,6 +13,7 @@ setuptools
 fastrlock
 tensorrt==10.7.0
 safetensors
+hydra-core
 
 # to remove timm, remove also:
 #   pip uninstall pyyaml colorama tqdm huggingface_hub timm -y

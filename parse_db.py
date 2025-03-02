@@ -164,7 +164,7 @@ def main():
         # pprint(ch_video)
         scene_no: int = arguments.scene
         if scene_no != -1:
-            print(lightcyan(f"Scene no. {scene_no}"))
+            print(lightcyan(f"Scene no. {scene_no}"), f"count={scene['dst']['count']}")
             ch_video: ChapterVideo | None = get_chapter_video(k_ep, k_ch)
             if ch_video is None:
                 continue

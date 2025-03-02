@@ -62,10 +62,11 @@ def parse_loop_file(k_ep: str, k_ch: Chapter = "", verbose: bool = False) -> Non
                 scene_no = int(option.split("_")[0])
                 src_scene: Scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][scene_no]
                 f_no = src_scene['start']
-                print(yellow(
-                    f"[W] {os.path.basename(filepath)}: missing frame no."
-                ))
-                print(f"  {scene_no} -> {scene_no}_{f_no}")
+                if verbose:
+                    print(yellow(
+                        f"[W] {os.path.basename(filepath)}: missing frame no."
+                    ))
+                    print(f"  {scene_no} -> {scene_no}_{f_no}")
 
 
             # Get scene_no from frame_no

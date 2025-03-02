@@ -37,55 +37,6 @@ def main():
         help="Filter by edition"
     )
 
-    parser.add_argument(
-        "--scene",
-        "-s",
-        type=str,
-        default='',
-        required=False,
-        help="scene no. to process. Integer or frame value (e.g. 2450f)"
-    )
-
-    parser.add_argument(
-        "--scene_min",
-        "-smin",
-        type=int,
-        default=-1,
-        required=False,
-        help="starting scene no. to process"
-    )
-
-    parser.add_argument(
-        "--scene_max",
-        "-smax",
-        type=int,
-        default=-1,
-        required=False,
-        help="last scene no. to process"
-    )
-
-    parser.add_argument(
-        "-f",
-        "--force",
-        action="store_true",
-        required=False,
-        help="Overwrite"
-    )
-
-    parser.add_argument(
-        "--simulate",
-        action="store_true",
-        required=False,
-        help="Simulate the process"
-    )
-
-    parser.add_argument(
-        "--watermark",
-        action="store_true",
-        required=False,
-        help="Watermark each scene with scene no."
-    )
-
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -129,13 +80,7 @@ def main():
     # pprint(db[next_episode]['video']['target']['episode']['scenes'])
     # sys.exit()
 
-    scene_no: int | None = None
-    scene_arg: str = arguments.scene
-    if scene_arg.endswith('f'):
-        raise NotImplementedError("scene_arg not yet implemented")
-        scene_no = frame_to_scene_no(int(scene_arg[:-1]))
-    elif scene_arg != '':
-        scene_no: int = int(scene_arg)
+    scene_no: int = arguments.scene
 
     task: TaskName = 'upscale'
 

@@ -124,15 +124,11 @@ class DecoderThread(BaseThread):
             to_produce: int = calculate_scene_frame_count(scene)
 
             # A scene may use multiple segments from different scenes
-            rem_src_scene = len(scene['src'].scenes())
-            print(f"remaining scenes: {rem_src_scene}")
-
+            remaining_src_scenes = len(scene['src'].scenes())
             remaining: int = to_produce
-            out_i: int = 0
-            produced: int = 0
 
             for src in scene['src'].scenes():
-                src_scene: SrcScene = src['scene']
+                src_scene: SrcScene = src.scene
                 # Input scene is low resolution, this won't work for doc
                 #  but we don't care because we use another pipeline for this
                 #  consolidate_src should be modified for this
@@ -144,18 +140,18 @@ class DecoderThread(BaseThread):
                 in_video_info: VideoStreamInfo = src_scene_inputs.progressive().info
 
                 frame_rate: FrameRate = in_video_info.frame_rate
-                src_start: int = src['start']
-                src_count: int = src['count']
+                src_start, src_count = src.start, src.count
+                if to_produce < src_count:
+                    raise ValueError("why is to_produce < count?")
+                    src_count = to_produce
+
+                to_decode: int = src_count
 
                 # Path the src scene so that the encoder receive the correct frame no.
                 # TODO: verify that this will not impact the other scene when using the
                 # same src
-                src['scene']['start'] = src_start
-                src['scene']['count'] = src_count
-
-                if to_produce < src_count:
-                    raise ValueError("why is to_produce < count?")
-                    src_count = to_produce
+                src.scene['start'] = src_start
+                src.scene['count'] = src_count
                 if verbose:
                     print(lightgreen(f"[V][D] {src_count} frames to extract"))
 
@@ -248,43 +244,42 @@ class DecoderThread(BaseThread):
 
                 # Frame replacement
                 src_f_replace = src_scene['replace']
+                frame_cache: FrameCache = FrameCache(verbose=False)
                 if task_name != 'dsr':
-                    frame_cache: FrameCache = FrameCache(verbose=False)
                     frame_cache.set_replaced_frames(src_f_replace)
+                # print(f"    replacements:")
+                # pprint(frame_cache.replacements)
 
                 # Backward scene....
-                src_scene['backward'] = src['backward']
-                if src_scene['backward']:
+                if src['backward']:
                     raise NotImplementedError("not implemented anymore")
 
-                # remaining source no
-                rem_src_scene -= 1
 
-                # in_f_no is incremented before reading in pipe
-                in_f_no: int = src_start
-                f_index: int = 0
-                d_f_no: int = src_start
+                # decoder frame no.
                 decoded: int = 0
+                d_f_no: int = src_start
+                f_index: int = 0
 
                 # f_no is the frame no. to send to the encoder
                 f_no: int = src_start
 
-                # print(f"decoder: scene: {remaining} from {src_start}, remaining src scenes: {rem_src_scene}")
+                # Number of src scenes to use
+                remaining_src_scenes -= 1
+
                 while (
                     not self._stop_event.is_set()
-                    and decoded < src_count
+                    and to_decode
                     and remaining > 0
                 ):
-                    # print(lightgreen("[V][D] Read input stream"))
-                    # We discard all frames that will be replaced
-                    if in_f_no >= src_start + src_count:
+                    _in_f_no = src_start + f_index
+                    if _in_f_no >= src_start + src_count:
                         print("BREAAAAAAK")
                         self.release()
                         break
 
                     # Get frame_no to send to the consumer
-                    f_no = frame_cache.get_out_f_no(in_f_no)
-                    # print(lightcyan(f"  in: {in_f_no}, waiting for {f_no}"))
+                    f_no = frame_cache.get_out_f_no(_in_f_no)
+                    # print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, waiting for {f_no}"))
 
                     # if not cached, decode a new frame
                     img_buffer: Tensor = None
@@ -293,14 +288,15 @@ class DecoderThread(BaseThread):
                             self.sub_process.stdout.read(pipe_img_nbytes),
                             dtype=torch.uint8,
                         )
-                        # print(f"decoded no. {decoded_f_no}: {decoded+1}/{src_count}: {len(img_buffer)}")
+                        # print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, waiting for {f_no}"))
 
                         # Throw this frame away if replaced
                         if (
-                            frame_cache.to_replace(in_f_no)
+                            frame_cache.to_replace(d_f_no)
                             and task_name != 'dsr'
                         ):
-                            print(f"  discard: {d_f_no}")
+                            # print(f"  discard: {d_f_no}")
+                            pass
                         else:
                             frame_cache.add(d_f_no, img_buffer)
 
@@ -314,9 +310,6 @@ class DecoderThread(BaseThread):
                         raise RuntimeError(f"missing frame: {f_no}")
 
                     # print(lightcyan(f"   {out_i}: send {f_no}"))
-                    produced += 1
-                    out_i += 1
-                    in_f_no += 1
 
                     # Wait until resource (GPU) is available
                     self._lock.acquire(blocking=True)
@@ -360,11 +353,12 @@ class DecoderThread(BaseThread):
                         encoder_step_no=encoder_step_no,
                     )
 
-                    # set last flag to inform the temporal inference
+                    # Tag it as last frame if no other src scene to decode
+                    # and this is the last frame of this src scene
                     # that it's the latest one and it has to continue producing frames
                     # by itself
-                    if rem_src_scene == 0 and remaining == 1:
-                        # print(yellow(f"Last frame: {frame.f_no}"))
+                    if remaining_src_scenes == 0 and remaining == 1:
+                        print(yellow(f"  Tag last frame: {frame.f_no}"))
                         frame.last = True
 
 
@@ -385,6 +379,9 @@ class DecoderThread(BaseThread):
 
                     # Skip following model if inpainting and dsr
                     # patch_next_step_no_(frame=frame, model_manager=model_manager)
+
+                    # print(f"    ({f_index}) send {frame.f_no}")
+
 
                     # Send the frame to the consumer
                     if frame.step_no >= frame.encoder_step_no:

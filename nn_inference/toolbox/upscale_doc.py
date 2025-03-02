@@ -15,7 +15,7 @@ import numpy as np
 from scene.consolidate import consolidate_scene
 from scene.filters import clean_fcomplex, get_ffmpeg_pad_filter
 from scene.src_scene import SrcScene
-from utils.mco_types import ChapterVideo, Effect, Scene
+from utils.mco_types import ChapterVideo, Scene
 from utils.mco_utils import ffmpeg_metadata
 from utils.media import (
     extract_media_info_mco,
@@ -41,6 +41,7 @@ from parsers import (
     TaskName,
     pprint_scene_mapping,
     scene_no_str,
+    Effect,
 )
 
 if sys.platform == 'win32':

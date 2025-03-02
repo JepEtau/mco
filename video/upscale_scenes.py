@@ -18,7 +18,6 @@ from nn_inference.toolbox.upscale_doc import (
     upscale_doc_chapter,
 )
 
-from parsers._types import VideoSettings
 from parsers.p_print import pprint_scene_mapping
 from scene.upscale_scene import UpscalePipeline
 from processing import supported_filters
@@ -37,6 +36,7 @@ from parsers import (
     ProcessingTask,
     Filter,
     calc_hash,
+    VideoSettings,
 )
 
 
@@ -161,7 +161,7 @@ def upscale_scenes(
 
                 # Parse input video, but do this only if needed
                 for src_scene in scene['src'].scenes():
-                    progressive_input = src_scene['scene']['inputs'].progressive()
+                    progressive_input = src_scene.scene['inputs'].progressive()
 
                     in_media_path = progressive_input.filepath
                     if in_media_path not in cached_video_info:
@@ -219,6 +219,7 @@ def upscale_scenes(
 
     # Now upscale scenes
     for scene in scenes_to_upscale:
+        print(lightgreen("Scene no. "), scene['no'])
         # Get all models
         model_manager = ModelManager()
         scene_filters: Filter = scene['filters'][scene['task'].name]
@@ -241,7 +242,7 @@ def upscale_scenes(
         # else:
         for filter_str in scene_filters.sequence.split(','):
             if filter_str.startswith(supported_filters):
-                print(lightgreen("supported:"), filter_str)
+                print(darkgrey("supported:"), filter_str)
                 params: list[str] = filter_str.split("=", maxsplit=1)
                 filter_name = params[0]
                 filter_params: str | float | None = None

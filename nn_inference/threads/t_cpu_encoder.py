@@ -13,11 +13,8 @@ from parsers import VideoSettings
 from nn_inference.resource_mgr import NnFrame, BaseThread
 from nn_inference.toolbox.filtering import get_encoder_ffmpeg_filters
 from processing.effects import apply_upscale_effects
-from processing.frame_cache import (
-    FrameCache,
-    get_frames_to_remove,
-)
-from pynnlib.import_libs import is_cuda_available
+from processing.frame_cache import FrameCache
+from pynnlib import is_cuda_available
 from scene.filters import do_watermark, get_ffmpeg_pad_filter, clean_fcomplex
 from scene.src_scene import SrcScene
 from utils.mco_types import McoFrame, Scene

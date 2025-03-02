@@ -71,12 +71,12 @@ class UpscalePipeline(object):
         in_max_sync_nbytes: int = 0
         # Verify that input videos to generate this scene have the same info
         vi: VideoStreamInfo = (
-            scene['src'].primary_scene()['scene']['inputs'].progressive().info
+            scene['src'].primary_scene().scene['inputs'].progressive().info
         )
         shape = [vi.img_shape[1], vi.img_shape[0]]
 
         for src_scene in scene['src'].scenes():
-            _vi: VideoStreamInfo = src_scene['scene']['inputs'].progressive().info
+            _vi: VideoStreamInfo = src_scene.scene['inputs'].progressive().info
             if (
                 _vi.img_shape[1] != vi.img_shape[1]
                 or _vi.img_shape[0] != vi.img_shape[0]
@@ -89,7 +89,7 @@ class UpscalePipeline(object):
         # Get HtoD max bytes.
         # The decoder MUST NOT resize the input video
         vi: VideoStreamInfo = (
-            scene['src'].primary_scene()['scene']['inputs'].progressive().info
+            scene['src'].primary_scene().scene['inputs'].progressive().info
         )
         nbytes: int = vi.img_nbytes
         if nbytes > in_max_nbytes:
@@ -99,8 +99,8 @@ class UpscalePipeline(object):
         filters: Filter = scene['filters'][task_name]
 
         pprint(filters.steps)
-        print(lightcyan(f"Calculate in/out shapes:"))
-        print(f"  initial shape: {shape}")
+        print(darkgrey(f"Calculate in/out shapes:"))
+        print(f"    initial shape: {shape}")
         scale: int = 1
         model_key: str = ""
         for i, filter_param in enumerate(filters.steps):
@@ -131,7 +131,7 @@ class UpscalePipeline(object):
                 filters.steps[i] = model_manager.set_input_size(model_key, shape)
 
             print(
-                lightgreen(f"  step {i}:"),
+                darkgrey(f"    step {i}:"),
                 (
                     f"{model_manager.model(model_key).arch_name}".ljust(22)
                     if model_key
@@ -177,9 +177,9 @@ class UpscalePipeline(object):
         # else:
         #     print(f"Scene {scene['no']}, in: {nbytes} bytes, out: {out_nbytes}")
 
-        print(f"Pinned memory: in: {in_max_nbytes} bytes, out: {out_nbytes}")
-        print(f"Inpaint: mask: {in_max_sync_nbytes} bytes")
-        print(f"Total scale: {scale}")
+        print(f"  pinned memory: in: {in_max_nbytes} bytes, out: {out_nbytes}")
+        print(f"  inpaint: mask: {in_max_sync_nbytes} bytes")
+        print(f"  total scale: {scale}")
 
         model_manager.opset = 20
         model_manager.consolidate()

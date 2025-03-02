@@ -272,8 +272,8 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
         to_remove: int = ch_video['count'] - ch_audio['count']
         print(darkgrey(f"[I] Remove some frames: {to_remove}"))
         logger.debug(f"{k_ch}: remove {to_remove} frames")
-        last_scene['src'].last_scene()['count'] -= to_remove
-        last_scene['dst']['count'] = last_scene['src'].last_scene()['count']
+        last_scene['src'].last_scene().count -= to_remove
+        last_scene['dst']['count'] = last_scene['src'].last_scene().count
 
     else:
         print(darkgrey(f"[I] Same duration: {ch_video['count']}f"))

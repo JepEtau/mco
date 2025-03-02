@@ -129,7 +129,7 @@ class EncoderThread(BaseThread):
                         remaining = to_produce
                         out_i: int = 0
                         print(purple(f"[V][E] output video file: {fp}"))
-                        print(purple(f"[V][E] Frames to produce: {to_produce}"))
+                        print(purple(f"[V][E] scene {scene['no']:03}: frames to produce: {to_produce}"))
                         if verbose:
                             print(purple(f"[V][E] output video file: {fp}"))
                             print(purple(f"[V][E]Frames to produce: {to_produce}"))

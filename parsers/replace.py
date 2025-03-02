@@ -20,6 +20,7 @@ if TYPE_CHECKING:
 
 
 def replace_scene_bounds_(k_ep: str) -> None:
+    print(yellow("replace_scene_bounds_"), k_ep)
     # edition 'j' only
     k_ed: str = 'j'
     k_chapter: Chapter = 'episode'
@@ -42,7 +43,7 @@ def replace_scene_bounds_(k_ep: str) -> None:
             if sr[frame_no] != new_frame_no:
                 print(red("  different"))
 
-        # Do not replace if already in src or  used as the src
+        # Do not replace if already in src or used as the src
         if frame_no not in sr.keys() and frame_no not in sr.values():
             sr[frame_no] = new_frame_no
 
@@ -78,6 +79,26 @@ def replace_scene_bounds_(k_ep: str) -> None:
             pprint(sr)
             raise
 
+        # Detect circular reference:
+        #   consolidate if a frame is pointing to a frame already replaced
+        consolidate = True
+        t = 0
+        while consolidate:
+            t += 1
+            consolidate: bool = False
+            replace_list = list(scene['replace'].keys())
+            for k, v in scene['replace'].items():
+                if v in replace_list:
+                    warn(yellow(f"replacing by a replaced frame. No. {frame_no} in {k_ed}:{k_ep}:{k_chapter}"))
+                    scene['replace'][k] = scene['replace'][v]
+                    consolidate = True
+                    break
+            if t > len(replace_list):
+                raise(red(f" circular reference"))
+
+        if scene['no'] == 5:
+            print(lightcyan("scene no."), scene['no'])
+            pprint(scene['replace'])
 
 
 def parse_replace_file(k_ep_or_g:str) -> None:

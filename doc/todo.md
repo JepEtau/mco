@@ -117,7 +117,7 @@ status:
 
     * unimatch (GMflow+)    https://github.com/autonomousvision/unimatch
         __integrated__
-        slow
+        slow (3fps 1536x1152)
 
     * GMflow                https://github.com/haofeixu/gmflow
         __module__

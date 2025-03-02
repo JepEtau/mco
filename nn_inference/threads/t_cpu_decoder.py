@@ -13,7 +13,7 @@ from nn_inference.toolbox.filtering import get_decoder_ffmpeg_filters
 
 from .t_cpu_encoder import CpuEncoderThread
 from .t_decoder import VideoStreamInfo
-from processing.frame_cache import FrameCache, get_frames_to_cache, get_frames_to_remove
+from processing.frame_cache import FrameCache
 from scene.filters import clean_fcomplex
 from utils.mco_utils import calculate_scene_frame_count
 if TYPE_CHECKING:
