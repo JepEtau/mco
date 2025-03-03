@@ -448,6 +448,7 @@ def parse_target_scenelist(
                     backward = False
 
                 elif k == 'backward':
+                    raise
                     if v.lower() == "true":
                         backward = True
                         raise

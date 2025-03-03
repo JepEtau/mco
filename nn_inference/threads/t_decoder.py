@@ -1,6 +1,7 @@
 from __future__ import annotations
 from copy import deepcopy
 from dataclasses import dataclass, field
+import time
 import warnings
 import numpy as np
 from pprint import pprint
@@ -127,12 +128,12 @@ class DecoderThread(BaseThread):
             # A scene may use multiple segments from different scenes
             remaining_src_scenes = len(scene['src'].scenes())
 
-            for src in scene['src'].scenes():
-                src_scene: SrcScene = src.in_scene
+            for src_index, src_scene in enumerate(scene['src'].scenes()):
+                in_scene: SrcScene = src_scene.in_scene
                 # Input scene is low resolution, this won't work for doc
                 #  but we don't care because we use another pipeline for this
                 #  consolidate_src should be modified for this
-                src_scene_inputs: Inputs = src_scene['inputs']
+                src_scene_inputs: Inputs = in_scene['inputs']
                 in_video_fp: str = src_scene_inputs.progressive().filepath
 
                 if verbose or True:
@@ -140,7 +141,7 @@ class DecoderThread(BaseThread):
                 in_video_info: VideoStreamInfo = src_scene_inputs.progressive().info
 
                 frame_rate: FrameRate = in_video_info.frame_rate
-                src_start, src_count = src.start, src.count
+                src_start, src_count = src_scene.start, src_scene.count
                 if to_produce < src_count:
                     raise ValueError("why is to_produce < count?")
                     src_count = to_produce
@@ -148,8 +149,8 @@ class DecoderThread(BaseThread):
                 # Path the src scene so that the encoder receive the correct frame no.
                 # TODO: verify that this will not impact the other scene when using the
                 # same src
-                src.in_scene['start'] = src_start
-                src.in_scene['count'] = src_count
+                src_scene.in_scene['start'] = src_start
+                src_scene.in_scene['count'] = src_count
                 if verbose:
                     print(lightgreen(f"[V][D] {src_count} frames to extract"))
 
@@ -241,13 +242,13 @@ class DecoderThread(BaseThread):
                 flip_r_b: bool = in_video_info.img_c_order != 'rgb'
 
                 # Frame replacement
-                src_f_replace = src_scene['replace']
+                src_f_replace = in_scene['replace']
                 frame_cache: FrameCache = FrameCache(verbose=False)
                 if task_name != 'dsr':
                     frame_cache.set_replaced_frames(src_f_replace)
 
                 # Backward scene....
-                if src['backward']:
+                if src_scene['backward']:
                     raise NotImplementedError("not implemented anymore")
 
                 # decoder frame no.
@@ -329,6 +330,9 @@ class DecoderThread(BaseThread):
                         cuda_stream=cuda_stream
                     )
 
+                    time.sleep(0.0001)
+                    cuda_stream.synchronize()
+
                     # Use the dtype of the first session following
                     # All filters between decoder and the next session will use this dtype
                     d_tensor: Tensor = img_to_tensor(
@@ -344,7 +348,7 @@ class DecoderThread(BaseThread):
                         last=False,
 
                         scene=scene,
-                        src_scene=src_scene,
+                        src_scene_index=src_index,
                         sequence=filter_steps,
                         step_no=start_step_no,
                         encoder_step_no=encoder_step_no,
@@ -367,6 +371,10 @@ class DecoderThread(BaseThread):
                         verbose=verbose,
                         cuda_stream=cuda_stream
                     )
+
+                    time.sleep(0.0001)
+                    cuda_stream.synchronize()
+
                     if verbose:
                         print(
                             f"[V][D] ({lightgreen(f_index)}) ({_in_f_no}), {remaining}. Tensor:",
@@ -397,7 +405,7 @@ class DecoderThread(BaseThread):
                         print("all frames to be decoded have been decoded")
 
                 print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
-                print(lightgreen(f"[V][D] End of src scene {src_scene['no']}"))
+                print(lightgreen(f"[V][D] End of src scene {in_scene['no']}"))
 
             print(lightgreen(f"[V][D] End of scene {scene['no']}"))
         print(lightgreen(f"[V][D] End of decoding"))

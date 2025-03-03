@@ -70,10 +70,6 @@ def apply_cuda_filters_(
         else:
             raise ValueError(f"Not supported: {name}")
 
-
-        time.sleep(0.0001)
-        cuda_stream.synchronize()
-
         frame.step_no += 1
         if frame.step_no >= frame.encoder_step_no:
             break

@@ -135,16 +135,16 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
             verbose_prefix: str = f"[V][I][TORCH][{frame.step_no}]"
 
             # Apply cuda filters until next inference or decoder
-            with torch.inference_mode():
-                torch_cuda_stream = torch.cuda.Stream()
-                with torch.cuda.stream(torch_cuda_stream):
-                    apply_cuda_filters_(
-                        frame,
-                        cuda_stream=torch_cuda_stream,
-                        verbose=verbose
-                    )
-                    time.sleep(0.0001)
-                    torch_cuda_stream.synchronize()
+            # with torch.inference_mode():
+            #     torch_cuda_stream = torch.cuda.Stream()
+            #     with torch.cuda.stream(torch_cuda_stream):
+            apply_cuda_filters_(
+                frame,
+                cuda_stream=infer_stream,
+                verbose=verbose
+            )
+            time.sleep(0.0001)
+            infer_stream.synchronize()
 
             # No more operation with input tensor
             # TODO: study if it can be done before.

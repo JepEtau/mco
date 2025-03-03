@@ -89,6 +89,10 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
                 frame, verbose=verbose, cuda_stream=cuda_stream
             )
 
+            time.sleep(0.0001)
+            cuda_stream.synchronize()
+
+
             # No more operation with input tensor
             # TODO: study if it can be done before.
             verbose_prefix: str = f"[V][I][TRT][{frame.step_no}]"

@@ -27,7 +27,7 @@ def perform_inpaint_inference(
     # Specific to MCO
     # Generate a binary mask
     mask_img: np.ndarray | None = generate_dsr_mask(
-        scene=frame.src_scene,
+        scene=frame.scene['src'].scenes()[frame.src_scene_index].in_scene,
         frame_no=frame.f_no,
         shape=frame.tensor.shape,
     )
