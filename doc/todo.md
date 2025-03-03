@@ -72,8 +72,7 @@ status:
     * ~~handheldSR~~        https://github.com/Jamy-L/Handheld-Multi-Frame-Super-Resolution
         reported as slow af
 
-    * ~~AnimeSRv2~~
-        __done__
+    * __AnimeSRv2__
 
     * RVRT (1x, 4x)         https://github.com/JingyunLiang/RVRT
         __integrated__
@@ -84,7 +83,7 @@ status:
 
     * CAVSR                 https://github.com/aprBlue/CAVSR
         n'utilise pas SPyNet mais autre chose...
-        better than basicvsr++, ftvsr
+        author: better than basicvsr++, ftvsr ?
         __integrated__
 
     * EvTexture (4x)        https://github.com/dachunkai/evtexture
@@ -96,7 +95,6 @@ status:
 
     * TMP                   https://github.com/xtudbxk/TMP
         __integrated__
-
 
     * CFDVSR                https://github.com/house-leo/cfdvsr
         non publié, auteur considère que mieux que les autres....
@@ -138,13 +136,14 @@ status:
 
 
 - segmentation
-    * InSPyReNet            https://github.com/plemeri/InSPyReNet
+    * ~~InSPyReNet~~            https://github.com/plemeri/InSPyReNet
 
-    * TRACER-B7             https://github.com/Karel911/TRACER
-        __module__ (partial)
+    * ~~TRACER-B7~~             https://github.com/Karel911/TRACER
 
-    * BiRefNet              https://github.com/ZhengPeng7/BiRefNet
+    * ~~BiRefNet~~              https://github.com/ZhengPeng7/BiRefNet
+
+    * __EfficientTAM__          https://github.com/yformer/EfficientTAM
 
 
 - algorithms
-    * ~~polyblur: https://github.com/teboli/polyblur~~
+    * ~~polyblur~~              https://github.com/teboli/polyblur

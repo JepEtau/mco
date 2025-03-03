@@ -29,11 +29,15 @@ def clean_ffmpeg_filter(data: str) -> str:
 
 
 
-def parse_filters(db_video, config: ConfigParser, k_section: str):
+def parse_filters(
+    db_video,
+    config: ConfigParser,
+    k_section: str,
+    verbose: bool = False
+):
     """Only parse filters, no verifications.
     This is done when consolidating the scene
     """
-    verbose = False
     if verbose:
         print(lightcyan(f"Parse_filters:"))
         print(green(f"  section: {k_section}"))
@@ -53,17 +57,17 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
         sys.exit()
 
     for k_option in config.options(k_section):
-        # if k_option != 'default' and not k_option.isdecimal():
-        #     # Not allowed
-        #     if verbose:
-        #         print(yellow("\tDiscarded"))
-        #     print(red(f"\tError: filter {k_section}/{k_option}"))
-        #     return
-
         if verbose:
-            print(green(f"\tparse filter {k_section}:{k_option}"))
+            print(darkgrey(f"  parse filter [{k_section}]{k_option}"))
+
         # Convert filter str to a list of dict
         filters_str: str = config.get(k_section, k_option)
+
+        if filters_str in config.options(k_section):
+            if verbose:
+                print(darkgrey(f"    alias to {filters_str}"))
+            filters_str: str = config.get(k_section, filters_str)
+
         filters: list[str] = (
             clean_ffmpeg_filter(filters_str).split(';')
         )
@@ -90,7 +94,7 @@ def parse_filters(db_video, config: ConfigParser, k_section: str):
                 )
 
             else:
-                pprint(db_video)
+                # pprint(db_video)
                 raise ValueError(f"Unrecognized filter: {f} (k_chapter: {k_chapter})")
 
 
