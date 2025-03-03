@@ -52,6 +52,10 @@ status:
         Spectral Recovery Challenge
 
 
+- SISR denoiser
+    * pcst                  https://github.com/grishavak/pcst
+            trained on DAVIS :-(
+
 - video
     * ~~basicVSR++~~        https://github.com/ckkelvinchan/BasicVSR_PlusPlus
         no support, missing source code for 2x
@@ -105,6 +109,9 @@ status:
     * VQD-SR                https://github.com/researchmm/vqd-sr
 
     * BSVD                  https://github.com/ChenyangQiQi/BSVD
+
+    * PaCNet                https://github.com/grishavak/PaCNet-denoiser
+        trained on DAVIS :-(
 
 
 - Optical Flow

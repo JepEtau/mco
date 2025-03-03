@@ -25,7 +25,8 @@ class NnFrame:
     encoder_step_no: int = 0
 
     scene: Scene | None = None
-    src_scene: SrcScene | None = None
+    src_scene_index: int = 0
+    # src_scene: SrcScene | None = None
     # last flag is used by temporal models
     last: bool = False
 

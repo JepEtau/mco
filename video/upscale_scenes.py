@@ -161,7 +161,7 @@ def upscale_scenes(
 
                 # Parse input video, but do this only if needed
                 for src_scene in scene['src'].scenes():
-                    progressive_input = src_scene.scene['inputs'].progressive()
+                    progressive_input = src_scene.in_scene['inputs'].progressive()
 
                     in_media_path = progressive_input.filepath
                     if in_media_path not in cached_video_info:

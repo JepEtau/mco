@@ -26,7 +26,7 @@ class SrcScene:
 
     def __init__(
         self,
-        scene: Scene,
+        in_scene: Scene,
         start: int,
         count: int,
         backward: bool,
@@ -40,16 +40,18 @@ class SrcScene:
         self._start: int = start
         self._count: int = count
         self._effects: Effects | None = effects
-        self._scene: Scene = scene
 
-        if scene is not None and 'effects' in scene is not None:
-            pprint(scene['effects'])
+        # scene is the original scene
+        self._in_scene: Scene = in_scene
+
+        if in_scene is not None and 'effects' in in_scene is not None:
+            pprint(in_scene['effects'])
 
             # Point to the effects of the original scene
             if effects is None:
-                self._effects: Effects = scene['effects']
+                self._effects: Effects = in_scene['effects']
             else:
-                for e in scene['effects'].effects:
+                for e in in_scene['effects'].effects:
                     self.effects.append(e)
 
 
@@ -103,12 +105,16 @@ class SrcScene:
         return self._count
 
     @property
-    def scene(self) -> Scene:
-        return self._scene
+    def in_scene(self) -> Scene:
+        """Returns the scene specific to an edition.
+        It's used to generate a 'source' scene which can use
+        the full or a partial length of this scene
+        """
+        return self._in_scene
 
 
-    def set_original_scene(self, scene: Scene) -> None:
-        self._scene = scene
+    def set_initial_scene(self, scene: Scene) -> None:
+        self._in_scene = scene
 
 
     @property
@@ -127,7 +133,7 @@ class SrcScene:
         class_dict = {k: v for k, v in self.__dict__.items() if k not in ('scene', '_scene')}
         class_dict['count'] = self.count
         class_dict['to_decode'] = self.to_decode
-        ed_scene = self.scene
+        ed_scene = self.in_scene
         class_dict['scene'] = (
             "{" + f"{ed_scene['k_ed']}:{ed_scene['k_ep']}:{ed_scene['k_ch']}:{ed_scene['no']}..." + "}"
         )
@@ -170,7 +176,7 @@ class SrcScenes:
             )
 
         src_scene: SrcScene = SrcScene(
-            scene=_scene,
+            in_scene=_scene,
             start=start,
             count=count,
             k_ed_ep_ch_no=(k_ed, k_ep, k_ch, no),
@@ -219,7 +225,7 @@ class SrcScenes:
             count = abs(count)
             start = _src_scene['start'] + _src_scene['count'] - count
 
-        src_scene.set_original_scene(_src_scene)
+        src_scene.set_initial_scene(_src_scene)
         src_scene.start = start
         src_scene.count = count
 
@@ -257,16 +263,16 @@ class SrcScenes:
     def frame_count(self, exclude_loop: bool = False) -> int:
         count: int = 0
         for src_scene in self._scenes:
-            if src_scene.scene is None:
+            if src_scene.in_scene is None:
                 self._consolidate_scene(src_scene)
             count += src_scene.count
 
             if (
-                src_scene.scene is not None
-                and 'effects' in src_scene.scene
-                and src_scene.scene['effects'] is not None
+                src_scene.in_scene is not None
+                and 'effects' in src_scene.in_scene
+                and src_scene.in_scene['effects'] is not None
             ):
-                e: Effect = src_scene.scene['effects'].get_effect('se_loop')
+                e: Effect = src_scene.in_scene['effects'].get_effect('se_loop')
                 if e is not None:
                     print(yellow(e))
                     count += sum(e.extra_param)
@@ -295,7 +301,7 @@ class SrcScenes:
 
     def primary_scene(self) -> SrcScene:
         primary_scene = self._scenes[0]
-        if primary_scene.scene is None:
+        if primary_scene.in_scene is None:
             self._consolidate_scene(primary_scene)
         return primary_scene
 
@@ -307,18 +313,18 @@ class SrcScenes:
     def get_frame_replace(self) -> dict[int, int]:
         frame_replace: dict[int, int] = {}
         for s in self._scenes:
-            frame_replace.update(s.scene['replace'])
+            frame_replace.update(s.in_scene['replace'])
         return frame_replace
 
 
     def consolidate(self, task_name: TaskName, watermark: bool) -> None:
         from scene.consolidate_src import consolidate_src_scene
         for src_scene in self._scenes:
-            if src_scene.scene is None:
+            if src_scene.in_scene is None:
                 self._consolidate_scene(src_scene)
 
             consolidate_src_scene(
-                scene=src_scene.scene,
+                scene=src_scene.in_scene,
                 task_name=task_name,
                 watermark=watermark
             )
@@ -326,8 +332,8 @@ class SrcScenes:
 
     def get_src_scene_from_frame_no(self, frame_no: int) -> SrcScene:
         for src_scene in self._scenes:
-            start: int = src_scene.scene['start']
-            end: int = src_scene.scene['start'] + src_scene.scene['count'] - 1
+            start: int = src_scene.in_scene['start']
+            end: int = src_scene.in_scene['start'] + src_scene.in_scene['count'] - 1
             if start <= frame_no <= end:
                 return src_scene
         raise ValueError(f"Scene not found for frame no. {frame_no}")
@@ -355,7 +361,7 @@ class SrcScenes:
     def get_edition(self) -> str:
         k_eds: set[str] = set()
         for s in self._scenes:
-            k_eds.add(s.scene['k_ed'])
+            k_eds.add(s.in_scene['k_ed'])
         if len(k_eds) > 1:
             raise ValueError(f"{':'.join(s['k_ed_ep_ch_no'])} uses mor than 1 edition: {k_eds}")
         return k_eds.pop()

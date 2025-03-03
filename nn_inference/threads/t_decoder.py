@@ -128,7 +128,7 @@ class DecoderThread(BaseThread):
             remaining_src_scenes = len(scene['src'].scenes())
 
             for src in scene['src'].scenes():
-                src_scene: SrcScene = src.scene
+                src_scene: SrcScene = src.in_scene
                 # Input scene is low resolution, this won't work for doc
                 #  but we don't care because we use another pipeline for this
                 #  consolidate_src should be modified for this
@@ -148,8 +148,8 @@ class DecoderThread(BaseThread):
                 # Path the src scene so that the encoder receive the correct frame no.
                 # TODO: verify that this will not impact the other scene when using the
                 # same src
-                src.scene['start'] = src_start
-                src.scene['count'] = src_count
+                src.in_scene['start'] = src_start
+                src.in_scene['count'] = src_count
                 if verbose:
                     print(lightgreen(f"[V][D] {src_count} frames to extract"))
 

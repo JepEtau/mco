@@ -104,12 +104,14 @@ class FrameCache(UserDict):
 
 
     def to_replace(self, f_no: int) -> bool:
-        if f_no in self.replacements:
-            return True
-
         for s in self.segments:
             if s[0] <= f_no <= s[1] and f_no != s[2]:
+                print(darkgrey(f"   discard {f_no} (loop: {s[1] - s[0]}, ref: {s[2]})"))
                 return True
+
+        if f_no in self.replacements:
+            print(darkgrey(f"   discard {f_no} (replaced)"))
+            return True
 
         return False
 
@@ -117,6 +119,7 @@ class FrameCache(UserDict):
     def get_out_f_no(self, f_no: int) -> int:
         for s in self.segments:
             if s[0] <= f_no <= s[1]:
+                print(darkgrey(f"  ignore {f_no} because replace by loop {s[2]}"))
                 return s[2]
 
         if f_no in self.replacements:

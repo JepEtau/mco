@@ -4,6 +4,7 @@ import os
 from pprint import pprint
 import subprocess
 import sys
+from warnings import warn
 import cv2
 import numpy as np
 import time
@@ -15,6 +16,7 @@ from parsers import (
     SceneDsr,
     DsrRegion,
     get_frame_rate,
+    Effect,
 )
 from processing.dsr import generate_dsr_mask
 from processing.effects import apply_effect
@@ -60,7 +62,7 @@ def generate_lr_scene(
     in_video_fp: str = (
         scene['src']
         .primary_scene()
-        .scene['inputs']
+        .in_scene['inputs']
         .progressive()
         .filepath
     )
@@ -177,37 +179,42 @@ def generate_lr_scene(
     produced: int = 0
 
     # Extract src scenes
-    for src in scene['src'].scenes():
-        src_scene: SrcScene = src.scene
-        src_scene_inputs: Inputs = src_scene['inputs']
+    for src_index, src_scene in enumerate(scene['src'].scenes()):
+        in_scene: Scene = src_scene.in_scene
+        src_scene_inputs: Inputs = in_scene['inputs']
         in_video_fp: str = src_scene_inputs.progressive().filepath
 
-        src_start, src_count = src.start, src.count
+        src_start, src_count = src_scene.start, src_scene.count
         if to_produce < src_count:
             src_count = to_produce
 
         to_decode: int = src_count
 
-        # Path the src scene so that the encoder receive the correct frame no.
+        # Patch the input scene so that the encoder receive the correct frame no.
         # TODO: verify that this will not impact the other scene when using the
         # same src
-        src.scene['start'] = src_start
-        src.scene['count'] = src_count
+        if (
+            src_scene.in_scene['start'] != src_start
+            or src_scene.in_scene['count'] != src_count
+        ):
+            raise ValueError(red("input scene has been patched"))
+        src_scene.in_scene['start'] = src_start
+        src_scene.in_scene['count'] = src_count
 
         # Decimate
         factor: int = 0
         factor_2_mod: int = 0
-        if 'effects' in src_scene:
-            if e := src_scene['effects'].get_effect('decimate'):
+        if 'effects' in in_scene:
+            if e := in_scene['effects'].get_effect('decimate'):
                 factor, _ = e.extra_param
-                print(yellow(f"  decimate:"), f"{src_scene['no']}: {src_count}")
+                print(yellow(f"  decimate:"), f"{in_scene['no']}: {src_count}")
                 # to_decode = int(src_count * factor / (factor - 1) )
 
-            elif e := src_scene['effects'].get_effect('decimate_2'):
+            elif e := in_scene['effects'].get_effect('decimate_2'):
                 factor, factor_2_mod = e.extra_param
                 # to_decode = int(factor_2_mod * src_count * factor / (factor - 1))
-                print(yellow(f"  decimate_2:"), f"{src_scene['no']}: {factor_2_mod}")
-                pprint(src_scene)
+                print(yellow(f"  decimate_2:"), f"{in_scene['no']}: {factor_2_mod}")
+                pprint(in_scene)
 
         # FFmpeg command
         frame_rate: FrameRate = in_vi['frame_rate_r']
@@ -248,7 +255,7 @@ def generate_lr_scene(
             return False
 
         # Frame replacement
-        src_f_replace = src_scene['replace']
+        src_f_replace = in_scene['replace']
         frame_cache: FrameCache = FrameCache(verbose=False)
         frame_cache.set_replaced_frames(src_f_replace)
         print(f"    replacements:")
@@ -257,11 +264,11 @@ def generate_lr_scene(
         # Replace a segment by a loop
         replace_by_loop: bool = False
         if (
-            'effects' in src_scene
-            and src_scene['effects'].has_effect(name='replace_by_loop')
+            'effects' in in_scene
+            and in_scene['effects'].has_effect(name='replace_by_loop')
         ):
             replace_by_loop = True
-            for loop in src_scene['effects'].get_effects(name='replace_by_loop'):
+            for loop in in_scene['effects'].get_effects(name='replace_by_loop'):
                 frame_cache.add_loop_segment(
                     (loop.start, loop.loop, loop.f_ref)
                 )
@@ -269,7 +276,7 @@ def generate_lr_scene(
             pprint(frame_cache.segments)
 
         # Dust and scratch removal
-        scene_dsr: SceneDsr = src_scene['dsr']
+        scene_dsr: SceneDsr = in_scene['dsr']
         if scene_dsr is not None:
             scene_dsr.set_frame_size((in_w, in_h))
 
@@ -305,7 +312,7 @@ def generate_lr_scene(
             # Get frame_no to send to the consumer
             f_no = frame_cache.get_out_f_no(_in_f_no)
             # if f_no != d_f_no:
-            print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, waiting for {f_no}"))
+            # print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, _in_f_no: {_in_f_no}, waiting for {f_no}"))
 
             # if not cached, decode a new frame
             img_buffer: np.ndarray = None
@@ -319,7 +326,9 @@ def generate_lr_scene(
                 if frame_cache.to_replace(d_f_no):
                     print(f"      discard: {d_f_no}")
                 else:
+                    # print(f"      add: {d_f_no}")
                     frame_cache.add(d_f_no, img_buffer)
+
 
                 d_f_no += 1
                 to_decode -= 1
@@ -342,7 +351,7 @@ def generate_lr_scene(
                 last=False,
 
                 scene=scene,
-                src_scene=src_scene,
+                src_scene_index=src_index,
             )
 
             # Tag it as last frame if no other src scene to decode
@@ -351,11 +360,21 @@ def generate_lr_scene(
                 print(yellow(f"  Tag last frame: {frame.f_no}"))
                 frame.last = True
 
+
             # Send to encoder...
+            #-----------------------------------------------
+
             encoder.encode_frame(frame)
 
-            remaining -= 1
-            f_index += 1
+            #-----------------------------------------------
+
+            # back to decoder
+            # increment _in_f_no, because 'loop' frames have been sent to the encoder
+            loop = get_frameloop(src_scene, f_no=f_no)
+            inc = 0 if not loop else loop - 1
+
+            remaining -= 1 + inc
+            f_index += 1 + inc
 
             # All frames of the scene have been decoded and sent to consumer
             if to_produce == 0:
@@ -543,12 +562,14 @@ class Encoder:
 
         print(lightgreen(f"    ({self.e_index}) encode: {frame.f_no}"))
 
-        out_img = frame.tensor
+
         mco_frame = McoFrame(
             no=frame.f_no,
-            img=out_img,
+            img=frame.tensor,
             scene=self.scene
         )
+        f_no: int = frame.f_no
+
         # Effects only on np.ndarray
         if self.watermark:
             out_img: np.ndarray = add_watermark(
@@ -556,6 +577,36 @@ class Encoder:
                 no=frame.f_no
             )
 
-        self.e_subprocess.stdin.write(out_img)
+        out_imgs = [out_img]
 
-        self.e_index += 1
+        src_scene: SrcScene = frame.scene['src'].scenes()[frame.src_scene_index]
+        loop = get_frameloop(src_scene, f_no=f_no)
+        if loop:
+            out_imgs = [out_img] * loop
+
+        [self.e_subprocess.stdin.write(img) for img in out_imgs]
+        self.e_index += len(out_imgs)
+        print(f"sent {len(out_imgs)} -> total = {self.e_index}")
+
+
+
+def get_frameloop(src_scene: SrcScene, f_no: int) -> int:
+    loop: int = 0
+    in_scene: Scene = src_scene.in_scene
+    e: Effect
+    for e in in_scene['effects'].get_effects('replace_by_loop'):
+        if f_no == e.f_ref:
+            loop = e.loop + 1
+            # decrease loop if start of src is higher than start of loop
+            if src_scene.start > e.start:
+                loop -= src_scene.start - e.start
+                raise ValueError(red("validate loop start < src start"))
+
+            # decrease loop if end of src is lower than end of loop
+            elif (e.start + e.loop)  > (src_scene.start + src_scene.count):
+                loop -= (
+                    (e.start + e.loop)
+                    - (src_scene.start + src_scene.count)
+                )
+                raise ValueError(red("validate loop (start+loop) is > end of source"))
+    return loop
