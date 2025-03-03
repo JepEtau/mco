@@ -28,6 +28,11 @@ if TYPE_CHECKING:
 
 
 def parse_loop_file(k_ep: str, k_ch: Chapter = "", verbose: bool = False) -> None:
+    """ a loop is defined by frame no.
+        number of loop excluding the frame ref no.
+    """
+
+
     if verbose:
         print(darkgrey(f"[I] {k_ep}:{k_ch}: parse_loop_file"))
 
@@ -94,10 +99,11 @@ def parse_loop_file(k_ep: str, k_ch: Chapter = "", verbose: bool = False) -> Non
                     src_scene['start']
                     + (int(result.group(1)) if result.group(1) else 0)
                 )
+                # +1 here because the second corresponds to the end frame INDEX
                 loop = (
-                    int(result.group(2))
+                    int(result.group(2)) + 1
                     if result.group(2)
-                    else src_scene['count'] - start
+                    else src_scene['count']
                 )
                 f_ref = (
                     int(result.group(3))

@@ -99,7 +99,7 @@ class FrameCache(UserDict):
         start, loop, ref = segment
         # start, end (inc.), frame used as ref
         self.segments.append(
-            (start, start + loop, ref)
+            (start, start + loop - 1, ref)
         )
 
 

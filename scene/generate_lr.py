@@ -269,6 +269,7 @@ def generate_lr_scene(
         ):
             replace_by_loop = True
             for loop in in_scene['effects'].get_effects(name='replace_by_loop'):
+                pprint(loop)
                 frame_cache.add_loop_segment(
                     (loop.start, loop.loop, loop.f_ref)
                 )
@@ -370,11 +371,13 @@ def generate_lr_scene(
 
             # back to decoder
             # increment _in_f_no, because 'loop' frames have been sent to the encoder
-            loop = get_frameloop(src_scene, f_no=f_no)
-            inc = 0 if not loop else loop - 1
-
-            remaining -= 1 + inc
-            f_index += 1 + inc
+            loop = get_loop_nframes(src_scene, f_no=f_no)
+            if loop:
+                remaining -= loop
+                f_index += loop
+            else:
+                remaining -= 1
+                f_index += 1
 
             # All frames of the scene have been decoded and sent to consumer
             if to_produce == 0:
@@ -580,7 +583,7 @@ class Encoder:
         out_imgs = [out_img]
 
         src_scene: SrcScene = frame.scene['src'].scenes()[frame.src_scene_index]
-        loop = get_frameloop(src_scene, f_no=f_no)
+        loop = get_loop_nframes(src_scene, f_no=f_no)
         if loop:
             out_imgs = [out_img] * loop
 
@@ -590,13 +593,18 @@ class Encoder:
 
 
 
-def get_frameloop(src_scene: SrcScene, f_no: int) -> int:
+def get_loop_nframes(src_scene: SrcScene, f_no: int) -> int:
+    """Returns the number of loops, frame ref included"""
     loop: int = 0
+
     in_scene: Scene = src_scene.in_scene
+    if 'effects' not in in_scene:
+        return loop
+
     e: Effect
     for e in in_scene['effects'].get_effects('replace_by_loop'):
         if f_no == e.f_ref:
-            loop = e.loop + 1
+            loop = e.loop
             # decrease loop if start of src is higher than start of loop
             if src_scene.start > e.start:
                 loop -= src_scene.start - e.start
@@ -609,4 +617,5 @@ def get_frameloop(src_scene: SrcScene, f_no: int) -> int:
                     - (src_scene.start + src_scene.count)
                 )
                 raise ValueError(red("validate loop (start+loop) is > end of source"))
+
     return loop
