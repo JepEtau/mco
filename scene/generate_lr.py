@@ -174,7 +174,6 @@ def generate_lr_scene(
     # Decode / Encode
     #-------------------------------------------------------------------------------------
     remaining: int = to_produce
-    out_i: int = 0
     produced: int = 0
 
     # Extract src scenes
@@ -285,7 +284,6 @@ def generate_lr_scene(
 
 
         # decoder frame no.
-        decoded: int = 0
         d_f_no: int = src_start
         f_index: int = 0
 
@@ -295,7 +293,10 @@ def generate_lr_scene(
         # Number of src scenes to use
         remaining_src_scenes -= 1
 
-        while to_decode and remaining > 0:
+        while (
+            to_decode
+            and remaining > 0
+        ):
             _in_f_no = src_start + f_index
             if _in_f_no >= src_start + src_count:
                 print("BREAAAAAAK but why?")

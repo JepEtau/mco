@@ -303,7 +303,7 @@ class UpscalePipeline(object):
         i_thread_config: CpuInferenceThreadConfig = CpuInferenceThreadConfig(
             d_thread=d_thread,
             e_thread=e_thread,
-            resize_scale=2,
+            resize_scale=2.4,
         )
         i_thread_dict = {'cpu': CpuInferenceThread(i_thread_config)}
 

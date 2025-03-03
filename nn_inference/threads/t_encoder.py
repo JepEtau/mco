@@ -89,194 +89,188 @@ class EncoderThread(BaseThread):
         backward_imgs: deque = deque()
         received: int = 0
         # try:
-        if True:
-            with torch.cuda.stream(cuda_stream):
-                while not self._stop_event.is_set():
-                    # Wait for a frame or a poison pill
-                    input = in_queue.get(block=True)
-                    if input is None or self._stop_event.is_set():
-                        if verbose:
-                            print(purple("[V][E] Received Null tensor"))
+        with torch.cuda.stream(cuda_stream):
+            while not self._stop_event.is_set():
+                # Wait for a frame or a poison pill
+                input = in_queue.get(block=True)
+                if input is None or self._stop_event.is_set():
+                    if verbose:
+                        print(purple("[V][E] Received Null tensor"))
 
-                        if src_scene is not None and src_scene['backward']:
-                            count = len(backward_imgs)
-                            for _ in range(count):
-                                writer_subprocess.stdin.write(backward_imgs.pop())
+                    self.end_encoding(writer_subprocess)
+                    writer_subprocess = None
+                    break
 
-                        self.end_encoding(writer_subprocess)
-                        writer_subprocess = None
-                        break
+                frame: NnFrame = input
 
-                    frame: NnFrame = input
+                if scene is None:
+                    # This is a different scene:
+                    # - end the current encoder subprocess
+                    # - start a new one
+                    if src_scene is not None and src_scene['backward']:
+                        count = len(backward_imgs)
+                        for _ in range(count):
+                            writer_subprocess.stdin.write(backward_imgs.pop())
 
-                    if scene is None:
-                        # This is a different scene:
-                        # - end the current encoder subprocess
-                        # - start a new one
-                        if src_scene is not None and src_scene['backward']:
-                            count = len(backward_imgs)
-                            for _ in range(count):
-                                writer_subprocess.stdin.write(backward_imgs.pop())
+                    self.end_encoding(writer_subprocess)
 
-                        self.end_encoding(writer_subprocess)
+                    # New scene
+                    scene = frame.scene
+                    fp: str = scene['task'].video_file
 
-                        # New scene
-                        scene = frame.scene
-                        fp: str = scene['task'].video_file
-
-                        # Use the destination frame count because we integrate all loops here
-                        to_produce: int = scene['dst']['count']
-                        remaining = to_produce
-                        out_i: int = 0
+                    # Use the destination frame count because we integrate all loops here
+                    to_produce: int = scene['dst']['count']
+                    remaining = to_produce
+                    out_i: int = 0
+                    print(purple(f"[V][E] output video file: {fp}"))
+                    print(purple(f"[V][E] scene {scene['no']:03}: frames to produce: {to_produce}"))
+                    if verbose:
                         print(purple(f"[V][E] output video file: {fp}"))
-                        print(purple(f"[V][E] scene {scene['no']:03}: frames to produce: {to_produce}"))
-                        if verbose:
-                            print(purple(f"[V][E] output video file: {fp}"))
-                            print(purple(f"[V][E]Frames to produce: {to_produce}"))
+                        print(purple(f"[V][E]Frames to produce: {to_produce}"))
 
-                        src_scene: SrcScene = None
-                        vsettings: VideoSettings = scene['task'].video_settings
-                        if vsettings.codec not in str_to_video_codec:
-                            sys.exit(red(f"{vsettings.codec} is not supported"))
+                    src_scene: SrcScene = None
+                    vsettings: VideoSettings = scene['task'].video_settings
+                    if vsettings.codec not in str_to_video_codec:
+                        sys.exit(red(f"{vsettings.codec} is not supported"))
 
-                        # stdin pixel format
-                        if PIXEL_FORMAT[vsettings.pix_fmt]['bpp'] > 8:
-                            stdin_pixfmt = 'rgb48'
-                            stdin_dtype = np.uint16
-                            stdin_torch_dtype: torch.dtype = torch.uint16
-                        else:
-                            stdin_pixfmt = 'rgb24'
-                            stdin_dtype = np.uint8
-                            stdin_torch_dtype: torch.dtype = torch.uint8
+                    # stdin pixel format
+                    if PIXEL_FORMAT[vsettings.pix_fmt]['bpp'] > 8:
+                        stdin_pixfmt = 'rgb48'
+                        stdin_dtype = np.uint16
+                        stdin_torch_dtype: torch.dtype = torch.uint16
+                    else:
+                        stdin_pixfmt = 'rgb24'
+                        stdin_dtype = np.uint8
+                        stdin_torch_dtype: torch.dtype = torch.uint8
 
-                        # FFmpeg complex filter
-                        filter_complex: list[str] = []
-                        # upscale_height = 1080 + 2 * vsettings.pad
-                        # if h > upscale_height:
-                        #     # used for 'upscale' task only
-                        #     fcomplex_str += f"""
-                        #         scale=-1:{upscale_height}
-                        #             :lanczos+accurate_rnd+bitexact+full_chroma_int
-                        #     """
-                        filter_complex_list: list[str] = []
+                    # FFmpeg complex filter
+                    filter_complex: list[str] = []
+                    # upscale_height = 1080 + 2 * vsettings.pad
+                    # if h > upscale_height:
+                    #     # used for 'upscale' task only
+                    #     fcomplex_str += f"""
+                    #         scale=-1:{upscale_height}
+                    #             :lanczos+accurate_rnd+bitexact+full_chroma_int
+                    #     """
+                    filter_complex_list: list[str] = []
 
-                        filter_complex_list.append("""
-                            setparams=colorspace=bt709
-                                :color_primaries=bt709
-                                :color_trc=bt709
-                        """)
+                    filter_complex_list.append("""
+                        setparams=colorspace=bt709
+                            :color_primaries=bt709
+                            :color_trc=bt709
+                    """)
 
-                        pad_filter: str = get_ffmpeg_pad_filter(scene)
-                        if pad_filter:
-                            filter_complex_list.append(pad_filter)
+                    pad_filter: str = get_ffmpeg_pad_filter(scene)
+                    if pad_filter:
+                        filter_complex_list.append(pad_filter)
 
-                        additional_filters: list[str] = get_encoder_ffmpeg_filters(
-                            frame.sequence, start_step_no=frame.step_no
-                        )
-                        if additional_filters:
-                            filter_complex_list.extend(additional_filters)
+                    additional_filters: list[str] = get_encoder_ffmpeg_filters(
+                        frame.sequence, start_step_no=frame.step_no
+                    )
+                    if additional_filters:
+                        filter_complex_list.extend(additional_filters)
 
-                        # Generate the FFmpeg filter command
-                        fcomplex_str: str = ','.join(filter_complex_list)
-                        fcomplex_str = clean_fcomplex(fcomplex_str)
-                        if fcomplex_str:
-                            filter_complex = [
-                                "-filter_complex", f"[0:v]{fcomplex_str}[outv]",
-                                "-map", "[outv]"
-                            ]
-
-                        if verbose:
-                            print(purple(f"[V][E] fcomplex_str:"), fcomplex_str)
-
-                        metadata: list[str] = ffmpeg_metadata(scene)
-                        _, _, h, w = frame.tensor.shape
-                        encoder_command: list[str] = [
-                            ffmpeg_exe,
-                            "-hide_banner",
-                            "-loglevel", "error",
-                            "-nostats",
-
-                            "-f", "rawvideo",
-                            '-pixel_format', stdin_pixfmt,
-                            '-video_size', f"{w}x{h}",
-                            "-r", str(vsettings.frame_rate),
-
-                            "-i", "pipe:0",
-                            *filter_complex,
-
-                            "-vcodec", str_to_video_codec[vsettings.codec].value,
-                            *vsettings.codec_options,
-                            "-pix_fmt", vsettings.pix_fmt,
-                            "-color_range", "limited",
-
-                            *metadata,
-                            "-y",
-                            fp
+                    # Generate the FFmpeg filter command
+                    fcomplex_str: str = ','.join(filter_complex_list)
+                    fcomplex_str = clean_fcomplex(fcomplex_str)
+                    if fcomplex_str:
+                        filter_complex = [
+                            "-filter_complex", f"[0:v]{fcomplex_str}[outv]",
+                            "-map", "[outv]"
                         ]
 
-                        print(purple(f"[V][E] command: "), " ".join(encoder_command))
-
-                        os.makedirs(path_split(fp)[0], exist_ok=True)
-                        try:
-                            writer_subprocess = subprocess.Popen(
-                                encoder_command,
-                                stdin=subprocess.PIPE,
-                                stdout=sys.stdout,
-                                stderr=subprocess.STDOUT,
-                                # bufsize=10**8
-                            )
-                        except Exception as e:
-                            print(f"[E] Unexpected error: {type(e)}", flush=True)
-
-                    # Transform a 4D tensor to a 3D tensor (h, w, c)
                     if verbose:
-                        print(
-                            purple(f"[V][E] Received no. {received}:"),
-                            f"{frame.tensor.shape}, {frame.tensor.dtype}, {frame.tensor.shape}"
+                        print(purple(f"[V][E] fcomplex_str:"), fcomplex_str)
+
+                    metadata: list[str] = ffmpeg_metadata(scene)
+                    _, _, h, w = frame.tensor.shape
+                    encoder_command: list[str] = [
+                        ffmpeg_exe,
+                        "-hide_banner",
+                        "-loglevel", "error",
+                        "-nostats",
+
+                        "-f", "rawvideo",
+                        '-pixel_format', stdin_pixfmt,
+                        '-video_size', f"{w}x{h}",
+                        "-r", str(vsettings.frame_rate),
+
+                        "-i", "pipe:0",
+                        *filter_complex,
+
+                        "-vcodec", str_to_video_codec[vsettings.codec].value,
+                        *vsettings.codec_options,
+                        "-pix_fmt", vsettings.pix_fmt,
+                        "-color_range", "limited",
+
+                        *metadata,
+                        "-y",
+                        fp
+                    ]
+
+                    print(purple(f"[V][E] command: "), " ".join(encoder_command))
+
+                    os.makedirs(path_split(fp)[0], exist_ok=True)
+                    try:
+                        writer_subprocess = subprocess.Popen(
+                            encoder_command,
+                            stdin=subprocess.PIPE,
+                            stdout=sys.stdout,
+                            stderr=subprocess.STDOUT,
+                            # bufsize=10**8
                         )
+                    except Exception as e:
+                        print(f"[E] Unexpected error: {type(e)}", flush=True)
 
-                    d_img: torch.tensor = tensor_to_img(
-                        tensor=frame.tensor,
-                        img_dtype=stdin_dtype,
-                        flip_r_b=flip_r_b,
+                # Transform a 4D tensor to a 3D tensor (h, w, c)
+                if verbose:
+                    print(
+                        purple(f"[V][E] Received no. {received}:"),
+                        f"{frame.tensor.shape}, {frame.tensor.dtype}, {frame.tensor.shape}"
                     )
 
-                    # Move to CPU
-                    out_img: np.ndarray = dtoh_transfer(
-                        host_mem=host_mem,
-                        d_img=d_img,
-                        cuda_stream=cuda_stream,
-                    )
+                d_img: torch.tensor = tensor_to_img(
+                    tensor=frame.tensor,
+                    img_dtype=stdin_dtype,
+                    flip_r_b=flip_r_b,
+                )
 
-                    in_f_no: int = frame.f_no
+                # Move to CPU
+                out_img: np.ndarray = dtoh_transfer(
+                    host_mem=host_mem,
+                    d_img=d_img,
+                    cuda_stream=cuda_stream,
+                )
 
-                    # Apply additionnal filters executed by the cpu
-                    # if frame.step_no < len(frame.sequence):
-                    #     apply_cpu_filters_(frame)
+                in_f_no: int = frame.f_no
 
-                    in_frame: McoFrame = McoFrame(
-                        no=in_f_no,
-                        img=out_img,
-                        scene=scene
-                    )
-                    if verbose:
-                        print(purple(f"\nreceived frame no. {in_frame.no}"))
+                # Apply additionnal filters executed by the cpu
+                # if frame.step_no < len(frame.sequence):
+                #     apply_cpu_filters_(frame)
 
-                    if verbose:
-                        print(yellow(f"[V][E] {out_i}: send {frame.f_no}"), flush=True)
+                in_frame: McoFrame = McoFrame(
+                    no=in_f_no,
+                    img=out_img,
+                    scene=scene
+                )
+                if verbose:
+                    print(purple(f"\nreceived frame no. {in_frame.no}"))
 
-                    out_frames: list[McoFrame] = apply_upscale_effects(
-                        in_f_no, in_frame, out_i
-                    )
-                    [writer_subprocess.stdin.write(f.img) for f in out_frames]
-                    out_i += len(out_frames)
-                    remaining -= len(out_frames)
-                    sent = len(out_frames)
+                if verbose:
+                    print(yellow(f"[V][E] {out_i}: send {frame.f_no}"), flush=True)
 
-                    del frame.tensor
-                    if self.progress_thread is not None:
-                        self.progress_thread.put(sent)
-                    self._encoded += sent
+                out_frames: list[McoFrame] = apply_upscale_effects(
+                    in_f_no, in_frame, out_i
+                )
+                [writer_subprocess.stdin.write(f.img) for f in out_frames]
+                out_i += len(out_frames)
+                remaining -= len(out_frames)
+                sent = len(out_frames)
+
+                del frame.tensor
+                if self.progress_thread is not None:
+                    self.progress_thread.put(sent)
+                self._encoded += sent
 
         # except:
         #     print(red(f"[V][E] Error while executing: "), " ".join(encoder_command))

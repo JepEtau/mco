@@ -216,7 +216,7 @@ def calculate_scene_frame_count(scene: Scene) -> int:
         return scene['count']
 
     count = scene['dst']['count']
-    if task_name in ('lr', 'sim', 'final'):
+    if task_name in ('lr', 'sim', 'final', 'sim_lr'):
         ch_video: ChapterVideo = get_target_video(scene)
         if is_first_scene(scene):
             print(lightcyan("first scene, avsync:"), ch_video['avsync'])
@@ -227,31 +227,16 @@ def calculate_scene_frame_count(scene: Scene) -> int:
         if is_last_scene(scene):
             count += ch_video['silence'] if 'silence' in ch_video else 0
 
-        # if 'effects' in scene:
-        #     for e_name in (
-        #         'loop',
-        #         'loop_and_fadein',
-        #         'loop_and_fadeout',
-        #         'zoom_in',
-        #         'zoom_out',
-        #     ):
-        #         if (e := scene['effects'].get_effect(e_name)):
-        #             count += e.loop
 
-    if task_name in ('upscale', 'hr'):
-        # Do not use the final frame count such as loop
-        # use the src scene count
+    elif task_name in ('upscale', 'hr'):
         count = scene['src'].frame_count(exclude_loop=False)
-    # For the scene which has a loop,
-    # remove the loop in number of frames to upscale
-    # if scene['task'].name == 'upscale':
-    #     s: Scene = scene['src'].primary_scene()
-    #     if 'effects' in s:
-    #         for name in ('zoom_in', 'zoom_out'):
-    #             if e := s['effects'].get_effect(name=name):
-    #                 count -= e.loop
 
-    # print(red(f"calculate_frame_count: {scene['no']} -> {count}"))
+    else:
+        warn(yellow(f"{task_name} is not used to calculate frame count"))
+
+
+    print(lightgreen(f"calculate_frame_count: {scene['no']} -> {count}"))
+    print(f"    when upscaling: {scene['src'].frame_count(exclude_loop=False)}")
     return count
 
 

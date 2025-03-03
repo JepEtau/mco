@@ -122,10 +122,10 @@ class DecoderThread(BaseThread):
             # Calculate number of frames to generate, this might differ
             # from the destination: do not process frames with effects
             to_produce: int = calculate_scene_frame_count(scene)
+            remaining: int = to_produce
 
             # A scene may use multiple segments from different scenes
             remaining_src_scenes = len(scene['src'].scenes())
-            remaining: int = to_produce
 
             for src in scene['src'].scenes():
                 src_scene: SrcScene = src.scene
@@ -247,13 +247,10 @@ class DecoderThread(BaseThread):
                 frame_cache: FrameCache = FrameCache(verbose=False)
                 if task_name != 'dsr':
                     frame_cache.set_replaced_frames(src_f_replace)
-                # print(f"    replacements:")
-                # pprint(frame_cache.replacements)
 
                 # Backward scene....
                 if src['backward']:
                     raise NotImplementedError("not implemented anymore")
-
 
                 # decoder frame no.
                 decoded: int = 0
@@ -274,7 +271,6 @@ class DecoderThread(BaseThread):
                     _in_f_no = src_start + f_index
                     if _in_f_no >= src_start + src_count:
                         print("BREAAAAAAK")
-                        self.release()
                         break
 
                     # Get frame_no to send to the consumer
@@ -372,7 +368,7 @@ class DecoderThread(BaseThread):
                     )
                     if verbose:
                         print(
-                            f"[V][D] ({lightgreen(f_index)}) ({in_f_no}), {remaining}. Tensor:",
+                            f"[V][D] ({lightgreen(f_index)}) ({_in_f_no}), {remaining}. Tensor:",
                             f"{d_tensor.shape}, {d_tensor.dtype}"
                         )
                         print(f"[V][D]     Step no.:{frame.step_no}, {frame.sequence[frame.step_no]}")
@@ -397,13 +393,11 @@ class DecoderThread(BaseThread):
 
                     # All frames of the scene have been decoded and sent to consumer
                     if to_produce == 0:
-                        break
+                        print("all frames to be decoded have been decoded")
 
-                # except:
-                #     if verbose:
-                #         print(lightgreen(f"[V][D] Encountered end of file or error. Decoded {f_no} frames"))
+                print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
+                print(lightgreen(f"[V][D] End of src scene {src_scene['no']}"))
 
-            print(lightgreen(f"[V][D] End of src scene {src_scene['no']}"))
             print(lightgreen(f"[V][D] End of scene {scene['no']}"))
         print(lightgreen(f"[V][D] End of decoding"))
 

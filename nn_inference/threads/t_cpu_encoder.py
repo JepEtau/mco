@@ -44,11 +44,12 @@ class CpuEncoderThread(BaseThread):
         verbose: bool = False
 
         in_queue: Queue = self.in_queue
-        writer_subproces: subprocess.Popen | None = None
+        writer_subprocess: subprocess.Popen | None = None
 
         # Default settings
         stdin_pixfmt: str = 'rgb24'
         stdin_dtype: np.dtype = np.uint8
+        flip_r_b: bool = False
         if verbose:
             print(purple("[V][E] Encoder, config:"))
 
@@ -56,9 +57,10 @@ class CpuEncoderThread(BaseThread):
         scene: Scene | None = None
         src_scene: SrcScene = None
         frame: NnFrame = None
-        # backward_imgs: deque = deque()
-        # try:
+        backward_imgs: deque = deque()
+        received: int = 0
         if True:
+        # with torch.cuda.stream(cuda_stream):
             while not self._stop_event.is_set():
                 # Wait for a frame or a poison pill
                 input = in_queue.get(block=True)
@@ -66,13 +68,8 @@ class CpuEncoderThread(BaseThread):
                     if verbose:
                         print(purple("[V][E] Received Null tensor"))
 
-                    # if src_scene is not None and src_scene['backward']:
-                    #     count = len(backward_imgs)
-                    #     for _ in range(count):
-                    #         writer_subproces.stdin.write(backward_imgs.pop())
-
-                    self.end_encoding(writer_subproces)
-                    writer_subproces = None
+                    self.end_encoding(writer_subprocess)
+                    writer_subprocess = None
                     break
 
                 frame: NnFrame = input
@@ -84,9 +81,9 @@ class CpuEncoderThread(BaseThread):
                     if src_scene is not None and src_scene['backward']:
                         count = len(backward_imgs)
                         for _ in range(count):
-                            writer_subproces.stdin.write(backward_imgs.pop())
+                            writer_subprocess.stdin.write(backward_imgs.pop())
 
-                    self.end_encoding(writer_subproces)
+                    self.end_encoding(writer_subprocess)
 
                     # New scene
                     scene = frame.scene
@@ -158,11 +155,13 @@ class CpuEncoderThread(BaseThread):
                     if verbose:
                         print(purple(f"[V][E] fcomplex_str:"), fcomplex_str)
 
+                    # force output codec->
                     codec: str = str_to_video_codec[vsettings.codec].value
                     codec_settings = vsettings.codec_options
                     if not is_cuda_available():
                         codec_settings = []
                         codec = 'libx264'
+                    # <-
 
                     metadata: list[str] = ffmpeg_metadata(scene)
                     h, w = frame.tensor.shape[:2]
@@ -194,7 +193,7 @@ class CpuEncoderThread(BaseThread):
 
                     os.makedirs(path_split(fp)[0], exist_ok=True)
                     try:
-                        writer_subproces = subprocess.Popen(
+                        writer_subprocess = subprocess.Popen(
                             encoder_command,
                             stdin=subprocess.PIPE,
                             stdout=sys.stdout,
@@ -234,31 +233,6 @@ class CpuEncoderThread(BaseThread):
                     out_img = out_img * multiplier
                 out_img = out_img.astype(stdin_dtype, copy=False)
 
-                # Frame replace
-                # Src scene is not the same, create a new cache for frame replacement
-                if src_scene is None or frame.src_scene is not src_scene:
-                    src_scene = frame.src_scene
-                    if verbose:
-                        print(purple(f"[V][E] New src scene:"), src_scene['no'])
-
-                    # Do not replace frames as this video
-                    # will be used to remove dust, scratches
-                    # and set the frames to be replaced
-                    frame_cache: FrameCache = FrameCache()
-                    frame_replace: list | dict[int, int] = []
-                    if frame.scene['task'].name != 'dsr':
-                        frame_replace = src_scene['replace']
-                        frames_to_replace: list[int] = get_frames_to_remove(frame_replace)
-                        frame_cache.set_replaced_frames(frame_replace)
-                        frame_cache._set_exceptions(frames_to_replace)
-
-                    start: int = src_scene['start']
-
-                    if verbose:
-                        print(purple(f"[V][E] frame replace: "), src_scene['replace'])
-
-                    # if src_scene['backward']:
-                    #     backward_imgs: deque = deque()
 
                 in_f_no: int = frame.f_no
                 in_frame: McoFrame = McoFrame(
@@ -266,90 +240,53 @@ class CpuEncoderThread(BaseThread):
                     scene=frame.scene,
                     img=out_img
                 )
+                if verbose:
+                    print(purple(f"\nreceived frame no. {in_frame.no}"))
 
-
-                # if verbose:
-                #     print(yellow(f"[V][E] ({self._encoded}) write image: {out_img.shape}, {out_img.dtype}, in_f_no: {in_f_no}"))
-                # print(purple(f"\nreceived frame no. {in_frame.no}"))
-                # frame_cache.add(in_f_no, in_frame)
-
-                # Send to FFmpeg
-                # sent = 0
-                # while remaining > 0:
-                #     f_no = (
-                #         frame_replace[in_f_no]
-                #         if in_f_no in frame_replace
-                #         else in_f_no
-                #     )
-                #     out_frame: McoFrame = frame_cache[f_no]
-                #     if out_frame is not None:
-
-                #         if src_scene['backward']:
-                #             backward_imgs.append(out_frame.img)
-                #             out_i += 1
-                #             remaining -= 1
-
-                #         else:
-                #             out_frames: list[McoFrame] = apply_upscale_effects(
-                #                 in_f_no, out_frame, out_i
-                #             )
-                #             if verbose:
-                #                 for i, f in enumerate(out_frames):
-                #                    print(yellow(f"[V][E] {out_i + i}: send {f.no}"), flush=True)
-
-                #             [writer_subproces.stdin.write(f.img) for f in out_frames]
-                #             out_i += len(out_frames)
-                #             remaining -= len(out_frames)
-                #             sent += len(out_frames)
-
-                #         # in_f_no += 1
-
-                #     else:
-                #         break
+                if verbose:
+                    print(yellow(f"[V][E] {out_i}: send {frame.f_no}"), flush=True)
 
                 out_frames: list[McoFrame] = apply_upscale_effects(
                     in_f_no, in_frame, out_i
                 )
-                if verbose:
-                    for i, f in enumerate(out_frames):
-                        print(yellow(f"[V][E] {out_i + i}: send {f.no}"), flush=True)
-
-                [writer_subproces.stdin.write(f.img) for f in out_frames]
+                [writer_subprocess.stdin.write(f.img) for f in out_frames]
                 out_i += len(out_frames)
                 remaining -= len(out_frames)
-                sent += len(out_frames)
-
+                sent = len(out_frames)
 
                 del frame.tensor
                 if self.progress_thread is not None:
                     self.progress_thread.put(sent)
                 self._encoded += sent
-                sent = 0
-
-            print(
-                yellow(f"[V][E] Encoded all frames"),
-                f"{self._encoded}",
-                flush=True
-            )
 
         # except:
         #     print(red(f"[V][E] Error while executing: "), " ".join(encoder_command))
-        self.end_encoding(writer_subproces)
+        self._processing = False
+        print(
+            purple(f"[V][E] Encoded all frames"),
+            f"{self._encoded}",
+            flush=True
+        )
+        self.end_encoding(writer_subprocess)
+        # print(purple(f"[V][E] ended"))
+
 
 
     def end_encoding(self, sub_process: subprocess.Popen| None) -> bool:
         # Close output video
-        print(yellow(f"[V][E] end encoding"), flush=True)
         if sub_process is not None:
             stderr_bytes: bytes | None = None
+            stdout_bytes: bytes | None = None
             if sub_process is not None:
                 try:
                     # Arbitrary timeout value
-                    print(yellow(f"[V][E] sent null"), flush=True)
-                    _, stderr_bytes = sub_process.communicate()
+                    stdout_bytes, stderr_bytes = sub_process.communicate(input='', timeout=60)
                 except:
                     sub_process.kill()
                     pass
+            if stdout_bytes is not None:
+                pprint(stdout_bytes.decode('utf-8)'))
+
             if stderr_bytes is not None:
                 std_str = stderr_bytes.decode('utf-8)')
                 # TODO: parse the output file
@@ -365,10 +302,12 @@ class CpuEncoderThread(BaseThread):
             while not self.in_queue.empty():
                 self.in_queue.get_nowait()
         self.put_frame(None)
+        self._processing = False
 
 
     def put_frame(self, frame: NnFrame) -> bool:
-        self.in_queue.put(frame)
+        if self._processing:
+            self.in_queue.put(frame)
         return True
 
 
@@ -378,5 +317,4 @@ class CpuEncoderThread(BaseThread):
 
     def set_progress_callback(self, function: Callable) -> None:
         self.callback = function
-
 
