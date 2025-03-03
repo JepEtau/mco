@@ -109,8 +109,6 @@ class CpuDecoderThread(BaseThread):
                     raise ValueError("why is to_produce < count?")
                     src_count = to_produce
 
-                to_decode: int = src_count
-
                 # Path the src scene so that the encoder receive the correct frame no.
                 # TODO: verify that this will not impact the other scene when using the
                 # same src
@@ -224,6 +222,7 @@ class CpuDecoderThread(BaseThread):
 
                 # Number of src scenes to use
                 remaining_src_scenes -= 1
+                to_decode: int = src_count
 
                 while (
                     not self._stop_event.is_set()
@@ -232,7 +231,8 @@ class CpuDecoderThread(BaseThread):
                 ):
                     _in_f_no = src_start + f_index
                     if _in_f_no >= src_start + src_count:
-                        print("BREAAAAAAK")
+                        print(f"BREAAAAAAK: to_decode: {to_decode}, remaining: {remaining}")
+                        raise
                         break
 
                     # Get frame_no to send to the consumer
@@ -260,6 +260,7 @@ class CpuDecoderThread(BaseThread):
 
                         d_f_no += 1
                         decoded += 1
+                        to_decode -= 1
 
                     # f_no is in cache
                     if f_no in frame_cache:
