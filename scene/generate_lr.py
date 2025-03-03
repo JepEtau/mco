@@ -616,6 +616,9 @@ def get_loop_nframes(src_scene: SrcScene, f_no: int) -> int:
                     (e.start + e.loop)
                     - (src_scene.start + src_scene.count)
                 )
+                print(lightcyan("-------------------------------"))
+                pprint(e)
+                pprint(src_scene)
                 raise ValueError(red("validate loop (start+loop) is > end of source"))
 
     return loop

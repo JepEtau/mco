@@ -95,16 +95,34 @@ def parse_loop_file(k_ep: str, k_ch: Chapter = "", verbose: bool = False) -> Non
             )
             for loop_str in loop_array:
                 result = re.search(re.compile(r"(\d*):(\d*):(\d*)"), loop_str)
+
+                # no start, start from the begin of the scene
+                # 040_08279 = :23:8302
                 start = (
                     src_scene['start']
                     + (int(result.group(1)) if result.group(1) else 0)
                 )
+
+                # no start, no count -> full
+                if not result.group(1) and not result.group(2):
+                    # 143_18005 = ::
+                    loop = src_scene['count']
+
+                # from index to end of the scene
+                elif result.group(1) and not result.group(2):
+                    # 146_18125 = 36::18161
+                    loop = src_scene['count'] - int(result.group(1))
+
                 # +1 here because the second corresponds to the end frame INDEX
-                loop = (
-                    int(result.group(2)) + 1
-                    if result.group(2)
-                    else src_scene['count']
-                )
+                elif not result.group(1) and result.group(2):
+                    loop = int(result.group(2)) + 1
+
+                # start and end specified
+                elif result.group(1) and result.group(2):
+                    # 52:78:5516
+                    loop = int(result.group(2)) - int(result.group(1)) + 1
+
+                # if not specified, use the frame in the middle
                 f_ref = (
                     int(result.group(3))
                     if result.group(3)
