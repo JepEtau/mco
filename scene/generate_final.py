@@ -28,7 +28,7 @@ from parsers import (
     FINAL_HEIGHT,
     Chapter,
 )
-from processing.effects import apply_effect
+from processing.effects import apply_final_effects
 from scene.src_scene import SrcScene
 from utils.images_io import img_info
 from utils.logger import main_logger
@@ -134,7 +134,7 @@ def resize_and_effects(
         )
         out_f_no: int = scene['src'].first_frame_no() + out_i
         out_frame = McoFrame(no=out_f_no, img=img, scene=scene)
-        out_frames: list[McoFrame] | McoFrame = apply_effect(
+        out_frames: list[McoFrame] | McoFrame = apply_final_effects(
             out_f_no=out_f_no,
             frame=out_frame,
             out_i=out_i
@@ -151,7 +151,7 @@ def resize_and_effects(
         # Apply effect before resizing
         out_f_no: int = scene['src'].first_frame_no() + out_i
         out_frame = McoFrame(no=out_f_no, img=np_to_float32(in_img), scene=scene)
-        out_frames: list[McoFrame] | McoFrame = apply_effect(
+        out_frames: list[McoFrame] | McoFrame = apply_final_effects(
             out_f_no=out_f_no,
             frame=out_frame,
             out_i=out_i

@@ -18,12 +18,13 @@ from parsers import (
     get_frame_rate,
     Effect,
 )
+from parsers._helpers import get_chapter_video
 from processing.dsr import generate_dsr_mask
-from processing.effects import apply_effect
+from processing.effects import apply_final_effects, apply_upscale_effects
 from processing.frame_cache import FrameCache
 from processing.watermark import add_watermark
 from scene.filters import do_watermark
-from scene.src_scene import SrcScene
+from scene.src_scene import SrcScene, SrcScenes
 from utils.images_io import write_image
 from utils.logger import main_logger
 from utils.mco_types import ChapterVideo, Inputs, McoFrame, Scene
@@ -36,7 +37,7 @@ from utils.mco_utils import (
     is_last_scene,
     is_up_to_date
 )
-from utils.np_dtypes import np_to_float32
+from utils.np_dtypes import np_to_float32, np_to_uint8
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
@@ -193,13 +194,18 @@ def generate_lr_scene(
         # Patch the input scene so that the encoder receive the correct frame no.
         # TODO: verify that this will not impact the other scene when using the
         # same src
-        if (
-            src_scene.in_scene['start'] != src_start
-            or src_scene.in_scene['count'] != src_count
-        ):
-            raise ValueError(red("input scene has been patched"))
-        src_scene.in_scene['start'] = src_start
-        src_scene.in_scene['count'] = src_count
+        # if (
+        #     in_scene['start'] != src_start
+        #     or in_scene['count'] != src_count
+        # ):
+        #     print("--------------------------------")
+        #     pprint(src_scene)
+        #     ch_video: ChapterVideo = get_chapter_video(scene['dst']['k_ep'], scene['dst']['k_ch'])
+        #     print("--------------------------------")
+        #     pprint(ch_video['effects'])
+        #     raise ValueError(red("input scene has been patched"))
+        #     src_scene.in_scene['start'] = src_start
+        #     src_scene.in_scene['count'] = src_count
 
         # Decimate
         factor: int = 0
@@ -258,8 +264,8 @@ def generate_lr_scene(
         src_f_replace = in_scene['replace']
         frame_cache: FrameCache = FrameCache(verbose=False)
         frame_cache.set_replaced_frames(src_f_replace)
-        print(f"    replacements:")
-        pprint(frame_cache.replacements)
+        # print(f"    replacements:")
+        # pprint(frame_cache.replacements)
 
         # Replace a segment by a loop
         replace_by_loop: bool = False
@@ -269,12 +275,11 @@ def generate_lr_scene(
         ):
             replace_by_loop = True
             for loop in in_scene['effects'].get_effects(name='replace_by_loop'):
-                pprint(loop)
                 frame_cache.add_loop_segment(
                     (loop.start, loop.loop, loop.f_ref)
                 )
-            print(f"    loops:")
-            pprint(frame_cache.segments)
+            # print(f"    loops:")
+            # pprint(frame_cache.segments)
 
         # Dust and scratch removal
         scene_dsr: SceneDsr = in_scene['dsr']
@@ -325,7 +330,8 @@ def generate_lr_scene(
 
                 # Throw this frame away if replaced
                 if frame_cache.to_replace(d_f_no):
-                    print(f"      discard: {d_f_no}")
+                    # print(f"      discard: {d_f_no}")
+                    pass
                 else:
                     # print(f"      add: {d_f_no}")
                     frame_cache.add(d_f_no, img_buffer)
@@ -358,7 +364,7 @@ def generate_lr_scene(
             # Tag it as last frame if no other src scene to decode
             # and this is the last frame of this src scene
             if remaining_src_scenes == 0 and remaining == 1:
-                print(yellow(f"  Tag last frame: {frame.f_no}"))
+                # print(yellow(f"  Tag last frame: {frame.f_no}"))
                 frame.last = True
 
 
@@ -563,33 +569,74 @@ class Encoder:
 
     def encode_frame(self, frame: NnFrame) -> None:
 
-        print(lightgreen(f"    ({self.e_index}) encode: {frame.f_no}"))
+        print(lightgreen(f"    ({self.e_index}) encode: {frame.f_no}, {frame.tensor.shape}, {frame.tensor.dtype}"))
 
-
+        # effect are made on np.ndarray
+        in_f_no: int = frame.f_no
         mco_frame = McoFrame(
-            no=frame.f_no,
+            no=in_f_no,
             img=frame.tensor,
             scene=self.scene
         )
-        f_no: int = frame.f_no
 
-        # Effects only on np.ndarray
+        # Watermark
         if self.watermark:
             out_img: np.ndarray = add_watermark(
                 frame=mco_frame,
-                no=frame.f_no
+                no=in_f_no
             )
+            mco_frame.img = out_img
 
-        out_imgs = [out_img]
+        mco_frame.img = np_to_float32(mco_frame.img)
 
-        src_scene: SrcScene = frame.scene['src'].scenes()[frame.src_scene_index]
-        loop = get_loop_nframes(src_scene, f_no=f_no)
+        # Loops <- put in apply_upscale_effects
+        out_imgs = [mco_frame.img]
+        src_scenes: SrcScenes = frame.scene['src'].scenes()
+        src_scene: SrcScene = src_scenes[frame.src_scene_index]
+        loop = get_loop_nframes(src_scene, f_no=in_f_no)
         if loop:
-            out_imgs = [out_img] * loop
+            out_imgs = [mco_frame.img] * loop
 
-        [self.e_subprocess.stdin.write(img) for img in out_imgs]
-        self.e_index += len(out_imgs)
-        print(f"sent {len(out_imgs)} -> total = {self.e_index}")
+        # Apply upscale effects (loops)
+        out_f_no: int = src_scene.start + self.e_index
+        out_frames = apply_upscale_effects(
+            out_f_no=out_f_no,
+            frame=mco_frame,
+            out_i=self.e_index,
+        )
+
+        if len(out_frames) > 1 and len(out_imgs) > 1:
+            raise ValueError("can\'t have both replace by loop and some other loop effects")
+
+        if len(out_imgs) > 1:
+            # looped
+            out_frames = [
+                McoFrame(no=out_f_no, img=np_to_float32(img), scene=self.scene)
+                for img in out_imgs
+            ]
+
+        # Final effects: fades and specific to generic (overlay, title, blend)
+        print(f"encode: f_no. {out_f_no}, nb of frames: {len(out_frames)}")
+        for out_frame in  out_frames:
+            out_f_no: int = src_scene.start + self.e_index
+
+            out_frames: list[McoFrame] = apply_final_effects(
+                out_f_no=out_f_no,
+                frame=out_frame,
+                out_i=self.e_index
+            )
+            # for debug
+            # if out_frames is None:
+            #     self.e_subprocess.communicate(timeout=60)
+            #     raise
+
+            if len(out_frames) > 1:
+                raise ValueError("final effects must not return multiple frames?")
+
+            self.e_subprocess.stdin.write(np_to_uint8(out_frames[0].img))
+
+            self.e_index += 1
+            print(f"sent {len(out_imgs)} -> total = {self.e_index}")
 
 
 

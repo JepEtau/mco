@@ -40,23 +40,22 @@ def title_filepath() -> str:
     return filepath
 
 
-def apply_effect(
+def apply_final_effects(
     out_f_no: int,
     frame: McoFrame,
     out_i: int
-) -> McoFrame | list[McoFrame]:
+) -> list[McoFrame]:
     # out_i is the index in the final scene from 0 to end
     # out_f_no is the f_no from start of the src scene
     scene: Scene = frame.scene
-    out_frames: list[McoFrame] = []
 
     # There is an effect in the scene used to generate this scene
     # Used by: g_debut
     last_src_scene: SrcScene = scene['src'].last_scene()
-    if 'effects' in last_src_scene and last_src_scene['effects'] is not None:
+    if last_src_scene.effects is not None:
 
         # Blend image with previous frame
-        if effect := last_src_scene['effects'].get_effect('blend'):
+        if effect := last_src_scene.effects.get_effect('blend'):
 
             if out_f_no >= effect.f_ref and out_f_no < effect.f_ref + effect.fade:
                 blend_factor = 1 - float(out_f_no - effect.f_ref ) / effect.fade
@@ -174,26 +173,26 @@ def apply_effect(
                 elif frame.img.dtype == np.uint8:
                     out_img = np_to_uint8(out_img)
                 # print(f"  to {out_img.shape}, {out_img.dtype} (vs initial: {frame.img.dtype})")
-                frames = McoFrame(
+                frames = [McoFrame(
                     no=out_f_no,
                     img=out_img,
                     scene=scene
-                )
+                )]
 
             elif out_f_no == effect.f_ref + effect.fade:
                 # Delete cached frame
                 print(yellow("delete cache frame"))
                 cached_frame = None
-                frames = frame
+                frames = [frame]
 
             else:
-                frames = frame
+                frames = [frame]
 
             return frames
 
         # Add title to the frame, and loop the input frame if not enough frames
         # to add title
-        elif effect := last_src_scene['effects'].get_effect('title'):
+        elif effect := last_src_scene.effects.get_effect('title'):
             start_no: int = effect.f_ref
 
             if out_i >= start_no:
@@ -279,11 +278,11 @@ def apply_effect(
                 elif frame.img.dtype == np.uint8:
                     blended = np_to_uint8(blended)
 
-                frame = McoFrame(
+                frame = [McoFrame(
                     no=frame.no,
                     img=blended,
                     scene=frame.scene
-                )
+                )]
 
                 # if out_i == start_no + effect.loop:
                 #     cached_frame = out_frames[-1]
@@ -361,7 +360,7 @@ def apply_effect(
                     img_out = np_to_uint16(img_out)
                 elif frame.img.dtype == np.uint8:
                     img_out = np_to_uint8(img_out)
-                return McoFrame(no=frame.no, img=img_out, scene=scene)
+                return [McoFrame(no=frame.no, img=img_out, scene=scene)]
 
 
         if effect := effects.get_effect('fadein'):
@@ -376,9 +375,11 @@ def apply_effect(
                     img_out = np_to_uint16(img_out)
                 elif frame.img.dtype == np.uint8:
                     img_out = np_to_uint8(img_out)
-                return McoFrame(no=frame.no, img=img_out, scene=scene)
+                return [McoFrame(no=frame.no, img=img_out, scene=scene)]
+            # else:
+            #     return None
 
-    return frame
+    return [frame]
 
 
 
