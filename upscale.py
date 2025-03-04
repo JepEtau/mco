@@ -10,11 +10,8 @@ from parsers import (
     ep_key,
     parse_database,
     TaskName,
+    parse_prec_asuivre_scenes,
 )
-from parsers.dsr import parse_dsr_file
-from parsers.geometry import parse_geometry_file
-from parsers.replace import parse_replace_file
-from parsers.target_scenes import consolidate_target_scenes
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
@@ -64,13 +61,25 @@ def main():
     # Parse database
     # if arguments.edition != '':
     #     episode = arguments.episode
-    k_ch: Chapter = arguments.chapter
+    k_ch_dst: Chapter = arguments.chapter
+    ep_no_dst: int = arguments.episode
+    k_ep_dst: str = ep_key(arguments.episode)
 
-    parse_database(
-        episode=episode,
-        lang=arguments.lang,
-    )
+    k_ch: Chapter = k_ch_dst
+    k_ep: str = k_ep_dst
+
+    # Parse following/previous chapter
+    if k_ch_dst in ('precedemment', 'asuivre'):
+        k_ep = ep_key(ep_no_dst + (1 if k_ch_dst == 'asuivre' else -1))
+        k_ch = 'episode'
+
+    parse_database(episode=k_ep, lang=arguments.lang)
     gc.collect()
+
+    # Parse target list for these chapters
+    scene_list: list[int] = []
+    if k_ch_dst in ('precedemment', 'asuivre'):
+        scene_list = parse_prec_asuivre_scenes(k_ep=k_ep_dst, k_ch=k_ch_dst)
 
     # next_episode: str = ep_key(episode+1)
     # consolidate_target_scenes(k_ep=next_episode, k_ch='episode')
@@ -85,7 +94,7 @@ def main():
     task: TaskName = 'upscale'
 
     upscale_scenes(
-        episode=arguments.episode,
+        episode=k_ep,
         single_chapter=k_ch,
         task_name=task,
         force=arguments.force,
@@ -93,6 +102,7 @@ def main():
         scene_no=scene_no,
         scene_min=arguments.scene_min,
         scene_max=arguments.scene_max,
+        scene_list=scene_list,
         watermark=arguments.watermark,
         edition=arguments.edition,
         debug=arguments.debug,

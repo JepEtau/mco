@@ -374,7 +374,6 @@ def parse_target_scenelist(
             current_scene_no: int | None = None
             segment_start: int = -1
             segment_count: int = -1
-            backward: bool = False
             effects: Effects | None = None
             _k_ep: str = k_ep
             for p in scene_properties:
@@ -406,12 +405,10 @@ def parse_target_scenelist(
                             no=current_scene_no,
                             start=segment_start,
                             count=segment_count,
-                            backward=backward
                         )
                     segment_start = -1
                     segment_count = -1
                     current_scene_no = None
-                    backward = False
 
                     if ed_ep_ch_scene := re.search(re.compile(r"([a-z]{1})?:*(\d{1,2}):([a-z_]+)?:*(\d+)?"), v):
                         if ed_ep_ch_scene.group(1) is not None:
@@ -440,18 +437,10 @@ def parse_target_scenelist(
                            no=current_scene_no,
                            start=segment_start,
                            count=segment_count,
-                           backward=backward
                        )
                     current_scene_no = int(v)
                     segment_start = -1
                     segment_count = -1
-                    backward = False
-
-                elif k == 'backward':
-                    raise
-                    if v.lower() == "true":
-                        backward = True
-                        raise
 
                 elif k in ('segment', 'sg'):
                     start_count = v.split(':')
@@ -561,7 +550,6 @@ def parse_target_scenelist(
                 no=current_scene_no if current_scene_no is not None else scene_no,
                 start=segment_start,
                 count=segment_count,
-                backward=backward,
                 effects=effects
             )
 

@@ -28,12 +28,10 @@ class SrcScene:
         in_scene: Scene,
         start: int,
         count: int,
-        backward: bool,
         k_ed_ep_ch_no: tuple[str, str, str, int],
         effects: Effects | None,
     ):
         self.__dict__.update({
-            'backward': backward,
             'k_ed_ep_ch_no': k_ed_ep_ch_no,
         })
         self._start: int = start
@@ -132,10 +130,13 @@ class SrcScene:
         class_dict = {k: v for k, v in self.__dict__.items() if k not in ('scene', '_scene')}
         class_dict['count'] = self.count
         class_dict['to_decode'] = self.to_decode
-        ed_scene = self.in_scene
-        class_dict['scene'] = (
-            "{" + f"{ed_scene['k_ed']}:{ed_scene['k_ep']}:{ed_scene['k_ch']}:{ed_scene['no']}..." + "}"
-        )
+        if self.in_scene is None:
+            class_dict['scene'] = "None"
+        else:
+            ed_scene = self.in_scene
+            class_dict['scene'] = (
+                "{" + f"{ed_scene['k_ed']}:{ed_scene['k_ep']}:{ed_scene['k_ch']}:{ed_scene['no']}..." + "}"
+            )
 
         class_str = "\n        {\n"
         class_str += "\n".join([f"            \'{k}\': {v}" for k, v in class_dict.items()])
@@ -157,7 +158,6 @@ class SrcScenes:
         start: int,
         count: int,
         effects: Effects = None,
-        backward: bool = False
     ) -> None:
         _scene = None
         try:
@@ -180,7 +180,6 @@ class SrcScenes:
             count=count,
             k_ed_ep_ch_no=(k_ed, k_ep, k_ch, no),
             effects=effects,
-            backward=backward,
         )
         self._scenes.append(src_scene)
 

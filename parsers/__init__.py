@@ -85,6 +85,11 @@ from .loop import (
     get_loop_nframes,
 )
 
+from .prec_asuivre_target import (
+    parse_prec_asuivre_scenes,
+)
+
+
 __all__ = [
     "db",
     "clean_ffmpeg_filter",
@@ -138,5 +143,6 @@ __all__ = [
     "calc_hash",
 
     "get_loop_nframes",
+    "parse_prec_asuivre_scenes",
 
 ]

@@ -54,6 +54,7 @@ def upscale_scenes(
     scene_no: int | None = None,
     scene_min: int = -1,
     scene_max: int = -1,
+    scene_list: list[int] = [],
     watermark: bool = False,
     edition: str | None = None,
     debug: bool = False,
@@ -131,6 +132,14 @@ def upscale_scenes(
 
             if scene_min != -1:
                 if scene['no'] < scene_min:
+                    continue
+
+            if scene_max != -1:
+                if scene['no'] > scene_max:
+                    continue
+
+            if scene_list:
+                if scene['no'] not in scene_list:
                     continue
 
             if k_ed is not None and k_ed:

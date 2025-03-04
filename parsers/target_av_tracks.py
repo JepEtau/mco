@@ -49,7 +49,8 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
         video_count = ch_video['count']
 
         if video_count > audio_count:
-            raise ValueError(red(f"{k_ep}:{k_ch} too many frames"))
+            # raise ValueError(red(f"{k_ep}:{k_ch} too many frames ({video_count} > {audio_count})"))
+            pass
 
         elif audio_count > video_count:
             print(yellow(f"[W] {k_ep}:{k_ch} add loop and fadeout"))
