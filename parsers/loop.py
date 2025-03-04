@@ -4,26 +4,23 @@ import os.path
 from pprint import pprint
 import re
 
-from utils.mco_types import ChapterVideo
 from utils.path_utils import absolute_path
 from utils.p_print import *
 from ._db import db
 from .effects import (
     Effects,
     Effect,
-    EffectName,
 )
-from ._helpers import get_chapter_video
 from ._keys import (
     Chapter,
     credit_chapter_keys,
-    ep_no,
 )
 from .scenes import get_scene_from_frame_no
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from utils.mco_types import Scene
+from scene.src_scene import SrcScene
 
 
 
@@ -152,3 +149,37 @@ def parse_loop_file(k_ep: str, k_ch: Chapter = "", verbose: bool = False) -> Non
                 if verbose:
                     print(darkgrey("[I] Added effect:"))
                     pprint(src_scene)
+
+
+
+
+
+def get_loop_nframes(src_scene: SrcScene, f_no: int) -> int:
+    """Returns the number of loops, frame ref included"""
+    loop: int = 0
+
+    in_scene: Scene = src_scene.in_scene
+    if 'effects' not in in_scene:
+        return loop
+
+    e: Effect
+    for e in in_scene['effects'].get_effects('replace_by_loop'):
+        if f_no == e.f_ref:
+            loop = e.loop
+            # decrease loop if start of src is higher than start of loop
+            if src_scene.start > e.start:
+                loop -= src_scene.start - e.start
+                raise ValueError(red("validate loop start < src start"))
+
+            # decrease loop if end of src is lower than end of loop
+            elif (e.start + e.loop)  > (src_scene.start + src_scene.count):
+                loop -= (
+                    (e.start + e.loop)
+                    - (src_scene.start + src_scene.count)
+                )
+                print(lightcyan("-------------------------------"))
+                pprint(e)
+                pprint(src_scene)
+                raise ValueError(red("validate loop (start+loop) is > end of source"))
+
+    return loop

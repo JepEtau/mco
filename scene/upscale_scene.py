@@ -34,7 +34,9 @@ from parsers import Filter
 from utils.mco_types import Scene
 from utils.p_print import *
 from utils.pxl_fmt import PIXEL_FORMAT
-
+from utils.mco_utils import (
+    calculate_scene_frame_count,
+)
 
 
 @dataclass
@@ -360,11 +362,11 @@ class UpscalePipeline(object):
         encoded: int = 0
 
         ask_to_end: bool = False
-        framecount: int = self.scene['dst']['count']
+        to_produce: int = calculate_scene_frame_count(scene=self.scene)
         while True:
             if not decoding:
                 # All frames encoded, send poison pill to all inference threads
-                if e_thread.encoded == framecount and ask_to_end:
+                if e_thread.encoded == to_produce and ask_to_end:
                     print("[V][C] All frames encoded, send poison pill to encoder")
                     e_thread.put_frame(None)
                     ask_to_end = False
@@ -397,7 +399,7 @@ class UpscalePipeline(object):
                     #         thread.put_frame(None)
                     decoding = False
                     ask_to_end = True
-                    print(f"[V][C] wait for {framecount} to be encoded")
+                    print(f"[V][C] wait for {to_produce} to be encoded")
 
             time.sleep(0.0001)
             if not e_thread.is_alive() and d_thread.is_alive():

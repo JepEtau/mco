@@ -23,6 +23,7 @@ from parsers import (
     db,
     Effect,
     Effects,
+    get_loop_nframes,
 )
 from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
@@ -403,6 +404,13 @@ def apply_upscale_effects(
             ):
                 return [frame] * (effect.loop + 1)
 
+    # Replace by loop
+    loop = get_loop_nframes(
+        src_scene=frame.scene['src'].scenes()[frame.src_scene_index],
+        f_no=frame.no
+    )
+    if loop:
+        return [frame] * loop
 
     # Only for doc. to reduce number of tests, discard this if not doc
     if scene['dst']['k_ch'] == 'doc':

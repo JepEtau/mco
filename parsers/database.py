@@ -21,7 +21,6 @@ from .episode import (
     parse_episode,
 )
 from .logger import logger
-from .loop import parse_loop_file
 from .target_scenes import (
     consolidate_target_scenes,
     consolidate_target_scenes_g,
@@ -38,8 +37,8 @@ from .stabilize import parse_stabilize_file
 from ._keys import (
     credit_chapter_keys,
     non_credit_chapter_keys,
-    ep_key,
 )
+from .loop import parse_loop_file
 from ._db import db
 from .p_print import pprint_episode, pprint_g_debut_fin
 from .vsettings import parse_video_settings

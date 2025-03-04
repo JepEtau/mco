@@ -39,6 +39,7 @@ class McoFrame:
     no: int
     img: np.ndarray
     scene: Scene = None
+    src_scene_index: int = 1e3
 
 
 @dataclass

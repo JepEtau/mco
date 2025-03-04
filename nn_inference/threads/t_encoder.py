@@ -22,13 +22,15 @@ from processing.effects import apply_upscale_effects
 from scene.filters import do_watermark, get_ffmpeg_pad_filter, clean_fcomplex
 from scene.src_scene import SrcScene
 from utils.mco_types import McoFrame, Scene
-from utils.mco_utils import ffmpeg_metadata
+from utils.mco_utils import (
+    ffmpeg_metadata,
+    calculate_scene_frame_count,
+)
 from utils.media import str_to_video_codec
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.tools import ffmpeg_exe
-
 from pynnlib import (
     is_cuda_available,
     tensor_to_img,
@@ -107,11 +109,6 @@ class EncoderThread(BaseThread):
                     # This is a different scene:
                     # - end the current encoder subprocess
                     # - start a new one
-                    if src_scene is not None and src_scene['backward']:
-                        count = len(backward_imgs)
-                        for _ in range(count):
-                            writer_subprocess.stdin.write(backward_imgs.pop())
-
                     self.end_encoding(writer_subprocess)
 
                     # New scene
@@ -119,9 +116,9 @@ class EncoderThread(BaseThread):
                     fp: str = scene['task'].video_file
 
                     # Use the destination frame count because we integrate all loops here
-                    to_produce: int = scene['dst']['count']
+                    to_produce: int = calculate_scene_frame_count(scene)
                     remaining = to_produce
-                    out_i: int = 0
+                    e_index: int = 0
                     print(purple(f"[V][E] output video file: {fp}"))
                     print(purple(f"[V][E] scene {scene['no']:03}: frames to produce: {to_produce}"))
                     if verbose:
@@ -243,27 +240,25 @@ class EncoderThread(BaseThread):
                 )
 
                 in_f_no: int = frame.f_no
-
-                # Apply additionnal filters executed by the cpu
-                # if frame.step_no < len(frame.sequence):
-                #     apply_cpu_filters_(frame)
-
                 in_frame: McoFrame = McoFrame(
                     no=in_f_no,
                     img=out_img,
-                    scene=scene
+                    scene=scene,
+                    src_scene_index=frame.src_scene_index,
                 )
                 if verbose:
                     print(purple(f"\nreceived frame no. {in_frame.no}"))
 
                 if verbose:
-                    print(yellow(f"[V][E] {out_i}: send {frame.f_no}"), flush=True)
+                    print(yellow(f"[V][E] {e_index}: send {frame.f_no}"), flush=True)
 
+                src_scene: SrcScene = frame.scene['src'].scenes()[frame.src_scene_index]
+                out_f_no: int = src_scene.start + e_index
                 out_frames: list[McoFrame] = apply_upscale_effects(
-                    in_f_no, in_frame, out_i
+                    out_f_no=out_f_no, frame=in_frame, out_i=e_index
                 )
                 [writer_subprocess.stdin.write(f.img) for f in out_frames]
-                out_i += len(out_frames)
+                e_index += len(out_frames)
                 remaining -= len(out_frames)
                 sent = len(out_frames)
 

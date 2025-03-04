@@ -216,7 +216,9 @@ def calculate_scene_frame_count(scene: Scene) -> int:
         return scene['count']
 
     count = scene['dst']['count']
-    if task_name in ('lr', 'sim', 'final', 'sim_lr'):
+    if task_name in (
+        'lr', 'sim', 'final', 'sim_lr',
+    ):
         ch_video: ChapterVideo = get_target_video(scene)
         if is_first_scene(scene):
             print(lightcyan("first scene, avsync:"), ch_video['avsync'])

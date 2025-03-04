@@ -17,6 +17,7 @@ from parsers import (
     DsrRegion,
     get_frame_rate,
     Effect,
+    get_loop_nframes,
 )
 from parsers._helpers import get_chapter_video
 from processing.dsr import generate_dsr_mask
@@ -268,12 +269,10 @@ def generate_lr_scene(
         # pprint(frame_cache.replacements)
 
         # Replace a segment by a loop
-        replace_by_loop: bool = False
         if (
             'effects' in in_scene
             and in_scene['effects'].has_effect(name='replace_by_loop')
         ):
-            replace_by_loop = True
             for loop in in_scene['effects'].get_effects(name='replace_by_loop'):
                 frame_cache.add_loop_segment(
                     (loop.start, loop.loop, loop.f_ref)
@@ -396,66 +395,10 @@ def generate_lr_scene(
             break
 
 
-        # raise
-        # # in_f_no is incremented before reading in pipe
-        # d_virtual_f_no: int = src_start
-        # f_index: int = 0
-        # f_no: int = d_virtual_f_no
-        # d_f_no: int = d_virtual_f_no
-        # decoded: int = 0
-
-        # out_f_no: int = src_start
-
-        # in_frame: McoFrame = None
-        # out_frame: McoFrame = None
-        # out_i: int = 0
-
-        # # backward
-        # backward_imgs: deque = deque()
 
         # # decimate
         # decimate_index: int = 0
         # decimate_index2: int = 0
-        # while (
-        #     decoded < src_count
-        #     and remaining > 0
-        # ):
-
-        #     in_frame: McoFrame = None
-        #     while in_frame is None:
-        #         d_virtual_f_no += 1
-        #         img: np.ndarray = np.frombuffer(
-        #             d_subprocess.stdout.read(in_pipe_img_nbytes),
-        #             dtype=img_dtype,
-        #         ).reshape(img_shape)
-
-        #         # if replace_by_loop:
-        #         #     for l in loops:
-
-
-
-        #         if d_virtual_f_no not in frames_to_replace:
-        #             # print(purple(f"Read frame no.{in_f_no}"))
-        #             mask_img: np.ndarray = generate_dsr_mask(
-        #                 scene=src_scene,
-        #                 frame_no=d_virtual_f_no,
-        #                 shape=img.shape,
-        #             )
-        #             if mask_img is not None:
-        #                 # start_time = time.time()
-        #                 radius: int = 5
-        #                 img = cv2.inpaint(
-        #                     img,
-        #                     inpaintMask=mask_img,
-        #                     inpaintRadius=radius,
-        #                     flags=cv2.INPAINT_TELEA
-        #                 )
-        #                 # print(f"elapsed: {(time.time() - start_time) * 1000:.01f}ms")
-        #                 # write_image(f"mask_{in_f_no:04}_in.png", img)
-        #                 # write_image(f"mask_{in_f_no:04}_out.png", out_img)
-        #             in_frame: McoFrame = McoFrame(
-        #                 no=d_virtual_f_no, img=img, scene=scene
-        #             )
 
         #     # decimate
         #     decimate_index += 1
@@ -469,63 +412,6 @@ def generate_lr_scene(
         #             out_f_no += 1
         #             continue
 
-        #     out_frame = None
-        #     frame_cache.add(d_virtual_f_no, in_frame)
-        #     while True:
-        #         f_no = frame_replace[out_f_no] if out_f_no in frame_replace else out_f_no
-        #         out_frame = None
-
-        #         from_cache = False
-        #         if f_no == d_virtual_f_no:
-        #             out_frame = in_frame
-
-        #         elif f_no in frame_cache:
-        #             out_frame = frame_cache[f_no]
-        #             from_cache = True
-
-        #         if out_frame is not None:
-
-        #             if watermark:
-        #                 out_frame.img = add_watermark(
-        #                     frame=out_frame,
-        #                     no=out_frame.no
-        #                 )
-
-        #             out_frames = apply_effect(out_f_no, out_frame, out_i)
-        #             if isinstance(out_frames, list):
-        #                 print(yellow(f"\t{out_i}: send {len(out_frames)}"))
-        #                 if src['backward']:
-        #                     for f in out_frames:
-        #                         backward_imgs.append(f.img)
-        #                 else:
-        #                     for f in out_frames:
-        #                         # print(lightcyan(f.img.shape))
-        #                         e_subprocess.stdin.write(f.img)
-
-        #                 produced += len(out_frames)
-        #                 out_i += len(out_frames)
-
-        #             else:
-        #                 out_frame = out_frames
-        #                 # print(yellow(f"\t{out_i}: send {out_frame.no} (from {'cache' if from_cache else 'producer'})"))
-        #                 if src['backward']:
-        #                     backward_imgs.append(out_frame.img)
-        #                 else:
-        #                     # print(lightcyan(out_frame.img.shape))
-        #                     e_subprocess.stdin.write(out_frame.img)
-        #                 produced += 1
-        #                 out_i += 1
-
-        #             out_f_no += 1
-        #             src_count -= 1
-        #         else:
-        #             break
-
-        # del frame_cache
-        # if backward_imgs:
-        #     src_count = len(backward_imgs)
-        #     for _ in range(src_count):
-        #         e_subprocess.stdin.write(backward_imgs.pop())
 
     main_logger.info(f"produced: {produced}")
     if is_last_scene(scene):
@@ -576,7 +462,8 @@ class Encoder:
         mco_frame = McoFrame(
             no=in_f_no,
             img=frame.tensor,
-            scene=self.scene
+            scene=self.scene,
+            src_scene_index=frame.src_scene_index,
         )
 
         # Watermark
@@ -589,15 +476,9 @@ class Encoder:
 
         mco_frame.img = np_to_float32(mco_frame.img)
 
-        # Loops <- put in apply_upscale_effects
-        out_imgs = [mco_frame.img]
-        src_scenes: SrcScenes = frame.scene['src'].scenes()
-        src_scene: SrcScene = src_scenes[frame.src_scene_index]
-        loop = get_loop_nframes(src_scene, f_no=in_f_no)
-        if loop:
-            out_imgs = [mco_frame.img] * loop
 
         # Apply upscale effects (loops)
+        src_scene: SrcScene = frame.scene['src'].scenes()[frame.src_scene_index]
         out_f_no: int = src_scene.start + self.e_index
         out_frames = apply_upscale_effects(
             out_f_no=out_f_no,
@@ -605,15 +486,9 @@ class Encoder:
             out_i=self.e_index,
         )
 
-        if len(out_frames) > 1 and len(out_imgs) > 1:
-            raise ValueError("can\'t have both replace by loop and some other loop effects")
-
-        if len(out_imgs) > 1:
-            # looped
-            out_frames = [
-                McoFrame(no=out_f_no, img=np_to_float32(img), scene=self.scene)
-                for img in out_imgs
-            ]
+        # Convert to np.float
+        for f in out_frames:
+            f.img = np_to_float32(f.img)
 
         # Final effects: fades and specific to generic (overlay, title, blend)
         print(f"encode: f_no. {out_f_no}, nb of frames: {len(out_frames)}")
@@ -636,36 +511,5 @@ class Encoder:
             self.e_subprocess.stdin.write(np_to_uint8(out_frames[0].img))
 
             self.e_index += 1
-            print(f"sent {len(out_imgs)} -> total = {self.e_index}")
+            print(f"sent {len(out_frames)} -> total = {self.e_index}")
 
-
-
-def get_loop_nframes(src_scene: SrcScene, f_no: int) -> int:
-    """Returns the number of loops, frame ref included"""
-    loop: int = 0
-
-    in_scene: Scene = src_scene.in_scene
-    if 'effects' not in in_scene:
-        return loop
-
-    e: Effect
-    for e in in_scene['effects'].get_effects('replace_by_loop'):
-        if f_no == e.f_ref:
-            loop = e.loop
-            # decrease loop if start of src is higher than start of loop
-            if src_scene.start > e.start:
-                loop -= src_scene.start - e.start
-                raise ValueError(red("validate loop start < src start"))
-
-            # decrease loop if end of src is lower than end of loop
-            elif (e.start + e.loop)  > (src_scene.start + src_scene.count):
-                loop -= (
-                    (e.start + e.loop)
-                    - (src_scene.start + src_scene.count)
-                )
-                print(lightcyan("-------------------------------"))
-                pprint(e)
-                pprint(src_scene)
-                raise ValueError(red("validate loop (start+loop) is > end of source"))
-
-    return loop

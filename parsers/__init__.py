@@ -81,6 +81,10 @@ from .stabilize import (
     StabilizeParams,
 )
 
+from .loop import (
+    get_loop_nframes,
+)
+
 __all__ = [
     "db",
     "clean_ffmpeg_filter",
@@ -132,5 +136,7 @@ __all__ = [
     "Effects",
 
     "calc_hash",
+
+    "get_loop_nframes",
 
 ]

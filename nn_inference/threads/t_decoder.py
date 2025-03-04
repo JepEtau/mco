@@ -49,6 +49,9 @@ from utils.time_conversions import (
     frame_to_sexagesimal,
 )
 from utils.tools import ffmpeg_exe
+from parsers import (
+    get_loop_nframes,
+)
 
 warnings.filterwarnings("ignore", category=UserWarning, message=".*non-writable tensors.*")
 
@@ -129,7 +132,7 @@ class DecoderThread(BaseThread):
             remaining_src_scenes = len(scene['src'].scenes())
 
             for src_index, src_scene in enumerate(scene['src'].scenes()):
-                in_scene: SrcScene = src_scene.in_scene
+                in_scene: Scene = src_scene.in_scene
                 # Input scene is low resolution, this won't work for doc
                 #  but we don't care because we use another pipeline for this
                 #  consolidate_src should be modified for this
@@ -149,10 +152,12 @@ class DecoderThread(BaseThread):
                 # Path the src scene so that the encoder receive the correct frame no.
                 # TODO: verify that this will not impact the other scene when using the
                 # same src
-                src_scene.in_scene['start'] = src_start
-                src_scene.in_scene['count'] = src_count
+                # src_scene.in_scene['start'] = src_start
+                # src_scene.in_scene['count'] = src_count
+                to_decode: int = src_count
+
                 if verbose:
-                    print(lightgreen(f"[V][D] {src_count} frames to extract"))
+                    print(lightgreen(f"[V][D] {to_decode} frames to extract"))
 
                 # Get filters
                 task_name = scene['task'].name
@@ -200,7 +205,7 @@ class DecoderThread(BaseThread):
                         )
                     ),
                     "-i", in_video_fp,
-                    "-t", str(frame_to_s(no=src_count, frame_rate=frame_rate)),
+                    "-t", str(frame_to_s(no=to_decode, frame_rate=frame_rate)),
 
                     *filter_complex,
 
@@ -247,21 +252,26 @@ class DecoderThread(BaseThread):
                 if task_name != 'dsr':
                     frame_cache.set_replaced_frames(src_f_replace)
 
-                # Backward scene....
-                if src_scene['backward']:
-                    raise NotImplementedError("not implemented anymore")
+                # Replace a segment by a loop
+                if (
+                    'effects' in in_scene
+                    and in_scene['effects'].has_effect(name='replace_by_loop')
+                ):
+                    for loop in in_scene['effects'].get_effects(name='replace_by_loop'):
+                        frame_cache.add_loop_segment(
+                            (loop.start, loop.loop, loop.f_ref)
+                        )
 
                 # decoder frame no.
-                decoded: int = 0
                 d_f_no: int = src_start
                 f_index: int = 0
+                decoded: int = 0
 
                 # f_no is the frame no. to send to the encoder
                 f_no: int = src_start
 
                 # Number of src scenes to use
                 remaining_src_scenes -= 1
-                to_decode: int = src_count
 
                 while (
                     not self._stop_event.is_set()
@@ -397,8 +407,14 @@ class DecoderThread(BaseThread):
                         ]
                         consumer.put_frame(frame)
 
-                    remaining -= 1
-                    f_index += 1
+                    # increment _in_f_no, because 'loop' frames have been sent to the encoder
+                    loop = get_loop_nframes(src_scene, f_no=f_no)
+                    if loop:
+                        remaining -= loop
+                        f_index += loop
+                    else:
+                        remaining -= 1
+                        f_index += 1
 
                     # All frames of the scene have been decoded and sent to consumer
                     if to_produce == 0:

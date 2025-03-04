@@ -19,7 +19,6 @@ from scene.filters import clean_fcomplex
 from utils.mco_utils import calculate_scene_frame_count
 if TYPE_CHECKING:
     from .t_inference import InferenceThread
-    from scene.src_scene import SrcScene
     from parsers import Filter
 
 from nn_inference.resource_mgr import NnFrame, BaseThread
@@ -34,7 +33,7 @@ from utils.time_conversions import (
     frame_to_sexagesimal,
 )
 from utils.tools import ffmpeg_exe
-
+from parsers import get_loop_nframes
 
 
 @dataclass
@@ -75,7 +74,7 @@ class CpuDecoderThread(BaseThread):
 
 
     def run(self) -> None:
-        verbose: bool = True
+        verbose: bool = False
         scene: Scene = self.scene
 
         e_thread: CpuEncoderThread = self.config.e_thread
@@ -91,12 +90,12 @@ class CpuDecoderThread(BaseThread):
             remaining_src_scenes = len(scene['src'].scenes())
 
             # A scene may use multiple segments from different scenes
-            for src in scene['src'].scenes():
-                src_scene: SrcScene = src.in_scene
+            for src_index, src_scene in enumerate(scene['src'].scenes()):
+                in_scene: Scene = src_scene.in_scene
                 # Input scene is low resolution, this won't work for doc
                 #  but we don't care because we use another pipeline for this
                 #  consolidate_src should be modified for this
-                src_scene_inputs: Inputs = src_scene['inputs']
+                src_scene_inputs: Inputs = in_scene['inputs']
                 in_video_fp: str = src_scene_inputs.progressive().filepath
 
                 if verbose or True:
@@ -104,18 +103,20 @@ class CpuDecoderThread(BaseThread):
                 in_video_info: VideoStreamInfo = src_scene_inputs.progressive().info
 
                 frame_rate: FrameRate = in_video_info.frame_rate
-                src_start, src_count = src.start, src.count
+                src_start, src_count = src_scene.start, src_scene.count
                 if to_produce < src_count:
                     raise ValueError("why is to_produce < count?")
                     src_count = to_produce
 
-                # Path the src scene so that the encoder receive the correct frame no.
-                # TODO: verify that this will not impact the other scene when using the
-                # same src
-                src.in_scene['start'] = src_start
-                src.in_scene['count'] = src_count
-                if verbose:
-                    print(lightgreen(f"[V][D] {src_count} frames to extract"))
+                # # Path the src scene so that the encoder receive the correct frame no.
+                # # TODO: verify that this will not impact the other scene when using the
+                # # same src
+                # src_scene.in_scene['start'] = src_start
+                # src_scene.in_scene['count'] = src_count
+                # if verbose:
+                #     print(lightgreen(f"[V][D] {src_count} frames to extract"))
+
+                to_decode: int = src_count
 
                 # Get filters
                 task_name = scene['task'].name
@@ -163,7 +164,7 @@ class CpuDecoderThread(BaseThread):
                         )
                     ),
                     "-i", in_video_fp,
-                    "-t", str(frame_to_s(no=src_count, frame_rate=frame_rate)),
+                    "-t", str(frame_to_s(no=to_decode, frame_rate=frame_rate)),
 
                     *filter_complex,
 
@@ -203,26 +204,31 @@ class CpuDecoderThread(BaseThread):
                 flip_r_b: bool = in_video_info.img_c_order != 'rgb'
 
                 # Frame replacement
-                src_f_replace = src_scene['replace']
+                src_f_replace = in_scene['replace']
                 frame_cache: FrameCache = FrameCache(verbose=False)
                 if task_name != 'dsr':
                     frame_cache.set_replaced_frames(src_f_replace)
 
-                # Backward scene....
-                if src['backward']:
-                    raise NotImplementedError("not implemented anymore")
+                # Replace a segment by a loop
+                if (
+                    'effects' in in_scene
+                    and in_scene['effects'].has_effect(name='replace_by_loop')
+                ):
+                    for loop in in_scene['effects'].get_effects(name='replace_by_loop'):
+                        frame_cache.add_loop_segment(
+                            (loop.start, loop.loop, loop.f_ref)
+                        )
 
                 # decoder frame no.
-                decoded: int = 0
                 d_f_no: int = src_start
                 f_index: int = 0
+                decoded: int = 0
 
                 # f_no is the frame no. to send to the encoder
                 f_no: int = src_start
 
                 # Number of src scenes to use
                 remaining_src_scenes -= 1
-                to_decode: int = src_count
 
                 while (
                     not self._stop_event.is_set()
@@ -302,7 +308,7 @@ class CpuDecoderThread(BaseThread):
                         last=False,
 
                         scene=scene,
-                        src_scene=src_scene,
+                        src_scene_index=src_index,
                         sequence=filter_steps,
                         step_no=start_step_no,
                         encoder_step_no=encoder_step_no,
@@ -329,13 +335,19 @@ class CpuDecoderThread(BaseThread):
                         consumer = self.i_threads['cpu']
                         consumer.put_frame(frame)
 
-                    remaining -= 1
-                    f_index += 1
+                    # increment _in_f_no, because 'loop' frames have been sent to the encoder
+                    loop = get_loop_nframes(src_scene, f_no=f_no)
+                    if loop:
+                        remaining -= loop
+                        f_index += loop
+                    else:
+                        remaining -= 1
+                        f_index += 1
 
                 # except:
                 #     if verbose:
                 #         print(lightgreen(f"[V][D] Encountered end of file or error. Decoded {f_no} frames"))
-                print(lightgreen(f"[V][D] End of src scene {src_scene['no']}"))
+                print(lightgreen(f"[V][D] End of src scene {in_scene['no']}"))
             print(lightgreen(f"[V][D] End of scene {scene['no']}"))
         print(lightgreen(f"[V][D] End of decoding"))
 

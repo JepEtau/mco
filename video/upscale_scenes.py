@@ -24,7 +24,11 @@ from processing import supported_filters
 from scene.consolidate import consolidate_scene
 from scene.src_scene import SrcScene
 from utils.mco_types import Scene, ChapterVideo
-from utils.mco_utils import is_up_to_date, extract_media_info_mco
+from utils.mco_utils import (
+    is_up_to_date,
+    extract_media_info_mco,
+    calculate_scene_frame_count,
+)
 from utils.media import vcodec_to_extension
 from utils.p_print import *
 from parsers import (
@@ -157,7 +161,7 @@ def upscale_scenes(
             # and add the scene to the list to upscale
             if not is_up_to_date(scene, display_msg=True) or force:
                 scenes_to_upscale.append(scene)
-                total_frames += scene['dst']['count']
+                total_frames += calculate_scene_frame_count(scene)
 
                 # Parse input video, but do this only if needed
                 for src_scene in scene['src'].scenes():
