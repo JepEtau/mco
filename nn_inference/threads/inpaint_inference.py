@@ -45,7 +45,7 @@ def perform_inpaint_inference(
         torch.from_numpy(np.ascontiguousarray(mask_img))
         .to(in_tensor.device, non_blocking=False)
     )
-    mask_tensor = mask_tensor.to(dtype=session.torch_dtype)
+    mask_tensor = mask_tensor.to(dtype=session.dtype)
     mask_tensor = mask_tensor / 255.
     mask_tensor = to_nchw(mask_tensor).contiguous()
 

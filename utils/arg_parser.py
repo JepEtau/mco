@@ -10,6 +10,15 @@ def common_argument_parser(
 
     parser = ArgumentParser(description=description)
     parser.add_argument(
+        "--edition",
+        "-ed",
+        choices=('j', 'f', 'k', 's', 's0'),
+        default='',
+        required=False,
+        help="Filter by edition"
+    )
+
+    parser.add_argument(
         "--episode",
         "-ep",
         type=int,

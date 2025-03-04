@@ -5,7 +5,12 @@ from pprint import pprint
 import signal
 import sys
 import winsound
-from parsers import parse_database
+from parsers import (
+    Chapter,
+    ep_key,
+    parse_database,
+    parse_prec_asuivre_scenes,
+)
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
@@ -19,54 +24,6 @@ def main():
         description="Generate the HR scenes",
         add_language=True
     )
-    parser.add_argument(
-        "--edition",
-        "-ed",
-        choices=('j', 'f', 'k', 's', 's0'),
-        default='',
-        required=False,
-        help="Filter by edition"
-    )
-
-    parser.add_argument(
-        "--scene",
-        "-s",
-        type=str,
-        default='',
-        required=False,
-        help="scene no. to process. Integer or frame value (e.g. 2450f)"
-    )
-
-    parser.add_argument(
-        "--scene_min",
-        type=int,
-        default=-1,
-        required=False,
-        help="starting scene no. to process"
-    )
-
-    parser.add_argument(
-        "--scene_max",
-        type=int,
-        default=-1,
-        required=False,
-        help="last scene no. to process"
-    )
-
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        required=False,
-        help="Overwrite"
-    )
-
-    parser.add_argument(
-        "--simulate",
-        action="store_true",
-        required=False,
-        help="Simulate the process"
-    )
-
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -96,34 +53,51 @@ def main():
     if chapter in ('g_doc', 'g_asuivre') and episode in (0, ''):
         episode = 'ep01'
 
-    parse_database(episode=episode, lang=arguments.lang)
+    # Parse database
+    # if arguments.edition != '':
+    #     episode = arguments.episode
+    k_ch_dst: Chapter = arguments.chapter
+    ep_no_dst: int = arguments.episode
+    k_ep_dst: str = ep_key(arguments.episode)
+
+    k_ch: Chapter = k_ch_dst
+    k_ep: str = k_ep_dst
+
+    # Parse following/previous chapter
+    if k_ch_dst in ('precedemment', 'asuivre'):
+        k_ep = ep_key(ep_no_dst + (1 if k_ch_dst == 'asuivre' else -1))
+        k_ch = 'episode'
+
+    parse_database(episode=k_ep, lang=arguments.lang)
     gc.collect()
 
-    scene_no: int | None = None
-    scene_arg: str = arguments.scene
-    if scene_arg.endswith('f'):
-        raise NotImplementedError("scene_arg not yet implemented")
-        scene_no = frame_to_scene_no(int(scene_arg[:-1]))
-    elif scene_arg != '':
-        scene_no: int = int(scene_arg)
+
+    # Parse target list for these chapters
+    scene_list: list[int] = []
+    if k_ch_dst in ('precedemment', 'asuivre'):
+        scene_list = parse_prec_asuivre_scenes(k_ep=k_ep_dst, k_ch=k_ch_dst)
+
+    scene_no: int = arguments.scene
 
     task = 'hr'
 
     upscale_scenes(
-        episode=episode,
-        single_chapter=chapter,
+        episode=k_ep,
+        single_chapter=k_ch,
         task_name=task,
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=scene_no,
         scene_min=arguments.scene_min,
         scene_max=arguments.scene_max,
+        scene_list=scene_list,
         watermark=False,
         edition=arguments.edition,
         debug=arguments.debug
     )
 
-    winsound.Beep(frequency=440, duration=200)
+    if sys.platform == "win32":
+        winsound.Beep(frequency=440, duration=200)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)

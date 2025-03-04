@@ -253,6 +253,12 @@ def upscale_scenes(
         #     scenes_to_upscale_doc.append(scene)
         #     total_frames += scene['src'].frame_count(exclude_loop=True)
         # else:
+        has_dsr = False
+        for s in scene['src'].scenes():
+            has_dsr = has_dsr or bool(
+                s.in_scene['dsr'] is not None and s.in_scene['dsr'].has_patches()
+            )
+
         for filter_str in scene_filters.sequence.split(','):
             if filter_str.startswith(supported_filters):
                 print(darkgrey("supported:"), filter_str)
@@ -300,10 +306,16 @@ def upscale_scenes(
             model_key = model_manager.register(model)
             if model_key is None:
                 raise ValueError(red(f"[E] {model} is not a valid model"))
-            scene_filters.steps.append(model_key)
+
+            if (
+                not has_dsr
+                and model_manager.model(model_key).arch.infer_type.type == 'inpaint'
+            ):
+                model_manager.unregister(model_key)
+            else:
+                scene_filters.steps.append(model_key)
         # print(lightcyan(f"Scene {scene['no']} filters:"))
         # pprint(scene_filters)
-
 
         if model_manager.count():
             print(model_manager)

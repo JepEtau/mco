@@ -18,6 +18,7 @@ from parsers import (
 )
 from parsers._helpers import get_chapter_audio
 from scene.consolidate import consolidate_scene
+from scene.src_scene import SrcScenes
 from utils.arg_parser import common_argument_parser
 from utils.mco_types import (
     ChapterAudio,
@@ -41,15 +42,6 @@ def main():
         default='',
         required=False,
         help="debug"
-    )
-
-    parser.add_argument(
-        "--edition",
-        "-ed",
-        choices=['f', 'k', 's', 'j', 's0'],
-        default='',
-        required=False,
-        help="Use this edition as source rather than the one selected in database"
     )
 
     parser.add_argument(
@@ -103,7 +95,7 @@ def main():
     task_name: TaskName = arguments.task
 
 
-    chapters: Chapter = all_chapter_keys() if arguments.chapter == '' else [arguments.chapter]
+    chapters: list[Chapter] = all_chapter_keys() if arguments.chapter == '' else [arguments.chapter]
     for k_ch in chapters:
         print(lightcyan(f"episode: {k_ep}, chapter: {k_ch}"))
         ch_video: ChapterVideo = get_chapter_video(k_ep, k_ch)
@@ -173,6 +165,25 @@ def main():
 
             pprint(ch_video.keys())
             pprint(scenes[scene_no])
+
+
+        if k_ch == 'episode':
+            for scene in scenes:
+                src_scenes: SrcScenes = scene['src'].scenes()
+                if len(src_scenes) > 1:
+                    print(f"{scene['no']:03} -> ", end= "")
+                    for s in src_scenes:
+                        _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']
+                        print(f"{_no}, ", end ="")
+
+                    print()
+                else:
+                    s = src_scenes[0]
+                    _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']
+                    if _k_ed == 'j':
+                        print(f"{scene['no']:03} -> {_k_ed}:{_no: 3}")
+                    else:
+                        print(f"{scene['no']:03} -> {_k_ed}")
 
 
         # for scene in scenes:

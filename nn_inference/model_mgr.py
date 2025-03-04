@@ -218,6 +218,10 @@ class ModelManager:
         return _model.key
 
 
+    def unregister(self, model_key: str) -> None:
+        del self._models_by_keys[model_key]
+
+
     def count(self) -> int:
         return len(self._models_by_keys)
 

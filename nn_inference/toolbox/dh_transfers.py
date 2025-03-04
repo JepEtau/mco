@@ -31,12 +31,12 @@ def dtoh_transfer(
     cuda_stream: torch.cuda.Stream,
 ) -> np.ndarray:
     out_shape: tuple[int, int, int] = d_img.shape
-    host_mem.copy_(d_img.ravel(), non_blocking=True)
+    host_mem.copy_(d_img.view(torch.uint8).ravel(), non_blocking=True)
 
     time.sleep(0.0001)
     cuda_stream.synchronize()
 
-    return host_mem.view(out_shape).numpy()
+    return host_mem.view(d_img.dtype).view(out_shape).numpy()
 
 
 

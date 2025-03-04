@@ -25,15 +25,6 @@ except ImportError:
 def main():
     # Arguments
     parser: ArgumentParser = common_argument_parser('Upscale scenes', add_language=True)
-    parser.add_argument(
-        "--edition",
-        "-ed",
-        choices=('j', 'f', 'k', 's', 's0'),
-        default='',
-        required=False,
-        help="Filter by edition"
-    )
-
     arguments = parser.parse_args()
 
     if arguments.debug:

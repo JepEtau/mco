@@ -64,6 +64,10 @@ class SceneDsr:
         return None
 
 
+    def has_patches(self) -> bool:
+        return bool(len(self._frames.keys()) > 0)
+
+
     def get_all(self) -> dict[int, list[DsrRegion]] | None:
         """Returns a list of region for each frame of the scene"""
         d: dict[int, list[DsrRegion]] = {}
