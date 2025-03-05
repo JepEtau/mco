@@ -65,9 +65,6 @@ class UpscalePipeline(object):
         self.f_progress_thread: ProgressThread = progress_thread
         self.model_manager: ModelManager = model_manager
 
-        nnlogger.addHandler(logging.StreamHandler(sys.stdout))
-        nnlogger.setLevel("DEBUG")
-
         in_max_nbytes: int = 0
         out_max_nbytes: int = 0
         in_max_sync_nbytes: int = 0

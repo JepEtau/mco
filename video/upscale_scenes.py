@@ -1,4 +1,5 @@
 import gc
+import logging
 import math
 import numpy as np
 import sys
@@ -42,7 +43,9 @@ from parsers import (
     calc_hash,
     VideoSettings,
 )
-
+from nn_inference import (
+    nnlogger,
+)
 
 
 def upscale_scenes(
@@ -63,6 +66,9 @@ def upscale_scenes(
     k_ep = ep_key(episode)
     k_ed = edition
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
+    if debug:
+        nnlogger.addHandler(logging.StreamHandler(sys.stdout))
+        nnlogger.setLevel("DEBUG")
 
     do_concatenate_video: bool = (
         True

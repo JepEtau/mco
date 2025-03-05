@@ -380,7 +380,11 @@ def apply_final_effects(
                 return McoFrame(no=frame.no, img=img_out, scene=scene)
 
 
-        if effect := effects.get_effect('fadein'):
+        if effects.has_effect('fadein') or effects.has_effect('loop_and_fadein'):
+            effect: Effect = effects.get_effect('fadein')
+            if effect is None:
+                effect = effects.get_effect('loop_and_fadein')
+
             if out_i <= effect.fade:
                 coef: float = float(out_i) / effect.fade
                 print(f"({out_i}) fadein, out_i: {out_i}, coef={coef:.06f}")
@@ -434,9 +438,9 @@ def apply_upscale_effects(
 
     # Only for doc. to reduce number of tests, discard this if not doc
     if scene['dst']['k_ch'] == 'doc':
-        in_scene: SrcScene = scene['src'].primary_scene().in_scene
+        in_scene: Scene = scene['src'].primary_scene().in_scene
         if 'effects' in in_scene and in_scene['effects'].has_effect('se_loop'):
-            effect: Effect = in_scene.effects.get_effect('se_loop')
+            effect: Effect = in_scene['effects'].get_effect('se_loop')
             if out_i == 0 and effect.extra_param[0]:
                 return [frame] * (effect.extra_param[0] + 1)
 

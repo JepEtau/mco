@@ -49,7 +49,7 @@ def extract_scenes(
         True
         if (
             (scene_no == -1 and scene_min == -1 and scene_max == -1)
-            and task_name != 'initial'
+            and task_name not in ('initial', 'extract')
         )
         else False
     )
@@ -129,7 +129,7 @@ def extract_scenes(
             for scene in scenes:
                 concat_file.write(f"file \'{scene['task'].video_file}\' \n")
 
-        vsettings: VideoSettings = db['vsettings']['lr']
+        vsettings: VideoSettings = db['vsettings'][task_name]
         ch_video['task'] = ProcessingTask(
             name=task_name,
             hash=hashcode,

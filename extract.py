@@ -139,7 +139,7 @@ def main():
     extract_scenes(
         episode=arguments.episode,
         single_chapter=arguments.chapter,
-        task_name='initial',
+        task_name='extract',
         force=arguments.force,
         simulation=arguments.simulate,
         scene_no=arguments.scene,

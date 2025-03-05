@@ -60,20 +60,20 @@ class Effects(list):
                 return True
         return False
 
+
     def primary_effect(self) -> Effect | None:
         for e in self.effects:
             if e.name != 'watermark':
                 return e
         return None
 
-    # def add(self, effect: Effect) -> None:
-    #     self.effects.append(effect)
 
     def has_effects(self) -> bool:
         for effect in self.effects:
             if effect.fade != 0 or effect.loop != 0:
                 return True
         return False
+
 
     def has_effect(self, name: EffectName) -> bool:
         if self.effects is None or len(self.effects) == 0:
@@ -84,8 +84,10 @@ class Effects(list):
                 return True
         return False
 
+
     def append(self, object: Any) -> None:
         return self.effects.append(object)
+
 
     def get_effect(self, name: EffectName) -> Effect | None:
         """Returns the first effect found
@@ -95,6 +97,7 @@ class Effects(list):
                 return e
         return None
 
+
     def get_effects(self, name: EffectName):
         """yield every effect
         """
@@ -102,7 +105,17 @@ class Effects(list):
             if e.name == name:
                 yield e
 
+
     def hash(self) -> str:
         if len(self.effects) == 0:
             return ''
         return calc_hash(';'.join(e.hash() for e in self.effects))
+
+
+    def remove_effect(self, name: EffectName) -> None:
+        """Returns the first effect found
+        """
+        for i, e in enumerate(self.effects):
+            if e.name == name:
+                del self.effects[i]
+                break

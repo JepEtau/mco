@@ -137,14 +137,20 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
             print(red("TODO: add default effects in chapter"))
             raise
             ch_video['effects'] = Effects()
+
+        if e := ch_video['effects'].get_effect('fadein'):
+            fade = e.fade
+            ch_video['effects'].remove_effect('fadein')
+
         ch_video['effects'].append(
             Effect(
                 name='loop_and_fadein',
-                loop=loop_count - 1,
+                loop=loop_count,
                 fade=fade,
             )
         )
         video_count += loop_count
+        ch_video['count'] += loop_count
         logger.debug(f"Fade in and loop at the beginning of the episode: {loop_count}, fade={fade}")
 
         warnings.warn(red(f"Fade in and loop at the beginning of the episode: {loop_count}, fade={fade}"))
