@@ -1,7 +1,9 @@
 
+from __future__ import annotations
 from pprint import pprint
+
 from ._keys import main_chapter_keys
-from utils.mco_types import Scene
+from utils.mco_types import ChapterVideo, Scene
 from .helpers import get_frame_rate
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
@@ -284,6 +286,8 @@ def pprint_g_debut_fin() -> dict[str, tuple[int]]:
 
 
 def pprint_scene_mapping(scene: Scene) -> None:
+    from utils.mco_utils import get_target_video, is_first_scene
+
     print(lightgreen(f"    {scene['no']}".rjust(8)), end=':')
     if 'ref' in scene:
         print(lightgreen(f"{scene['ref']['start']}".rjust(6)), end='')
@@ -291,9 +295,16 @@ def pprint_scene_mapping(scene: Scene) -> None:
     else:
         print(lightgreen(" ..."), end='')
 
+    scene_dst_count = scene['dst']['count']
+    ch_video: ChapterVideo = get_target_video(scene)
+    if is_first_scene(scene):
+        if ch_video['avsync'] != 0:
+            raise NotImplementedError("avsync not yet supported")
+        scene_dst_count = scene['src'].primary_scene().count
+
     print(f"  <- ", end='')
     _str: str = ""
-    if 'ref' in scene and scene['ref']['count'] == scene['dst']['count']:
+    if 'ref' in scene and scene['ref']['count'] == scene_dst_count:
         _str = f"{scene['dst']['count']}".rjust(4)
     else:
         _str = yellow(f"{scene['dst']['count']}".rjust(4))

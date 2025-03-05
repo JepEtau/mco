@@ -224,11 +224,11 @@ def calculate_scene_frame_count(scene: Scene) -> int:
             print(lightcyan("first scene, avsync:"), ch_video['avsync'])
             if ch_video['avsync'] != 0:
                 raise NotImplementedError("avsync not yet supported")
+            count = scene['src'].primary_scene().count
 
         # Add silence if last scene of a chapter
         if is_last_scene(scene):
             count += ch_video['silence'] if 'silence' in ch_video else 0
-
 
     elif task_name in ('upscale', 'hr'):
         count = scene['src'].frame_count(exclude_loop=False)
@@ -237,8 +237,8 @@ def calculate_scene_frame_count(scene: Scene) -> int:
         warn(yellow(f"{task_name} is not used to calculate frame count"))
 
 
-    print(lightgreen(f"calculate_frame_count: {scene['no']} -> {count}"))
-    print(f"    when upscaling: {scene['src'].frame_count(exclude_loop=False)}")
+    print(darkgrey(f"calculate_frame_count: {scene['no']} -> {count}"))
+    # print(f"    when upscaling: {scene['src'].frame_count(exclude_loop=False)}")
     return count
 
 

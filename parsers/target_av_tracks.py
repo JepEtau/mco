@@ -117,11 +117,15 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
         src_scene: Scene = ch_video['scenes'][0]['src'].primary_scene()
         src_scene.start += to_remove
         src_scene.count -= to_remove
+        ch_video['scenes'][0]['dst']['count'] -= to_remove
+
         ch_video['count'] -= to_remove
         if 'effects' not in ch_video:
             ch_video['effects'] = Effects()
         fadein_effect = Effect(name='fadein', loop=0, fade=to_remove)
         ch_video['effects'].append(fadein_effect)
+
+
         # move from ch_video to scene ?
         # src_scene.effects = Effects(fadein_effect)
 

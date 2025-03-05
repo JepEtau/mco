@@ -167,28 +167,25 @@ def main():
             pprint(scenes[scene_no])
 
 
-        if k_ch == 'episode':
-            for scene in scenes:
-                src_scenes: SrcScenes = scene['src'].scenes()
-                if len(src_scenes) > 1:
-                    print(f"{scene['no']:03} -> ", end= "")
-                    for s in src_scenes:
-                        _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']
-                        print(f"{_no}, ", end ="")
+        if False:
+            if k_ch == 'episode':
+                for scene in scenes:
+                    src_scenes: SrcScenes = scene['src'].scenes()
+                    if len(src_scenes) > 1:
+                        print(f"{scene['no']:03} -> ", end= "")
+                        for s in src_scenes:
+                            _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']
+                            print(f"{_no}, ", end ="")
 
-                    print()
-                else:
-                    s = src_scenes[0]
-                    _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']
-                    if _k_ed == 'j':
-                        print(f"{scene['no']:03} -> {_k_ed}:{_no: 3}")
+                        print()
                     else:
-                        print(f"{scene['no']:03} -> {_k_ed}")
+                        s = src_scenes[0]
+                        _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']
+                        if _k_ed == 'j':
+                            print(f"{scene['no']:03} -> {_k_ed}:{_no: 3}")
+                        else:
+                            print(f"{scene['no']:03} -> {_k_ed}")
 
-
-        # for scene in scenes:
-        #     print(lightcyan(f"Scene no. {scene['no']}"))
-        #     pprint(scene)
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)

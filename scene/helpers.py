@@ -24,6 +24,7 @@ from utils.path_utils import absolute_path
 
 _doc_previous_task: dict[str, str] = {
     'initial': '',
+    'sim_lr': 'initial',
     'lr': 'initial',
     'hr': 'initial',
     'tf': 'hr',
@@ -32,6 +33,7 @@ _doc_previous_task: dict[str, str] = {
 }
 
 _g_asuivre_previous_task: dict[str, str] = {
+    'sim_lr': 'initial',
     'lr': 'initial',
     'hr': 'initial',
     'cg': 'hr',
@@ -153,7 +155,8 @@ def set_doc_filepath_(scene: Scene) -> None:
 
 
 def set_g_asuivre_filepath_(scene: Scene) -> None:
-    k_ep, k_ch = scene['dst']['k_ep'], scene['dst']['k_ch']
+    k_ep_dst, k_ch_dst = scene['dst']['k_ep'], scene['dst']['k_ch']
+
     primary_src_scene = scene['src'].primary_scene()
     task: ProcessingTask = scene['task']
     task_name: str = task.name
@@ -180,15 +183,17 @@ def set_g_asuivre_filepath_(scene: Scene) -> None:
 
     # Cache path, in/out files
     in_cache_doc: str = os.path.abspath(
-        os.path.join(db['common']['directories']['cache_doc'], os.pardir, k_ch, k_ep)
+        os.path.join(
+            db['common']['directories']['cache_doc'], os.pardir, k_ch_dst, k_ep_dst
+        )
     )
     out_cache_doc = in_cache_doc
-    in_basename: str = f"{k_ep}_{k_ch}_{s_no_str}__{primary_src_scene['k_ed_ep_ch_no'][0]}"
+    in_basename: str = f"{k_ep_dst}_{k_ch_dst}_{s_no_str}__{primary_src_scene['k_ed_ep_ch_no'][0]}"
     out_basename = in_basename
 
 
     # Specific to g_doc (asuivre should follow the same way)
-    if scene['dst']['k_ch'] == 'g_asuivre':
+    if k_ch_dst == 'g_asuivre':
         _k_ed, _k_ep, _k_ch, _no = primary_src_scene['k_ed_ep_ch_no']
         in_basename: str = f"{_k_ch}_{_no:02}__{_k_ed}_{_k_ep}"
         out_basename = in_basename
@@ -196,19 +201,19 @@ def set_g_asuivre_filepath_(scene: Scene) -> None:
         # Cache path
         in_cache_doc = os.path.abspath(os.path.join(in_cache_doc, os.pardir))
         out_cache_doc = in_cache_doc
-        if task_name == 'final':
+        if task_name in ('final', 'sim_lr'):
             out_cache_doc: str = os.path.abspath(
                 os.path.join(
-                    db['common']['directories']['cache_doc'], os.pardir, k_ch, k_ep
+                    db['common']['directories']['cache_doc'], os.pardir, k_ch_dst, k_ep_dst
                 )
             )
             _k_ed, _k_ep, _k_ch, _no = primary_src_scene['k_ed_ep_ch_no']
-            out_basename: str = f"{k_ep}_{k_ch}_{s_no_str}__{_k_ed}"
+            out_basename: str = f"{k_ep_dst}_{k_ch_dst}_{s_no_str}__{_k_ed}"
 
 
     # Input file for this task
     prev_task_name: TaskName = _g_asuivre_previous_task[task_name]
-    suffix = "hr_" if task_name in ('final') else ""
+    suffix = "hr_" if task_name in ('final', ) else ""
     in_vsettings: VideoSettings = db['vsettings']['hr']
     in_ext: str = vcodec_to_extension[in_vsettings.codec]
     task.in_video_file = os.path.join(
@@ -230,12 +235,16 @@ def set_g_asuivre_filepath_(scene: Scene) -> None:
         )
     )
 
-    if scene['dst']['k_ch'] == 'g_asuivre' and task_name == 'final':
+    # Store the g_asuivre of all episodes in the same directory
+    if (
+        k_ch_dst == 'g_asuivre'
+        and task_name in ('sim_lr', 'final',)
+    ):
         task.video_file = absolute_path(
             os.path.join(
                 db['common']['directories']['cache_doc'],
                 os.pardir,
-                k_ch,
+                k_ch_dst,
                 task_name,
                 f"{out_basename}_{suffix}{task_name}{ext}"
             )

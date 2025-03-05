@@ -97,12 +97,13 @@ def generate_lr_scene(
     lr_directory: str = path_split(scene['task'].video_file)[0]
     os.makedirs(lr_directory, exist_ok=True)
 
-    print(lightcyan("Encoder:"))
-    print(f"   to produce: {to_produce}")
-    print("  pipe:")
-    print(f"    dtype: {e_pipe_dtype}")
-    print(f"    pixfmt: {e_pixel_format}")
-    print(f"    size: {out_w}x{out_h}")
+    if verbose:
+        print(lightcyan("Encoder:"))
+        print(f"   to produce: {to_produce}")
+        print("  pipe:")
+        print(f"    dtype: {e_pipe_dtype}")
+        print(f"    pixfmt: {e_pixel_format}")
+        print(f"    size: {out_w}x{out_h}")
 
     e_command: list[str] = [
         ffmpeg_exe,
@@ -122,7 +123,8 @@ def generate_lr_scene(
         *metadata,
         out_video_fp, "-y"
     ]
-    print(lightcyan(f"  e_command:"), " ".join(e_command))
+    if verbose:
+        print(lightcyan(f"  e_command:"), " ".join(e_command))
     e_subprocess: subprocess.Popen = None
     try:
         e_subprocess = subprocess.Popen(
@@ -164,15 +166,16 @@ def generate_lr_scene(
     # A scene may use multiple segments from different scenes
     remaining_src_scenes = len(scene['src'].scenes())
 
-    print(lightcyan("Decoder:"))
-    print(f"  nb of src scenes: {remaining_src_scenes}")
-    print(f"  to produce: {to_produce}")
+    if verbose:
+        print(lightcyan("Decoder:"))
+        print(f"  nb of src scenes: {remaining_src_scenes}")
+        print(f"  to produce: {to_produce}")
 
-    print("  pipe:")
-    print(f"    pixfmt: {in_pipe_pixfmt}")
-    print(f"    shape: {img_shape}")
-    print(f"    dtype: {img_dtype}")
-    print(f"    nbytes: {pipe_img_nbytes}")
+        print("  pipe:")
+        print(f"    pixfmt: {in_pipe_pixfmt}")
+        print(f"    shape: {img_shape}")
+        print(f"    dtype: {img_dtype}")
+        print(f"    nbytes: {pipe_img_nbytes}")
 
 
     # Decode / Encode
@@ -247,7 +250,8 @@ def generate_lr_scene(
         ]
         print(lightcyan(f"  scene no. {scene['no']}"))
         print(f"    to extract: {to_decode}")
-        print(lightcyan(f"  d_command:"), " ".join(d_command))
+        if verbose:
+            print(lightcyan(f"  d_command:"), " ".join(d_command))
 
         d_subprocess: subprocess.Popen = None
         try:
@@ -390,7 +394,8 @@ def generate_lr_scene(
                 # break
 
         # remaining source no
-        print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
+        if verbose:
+            print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
         if remaining_src_scenes == 0:
             break
 
@@ -453,9 +458,9 @@ class Encoder:
         self.e_subprocess: subprocess.Popen = e_subprocess
         self.watermark: bool = do_watermark(scene=scene)
 
-    def encode_frame(self, frame: NnFrame) -> None:
 
-        print(lightgreen(f"    ({self.e_index}) encode: {frame.f_no}, {frame.tensor.shape}, {frame.tensor.dtype}"))
+    def encode_frame(self, frame: NnFrame) -> None:
+        # print(lightgreen(f"    ({self.e_index}) encode: {frame.f_no}, {frame.tensor.shape}, {frame.tensor.dtype}"))
 
         # effect are made on np.ndarray
         in_f_no: int = frame.f_no
@@ -491,7 +496,7 @@ class Encoder:
             f.img = np_to_float32(f.img)
 
         # Final effects: fades and specific to generic (overlay, title, blend)
-        print(f"encode: f_no. {out_f_no}, nb of frames: {len(out_frames)}")
+        # print(f"encode: f_no. {out_f_no}, nb of frames: {len(out_frames)}")
         for out_frame in  out_frames:
             out_f_no: int = src_scene.start + self.e_index
 
@@ -508,5 +513,5 @@ class Encoder:
             self.e_subprocess.stdin.write(np_to_uint8(out_frame.img))
 
             self.e_index += 1
-            print(f"sent {len(out_frames)} -> total = {self.e_index}")
+            # print(f"sent {len(out_frames)} -> total = {self.e_index}")
 

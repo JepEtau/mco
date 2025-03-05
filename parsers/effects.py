@@ -1,3 +1,4 @@
+from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Literal
 from .hash import calc_hash
@@ -75,6 +76,9 @@ class Effects(list):
         return False
 
     def has_effect(self, name: EffectName) -> bool:
+        if self.effects is None or len(self.effects) == 0:
+            return False
+
         for e in self.effects:
             if e.name == name:
                 return True
