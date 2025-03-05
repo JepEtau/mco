@@ -134,42 +134,40 @@ def resize_and_effects(
         )
         out_f_no: int = scene['src'].first_frame_no() + out_i
         out_frame = McoFrame(no=out_f_no, img=img, scene=scene)
-        out_frames: list[McoFrame] | McoFrame = apply_final_effects(
+        out_frames: McoFrame = apply_final_effects(
             out_f_no=out_f_no,
             frame=out_frame,
             out_i=out_i
         )
 
-        if isinstance(out_frames, list):
-            out_frames: list[McoFrame]
-            return list([dtype_convert_fct(f.img)for f in out_frames])
-        else:
-            out_frames: McoFrame
-            return [dtype_convert_fct(out_frames.img)]
+        # if isinstance(out_frames, list):
+        #     out_frames: list[McoFrame]
+        #     return list([dtype_convert_fct(f.img)for f in out_frames])
+        # else:
+        out_frames: McoFrame
+        return [dtype_convert_fct(out_frames.img)]
 
     else:
         # Apply effect before resizing
         out_f_no: int = scene['src'].first_frame_no() + out_i
         out_frame = McoFrame(no=out_f_no, img=np_to_float32(in_img), scene=scene)
-        out_frames: list[McoFrame] | McoFrame = apply_final_effects(
+        out_frame: McoFrame = apply_final_effects(
             out_f_no=out_f_no,
             frame=out_frame,
             out_i=out_i
         )
 
-        if isinstance(out_frames, list):
-            f_prev = None
-            for f in out_frames:
-                f: McoFrame
-                if f is not f_prev:
-                    f.img = resize_to_4_3(f.img, transformation)
-                f_prev = f
-            return list([dtype_convert_fct(f.img)for f in out_frames])
+        # if isinstance(out_frames, list):
+        #     f_prev = None
+        #     for f in out_frames:
+        #         f: McoFrame
+        #         if f is not f_prev:
+        #             f.img = resize_to_4_3(f.img, transformation)
+        #         f_prev = f
+        #     return list([dtype_convert_fct(f.img)for f in out_frames])
 
-        else:
-            out_frames: McoFrame
-            out_frames.img = resize_to_4_3(out_frames.img, transformation)
-            return list([dtype_convert_fct(out_frames.img)])
+        out_frame.img = resize_to_4_3(out_frame.img, transformation)
+        return [dtype_convert_fct(out_frames.img)]
 
 
 

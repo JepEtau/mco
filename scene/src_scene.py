@@ -237,18 +237,21 @@ class SrcScenes:
             effects: Effects = src_scene.effects
             for e in effects.effects:
                 if e.name == 'blend':
-                    e.frame_ref = src_scene.start
+                    e.f_ref  = src_scene.start
+
                 elif e.f_ref == -1:
-                    e.f_ref = src_scene.start + src_scene.start - 1
+                    e.f_ref = src_scene.start + src_scene.count - 1
+
                 elif e.f_ref == 0:
                     e.f_ref = src_scene.start
 
             if effects.has_effect('title'):
                 e: Effect = effects.get_effect('title')
                 if effects.has_effect('zoom_in'):
-                    e.f_ref = src_scene.start - 1
-                    e = src_scene.effects.get_effect('zoom_in')
-                    e.f_ref = src_scene.start - 1
+                    e_zoom_in = effects.get_effect('zoom_in')
+                    e.f_ref = e_zoom_in.f_ref
+                    e.start = e_zoom_in.loop - 1
+
                 else:
                     e.f_ref = 0
                     if e.loop <= 0:

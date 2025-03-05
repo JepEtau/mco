@@ -49,13 +49,11 @@ def main():
     print("Tasks:")
     print("\t- parse database")
 
-    k_ep: str = ep_key(ep_no)
-
     # Parse database
-    parse_database(episode=k_ep, lang=arguments.lang)
+    parse_database(episode=ep_no, lang=arguments.lang)
     gc.collect()
 
-
+    k_ep = ep_key(ep_no)
     task: TaskName = 'sim_lr'
 
     generate_lr_scenes(

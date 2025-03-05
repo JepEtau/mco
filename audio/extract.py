@@ -35,10 +35,11 @@ def extract_audio_track(
     logger.debug(lightgreen(f"{__name__}: {k_ed}:{k_src}:{chapter}"))
 
     # Input audio file
+    in_filepath = db['editions'][k_ed]['inputs']['audio'][k_src]
     try:
         in_filepath = db['editions'][k_ed]['inputs']['audio'][k_src]
     except:
-        sys.exit(red(f"Missing file: edition {k_ed}, episode {k_src}"))
+        raise(red(f"Missing file: edition {k_ed}, episode {k_src}"))
     if force:
         logger.debug(f"Extract audio stream: {k_ed}:{k_src} from {in_filepath}")
 

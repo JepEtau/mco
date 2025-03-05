@@ -45,7 +45,7 @@ def apply_final_effects(
     out_f_no: int,
     frame: McoFrame,
     out_i: int
-) -> list[McoFrame]:
+) -> McoFrame:
     # out_i is the index in the final scene from 0 to end
     # out_f_no is the f_no from start of the src scene
     scene: Scene = frame.scene
@@ -174,27 +174,31 @@ def apply_final_effects(
                 elif frame.img.dtype == np.uint8:
                     out_img = np_to_uint8(out_img)
                 # print(f"  to {out_img.shape}, {out_img.dtype} (vs initial: {frame.img.dtype})")
-                frames = [McoFrame(
+                frame = McoFrame(
                     no=out_f_no,
                     img=out_img,
                     scene=scene
-                )]
+                )
 
             elif out_f_no == effect.f_ref + effect.fade:
                 # Delete cached frame
                 print(yellow("delete cache frame"))
                 cached_frame = None
-                frames = [frame]
+                frame = frame
 
             else:
-                frames = [frame]
+                frame = frame
 
-            return frames
+            return frame
 
         # Add title to the frame, and loop the input frame if not enough frames
         # to add title
         elif effect := last_src_scene.effects.get_effect('title'):
-            start_no: int = effect.f_ref
+
+            start_no: int = effect.start
+            # pprint(effect)
+            print(out_i)
+            # raise
 
             if out_i >= start_no:
                 print(yellow(f"{out_i} add title ({out_f_no})"))
@@ -219,13 +223,15 @@ def apply_final_effects(
                 )
                 print(f"    iteration no. {i}, factor={factor:.3f}")
 
-                if scene['task'].name == 'lr':
-                    initial_title_img: np.ndarray = cv2.resize(
-                        initial_title_img,
-                        (in_w//2, in_h//2),
-                        interpolation=cv2.INTER_LANCZOS4
-                    )
-                    in_h, in_w = initial_title_img.shape[:2]
+                if scene['task'].name in ('lr', 'sim_lr'):
+                    # in_h, in_w = initial_title_img.shape[:2]
+                    # initial_title_img: np.ndarray = cv2.resize(
+                    #     initial_title_img,
+                    #     (in_w//2, in_h//2),
+                    #     interpolation=cv2.INTER_LANCZOS4
+                    # )
+                    # in_h, in_w = initial_title_img.shape[:2]
+                    factor /= 2
 
                 overlay_h, overlay_w = int(factor * title_h), int(factor * title_w)
                 overlay_img: np.ndarray = cv2.resize(
@@ -279,11 +285,11 @@ def apply_final_effects(
                 elif frame.img.dtype == np.uint8:
                     blended = np_to_uint8(blended)
 
-                frame = [McoFrame(
+                frame = McoFrame(
                     no=frame.no,
                     img=blended,
                     scene=frame.scene
-                )]
+                )
 
                 # if out_i == start_no + effect.loop:
                 #     cached_frame = out_frames[-1]
@@ -314,28 +320,38 @@ def apply_final_effects(
                     # position and overlay use the final coordinates system#
                     # -> resize to this resolution (lr task only)
                     h, w = frame.img.shape[:2]
+                    sized_img: np.ndarray = None
                     if overlay.shape[0] != h:
-                        w_factor = w / 1440
-                        overlay: np.ndarray = cv2.resize(
-                            overlay,
-                            (int(overlay.shape[1] * w_factor), h),
-                            interpolation=cv2.INTER_LANCZOS4
+                        sized_img = cv2.resize(
+                            np_to_float32(frame.img),
+                            (1440, 1080),
+                            interpolation=cv2.INTER_CUBIC
                         )
-                        x0 = int(x0  * w_factor)
+                        sized_img = np.clip(sized_img, 0, 1)
+                        h, w = sized_img.shape[:2]
 
                     overlay = cv2.copyMakeBorder(
                         overlay,
                         0, 0, x0, w - (overlay.shape[1] + x0),
                         borderType=cv2.BORDER_CONSTANT,
                     )
-                    # cached_overlay = McoFrame(no=out_i, img=overlay)
 
                     text = overlay
+                    bgd = frame.img if sized_img is None else sized_img
                     rgb_text = text[:,:,:3]
                     alpha_text = text[:,:,3:]
                     overlayed: np.ndarray = (
-                        (1.0 - alpha_text) * np_to_float32(frame.img) + alpha_text * rgb_text
+                        (1.0 - alpha_text) * np_to_float32(bgd) + alpha_text * rgb_text
                     )
+
+                    if sized_img is not None:
+                        overlayed = cv2.resize(
+                            overlayed,
+                            (frame.img.shape[1], frame.img.shape[0]),
+                            interpolation=cv2.INTER_LANCZOS4
+                        )
+                    overlayed = np.clip(overlayed, 0, 1)
+
                     if frame.img.dtype == np.uint16:
                         frame.img = np_to_uint16(overlayed)
                     elif frame.img.dtype == np.uint8:
@@ -361,7 +377,7 @@ def apply_final_effects(
                     img_out = np_to_uint16(img_out)
                 elif frame.img.dtype == np.uint8:
                     img_out = np_to_uint8(img_out)
-                return [McoFrame(no=frame.no, img=img_out, scene=scene)]
+                return McoFrame(no=frame.no, img=img_out, scene=scene)
 
 
         if effect := effects.get_effect('fadein'):
@@ -376,11 +392,11 @@ def apply_final_effects(
                     img_out = np_to_uint16(img_out)
                 elif frame.img.dtype == np.uint8:
                     img_out = np_to_uint8(img_out)
-                return [McoFrame(no=frame.no, img=img_out, scene=scene)]
+                return McoFrame(no=frame.no, img=img_out, scene=scene)
             # else:
             #     return None
 
-    return [frame]
+    return frame
 
 
 
@@ -399,7 +415,11 @@ def apply_upscale_effects(
         scene_effects: Effects = scene['effects']
         for effect in scene_effects.effects:
             if (
-                effect.name in ('loop', 'loop_and_fadeout', 'loop_and_fadein')
+                effect.name in (
+                    'loop',
+                    'loop_and_fadeout',
+                    'loop_and_fadein'
+                )
                 and out_f_no == effect.f_ref
             ):
                 return [frame] * (effect.loop + 1)
@@ -423,17 +443,18 @@ def apply_upscale_effects(
             if out_i == src_scene['count'] - 1 and effect.extra_param[1]:
                 return [frame] * (effect.extra_param[1] + 1)
 
-
     # Only for g_debut. to reduce number of tests, discard this if not g_debut
     if scene['dst']['k_ch'] == 'g_debut':
         last_src_scene: SrcScene = scene['src'].last_scene()
-        if 'effects' in last_src_scene and last_src_scene['effects'] is not None:
+        if last_src_scene.effects is not None:
             # Zoom in frame and generate a sequence of frames
             # Append title
-            if effect := last_src_scene['effects'].get_effect('zoom_in'):
-                print(f"out_i: {out_i}")
+            if effect := last_src_scene.effects.get_effect('zoom_in'):
                 # pprint(effect)
-                if out_i == effect.f_ref:
+                # raise
+                print(f"out_i: {out_i}, {frame.no}, {out_f_no}, {effect.f_ref}")
+                # pprint(effect)
+                if out_f_no == effect.f_ref:
                     in_dtype: np.dtype = frame.img.dtype
                     print(f"ZOOOOM of frame {effect.f_ref}, shape={frame.img.shape}, dtype={frame.img.dtype}")
                     initial_img = frame.img
@@ -470,8 +491,10 @@ def apply_upscale_effects(
                             zoomed = np_to_uint8(zoomed)
 
                         out_frames.append(McoFrame(
-                            no=frame.no,
+                            no=frame.no + i,
                             img=np.ascontiguousarray(zoomed),
+                            scene=frame.scene,
+                            src_scene_index=frame.src_scene_index,
                         ))
                     print(f": {len(out_frames)}")
                     return out_frames

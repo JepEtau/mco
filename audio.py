@@ -38,27 +38,10 @@ def main():
     )
 
     parser.add_argument(
-        "--edition",
-        "-ed",
-        choices=editions,
-        default='',
-        required=False,
-        help="Edition: use to extract audio stream only"
-    )
-
-    parser.add_argument(
         "--stats",
         action="store_true",
         required=False,
         help="debug"
-    )
-
-    parser.add_argument(
-        "--force",
-        "-f",
-        action="store_true",
-        required=False,
-        help="Force. Overwrite previous files"
     )
 
     arguments = parser.parse_args()

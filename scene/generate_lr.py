@@ -495,7 +495,7 @@ class Encoder:
         for out_frame in  out_frames:
             out_f_no: int = src_scene.start + self.e_index
 
-            out_frames: list[McoFrame] = apply_final_effects(
+            out_frame: McoFrame = apply_final_effects(
                 out_f_no=out_f_no,
                 frame=out_frame,
                 out_i=self.e_index
@@ -505,10 +505,7 @@ class Encoder:
             #     self.e_subprocess.communicate(timeout=60)
             #     raise
 
-            if len(out_frames) > 1:
-                raise ValueError("final effects must not return multiple frames?")
-
-            self.e_subprocess.stdin.write(np_to_uint8(out_frames[0].img))
+            self.e_subprocess.stdin.write(np_to_uint8(out_frame.img))
 
             self.e_index += 1
             print(f"sent {len(out_frames)} -> total = {self.e_index}")
