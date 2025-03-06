@@ -71,6 +71,17 @@ _non_credit_chapters: tuple[str] = (
 )
 
 
+_all_unordered_chapters: tuple[str] = (
+    'precedemment',
+    'asuivre',
+    'episode',
+    'g_asuivre',
+    'g_doc',
+    'doc',
+    'g_debut',
+    'g_fin'
+)
+
 
 def main_chapter_keys() -> tuple[str]:
     return _main_chapters
@@ -84,3 +95,5 @@ def all_chapter_keys() -> tuple[str]:
 def non_credit_chapter_keys() -> tuple[str]:
     return _non_credit_chapters
 
+def all_unordered_chapter_keys() -> tuple[str]:
+    return _all_unordered_chapters

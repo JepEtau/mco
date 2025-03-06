@@ -38,12 +38,14 @@ def add_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | None:
     scene: Scene = frame.scene
     in_img: np.ndarray = frame.img
     sno_str = scene_no_str(scene)
-    if scene['task'].name in 'initial':
+    if scene['task'].name in ('initial', 'extract'):
         text: str = f"""{scene['k_ed']}:{scene['k_ep']}:{sno_str}{str(no).rjust(10)}"""
     else:
         try:
             src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no).in_scene
         except:
+            if scene['task'].name != 'sim_lr':
+                raise
             return in_img
         text: str = f"""{src_scene['k_ed']}:{src_scene['k_ep']}:{sno_str}{str(no).rjust(10)}"""
 
@@ -81,7 +83,7 @@ def add_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | None:
         align=alignment.value,
         fill=ink,
     )
-    if scene['task'].name in ('initial', 'lr'):
+    if scene['task'].name in ('initial', 'extract', 'lr'):
         _add_initial_scene_watermak(pil_image=pil_image, scene=scene, no=no)
     out_img: np.ndarray = np.array(pil_image)
 
@@ -98,7 +100,7 @@ def _add_initial_scene_watermak(pil_image: PilImage.Image, scene: Scene, no: int
 
     height: int = pil_image.height
 
-    if scene['task'].name == 'initial':
+    if scene['task'].name in ('initial', 'extract',):
         text: str = f"{scene['k_ed']}:{scene['k_ep']}:{sno_str} {scene['count']}"
         color: tuple[int, int, int] = (0, 240, 0)
 

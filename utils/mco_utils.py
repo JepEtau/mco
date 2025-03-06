@@ -230,6 +230,11 @@ def calculate_scene_frame_count(scene: Scene) -> int:
         if is_last_scene(scene):
             count += ch_video['silence'] if 'silence' in ch_video else 0
 
+        # If a loop is defined in target scene
+        if scene['dst']['k_ch'] == 'episode':
+            count = scene['src'].frame_count(exclude_loop=False)
+            scene['dst']['count'] = count
+
     elif task_name in ('upscale', 'hr'):
         count = scene['src'].frame_count(exclude_loop=False)
 

@@ -455,7 +455,7 @@ def parse_target_scenelist(
                         segment_count = int(start_count[1])
 
                 elif k == 'effect':
-                    # print(f"effect: {v}")
+                    print(f"effect: {v}")
                     # name, frame_ref, count, param
                     if (match := re.search(re.compile(
                         r"([a-z_]+):(-?\d+):(\d+):([\d+[.]*\d*)"
@@ -483,6 +483,7 @@ def parse_target_scenelist(
                                 zoom_factor=zoom_factor
                             )
                         )
+                        pprint(effects)
                     elif (
                         v.startswith('blend')
                         and (match := re.search(re.compile(r"([a-z_]+):(-?\d+)"), v))
@@ -552,6 +553,9 @@ def parse_target_scenelist(
                 count=segment_count,
                 effects=effects
             )
+            if k_ep == 'ep03' and k_ch =='episode' and scene['no'] == 189:
+                pprint(scene)
+                # raise
 
 
 def get_scene_from_frame_no(

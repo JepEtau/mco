@@ -81,14 +81,14 @@ def main():
 
     # Don't merge if chapter is specified
     if arguments.chapter == '':
-        for k in ('g_debut', 'g_fin'):
-            combine_av_tracks(
-                episode='',
-                chapter=k,
-                task=task,
-                force=True,
-                simulation=arguments.simulate
-            )
+        # for k in ('g_debut', 'g_fin'):
+        #     combine_av_tracks(
+        #         episode='',
+        #         chapter=k,
+        #         task=task,
+        #         force=True,
+        #         simulation=arguments.simulate
+        #     )
 
         combine_av_tracks(
             episode=k_ep,

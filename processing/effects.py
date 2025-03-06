@@ -415,6 +415,7 @@ def apply_upscale_effects(
     We assume that the loop generated when in fr will be > english version
     """
     scene: Scene = frame.scene
+
     if 'effects' in scene:
         scene_effects: Effects = scene['effects']
         for effect in scene_effects.effects:
@@ -427,6 +428,12 @@ def apply_upscale_effects(
                 and out_f_no == effect.f_ref
             ):
                 return [frame] * (effect.loop + 1)
+
+    src_scene = scene['src'].scenes()[frame.src_scene_index]
+    if src_scene.effects is not None:
+        if e := src_scene.effects.get_effect('loop'):
+            if frame.no == e.f_ref:
+                return [frame] * (e.loop + 1)
 
     # Replace by loop
     loop = get_loop_nframes(

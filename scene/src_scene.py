@@ -284,6 +284,9 @@ class SrcScenes:
                     e: Effect = src_scene.effects.get_effect('zoom_in')
                     count += e.loop if e is not None else 0
 
+                    e: Effect = src_scene.effects.get_effect('loop')
+                    count += e.loop if e is not None else 0
+
         return count
 
 

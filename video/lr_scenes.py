@@ -14,7 +14,7 @@ from utils.tools import ffmpeg_exe
 from parsers import (
     db,
     Chapter,
-    all_chapter_keys,
+    all_unordered_chapter_keys,
     ep_key,
     TaskName,
     ProcessingTask,
@@ -43,7 +43,7 @@ def generate_lr_scenes(
 ):
     k_ep = ep_key(episode)
     chapters: Chapter = (
-        all_chapter_keys()
+        all_unordered_chapter_keys()
         if single_chapter == ''
         else [single_chapter]
     )

@@ -9,6 +9,7 @@ from parsers import (
     all_chapter_keys,
 )
 from parsers.episode import parse_episode
+from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
 from video.extract_scenes import extract_scenes
@@ -17,74 +18,9 @@ from video.extract_scenes import extract_scenes
 
 def main():
     # Arguments
-    parser: ArgumentParser = ArgumentParser(
-        description="Extract initial frames"
-    )
-    parser.add_argument(
-        "--episode",
-        "-ep",
-        type=int,
-        default=0,
-        required=True,
-        help="from 1 to 39"
-    )
-
-    parser.add_argument(
-        "--chapter",
-        "-ch",
-        choices=all_chapter_keys(),
-        default='',
-        required=False,
-        help="Chapter"
-    )
-    parser.add_argument(
-        "--edition",
-        "-ed",
-        choices=['f', 'k', 's', 'j', 's0'],
-        default='',
-        required=True,
-        help="Use this edition"
-    )
-
-    parser.add_argument(
-        "--scene",
-        "-s",
-        type=int,
-        default=-1,
-        required=False,
-        help="scene no. to extract"
-    )
-
-    parser.add_argument(
-        "-smin",
-        "--scene_min",
-        type=int,
-        default=-1,
-        required=False,
-        help="starting scene no. to process"
-    )
-
-    parser.add_argument(
-        "-smax",
-        "--scene_max",
-        type=int,
-        default=-1,
-        required=False,
-        help="last scene no. to process"
-    )
-
-    parser.add_argument(
-        "--watermark",
-        action="store_true",
-        required=False,
-        help="Watermark each scene with scene no."
-    )
-
-    parser.add_argument(
-        "--debug",
-        action="store_true",
-        required=False,
-        help="debug"
+    parser: ArgumentParser = common_argument_parser(
+        description="Generate the HR scenes",
+        add_language=True
     )
 
     parser.add_argument(
@@ -92,20 +28,6 @@ def main():
         action="store_true",
         required=False,
         help="debug"
-    )
-
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        required=False,
-        help="Overwrite"
-    )
-
-    parser.add_argument(
-        "--simulate",
-        action="store_true",
-        required=False,
-        help="Simulate the process"
     )
 
     arguments = parser.parse_args()
