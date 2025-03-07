@@ -280,8 +280,6 @@ class DecoderThread(BaseThread):
                 ):
                     _in_f_no = src_start + f_index
                     if _in_f_no >= src_start + src_count:
-                        print(f"BREAAAAAAK: to_decode: {to_decode}, remaining: {remaining}")
-                        raise
                         break
 
                     # Get frame_no to send to the consumer

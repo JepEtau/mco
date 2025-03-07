@@ -7,6 +7,7 @@
     + [x] f
 * [x] consolider j vs k
 * [x] consolider f vs k
+* [ ] sim_lr
 
 
 # ep02
@@ -18,6 +19,7 @@
 * [x] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [x] sim_lr
 
 
 # ep03
@@ -29,6 +31,7 @@
 * [x] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [x] sim_lr
 
 
 # ep04
@@ -40,6 +43,7 @@
 * [ ] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [x] sim_lr
 
 
 # ep05
@@ -51,6 +55,7 @@
 * [ ] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep06
@@ -62,6 +67,7 @@
 * [x] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep07
@@ -73,6 +79,7 @@
 * [x] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep08
@@ -84,6 +91,7 @@
 * [x] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep09
@@ -95,6 +103,7 @@
 * [x] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep10
@@ -106,6 +115,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep11
@@ -117,6 +127,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep12
@@ -128,6 +139,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep13
@@ -139,6 +151,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep14
@@ -150,6 +163,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep15
@@ -161,6 +175,7 @@
 * [-] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep16
@@ -172,6 +187,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep17
@@ -183,6 +199,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep18
@@ -194,6 +211,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep19
@@ -205,6 +223,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep20
@@ -216,6 +235,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep21
@@ -227,6 +247,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep22
@@ -238,6 +259,7 @@
 * [x] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep23
@@ -249,6 +271,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep24
@@ -260,6 +283,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep25
@@ -271,6 +295,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep26
@@ -282,6 +307,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep27
@@ -293,6 +319,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep28
@@ -305,6 +332,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep29
@@ -316,6 +344,7 @@
 * [ ] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep30
@@ -327,6 +356,7 @@
 * [ ] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep31
@@ -349,6 +379,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep33
@@ -361,6 +392,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep34
@@ -372,6 +404,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep35
@@ -383,6 +416,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep36
@@ -394,6 +428,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep37
@@ -405,6 +440,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep38
@@ -416,6 +452,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
+* [ ] sim_lr
 
 
 # ep39
@@ -426,4 +463,5 @@
 * [x] consolider j vs k
 * [/] consolider f vs k
 * [x] precedemment
+* [ ] sim_lr
 

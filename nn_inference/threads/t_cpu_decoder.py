@@ -74,7 +74,7 @@ class CpuDecoderThread(BaseThread):
 
 
     def run(self) -> None:
-        verbose: bool = False
+        verbose: bool = True
         scene: Scene = self.scene
 
         e_thread: CpuEncoderThread = self.config.e_thread
@@ -229,7 +229,7 @@ class CpuDecoderThread(BaseThread):
 
                 # Number of src scenes to use
                 remaining_src_scenes -= 1
-
+                print(lightcyan(f"to_decode: {to_decode}, remaining: {remaining}"))
                 while (
                     not self._stop_event.is_set()
                     and to_decode
@@ -237,8 +237,6 @@ class CpuDecoderThread(BaseThread):
                 ):
                     _in_f_no = src_start + f_index
                     if _in_f_no >= src_start + src_count:
-                        print(f"BREAAAAAAK: to_decode: {to_decode}, remaining: {remaining}")
-                        raise
                         break
 
                     # Get frame_no to send to the consumer
