@@ -17,6 +17,9 @@ from ._types import (
 from .helpers import (
     get_frame_rate,
 )
+from ._helpers import (
+    get_chapter_video,
+)
 from ._keys import (
     Chapter,
     ep_key,
@@ -145,5 +148,7 @@ __all__ = [
 
     "get_loop_nframes",
     "parse_prec_asuivre_scenes",
+
+    "get_chapter_video",
 
 ]

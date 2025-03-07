@@ -159,6 +159,7 @@ def upscale_scenes(
 
             # Generate frames for this scene
             consolidate_scene(scene=scene, watermark=watermark, compare=compare)
+            print(scene['task'].video_file)
 
             if debug:
                 print(lightcyan("======================= consolidate scene for upscale ============================="))
@@ -174,7 +175,10 @@ def upscale_scenes(
 
             # Add models to the model manager
             # and add the scene to the list to upscale
-            if not is_up_to_date(scene, display_msg=True) or force:
+            if (
+                (not is_up_to_date(scene, display_msg=True) or force)
+                and not simulation
+            ):
                 scenes_to_upscale.append(scene)
                 total_frames += calculate_scene_frame_count(scene)
 
@@ -209,7 +213,7 @@ def upscale_scenes(
 
 
         hashcode: str = calc_hash(hashes_str[:-1])
-        basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task_name}_{hashcode}"
+        basename: str = f"{k_ep}_{k_ch}_{task_name}_{hashcode}"
         cache_path = (
             db[k_ch]['cache_path']
             if k_ch in ('g_debut', 'g_fin')
@@ -222,9 +226,12 @@ def upscale_scenes(
             name=task_name,
             hash=hashcode,
             concat_file=os.path.join(cache_path, "concat", f"{basename}.txt"),
-            video_file=os.path.join(cache_path, f"video_lr", f"{basename}{ext}"),
+            video_file=os.path.join(cache_path, f"video", f"{basename}{ext}"),
             video_settings=ch_vsettings,
         )
+
+    if simulation:
+        return
 
     print(lightcyan(f"Consolidated scenes:"), f"{time.time() - start_time_full:.03f}s")
     print(lightcyan(f"Total number of scenes to upscale:"), f"{len(scenes_to_upscale)}")

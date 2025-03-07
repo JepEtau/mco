@@ -10,6 +10,7 @@ from parsers import (
     ep_key,
     parse_database,
     parse_prec_asuivre_scenes,
+    TaskName,
 )
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
@@ -78,8 +79,7 @@ def main():
         scene_list = parse_prec_asuivre_scenes(k_ep=k_ep_dst, k_ch=k_ch_dst)
 
     scene_no: int = arguments.scene
-
-    task = 'hr'
+    task: TaskName = 'hr'
 
     upscale_scenes(
         episode=k_ep,
