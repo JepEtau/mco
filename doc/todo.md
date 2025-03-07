@@ -2,7 +2,7 @@
 
 
 ## HIGH priority
-- chaining fp32 / fp16 models
+
 
 
 ## MIDDLE priority
@@ -11,7 +11,6 @@
 
 
 ## LOW priority and improvments
-- inpaint: determine HtoD sync memory size ?
 - add full verification in geometry
 - add watermark to the final version
 
@@ -25,7 +24,6 @@
 
 
 (won't fix)
-- g_debut in lr
 - crop after title overlay
 ~~- Add grain at the end?~~
     ~~noise=alls=14:allf=t+u~~
