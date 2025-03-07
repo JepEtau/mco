@@ -20,22 +20,6 @@ def main():
     )
 
     parser.add_argument(
-        "--scene",
-        "-s",
-        type=int,
-        default=-1,
-        required=False,
-        help="scene no. to process. Integer or frame value (e.g. 2450f)"
-    )
-
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        required=False,
-        help="Overwrite"
-    )
-
-    parser.add_argument(
         "--eval",
         "-e",
         action="store_true",
