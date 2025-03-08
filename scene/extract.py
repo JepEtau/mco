@@ -25,6 +25,7 @@ from utils.media import VideoInfo, extract_media_info_mco, str_to_video_codec
 
 def extract_scene(
     scene: Scene,
+    compare: bool = False,
     force: bool = False,
     debug: bool = False
 ) -> bool:
@@ -92,10 +93,13 @@ def extract_scene(
 
     # Force to 576p to facilitate comparisons
     filter_complex: list[str] = []
-    if task_name != 'lr' and (h != 640 or w != 480):
+    if (
+        (task_name != 'lr' or compare)
+        and (h != 720 or w != 576)
+    ):
         filter_complex = [
             "-filter_complex",
-            f"[0:v]scale=640:480:sws_flags=bilinear+accurate_rnd+bitexact+full_chroma_int,setsar=1[outv]",
+            f"[0:v]scale=720:576:sws_flags=bilinear+accurate_rnd+bitexact+full_chroma_int,setsar=1[outv]",
             "-map", "[outv]"
         ]
 

@@ -10,7 +10,7 @@ from parsers import (
     ep_key,
     parse_database,
     TaskName,
-    parse_prec_asuivre_scenes,
+    parse_prec_asuivre_target_scenes,
 )
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
@@ -70,7 +70,7 @@ def main():
     # Parse target list for these chapters
     scene_list: list[int] = []
     if k_ch_dst in ('precedemment', 'asuivre'):
-        scene_list = parse_prec_asuivre_scenes(k_ep=k_ep_dst, k_ch=k_ch_dst)
+        scene_list = parse_prec_asuivre_target_scenes(k_ep=k_ep_dst, k_ch=k_ch_dst)
 
     # next_episode: str = ep_key(episode+1)
     # consolidate_target_scenes(k_ep=next_episode, k_ch='episode')

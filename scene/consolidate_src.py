@@ -23,6 +23,7 @@ from parsers import (
     VideoSettings,
     TaskName,
     scene_no_str,
+    get_ed_to_src_scene,
 )
 from utils.mco_types import Scene, Inputs
 
@@ -30,7 +31,9 @@ from utils.mco_types import Scene, Inputs
 def consolidate_src_scene(
     scene: Scene,
     task_name: TaskName = 'initial',
-    watermark: bool = False
+    watermark: bool = False,
+    compare: bool = False,
+    target_scene_no: int = -1,
 ) -> None:
     verbose: bool = False
     if verbose:
@@ -106,26 +109,32 @@ def consolidate_src_scene(
 
 
     # Output video settings
-    _task_name: TaskName = (
+    _vsettings_key: TaskName = (
         task_name
-        if task_name in ('lr', 'deinterlace', 'initial', 'extract')
+        if task_name in ('lr', 'deinterlace', 'initial', 'extract',)
         else 'initial'
     )
-    vsettings: VideoSettings = db['vsettings'].get(_task_name, None)
+    if compare:
+        _vsettings_key = 'compare'
+
+    vsettings: VideoSettings = db['vsettings'].get(_vsettings_key, None)
     if vsettings is not None:
         scene['task'].video_settings = deepcopy(vsettings)
         vsettings = scene['task'].video_settings
     else:
-        raise ValueError(f"VideoSettings not defined for task: {task_name}")
+        raise ValueError(f"VideoSettings not defined for task: {_vsettings_key}")
 
     # Output video filename
     if k_ch in ('g_debut', 'g_fin'):
         cache_path: str = db[k_ch]['cache_path']
     else:
-        cache_path: str = get_cache_path(scene)
+        cache_path: str = get_cache_path(scene, compare=compare)
 
     if task_name == 'lr':
-        basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}_{k_ed}"
+        if compare:
+            basename: str = f"{k_ep}_{k_ch}_{target_scene_no}_{k_ed}_{scene['no']:03}"
+        else:
+            basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}_{k_ed}"
     else:
         # Use destination scene no
         basename = f"{k_ed}_{k_ep}_{k_ch}_{scene_no_str(scene)}"

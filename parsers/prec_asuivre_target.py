@@ -10,7 +10,41 @@ from ._keys import Chapter, all_chapter_keys, ep_key, main_chapter_keys
 from scene.src_scene import SrcScenes, SrcScene, Scene
 
 
-def parse_prec_asuivre_scenes(k_ep: str, k_ch: Chapter) -> list[SrcScene]:
+def parse_prec_asuivre_target_scenes(k_ep: str, k_ch: Chapter, k_ed: str = 'j') -> list[int]:
+    scene_nos: set[int] = set()
+
+    db_scenes: list[Scene] = parse_target_chapter(k_ep=k_ep, k_ch=k_ch)
+    for scene in db_scenes:
+        for src_scene in scene['src'].scenes():
+            _k_ed, _, _, scene_no = src_scene['k_ed_ep_ch_no']
+            scene_nos.add(scene_no)
+            if k_ed and k_ed != _k_ed:
+                raise ValueError(f"parse target scene list for {k_ch}: ed is different!")
+    return sorted(list(scene_nos))
+
+
+
+def get_ed_to_src_scene(
+    k_ep: str,
+    k_ch: Chapter,
+) -> dict:
+    db_scenes: list[Scene] = parse_target_chapter(k_ep=k_ep, k_ch=k_ch)
+    ed_to_target_map: dict = {}
+
+    # Use primary scene_no
+    for scene in db_scenes:
+        in_scene: Scene = scene['src'].primary_scene().in_scene
+        in_scene_no = in_scene['no']
+        in_ed = in_scene['k_ed']
+        if in_ed not in ed_to_target_map:
+            ed_to_target_map[in_ed] = {}
+        ed_to_target_map[in_ed][in_scene_no] = scene['no']
+
+    return ed_to_target_map
+
+
+
+def parse_target_chapter(k_ep: str, k_cg: Chapter) -> list[SrcScene]:
     # Open configuration file
     filepath: str = absolute_path(
         os.path.join(
@@ -145,12 +179,4 @@ def parse_prec_asuivre_scenes(k_ep: str, k_ch: Chapter) -> list[SrcScene]:
                 count=segment_count,
             )
 
-    scene_nos: set[int] = set()
-    for scene in db_scenes:
-        for src_scene in scene['src'].scenes():
-            k_ed_ep_ch_no = src_scene['k_ed_ep_ch_no']
-            scene_nos.add(k_ed_ep_ch_no[3])
-            if k_ed != 'j':
-                raise ValueError(f"parse target scene list for {k_ch}: ed is different!")
-    return sorted(list(scene_nos))
-
+    return db_scenes

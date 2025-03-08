@@ -24,6 +24,7 @@ from parsers import (
     ProcessingTask,
     VideoSettings,
     calc_hash,
+    get_chapter_video,
 )
 
 
@@ -38,9 +39,13 @@ def extract_scenes(
     scene_max: int = -1,
     watermark: bool = False,
     edition: str | None = None,
-    debug: bool = False
+    debug: bool = False,
+    compare: bool = False,
 ):
+    """
+        compare: used for lr to set basename for source comparisons
 
+    """
     k_ed = edition
     k_ep = ep_key(episode)
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
@@ -87,34 +92,47 @@ def extract_scenes(
                 f"{scene['count']}".rjust(4),
             )
 
+            # Get source scene for comparisons
+            ed_scene = scene
+            if compare:
+                target_scenes: list[Scene] = get_chapter_video(k_ep, k_ch)['scenes']
+                in_scene: Scene = target_scenes[scene_no]['src'].primary_scene().in_scene
+                if in_scene['k_ed'] == k_ed:
+                    ed_scene_no: int = in_scene['no']
+                    ed_scene = scenes[ed_scene_no]
+
             # Consolidate this scene
             consolidate_src_scene(
-                scene=scene,
+                scene=ed_scene,
                 task_name=task_name,
-                watermark=watermark
+                watermark=watermark,
+                compare=compare,
+                target_scene_no=scene_no,
             )
 
             if debug:
                 print(lightcyan("================================== Scene ======================================="))
-                pprint(scene)
+                pprint(ed_scene)
                 print(lightcyan("==============================================================================="))
 
             if not simulation:
-                result = extract_scene(scene=scene, force=force, debug=debug)
+                result = extract_scene(
+                    scene=ed_scene, compare=compare, force=force, debug=debug
+                )
                 if not result:
-                    pprint(scene)
+                    # pprint(ed_scene)
                     raise RuntimeError(
-                        red(f"Failed processing scene: source: {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}")
+                        red(f"Failed processing scene: source: {ed_scene['k_ed']}:{ed_scene['k_ep']}:{scene['k_ch']}")
                     )
 
             # Calculate hash for the video
-            hashes_str += f",{scene['task'].hash}"
+            hashes_str += f",{ed_scene['task'].hash}"
 
             if debug:
                 elapsed = time.time() - start_time
                 print(purple(
-                    f"\t\tscene no. {scene['no']} generated in "
-                    f"{s_to_sexagesimal(elapsed)} ({elapsed/scene['count']:02f}s/f)\n"
+                    f"\t\tscene no. {ed_scene['no']} generated in "
+                    f"{s_to_sexagesimal(elapsed)} ({elapsed/ed_scene['count']:02f}s/f)\n"
                 ))
 
         hashcode: str = calc_hash(hashes_str[:-1])

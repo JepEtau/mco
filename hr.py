@@ -9,7 +9,7 @@ from parsers import (
     Chapter,
     ep_key,
     parse_database,
-    parse_prec_asuivre_scenes,
+    parse_prec_asuivre_target_scenes,
     TaskName,
 )
 from utils.arg_parser import common_argument_parser
@@ -76,7 +76,7 @@ def main():
     # Parse target list for these chapters
     scene_list: list[int] = []
     if k_ch_dst in ('precedemment', 'asuivre'):
-        scene_list = parse_prec_asuivre_scenes(k_ep=k_ep_dst, k_ch=k_ch_dst)
+        scene_list = parse_prec_asuivre_target_scenes(k_ep=k_ep_dst, k_ch=k_ch_dst)
 
     scene_no: int = arguments.scene
     task: TaskName = 'hr'

@@ -261,7 +261,7 @@ def nested_dict_set(d: dict, o: object, *keys) -> None:
 
 
 
-def get_cache_path(scene: Scene, out: bool=False) -> str:
+def get_cache_path(scene: Scene, compare: bool = False) -> str:
     task_name: TaskName = scene['task'].name
     cache_dir: str = (
         db['common']['directories']['cache']
@@ -332,7 +332,7 @@ def get_cache_path(scene: Scene, out: bool=False) -> str:
         output_path = os.path.join(
             cache_dir,
             scene['k_ep'],
-            "lr",
+            "lr_compare" if compare else "lr"
         )
 
     elif task_name == 'upscale':
@@ -457,23 +457,16 @@ def run_simple_command(command: list[str] | tuple[str]) -> bool:
     result = subprocess.run(
         command,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.STDOUT
     )
     stdout: str = ''
-    stderr: str = ''
     try:
         stdout = result.stdout.decode('utf-8')
-    except:
-        pass
-    try:
-        stderr = result.stderr.decode('utf-8')
     except:
         pass
 
     main_logger.debug(f"[V] {command[0]} executed in {time.time() - start_time:.02f}s")
     if stdout:
         print(stdout)
-    if stderr:
-        print(stderr)
-        return False
+
     return True

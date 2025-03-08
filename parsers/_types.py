@@ -55,7 +55,10 @@ TaskName = Literal[
     'cg',
 
     # Finalize: geometry, fading
-    'final'
+    'final',
+
+    # virtual task name to use vsettings for comparisons
+    'compare',
 ]
 
 TASK_NAMES: list[TaskName] = get_args(TaskName)
