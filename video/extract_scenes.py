@@ -118,7 +118,10 @@ def extract_scenes(
                 ))
 
         hashcode: str = calc_hash(hashes_str[:-1])
-        basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task_name}_{hashcode}"
+        if task_name == 'lr':
+           basename: str = f"{k_ep}_{k_ch}_{k_ed}_{task_name}_{hashcode}"
+        else:
+           basename: str = f"{k_ed}_{k_ep}_{k_ch}_{task_name}_{hashcode}"
 
         k_ep_or_g: str = k_ch if k_ch in ('g_debut', 'g_fin') else k_ep
         concat_fp: str =os.path.join(

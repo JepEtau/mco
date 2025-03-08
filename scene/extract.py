@@ -9,6 +9,7 @@ from parsers import (
     db,
     get_frame_rate,
     VideoSettings,
+    TaskName,
 )
 from processing.watermark import add_watermark
 from scene.filters import do_watermark
@@ -27,11 +28,16 @@ def extract_scene(
     force: bool = False,
     debug: bool = False
 ) -> bool:
+    task_name: TaskName = scene['task'].name
+
     scene_key: str = f"{scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}:{scene['k_ch']}:{scene['no']}"
 
+    # Input video file
     in_video_fp: str = scene['inputs'].progressive().filepath
     if not os.path.exists(in_video_fp):
         raise FileExistsError(red(f"Missing input file: {in_video_fp}"))
+
+    # Output video file
     out_video_fp: str = scene['task'].video_file
     in_video_info: VideoInfo = extract_media_info_mco(in_video_fp)['video']
 
@@ -86,7 +92,7 @@ def extract_scene(
 
     # Force to 576p to facilitate comparisons
     filter_complex: list[str] = []
-    if h != 640 or w != 480:
+    if task_name != 'lr' and (h != 640 or w != 480):
         filter_complex = [
             "-filter_complex",
             f"[0:v]scale=640:480:sws_flags=bilinear+accurate_rnd+bitexact+full_chroma_int,setsar=1[outv]",

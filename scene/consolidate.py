@@ -158,13 +158,16 @@ def consolidate_scene(
         if task_name == 'hr':
             vsettings.pad = db['vsettings'][task_name].pad
 
-    elif task_name_index > TASK_NAMES.index('upscale'):
-        task.video_settings = deepcopy(db['vsettings'].get('hr', None))
+    # elif task_name_index > TASK_NAMES.index('upscale'):
+    else:
+        task.video_settings = deepcopy(db['vsettings'].get(task_name, None))
         vsettings = task.video_settings
         vsettings.pad = 0
 
-    else:
-        raise ValueError(f"VideoSettings not defined for task: {task_name}")
+    # pprint(task)
+    # raise
+    # else:
+    #     raise ValueError(f"VideoSettings not defined for task: {task_name}")
 
 
     # Hash code, metadata

@@ -7,6 +7,7 @@ import sys
 from parsers import (
     parse_database,
     all_chapter_keys,
+    Chapter,
 )
 from parsers.episode import parse_episode
 from utils.arg_parser import common_argument_parser
@@ -37,9 +38,11 @@ def main():
         main_logger.setLevel("DEBUG")
 
     episode: int = arguments.episode
-    chapter: str = arguments.chapter
+    chapter: Chapter = arguments.chapter
     if episode == 0 and chapter == '':
         sys.exit("Error: at least an episode or a chapter shall be specified")
+    elif episode != 0 and chapter == '':
+        chapter = 'episode'
 
     if not (episode > 0 or episode <= 39 or episode == 99):
         sys.exit(red("Episode must be between 1 and 39"))

@@ -124,7 +124,12 @@ def consolidate_src_scene(
     else:
         cache_path: str = get_cache_path(scene)
 
-    basename = f"{k_ed}_{k_ep}_{k_ch}_{scene_no_str(scene)}"
+    if task_name == 'lr':
+        basename: str = f"{k_ep}_{k_ch}_{scene['no']:03}_{k_ed}"
+    else:
+        # Use destination scene no
+        basename = f"{k_ed}_{k_ep}_{k_ch}_{scene_no_str(scene)}"
+
     suffix: str = ""
     if task_name != "restored":
         if scene['task'].hash != '':

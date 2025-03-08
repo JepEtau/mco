@@ -96,7 +96,7 @@ def tf_scenes(
                 out_mtime_str = datetime.fromtimestamp(out_mtime).strftime("%Y-%m-%d %H:%M:%S")
 
             if out_mtime_str == "-":
-                print(yellow(f"{scene_id}: temporal filtered scene has to be generated"))
+                print(yellow(f"{scene_id}: {out_fp} doesn't exist"))
                 do_process = True
 
             elif out_mtime < in_mtime or force:
