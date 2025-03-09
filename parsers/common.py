@@ -109,6 +109,8 @@ def parse_common_configuration(language:str=''):
         'cache',
         'cache_progressive',
         'audio',
+        'inputs',
+        'outputs',
     ):
         if not os.path.exists(directories[d]) or sys.platform == 'linux':
             directories[d] = absolute_path(os.path.join(directories[f"{d}_default"]))
