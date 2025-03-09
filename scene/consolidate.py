@@ -150,6 +150,8 @@ def consolidate_scene(
         _task_name = 'lr'
     elif task_name == 'upscale':
         _task_name = 'final'
+    elif task_name == 'cg':
+        _task_name = 'tf'
 
     in_vsettings: VideoSettings = db['vsettings'].get(_task_name, None)
     if in_vsettings is not None:

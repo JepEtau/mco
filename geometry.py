@@ -24,15 +24,6 @@ def main():
         add_language=True,
     )
 
-    parser.add_argument(
-        "--scene",
-        "-s",
-        type=int,
-        default=-1,
-        required=False,
-        help="scene no. to process."
-    )
-
     arguments = parser.parse_args()
 
     if arguments.debug:

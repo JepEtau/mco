@@ -44,15 +44,6 @@ def main():
         help="debug"
     )
 
-    parser.add_argument(
-        "--task",
-        "-t",
-        choices=TASK_NAMES,
-        default='lr',
-        required=False,
-        help="task name"
-    )
-
     arguments = parser.parse_args()
 
     if arguments.debug:

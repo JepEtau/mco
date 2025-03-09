@@ -1,7 +1,9 @@
 from argparse import ArgumentParser
 from parsers import (
     all_chapter_keys,
+    TASK_NAMES,
 )
+
 
 def common_argument_parser(
     description: str = '',
@@ -54,7 +56,6 @@ def common_argument_parser(
         help="last scene no. to process"
     )
 
-
     parser.add_argument(
         "--scene",
         "-s",
@@ -62,6 +63,15 @@ def common_argument_parser(
         default=-1,
         required=False,
         help="scene no. to process"
+    )
+
+    parser.add_argument(
+        "--task",
+        "-t",
+        choices=TASK_NAMES,
+        default='lr',
+        required=False,
+        help="task name"
     )
 
     parser.add_argument(
