@@ -67,7 +67,7 @@
 * [x] consolider f vs k
 * [x] precedemment
 * [x] asuivre
-* [ ] sim_lr
+* [x] sim_lr
 
 
 # ep07
@@ -79,8 +79,7 @@
 * [x] consolider f vs k
 * [x] precedemment
 * [x] asuivre
-* [ ] sim_lr
-    **verify episode scene 1: frames removed**
+* [x] sim_lr
 
 
 # ep08

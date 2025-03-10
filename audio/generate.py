@@ -140,9 +140,9 @@ def generate_audio_track(
                 end = int(s['end'] * sample_rate_src)
                 logger.debug(
                     f"\t  [{start} ... {end}] ({end-start})"
-                    + f"([{ms_to_frame(start/sample_rate_src, fps):.1}f "
-                    + f"... {ms_to_frame(end/sample_rate_src, fps):.1}f] "
-                    + f"({ms_to_frame((end-start)/sample_rate_src, fps):.1}f)"
+                    + f"([{ms_to_frame(start/sample_rate_src, fps)}f "
+                    + f"... {ms_to_frame(end/sample_rate_src, fps)}f] "
+                    + f"({ms_to_frame((end-start)/sample_rate_src, fps)}f)"
                 )
                 out_left_channel = np.append(out_left_channel, in_left_channel_tmp[start:end])
                 if channel_count > 1:

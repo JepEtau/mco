@@ -219,12 +219,16 @@ def generate_lr_scene(
                 factor, _ = e.extra_param
                 print(yellow(f"  decimate:"), f"{in_scene['no']}: {src_count}")
                 # to_decode = int(src_count * factor / (factor - 1) )
+                pprint(scene)
+                pprint(in_scene)
+                raise
 
             elif e := in_scene['effects'].get_effect('decimate_2'):
                 factor, factor_2_mod = e.extra_param
                 # to_decode = int(factor_2_mod * src_count * factor / (factor - 1))
                 print(yellow(f"  decimate_2:"), f"{in_scene['no']}: {factor_2_mod}")
                 pprint(in_scene)
+                raise
 
         # FFmpeg command
         frame_rate: FrameRate = in_vi['frame_rate_r']
