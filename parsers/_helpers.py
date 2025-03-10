@@ -18,7 +18,7 @@ def get_chapter_video(k_ep: str, k_ch: str) -> ChapterVideo | None:
 
     # Do not generate clip for unused chapters
     if 'count' not in ch_video:
-        print(yellow(f"warning: not \'count\' in {k_ep}:{k_ch}"))
+        print(yellow(f"warning: no \'count\' in {k_ep}:{k_ch} -> no scenes"))
         return None
 
     if ch_video['count'] <= 0:
@@ -42,7 +42,7 @@ def get_chapter_audio(k_ep: str, k_ch: str) -> ChapterAudio | None:
 
     # Do not generate clip for unused chapters
     if 'count' not in ch_audio:
-        print(yellow(f"warning: not \'count\' in {k_ep}:{k_ch}"))
+        print(yellow(f"warning: no \'count\' in {k_ep}:{k_ch} -> no audio segment"))
         return None
 
     if ch_audio['count'] <= 0:

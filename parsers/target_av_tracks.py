@@ -7,6 +7,7 @@ import warnings
 
 from parsers._keys import main_chapter_keys
 from parsers.video_target import get_video_chapter_frame_count
+from scene.src_scene import SrcScene
 from .helpers import get_frame_rate, nested_dict_set
 from .logger import logger
 from utils.p_print import *
@@ -125,7 +126,6 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
         fadein_effect = Effect(name='fadein', loop=0, fade=to_remove)
         ch_video['effects'].append(fadein_effect)
 
-
         # move from ch_video to scene ?
         # src_scene.effects = Effects(fadein_effect)
 
@@ -168,6 +168,13 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
     if video_count > audio_count:
         # raise ValueError(red(f"{k_ep}:{k_ch} too many frames"))
         warnings.warn(red(f"{k_ep}:{k_ch} too many frames"))
+        to_remove: int = video_count - audio_count
+        print(f"[I]  remove frames: {to_remove}")
+        last_src_scene: SrcScene = ch_video['scenes'][-1]
+        src_scene: Scene = last_src_scene['src'].primary_scene()
+        src_scene.count -= to_remove
+        last_src_scene['dst']['count'] -= to_remove
+        ch_video['count'] -= to_remove
 
     elif audio_count > video_count:
         add_loop_and_fadeout_effect(ch_video, ch_audio, k_ep, k_ch)
@@ -560,6 +567,9 @@ def add_loop_and_fadeout_effect(
     ])
     last_scene['dst']['count'] += loop_count
     ch_video['count'] += loop_count
+
+    pprint(last_scene)
+    # raise
 
 
 

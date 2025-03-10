@@ -28,9 +28,9 @@ from .filters import (
 )
 from .chapter import parse_chapter_sections
 from .scenes import (
-    consolidate_parsed_scenes,
+    consolidate_in_scenes,
     parse_scenes,
-    parse_scenes_new,
+    parse_scenes,
     parse_target_scenelist,
 )
 from ._keys import (
@@ -281,35 +281,6 @@ def parse_episode(k_ed: str, k_ep: str | int):
                 config=config,
             )
 
-        # chapters: scenes and other properties (previous format)
-        #----------------------------------------------------
-        elif k_section in all_chapter_keys():
-            k_ch = k_section
-            for k_option in config.options(k_section):
-                value_str = config.get(k_section, k_option)
-                value_str = value_str.replace(' ','')
-
-                # scenes
-                db_video_chapter = db_video[k_ch]
-                db_video_chapter['scenes'] = []
-                if k_option == 'scenes':
-                    if k_section in (
-                        'episode',
-                        'doc',
-                        'g_debut',
-                        'g_fin',
-                        'g_asuivre',
-                        'g_doc'
-                    ):
-                        parse_scenes(k_ed, k_ep, k_ch, value_str)
-
-                    elif k_section in ['precedemment', 'asuivre']:
-                        # precedemment and asuivre are different as some scenes
-                        # may be replaced
-                        # TODO rework as the function/parameteres are the same!
-                        parse_scenes(k_ed, k_ep, k_ch, value_str)
-
-
         # chapters: scenes (new format)
         #----------------------------------------------------
         elif k_section.startswith('scenes_'):
@@ -317,12 +288,12 @@ def parse_episode(k_ed: str, k_ep: str | int):
             if k_ch not in all_chapter_keys():
                 continue
             db_video[k_ch]['scenes'] = []
-            parse_scenes_new(k_ed, k_ep, k_ch, config, k_section)
+            parse_scenes(k_ed, k_ep, k_ch, config, k_section)
 
 
     # Calculate durations for each chapters based on scenes duration
     for k_p in all_chapter_keys():
-        consolidate_parsed_scenes(k_ed=k_ed, k_ep=k_ep, k_chapter=k_p)
+        consolidate_in_scenes(k_ed=k_ed, k_ep=k_ep, k_ch=k_p)
 
 
     # Consolidate inputs dict

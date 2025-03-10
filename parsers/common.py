@@ -92,7 +92,6 @@ def parse_common_configuration(language:str=''):
             v = v.replace(c, '')
         directories[d] = v
 
-    directories['images'] = os.path.join(directories['inputs'], "img")
 
     root_path: str = absolute_path(
         os.path.join(__file__, os.pardir, os.pardir)
@@ -136,6 +135,7 @@ def parse_common_configuration(language:str=''):
     ):
         os.makedirs(directories[k], exist_ok=True)
 
+    directories['images'] = os.path.join(directories['inputs'], "img")
 
     # Others
     #===========================================================================

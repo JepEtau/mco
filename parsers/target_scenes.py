@@ -98,6 +98,18 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
         target_scene_nos = []
         ch_video['scenes'] = []
 
+    # Append scenes from src and sort
+    k_ed_ref: str = 'f' if db[k_ep]['audio']['lang'] == 'en' else 'k'
+    k_ep_ref: str = k_ep
+    if k_ch == 'episode':
+        scene_count: int = len(db[k_ep_ref]['video'][k_ed_ref][k_ch]['scenes'])
+
+    else:
+        # All targets scenes are specified by the scene target list
+        k_ep_ref = k_ep
+        scene_count = len(ch_video_src['scenes'])
+
+
     # Find scene no if not specified in target scene list
     for scene in ch_video['scenes']:
         for src_scene in scene['src'].scenes():
@@ -112,11 +124,9 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
 
     # Append scenes from src and sort
     for scene_src in ch_video_src['scenes']:
-        if (
-            'scene_count' in ch_video
-            and len(ch_video['scenes']) >= ch_video['scene_count']
-        ):
+        if len(ch_video['scenes']) >= scene_count:
             break
+
         if scene_src['no'] not in target_scene_nos:
             ch_video['scenes'].append(
                 Scene(
@@ -281,11 +291,16 @@ def consolidate_target_scenes_g(k_ep: int | str, k_ch: str, verbose: bool = Fals
     target_scene_nos = ([s['no'] for s in ch_video['scenes']])
 
     # Append scenes from src and sort
-    scene_count: int = (
-        ch_video['scene_count']
-        if 'scene_count' in ch_video
-        else len(ch_video_src['scenes'])
-    )
+    k_ed_ref: str = 'f' if db[k_ch]['audio']['lang'] == 'en' else 'k'
+    if k_ch in ('g_debut', 'g_fin'):
+        k_ep_ref: str = db[k_ch]['audio']['src']['k_ep']
+        scene_count: int = len(db[k_ep_ref]['video'][k_ed_ref][k_ch]['scenes'])
+
+    else:
+        # All targets scenes are specified by the scene target list
+        k_ep_ref = k_ep
+        scene_count = len(ch_video_src['scenes'])
+
     for no in range(scene_count):
         if no in target_scene_nos:
             continue
@@ -309,8 +324,7 @@ def consolidate_target_scenes_g(k_ep: int | str, k_ch: str, verbose: bool = Fals
     #     raise
     ch_video['scenes'] = sorted(ch_video['scenes'], key=lambda s: s['no'])
 
-    k_ed_ref: str = 'f' if db[k_ch]['audio']['lang'] == 'en' else 'k'
-    k_ep_ref: str = 'ep01' if k_ch in ('g_debut', 'g_fin') else k_ep
+
 
     # k_ed_ref: str = 's' if k_ch == 'g_fin' else k_ed_ref
     # k_ep_ref: str = 'ep11' if k_ch == 'g_fin' else k_ep_ref

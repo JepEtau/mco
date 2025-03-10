@@ -13,6 +13,7 @@ from parsers.helpers import get_frame_rate
 from scene.consolidate import consolidate_scene
 from scene.src_scene import SrcScene
 from utils.images_io import load_image_fp32, write_image
+from utils.mco_utils import calculate_scene_frame_count
 from utils.media import VideoInfo, extract_media_info_mco, FShape
 from utils.np_dtypes import np_to_float32, np_to_uint16, np_to_uint8
 from utils.p_print import *
@@ -364,11 +365,15 @@ def apply_final_effects(
             effect: Effect = effects.get_effect('fadeout')
             if effect is None:
                 effect = effects.get_effect('loop_and_fadeout')
+                print("loop and fadeout")
+                pprint(effect)
+            scene_frame_count = calculate_scene_frame_count(scene)
+            print(f"{scene['dst']['count']} vs {scene_frame_count}")
             start_no: int = scene['dst']['count'] - effect.fade
 
             if out_i >= start_no:
                 coef: float = float(out_i - start_no) / effect.fade
-                print(f"fadeout, start: {start_no}, out_i: {out_i}, coef={coef:.06f}")
+                print(f"fadeout, start: {start_no}, out_i: {out_i}, coef={coef:.06f}, dtype={frame.img.dtype}")
                 img_black: np.ndarray = np.zeros(frame.img.shape, dtype=np.float32)
                 img_out: np.ndarray = cv2.addWeighted(
                     np_to_float32(frame.img), 1 - coef, img_black, coef, 0

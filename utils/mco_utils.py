@@ -91,8 +91,8 @@ def is_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
         check_metdata = False
 
     if os.path.exists(out_video_fp):
-        # dst_frame_count: int = calculate_scene_frame_count(scene)
-        dst_frame_count = scene['dst']['count']
+        dst_frame_count: int = calculate_scene_frame_count(scene)
+        # dst_frame_count = scene['dst']['count']
         print(yellow(f"dst frame_count: {dst_frame_count}"))
         out_video_info: VideoInfo | None =  None
         try:
@@ -227,11 +227,16 @@ def calculate_scene_frame_count(scene: Scene) -> int:
             count = scene['src'].primary_scene().count
 
         # Add silence if last scene of a chapter
-        if is_last_scene(scene):
+        elif is_last_scene(scene):
             count += ch_video['silence'] if 'silence' in ch_video else 0
 
-        # If a loop is defined in target scene
-        if scene['dst']['k_ch'] == 'episode':
+            # if 'effects' in scene:
+            #     if e := scene['effects'].get_effect('loop_and_fadeout'):
+            #         # raise
+            #         count += e.loop
+
+        # specific when using loop for replace
+        elif scene['dst']['k_ch'] == 'episode':
             count = scene['src'].frame_count(exclude_loop=False)
             scene['dst']['count'] = count
 
