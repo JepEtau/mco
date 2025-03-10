@@ -212,23 +212,23 @@ def generate_lr_scene(
         #     src_scene.in_scene['count'] = src_count
 
         # Decimate
-        factor: int = 0
-        factor_2_mod: int = 0
+        factor_mod1: int = 0
+        factor_mod2: int = 0
         if 'effects' in in_scene:
             if e := in_scene['effects'].get_effect('decimate'):
-                factor, _ = e.extra_param
+                factor_mod1, _ = e.extra_param
                 print(yellow(f"  decimate:"), f"{in_scene['no']}: {src_count}")
                 # to_decode = int(src_count * factor / (factor - 1) )
-                pprint(scene)
-                pprint(in_scene)
-                raise
+                # pprint(scene)
+                # pprint(in_scene)
+                # raise
 
             elif e := in_scene['effects'].get_effect('decimate_2'):
-                factor, factor_2_mod = e.extra_param
+                factor_mod1, factor_mod2 = e.extra_param
                 # to_decode = int(factor_2_mod * src_count * factor / (factor - 1))
-                print(yellow(f"  decimate_2:"), f"{in_scene['no']}: {factor_2_mod}")
-                pprint(in_scene)
-                raise
+                print(yellow(f"  decimate_2:"), f"{in_scene['no']}: {factor_mod2}")
+                # pprint(in_scene)
+                # raise
 
         # FFmpeg command
         frame_rate: FrameRate = in_vi['frame_rate_r']
@@ -313,19 +313,37 @@ def generate_lr_scene(
         # Number of src scenes to use
         remaining_src_scenes -= 1
 
+        # decimate
+        decimate_index: int = 0
+        decimate_index2: int = 0
+
         while (
             to_decode
             and remaining > 0
         ):
             _in_f_no = src_start + f_index
             if _in_f_no >= src_start + src_count:
-                print("BREAAAAAAK but why?")
                 break
+
+
+            # decimate
+            if factor_mod1:
+                print(f"decimate index: {decimate_index} % {factor_mod1} -> {decimate_index // factor_mod1}")
+                decimate_index += 1
+                if decimate_index // factor_mod1 == 1:
+                    decimate_index = 0
+                    d_f_no += 1
+                    to_decode -= 1
+                    print(f"  discard {d_f_no}")
+                    f_index += 1
+                    _in_f_no = src_start + f_index
+                    continue
 
             # Get frame_no to send to the consumer
             f_no = frame_cache.get_out_f_no(_in_f_no)
             # if f_no != d_f_no:
-            # print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, _in_f_no: {_in_f_no}, waiting for {f_no}"))
+            print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, _in_f_no: {_in_f_no}, waiting for {f_no}"))
+
 
             # if not cached, decode a new frame
             img_buffer: np.ndarray = None
@@ -335,6 +353,13 @@ def generate_lr_scene(
                     dtype=np.uint8,
                 )
 
+                # if factor_mod2:
+                #     decimate_index2 = (decimate_index2 + 1) % factor_mod2
+                #     if decimate_index2:
+                #         d_f_no += 1
+                #         to_decode -= 1
+                #         continue
+
                 # Throw this frame away if replaced
                 if frame_cache.to_replace(d_f_no):
                     # print(f"      discard: {d_f_no}")
@@ -342,7 +367,6 @@ def generate_lr_scene(
                 else:
                     # print(f"      add: {d_f_no}")
                     frame_cache.add(d_f_no, img_buffer)
-
 
                 d_f_no += 1
                 to_decode -= 1
@@ -405,21 +429,6 @@ def generate_lr_scene(
 
 
 
-        # # decimate
-        # decimate_index: int = 0
-        # decimate_index2: int = 0
-
-        #     # decimate
-        #     decimate_index += 1
-        #     if factor != 0 and (decimate_index % factor) == 0:
-        #         decimate_index = 0
-        #         out_f_no += 1
-        #         continue
-        #     if factor_2_mod:
-        #         decimate_index2 = (decimate_index2 + 1) % factor_2_mod
-        #         if decimate_index2:
-        #             out_f_no += 1
-        #             continue
 
 
     main_logger.info(f"produced: {produced}")

@@ -233,7 +233,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
         print(cyan("Dependencies"))
         pprint(in_videos)
 
-    vsettings: VideoSettings = db['vsettings']['initial']
+    vsettings: VideoSettings = db['vsettings']['deinterlace']
 
     for in_video, value in in_videos.items():
         ed, ep = value['ed_ep']
@@ -298,7 +298,7 @@ Default value for NNEDI deinterlacer is \"nsize=s8x6:nns=n128:qual=slow:etype=s:
                 try:
                     qtgmc_args: OrderedDict[str, str] = get_qtgmc_args(template_script)
                 except:
-                    print(yellow("failed to fetech QTGMC params"))
+                    print(yellow("failed to fetch QTGMC params"))
                 hashcode, filter_str = calc_deint_hash(qtgmc_args)
                 script_filepath: str = os.path.join(
                     db_directories['cache_progressive'],
