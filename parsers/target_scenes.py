@@ -154,13 +154,10 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
     ref_scenes: list[Scene] = db[k_ep]['video'][k_ed_ref][k_ch]['scenes']
     add_ref: bool = True
     if len(ref_scenes) != len(ch_video['scenes']):
-        print(red(f"Target: {len(ch_video['scenes'])}, Reference ({k_ed_ref}): {len(ref_scenes)} scenes"))
-
+        print(darkgrey(f"[I] {k_ch}: target scenes ({len(ch_video['scenes'])}) != reference ({k_ed_ref}: {len(ref_scenes)})"))
         if k_ch != 'episode':
             add_ref = False
 
-        if k_ch in ('precedemment', 'asuivre', 'reportage'):
-            warn(f"{k_ch}: cannot add reference to every scenes")
 
     frame_count = 0
     for no, scene in enumerate(ch_video['scenes']):
@@ -183,6 +180,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
             'count': scene['src'].frame_count()
         }
 
+        # Add scene used as the reference for display
         if add_ref and scene['no'] < len(ref_scenes):
             ref_scene = ref_scenes[scene['no']]
             scene['ref'] = RefScene(
@@ -198,9 +196,9 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
     ch_video['count'] = frame_count
 
 
-    if k_ch == 'precedemment':
-        pprint(ch_video)
-        print(f"   count: {ch_video['count']}")
+    # if k_ch == 'precedemment':
+    #     pprint(ch_video)
+    #     print(f"   count: {ch_video['count']}")
         # raise
 
     if k_ep == K_EP_DEBUG and k_ch == K_CHAPTER_DEBUG:

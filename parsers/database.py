@@ -1,10 +1,8 @@
 from __future__ import annotations
 from collections import OrderedDict
-import os
 from pprint import pprint
 import sys
 from typing import Any, Literal
-from utils.mco_types import ChapterVideo
 from utils.p_print import *
 
 from .common import parse_common_configuration
@@ -26,7 +24,7 @@ from .target_scenes import (
     consolidate_target_scenes_g,
 
 )
-from .target_av_tracks import (
+from .av_sync import (
     consolidate_av_tracks,
     consolidate_av_tracks_g_debut_fin,
 )
@@ -129,11 +127,10 @@ def parse_database(
                 # Do not parse this episode another time
                 continue
             logger.debug(lightgrey(f"parse dependency: {k_ed_tmp}:{k_ep_tmp}"))
-            print(lightgrey(f"parse dependency: {k_ed_tmp}:{k_ep_tmp}"))
+            # print(lightgrey(f"parse dependency: {k_ed_tmp}:{k_ep_tmp}"))
             parse_episode(k_ed=k_ed_tmp, k_ep=k_ep_tmp)
 
     # Parse other config files for each dependency
-    pprint(dependencies)
     already_parsed = list()
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in dependencies[k_ed_tmp]:
@@ -202,7 +199,7 @@ def parse_database(
 
     stats: dict[str, Any] | None = None
     if k_ep != 'ep00':
-        consolidate_av_tracks(k_ep=k_ep, verbose=True)
+        consolidate_av_tracks(k_ep=k_ep, verbose=False)
 
         stats = pprint_episode(k_ep=k_ep)
     else:

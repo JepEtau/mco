@@ -1,355 +1,650 @@
 from __future__ import annotations
+from copy import deepcopy
 import sys
 from pprint import pprint
+import warnings
 
-from scene.src_scene import SrcScene, SrcScenes
+from parsers.video_target import get_video_chapter_frame_count
+from scene.src_scene import SrcScene
+from .helpers import get_frame_rate
 from .logger import logger
-from ._keys import (
-    main_chapter_keys,
-)
-from .audio import get_frame_rate
-from .helpers import nested_dict_set
 from utils.p_print import *
 from utils.time_conversions import (
     frame_to_ms,
     ms_to_frame,
 )
-from utils.mco_types import ChapterVideo, Effect, Effects, Scene
+from utils.mco_types import ChapterAudio, Scene, ChapterVideo
 from ._db import db
+from .effects import Effect, Effects
 
 
 
-def consolidate_av_sync(k_ep: str):
-    episode = db[k_ep]
+def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
     fps = get_frame_rate()
-    logger.debug(lightgreen(f"consolidate_av_sync"))
 
-    if ('audio' not in episode or 'video' not in episode):
-        sys.exit("calculate_av_sync: error, audio or video does not exist in %s:common" % (__name__, k_ep))
-        return
-    db_target_video = episode['video']['target']
-    tvideo_track = episode['video']['target']
-    audio_track: dict = episode['audio']
+    logger.debug(lightgreen(f"consolidate_av_tracks: {k_ep}"))
+    if verbose:
+        print(f"[I] consolidate_av_tracks: {k_ep}:{k_ch}")
+    K_EP_DEBUG, K_CHAPTER_DEBUG = '', ''
+    # K_EP_DEBUG = 'ep05'
+    # K_CHAPTER_DEBUG = 'precedemment'
+    try:
+        db_video = db[k_ep]['video']['target']
+        db_audio = db[k_ep]['audio']
+    except:
+        sys.exit(f"consolidate_av_tracks: error, audio or video does not exist in {k_ep}:common")
 
-    p_target_video: ChapterVideo = episode['video']['target']['precedemment']
-    pprint(p_target_video)
+    # !!!! FR language only
 
     # precedemment
+    #---------------------------------------------------------------------------
     k_ch = 'precedemment'
-    # no avsync for precedemment
-    audio_track['precedemment']['avsync'] = 0
+    ch_audio: ChapterAudio = db_audio[k_ch]
+    ch_video: ChapterVideo = db_video[k_ch]
+    if ch_audio['duration']:
+        audio_count = check_audio_duration_multiple_of_frames(ch_audio)
+        ch_audio['count'] = audio_count
+        video_count = ch_video['count']
 
-    # initialize avsync of episode to 0to 0
-    audio_track['episode']['avsync'] = 0
-    p_target_video['avsync'] = 0
-    tvideo_track['episode']['avsync'] = 0
+        if video_count > audio_count:
+            # raise ValueError(red(f"{k_ep}:{k_ch} too many frames ({video_count} > {audio_count})"))
+            pass
 
-    if k_ch in audio_track and audio_track[k_ch]['duration'] != 0:
-        # edition used as the src for the audio track
+        elif audio_count > video_count:
+            print(yellow(f"[W] {k_ep}:{k_ch} add loop and fadeout {audio_count} > {video_count}"))
+            add_loop_and_fadeout_effect(ch_video, ch_audio, k_ep, k_ch)
 
-        # get edition used for the track: k for fr, f for en
-        k_ed_audio_src = audio_track['src']['k_ed']
+        else:
+            consolidate_last_scene_effect(ch_video, verbose=verbose)
 
-        print(red("AVsync\n-------------------"))
-        logger.debug(f"k_ed_audio_src: {k_ed_audio_src}")
-        p_video_count = p_target_video['count']
-        p_audio_count = ms_to_frame(audio_track['precedemment']['duration'], fps)
-
-        print(f"Target: precedemment video count: {p_video_count}")
-        print(f"Target: precedemment audio count: {p_audio_count}")
-        if p_video_count > p_audio_count:
-            raise ValueError(f"Precedemment is too long ({p_video_count} > {p_audio_count})")
-        elif p_video_count < p_audio_count:
-            raise NotImplementedError("Add loop and fadeout")
+    else:
+        print(darkgrey(f"[I] No chapter: \'{k_ch}\'"))
 
 
-        e_vchapter: ChapterVideo = db_target_video['episode']
-        e_s0_vcount: int = e_vchapter['scenes'][0]['src'].frame_count()
-        e_s0_acount: int = (
-            episode['video'][k_ed_audio_src]['episode']['scenes'][1]['start']
-            - ms_to_frame(audio_track['episode']['start'], fps)
+    # episode
+    #---------------------------------------------------------------------------
+    k_ch = 'episode'
+    # audio/video targets:
+    ch_audio: ChapterAudio = db_audio[k_ch]
+    ch_video: ChapterVideo = db_video[k_ch]
+
+    audio_count = check_audio_duration_multiple_of_frames(ch_audio)
+    ch_audio['count'] = audio_count
+    video_count = ch_video['count']
+
+    k_ed_audio_src = db_audio['src']['k_ed']
+
+    if verbose:
+        print(lightcyan(f"----------------- Consolidate A/V tracks ------------------"))
+        print(f"k_ed_audio_src: {k_ed_audio_src}")
+        print(f"chapter: {k_ch}")
+        print(f"  - audio_count: {ch_audio['count']}")
+        print(f"  - audio_duration: {ch_audio['duration']}")
+        print(f"  - video_count : {video_count}")
+        print(f"  - video_count (rounded): {ch_video['count']}")
+
+
+    #   episode: 1st scene
+    #---------------------------------------------------------------------------
+    if verbose:
+        print(lightblue(f"{k_ep}:{k_ch} First scene"))
+    # First scenes
+    #   Let's use the first 3 scenes because sometimes replaced by other edition
+    #   and nb of frames might differ. e.g. episode 1
+    e_s0_vcount: int = sum(
+        [ch_video['scenes'][i]['src'].frame_count() for i in range(3)]
+    )
+    e_s0_acount: int = (
+        db[k_ep]['video'][k_ed_audio_src]['episode']['scenes'][3]['start']
+        - ms_to_frame(ch_audio['start'], fps)
+    )
+    if verbose:
+        print(f"Target: episode, 3 first scene video count: {e_s0_vcount}, must be {e_s0_acount}")
+
+    if e_s0_vcount > e_s0_acount:
+        if verbose:
+            print(yellow(f"[W] {k_ep}:{k_ch} first scenes are too long ({e_s0_vcount} > {e_s0_acount})"))
+        to_remove: int = e_s0_vcount - e_s0_acount
+
+        # Too many frames, add silence and fadein only for episode 1
+        # (no precedemment)
+        if db_video['precedemment']['count'] <= 0:
+            avsync: int = to_remove // 2
+            if verbose:
+                print(f"[I]  add silence, use avsync: {avsync}")
+            ch_audio['avsync'] = 1000. * avsync / fps
+            ch_audio['count'] += avsync
+            to_remove -= avsync
+
+        if verbose:
+            print(f"[I]  remove frames and fadein: {to_remove}")
+        src_scene: Scene = ch_video['scenes'][0]['src'].primary_scene()
+        src_scene.start += to_remove
+        src_scene.count -= to_remove
+        ch_video['scenes'][0]['dst']['count'] -= to_remove
+
+        ch_video['count'] -= to_remove
+        if 'effects' not in ch_video:
+            ch_video['effects'] = Effects()
+        fadein_effect = Effect(name='fadein', loop=0, fade=to_remove)
+        ch_video['effects'].append(fadein_effect)
+
+        # move from ch_video to scene ?
+        # src_scene.effects = Effects(fadein_effect)
+
+    elif e_s0_vcount < e_s0_acount:
+        loop_count = e_s0_acount - e_s0_vcount
+        # minimum between diff and 2.5s
+        fade = min(loop_count, int(2.5 * fps))
+        if 'effects' not in ch_video:
+            print(red("TODO: add default effects in chapter"))
+            raise
+            ch_video['effects'] = Effects()
+
+        if e := ch_video['effects'].get_effect('fadein'):
+            fade = e.fade
+            ch_video['effects'].remove_effect('fadein')
+
+        ch_video['effects'].append(
+            Effect(
+                name='loop_and_fadein',
+                loop=loop_count,
+                fade=fade,
+            )
         )
-        print(f"Target: episode, 1st scene video count: {e_s0_vcount}")
-        print(f"Target: episode, 1st scene audio count: {e_s0_acount}")
+        video_count += loop_count
+        ch_video['count'] += loop_count
+        logger.debug(f"Fade in and loop at the beginning of the episode: {loop_count}, fade={fade}")
+
+        warnings.warn(red(f"Fade in and loop at the beginning of the episode: {loop_count}, fade={fade}"))
+
+    video_count = ch_video['count']
+    audio_count = ch_audio['count']
+
+    #   episode: last scene
+    #---------------------------------------------------------------------------
+    if verbose:
+        print(lightblue(f"{k_ep}:{k_ch} Last scene"))
+
+        print(f" before")
+        print(f"  - audio count: before: {ch_audio['count']}")
+        print(f"  - video count: before: {ch_video['count']}")
+    if video_count > audio_count:
+        # raise ValueError(red(f"{k_ep}:{k_ch} too many frames"))
+        warnings.warn(red(f"{k_ep}:{k_ch} too many frames"))
+        to_remove: int = video_count - audio_count
+        if verbose:
+            print(f"[I]  remove frames: {to_remove}")
+        last_src_scene: SrcScene = ch_video['scenes'][-1]
+        src_scene: Scene = last_src_scene['src'].primary_scene()
+        src_scene.count -= to_remove
+        last_src_scene['dst']['count'] -= to_remove
+        ch_video['count'] -= to_remove
+
+    elif audio_count > video_count:
+        add_loop_and_fadeout_effect(ch_video, ch_audio, k_ep, k_ch)
+        if verbose:
+            print(f"[I]  add loop and fadeout")
+
+    else:
+        consolidate_last_scene_effect(ch_video, verbose=verbose)
+
+    if verbose:
+        print(f" after")
+        print(f"  - audio count: after: {ch_audio['count']}")
+        print(f"  - video count: after: {ch_video['count']}")
 
 
-        if e_s0_vcount > e_s0_acount:
-            raise ValueError(f"episode, scene 0 is too long ({e_s0_vcount} > {e_s0_acount})")
-            # TODO: cut and fadein
-        elif e_s0_vcount < e_s0_acount:
+    # Report chapter effects (fadein) in first scene
+    consolidate_first_scene_effect(ch_video=ch_video)
 
-            loop_count = e_s0_acount - e_s0_vcount
-            # minimum between diff and 2.5s
-            fade = min(loop_count, int(2.5 * fps))
-            if 'effects' not in e_vchapter:
-                print(red("TODO: add default effects in chapter"))
-                e_vchapter['effects'] = Effects()
-            e_vchapter['effects'].append(
+    if verbose:
+        print(f"  -> video_count: {ch_video['count']}")
+    consolidate_silence(ch_video, ch_audio, verbose=verbose)
+
+    if verbose:
+        print(lightcyan(f"-----------------------------------------------------------"))
+
+
+
+    # g_asuivre
+    #---------------------------------------------------------------------------
+    if db_audio['asuivre']['duration'] > 0:
+        if db_video['asuivre']['count']:
+            if verbose:
+                print(lightblue(f"{k_ep}:{k_ch} g_asuivre"))
+            k_ch = 'g_asuivre'
+            ch_audio: ChapterAudio = db_audio[k_ch]
+            ch_video: ChapterVideo = db_video[k_ch]
+            audio_count = check_audio_duration_multiple_of_frames(ch_audio)
+            ch_audio['count'] = audio_count
+            ch_video['count'] = ch_audio['count']
+            last_scene: Scene = ch_video['scenes'][-1]
+            last_scene['effects'] = Effects([
                 Effect(
-                    name='loop_and_fadein',
+                    name='loop',
+                    f_ref=last_scene['src'].last_frame_no(),
+                    loop=ch_video['count'] - 1
+                )
+            ])
+            last_scene['dst']['count'] = ch_video['count']
+            if verbose:
+                print(f"  video count: {last_scene['dst']['count']}")
+            if k_ep == K_EP_DEBUG:
+                print(f"\ndb_video: %s:\n--------------------------------------" % (k_ch))
+                pprint(ch_video)
+        elif verbose:
+            print(darkgrey(f"[I] No chapter: \'{k_ch}\'"))
+
+
+    # asuivre
+    #---------------------------------------------------------------------------
+    if db_audio['asuivre']['duration'] > 0:
+        k_ch = 'asuivre'
+        ch_audio: ChapterAudio = db_audio[k_ch]
+        ch_video: ChapterVideo = db_video[k_ch]
+        audio_count = check_audio_duration_multiple_of_frames(ch_audio)
+        ch_audio['count'] = audio_count
+        video_count = ch_video['count']
+
+        if verbose:
+            print(lightblue(f"{k_ep}:{k_ch}"))
+            print(f" before")
+            print(f"  - audio count: before: {ch_audio['count']}")
+            print(f"  - video count: before: {ch_video['count']}")
+
+        if audio_count > video_count:
+            if verbose:
+                print("add_loop_and_fadeout_effect")
+            add_loop_and_fadeout_effect(ch_video, ch_audio, k_ep, k_ch)
+
+        elif video_count > audio_count:
+            # raise ValueError(red(f"{k_ep}:{k_ch} too many frames: {video_count} > {audio_count}"))
+            warnings.warn(red(f"{k_ep}:{k_ch} too many frames: {video_count} > {audio_count}"))
+
+        else:
+            if verbose:
+                print("consolidate_last_scene_effect")
+            consolidate_last_scene_effect(ch_video, verbose=verbose)
+
+        if verbose:
+            print(f" after")
+            print(f" - audio count: after: {ch_audio['count']}")
+            print(f" - video count: after: {ch_video['count']}")
+        consolidate_silence(ch_video, ch_audio)
+        if verbose:
+            print(lightcyan(f"-----------------------------------------------------------"))
+
+
+    # g_doc
+    #---------------------------------------------------------------------------
+    k_ch = 'g_doc'
+    ch_audio: ChapterAudio = db_audio[k_ch]
+    ch_video: ChapterVideo = db_video[k_ch]
+
+    ch_audio['count'] = ms_to_frame(ch_audio['duration'], fps)
+    last_scene = ch_video['scenes'][-1]
+
+    if verbose:
+        print(lightblue(f"{k_ep}:{k_ch}"))
+
+    if ch_audio['count'] > ch_video['count']:
+        # Use last frame to loop
+        loop_start = last_scene['src'].last_frame_no()
+        loop_count = ch_audio['count'] - ch_video['count']
+        if verbose:
+            print(darkgrey(f"[I] Loop on last frame: {loop_count}"))
+        logger.debug(f"{k_ch}: loop, last frame={loop_start}, {loop_count} frames")
+        last_scene['effects'] = Effects([
+            Effect(
+                name='loop',
+                f_ref=loop_start,
+                loop=loop_count
+            )
+        ])
+        last_scene['dst']['count'] += loop_count
+
+    elif ch_video['count'] > ch_audio['count']:
+        # Remove some frames: patch src
+        to_remove: int = ch_video['count'] - ch_audio['count']
+        if verbose:
+            print(darkgrey(f"[I] Remove some frames: {to_remove}"))
+        logger.debug(f"{k_ch}: remove {to_remove} frames")
+        last_scene['src'].last_scene().count -= to_remove
+        last_scene['dst']['count'] = last_scene['src'].last_scene().count
+
+    elif verbose:
+        print(darkgrey(f"[I] Same duration: {ch_video['count']}f"))
+
+    ch_video['count'] = ch_audio['count']
+
+
+    # doc
+    #---------------------------------------------------------------------------
+    k_ch = 'doc'
+    ch_audio: ChapterAudio = db_audio[k_ch]
+    ch_video: ChapterVideo = db_video[k_ch]
+    audio_count = check_audio_duration_multiple_of_frames(ch_audio)
+    ch_audio['count'] = audio_count
+    video_count = get_video_chapter_frame_count(k_ep, k_ch)
+
+    if verbose:
+        print(lightblue(f"{k_ep}:{k_ch}"))
+        print(f" before")
+        print(f"  - audio count: before: {ch_audio['count']}")
+        print(f"  - video count: before: {ch_video['count']}")
+
+    if audio_count > video_count:
+        add_loop_and_fadeout_effect(ch_video, ch_audio, k_ep, k_ch)
+        raise ValueError("must not loop and fadeout")
+
+    elif video_count > audio_count:
+        # Remove frames
+        # Patch Source frames: verify that the number of frames to extract is correct
+        last_scene: Scene = ch_video['scenes'][-1]
+        if verbose:
+            print(red("patch last scene:"), f"last scene frame count: {last_scene['src'].frame_count()}")
+        to_remove: int = video_count - audio_count
+        if verbose:
+            print(f"  to_remove: {to_remove}")
+        last_scene['dst']['count'] -= to_remove
+        last_scene['src'].last_scene()['count'] -= to_remove
+        if verbose:
+            print(f"-> frame count: {last_scene['src'].frame_count()}")
+        ch_video['count'] = ch_audio['count']
+        raise ValueError(f"remove frames")
+
+    if video_count == audio_count:
+        consolidate_last_scene_effect(ch_video, verbose=verbose)
+
+
+    if verbose:
+        print(f" after")
+        print(f" - audio count: after: {ch_audio['count']}")
+        print(f" - video count: after: {ch_video['count']}")
+
+        consolidate_silence(ch_video, ch_audio, verbose=verbose)
+        print(lightcyan(f"-----------------------------------------------------------"))
+
+
+
+
+
+def consolidate_av_tracks_g_debut_fin(k_ch: str, verbose: bool = False) -> None:
+    """This function compares the audio and video tracks of a generique
+    It aligns these 2 durations by:
+    - adding silences
+    - adding frames (loop, loop and fadeout)
+    """
+    if verbose:
+        print(darkgrey(f"[I] consolidate_av_tracks_g_debut_fin: {k_ch}"))
+        print(f"  language: {db[k_ch]['audio']['lang']}")
+    frame_rate = get_frame_rate()
+    if k_ch not in ('g_debut', 'g_fin'):
+        return
+
+    # video and audio tracks
+    ch_video: ChapterVideo = db[k_ch]['video']
+    ch_audio: ChapterAudio = db[k_ch]['audio']
+
+    # Get nb of frames for the video track
+    video_count: int = get_video_chapter_frame_count(k_ep='', k_ch=k_ch)
+
+    # # Align video track to a multiple of seconds
+    # ch_video['count'] = int(fps * int(1 + ch_video['count'] / fps))
+    # if video_count != ch_video['count']:
+    #     ch_video['silence'] = ch_video['count'] - video_count
+
+    # Get the duration in ms
+    audio_duration = ch_audio['duration']
+    if 'avsync' in ch_audio:
+        audio_duration += ch_audio['avsync']
+
+    # Add silence because audio track is generated with this
+    if 'silence' in ch_audio:
+        audio_duration += ch_audio['silence']
+    else:
+        pprint(ch_audio)
+        raise
+
+    if verbose:
+        print(f"  audio duration (silence included): {audio_duration/1000:.03f}s")
+    initial_audio_count = ms_to_frame(audio_duration, frame_rate)
+    if verbose:
+        print(f"  audio count: {initial_audio_count}")
+
+    # Align audio track to a multiple of seconds
+    rounded_audio_duration = 1000 * int(1 + float(audio_duration)/1000)
+    audio_count = ms_to_frame(rounded_audio_duration, frame_rate)
+    if verbose:
+        print(f"rounded audio count: {audio_count}")
+    if frame_to_ms(audio_count, frame_rate) != audio_duration:
+        ch_audio['segments'].append({
+            'start': 0,
+            'end': 0,
+            'silence': frame_to_ms(audio_count, frame_rate) - audio_duration
+        })
+
+    # Update audio duration and nb of frames
+    ch_audio['count'] = audio_count
+    ch_audio['duration'] = frame_to_ms(audio_count, frame_rate)
+
+
+    if verbose:
+        print(lightcyan(f"----------------- Consolidate A/V tracks ------------------"))
+        print(f"chapter: {k_ch}")
+        print(f"  - audio_count: {ch_audio['count']}")
+        print(f"  - audio_duration: {ch_audio['duration']}")
+        print(f"  - video_count : {video_count}")
+        print(f"  - video_count (rounded): {ch_video['count']}")
+    # pprint(db_video)
+
+    # Align audio and video duration
+    scenes: list[Scene] = ch_video['scenes']
+    ch_video['silence'] = ms_to_frame(ch_audio['silence'], frame_rate)
+    ch_video['silence'] += (audio_count - initial_audio_count)
+
+    video_and_silence_count = ch_video['count'] + ch_video['silence']
+
+    if verbose:
+        print(f"  video + silence: {video_and_silence_count} vs audio_count: {audio_count}")
+    # raise
+
+    # The following consildation are done for g_debut/g_fin
+    # because g_reporatge/g_asuivre video count uses audio count
+    if audio_count > video_and_silence_count:
+        # Frames shall be added: use the loop effect for this
+        last_scene: Scene = scenes[-1]
+        frame_no = last_scene['src'].last_frame_no()
+        if verbose:
+            print(f"  -> add video frames, video({video_and_silence_count}) < audio ({audio_count})")
+        loop_count = audio_count - video_and_silence_count
+
+        fade: int = 25
+        if (effect := ch_video['effects'].get_effect('fadeout')):
+            fade = effect.fade
+
+        if 'effects' not in last_scene:
+            last_scene['effects'] = Effects()
+
+        # Transform the fadeout effect in loop_and_fadeout
+        if effect := last_scene['effects'].get_effect('fadeout'):
+            warnings.warn(red("consolidate_av_tracks_g_debut_fin - verify this"))
+            effect.name = 'loop_and_fadeout'
+            effect.f_ref = frame_no
+            effect.loop = loop_count
+            effect.fade = fade
+
+        else:
+            last_scene['effects'].append(
+                Effect(
+                    name='loop_and_fadeout',
+                    f_ref=frame_no,
                     loop=loop_count,
                     fade=fade,
                 )
             )
-            tvideo_track['episode']['count'] += loop_count
-            logger.debug(f"Fade in and loop at the beginning of the episode: {loop_count}, fade={fade}")
+
+        last_scene['dst']['count'] += loop_count
+        ch_video['count'] += loop_count
+        if verbose:
+            print(f"  -> video_count: {ch_video['count']}")
+            print(lightcyan(f"-----------------------------------------------------------"))
 
 
-        # # Compare video count from audio_src and target
+    elif video_and_silence_count > audio_count:
+        # Add silence to the audio track by adding a new segment
+        raise
+        print(f"  -> add audio silence, video({video_and_silence_count}) > audio ({audio_count})")
+        video_duration = frame_to_ms(video_and_silence_count, frame_rate)
+        audio_duration = ch_audio['duration']
+        silence_duration = video_duration - audio_duration
+        ch_audio['segments'].append({
+            'start': 0,
+            'end': 0,
+            'silence': silence_duration,
+        })
+        ch_audio['count'] = ch_video['count']
+        ch_audio['duration'] += silence_duration
 
-        # # TODO: we cans use scene['ref'] which has the start specified
-        # print(red("AVsync to be verified with fadeout+loop\n-------------------"))
-        # # _calculate_precedemment_target_vcount(k_ep, k_ch)
-        # print(yellow(p_target_video['count']))
-        # print(yellow(p_target_video['scenes'][0]['src'].frame_count()))
-        # p_vcount: int = p_target_video['count'] - p_target_video['scenes'][0]['src'].frame_count()
-        # p_s1_ref: int = episode['video'][k_ed_audio_src]['precedemment']['scenes'][1]
+        print(f"  -> audio: {ch_audio['count']}")
 
-        # e_vchapter: ChapterVideo = db_target_video['episode']
-        # e_s0_vcount: int = e_vchapter['scenes'][0]['src'].frame_count()
-        # e_s1_ref: int = episode['video'][k_ed_audio_src]['episode']['scenes'][1]
-        # e_slast_ref: int = episode['video'][k_ed_audio_src]['episode']['scenes'][-1]
-
-        # # p_ref_vcount is the audio duration between p_s1 and e_s1 "reference"
-        # # p_target_vcount is the video duration between p_s1 and e_s1 "target" w/out adding silences
-        # print(f"audio source: {k_ed_audio_src}")
-        # p_target_vcount: int = 0
-        # try:
-        #     p_ref_vcount = e_s1_ref['start'] - p_s1_ref['start']
-        #     p_target_vcount = p_vcount + e_s0_vcount
-        # except:
-        #     pprint(episode['video'].keys())
-        #     pprint(episode['video']['target'].keys())
-        #     pprint(episode['video']['target']['precedemment'])
-        #     raise ValueError(f"{k_ep}:{k_ch}: video scenes are not defined. They are required to calculate AV sync values.")
-        # print(f"Src video count: {p_ref_vcount}")
-
-        # logger.debug(lightgrey(f"AVsync: precedemment to episode (use the 2nd scene):"))
-        # logger.debug(lightgrey(f"  video count ({k_ed_audio_src}): {p_ref_vcount}"))
-        # logger.debug(lightgrey(f"  video count (target): {p_target_vcount}"))
-        # if p_ref_vcount != p_target_vcount:
-        #     print(yellow(f"[W] precedemment to episode: erroneous frame count between audio ref ({k_ed_audio_src}) and target:"))
-        #     print(yellow(f"  {p_ref_vcount}, {p_target_vcount}"))
+        if (effect := ch_video['effects'].get_effect('fadeout')):
+            raise NotImplementedError("fadeout for g_debut/g_fin")
+            last_scene: Scene = scenes[-1]
+            frame_no = last_scene['src'].last_frame_no() - effect.fade
+            if 'effect' not in last_scene:
+                last_scene['effects'] = Effects()
+            last_scene['effects'].append(
+                Effect(
+                    name='fadeout',
+                    f_ref=frame_no,
+                    loop=0,
+                    fade=effect.fade
+                )
+            )
+        print(lightcyan(f"-----------------------------------------------------------"))
 
 
-        # # Verifications before consolidating AVsync
-        # episode_src_count = e_slast_ref['start'] - e_s1_ref['start']
-        # episode_target_count = 0
-        # for scene in tvideo_track['episode']['scenes'][1:-1]:
-        #     episode_target_count += scene['dst']['count']
-
-        # avsync_episode = 0
-        # if episode_src_count != episode_target_count:
-        #     # ep: 2, 13, 22
-        #     print(red(f"\twarning: target vs source: erroneous frame count:"),
-        #             f"target: {episode_target_count}, src ({k_ed_audio_src}): {episode_src_count}")
-        #     # sys.exit()
-        #     avsync_episode = episode_target_count - episode_src_count
+    elif video_count == audio_count:
+        if verbose:
+            print(f"  - audio = video = {audio_count}")
+        consolidate_last_scene_effect(ch_video=ch_video)
 
 
-        # # Now synchronize all
-
-        # # offset used to change referentiel: target -> src
-        # # offset = src - target
-        # e_tscenes: list[Scene] = tvideo_track['episode']['scenes']
-        # offset_src_to_target = e_tscenes[1]['src'].first_frame_no() - e_s1_ref['start']
-
-        # # audio start in target referentiel
-        # precedemment_audio_start = (
-        #     ms_to_frame(audio_track['precedemment']['start'], fps)
-        #     + offset_src_to_target
-        # )
-
-        # # Precedemment: let's set the 1st frame of video aligned with the audio start
-        # p_target_video['avsync'] = 0
-
-        # # We moved the precedemment part, calculate new silence between precedemment and episode
-        # p_ref_vcount = tvideo_track['precedemment']['count']
-        # video_silence = (
-        #     e_tscenes[0]['src'].first_frame_no()
-        #     - (precedemment_audio_start + p_ref_vcount)
-        # )
-
-        # p_audio_count = ms_to_frame(audio_track['precedemment']['duration'], fps)
-
-        # logger.debug(f"\tsrc to target offset: {offset_src_to_target}")
-        # logger.debug(f"\tprecedemment_audio_start: {precedemment_audio_start}")
-        # logger.debug(f"\tprecedemment_video_count: {p_ref_vcount}")
-        # logger.debug(f"\tepisode_video_start: {e_tscenes[0]['src'].first_frame_no()}")
-        # logger.debug(f"\tprecedemment, audio_count: {p_audio_count}")
-        # logger.debug(f"\tvideo_silence: {video_silence}")
-
-        # p_last_scene: Scene = p_target_video['scenes'][-1]
-        # first_scene_episode: Scene = tvideo_track['episode']['scenes'][0]
-        # logger.debug(f"\tlast_scene_precedemment: end: {p_last_scene['src'].first_frame_no() + p_last_scene['dst']['count']}")
-        # logger.debug(f"\tfirst_scene_episode: start: {first_scene_episode['src'].first_frame_no()}")
-
-        # # !!! Overlapped scenes
-        # if video_silence < 0:
-        #     # overlap
-        #     logger.debug(lightgreen(f"precedemment to episode: remove {abs(video_silence)} frames"))
-        #     video_silence = abs(video_silence)
-
-        #     if p_audio_count > p_ref_vcount:
-        #         # Remove frames from episode
-        #         # fr: ep no. 19
-        #         # fadein to do
-        #         # ep26 (99 frames)?????
-        #         # validated (2023-08-28): 19
-        #         logger.debug(f"\tepisode: remove {abs(video_silence)} frames")
-        #         first_scene_episode['start'] += video_silence
-        #         first_scene_episode['count'] -= video_silence
-        #         first_scene_episode['dst']['count'] -= video_silence
-        #         tvideo_track['episode']['count'] -= video_silence
-        #     else:
-        #         # Remove frames from precedemment
-        #         # fr: ep no. 14, 36
-        #         # validated (2023-08-26): 14, 36
-        #         # TODO: Improve: ep14, use fadeout
-        #         # validated (2023-09-07): 3,
-        #         logger.debug(f"\tprecedemment: remove {abs(video_silence)} frames")
-        #         p_last_scene['count'] -= video_silence
-        #         p_last_scene['dst']['count'] -= video_silence
-        #         tvideo_track['precedemment']['count'] -= video_silence
-
-        # # Add video silence between precedemment and episode
-        # elif video_silence > 0:
-        #     logger.debug(lightgreen(f"precedemment to episode: add video silence: {abs(video_silence)} frames"))
-
-        #     if p_audio_count > p_ref_vcount:
-        #         # fr: ep no. 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18,
-        #         #               20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
-        #         #               30, 31, 32, 34, 35, 37, 38, 39
-        #         # validated (2023-09-07): 4, 5,
-        #         logger.debug(f"\tprecedemment: loop and fadeout")
-        #         av_diff = p_audio_count - p_ref_vcount
-
-        #         logger.debug(f"\tav_diff : {p_audio_count - p_ref_vcount}")
-        #         # Add loop_and_fadeout to precedemment up to end of audio
-        #         if av_diff <= video_silence:
-        #             logger.debug(purple("no need to revalidate"))
-
-        #             loop_count = p_audio_count - p_ref_vcount
-        #             loop_start = (
-        #                 p_last_scene['src'].first_frame_no()
-        #                 + p_last_scene['dst']['count'] - 1
-        #             )
-        #             p_last_scene['effects'] = Effects([
-        #                 Effect(
-        #                     name='loop_and_fadeout',
-        #                     frame_ref=loop_start,
-        #                     loop=loop_count,
-        #                     fade=loop_count
-        #                 )
-        #             ])
-        #             p_target_video['count'] += loop_count
-
-        #             # If the amount of added frames were not enough
-        #             # Add silence at the beginning of the episode or fade_in
-        #             if loop_count < video_silence:
-        #                 loop_count = video_silence - loop_count
-        #                 db_target_video['episode']['effects'] = Effects([
-        #                     Effect(
-        #                         name='loop_and_fadein',
-        #                         loop=loop_count,
-        #                         fade=0,
-        #                     )
-        #                 ])
-        #                 tvideo_track['episode']['count'] += loop_count
-        #                 logger.debug(f"\tAdd silence at the beginning of the episode: {loop_count}")
-
-        #         else:
-        #             # Add loop_and_fadeout to precedemment up to end of audio
-        #             # fr: ep no. 6, 7, 8
-
-        #             loop_count = video_silence
-        #             loop_start = (
-        #                 p_last_scene['start']
-        #                 + p_last_scene['count'] - 1
-        #             )
-        #             p_last_scene['effects'] = Effects([
-        #                 Effect(
-        #                     name='loop_and_fadeout',
-        #                     frame_ref=loop_start,
-        #                     loop=loop_count,
-        #                     fade=loop_count
-        #                 )
-        #             ])
-        #             p_target_video['count'] += loop_count
-
-        #             logger.debug(purple(f"loop_count: {loop_count}"))
-
-        #             # # If the amount of added frames were not enough
-        #             # if loop_count < video_silence:
-        #             #     # Add silence at the beginning of the episode or fade_in
-        #             #     loop_count = video_silence - loop_count
-        #             #     nested_dict_set(db_video['episode'], loop_count, 'effects', 'loop_and_fadein')
-        #             #     db_video_target['episode']['count'] += loop_count
+    # Report chapter effects (fadein) in first scene, there is no loop in generiques
+    consolidate_first_scene_effect(ch_video=ch_video)
 
 
-        #             logger.debug(yellow("warning: silence is not enough"))
-
-        #             # sys.exit()
-
-
-        #     else:
-        #         logger.debug(f"\tTODO: episode: loop and fadein")
-        #         sys.exit()
-
-        # # No need to add/remove video silences
-        # else:
-        #     # No modifications
-        #     # fr: ep no. 2
-        #     # validated (2023-08-25): 02
-        #     logger.debug(lightgreen(f"precedemment to episode: no modification"))
+    if 'silence' in ch_audio and ch_audio['silence']:
+        ch_video['silence'] = ch_audio['count'] - ch_video['count']
+        if verbose:
+            print(f"add silence: {ch_video['silence']}")
+        # raise
 
 
-        # if avsync_episode > 0:
-        #     logger.debug(f"\tepisode: remove {abs(avsync_episode)} frames")
-        #     # !!! ep13: ok to remove from 1st scene
-        #     first_scene_episode['start'] += avsync_episode
-        #     first_scene_episode['count'] -= avsync_episode
-        #     first_scene_episode['dst']['count'] -= avsync_episode
-        #     tvideo_track['episode']['count'] -= avsync_episode
-        # elif avsync_episode < 0:
-        #     sys.exit(f"TODO: avsync: {avsync_episode}, add frames/scenes")
-        # # if db_video['episode']['start'] != db_video['episode']['scenes'][0]['start']:
-        # #     sys.exit("calculate_av_sync: error: start of episode (%d) != start of 1st scene (%d)" % (
-        # #         db_video['episode']['start'], db_video[k_chapter]['scenes'][0]['start']))
+def check_audio_duration_multiple_of_frames(ch_audio: ChapterAudio) -> int:
+    fps = get_frame_rate()
+    audio_duration: float = ch_audio['duration']
+    audio_count = ms_to_frame(audio_duration, fps)
+    audio_count_rounded = float(int((audio_duration * fps / 1000) + 0.5))
+    audio_count_float = (audio_duration * fps / 1000)
+    if audio_count_float != audio_count_rounded:
+        raise ValueError(f"consolidate_av_tracks: correct or remove this (add an audio segment), {k_ep}:{k_ch}")
+        # Add silence to the latest segment
+        s = ch_audio['segments'][-1]
+        silence = int(((audio_count_rounded - audio_count_float) * 1000 / fps) + 0.5)
+        if 'segments' in s.keys():
+            s['silence'] += silence
+        else:
+            s['silence'] = silence
 
-    # else:
-    #     # precedemment does not exist
-    #     tvideo_track['precedemment'].update({
-    #         'avsync': 0,
-    #         'count': 0,
-    #     })
+        ch_audio['duration'] = int(audio_count_rounded * 1000 / fps)
+        audio_count = audio_count_rounded
+        warnings.warn(f"consolidate_av_tracks: {k_ep}:{k_ch}: add a silence to round the audio duration: {silence}")
+    return audio_count
 
-    #     # episode
-    #     k_ch = 'episode'
 
-    #     # Get the start frame no. from the src ed.
-    #     k_ed_src = audio_track['src']['k_ed']
-    #     video_start = episode['video'][k_ed_src][k_ch]['start']
+def add_loop_and_fadeout_effect(
+    ch_video: ChapterVideo,
+    ch_audio: ChapterAudio,
+    k_ep: str, k_ch: str
+):
+    # Frames shall be added: use the loop (and fadeout) effect for this
+    video_count = ch_video['count']
+    audio_count = ch_audio['count']
+    logger.debug(
+        lightgrey(f"\t{k_ep}:{k_ch}: ")
+        + f"video({video_count}) < audio ({audio_count}): add video frames, "
+    )
+    last_scene: Scene = ch_video['scenes'][-1]
+    loop_count: int = audio_count - video_count
 
-    #     avsync_ms = audio_track[k_ch]['start'] - frame_to_ms(video_start, fps)
-    #     # db_video[k_chapter].update({
-    #     #     'avsync': ms_to_frame(abs(avsync_ms), fps) if avsync_ms < 0 else 0
-    #     # })
-    #     if avsync_ms > 0:
-    #         db_target_video[k_ch]['avsync'] = 0
-    #         audio_track[k_ch]['avsync'] = abs(avsync_ms)
-    #     else:
-    #         # missing video frames, use fade_in
-    #         loop_count = ms_to_frame(abs(avsync_ms), fps)
-    #         nested_dict_set(db_target_video[k_ch], loop_count, 'effects', 'loop_and_fadein')
-    #         db_target_video[k_ch]['count'] += loop_count
+    # Reuse part's fade if already defined in config files
+    ch_fade: int = 0
+    if ch_video['effects'].has_effect('fadeout'):
+        ch_fade = ch_video['effects'].get_effect('fadeout').fade
 
-    #     logger.debug(lightgrey(f"\tcalculate_av_sync: avsync_ms: {avsync_ms}"))
+    last_scene['effects'] = Effects([
+        Effect(
+            name='loop_and_fadeout',
+            f_ref=last_scene['src'].last_frame_no(),
+            loop=loop_count,
+            fade=max(ch_fade, min(loop_count, 25))
+        )
+    ])
+    last_scene['dst']['count'] += loop_count
+    ch_video['count'] += loop_count
 
 
 
-    # TODO remove the above modification of frames count once frame count is validate
-    # Recalculte video count
-    for k_ch in main_chapter_keys():
-        logger.debug(f"\t{k_ch}: count={db_target_video[k_ch]['count']}")
 
+def consolidate_last_scene_effect(
+    ch_video: ChapterVideo,
+    verbose: bool = False,
+) -> None:
+    # Get fadeout from chapter and put it in last scene
+    if ch_effect := ch_video['effects'].get_effect('fadeout'):
+        last_scene: Scene = ch_video['scenes'][-1]
+        last_scene['effects'] = Effects([
+            Effect(
+                name='fadeout',
+                f_ref=last_scene['dst']['count'] - ch_effect.fade,
+                fade=ch_effect.fade
+            )
+        ])
+        if verbose:
+            print(darkgrey(f"[I] add fadeout effect: {ch_effect.fade}"))
+
+
+
+def consolidate_first_scene_effect(ch_video: ChapterVideo) -> None:
+    if ch_effect := ch_video['effects'].get_effect('fadein'):
+        first_scene: Scene = ch_video['scenes'][0]
+        if 'effects' not in first_scene:
+            first_scene['effects'] = Effects()
+        effect = deepcopy(ch_effect)
+        effect.f_ref = first_scene['src'].first_frame_no()
+        first_scene['effects'].append(effect)
+
+    elif ch_effect := ch_video['effects'].get_effect('loop_and_fadein'):
+        first_scene: Scene = ch_video['scenes'][0]
+        if 'effects' not in first_scene:
+            first_scene['effects'] = Effects()
+        effect = deepcopy(ch_effect)
+        effect.f_ref = first_scene['src'].first_frame_no()
+        first_scene['effects'].append(effect)
+
+
+
+def consolidate_silence(
+    ch_video: ChapterVideo,
+    ch_audio: ChapterVideo,
+    verbose: bool = False
+) -> None:
+    if 'silence' in ch_audio and ch_audio['silence']:
+        ch_video['silence'] = ms_to_frame(
+            ch_audio['silence'], frame_rate=get_frame_rate()
+        )
+        if verbose:
+            print(darkgrey(f"[I] add silence: {ch_video['silence']}"))

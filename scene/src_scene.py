@@ -42,7 +42,6 @@ class SrcScene:
         self._in_scene: Scene = in_scene
 
         if in_scene is not None and 'effects' in in_scene is not None:
-            pprint(in_scene['effects'])
 
             # Point to the effects of the original scene
             if effects is None:
@@ -284,7 +283,6 @@ class SrcScenes:
             ):
                 e: Effect = src_scene.in_scene['effects'].get_effect('se_loop')
                 if e is not None:
-                    print(yellow(e))
                     count += sum(e.extra_param)
 
             if not exclude_loop:

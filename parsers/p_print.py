@@ -44,6 +44,8 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
     for k_ch in main_chapter_keys():
         ch_video = db[k_ep]['video']['target'][k_ch]
         db_audio = db[k_ep]['audio'][k_ch]
+        if 'count' not in db_audio:
+            continue
         frame_count = 0
         print(lightcyan("  %s" % (k_ch.ljust(14))), end='')
 

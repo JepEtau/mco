@@ -174,13 +174,13 @@ def consolidate_in_scenes(k_ed: str, k_ep: str, k_ch: Chapter) -> None:
 
             if e := effects.get_effect("decimate"):
                 # raise ValueError("decimate")
-                print(f"consolidate_in_scenes: decimate: {k_ed}:{k_ep}:{k_ch}:{in_scene['no']}")
+                # print(f"consolidate_in_scenes: decimate: {k_ed}:{k_ep}:{k_ch}:{in_scene['no']}")
                 factor: int = e.extra_param[0]
                 e.extra_param[1] = in_scene['count']
                 _count = in_scene['count']
                 in_scene['to_decode'] = _count
                 in_scene['count'] = int(_count * (factor - 1) / factor + 0.5)
-                pprint(in_scene)
+                # pprint(in_scene)
                 # if in_scene['no'] == 270:
                 #     raise
 
@@ -342,7 +342,6 @@ def parse_target_scenelist(
                         segment_count = int(start_count[1])
 
                 elif k == 'effect':
-                    print(f"effect: {v}")
                     # name, frame_ref, count, param
                     if (match := re.search(re.compile(
                         r"([a-z_]+):(-?\d+):(\d+):([\d+[.]*\d*)"
@@ -370,7 +369,7 @@ def parse_target_scenelist(
                                 zoom_factor=zoom_factor
                             )
                         )
-                        pprint(effects)
+
                     elif (
                         v.startswith("blend")
                         and (match := re.search(re.compile(r"([a-z_]+):(-?\d+)"), v))
@@ -387,6 +386,7 @@ def parse_target_scenelist(
                                 fade=int(match.group(2)),
                             )
                         )
+
                     elif (
                         v.startswith("title")
                         and (match := re.search(re.compile(
@@ -440,9 +440,6 @@ def parse_target_scenelist(
                 count=segment_count,
                 effects=effects
             )
-            if k_ep == 'ep03' and k_ch =='episode' and scene['no'] == 189:
-                pprint(scene)
-                # raise
 
 
 def get_scene_from_frame_no(

@@ -20,12 +20,12 @@ if TYPE_CHECKING:
 
 
 def replace_scene_bounds_(k_ep: str) -> None:
-    print(yellow("replace_scene_bounds_"), k_ep)
+    # print(yellow("replace_scene_bounds_"), k_ep)
     # edition 'j' only
     k_ed: str = 'j'
     k_chapter: Chapter = 'episode'
     if 'scenes' not in db[k_ep]['video'][k_ed][k_chapter]:
-        print(red(f"no scenes for {k_ed}:{k_ep}:{k_chapter}"))
+        # print(red(f"no scenes for {k_ed}:{k_ep}:{k_chapter}"))
         return
     try:
         scenes: list[Scene] = db[k_ep]['video'][k_ed][k_chapter]['scenes']
@@ -89,7 +89,7 @@ def replace_scene_bounds_(k_ep: str) -> None:
             replace_list = list(scene['replace'].keys())
             for k, v in scene['replace'].items():
                 if v in replace_list:
-                    warn(yellow(f"replacing by a replaced frame. No. {frame_no} in {k_ed}:{k_ep}:{k_chapter}"))
+                    # warn(yellow(f"replacing by a replaced frame. No. {frame_no} in {k_ed}:{k_ep}:{k_chapter}"))
                     scene['replace'][k] = scene['replace'][v]
                     consolidate = True
                     break
@@ -162,7 +162,7 @@ def parse_replace_file(k_ep_or_g:str) -> None:
                 replace_list = list(scene['replace'].keys())
                 for k, v in scene['replace'].items():
                     if v in replace_list:
-                        warn(yellow(f"replacing by a replaced frame. No. {frame_no} in {k_ed}:{k_ep}:{k_chapter}"))
+                        # warn(yellow(f"replacing by a replaced frame. No. {frame_no} in {k_ed}:{k_ep}:{k_chapter}"))
                         scene['replace'][k] = scene['replace'][v]
                         consolidate = True
                         break
