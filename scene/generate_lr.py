@@ -193,23 +193,21 @@ def generate_lr_scene(
         if to_produce < src_count:
             src_count = to_produce
 
-        to_decode: int = src_count
+        to_decode: int = src_scene.to_decode
+        _to_decode: int = to_decode
 
-        # Patch the input scene so that the encoder receive the correct frame no.
-        # TODO: verify that this will not impact the other scene when using the
-        # same src
-        # if (
-        #     in_scene['start'] != src_start
-        #     or in_scene['count'] != src_count
-        # ):
-        #     print("--------------------------------")
-        #     pprint(src_scene)
-        #     ch_video: ChapterVideo = get_chapter_video(scene['dst']['k_ep'], scene['dst']['k_ch'])
-        #     print("--------------------------------")
-        #     pprint(ch_video['effects'])
-        #     raise ValueError(red("input scene has been patched"))
-        #     src_scene.in_scene['start'] = src_start
-        #     src_scene.in_scene['count'] = src_count
+        # TODO ensure to_decode is consistent for all scenes
+        if to_decode != src_count:
+            if (
+                'effects' not in in_scene
+                or (
+                    not in_scene['effects'].has_effect('decimate')
+                    and not in_scene['effects'].has_effect('decimate')
+                )
+            ):
+                pprint(src_scene)
+                raise ValueError(red(f"to decode ({to_decode}) != src.count ({src_count})"))
+
 
         # Decimate
         factor_mod1: int = 0
@@ -217,10 +215,12 @@ def generate_lr_scene(
         if 'effects' in in_scene:
             if e := in_scene['effects'].get_effect('decimate'):
                 factor_mod1, _ = e.extra_param
-                print(yellow(f"  decimate:"), f"{in_scene['no']}: {src_count}")
-                # to_decode = int(src_count * factor / (factor - 1) )
-                # pprint(scene)
-                # pprint(in_scene)
+                # factor_mod1 += 1
+                print(yellow(f"  decimate:"), f"{in_scene['no']}: {to_decode} -> {src_count} (mod={factor_mod1})")
+                # print(int(to_decode * / (factor_mod1 - 1)))
+                # pprint(src_scene)
+                # # pprint(in_scene)
+                # print(to_decode)
                 # raise
 
             elif e := in_scene['effects'].get_effect('decimate_2'):
@@ -229,6 +229,7 @@ def generate_lr_scene(
                 print(yellow(f"  decimate_2:"), f"{in_scene['no']}: {factor_mod2}")
                 # pprint(in_scene)
                 # raise
+
 
         # FFmpeg command
         frame_rate: FrameRate = in_vi['frame_rate_r']
@@ -318,31 +319,30 @@ def generate_lr_scene(
         decimate_index2: int = 0
 
         while (
-            to_decode
+            _to_decode
             and remaining > 0
         ):
             _in_f_no = src_start + f_index
-            if _in_f_no >= src_start + src_count:
+            if _in_f_no >= src_start + to_decode:
                 break
 
 
             # decimate
             if factor_mod1:
-                print(f"decimate index: {decimate_index} % {factor_mod1} -> {decimate_index // factor_mod1}")
+                # print(f"decimate index: {decimate_index} % {factor_mod1} -> {decimate_index // factor_mod1}")
                 decimate_index += 1
                 if decimate_index // factor_mod1 == 1:
                     decimate_index = 0
-                    d_f_no += 1
-                    to_decode -= 1
-                    print(f"  discard {d_f_no}")
+                    # print(f"  discard {_in_f_no}")
                     f_index += 1
                     _in_f_no = src_start + f_index
-                    continue
+                    if _in_f_no >= src_start + to_decode:
+                        break
 
             # Get frame_no to send to the consumer
             f_no = frame_cache.get_out_f_no(_in_f_no)
             # if f_no != d_f_no:
-            print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, _in_f_no: {_in_f_no}, waiting for {f_no}"))
+            # print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, _in_f_no: {_in_f_no}, waiting for {f_no}"))
 
 
             # if not cached, decode a new frame
@@ -357,7 +357,7 @@ def generate_lr_scene(
                 #     decimate_index2 = (decimate_index2 + 1) % factor_mod2
                 #     if decimate_index2:
                 #         d_f_no += 1
-                #         to_decode -= 1
+                #         src_remaining_to_decode -= 1
                 #         continue
 
                 # Throw this frame away if replaced
@@ -369,7 +369,7 @@ def generate_lr_scene(
                     frame_cache.add(d_f_no, img_buffer)
 
                 d_f_no += 1
-                to_decode -= 1
+                _to_decode -= 1
 
             # f_no is in cache
             if f_no in frame_cache:

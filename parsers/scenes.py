@@ -174,10 +174,10 @@ def consolidate_in_scenes(k_ed: str, k_ep: str, k_ch: Chapter) -> None:
             if e := effects.get_effect("decimate"):
                 # raise ValueError("decimate")
                 print(f"decimate: {k_ed}:{k_ep}:{k_ch}:{scene['no']}")
-                factor: int = e.extra_param[0]
+                # factor: int = e.extra_param[0]
                 e.extra_param[1] = scene['count']
-                scene['count'] = int(scene['count'] * (factor - 1 ) / factor + 0.5)
-                pprint(scene)
+                # scene['count'] = int(scene['count'] * (factor - 1 ) / factor + 0.5)
+                # pprint(scene)
                 # raise
 
             elif e := effects.get_effect("decimate_2"):
