@@ -54,7 +54,7 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
             pass
 
         elif audio_count > video_count:
-            print(yellow(f"[W] {k_ep}:{k_ch} add loop and fadeout"))
+            print(yellow(f"[W] {k_ep}:{k_ch} add loop and fadeout {audio_count} > {video_count}"))
             add_loop_and_fadeout_effect(ch_video, ch_audio, k_ep, k_ch)
 
         else:

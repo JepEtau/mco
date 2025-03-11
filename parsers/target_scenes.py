@@ -83,7 +83,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
         and 'scenes' not in ch_video_src
     ):
         # Cannot consolidate because no scenes are defined
-        sys.exit(f"error: consolidate_target_scenes: no scenes in {k_ep}:{k_ch}")
+        raise ValueError(red(f"error: consolidate_target_scenes: no scenes in {k_ep}:{k_ch}"))
 
     if k_ep==K_EP_DEBUG and k_ch == K_CHAPTER_DEBUG:
         pprint(ch_video)
@@ -197,6 +197,11 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
     # Number of frames without effects
     ch_video['count'] = frame_count
 
+
+    if k_ch == 'precedemment':
+        pprint(ch_video)
+        print(f"   count: {ch_video['count']}")
+        # raise
 
     if k_ep == K_EP_DEBUG and k_ch == K_CHAPTER_DEBUG:
         print(green("-------------------- after ----------------------------\n"))

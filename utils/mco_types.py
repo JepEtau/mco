@@ -182,6 +182,8 @@ class Scene(TypedDict):
     no: int
     start: int
     count: int
+    # to_decode is used when decimate, otherwise use count
+    to_decode: int
 
     # Filters: this is the processing chain for this scene. Once consolidated,
     # this variable specifies a list of filters for each frame

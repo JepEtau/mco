@@ -67,19 +67,7 @@ class SrcScene:
 
     @property
     def count(self) -> int:
-        v = self._count
-        if self._effects is not None:
-            if e := self._effects.get_effect(name='decimate'):
-                factor: int = e.extra_param[0]
-                # e.extra_param[1] = v
-                return int(v * (factor - 1 ) / factor + 0.5)
-
-            elif e := self._effects.get_effect(name='decimate2'):
-                factor: int = e.extra_param[0]
-                # e.extra_param[1] = v
-                return int((v * (factor - 1 ) / factor + 0.5) / e.extra_param[1])
-
-        return v
+        return self._count
 
 
     @count.setter
@@ -99,7 +87,25 @@ class SrcScene:
 
     @property
     def to_decode(self) -> int:
-        return self._count
+        v = self._count
+        if (
+            self.in_scene is not None
+            and 'effects' in self.in_scene
+            and self.in_scene['effects'] is not None
+        ):
+            effects: Effects = self.in_scene['effects']
+            if e := effects.get_effect(name='decimate'):
+                if self._count != self.in_scene['count']:
+                    # print(self._count)
+                    # pprint(self.in_scene)
+                    # raise
+                    factor: int = e.extra_param[0]
+                    # e.extra_param[1] = v
+                    return int((v - 0.5) * factor / (factor - 1))
+                else:
+                    return self.in_scene['to_decode']
+        return v
+
 
     @property
     def in_scene(self) -> Scene:
@@ -120,7 +126,10 @@ class SrcScene:
 
 
     def to_dict(self) -> dict:
-        class_dict = {k: v for k, v in self.__dict__.items() if k not in ('scene', '_scene')}
+        class_dict = {
+            k: v for k, v in self.__dict__.items()
+            if k not in ('scene', '_scene')
+        }
         class_dict['count'] = self.count
         class_dict['to_decode'] = self.to_decode
         return class_dict

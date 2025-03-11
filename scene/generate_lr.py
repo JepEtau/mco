@@ -211,23 +211,13 @@ def generate_lr_scene(
 
         # Decimate
         factor_mod1: int = 0
-        factor_mod2: int = 0
         if 'effects' in in_scene:
             if e := in_scene['effects'].get_effect('decimate'):
                 factor_mod1, _ = e.extra_param
-                # factor_mod1 += 1
                 print(yellow(f"  decimate:"), f"{in_scene['no']}: {to_decode} -> {src_count} (mod={factor_mod1})")
-                # print(int(to_decode * / (factor_mod1 - 1)))
                 # pprint(src_scene)
-                # # pprint(in_scene)
-                # print(to_decode)
-                # raise
-
-            elif e := in_scene['effects'].get_effect('decimate_2'):
-                factor_mod1, factor_mod2 = e.extra_param
-                # to_decode = int(factor_2_mod * src_count * factor / (factor - 1))
-                print(yellow(f"  decimate_2:"), f"{in_scene['no']}: {factor_mod2}")
                 # pprint(in_scene)
+                # print(to_decode)
                 # raise
 
 
@@ -353,13 +343,6 @@ def generate_lr_scene(
                     dtype=np.uint8,
                 )
 
-                # if factor_mod2:
-                #     decimate_index2 = (decimate_index2 + 1) % factor_mod2
-                #     if decimate_index2:
-                #         d_f_no += 1
-                #         src_remaining_to_decode -= 1
-                #         continue
-
                 # Throw this frame away if replaced
                 if frame_cache.to_replace(d_f_no):
                     # print(f"      discard: {d_f_no}")
@@ -428,8 +411,7 @@ def generate_lr_scene(
             break
 
 
-
-
+    del frame_cache
 
     main_logger.info(f"produced: {produced}")
     if is_last_scene(scene):
@@ -456,6 +438,8 @@ def generate_lr_scene(
             print(f"{scene_key} stderr:")
             pprint(stderr)
             return False
+
+    d_subprocess.kill()
     return True
 
 

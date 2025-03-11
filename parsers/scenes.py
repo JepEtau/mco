@@ -32,7 +32,6 @@ ScenePropertyName = Literal[
     "se_loop",
     "filters", "f",
     "decimate", "d",
-    "decimate2", "d2",
 ]
 
 
@@ -110,10 +109,12 @@ def parse_scenes(
 
                 elif name in ("decimate", "d"):
                     # cannot mix decimate and se_loop
-                    in_scenes[scene_no]['effects'] = Effects([
+                    in_scene: Scene = in_scenes[scene_no]
+                    factor = int(d[1]) if len(d) > 1 else 5
+                    in_scene['effects'] = Effects([
                         Effect(
                             name='decimate',
-                            extra_param=[int(d[1]) if len(d) > 1 else 5, 0]
+                            extra_param=[factor, 0]
                         )
                     ])
 
@@ -152,44 +153,41 @@ def consolidate_in_scenes(k_ed: str, k_ep: str, k_ch: Chapter) -> None:
         return
 
     # Update each scene durations
-    scenes: list[Scene] = in_ch_video['scenes']
+    in_scenes: list[Scene] = in_ch_video['scenes']
     ch_frame_count: int = 0
-    for i, scene in enumerate(scenes):
-        if scene is None:
+    for i, in_scene in enumerate(in_scenes):
+        if in_scene is None:
             continue
 
-        if scene['count'] == 0:
-            if i + 1 >= len(scenes):
+        if in_scene['count'] == 0:
+            if i + 1 >= len(in_scenes):
                 # Last scene: use the count field of the chapter
-                scene['count'] = in_ch_video['start'] + in_ch_video['count'] - scene['start']
+                in_scene['count'] = in_ch_video['start'] + in_ch_video['count'] - in_scene['start']
             else:
-                scene['count'] = scenes[i+1]['start'] - scene['start']
+                in_scene['count'] = in_scenes[i+1]['start'] - in_scene['start']
 
-        if 'effects' in scene:
-            effects: Effects = scene['effects']
+        if 'effects' in in_scene:
+            effects: Effects = in_scene['effects']
             if e := effects.get_effect("loop"):
                 ch_frame_count += e.loop
                 sys.exit("%s: add loop duration" % (__name__))
 
             if e := effects.get_effect("decimate"):
                 # raise ValueError("decimate")
-                print(f"decimate: {k_ed}:{k_ep}:{k_ch}:{scene['no']}")
-                # factor: int = e.extra_param[0]
-                e.extra_param[1] = scene['count']
-                # scene['count'] = int(scene['count'] * (factor - 1 ) / factor + 0.5)
-                # pprint(scene)
-                # raise
+                print(f"consolidate_in_scenes: decimate: {k_ed}:{k_ep}:{k_ch}:{in_scene['no']}")
+                factor: int = e.extra_param[0]
+                e.extra_param[1] = in_scene['count']
+                _count = in_scene['count']
+                in_scene['to_decode'] = _count
+                in_scene['count'] = int(_count * (factor - 1) / factor + 0.5)
+                pprint(in_scene)
+                # if in_scene['no'] == 270:
+                #     raise
 
-            elif e := effects.get_effect("decimate_2"):
-                raise ValueError("decimate2")
-            #     factor: int = e.extra_param[0]
-            #     # e.extra_param[1] = scene['count']
-            #     scene['count'] =  int((scene['count'] * (factor - 1 ) / factor + 0.5) / e.extra_param[1])
+        if in_scene['count'] <= 0 and i < len(in_scenes) - 1:
+            raise ValueError(red(f"Error: {k_ed}:{k_ep}:{k_ch}: scene no. {in_scene['no']:03d}, length (scene['count']) < 0"))
 
-        if scene['count'] <= 0 and i < len(scenes) - 1:
-            raise ValueError(red(f"Error: {k_ed}:{k_ep}:{k_ch}: scene no. {scene['no']:03d}, length (scene['count']) < 0"))
-
-        ch_frame_count += scene['count']
+        ch_frame_count += in_scene['count']
 
     in_ch_video['count'] = ch_frame_count
 

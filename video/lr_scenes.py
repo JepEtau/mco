@@ -1,3 +1,4 @@
+import gc
 import subprocess
 import sys
 import os
@@ -99,6 +100,8 @@ def generate_lr_scenes(
                     raise RuntimeError(
                         red(f"Failed processing scene: source: {scene['k_ed']}:{scene['k_ep']}:{scene['k_ch']}")
                     )
+            if sys.platform == 'linux':
+                gc.collect()
 
             if debug:
                 elapsed = time.time() - start_time
