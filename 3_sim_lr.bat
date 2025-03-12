@@ -1,4 +1,7 @@
-@REM python.exe sim_lr.py -w -ep 1
+python.exe sim_lr.py -w -ch g_debut
+python.exe sim_lr.py -w -ch g_fin
+
+python.exe sim_lr.py -w -ep 1
 python.exe sim_lr.py -w -ep 2
 python.exe sim_lr.py -w -ep 3
 python.exe sim_lr.py -w -ep 4

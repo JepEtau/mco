@@ -1,5 +1,11 @@
 ## FIXED, to validate:
 
+sim_lr: failed ep:
+  10: missing deinterlaced f_ep10
+  15: doc, scene 24 (to decode (65) != src.count (64))
+  26: missing deinterlaced f_ep26
+  28: wrong nb of frames, refer to episode.md
+
 
 ## HIGH priority
 
