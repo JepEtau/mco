@@ -8,6 +8,7 @@ from .helpers import get_frame_rate
 from utils.p_print import *
 from utils.time_conversions import ms_to_frame
 from ._db import db
+from parsers.effects import Effects
 
 
 def pprint_episode(k_ep) -> dict[str, tuple[int]]:
@@ -70,12 +71,12 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
             # print(f"\teffect:{last_scene['effects']}")
             if 'loop' in effect.name:
                 loop_count = effect.loop
+
         if 'effects' in first_scene:
-            effect = first_scene['effects'].primary_effect()
-            if effect.name == 'loop_and_fadein':
-                pprint(effect)
-                loop_count += effect.loop
-        # ch_frame_count += loop_count
+            effects: Effects = first_scene['effects']
+            for e in effects.effects:
+                if e.name in ('loop_and_fadein', ):
+                    ch_frame_count += e.loop
 
         video_silence = 0
         try:
@@ -153,7 +154,7 @@ def pprint_episode(k_ep) -> dict[str, tuple[int]]:
     for k_ch in ['episode', 'asuivre', 'doc']:
         silence_count = ms_to_frame(db[k_ep]['audio'][k_ch]['silence'], fps)
         audio_count += silence_count
-        video_count += silence_count
+        # video_count += silence_count
 
     print("")
     print(green(f" Audio track: {audio_count}"))

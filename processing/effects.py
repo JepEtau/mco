@@ -365,10 +365,7 @@ def apply_final_effects(
             effect: Effect = effects.get_effect('fadeout')
             if effect is None:
                 effect = effects.get_effect('loop_and_fadeout')
-                print("loop and fadeout")
-                pprint(effect)
-            scene_frame_count = calculate_scene_frame_count(scene)
-            print(f"{scene['dst']['count']} vs {scene_frame_count}")
+
             start_no: int = scene['dst']['count'] - effect.fade
 
             if out_i >= start_no:

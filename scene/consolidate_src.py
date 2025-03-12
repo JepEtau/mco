@@ -75,7 +75,7 @@ def consolidate_src_scene(
     # Update the scene task
     scene['task'].hash = scene_filters[scene['task'].name].hash
 
-    task_name: str = scene['task'].name
+    task_name: TaskName = scene['task'].name
     if watermark:
         sequence: str = scene['filters'][task_name].sequence
         scene['filters'][task_name].sequence = (
@@ -143,6 +143,8 @@ def consolidate_src_scene(
     if task_name != "restored":
         if scene['task'].hash != '':
             suffix = f"_{scene['task'].hash}"
+
+    if task_name not in ('restored', 'extract'):
         suffix += f"_{task_name}"
 
     ext: str = vcodec_to_extension[vsettings.codec]

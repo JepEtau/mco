@@ -88,7 +88,7 @@ def main():
 
     chapters: list[Chapter] = all_chapter_keys() if arguments.chapter == '' else [arguments.chapter]
     for k_ch in chapters:
-        print(lightcyan(f"episode: {k_ep}, chapter: {k_ch}"))
+        print(lightcyan(f"\nepisode: {k_ep}, chapter: {k_ch}"))
         ch_video: ChapterVideo = get_chapter_video(k_ep, k_ch)
         ch_audio: ChapterAudio = get_chapter_audio(k_ep, k_ch)
         if ch_audio is None:
@@ -101,6 +101,16 @@ def main():
         scenes: list[Scene] = ch_video['scenes']
         target_count = 0
         ref_count: int = 0
+
+        if arguments.verbose:
+            if 'effects' in scenes[0]:
+                print(blue("  First scene effect:"))
+                pprint(scenes[0]['effects'])
+
+            if ch_audio['avsync']:
+                print(blue("  First scene AVsync:"), ch_audio['avsync'])
+
+
         for scene in scenes:
             pprint_scene_mapping(scene)
 
@@ -123,26 +133,26 @@ def main():
             else:
                 print("Ignore reference as it has not been parsed")
 
-        if 'effects' in scenes[0]:
-            print(lightcyan("first scene effect:"))
-            pprint(scenes[0]['effects'])
+        if arguments.verbose:
+            # if 'effects' in scenes[0]:
+            #     print(lightcyan("first scene effect:"))
+            #     pprint(scenes[0]['effects'])
 
-        if ch_audio['avsync']:
-            print(lightcyan("first scene AVsync:"), ch_audio['avsync'])
+            if 'effects' in scenes[-1]:
+                print(blue("  Last scene effect:"))
+                pprint(scenes[-1]['effects'])
 
-        if 'effects' in scenes[-1]:
-            print(lightcyan("last scene effect:"))
-            pprint(scenes[-1]['effects'])
-
-        if k_ch in ('g_debut', 'g_fin'):
+            if k_ch in ('g_debut', 'g_fin'):
+                if ch_video['silence']:
+                    target_count += ch_video['silence']
             if ch_video['silence']:
-                target_count += ch_video['silence']
-        if ch_video['silence']:
-            print(lightcyan("video silence:"), ch_video['silence'])
+                print(blue("  video silence:"), ch_video['silence'])
 
-        print(f"  Reference: {ref_count}")
-        print(f"  Audio: {ch_audio['count']}")
-        print(f"  Target: {target_count}")
+            print(f"  Reference: {ref_count}")
+            print(f"  Audio: {ch_audio['count']}")
+            print(f"  Target: {target_count}")
+        else:
+            print()
 
         # pprint(ch_video)
         scene_no: int = arguments.scene

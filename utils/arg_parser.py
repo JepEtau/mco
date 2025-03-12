@@ -106,11 +106,19 @@ def common_argument_parser(
     )
 
     parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        required=False,
+        help="verbose"
+    )
+
+    parser.add_argument(
         "--compare",
         "-c",
         action="store_true",
         required=False,
-        help="ignored except for upscale: append original scene no in the filename"
+        help="UPSCALE only: append original scene no in the filename"
     )
 
 

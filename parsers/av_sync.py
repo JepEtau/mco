@@ -363,7 +363,8 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
         print(f" - audio count: after: {ch_audio['count']}")
         print(f" - video count: after: {ch_video['count']}")
 
-        consolidate_silence(ch_video, ch_audio, verbose=verbose)
+    consolidate_silence(ch_video, ch_audio, verbose=verbose)
+    if verbose:
         print(lightcyan(f"-----------------------------------------------------------"))
 
 
@@ -584,7 +585,6 @@ def add_loop_and_fadeout_effect(
     ch_fade: int = 0
     if ch_video['effects'].has_effect('fadeout'):
         ch_fade = ch_video['effects'].get_effect('fadeout').fade
-
     last_scene['effects'] = Effects([
         Effect(
             name='loop_and_fadeout',

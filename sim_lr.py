@@ -50,7 +50,7 @@ def main():
     print("\t- parse database")
 
     # Parse database
-    parse_database(episode=ep_no, lang=arguments.lang)
+    parse_database(episode=ep_no, lang=arguments.lang, verbose=arguments.verbose)
     gc.collect()
 
     k_ep = ep_key(ep_no)
@@ -66,7 +66,7 @@ def main():
         scene_min=arguments.scene_min,
         scene_max=arguments.scene_max,
         watermark=arguments.watermark,
-        debug=arguments.debug
+        debug=arguments.debug,
     )
 
     # Merge audio and video files of 'g_debut' and 'g_fin' and no scene

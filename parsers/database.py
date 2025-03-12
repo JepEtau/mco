@@ -47,7 +47,8 @@ def parse_database(
     lang: Literal['en', 'fr'] = 'fr',
     edition: str = '',
     ignore_av_sync: bool = False,
-    avsync_stats: bool = False
+    avsync_stats: bool = False,
+    verbose: bool = False,
 ) -> dict[str, tuple[int]]:
     """Parse the database for a specified episode
         - ignore avsync when called by a tool or for stats before aligning AV channels
@@ -199,7 +200,7 @@ def parse_database(
 
     stats: dict[str, Any] | None = None
     if k_ep != 'ep00':
-        consolidate_av_tracks(k_ep=k_ep, verbose=False)
+        consolidate_av_tracks(k_ep=k_ep, verbose=verbose)
 
         stats = pprint_episode(k_ep=k_ep)
     else:
