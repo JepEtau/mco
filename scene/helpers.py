@@ -90,14 +90,17 @@ def set_doc_filepath_(scene: Scene) -> None:
         # Cache path
         in_cache_doc = os.path.abspath(os.path.join(in_cache_doc, os.pardir))
         out_cache_doc = in_cache_doc
-        if task_name == 'final':
+        if task_name in ('sim_lr', 'final'):
             out_cache_doc: str = os.path.abspath(
                 os.path.join(
-                    db['common']['directories']['cache_doc'], os.pardir, k_ch, k_ep
+                    db['common']['directories']['cache_doc'],
+                    os.pardir,
+                    k_ch
                 )
             )
             _k_ed, _k_ep, _k_ch, _no = primary_src_scene['k_ed_ep_ch_no']
             out_basename: str = f"{k_ep}_{k_ch}_{s_no_str}__{_k_ed}"
+
 
 
     # Input file for this task
