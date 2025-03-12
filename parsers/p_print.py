@@ -317,7 +317,7 @@ def pprint_scene_mapping(scene: Scene) -> None:
         _k_ed, _k_ep, _k_ch, _no = s['k_ed_ep_ch_no']
         print(f" {_k_ed}:{_k_ep}:{_k_ch}:{_no: 3}".rjust(10), end='')
         print(f" {s.start}".rjust(10), end='')
-        print(f"{s.start}".rjust(8), end='')
+        print(f"({s.count})".rjust(8), end='')
         if len(scene['src']) > 1:
             print(', ', end='')
     print()

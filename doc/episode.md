@@ -295,7 +295,7 @@
 * [/] consolider f vs k
 * [x] precedemment
 * [x] asuivre
-* [ ] sim_lr
+* [-] sim_lr
 
 
 # ep26
