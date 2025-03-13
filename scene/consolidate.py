@@ -102,6 +102,7 @@ def consolidate_scene(
     # Geometry
     #---------------------------------------------------------------------------
     if k_ch in ['g_asuivre', 'g_doc']:
+        # Use following chapter to set this geometry
         ch_geometry: ChapterGeometry = deepcopy(
             db[scene['dst']['k_ep']]['video']['target'][k_ch[2:]]['geometry']
         )
@@ -145,8 +146,6 @@ def consolidate_scene(
     #---------------------------------------------------------------------------
     _task_name: TaskName = task_name
     if task_name == 'initial':
-        _task_name = 'lr'
-    elif task_name == 'sim':
         _task_name = 'lr'
     elif task_name == 'upscale':
         _task_name = 'final'
@@ -264,9 +263,12 @@ def consolidate_scene(
             basename = f"{k_ep}_{k_ch}_{s_no_str}__{_k_ed}"
 
         suffix: str = ""
-        if task_name not in ('hr', 'tf', 'final'):
-            if task.hash != '':
-                suffix = f"_{task.hash}"
+        # Append the hash for comparisons except for some tasks
+        if (
+            task_name not in ('hr', 'tf', 'final')
+            and task.hash != ''
+        ):
+            suffix = f"_{task.hash}"
         suffix += f"_{task_name}"
 
         # Append the model name to evaluate models: only for upscale task
@@ -291,6 +293,7 @@ def consolidate_scene(
             else:
                 suffix = f"__{suffix}"
 
+        # Some tasks are optionals, use the previous task
         previous = {
             'st': 'hr',
             'tf': 'st',
@@ -314,14 +317,13 @@ def consolidate_scene(
             os.path.join(cache_path, f"{task_name}", f"{basename}{suffix}{ext}")
         )
         if task_name == 'upscale':
-            cache_path: str = absolute_path(
-                os.path.join(cache_path, f"{task_name}")
-            )
+            cache_path: str = absolute_path(os.path.join(cache_path, f"{task_name}"))
             if k_ch not in credit_chapter_keys():
                 cache_path = os.path.join(cache_path, f"{scene['dst']['k_ch']}")
             task.video_file = os.path.join(cache_path, f"{basename}{suffix}{ext}")
 
-        # Input file for this task
+        # Input file for this task might not use the previous one
+        #  but the input of the previous task, update input file
         if task_name in ('st', 'tf', 'cg', 'final'):
             suffix: str = ""
             if task_name == 'tf':
@@ -329,6 +331,7 @@ def consolidate_scene(
             elif task_name == 'final':
                 suffix = "tf_"
 
+            # These taks use the same video settings as hr
             in_vsettings: VideoSettings = db['vsettings']['hr']
             in_ext: str = vcodec_to_extension[in_vsettings.codec]
 
@@ -339,13 +342,26 @@ def consolidate_scene(
             )
 
             # Add fallback input video filename bc some tasks may be not processed
-            if task_name in ('st', 'tf', 'cg', 'final'):
-                task.fallback_in_video_files = {
-                    'hr': os.path.join(scene['cache'], f"hr", f"{basename}_hr{in_ext}"),
-                    'st': os.path.join(scene['cache'], f"st", f"{basename}_hr_st{in_ext}"),
-                    'tf': os.path.join(scene['cache'], f"tf", f"{basename}_tf{in_ext}"),
-                }
+            task.fallback_in_video_files = {
+                'hr': os.path.join(scene['cache'], f"hr", f"{basename}_hr{in_ext}"),
+                'st': os.path.join(scene['cache'], f"st", f"{basename}_hr_st{in_ext}"),
+                'tf': os.path.join(scene['cache'], f"tf", f"{basename}_tf{in_ext}"),
+            }
 
+            in_video_fp: str = task.in_video_file
+            if not os.path.exists(in_video_fp):
+                for i in range(
+                    TASK_NAMES.index(task.name),
+                    TASK_NAMES.index('hr') - 1,
+                    -1
+                ):
+                    _task_name: TaskName = TASK_NAMES[i]
+                    if _task_name not in task.fallback_in_video_files:
+                        continue
+                    in_video_fp = task.fallback_in_video_files[_task_name]
+                    if _task_name == 'hr' or os.path.exists(in_video_fp):
+                        break
+                task.in_video_file = in_video_fp
 
     if verbose:
         print(lightcyan("TO"))

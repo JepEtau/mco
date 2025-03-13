@@ -72,16 +72,7 @@ def main():
     if k_ch_dst in ('precedemment', 'asuivre'):
         scene_list = parse_prec_asuivre_target_scenes(k_ep=k_ep_dst, k_ch=k_ch_dst)
 
-    # next_episode: str = ep_key(episode+1)
-    # consolidate_target_scenes(k_ep=next_episode, k_ch='episode')
-    # parse_geometry_file(k_ep_or_g=next_episode, k_ch='episode')
-    # parse_replace_file(k_ep_or_g=next_episode, k_ch='episode')
-    # parse_dsr_file(k_ep_or_g=next_episode)
-    # pprint(db[next_episode]['video']['target']['episode']['scenes'])
-    # sys.exit()
-
     scene_no: int = arguments.scene
-
     task: TaskName = 'upscale'
 
     upscale_scenes(

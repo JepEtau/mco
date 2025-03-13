@@ -4,7 +4,6 @@ import logging
 from pprint import pprint
 import signal
 import sys
-import winsound
 from parsers import (
     Chapter,
     ep_key,
@@ -16,6 +15,10 @@ from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
 from video.upscale_scenes import upscale_scenes
+try:
+    import winsound
+except ImportError:
+    pass
 
 
 
@@ -71,7 +74,6 @@ def main():
 
     parse_database(episode=k_ep, lang=arguments.lang)
     gc.collect()
-
 
     # Parse target list for these chapters
     scene_list: list[int] = []

@@ -30,16 +30,19 @@ from .concat_scenes import concat_scenes
 
 
 def final_scenes(
-    episode: str,
+    k_ep: str,
     single_chapter: Chapter,
-    scene_no: int = -1,
+    scene_no: int | None = None,
+    scene_min: int = -1,
+    scene_max: int = -1,
+    scene_list: list[int] = [],
     task_name: TaskName = '',
     force: bool = False,
-    simulation: bool = False,
+    simulate: bool = False,
     debug: bool = False,
     stats: bool = False
 ):
-    k_ep = ep_key(episode)
+    k_ep = ep_key(k_ep)
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]
 
     if k_ep == '' and single_chapter not in ('g_debut', 'g_fin'):
@@ -61,6 +64,17 @@ def final_scenes(
         # Walk through target scenes
         scenes: list[Scene] = ch_video['scenes']
         for scene in scenes:
+            # Discard some scenes
+            if scene_no is not None and scene_no != -1 and scene['no'] != scene_no:
+                # print(f"skip scene no. {scene['no']}")
+                continue
+            if scene_min != -1 and scene['no'] < scene_min:
+                continue
+            if scene_max != -1 and scene['no'] > scene_max:
+                continue
+            if scene_list and scene['no'] not in scene_list:
+                    continue
+
             start_time = time.time()
             if scene_no != -1 and scene['no'] != scene_no:
                 continue
@@ -85,7 +99,8 @@ def final_scenes(
             result = generate_final_scene(
                 scene=scene,
                 force=force,
-                debug=debug
+                debug=debug,
+                simulate=simulate
             )
             if not result:
                 # pprint(db[scene['k_ep']]['video'][scene['k_ed']])
@@ -149,7 +164,7 @@ def final_scenes(
             chapter=k_ch,
             ch_video=ch_video,
             force=force,
-            simulation=simulation
+            simulation=simulate
         )
 
 
@@ -194,7 +209,7 @@ def final_scenes(
         ]
 
         print(' '.join(ffmpeg_command))
-        if not simulation:
+        if not simulate:
             sub_process = subprocess.Popen(
                 ffmpeg_command,
                 stdin=subprocess.PIPE,

@@ -205,6 +205,7 @@ def generate_lr_scene(
                     and not in_scene['effects'].has_effect('decimate')
                 )
             ):
+                pprint(scene)
                 pprint(src_scene)
                 raise ValueError(red(f"to decode ({to_decode}) != src.count ({src_count})"))
 
@@ -215,11 +216,30 @@ def generate_lr_scene(
             if e := in_scene['effects'].get_effect('decimate'):
                 factor_mod1, _ = e.extra_param
                 print(yellow(f"  decimate:"), f"{in_scene['no']}: {to_decode} -> {src_count} (mod={factor_mod1})")
-                # pprint(src_scene)
-                # pprint(in_scene)
-                # print(to_decode)
-                # raise
 
+        # Frame replacement
+        src_f_replace = in_scene['replace']
+        frame_cache: FrameCache = FrameCache(verbose=False)
+        frame_cache.set_replaced_frames(src_f_replace)
+
+        # Replace a segment by a loop
+        if (
+            'effects' in in_scene
+            and in_scene['effects'].has_effect(name='replace_by_loop')
+        ):
+            for loop in in_scene['effects'].get_effects(name='replace_by_loop'):
+                frame_cache.add_loop_segment(
+                    (loop.start, loop.loop, loop.f_ref)
+                )
+
+        # If last frames will be replaced, do not decode them
+        if frame_cache.to_replace(src_scene.start + to_decode - 1):
+            to_decode -= 1
+            for i in range(src_scene.start + to_decode - 1, 1, -1):
+                if not frame_cache.to_replace(i):
+                    break
+                to_decode -= 1
+            _to_decode = to_decode
 
         # FFmpeg command
         frame_rate: FrameRate = in_vi['frame_rate_r']
@@ -244,7 +264,7 @@ def generate_lr_scene(
             "-"
         ]
         print(lightcyan(f"  scene no. {scene['no']}"))
-        print(f"    to extract: {to_decode}")
+        print(f"    to decode: {to_decode}")
         if verbose:
             print(lightcyan(f"  d_command:"), " ".join(d_command))
 
@@ -260,25 +280,6 @@ def generate_lr_scene(
             print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
             return False
 
-        # Frame replacement
-        src_f_replace = in_scene['replace']
-        frame_cache: FrameCache = FrameCache(verbose=False)
-        frame_cache.set_replaced_frames(src_f_replace)
-        # print(f"    replacements:")
-        # pprint(frame_cache.replacements)
-
-        # Replace a segment by a loop
-        if (
-            'effects' in in_scene
-            and in_scene['effects'].has_effect(name='replace_by_loop')
-        ):
-            for loop in in_scene['effects'].get_effects(name='replace_by_loop'):
-                frame_cache.add_loop_segment(
-                    (loop.start, loop.loop, loop.f_ref)
-                )
-            # print(f"    loops:")
-            # pprint(frame_cache.segments)
-
         # Dust and scratch removal
         scene_dsr: SceneDsr = in_scene['dsr']
         if scene_dsr is not None:
@@ -291,8 +292,10 @@ def generate_lr_scene(
             if ch_video['avsync'] != 0:
                 raise NotImplementedError("avsync not yet supported")
 
-        # Decode
+        # Encode
+        encoded: int = 0
 
+        # Decode
 
         # decoder frame no.
         d_f_no: int = src_start
@@ -306,7 +309,6 @@ def generate_lr_scene(
 
         # decimate
         decimate_index: int = 0
-        decimate_index2: int = 0
 
         while (
             _to_decode
@@ -315,7 +317,6 @@ def generate_lr_scene(
             _in_f_no = src_start + f_index
             if _in_f_no >= src_start + to_decode:
                 break
-
 
             # decimate
             if factor_mod1:
@@ -333,7 +334,6 @@ def generate_lr_scene(
             f_no = frame_cache.get_out_f_no(_in_f_no)
             # if f_no != d_f_no:
             # print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, _in_f_no: {_in_f_no}, waiting for {f_no}"))
-
 
             # if not cached, decode a new frame
             img_buffer: np.ndarray = None
@@ -385,7 +385,7 @@ def generate_lr_scene(
             # Send to encoder...
             #-----------------------------------------------
 
-            encoder.encode_frame(frame)
+            encoded = encoder.encode_frame(frame)
 
             #-----------------------------------------------
 
@@ -400,7 +400,7 @@ def generate_lr_scene(
                 f_index += 1
 
             # All frames of the scene have been decoded and sent to consumer
-            if to_produce == 0:
+            if _to_decode == 0:
                 print("all frames to be decoded have been decoded")
                 # break
 
@@ -410,8 +410,9 @@ def generate_lr_scene(
         if remaining_src_scenes == 0:
             break
 
-
     del frame_cache
+
+
 
     main_logger.info(f"produced: {produced}")
     if is_last_scene(scene):
@@ -421,6 +422,16 @@ def generate_lr_scene(
             [e_subprocess.stdin.write(img_black) for _ in range(silence)]
             produced += silence
             print(f"produced w/ silence: {produced}")
+            encoded += silence
+
+
+    # Exception for sim_lr bc synchronous processing
+    #   the encoder might have to encode another frame bc replaced
+    print(f"encoded: {encoded} / {to_produce}")
+    if encoded != to_produce:
+        print(yellow(f"  encode more because of sync decode/encode"))
+        for _ in range(to_produce - encoded):
+            encoder.encode_frame(frame)
 
 
     stderr_bytes: bytes | None = None
@@ -439,7 +450,14 @@ def generate_lr_scene(
             pprint(stderr)
             return False
 
-    d_subprocess.kill()
+    if d_subprocess.poll() is None:
+        timeout: int = 10
+        while d_subprocess.poll() is None and timeout:
+            time.sleep(0.1)
+            timeout -= 1
+        if not timeout:
+            d_subprocess.kill()
+        print(yellow(f"to decode was higher than what has to be decoded {_to_decode}"))
     return True
 
 
@@ -512,3 +530,4 @@ class Encoder:
             self.e_index += 1
             # print(f"sent {len(out_frames)} -> total = {self.e_index}")
 
+        return self.e_index

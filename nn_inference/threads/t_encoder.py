@@ -88,7 +88,6 @@ class EncoderThread(BaseThread):
         scene: Scene | None = None
         src_scene: SrcScene = None
         frame: NnFrame = None
-        backward_imgs: deque = deque()
         received: int = 0
         # try:
         with torch.cuda.stream(cuda_stream):

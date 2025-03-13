@@ -57,7 +57,7 @@ class CpuDecoderThread(BaseThread):
         self._lock.acquire(blocking=False)
 
         self.scene: Scene = scene
-        self.sub_process: subprocess.Popen | None = None
+        self.d_subprocess: subprocess.Popen | None = None
         self.i_threads: dict[str, InferenceThread] = None
         self._decoded: int = 0
         self.config: CpuDecoderThreadConfig = config
@@ -108,15 +108,60 @@ class CpuDecoderThread(BaseThread):
                     raise ValueError("why is to_produce < count?")
                     src_count = to_produce
 
-                # # Path the src scene so that the encoder receive the correct frame no.
-                # # TODO: verify that this will not impact the other scene when using the
-                # # same src
+                # Path the src scene so that the encoder receive the correct frame no.
+                # TODO: verify that this will not impact the other scene when using the
+                # same src
                 # src_scene.in_scene['start'] = src_start
                 # src_scene.in_scene['count'] = src_count
-                # if verbose:
-                #     print(lightgreen(f"[V][D] {src_count} frames to extract"))
+                to_decode: int = src_scene.to_decode
+                _to_decode: int = to_decode
 
-                to_decode: int = src_count
+                if verbose:
+                    print(lightgreen(f"[V][D] {to_decode} frames to extract"))
+
+                # TODO ensure to_decode is consistent for all scenes
+                if to_decode != src_count:
+                    if (
+                        'effects' not in in_scene
+                        or (
+                            not in_scene['effects'].has_effect('decimate')
+                            and not in_scene['effects'].has_effect('decimate')
+                        )
+                    ):
+                        pprint(scene)
+                        pprint(src_scene)
+                        raise ValueError(red(f"to decode ({to_decode}) != src.count ({src_count})"))
+
+                # Decimate
+                factor_mod1: int = 0
+                if 'effects' in in_scene:
+                    if e := in_scene['effects'].get_effect('decimate'):
+                        factor_mod1, _ = e.extra_param
+                        print(yellow(f"  decimate:"), f"{in_scene['no']}: {to_decode} -> {src_count} (mod={factor_mod1})")
+
+                # Frame replacement
+                src_f_replace = in_scene['replace']
+                frame_cache: FrameCache = FrameCache(verbose=False)
+                frame_cache.set_replaced_frames(src_f_replace)
+
+                # Replace a segment by a loop
+                if (
+                    'effects' in in_scene
+                    and in_scene['effects'].has_effect(name='replace_by_loop')
+                ):
+                    for loop in in_scene['effects'].get_effects(name='replace_by_loop'):
+                        frame_cache.add_loop_segment(
+                            (loop.start, loop.loop, loop.f_ref)
+                        )
+
+                # If last frames will be replaced, do not decode them
+                if frame_cache.to_replace(src_scene.start + to_decode - 1):
+                    to_decode -= 1
+                    for i in range(src_scene.start + to_decode - 1, 1, -1):
+                        if not frame_cache.to_replace(i):
+                            break
+                        to_decode -= 1
+                    _to_decode = to_decode
 
                 # Get filters
                 task_name = scene['task'].name
@@ -177,9 +222,9 @@ class CpuDecoderThread(BaseThread):
                 print(lightgreen(f"[V][D] FFmpeg command:"), ' '.join(d_command))
 
                 # Open subprocess
-                self.sub_process = None
+                self.d_subprocess = None
                 try:
-                    self.sub_process = subprocess.Popen(
+                    self.d_subprocess = subprocess.Popen(
                         d_command,
                         stdin=subprocess.PIPE,
                         stdout=subprocess.PIPE,
@@ -188,7 +233,7 @@ class CpuDecoderThread(BaseThread):
                 except Exception as e:
                     print(f"[E] Unexpected error: {type(e)}", flush=True)
 
-                if self.sub_process is None:
+                if self.d_subprocess is None:
                     self._has_error = True
                     self._error_msg = "[E] Decoder failed to start"
 
@@ -203,41 +248,40 @@ class CpuDecoderThread(BaseThread):
                 # Flow control
                 flip_r_b: bool = in_video_info.img_c_order != 'rgb'
 
-                # Frame replacement
-                src_f_replace = in_scene['replace']
-                frame_cache: FrameCache = FrameCache(verbose=False)
-                if task_name != 'dsr':
-                    frame_cache.set_replaced_frames(src_f_replace)
-
-                # Replace a segment by a loop
-                if (
-                    'effects' in in_scene
-                    and in_scene['effects'].has_effect(name='replace_by_loop')
-                ):
-                    for loop in in_scene['effects'].get_effects(name='replace_by_loop'):
-                        frame_cache.add_loop_segment(
-                            (loop.start, loop.loop, loop.f_ref)
-                        )
-
                 # decoder frame no.
                 d_f_no: int = src_start
                 f_index: int = 0
-                decoded: int = 0
 
                 # f_no is the frame no. to send to the encoder
                 f_no: int = src_start
 
                 # Number of src scenes to use
                 remaining_src_scenes -= 1
+
+                # decimate
+                decimate_index: int = 0
+
                 print(lightcyan(f"to_decode: {to_decode}, remaining: {remaining}"))
                 while (
                     not self._stop_event.is_set()
-                    and to_decode
+                    and _to_decode
                     and remaining > 0
                 ):
                     _in_f_no = src_start + f_index
-                    if _in_f_no >= src_start + src_count:
+                    if _in_f_no >= src_start + to_decode:
                         break
+
+                    # decimate
+                    if factor_mod1:
+                        # print(f"decimate index: {decimate_index} % {factor_mod1} -> {decimate_index // factor_mod1}")
+                        decimate_index += 1
+                        if decimate_index // factor_mod1 == 1:
+                            decimate_index = 0
+                            # print(f"  discard {_in_f_no}")
+                            f_index += 1
+                            _in_f_no = src_start + f_index
+                            if _in_f_no >= src_start + to_decode:
+                                break
 
                     # Get frame_no to send to the consumer
                     f_no = frame_cache.get_out_f_no(_in_f_no)
@@ -247,7 +291,7 @@ class CpuDecoderThread(BaseThread):
                     img_buffer: np.ndarray = None
                     while f_no not in frame_cache:
                         img_buffer: np.ndarray = np.frombuffer(
-                            self.sub_process.stdout.read(pipe_img_nbytes),
+                            self.d_subprocess.stdout.read(pipe_img_nbytes),
                             dtype=img_dtype,
                         )
                         # print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, waiting for {f_no}"))
@@ -263,8 +307,7 @@ class CpuDecoderThread(BaseThread):
                             frame_cache.add(d_f_no, img_buffer)
 
                         d_f_no += 1
-                        decoded += 1
-                        to_decode -= 1
+                        _to_decode -= 1
 
                     # f_no is in cache
                     if f_no in frame_cache:
@@ -282,6 +325,7 @@ class CpuDecoderThread(BaseThread):
                     if remaining < 0 or img_buffer is None:
                         print(yellow("remaining < 0 or img_buffer is None"))
                         remaining = 0
+                        raise
                         self.release()
                         break
 
@@ -342,13 +386,18 @@ class CpuDecoderThread(BaseThread):
                         remaining -= 1
                         f_index += 1
 
-                # except:
-                #     if verbose:
-                #         print(lightgreen(f"[V][D] Encountered end of file or error. Decoded {f_no} frames"))
-                print(lightgreen(f"[V][D] End of src scene {in_scene['no']}"))
-            print(lightgreen(f"[V][D] End of scene {scene['no']}"))
-        print(lightgreen(f"[V][D] End of decoding"))
+                    # All frames of the scene have been decoded and sent to consumer
+                    if _to_decode == 0:
+                        print("all frames to be decoded have been decoded")
 
+                print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
+                if remaining_src_scenes == 0:
+                    break
+                print(lightgreen(f"[V][D] End of src scene {in_scene['no']}"))
+
+            print(lightgreen(f"[V][D] End of scene {scene['no']}"))
+        del frame_cache
+        print(lightgreen(f"[V][D] End of decoding, f_index={f_index}"))
 
     def stop(self, force: bool=False) -> None:
         self._stop_event.set()
@@ -356,7 +405,7 @@ class CpuDecoderThread(BaseThread):
         if force:
             self.release()
             try:
-                self.sub_process.kill()
+                self.d_subprocess.kill()
             except:
                 pass
 

@@ -34,11 +34,11 @@ CHAPTER_NAMES: dict[str, tuple[str]] = {
 }
 
 def add_chapters(
-    episode: str,
+    k_ep: str,
     task: TaskName,
     simulation:bool=False
 ) -> None:
-    k_ep: str = ep_key(episode)
+    k_ep: str = ep_key(k_ep)
     fps = get_frame_rate()
 
     # Add chapters to the video file

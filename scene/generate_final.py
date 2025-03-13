@@ -93,9 +93,9 @@ def decode_and_ac_detect(
     with lock_array[i]:
         stream = ffmpeg_subprocess.stdout.read(in_size)
         lock_array[i+1].release()
+    # print(f"convert: {in_pipe_dtype} -> {out_pipe_dtype} ({multiplier})")
     img = np.frombuffer(stream, dtype=in_pipe_dtype).reshape(in_pipe_shape)
     in_img: np.ndarray = img
-    # print(f"convert: {in_pipe_dtype} -> {out_pipe_dtype} ({multiplier})")
     if in_pipe_dtype != out_pipe_dtype:
         if multiplier > 1:
             in_img = img.astype(out_pipe_dtype)
@@ -175,6 +175,7 @@ def generate_final_scene(
     scene: Scene,
     force: bool = False,
     debug: bool = False,
+    simulate: bool = False
 ) -> bool:
     debug_scene: bool = False
 
@@ -203,10 +204,10 @@ def generate_final_scene(
     in_pipe_dtype: np.dtype = out_pipe_dtype
     in_pipe_pixfmt: str = out_pipe_pixfmt
     in_pipe_nbytes: int = math.prod(in_pipe_shape)
-    # if PIXEL_FORMAT[in_video_info['pix_fmt']]['bpp'] > 8:
-    #     in_pipe_dtype = np.uint16
-    #     in_pipe_pixfmt = 'bgr48'
-    #     in_pipe_nbytes: int = 2 * math.prod(in_pipe_shape)
+    if PIXEL_FORMAT[in_video_info['pix_fmt']]['bpp'] > 8:
+        in_pipe_dtype = np.uint16
+        in_pipe_pixfmt = 'bgr48'
+        in_pipe_nbytes: int = 2 * math.prod(in_pipe_shape)
 
     if debug:
         print(lightcyan(f"Input:"))
@@ -271,8 +272,7 @@ def generate_final_scene(
 
     # If dst has effect
     has_effects: bool = (
-        'effects' in scene.keys()
-        and scene['effects'].has_effects()
+        'effects' in scene.keys() and scene['effects'].has_effects()
     )
     # or src
     has_effects = has_effects or scene["src"].has_effects()
@@ -283,6 +283,10 @@ def generate_final_scene(
 
     # if geometry.use_autocrop and has_effects:
     vsettings: VideoSettings = task.video_settings
+    if not geometry.use_autocrop and any([x == 0 for x in geometry.crop]):
+        print(red("Error: no autocrop and no crop! Force to True"))
+        geometry.use_autocrop = True
+
     do_decode: bool = (
         (
             geometry.use_autocrop

@@ -20,7 +20,7 @@ from nn_inference.toolbox.upscale_doc import (
 )
 
 from parsers.p_print import pprint_scene_mapping
-from scene.upscale_scene import UpscalePipeline
+from scene.generate_hr import UpscalePipeline
 from processing import supported_filters
 from scene.consolidate import consolidate_scene
 from scene.src_scene import SrcScene
@@ -135,17 +135,11 @@ def upscale_scenes(
             if scene_no is not None and scene_no != -1 and scene['no'] != scene_no:
                 # print(f"skip scene no. {scene['no']}")
                 continue
-
-            if scene_min != -1:
-                if scene['no'] < scene_min:
-                    continue
-
-            if scene_max != -1:
-                if scene['no'] > scene_max:
-                    continue
-
-            if scene_list:
-                if scene['no'] not in scene_list:
+            if scene_min != -1 and scene['no'] < scene_min:
+                continue
+            if scene_max != -1 and scene['no'] > scene_max:
+                continue
+            if scene_list and scene['no'] not in scene_list:
                     continue
 
             if k_ed is not None and k_ed:

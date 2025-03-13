@@ -6,6 +6,9 @@ import signal
 import sys
 from parsers import (
     parse_database,
+    ep_key,
+    Chapter,
+    TaskName,
 )
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger
@@ -23,77 +26,60 @@ def main():
         add_language=True,
     )
 
-    parser.add_argument(
-        "--scene",
-        "-s",
-        type=int,
-        default=-1,
-        required=False,
-        help="scene no. to process. Integer or frame value (e.g. 2450f)"
-    )
-
-    parser.add_argument(
-        "--force",
-        action="store_true",
-        required=False,
-        help="Overwrite"
-    )
-
-    parser.add_argument(
-        "--simulate",
-        action="store_true",
-        required=False,
-        help="Simulate the process"
-    )
-
     arguments = parser.parse_args()
 
     if arguments.debug:
         main_logger.addHandler(logging.StreamHandler(sys.stdout))
         main_logger.setLevel("DEBUG")
 
-    episode: int = arguments.episode
-    chapter: str = arguments.chapter
-    if episode == 0 and chapter == '':
+    simulate: bool = arguments.simulate
+
+    ep_no: int = arguments.episode
+    k_ch: Chapter = arguments.chapter
+    if ep_no == 0 and k_ch == '':
         sys.exit("Error: at least an episode or a chapter shall be specified")
 
-    if episode < 0 or episode > 39:
+    if ep_no < 0 or ep_no > 39:
         sys.exit(red("Episode must be between 1 and 39"))
 
-    if chapter in ('g_debut', 'g_fin'):
-        episode = 0
-    if episode != 0:
-        print(f"Episode: {episode}")
-    if chapter != '':
-        print("Chapter: %s" % (chapter))
+    if k_ch in ('g_debut', 'g_fin'):
+        ep_no = 0
+    if ep_no != 0:
+        print(f"Episode: {ep_no}")
+    if k_ch != '':
+        print("Chapter: %s" % (k_ch))
     print(f"Language: {arguments.lang}")
     print("Tasks:")
     print("\t- parse database")
 
-    # Parse database
-    parse_database(episode=episode, lang=arguments.lang)
-    gc.collect()
+    k_ep: str = ep_key(ep_no)
 
+    # Parse database
+    parse_database(episode=k_ep, lang=arguments.lang)
+    gc.collect()
 
     scene_no: int = arguments.scene
 
-    task = 'final'
+    task_name: TaskName = 'final'
     final_scenes(
-        episode=arguments.episode,
-        single_chapter=arguments.chapter,
+        k_ep=k_ep,
+        single_chapter=k_ch,
         scene_no=scene_no,
-        task_name=task,
+        scene_min=arguments.scene_min,
+        scene_max=arguments.scene_max,
+        scene_list=[],
+        task_name=task_name,
         force=arguments.force,
-        simulation=arguments.simulate,
+        simulate=simulate,
         debug=arguments.debug,
     )
 
 
     if arguments.chapter in ('g_debut', 'g_fin') and scene_no == -1:
         combine_av_tracks(
-            episode=arguments.episode,
-            chapter=arguments.chapter,
-            task=task,
+            k_ep=k_ep,
+            k_ch=arguments.chapter,
+            task=task_name,
             force=True,
             simulation=arguments.simulate
         )
@@ -101,32 +87,32 @@ def main():
     if arguments.chapter == '':
         for k in ('g_debut', 'g_fin'):
             combine_av_tracks(
-                episode='',
-                chapter=k,
-                task=task,
+                k_ep='',
+                k_ch=k,
+                task=task_name,
                 force=True,
-                simulation=arguments.simulate
+                simulation=simulate,
             )
 
         combine_av_tracks(
-            episode=arguments.episode,
-            chapter='',
-            task=task,
+            k_ep=k_ep,
+            k_ch='',
+            task=task_name,
             force=True,
-            simulation=arguments.simulate
+            simulation=simulate,
         )
 
         # Merge video and audio stream from all parts (except g_debut and g_fin)
         concatenate_all(
-            episode=arguments.episode,
-            task=task,
-            simulation=arguments.simulate
+            k_ep=k_ep,
+            task=task_name,
+            simulation=simulate,
         )
 
         add_chapters(
-            episode=arguments.episode,
-            task=task,
-            simulation=arguments.simulate
+            k_ep=k_ep,
+            task=task_name,
+            simulation=simulate,
         )
 
 

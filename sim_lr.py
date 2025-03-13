@@ -72,8 +72,8 @@ def main():
     # Merge audio and video files of 'g_debut' and 'g_fin' and no scene
     if arguments.chapter in ('g_debut', 'g_fin') and arguments.scene == -1:
         combine_av_tracks(
-            episode=k_ep,
-            chapter=arguments.chapter,
+            k_ep=k_ep,
+            k_ch=arguments.chapter,
             task=task,
             force=True,
             simulation=arguments.simulate
@@ -91,8 +91,8 @@ def main():
         #     )
 
         combine_av_tracks(
-            episode=k_ep,
-            chapter='',
+            k_ep=k_ep,
+            k_ch='',
             task=task,
             force=True,
             simulation=arguments.simulate
@@ -100,13 +100,13 @@ def main():
 
         # Merge video and audio stream from all parts (except g_debut and g_fin)
         concatenate_all(
-            episode=k_ep,
+            k_ep=k_ep,
             task=task,
             simulation=arguments.simulate
         )
 
         add_chapters(
-            episode=k_ep,
+            k_ep=k_ep,
             task=task,
             simulation=arguments.simulate
         )

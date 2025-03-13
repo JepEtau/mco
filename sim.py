@@ -100,8 +100,8 @@ def main():
     if arguments.chapter in ('g_debut', 'g_fin') and scene_no == -1:
         print(lightcyan("Combine audio and video tracks:"), arguments.chapter)
         combine_av_tracks(
-            episode=arguments.episode,
-            chapter=arguments.chapter,
+            k_ep=arguments.episode,
+            k_ch=arguments.chapter,
             task=task,
             force=True,
             simulation=arguments.simulate
@@ -110,16 +110,16 @@ def main():
     if arguments.chapter == '':
         for k in ('g_debut', 'g_fin'):
             combine_av_tracks(
-                episode='',
-                chapter=k,
+                k_ep='',
+                k_ch=k,
                 task=task,
                 force=True,
                 simulation=arguments.simulate
             )
 
         combine_av_tracks(
-            episode=arguments.episode,
-            chapter='',
+            k_ep=arguments.episode,
+            k_ch='',
             task=task,
             force=True,
             simulation=arguments.simulate
@@ -127,13 +127,13 @@ def main():
 
         # Merge video and audio stream from all parts (except g_debut and g_fin)
         concatenate_all(
-            episode=arguments.episode,
+            k_ep=arguments.episode,
             task=task,
             simulation=arguments.simulate
         )
 
         add_chapters(
-            episode=arguments.episode,
+            k_ep=arguments.episode,
             task=task,
             simulation=arguments.simulate
         )

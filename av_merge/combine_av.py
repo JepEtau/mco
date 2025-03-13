@@ -7,7 +7,8 @@ from parsers import (
     db,
     ep_key,
     get_frame_rate,
-    TaskName
+    TaskName,
+    Chapter,
 )
 from utils.logger import main_logger
 from audio import get_audio_frame_count
@@ -56,17 +57,17 @@ def get_video_duration(filename: str, integrity: bool = True) -> tuple[float, in
 
 
 def combine_av_tracks(
-    episode: str,
-    chapter: str = '',
+    k_ep: str,
+    k_ch: Chapter = '',
     task: TaskName='lr',
     force: bool = False,
     simulation: bool = False
 ):
     k_ep_or_g: str = ''
-    if chapter in ('g_debut', 'g_fin') or episode is None:
-        k_ep_or_g = chapter
+    if k_ch in ('g_debut', 'g_fin') or k_ep is None:
+        k_ep_or_g = k_ch
     else:
-        k_ep_or_g = ep_key(episode)
+        k_ep_or_g = ep_key(k_ep)
     print(lightcyan("Combine audio and video tracks:"), f"{k_ep_or_g}")
 
     # Output filepath
@@ -87,7 +88,7 @@ def combine_av_tracks(
 
     # Get nb of frames from video stream
     if k_ep_or_g in ('g_debut', 'g_fin'):
-        ch_video: ChapterVideo = get_chapter_video(episode, chapter)
+        ch_video: ChapterVideo = get_chapter_video(k_ep, k_ch)
         video_fp: str = ch_video['task'].video_file
     else:
         video_fp = os.path.join(
@@ -112,9 +113,9 @@ def combine_av_tracks(
     audio_frames_count: int = 0
     try:
         if not simulation:
-            audio_frames_count = get_audio_frame_count(episode, chapter)
+            audio_frames_count = get_audio_frame_count(k_ep, k_ch)
     except:
-        k_ep_or_g: str = f"episode {episode}" if chapter == '' else chapter
+        k_ep_or_g: str = f"episode {k_ep}" if k_ch == '' else k_ch
         raise RuntimeError(f"No valid audio for {k_ep_or_g}")
 
     print(f"  video: {video_fp}: {video_frames_count}")
@@ -145,11 +146,11 @@ def combine_av_tracks(
 
 
 def concatenate_all(
-    episode: str,
+    k_ep: str,
     task: TaskName,
     simulation: bool = False
 ) -> None:
-    k_ep: str = ep_key(episode)
+    k_ep: str = ep_key(k_ep)
     print(lightgreen(f"Concatenate all A/V files:"), lightcyan(f"{k_ep}"))
 
     language = db[k_ep]['audio']['lang']
@@ -163,7 +164,7 @@ def concatenate_all(
     main_logger.debug(f"A/V file (without chapters): {output_filepath}")
 
     # Create concat file
-    makedirs(episode)
+    makedirs(k_ep)
     concat_fp: str = absolute_path(
         os.path.join(
             cache_directory,

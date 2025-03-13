@@ -69,6 +69,17 @@ def scene_id_str(scene: Scene) -> str:
     return scene_id
 
 
+def get_fallback_in_video_fp(scene: Scene) -> str:
+    task: ProcessingTask = scene['task']
+    in_video_fp: str = task.in_video_file
+    if not os.path.exists(in_video_fp):
+        for _task_name in reversed(TASK_NAMES):
+            if _task_name not in task.fallback_in_video_files:
+                continue
+            in_video_fp = task.fallback_in_video_files[_task_name]
+            if _task_name == 'hr' or os.path.exists(in_video_fp):
+                break
+
 
 def is_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
     task: ProcessingTask = scene['task']
@@ -139,14 +150,17 @@ def is_final_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
     else:
         in_video_fp: str = task.in_video_file
 
+    print(lightcyan("input file:"), in_video_fp)
     if not os.path.exists(in_video_fp):
         raise FileExistsError(red(f"{in_video_fp}: No such file or directory"))
 
     out_video_fp: str = task.video_file
-    if (
-        not os.path.exists(out_video_fp)
-        or os.path.getmtime(in_video_fp) > os.path.getmtime(out_video_fp)
-    ):
+    if not os.path.exists(out_video_fp):
+        if display_msg:
+            print(lightgreen(f"        render, reason:"), "output has not been generated yet")
+        return False
+
+    if os.path.getmtime(in_video_fp) > os.path.getmtime(out_video_fp):
         if display_msg:
             print(lightgreen(f"        render, reason:"), "input is newer")
         return False
@@ -217,7 +231,7 @@ def calculate_scene_frame_count(scene: Scene) -> int:
 
     count = scene['dst']['count']
     if task_name in (
-        'lr', 'sim', 'final', 'sim_lr',
+        'lr', 'sim', 'final', 'sim_lr', 'hr'
     ):
         ch_video: ChapterVideo = get_target_video(scene)
         if is_first_scene(scene):

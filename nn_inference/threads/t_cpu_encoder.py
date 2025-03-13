@@ -44,7 +44,7 @@ class CpuEncoderThread(BaseThread):
 
 
     def run(self) -> None:
-        verbose: bool = False
+        verbose: bool = True
 
         in_queue: Queue = self.in_queue
         writer_subprocess: subprocess.Popen | None = None
@@ -249,6 +249,7 @@ class CpuEncoderThread(BaseThread):
                     out_f_no=out_f_no, frame=in_frame, out_i=e_index
                 )
                 [writer_subprocess.stdin.write(f.img) for f in out_frames]
+                print(f"sent {len(out_frames)}")
                 e_index += len(out_frames)
                 remaining -= len(out_frames)
                 sent = len(out_frames)
