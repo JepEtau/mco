@@ -182,9 +182,14 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
         ch_video['count'] -= to_remove
 
     elif audio_count > video_count:
+        last_scene: Scene = ch_video['scenes'][-1]
+        pprint(last_scene)
         add_loop_and_fadeout_effect(ch_video, ch_audio, k_ep, k_ch)
         if verbose:
             print(f"[I]  add loop and fadeout")
+            pprint(last_scene)
+            warnings.warn("[I]  add loop and fadeout")
+            # raise
 
     else:
         consolidate_last_scene_effect(ch_video, verbose=verbose)

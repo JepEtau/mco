@@ -166,17 +166,6 @@ def generate_lr_scene(
     # A scene may use multiple segments from different scenes
     remaining_src_scenes = len(scene['src'].scenes())
 
-    if verbose:
-        print(lightcyan("Decoder:"))
-        print(f"  nb of src scenes: {remaining_src_scenes}")
-        print(f"  to produce: {to_produce}")
-
-        print("  pipe:")
-        print(f"    pixfmt: {in_pipe_pixfmt}")
-        print(f"    shape: {img_shape}")
-        print(f"    dtype: {img_dtype}")
-        print(f"    nbytes: {pipe_img_nbytes}")
-
 
     # Decode / Encode
     #-------------------------------------------------------------------------------------
@@ -195,6 +184,7 @@ def generate_lr_scene(
 
         to_decode: int = src_scene.to_decode
         _to_decode: int = to_decode
+
 
         # TODO ensure to_decode is consistent for all scenes
         if to_decode != src_count:
@@ -240,6 +230,20 @@ def generate_lr_scene(
                     break
                 to_decode -= 1
             _to_decode = to_decode
+
+
+        if verbose:
+            print(lightcyan("Decoder:"))
+            print(f"  nb of src scenes: {remaining_src_scenes}")
+            print(f"  to send to the decoder: {src_count}")
+            print(f"  to encode: {to_produce}")
+
+            print("  pipe:")
+            print(f"    pixfmt: {in_pipe_pixfmt}")
+            print(f"    shape: {img_shape}")
+            print(f"    dtype: {img_dtype}")
+            print(f"    nbytes: {pipe_img_nbytes}")
+
 
         # FFmpeg command
         frame_rate: FrameRate = in_vi['frame_rate_r']
@@ -294,6 +298,7 @@ def generate_lr_scene(
 
         # Encode
         encoded: int = 0
+        to_encode: int = 0
 
         # Decode
 
@@ -310,10 +315,9 @@ def generate_lr_scene(
         # decimate
         decimate_index: int = 0
 
-        while (
-            _to_decode
-            and remaining > 0
-        ):
+        to_send_to_decoder = src_count
+
+        while to_send_to_decoder:
             _in_f_no = src_start + f_index
             if _in_f_no >= src_start + to_decode:
                 break
@@ -384,7 +388,7 @@ def generate_lr_scene(
 
             # Send to encoder...
             #-----------------------------------------------
-
+            to_send_to_decoder -= 1
             encoded = encoder.encode_frame(frame)
 
             #-----------------------------------------------
@@ -401,7 +405,7 @@ def generate_lr_scene(
 
             # All frames of the scene have been decoded and sent to consumer
             if _to_decode == 0:
-                print("all frames to be decoded have been decoded")
+                print(f"all frames to be decoded have been decoded ({to_decode})")
                 # break
 
         # remaining source no
@@ -412,6 +416,20 @@ def generate_lr_scene(
 
     del frame_cache
 
+    # Exception for sim_lr bc synchronous processing
+    #   the encoder might have to encode another frame bc replaced
+    print(f"sent to encode: {to_encode}")
+    print(f"encoded: {encoded} / {to_produce}")
+    if encoded < to_produce:
+        print(yellow(f"  encode more because of sync decode/encode"))
+        silence = 0
+        try:
+            silence = ch_video['silence']
+        except:
+            pass
+
+        for _ in range(to_produce - encoded - silence):
+            encoder.encode_frame(frame)
 
 
     main_logger.info(f"produced: {produced}")
@@ -425,13 +443,7 @@ def generate_lr_scene(
             encoded += silence
 
 
-    # Exception for sim_lr bc synchronous processing
-    #   the encoder might have to encode another frame bc replaced
-    print(f"encoded: {encoded} / {to_produce}")
-    if encoded != to_produce:
-        print(yellow(f"  encode more because of sync decode/encode"))
-        for _ in range(to_produce - encoded):
-            encoder.encode_frame(frame)
+
 
 
     stderr_bytes: bytes | None = None
