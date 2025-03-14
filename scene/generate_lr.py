@@ -2,8 +2,10 @@ from collections import deque
 import math
 import os
 from pprint import pprint
+from queue import Queue
 import subprocess
 import sys
+from threading import Event, Thread
 from warnings import warn
 import cv2
 import numpy as np
@@ -42,7 +44,7 @@ from utils.np_dtypes import np_to_float32, np_to_uint8
 from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
-from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal, ms_to_frame
+from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
 from utils.tools import ffmpeg_exe
 from utils.media import (
     VideoInfo, extract_media_info_mco, frame_rate_dec, str_to_video_codec
@@ -140,7 +142,9 @@ def generate_lr_scene(
     encoder: Encoder = Encoder(
         scene=scene,
         e_subprocess=e_subprocess,
+        verbose=verbose
     )
+    encoder.start()
 
 
     # Decoder (common)
@@ -169,8 +173,6 @@ def generate_lr_scene(
 
     # Decode / Encode
     #-------------------------------------------------------------------------------------
-    remaining: int = to_produce
-    produced: int = 0
 
     # Extract src scenes
     for src_index, src_scene in enumerate(scene['src'].scenes()):
@@ -182,9 +184,13 @@ def generate_lr_scene(
         if to_produce < src_count:
             src_count = to_produce
 
+        # to_decode is used to count nb of frames to be decoded, passed to FFmpeg
         to_decode: int = src_scene.to_decode
         _to_decode: int = to_decode
-
+        # to_process is the number frames to be processed, not all decoded frames will
+        #   be sent to the encoder
+        remaining = src_count
+        src_end = src_start + to_decode
 
         # TODO ensure to_decode is consistent for all scenes
         if to_decode != src_count:
@@ -205,7 +211,8 @@ def generate_lr_scene(
         if 'effects' in in_scene:
             if e := in_scene['effects'].get_effect('decimate'):
                 factor_mod1, _ = e.extra_param
-                print(yellow(f"  decimate:"), f"{in_scene['no']}: {to_decode} -> {src_count} (mod={factor_mod1})")
+                print(yellow(f"  decimate:"), f"{in_scene['no']}: {to_decode} -> {remaining} (mod={factor_mod1})")
+                src_end = src_start + to_decode
 
         # Frame replacement
         src_f_replace = in_scene['replace']
@@ -224,6 +231,8 @@ def generate_lr_scene(
 
         # If last frames will be replaced, do not decode them
         if frame_cache.to_replace(src_scene.start + to_decode - 1):
+            if verbose:
+                print("remove last frame")
             to_decode -= 1
             for i in range(src_scene.start + to_decode - 1, 1, -1):
                 if not frame_cache.to_replace(i):
@@ -235,8 +244,8 @@ def generate_lr_scene(
         if verbose:
             print(lightcyan("Decoder:"))
             print(f"  nb of src scenes: {remaining_src_scenes}")
-            print(f"  to send to the decoder: {src_count}")
-            print(f"  to encode: {to_produce}")
+            print(f"  to decode: {to_decode}")
+            print(f"  to send to the encoder: {remaining}")
 
             print("  pipe:")
             print(f"    pixfmt: {in_pipe_pixfmt}")
@@ -267,8 +276,11 @@ def generate_lr_scene(
             "-vcodec", "rawvideo",
             "-"
         ]
-        print(lightcyan(f"  scene no. {scene['no']}"))
-        print(f"    to decode: {to_decode}")
+        if verbose:
+            print(lightcyan(f"  scene no. {scene['no']}"))
+            print(f"    to decode: {to_decode}")
+            print(f"    to process: {remaining}")
+
         if verbose:
             print(lightcyan(f"  d_command:"), " ".join(d_command))
 
@@ -296,9 +308,6 @@ def generate_lr_scene(
             if ch_video['avsync'] != 0:
                 raise NotImplementedError("avsync not yet supported")
 
-        # Encode
-        encoded: int = 0
-        to_encode: int = 0
 
         # Decode
 
@@ -315,11 +324,14 @@ def generate_lr_scene(
         # decimate
         decimate_index: int = 0
 
-        to_send_to_decoder = src_count
+        # remining to process
 
-        while to_send_to_decoder:
+        # Loop until all frames have been sent to the encoder
+        while remaining:
+
             _in_f_no = src_start + f_index
-            if _in_f_no >= src_start + to_decode:
+            if _in_f_no >= src_end:
+                print(red("heeee?"))
                 break
 
             # decimate
@@ -331,7 +343,8 @@ def generate_lr_scene(
                     # print(f"  discard {_in_f_no}")
                     f_index += 1
                     _in_f_no = src_start + f_index
-                    if _in_f_no >= src_start + to_decode:
+                    if _in_f_no >= src_end:
+                        print(red("heeee?"))
                         break
 
             # Get frame_no to send to the consumer
@@ -388,8 +401,7 @@ def generate_lr_scene(
 
             # Send to encoder...
             #-----------------------------------------------
-            to_send_to_decoder -= 1
-            encoded = encoder.encode_frame(frame)
+            encoder.put_frame(frame)
 
             #-----------------------------------------------
 
@@ -404,9 +416,12 @@ def generate_lr_scene(
                 f_index += 1
 
             # All frames of the scene have been decoded and sent to consumer
-            if _to_decode == 0:
-                print(f"all frames to be decoded have been decoded ({to_decode})")
-                # break
+            # if _to_decode == 0:
+            #     print(f"all frames to be decoded have been decoded ({to_decode})")
+
+            # if remaining == 0:
+            #     print(f"all frames have been sent to the encoder")
+            # print(f"remaining: {remaining}")
 
         # remaining source no
         if verbose:
@@ -416,130 +431,151 @@ def generate_lr_scene(
 
     del frame_cache
 
-    # Exception for sim_lr bc synchronous processing
-    #   the encoder might have to encode another frame bc replaced
-    print(f"sent to encode: {to_encode}")
-    print(f"encoded: {encoded} / {to_produce}")
-    if encoded < to_produce:
-        print(yellow(f"  encode more because of sync decode/encode"))
-        silence = 0
-        try:
-            silence = ch_video['silence']
-        except:
-            pass
-
-        for _ in range(to_produce - encoded - silence):
-            encoder.encode_frame(frame)
-
-
-    main_logger.info(f"produced: {produced}")
-    if is_last_scene(scene):
-        if 'silence' in ch_video and ch_video['silence']:
-            silence: int = ch_video['silence']
-            img_black = np.zeros(img_shape, dtype=e_pipe_dtype)
-            [e_subprocess.stdin.write(img_black) for _ in range(silence)]
-            produced += silence
-            print(f"produced w/ silence: {produced}")
-            encoded += silence
-
-
-
-
-
-    stderr_bytes: bytes | None = None
-    try:
-        # Arbitrary timeout value
-        _, stderr_bytes = e_subprocess.communicate(timeout=60)
-    except:
-        e_subprocess.kill()
-        return False
-
-    if stderr_bytes is not None:
-        stderr = stderr_bytes.decode('utf-8)')
-        # TODO: parse the output file
-        if stderr != '':
-            print(f"{scene_key} stderr:")
-            pprint(stderr)
-            return False
+    # Poison pill
+    encoder.put_frame(None)
 
     if d_subprocess.poll() is None:
+        print(yellow(f"to decode was higher than what has to be decoded {_to_decode}"))
         timeout: int = 10
         while d_subprocess.poll() is None and timeout:
             time.sleep(0.1)
             timeout -= 1
         if not timeout:
+            print(f"    kill decoder")
             d_subprocess.kill()
-        print(yellow(f"to decode was higher than what has to be decoded {_to_decode}"))
+
+    while encoder.is_alive():
+        time.sleep(0.1)
+
     return True
 
 
 
-class Encoder:
+class Encoder(Thread):
     def __init__(
         self,
         scene: Scene,
         e_subprocess: subprocess.Popen,
+        verbose: bool,
     ):
+        super().__init__(name="encoder")
+        self.verbose: bool = verbose
         self.e_index: int = 0
         self.scene: Scene = scene
         self.e_subprocess: subprocess.Popen = e_subprocess
         self.watermark: bool = do_watermark(scene=scene)
 
+        self._stop_event: Event = Event()
+        self.in_queue: Queue = Queue(1)
 
-    def encode_frame(self, frame: NnFrame) -> None:
-        # print(lightgreen(f"    ({self.e_index}) encode: {frame.f_no}, {frame.tensor.shape}, {frame.tensor.dtype}"))
+    def put_frame(self, frame: NnFrame) -> bool:
+        self.in_queue.put(frame)
+        return True
 
-        # effect are made on np.ndarray
-        in_f_no: int = frame.f_no
-        mco_frame = McoFrame(
-            no=in_f_no,
-            img=frame.tensor,
-            scene=self.scene,
-            src_scene_index=frame.src_scene_index,
-        )
 
-        # Watermark
-        if self.watermark:
-            out_img: np.ndarray = add_watermark(
-                frame=mco_frame,
-                no=in_f_no
+    def run(self) -> None:
+        in_queue: Queue = self.in_queue
+        e_subprocess = self.e_subprocess
+        verbose: bool = self.verbose
+
+        while not self._stop_event.is_set():
+            # Wait for a frame or a poison pill
+            input = in_queue.get(block=True)
+            if input is None or self._stop_event.is_set():
+                if verbose:
+                    print(purple("[V][E] Received Null tensor"))
+                break
+
+            frame: NnFrame = input
+
+            # print(lightgreen(f"    ({self.e_index}) encode: {frame.f_no}, {frame.tensor.shape}, {frame.tensor.dtype}"))
+
+            # effect are made on np.ndarray
+            in_f_no: int = frame.f_no
+            mco_frame = McoFrame(
+                no=in_f_no,
+                img=frame.tensor,
+                scene=self.scene,
+                src_scene_index=frame.src_scene_index,
             )
-            mco_frame.img = out_img
 
-        mco_frame.img = np_to_float32(mco_frame.img)
+            # Watermark
+            if self.watermark:
+                out_img: np.ndarray = add_watermark(
+                    frame=mco_frame,
+                    no=in_f_no
+                )
+                mco_frame.img = out_img
+
+            mco_frame.img = np_to_float32(mco_frame.img)
 
 
-        # Apply upscale effects (loops)
-        src_scene: SrcScene = frame.scene['src'].scenes()[frame.src_scene_index]
-        out_f_no: int = src_scene.start + self.e_index
-        out_frames = apply_upscale_effects(
-            out_f_no=out_f_no,
-            frame=mco_frame,
-            out_i=self.e_index,
-        )
-
-        # Convert to np.float
-        for f in out_frames:
-            f.img = np_to_float32(f.img)
-
-        # Final effects: fades and specific to generic (overlay, title, blend)
-        # print(f"encode: f_no. {out_f_no}, nb of frames: {len(out_frames)}")
-        for out_frame in  out_frames:
+            # Apply upscale effects (loops)
+            src_scene: SrcScene = frame.scene['src'].scenes()[frame.src_scene_index]
             out_f_no: int = src_scene.start + self.e_index
-
-            out_frame: McoFrame = apply_final_effects(
+            out_frames = apply_upscale_effects(
                 out_f_no=out_f_no,
-                frame=out_frame,
-                out_i=self.e_index
+                frame=mco_frame,
+                out_i=self.e_index,
             )
-            # for debug
-            # if out_frames is None:
-            #     self.e_subprocess.communicate(timeout=60)
-            #     raise
+            # print(f"upscale effects: {len(out_frames)}")
 
-            self.e_subprocess.stdin.write(np_to_uint8(out_frame.img))
+            # Convert to np.float
+            for f in out_frames:
+                f.img = np_to_float32(f.img)
 
-            self.e_index += 1
-            # print(f"sent {len(out_frames)} -> total = {self.e_index}")
+            # Final effects: fades and specific to generic (overlay, title, blend)
+            # print(f"encode: f_no. {out_f_no}, nb of frames: {len(out_frames)}")
+            for out_frame in  out_frames:
+                out_f_no: int = src_scene.start + self.e_index
 
-        return self.e_index
+                out_frame: McoFrame = apply_final_effects(
+                    out_f_no=out_f_no,
+                    frame=out_frame,
+                    out_i=self.e_index
+                )
+                # for debug
+                # if out_frames is None:
+                #     self.e_subprocess.communicate(timeout=60)
+                #     raise
+
+                e_subprocess.stdin.write(np_to_uint8(out_frame.img))
+
+                self.e_index += 1
+                # print(f"sent {len(out_frames)} -> total = {self.e_index}")
+
+                scene_shape = out_frame.img.shape
+                # scene_dtype = out_frame.img.dtype
+
+        # Final: Add silence
+        scene = frame.scene
+        if is_last_scene(frame.scene):
+            ch_video: ChapterVideo = get_target_video(scene)
+            if 'silence' in ch_video and ch_video['silence']:
+                silence: int = ch_video['silence']
+                img_black = np.zeros(scene_shape, dtype=np.uint8)
+                [e_subprocess.stdin.write(img_black) for _ in range(silence)]
+                self.e_index +=  silence
+                if verbose:
+                    print(purple(f"added silence: {silence}"))
+        if verbose:
+            print(purple(f"produced w/ silence: {self.e_index}"))
+
+
+        stderr_bytes: bytes | None = None
+        try:
+            # Arbitrary timeout value
+            _, stderr_bytes = e_subprocess.communicate(timeout=60)
+        except:
+            e_subprocess.kill()
+            return False
+
+        if stderr_bytes is not None:
+            stderr = stderr_bytes.decode('utf-8)')
+            # TODO: parse the output file
+            if stderr != '':
+                pprint(stderr)
+                return False
+
+        if verbose:
+            print(purple(f"encoder: ended"))

@@ -150,7 +150,7 @@ def is_final_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
     else:
         in_video_fp: str = task.in_video_file
 
-    print(lightcyan("input file:"), in_video_fp)
+    # print(lightcyan("input file:"), in_video_fp)
     if not os.path.exists(in_video_fp):
         raise FileExistsError(red(f"{in_video_fp}: No such file or directory"))
 
@@ -235,7 +235,7 @@ def calculate_scene_frame_count(scene: Scene) -> int:
     ):
         ch_video: ChapterVideo = get_target_video(scene)
         if is_first_scene(scene):
-            print(lightcyan("first scene, avsync:"), ch_video['avsync'])
+            # print(lightcyan("first scene, avsync:"), ch_video['avsync'])
             if ch_video['avsync'] != 0:
                 raise NotImplementedError("avsync not yet supported")
             count = scene['src'].primary_scene().count
@@ -261,7 +261,7 @@ def calculate_scene_frame_count(scene: Scene) -> int:
         warn(yellow(f"{task_name} is not used to calculate frame count"))
 
 
-    print(darkgrey(f"calculate_frame_count: {scene['no']} -> {count}"))
+    print(darkgrey(f"calculate_frame_count: scence no. {scene['no']}: {count}"))
     # print(f"    when upscaling: {scene['src'].frame_count(exclude_loop=False)}")
     return count
 

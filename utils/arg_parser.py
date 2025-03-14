@@ -6,7 +6,7 @@ from parsers import (
 
 
 def common_argument_parser(
-    description: str = '',
+    description: str = "",
     add_language: bool = False,
 ) -> ArgumentParser:
 
@@ -15,7 +15,7 @@ def common_argument_parser(
         "--edition",
         "-ed",
         choices=('j', 'f', 'k', 's', 's0'),
-        default='',
+        default="",
         required=False,
         help="Filter by edition"
     )
@@ -33,7 +33,7 @@ def common_argument_parser(
         "--chapter",
         "-ch",
         choices=all_chapter_keys(),
-        default='',
+        default="",
         required=False,
         help="Chapter"
     )

@@ -47,6 +47,7 @@ def apply_final_effects(
     frame: McoFrame,
     out_i: int
 ) -> McoFrame:
+    verbose: bool = False
     # out_i is the index in the final scene from 0 to end
     # out_f_no is the f_no from start of the src scene
     scene: Scene = frame.scene
@@ -197,22 +198,22 @@ def apply_final_effects(
         elif effect := last_src_scene.effects.get_effect('title'):
 
             start_no: int = effect.start
-            # pprint(effect)
-            print(out_i)
-            # raise
 
             if out_i >= start_no:
-                print(yellow(f"{out_i} add title ({out_f_no})"))
+                if verbose:
+                    print(yellow(f"{out_i} add title ({out_f_no})"))
 
                 # Input frame = background
                 bgd_img = np_to_float32(frame.img)
                 bgd_h, bgd_w = bgd_img.shape[:2]
-                print(f"    bgd shape: {bgd_img.shape}")
+                if verbose:
+                    print(f"    bgd shape: {bgd_img.shape}")
 
                 # Title = overlay
                 initial_title_img: np.ndarray = load_image_fp32(title_filepath())
                 title_h, title_w = initial_title_img.shape[:2]
-                print(f"    initial_title_img: {initial_title_img.shape}")
+                if verbose:
+                    print(f"    initial_title_img: {initial_title_img.shape}")
 
                 i = out_i - start_no
                 start_factor: float = effect.zoom_factor
@@ -222,7 +223,8 @@ def apply_final_effects(
                 factor: float = (
                     start_factor * (1 - step) + end_factor * step
                 )
-                print(f"    iteration no. {i}, factor={factor:.3f}")
+                if verbose:
+                    print(f"    iteration no. {i}, factor={factor:.3f}")
 
                 if scene['task'].name in ('lr', 'sim_lr'):
                     # in_h, in_w = initial_title_img.shape[:2]
@@ -242,7 +244,8 @@ def apply_final_effects(
                 )
 
                 # Crop if overlay is > background
-                print(f"    title_img: out_w, out_h: {overlay_w}, {overlay_h}")
+                if verbose:
+                    print(f"    title_img: out_w, out_h: {overlay_w}, {overlay_h}")
                 if overlay_w > bgd_w or overlay_h > bgd_h:
                     top = max(0, int((overlay_h - bgd_h) / 2))
                     left = max(0, int((overlay_w - bgd_w) / 2))
@@ -253,7 +256,8 @@ def apply_final_effects(
                             :
                         ]
                     )
-                    print(f"    cropped_title: {overlay_img.shape}")
+                    if verbose:
+                        print(f"    cropped_title: {overlay_img.shape}")
 
                 # Add borders if overlay is < background
                 overlay_h, overlay_w = overlay_img.shape[:2]
@@ -264,14 +268,16 @@ def apply_final_effects(
                     right = bgd_w - (overlay_w + left)
 
                     borders = [top, bottom, left, right]
-                    print(f"    add borders: {borders}")
+                    if verbose:
+                        print(f"    add borders: {borders}")
                     overlay_img: np.ndarray = cv2.copyMakeBorder(
                         overlay_img,
                         *borders,
                         cv2.BORDER_CONSTANT,
                         value=0
                     )
-                print(f"    title_img: {overlay_img.shape}")
+                if verbose:
+                    print(f"    title_img: {overlay_img.shape}")
 
                 overlay_img = np.clip(overlay_img, 0, 1, out=overlay_img)
                 rgb = overlay_img[:,:,:3]
@@ -465,7 +471,7 @@ def apply_upscale_effects(
             if effect := last_src_scene.effects.get_effect('zoom_in'):
                 # pprint(effect)
                 # raise
-                print(f"out_i: {out_i}, {frame.no}, {out_f_no}, {effect.f_ref}")
+                # print(f"out_i: {out_i}, {frame.no}, {out_f_no}, {effect.f_ref}")
                 # pprint(effect)
                 if out_f_no == effect.f_ref:
                     in_dtype: np.dtype = frame.img.dtype
@@ -479,7 +485,7 @@ def apply_upscale_effects(
                     for i in range(effect.loop):
                         # Recalulate factor at every iteration: linear
                         factor: float = 1 + ((effect.zoom_factor - 1) * (i + 1)) / effect.loop
-                        print(lightcyan(f"factor = {factor}"))
+                        # print(lightcyan(f"factor = {factor}"))
                         out_h, out_w = int(factor * in_h), int(factor * in_w)
                         zoomed: np.ndarray = cv2.resize(
                             initial_img,
@@ -509,7 +515,7 @@ def apply_upscale_effects(
                             scene=frame.scene,
                             src_scene_index=frame.src_scene_index,
                         ))
-                    print(f": {len(out_frames)}")
+                    # print(f": {len(out_frames)}")
                     return out_frames
 
     return [frame]
