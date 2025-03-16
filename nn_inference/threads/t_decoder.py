@@ -140,7 +140,6 @@ class DecoderThread(BaseThread):
                     print(lightgreen(f"[V][D] scene {scene['no']}"))
                 in_video_info: VideoStreamInfo = src_scene_inputs.progressive().info
 
-                frame_rate: FrameRate = in_video_info.frame_rate
                 src_start, src_count = src_scene.start, src_scene.count
                 if to_produce < src_count:
                     raise ValueError("why is to_produce < count?")
@@ -153,6 +152,8 @@ class DecoderThread(BaseThread):
                 # src_scene.in_scene['count'] = src_count
                 to_decode: int = src_scene.to_decode
                 _to_decode: int = to_decode
+                remaining = src_count
+                src_end = src_start + to_decode
 
                 if verbose:
                     print(lightgreen(f"[V][D] {to_decode} frames to extract"))
@@ -175,7 +176,8 @@ class DecoderThread(BaseThread):
                 if 'effects' in in_scene:
                     if e := in_scene['effects'].get_effect('decimate'):
                         factor_mod1, _ = e.extra_param
-                        print(yellow(f"  decimate:"), f"{in_scene['no']}: {to_decode} -> {src_count} (mod={factor_mod1})")
+                        print(yellow(f"  decimate:"), f"{in_scene['no']}: {to_decode} -> {remaining} (mod={factor_mod1})")
+                        src_end = src_start + to_decode
 
                 # Frame replacement
                 src_f_replace = in_scene['replace']
@@ -233,7 +235,8 @@ class DecoderThread(BaseThread):
                 img_dtype: np.dtype = np_dtype_to_torch[in_video_info.img_dtype]
                 pipe_img_nbytes = in_video_info.img_nbytes
 
-                # Generate the decoder command line
+                # FFmpeg decoder command
+                frame_rate: FrameRate = in_video_info.frame_rate
                 d_command: list[str] = [
                     ffmpeg_exe,
                     "-hide_banner",
@@ -275,7 +278,6 @@ class DecoderThread(BaseThread):
                     self._has_error = True
                     self._error_msg = "[E] Decoder failed to start"
 
-
                 # Search the first nn model
                 step_no: int = get_first_nnmodel_step_no(filter_steps)
                 session: NnModelSession = model_manager.session(filter_steps[step_no])
@@ -303,24 +305,26 @@ class DecoderThread(BaseThread):
 
                 while (
                     not self._stop_event.is_set()
-                    and _to_decode
                     and remaining > 0
                 ):
                     _in_f_no = src_start + f_index
-                    if _in_f_no >= src_start + to_decode:
+                    if _in_f_no >= src_end:
+                        print(red(f"heeee? {_in_f_no} >= {src_end}"))
                         break
 
                     # decimate
                     if factor_mod1:
                         # print(f"decimate index: {decimate_index} % {factor_mod1} -> {decimate_index // factor_mod1}")
-                        decimate_index += 1
                         if decimate_index // factor_mod1 == 1:
                             decimate_index = 0
                             # print(f"  discard {_in_f_no}")
                             f_index += 1
                             _in_f_no = src_start + f_index
-                            if _in_f_no >= src_start + to_decode:
+                            if _in_f_no >= src_end:
+                                print(red(f"decimate: heeee? {_in_f_no} >= {src_end}"))
                                 break
+                        else:
+                            decimate_index += 1
 
                     # Get frame_no to send to the consumer
                     f_no = frame_cache.get_out_f_no(_in_f_no)
@@ -396,7 +400,7 @@ class DecoderThread(BaseThread):
 
                         scene=scene,
                         src_scene_index=src_index,
-                        sequence=filter_steps,
+                        sequence=deepcopy(filter_steps),
                         step_no=start_step_no,
                         encoder_step_no=encoder_step_no,
                     )
@@ -413,11 +417,7 @@ class DecoderThread(BaseThread):
                     # Execute synchronous filters.
                     # TODO: later, use a separate thread for this
                     # Apply cuda filters until next inference or decoder
-                    apply_cuda_filters_(
-                        frame,
-                        verbose=verbose,
-                        cuda_stream=cuda_stream
-                    )
+                    apply_cuda_filters_(frame, verbose=verbose)
 
                     time.sleep(0.0001)
                     cuda_stream.synchronize()
@@ -453,9 +453,6 @@ class DecoderThread(BaseThread):
                         remaining -= 1
                         f_index += 1
 
-                    # All frames of the scene have been decoded and sent to consumer
-                    if to_produce == 0:
-                        print("all frames to be decoded have been decoded")
 
                 print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
                 if remaining_src_scenes == 0:
@@ -464,6 +461,7 @@ class DecoderThread(BaseThread):
 
             print(lightgreen(f"[V][D] End of scene {scene['no']}"))
         print(lightgreen(f"[V][D] End of decoding"))
+
 
         if self.d_subprocess.poll() is None:
             timeout: int = 10

@@ -73,6 +73,7 @@ class EncoderThread(BaseThread):
             dtype=torch.uint8,
             pin_memory=True
         )
+        print(red(vpi_nbytes))
 
         in_queue: Queue = self.in_queue
         writer_subprocess: subprocess.Popen | None = None
@@ -132,12 +133,10 @@ class EncoderThread(BaseThread):
                     # stdin pixel format
                     if PIXEL_FORMAT[vsettings.pix_fmt]['bpp'] > 8:
                         stdin_pixfmt = 'rgb48'
-                        stdin_dtype = np.uint16
-                        stdin_torch_dtype: torch.dtype = torch.uint16
+                        stdin_dtype = torch.uint16
                     else:
                         stdin_pixfmt = 'rgb24'
-                        stdin_dtype = np.uint8
-                        stdin_torch_dtype: torch.dtype = torch.uint8
+                        stdin_dtype = torch.uint8
 
                     # FFmpeg complex filter
                     filter_complex: list[str] = []

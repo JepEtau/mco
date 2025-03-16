@@ -28,7 +28,6 @@ if is_tensorrt_available():
 import torch
 from utils.p_print import *
 
-from .resource_mgr import Singleton
 from utils.path_utils import absolute_path, os_path_basename, path_split
 from utils.tools import ml_model_dir
 
@@ -334,8 +333,6 @@ class ModelManager:
         # torch.backends.cudnn.benchmark = False
 
         # Set custom sessions
-        # if is_cuda_available():
-        #     nnlib.set_session_constructor(NnFrameworkType.PYTORCH, PyTorchCuPySession)
 
         # Create streams
         if self.has_torch_models():

@@ -147,8 +147,6 @@ def consolidate_scene(
     _task_name: TaskName = task_name
     if task_name == 'initial':
         _task_name = 'lr'
-    elif task_name == 'upscale':
-        _task_name = 'final'
     elif task_name == 'cg':
         _task_name = 'tf'
 

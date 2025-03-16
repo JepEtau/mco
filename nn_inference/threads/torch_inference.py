@@ -138,11 +138,7 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
             # with torch.inference_mode():
             #     torch_cuda_stream = torch.cuda.Stream()
             #     with torch.cuda.stream(torch_cuda_stream):
-            apply_cuda_filters_(
-                frame,
-                cuda_stream=infer_stream,
-                verbose=verbose
-            )
+            apply_cuda_filters_(frame, verbose=verbose)
             time.sleep(0.0001)
             infer_stream.synchronize()
 

@@ -85,9 +85,7 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             # Apply cuda filters until next inference or decoder
             # torch_cuda_stream = torch.cuda.Stream()
             # with torch.cuda.stream(torch_cuda_stream):
-            apply_cuda_filters_(
-                frame, verbose=verbose, cuda_stream=cuda_stream
-            )
+            apply_cuda_filters_(frame, verbose=verbose)
 
             time.sleep(0.0001)
             cuda_stream.synchronize()

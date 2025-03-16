@@ -54,7 +54,7 @@ from utils.media import (
 def generate_lr_scene(
     scene: Scene,
     force: bool = False,
-    verbose: bool = False
+    verbose: bool = True
 ) -> bool:
     scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
     out_video_fp: str = scene['task'].video_file
@@ -187,8 +187,6 @@ def generate_lr_scene(
         # to_decode is used to count nb of frames to be decoded, passed to FFmpeg
         to_decode: int = src_scene.to_decode
         _to_decode: int = to_decode
-        # to_process is the number frames to be processed, not all decoded frames will
-        #   be sent to the encoder
         remaining = src_count
         src_end = src_start + to_decode
 
@@ -254,7 +252,7 @@ def generate_lr_scene(
             print(f"    nbytes: {pipe_img_nbytes}")
 
 
-        # FFmpeg command
+        # FFmpeg decoder command
         frame_rate: FrameRate = in_vi['frame_rate_r']
         d_command: list[str] = [
             ffmpeg_exe,
@@ -324,28 +322,29 @@ def generate_lr_scene(
         # decimate
         decimate_index: int = 0
 
-        # remining to process
+        sent = 0
 
         # Loop until all frames have been sent to the encoder
         while remaining:
 
             _in_f_no = src_start + f_index
             if _in_f_no >= src_end:
-                print(red("heeee?"))
+                print(red(f"heeee? {_in_f_no} >= {src_end}"))
                 break
 
             # decimate
             if factor_mod1:
                 # print(f"decimate index: {decimate_index} % {factor_mod1} -> {decimate_index // factor_mod1}")
-                decimate_index += 1
                 if decimate_index // factor_mod1 == 1:
                     decimate_index = 0
                     # print(f"  discard {_in_f_no}")
                     f_index += 1
                     _in_f_no = src_start + f_index
                     if _in_f_no >= src_end:
-                        print(red("heeee?"))
+                        print(red(f"decimate: heeee? {_in_f_no} >= {src_end}"))
                         break
+                else:
+                    decimate_index += 1
 
             # Get frame_no to send to the consumer
             f_no = frame_cache.get_out_f_no(_in_f_no)
@@ -402,6 +401,8 @@ def generate_lr_scene(
             # Send to encoder...
             #-----------------------------------------------
             encoder.put_frame(frame)
+            if verbose:
+                sent += 1
 
             #-----------------------------------------------
 
@@ -425,6 +426,7 @@ def generate_lr_scene(
 
         # remaining source no
         if verbose:
+            print(yellow(f"  sent frames: {sent}"))
             print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
         if remaining_src_scenes == 0:
             break

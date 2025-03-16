@@ -44,7 +44,6 @@ _cuda_functions: dict[str, Callable[..., object]] = {
 
 def apply_cuda_filters_(
     frame: NnFrame,
-    cuda_stream: torch.cuda.Stream,
     verbose: bool = False
 ) -> None:
     """Inline modification of the frame"""
