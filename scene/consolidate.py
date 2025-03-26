@@ -354,6 +354,9 @@ def consolidate_scene(
                     -1
                 ):
                     _task_name: TaskName = TASK_NAMES[i]
+                    if _task_name == task_name:
+                        continue
+
                     if _task_name not in task.fallback_in_video_files:
                         continue
                     in_video_fp = task.fallback_in_video_files[_task_name]

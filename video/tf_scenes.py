@@ -91,6 +91,7 @@ def tf_scenes(
             out_fp: str = scene['task'].video_file
             out_mtime: float = 0
             out_mtime_str: str = "-"
+            print(f"{in_fp} -> {out_fp}")
             if os.path.exists(out_fp):
                 out_mtime = os.path.getmtime(out_fp)
                 out_mtime_str = datetime.fromtimestamp(out_mtime).strftime("%Y-%m-%d %H:%M:%S")
@@ -102,6 +103,10 @@ def tf_scenes(
             elif out_mtime < in_mtime or force:
                 print(yellow(f"{scene_id} has to be updated"))
                 do_process = True
+
+            else:
+                print(yellow(f"{scene_id}: up to date "), f"{out_mtime} vs {in_mtime}")
+
 
             if not do_process:
                 if evaluate:
