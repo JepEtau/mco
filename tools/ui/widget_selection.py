@@ -39,6 +39,7 @@ if TYPE_CHECKING:
     from backend.replace_controller import ReplaceController
     from backend.geometry_controller import GeometryController
     from .window_replace import ReplaceWindow
+    from .window_geometry import GeometryWindow
 
 
 from backend._types import (
@@ -65,7 +66,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
     def __init__(
         self,
-        parent: QWidget | ReplaceWindow,
+        parent: QWidget | ReplaceWindow | GeometryWindow,
         controller,
         app_type: AppType
     ) -> None:

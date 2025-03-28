@@ -340,7 +340,7 @@ class GeometryDatabase:
         # Scene
         if k_scene in self.modified_scenes:
             scene_no: int = scene['no']
-            src_scene: Scene = scene['src'].primary_scene()['scene']
+            src_scene: Scene = scene['src'].primary_scene().in_scene
             option: str = "_". join((
                 f"{scene_no:03}",
                 src_scene['k_ed'],

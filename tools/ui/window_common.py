@@ -162,6 +162,11 @@ class CommonWindow(QMainWindow):
         self.close()
 
 
+
+    def set_focus(self) -> None:
+        self.setFocus()
+
+
     def refresh_available_selection(self, selection: dict):
         print("refresh selection selection")
         self.widget_selection.refresh_available_selection(selection)

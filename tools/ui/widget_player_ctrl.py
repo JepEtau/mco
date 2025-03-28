@@ -373,7 +373,11 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             #     print("editing, do not modify current frame")
             #     return False
 
-        if self._parent.is_editing_patches() and not self.is_shift_key_pressed:
+        if (
+            self.app_type == 'replace'
+            and self._parent.is_editing_patches()
+            and not self.is_shift_key_pressed
+        ):
             return False
 
         # elif key == Qt.Key.Key_Control:
@@ -452,9 +456,10 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         #     return True
 
 
-        print(f"player control, editing: {self._parent.is_editing_patches()}, shift key: {self.is_shift_key_pressed}")
+        if self.app_type == 'replace':
+            print(f"player control, editing: {self._parent.is_editing_patches()}, shift key: {self.is_shift_key_pressed}")
         if (
-            self.app_type=='geometry'
+            self.app_type == 'geometry'
             or not self._parent.is_editing_patches()
             or (self._parent.is_editing_patches() and self.is_shift_key_pressed)
         ):

@@ -414,8 +414,6 @@ class ReplaceWindow(QMainWindow):
         return super().eventFilter(watched, event)
 
 
-    def set_focus(self) -> None:
-        self.setFocus()
 
 
     # DSR
