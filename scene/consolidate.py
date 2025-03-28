@@ -120,6 +120,7 @@ def consolidate_scene(
         scene['dst']['count'] = 280
         loop_effect.loop = (scene['dst']['count'] - in_scene['count'])
         src_scene.effects = Effects([loop_effect])
+        scene['effects'] = src_scene.effects
 
 
     # Geometry
