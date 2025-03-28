@@ -44,7 +44,7 @@ def get_ed_to_src_scene(
 
 
 
-def parse_target_chapter(k_ep: str, k_cg: Chapter) -> list[SrcScene]:
+def parse_target_chapter(k_ep: str, k_ch: Chapter) -> list[SrcScene]:
     # Open configuration file
     filepath: str = absolute_path(
         os.path.join(
