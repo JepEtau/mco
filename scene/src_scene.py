@@ -53,7 +53,7 @@ class SrcScene:
 
     def __getitem__(self, key: str) -> Any:
         if key in ('start', 'count', 'effects', 'scene'):
-            raise
+            raise (red(f"replace by attribute: {key}"))
         return getattr(self, key)
 
 

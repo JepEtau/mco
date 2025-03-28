@@ -37,7 +37,7 @@ class ReplaceDatabase:
     def get(self, src_scene: SrcScene, f_no: int, initial: bool=False) -> int:
         """Returns the frame no. used to replace this frame
         """
-        scene: Scene = src_scene['scene']
+        scene: Scene = src_scene.in_scene
         try:
             if initial:
                 return scene['replace'][f_no]
@@ -84,8 +84,8 @@ class ReplaceDatabase:
             _key = self._key(src_scene)
             if _key in self._db:
                 count += len(self._db[_key].keys())
-            elif 'replace' in src_scene['scene']:
-                count += len(src_scene['scene']['replace'].keys())
+            else:
+                count += len(src_scene.in_scene['replace'].keys())
         return count
 
 
@@ -180,8 +180,8 @@ class ReplaceDatabase:
 
             # Update the config file, select section
             k_section = '.'.join((k_ed, k_ep, k_ch))
-            _src_scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][int(src_scene_no)]
-            initial_replace = _src_scene['replace']
+            in_scene: Scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][int(src_scene_no)]
+            initial_replace = in_scene['replace']
 
             # Remove replacements that are not used anymore
             for f_no in initial_replace:
@@ -197,6 +197,14 @@ class ReplaceDatabase:
                 if f_no != by:
                     if not config_replace.has_section(k_section):
                         config_replace.add_section(k_section)
+
+                    # Do not save the frames automatically replaced
+                    if (
+                        in_scene['k_ed'] == 'j'
+                        and f_no in (in_scene['start'], in_scene['start'] + in_scene['count'] - 1)
+                    ):
+                        continue
+
                     config_replace.set(k_section, f"{f_no}", f"{by}")
 
             # Write to the database
@@ -204,7 +212,7 @@ class ReplaceDatabase:
                 config_replace.write(config_file)
 
             # Remove modified
-            _src_scene['replace'] = deepcopy(self._db[src_scene_key])
+            in_scene['replace'] = deepcopy(self._db[src_scene_key])
             self.modified_src_scenes.remove(src_scene_key)
 
         self.modified_scenes.remove(scene['no'])
@@ -217,7 +225,7 @@ class ReplaceDatabase:
 
         for src_scene in scene['src'].scenes():
             src_scene_key = self._key(src_scene)
-            self._db[src_scene_key] = deepcopy(src_scene['scene']['replace'])
+            self._db[src_scene_key] = deepcopy(src_scene.in_scene['replace'])
             self.modified_src_scenes.remove(src_scene_key)
 
         self.modified_scenes.remove(scene['no'])

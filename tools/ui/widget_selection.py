@@ -485,7 +485,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                 elif column[0] == 'start':
                     self.tableWidget_scenes.setItem(
                         row_no, column_no,
-                        QTableWidgetItem(f"{scene['src'].primary_scene()['start']}")
+                        QTableWidgetItem(f"{scene['src'].primary_scene().start}")
                     )
                     item: QTableWidgetItem = self.tableWidget_scenes.item(row_no, column_no)
                     item.setTextAlignment(column[2])

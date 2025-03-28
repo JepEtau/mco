@@ -17,4 +17,4 @@ python ./_utils/patch_ui.py --file ./ui/ui/ui_widget_selection.py
 # python ./tools/resources/patch_ui.py --file ./tools/logger/ui_logger.py
 
 export NO_AT_BRIDGE=1
-python replace.py -t lr
+python replace.py -t initial

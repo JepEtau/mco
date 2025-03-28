@@ -41,7 +41,7 @@ def replace_scene_bounds_(k_ep: str) -> None:
         if frame_no in sr:
             print(yellow(f"{k_ep}:{scene['no']} (start) already in replace list {frame_no} <- {sr[frame_no]}"))
             if sr[frame_no] != new_frame_no:
-                print(red("  different"))
+                print(red(f"  different: {sr[frame_no]} != {new_frame_no}"))
 
         # Do not replace if already in src or used as the src
         if frame_no not in sr.keys() and frame_no not in sr.values():
@@ -52,10 +52,12 @@ def replace_scene_bounds_(k_ep: str) -> None:
             pass
 
         else:
-            print("unknow error")
+            print(red("unknow error"))
+            print(f"    frame_no: {frame_no} is in sr? {frame_no in sr.keys()}")
+            print(f"    new_frame_no: {new_frame_no} is in sr? {new_frame_no in sr.keys()}")
             # print(f"{scene['no']:03d} (first): won't replace {frame_no} because better than following")
             pprint(sr)
-            raise
+            # raise
 
         # last frame to be replaced by the previous one
         frame_no = scene['start'] + scene['count'] - 1
@@ -63,7 +65,7 @@ def replace_scene_bounds_(k_ep: str) -> None:
         if frame_no in sr:
             print(yellow(f"{k_ep}:{scene['no']} (end) already in replace list {frame_no} <- {sr[frame_no]}"))
             if sr[frame_no] != new_frame_no:
-                print(red("  different"))
+                print(red(f"  different: {sr[frame_no]} != {new_frame_no}"))
         # Do not replace if used as the src
         if frame_no not in sr.keys() and frame_no not in sr.values():
             sr[frame_no] = new_frame_no

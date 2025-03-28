@@ -65,7 +65,7 @@ class DsrDatabase:
         f_no: int,
         initial: bool = False
     ) -> list[DsrRegion]:
-        scene: Scene = src_scene['scene']
+        scene: Scene = src_scene.in_scene
         try:
             if initial:
                 return scene['dsr'].get(f_no)

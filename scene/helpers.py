@@ -34,6 +34,7 @@ _doc_previous_task: dict[str, str] = {
 }
 
 _g_asuivre_previous_task: dict[str, str] = {
+    'initial': '',
     'sim_lr': 'initial',
     'lr': 'initial',
     'upscale': 'initial',

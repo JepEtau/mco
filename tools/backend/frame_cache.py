@@ -72,14 +72,18 @@ class FrameCache:
             total_count = scene['src'].frame_count()
             for src_scene in scene['src'].scenes():
                 print(lightcyan(f"extract {total_count} frames from: {src_scene['k_ed_ep_ch_no']}"))
-                count = src_scene['count']
-                src_start: int = src_scene['start'] - src_scene['scene']['inputs'].progressive().start
+                src_start: int = src_scene.start - src_scene.in_scene['inputs'].progressive().start
                 start: int = 0
                 in_video_fp: str = scene['task'].in_video_file
+                in_video_fp = (
+                    src_scene.in_scene['inputs'].progressive().filepath
+                    if not in_video_fp
+                    else in_video_fp
+                )
 
-                if task_name == 'lr':
+                if task_name in ('initial', 'lr'):
                     # Do not use FFv1 because slow to decode
-                    in_video_fp = src_scene['scene']['inputs'].progressive().filepath
+                    in_video_fp = src_scene.in_scene['inputs'].progressive().filepath
                     directory, basename, extension = path_split(in_video_fp)
                     in_video_fp = os.path.join(directory, f"{basename}{extension}")
                     start = src_start
@@ -92,7 +96,7 @@ class FrameCache:
                         in_video_fp = scene['task'].fallback_in_video_files['hr']
                     print(yellow(f"{in_video_fp} does not exist, fallback to"), in_video_fp)
 
-                print(f"  segment: {in_video_fp}, {start}, {count}")
+                print(f"  segment: {in_video_fp}, {start}, {src_scene.count}")
                 if not os.path.exists(in_video_fp):
                     raise ValueError(red(f"frame cache: missing {in_video_fp}"))
 
@@ -111,7 +115,7 @@ class FrameCache:
                 in_h, in_w, in_c = vi['shape']
 
                 print(red("TODO: use task_name \'dsr\' in frame cache"))
-                if task_name == 'lr' and self.replace_db is not None:
+                if task_name in ('lr', 'initial') and self.replace_db is not None:
                     factor: float = (
                         1.5
                         if QApplication.screens()[0].size().height()
@@ -162,7 +166,7 @@ class FrameCache:
                     "-ss",
                     str(frame_to_sexagesimal(no=start,frame_rate=frame_rate)),
                     "-i", in_video_fp,
-                    "-t", str(frame_to_s(no=count, frame_rate=frame_rate)),
+                    "-t", str(frame_to_s(no=src_scene.count, frame_rate=frame_rate)),
                     *filter_complex,
                     "-f", "image2pipe",
                     "-pix_fmt", 'bgr24',
@@ -189,12 +193,12 @@ class FrameCache:
                 pipe_in_shape = (in_h, in_w, in_c)
                 in_dtype = np.uint8
                 src_scene_key: str = f"{':'.join(src_scene['k_ed_ep_ch_no'][:-1])}:{src_scene['k_ed_ep_ch_no'][-1]:03}"
-                for i in range(count):
+                for i in range(src_scene.count):
                     img: np.ndarray = np.frombuffer(
                         self.sub_process.stdout.read(pipe_img_nbytes),
                         dtype=in_dtype,
                     ).reshape(pipe_in_shape)
-                    f_no = src_start + src_scene['scene']['inputs'].progressive().start + i
+                    f_no = src_start + src_scene.in_scene['inputs'].progressive().start + i
                     self.scenes[scene_key].append(
                         Frame(
                             i=i,
@@ -218,7 +222,7 @@ class FrameCache:
                 np_img: np.ndarray = self.scenes[scene_key][0].img
                 self.scenes[scene_key][0].img = np_img
 
-                self.frame_count += count
+                self.frame_count += src_scene.count
                 self.scene_keys.append(scene_key)
                 print(f"Number of frames in cache: {self.frame_count}")
 
