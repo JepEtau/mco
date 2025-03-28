@@ -57,6 +57,7 @@ def main():
 
     precedemment: dict[str, dict[Chapter, str | int]] = {}
     asuivre: dict[str, dict[Chapter, str | int]] = {}
+    g_doc: dict[str, dict[Chapter, str | int]] = {}
     for ep_no in range(1, 40):
         k_ep = ep_key(ep_no)
         parse_database(
@@ -91,6 +92,16 @@ def main():
             if ch_audio['avsync'] != 0:
                 raise ValueError(red(f"Error: {k_ep}: avsync!=0 ({ch_audio['avsync']})"))
 
+
+        # A suivre
+        ch_audio: ChapterAudio = db[k_ep]['audio']['g_doc']
+        if 'count' in ch_audio and ch_audio['count'] != 0:
+            g_doc[k_ep] = {
+                'avsync': ch_audio['avsync'],
+                'count': int(ch_audio['duration'] * get_frame_rate() / 1000),
+            }
+
+
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # Deactivated:
         # https://vscode.dev/github/JepEtau/mco_dev/blob/dev/parsers/target_av_tracks.py#L49-L50
@@ -105,6 +116,13 @@ def main():
     print(lightcyan("\nasuivre"))
     for k, v in asuivre.items():
         print(f"{k}\t{v['count']}")
+
+
+    print(lightcyan("\ng_doc"))
+    for k, v in g_doc.items():
+        print(f"{k}\t{v['count']}")
+    g_doc_max = max(list([v['count'] for v in g_doc.values()]))
+    print(f"-> {g_doc_max}")
 
 if __name__ == "__main__":
     signal.signal(signal.SIGINT, signal.SIG_DFL)

@@ -10,11 +10,21 @@
 
 ### Installation
 ```sh
-conda create -n m python==3.12.7
-conda activate mco
+conda create -n e python==3.12.9
+conda activate e
 pip install -r requirements.txt
 python install.py
 ```
+
+
+pynnlib as a submodule
+```sh
+git submodule init
+git submodule add https://github.com/JepEtau/pynnlib.git
+git submodule update  --recursive
+```
+
+
 
 
 ### Tasks

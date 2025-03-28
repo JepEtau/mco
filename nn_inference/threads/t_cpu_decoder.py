@@ -74,7 +74,7 @@ class CpuDecoderThread(BaseThread):
 
 
     def run(self) -> None:
-        verbose: bool = True
+        verbose: bool = False
         scene: Scene = self.scene
 
         e_thread: CpuEncoderThread = self.config.e_thread
@@ -388,7 +388,7 @@ class CpuDecoderThread(BaseThread):
 
                     # All frames of the scene have been decoded and sent to consumer
                     if _to_decode == 0:
-                        print("all frames to be decoded have been decoded")
+                        print(f"all frames to be decoded have been decoded: {to_decode}")
 
                 print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
                 if remaining_src_scenes == 0:

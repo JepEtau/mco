@@ -124,6 +124,11 @@ class SrcScene:
         return self._effects
 
 
+    @effects.setter
+    def effects(self, effects: Effects) -> None:
+        self._effects = effects
+
+
     def to_dict(self) -> dict:
         class_dict = {
             k: v for k, v in self.__dict__.items()

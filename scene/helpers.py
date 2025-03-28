@@ -27,6 +27,7 @@ _doc_previous_task: dict[str, str] = {
     'sim_lr': 'initial',
     'lr': 'initial',
     'hr': 'initial',
+    'upscale': 'initial',
     'tf': 'hr',
     'cg': 'hr',
     'final': 'cg',
@@ -35,6 +36,7 @@ _doc_previous_task: dict[str, str] = {
 _g_asuivre_previous_task: dict[str, str] = {
     'sim_lr': 'initial',
     'lr': 'initial',
+    'upscale': 'initial',
     'hr': 'initial',
     'cg': 'hr',
     'final': 'cg',

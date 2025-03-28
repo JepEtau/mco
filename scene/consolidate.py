@@ -27,6 +27,8 @@ from parsers import (
     Chapter,
     scene_no_str,
     calc_hash,
+    Effects,
+    Effect,
 )
 from utils.mco_utils import (
     get_cache_path,
@@ -36,6 +38,7 @@ from utils.mco_utils import (
 )
 from utils.p_print import *
 from utils.path_utils import absolute_path
+from .src_scene import SrcScene, SrcScenes
 
 
 def is_scene_stabilized(scene: Scene) -> bool | None:
@@ -95,9 +98,29 @@ def consolidate_scene(
     # Effects
     #---------------------------------------------------------------------------
     if k_ch == 'g_asuivre' and task_name in ('hr', 'upscale'):
-        effect = scene['effects'].get_effect('loop')
-        effect.loop = 99
-        scene['dst']['count'] = effect.loop + 1
+        src_scene: SrcScene = scene['src'].primary_scene()
+        loop_effect = scene['effects'].get_effect('loop')
+
+        scene['dst']['count'] = 100
+        loop_effect.loop = scene['dst']['count'] - 1
+        src_scene.effects = scene['effects']
+
+    elif k_ch == 'g_doc' and task_name in ('hr', 'upscale'):
+        src_scene: SrcScene = scene['src'].primary_scene()
+        in_scene: Scene = src_scene.in_scene
+        src_scene.count = in_scene['count']
+
+        loop_effect = Effect(
+            name='loop',
+            f_ref=in_scene['start'] + in_scene['count'] - 1,
+            start=0,
+            loop=0
+        )
+
+        scene['dst']['count'] = 280
+        loop_effect.loop = (scene['dst']['count'] - in_scene['count'])
+        src_scene.effects = Effects([loop_effect])
+
 
     # Geometry
     #---------------------------------------------------------------------------
