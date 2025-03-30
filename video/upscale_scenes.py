@@ -62,6 +62,7 @@ def upscale_scenes(
     edition: str | None = None,
     debug: bool = False,
     compare: bool = False,
+    inpaint: bool = False
 ):
     k_ep = ep_key(episode)
     k_ed = edition
@@ -265,6 +266,9 @@ def upscale_scenes(
             has_dsr = has_dsr or bool(
                 s.in_scene['dsr'] is not None and s.in_scene['dsr'].has_patches()
             )
+        # Force to ignore inpainting
+        if not inpaint:
+            has_dsr = False
 
         for filter_str in scene_filters.sequence.split(','):
             if filter_str.startswith(supported_filters):

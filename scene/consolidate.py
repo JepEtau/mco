@@ -32,13 +32,10 @@ from parsers import (
 )
 from utils.mco_utils import (
     get_cache_path,
-    get_target_video,
-    is_first_scene,
-    is_last_scene,
 )
 from utils.p_print import *
 from utils.path_utils import absolute_path
-from .src_scene import SrcScene, SrcScenes
+from .src_scene import SrcScene
 
 
 def is_scene_stabilized(scene: Scene) -> bool | None:
@@ -225,6 +222,14 @@ def consolidate_scene(
             f = f.replace(s, '')
         if task_name_index >= TASK_NAMES.index('upscale'):
             vsettings.metadata[f"{i + 1:02}"] = f
+
+    #   DSR patches
+    if scene['src'].has_dsr():
+        dsr_hash = scene['src'].dsr_hash()
+        t_hash = calc_hash(f"{t_hash};{dsr_hash}")
+        scene_filters['dsr'].hash = t_hash
+        print(yellow(f"DSR hash: {dsr_hash}"))
+
     scene_filters['upscale'].hash = t_hash
 
     t_hash = calc_hash(f"{t_hash};{vsettings.pad}")

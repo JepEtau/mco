@@ -22,7 +22,7 @@ def automatic_brightness_and_contrast_gray(
 ):
     # source: https://stackoverflow.com/questions/56905592/automatic-contrast-and-brightness-adjustment-of-a-color-photo-of-a-sheet-of-pape
     # Calculate grayscale histogram
-    hist = cv2.calcHist([gray_img], [0], None, [256], [0, 256])
+    hist = cv2.calcHist([gray_img], [0], None, [255], [0, 255])
     hist_size = len(hist)
 
     # Calculate cumulative distribution from the histogram

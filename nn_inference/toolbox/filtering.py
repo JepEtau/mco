@@ -11,6 +11,7 @@ from .cuda_filters import (
     darker_thinner_,
     gpu_rotate_90_,
     unsharp_mask_,
+    collor_correction_,
 )
 from .cv2_filters import (
     cv2_bilateral_,
@@ -38,6 +39,7 @@ _cuda_functions: dict[str, Callable[..., object]] = {
     'resize_to': gpu_resize_to_,
     'rotate90': gpu_rotate_90_,
     'unsharp_mask': unsharp_mask_,
+    'ccor': collor_correction_,
 }
 
 

@@ -1,12 +1,15 @@
 from __future__ import annotations
 import configparser
 from dataclasses import dataclass, field
+from hashlib import md5
+import json
 import os
 from pprint import pprint
 from PySide6.QtWidgets import QGraphicsEllipseItem
 import re
 from typing import Literal, TYPE_CHECKING, Self
 
+from .hash import calc_hash
 from utils.p_print import *
 from utils.path_utils import absolute_path
 from ._db import db
@@ -44,6 +47,15 @@ class DsrRegion:
             (int(self.axes[0] * w + 0.5), int(self.axes[1] * h + 0.5)),
             self.angle,
         )
+
+    def hash(self):
+        dsr_str = ":".join([
+            self.shape,
+            ",".join(map(str, self.center)),
+            ",".join(map(str, self.axes)),
+            f"{self.angle}",
+        ])
+        return md5(dsr_str.encode('utf-8')).hexdigest()[:7]
 
 
 
@@ -114,6 +126,14 @@ class SceneDsr:
     def set_frame_size(self, size: list[int, int] | tuple[int, int]) -> None:
         """Set the shape so that the get function returns absolute coordinates/size"""
         self._size = size
+
+
+    def hash(self) -> str:
+        regions_str_list: list[str] = []
+        for frame_no, dsr_regions in self._frames.items():
+            regions_str_list.append(":".join(d.hash() for d in dsr_regions))
+        regions_str = ";".join(regions_str_list)
+        return calc_hash(regions_str)
 
 
 

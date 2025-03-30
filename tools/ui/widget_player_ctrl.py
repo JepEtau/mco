@@ -46,6 +46,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
     signal_widget_selected = Signal(str)
     signal_button_pushed = Signal(str)
     signal_slider_moved = Signal(int)
+    signal_flush_frame_cache = Signal()
 
 
     def __init__(
@@ -348,6 +349,11 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.current_key_pressed = None
         # print(f"{__name__} key: {key}")
 
+        if modifiers & Qt.KeyboardModifier.ControlModifier:
+            if key == Qt.Key.Key_F5:
+                self.signal_flush_frame_cache.emit()
+                return True
+
         # action
         if key == Qt.Key.Key_Space:
             log.info("Space key")
@@ -389,17 +395,21 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         elif key in [Qt.Key.Key_Home, Qt.Key.Key_End]:
             self.slider_frames.keyPressEvent(event)
             return True
+
         elif key == Qt.Key.Key_Left:
             log.info("key_pressed: pressed frame")
             self.event_previous_frame()
             return True
+
         elif key == Qt.Key.Key_Right:
             log.info("key_pressed: next frame")
             self.event_next_frame()
             return True
+
         elif key == Qt.Key.Key_Up or key == Qt.Key.Key_PageUp:
             self.event_previous_frame(10)
             return True
+
         elif key == Qt.Key.Key_Down or key == Qt.Key.Key_PageDown:
             self.event_next_frame(10)
             return True

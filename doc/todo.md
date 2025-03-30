@@ -1,13 +1,8 @@
 ## FIXED, to validate:
 
-sim_lr: failed ep:
-  10: missing deinterlaced f_ep10
-  26: missing deinterlaced f_ep26
-  28: wrong nb of frames, refer to episode.md
-
 
 ## HIGH priority
-
+- add inpainting in checksum
 
 
 ## MIDDLE priority

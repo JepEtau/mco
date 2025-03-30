@@ -25,6 +25,13 @@ except ImportError:
 def main():
     # Arguments
     parser: ArgumentParser = common_argument_parser('Upscale scenes', add_language=True)
+    parser.add_argument(
+        "--ignore_inpaint",
+        "-ii",
+        action="store_true",
+        required=False,
+        help="UPSCALE only: ignore inpainting"
+    )
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -89,6 +96,7 @@ def main():
         edition=arguments.edition,
         debug=arguments.debug,
         compare=arguments.compare,
+        inpaint=not arguments.ignore_inpaint,
     )
 
     if sys.platform == "win32":

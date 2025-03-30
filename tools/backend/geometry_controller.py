@@ -75,7 +75,7 @@ class GeometryController(CommonController):
 
         # self.view.widget_geometry.signal_undo.connect(self.event_geometry_undo)
         # self.view.widget_geometry.signal_save.connect(self.event_geometry_save)
-        # self.view.widget_geometry.signal_discard.connect(self.event_geometry_discard)
+        self.view.widget_geometry.signal_discard.connect(self.event_geometry_discard)
         self.view.widget_geometry.signal_geometry_modified.connect(self.event_geometry_modified)
         self.view.widget_geometry.signal_detect_inner_rect.connect(self.event_detect_inner_rect)
         self.view.widget_geometry.signal_save.connect(self.event_geometry_save)
@@ -244,6 +244,11 @@ class GeometryController(CommonController):
         self.signal_reload_frame.emit()
 
 
+    def send_modified_scene_signal(self):
+        modified_nos: list[int] = self.geometry_db.modified_scene_nos()
+        self.signal_modified_scenes.emit(list(set(modified_nos)))
+
+
     @Slot()
     def event_geometry_save(self):
         print(f"selected scenes: {self.playlist_properties().scenes}")
@@ -254,8 +259,19 @@ class GeometryController(CommonController):
             self.geometry_db.save(scene)
 
         self.signal_is_saved.emit('geometry_db')
-        print(f"modified_scenes: {self.geometry_db.modified_scene_nos()}")
-        self.signal_modified_scenes.emit(self.geometry_db.modified_scene_nos())
+        self.send_modified_scene_signal()
+
+
+    @Slot()
+    def event_geometry_discard(self):
+        log.info("discard modifications requested")
+        for scene_no in self.playlist_properties().scenes:
+            scene: Scene = self.current_selection.scenes[scene_no]
+            self.geometry_db.discard(scene)
+
+        self.signal_is_saved.emit('geometry')
+        self.signal_reload_frame.emit()
+        self.send_modified_scene_signal()
 
 
     def scene_geometry_stats(self, scene_no: int) -> SceneGeometryStat | None:

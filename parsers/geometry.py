@@ -35,10 +35,10 @@ class ChapterGeometry:
 
 @dataclass(slots=True)
 class DetectInnerRectParams:
-    threshold_min: int = 10
-    morph_kernel_radius: int = 3
-    erode_kernel_radius: int = 1
-    erode_iterations: int = 2
+    threshold_min: int = 15
+    morph_kernel: int = 3
+    erode_kernel: int = 5
+    erode_iterations: int = 1
     do_add_borders: bool = True
 
 
@@ -141,8 +141,8 @@ class SceneGeometry:
             params += ";ac," + ','.join(list(
                 map(str, (
                     self.detection_params.do_add_borders,
-                    self.detection_params.morph_kernel_radius,
-                    self.detection_params.erode_kernel_radius,
+                    self.detection_params.morph_kernel,
+                    self.detection_params.erode_kernel,
                     self.detection_params.erode_iterations,
                     self.detection_params.do_add_borders,
                 ))
@@ -272,7 +272,8 @@ def get_geometry_from_properties(properties_str: str) -> SceneGeometry:
 
         elif property_name == 'crop':
             # crop: x0, y0, x1, y1
-            geometry.crop = list(map(int, value.split(':')))
+            crop = list(map(int, value.split(':')))
+            geometry.crop = list([max(0, v) for v in crop])
             geometry.defined = True
 
         # Inner rect detection
@@ -280,8 +281,8 @@ def get_geometry_from_properties(properties_str: str) -> SceneGeometry:
             # threshold_min, morph_kernel_radius, erode_kernel_radius, erode_iterations
             values = value.split(':')
             geometry.detection_params.threshold_min = int(values[0])
-            geometry.detection_params.morph_kernel_radius = int(values[1])
-            geometry.detection_params.erode_kernel_radius = int(values[2])
+            geometry.detection_params.morph_kernel = int(values[1])
+            geometry.detection_params.erode_kernel = int(values[2])
             geometry.detection_params.erode_iterations = int(values[3])
 
         elif property_name == 'autocrop':

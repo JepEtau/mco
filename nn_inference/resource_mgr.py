@@ -30,6 +30,10 @@ class NnFrame:
     # last flag is used by temporal models
     last: bool = False
 
+    # ccor_index is used to save image used as ref for color correction
+    ccor_index: int = -1
+    ccor_ref: Tensor = None
+
 
 
 class BaseThread(abc.ABC, Thread):

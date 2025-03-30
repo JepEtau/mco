@@ -8,7 +8,7 @@ from PySide6.QtCore import (
 from abc import ABC, abstractmethod, ABCMeta
 from ui.window_common import CommonWindow
 from ._types import PlaylistProperties, Selection
-from .frame_cache import Frame
+from .frame_cache import Frame, FrameCache
 from .db_helpers import consolidate_target
 from .user_preferences import UserPreferences
 from logger import log
@@ -56,6 +56,8 @@ class CommonController(QObject, metaclass=QMeta):
 
         self.preview_enabled: bool = True
         self.preview_options = None
+
+        self.frame_cache: FrameCache = None
 
 
     def exit(self):
@@ -121,6 +123,12 @@ class CommonController(QObject, metaclass=QMeta):
         # self.view.signal_save_and_close.connect(self.event_save_and_close_requested)
 
         self.view.signal_preview_modified[dict].connect(self.preview_modified)
+
+        # Player control
+        self.view.widget_player_ctrl.signal_flush_frame_cache.connect(
+            self.flush_frame_cache
+        )
+
 
         # Force refresh of preview options
         p = self.user_preferences.get_preferences()
@@ -232,3 +240,7 @@ class CommonController(QObject, metaclass=QMeta):
 
     def get_frame_at_index(self, index: int) -> tuple[Frame, Frame | None]:
         return self.playlist_frames[index], None
+
+
+    def flush_frame_cache(self) -> None:
+        self.frame_cache.flush()

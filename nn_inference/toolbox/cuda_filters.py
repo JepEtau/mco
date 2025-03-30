@@ -2,6 +2,8 @@ import torch
 from torch import Tensor
 import torch.nn.functional as F
 from torchvision.transforms.v2 import GaussianNoise
+
+from .color_correction import ColorCorrection
 from .darker_thinner import DarkerThinner
 
 from nn_inference.resource_mgr import NnFrame
@@ -151,5 +153,48 @@ def unsharp_mask_(
     sharpened = in_x + amount * mask
 
     frame.tensor = torch.clamp(sharpened.contiguous(), 0., 1.)
+
+    return frame
+
+
+
+
+def collor_correction_(
+    frame: NnFrame,
+    params: str | None,
+) -> NnFrame:
+    if frame.ccor_index == frame.step_no:
+        frame.ccor_ref = torch.clone(frame.tensor)
+
+    verbose: bool = False
+
+    # if params is not None:
+    #     param_list: list[str] = params.split(":")
+    #     if len(param_list) >= 1:
+    #         args['strength'] = float(param_list[0])
+
+
+    color_correction = ColorCorrection()
+
+    if verbose:
+        print(purple(f"[V][F]   collor_correction_"))
+
+    in_x: Tensor = frame.tensor
+    if verbose:
+        print(purple(f"[V][F]     in_x"), f"{in_x.shape}, {in_x.dtype}")
+
+    dtype: torch.dtype = torch.float16
+    in_x = in_x.to(dtype=dtype)
+    ref = frame.ccor_ref.to(dtype=dtype)
+    color_correction.to(device=in_x.device, dtype=dtype)
+
+    # if verbose:
+    #     print(purple(f"[V][F]     in_x"), f"{in_x.shape}, {in_x.dtype}")
+    out_x: Tensor = color_correction(x=in_x, ref=ref)
+    # if verbose:
+    #     print(purple(f"[V][F]     out_x"), f"{out_x.shape}, {out_x.dtype}")
+
+    frame.tensor = torch.clamp(out_x.contiguous(), 0, 1.0)
+    del frame.ccor_ref
 
     return frame

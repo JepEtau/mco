@@ -389,3 +389,17 @@ class SrcScenes:
             class_str += s.__repr__() + ","
         return class_str + "\n    )"
 
+
+    def has_dsr(self) -> bool:
+        for s in self._scenes:
+            if 'dsr' in s.in_scene and s.in_scene['dsr'].has_patches():
+                return True
+        return False
+
+
+    def dsr_hash(self) -> str:
+        hashes: list[str] = []
+        for s in self._scenes:
+            if 'dsr' in s.in_scene and s.in_scene['dsr'].has_patches():
+                hashes.append(f"{s.in_scene['dsr'].hash()}")
+        return ";".join(hashes)

@@ -391,3 +391,4 @@ class ReplaceController(CommonController):
         self.signal_is_saved.emit('replace')
         self.signal_is_saved.emit('dsr')
         self.send_modified_scene_signal()
+

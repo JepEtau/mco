@@ -400,7 +400,7 @@ def generate_final_scene(
 
             autocrop = calculate_autocrop_values(coordinates, in_pipe_shape[:2])
             elapsed_time = time.time() - start_time
-            print(yellow("geometry, autocrop:"), f"{geometry.autocrop}")
+            print(yellow("stored autocrop:"), f"{geometry.autocrop}")
             print(yellow("final, autocrop:"), f"{autocrop}")
 
 

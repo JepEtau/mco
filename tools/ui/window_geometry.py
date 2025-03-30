@@ -62,10 +62,10 @@ class GeometryWindow(CommonWindow):
         self.widgets['geometry'] = self.widget_geometry
 
         self.verticalLayout_tool = QVBoxLayout()
+        self.verticalLayout_tool.addWidget(self.widget_geometry)
         self.verticalLayout_tool.addItem(
             QSpacerItem(20, 20, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
         )
-        self.verticalLayout_tool.addWidget(self.widget_geometry)
         self.horizontalLayout.addLayout(self.verticalLayout_tool)
 
         # Selection

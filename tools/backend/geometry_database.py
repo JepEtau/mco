@@ -373,8 +373,8 @@ class GeometryDatabase:
                 params: DetectInnerRectParams = scene_geometry.detection_params
                 params_str: str = ":".join(map(str, (
                     params.threshold_min,
-                    params.morph_kernel_radius,
-                    params.erode_kernel_radius,
+                    params.morph_kernel,
+                    params.erode_kernel,
                 )))
                 params_str += f":{'true' if params.do_add_borders else 'false'}"
 

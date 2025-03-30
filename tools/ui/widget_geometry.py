@@ -212,6 +212,11 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
     @Slot()
     def event_save(self) -> None:
+        self.signal_discard.emit()
+
+
+    @Slot()
+    def event_save(self) -> None:
         self.signal_save.emit()
 
 
@@ -265,8 +270,8 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.block_autocrop_signals(True)
         autocrop_params: DetectInnerRectParams = scene_geometry.detection_params
         self.spinBox_threshold_min.setValue(autocrop_params.threshold_min)
-        self.spinBox_morph_kernel_radius.setValue(autocrop_params.morph_kernel_radius)
-        self.spinBox_erode_kernel_radius.setValue(autocrop_params.erode_kernel_radius)
+        self.spinBox_morph_kernel_radius.setValue(autocrop_params.morph_kernel)
+        self.spinBox_erode_kernel_radius.setValue(autocrop_params.erode_kernel)
         self.spinBox_erode_iterations.setValue(autocrop_params.erode_iterations)
         self.checkBox_do_add_borders.setChecked(autocrop_params.do_add_borders)
         self.checkBox_use_autocrop.setChecked(scene_geometry.use_autocrop)
@@ -380,8 +385,8 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.pushButton_save.setEnabled(True)
         ac_params: DetectInnerRectParams = DetectInnerRectParams(
             threshold_min=self.spinBox_threshold_min.value(),
-            morph_kernel_radius=self.spinBox_morph_kernel_radius.value(),
-            erode_kernel_radius=self.spinBox_erode_kernel_radius.value(),
+            morph_kernel=self.spinBox_morph_kernel_radius.value(),
+            erode_kernel=self.spinBox_erode_kernel_radius.value(),
             erode_iterations=self.spinBox_erode_iterations.value(),
             do_add_borders=self.checkBox_do_add_borders.isChecked(),
         )
@@ -397,8 +402,8 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
     def event_default(self) -> None:
         ac_params: DetectInnerRectParams = DetectInnerRectParams()
         self.spinBox_threshold_min.setValue(ac_params.threshold_min)
-        self.spinBox_morph_kernel_radius.setValue(ac_params.morph_kernel_radius)
-        self.spinBox_erode_kernel_radius.setValue(ac_params.erode_kernel_radius)
+        self.spinBox_morph_kernel_radius.setValue(ac_params.morph_kernel)
+        self.spinBox_erode_kernel_radius.setValue(ac_params.erode_kernel)
         self.spinBox_erode_iterations.setValue(ac_params.erode_iterations)
         self.checkBox_do_add_borders.setChecked(ac_params.do_add_borders)
         self.event_ac_params_changed()
@@ -410,8 +415,8 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
         self.pushButton_save.setEnabled(True)
         ac_params: DetectInnerRectParams = DetectInnerRectParams(
             threshold_min=self.spinBox_threshold_min.value(),
-            morph_kernel_radius=self.spinBox_morph_kernel_radius.value(),
-            erode_kernel_radius=self.spinBox_erode_kernel_radius.value(),
+            morph_kernel=self.spinBox_morph_kernel_radius.value(),
+            erode_kernel=self.spinBox_erode_kernel_radius.value(),
             erode_iterations=self.spinBox_erode_iterations.value(),
             do_add_borders=self.checkBox_do_add_borders.isChecked(),
         )
@@ -547,6 +552,14 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
                 self.paste_crop_values()
                 return True
 
+
+            if key == Qt.Key.Key_Z:
+                if verbose:
+                    print(purple("Discard geometry"))
+                self.event_discard()
+                return True
+
+
             self.setFocus()
             return False
 
@@ -584,6 +597,10 @@ class GeometryWidget(QWidget, Ui_GeometryWidget):
 
         elif key == Qt.Key.Key_F6:
             self.pushButton_scene_resize_preview.toggle()
+            return True
+
+        elif key == Qt.Key.Key_F9:
+            self.checkBox_use_autocrop.toggle()
             return True
 
         # Edit crop dimensions

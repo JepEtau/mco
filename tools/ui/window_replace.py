@@ -47,10 +47,11 @@ from parsers import (
     get_frame_rate,
     MaskShape,
 )
+from .window_common import CommonWindow
 
 
 
-class ReplaceWindow(QMainWindow):
+class ReplaceWindow(CommonWindow):
     signal_k_ep_p_refreshed = Signal(dict)
     signal_preview_modified = Signal(dict)
 
@@ -60,8 +61,7 @@ class ReplaceWindow(QMainWindow):
         ui=None,
         controller: ReplaceController=None
     ):
-        super().__init__()
-        self.widgets: dict[str, QWidget] = {}
+        super().__init__(controller, 'replace')
         self.controller: ReplaceController = controller
 
         self.centralwidget = QWidget(self)

@@ -66,11 +66,12 @@ def detect_inner_rect(
     img: np.ndarray = np_to_uint8(img)
 
     border: int = 2 if params.do_add_borders else 0
-    diameter = int(params.morph_kernel_radius * 2 + 1)
-    morph_kernel: np.ndarray = np.ones((diameter, diameter), img.dtype)
-    if params.erode_kernel_radius != 0:
-        diameter = int(params.erode_kernel_radius * 2 + 1)
-        erode_kernel: np.ndarray = np.ones((diameter, diameter), img.dtype)
+
+    if params.erode_kernel != 0:
+        erode_kernel: np.ndarray = np.ones(
+            (params.erode_kernel, params.erode_kernel),
+            img.dtype
+        )
 
     in_h, in_w = img.shape[:2]
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -85,20 +86,20 @@ def detect_inner_rect(
             borderType=cv2.BORDER_CONSTANT,
             value=[0, 0, 0])
 
-    brightness_estimate = cv2.mean(gray_img)[0]
-    contrast_estimate = gray_img.std()
-    # print(yellow(f"\tmean: {brightness_estimate}\tcontrast: {contrast_estimate}"))
+    brightness = cv2.mean(gray_img)[0]
+    contrast = gray_img.std()
+    print(f"  mean: {brightness}, contrast: {contrast}")
 
-    if brightness_estimate < 25:
+    if brightness < 25:
         try:
             gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
-            brightness_estimate = cv2.mean(gray_img)[0]
-            contrast_estimate = gray_img.std()
-            print(yellow(f"\tcorrected, mean: {brightness_estimate}\tcontrast: {contrast_estimate}"))
+            brightness = cv2.mean(gray_img)[0]
+            contrast = gray_img.std()
+            print(yellow(f"\tcorrected, mean: {brightness}\tcontrast: {contrast}"))
         except:
             # gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
-            brightness_estimate = cv2.mean(gray_img)[0]
-            contrast_estimate = gray_img.std()
+            brightness = cv2.mean(gray_img)[0]
+            contrast = gray_img.std()
             print(red(f"Error: cannot apply automatic brightness&contrast"))
             return (0, 0, in_w, in_h), img if do_output_img else None
 
@@ -118,21 +119,18 @@ def detect_inner_rect(
     #     cv2.imwrite(f"mask_{index:03}.png", gray_img)
     #     # show_image(img_debug, f"{i}")
     #     index += 1
-
+    morph_kernel: np.ndarray = np.ones(
+        (params.morph_kernel, params.morph_kernel),
+        img.dtype
+    )
     gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_OPEN, morph_kernel)
     gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_CLOSE, morph_kernel)
 
-    if params.erode_kernel_radius != 0:
-        gray_img = cv2.erode(
-            gray_img,
-            erode_kernel,
-            iterations=params.erode_iterations
-        )
+    if params.erode_kernel:
+        gray_img = cv2.erode(gray_img, erode_kernel, iterations=params.erode_iterations)
 
     contours, hierarchy = cv2.findContours(
-        gray_img,
-        cv2.RETR_EXTERNAL,
-        cv2.CHAIN_APPROX_SIMPLE
+        gray_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
 
     outer_contour = None
@@ -196,7 +194,9 @@ def detect_inner_rect(
             show_image(img_debug, f"{i}")
 
     contour = polygon.reshape(len(polygon), 2)
-    if len(contour.shape) > 2:
+    print(contour.shape)
+    pprint(contour)
+    if contour.shape[0] > 2:
         try:
             x0, x1 = _get_coordinates(contour[:, 0:1])
             y0, y1 = _get_coordinates(contour[:, 1:])
@@ -205,11 +205,14 @@ def detect_inner_rect(
             print(contour)
 
     else:
+        print(yellow(f"contour shape not found: {contour}"))
         x, y, w, h = cv2.boundingRect(contour)
         x0, x1 = x, x + w
         y0, y1 = y, y + h
 
-    coordinates = np.array([max(0, x - border) for x in (x0, x1, y0, y1)])
+    # coordinates = np.array([max(0, v - border) for v in (x0, x1, y0, y1)])
+    coordinates: np.ndarray = np.array((x0, x1, y0, y1)) - border
+
     if verbose:
         print(f"rect: {coordinates}")
 

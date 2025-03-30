@@ -22,13 +22,8 @@ from parsers import (
     db,
     get_frame_rate,
     VideoSettings,
-    clean_ffmpeg_filter,
 )
 from ._types import Frame
-
-from PySide6.QtWidgets import (
-    QApplication,
-)
 
 
 class FrameCache:
@@ -115,14 +110,10 @@ class FrameCache:
                 in_h, in_w, in_c = vi['shape']
 
                 print(red("TODO: use task_name \'dsr\' in frame cache"))
+                hr_vsettings: VideoSettings = db['vsettings']['hr']
+                pad: int = hr_vsettings.pad
                 if task_name in ('lr', 'initial') and self.replace_db is not None:
-                    factor: float = (
-                        1.5
-                        if QApplication.screens()[0].size().height()
-                        else 2
-                    )
-                    print(f"low resolution, upscale {factor}x")
-                    in_h, in_w = int(in_h * factor), int(in_w * factor)
+                    in_h, in_w = 1152, 1536
                     filter_complex = [
                         "-filter_complex",
                         f"[0:v]scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",
@@ -130,8 +121,6 @@ class FrameCache:
                     ]
 
                 if task_name == 'hr':
-                    video_settings: VideoSettings = db['vsettings']['hr']
-                    pad: int = video_settings.pad
                     in_h, in_w = int(in_h - 2 * pad), int(in_w - 2 * pad)
                     filter_complex = [
                         "-filter_complex",
@@ -227,6 +216,12 @@ class FrameCache:
                 print(f"Number of frames in cache: {self.frame_count}")
 
         return self.scenes[scene_key]
+
+
+    def flush(self) -> None:
+        """Flush all frames to force extraction, used to update the cache with latest
+        upscaled frames
+        """
 
     # def __getitem__(self, key: Any) -> Any:
     #     if self.verbose:
