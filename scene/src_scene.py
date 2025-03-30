@@ -392,7 +392,11 @@ class SrcScenes:
 
     def has_dsr(self) -> bool:
         for s in self._scenes:
-            if 'dsr' in s.in_scene and s.in_scene['dsr'].has_patches():
+            if (
+                'dsr' in s.in_scene
+                and s.in_scene['dsr'] is not None
+                and s.in_scene['dsr'].has_patches()
+            ):
                 return True
         return False
 

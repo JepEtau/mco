@@ -8,7 +8,7 @@ from parsers import parse_database, TaskName
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.p_print import *
-from video.upscale_scenes import upscale_scenes
+from video.hr_scenes import upscale_scenes
 
 
 

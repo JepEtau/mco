@@ -62,7 +62,7 @@ def upscale_scenes(
     edition: str | None = None,
     debug: bool = False,
     compare: bool = False,
-    inpaint: bool = False
+    inpaint: bool = True
 ):
     k_ep = ep_key(episode)
     k_ed = edition
