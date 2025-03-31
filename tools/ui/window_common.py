@@ -263,3 +263,5 @@ class CommonWindow(QMainWindow):
         msg.setInformativeText(message)
         msg.setWindowTitle("Error")
         msg.exec_()
+
+

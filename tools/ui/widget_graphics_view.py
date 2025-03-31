@@ -30,6 +30,7 @@ from PySide6.QtGui import (
     QBrush,
     QCursor,
     QTransform,
+    QMouseEvent,
 )
 from PySide6.QtWidgets import (
     QTableWidgetItem,
@@ -344,7 +345,12 @@ class GraphicsViewWidget(QGraphicsView):
             # self.modified = True
 
 
-    def mouseDoubleClickEvent(self, event):
+    def mouseDoubleClickEvent(self, event: QMouseEvent):
+        if event.button() in (
+            Qt.MouseButton.ForwardButton, Qt.MouseButton.BackButton
+        ):
+            return
+
         if self.new_region is not None:
             self.regions.append(self.new_region.copy())
             self.cursor_offset = QPointF(0, 0)
@@ -383,8 +389,14 @@ class GraphicsViewWidget(QGraphicsView):
         super().mouseMoveEvent(event)
 
 
-    def mousePressEvent(self, event):
+    def mousePressEvent(self, event: QMouseEvent):
+        print(f"widget graphics: pressEvent: {event.button()}")
+        return self._parent.mousePressEvent(event=event)
+
+
+    def mouse_press_event(self, event: QMouseEvent):
         # Append the shape to the list of patches
+
         if self.control_key_pressed:
             self.regions.append(self.new_region.copy())
             self.cursor_offset = QPointF(0, 0)
@@ -407,6 +419,8 @@ class GraphicsViewWidget(QGraphicsView):
             # start moving shape
             is_mouse_over_shape: bool = False
             for i, s in enumerate(reversed(self.regions)):
+                if s.item is None:
+                    continue
                 if s.item.isUnderMouse():
                     print("under mouse")
                     is_mouse_over_shape = True
@@ -423,7 +437,7 @@ class GraphicsViewWidget(QGraphicsView):
 
                 return True
 
-        return super().mousePressEvent(event)
+        return False
 
 
     def event_key_released(self, event: QKeyEvent) -> bool:

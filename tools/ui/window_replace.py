@@ -12,6 +12,7 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import (
     QKeyEvent,
+    QMouseEvent,
 )
 from PySide6.QtWidgets import (
     QApplication,
@@ -127,6 +128,7 @@ class ReplaceWindow(CommonWindow):
         self.timer: QBasicTimer = QBasicTimer()
         self.timer.stop()
         self.is_closing: bool = False
+        self.working: bool = False
 
         self.widget_replace.signal_preview_toggled[bool].connect(
             self.preview_modified
@@ -194,6 +196,7 @@ class ReplaceWindow(CommonWindow):
             return
         self.close()
 
+
     def event_selection_scenes_refreshed(self):
         pass
 
@@ -203,7 +206,6 @@ class ReplaceWindow(CommonWindow):
         print("refresh selection selection")
         # pprint(selection)
         self.widget_selection.refresh_available_selection(selection)
-
 
 
     def event_edition_started(self):
@@ -344,7 +346,7 @@ class ReplaceWindow(CommonWindow):
         # print(f"{__name__} received: {event.key()}")
         self.current_key_pressed = None
 
-        if event.key() == Qt.Key.Key_F3:
+        if event.key() in (Qt.Key.Key_F3, Qt.Key.Key_F):
             self.toggle_editing_patches()
 
         widgets = (
@@ -396,6 +398,30 @@ class ReplaceWindow(CommonWindow):
             except:
                 pass
         return super().wheelEvent(event)
+
+
+    def mousePressEvent(self, event: QMouseEvent):
+        log.info("main wheel event")
+        if self.working:
+            return
+        self.working = True
+        widgets = (
+            self.widget_selection,
+            self.widget_preview,
+            # self.widget_dsr,
+            # self.widget_player_ctrl,
+        )
+
+        for w in widgets:
+            # try:
+            for _w in widgets:
+                if _w.mouse_press_event(event):
+                    self.working = False
+                    return True
+            # except:
+            #     pass
+        self.working = False
+        return super().mousePressEvent(event)
 
 
 

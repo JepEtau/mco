@@ -18,6 +18,7 @@ from PySide6.QtGui import (
     QColor,
     QKeyEvent,
     QWheelEvent,
+    QMouseEvent,
 )
 from PySide6.QtWidgets import (
     QTableWidgetItem,
@@ -739,9 +740,11 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
 
     def select_next_scene(self):
         if len(self.tableWidget_scenes.selectionModel().selectedRows()) > 1:
-            return
-        try:
+            row_no = self.tableWidget_scenes.selectionModel().selectedRows()[-1]
+        else:
             row_no = self.tableWidget_scenes.currentRow() + 1
+
+        try:
             if row_no >= self.tableWidget_scenes.rowCount():
                 row_no = 0
             self.tableWidget_scenes.clearSelection()
@@ -777,6 +780,14 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                 self.tableWidget_scenes.selectAll()
                 return True
 
+        elif key == Qt.Key.Key_Up:
+            self.select_previous_scene()
+            return True
+
+        elif key == Qt.Key.Key_Down:
+            self.select_next_scene()
+            return True
+
         return False
 
 
@@ -790,6 +801,22 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
         return False
 
 
+    def mouse_press_event(self, event: QMouseEvent):
+        key: Qt.MouseButton = event.button()
+        print("selection: mouse pressevent")
+        if key == Qt.MouseButton.ForwardButton:
+            print("previous scene")
+            self.select_previous_scene()
+            return True
+
+        elif key == Qt.MouseButton.BackButton:
+            print("next scene")
+            self.select_next_scene()
+            return True
+
+        else:
+            print(f"selection: mouse pressevent: {key}")
+        return False
 
 
     def eventFilter(self, watched: QObject, event: QEvent) -> bool:
@@ -820,6 +847,13 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             self._parent.set_focus()
             event.accept()
             return True
+
+        if event.type() == QMouseEvent:
+            print("selection filter, mouse press")
+            if self.mouse_press_event(event=event):
+                self._parent.set_focus()
+                event.accept()
+                return True
 
         # elif event.type() == QEvent.Type.FocusIn:
         #     self.signal_widget_selected.emit(self.objectName())

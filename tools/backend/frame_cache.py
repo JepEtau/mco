@@ -24,6 +24,7 @@ from parsers import (
     VideoSettings,
 )
 from ._types import Frame
+from PySide6.QtWidgets import QApplication
 
 
 class FrameCache:
@@ -113,7 +114,14 @@ class FrameCache:
                 hr_vsettings: VideoSettings = db['vsettings']['hr']
                 pad: int = hr_vsettings.pad
                 if task_name in ('lr', 'initial') and self.replace_db is not None:
-                    in_h, in_w = 1152, 1536
+                    screen_size = QApplication.screens()[0].size()
+                    screen_height, screen_width = screen_size.height(), screen_size.width()
+                    if screen_height < 1440:
+                        # 1080p display
+                        in_w, in_h = 1024, 768
+                    else:
+                        in_w, in_h = 1440, 1080
+                    # in_h, in_w = 1152, 1536
                     filter_complex = [
                         "-filter_complex",
                         f"[0:v]scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int[outv]",

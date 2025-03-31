@@ -349,10 +349,10 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.current_key_pressed = None
         # print(f"{__name__} key: {key}")
 
-        if modifiers & Qt.KeyboardModifier.ControlModifier:
-            if key == Qt.Key.Key_F5:
-                self.signal_flush_frame_cache.emit()
-                return True
+        # if modifiers & Qt.KeyboardModifier.ControlModifier:
+        if key == Qt.Key.Key_F5:
+            self.signal_flush_frame_cache.emit()
+            return True
 
         # action
         if key == Qt.Key.Key_Space:
@@ -406,11 +406,11 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             self.event_next_frame()
             return True
 
-        elif key == Qt.Key.Key_Up or key == Qt.Key.Key_PageUp:
+        elif key == Qt.Key.Key_PageUp:
             self.event_previous_frame(10)
             return True
 
-        elif key == Qt.Key.Key_Down or key == Qt.Key.Key_PageDown:
+        elif key == Qt.Key.Key_PageDown:
             self.event_next_frame(10)
             return True
         return False
@@ -445,29 +445,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             print("controls: slider is disabled")
             return False
 
-
-        # if self.is_shift_key_pressed:
-        #     # move to next/previous tick
-        #     if event.angleDelta().y() > 0:
-        #         self.set_slider_to_previous_tick()
-        #     elif event.angleDelta().y() < 0:
-        #         self.set_slider_to_following_tick()
-        #     return True
-
-        # elif (
-        #     self.current_key_pressed is None
-        #     and not self.is_ctrl_key_pressed
-        # ):
-        #     # Select next/previous frame
-        #     if event.angleDelta().y() > 0:
-        #         self.event_previous_frame()
-        #     elif event.angleDelta().y() < 0:
-        #         self.event_next_frame()
-        #     return True
-
-
-        if self.app_type == 'replace':
-            print(f"player control, editing: {self._parent.is_editing_patches()}, shift key: {self.is_shift_key_pressed}")
+        # if self.app_type == 'replace':
+        #     print(f"player control, editing: {self._parent.is_editing_patches()}, shift key: {self.is_shift_key_pressed}")
         if (
             self.app_type == 'geometry'
             or not self._parent.is_editing_patches()
@@ -519,5 +498,10 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
                 if self._parent.wheelEvent(event):
                     event.accept()
                     return
+
+        elif event.type() == QMouseEvent:
+            if self._parent.mousePressEvent(event):
+                event.accept()
+                return
 
         return super().eventFilter(watched, event)
