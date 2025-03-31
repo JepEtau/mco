@@ -1,3 +1,6 @@
+https://resolve.cafe/developers/scripting/
+
+
 # To change the file paths of clips in a DaVinci Resolve project
 
 ```python
@@ -463,3 +466,234 @@ print("Rendered frames:")
 for frame in rendered_frames:
     print(frame)
 ```
+
+
+
+# DaVinci Resolve Python API - Key Functions
+
+The DaVinci Resolve API is structured hierarchically. Here are the main objects and their key functions:
+
+## Resolve Object (Top Level)
+- `GetProjectManager()` - Returns the ProjectManager object
+- `GetMediaStorage()` - Returns the MediaStorage object
+- `GetFusionCompManager()` - Returns the FusionCompManager object
+- `OpenPage(pageName)` - Opens a specific page in the UI (e.g., "edit", "fusion", "color")
+- `GetCurrentPage()` - Returns the currently active page
+- `GetVersion()` - Returns the Resolve version
+- `GetVersionString()` - Returns the Resolve version as a string
+- `LoadLayoutPreset(presetName)` - Loads a UI layout preset
+- `UpdateLayoutPreset(presetName)` - Updates a UI layout preset
+- `ExportLayoutPreset(presetName, presetFilePath)` - Exports a UI layout preset
+- `DeleteLayoutPreset(presetName)` - Deletes a UI layout preset
+- `SaveLayoutPreset(presetName)` - Saves the current UI layout as a preset
+- `Fusion()` - Returns the Fusion object for Fusion page scripting
+- `QuitResolve()` - Quits the DaVinci Resolve application
+
+## ProjectManager Object
+- `CreateProject(projectName)` - Creates a new project
+- `LoadProject(projectName)` - Loads a project
+- `SaveProject()` - Saves the current project
+- `CloseProject(project)` - Closes a project
+- `GetCurrentProject()` - Returns the currently open Project
+- `GetProjectListInCurrentFolder()` - Returns the list of projects in the current folder
+- `GetFoldersListInCurrentFolder()` - Returns the list of folders in the current folder
+- `GetCurrentFolder()` - Returns the name of the current folder
+- `CreateFolder(folderName)` - Creates a new folder
+- `DeleteProject(projectName)` - Deletes a project
+- `ImportProject(filePath)` - Imports a project from a file
+- `ExportProject(projectName, filePath, withStillsAndLUTs)` - Exports a project to a file
+- `ArchiveProject(projectName, filePath, withStillsAndLUTs)` - Archives a project to a file
+- `RestoreProject(filePath, projectName)` - Restores an archived project
+- `GetCurrentDatabase()` - Returns the current database name
+- `SetCurrentDatabase(databaseName)` - Sets the current database
+
+## Project Object
+- `GetMediaPool()` - Returns the MediaPool object
+- `GetTimelineCount()` - Returns the number of timelines in the project
+- `GetTimelineByIndex(idx)` - Returns a Timeline by index
+- `GetCurrentTimeline()` - Returns the currently active Timeline
+- `SetCurrentTimeline(timeline)` - Sets the currently active Timeline
+- `GetGallery()` - Returns the Gallery object
+- `GetName()` - Returns the project name
+- `SetName(projectName)` - Sets the project name
+- `GetPresetList()` - Returns the list of presets
+- `SetPreset(presetName)` - Sets a preset
+- `AddRenderJob()` - Adds a render job
+- `StartRendering(jobIds, isInteractiveMode)` - Starts rendering jobs
+- `StopRendering()` - Stops rendering
+- `IsRenderingInProgress()` - Returns whether rendering is in progress
+- `DeleteAllRenderJobs()` - Deletes all render jobs
+- `GetRenderJobList()` - Returns the list of render jobs
+- `GetRenderPresetList()` - Returns the list of render presets
+- `ExportProject(filePath, withStillsAndLUTs)` - Exports the project to a file
+- `SaveAs(filePath)` - Saves the project to a new file
+
+## MediaPool Object
+- `GetRootFolder()` - Returns the root Folder of the media pool
+- `AddSubFolder(folder, name)` - Adds a subfolder to a Folder
+- `CreateEmptyTimeline(name)` - Creates an empty timeline
+- `AppendToTimeline(clips)` - Appends clips to the current timeline
+- `CreateTimelineFromClips(name, clips)` - Creates a timeline from clips
+- `ImportMedia(items)` - Imports media from a list of file paths
+- `ExportMetadata(filePath, clips)` - Exports metadata for clips to a file
+
+## Folder Object
+- `GetClipList()` - Returns the list of clips in the folder
+- `GetName()` - Returns the folder name
+- `GetSubFolderList()` - Returns the list of subfolders
+- `GetItemsInFolder()` - Returns all items in the folder (clips and folders)
+
+## Timeline Object
+- `GetName()` - Returns the timeline name
+- `SetName(timelineName)` - Sets the timeline name
+- `GetStartFrame()` - Returns the starting frame number
+- `GetEndFrame()` - Returns the ending frame number
+- `GetTrackCount(trackType)` - Returns the number of tracks of the specified type ("audio", "video", "subtitle")
+- `GetItemListInTrack(trackType, index)` - Returns the items on a track
+- `AddMarker(frameId, color, name, note, duration, customData)` - Adds a marker
+- `GetMarkers()` - Returns all markers on the timeline
+- `DeleteMarkersByColor(color)` - Deletes markers by color
+- `DeleteMarkerAtFrame(frameNum)` - Deletes a marker at a specific frame
+- `ApplyGradeFromDRX(path, gradeMode, clips)` - Applies a grade from a DRX file
+- `GetCurrentTimecode()` - Returns the current timecode
+- `SetCurrentTimecode(timecode)` - Sets the current timecode position
+- `InsertClip(clipInfo, trackIndex)` - Inserts a clip on a track
+- `AppendClip(clipInfo)` - Appends a clip to the timeline
+- `CreateCompoundClip(clipInfo)` - Creates a compound clip
+- `CreateFusionClip(clipInfo)` - Creates a fusion clip
+- `ImportIntoTimeline(filePath, importOptions)` - Imports a timeline from a file
+
+## MediaPoolItem Object (Clip)
+- `GetName()` - Returns the clip name
+- `GetMetadata(metadataType)` - Returns metadata of the specified type
+- `SetMetadata(metadataType, metadataValue)` - Sets metadata of the specified type
+- `GetMediaId()` - Returns the unique media id
+- `AddMarker(frameId, color, name, note, duration, customData)` - Adds a marker
+- `GetMarkers()` - Returns all markers on the clip
+- `DeleteMarkersByColor(color)` - Deletes markers by color
+- `DeleteMarkerAtFrame(frameNum)` - Deletes a marker at a specific frame
+- `AddFlag(color)` - Adds a flag with the specified color
+- `GetFlagList()` - Returns all flags on the clip
+- `ClearFlags(color)` - Clears flags of the specified color
+
+## TimelineItem Object
+- `GetName()` - Returns the clip name
+- `GetDuration()` - Returns the duration in frames
+- `GetEnd()` - Returns the end frame position
+- `GetFusionCompCount()` - Returns the number of Fusion compositions
+- `GetFusionCompByIndex(compIndex)` - Returns a FusionComp by index
+- `GetFusionCompNameList()` - Returns a list of Fusion composition names
+- `AddFusionComp()` - Adds a new Fusion composition
+- `ImportFusionComp(path)` - Imports a Fusion composition from a file
+- `ExportFusionComp(path)` - Exports a Fusion composition to a file
+- `DeleteFusionCompByName(compName)` - Deletes a Fusion composition by name
+
+## FusionComp Object
+- `GetSetting(settingName)` - Returns the value of a setting
+- `SetSetting(settingName, settingValue)` - Sets the value of a setting
+- `AddTool(toolName)` - Adds a tool node
+- `Refresh()` - Refreshes the composition
+- `Save()` - Saves the composition
+- `GetToolList()` - Returns a list of all tools in the composition
+- `GetActiveTool()` - Returns the currently active tool
+- `SetActiveTool(tool)` - Sets the active tool
+- `FindTool(toolName)` - Finds a tool by name
+- `Connect(tool1, tool2)` - Connects two tools
+- `RenameComp(newName)` - Renames the composition
+
+## Gallery Objects
+- `GetAlbumName(galleryStillAlbum)` - Returns the album name
+- `GetCurrentStillAlbum()` - Returns the current still album
+- `SetCurrentStillAlbum(galleryStillAlbum)` - Sets the current still album
+- `GetGalleryStillAlbums()` - Returns all still albums in the gallery
+- `GetStills(galleryStillAlbum)` - Returns all stills in an album
+- `DeleteGalleryStill(galleryStill)` - Deletes a gallery still
+
+
+# Common metadata types available in DaVinci Resolve
+metadata_types = [
+    "Clip Name",
+    "File Name",
+    "File Path",
+    "Start TC",
+    "End TC",
+    "Duration",
+    "Resolution",
+    "Frame Rate",
+    "Media Type",
+    "Bit Depth",
+    "Codec",
+    "Data Level",
+    "Keywords",
+    "Shot",
+    "Scene",
+    "Take",
+    "Angle",
+    "Slate",
+    "Description",
+    "Comments",
+    "Log",
+    "Camera Type",
+    "Aperture",
+    "Lens Type",
+    "Focal Length",
+    "Camera",
+    "Camera #",
+    "Reel",
+    "ISO",
+    "Day / Night",
+    "Exposure",
+    "White Balance",
+    "Flag",
+    "Good Take",
+    "CircleFrame",
+    "Gamma",
+    "Camera Raw",
+    "Shutter",
+    "Roll/Card",
+    "Production",
+    "Lens",
+    "Location",
+    "Shot Type",
+    "Audio TC",
+    "Color Temp",
+    "Clip Color",
+    "Rating",
+    "Keyword",
+    "Interior / Exterior",
+    "Director",
+    "DoP",
+    "Artist",
+    "Album",
+    "Copyright",
+    "Tracks",
+    "Channels",
+    "Sample Rate",
+    "Field Dominance",
+    "Alpha mode",
+    "Project",
+    "Job",
+    "SMPTE UMID",
+    "Media ID",
+    "Gamma Type",
+    "Input Color Space",
+    "IDT",
+    "Creator",
+    "Publisher",
+    "Encoded By",
+    "DropFrame",
+    "Timecode Rate",
+    "Project Frame Rate",
+    "Slate TC",
+    "Start KeyKode",
+    "Flags",
+    "Date Created",
+    "Date Modified",
+    "EDL Import Source TC",
+    "EDL Import Record TC",
+    "People",
+    "Group",
+    "Offline Reference",
+    "Timeline Name",
+    "Note"
+]
