@@ -288,14 +288,14 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             log.info("event: pause")
             self.refresh_status('paused')
             self.pushButton_play_pause.setIcon(self.icon_play)
-            self.pushButton_play_pause.setFocus()
+            # self.pushButton_play_pause.setFocus()
             self.slider_frames.blockSignals(False)
             self.signal_button_pushed.emit('pause')
         else:
             log.info("event: playing")
             self.refresh_status('playing')
             self.pushButton_play_pause.setIcon(self.icon_pause)
-            self.pushButton_play_pause.setFocus()
+            # self.pushButton_play_pause.setFocus()
             self.slider_frames.blockSignals(True)
             self.signal_button_pushed.emit('play')
 
@@ -355,8 +355,9 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             return True
 
         # action
-        if key == Qt.Key.Key_Space:
+        if key in (Qt.Key.Key_Space, Qt.Key.Key_Enter):
             log.info("Space key")
+            self.pushButton_play_pause.blockSignals(True)
             if self.status == 'playing':
                 log.info("playing -> pause")
                 self.pushButton_play_pause.setChecked(False)
@@ -365,6 +366,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
                 log.info("pause/stop -> playing")
                 self.pushButton_play_pause.setChecked(True)
                 self.event_play_pause(False)
+            self.pushButton_play_pause.blockSignals(False)
             return True
 
         if not self.slider_frames.isEnabled():
@@ -390,6 +392,9 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         #     print("Control")
         #     self.is_ctrl_key_pressed = True
         #     return False
+        elif key == Qt.Key.Key_L:
+            self.pushButton_loop.toggle()
+            return True
 
         # modify slider value
         elif key in [Qt.Key.Key_Home, Qt.Key.Key_End]:

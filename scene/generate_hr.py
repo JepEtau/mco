@@ -118,6 +118,11 @@ class UpscalePipeline(object):
                     if param not in (2, 4):
                         shape = [shape[1], shape[0]]
 
+                elif name == 'rotate90':
+                    if param not in (2, 4):
+                        shape = [shape[1], shape[0]]
+
+
                 # elif name not in supported_filters:
                 #     continue
 

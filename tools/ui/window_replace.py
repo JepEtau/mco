@@ -277,7 +277,7 @@ class ReplaceWindow(CommonWindow):
             self.timer.stop()
             self.widget_selection.set_enabled(True)
             self.event_move_to_frame_index(0)
-
+        return True
 
     def timerEvent(self, e=None):
         now = time.time()
@@ -384,7 +384,6 @@ class ReplaceWindow(CommonWindow):
     def wheelEvent(self, event: QKeyEvent) -> bool:
         log.info("main wheel event")
         widgets = (
-            self.widget_dsr,
             self.widget_preview,
             self.widget_player_ctrl,
         )
@@ -392,9 +391,8 @@ class ReplaceWindow(CommonWindow):
         for w in widgets:
             try:
                 for _w in widgets:
-                    if _w != w:
-                        _w.event_wheel(event)
-                return True
+                    if _w.event_wheel(event):
+                        return True
             except:
                 pass
         return super().wheelEvent(event)

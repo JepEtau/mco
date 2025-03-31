@@ -151,7 +151,7 @@ class GraphicsViewWidget(QGraphicsView):
         self.radius: int = 0.015
         self.width: int = 0.025
         self.height: int = 0.015
-        self.angle: float = 0
+        self.angle: float = -45
         # sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         # sizePolicy.setHorizontalStretch(0)
         # sizePolicy.setVerticalStretch(0)
@@ -173,6 +173,7 @@ class GraphicsViewWidget(QGraphicsView):
         )
         self.new_region: DsrSceneRegion = deepcopy(self.default_region)
         self.modifying_shape: bool = False
+        self.previous_dsr_region = None
 
         self.modified: bool = False
 
@@ -242,6 +243,19 @@ class GraphicsViewWidget(QGraphicsView):
             self._scene.removeItem(self.new_region.item)
             self.new_region = None
 
+    def append_dsr_region(self, recall: bool = False) -> None:
+        if recall and self.previous_dsr_region is not None:
+            self._scene.removeItem(self.new_region.item)
+            self.new_region = self.previous_dsr_region.copy()
+            self._scene.addItem(self.new_region.item)
+        else:
+            self.previous_dsr_region = self.new_region.copy()
+        self.regions.append(self.new_region.copy())
+        self.cursor_offset = QPointF(0, 0)
+        self.setCursor(Qt.CursorShape.ArrowCursor)
+        self.new_region.item = None
+        self.modifying_shape = False
+        self.signal_dsr_updated_event.emit(self.regions)
 
 
     def start_modifying_shape(self, selected: DsrSceneRegion) -> None:
@@ -281,7 +295,6 @@ class GraphicsViewWidget(QGraphicsView):
         # self.new_region.center = (x, y)
         self.modifying_shape = True
         self.add_region_to_scene(self.new_region)
-
 
 
     def discard_modifying_shape(self, current_position: QPointF) -> None:
@@ -398,12 +411,7 @@ class GraphicsViewWidget(QGraphicsView):
         # Append the shape to the list of patches
 
         if self.control_key_pressed:
-            self.regions.append(self.new_region.copy())
-            self.cursor_offset = QPointF(0, 0)
-            self.setCursor(Qt.CursorShape.ArrowCursor)
-            self.new_region.item = None
-            self.modifying_shape = False
-            self.signal_dsr_updated_event.emit(self.regions)
+            self.append_dsr_region()
 
         elif self.modifying_shape:
             print("Moved")
@@ -458,45 +466,54 @@ class GraphicsViewWidget(QGraphicsView):
 
     def event_key_pressed(self, event: QKeyEvent) -> bool:
         key, modifiers = event.key(), event.modifiers()
-        # print(f"{time.time()} {__name__}.event_key_pressed: {key}, modifiers={modifiers}")
+        print(f"{time.time()} {__name__}.event_key_pressed: 0x{key:3X}, modifiers={modifiers}")
 
         self.is_alt_key_pressed = modifiers & Qt.KeyboardModifier.AltModifier
 
         if modifiers & Qt.KeyboardModifier.ControlModifier:
             self.control_key_pressed = True
-        else:
-            if key in (Qt.Key.Key_S, Qt.Key.Key_Z):
-                self.event_key_released(None)
-                self.modif_keys['radius'] = True
-                self.modif_keys['height'] = True
-                return True
+            return False
 
-            elif key == Qt.Key.Key_Q:
-                self.event_key_released(None)
-                self.modif_keys['radius'] = True
-                self.modif_keys['width'] = True
-                return True
+        if key == Qt.Key.Key_Asterisk:
+            self.append_dsr_region(recall=True)
+            return True
 
-            elif key == Qt.Key.Key_D:
-                self.event_key_released(None)
-                self.modif_keys['angle'] = True
-                return True
+        if key == Qt.Key.Key_Plus:
+            self.append_dsr_region()
+            return True
 
-            elif key in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
-                for i, s in enumerate(self.regions):
-                    if s.item.isUnderMouse():
-                        print("delete under mouse")
-                        self.modifying_index = -1
-                        self._scene.removeItem(s.item)
-                        del self.regions[i]
-                        self.setCursor(Qt.CursorShape.ArrowCursor)
-                        self.cursor_offset = QPoint(0, 0)
-                        self.signal_dsr_updated_event.emit(self.regions)
-                        return True
+        elif key in (Qt.Key.Key_S, Qt.Key.Key_Z, Qt.Key.Key_8):
+            self.event_key_released(None)
+            self.modif_keys['radius'] = True
+            self.modif_keys['height'] = True
+            return True
 
-            elif key == Qt.Key.Key_Escape:
-                self.discard_modifying_shape(self.current_position)
-                return True
+        elif key in (Qt.Key.Key_Q, Qt.Key.Key_6):
+            self.event_key_released(None)
+            self.modif_keys['radius'] = True
+            self.modif_keys['width'] = True
+            return True
+
+        elif key in (Qt.Key.Key_D, Qt.Key.Key_5):
+            self.event_key_released(None)
+            self.modif_keys['angle'] = True
+            return True
+
+        elif key in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace, Qt.Key.Key_Minus):
+            for i, s in enumerate(self.regions):
+                if s.item.isUnderMouse():
+                    print("delete under mouse")
+                    self.modifying_index = -1
+                    self._scene.removeItem(s.item)
+                    del self.regions[i]
+                    self.setCursor(Qt.CursorShape.ArrowCursor)
+                    self.cursor_offset = QPoint(0, 0)
+                    self.signal_dsr_updated_event.emit(self.regions)
+                    return True
+
+        elif key == Qt.Key.Key_Escape:
+            self.discard_modifying_shape(self.current_position)
+            return True
 
         return False
 
@@ -506,27 +523,11 @@ class GraphicsViewWidget(QGraphicsView):
 
 
     def event_wheel(self, event: QWheelEvent) -> bool:
-        log.info("graphics viewevent_wheel")
-        if (
-            not self._parent.is_editing_patches()
-            or not any(self.modif_keys.values())
-        ):
+        print(f"graphics viewevent_wheel with {self.modif_keys}")
+        is_editing: bool = any(self.modif_keys.values())
+
+        if not is_editing:
             print(f"\tnot for self: editing{self._parent.is_editing_patches()}, any key: {any(self.modif_keys.values())}")
-            return False
-
-
-        #     # if self.shapes and self.modified:
-        #     #     # do not allow changing frame if modification is on going
-        #     #     return True
-
-        #     # if not self.main_window.is_dsr_modified():
-        #     #     print("not for this")
-        if not any(self.modif_keys.values()):
-            # print(f"no other key, is_editing_patches: {self._parent.is_editing_patches()}")
-            # if not self._parent.is_editing_patches():
-            #     print(f"not modifying")
-            #     return False
-            print("\tnot for self, no modifying keys")
             return False
 
         # print(event.angleDelta().y())
@@ -552,7 +553,7 @@ class GraphicsViewWidget(QGraphicsView):
                 self.height = min(max(self.height + diff, 0), 0.25)
 
             elif self.modif_keys['angle']:
-                self.angle = min(max(self.angle + 5 * diff, -90), 90)
+                self.angle = min(max(self.angle - 5 * diff, -90), 90)
 
         self._scene.removeItem(self.new_region.item)
         self.new_region.item = None

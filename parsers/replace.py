@@ -19,8 +19,9 @@ if TYPE_CHECKING:
     from utils.mco_types import Scene
 
 
-def replace_scene_bounds_(k_ep: str) -> None:
-    # print(yellow("replace_scene_bounds_"), k_ep)
+def replace_scene_bounds_(k_ep: str, verbose: bool = False) -> None:
+    if verbose:
+        print(yellow("replace_scene_bounds_"), k_ep)
     # edition 'j' only
     k_ed: str = 'j'
     k_chapter: Chapter = 'episode'
@@ -98,9 +99,6 @@ def replace_scene_bounds_(k_ep: str) -> None:
             if t > len(replace_list):
                 raise(red(f" circular reference"))
 
-        if scene['no'] == 5:
-            print(lightcyan("scene no."), scene['no'])
-            pprint(scene['replace'])
 
 
 def parse_replace_file(k_ep_or_g:str) -> None:
@@ -108,7 +106,7 @@ def parse_replace_file(k_ep_or_g:str) -> None:
     It will returns the replaced frame for each frame. This is mainly edited in video
     editor
     """
-    verbose = False
+    verbose = True
 
     if verbose:
         print(lightgreen(f"parse_replace_file: {k_ep_or_g}"))
@@ -124,6 +122,11 @@ def parse_replace_file(k_ep_or_g:str) -> None:
         filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
     if not os.path.exists(filepath):
         # print(f"warning: {filepath} does not exist, ignore")
+        if (
+            not k_ep_or_g.startswith("g_")
+            and ep_no(k_ep_or_g) < 40
+        ):
+            replace_scene_bounds_(k_ep=k_ep_or_g, verbose=verbose)
         return
 
     # Parse the file

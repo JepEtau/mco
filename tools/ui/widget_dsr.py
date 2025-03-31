@@ -202,11 +202,11 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         key, modifiers = event.key(), event.modifiers()
         # print(f"{time.time()} {__name__}.event_key_pressed: {key}, modifiers={modifiers}")
 
-        if key == Qt.Key.Key_C:
+        if key in (Qt.Key.Key_C, Qt.Key.Key_3):
             self.pushButton_circle.click()
             return True
 
-        elif key == Qt.Key.Key_E:
+        elif key in (Qt.Key.Key_E, Qt.Key.Key_9):
             self.pushButton_ellipse.click()
             return True
 

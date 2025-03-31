@@ -118,7 +118,7 @@ class FrameCache:
                     screen_height, screen_width = screen_size.height(), screen_size.width()
                     if screen_height < 1440:
                         # 1080p display
-                        in_w, in_h = 1024, 768
+                        in_w, in_h = 1000, 750
                     else:
                         in_w, in_h = 1440, 1080
                     # in_h, in_w = 1152, 1536
