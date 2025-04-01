@@ -36,7 +36,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
     """This procedure is used to consolidate chapter of an 'episode': it uses the 'replace'
     field to generate a new list of scenes in the 'common' structure of the 'episode'. This list
     will be used for processing instead of the list defined in the edition.
-    It is mainly used for 'asuivre' and 'precedemment' because these chapters use the scenes from the
+    It is mainly used for 'asuivre' and 'prec' because these chapters use the scenes from the
     following or the previous 'episode'
 
     Note: this procedure has to be called only when the edition (to process)
@@ -46,7 +46,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
     Args:
         db_episode_src: the global db
         db_episode_dst: a single scene to consolidate
-        k_chapter: chapter to consolidate (mainly 'asuivre' or 'precedemment')
+        k_chapter: chapter to consolidate (mainly 'asuivre' or 'prec')
 
     Returns:
         None
@@ -61,7 +61,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
 
     ch_video: ChapterVideo = db[k_ep]['video']['target'][k_ch]
 
-    if k_ch in ('precedemment', 'asuivre'):
+    if k_ch in ('prec', 'asuivre'):
         if verbose:
             print(darkgrey(f"[I] consolidate_target_scenes: {k_ch}"))
         # pprint(db['ep01']['video']['target'][k_chapter])
@@ -72,7 +72,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
     ch_video_src: ChapterVideo = db[k_ep]['video'][k_ed_src][k_ch]
 
     if ch_video_src['count'] < 1:
-        if k_ch not in ('asuivre', 'precedemment'):
+        if k_ch not in ('asuivre', 'prec'):
             print(yellow(f"{k_ed_src}:{k_ep}:{k_ch} is empty"))
             raise
         # return
@@ -196,7 +196,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
     ch_video['count'] = frame_count
 
 
-    # if k_ch == 'precedemment':
+    # if k_ch == 'prec':
     #     pprint(ch_video)
     #     print(f"   count: {ch_video['count']}")
         # raise
@@ -224,7 +224,7 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
 
 def consolidate_target_scenes_g(k_ep: int | str, k_ch: str, verbose: bool = False) -> None:
     """Generate the list of scenes which will be used for this credit
-    (opening, precedemment, asuivre, end)
+    (opening, prec, asuivre, end)
     The total duration (in frames) is updated
     """
     k_ep: str = ep_key(k_ep)

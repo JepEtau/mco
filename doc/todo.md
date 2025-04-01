@@ -51,6 +51,9 @@ status:
 
 
 - SISR denoiser
+    * ESC                   https://github.com/dslisleedh/ESC
+            cuda compilation required, still in progress, x4 models only for the newest code
+
     * pcst                  https://github.com/grishavak/pcst
             trained on DAVIS :-(
 

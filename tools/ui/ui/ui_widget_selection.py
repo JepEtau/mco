@@ -178,7 +178,7 @@ class Ui_SelectionWidget(object):
         self.comboBox_episode.setItemText(1, QCoreApplication.translate("SelectionWidget", u"ep02", None))
 
         self.comboBox_part.setItemText(0, QCoreApplication.translate("SelectionWidget", u"g_debut", None))
-        self.comboBox_part.setItemText(1, QCoreApplication.translate("SelectionWidget", u"precedemment", None))
+        self.comboBox_part.setItemText(1, QCoreApplication.translate("SelectionWidget", u"prec", None))
         self.comboBox_part.setItemText(2, QCoreApplication.translate("SelectionWidget", u"episode", None))
         self.comboBox_part.setItemText(3, QCoreApplication.translate("SelectionWidget", u"g_asuivre", None))
         self.comboBox_part.setItemText(4, QCoreApplication.translate("SelectionWidget", u"asuivre", None))

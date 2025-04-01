@@ -101,7 +101,7 @@ class CommonController(QObject, metaclass=QMeta):
             # if os.path.exists(os.path.join(path_cache, k_ep)):
             episode_and_parts[k_ep] = list(all_chapter_keys())
 
-        episode_and_parts['ep01'].remove('precedemment')
+        episode_and_parts['ep01'].remove('prec')
         episode_and_parts['ep39'].remove('g_asuivre')
         episode_and_parts['ep39'].remove('asuivre')
 

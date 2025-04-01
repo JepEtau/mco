@@ -55,7 +55,7 @@ def main():
         logger.setLevel("DEBUG")
 
 
-    precedemment: dict[str, dict[Chapter, str | int]] = {}
+    prec: dict[str, dict[Chapter, str | int]] = {}
     asuivre: dict[str, dict[Chapter, str | int]] = {}
     g_doc: dict[str, dict[Chapter, str | int]] = {}
     for ep_no in range(1, 40):
@@ -66,15 +66,15 @@ def main():
             avsync_stats=True
         )
 
-        # Precedemment
-        ch_audio: ChapterAudio = db[k_ep]['audio']['precedemment']
+        # prec
+        ch_audio: ChapterAudio = db[k_ep]['audio']['prec']
         if 'count' in ch_audio and ch_audio['count'] != 0:
-            precedemment[k_ep] = {
+            prec[k_ep] = {
                 'avsync': ch_audio['avsync'],
                 'count': int(ch_audio['duration'] * get_frame_rate() / 1000),
             }
-            if ch_audio['count'] != precedemment[k_ep]['count']:
-                raise ValueError(red(f"Error: {k_ep}: {ch_audio['count']} vs {precedemment[k_ep]['count']}"))
+            if ch_audio['count'] != prec[k_ep]['count']:
+                raise ValueError(red(f"Error: {k_ep}: {ch_audio['count']} vs {prec[k_ep]['count']}"))
 
             if ch_audio['avsync'] != 0:
                 raise ValueError(red(f"Error: {k_ep}: avsync!=0 ({ch_audio['avsync']})"))
@@ -87,7 +87,7 @@ def main():
                 'count': int(ch_audio['duration'] * get_frame_rate() / 1000),
             }
             if ch_audio['count'] != asuivre[k_ep]['count']:
-                raise ValueError(red(f"Error: {k_ep}: {ch_audio['count']} vs {precedemment[k_ep]['count']}"))
+                raise ValueError(red(f"Error: {k_ep}: {ch_audio['count']} vs {prec[k_ep]['count']}"))
 
             if ch_audio['avsync'] != 0:
                 raise ValueError(red(f"Error: {k_ep}: avsync!=0 ({ch_audio['avsync']})"))
@@ -109,8 +109,8 @@ def main():
         # https://vscode.dev/github/JepEtau/mco_dev/blob/dev/parsers/geometry.py#L211-L212
 
 
-    print(lightcyan("precedemment"))
-    for k, v in precedemment.items():
+    print(lightcyan("prec"))
+    for k, v in prec.items():
         print(f"{k}\t{v['count']}")
 
     print(lightcyan("\nasuivre"))

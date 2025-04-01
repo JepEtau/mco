@@ -27,7 +27,7 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
         print(f"[I] consolidate_av_tracks: {k_ep}:{k_ch}")
     K_EP_DEBUG, K_CHAPTER_DEBUG = '', ''
     # K_EP_DEBUG = 'ep05'
-    # K_CHAPTER_DEBUG = 'precedemment'
+    # K_CHAPTER_DEBUG = 'prec'
     try:
         db_video = db[k_ep]['video']['target']
         db_audio = db[k_ep]['audio']
@@ -36,9 +36,9 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
 
     # !!!! FR language only
 
-    # precedemment
+    # prec
     #---------------------------------------------------------------------------
-    k_ch = 'precedemment'
+    k_ch = 'prec'
     ch_audio: ChapterAudio = db_audio[k_ch]
     ch_video: ChapterVideo = db_video[k_ch]
     if ch_audio['duration']:
@@ -107,8 +107,8 @@ def consolidate_av_tracks(k_ep, k_ch: str = '', verbose: bool = False) -> None:
         to_remove: int = e_s0_vcount - e_s0_acount
 
         # Too many frames, add silence and fadein only for episode 1
-        # (no precedemment)
-        if db_video['precedemment']['count'] <= 0:
+        # (no prec)
+        if db_video['prec']['count'] <= 0:
             avsync: int = to_remove // 2
             if verbose:
                 print(f"[I]  add silence, use avsync: {avsync}")

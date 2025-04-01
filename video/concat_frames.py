@@ -101,7 +101,7 @@ def generate_video_concat_file(
 ):
     """ This function creates a concatenation file which lists
         all video files to merge:
-        - precedemment
+        - prec
         - episode
         - g_asuivre
         - asuivre

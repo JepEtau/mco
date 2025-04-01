@@ -694,7 +694,7 @@ def generate_final_scene(
 
         # in_frame_count: int = in_video_info['frame_count']
         in_frame_count: int = scene['dst']['count']
-        # The dst may use a common src scene: g_fin (english), precedemment? asuivre?
+        # The dst may use a common src scene: g_fin (english), prec? asuivre?
         if src_seek_count:
             in_frame_count = src_seek_count
         dtype_convert_fct = np_to_uint16 if in_pipe_dtype == np.uint16 else np_to_uint8

@@ -17,7 +17,7 @@
     + [x] f
 * [x] consolider j vs k
 * [x] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [-] sim_lr
 
@@ -29,7 +29,7 @@
     + [x] f
 * [x] consolider j vs k
 * [x] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [-] sim_lr
 
@@ -41,7 +41,7 @@
     + [x] f
 * [x] consolider j vs k
 * [ ] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [-] sim_lr
 
@@ -53,7 +53,7 @@
     + [x] f
 * [x] consolider j vs k
 * [ ] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [-] sim_lr
 
@@ -65,7 +65,7 @@
     + [x] f
 * [x] consolider j vs k
 * [x] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [-] sim_lr
 
@@ -77,7 +77,7 @@
     + [x] f
 * [x] consolider j vs k
 * [x] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [-] sim_lr
 
@@ -89,7 +89,7 @@
     + [x] f
 * [x] consolider j vs k
 * [x] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [-] sim_lr
 
@@ -101,7 +101,7 @@
     + [x] f
 * [x] consolider j vs k
 * [x] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [-] sim_lr
 
@@ -113,7 +113,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -125,7 +125,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -137,7 +137,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -149,7 +149,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -161,7 +161,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -173,7 +173,7 @@
     + [/] f
 * [x] consolider j vs k
 * [-] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -185,7 +185,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -197,7 +197,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -209,7 +209,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -221,7 +221,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -233,7 +233,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -245,7 +245,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -257,7 +257,7 @@
     + [/] f
 * [/] consolider j vs k
 * [x] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -269,7 +269,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -281,7 +281,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -293,7 +293,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [-] sim_lr
 
@@ -305,7 +305,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -317,7 +317,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -330,7 +330,7 @@
 * [x] consolider j vs k
     TODO vérifier av synchro car trop de diff d'une ou 2 frames sur des scènes éloignées!!!
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -342,7 +342,7 @@
     + [ ] f
 * [x] consolider j vs k
 * [ ] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -354,7 +354,7 @@
     + [ ] f
 * [x] consolider j vs k
 * [ ] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -366,7 +366,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 
 
@@ -377,7 +377,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -390,7 +390,7 @@
 * [ ] consolider j vs k
     TODO AVsync !!!!
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -402,7 +402,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -414,7 +414,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -426,7 +426,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -438,7 +438,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -450,7 +450,7 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [x] asuivre
 * [ ] sim_lr
 
@@ -462,6 +462,6 @@
     + [/] f
 * [x] consolider j vs k
 * [/] consolider f vs k
-* [x] precedemment
+* [x] prec
 * [ ] sim_lr
 

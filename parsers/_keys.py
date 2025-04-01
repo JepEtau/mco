@@ -26,7 +26,7 @@ def ep_no(key: str) -> int:
 
 
 Chapter = Literal[
-    'precedemment',
+    'prec',
     'episode',
     'g_asuivre',
     'asuivre',
@@ -44,7 +44,7 @@ _credits: tuple[str] = (
 )
 
 _main_chapters: tuple[str] = (
-    'precedemment',
+    'prec',
     'episode',
     'g_asuivre',
     'asuivre',
@@ -54,7 +54,7 @@ _main_chapters: tuple[str] = (
 
 _all_chapters: tuple[str] = (
     'g_debut',
-    'precedemment',
+    'prec',
     'episode',
     'g_asuivre',
     'asuivre',
@@ -64,7 +64,7 @@ _all_chapters: tuple[str] = (
 )
 
 _non_credit_chapters: tuple[str] = (
-    'precedemment',
+    'prec',
     'episode',
     'asuivre',
     'doc'
@@ -72,7 +72,7 @@ _non_credit_chapters: tuple[str] = (
 
 
 _all_unordered_chapters: tuple[str] = (
-    'precedemment',
+    'prec',
     'asuivre',
     'episode',
     'g_asuivre',

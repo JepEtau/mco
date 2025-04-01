@@ -68,7 +68,7 @@ def main():
     k_ep: str = k_ep_dst
 
     # Parse following/previous chapter
-    if k_ch_dst in ('precedemment', 'asuivre'):
+    if k_ch_dst in ('prec', 'asuivre'):
         k_ep = ep_key(ep_no_dst + (1 if k_ch_dst == 'asuivre' else -1))
         k_ch = 'episode'
 
@@ -77,7 +77,7 @@ def main():
 
     # Parse target list for these chapters
     scene_list: list[int] = []
-    if k_ch_dst in ('precedemment', 'asuivre'):
+    if k_ch_dst in ('prec', 'asuivre'):
         scene_list = parse_prec_asuivre_target_scenes(k_ep=k_ep_dst, k_ch=k_ch_dst)
 
     scene_no: int = arguments.scene

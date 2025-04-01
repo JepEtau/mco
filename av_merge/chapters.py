@@ -76,7 +76,7 @@ def add_chapters(
     chapters_file.write(f"CHAPTER0{index}NAME={CHAPTER_NAMES[language][0]}\n")
     count += db['g_debut']['audio']['count']
 
-    k_ch = 'precedemment'
+    k_ch = 'prec'
     if db[k_ep]['audio'][k_ch]['duration'] > 0:
         index += 1
         chapters_file.write(f"CHAPTER0{index}={frame_to_sexagesimal(count, fps)}0\n")
