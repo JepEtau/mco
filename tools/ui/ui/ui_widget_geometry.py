@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'ui_widget_geometry.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.8.2
+## Created by: Qt User Interface Compiler version 6.8.3
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -25,7 +25,7 @@ class Ui_GeometryWidget(object):
     def setupUi(self, GeometryWidget):
         if not GeometryWidget.objectName():
             GeometryWidget.setObjectName(u"GeometryWidget")
-        GeometryWidget.resize(317, 627)
+        GeometryWidget.resize(293, 606)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -396,12 +396,12 @@ class Ui_GeometryWidget(object):
 
         self.spinBox_threshold_min = QSpinBox(self.groupBox_autocrop)
         self.spinBox_threshold_min.setObjectName(u"spinBox_threshold_min")
-        self.spinBox_threshold_min.setMaximumSize(QSize(60, 16777215))
+        self.spinBox_threshold_min.setMaximumSize(QSize(70, 16777215))
         self.spinBox_threshold_min.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.spinBox_threshold_min.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.spinBox_threshold_min.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_threshold_min.setMaximum(127)
-        self.spinBox_threshold_min.setValue(10)
+        self.spinBox_threshold_min.setValue(15)
 
         self.formLayout_3.setWidget(0, QFormLayout.FieldRole, self.spinBox_threshold_min)
 
@@ -412,7 +412,7 @@ class Ui_GeometryWidget(object):
 
         self.spinBox_morph_kernel_radius = QSpinBox(self.groupBox_autocrop)
         self.spinBox_morph_kernel_radius.setObjectName(u"spinBox_morph_kernel_radius")
-        self.spinBox_morph_kernel_radius.setMaximumSize(QSize(60, 16777215))
+        self.spinBox_morph_kernel_radius.setMaximumSize(QSize(70, 16777215))
         self.spinBox_morph_kernel_radius.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.spinBox_morph_kernel_radius.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.spinBox_morph_kernel_radius.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
@@ -429,11 +429,12 @@ class Ui_GeometryWidget(object):
 
         self.spinBox_erode_kernel_radius = QSpinBox(self.groupBox_autocrop)
         self.spinBox_erode_kernel_radius.setObjectName(u"spinBox_erode_kernel_radius")
-        self.spinBox_erode_kernel_radius.setMaximumSize(QSize(60, 16777215))
+        self.spinBox_erode_kernel_radius.setMaximumSize(QSize(70, 16777215))
         self.spinBox_erode_kernel_radius.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.spinBox_erode_kernel_radius.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.spinBox_erode_kernel_radius.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_erode_kernel_radius.setMaximum(11)
+        self.spinBox_erode_kernel_radius.setValue(5)
 
         self.formLayout_3.setWidget(2, QFormLayout.FieldRole, self.spinBox_erode_kernel_radius)
 
@@ -444,12 +445,12 @@ class Ui_GeometryWidget(object):
 
         self.spinBox_erode_iterations = QSpinBox(self.groupBox_autocrop)
         self.spinBox_erode_iterations.setObjectName(u"spinBox_erode_iterations")
-        self.spinBox_erode_iterations.setMaximumSize(QSize(60, 16777215))
+        self.spinBox_erode_iterations.setMaximumSize(QSize(70, 16777215))
         self.spinBox_erode_iterations.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.spinBox_erode_iterations.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
         self.spinBox_erode_iterations.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
         self.spinBox_erode_iterations.setMaximum(3)
-        self.spinBox_erode_iterations.setValue(2)
+        self.spinBox_erode_iterations.setValue(1)
 
         self.formLayout_3.setWidget(3, QFormLayout.FieldRole, self.spinBox_erode_iterations)
 
@@ -463,6 +464,7 @@ class Ui_GeometryWidget(object):
         self.checkBox_do_add_borders.setMaximumSize(QSize(60, 16777215))
         self.checkBox_do_add_borders.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.checkBox_do_add_borders.setText(u"")
+        self.checkBox_do_add_borders.setChecked(True)
 
         self.formLayout_3.setWidget(4, QFormLayout.FieldRole, self.checkBox_do_add_borders)
 
@@ -524,6 +526,12 @@ class Ui_GeometryWidget(object):
 
         self.horizontalLayout_2.addWidget(self.checkBox_use_autocrop)
 
+        self.shortcut_8 = QLabel(self.groupBox_autocrop)
+        self.shortcut_8.setObjectName(u"shortcut_8")
+        self.shortcut_8.setFont(font1)
+
+        self.horizontalLayout_2.addWidget(self.shortcut_8)
+
 
         self.verticalLayout.addLayout(self.horizontalLayout_2)
 
@@ -580,6 +588,7 @@ class Ui_GeometryWidget(object):
         self.lineEdit_scene_autocrop.setText(QCoreApplication.translate("GeometryWidget", u"x:10, y:10, w:5000, h:5000", None))
         self.pushButton_copy_to_scene.setText(QCoreApplication.translate("GeometryWidget", u"copy to scene", None))
         self.label_6.setText(QCoreApplication.translate("GeometryWidget", u"use", None))
+        self.shortcut_8.setText(QCoreApplication.translate("GeometryWidget", u"(F9)", None))
         pass
     # retranslateUi
 

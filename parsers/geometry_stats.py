@@ -30,7 +30,7 @@ class SceneGeometryStat:
         vsettings: VideoSettings = db['vsettings']['hr']
         if not self.geometry.defined:
             # Not valid:
-            print(red("crop is missing:"), f"{scene['no']}")
+            # print(red("crop is missing:"), f"{scene['no']}")
             self._defined = False
             return
         else:

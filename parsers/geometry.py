@@ -54,7 +54,7 @@ class SceneGeometry:
     detection_params: DetectInnerRectParams = field(
         default_factory=DetectInnerRectParams
     )
-    custom_detection_params: bool = True
+    custom_detection_params: bool = False
     use_autocrop: bool = False
     autocrop: list[int, int, int, int] = field(default_factory=list)
 
@@ -296,8 +296,8 @@ def get_geometry_from_properties(properties_str: str) -> SceneGeometry:
             # Use a global default crop value
             geometry.use_default = bool(value == 'true')
 
-        elif property_name == 'custom_detection_params':
-            geometry.custom_detection_params = bool(value == 'true')
+        elif property_name == 'detection_params':
+            geometry.custom_detection_params = not bool(value == 'default')
 
     return geometry
 

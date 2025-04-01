@@ -368,15 +368,20 @@ class GeometryDatabase:
                 if scene_geometry.use_autocrop:
                     values.append(f"use_autocrop=true")
 
+            detection_params: str = f"detection_params="
             if not scene_geometry.custom_detection_params:
-                values.append(f"default_detection_params=true")
+                detection_params += "default"
+            else:
                 params: DetectInnerRectParams = scene_geometry.detection_params
                 params_str: str = ":".join(map(str, (
                     params.threshold_min,
                     params.morph_kernel,
                     params.erode_kernel,
+                    params.erode_iterations,
                 )))
                 params_str += f":{'true' if params.do_add_borders else 'false'}"
+                detection_params += params_str
+            values.append(detection_params)
 
             values_str: str = ", ".join(values)
             print(lightgreen(values_str))
