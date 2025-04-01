@@ -38,7 +38,7 @@ def gpu_resize_to_(
     params: str,
     interpolation_method: str = "bicubic",
 ) -> NnFrame:
-    w, h = map(int, params.split(":")[:2])
+    w, h = map(int, params.split("x")[:2])
     return gpu_resize_(
         frame,
         out_size=(h, w),

@@ -171,13 +171,12 @@ def save_tensor_for_ccor_(frame: NnFrame):
             break
 
     if frame.step_no == ccorr_ref_step_no:
-        print("     saved")
         frame.ccor_ref = frame.tensor.clone()
 
     return frame
 
 
-def collor_correction_(
+def color_correction_(
     frame: NnFrame,
     params: str = "",
 ) -> NnFrame:

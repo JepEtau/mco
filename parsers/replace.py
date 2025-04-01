@@ -106,7 +106,7 @@ def parse_replace_file(k_ep_or_g:str) -> None:
     It will returns the replaced frame for each frame. This is mainly edited in video
     editor
     """
-    verbose = True
+    verbose = False
 
     if verbose:
         print(lightgreen(f"parse_replace_file: {k_ep_or_g}"))
