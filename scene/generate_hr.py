@@ -111,7 +111,7 @@ class UpscalePipeline(object):
                     _scale = param
 
                 elif name == 'resize_to':
-                    w, h = map(int, param.split(":")[:2])
+                    w, h = map(int, param.split("x")[:2])
                     shape = [w, h]
 
                 elif name == 'rotate90':

@@ -116,6 +116,8 @@ class CpuDecoderThread(BaseThread):
                 # src_scene.in_scene['count'] = src_count
                 to_decode: int = src_scene.to_decode
                 _to_decode: int = to_decode
+                remaining = src_count
+                src_end = src_start + to_decode
 
                 if verbose:
                     print(lightgreen(f"[V][D] {to_decode} frames to extract"))
@@ -139,6 +141,7 @@ class CpuDecoderThread(BaseThread):
                     if e := in_scene['effects'].get_effect('decimate'):
                         factor_mod1, _ = e.extra_param
                         print(yellow(f"  decimate:"), f"{in_scene['no']}: {to_decode} -> {src_count} (mod={factor_mod1})")
+                        src_end = src_start + to_decode
 
                 # Frame replacement
                 src_f_replace = in_scene['replace']
@@ -263,13 +266,13 @@ class CpuDecoderThread(BaseThread):
                 decimate_index: int = 0
 
                 print(lightcyan(f"to_decode: {to_decode}, remaining: {remaining}"))
+                print(f"   to replace:  {len(in_scene['replace'].keys())}")
                 while (
                     not self._stop_event.is_set()
-                    and _to_decode
                     and remaining > 0
                 ):
                     _in_f_no = src_start + f_index
-                    if _in_f_no >= src_start + to_decode:
+                    if _in_f_no >= src_end:
                         break
 
                     # decimate
@@ -282,6 +285,7 @@ class CpuDecoderThread(BaseThread):
                             f_index += 1
                             _in_f_no = src_start + f_index
                             if _in_f_no >= src_start + to_decode:
+                                print(red(f"decimate: heeee? {_in_f_no} >= {src_end}"))
                                 break
 
                     # Get frame_no to send to the consumer

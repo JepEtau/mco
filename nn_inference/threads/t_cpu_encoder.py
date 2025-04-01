@@ -44,7 +44,7 @@ class CpuEncoderThread(BaseThread):
 
 
     def run(self) -> None:
-        verbose: bool = False
+        verbose: bool = True
 
         in_queue: Queue = self.in_queue
         writer_subprocess: subprocess.Popen | None = None

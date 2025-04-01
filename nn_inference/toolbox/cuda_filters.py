@@ -159,15 +159,15 @@ def unsharp_mask_(
 
 
 def save_tensor_for_ccor_(frame: NnFrame):
-    print(f"save tensor for step={frame.step_no}?")
+    # print(f"save tensor for step={frame.step_no}?")
     ccorr_ref_step_no: int = -1
-    for i, step in enumerate(frame.sequence[frame.step_no:]):
+    for step in frame.sequence[frame.step_no:]:
         if not isinstance(step, list | tuple):
             continue
         name, params = step
         if name == "ccorr":
             ccorr_ref_step_no = int(params)
-            print(f"     ccorr_ref_step_no: {ccorr_ref_step_no}")
+            # print(f"     ccorr_ref_step_no: {ccorr_ref_step_no}")
             break
 
     if frame.step_no == ccorr_ref_step_no:
