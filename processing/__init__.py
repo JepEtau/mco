@@ -37,6 +37,7 @@ supported_cuda_filters : tuple[str] = (
     "gaussian_noise",
     "rotate90",
     "unsharp_mask",
+    "ccorr",
 )
 
 

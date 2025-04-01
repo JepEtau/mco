@@ -1,3 +1,4 @@
+from typing import Any
 import torch
 from torch import Tensor
 import torch.nn.functional as F
@@ -157,22 +158,33 @@ def unsharp_mask_(
     return frame
 
 
+def save_tensor_for_ccor_(frame: NnFrame):
+    print(f"save tensor for step={frame.step_no}?")
+    ccorr_ref_step_no: int = -1
+    for i, step in enumerate(frame.sequence[frame.step_no:]):
+        if not isinstance(step, list | tuple):
+            continue
+        name, params = step
+        if name == "ccorr":
+            ccorr_ref_step_no = int(params)
+            print(f"     ccorr_ref_step_no: {ccorr_ref_step_no}")
+            break
+
+    if frame.step_no == ccorr_ref_step_no:
+        print("     saved")
+        frame.ccor_ref = frame.tensor.clone()
+
+    return frame
 
 
 def collor_correction_(
     frame: NnFrame,
-    params: str | None,
+    params: str = "",
 ) -> NnFrame:
-    if frame.ccor_index == frame.step_no:
-        frame.ccor_ref = torch.clone(frame.tensor)
+    if frame.ccor_ref is None:
+        raise ValueError("Reference fraeme has not be saved for color correction")
 
     verbose: bool = False
-
-    # if params is not None:
-    #     param_list: list[str] = params.split(":")
-    #     if len(param_list) >= 1:
-    #         args['strength'] = float(param_list[0])
-
 
     color_correction = ColorCorrection()
 

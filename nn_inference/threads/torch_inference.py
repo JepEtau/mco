@@ -13,6 +13,7 @@ from nn_inference.resource_mgr import NnFrame
 from nn_inference.threads.t_decoder import DecoderThread
 from nn_inference.threads.t_encoder import EncoderThread
 from nn_inference.threads.t_helpers import patch_next_step_no_
+from nn_inference.toolbox.cuda_filters import save_tensor_for_ccor_
 from nn_inference.toolbox.filtering import apply_cuda_filters_
 from utils.p_print import *
 from pynnlib import (
@@ -58,6 +59,10 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
                 print(blue(f"{verbose_prefix} model: {model_key}"))
 
             if frame.tensor is not None:
+
+                # Save tensor if this frame tensor will be used as ref
+                frame = save_tensor_for_ccor_(frame)
+
                 if do_copy:
                     in_tensor: Tensor = frame.tensor.clone()
                     # self.producer.set_produce_flag()

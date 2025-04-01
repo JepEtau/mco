@@ -8,6 +8,7 @@ from nn_inference.resource_mgr import NnFrame
 from nn_inference.threads.t_decoder import DecoderThread
 from nn_inference.threads.t_encoder import EncoderThread
 from nn_inference.threads.t_helpers import patch_next_step_no_
+from nn_inference.toolbox.cuda_filters import save_tensor_for_ccor_
 from nn_inference.toolbox.filtering import apply_cuda_filters_
 from pynnlib import is_tensorrt_available
 if is_tensorrt_available():
@@ -36,6 +37,10 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             if input is None or self._stop_event.is_set():
                 break
             frame: NnFrame = input
+
+
+            # Save tensor if this frame tensor will be used as ref
+            frame = save_tensor_for_ccor_(frame)
 
             # Get model and session
             model_key: str = frame.sequence[frame.step_no]

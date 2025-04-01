@@ -8,6 +8,7 @@ from typing import Literal
 
 import cv2
 import numpy as np
+from nn_inference.toolbox.cuda_filters import save_tensor_for_ccor_
 from utils.p_print import *
 
 from nn_inference.resource_mgr import NnFrame, BaseThread
@@ -60,6 +61,9 @@ class CpuInferenceThread(BaseThread):
                 print(blue(f"[V][I][CPU] end of inference (reason: {reason})"))
                 break
             frame: NnFrame = input
+
+            # Save tensor if this frame tensor will be used as ref
+            frame = save_tensor_for_ccor_(frame)
 
             # Get model
             model_key: str = frame.sequence[frame.step_no]

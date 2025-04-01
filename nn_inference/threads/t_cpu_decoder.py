@@ -10,6 +10,7 @@ import time
 from typing import TYPE_CHECKING
 
 from nn_inference.threads.t_helpers import get_encoder_step_no, get_first_nnmodel_step_no
+from nn_inference.toolbox.cuda_filters import save_tensor_for_ccor_
 from nn_inference.toolbox.filtering import get_decoder_ffmpeg_filters
 
 from .t_cpu_encoder import CpuEncoderThread
@@ -355,6 +356,9 @@ class CpuDecoderThread(BaseThread):
                         step_no=start_step_no,
                         encoder_step_no=encoder_step_no,
                     )
+
+                    # Save tensor if this frame tensor will be used as ref
+                    frame = save_tensor_for_ccor_(frame)
 
                     if remaining_src_scenes == 0 and remaining == 1:
                         print(yellow(f"  Tag last frame: {frame.f_no}"))

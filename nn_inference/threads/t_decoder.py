@@ -12,6 +12,7 @@ from torch import Tensor
 from typing import TYPE_CHECKING
 
 from nn_inference.threads.t_encoder import EncoderThread
+from nn_inference.toolbox.cuda_filters import save_tensor_for_ccor_
 from nn_inference.toolbox.dh_transfers import (
     htod_transfer,
 )
@@ -413,6 +414,8 @@ class DecoderThread(BaseThread):
                         print(yellow(f"  Tag last frame: {frame.f_no}"))
                         frame.last = True
 
+                    # Save tensor if this frame tensor will be used as ref
+                    frame = save_tensor_for_ccor_(frame)
 
                     # Execute synchronous filters.
                     # TODO: later, use a separate thread for this

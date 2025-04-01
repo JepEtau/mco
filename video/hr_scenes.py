@@ -12,6 +12,7 @@ from nn_inference.threads.t_progress import ProgressThread
 from nn_inference.model_mgr import ModelManager
 from nn_inference.resource_mgr import ResourceManager
 from nn_inference.threads.t_decoder import VideoStreamInfo
+
 from nn_inference.toolbox.upscale_doc import (
     consolidate_initial_doc,
     consolidate_initial_doc_scenes,
@@ -20,6 +21,7 @@ from nn_inference.toolbox.upscale_doc import (
 )
 
 from parsers.p_print import pprint_scene_mapping
+from scene.filters import patch_filters_for_ccor_
 from scene.generate_hr import UpscalePipeline
 from processing import supported_filters
 from scene.consolidate import consolidate_scene
@@ -325,8 +327,10 @@ def upscale_scenes(
                 model_manager.unregister(model_key)
             else:
                 scene_filters.steps.append(model_key)
-        # print(lightcyan(f"Scene {scene['no']} filters:"))
-        # pprint(scene_filters)
+
+        # Consolidate scene filters for the ones that uses past frames
+        scene_filters = patch_filters_for_ccor_(scene_filters)
+
 
         if model_manager.count():
             print(model_manager)

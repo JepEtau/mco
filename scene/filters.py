@@ -105,3 +105,20 @@ def get_filters(scene: Scene) -> list[Filter]:
         raise NotImplementedError(f"it was filters for scene: {':'.join((k_ed, k_ep, k_ch))}")
     return filters
 
+
+
+
+def patch_filters_for_ccor_(scene_filters: Filter) -> Filter:
+    # Loop until non FFmpeg filter found
+
+    for i, step in enumerate(scene_filters.steps):
+        if not isinstance(step, list | tuple):
+            continue
+        name, params = step
+        if name == "ccorr":
+            delta = int(params)
+            if delta < 0:
+                scene_filters.steps[i] = (name, str(i + int(params)))
+            if delta == 0:
+                raise ValueError(red("[E] not a valid color correction step no. or delta"))
+    return scene_filters
