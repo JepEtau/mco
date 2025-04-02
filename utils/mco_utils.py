@@ -353,7 +353,7 @@ def get_cache_path(scene: Scene, compare: bool = False) -> str:
     elif task_name == 'lr':
         output_path = os.path.join(
             cache_dir,
-            scene['k_ep'],
+            scene['dst']['k_ep'] if 'dst' in scene else scene['k_ep'],
             "lr_compare" if compare else "lr"
         )
 

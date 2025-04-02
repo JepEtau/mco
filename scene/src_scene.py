@@ -37,6 +37,7 @@ class SrcScene:
         self._start: int = start
         self._count: int = count
         self._effects: Effects | None = effects
+        self._k_ed_ep_ch_no: tuple[str, str, str, int] = k_ed_ep_ch_no
 
         # scene is the original scene
         self._in_scene: Scene = in_scene
@@ -62,6 +63,11 @@ class SrcScene:
         if 'start' in keys or 'count' in keys or 'scene' in keys:
             raise ValueError("not allowed to access")
         self.__dict__.update(values)
+
+
+    @property
+    def k_ed_ep_ch_no(self) -> tuple[str, str, str, int]:
+        return self._k_ed_ep_ch_no
 
 
     @property

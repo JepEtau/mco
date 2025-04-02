@@ -54,7 +54,8 @@ from utils.media import (
 def generate_lr_scene(
     scene: Scene,
     force: bool = False,
-    verbose: bool = True
+    verbose: bool = True,
+    save_as_png: bool = False,
 ) -> bool:
     scene_key: str = f"{scene['dst']['k_ep']}:{scene['dst']['k_ch']}:{scene['no']}"
     out_video_fp: str = scene['task'].video_file
@@ -107,43 +108,48 @@ def generate_lr_scene(
         print(f"    pixfmt: {e_pixel_format}")
         print(f"    size: {out_w}x{out_h}")
 
-    e_command: list[str] = [
-        ffmpeg_exe,
-        "-hide_banner",
-        "-loglevel", "warning",
-        "-nostats",
 
-        "-f", "rawvideo",
-        '-pixel_format', e_pixel_format,
-        '-video_size', f"{out_w}x{out_h}",
-        "-r", str(frame_rate),
-        "-i", "pipe:0",
+    if save_as_png:
+        encoder: ImageWriter = ImageWriter(scene=scene, verbose=verbose)
 
-        "-pix_fmt", vsettings.pix_fmt,
-        "-vcodec", str_to_video_codec[vsettings.codec].value,
-        *vsettings.codec_options,
-        *metadata,
-        out_video_fp, "-y"
-    ]
-    if verbose:
-        print(lightcyan(f"  e_command:"), " ".join(e_command))
-    e_subprocess: subprocess.Popen = None
-    try:
-        e_subprocess = subprocess.Popen(
-            e_command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
+    else:
+        e_command: list[str] = [
+            ffmpeg_exe,
+            "-hide_banner",
+            "-loglevel", "warning",
+            "-nostats",
+
+            "-f", "rawvideo",
+            '-pixel_format', e_pixel_format,
+            '-video_size', f"{out_w}x{out_h}",
+            "-r", str(frame_rate),
+            "-i", "pipe:0",
+
+            "-pix_fmt", vsettings.pix_fmt,
+            "-vcodec", str_to_video_codec[vsettings.codec].value,
+            *vsettings.codec_options,
+            *metadata,
+            out_video_fp, "-y"
+        ]
+        if verbose:
+            print(lightcyan(f"  e_command:"), " ".join(e_command))
+        e_subprocess: subprocess.Popen = None
+        try:
+            e_subprocess = subprocess.Popen(
+                e_command,
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+            )
+        except Exception as e:
+            print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
+            return False
+
+        encoder: Encoder = Encoder(
+            scene=scene,
+            e_subprocess=e_subprocess,
+            verbose=verbose
         )
-    except Exception as e:
-        print(red(f"[E][W] {scene_key} Unexpected error: {type(e)}"))
-        return False
-
-    encoder: Encoder = Encoder(
-        scene=scene,
-        e_subprocess=e_subprocess,
-        verbose=verbose
-    )
     encoder.start()
 
 
@@ -305,7 +311,6 @@ def generate_lr_scene(
             print(lightcyan("first scene, avsync:"), ch_video['avsync'])
             if ch_video['avsync'] != 0:
                 raise NotImplementedError("avsync not yet supported")
-
 
         # Decode
 
@@ -581,3 +586,80 @@ class Encoder(Thread):
 
         if verbose:
             print(purple(f"encoder: ended"))
+
+
+
+class ImageWriter(Thread):
+    def __init__(
+        self,
+        scene: Scene,
+        verbose: bool,
+    ):
+        super().__init__(name="image_writer")
+        self.verbose: bool = verbose
+        self.scene: Scene = scene
+        self._stop_event: Event = Event()
+        self.in_queue: Queue = Queue(1)
+
+        # Output folder
+        k_ed, k_ep = scene['src'].primary_scene().k_ed_ep_ch_no[:2]
+        self.img_directory = os.path.join(
+            os.sep.join(scene['cache'].split(os.sep)[:-3]),
+            "imgs",
+            f"{k_ep}_{scene['no']:03}_{scene['task'].name}_{k_ed}"
+        )
+        os.makedirs(self.img_directory, exist_ok=True)
+
+    def put_frame(self, frame: NnFrame) -> bool:
+        self.in_queue.put(frame)
+        return True
+
+
+    def run(self) -> None:
+        in_queue: Queue = self.in_queue
+        verbose: bool = self.verbose
+
+        e_index: int = 0
+        while not self._stop_event.is_set():
+            # Wait for a frame or a poison pill
+            input = in_queue.get(block=True)
+            if input is None or self._stop_event.is_set():
+                if verbose:
+                    print(purple("[V][E] Received Null tensor"))
+                break
+
+            frame: NnFrame = input
+
+            print(lightgreen(f"    ({e_index}) write: {frame.f_no}, {frame.tensor.shape}, {frame.tensor.dtype}"))
+
+            # effect are made on np.ndarray
+            in_f_no: int = frame.f_no
+            mco_frame = McoFrame(
+                no=in_f_no,
+                img=np_to_float32(frame.tensor),
+                scene=self.scene,
+                src_scene_index=frame.src_scene_index,
+            )
+
+            # Apply upscale effects (loops)
+            src_scene: SrcScene = frame.scene['src'].scenes()[frame.src_scene_index]
+            out_f_no: int = src_scene.start + e_index
+            out_frames = apply_upscale_effects(
+                out_f_no=out_f_no,
+                frame=mco_frame,
+                out_i=e_index,
+            )
+            # print(f"upscale effects: {len(out_frames)}")
+
+            # Convert to np.float
+            for f in out_frames:
+                f.img = np_to_float32(f.img)
+
+            # Final effects: fades and specific to generic (overlay, title, blend)
+            # print(f"encode: f_no. {out_f_no}, nb of frames: {len(out_frames)}")
+            for out_frame in out_frames:
+                img_fp: str = os.path.join(self.img_directory, f"{e_index:03}.png")
+                # print(f"   write: {e_index}: {out_frame.img.shape} as {img_fp}")
+                write_image(img_fp, out_frame.img)
+                e_index += 1
+

@@ -1,8 +1,5 @@
-## FIXED, to validate:
-
-
 ## HIGH priority
-- add inpainting in checksum
+- extract frames from a clip
 
 
 ## MIDDLE priority
