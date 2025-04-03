@@ -119,9 +119,10 @@ status:
 
 (!)     * FastDVDNet             https://github.com/m-tassano/fastdvdnet
 
-(!)     * STBN                   https://github.com/ZKCCZ/STBN
-            interesting paper
-            reported as > FastDVDNet and unsupervised contrary to RVRT
+    * STBN                   https://github.com/ZKCCZ/STBN
+        interesting paper
+        reported as > FastDVDNet and unsupervised contrary to RVRT
+        __TO_INTEGRATE__
 
 (!)     * DAS3R                  https://github.com/kai422/DAS3R
 

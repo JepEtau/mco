@@ -17,8 +17,9 @@ def get_first_nnmodel_step_no(filters: list[Any]) -> int:
         if isinstance(f, str):
             break
 
-    if i == len(filters):
-        raise ValueError(red("at least a model is required"))
+    if i == len(filters) - 1:
+        print(red("get_first_nnmodel_step_no: at least a model is required"))
+        return -1
 
     return min(i, len(filters) - 1)
 

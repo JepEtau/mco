@@ -21,6 +21,7 @@ from parsers import (
     VideoSettings,
     parse_episode,
     pprint_scene_mapping,
+    TASK_NAMES,
 )
 from processing.frame_cache import FrameCache
 from scene.consolidate import consolidate_scene
@@ -117,11 +118,19 @@ def main():
 def video_to_images(arguments) -> None:
     in_video_fp: str = absolute_path(arguments.input)
     directory, basename = path_split(in_video_fp)[:2]
-    k_ep, task_name, k_ch = directory.split(os.sep)[-3:]
+    print(directory)
+    dir_array: list[str] = directory.split(os.sep)
+    if dir_array[-1] not in TASK_NAMES:
+        k_ep, task_name, k_ch = directory.split(os.sep)[-3:]
+    else:
+        k_ep, task_name = directory.split(os.sep)[-2:]
+
     _, _, scene_no, k_ed = basename.replace("__", "_").split("_", maxsplit=4)[:4]
 
+    print(basename.replace("__", "_").split("_", maxsplit=4))
+
     img_directory = os.path.join(
-        os.sep.join(directory.split(os.sep)[:-3]).replace("cache", "imgs"),
+        os.sep.join([]).replace("cache", "imgs"),
         f"{k_ep}_{scene_no}_{task_name}_{k_ed}"
     )
     os.makedirs(img_directory, exist_ok=True)
@@ -135,7 +144,7 @@ def video_to_images(arguments) -> None:
         os.sep.join([img_directory, "%03d.png"])
     ]
     print(lightgreen(' '.join(ffmpeg_command)))
-
+    sys.exit()
     d_subprocess: subprocess.Popen | None = None
     try:
         d_subprocess = subprocess.Popen(

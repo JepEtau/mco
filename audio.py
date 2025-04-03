@@ -20,8 +20,6 @@ from utils.p_print import *
 
 
 def main():
-    editions = ['s0', 's', 'k', 'a', 'f', 'b', 'c']
-
     # Arguments
     parser = common_argument_parser(
         description="Generate audio stream",

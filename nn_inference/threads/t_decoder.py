@@ -281,12 +281,17 @@ class DecoderThread(BaseThread):
 
                 # Search the first nn model
                 step_no: int = get_first_nnmodel_step_no(filter_steps)
-                session: NnModelSession = model_manager.session(filter_steps[step_no])
-
-                # Search the encoder step no.
-                encoder_step_no: int = get_encoder_step_no(filter_steps)
-                print(lightgreen(f"[V][D] encoder step no. -> {encoder_step_no}"))
                 print(lightgreen(f"[V][D] first NN model step no -> {step_no}"))
+                if step_no == -1:
+                    encoder_step_no: int = len(filter_steps)
+                    first_model_dtype = torch.float16
+                else:
+                    session: NnModelSession = model_manager.session(filter_steps[step_no])
+                    first_model_dtype = session.dtype
+
+                    # Search the encoder step no.
+                    encoder_step_no: int = get_encoder_step_no(filter_steps)
+                print(lightgreen(f"[V][D] encoder step no. -> {encoder_step_no}"))
 
                 # Flow control
                 flip_r_b: bool = in_video_info.img_c_order != 'rgb'
@@ -389,7 +394,7 @@ class DecoderThread(BaseThread):
                     # All filters between decoder and the next session will use this dtype
                     d_tensor: Tensor = img_to_tensor(
                         d_img=d_img,
-                        tensor_dtype=session.dtype,
+                        tensor_dtype=first_model_dtype,
                         flip_r_b=flip_r_b,
                     )
 
@@ -430,7 +435,7 @@ class DecoderThread(BaseThread):
                             f"[V][D] ({lightgreen(f_index)}) ({_in_f_no}), {remaining}. Tensor:",
                             f"{d_tensor.shape}, {d_tensor.dtype}"
                         )
-                        print(f"[V][D]     Step no.:{frame.step_no}, {frame.sequence[frame.step_no]}")
+                        print(f"[V][D]     Step no.:{frame.step_no}") #, {frame.sequence[frame.step_no]}")
 
                     # Skip following model if inpainting and dsr
                     # patch_next_step_no_(frame=frame, model_manager=model_manager)
@@ -445,7 +450,7 @@ class DecoderThread(BaseThread):
                         consumer = self.i_threads[
                             model_manager.xprovider(frame.sequence[step_no])
                         ]
-                        consumer.put_frame(frame)
+                    consumer.put_frame(frame)
 
                     # increment _in_f_no, because 'loop' frames have been sent to the encoder
                     loop = get_loop_nframes(src_scene, f_no=f_no)
