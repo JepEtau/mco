@@ -273,21 +273,21 @@ def consolidate_scene(
 
     else:
         # Output video filename
-        _k_ed, _k_ep = primary_src_scene['k_ed_ep_ch_no'][:2]
+        in_k_ed, in_k_ep, in_k_ch, in_scene_no = primary_src_scene['k_ed_ep_ch_no']
         if k_ch in ('g_debut', 'g_fin'):
             cache_path: str = db[k_ch]['cache_path']
-            basename = f"{k_ch}_{s_no_str}__{_k_ed}_{_k_ep}"
+            basename = f"{k_ch}_{s_no_str}__{in_k_ed}_{in_k_ep}"
 
         elif (
             k_ch in ('g_asuivre', 'g_doc')
             and task_name not in ('lr', 'sim', 'final')
         ):
             cache_path: str = db[k_ch]['cache_path']
-            basename = f"{k_ch}_{s_no_str}__{_k_ed}_{_k_ep}"
+            basename = f"{k_ch}_{s_no_str}__{in_k_ed}_{in_k_ep}"
 
         else:
             cache_path: str = db[k_ep]['cache_path']
-            basename = f"{k_ep}_{k_ch}_{s_no_str}__{_k_ed}"
+            basename = f"{k_ep}_{k_ch}_{s_no_str}__{in_k_ed}"
 
         suffix: str = ""
         # Append the hash for comparisons except for some tasks
@@ -349,6 +349,9 @@ def consolidate_scene(
                 cache_path = os.path.join(cache_path, f"{scene['dst']['k_ch']}")
             task.video_file = os.path.join(cache_path, f"{basename}{suffix}{ext}")
 
+
+        # Input video file
+
         # Input file for this task might not use the previous one
         #  but the input of the previous task, update input file
         if task_name in ('st', 'tf', 'cg', 'final'):
@@ -362,17 +365,25 @@ def consolidate_scene(
             in_vsettings: VideoSettings = db['vsettings']['hr']
             in_ext: str = vcodec_to_extension[in_vsettings.codec]
 
+            # Input basename/cache
+            #   use the src cache for prec/asuivre
+            if scene['dst']['k_ch'] in ('prec', 'asuivre'):
+                cache_path: str = db[in_k_ep]['cache_path']
+                basename = f"{in_k_ep}_{in_k_ch}_{in_scene_no:03}__{in_k_ed}"
+            else:
+                cache_path = scene['cache']
+
             task.in_video_file = os.path.join(
-                scene['cache'],
+                cache_path,
                 f"{prev_task_name}",
                 f"{basename}_{suffix}{prev_task_name}{in_ext}"
             )
 
             # Add fallback input video filename bc some tasks may be not processed
             task.fallback_in_video_files = {
-                'hr': os.path.join(scene['cache'], f"hr", f"{basename}_hr{in_ext}"),
-                'st': os.path.join(scene['cache'], f"st", f"{basename}_hr_st{in_ext}"),
-                'tf': os.path.join(scene['cache'], f"tf", f"{basename}_tf{in_ext}"),
+                'hr': os.path.join(cache_path, f"hr", f"{basename}_hr{in_ext}"),
+                'st': os.path.join(cache_path, f"st", f"{basename}_hr_st{in_ext}"),
+                'tf': os.path.join(cache_path, f"tf", f"{basename}_tf{in_ext}"),
             }
 
             in_video_fp: str = task.in_video_file

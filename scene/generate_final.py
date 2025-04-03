@@ -435,7 +435,7 @@ def generate_final_scene(
     transformation: TransformationValues = geometry.calculate_transformation()
     pprint(transformation)
     if transformation.err_borders is not None:
-        raise ValueError(red("Erroneous chapter width"))
+        raise ValueError(red(f"Erroneous chapter width: {ch_width}"))
     # Create a video file for debug
     if debug and debug_imgs:
         # Draw rectangle

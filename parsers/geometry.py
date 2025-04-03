@@ -165,7 +165,7 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
     TODO: it uses the first frame of a scene to identify the scene rather the index, so that
     a modification of scenes will not break anything
     """
-    verbose = False
+    verbose = True
     if verbose:
         print(lightgreen(f"parse_geometry_file: {k_ep_or_g}"))
 
@@ -226,7 +226,11 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
                 k_ep_src: str = result.group(3)
                 k_ch_src: str = result.group(4)
                 scene_no_src: int = int(result.group(5))
-                scene: Scene = ch_video['scenes'][scene_no]
+                try:
+                    scene: Scene = ch_video['scenes'][scene_no]
+                except Exception as e:
+                    print(red(f"exception: parse_geometry_file: {k_ep_or_g}"))
+                    pass
                 src_scene: Scene = scene['src'].primary_scene().in_scene
                 if (
                     src_scene['k_ed'] != k_ed_src
@@ -236,6 +240,8 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
                 ):
                     if verbose:
                         print(yellow(f"not the primary scene: [{k_str}]"))
+                        pprint(scene)
+                        raise
                     continue
 
                 properties = config.get(section, k_str)

@@ -132,13 +132,14 @@ def parse_database(
             parse_episode(k_ed=k_ed_tmp, k_ep=k_ep_tmp)
 
     # Parse other config files for each dependency
-    already_parsed = list()
+    already_parsed = []
     for k_ed_tmp, v in dependencies.items():
         for k_ep_tmp in dependencies[k_ed_tmp]:
             if k_ep_tmp not in already_parsed:
                 parse_replace_file(k_ep_or_g=k_ep_tmp)
                 parse_loop_file(k_ep=k_ep_tmp, verbose=False)
                 parse_dsr_file(k_ep_or_g=k_ep_tmp)
+                # parse_geometry_file(k_ep_or_g=k_ep_tmp)
                 # parse_stabilize_configurations(k_ep_or_g=k_ep_tmp)
                 already_parsed.append(k_ep_tmp)
 

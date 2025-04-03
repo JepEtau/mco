@@ -29,6 +29,8 @@
     -> *use davinci resolve*
 
 
+https://github.com/FORARTfe/HyMPS/blob/main/Video/AI-based.md#denoisers-
+
 
 ## New archs / algorithms
 https://github.com/rewaifu/resselt/
@@ -78,10 +80,11 @@ status:
 
     * RVRT (1x, 4x)         https://github.com/JingyunLiang/RVRT
         __integrated__
+        Artifacts with denoiser... unusable
 
-    * IART (4x)             https://github.com/kai422/IART
-        use SPyNet still
-        __integrated__
+(*)     * IART (4x)             https://github.com/kai422/IART
+            use SPyNet still
+            __integrated__
 
     * CAVSR                 https://github.com/aprBlue/CAVSR
         n'utilise pas SPyNet mais autre chose...
@@ -104,12 +107,23 @@ status:
     * TTVSR                 https://github.com/researchmm/TTVSR
         inference function might be interesting
 
-    * VQD-SR                https://github.com/researchmm/vqd-sr
+(!)     * VQD-SR (4x)           https://github.com/researchmm/vqd-sr
+            like animeSR
 
-    * BSVD                  https://github.com/ChenyangQiQi/BSVD
+(!)     * BSVD                  https://github.com/ChenyangQiQi/BSVD
+        Real-time Streaming Video Denoising with Bidirectional Buffers
 
-    * PaCNet                https://github.com/grishavak/PaCNet-denoiser
-        trained on DAVIS :-(
+(!)     * PaCNet                 https://github.com/grishavak/PaCNet-denoiser
+            trained on DAVIS :-(
+                why not?
+
+(!)     * FastDVDNet             https://github.com/m-tassano/fastdvdnet
+
+(!)     * STBN                   https://github.com/ZKCCZ/STBN
+            interesting paper
+            reported as > FastDVDNet and unsupervised contrary to RVRT
+
+(!)     * DAS3R                  https://github.com/kai422/DAS3R
 
 
 - Optical Flow
