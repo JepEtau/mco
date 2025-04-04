@@ -28,7 +28,7 @@ from scene.generate_lr import generate_lr_scene
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
 from utils.mco_types import ChapterVideo, Scene
-from utils.media import VideoCodec
+from utils.media import VideoCodec, extract_media_info
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
 from utils.tools import ffmpeg_exe
@@ -60,6 +60,7 @@ DEFAULT_HVEC_NVENC_PARAMS: str = """
 
 
 def execute_ffmpeg_command(command: list[str], verbose: bool = False) -> None:
+    command = list(filter(None, command))
     if verbose:
         print(lightgreen("FFmpeg command:"), darkgrey(' '.join(command)))
 
@@ -106,14 +107,27 @@ def video_to_images(arguments: Namespace) -> None:
     )
     os.makedirs(scene_img_directory, exist_ok=True)
 
+    # Crop for comparison
+    ffmpeg_filter: list[str] = []
+    if arguments.compare:
+        task_name: TaskName
+        if task_name in ('hr', 'tf', 'cg'):
+            h, w, _ = extract_media_info(in_video_fp)['video']['shape']
+            pad = 24
+            ffmpeg_filter = [
+                "-vf", f"crop={w - 2 * pad}:{h - 2 * pad}:{pad}:{pad}"
+            ]
+
     ffmpeg_command: list[str] = [
         ffmpeg_exe,
         "-hide_banner",
         "-loglevel", "error",
         "-stats",
         "-i", in_video_fp,
+        *ffmpeg_filter,
         os.sep.join([scene_img_directory, "%03d.png"])
     ]
+
     execute_ffmpeg_command(command=ffmpeg_command, verbose=True)
 
 
@@ -155,6 +169,20 @@ def images_to_video(arguments: Namespace) -> None:
     elif vcodec == VideoCodec.HEVC_NVENC:
         codec_params = DEFAULT_HVEC_NVENC_PARAMS
 
+    extra_params: list[str] = []
+    if codec_params:
+        def _clean_ffmpeg_params(data: str) -> str:
+            for c in ['\"', '\r', '\n', '\t']:
+                data = data.replace(c, '')
+            # avoid too many spaces when debugging
+            for _ in range(4):
+                data = data.replace('  ', ' ')
+            return data
+
+        extra_params = list(
+            [x for x in _clean_ffmpeg_params(codec_params).split(" ") if x]
+        )
+
     # Create command
     ffmpeg_command: list[str] = [
         ffmpeg_exe,
@@ -168,22 +196,9 @@ def images_to_video(arguments: Namespace) -> None:
         "-vcodec", vcodec.value,
         "-pix_fmt", pix_fmt,
         "-color_range", "limited",
+        *extra_params,
+        "-y", out_video_fp
     ]
-
-    if codec_params:
-        def _clean_ffmpeg_params(data: str) -> str:
-            for c in ['\"', '\r', '\n', '\t']:
-                data = data.replace(c, '')
-            # avoid too many spaces when debugging
-            for _ in range(4):
-                data = data.replace('  ', ' ')
-            return data
-
-        ffmpeg_command.extend(
-            [x for x in _clean_ffmpeg_params(codec_params).split(" ") if x]
-        )
-
-    ffmpeg_command.extend(["-y", out_video_fp])
     execute_ffmpeg_command(command=ffmpeg_command, verbose=True)
 
 
@@ -276,8 +291,6 @@ def main():
     scene['task'] = ProcessingTask(name=task_name)
     consolidate_scene(scene=scene)
     generate_lr_scene(scene=scene, save_as_png=True)
-
-
 
 
 
