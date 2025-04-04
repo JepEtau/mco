@@ -15,7 +15,7 @@ ChannelOrder = Literal['rgb', 'bgr']
 FShape = tuple[int, int, int]
 
 
-class FFmpegVideoCodec(Enum):
+class VideoCodec(Enum):
     H264 = "libx264"
     H265 = "libx265"
     VP9 = "libvpx-vp9"
@@ -24,18 +24,18 @@ class FFmpegVideoCodec(Enum):
     HEVC_NVENC = "hevc_nvenc"
 
 
-str_to_video_codec: dict[str, FFmpegVideoCodec] = {
-    'h264': FFmpegVideoCodec.H264,
-    'h265': FFmpegVideoCodec.H265,
-    'ffv1': FFmpegVideoCodec.FFV1,
-    'vp9': FFmpegVideoCodec.VP9,
-    'dnxhd': FFmpegVideoCodec.DNXHD,
-    "hevc_nvenc": FFmpegVideoCodec.HEVC_NVENC,
+str_to_video_codec: dict[str, VideoCodec] = {
+    'h264': VideoCodec.H264,
+    'h265': VideoCodec.H265,
+    'ffv1': VideoCodec.FFV1,
+    'vp9': VideoCodec.VP9,
+    'dnxhd': VideoCodec.DNXHD,
+    "hevc_nvenc": VideoCodec.HEVC_NVENC,
 }
 
 
 # Limit the containers
-vcodec_to_extension: dict[FFmpegVideoCodec, str] = {
+vcodec_to_extension: dict[VideoCodec, str] = {
     'h264': '.mkv',
     'h265': '.mkv',
     'ffv1': '.mkv',

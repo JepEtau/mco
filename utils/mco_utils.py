@@ -9,7 +9,7 @@ from scene.filters import do_watermark
 from utils.mco_types import ChapterVideo, Scene
 from utils.media import (
     extract_media_info_mco,
-    FFmpegVideoCodec,
+    VideoCodec,
     str_to_video_codec,
     VideoInfo,
 )
@@ -38,7 +38,7 @@ def ffmpeg_metadata(scene: Scene) -> list[str]:
     vsettings: VideoSettings = scene['task'].video_settings
 
     metadata: list[str] = []
-    if str_to_video_codec[vsettings.codec] == FFmpegVideoCodec.DNXHD:
+    if str_to_video_codec[vsettings.codec] == VideoCodec.DNXHD:
         metadata.extend(["-map_metadata", "-1"])
         if len(vsettings.metadata.keys()):
             for k, v in vsettings.metadata.items():

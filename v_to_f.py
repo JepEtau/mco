@@ -1,4 +1,4 @@
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 import gc
 import logging
 import math
@@ -23,21 +23,169 @@ from parsers import (
     pprint_scene_mapping,
     TASK_NAMES,
 )
-from processing.frame_cache import FrameCache
 from scene.consolidate import consolidate_scene
 from scene.generate_lr import generate_lr_scene
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
-from utils.mco_types import ChapterVideo, Scene, Inputs
-from utils.mco_utils import calculate_scene_frame_count, run_simple_command
+from utils.mco_types import ChapterVideo, Scene
+from utils.media import VideoCodec
 from utils.p_print import *
 from utils.path_utils import absolute_path, path_split
-from utils.time_conversions import FrameRate, frame_to_s, frame_to_sexagesimal
-from video.extract_scenes import extract_scenes
-from utils.media import (
-    VideoInfo, extract_media_info_mco, frame_rate_dec, str_to_video_codec
-)
 from utils.tools import ffmpeg_exe
+
+
+
+# Keep here to fasten modifications
+DEFAULT_H265_PARAMS: str = """
+    -preset slow
+    -crf 16
+    -profile:v main422-10
+    -x265-params sao=0
+"""
+
+DEFAULT_HVEC_NVENC_PARAMS: str = """
+    -profile:v main
+    -b_ref_mode disabled
+    -tag:v hvc1
+    -g 30
+    -preset p7
+    -tune hq
+    -rc constqp
+    -qp 17
+    -rc-lookahead 20
+    -spatial_aq 1
+    -aq-strength 15
+    -b:v 0
+"""
+
+
+def execute_ffmpeg_command(command: list[str], verbose: bool = False) -> None:
+    if verbose:
+        print(lightgreen("FFmpeg command:"), darkgrey(' '.join(command)))
+
+    d_subprocess: subprocess.Popen | None = None
+    try:
+        d_subprocess = subprocess.Popen(
+            command,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT
+        )
+    except Exception as e:
+        print(f"[E] Unexpected error: {type(e)}", flush=True)
+
+    os.set_blocking(d_subprocess.stdout.fileno(), False)
+    while True:
+        if d_subprocess.poll() is not None:
+            if verbose:
+                print()
+            break
+
+        line: str = d_subprocess.stdout.readline().decode('utf-8')
+        if line and verbose:
+            print(line.strip(), end='\r')
+
+
+
+def video_to_images(arguments: Namespace) -> None:
+    in_video_fp: str = absolute_path(arguments.input)
+    directory, basename = path_split(in_video_fp)[:2]
+
+    dir_list: list[str] = directory.split(os.sep)
+    if dir_list[-1] not in TASK_NAMES:
+        k_ep, task_name, _ = dir_list[-3:]
+        imgs_dir = os.sep.join(dir_list[:-3]).replace("cache", "imgs")
+    else:
+        k_ep, task_name = dir_list[-2:]
+        imgs_dir = os.sep.join(dir_list[:-2]).replace("cache", "imgs")
+
+    _, _k_ch, scene_no, k_ed = basename.replace("__", "_").split("_", maxsplit=4)[:4]
+
+    scene_img_directory: str = os.path.join(
+        imgs_dir, f"{k_ep}_{scene_no}_{task_name}_{k_ed}"
+    )
+    os.makedirs(scene_img_directory, exist_ok=True)
+
+    ffmpeg_command: list[str] = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "error",
+        "-stats",
+        "-i", in_video_fp,
+        os.sep.join([scene_img_directory, "%03d.png"])
+    ]
+    execute_ffmpeg_command(command=ffmpeg_command, verbose=True)
+
+
+
+def images_to_video(arguments: Namespace) -> None:
+    # Input folder name
+    in_folder_path: str = absolute_path(arguments.input)
+
+    # Use provided output filepath or automatically generate one
+    out_video_fp: str = arguments.output
+    if not out_video_fp:
+        # Use parent folder and folder name to generate filepath
+        dir_list: list[str] = in_folder_path.split(os.sep)
+        grandparent, parent = dir_list[-2:]
+        out_dir: str = ""
+        if grandparent.startswith("ep"):
+            out_dir = os.path.join(dir_list[:-2], grandparent)
+            out_basename = f"{grandparent}_{parent}"
+        else:
+            grandparent = ""
+            out_dir = os.sep.join(dir_list[:-1])
+            out_basename: str = f"{parent}"
+
+        # Add task name if provided
+        taskname: str = arguments.task
+        if taskname:
+            out_basename = f"{out_basename}_{taskname}"
+
+        out_video_fp: str = os.path.join(out_dir, f"{out_basename}.mkv")
+
+    out_video_fp = absolute_path(out_video_fp)
+
+    # Output video settings
+    vcodec: VideoCodec = VideoCodec.H265
+    pix_fmt: str = 'yuv420p'
+    codec_params: list[str] = []
+    if vcodec == VideoCodec.H265:
+        codec_params = DEFAULT_H265_PARAMS
+    elif vcodec == VideoCodec.HEVC_NVENC:
+        codec_params = DEFAULT_HVEC_NVENC_PARAMS
+
+    # Create command
+    ffmpeg_command: list[str] = [
+        ffmpeg_exe,
+        "-hide_banner",
+        "-loglevel", "error",
+        "-stats",
+        "-i", os.sep.join([in_folder_path, "%03d.png"]),
+
+        "-vf", "setparams=colorspace=bt709:color_primaries=bt709:color_trc=bt709",
+        "-r", "25",
+        "-vcodec", vcodec.value,
+        "-pix_fmt", pix_fmt,
+        "-color_range", "limited",
+    ]
+
+    if codec_params:
+        def _clean_ffmpeg_params(data: str) -> str:
+            for c in ['\"', '\r', '\n', '\t']:
+                data = data.replace(c, '')
+            # avoid too many spaces when debugging
+            for _ in range(4):
+                data = data.replace('  ', ' ')
+            return data
+
+        ffmpeg_command.extend(
+            [x for x in _clean_ffmpeg_params(codec_params).split(" ") if x]
+        )
+
+    ffmpeg_command.extend(["-y", out_video_fp])
+    execute_ffmpeg_command(command=ffmpeg_command, verbose=True)
+
 
 
 
@@ -47,16 +195,27 @@ def main():
         description="Extract frames from a video scene"
     )
 
+    parser.set_defaults(task="")
+
     parser.add_argument(
         "--input",
         "-i",
         type=str,
         default="",
         required=False,
-        help="Chapter"
+        help="Input video file"
     )
 
-    arguments = parser.parse_args()
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        default="",
+        required=False,
+        help="Output video file"
+    )
+
+    arguments: Namespace = parser.parse_args()
     verbose: bool = arguments.verbose
 
     if verbose:
@@ -64,8 +223,13 @@ def main():
         main_logger.setLevel("DEBUG")
 
     if arguments.input:
-        video_to_images(arguments)
+        if os.path.isfile(arguments.input):
+            video_to_images(arguments)
+
+        elif os.path.isdir(arguments.input):
+            images_to_video(arguments)
         return
+
 
     episode: int = arguments.episode
     k_ep: str = ep_key(episode)
@@ -114,57 +278,6 @@ def main():
     generate_lr_scene(scene=scene, save_as_png=True)
 
 
-
-def video_to_images(arguments) -> None:
-    in_video_fp: str = absolute_path(arguments.input)
-    directory, basename = path_split(in_video_fp)[:2]
-    print(directory)
-    dir_array: list[str] = directory.split(os.sep)
-    if dir_array[-1] not in TASK_NAMES:
-        k_ep, task_name, k_ch = directory.split(os.sep)[-3:]
-    else:
-        k_ep, task_name = directory.split(os.sep)[-2:]
-
-    _, _, scene_no, k_ed = basename.replace("__", "_").split("_", maxsplit=4)[:4]
-
-    print(basename.replace("__", "_").split("_", maxsplit=4))
-
-    img_directory = os.path.join(
-        os.sep.join([]).replace("cache", "imgs"),
-        f"{k_ep}_{scene_no}_{task_name}_{k_ed}"
-    )
-    os.makedirs(img_directory, exist_ok=True)
-
-    ffmpeg_command: list[str] = [
-        ffmpeg_exe,
-        "-hide_banner",
-        "-loglevel", "error",
-        "-stats",
-        "-i", in_video_fp,
-        os.sep.join([img_directory, "%03d.png"])
-    ]
-    print(lightgreen(' '.join(ffmpeg_command)))
-    sys.exit()
-    d_subprocess: subprocess.Popen | None = None
-    try:
-        d_subprocess = subprocess.Popen(
-            ffmpeg_command,
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT
-        )
-    except Exception as e:
-        print(f"[E] Unexpected error: {type(e)}", flush=True)
-
-    os.set_blocking(d_subprocess.stdout.fileno(), False)
-    while True:
-        if d_subprocess.poll() is not None:
-            print()
-            break
-
-        line: str = d_subprocess.stdout.readline().decode('utf-8')
-        if line:
-            print(line.strip(), end='\r')
 
 
 
