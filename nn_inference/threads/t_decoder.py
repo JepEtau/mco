@@ -11,7 +11,6 @@ import torch
 from torch import Tensor
 from typing import TYPE_CHECKING
 
-from nn_inference.threads.t_encoder import EncoderThread
 from nn_inference.toolbox.cuda_filters import save_tensor_for_ccor_
 from nn_inference.toolbox.dh_transfers import (
     htod_transfer,
@@ -32,6 +31,7 @@ from scene.filters import clean_fcomplex
 from utils.mco_utils import calculate_scene_frame_count
 if TYPE_CHECKING:
     from .t_inference import InferenceThread
+    from .t_encoder import EncoderThread
     from scene.src_scene import SrcScene
     from parsers import Filter
 from pynnlib import (

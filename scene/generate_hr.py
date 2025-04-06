@@ -272,6 +272,12 @@ class UpscalePipeline(object):
             'trt': i_trt_thread,
         }
 
+        if (
+            not model_manager.has_torch_models()
+            and not model_manager.has_trt_models()
+        ):
+            e_thread.set_dthread(d_thread=d_thread)
+
         return self._run(
             d_thread=d_thread,
             i_thread_dict=i_thread_dict,

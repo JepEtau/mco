@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING
 from nn_inference.threads.inpaint_inference import perform_inpaint_inference
 from nn_inference.threads.temporal_inference import perform_temporal_inference
 from nn_inference.resource_mgr import NnFrame
-from nn_inference.threads.t_decoder import DecoderThread
 from nn_inference.threads.t_encoder import EncoderThread
 from nn_inference.threads.t_helpers import patch_next_step_no_
 from nn_inference.toolbox.cuda_filters import save_tensor_for_ccor_
@@ -22,6 +21,7 @@ from pynnlib import (
 )
 if TYPE_CHECKING:
     from .t_inference import InferenceThread
+    from .t_decoder import DecoderThread
 
 
 @torch.inference_mode()

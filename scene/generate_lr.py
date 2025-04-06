@@ -659,7 +659,7 @@ class ImageWriter(Thread):
             # print(f"encode: f_no. {out_f_no}, nb of frames: {len(out_frames)}")
             for out_frame in out_frames:
                 img_fp: str = os.path.join(self.img_directory, f"{e_index:03}.png")
-                # print(f"   write: {e_index}: {out_frame.img.shape} as {img_fp}")
+                print(f"   write: {e_index}: {out_frame.img.shape} as {img_fp}")
                 write_image(img_fp, out_frame.img)
                 e_index += 1
 

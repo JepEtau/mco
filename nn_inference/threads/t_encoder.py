@@ -9,8 +9,9 @@ import sys
 from threading import Event
 import torch
 from torch import Tensor
-from typing import Callable
+from typing import Callable, TYPE_CHECKING
 
+from nn_inference.threads.t_decoder import DecoderThread
 from nn_inference.toolbox.dh_transfers import (
     dtoh_transfer,
 )
@@ -36,6 +37,10 @@ from pynnlib import (
     tensor_to_img,
 )
 
+if TYPE_CHECKING:
+    from .t_decoder import DecoderThread
+
+
 @dataclass(slots=True)
 class EncoderThreadConfig:
     model_manager: ModelManager
@@ -51,6 +56,11 @@ class EncoderThread(BaseThread):
         self.in_queue: Queue = Queue(1)
         self._encoded: int = 0
         self.model_manager = config.model_manager
+        self.d_thread: DecoderThread = None
+
+
+    def set_dthread(self, d_thread: DecoderThread) -> None:
+        self.d_thread = d_thread
 
 
     @property
@@ -74,6 +84,9 @@ class EncoderThread(BaseThread):
             pin_memory=True
         )
         print(red(vpi_nbytes))
+
+
+
 
         in_queue: Queue = self.in_queue
         writer_subprocess: subprocess.Popen | None = None
@@ -259,6 +272,9 @@ class EncoderThread(BaseThread):
                 e_index += len(out_frames)
                 remaining -= len(out_frames)
                 sent = len(out_frames)
+
+                if self.d_thread is not None and self.d_thread.is_alive():
+                    self.d_thread.set_produce_flag()
 
                 del frame.tensor
                 if self.progress_thread is not None:
