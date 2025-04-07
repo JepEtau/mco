@@ -125,6 +125,7 @@ def video_to_images(arguments: Namespace) -> None:
         "-stats",
         "-i", in_video_fp,
         *ffmpeg_filter,
+        "-start_number", "0",
         os.sep.join([scene_img_directory, "%03d.png"])
     ]
 
