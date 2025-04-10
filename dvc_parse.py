@@ -1,6 +1,18 @@
 import os
 from pprint import pprint
+import signal
 import sys
+from argparse import ArgumentParser
+import logging
+from pprint import pprint
+import signal
+import sys
+from parsers import (
+    parse_database,
+)
+from utils.arg_parser import common_argument_parser
+from utils.logger import main_logger
+from utils.p_print import *
 
 # RESOLVE_SCRIPT_API = os.path.join(
 #     os.environ["PROGRAMDATA"],
@@ -74,207 +86,233 @@ def get_metadata_dictionary(media_pool_item):
 
 
 
-print("start")
-resolve = dvr.scriptapp("Resolve")
-print("got it")
-print(f"DaVinci Resolve version: {resolve.GetVersionString()}")
+def main():
+    # Arguments
+    parser: ArgumentParser = common_argument_parser(
+        description="Generate episode (final)",
+        add_language=True,
+    )
 
-project_manager = resolve.GetProjectManager()
-# # Get a list of all projects
-# projects = project_manager.GetProjects()
-# if projects:
-#     # Print the names of all available projects
-#     print("Available Projects:")
-#     for project in projects:
-#         print(project)
+    arguments = parser.parse_args()
 
-# Add this to your script
+    if arguments.debug:
+        main_logger.addHandler(logging.StreamHandler(sys.stdout))
+        main_logger.setLevel("DEBUG")
+
+    episode: int = arguments.episode
 
 
-# currentProject = projectManager.GetCurrentProject()
-# currentTimeline = currentProject.GetCurrentTimeline()
-# offset = currentTimeline.GetStartFrame()
-project_name = "ep01_python"
-project = project_manager.LoadProject(project_name)
-print(f"Project loaded: {project.GetName()}")
-# project = project_manager.GetCurrentProject()
 
-if False:
-    # Get a simple list of media pool items and their metadata
-    media_pool = project.GetMediaPool()
-    root_folder = media_pool.GetRootFolder()
-    clips = root_folder.GetClipList()
+    print("start")
+    resolve = dvr.scriptapp("Resolve")
+    print("got it")
+    print(f"DaVinci Resolve version: {resolve.GetVersionString()}")
 
-    print("Media Pool Items:")
-    for clip in clips[:5]:  # Just test the first 5
-        print(f"Clip: {clip.GetName()}")
-        try:
-            path = clip.GetMetadata("File Path")
-            print(f"  File Path: {path}")
-            print(f"  id: {clip.GetMediaId()}")
+    project_manager = resolve.GetProjectManager()
+    # # Get a list of all projects
+    # projects = project_manager.GetProjects()
+    # if projects:
+    #     # Print the names of all available projects
+    #     print("Available Projects:")
+    #     for project in projects:
+    #         print(project)
 
-        except Exception as e:
-            print(f"  Error: {e}")
+    # Add this to your script
 
-if True:
-    # timeline = project.GetCurrentTimeline()
-    timeline = project.GetTimelineByIndex(1)
-    # timeline.SetName("ep01_episode")
-    # print(f"got timeline: {timeline.GetName()}")
-    # if not timeline.SetTrackName("video", 1, "episode"):
-    #     print("failed naming track name")
-    print(f"    track count: {timeline.GetTrackCount("video")}")
-    print(f"    track name: {timeline.GetTrackName("video", 1)}")
 
-    # media_pool = project.GetMediaPool()
-    # root_folder = media_pool.GetRootFolder()
-    # clip_list = root_folder.GetClipList()
-    # first_clip_name = clip_list[0].GetName()
-    # print(clip_list[0].GetMetadata("Codec"))
-    track_index = 1
-    track_items = timeline.GetItemListInTrack("video", track_index)
-    track_clips = []
-    for item in track_items[:5]:
-        clip_info = {
-            "name": item.GetName(),
-            "start_frame": item.GetStart(),
-            "end_frame": item.GetEnd(),
-            "duration": item.GetDuration(),
-        }
+    # currentProject = projectManager.GetCurrentProject()
+    # currentTimeline = currentProject.GetCurrentTimeline()
+    # offset = currentTimeline.GetStartFrame()
+    project_name = "ep01_python"
+    project = project_manager.LoadProject(project_name)
+    print(f"Project loaded: {project.GetName()}")
+    # project = project_manager.GetCurrentProject()
 
-        # Try to get the media pool item (original clip)
-        media_pool_item = item.GetMediaPoolItem()
-        if media_pool_item:
-            # print(f"  ✓ Found media pool item: {media_pool_item.GetName()}")
-            clip_info["media_pool_item"] = {
-                "name": media_pool_item.GetName(),
-                # "metadata": get_metadata_dictionary(media_pool_item),
-                "media_id": media_pool_item.GetMediaId(),
-                "filepath": media_pool_item.GetClipProperty('File Path')
+    if False:
+        # Get a simple list of media pool items and their metadata
+        media_pool = project.GetMediaPool()
+        root_folder = media_pool.GetRootFolder()
+        clips = root_folder.GetClipList()
+
+        print("Media Pool Items:")
+        for clip in clips[:5]:  # Just test the first 5
+            print(f"Clip: {clip.GetName()}")
+            try:
+                path = clip.GetMetadata("File Path")
+                print(f"  File Path: {path}")
+                print(f"  id: {clip.GetMediaId()}")
+
+            except Exception as e:
+                print(f"  Error: {e}")
+
+    if True:
+        # timeline = project.GetCurrentTimeline()
+        timeline = project.GetTimelineByIndex(1)
+        # timeline.SetName("ep01_episode")
+        # print(f"got timeline: {timeline.GetName()}")
+        # if not timeline.SetTrackName("video", 1, "episode"):
+        #     print("failed naming track name")
+        print(f"    track count: {timeline.GetTrackCount("video")}")
+        print(f"    track name: {timeline.GetTrackName("video", 1)}")
+
+        # media_pool = project.GetMediaPool()
+        # root_folder = media_pool.GetRootFolder()
+        # clip_list = root_folder.GetClipList()
+        # first_clip_name = clip_list[0].GetName()
+        # print(clip_list[0].GetMetadata("Codec"))
+        track_index = 1
+        track_items = timeline.GetItemListInTrack("video", track_index)
+        track_clips = []
+        for item in track_items[:5]:
+            clip_info = {
+                "name": item.GetName(),
+                "start_frame": item.GetStart(),
+                "end_frame": item.GetEnd(),
+                "duration": item.GetDuration(),
             }
-        # print(f"Timeline item type: {type(item).__name__}")
-        # print(f"Has fusion comp: {item.GetFusionCompCount() > 0}")
-        #     clip_info["media_pool_item"] = {
-        #         "name": media_pool_item.GetName(),
-        #         "metadata": {
-        #             "File Path": media_pool_item.GetMetadata("File Path"),
-        #             "Resolution": media_pool_item.GetMetadata("Resolution"),
-        #             "Frame Rate": media_pool_item.GetMetadata("Frame Rate"),
-        #             "Codec": media_pool_item.GetMetadata("Codec")
-        #         }
-        #     }
 
-        #     media_pool_item = item.GetMediaPoolItem()
-        #     if media_pool_item:
-        #         print(f"  ✓ Found media pool item: {media_pool_item.GetName()}")
-        #         clip_info["media_pool_item"] = {
-        #             "name": media_pool_item.GetName(),
-        #             "metadata": get_metadata_dictionary(media_pool_item)
-        #         }
-        #     else:
-        #         print(f"  ✗ No media pool item found (might be a compound clip or generator)")
-        # except Exception as e:
-        #     print(f"  ! Error getting media pool item: {str(e)}")
+            # Try to get the media pool item (original clip)
+            media_pool_item = item.GetMediaPoolItem()
+            if media_pool_item:
+                # print(f"  ✓ Found media pool item: {media_pool_item.GetName()}")
+                clip_info["media_pool_item"] = {
+                    "name": media_pool_item.GetName(),
+                    # "metadata": get_metadata_dictionary(media_pool_item),
+                    "media_id": media_pool_item.GetMediaId(),
+                    "filepath": media_pool_item.GetClipProperty('File Path')
+                }
+            # print(f"Timeline item type: {type(item).__name__}")
+            # print(f"Has fusion comp: {item.GetFusionCompCount() > 0}")
+            #     clip_info["media_pool_item"] = {
+            #         "name": media_pool_item.GetName(),
+            #         "metadata": {
+            #             "File Path": media_pool_item.GetMetadata("File Path"),
+            #             "Resolution": media_pool_item.GetMetadata("Resolution"),
+            #             "Frame Rate": media_pool_item.GetMetadata("Frame Rate"),
+            #             "Codec": media_pool_item.GetMetadata("Codec")
+            #         }
+            #     }
+
+            #     media_pool_item = item.GetMediaPoolItem()
+            #     if media_pool_item:
+            #         print(f"  ✓ Found media pool item: {media_pool_item.GetName()}")
+            #         clip_info["media_pool_item"] = {
+            #             "name": media_pool_item.GetName(),
+            #             "metadata": get_metadata_dictionary(media_pool_item)
+            #         }
+            #     else:
+            #         print(f"  ✗ No media pool item found (might be a compound clip or generator)")
+            # except Exception as e:
+            #     print(f"  ! Error getting media pool item: {str(e)}")
 
 
-        track_clips.append(clip_info)
-    pprint(track_clips)
-        # all_clips[f"V{track_index}"] = track_clips
+            track_clips.append(clip_info)
+        pprint(track_clips)
+            # all_clips[f"V{track_index}"] = track_clips
 
-        # # Check if the clip is valid
-        # if clip:
+            # # Check if the clip is valid
+            # if clip:
 
-        #     # Get clip name
+            #     # Get clip name
+            #     clip_name = clip.GetName()
+            #     print(f"  Clip Name: {clip_name}")
+
+            #     # Get clip start time
+            #     start_time = clip.GetStart()
+            #     print(f"  Start Time: {start_time}")
+
+            #     # Get clip end time
+            #     end_time = clip.GetEnd()
+            #     print(f"  End Time: {end_time}")
+
+            #     # Get clip duration
+            #     duration = clip.GetDuration()
+            #     print(f"  Duration: {duration}")
+
+            #     # Check if the clip has a media source (for file-based clips)
+            #     try:
+            #         media_source = clip.GetMediaSource()
+            #         if media_source:
+            #             file_path = media_source.GetFilePath()
+            #             print(f"  File Path: {file_path}")
+            #         else:
+            #             print("  This clip has no media source (possibly an effect or title).")
+            #     except Exception as e:
+            #         print(f"  Error accessing media source: {e}")
+            # else:
+            #     print(f"Clip not found in Track {track_index}.")
+
+        # print(f"Clips: {project.GetName()}")
+        # track = timeline.GetItemListInTrack("video", 1)
+        # for clip in track:
         #     clip_name = clip.GetName()
-        #     print(f"  Clip Name: {clip_name}")
+        #     print(f"   {clip_name}: {clip.GetDuration()}")
+        #     # Get and print basic clip information
+        #     print(f"Clip Name: {clip.GetName()}")
+        #     print(f"  Start Time: {clip.GetStart()}")
+        #     print(f"  End Time: {clip.GetEnd()}")
+        #     print(f"  Duration: {clip.GetDuration()}")
 
-        #     # Get clip start time
-        #     start_time = clip.GetStart()
-        #     print(f"  Start Time: {start_time}")
+        #     media_source = clip.GetMediaSource()
+        #     file_path = media_source.GetFilePath()
+        #     print(f"  File Path: {file_path}")
 
-        #     # Get clip end time
-        #     end_time = clip.GetEnd()
-        #     print(f"  End Time: {end_time}")
+            # in_clip = clip.GetMediaId()
+            # pprint(clip.GetMediaId())
+            # print(f"       {in_clip.GetMetadata("Codec")}")
+            # pprint(in_clip.GetMetadata())
+            # # print(clip.GetMediaSource().GetFilePath())
 
-        #     # Get clip duration
-        #     duration = clip.GetDuration()
-        #     print(f"  Duration: {duration}")
+        # all_clips = []
+        # media_pool = project.GetMediaPool()
+        # bins = media_pool.GetRootFolder().GetSubFolders()
+        # print("got bins")
+        # for bin in bins:
+        #     clips = bin.GetClips()
+        #     all_clips.extend(clips.values())
 
-        #     # Check if the clip has a media source (for file-based clips)
-        #     try:
-        #         media_source = clip.GetMediaSource()
-        #         if media_source:
-        #             file_path = media_source.GetFilePath()
-        #             print(f"  File Path: {file_path}")
-        #         else:
-        #             print("  This clip has no media source (possibly an effect or title).")
-        #     except Exception as e:
-        #         print(f"  Error accessing media source: {e}")
-        # else:
-        #     print(f"Clip not found in Track {track_index}.")
+        # for clip in all_clips:
+        #     print(clip.GetName())
 
-    # print(f"Clips: {project.GetName()}")
-    # track = timeline.GetItemListInTrack("video", 1)
-    # for clip in track:
-    #     clip_name = clip.GetName()
-    #     print(f"   {clip_name}: {clip.GetDuration()}")
-    #     # Get and print basic clip information
-    #     print(f"Clip Name: {clip.GetName()}")
-    #     print(f"  Start Time: {clip.GetStart()}")
-    #     print(f"  End Time: {clip.GetEnd()}")
-    #     print(f"  Duration: {clip.GetDuration()}")
+        # for track_index in range(1, timeline.GetTrackCount("video") + 1):
+        #     track = timeline.GetTrackItems("video", track_index)
+        #     for clip in track:
+        #         print(clip.GetName())
 
-    #     media_source = clip.GetMediaSource()
-    #     file_path = media_source.GetFilePath()
-    #     print(f"  File Path: {file_path}")
 
-        # in_clip = clip.GetMediaId()
-        # pprint(clip.GetMediaId())
-        # print(f"       {in_clip.GetMetadata("Codec")}")
-        # pprint(in_clip.GetMetadata())
-        # # print(clip.GetMediaSource().GetFilePath())
+    # project_manager.CloseProject(project)
+    print("done")
+    # import DaVinciResolveScript as dvr_script
 
-    # all_clips = []
+    # # Connect to DaVinci Resolve
+    # resolve = dvr_script.scriptapp("Resolve")
+
+    # # Get the current project
+    # project_manager = resolve.GetProjectManager()
+    # project = project_manager.GetCurrentProject()
+
+    # # Access the media pool
     # media_pool = project.GetMediaPool()
-    # bins = media_pool.GetRootFolder().GetSubFolders()
-    # print("got bins")
-    # for bin in bins:
-    #     clips = bin.GetClips()
-    #     all_clips.extend(clips.values())
 
-    # for clip in all_clips:
-    #     print(clip.GetName())
+    # # Get the list of all clips in the media pool (for all bins)
+    # def get_all_clips():
+    #     all_clips = []
 
-    # for track_index in range(1, timeline.GetTrackCount("video") + 1):
-    #     track = timeline.GetTrackItems("video", track_index)
-    #     for clip in track:
-    #         print(clip.GetName())
+    #     # Retrieve all bins in the media pool
+    #     bins = media_pool.GetRootFolder().GetSubFolders()
+
+    #     # Traverse through all bins to collect clips
+    #     for bin in bins:
+    #         clips = bin.GetClips()
+    #         all_clips.extend(clips.values())
+
+    #     return all_clips
 
 
-# project_manager.CloseProject(project)
-print("done")
-# import DaVinciResolveScript as dvr_script
 
-# # Connect to DaVinci Resolve
-# resolve = dvr_script.scriptapp("Resolve")
 
-# # Get the current project
-# project_manager = resolve.GetProjectManager()
-# project = project_manager.GetCurrentProject()
 
-# # Access the media pool
-# media_pool = project.GetMediaPool()
 
-# # Get the list of all clips in the media pool (for all bins)
-# def get_all_clips():
-#     all_clips = []
-
-#     # Retrieve all bins in the media pool
-#     bins = media_pool.GetRootFolder().GetSubFolders()
-
-#     # Traverse through all bins to collect clips
-#     for bin in bins:
-#         clips = bin.GetClips()
-#         all_clips.extend(clips.values())
-
-#     return all_clips
+if __name__ == "__main__":
+    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    main()
