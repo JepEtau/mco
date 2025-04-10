@@ -7,6 +7,8 @@ import logging
 from pprint import pprint
 import signal
 import sys
+import time
+from typing import Any, Literal
 from parsers import (
     parse_database,
 )
@@ -44,6 +46,141 @@ dvr_python = "C:\\ProgramData\\Blackmagic Design\\DaVinci Resolve\\Support\\Deve
 sys.path.append(dvr_python)
 
 import DaVinciResolveScript as dvr
+
+
+DbType = Literal['Disk', 'PostgreSQL']
+TrackType = Literal['video', 'audio', 'subtitle']
+
+
+class DVRItem:
+    def __init__(self):
+        pass
+
+
+class DVRTimeline:
+    def __init__(self, timeline):
+        self._timeline = timeline
+
+    def name(self) -> str:
+        return self._timeline.GetName()
+
+    def set_name(self, name: str) -> str:
+        self._timeline.SetName(name)
+
+    def _track_count(self, type: TrackType = 'video') -> int:
+        return self._timeline.GetTrackCount(type)
+
+    def _track_name(self, type: TrackType = 'video', index: int = 1) -> str:
+        try:
+            return self._timeline.GetTrackName(type, index)
+        except:
+            raise ValueError(f"Failed getting track name for index={index}")
+
+    def video_track_count(self) -> int:
+        return self._track_count(type='video')
+
+    def video_track_name(self, index: int = 1) -> str:
+        return self._track_name(type='video', index=index)
+
+    def video_track_items(self, index: int = 1) -> list[Any]:
+        return self._timeline.GetItemListInTrack("video", index)
+
+
+    def audio_track_count(self) -> int:
+        return self._track_count(type='audio')
+
+    def audio_track_name(self, index: int = 1) -> str:
+        return self._track_name(type='audio', index=index)
+
+    def audio_track_items(self, index: int = 1) -> list[Any]:
+        return self._timeline.GetItemListInTrack("audio", index)
+
+
+
+class DVRProject:
+    def __init__(self, project: Any):
+        self.project = project
+
+    def name(self) -> str:
+        try:
+            return self.project.GetName()
+        except Exception as e:
+            raise ValueError(f"Erroneous project")
+
+    def timeline_count(self) -> int:
+        return self.project.GetTimelineCount()
+
+    def timeline_by_index(self, index: int = 1) -> DVRTimeline:
+        return DVRTimeline(self.project.GetTimelineByIndex(index))
+
+    def framerate(self) -> float:
+        return self.project.GetSetting("timelineFrameRate")
+
+    def resolution(self) -> tuple[int, int]:
+        return (
+            self.project.GetSetting("timelineResolutionWidth"),
+            self.project.GetSetting("timelineResolutionHeight")
+        )
+
+
+
+class DVR:
+    def __init__(self):
+        self._resolve = dvr.scriptapp("Resolve")
+        try:
+            self._version = self._resolve.GetVersionString()
+        except Exception as e:
+            raise ValueError(red("DaVinci Resolve is not opened"))
+        self.pm = self._resolve.GetProjectManager()
+        self._project = None
+
+
+    def version(self) -> str:
+        return self._version
+
+
+    def database_names(self) -> list[str]:
+        database_list = self.pm.GetDatabaseList()
+        return list([db['DbName'] for db in database_list])
+
+
+    def current_database(self) -> dict[str, str]:
+        return self.pm.GetCurrentDatabase()
+
+
+    def current_database_name(self) -> str:
+        return self.pm.GetCurrentDatabase()['DbName']
+
+
+    def set_current_database(self, name: str, type: DbType = 'Disk', ip_address: str = "") -> None:
+        current_db = {
+            'DbType': type,
+            'DbName': name,
+        }
+        if ip_address:
+            current_db['IpAddress'] = ip_address
+        try:
+            self.pm.SetCurrentDatabase(current_db)
+        except:
+            raise ValueError(f"Failed to set current database to {name}")
+
+
+    def load_project(self, name: str) -> DVRProject:
+        try:
+            self._project: DVRProject = DVRProject(self.pm.LoadProject(name))
+        except Exception as e:
+            raise ValueError(f"Failed to load project: {type(e)}")
+        return self._project
+
+
+    def project(self) -> DVRProject:
+        if self._project is None:
+            raise ValueError(f"No project loaded")
+        return self._project
+
+
+
+
 
 
 
@@ -93,6 +230,15 @@ def main():
         add_language=True,
     )
 
+    parser.add_argument(
+        "--project",
+        "-p",
+        type=str,
+        default="ep01_python",
+        required=False,
+        help="project name"
+    )
+
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -100,16 +246,16 @@ def main():
         main_logger.setLevel("DEBUG")
 
     episode: int = arguments.episode
+    project_name = arguments.project
+    db_name = "mco"
 
+    dvr = DVR()
+    print(f"DaVinci Resolve version: {dvr.version()}")
+    print(f"Available databases: {dvr.database_names()}")
+    print(f"current database: {dvr.current_database_name()}")
+    dvr.set_current_database(name=db_name)
+    print(f"current database: {dvr.current_database_name()}")
 
-
-    print("start")
-    resolve = dvr.scriptapp("Resolve")
-    print("got it")
-    print(f"DaVinci Resolve version: {resolve.GetVersionString()}")
-
-    project_manager = resolve.GetProjectManager()
-    # # Get a list of all projects
     # projects = project_manager.GetProjects()
     # if projects:
     #     # Print the names of all available projects
@@ -117,16 +263,15 @@ def main():
     #     for project in projects:
     #         print(project)
 
-    # Add this to your script
-
 
     # currentProject = projectManager.GetCurrentProject()
     # currentTimeline = currentProject.GetCurrentTimeline()
     # offset = currentTimeline.GetStartFrame()
-    project_name = "ep01_python"
-    project = project_manager.LoadProject(project_name)
-    print(f"Project loaded: {project.GetName()}")
+    print(f"Try loading project: {project_name}")
+    project = dvr.load_project(project_name)
+    print(f"Project loaded: {project.name()}")
     # project = project_manager.GetCurrentProject()
+    # # Get a list of all projects
 
     if False:
         # Get a simple list of media pool items and their metadata
@@ -147,21 +292,20 @@ def main():
 
     if True:
         # timeline = project.GetCurrentTimeline()
-        timeline = project.GetTimelineByIndex(1)
+        timeline: DVRTimeline = project.timeline_by_index()
         # timeline.SetName("ep01_episode")
-        # print(f"got timeline: {timeline.GetName()}")
+        print(f"got timeline: {timeline.name()}")
         # if not timeline.SetTrackName("video", 1, "episode"):
         #     print("failed naming track name")
-        print(f"    track count: {timeline.GetTrackCount("video")}")
-        print(f"    track name: {timeline.GetTrackName("video", 1)}")
+        print(f"    video track count: {timeline.video_track_count()}")
+        print(f"    video track name: {timeline.video_track_name()}")
 
         # media_pool = project.GetMediaPool()
         # root_folder = media_pool.GetRootFolder()
         # clip_list = root_folder.GetClipList()
         # first_clip_name = clip_list[0].GetName()
         # print(clip_list[0].GetMetadata("Codec"))
-        track_index = 1
-        track_items = timeline.GetItemListInTrack("video", track_index)
+        track_items = timeline.video_track_items()
         track_clips = []
         for item in track_items[:5]:
             clip_info = {
