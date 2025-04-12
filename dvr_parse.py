@@ -1,6 +1,8 @@
+from dataclasses import dataclass
 import os
 from pprint import pprint
 import signal
+import subprocess
 import sys
 from argparse import ArgumentParser
 import logging
@@ -9,6 +11,7 @@ import signal
 import sys
 import time
 from typing import Any, Literal
+from warnings import warn
 from parsers import (
     parse_database,
 )
@@ -43,6 +46,7 @@ from utils.p_print import *
 # RESOLVE_SCRIPT_LIB="C:\Program Files\Blackmagic Design\DaVinci Resolve\fusionscript.dll"
 # PYTHONPATH="%PYTHONPATH%;%RESOLVE_SCRIPT_API%\Modules\"
 dvr_python = "C:\\ProgramData\\Blackmagic Design\\DaVinci Resolve\\Support\\Developer\\Scripting\\Modules"
+RESOLVE_EXE_PATH = r"C:\Program Files\Blackmagic Design\DaVinci Resolve\Resolve.exe"
 sys.path.append(dvr_python)
 
 import DaVinciResolveScript as dvr
@@ -51,10 +55,72 @@ import DaVinciResolveScript as dvr
 DbType = Literal['Disk', 'PostgreSQL']
 TrackType = Literal['video', 'audio', 'subtitle']
 
+ClipProperty = Literal[
+    "File Path",
+    "Resolution",
+    "Frame Rate",
+    "Codec",
+    "Bit Depth",
+    "Clip Name",
+    "Duration",
+    "Media Type",
+    "Start TC",
+    "End TC",
+    "Reel",
+    "Scene",
+    "Shot",
+    "Take",
+    "Camera Type",
+    "Audio Channels",
+    "Sample Rate",
+]
+
+already_started: bool = True
+
+
+@dataclass
+class DVRMediaPoolCip:
+    name: str
+    media_id: str
+    filepath: str
+    filename: str
+
+
 
 class DVRItem:
-    def __init__(self):
-        pass
+    def __init__(self, item: Any):
+        super().__init__()
+        self.name: str = item.GetName()
+        self.start_frame: int = item.GetStart()
+        self.end_frame: int = item.GetEnd()
+        self.frame_count: int = item.GetDuration()
+        self.media_clip: DVRMediaPoolCip = None
+
+        media_pool_item = None
+        try:
+            media_pool_item = item.GetMediaPoolItem()
+        except:
+            warn(f"Failed to get MediaPoolItem for item `{self.name}`")
+
+        if media_pool_item is not None:
+            # pprint(media_pool_item.GetClipProperty())
+            self.media_clip: DVRMediaPoolCip = DVRMediaPoolCip(
+                name=media_pool_item.GetName(),
+                media_id=media_pool_item.GetMediaId(),
+                filepath=media_pool_item.GetClipProperty('File Path'),
+                filename=media_pool_item.GetClipProperty('Filename'),
+                # metadata=get_metadata_dictionary(media_pool_item),
+            )
+
+    def __str__(self):
+        item_str: str = f"""{self.__class__.__name__}(
+            name={self.name},
+            start_frame={self.start_frame},
+            end_frame={self.end_frame},
+            frame_count={self.end_frame},
+            media_clip={self.media_clip},\n)
+        """
+        return item_str.replace ("            ", "  ")
 
 
 class DVRTimeline:
@@ -82,9 +148,11 @@ class DVRTimeline:
     def video_track_name(self, index: int = 1) -> str:
         return self._track_name(type='video', index=index)
 
-    def video_track_items(self, index: int = 1) -> list[Any]:
-        return self._timeline.GetItemListInTrack("video", index)
-
+    def video_track_items(self, index: int = 1) -> list[DVRItem]:
+        items: list[DVRItem] = []
+        for item in self._timeline.GetItemListInTrack("video", index):
+            items.append(DVRItem(item))
+        return items
 
     def audio_track_count(self) -> int:
         return self._track_count(type='audio')
@@ -93,6 +161,7 @@ class DVRTimeline:
         return self._track_name(type='audio', index=index)
 
     def audio_track_items(self, index: int = 1) -> list[Any]:
+        raise NotImplementedError("To be reworked to work like video items")
         return self._timeline.GetItemListInTrack("audio", index)
 
 
@@ -126,13 +195,32 @@ class DVRProject:
 
 class DVR:
     def __init__(self):
+        global already_started
         self._resolve = dvr.scriptapp("Resolve")
+        if self._resolve is None:
+            # raise SystemError(red("resolve is None"))
+            subprocess.Popen(args=[f"\"{RESOLVE_EXE_PATH}\"", "-nogui"])
+            time.sleep()
+            self._resolve = dvr.scriptapp("Resolve")
+
+
         try:
             self._version = self._resolve.GetVersionString()
         except Exception as e:
-            raise ValueError(red("DaVinci Resolve is not opened"))
+            warn(yellow("DaVinci Resolve is not opened, try opening it"))
+            already_started = False
+            subprocess.Popen(args=[f"\"{RESOLVE_EXE_PATH}\"", "-nogui"])
+            try:
+                self._version = self._resolve.GetVersionString()
+            except:
+                raise SystemError(red("Failed to start DaVinci Resolve"))
+
         self.pm = self._resolve.GetProjectManager()
         self._project = None
+
+
+    def quit(self):
+        self._resolve.Quit()
 
 
     def version(self) -> str:
@@ -256,17 +344,6 @@ def main():
     dvr.set_current_database(name=db_name)
     print(f"current database: {dvr.current_database_name()}")
 
-    # projects = project_manager.GetProjects()
-    # if projects:
-    #     # Print the names of all available projects
-    #     print("Available Projects:")
-    #     for project in projects:
-    #         print(project)
-
-
-    # currentProject = projectManager.GetCurrentProject()
-    # currentTimeline = currentProject.GetCurrentTimeline()
-    # offset = currentTimeline.GetStartFrame()
     print(f"Try loading project: {project_name}")
     project = dvr.load_project(project_name)
     print(f"Project loaded: {project.name()}")
@@ -306,157 +383,25 @@ def main():
         # first_clip_name = clip_list[0].GetName()
         # print(clip_list[0].GetMetadata("Codec"))
         track_items = timeline.video_track_items()
-        track_clips = []
         for item in track_items[:5]:
-            clip_info = {
-                "name": item.GetName(),
-                "start_frame": item.GetStart(),
-                "end_frame": item.GetEnd(),
-                "duration": item.GetDuration(),
-            }
+            print(item)
 
-            # Try to get the media pool item (original clip)
-            media_pool_item = item.GetMediaPoolItem()
-            if media_pool_item:
-                # print(f"  ✓ Found media pool item: {media_pool_item.GetName()}")
-                clip_info["media_pool_item"] = {
-                    "name": media_pool_item.GetName(),
-                    # "metadata": get_metadata_dictionary(media_pool_item),
-                    "media_id": media_pool_item.GetMediaId(),
-                    "filepath": media_pool_item.GetClipProperty('File Path')
-                }
-            # print(f"Timeline item type: {type(item).__name__}")
-            # print(f"Has fusion comp: {item.GetFusionCompCount() > 0}")
-            #     clip_info["media_pool_item"] = {
-            #         "name": media_pool_item.GetName(),
-            #         "metadata": {
-            #             "File Path": media_pool_item.GetMetadata("File Path"),
-            #             "Resolution": media_pool_item.GetMetadata("Resolution"),
-            #             "Frame Rate": media_pool_item.GetMetadata("Frame Rate"),
-            #             "Codec": media_pool_item.GetMetadata("Codec")
-            #         }
-            #     }
-
-            #     media_pool_item = item.GetMediaPoolItem()
-            #     if media_pool_item:
-            #         print(f"  ✓ Found media pool item: {media_pool_item.GetName()}")
-            #         clip_info["media_pool_item"] = {
-            #             "name": media_pool_item.GetName(),
-            #             "metadata": get_metadata_dictionary(media_pool_item)
-            #         }
-            #     else:
-            #         print(f"  ✗ No media pool item found (might be a compound clip or generator)")
-            # except Exception as e:
-            #     print(f"  ! Error getting media pool item: {str(e)}")
-
-
-            track_clips.append(clip_info)
-        pprint(track_clips)
-            # all_clips[f"V{track_index}"] = track_clips
-
-            # # Check if the clip is valid
-            # if clip:
-
-            #     # Get clip name
-            #     clip_name = clip.GetName()
-            #     print(f"  Clip Name: {clip_name}")
-
-            #     # Get clip start time
-            #     start_time = clip.GetStart()
-            #     print(f"  Start Time: {start_time}")
-
-            #     # Get clip end time
-            #     end_time = clip.GetEnd()
-            #     print(f"  End Time: {end_time}")
-
-            #     # Get clip duration
-            #     duration = clip.GetDuration()
-            #     print(f"  Duration: {duration}")
-
-            #     # Check if the clip has a media source (for file-based clips)
-            #     try:
-            #         media_source = clip.GetMediaSource()
-            #         if media_source:
-            #             file_path = media_source.GetFilePath()
-            #             print(f"  File Path: {file_path}")
-            #         else:
-            #             print("  This clip has no media source (possibly an effect or title).")
-            #     except Exception as e:
-            #         print(f"  Error accessing media source: {e}")
-            # else:
-            #     print(f"Clip not found in Track {track_index}.")
-
-        # print(f"Clips: {project.GetName()}")
-        # track = timeline.GetItemListInTrack("video", 1)
-        # for clip in track:
-        #     clip_name = clip.GetName()
-        #     print(f"   {clip_name}: {clip.GetDuration()}")
-        #     # Get and print basic clip information
-        #     print(f"Clip Name: {clip.GetName()}")
-        #     print(f"  Start Time: {clip.GetStart()}")
-        #     print(f"  End Time: {clip.GetEnd()}")
-        #     print(f"  Duration: {clip.GetDuration()}")
-
-        #     media_source = clip.GetMediaSource()
-        #     file_path = media_source.GetFilePath()
-        #     print(f"  File Path: {file_path}")
-
-            # in_clip = clip.GetMediaId()
-            # pprint(clip.GetMediaId())
-            # print(f"       {in_clip.GetMetadata("Codec")}")
-            # pprint(in_clip.GetMetadata())
-            # # print(clip.GetMediaSource().GetFilePath())
-
-        # all_clips = []
-        # media_pool = project.GetMediaPool()
-        # bins = media_pool.GetRootFolder().GetSubFolders()
-        # print("got bins")
-        # for bin in bins:
-        #     clips = bin.GetClips()
-        #     all_clips.extend(clips.values())
-
-        # for clip in all_clips:
-        #     print(clip.GetName())
-
-        # for track_index in range(1, timeline.GetTrackCount("video") + 1):
-        #     track = timeline.GetTrackItems("video", track_index)
-        #     for clip in track:
-        #         print(clip.GetName())
-
-
-    # project_manager.CloseProject(project)
     print("done")
-    # import DaVinciResolveScript as dvr_script
-
-    # # Connect to DaVinci Resolve
-    # resolve = dvr_script.scriptapp("Resolve")
-
-    # # Get the current project
-    # project_manager = resolve.GetProjectManager()
-    # project = project_manager.GetCurrentProject()
-
-    # # Access the media pool
-    # media_pool = project.GetMediaPool()
-
-    # # Get the list of all clips in the media pool (for all bins)
-    # def get_all_clips():
-    #     all_clips = []
-
-    #     # Retrieve all bins in the media pool
-    #     bins = media_pool.GetRootFolder().GetSubFolders()
-
-    #     # Traverse through all bins to collect clips
-    #     for bin in bins:
-    #         clips = bin.GetClips()
-    #         all_clips.extend(clips.values())
-
-    #     return all_clips
+    if not already_started:
+        print(yellow("TODO: close it"))
+        dvr.quit()
 
 
 
 
+def signal_handler(signum, frame):
+    # Close if it has been started from this script
+    if not already_started:
+        print(yellow("TODO: close it"))
+        dvr.quit()
 
 
 if __name__ == "__main__":
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
+    # signal.signal(signal.SIGINT, signal.SIG_DFL)
+    signal.signal(signal.SIGINT, signal_handler)
     main()
