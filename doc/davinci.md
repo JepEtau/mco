@@ -697,3 +697,29 @@ metadata_types = [
     "Timeline Name",
     "Note"
 ]
+
+
+
+def get_resolve_instance():
+    """Get the current DaVinci Resolve instance."""
+    try:
+        # macOS
+        import fusionscript as fs
+        fusion = fs.Fusion()
+        resolve = fusion.GetResolve()
+        return resolve
+    except ImportError:
+        try:
+            # Windows
+            import win32com.client
+            resolve = win32com.client.Dispatch("DaVinciResolve.Application")
+            return resolve
+        except ImportError:
+            try:
+                # Linux
+                import BlackmagicFusion
+                resolve = BlackmagicFusion.scriptapp("Resolve")
+                return resolve
+            except ImportError:
+                print("Error: Could not find DaVinci Resolve API")
+                return None

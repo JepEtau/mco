@@ -84,21 +84,37 @@ class DVRMediaPoolCip:
     media_id: str
     filepath: str
     filename: str
+    start_frame: int
+    end_frame: int
+    frame_count: int = 0
 
+    def __post_init__(self):
+        self.frame_count = self.end_frame - self.start_frame + 1
 
 
 class DVRItem:
-    def __init__(self, item: Any):
+    def __init__(
+        self,
+        timeline_item: Any,
+        timeline: Any,
+        project: Any
+        # timeline_index: int,
+    ):
         super().__init__()
-        self.name: str = item.GetName()
-        self.start_frame: int = item.GetStart()
-        self.end_frame: int = item.GetEnd()
-        self.frame_count: int = item.GetDuration()
+        self._timeline_item = timeline_item
+        self._timeline = timeline
+        self._project = project
+        # self._timeline_index = timeline_index
+
+        self.name: str = timeline_item.GetName()
+        self.start_frame: int = timeline_item.GetStart()
+        self.end_frame: int = timeline_item.GetEnd()
+        self.frame_count: int = timeline_item.GetDuration()
         self.media_clip: DVRMediaPoolCip = None
 
         media_pool_item = None
         try:
-            media_pool_item = item.GetMediaPoolItem()
+            media_pool_item = timeline_item.GetMediaPoolItem()
         except:
             warn(f"Failed to get MediaPoolItem for item `{self.name}`")
 
@@ -109,8 +125,12 @@ class DVRItem:
                 media_id=media_pool_item.GetMediaId(),
                 filepath=media_pool_item.GetClipProperty('File Path'),
                 filename=media_pool_item.GetClipProperty('Filename'),
+                start_frame=timeline_item.GetSourceStartFrame(),
+                end_frame=timeline_item.GetSourceEndFrame(),
                 # metadata=get_metadata_dictionary(media_pool_item),
             )
+        self.media_pool_item = media_pool_item
+
 
     def __str__(self):
         item_str: str = f"""{self.__class__.__name__}(
@@ -123,9 +143,67 @@ class DVRItem:
         return item_str.replace ("            ", "  ")
 
 
+    # Function to reapply stabilization without changing the settings
+    def stabilize(self):
+        # First, clear any current selection
+        print(lightcyan(f"stabilize: {self.name}"))
+        # print(self._timeline.SetCurrentTimecode(self.media_clip.start_frame+1))
+        # Get the current stabilization settings
+        # fusion_comp = self._item.GetFusionCompByIndex(1)
+        # clip_item = selected_items[list(selected_items.keys())[0]]
+        # clip_properties = self.media_pool_item.GetProperty()
+        print("inspector")
+        inspector_properties = self._timeline_item.GetProperty("Inspector")
+        pprint(inspector_properties)
+
+        print("GetFusionCompCount")
+        print(self._timeline_item.GetFusionCompCount())
+        print("GetProperty")
+        pprint(self._timeline_item.GetProperty())
+
+        # result = self._timeline_item.Stabilize()
+        # print(result)
+
+
+
+        # stabilization = self._item.GetStabilization()
+
+        # # Store the current settings to reapply later
+        # mode = stabilization.GetMode()
+        # zoom = stabilization.GetZoom()
+        # cropping_ratio = stabilization.GetCroppingRatio()
+        # smoothness = stabilization.GetSmoothing()
+
+        # print(f"clip: {self.name}")
+        # print(f"  mode: {mode}")
+        # print(f"  zoom: {zoom}")
+        # print(f"  cropping ratio: {cropping_ratio}")
+        # print(f"  smoothness: {smoothness}")
+
+        # # Clear the current stabilization settings
+        # stabilization.Clear()
+        # print(f"Cleared stabilization for {clip.GetName()}")
+
+        # # Reapply the original stabilization settings
+        # stabilization.SetMode(current_mode)
+        # stabilization.SetZoom(current_zoom)
+        # stabilization.SetCroppingRatio(current_cropping_ratio)
+        # stabilization.SetSmoothing(current_smoothness)
+
+        # Apply the stabilization again (force the reapplication)
+        # clip.Stabilize()
+        print()
+
+    @property
+    def dvr_timeline_item(self):
+        return self._timeline_item
+
+
+
 class DVRTimeline:
-    def __init__(self, timeline):
+    def __init__(self, timeline, project):
         self._timeline = timeline
+        self._project = project
 
     def name(self) -> str:
         return self._timeline.GetName()
@@ -151,7 +229,13 @@ class DVRTimeline:
     def video_track_items(self, index: int = 1) -> list[DVRItem]:
         items: list[DVRItem] = []
         for item in self._timeline.GetItemListInTrack("video", index):
-            items.append(DVRItem(item))
+            items.append(
+                DVRItem(
+                    item,
+                    timeline=self._timeline,
+                    project=self._project
+                )
+            )
         return items
 
     def audio_track_count(self) -> int:
@@ -163,6 +247,31 @@ class DVRTimeline:
     def audio_track_items(self, index: int = 1) -> list[Any]:
         raise NotImplementedError("To be reworked to work like video items")
         return self._timeline.GetItemListInTrack("audio", index)
+
+    def set_as_current(self):
+        self._project.SetCurrentTimeline(self._timeline)
+
+    def set_current_timecode(self, timecode: int) -> None:
+        self.set_as_current()
+        self._timeline.SetCurrentTimecode(timecode)
+
+
+    def get_start_timecode(self) -> str:
+        self.set_as_current()
+        return self._timeline.GetStartTimecode()
+
+
+    def get_current_item(self) -> DVRItem:
+        current_item = self._timeline.GetCurrentVideoItem()
+        current_item_start = current_item.GetStart()
+        current_item_end = current_item.GetEnd()
+        for item in self.video_track_items():
+            if (
+                item.start_frame == current_item_start
+                and item.end_frame == current_item_end
+            ):
+                return item
+        raise ValueError(red("item not found"))
 
 
 
@@ -180,7 +289,10 @@ class DVRProject:
         return self.project.GetTimelineCount()
 
     def timeline_by_index(self, index: int = 1) -> DVRTimeline:
-        return DVRTimeline(self.project.GetTimelineByIndex(index))
+        return DVRTimeline(
+            self.project.GetTimelineByIndex(index),
+            self.project
+        )
 
     def framerate(self) -> float:
         return self.project.GetSetting("timelineFrameRate")
@@ -190,6 +302,10 @@ class DVRProject:
             self.project.GetSetting("timelineResolutionWidth"),
             self.project.GetSetting("timelineResolutionHeight")
         )
+
+    def set_current_timeline(self, index: int = 1):
+        timeline = self.project.GetTimelineByIndex(index)
+        self.project.SetCurrentTimeline(timeline)
 
 
 
@@ -267,47 +383,8 @@ class DVR:
         return self._project
 
 
-
-
-
-
-
-def get_metadata_dictionary(media_pool_item):
-    """
-    Try to get all available metadata from a media pool item.
-
-    Args:
-        media_pool_item: MediaPoolItem object
-
-    Returns:
-        dict: Dictionary of metadata key-value pairs
-    """
-    if not media_pool_item:
-        return {}
-
-    # Common metadata fields to try
-    metadata_fields = [
-        "File Path", "Resolution", "Frame Rate", "Codec", "Bit Depth",
-        "Duration", "Media Type", "Start TC", "End TC", "Reel", "Scene",
-        "Shot", "Take", "Camera Type", "Audio Channels", "Sample Rate"
-    ]
-
-    metadata = {}
-    print(f"Trying to get metadata for: {media_pool_item.GetName()}")
-
-    # Try each metadata field
-    for field in metadata_fields:
-        try:
-            value = media_pool_item.GetMetadata(field)
-            if value:
-                metadata[field] = value
-                print(f"  ✓ {field}: {value}")
-            else:
-                print(f"  ✗ {field}: No value")
-        except Exception as e:
-            print(f"  ! Error getting '{field}': {str(e)}")
-
-    return metadata
+    def select_page(self, name: Literal["cut", "edit", "deliver"]) -> None:
+        self._resolve.OpenPage(name)
 
 
 
@@ -338,53 +415,44 @@ def main():
     db_name = "mco"
 
     dvr = DVR()
-    print(f"DaVinci Resolve version: {dvr.version()}")
-    print(f"Available databases: {dvr.database_names()}")
-    print(f"current database: {dvr.current_database_name()}")
+    # Open database/project
+    print(lightcyan(f"DaVinci Resolve version:"), dvr.version())
     dvr.set_current_database(name=db_name)
-    print(f"current database: {dvr.current_database_name()}")
-
-    print(f"Try loading project: {project_name}")
+    print(lightcyan(f"Database:"), dvr.current_database_name())
     project = dvr.load_project(project_name)
-    print(f"Project loaded: {project.name()}")
-    # project = project_manager.GetCurrentProject()
-    # # Get a list of all projects
+    print(lightcyan(f"Project loaded:"), project.name())
 
-    if False:
-        # Get a simple list of media pool items and their metadata
-        media_pool = project.GetMediaPool()
-        root_folder = media_pool.GetRootFolder()
-        clips = root_folder.GetClipList()
+    timeline: DVRTimeline = project.timeline_by_index()
+    print(lightcyan(f"Timeline:"), timeline.name())
+    timeline.set_as_current()
 
-        print("Media Pool Items:")
-        for clip in clips[:5]:  # Just test the first 5
-            print(f"Clip: {clip.GetName()}")
-            try:
-                path = clip.GetMetadata("File Path")
-                print(f"  File Path: {path}")
-                print(f"  id: {clip.GetMediaId()}")
+    track_items = timeline.video_track_items()
+    print(lightcyan(f"Input media clips:"))
 
-            except Exception as e:
-                print(f"  Error: {e}")
 
-    if True:
-        # timeline = project.GetCurrentTimeline()
-        timeline: DVRTimeline = project.timeline_by_index()
-        # timeline.SetName("ep01_episode")
-        print(f"got timeline: {timeline.name()}")
-        # if not timeline.SetTrackName("video", 1, "episode"):
-        #     print("failed naming track name")
-        print(f"    video track count: {timeline.video_track_count()}")
-        print(f"    video track name: {timeline.video_track_name()}")
 
-        # media_pool = project.GetMediaPool()
-        # root_folder = media_pool.GetRootFolder()
-        # clip_list = root_folder.GetClipList()
-        # first_clip_name = clip_list[0].GetName()
-        # print(clip_list[0].GetMetadata("Codec"))
-        track_items = timeline.video_track_items()
-        for item in track_items[:5]:
-            print(item)
+    dvr.select_page(name="edit")
+    # for item in track_items[14:16]:
+    # item = track_items[14]
+    # # print(item)
+    # print(item)
+    # item.stabilize()
+    print(timeline.get_start_timecode())
+    print(timeline.set_current_timecode("01:02:24:00"))
+    item: DVRItem = timeline.get_current_item()
+
+    dvr_item = item.dvr_timeline_item
+    inspector_properties = dvr_item.GetProperty("Inspector")
+    pprint(inspector_properties)
+
+    print("GetFusionCompCount")
+    print(dvr_item.GetFusionCompCount())
+    print("GetProperty")
+    pprint(dvr_item.GetProperty())
+
+    pprint(item.media_clip.filepath)
+
+
 
     print("done")
     if not already_started:
