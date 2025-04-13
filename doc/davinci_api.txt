@@ -578,7 +578,7 @@ Where syncMode is one of the following values:
 * resolve.CLOUD_SYNC_PROXY_ONLY,
 * resolve.CLOUD_SYNC_PROXY_AND_ORIG
 
-All four functions "ProjectManager:CreateCloudProject", "ProjectManager:LoadCloudProject", "ProjectManager:ImportCloudProject", and "ProjectManager:RestoreCloudProject" require resolve.PROJECT_MEDIA_PATH to be defined. 
+All four functions "ProjectManager:CreateCloudProject", "ProjectManager:LoadCloudProject", "ProjectManager:ImportCloudProject", and "ProjectManager:RestoreCloudProject" require resolve.PROJECT_MEDIA_PATH to be defined.
 "ProjectManager:LoadCloudProject" and "ProjectManager:CreateCloudProject" also requires resolve.PROJECT_NAME to be defined.
 
 Audio Sync Settings
