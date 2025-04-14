@@ -8,9 +8,9 @@ TrackType = Literal['video', 'audio', 'subtitle']
 
 
 class DVRTimeline:
-    def __init__(self, project, timeline_index: int):
-        self._project = project
-        self._timeline = project.GetTimelineByIndex(timeline_index)
+    def __init__(self, dvr_project, timeline_index: int):
+        self._dvr_project = dvr_project
+        self._dvr_timeline = dvr_project.GetTimelineByIndex(timeline_index)
         self._video_items: list[DVRItem] = None
 
 
@@ -20,42 +20,42 @@ class DVRTimeline:
             it permits to access to the properties/functions\n
             that are not implemented in this class.
         """
-        return self._timeline
+        return self._dvr_timeline
 
 
     def get_settings(self) -> dict[str, float | int | str]:
-        return self._timeline.GetSetting()
+        return self._dvr_timeline.GetSetting()
 
 
     def get_setting(self, name: str) -> Any | dict[str, Any]:
         if not name:
             raise ValueError(f"Not a valid setting name: {name}")
-        return self._timeline.GetSetting(name)
+        return self._dvr_timeline.GetSetting(name)
 
 
     def set_setting(self, name: str, value: float | int | str) -> bool:
         if not name:
             raise ValueError(f"Not a valid property name: {name}")
-        return self._timeline.SetSetting(name, value)
+        return self._dvr_timeline.SetSetting(name, value)
 
 
     @property
     def name(self) -> str:
-        return self._timeline.GetName()
+        return self._dvr_timeline.GetName()
 
 
     @name.setter
     def name(self, name: str) -> None:
-        self._timeline.SetName(name)
+        self._dvr_timeline.SetName(name)
 
 
     def _track_count(self, type: TrackType = 'video') -> int:
-        return self._timeline.GetTrackCount(type)
+        return self._dvr_timeline.GetTrackCount(type)
 
 
     def _track_name(self, type: TrackType = 'video', index: int = 1) -> str:
         try:
-            return self._timeline.GetTrackName(type, index)
+            return self._dvr_timeline.GetTrackName(type, index)
         except:
             raise ValueError(f"Failed getting track name for index={index}")
 
@@ -80,12 +80,12 @@ class DVRTimeline:
         """
         if self._video_items is None:
             self._video_items: list[DVRItem] = []
-            for item in self._timeline.GetItemListInTrack("video", track_index):
+            for item in self._dvr_timeline.GetItemListInTrack("video", track_index):
                 self._video_items.append(
                     DVRItem(
                         item,
-                        timeline=self._timeline,
-                        project=self._project
+                        dvr_timeline=self._dvr_timeline,
+                        project=self._dvr_project
                     )
                 )
         return self._video_items
@@ -105,29 +105,29 @@ class DVRTimeline:
 
     def audio_track_items(self, index: int = 1) -> list[Any]:
         raise NotImplementedError("To be reworked to work like video items")
-        return self._timeline.GetItemListInTrack("audio", index)
+        return self._dvr_timeline.GetItemListInTrack("audio", index)
 
 
     def set_as_current(self):
-        self._project.SetCurrentTimeline(self._timeline)
+        self._dvr_project.SetCurrentTimeline(self._dvr_timeline)
 
 
     def set_current_timecode(self, timecode: int) -> None:
         self.set_as_current()
-        self._timeline.SetCurrentTimecode(timecode)
+        self._dvr_timeline.SetCurrentTimecode(timecode)
 
 
     def start_timecode(self) -> str:
         self.set_as_current()
-        return self._timeline.GetStartTimecode()
+        return self._dvr_timeline.GetStartTimecode()
 
 
     def framerate(self) -> float:
-        return float(self._timeline.GetSetting("timelineFrameRate"))
+        return float(self._dvr_timeline.GetSetting("timelineFrameRate"))
 
 
     def get_current_item(self) -> DVRItem:
-        current_item = self._timeline.GetCurrentVideoItem()
+        current_item = self._dvr_timeline.GetCurrentVideoItem()
         current_item_start = current_item.GetStart()
         current_item_end = current_item.GetEnd()
         for item in self.video_track_items():
@@ -171,7 +171,7 @@ class DVRTimeline:
         timecode: str = self.frame_to_timecode(item.start_frame)
         print(timecode)
         self.set_as_current()
-        self._timeline.SetCurrentTimecode(timecode)
+        self._dvr_timeline.SetCurrentTimecode(timecode)
         return item
 
 

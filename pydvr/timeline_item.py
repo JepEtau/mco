@@ -80,36 +80,36 @@ class Cropping:
 class DVRItem:
     def __init__(
         self,
-        timeline_item: Any,
-        timeline: Any,
+        dvr_timeline_item: Any,
+        dvr_timeline: Any,
         project: Any
         # timeline_index: int,
     ):
         super().__init__()
-        self._timeline_item = timeline_item
-        self._timeline = timeline
-        self._project = project
+        self._dvr_timeline_item = dvr_timeline_item
+        self._dvr_timeline = dvr_timeline
+        self._dvr_project = project
         # self._timeline_index = timeline_index
 
-        self.name: str = timeline_item.GetName()
-        self.start_frame: int = timeline_item.GetStart()
-        self.end_frame: int = timeline_item.GetEnd()
-        self.frame_count: int = timeline_item.GetDuration()
+        self.name: str = dvr_timeline_item.GetName()
+        self.start_frame: int = dvr_timeline_item.GetStart()
+        self.end_frame: int = dvr_timeline_item.GetEnd()
+        self.frame_count: int = dvr_timeline_item.GetDuration()
         self.media_clip: DVRMediaPoolItem = None
 
         media_pool_item = None
         try:
-            media_pool_item = timeline_item.GetMediaPoolItem()
+            media_pool_item = dvr_timeline_item.GetMediaPoolItem()
         except:
             warn(f"Failed to get MediaPoolItem for item `{self.name}`")
 
         if media_pool_item is not None:
             self.media_clip: DVRMediaPoolItem = DVRMediaPoolItem(
-                media_pool_item=media_pool_item, timeline_item=timeline_item
+                media_pool_item=media_pool_item, timeline_item=dvr_timeline_item
             )
         self.media_pool_item = media_pool_item
-        self._transform = Transform(self._timeline_item)
-        self._cropping = Cropping(self._timeline_item)
+        self._transform = Transform(self._dvr_timeline_item)
+        self._cropping = Cropping(self._dvr_timeline_item)
 
 
     @property
@@ -118,23 +118,23 @@ class DVRItem:
             it permits to access to the properties/functions\n
             that are not implemented in this class.
         """
-        return self._timeline_item
+        return self._dvr_timeline_item
 
 
     def get_properties(self) -> dict[str, float | int | str]:
-        return self._timeline_item.GetProperty()
+        return self._dvr_timeline_item.GetProperty()
 
 
     def get_property(self, name: str) -> Any | dict[str, Any]:
         if not name:
             raise ValueError(f"Not a valid property name: {name}")
-        return self._timeline_item.GetProperty(name)
+        return self._dvr_timeline_item.GetProperty(name)
 
 
     def set_property(self, name: str, value: float | int | str) -> bool:
         if not name:
             raise ValueError(f"Not a valid property name: {name}")
-        return self._timeline_item.SetProperty(name, value)
+        return self._dvr_timeline_item.SetProperty(name, value)
 
 
     @property

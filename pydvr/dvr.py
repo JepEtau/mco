@@ -4,7 +4,7 @@ import sys
 import time
 from typing import Literal
 from warnings import warn
-from dvr.project import DVRProject
+from .project import DVRProject
 from utils.p_print import *
 
 

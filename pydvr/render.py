@@ -1,5 +1,6 @@
 
 import os
+from typing import Any, Literal
 
 
 class RenderSettings:
@@ -43,6 +44,28 @@ class RenderSettings:
         }
         return dict([{k: v} for k, v in settings_dict.items if v is not None])
 
+
+class Render:
+    def __init__(self, dvr_project: Any):
+        self._dvr_project = dvr_project
+
+
+    def set_settings(self, settings: RenderSettings) -> bool:
+        return self._dvr_project.SetRenderSettings(settings.as_dict())
+
+
+    def set_mode(self, mode: Literal["single", "individual"]) -> bool:
+        return self._dvr_project.SetCurrentRenderMode(
+            1 if mode == "single" else 0
+        )
+
+
+    def get_render_mode(self) -> Literal["single", "individual"]:
+        return (
+            "single"
+            if self._dvr_project.GetCurrentRenderMode() == 1
+            else "individual"
+        )
 
 
 # Looking up Render Settings

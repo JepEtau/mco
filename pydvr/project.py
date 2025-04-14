@@ -1,92 +1,85 @@
-from typing import Any, Literal
+from typing import Any
 
-from dvr.render import RenderSettings
+from .render import (
+    Render,
+)
 from .timeline import DVRTimeline
 
 
 class DVRProject:
     def __init__(self, project: Any):
-        self._project = project
+        self._dvr_project = project
+        self._render = Render(dvr_project=self._dvr_project)
+        self._timelines: dict[str | int, DVRTimeline] = {}
 
 
     @property
     def name(self) -> str:
         try:
-            return self._project.GetName()
+            return self._dvr_project.GetName()
         except Exception as e:
             raise ValueError(f"Erroneous project")
 
 
     @name.setter
     def name(self, name: str) -> None:
-        self._project.SetName(name)
+        self._dvr_project.SetName(name)
 
 
     @property
     def dvr_project(self) -> Any:
         """Return the DaVinciProject object
         """
-        return self._project
+        return self._dvr_project
 
 
     def get_settings(self) -> dict[str, float | int | str]:
-        return self._project.GetSetting()
+        return self._dvr_project.GetSetting()
 
 
     def get_setting(self, name: str) -> Any | dict[str, Any]:
         if not name:
             raise ValueError(f"Not a valid setting name: {name}")
-        return self._project.GetSetting(name)
+        return self._dvr_project.GetSetting(name)
 
 
     def set_setting(self, name: str, value: float | int | str) -> bool:
         if not name:
             raise ValueError(f"Not a valid property name: {name}")
-        return self._project.SetSetting(name, value)
+        return self._dvr_project.SetSetting(name, value)
 
 
     def timeline_count(self) -> int:
-        return self._project.GetTimelineCount()
+        return self._dvr_project.GetTimelineCount()
 
 
     def get_timeline(self, index: int = 1) -> DVRTimeline:
-        return DVRTimeline(project=self._project, timeline_index=index)
+        if index not in self._timelines:
+            self._timelines[index] = DVRTimeline(
+                dvr_project=self._dvr_project, timeline_index=index
+            )
+        return self._timelines[index]
 
 
     def framerate(self) -> float:
-        return self._project.GetSetting("timelineFrameRate")
+        return self._dvr_project.GetSetting("timelineFrameRate")
 
 
     def resolution(self) -> tuple[int, int]:
         return (
-            self._project.GetSetting("timelineResolutionWidth"),
-            self._project.GetSetting("timelineResolutionHeight")
+            self._dvr_project.GetSetting("timelineResolutionWidth"),
+            self._dvr_project.GetSetting("timelineResolutionHeight")
         )
 
 
     def set_current_timeline(self, index: int = 1) -> bool:
-        timeline = self._project.GetTimelineByIndex(index)
-        return self._project.SetCurrentTimeline(timeline)
+        timeline = self._dvr_project.GetTimelineByIndex(index)
+        return self._dvr_project.SetCurrentTimeline(timeline)
 
 
-    def set_render_settings(self, settings: RenderSettings) -> bool:
-        return self._project.SetRenderSettings(settings.as_dict())
-
-
-    def set_render_mode(self, mode: Literal["single", "individual"]) -> bool:
-        return self._project.SetCurrentRenderMode(
-            1 if mode == "single" else 0
-        )
-
-
-    def get_render_mode(self) -> Literal["single", "individual"]:
-        return (
-            "single"
-            if self._project.GetCurrentRenderMode() == 1
-            else "individual"
-        )
-
-
+    @property
+    def render(self) -> Render:
+        return self._render
 
 
 # Project
