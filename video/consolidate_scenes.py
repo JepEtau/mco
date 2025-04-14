@@ -1,13 +1,11 @@
 import sys
 import os
 from pprint import pprint
-from parsers._helpers import get_chapter_video
 from scene.consolidate import consolidate_scene
 from utils.mco_types import Scene, ChapterVideo
 from utils.mco_utils import scene_id_str
 from utils.p_print import *
 from parsers import (
-    db,
     Chapter,
     all_chapter_keys,
     ep_key,
@@ -15,6 +13,7 @@ from parsers import (
     ProcessingTask,
     pprint_scene_mapping,
     ChGeometryStats,
+    get_chapter_video,
 )
 
 

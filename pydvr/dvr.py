@@ -105,7 +105,12 @@ class DVR:
         return self.pm.GetCurrentDatabase()['DbName']
 
 
-    def set_current_database(self, name: str, type: DbType = 'Disk', ip_address: str = "") -> None:
+    def set_current_database(
+        self,
+        name: str,
+        type: DbType = 'Disk',
+        ip_address: str = ""
+    ) -> bool:
         current_db = {
             'DbType': type,
             'DbName': name,
@@ -113,7 +118,7 @@ class DVR:
         if ip_address:
             current_db['IpAddress'] = ip_address
         try:
-            self.pm.SetCurrentDatabase(current_db)
+            return self.pm.SetCurrentDatabase(current_db)
         except:
             raise ValueError(f"Failed to set current database to {name}")
 
@@ -129,6 +134,23 @@ class DVR:
     def project(self) -> DVRProject:
         if self._project is None:
             raise ValueError(f"No project loaded")
+        return self._project
+
+
+    def current_project_name(self) -> str:
+        try:
+            return self.pm.GetCurrentProject().Name()
+        except:
+            return ""
+
+
+    def current_project(self) -> DVRProject:
+        if self._project is None:
+            try:
+                dvr_project = self.pm.GetCurrentProject()
+            except:
+                raise ValueError(red("Failed to get current project"))
+            self._project: DVRProject = DVRProject(dvr_project=dvr_project)
         return self._project
 
 

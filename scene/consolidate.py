@@ -387,7 +387,7 @@ def consolidate_scene(
             }
 
             in_video_fp: str = task.in_video_file
-            if not os.path.exists(in_video_fp):
+            if not os.path.exists(in_video_fp) and task_name not in ('cg', ):
                 for i in range(
                     TASK_NAMES.index(task.name),
                     TASK_NAMES.index('hr') - 1,

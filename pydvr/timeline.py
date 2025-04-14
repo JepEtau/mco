@@ -80,12 +80,15 @@ class DVRTimeline:
         """
         if self._video_items is None:
             self._video_items: list[DVRItem] = []
-            for item in self._dvr_timeline.GetItemListInTrack("video", track_index):
+            for i, item in enumerate(
+                self._dvr_timeline.GetItemListInTrack("video", track_index)
+            ):
                 self._video_items.append(
                     DVRItem(
                         item,
                         dvr_timeline=self._dvr_timeline,
-                        project=self._dvr_project
+                        project=self._dvr_project,
+                        dvr_index=i+1,
                     )
                 )
         return self._video_items
@@ -161,18 +164,41 @@ class DVRTimeline:
         return f"{int(hours):02}:{int(minutes):02}:{int(seconds):02}:{int(frames):02}"
 
 
-    def select_item(self, dvr_index: int) -> DVRItem:
+    def get_item(self, dvr_index: int) -> DVRItem:
         """Index from 1 to numberf of GetTrackCount()
         """
         try:
             item = self.video_track_items()[dvr_index - 1]
         except:
             raise ValueError(red(f"Not a valid index: {dvr_index}"))
+        return item
+
+
+    def select_item_by_index(self, index: int) -> None:
+        """Index from 1 to numberf of GetTrackCount()
+        """
+        if not 1 <= index <= self.video_item_count() + 1:
+            raise ValueError(red(f"Not a valid item"))
+
+        item = self.video_track_items()[index - 1]
         timecode: str = self.frame_to_timecode(item.start_frame)
-        print(timecode)
         self.set_as_current()
         self._dvr_timeline.SetCurrentTimecode(timecode)
-        return item
+
+
+
+    def select_item(self, item: DVRItem) -> None:
+        """Index from 1 to numberf of GetTrackCount()
+        """
+        if not 1 <= item.index - 1 <= self.video_item_count() + 1:
+            raise ValueError(red(f"Not a valid item"))
+
+        item = self.video_track_items()[item.index - 1]
+        timecode: str = self.frame_to_timecode(item.start_frame)
+        self.set_as_current()
+        self._dvr_timeline.SetCurrentTimecode(timecode)
+
+
 
 
 #   GetName()                                       --> string             # Returns the timeline name.
