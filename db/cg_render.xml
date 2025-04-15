@@ -24,7 +24,7 @@
  <FormatHeight>1128</FormatHeight>
  <FormatPixelAspectRatio>1</FormatPixelAspectRatio>
  <FormatOption>-1</FormatOption>
- <RecordTargetDir>N:\cache\g_debut\cg</RecordTargetDir>
+ <RecordTargetDir>N:\cache</RecordTargetDir>
  <RecordUseTgtTimeCode>0</RecordUseTgtTimeCode>
  <RenderAtSourceResolution>false</RenderAtSourceResolution>
  <RecordSetTimelineTimecode>false</RecordSetTimelineTimecode>

@@ -49,7 +49,9 @@ class Render(RenderSettings):
 
 
     def add_render_job(self) -> str:
-        return self.AddRenderJob()
+        """Returns the job id
+        """
+        return self._dvr_project.AddRenderJob()
 
 
     def delete_render_job(self, job_id: str) -> bool:
@@ -80,10 +82,13 @@ class Render(RenderSettings):
 
 
     def rendering_status(self, job_id: str) -> dict[str, str]:
+        """Returns a dict with job status and completion percentage
+            of the job by given jobId.
+        """
         return self._dvr_project.GetRenderJobStatus(job_id)
 
 
-    def get_video_formats(self) -> dict[str, str]:
+    def video_formats(self) -> dict[str, str]:
         """Returns extension for each video format
             {
                 'AVI': 'avi',
@@ -109,6 +114,22 @@ class Render(RenderSettings):
             }
         """
         return self._dvr_project.GetRenderFormats()
+
+
+    def video_codecs(self, format: str) -> dict[str, str]:
+        if format not in self.video_formats().keys():
+            raise ValueError(f"Format {format} is not supported")
+        return self._dvr_project.GetRenderCodecs(format)
+
+
+    def current_format_and_codec(self) -> dict[str, str]:
+        return self._dvr_project.GetCurrentRenderFormatAndCodec()
+
+
+    def set_current_format_and_codec(self, format: str, codec: str) -> dict[str, str]:
+        return self._dvr_project.SetCurrentRenderFormatAndCodec(
+            {'format': format, 'codec': codec}
+        )
 
 
 # Project

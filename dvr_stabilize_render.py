@@ -57,7 +57,9 @@ from utils.mco_types import Scene, ChapterVideo
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger
 from utils.p_print import *
-
+from utils.path_utils import (
+    path_split,
+)
 
 dvr = None
 
@@ -87,6 +89,7 @@ def main():
     k_ch: Chapter = 'episode'
     debug: bool = arguments.debug
     scene_no: int = arguments.scene
+    force: bool = arguments.force
 
 
     project_name = "ep01_episode"
@@ -142,19 +145,16 @@ def main():
 
 
         if False:
+            render = project.render
             print("---------------------------------")
             dvr.select_page("deliver")
-            print(project.render.get_render_mode())
+            print(render.get_render_mode())
             print("---------------------------------")
-            pprint(project.render.get_render_jobs())
+            pprint(render.get_render_jobs())
             print("---------------------------------")
-            pprint(project.render.get_presets())
+            pprint(render.get_presets())
             print("---------------------------------")
-            pprint(project.dvr_project.GetRenderFormats())
-            # pprint(project.dvr_project.GetRenderFormats())
-
-            # %{Source Name}_cg
-
+            pprint(render.video_formats())
 
         print("done")
         if not app_already_started():
@@ -185,7 +185,7 @@ def main():
     if timeline.video_item_count() != len(scenes):
         raise ValueError(red(f"missing scenes timeline: {timeline.video_item_count()}, must be {len(scenes)}"))
 
-    for scene in scenes:
+    for scene in scenes[:10]:
         if scene_no != -1 and scene['no'] != scene_no:
             continue
         pprint_scene_mapping(scene)
@@ -214,7 +214,7 @@ def main():
             in_video_info: VideoInfo | None =  None
             try:
                 in_video_info = extract_media_info_mco(in_video_fp)['video']
-                print(f"  input video file: {out_video_info['frame_count']} frames")
+                print(f"  input video file: {in_video_info['frame_count']} frames")
                 if in_video_info['frame_count'] != dst_frame_count:
                     raise ValueError(f"Error: {scene_id}, input file has wrong number of frames")
             except:
@@ -230,32 +230,56 @@ def main():
             except:
                 do_append = True
 
-        if do_append:
+        if do_append or force:
             video_to_update_fp[in_video_fp] = out_video_fp
 
     # Stabilize
-    dvr.select_page("edit")
+    # dvr.select_page("edit")
+    # for item in timeline.video_track_items():
+    #     in_video_fp: str = item.media_clip.filepath
+
+    #     # If this clip has to be rendered, stabilize it first
+    #     if in_video_fp in video_to_update_fp:
+    #         timeline.select_item(item)
+    #         print(lightcyan(f"stabilize item:"), item.name)
+    #         if not item.stabilize():
+    #             print(red(f"  failed to stabilize item: {item.name}"))
+
+    # Render
+    dvr.select_page("deliver")
+    render: Render = project.render
+    render.load_preset("mco_cg")
+    render.export_audio = False
+    render.delete_all_render_jobs()
+    job_ids: list[str] = []
     for item in timeline.video_track_items():
         in_video_fp: str = item.media_clip.filepath
-
-        # If this clip has to be rendered, stabilize it first
         if in_video_fp in video_to_update_fp:
-            timeline.select_item(item)
-            print(lightcyan(f"stabilize item:"), item.name)
-            if not item.stabilize():
-                print(red(f"  failed to stabilize item: {item.name}"))
+            # timeline.select_item(item)
+            out_video_fp: str = video_to_update_fp[in_video_fp]
+            print(f"Add {out_video_fp} to render queue: [{item.start_frame}..{item.last_frame}]")
+            try:
+                os.remove(out_video_fp)
+            except:
+                pass
+            out_dir, basename, _ = path_split(out_video_fp)
+
+            render.new_settings()
+            render.set_mark_range(item.start_frame, item.last_frame)
+            render.output_dir = os.path.join(out_dir)
+            render.custom_name = basename
+            render.overwrite_output_file = True
+            render.apply_settings()
+            job_ids.append(render.add_render_job())
 
 
-
-    render: Render = project.render
-    render.set_mode('in')
-            # out_video_fp: str = video_to_update_fp[in_video_fp]
-
-    # # Define a render job
-    # render.load_preset('mco_cg')
-
-
-
+    print(f"Start rendering {video_to_update_fp} clips...")
+    render.start_rendering()
+    while render.is_rendering():
+        # for job_id in job_ids:
+        #     print(render.rendering_status(job_id))
+        time.sleep(1)
+    print("Done.")
 
 
 def signal_handler(signum, frame):

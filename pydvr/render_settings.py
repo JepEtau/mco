@@ -45,6 +45,7 @@ class RenderSettings:
     def __init__(self, dvr_project: Any):
         self._render_settings: dict[SettingKey, float | int | str] = {}
         self._dvr_project = dvr_project
+        self.new_settings()
 
 
     def new_settings(self) -> None:
@@ -57,6 +58,10 @@ class RenderSettings:
 
     def set_setting(self, name: SettingKey, value: int | float | str) -> None:
         self._render_settings[name] = value
+
+
+    def apply_settings(self) -> bool:
+        return self._dvr_project.SetRenderSettings(self._render_settings)
 
 
     def set_settings(self, settings: SettingKey) -> bool:
@@ -100,13 +105,13 @@ class RenderSettings:
             self._render_settings.get("MarkOut", 0)
         )
 
-    @mark_out.setter
-    def mark_out(self, marks: tuple[int, int]) -> None:
+    @mark_range.setter
+    def mark_range(self, marks: tuple[int, int]) -> None:
         self._render_settings["MarkIn"] = marks[0]
         self._render_settings["MarkOut"] = marks[1]
 
-    def set_mark_range(self, marks: tuple[int, int]) -> None:
-        self.mark_range = marks
+    def set_mark_range(self, mark_in: int, mark_out: int) -> None:
+        self.mark_range = (mark_in, mark_out)
 
 
     @property
@@ -194,6 +199,18 @@ class RenderSettings:
 
 
     @property
+    def custom_name(self) -> str:
+        return self._render_settings.get("CustomName", "")
+
+    @custom_name.setter
+    def custom_name(self, name: str) -> None:
+        self._render_settings["CustomName"] = name
+
+    def set_custom_name(self, name: str) -> None:
+        self.custom_name = name
+
+
+    @property
     def video_quality(self) -> int | str:
         """
             "VideoQuality" possible values for current codec (if applicable):
@@ -218,7 +235,6 @@ class RenderSettings:
         self.video_quality = quality
 
     # Not implemented:
-    #   CustomName
     #   UniqueFilenameStyle
     #   AudioCodec
     #   AudioBitDepth

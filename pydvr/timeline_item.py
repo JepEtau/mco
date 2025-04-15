@@ -94,7 +94,7 @@ class DVRItem:
 
         self.name: str = dvr_timeline_item.GetName()
         self.start_frame: int = dvr_timeline_item.GetStart()
-        self.end_frame: int = dvr_timeline_item.GetEnd()
+        self.last_frame: int = dvr_timeline_item.GetEnd() - 1
         self.frame_count: int = dvr_timeline_item.GetDuration()
         self.media_clip: DVRMediaPoolItem = None
 
@@ -164,8 +164,8 @@ class DVRItem:
         item_str: str = f"""{self.__class__.__name__}(
             name={self.name},
             start_frame={self.start_frame},
-            end_frame={self.end_frame},
-            frame_count={self.end_frame},
+            last_frame={self.last_frame},
+            frame_count={self.last_frame - self.start_frame + 1},
             media_clip={self.media_clip},\n)
         """
         return item_str.replace ("            ", "  ")

@@ -169,7 +169,7 @@ class DVRTimeline:
         for item in self.video_track_items():
             if (
                 item.start_frame == current_item_start
-                and item.end_frame == current_item_end
+                and item.last_frame == current_item_end
             ):
                 return item
         raise ValueError(red("item not found"))
