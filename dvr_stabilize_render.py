@@ -57,7 +57,6 @@ from utils.mco_types import Scene, ChapterVideo
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger
 from utils.p_print import *
-from video.consolidate_scenes import consolidate_scenes
 
 
 dvr = None
@@ -249,6 +248,7 @@ def main():
 
 
     render: Render = project.render
+    render.set_mode('in')
             # out_video_fp: str = video_to_update_fp[in_video_fp]
 
     # # Define a render job
