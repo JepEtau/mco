@@ -1,10 +1,43 @@
+from enum import Enum
 import re
 from typing import Any, Literal
+
+from .resolve import get_resolve
 from .timeline_item import DVRItem
 from utils.p_print import red
 
 
 TrackType = Literal['video', 'audio', 'subtitle']
+
+resolve = get_resolve()
+class ExportType(Enum):
+    AAF = resolve.EXPORT_AAF
+    DRT = resolve.EXPORT_DRT
+    EDL = resolve.EXPORT_EDL
+    FCP_7_XML = resolve.EXPORT_FCP_7_XML
+    FCPXML_1_8 = resolve.EXPORT_FCPXML_1_8
+    FCPXML_1_9 = resolve.EXPORT_FCPXML_1_9
+    FCPXML_1_10 = resolve.EXPORT_FCPXML_1_10
+    HDR_10_PROFILE_A = resolve.EXPORT_HDR_10_PROFILE_A
+    HDR_10_PROFILE_B = resolve.EXPORT_HDR_10_PROFILE_B
+    TEXT_CSV = resolve.EXPORT_TEXT_CSV
+    TEXT_TAB = resolve.EXPORT_TEXT_TAB
+    DOLBY_VISION_VER_2_9 = resolve.EXPORT_DOLBY_VISION_VER_2_9
+    DOLBY_VISION_VER_4_0 = resolve.EXPORT_DOLBY_VISION_VER_4_0
+    DOLBY_VISION_VER_5_1 = resolve.EXPORT_DOLBY_VISION_VER_5_1
+    OTIO = resolve.EXPORT_OTIO
+    ALE = resolve.EXPORT_ALE
+    ALE_CDL = resolve.EXPORT_ALE_CDL
+
+
+class ExportSubType(Enum):
+    NONE = resolve.EXPORT_NONE
+    AAF_NEW = resolve.EXPORT_AAF_NEW
+    AAF_EXISTING = resolve.EXPORT_AAF_EXISTING
+    CDL = resolve.EXPORT_CDL
+    SDL = resolve.EXPORT_SDL
+    MISSING_CLIPS = resolve.EXPORT_MISSING_CLIPS
+
 
 
 class DVRTimeline:
@@ -186,12 +219,11 @@ class DVRTimeline:
         self._dvr_timeline.SetCurrentTimecode(timecode)
 
 
-
     def select_item(self, item: DVRItem) -> None:
         """Index from 1 to numberf of GetTrackCount()
         """
-        if not 1 <= item.index - 1 <= self.video_item_count() + 1:
-            raise ValueError(red(f"Not a valid item"))
+        if not (1 <= item.index <= self.video_item_count()):
+            raise ValueError(red(f"Not a valid item: {item.index}"))
 
         item = self.video_track_items()[item.index - 1]
         timecode: str = self.frame_to_timecode(item.start_frame)
@@ -199,6 +231,15 @@ class DVRTimeline:
         self._dvr_timeline.SetCurrentTimecode(timecode)
 
 
+    def export(
+        self,
+        filepath: str,
+        type: ExportType,
+        subtype: ExportSubType = None,
+    ):
+        if subtype is None:
+            return self._dvr_timeline.Export(filepath, type)
+        return self._dvr_timeline.Export(filepath, type, subtype)
 
 
 #   GetName()                                       --> string             # Returns the timeline name.

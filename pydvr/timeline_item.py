@@ -174,10 +174,8 @@ class DVRItem:
     def stabilize(self) -> bool:
         # Function to reapply stabilization without changing the settings
         # because they're not accessible
-        print(lightcyan(f"stabilize: {self.name}"))
-        # set timeline to current item
-        # clip.Stabilize()
-        print()
+        return self._dvr_timeline_item.Stabilize()
+
 
 
 # TimelineItem

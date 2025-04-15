@@ -2,6 +2,7 @@ from dataclasses import dataclass
 import os
 from pprint import pprint
 import random
+import re
 import signal
 import sys
 from argparse import ArgumentParser
@@ -13,6 +14,16 @@ import time
 
 from utils.mco_utils import calculate_scene_frame_count, scene_id_str
 DVR_PLUGIN_LOADED = False
+from pydvr import (
+    DVR,
+    DVRItem,
+    DVRProject,
+    DVRTimeline,
+    Render,
+    app_already_started,
+    Pages,
+)
+
 try:
     from pydvr import (
         DVR,
@@ -79,7 +90,7 @@ def main():
     scene_no: int = arguments.scene
 
 
-    project_name = arguments.project
+    project_name = "ep01_episode"
     db_name = "mco"
 
     if DVR_PLUGIN_LOADED:
@@ -117,13 +128,42 @@ def main():
                 item.cropping.crop = (0, 0, 0, 0)
                 print(f"item no. {dvr_index}:\n  {item.media_clip.filename}, start frame {item.start_frame}\n")
 
-        dvr.select_page("deliver")
-        print(project.render.get_render_mode())
+        in_filepaths: list[str] = list(
+            [item.media_clip.filepath for item in timeline.video_track_items()]
+        )
+        print(len(in_filepaths))
+        scene_nos: list[int] = []
+        for f in sorted(in_filepaths):
+            result = re.search(re.compile(r"ep01_episode_(\d{3})__.*"), f)
+            no = int(result.group(1))
+            if no in scene_nos:
+                print(red(f"scene no. {no} already in list of scenes"))
+            else:
+                scene_nos.append(no)
+
+
+        if False:
+            print("---------------------------------")
+            dvr.select_page("deliver")
+            print(project.render.get_render_mode())
+            print("---------------------------------")
+            pprint(project.render.get_render_jobs())
+            print("---------------------------------")
+            pprint(project.render.get_presets())
+            print("---------------------------------")
+            pprint(project.dvr_project.GetRenderFormats())
+            # pprint(project.dvr_project.GetRenderFormats())
+
+            # %{Source Name}_cg
+
 
         print("done")
         if not app_already_started():
             print(yellow("TODO: close it"))
             dvr.quit()
+    else:
+        raise ValueError(red("Cannot use DaVinci Resolve API"))
+
 
     # Parse databse and consolidate
     parse_database(episode=k_ep)
@@ -144,7 +184,7 @@ def main():
     scenes: list[Scene] = ch_video['scenes']
 
     if timeline.video_item_count() != len(scenes):
-        raise ValueError(red("missing scene"))
+        raise ValueError(red(f"missing scenes timeline: {timeline.video_item_count()}, must be {len(scenes)}"))
 
     for scene in scenes:
         if scene_no != -1 and scene['no'] != scene_no:
@@ -162,8 +202,10 @@ def main():
         out_video_fp: str = scene['task'].video_file
 
         do_append: bool = False
+        if not os.path.exists(in_video_fp):
+            raise ValueError(red(f"Missing input file: {in_video_fp}"))
         if (
-            os.path.exists(out_video_fp)
+            not os.path.exists(out_video_fp)
             or os.path.getmtime(in_video_fp) > os.path.getmtime(out_video_fp)
         ):
             do_append = True
@@ -192,20 +234,26 @@ def main():
         if do_append:
             video_to_update_fp[in_video_fp] = out_video_fp
 
-        render: Render = project.render
-        for item in timeline.video_track_items():
-            in_video_fp: str = item.media_clip.filepath
-            if in_video_fp in video_to_update_fp:
-                out_video_fp: str = video_to_update_fp[in_video_fp]
+    # Stabilize
+    dvr.select_page("edit")
+    for item in timeline.video_track_items():
+        in_video_fp: str = item.media_clip.filepath
 
-                # Verify that the rendered filepath is this one or modify it
-                # ...
+        # If this clip has to be rendered, stabilize it first
+        if in_video_fp in video_to_update_fp:
+            timeline.select_item(item)
+            print(lightcyan(f"stabilize item:"), item.name)
+            if not item.stabilize():
+                print(red(f"  failed to stabilize item: {item.name}"))
 
-                timeline.select_item(item)
-                item.stabilize()
 
-            # Define a render job
-            render.load_preset('mco_cg')
+
+    render: Render = project.render
+            # out_video_fp: str = video_to_update_fp[in_video_fp]
+
+    # # Define a render job
+    # render.load_preset('mco_cg')
+
 
 
 
@@ -215,7 +263,7 @@ def signal_handler(signum, frame):
     if not app_already_started():
         print(yellow("TODO: close it"))
         dvr.quit()
-
+    sys.exit()
 
 if __name__ == "__main__":
     # signal.signal(signal.SIGINT, signal.SIG_DFL)

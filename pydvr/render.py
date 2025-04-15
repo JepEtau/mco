@@ -131,6 +131,34 @@ class Render:
         return self._dvr_project.GetRenderJobStatus(job_id)
 
 
+    def get_video_formats(self) -> dict[str, str]:
+        """Returns extension for each video format
+            {
+                'AVI': 'avi',
+                'BRAW': 'braw',
+                'Cineon': 'cin',
+                'DCP': 'dcp',
+                'DPX': 'dpx',
+                'EXR': 'exr',
+                'GIF': 'gif',
+                'HLS': 'm3u8',
+                'IMF': 'imf',
+                'JPEG 2000': 'j2c',
+                'MJ2': 'mj2',
+                'MKV': 'mkv',
+                'MP4': 'mp4',
+                'MTS': 'mts',
+                'MXF OP-Atom': 'mxf',
+                'MXF OP1A': 'mxf_op1a',
+                'Panasonic AVC': 'pavc',
+                'QuickTime': 'mov',
+                'TIFF': 'tif',
+                'Wave': 'wav'
+            }
+        """
+        return self._dvr_project.GetRenderFormats()
+
+
 # Project
 #   GetPresetList()                                 --> [presets...]       # Returns a list of presets and their information.
 #   SetPreset(presetName)                           --> Bool               # Sets preset by given presetName (string) into project.

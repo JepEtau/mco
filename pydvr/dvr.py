@@ -1,87 +1,19 @@
-import os
-import subprocess
-import sys
-import time
 from typing import Literal
-from warnings import warn
+from .resolve import get_resolve
 from .project import DVRProject
 from utils.p_print import *
 
 
-
-# RESOLVE_SCRIPT_API = os.path.join(
-#     os.environ["PROGRAMDATA"],
-#     "Blackmagic Design", "DaVinci Resolve", "Support", "Developer", "Scripting"
-# )
-# RESOLVE_SCRIPT_LIB="C:\\Program Files\\Blackmagic Design\\DaVinci Resolve\\fusionscript.dll"
-# # RESOLVE_PYTHON_PATH = os.path.join(RESOLVE_SCRIPT_API, "Modules")
-# # # PYTHONPATH="%PYTHONPATH%;%RESOLVE_SCRIPT_API%\Modules\"
-
-
-# os.environ["RESOLVE_SCRIPT_API"] = RESOLVE_SCRIPT_API
-# os.environ["RESOLVE_SCRIPT_LIB"] = RESOLVE_SCRIPT_LIB
-# if "PYTHONPATH" in os.environ:
-#     os.environ["PYTHONPATH"] = ";".join((os.environ["PYTHONPATH"], RESOLVE_PYTHON_PATH))
-# else:
-#     os.environ["PYTHONPATH"] = RESOLVE_PYTHON_PATH
-
-# print(os.environ["RESOLVE_SCRIPT_API"])
-# print(os.environ["RESOLVE_SCRIPT_LIB"])
-# print(os.environ["PYTHONPATH"])
-
-# print(os.environ.keys())
-# for k in os.environ:
-#     print(f"{k}: {os.environ[k]}")
-# RESOLVE_SCRIPT_API="%PROGRAMDATA%\Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting"
-# RESOLVE_SCRIPT_LIB="C:\Program Files\Blackmagic Design\DaVinci Resolve\fusionscript.dll"
-# PYTHONPATH="%PYTHONPATH%;%RESOLVE_SCRIPT_API%\Modules\"
-
-RESOLVE_SCRIPT_API = os.path.join(
-    os.environ["PROGRAMDATA"],
-    "Blackmagic Design", "DaVinci Resolve", "Support", "Developer", "Scripting"
-)
-RESOLVE_EXE_PATH = r"C:\Program Files\Blackmagic Design\DaVinci Resolve\Resolve.exe"
-sys.path.append(os.path.join(RESOLVE_SCRIPT_API, "Modules"))
-import DaVinciResolveScript as dvr_script
-
-
-
 DbType = Literal['Disk', 'PostgreSQL']
 Pages = Literal["media", "cut", "edit", "fusion", "color", "fairlight", "deliver"]
-_already_started: bool = True
-
-
-def app_already_started() -> bool:
-    """Returns True if DaVinci Resolve was already started before
-        reunning the script
-    """
-    return _already_started
 
 
 class DVR:
     def __init__(self):
-        global _already_started
-        self._resolve = dvr_script.scriptapp("Resolve")
-        if self._resolve is None:
-            # raise SystemError(red("resolve is None"))
-            subprocess.Popen(args=[f"\"{RESOLVE_EXE_PATH}\"", "-nogui"])
-            time.sleep()
-            self._resolve = dvr_script.scriptapp("Resolve")
-
-
-        try:
-            self._version = self._resolve.GetVersionString()
-        except Exception as e:
-            warn(yellow("DaVinci Resolve is not opened, try opening it"))
-            _already_started = False
-            subprocess.Popen(args=[f"\"{RESOLVE_EXE_PATH}\"", "-nogui"])
-            try:
-                self._version = self._resolve.GetVersionString()
-            except:
-                raise SystemError(red("Failed to start DaVinci Resolve"))
-
+        self._resolve = get_resolve()
         self.pm = self._resolve.GetProjectManager()
         self._project = None
+        self._version = self._resolve.GetVersionString()
 
 
     def quit(self):
