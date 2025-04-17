@@ -5,7 +5,7 @@ from utils.p_print import *
 
 
 DbType = Literal['Disk', 'PostgreSQL']
-Pages = Literal["media", "cut", "edit", "fusion", "color", "fairlight", "deliver"]
+Page = Literal["media", "cut", "edit", "fusion", "color", "fairlight", "deliver"]
 
 
 class DVR:
@@ -86,9 +86,12 @@ class DVR:
         return self._project
 
 
-    def select_page(self, name: Pages) -> None:
-        self._resolve.OpenPage(name)
+    def select_page(self, name: Page) -> bool:
+        return self._resolve.OpenPage(name)
 
+
+    def current_page(self) -> str:
+        return self._resolve.GetCurrentPage()
 
 
 # Resolve

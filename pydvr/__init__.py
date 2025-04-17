@@ -3,7 +3,7 @@ from .resolve import (
 )
 from .dvr import (
     DVR,
-    Pages,
+    Page,
     DbType,
 )
 from .media_pool import (
@@ -40,7 +40,7 @@ __all__ = [
     "app_already_started",
 
     "DbType",
-    "Pages",
+    "Page",
     "TrackType",
 ]
 
