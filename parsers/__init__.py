@@ -90,7 +90,7 @@ from .loop import (
 )
 
 from .prec_asuivre_target import (
-    parse_prec_asuivre_target_scenes,
+    get_dst_scene_nos,
     get_ed_to_src_scene,
 )
 
@@ -148,7 +148,7 @@ __all__ = [
     "calc_hash",
 
     "get_loop_nframes",
-    "parse_prec_asuivre_target_scenes",
+    "get_dst_scene_nos",
     "get_ed_to_src_scene",
 
     "get_chapter_video",

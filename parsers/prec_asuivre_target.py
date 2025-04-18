@@ -4,23 +4,48 @@ import os
 from pprint import pprint
 import re
 import sys
+from utils.p_print import red
 from utils.path_utils import absolute_path
 from ._db import db
 from ._keys import Chapter, all_chapter_keys, ep_key, main_chapter_keys
 from scene.src_scene import SrcScenes, SrcScene, Scene
 
 
-def parse_prec_asuivre_target_scenes(k_ep: str, k_ch: Chapter, k_ed: str = 'j') -> list[int]:
-    scene_nos: set[int] = set()
+def get_dst_scene_nos(
+    k_ep_dst: str,
+    k_ch_dst: Chapter,
+    k_ep: str,
+    k_ch: Chapter,
+    verbose: bool = False
+) -> list[int]:
+    scene_list: list[str] = []
 
-    db_scenes: list[Scene] = parse_target_chapter(k_ep=k_ep, k_ch=k_ch)
+    if verbose:
+        print(f"destination: {k_ep_dst}:{k_ch_dst}")
+        print(f"source: {k_ep}:{k_ch}")
+
+    src_ed_ep_ch_nos: list[int] = []
+    # Parse asuivre/precedemment traget section
+    #   get the src ed/ep/ch/scene_no for each scene
+    db_scenes: list[Scene] = parse_target_chapter(k_ep=k_ep_dst, k_ch=k_ch_dst)
     for scene in db_scenes:
         for src_scene in scene['src'].scenes():
-            _k_ed, _, _, scene_no = src_scene['k_ed_ep_ch_no']
-            scene_nos.add(scene_no)
-            if k_ed and k_ed != _k_ed:
-                raise ValueError(f"parse target scene list for {k_ch}: ed is different!")
-    return sorted(list(scene_nos))
+            src_ed_ep_ch_nos.append(src_scene['k_ed_ep_ch_no'])
+    if verbose:
+        print(f"  source scene list for {k_ep_dst}:{k_ch_dst}:")
+        pprint(src_ed_ep_ch_nos)
+
+    # For each source scene, search the destination scene
+    for src_ed_ep_ch_no in src_ed_ep_ch_nos:
+        if src_ed_ep_ch_no[1] != src_ed_ep_ch_nos[0][1]:
+            raise ValueError(f"episode no is different for scene no.{src_ed_ep_ch_no[3]}")
+
+        scene: Scene
+        for scene in db[k_ep]['video']['target'][k_ch]['scenes']:
+            if scene['src'].primary_scene().k_ed_ep_ch_no == src_ed_ep_ch_no:
+                scene_list.append(scene['no'])
+
+    return scene_list
 
 
 
@@ -28,17 +53,19 @@ def get_ed_to_src_scene(
     k_ep: str,
     k_ch: Chapter,
 ) -> dict:
-    db_scenes: list[Scene] = parse_target_chapter(k_ep=k_ep, k_ch=k_ch)
+    db_target_scenes: list[Scene] = parse_target_chapter(k_ep=k_ep, k_ch=k_ch)
     ed_to_target_map: dict = {}
 
     # Use primary scene_no
-    for scene in db_scenes:
+    for scene in db_target_scenes:
         in_scene: Scene = scene['src'].primary_scene().in_scene
         in_scene_no = in_scene['no']
         in_ed = in_scene['k_ed']
         if in_ed not in ed_to_target_map:
             ed_to_target_map[in_ed] = {}
         ed_to_target_map[in_ed][in_scene_no] = scene['no']
+
+    pprint(ed_to_target_map)
 
     return ed_to_target_map
 

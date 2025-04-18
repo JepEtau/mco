@@ -6,11 +6,10 @@ import signal
 import sys
 from parsers import (
     Chapter,
-    db,
     ep_key,
     parse_database,
     TaskName,
-    parse_prec_asuivre_target_scenes,
+    get_dst_scene_nos,
 )
 from utils.arg_parser import common_argument_parser
 from utils.logger import main_logger as main_logger
@@ -62,6 +61,7 @@ def main():
     k_ch_dst: Chapter = arguments.chapter
     ep_no_dst: int = arguments.episode
     k_ep_dst: str = ep_key(arguments.episode)
+    verbose: bool = arguments.debug
 
     k_ch: Chapter = k_ch_dst
     k_ep: str = k_ep_dst
@@ -77,7 +77,15 @@ def main():
     # Parse target list for these chapters
     scene_list: list[int] = []
     if k_ch_dst in ('prec', 'asuivre'):
-        scene_list = parse_prec_asuivre_target_scenes(k_ep=k_ep_dst, k_ch=k_ch_dst)
+        scene_list = get_dst_scene_nos(
+            k_ep_dst=k_ep_dst,
+            k_ch_dst=k_ch_dst,
+            k_ep=k_ep,
+            k_ch=k_ch,
+            verbose=verbose
+        )
+        if verbose:
+            pprint(scene_list)
 
     scene_no: int = arguments.scene
     task: TaskName = 'upscale'

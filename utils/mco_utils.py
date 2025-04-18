@@ -101,6 +101,9 @@ def is_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
     ):
         check_metdata = False
 
+    if task.name in ('hr', 'upscale') and sys.platform == 'linux':
+        check_metdata = False
+
     if os.path.exists(out_video_fp):
         dst_frame_count: int = calculate_scene_frame_count(scene)
         # dst_frame_count = scene['dst']['count']
