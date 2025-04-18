@@ -373,9 +373,7 @@ class SrcScenes:
 
     def has_effect(self, name: EffectName) -> bool:
         for s in self._scenes:
-            if (s['effects'] is not None
-                and s['effects'].has_effect(name)
-            ):
+            if s.effects is not None and s.effects.has_effect(name):
                 return True
         return False
 

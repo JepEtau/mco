@@ -124,7 +124,7 @@ def resize_and_effects(
 ) -> list[np.ndarray]:
 
     # Resize before blending the frame from last scene to this one
-    last_src_scene_effects: Scene = scene['src'].last_scene()['effects']
+    last_src_scene_effects: Scene = scene['src'].last_scene().effects
     if (
         last_src_scene_effects is not None
         and last_src_scene_effects.has_effect('blend')
@@ -167,7 +167,7 @@ def resize_and_effects(
         #     return list([dtype_convert_fct(f.img)for f in out_frames])
 
         out_frame.img = resize_to_4_3(out_frame.img, transformation)
-        return [dtype_convert_fct(out_frames.img)]
+        return [dtype_convert_fct(out_frame.img)]
 
 
 
@@ -242,15 +242,23 @@ def generate_final_scene(
         overwritten_scenes: dict[int, Scene] = db[k_ch]['video']['overwritten_scenes']
         if scene['no'] in overwritten_scenes:
             original_scene = overwritten_scenes[scene['no']]
-            original_start: int = original_scene['src'].primary_scene()['start']
-            src_seek_start = scene['src'].primary_scene()['start'] - original_start
+            original_start: int = original_scene['src'].primary_scene().start
+            src_seek_start = scene['src'].primary_scene().start - original_start
             src_seek_count = scene['dst']['count']
-            if src_seek_count == scene['src'].primary_scene()['count'] and src_seek_start == 0:
+            if src_seek_count == scene['src'].primary_scene().count and src_seek_start == 0:
                 src_seek_count = 0
 
             print(yellow(f"{scene['no']} is overwritten"))
             print(yellow(f"src seek start: {src_seek_start}"))
             print(yellow(f"src seek count: {src_seek_count}"))
+    else:
+        primary_scene = scene['src'].primary_scene()
+        src_seek_start = primary_scene.start - primary_scene.in_scene['start']
+
+        if in_video_info['frame_count'] != scene['dst']['count']:
+            src_seek_count = scene['dst']['count']
+        print(yellow(src_seek_start))
+
 
     src_frame_count: int = scene['src'].frame_count(exclude_loop=True)
     if in_video_info['frame_count'] < src_frame_count:
@@ -299,7 +307,7 @@ def generate_final_scene(
     # Src seek
     src_seek_start_args = (
         ["-ss", f"{frame_to_sexagesimal(src_seek_start, frame_rate=in_video_info['frame_rate_r'])}"]
-        if src_seek_start and src_seek_count
+        if src_seek_start
         else []
     )
     src_seek_count_args = (
@@ -307,9 +315,9 @@ def generate_final_scene(
         if src_seek_count
         else []
     )
-
     print(yellow(src_seek_start_args))
     print(yellow(src_seek_count_args))
+    # sys.exit()
 
     if do_decode:
         d_command: list[str] = [
@@ -448,8 +456,9 @@ def generate_final_scene(
 
             "-f", "rawvideo",
             '-pixel_format', 'bgr24',
+            "-framerate", str(vsettings.frame_rate),
             '-video_size', f"{in_w}x{in_h}",
-            "-r", "25",
+            "-r", str(vsettings.frame_rate),
             "-i", "pipe:0",
             "-pix_fmt", "yuv420p",
             "-vcodec", "libx264",
@@ -482,8 +491,13 @@ def generate_final_scene(
     codec: str = str_to_video_codec[vsettings.codec].value
     codec_options: list[str] = vsettings.codec_options
     if sys.platform != 'win32':
-        codec = 'libx264'
-        codec_options = []
+        codec = 'libx265'
+        codec_options = [
+            "-profile:v",
+            "main422-10",
+            "-x265-params",
+            "sao=0",
+        ]
 
     # Colorspace, output is x264 so it's working like that
     colorspace: list[str] = []
@@ -500,6 +514,10 @@ def generate_final_scene(
         print(lightcyan("first scene, avsync:"), ch_video['avsync'])
         if ch_video['avsync'] != 0:
             raise NotImplementedError("avsync not yet supported")
+
+    print(yellow(src_seek_start_args))
+    print(yellow(src_seek_count_args))
+
 
     # Not effects, use FFmpeg only
     if not has_effects:
@@ -591,6 +609,7 @@ def generate_final_scene(
             *src_seek_count_args,
 
             *ffmpeg_filter,
+            "-r", str(vsettings.frame_rate),
 
             "-pix_fmt", vsettings.pix_fmt,
             "-vcodec", codec,
@@ -705,16 +724,18 @@ def generate_final_scene(
         # executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
 
 
-        def _d_thread(stream: IO, d_queue: Queue):
+        def _d_thread(stream: IO, d_queue: Queue, frame_count: int):
             try:
-                while True:
+                while frame_count:
                     d_queue.put(
                         np.frombuffer(
                             stream.read(in_pipe_nbytes), dtype=in_pipe_dtype
                         ).reshape(in_pipe_shape)
                     )
+                    frame_count -= 1
             except:
                 pass
+            print("decoding has ended")
 
 
         def _e_thread(
@@ -739,11 +760,11 @@ def generate_final_scene(
                 line = e_subprocess.stdout.readline().decode('utf-8')
                 if line:
                     print(line.strip(), end='\r', file=sys.stdout)
-
+            print(blue("End to encode"))
 
         d_queue: Queue = Queue(maxsize=ofc)
         e_queue: Queue = Queue(maxsize=ofc * 2)
-        d_thread = Thread(target=_d_thread, args=(d_subprocess.stdout, d_queue,))
+        d_thread = Thread(target=_d_thread, args=(d_subprocess.stdout, d_queue, remaining))
         e_thread = Thread(target=_e_thread, args=(e_subprocess, e_queue,))
         d_thread.start()
         e_thread.start()
@@ -795,7 +816,7 @@ def generate_final_scene(
         print(f"produced {produced} frames in {elapsed_time:.02f}s ({scene['dst']['count']/elapsed_time:.1f}fps)")
 
         stdout_bytes: bytes | None = None
-        stdout_bytes, _ = e_subprocess.communicate(timeout=10)
+        stdout_bytes, _ = e_subprocess.communicate(timeout=30)
         if stdout_bytes is not None:
             stdout = stdout_bytes.decode('utf-8)')
             # TODO: parse the output file

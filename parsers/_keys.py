@@ -64,8 +64,8 @@ _all_chapters: tuple[str] = (
 )
 
 _non_credit_chapters: tuple[str] = (
-    'prec',
     'episode',
+    'prec',
     'asuivre',
     'doc'
 )

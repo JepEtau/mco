@@ -44,6 +44,7 @@ def get_dst_scene_nos(
         for scene in db[k_ep]['video']['target'][k_ch]['scenes']:
             if scene['src'].primary_scene().k_ed_ep_ch_no == src_ed_ep_ch_no:
                 scene_list.append(scene['no'])
+                break
 
     return scene_list
 
@@ -119,6 +120,7 @@ def parse_target_chapter(k_ep: str, k_ch: Chapter) -> list[SrcScene]:
             segment_count: int = -1
 
             _k_ep: str = k_ep
+            k_ed: str = 'j'
             for p in scene_properties:
                 try:
                     k, v = p.split('=')
@@ -205,5 +207,8 @@ def parse_target_chapter(k_ep: str, k_ch: Chapter) -> list[SrcScene]:
                 start=segment_start,
                 count=segment_count,
             )
+
+            # todo: use the one defined in video section
+            k_ed = 'j'
 
     return db_scenes

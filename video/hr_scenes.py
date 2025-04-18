@@ -66,6 +66,7 @@ def upscale_scenes(
     compare: bool = False,
     inpaint: bool = True
 ):
+
     k_ep = ep_key(episode)
     k_ed = edition
     chapters: Chapter = all_chapter_keys() if single_chapter == '' else [single_chapter]

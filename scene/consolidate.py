@@ -29,6 +29,7 @@ from parsers import (
     calc_hash,
     Effects,
     Effect,
+    parse_target_chapter,
 )
 from utils.mco_utils import (
     get_cache_path,
@@ -369,7 +370,22 @@ def consolidate_scene(
             #   use the src cache for prec/asuivre
             if scene['dst']['k_ch'] in ('prec', 'asuivre'):
                 cache_path: str = db[in_k_ep]['cache_path']
-                basename = f"{in_k_ep}_{in_k_ch}_{in_scene_no:03}__{in_k_ed}"
+                if task_name == 'final':
+                    _scene: Scene
+                    target_chapter_scenes: list[Scene] = parse_target_chapter(k_ep=in_k_ep, k_ch=in_k_ch)
+                    src_ed_ep_ch_no = scene['src'].primary_scene().k_ed_ep_ch_no
+                    print(src_ed_ep_ch_no)
+                    for _scene in target_chapter_scenes:
+                        # print(_scene['src'].scenes()[0].k_ed_ep_ch_no)
+                        if _scene['src'].scenes()[0].k_ed_ep_ch_no == src_ed_ep_ch_no:
+                            in_scene_no = _scene['no']
+                            break
+                    basename = f"{in_k_ep}_{in_k_ch}_{in_scene_no:03}__{in_k_ed}"
+
+                else:
+                    basename = f"{in_k_ep}_{in_k_ch}_{in_scene_no:03}__{in_k_ed}"
+
+                # raise ValueError(basename)
             else:
                 cache_path = scene['cache']
 

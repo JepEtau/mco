@@ -61,6 +61,7 @@ def main():
     k_ch_dst: Chapter = arguments.chapter
     ep_no_dst: int = arguments.episode
     k_ep_dst: str = ep_key(arguments.episode)
+    scene_no: int = arguments.scene
     verbose: bool = arguments.debug
 
     k_ch: Chapter = k_ch_dst
@@ -86,8 +87,9 @@ def main():
         )
         if verbose:
             pprint(scene_list)
+        if scene_no != -1:
+            scene_no = scene_list[scene_no]
 
-    scene_no: int = arguments.scene
     task: TaskName = 'upscale'
 
     upscale_scenes(

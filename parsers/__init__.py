@@ -94,6 +94,10 @@ from .prec_asuivre_target import (
     get_ed_to_src_scene,
 )
 
+from .prec_asuivre_target import (
+    parse_target_chapter
+)
+
 
 __all__ = [
     "db",
@@ -149,6 +153,7 @@ __all__ = [
 
     "get_loop_nframes",
     "get_dst_scene_nos",
+    "parse_target_chapter",
     "get_ed_to_src_scene",
 
     "get_chapter_video",

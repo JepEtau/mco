@@ -151,13 +151,8 @@ class CpuEncoderThread(BaseThread):
                     if verbose:
                         print(purple(f"[V][E] fcomplex_str:"), fcomplex_str)
 
-                    # force output codec->
                     codec: str = str_to_video_codec[vsettings.codec].value
                     codec_settings = vsettings.codec_options
-                    if not is_cuda_available():
-                        codec_settings = []
-                        codec = 'libx264'
-                    # <-
 
                     metadata: list[str] = ffmpeg_metadata(scene)
                     h, w = frame.tensor.shape[:2]
@@ -170,10 +165,11 @@ class CpuEncoderThread(BaseThread):
                         "-f", "rawvideo",
                         '-pixel_format', stdin_pixfmt,
                         '-video_size', f"{w}x{h}",
-                        "-r", str(vsettings.frame_rate),
-
+                        "-framerate", str(vsettings.frame_rate),
                         "-i", "pipe:0",
+
                         *filter_complex,
+                        "-r", str(vsettings.frame_rate),
 
                         "-vcodec", codec,
                         *codec_settings,

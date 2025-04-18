@@ -201,10 +201,10 @@ class EncoderThread(BaseThread):
                         "-f", "rawvideo",
                         '-pixel_format', stdin_pixfmt,
                         '-video_size', f"{w}x{h}",
-                        "-r", str(vsettings.frame_rate),
-
+                        "-framerate", str(vsettings.frame_rate),
                         "-i", "pipe:0",
                         *filter_complex,
+                        "-r", str(vsettings.frame_rate),
 
                         "-vcodec", str_to_video_codec[vsettings.codec].value,
                         *vsettings.codec_options,

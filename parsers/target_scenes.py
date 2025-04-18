@@ -220,6 +220,10 @@ def consolidate_target_scenes(k_ep: int | str, k_ch: Chapter, verbose: bool = Fa
         print("\n")
         # sys.exit()
 
+    # if k_ep =='ep01' and k_ch == 'asuivre':
+    #     pprint(ch_video['scenes'][5])
+    #     raise
+
 
 
 def consolidate_target_scenes_g(k_ep: int | str, k_ch: str, verbose: bool = False) -> None:
