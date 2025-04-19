@@ -53,14 +53,14 @@ _main_chapters: tuple[str] = (
 )
 
 _all_chapters: tuple[str] = (
-    'g_debut',
-    'prec',
     'episode',
-    'g_asuivre',
+    'prec',
     'asuivre',
+    'g_asuivre',
     'g_doc',
+    'g_debut',
+    'g_fin',
     'doc',
-    'g_fin'
 )
 
 _non_credit_chapters: tuple[str] = (
@@ -79,7 +79,7 @@ _all_unordered_chapters: tuple[str] = (
     'g_doc',
     'doc',
     'g_debut',
-    'g_fin'
+    'g_fin',
 )
 
 

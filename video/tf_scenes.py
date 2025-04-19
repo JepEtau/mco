@@ -4,6 +4,7 @@ import sys
 import os
 import time
 from pprint import pprint
+from warnings import warn
 
 from parsers.p_print import pprint_scene_mapping
 from scene.consolidate import consolidate_scene
@@ -85,7 +86,8 @@ def tf_scenes(
                 if os.path.exists(in_fp):
                     in_mtime = os.path.getmtime(in_fp)
                 else:
-                    print(red(f"{scene_id}: missing input file:"), in_fp)
+                    print(red(f"{scene_id}: tf_scenes, missing input file:"), in_fp)
+                    print("  continue")
                     continue
 
             out_fp: str = scene['task'].video_file
@@ -101,11 +103,17 @@ def tf_scenes(
                 do_process = True
 
             elif out_mtime < in_mtime or force:
-                print(yellow(f"{scene_id} has to be updated"))
+                print(yellow(f"{scene_id} has to be updated (reason: newer input file)"))
                 do_process = True
 
             else:
-                print(yellow(f"{scene_id}: up to date "), f"{out_mtime} vs {in_mtime}")
+                out_vi = extract_media_info_mco(out_fp)['video']['frame_count']
+                in_vi = extract_media_info_mco(in_fp)['video']['frame_count']
+                if out_vi != in_vi:
+                    print(yellow(f"{scene_id} has to be updated (reason: frame count differs)"))
+                    do_process = True
+                else:
+                    print(yellow(f"{scene_id}: up to date "), f"{out_mtime} vs {in_mtime}")
 
 
             if not do_process:

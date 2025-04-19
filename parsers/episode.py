@@ -363,7 +363,9 @@ def get_episode_dependencies(
             try:
                 chapter_video = db[k_ep]['video'][k_ed_src][k_ch]
             except:
-                sys.exit(red(f"error: {k_ed_src}:{k_ep}:{k_ch}: missing input file"))
+                pprint(db[k_ep]['video'][k_ed_src])
+                raise ValueError(red(f"error: dependency: {k_ed_src}:{k_ep}:{k_ch}"))
+
             if 'scenes' in chapter_video.keys():
                 scenes = chapter_video['scenes']
                 for scene in scenes:

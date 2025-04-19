@@ -91,7 +91,8 @@ def st_scenes(
                 in_mtime = os.path.getmtime(in_fp)
                 # in_mtime_str = datetime.fromtimestamp(in_mtime).strftime("%Y-%m-%d %H:%M:%S")
             else:
-                print(red(f"{scene_id}: missing input file:"), in_fp)
+                print(red(f"{scene_id}: sst_scenest, missing input file:"), in_fp)
+                print("  continue")
                 continue
             # print(f"input: {in_fp}\n  {in_mtime_str}")
 

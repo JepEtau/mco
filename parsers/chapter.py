@@ -18,8 +18,8 @@ def parse_chapter_sections(
     db_video = db[ep_key(episode)]['video'][edition]
     fps: float = get_frame_rate()
 
-    for k_chapter in config.options(k_section):
-        value_str = config.get(k_section, k_chapter)
+    for k_ch in config.options(k_section):
+        value_str = config.get(k_section, k_ch)
         value_str = value_str.replace(' ','')
         # print("%s, %s => [%s]" % (k_section, k_chapter, value_str))
 
@@ -44,21 +44,24 @@ def parse_chapter_sections(
                 chapter_fadeout = int(float(search_fadeout.group(1)) * fps)
 
         if start is None:
-            sys.exit("Error: parse_chapter_sections: start and end values are required for %s in episode file" % (k_chapter))
+            sys.exit("Error: parse_chapter_sections: start and end values are required for %s in episode file" % (k_ch))
 
-        db_video[k_chapter].update({
+        if k_ch not in db_video:
+            db_video[k_ch] = {}
+
+        db_video[k_ch].update({
             'start': start,
             'end': end,
             'count': (end - start) if end > 0 else -1,
         })
-        db_video[k_chapter]['effects'] = Effects()
+        db_video[k_ch]['effects'] = Effects()
         if chapter_fadein:
-            db_video[k_chapter]['effects'].append(
+            db_video[k_ch]['effects'].append(
                 Effect(name='fadein', fade=chapter_fadein)
             )
 
         if chapter_fadeout:
-            db_video[k_chapter]['effects'].append(
+            db_video[k_ch]['effects'].append(
                 Effect(name='fadein', fade=chapter_fadeout)
             )
 

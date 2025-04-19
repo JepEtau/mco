@@ -88,6 +88,10 @@ def parse_target_chapter(k_ep: str, k_ch: Chapter) -> list[SrcScene]:
     db_scenes: list[Scene] = []
 
     k_section = f"scenes_{k_ch}"
+    if k_section not in config.sections():
+        k_section = f"{k_section}.fr"
+
+    print(f"parse: {k_section}")
     for k_option in config.options(k_section):
         value_str: str = (
             config.get(k_section, k_option)

@@ -71,7 +71,10 @@ class GeometryDatabase:
             #     if 'geometry' in src_scene['scene']:
             #     else:
             #         self._db[src_scene_key] = SceneGeometry()
-            self._db[self._key(scene)] = deepcopy(scene['geometry'])
+            try:
+                self._db[self._key(scene)] = deepcopy(scene['geometry'])
+            except:
+                print(f"GeometryDatabase: failed copying from source")
 
         k_ep, k_ch = selection.k_ep, selection.k_ch
 
