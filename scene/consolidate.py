@@ -8,6 +8,8 @@ from warnings import warn
 from scene.helpers import (
     set_doc_filepath_,
     set_g_asuivre_filepath_,
+    get_upscale_suffix,
+    set_prec_asuivre_filepath_,
 )
 from parsers.hash import calc_hash
 from utils.mco_types import (
@@ -29,7 +31,6 @@ from parsers import (
     calc_hash,
     Effects,
     Effect,
-    parse_target_chapter,
 )
 from utils.mco_utils import (
     get_cache_path,
@@ -267,50 +268,22 @@ def consolidate_scene(
 
     # For documentation: specific cache directory structure
     if k_ch in ('g_doc', 'doc'):
-        set_doc_filepath_(scene)
+        set_doc_filepath_(scene, compare=compare)
 
     elif k_ch == 'g_asuivre':
-        set_g_asuivre_filepath_(scene)
+        set_g_asuivre_filepath_(scene, compare=compare)
+
+    elif k_ch in ('prec', 'asuivre'):
+        set_prec_asuivre_filepath_(scene, compare=compare)
 
     else:
         in_k_ed, in_k_ep, in_k_ch, in_scene_no = primary_src_scene['k_ed_ep_ch_no']
         s_no_str: str = scene_no_str(scene)
 
-        if (
-            scene['dst']['k_ch'] in ('prec', 'asuivre')
-            and task_name in ('tf', 'final')
-        ):
-            # The input scene no has to be the target's one
-            #   and not the original one for these chapters/scenes
-            print(lightcyan(f"consolidate scene: prec/asuivre, parse {in_k_ep}:{in_k_ch}"))
-            target_chapter_scenes: list[Scene] = parse_target_chapter(
-                k_ep=in_k_ep, k_ch=in_k_ch
-            )
-            src_ed_ep_ch_no = scene['src'].primary_scene().k_ed_ep_ch_no
-            for _scene in target_chapter_scenes:
-                if _scene['src'].scenes()[0].k_ed_ep_ch_no == src_ed_ep_ch_no:
-                    in_scene_no = _scene['no']
-                    break
-            # The source is the episode -> 3 digits
-            s_no_str = f"{in_scene_no:03}"
-
-
         # Output video filename
         if k_ch in ('g_debut', 'g_fin'):
             cache_path: str = db[k_ch]['cache_path']
             basename = f"{k_ch}_{s_no_str}__{in_k_ed}_{in_k_ep}"
-
-        elif (
-            k_ch in ('g_asuivre', 'g_doc')
-            and task_name not in ('lr', 'sim', 'final')
-        ):
-            cache_path: str = db[k_ch]['cache_path']
-            basename = f"{k_ch}_{s_no_str}__{in_k_ed}_{in_k_ep}"
-
-        elif task_name in ('tf', ) and scene['dst']['k_ch'] in ('prec', 'asuivre'):
-            # use original source episode for prec/asuivre
-            cache_path: str = db[in_k_ep]['cache_path']
-            basename = f"{in_k_ep}_{in_k_ch}_{s_no_str}__{in_k_ed}"
 
         else:
             cache_path: str = db[k_ep]['cache_path']
@@ -376,10 +349,7 @@ def consolidate_scene(
 
             # Input basename/cache
             #   use the src cache for prec/asuivre
-            if scene['dst']['k_ch'] in ('prec', 'asuivre'):
-                cache_path: str = db[in_k_ep]['cache_path']
-            else:
-                cache_path = scene['cache']
+            cache_path = scene['cache']
 
             task.in_video_file = os.path.join(
                 cache_path,
@@ -421,35 +391,3 @@ def consolidate_scene(
 
 
 
-def get_upscale_suffix(
-    scene: Scene,
-    compare: bool = False
-) -> str:
-    task_name: TaskName = scene['task'].name
-
-    # Append the model name to evaluate models: only for upscale task
-    if task_name != 'upscale':
-        return ""
-
-    scene_filters = scene['filters']
-    sequence: str = scene_filters[task_name].sequence
-    for t in (
-        ':cuda', ':trt', ':fp16', ':fp32', ':bf16', ':static'
-    ):
-        sequence = sequence.replace(t, '')
-    suffix: str = ""
-    for s in sequence.split(','):
-        if result := re.search(re.compile(r"^([^=]*)=(.*)"), s):
-            _s = result.group(1)
-            if ("darker" in s or "unsharp" in s):
-                _s += f"_{result.group(2).replace(':', '_')}"
-            suffix += f"+{_s}" if suffix else f"{_s}"
-        else:
-            suffix += f"+{s}" if suffix else s
-    if compare:
-        # use the first scene no
-        suffix = f"_{scene['src'].primary_scene()['k_ed_ep_ch_no'][-1]:03}_{suffix}"
-    else:
-        suffix = f"__{suffix}"
-
-    return suffix
