@@ -115,6 +115,7 @@ def parse_database(
         dependencies[k_ed] = list(set(dependencies[k_ed] + v))
 
     logger.debug(lightcyan("dependencies: "), dependencies)
+    print(lightcyan("dependencies: "), dependencies)
     if edition != '':
         if edition not in dependencies:
             dependencies[edition] = list()
@@ -128,7 +129,7 @@ def parse_database(
                 # Do not parse this episode another time
                 continue
             logger.debug(lightgrey(f"parse dependency: {k_ed_tmp}:{k_ep_tmp}"))
-            # print(lightgrey(f"parse dependency: {k_ed_tmp}:{k_ep_tmp}"))
+            print(lightgrey(f"parse dependency: {k_ed_tmp}:{k_ep_tmp}"))
             parse_episode(k_ed=k_ed_tmp, k_ep=k_ep_tmp)
 
     # Parse other config files for each dependency
@@ -139,6 +140,7 @@ def parse_database(
                 parse_replace_file(k_ep_or_g=k_ep_tmp)
                 parse_loop_file(k_ep=k_ep_tmp, verbose=False)
                 parse_dsr_file(k_ep_or_g=k_ep_tmp)
+
                 # parse_geometry_file(k_ep_or_g=k_ep_tmp)
                 # parse_stabilize_configurations(k_ep_or_g=k_ep_tmp)
                 already_parsed.append(k_ep_tmp)
@@ -191,6 +193,15 @@ def parse_database(
                 consolidate_target_scenes_g(k_ep=k_ep, k_ch=k_chapter_g)
             else:
                 parse_geometry_file(k_ep_or_g=k_chapter_g)
+
+            # Parse geometry
+            already_parsed = []
+            for k_ed_tmp, v in dependencies.items():
+                for k_ep_tmp in dependencies[k_ed_tmp]:
+                    if k_ep_tmp not in already_parsed:
+                        parse_geometry_file(k_ep_or_g=k_ep_tmp)
+
+
     else:
         for k_chapter_g in ('g_debut', 'g_fin'):
             parse_geometry_file(k_ep_or_g=k_chapter_g)

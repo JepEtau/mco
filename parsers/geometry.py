@@ -9,6 +9,7 @@ import os.path
 from pprint import pprint
 from typing import Any
 
+from scene.src_scene import SrcScene
 from utils.p_print import *
 from utils.mco_types import ChapterVideo, Scene
 from utils.path_utils import absolute_path
@@ -226,26 +227,34 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
                 k_ep_src: str = result.group(3)
                 k_ch_src: str = result.group(4)
                 scene_no_src: int = int(result.group(5))
-                try:
-                    scene: Scene = ch_video['scenes'][scene_no]
-                except Exception as e:
-                    print(red(f"exception: parse_geometry_file: {k_ep_or_g}"))
-                    pass
-                src_scene: Scene = scene['src'].primary_scene().in_scene
-                if (
-                    src_scene['k_ed'] != k_ed_src
-                    or src_scene['k_ep'] != k_ep_src
-                    or src_scene['k_ch'] != k_ch_src
-                    or src_scene['no'] != scene_no_src
-                ):
-                    if verbose:
-                        print(yellow(f"not the primary scene: [{k_str}]"))
-                        pprint(scene)
-                        raise
-                    continue
+
+                src_ch_video = db[k_ep_src]['video'][k_ed_src][k_ch_src]
+                src_scene: SrcScene = src_ch_video['scenes'][scene_no_src]
+
+                # try:
+                #     scene: Scene = ch_video['scenes'][scene_no]
+                # except Exception as e:
+                #     print(red(f"exception: parse_geometry_file: {k_ep_or_g}:{section}:{scene_no}"))
+                #     pass
+                # src_scene: Scene = scene['src'].primary_scene().in_scene
+                # if (
+                #     src_scene['k_ed'] != k_ed_src
+                #     or src_scene['k_ep'] != k_ep_src
+                #     or src_scene['k_ch'] != k_ch_src
+                #     or src_scene['no'] != scene_no_src
+                # ):
+                #     if verbose:
+                #         print(yellow(f"not the primary scene: [{k_str}]"))
+                #         print(f"{src_scene['k_ed']} vs {k_ed_src}")
+                #         print(f"{src_scene['k_ep']} vs {k_ep_src}")
+                #         print(f"{src_scene['k_ch']} vs {k_ch_src}")
+                #         print(f"{src_scene['no']} vs {scene_no_src}")
+                #         pprint(scene)
+                #         raise
+                #     continue
 
                 properties = config.get(section, k_str)
-                scene['geometry'] = get_geometry_from_properties(properties)
+                src_scene['geometry'] = get_geometry_from_properties(properties)
 
         for scene in ch_video['scenes']:
             if 'geometry' not in scene:

@@ -146,7 +146,7 @@ class SrcScene:
 
 
     def __repr__(self):
-        class_dict = {k: v for k, v in self.__dict__.items() if k not in ('scene', '_scene')}
+        class_dict = {k: v for k, v in self.__dict__.items() if k not in ('scene', '_scene', '_in_scene')}
         class_dict['count'] = self.count
         class_dict['to_decode'] = self.to_decode
         if self.in_scene is None:
@@ -156,9 +156,10 @@ class SrcScene:
             class_dict['scene'] = (
                 "{" + f"{ed_scene['k_ed']}:{ed_scene['k_ep']}:{ed_scene['k_ch']}:{ed_scene['no']}..." + "}"
             )
-
         class_str = "\n        {\n"
         class_str += "\n".join([f"            \'{k}\': {v}" for k, v in class_dict.items()])
+        class_str += f"\n            \'_in_scene\'\n:"
+        class_str += "\n".join([f"                \'{k}\': {v}" for k, v in self._in_scene.items()])
         class_str += "\n        }"
         return class_str
 

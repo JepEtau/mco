@@ -443,7 +443,7 @@ def generate_final_scene(
     transformation: TransformationValues = geometry.calculate_transformation()
     pprint(transformation)
     if transformation.err_borders is not None:
-        raise ValueError(red(f"Erroneous chapter width: {ch_width}"))
+        raise ValueError(red(f"Erroneous chapter width: {ch_width} (reason: added borders)"))
     # Create a video file for debug
     if debug and debug_imgs:
         # Draw rectangle
@@ -520,7 +520,7 @@ def generate_final_scene(
 
 
     # Not effects, use FFmpeg only
-    if not has_effects:
+    if not has_effects and False:
         print(f"{scene_key}: no effects, use FFmpeg to apply the final geometry")
         filters: list[str] = []
 

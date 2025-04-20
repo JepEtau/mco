@@ -203,7 +203,8 @@ def detect_inner_rect(
         except:
             print(red(f"Failed "))
             print(contour)
-
+            x0, x1 = _get_coordinates(contour[:, 0:1])
+            y0, y1 = _get_coordinates(contour[:, 1:])
     else:
         print(yellow(f"contour shape not found: {contour}"))
         x, y, w, h = cv2.boundingRect(contour)

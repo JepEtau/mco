@@ -134,6 +134,8 @@ def consolidate_scene(
         scene['geometry'].chapter = ch_geometry
 
     else:
+        print(darkgrey(f"consolidate_scene: get geometry for {k_ep}:{k_ch}"))
+        pprint(scene['geometry'])
         if verbose:
             print(f"\t\t\tconsolidate_scene: get geometry for {k_ep}:{k_ch}")
         chapter: ChapterVideo | None = None
@@ -145,8 +147,12 @@ def consolidate_scene(
             scene['geometry'].chapter = deepcopy(chapter['geometry'])
         except:
             if task_name == 'final':
-                warn(red(f"no geometry defined for {k_ep}:{k_ch}"))
+                warn(red(f"no chapter geometry defined for {k_ep}:{k_ch}"))
             scene['geometry'] = SceneGeometry()
+
+        # Use source geometry
+        scene['geometry'] = scene['src'].primary_scene().in_scene['geometry']
+        scene['geometry'].chapter = deepcopy(chapter['geometry'])
 
 
     # Processing chain
