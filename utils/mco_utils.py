@@ -233,11 +233,13 @@ def calculate_scene_frame_count(scene: Scene) -> int:
         return scene['count']
 
     count = scene['dst']['count']
-    if task_name in (
-        'lr', 'sim', 'final', 'sim_lr'
-    ):
+    if task_name in ('lr', 'sim', 'final', 'sim_lr'):
         ch_video: ChapterVideo = get_target_video(scene)
-        if is_first_scene(scene):
+
+        if scene['dst']['k_ch'] in ('g_asuivre', 'g_doc'):
+            count = scene['dst']['count']
+
+        elif is_first_scene(scene):
             # print(lightcyan("first scene, avsync:"), ch_video['avsync'])
             if ch_video['avsync'] != 0:
                 raise NotImplementedError("avsync not yet supported")
@@ -246,11 +248,6 @@ def calculate_scene_frame_count(scene: Scene) -> int:
         # Add silence if last scene of a chapter
         elif is_last_scene(scene):
             count += ch_video['silence'] if 'silence' in ch_video else 0
-
-            # if 'effects' in scene:
-            #     if e := scene['effects'].get_effect('loop_and_fadeout'):
-            #         # raise
-            #         count += e.loop
 
         # specific when using loop for replace
         elif scene['dst']['k_ch'] == 'episode':
@@ -267,7 +264,7 @@ def calculate_scene_frame_count(scene: Scene) -> int:
         warn(yellow(f"{task_name} is not used to calculate frame count"))
 
 
-    print(darkgrey(f"calculate_frame_count: scence no. {scene['no']}: {count}"))
+    print(darkgrey(f"calculate_frame_count: scene no. {scene['no']}: {count}"))
     # print(f"    when upscaling: {scene['src'].frame_count(exclude_loop=False)}")
     return count
 
