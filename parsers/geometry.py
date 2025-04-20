@@ -300,11 +300,14 @@ def get_geometry_from_properties(properties_str: str) -> SceneGeometry:
         # Inner rect detection
         elif property_name == 'detection_params':
             # threshold_min, morph_kernel_radius, erode_kernel_radius, erode_iterations
-            values = value.split(':')
-            geometry.detection_params.threshold_min = int(values[0])
-            geometry.detection_params.morph_kernel = int(values[1])
-            geometry.detection_params.erode_kernel = int(values[2])
-            geometry.detection_params.erode_iterations = int(values[3])
+            if value == "default":
+                print(yellow(f"use default detection params"))
+            else:
+                values = value.split(':')
+                geometry.detection_params.threshold_min = int(values[0])
+                geometry.detection_params.morph_kernel = int(values[1])
+                geometry.detection_params.erode_kernel = int(values[2])
+                geometry.detection_params.erode_iterations = int(values[3])
 
         elif property_name == 'autocrop':
             # crop: x0, y0, x1, y1

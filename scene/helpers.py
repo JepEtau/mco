@@ -133,7 +133,12 @@ def set_doc_filepath_(scene: Scene, compare: bool = False) -> None:
 
     # Input file for this task
     prev_task_name: TaskName = _doc_previous_task[task_name]
-    suffix = "_hr_" if task_name in ('final') else ""
+    suffix = ""
+    if task_name in ('final', ):
+        suffix = "_hr_"
+    elif task_name in ('tf', ):
+        suffix = "_"
+
     in_vsettings: VideoSettings = db['vsettings']['hr']
     in_ext: str = vcodec_to_extension[in_vsettings.codec]
     suffix = (
