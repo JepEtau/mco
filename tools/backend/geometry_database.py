@@ -276,7 +276,11 @@ class GeometryDatabase:
             chapter_geometry: ChapterGeometry = self._db[k_ch_key]
 
         k_ep: str = scene['dst']['k_ep']
-        k: str = k_ch if k_ch in ('g_debut', 'g_fin') else k_ep
+        if k_ch in ('g_debut', 'g_fin'):
+            k: str = k_ch
+        else:
+            k: str = scene['src'].primary_scene().k_ed_ep_ch_no[1]
+
         geometry_fp = os.path.join(
             db['common']['directories']['config'], k, f"{k}_geometry.ini"
         )

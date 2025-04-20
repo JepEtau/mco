@@ -3,7 +3,12 @@ import cv2
 from dataclasses import dataclass
 import numpy as np
 from pprint import pprint
-from processing.resize import PillowResizeAlgorithm, np_to_float32, pillow_resize
+from processing.resize import (
+    PillowResizeAlgorithm,
+    np_to_float32,
+    pillow_resize,
+    cv2_resize,
+)
 from utils.p_print import *
 from PIL import Image
 
@@ -259,10 +264,11 @@ def resize_to_4_3(
     # )
     # resized_img = np.asarray(pimg)
     resized_img: np.ndarray = pillow_resize(
+    # resized_img: np.ndarray = cv2_resize(
         cropped_img,
         transformation.resize_to[0],
         transformation.resize_to[1],
-        PillowResizeAlgorithm['lanczos'],
+        PillowResizeAlgorithm['bilinear'],
     )
 
     # (3)

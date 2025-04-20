@@ -443,7 +443,7 @@ def generate_final_scene(
     transformation: TransformationValues = geometry.calculate_transformation()
     pprint(transformation)
     if transformation.err_borders is not None:
-        raise ValueError(red(f"Erroneous chapter width: {ch_width} (reason: added borders)"))
+        raise ValueError(red(f"Scene: {scene['no']}, erroneous chapter width: {ch_width} (reason: added borders)"))
     # Create a video file for debug
     if debug and debug_imgs:
         # Draw rectangle
@@ -805,9 +805,8 @@ def generate_final_scene(
 
         if is_last_scene(scene):
             if 'silence' in ch_video and ch_video['silence'] > 0:
-                img_black = np.zeros((FINAL_HEIGHT, FINAL_WIDTH, 3), dtype=in_pipe_dtype)
+                img_black = np.zeros((FINAL_HEIGHT, FINAL_WIDTH, 3), dtype=out_pipe_dtype)
                 [e_queue.put(img_black) for _ in range(ch_video['silence'])]
-                # [e_subprocess.stdin.write(img_black) for _ in range(ch_video['silence'])]
                 produced += ch_video['silence']
                 print(f"produced w/ silence: {produced}")
         e_queue.put(None)

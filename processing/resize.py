@@ -33,7 +33,8 @@ PillowResizeAlgorithm: dict = {
     'box': Image.Resampling.BOX,
     'hamming': Image.Resampling.HAMMING,
     'bicubic': Image.Resampling.BICUBIC,
-    'lanczos': Image.Resampling.LANCZOS,
+    # out of range with lanczose: either clamp values or don't use
+    # 'lanczos': Image.Resampling.LANCZOS,
 }
 
 

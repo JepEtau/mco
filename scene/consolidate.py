@@ -151,7 +151,13 @@ def consolidate_scene(
             scene['geometry'] = SceneGeometry()
 
         # Use source geometry
-        scene['geometry'] = scene['src'].primary_scene().in_scene['geometry']
+        try:
+            scene['geometry'] = scene['src'].primary_scene().in_scene['geometry']
+        except:
+            if task_name == 'final':
+                warn(red(f"no chapter geometry defined for {k_ep}:{k_ch}"))
+            scene['geometry'] = SceneGeometry()
+
         scene['geometry'].chapter = deepcopy(chapter['geometry'])
 
 
