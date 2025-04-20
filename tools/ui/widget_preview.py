@@ -237,8 +237,8 @@ class PreviewWidget(QWidget):
             ix0: int = (container_w - iw) // 2
             iy0: int = (container_h - ih) // 2
 
-
         if self.app_type == 'replace':
+            print(yellow(f"replace app: {self.frame.img.shape} -> {iw}x{ih}"))
             qimage = QImage(self.frame.img, iw, ih, iw * c, QImage.Format.Format_BGR888)
             scaled: QPixmap = QPixmap().fromImage(qimage).scaled(
                 int(container_w),

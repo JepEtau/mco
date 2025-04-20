@@ -8,7 +8,7 @@ from logger import log
 import os
 from pprint import pprint
 
-from utils.p_print import lightgreen
+from utils.p_print import lightgreen, red
 from ._types import (
     GeometryAction,
     GeometryActionParameter,
@@ -281,11 +281,7 @@ class GeometryDatabase:
         else:
             k: str = scene['src'].primary_scene().k_ed_ep_ch_no[1]
 
-        geometry_fp = os.path.join(
-            db['common']['directories']['config'], k, f"{k}_geometry.ini"
-        )
 
-        print(geometry_fp)
         pprint(scene_geometry)
         pprint(chapter_geometry)
         print(f"k_ch_key: {k_ch_key}")
@@ -294,10 +290,13 @@ class GeometryDatabase:
 
 
         # Chapter: use destination episode
+        ch_geometry_fp = os.path.join(
+            db['common']['directories']['config'], k_ep, f"{k_ep}_geometry.ini"
+        )
         if k_ch not in ('g_asuivre', 'g_doc'):
-            if os.path.exists(geometry_fp):
+            if os.path.exists(ch_geometry_fp):
                 config_geometry = ConfigParser(dict_type=OrderedDict)
-                config_geometry.read(geometry_fp)
+                config_geometry.read(ch_geometry_fp)
             else:
                 config_geometry = ConfigParser({}, OrderedDict)
 
@@ -312,7 +311,7 @@ class GeometryDatabase:
                     config_geometry.remove_option(k_section, option)
                 config_geometry.set(k_section, option, f"{chapter_geometry.width}")
 
-                with open(geometry_fp, 'w') as config_file:
+                with open(ch_geometry_fp, 'w') as config_file:
                     config_geometry.write(config_file)
 
         else:
@@ -320,11 +319,16 @@ class GeometryDatabase:
             # pprint(db[k_ep]['video']['target'][k_ch])
             pprint(scene)
             _k_ep = scene['src'].primary_scene()['k_ed_ep_ch_no'][1]
-            geometry_fp = os.path.join(
+            ch_geometry_fp = os.path.join(
                 db['common']['directories']['config'], _k_ep, f"{_k_ep}_geometry.ini"
             )
 
-        print(geometry_fp)
+
+        scene_geometry_fp = os.path.join(
+            db['common']['directories']['config'], k, f"{k}_geometry.ini"
+        )
+
+        print(scene_geometry_fp)
         pprint(scene_geometry)
         pprint(chapter_geometry)
         print(f"k_ch_key: {k_ch_key}")
@@ -333,14 +337,14 @@ class GeometryDatabase:
 
 
         # Parse the file
-        if os.path.exists(geometry_fp):
+        if os.path.exists(scene_geometry_fp):
             config_geometry = ConfigParser(dict_type=OrderedDict)
-            config_geometry.read(geometry_fp)
+            config_geometry.read(scene_geometry_fp)
         else:
             config_geometry = ConfigParser({}, OrderedDict)
 
         # Select section
-        k_section: str = k_ch
+        k_section: str = scene['src'].primary_scene().k_ed_ep_ch_no[2]
         if not config_geometry.has_section(k_section):
             config_geometry.add_section(k_section)
 
@@ -348,6 +352,7 @@ class GeometryDatabase:
         if k_scene in self.modified_scenes:
             scene_no: int = scene['no']
             src_scene: Scene = scene['src'].primary_scene().in_scene
+            print(red("wrong dst scene_no"))
             option: str = "_". join((
                 f"{scene_no:03}",
                 src_scene['k_ed'],
@@ -395,7 +400,7 @@ class GeometryDatabase:
             config_geometry.set(k_section, option, values_str)
 
         # Write to the database
-        with open(geometry_fp, 'w') as config_file:
+        with open(scene_geometry_fp, 'w') as config_file:
             config_geometry.write(config_file)
 
         # Remove modified

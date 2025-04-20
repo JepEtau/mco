@@ -129,13 +129,17 @@ def consolidate_scene(
         )
         if ch_geometry is None:
             raise ValueError(yellow(f"no geometry for chapter: {k_ch}"))
+
         if 'geometry' not in scene:
             scene['geometry'] = SceneGeometry()
+        try:
+            scene['geometry'] = scene['src'].primary_scene().in_scene['geometry']
+        except:
+            print(red(f"No scene geometry defined for {k_ch}"))
         scene['geometry'].chapter = ch_geometry
 
     else:
         print(darkgrey(f"consolidate_scene: get geometry for {k_ep}:{k_ch}"))
-        pprint(scene['geometry'])
         if verbose:
             print(f"\t\t\tconsolidate_scene: get geometry for {k_ep}:{k_ch}")
         chapter: ChapterVideo | None = None

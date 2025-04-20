@@ -130,9 +130,16 @@ class FrameCache:
 
                 if task_name == 'hr':
                     in_h, in_w = int(in_h - 2 * pad), int(in_w - 2 * pad)
+                    filters: list[str] = [f"crop={in_w}:{in_h}:{pad}:{pad}"]
+                    if in_h != 1080 or in_w != 1440:
+                        print(yellow(f"FrameCache: rescale {in_w}x{in_h} to 1440, 1080"))
+                        in_w, in_h = 1440, 1080
+                        filters.append(
+                            f"scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int"
+                        )
                     filter_complex = [
                         "-filter_complex",
-                        f"[0:v]crop={in_w}:{in_h}:{pad}:{pad}[outv]",
+                        f"[0:v]{','.join(filters)}[outv]",
                         "-map", "[outv]"
                     ]
 
@@ -154,6 +161,9 @@ class FrameCache:
                 #         "-map", "[outv]"
                 #     ]
                 #     in_h, in_w = 2 * (in_h + pad), 2 * (in_w + pad)
+                scene_count = src_scene.count
+                if scene['dst']['k_ch'] == 'g_asuivre':
+                    scene_count = scene['dst']['count']
 
                 xtract_command: list[str] = [
                     ffmpeg_exe,
@@ -163,7 +173,7 @@ class FrameCache:
                     "-ss",
                     str(frame_to_sexagesimal(no=start,frame_rate=frame_rate)),
                     "-i", in_video_fp,
-                    "-t", str(frame_to_s(no=src_scene.count, frame_rate=frame_rate)),
+                    "-t", str(frame_to_s(no=scene_count, frame_rate=frame_rate)),
                     *filter_complex,
                     "-f", "image2pipe",
                     "-pix_fmt", 'bgr24',
@@ -190,7 +200,7 @@ class FrameCache:
                 pipe_in_shape = (in_h, in_w, in_c)
                 in_dtype = np.uint8
                 src_scene_key: str = f"{':'.join(src_scene['k_ed_ep_ch_no'][:-1])}:{src_scene['k_ed_ep_ch_no'][-1]:03}"
-                for i in range(src_scene.count):
+                for i in range(scene_count):
                     img: np.ndarray = np.frombuffer(
                         self.sub_process.stdout.read(pipe_img_nbytes),
                         dtype=in_dtype,
@@ -219,7 +229,7 @@ class FrameCache:
                 np_img: np.ndarray = self.scenes[scene_key][0].img
                 self.scenes[scene_key][0].img = np_img
 
-                self.frame_count += src_scene.count
+                self.frame_count += scene_count
                 self.scene_keys.append(scene_key)
                 print(f"Number of frames in cache: {self.frame_count}")
 
@@ -230,65 +240,3 @@ class FrameCache:
         """Flush all frames to force extraction, used to update the cache with latest
         upscaled frames
         """
-
-    # def __getitem__(self, key: Any) -> Any:
-    #     if self.verbose:
-    #         print(f"ImageCache: GET {key}")
-    #     item = super().__getitem__(key)
-    #     if item is not None:
-    #         if self.verbose:
-    #             print(f"try removing {key}: {self.occurences[key]}")
-    #         self.occurences[key] -= 1
-    #         if self.occurences[key] <= 0:
-    #             del self.occurences[key]
-    #             del self.data[key]
-    #             if self.verbose:
-    #                 print("\tDelete item from cache")
-    #     elif self.verbose:
-    #         print(f"ImageCache: not in cache")
-    #     return item
-
-
-    # def __setitem__(self, key: Any, item: Any) -> None:
-    #     if self.verbose:
-    #         print(f"ImageCache: SET {key}")
-    #     if key in self.exceptions:
-    #         if self.verbose:
-    #             print("\tnot cacheable, discard")
-    #         return
-    #     if key not in self.occurences:
-    #         if self.verbose:
-    #             print(f"set occurence of {key}")
-    #         self.occurences[key] = 1
-    #     else:
-    #         self.occurences[key] += 1
-    #         if self.verbose:
-    #             print(f"add occurence of {key} -> {self.occurences[key]}")
-    #     return super().__setitem__(key, item)
-
-
-    # def set_occurences(self, occurences: Counter)  -> None:
-    #     self.occurences = occurences
-    #     if self.verbose:
-    #         pprint(self.occurences)
-
-
-    # def set_exceptions(self, exceptions: set | list) -> None:
-    #     """Do not cache some items"""
-    #     if isinstance(exceptions, set):
-    #         self.exceptions = exceptions
-    #     else:
-    #         self.exceptions = set(exceptions)
-
-
-    # def add(self, key: Any, item: Any, set_occurence: bool = True) -> None:
-    #     """Add an item to the cache.
-    #         if set_occurence is False, the nb of occurences
-    #         is not modified.
-    #         This boolen is used by the ReplaceNode to not count
-    #         an additionnal occurence if an item is put in cache while
-    #         used
-    #     """
-    #     self.__setitem__(key, item)
-    #     if not set_occurence:
-    #         self.occurences[key] -= 1

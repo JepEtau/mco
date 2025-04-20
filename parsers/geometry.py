@@ -209,6 +209,8 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
         if k_ep_or_g in ('g_debut', 'g_fin'):
             ch_video = db[k_ep_or_g]['video']
         else:
+            if section not in db[k_ep_or_g]['video']['target']:
+                db[k_ep_or_g]['video']['target'][section] = {'scenes': []}
             ch_video = db[k_ep_or_g]['video']['target'][section]
 
         # for each option
@@ -229,8 +231,12 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
                 scene_no_src: int = int(result.group(5))
 
                 src_ch_video = db[k_ep_src]['video'][k_ed_src][k_ch_src]
-                src_scene: SrcScene = src_ch_video['scenes'][scene_no_src]
-
+                try:
+                    src_scene: SrcScene = src_ch_video['scenes'][scene_no_src]
+                except:
+                    print(red(f"exception: parse_geometry_file: {k_ep_or_g}:{section}:{scene_no}"))
+                    print(red(f"    src scene: {k_ep_src}:{k_ed_src}:{k_ch_src}:{scene_no_src}"))
+                    pass
                 # try:
                 #     scene: Scene = ch_video['scenes'][scene_no]
                 # except Exception as e:

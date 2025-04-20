@@ -523,7 +523,7 @@ class GraphicsViewWidget(QGraphicsView):
 
 
     def event_wheel(self, event: QWheelEvent) -> bool:
-        print(f"graphics viewevent_wheel with {self.modif_keys}")
+        # print(f"graphics viewevent_wheel with {self.modif_keys}")
         is_editing: bool = any(self.modif_keys.values())
 
         if not is_editing:
@@ -698,29 +698,19 @@ class GraphicsViewWidget(QGraphicsView):
 
 
     def draw_image(self):
-        # print("viewport geometry:", self.viewport().geometry())
-        # print("sceneRect geometry:", self.sceneRect())
-        self.setSceneRect(0, 0, self.viewport().geometry().width(), self.viewport().geometry().height())
-
-        verbose = True
-        # pprint(self.__scene.items())
-        # print(self.__scene.sceneRect())
-
-        # if self.image is None:
-        #     print("no image loaded")
-        #     return
-
-        # img = self.image['cache']
-        # if img is None:
-        #     return
-        # if self.image['cache_initial'] is None:
-        #     return
+        print("viewport geometry:", self.viewport().geometry())
+        print("sceneRect geometry:", self.sceneRect())
+        self.setSceneRect(
+            0, 0,
+            self.viewport().geometry().width(), self.viewport().geometry().height()
+        )
 
         if self.is_repainting:
             print(red("error: self.is_repainting is True!!"))
             return
         self.is_repainting = True
 
+        print(yellow(f"replace app: {self.frame.img.shape}"))
 
         # Use
         # if self.app_type == 'replace':
