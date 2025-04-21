@@ -186,6 +186,9 @@ def main():
     if timeline.video_item_count() != len(scenes):
         raise ValueError(red(f"missing scenes timeline: {timeline.video_item_count()}, must be {len(scenes)}"))
 
+    if force:
+        scenes = scenes[:1]
+
     for scene in scenes:
         if scene_no != -1 and scene['no'] != scene_no:
             continue
@@ -260,7 +263,7 @@ def main():
     render.export_audio = False
     render.delete_all_render_jobs()
     job_ids: list[str] = []
-    if scene_no != -1:
+    if scene_no != -1 and not force:
         for item in timeline.video_track_items():
             in_video_fp: str = item.media_clip.filepath
             if in_video_fp in video_to_update_fp:
