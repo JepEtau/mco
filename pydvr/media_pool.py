@@ -40,6 +40,11 @@ class DVRMediaPoolItem:
         return self._item.GetClipProperty("File Path")
 
 
+    @filepath.setter
+    def filepath(self, filepath: str) -> str:
+        return self._item.ReplaceClip(filepath)
+
+
     @property
     def filename(self) -> str:
         return self._item.GetClipProperty("Filename")

@@ -243,6 +243,7 @@ def main():
         # If this clip has to be rendered, stabilize it first
         if in_video_fp in video_to_update_fp:
             timeline.select_item(item)
+            item.media_clip.filepath = in_video_fp
             print(lightcyan(f"stabilize item:"), item.name)
             if not item.stabilize():
                 print(red(f"  failed to stabilize item: {item.name}"))
@@ -295,6 +296,8 @@ def main():
         for job_id in job_ids:
             print(render.rendering_status(job_id), end="\r")
         time.sleep(1)
+    render.new_settings()
+    render.select_all_frames(True)
     print("Done.")
 
     dvr.select_page(current_page)
