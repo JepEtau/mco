@@ -415,7 +415,8 @@ def apply_final_effects(
 def apply_upscale_effects(
     out_f_no: int,
     frame: McoFrame,
-    out_i: int
+    out_i: int,
+    verbose: bool = False
 ) -> list[McoFrame]:
     """This function apply all loop effects. This is important to do it
     when upscaling to allow adding temporal grain (non static).
@@ -435,6 +436,8 @@ def apply_upscale_effects(
                 )
                 and out_f_no == effect.f_ref
             ):
+                if verbose:
+                    print(f"Loop for effect {effect.name}: {effect.loop} frames")
                 return [frame] * (effect.loop + 1)
 
     src_scene = scene['src'].scenes()[frame.src_scene_index]
@@ -449,6 +452,8 @@ def apply_upscale_effects(
         f_no=frame.no
     )
     if loop:
+        if verbose:
+            print(f"Loop: {loop} frames")
         return [frame] * loop
 
     # Only for doc. to reduce number of tests, discard this if not doc

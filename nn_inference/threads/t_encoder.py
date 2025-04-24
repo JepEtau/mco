@@ -70,6 +70,7 @@ class EncoderThread(BaseThread):
 
     def run(self) -> None:
         verbose: bool = self.verbose
+        # verbose: bool = True
 
         if not is_cuda_available():
             raise ModuleNotFoundError("No cuda device")
@@ -83,10 +84,6 @@ class EncoderThread(BaseThread):
             dtype=torch.uint8,
             pin_memory=True
         )
-        print(red(vpi_nbytes))
-
-
-
 
         in_queue: Queue = self.in_queue
         writer_subprocess: subprocess.Popen | None = None
@@ -116,6 +113,7 @@ class EncoderThread(BaseThread):
                     writer_subprocess = None
                     break
 
+                received += 1
                 frame: NnFrame = input
 
                 if scene is None:
@@ -233,7 +231,7 @@ class EncoderThread(BaseThread):
                 # Transform a 4D tensor to a 3D tensor (h, w, c)
                 if verbose:
                     print(
-                        purple(f"[V][E] Received no. {received}:"),
+                        purple(f"[V][E] Received {received}."),
                         f"{frame.tensor.shape}, {frame.tensor.dtype}, {frame.tensor.shape}"
                     )
 
@@ -266,12 +264,14 @@ class EncoderThread(BaseThread):
                 src_scene: SrcScene = frame.scene['src'].scenes()[frame.src_scene_index]
                 out_f_no: int = src_scene.start + e_index
                 out_frames: list[McoFrame] = apply_upscale_effects(
-                    out_f_no=out_f_no, frame=in_frame, out_i=e_index
+                    out_f_no=out_f_no, frame=in_frame, out_i=e_index, verbose=verbose
                 )
                 [writer_subprocess.stdin.write(f.img) for f in out_frames]
                 e_index += len(out_frames)
                 remaining -= len(out_frames)
                 sent = len(out_frames)
+                if verbose:
+                    print(yellow(f"[V][E] remaining: {remaining}"), flush=True)
 
                 if self.d_thread is not None and self.d_thread.is_alive():
                     self.d_thread.set_produce_flag()
@@ -280,6 +280,9 @@ class EncoderThread(BaseThread):
                 if self.progress_thread is not None:
                     self.progress_thread.put(sent)
                 self._encoded += sent
+
+                if remaining <= 0:
+                    break
 
         # except:
         #     print(red(f"[V][E] Error while executing: "), " ".join(encoder_command))

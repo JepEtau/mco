@@ -468,7 +468,7 @@ class DecoderThread(BaseThread):
                 print(lightgreen(f"[V][D] End of src scene {in_scene['no']}"))
 
             print(lightgreen(f"[V][D] End of scene {scene['no']}"))
-        print(lightgreen(f"[V][D] End of decoding"))
+        print(lightgreen(f"[V][D] End of decoding, decoded: {src_count}"))
 
 
         if self.d_subprocess.poll() is None:

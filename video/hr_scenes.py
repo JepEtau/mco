@@ -234,6 +234,7 @@ def upscale_scenes(
     print(lightcyan(f"Consolidated scenes:"), f"{time.time() - start_time_full:.03f}s")
     print(lightcyan(f"Total number of scenes to upscale:"), f"{len(scenes_to_upscale)}")
     print(lightcyan(f"Total number of frames to upscale:"), f"{total_frames}")
+    print(lightcyan(f"Scenes no:"), f"{scenes_to_upscale}")
 
     # Create a progress bar
     f_progress_thread: ProgressThread | None = None

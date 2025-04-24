@@ -58,6 +58,8 @@ def detect_inner_rect(
     do_output_img: bool=False,
     index: int = 0
 ) -> tuple[np.ndarray, np.ndarray | None]:
+    """Returns (x0, x1, y0, y1)
+    """
     verbose = False
     debug: bool = False
     # do_output_img = True
@@ -88,20 +90,25 @@ def detect_inner_rect(
 
     brightness = cv2.mean(gray_img)[0]
     contrast = gray_img.std()
-    print(f"  mean: {brightness}, contrast: {contrast}")
+    print(f"{index}  mean: {brightness}, contrast: {contrast}")
 
-    if brightness < 25:
-        try:
-            gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
-            brightness = cv2.mean(gray_img)[0]
-            contrast = gray_img.std()
-            print(yellow(f"\tcorrected, mean: {brightness}\tcontrast: {contrast}"))
-        except:
-            # gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
-            brightness = cv2.mean(gray_img)[0]
-            contrast = gray_img.std()
-            print(red(f"Error: cannot apply automatic brightness&contrast"))
-            return (0, 0, in_w, in_h), img if do_output_img else None
+    if brightness < 60:
+        h, w = img.shape[:2]
+        return [0,  h, 0, w], None
+
+    # elif brightness < 60:
+    #     try:
+    #         gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
+    #         brightness = cv2.mean(gray_img)[0]
+    #         contrast = gray_img.std()
+    #         print(yellow(f"\tcorrected, mean: {brightness}\tcontrast: {contrast}"))
+    #     except:
+    #         # gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
+    #         brightness = cv2.mean(gray_img)[0]
+    #         contrast = gray_img.std()
+    #         print(red(f"Error: cannot apply automatic brightness&contrast"))
+    #         return (0, 0, in_w, in_h), img if do_output_img else None
+
 
     gray_img_debug = gray_img.copy()
     # gray_img: np.ndarray = np_to_uint8(gray_img)
@@ -194,17 +201,14 @@ def detect_inner_rect(
             show_image(img_debug, f"{i}")
 
     contour = polygon.reshape(len(polygon), 2)
-    print(contour.shape)
+    # print(contour.shape)
     pprint(contour)
     if contour.shape[0] > 2:
         try:
             x0, x1 = _get_coordinates(contour[:, 0:1])
             y0, y1 = _get_coordinates(contour[:, 1:])
         except:
-            print(red(f"Failed "))
-            print(contour)
-            x0, x1 = _get_coordinates(contour[:, 0:1])
-            y0, y1 = _get_coordinates(contour[:, 1:])
+            print(red(f"Failed "), contour)
     else:
         print(yellow(f"contour shape not found: {contour}"))
         x, y, w, h = cv2.boundingRect(contour)
@@ -265,36 +269,47 @@ def calculate_autocrop_values(
     print("min:", np.min(coordinates, axis=0))
     print("max:", np.max(coordinates, axis=0))
     print("in_shape:", in_shape)
-    min_coords: np.ndarray = np.min(coordinates, axis=0)
-    max_coords: np.ndarray = np.max(coordinates, axis=0)
-    in_h, in_w = in_shape
 
-    coord0_min = 1.5 * max(min_coords[0], 3)
-    coord2_min = 1.5 * max(min_coords[2], 3)
-    w_max = 1.5 * ((in_w - max_coords[1]) + 3)
-    print(f"coord0_min={coord0_min}, coord2_min={coord2_min}, w_max={w_max}")
-    consolidated_coordinates: list[np.ndarray] = []
-    for coord in coordinates:
-        if coord[0] > coord0_min:
-            print(f"(0) discard: {coord}")
-            continue
+    if False:
+        min_coords: np.ndarray = np.min(coordinates, axis=0)
+        max_coords: np.ndarray = np.max(coordinates, axis=0)
+        in_h, in_w = in_shape
 
-        if (in_w - coord[1] + 2) > w_max:
-            print(f"(1) discard: {coord} ({(in_w - coord[1])} > {w_max})")
-            continue
+        coord0_min = 1.5 * max(min_coords[0], 3)
+        coord2_min = 1.5 * max(min_coords[2], 3)
+        w_max = 1.5 * ((in_w - max_coords[1]) + 3)
+        print(f"coord0_min={coord0_min}, coord2_min={coord2_min}, w_max={w_max}")
+        consolidated_coordinates: list[np.ndarray] = []
+        for coord in coordinates:
+            if coord[0] > coord0_min:
+                print(f"(0) discard: {coord}")
+                continue
 
-        if coord[2] > coord2_min:
-            print(f"(2) discard: {coord}")
-            continue
-        consolidated_coordinates.append(coord)
+            if (in_w - coord[1] + 2) > w_max:
+                print(f"(1) discard: {coord} ({(in_w - coord[1])} > {w_max})")
+                continue
 
-    print("consolidated")
-    print("min:", np.min(consolidated_coordinates, axis=0))
-    print("max:", np.max(consolidated_coordinates, axis=0))
-    print("in_shape:", in_shape)
-    min_coords: np.ndarray = np.min(consolidated_coordinates, axis=0)
-    max_coords: np.ndarray = np.max(consolidated_coordinates, axis=0)
+            if coord[2] > coord2_min:
+                print(f"(2) discard: {coord}")
+                continue
+            consolidated_coordinates.append(coord)
 
-    x0, x1 = max_coords[0], min_coords[1]
-    y0, y1 = max_coords[2], min_coords[3]
+        print("consolidated")
+        print("min:", np.min(consolidated_coordinates, axis=0))
+        print("max:", np.max(consolidated_coordinates, axis=0))
+        print("in_shape:", in_shape)
+        min_coords: np.ndarray = np.min(consolidated_coordinates, axis=0)
+        max_coords: np.ndarray = np.max(consolidated_coordinates, axis=0)
+
+        x0, x1 = max_coords[0], min_coords[1]
+        y0, y1 = max_coords[2], min_coords[3]
+
+    else:
+        min_coords: np.ndarray = np.min(coordinates, axis=0)
+        max_coords: np.ndarray = np.max(coordinates, axis=0)
+        in_h, in_w = in_shape
+
+        x0, x1 = max_coords[0], min_coords[1]
+        y0, y1 = max_coords[2], min_coords[3]
+
     return [y0,  in_h - y1, x0, in_w - x1]

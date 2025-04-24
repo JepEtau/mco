@@ -102,7 +102,6 @@ class GeometryController(CommonController):
             k_ep=selection.k_ep,
             k_ch=selection.k_ch,
         )
-        pprint(ch_video)
         for scene in ch_video['scenes']:
             self.geometry_stats.append(scene)
 

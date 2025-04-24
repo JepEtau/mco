@@ -466,7 +466,7 @@ class GraphicsViewWidget(QGraphicsView):
 
     def event_key_pressed(self, event: QKeyEvent) -> bool:
         key, modifiers = event.key(), event.modifiers()
-        print(f"{time.time()} {__name__}.event_key_pressed: 0x{key:3X}, modifiers={modifiers}")
+        # print(f"{time.time()} {__name__}.event_key_pressed: 0x{key:3X}, modifiers={modifiers}")
 
         self.is_alt_key_pressed = modifiers & Qt.KeyboardModifier.AltModifier
 
