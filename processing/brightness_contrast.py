@@ -10,8 +10,9 @@ def convert_scale(img: np.ndarray, alpha: float, beta: float):
     becomes 78 with OpenCV, when in fact it should become 0).
     """
     new_img = img * alpha + beta
-    new_img[new_img < 0] = 0
-    new_img[new_img > 255] = 255
+    new_img = np.clip(new_img, 0, 255)
+    # new_img[new_img < 0] = 0
+    # new_img[new_img > 255] = 255
     return new_img.astype(np.uint8)
 
 
@@ -47,8 +48,8 @@ def automatic_brightness_and_contrast_gray(
         maximum_gray -= 1
 
     # Calculate alpha and beta values
-    alpha = 255 / (maximum_gray - minimum_gray)
-    beta = -minimum_gray * alpha
+    alpha: float = 255. / (maximum_gray - minimum_gray)
+    beta: float = -minimum_gray * alpha
 
     '''
     # Calculate new histogram with desired range and show histogram
@@ -59,8 +60,9 @@ def automatic_brightness_and_contrast_gray(
     plt.xlim([0,256])
     plt.show()
     '''
-    auto_result = convert_scale(gray_img, alpha=alpha, beta=beta)
+    new_img = gray_img.astype(np.float32) * alpha + beta
+    new_img = np.clip(new_img, 0, 255).astype(np.uint8)
 
-    return auto_result, alpha, beta
+    return new_img, alpha, beta
 
 

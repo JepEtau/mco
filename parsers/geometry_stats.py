@@ -33,8 +33,8 @@ class SceneGeometryStat:
             # print(red("crop is missing:"), f"{scene['no']}")
             self._defined = False
             return
-        else:
-            print(lightgreen("defined crop"), f"{scene['no']}")
+        # else:
+        #     print(lightgreen("defined crop"), f"{scene['no']}")
 
         if in_size is None:
             self._is_erroneous = True

@@ -304,7 +304,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
                 self.tableWidget_scenes.item(row_no, 0).setText(scene_str)
 
         scene_no: int = self.tableWidget_scenes.currentRow()
-        self.set_enabled(bool(len(modified_scenes) == 0))
+        # self.set_enabled(bool(len(modified_scenes) == 0))
         self.edition_started(bool(scene_no in modified_scenes))
 
         print(f"selection: refresh: {scene_no}")

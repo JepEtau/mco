@@ -300,5 +300,6 @@ def resize_to_4_3(
         right=transformation.borders[1],
         borderType=cv2.BORDER_CONSTANT,
         value=[0, 0, 0]
+        # value=[0, 255, 0]
     )
 

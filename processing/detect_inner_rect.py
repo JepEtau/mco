@@ -1,8 +1,10 @@
 from __future__ import annotations
 from pprint import pprint
+import sys
 import cv2
 import numpy as np
 
+from utils.images_io import write_image
 from utils.p_print import *
 from .brightness_contrast import automatic_brightness_and_contrast_gray
 
@@ -60,13 +62,12 @@ def detect_inner_rect(
 ) -> tuple[np.ndarray, np.ndarray | None]:
     """Returns (x0, x1, y0, y1)
     """
-    verbose = False
     debug: bool = False
+    out_img = np.ones(1)
     # do_output_img = True
 
     # Optimize, simplify
     img: np.ndarray = np_to_uint8(img)
-
     border: int = 2 if params.do_add_borders else 0
 
     if params.erode_kernel != 0:
@@ -75,8 +76,31 @@ def detect_inner_rect(
             img.dtype
         )
 
-    in_h, in_w = img.shape[:2]
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    brightness = cv2.mean(gray_img)[0]
+    contrast = gray_img.std()
+    print(f"{index} brightness: {brightness}, contrast: {contrast}")
+
+    # if brightness < 60:
+    #     h, w = img.shape[:2]
+    #     return [0,  h, 0, w], None
+
+    # if brightness < 40:
+    #     try:
+    #         gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
+    #         brightness = cv2.mean(gray_img)[0]
+    #         contrast = gray_img.std()
+    #         print(yellow(f"  corrected, brightness: {brightness}\tcontrast: {contrast}"))
+    #         # write_image(f"N:\\gray\\gray_{index:03}.png", cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR))
+
+    #     except:
+    #         # gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
+    #         brightness = cv2.mean(gray_img)[0]
+    #         contrast = gray_img.std()
+    #         print(red(f"Error: cannot apply automatic brightness&contrast"))
+    #         return (0, 0, in_w, in_h), img if do_output_img else None
+
+
     if border:
         # Add border to correctly detect the outer limits
         gray_img = cv2.copyMakeBorder(
@@ -88,44 +112,10 @@ def detect_inner_rect(
             borderType=cv2.BORDER_CONSTANT,
             value=[0, 0, 0])
 
-    brightness = cv2.mean(gray_img)[0]
-    contrast = gray_img.std()
-    print(f"{index}  mean: {brightness}, contrast: {contrast}")
 
-    if brightness < 60:
-        h, w = img.shape[:2]
-        return [0,  h, 0, w], None
-
-    # elif brightness < 60:
-    #     try:
-    #         gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
-    #         brightness = cv2.mean(gray_img)[0]
-    #         contrast = gray_img.std()
-    #         print(yellow(f"\tcorrected, mean: {brightness}\tcontrast: {contrast}"))
-    #     except:
-    #         # gray_img, _, _ = automatic_brightness_and_contrast_gray(gray_img)
-    #         brightness = cv2.mean(gray_img)[0]
-    #         contrast = gray_img.std()
-    #         print(red(f"Error: cannot apply automatic brightness&contrast"))
-    #         return (0, 0, in_w, in_h), img if do_output_img else None
-
-
-    gray_img_debug = gray_img.copy()
+    # gray_img_debug = gray_img.copy()
     # gray_img: np.ndarray = np_to_uint8(gray_img)
-    _, gray_img = cv2.threshold(
-        gray_img,
-        params.threshold_min,
-        255,
-        cv2.THRESH_BINARY
-    )
 
-
-    # if debug:
-    #     global index
-    #     # cv2.drawContours(gray_img, [polygon], -1, (0, 255, 0), 1)
-    #     cv2.imwrite(f"mask_{index:03}.png", gray_img)
-    #     # show_image(img_debug, f"{i}")
-    #     index += 1
     morph_kernel: np.ndarray = np.ones(
         (params.morph_kernel, params.morph_kernel),
         img.dtype
@@ -133,21 +123,37 @@ def detect_inner_rect(
     gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_OPEN, morph_kernel)
     gray_img = cv2.morphologyEx(gray_img, cv2.MORPH_CLOSE, morph_kernel)
 
-    if params.erode_kernel:
+    if params.erode_kernel and params.erode_iterations:
         gray_img = cv2.erode(gray_img, erode_kernel, iterations=params.erode_iterations)
+
+    if debug:
+        write_image(f"N:\\gray\\{index:03}_00_gray.png", cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR))
+
+    threshold_min = params.threshold_min
+    _, gray_img = cv2.threshold(
+        gray_img,
+        threshold_min,
+        255,
+        cv2.THRESH_BINARY
+    )
+    if debug:
+        write_image(f"N:\\gray\\{index:03}_01_threshold.png", cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR))
 
     contours, hierarchy = cv2.findContours(
         gray_img, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE
     )
+    if debug:
+        debug_img = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)
+        cv2.drawContours(debug_img, contours, -1, (0, 255, 0), 2)
+        write_image(f"N:\\gray\\{index:03}_02_contours.png", debug_img)
 
-    outer_contour = None
+    inner_contour = None
     for hierarchy_values, contour in zip(hierarchy[0], contours):
         if hierarchy_values[0] == -1 and hierarchy_values[3] == -1:
-            outer_contour = contour
-
-            if False:
-                debug_img = cv2.cvtColor(gray_img_debug, cv2.COLOR_GRAY2BGR)
-                x,y,w,h = cv2.boundingRect(contour)
+            inner_contour = contour
+            if debug:
+                debug_img = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)
+                x, y, w, h = cv2.boundingRect(contour)
                 cv2.rectangle(debug_img,
                     (x, y ),
                     (x + w , y + h),
@@ -157,103 +163,44 @@ def detect_inner_rect(
                     (x, y+10),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5,
                     (255,30,12), 2)
-                cv2.imwrite(f"mask_{index:05}.png", debug_img)
             break
+    if debug:
+        write_image(f"N:\\gray\\{index:03}_03_bounding_rect.png", debug_img)
 
-    epsilon = 0.1 * cv2.arcLength(outer_contour, True)
-    polygon: np.ndarray = cv2.approxPolyDP(outer_contour, epsilon, True)
+    epsilon = 0.1 * cv2.arcLength(inner_contour, True)
+    polygon: np.ndarray = cv2.approxPolyDP(inner_contour, epsilon, True)
+    if debug:
+        debug_img = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)
+        cv2.drawContours(debug_img, [polygon], -1, (255, 0, 0), 1)
+        cv2.imwrite(f"N:\\gray\\{index:03}_04_approxPolyDP.png", debug_img)
 
-    if False:
-        debug_img = cv2.cvtColor(gray_img_debug, cv2.COLOR_GRAY2BGR)
-        cv2.drawContours(debug_img, [polygon], -1, (0, 255, 0), 1)
-        cv2.imwrite(f"mask_{index:05}.png", debug_img)
-        # show_image(img_debug, f"{i}")
+    polygon = polygon.reshape((-1, 2))
+    try:
+        left, right = _get_coordinates(polygon[:, 0])
+        top, bottom = _get_coordinates(polygon[:, 1])
+        coordinates = np.array([left, right, top, bottom], dtype=np.uint32)
+        coordinates -= border
+    except:
+        print(red("failed getting coordinates"))
+        pprint(polygon)
+        h, w = img.shape[:2]
+        coordinates = (0, w, 0, h)
+    # print(f"coordinates {coordinates}")
 
-    if polygon.shape[0] < 4:
-        print(red(f"Polygon not found"))
-        print(lightcyan(f"\tshape:{polygon.shape}"))
-        return None, None
-        # print("hierarchy")
-        # pprint(hierarchy)
-        # print("contours")
-        # pprint(contours)
-
-        img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
-        if True:
-            # show all points
-            contour = outer_contour.reshape(len(outer_contour),2)
-            for (_x, _y) in contour:
-                cv2.rectangle(img_debug, (_x-1, _y-1), (_x+1, _y+1), (0,255,0), 1)
-            show_image(img_debug, f"{i}")
-
-        if True:
-            # Show all contours
-            for hierarchy_values, contour in zip(hierarchy[0], contours):
-                x, y, w, h = cv2.boundingRect(contour)
-                cv2.rectangle(img_debug,
-                    (x, y ), (x + w , y + h),
-                    (0, 0, 255), 1)
-                cv2.putText(img_debug,
-                    f"{hierarchy_values}",
-                    (x, y+10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                    (255,30,12), 2)
-            show_image(img_debug, f"{i}")
-
-    contour = polygon.reshape(len(polygon), 2)
-    # print(contour.shape)
-    pprint(contour)
-    if contour.shape[0] > 2:
-        try:
-            x0, x1 = _get_coordinates(contour[:, 0:1])
-            y0, y1 = _get_coordinates(contour[:, 1:])
-        except:
-            print(red(f"Failed "), contour)
-    else:
-        print(yellow(f"contour shape not found: {contour}"))
-        x, y, w, h = cv2.boundingRect(contour)
-        x0, x1 = x, x + w
-        y0, y1 = y, y + h
-
-    # coordinates = np.array([max(0, v - border) for v in (x0, x1, y0, y1)])
-    coordinates: np.ndarray = np.array((x0, x1, y0, y1)) - border
-
-    if verbose:
-        print(f"rect: {coordinates}")
-
-    if do_output_img and index == 132:
-        out_img = np.copy(img)
-        cv2.rectangle(out_img,
-            (coordinates[0], coordinates[2]),
-            (coordinates[1], coordinates[3]),
-            (0, 255, 0),
-            1
-        )
-        if debug:
-            img_debug = cv2.cvtColor(gray_img.copy(), cv2.COLOR_GRAY2BGR)
-
-            # Show all contours
-            print(polygon.shape[0])
-            for hierarchy_values, contour in zip(hierarchy[0], contours):
-                x, y, w, h = cv2.boundingRect(contour)
-                cv2.rectangle(img_debug,
-                    (x, y ), (x + w , y + h),
-                    (0, 0, 255), 1)
-                cv2.putText(img_debug,
-                    f"{hierarchy_values}",
-                    (x, y+10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5,
-                    (255,30,12), 2)
-            show_image(img_debug, f"{index}")
-
-
-
-
-            cv2.rectangle(img_debug, (x0 +1, y1+1), (x1-1, y0-1), (0,0,255), 2)
-            cv2.imwrite("mask_final.png", img_debug)
-            show_image(img_debug, f"{index}")
-    else:
-        out_img = np.ones(1)
+    if debug:
+        # debug_img = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)
+        left, right, top, bottom = coordinates
+        x, y = left, top
+        w, h = (right-left), (bottom-top)
+        rect = np.array([
+            [x, y],
+            [x + w, y],
+            [x + w, y + h],
+            [x, y + h]
+        ], dtype=np.int32)
+        debug_img = img.copy()
+        cv2.polylines(debug_img, [rect], isClosed=True, color=(0, 255, 0), thickness=1)
+        cv2.imwrite(f"N:\\gray\\{index:03}_05_final.png", debug_img)
 
     return coordinates, out_img if do_output_img else None
 
@@ -264,8 +211,9 @@ def calculate_autocrop_values(
     coordinates: list[np.ndarray],
     in_shape: list[int, int]
 ) -> list[int, int, int, int]:
-
-    pprint(coordinates)
+    # coordinates: (x0, x1, y0, y1)
+    # coordinates = np.ndarray(coordinates)
+    # pprint(coordinates)
     print("min:", np.min(coordinates, axis=0))
     print("max:", np.max(coordinates, axis=0))
     print("in_shape:", in_shape)
@@ -309,7 +257,13 @@ def calculate_autocrop_values(
         max_coords: np.ndarray = np.max(coordinates, axis=0)
         in_h, in_w = in_shape
 
+        print(f"min_coords: {min_coords}")
+        print(f"max_coords: {max_coords}")
+
         x0, x1 = max_coords[0], min_coords[1]
         y0, y1 = max_coords[2], min_coords[3]
 
+    coordinates = (x0, x1, y0, y1)
+    print(f"temporal consolidated coords: {coordinates}")
+    # crop: top, bottom, left, right
     return [y0,  in_h - y1, x0, in_w - x1]

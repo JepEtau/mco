@@ -88,7 +88,8 @@ def decode_and_ac_detect(
     ffmpeg_subprocess: subprocess.Popen,
     detect_params,
     lock_array: list[mp.Lock],
-    debug: bool = False
+    debug: bool = False,
+    index: int = 0
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray | None]:
     with lock_array[i]:
         stream = ffmpeg_subprocess.stdout.read(in_size)
@@ -104,9 +105,11 @@ def decode_and_ac_detect(
             in_img = img * multiplier
             in_img = in_img.astype(out_pipe_dtype)
 
+    # coords: (x0, x1, y0, y1)
     coords, debug_img = detect_inner_rect(
         in_img,
         detect_params,
+        index=index,
         do_output_img=debug
     )
     # print(f"stdin_to_shared: {in_img.shape}, {in_pipe_dtype} -> {in_img.dtype}")
@@ -302,7 +305,8 @@ def generate_final_scene(
         )
         or has_effects
     )
-
+    print(f"do_decode: {do_decode}")
+    do_decode = True
 
     # Src seek
     src_seek_start_args = (
@@ -390,7 +394,8 @@ def generate_final_scene(
                         d_subprocess,
                         geometry.detection_params,
                         locks,
-                        debug=debug_scene
+                        debug=debug_scene,
+                        index=src_frame_count - remaining + i,
                     ),
                     range(count)
                 ):
@@ -444,6 +449,7 @@ def generate_final_scene(
     pprint(transformation)
     if transformation.err_borders is not None:
         raise ValueError(red(f"Scene: {scene['no']}, erroneous chapter width: {ch_width} (reason: added borders)"))
+
     # Create a video file for debug
     if debug and debug_imgs:
         # Draw rectangle

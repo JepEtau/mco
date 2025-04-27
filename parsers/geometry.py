@@ -36,7 +36,7 @@ class ChapterGeometry:
 
 @dataclass(slots=True)
 class DetectInnerRectParams:
-    threshold_min: int = 15
+    threshold_min: int = 10
     morph_kernel: int = 3
     erode_kernel: int = 5
     erode_iterations: int = 1
