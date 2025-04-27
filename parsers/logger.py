@@ -1,6 +1,6 @@
 import logging
 
-logger: logging.Logger = logging.getLogger("logger_parse")
+logger: logging.Logger = logging.getLogger("logger_mco_main")
 
 
 __all__ = [

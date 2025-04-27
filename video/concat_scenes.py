@@ -62,12 +62,12 @@ def concat_scenes(
 
     if len(scenes) > 1:
         # Create concat file
-        concat_fp = os.path.join(
+        concat_dir = os.path.join(
             cache_directory,
-            "concat",
-            f"{prefix}_{hashcode}{suffix}.txt"
+            "concat"
         )
-
+        os.makedirs(concat_dir, exist_ok=True)
+        concat_fp = os.path.join(concat_dir, f"{prefix}_{hashcode}{suffix}.txt")
         concat_file = open(concat_fp, "w")
         for scene in scenes:
             # filepath = scene['path']

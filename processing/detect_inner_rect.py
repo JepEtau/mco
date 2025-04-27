@@ -64,6 +64,7 @@ def detect_inner_rect(
     """
     padding = 24
     debug: bool = False
+    verbose: bool = False
     out_img = np.ones(1)
     # do_output_img = True
 
@@ -83,10 +84,11 @@ def detect_inner_rect(
     gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     brightness = cv2.mean(gray_img)[0]
     contrast = gray_img.std()
-    print(f"{index} brightness: {brightness}, contrast: {contrast}")
+    if verbose:
+        print(f"{index:03} brightness: {brightness}, contrast: {contrast}")
 
     if brightness < 15:
-        print(f"  brightness is too low, fallback")
+        print(f"  {index:03} brightness is too low, fallback")
         return fallback_coords, None
 
     # if brightness < 40:
@@ -222,13 +224,14 @@ def detect_inner_rect(
         or bottom < in_h - 2 * padding
     ):
         # something wrong
-        print(f"  fallback to {fallback_coords}")
+        if verbose:
+            print(f"  {index:03} fallback to {fallback_coords}")
         return fallback_coords, None
 
     coordinates = np.array([left, right, top, bottom], dtype=np.uint32)
     coordinates -= border
-    print(f"  x0, x1, y0, y1: {coordinates}")
-
+    if verbose:
+        print(f"  {index:03} x0, x1, y0, y1: {coordinates}")
 
     if debug:
         # debug_img = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)

@@ -52,7 +52,9 @@ def main():
     print("Tasks:")
     print("\t- parse database")
 
-    k_ep: str = ep_key(ep_no)
+    k_ep = "ep00" if ep_no == 0 else ep_key(ep_no)
+    # k_ep: str = ep_key(ep_no)
+    print(k_ep)
 
     # Parse database
     parse_database(episode=k_ep, lang=arguments.lang)

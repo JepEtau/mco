@@ -258,6 +258,7 @@ class ModelManager:
         print(yellow("Consolidate models, convert from torch to TRT engines:"))
         pprint(self._shapes)
         for model_key, sizes in self._shapes.items():
+            print(model_key)
             for size_key in sizes:
                 model: ModelInfo = self._models_by_keys[model_key]
                 print(f"  convert to TensorRT, ",

@@ -256,7 +256,7 @@ def generate_final_scene(
             print(yellow(f"src seek count: {src_seek_count}"))
     else:
         primary_scene = scene['src'].primary_scene()
-        src_seek_start = primary_scene.start - primary_scene.in_scene['start']
+        # src_seek_start = primary_scene.start - primary_scene.in_scene['start']
 
         if in_video_info['frame_count'] != scene['dst']['count']:
             src_seek_count = scene['dst']['count']
@@ -356,7 +356,7 @@ def generate_final_scene(
         coordinates: list[np.ndarray] = []
 
         ofc: int = int(3 * mp.cpu_count() / 4)
-        ofc = 1
+        # ofc = 1
         locks = [mp.Lock() for _ in range(ofc + 1)]
         executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
 

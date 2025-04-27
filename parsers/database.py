@@ -86,6 +86,7 @@ def parse_database(
                 dependencies[k] = list()
             dependencies[k] = list(set(dependencies[k] + v))
 
+    print(k_ep)
     if k_ep != 'ep00':
         # Parse episode at first (required to generate dependencies)
         for k in db['editions']['available']:

@@ -156,7 +156,7 @@ def final_scenes(
 
     # For each part, concatenate scenes in a single clip
     for k_ch in chapters:
-        ch_video: ChapterVideo | None = get_chapter_video(k_ep, k_ch)
+        ch_video: ChapterVideo = get_chapter_video(k_ep, k_ch)
         if ch_video is None:
             continue
         concat_scenes(
