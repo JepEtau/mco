@@ -107,7 +107,7 @@ def is_up_to_date(scene: Scene, display_msg: bool = False) -> bool:
     if os.path.exists(out_video_fp):
         dst_frame_count: int = calculate_scene_frame_count(scene)
         # dst_frame_count = scene['dst']['count']
-        print(yellow(f"dst frame_count: {dst_frame_count}"))
+        print(yellow(f"is_up_to_date: dst frame_count: {dst_frame_count}"))
         out_video_info: VideoInfo | None =  None
         try:
             out_video_info = extract_media_info_mco(out_video_fp)['video']
@@ -260,6 +260,13 @@ def calculate_scene_frame_count(scene: Scene) -> int:
         if scene['dst']['k_ch'] == 'episode':
             scene['dst']['count'] = count
 
+        if is_last_scene(scene):
+            # warn(red("calculate_scene_frame_count: debug last scene when in HR"))
+            # pprint(scene)
+            if 'effects' in scene:
+                effects = scene['effects']
+                if e := effects.get_effect('loop_and_fadeout'):
+                    count += e.loop
     else:
         warn(yellow(f"{task_name} is not used to calculate frame count"))
 

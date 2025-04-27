@@ -122,7 +122,7 @@ class ChGeometryStats:
                 in_vi: VideoInfo = extract_media_info_mco(fp)['video']
             except:
                 warn(red(f"Failed opening {fp}"))
-                raise
+                # raise
 
             # height, width
             self._sizes['fp'] = in_vi['shape'][:2]

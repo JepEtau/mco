@@ -62,12 +62,16 @@ def detect_inner_rect(
 ) -> tuple[np.ndarray, np.ndarray | None]:
     """Returns (x0, x1, y0, y1)
     """
+    padding = 24
     debug: bool = False
     out_img = np.ones(1)
     # do_output_img = True
 
     # Optimize, simplify
     img: np.ndarray = np_to_uint8(img)
+    in_h, in_w = img.shape[:2]
+    fallback_coords = (padding, in_w - padding, padding, in_h - padding)
+
     border: int = 2 if params.do_add_borders else 0
 
     if params.erode_kernel != 0:
@@ -81,9 +85,9 @@ def detect_inner_rect(
     contrast = gray_img.std()
     print(f"{index} brightness: {brightness}, contrast: {contrast}")
 
-    # if brightness < 60:
-    #     h, w = img.shape[:2]
-    #     return [0,  h, 0, w], None
+    if brightness < 15:
+        print(f"  brightness is too low, fallback")
+        return fallback_coords, None
 
     # if brightness < 40:
     #     try:
@@ -153,10 +157,10 @@ def detect_inner_rect(
             inner_contour = contour
             if debug:
                 debug_img = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)
-                x, y, w, h = cv2.boundingRect(contour)
+                x, y, in_w, in_h = cv2.boundingRect(contour)
                 cv2.rectangle(debug_img,
                     (x, y ),
-                    (x + w , y + h),
+                    (x + in_w , y + in_h),
                     (0, 0, 255), 1)
                 cv2.putText(debug_img,
                     f"{hierarchy_values}",
@@ -174,29 +178,68 @@ def detect_inner_rect(
         cv2.drawContours(debug_img, [polygon], -1, (255, 0, 0), 1)
         cv2.imwrite(f"N:\\gray\\{index:03}_04_approxPolyDP.png", debug_img)
 
+    outer_contour = cv2.boundingRect(contour)
+    ox, oy, ow, oh = outer_contour
+    if polygon.shape[0] > 4:
+        print(yellow(f"  polygon shape has more than 4 points, return outer: {outer_contour}"))
+        pprint(polygon)
+        ox, oy, ow, oh = outer_contour
+        if (
+            ox > 3 * padding
+            or oy > 2 * padding
+            or ow < in_w - 2 * padding
+            or oh < in_h - 2 * padding
+        ):
+            # something wrong in outer contour
+            return fallback_coords, None
+        return (ox-border, ow-border, oy-border, oh-border), None
+
     polygon = polygon.reshape((-1, 2))
     try:
         left, right = _get_coordinates(polygon[:, 0])
         top, bottom = _get_coordinates(polygon[:, 1])
-        coordinates = np.array([left, right, top, bottom], dtype=np.uint32)
-        coordinates -= border
     except:
         print(red("failed getting coordinates"))
         pprint(polygon)
-        h, w = img.shape[:2]
-        coordinates = (0, w, 0, h)
-    # print(f"coordinates {coordinates}")
+        return fallback_coords, None
+
+    if left - ox > padding:
+        print(f"  left, ox: {left}, {ox}")
+        left = ox
+    if ow - right > padding:
+        print(f"  right, ow: {right}, {ow}")
+        right = ow
+    if top - oy > padding:
+        print(f"  top, oy: {top}, {oy}")
+        top = oy
+
+    # Compare to padding
+    #   min crop = padding + border
+    if (
+        left > 3 * padding
+        or top > 2 * padding
+        or right < in_w - 2 * padding
+        or bottom < in_h - 2 * padding
+    ):
+        # something wrong
+        print(f"  fallback to {fallback_coords}")
+        return fallback_coords, None
+
+    coordinates = np.array([left, right, top, bottom], dtype=np.uint32)
+    coordinates -= border
+    print(f"  x0, x1, y0, y1: {coordinates}")
+
 
     if debug:
         # debug_img = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)
         left, right, top, bottom = coordinates
         x, y = left, top
-        w, h = (right-left), (bottom-top)
+        in_w, in_h = (right-left), (bottom-top)
         rect = np.array([
             [x, y],
-            [x + w, y],
-            [x + w, y + h],
-            [x, y + h]
+            [x + in_w, y],
+            [x + in_w, y + in_h],
+            [x, y + in_h]
         ], dtype=np.int32)
         debug_img = img.copy()
         cv2.polylines(debug_img, [rect], isClosed=True, color=(0, 255, 0), thickness=1)

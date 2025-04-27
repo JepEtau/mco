@@ -166,7 +166,7 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
     TODO: it uses the first frame of a scene to identify the scene rather the index, so that
     a modification of scenes will not break anything
     """
-    verbose = True
+    verbose = False
     if verbose:
         print(lightgreen(f"parse_geometry_file: {k_ep_or_g}"))
 

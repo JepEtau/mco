@@ -356,6 +356,7 @@ def generate_final_scene(
         coordinates: list[np.ndarray] = []
 
         ofc: int = int(3 * mp.cpu_count() / 4)
+        ofc = 1
         locks = [mp.Lock() for _ in range(ofc + 1)]
         executor = ThreadPoolExecutor(max_workers=ofc, thread_name_prefix='mco')
 
