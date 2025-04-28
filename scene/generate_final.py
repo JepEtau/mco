@@ -11,6 +11,7 @@ import sys
 from threading import Thread
 import time
 from typing import IO, Any
+from warnings import warn
 from PIL import Image
 import cv2
 import numpy as np
@@ -29,6 +30,7 @@ from parsers import (
     Chapter,
 )
 from processing.effects import apply_final_effects
+from processing.watermark import add_final_watermark
 from scene.src_scene import SrcScene
 from utils.images_io import img_info
 from utils.logger import main_logger
@@ -125,8 +127,10 @@ def resize_and_effects(
     transformation,
     dtype_convert_fct: Callable,
 ) -> list[np.ndarray]:
+    watermark: bool = bool('watermark' in scene['filters']['final'].sequence)
 
     # Resize before blending the frame from last scene to this one
+    # specific to g_debut
     last_src_scene_effects: Scene = scene['src'].last_scene().effects
     if (
         last_src_scene_effects is not None
@@ -142,11 +146,6 @@ def resize_and_effects(
             frame=out_frame,
             out_i=out_i
         )
-
-        # if isinstance(out_frames, list):
-        #     out_frames: list[McoFrame]
-        #     return list([dtype_convert_fct(f.img)for f in out_frames])
-        # else:
         out_frames: McoFrame
         return [dtype_convert_fct(out_frames.img)]
 
@@ -170,6 +169,10 @@ def resize_and_effects(
         #     return list([dtype_convert_fct(f.img)for f in out_frames])
 
         out_frame.img = resize_to_4_3(out_frame.img, transformation)
+
+        if watermark:
+            out_frame.img = add_final_watermark(out_frame, out_f_no)
+
         return [dtype_convert_fct(out_frame.img)]
 
 
@@ -236,12 +239,12 @@ def generate_final_scene(
     # Same src for en/fr
     src_seek_start: int = 0
     src_seek_count: int = 0
+    k_ch: Chapter = scene['dst']['k_ch']
     if (
-        scene['dst']['k_ch'] in ('g_fin',)
-        and db[scene['dst']['k_ch']]['audio']['lang'] == 'en'
+        k_ch in ('g_fin',)
+        and db[k_ch]['audio']['lang'] == 'en'
     ):
         # Validated on g_fin only
-        k_ch: Chapter = scene['dst']['k_ch']
         overwritten_scenes: dict[int, Scene] = db[k_ch]['video']['overwritten_scenes']
         if scene['no'] in overwritten_scenes:
             original_scene = overwritten_scenes[scene['no']]
@@ -254,9 +257,16 @@ def generate_final_scene(
             print(yellow(f"{scene['no']} is overwritten"))
             print(yellow(f"src seek start: {src_seek_start}"))
             print(yellow(f"src seek count: {src_seek_count}"))
-    else:
-        primary_scene = scene['src'].primary_scene()
-        # src_seek_start = primary_scene.start - primary_scene.in_scene['start']
+    elif not k_ch.startswith("g_"):
+        k_ep: str = scene['dst']['k_ep']
+        if (
+            k_ch in ('prec', 'asuivre')
+            or db[k_ep]['audio']['lang'] == 'en'
+        ):
+            if db[k_ch]['audio']['lang'] == 'en':
+                warn(yellow(f"is {scene['no']} overwritten for english language"))
+            primary_scene = scene['src'].primary_scene()
+            src_seek_start = primary_scene.start - primary_scene.in_scene['start']
 
         if in_video_info['frame_count'] != scene['dst']['count']:
             src_seek_count = scene['dst']['count']
@@ -527,7 +537,8 @@ def generate_final_scene(
 
 
     # Not effects, use FFmpeg only
-    if not has_effects and False:
+    watermark: bool = bool('watermark' in scene['filters']['final'].sequence)
+    if not has_effects and not watermark:
         print(f"{scene_key}: no effects, use FFmpeg to apply the final geometry")
         filters: list[str] = []
 

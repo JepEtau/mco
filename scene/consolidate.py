@@ -178,6 +178,14 @@ def consolidate_scene(
         if t not in scene_filters:
             scene_filters[t] = Filter(task_name=t)
 
+    # Add watermark for final task
+    if watermark and task_name == 'final':
+        sequence: str = scene['filters'][task_name].sequence
+        scene['filters'][task_name].sequence = (
+            f"{sequence};watermark"
+            if sequence
+            else "watermark"
+        )
 
     # Output video Settings
     #---------------------------------------------------------------------------

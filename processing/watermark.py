@@ -151,3 +151,63 @@ def _add_initial_scene_watermak(pil_image: PilImage.Image, scene: Scene, no: int
         align=alignment.value,
         fill=ink,
     )
+
+
+
+
+def add_final_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | None:
+    """Add edition, episode, scene no, frame no
+    no is the frame no.
+    """
+
+    scene: Scene = frame.scene
+    in_img: np.ndarray = frame.img
+    h, w = in_img.shape[:2]
+    sno_str = scene_no_str(scene)
+
+    font_size: int = 32
+    bold: bool = False
+    italic: bool = False
+    alignment: WatermarkAlignment = WatermarkAlignment.LEFT
+    color: tuple[int, int, int] = (0, 240, 0)
+    font_path = os.path.join(font_dir, _FONT_PATH[int(bold)][int(italic)])
+    font = ImageFont.truetype(font_path, size=font_size)
+    ink = color
+
+    text = str(no)
+    # if scene['task'].name in ('initial', 'extract'):
+    #     text: str = f"""{scene['k_ed']}:{scene['k_ep']}:{sno_str}{str(no).rjust(10)}"""
+    # else:
+    #     try:
+    #         src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no).in_scene
+    #     except:
+    #         if scene['task'].name != 'sim_lr':
+    #             raise
+    #         return in_img
+    #     text: str = f"""{src_scene['k_ed']}:{src_scene['k_ep']}:{sno_str}{str(no).rjust(10)}"""
+
+    pil_mask = PilImage.new("RGBA", (w, h), (0, 0, 0, 0))
+    position_h: int = h - 80
+    position_w: int = 40
+
+    ImageDraw.Draw(pil_mask).text(
+        (position_w, position_h),
+        text,
+        font=font,
+        anchor="ls",
+        align=alignment.value,
+        fill=ink,
+    )
+    watermark = np.array(pil_mask).astype(np.float32) / 255.0
+    watermark_rgb = watermark[..., :3]
+    watermark_alpha = watermark[..., 3:]
+    out_img = in_img * (1 - watermark_alpha) + watermark_rgb * watermark_alpha
+
+    # Debug
+    # print(f"img: {img.shape}, {img.dtype}. Htext={h_text}px position: (50, {position_h})")
+    # write_image(frame.out_fp, out_img)
+
+    return out_img
+
+
+

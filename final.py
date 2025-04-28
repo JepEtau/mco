@@ -71,6 +71,7 @@ def main():
         scene_max=arguments.scene_max,
         scene_list=[],
         task_name=task_name,
+        watermark=arguments.watermark,
         force=arguments.force,
         simulate=simulate,
         debug=arguments.debug,

@@ -38,6 +38,7 @@ def final_scenes(
     scene_list: list[int] = [],
     task_name: TaskName = '',
     force: bool = False,
+    watermark: bool = False,
     simulate: bool = False,
     debug: bool = False,
     stats: bool = False
@@ -81,7 +82,7 @@ def final_scenes(
             pprint_scene_mapping(scene)
 
             # Consolidate this scene
-            consolidate_scene(scene, task_name=task_name)
+            consolidate_scene(scene, task_name=task_name, watermark=watermark)
             scene_id: str = scene_id_str(scene)
 
             # Calculate hash for the video
