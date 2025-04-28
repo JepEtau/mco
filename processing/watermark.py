@@ -165,33 +165,38 @@ def add_final_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | N
     h, w = in_img.shape[:2]
     sno_str = scene_no_str(scene)
 
-    font_size: int = 32
+    font_size: int = 40
     bold: bool = False
     italic: bool = False
     alignment: WatermarkAlignment = WatermarkAlignment.LEFT
-    color: tuple[int, int, int] = (0, 240, 0)
     font_path = os.path.join(font_dir, _FONT_PATH[int(bold)][int(italic)])
     font = ImageFont.truetype(font_path, size=font_size)
-    ink = color
 
-    text = str(no)
-    # if scene['task'].name in ('initial', 'extract'):
-    #     text: str = f"""{scene['k_ed']}:{scene['k_ep']}:{sno_str}{str(no).rjust(10)}"""
-    # else:
-    #     try:
-    #         src_scene: Scene = scene['src'].get_src_scene_from_frame_no(no).in_scene
-    #     except:
-    #         if scene['task'].name != 'sim_lr':
-    #             raise
-    #         return in_img
-    #     text: str = f"""{src_scene['k_ed']}:{src_scene['k_ep']}:{sno_str}{str(no).rjust(10)}"""
+    # print(frame.no)
+    # print(no)
+    src_scene: SrcScene = scene['src'].get_src_scene_from_frame_index(no)
+    in_scene: Scene = src_scene.in_scene
+    in_no = src_scene.start + no
+    in_no = in_scene['replace'].get(in_no, in_no)
+    in_k_ed, in_k_ep, in_k_ch, in_scene_no = src_scene.k_ed_ep_ch_no
+    src_text: str = f"""{in_k_ed}:{in_k_ep}:{in_scene_no:03}{str(in_no).rjust(6)}"""
 
+
+    text = f"{scene['no']:03}:{no:03}"
     pil_mask = PilImage.new("RGBA", (w, h), (0, 0, 0, 0))
-    position_h: int = h - 80
-    position_w: int = 40
-
+    ink: tuple[int, int, int] = (255, 240, 0)
     ImageDraw.Draw(pil_mask).text(
-        (position_w, position_h),
+        (300, h - 50),
+        src_text,
+        font=font,
+        anchor="ls",
+        align=alignment.value,
+        fill=ink,
+    )
+
+    ink: tuple[int, int, int] = (0, 240, 0)
+    ImageDraw.Draw(pil_mask).text(
+        (40, h - 50),
         text,
         font=font,
         anchor="ls",
@@ -202,11 +207,6 @@ def add_final_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | N
     watermark_rgb = watermark[..., :3]
     watermark_alpha = watermark[..., 3:]
     out_img = in_img * (1 - watermark_alpha) + watermark_rgb * watermark_alpha
-
-    # Debug
-    # print(f"img: {img.shape}, {img.dtype}. Htext={h_text}px position: (50, {position_h})")
-    # write_image(frame.out_fp, out_img)
-
     return out_img
 
 

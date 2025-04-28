@@ -363,6 +363,18 @@ class SrcScenes:
         return None
 
 
+    def get_src_scene_from_frame_index(self, index: int) -> SrcScene:
+        """Return src scene"""
+        start = 0
+        for src_scene in self._scenes:
+            end: int = start + src_scene.in_scene['count'] - 1
+            if start <= index <= end:
+                return src_scene
+            start = end + 1
+        raise ValueError(f"Scene not found for frame index {index}")
+        return None
+
+
     def has_effects(self) -> bool:
         for s in self._scenes:
             if s.effects is None:

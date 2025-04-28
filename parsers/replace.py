@@ -26,7 +26,7 @@ def replace_scene_bounds_(k_ep: str, verbose: bool = False) -> None:
     k_ed: str = 'j'
     k_chapter: Chapter = 'episode'
     if 'scenes' not in db[k_ep]['video'][k_ed][k_chapter]:
-        # print(red(f"no scenes for {k_ed}:{k_ep}:{k_chapter}"))
+        print(red(f"no scenes for {k_ed}:{k_ep}:{k_chapter}"))
         return
     try:
         scenes: list[Scene] = db[k_ep]['video'][k_ed][k_chapter]['scenes']
@@ -98,7 +98,9 @@ def replace_scene_bounds_(k_ep: str, verbose: bool = False) -> None:
                     break
             if t > len(replace_list):
                 raise(red(f" circular reference"))
-
+        if verbose:
+            print(lightcyan(f"scene:"), scene['no'])
+            print(scene['replace'])
 
 
 def parse_replace_file(k_ep_or_g:str) -> None:
@@ -144,7 +146,7 @@ def parse_replace_file(k_ep_or_g:str) -> None:
             new_frame_no = int(config.get(k_section, frame_no_str).strip())
 
             # Get scene from frame no.
-            if verbose:
+            if verbose and False:
                 print(f"\tsearch {frame_no} in {k_ed}:{k_ep}:{k_chapter} -> scene no.", end="")
 
             scene: Scene = get_scene_from_frame_no(
@@ -185,7 +187,8 @@ def parse_replace_file(k_ep_or_g:str) -> None:
             and k_ed == 'j'
             and ep_no(k_ep) < 40
         ):
-            replace_scene_bounds_(k_ep=k_ep_or_g)
+            print(yellow(f"replace bound:"), k_ep_or_g)
+            replace_scene_bounds_(k_ep=k_ep_or_g, verbose=verbose)
 
 
 

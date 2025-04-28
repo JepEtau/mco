@@ -171,7 +171,7 @@ def resize_and_effects(
         out_frame.img = resize_to_4_3(out_frame.img, transformation)
 
         if watermark:
-            out_frame.img = add_final_watermark(out_frame, out_f_no)
+            out_frame.img = add_final_watermark(out_frame, out_i)
 
         return [dtype_convert_fct(out_frame.img)]
 
@@ -538,7 +538,8 @@ def generate_final_scene(
 
     # Not effects, use FFmpeg only
     watermark: bool = bool('watermark' in scene['filters']['final'].sequence)
-    if not has_effects and not watermark:
+    # if not has_effects and not watermark:
+    if False:
         print(f"{scene_key}: no effects, use FFmpeg to apply the final geometry")
         filters: list[str] = []
 
