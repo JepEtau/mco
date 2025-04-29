@@ -174,13 +174,16 @@ def add_final_watermark(frame: McoFrame | np.ndarray, no: int) -> np.ndarray | N
 
     # print(frame.no)
     # print(no)
-    src_scene: SrcScene = scene['src'].get_src_scene_from_frame_index(no)
-    in_scene: Scene = src_scene.in_scene
-    in_no = src_scene.start + no
-    in_no = in_scene['replace'].get(in_no, in_no)
-    in_k_ed, in_k_ep, in_k_ch, in_scene_no = src_scene.k_ed_ep_ch_no
-    src_text: str = f"""{in_k_ed}:{in_k_ep}:{in_scene_no:03}{str(in_no).rjust(6)}"""
-
+    src_text: str = ""
+    try:
+        src_scene: SrcScene = scene['src'].get_src_scene_from_frame_index(no)
+        in_scene: Scene = src_scene.in_scene
+        in_no = src_scene.start + no
+        in_no = in_scene['replace'].get(in_no, in_no)
+        in_k_ed, in_k_ep, in_k_ch, in_scene_no = src_scene.k_ed_ep_ch_no
+        src_text = f"{in_k_ed}:{in_k_ep}:{in_scene_no:03}{str(in_no).rjust(6)}"
+    except:
+        pass
 
     text = f"{scene['no']:03}:{no:03}"
     pil_mask = PilImage.new("RGBA", (w, h), (0, 0, 0, 0))

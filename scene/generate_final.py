@@ -263,7 +263,7 @@ def generate_final_scene(
             k_ch in ('prec', 'asuivre')
             or db[k_ep]['audio']['lang'] == 'en'
         ):
-            if db[k_ch]['audio']['lang'] == 'en':
+            if db[k_ep]['audio']['lang'] == 'en':
                 warn(yellow(f"is {scene['no']} overwritten for english language"))
             primary_scene = scene['src'].primary_scene()
             src_seek_start = primary_scene.start - primary_scene.in_scene['start']
