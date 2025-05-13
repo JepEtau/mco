@@ -10,5 +10,5 @@ pyside6-uic .\ui\ui\ui_widget_selection.ui         -o .\ui\ui\ui_widget_selectio
 python .\_utils\patch_ui.py --file .\ui\ui\ui_widget_selection.py
 
 :: hr, lr
-python .\replace.py -t hr
+python .\replace.py -t lr
 

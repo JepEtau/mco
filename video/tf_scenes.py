@@ -113,8 +113,8 @@ def tf_scenes(
                     print(yellow(f"{scene_id} has to be updated (reason: frame count differs)"))
                     do_process = True
                 else:
-                    print(yellow(f"{scene_id}: up to date "), f"{out_mtime} vs {in_mtime}")
-
+                    in_mtime_str = datetime.fromtimestamp(in_mtime).strftime("%Y-%m-%d %H:%M:%S")
+                    print(yellow(f"{scene_id}: up to date "), f"input: {in_mtime_str}, output: {out_mtime_str}")
 
             if not do_process:
                 if evaluate:
@@ -146,7 +146,6 @@ def tf_scenes(
             )
             vs_out_pix_fmt = 'yuv444p16le'
 
-
             # VSpipe command
             vs_command: list[str] = [
                 vspipe_exe,
@@ -160,7 +159,6 @@ def tf_scenes(
             if debug:
                 print(lightcyan("VS command:"))
                 print(lightgreen(' '.join(vs_command)))
-
 
             in_vi: VideoInfo = extract_media_info_mco(in_fp)['video']
             f_rate = in_vi['frame_rate_r']
