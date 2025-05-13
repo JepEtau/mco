@@ -113,11 +113,14 @@ class FrameCache:
                 print(red("TODO: use task_name \'dsr\' in frame cache"))
                 hr_vsettings: VideoSettings = db['vsettings']['hr']
                 pad: int = hr_vsettings.pad
+
+                # Use screen dimension to fit to screen
+                screen_size = QApplication.screens()[0].size()
+                screen_height, screen_width = screen_size.height(), screen_size.width()
+
                 if task_name in ('lr', 'initial') and self.replace_db is not None:
-                    screen_size = QApplication.screens()[0].size()
-                    screen_height, screen_width = screen_size.height(), screen_size.width()
                     if screen_height < 1440:
-                        # 1080p display
+                        # screen is too small, resize to fit
                         in_w, in_h = 1000, 750
                     else:
                         in_w, in_h = 1440, 1080
@@ -131,12 +134,22 @@ class FrameCache:
                 if task_name == 'hr':
                     in_h, in_w = int(in_h - 2 * pad), int(in_w - 2 * pad)
                     filters: list[str] = [f"crop={in_w}:{in_h}:{pad}:{pad}"]
-                    if in_h != 1080 or in_w != 1440:
-                        print(yellow(f"FrameCache: rescale {in_w}x{in_h} to 1440, 1080"))
-                        in_w, in_h = 1440, 1080
+
+                    if screen_height < 1440:
+                        # screen is too small, resize to fit
+                        in_w, in_h = 1152, 864
+                        print(yellow(f"FrameCache: screen is too small, resize to {in_w}x{in_h}"))
                         filters.append(
                             f"scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int"
                         )
+
+                    else:
+                        if in_h != 1080 or in_w != 1440:
+                            print(yellow(f"FrameCache: rescale {in_w}x{in_h} to 1440, 1080"))
+                            in_w, in_h = 1440, 1080
+                            filters.append(
+                                f"scale={in_w}:{in_h}:sws_flags=lanczos+accurate_rnd+bitexact+full_chroma_int"
+                            )
                     filter_complex = [
                         "-filter_complex",
                         f"[0:v]{','.join(filters)}[outv]",
@@ -161,6 +174,7 @@ class FrameCache:
                 #         "-map", "[outv]"
                 #     ]
                 #     in_h, in_w = 2 * (in_h + pad), 2 * (in_w + pad)
+
                 scene_count = src_scene.count
                 if scene['dst']['k_ch'] == 'g_asuivre':
                     scene_count = scene['dst']['count']

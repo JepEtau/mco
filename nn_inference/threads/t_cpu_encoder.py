@@ -249,10 +249,16 @@ class CpuEncoderThread(BaseThread):
                 remaining -= len(out_frames)
                 sent = len(out_frames)
 
+                # if self.d_thread is not None and self.d_thread.is_alive():
+                #     self.d_thread.set_produce_flag()
+
                 del frame.tensor
                 if self.progress_thread is not None:
                     self.progress_thread.put(sent)
                 self._encoded += sent
+
+                if remaining <= 0:
+                    break
 
         # except:
         #     print(red(f"[V][E] Error while executing: "), " ".join(encoder_command))

@@ -407,6 +407,18 @@ class CpuDecoderThread(BaseThread):
         del frame_cache
         print(lightgreen(f"[V][D] End of decoding, f_index={f_index}"))
 
+
+        if self.d_subprocess.poll() is None:
+            timeout: int = 10
+            while self.d_subprocess.poll() is None and timeout:
+                time.sleep(0.1)
+                timeout -= 1
+            if not timeout:
+                self.d_subprocess.kill()
+            print(yellow(f"to decode was higher than what has to be decoded {_to_decode}"))
+
+
+
     def stop(self, force: bool=False) -> None:
         self._stop_event.set()
 

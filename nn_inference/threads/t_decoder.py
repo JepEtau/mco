@@ -461,6 +461,10 @@ class DecoderThread(BaseThread):
                         remaining -= 1
                         f_index += 1
 
+                    # All frames of the scene have been decoded and sent to consumer
+                    if _to_decode == 0:
+                        print(f"all frames to be decoded have been decoded: {to_decode}")
+
 
                 print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
                 if remaining_src_scenes == 0:

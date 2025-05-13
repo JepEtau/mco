@@ -33,6 +33,9 @@ class DsrRegion:
     axes: list[float | int, float | int]
     # in radian
     angle: float
+    # When a patch is for multiple frames
+    start: int = -1
+    end: int = -1
     # Used by editor
     item: QGraphicsEllipseItem | None = None
 
@@ -68,7 +71,9 @@ class SceneDsr:
         self,
         frame_no: int | None = None
     ) -> list[DsrRegion] | dict[int, list[DsrRegion]] | None:
-        """Returns a list of frame's patch"""
+        """Returns a list of frame's patch
+        if frame_no is None, returns all patches
+        """
         if frame_no is None:
             return self.get_all()
         elif frame_no in self._frames:
@@ -94,7 +99,9 @@ class SceneDsr:
         shape: MaskShape,
         coordinates: list[float, float] | tuple[float, float],
         size: list[float, float] | tuple[float, float],
-        theta: float
+        theta: float,
+        start: int = -1,
+        end: int = -1,
     ) -> None:
         if not frame_no in self._frames:
             self._frames[frame_no] = []
@@ -158,6 +165,10 @@ def parse_dsr_file(k_ep_or_g: str, verbose: bool = False):
     regex: re.Pattern = re.compile(
         rf"({'|'.join(list(MaskShape.__args__))})\s*=\s*(\d*\.?\d*),(\d*\.?\d*):(\d*\.?\d*),(\d*\.?\d*):(-?\d*\.?\d*)"
     )
+    # shape:x:y:w:h:theta:start:end
+    regex_multiple: re.Pattern = re.compile(
+        rf"({'|'.join(list(MaskShape.__args__))})\s*=\s*(\d*\.?\d*),(\d*\.?\d*):(\d*\.?\d*),(\d*\.?\d*):(-?\d*\.?\d*):(\d+):(\d+)"
+    )
 
     config = configparser.ConfigParser()
     config.read(filepath)
@@ -170,42 +181,85 @@ def parse_dsr_file(k_ep_or_g: str, verbose: bool = False):
 
 
         for frame_no_str in config.options(k_section):
-            frame_no = int(frame_no_str)
+            if "_" in frame_no_str:
+                # Patch for a multiple frames
+                frame_no_str, _ = frame_no_str.split("_")
+                frame_no = int(frame_no_str)
 
-            # Get scene from frame no.
-            if verbose:
-                print(f"\tsearch {frame_no} in {k_ed}:{k_ep}:{k_chapter}")
-
-            scene: Scene = get_scene_from_frame_no(
-                frame_no, k_ed=k_ed, k_ep=k_ep, k_ch=k_chapter
-            )
-            if scene is None:
-                continue
-
-            if scene['dsr'] is None:
-                scene['dsr'] = SceneDsr()
-            scene_dsr: SceneDsr = scene['dsr']
-
-            regions: list[str] = (
-                config.get(k_section, frame_no_str).split('\n')
-            )
-
-            for region_str in regions:
+                # frame_no is the first frame of the cene,
+                # Get scene from frame no.
                 if verbose:
-                    print(f"{frame_no} -> {region_str}")
-                if not parser_strip(region_str):
+                    print(f"\tsearch {frame_no} in {k_ed}:{k_ep}:{k_chapter}")
+
+                scene: Scene = get_scene_from_frame_no(
+                    frame_no, k_ed=k_ed, k_ep=k_ep, k_ch=k_chapter
+                )
+                if scene is None:
+                    continue
+                if scene['dsr'] is None:
+                    scene['dsr'] = SceneDsr()
+                scene_dsr: SceneDsr = scene['dsr']
+
+                # Get all patches
+                patches: list[str] = (
+                    config.get(k_section, frame_no_str).split('\n')
+                )
+
+                for patch_str in patches:
+                    if not parser_strip(patch_str):
+                        continue
+
+                    if region := re.search(regex_multiple, patch_str):
+                        # use frame_no as -1 to indicates that i's a patch to add
+                        # to multiple frames
+                        scene_dsr.add(
+                            frame_no=-1,
+                            shape=region.group(1),
+                            coordinates=(float(region.group(2)), float(region.group(3))),
+                            size=(float(region.group(4)), float(region.group(5))),
+                            theta=float(region.group(6)),
+                            start=int(region.group(7)),
+                            end=int(region.group(8)),
+                        )
+
+            else:
+                # Patch for a single frame
+                frame_no = int(frame_no_str)
+
+                # Get scene from frame no.
+                if verbose:
+                    print(f"\tsearch {frame_no} in {k_ed}:{k_ep}:{k_chapter}")
+
+                scene: Scene = get_scene_from_frame_no(
+                    frame_no, k_ed=k_ed, k_ep=k_ep, k_ch=k_chapter
+                )
+                if scene is None:
                     continue
 
-                if region := re.search(regex, region_str):
-                    scene_dsr.add(
-                        frame_no=frame_no,
-                        shape=region.group(1),
-                        coordinates=(float(region.group(2)), float(region.group(3))),
-                        size=(float(region.group(4)), float(region.group(5))),
-                        theta=float(region.group(6)),
-                    )
-                elif verbose:
-                    print(yellow("failed:"), region_str)
+                if scene['dsr'] is None:
+                    scene['dsr'] = SceneDsr()
+                scene_dsr: SceneDsr = scene['dsr']
+
+                patches: list[str] = (
+                    config.get(k_section, frame_no_str).split('\n')
+                )
+
+                for patch_str in patches:
+                    if verbose:
+                        print(f"{frame_no} -> {patch_str}")
+                    if not parser_strip(patch_str):
+                        continue
+
+                    if region := re.search(regex, patch_str):
+                        scene_dsr.add(
+                            frame_no=frame_no,
+                            shape=region.group(1),
+                            coordinates=(float(region.group(2)), float(region.group(3))),
+                            size=(float(region.group(4)), float(region.group(5))),
+                            theta=float(region.group(6)),
+                        )
+                    elif verbose:
+                        print(yellow("failed:"), patch_str)
 
 
         # if verbose:
