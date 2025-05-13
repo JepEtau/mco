@@ -120,7 +120,7 @@ class DsrDatabase:
         self._push_to_history()
 
         src_scene_key = modification.frame.src_scene_key
-        print(lightgreen("modification src scene:"), src_scene_key)
+        print(lightgreen("DSR db: modify src scene:"), src_scene_key)
         if src_scene_key not in self._db:
             self._db[src_scene_key] = SceneDsr()
 

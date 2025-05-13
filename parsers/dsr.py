@@ -172,14 +172,23 @@ class SceneDsr:
         print(blue("new regions to set:"))
         print(regions)
         for r in regions:
-            self._frames[frame_no].append(
+            _f_no = frame_no
+
+            # shared patch
+            if r.start != -1 and r.end != -1:
+                _f_no = -1
+                if -1 not in self._frames.keys():
+                    self._frames[_f_no] = []
+
+            # Append to frame dsr list or shared list
+            self._frames[_f_no].append(
                 DsrRegion(
                     shape=r.shape,
                     center=r.center,
                     axes=r.axes,
                     angle=r.angle,
-                    start=start,
-                    end=end,
+                    start=r.start,
+                    end=r.end,
                 )
             )
 
