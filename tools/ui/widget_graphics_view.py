@@ -88,6 +88,12 @@ FINAL_HEIGHT: int = 1080
 #         self.posX = event.scenePos().x()
 #         self.parent().parent().setPosition(event.scenePos().x())
 
+@dataclass(slots=True)
+class SharedPatch:
+    patch: DsrSceneRegion | None = None
+    start: int = -1
+    end: int = -1
+
 
 
 class GraphicsViewWidget(QGraphicsView):
@@ -173,7 +179,8 @@ class GraphicsViewWidget(QGraphicsView):
         )
         self.new_region: DsrSceneRegion = deepcopy(self.default_region)
         self.modifying_shape: bool = False
-        self.previous_dsr_region = None
+        self.previous_dsr_region: DsrSceneRegion = None
+        self.shared_patch: SharedPatch | None = None
 
         self.modified: bool = False
 
@@ -482,7 +489,7 @@ class GraphicsViewWidget(QGraphicsView):
             self.append_dsr_region()
             return True
 
-        elif key in (Qt.Key.Key_S, Qt.Key.Key_Z, Qt.Key.Key_8):
+        elif key in (Qt.Key.Key_Z, Qt.Key.Key_8):
             self.event_key_released(None)
             self.modif_keys['radius'] = True
             self.modif_keys['height'] = True
@@ -499,6 +506,37 @@ class GraphicsViewWidget(QGraphicsView):
             self.modif_keys['angle'] = True
             return True
 
+        # Add a shared patch
+        elif key == Qt.Key.Key_S:
+            for p in self.regions:
+                if p.item.isUnderMouse():
+                    self.shared_patch = SharedPatch(
+                        patch=p,
+                        start=self.frame.no,
+                        end=-1
+                    )
+                    print(f"save shared patch start={self.shared_patch.start}", self.shared_patch.patch)
+                    return True
+
+            return True
+
+        elif key == Qt.Key.Key_E:
+            if self.shared_patch is not None and self.shared_patch.patch is not None:
+                print("send end of shared patch:")
+                patch_copy = self.shared_patch.patch.copy()
+                patch_copy.start = min(self.frame.no, self.shared_patch.start)
+                patch_copy.end = max(self.frame.no, self.shared_patch.start)
+                self.regions.append(patch_copy)
+                self._scene.addItem(patch_copy.item)
+
+                self.cursor_offset = QPointF(0, 0)
+                self.setCursor(Qt.CursorShape.ArrowCursor)
+                self.new_region.item = None
+                self.signal_dsr_updated_event.emit(self.regions)
+                self.shared_patch = None
+            return True
+
+        # Remove patch
         elif key in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace, Qt.Key.Key_Minus):
             for i, s in enumerate(self.regions):
                 if s.item.isUnderMouse():
@@ -508,6 +546,8 @@ class GraphicsViewWidget(QGraphicsView):
                     del self.regions[i]
                     self.setCursor(Qt.CursorShape.ArrowCursor)
                     self.cursor_offset = QPoint(0, 0)
+                    print(lightcyan("send signal to update regions:"))
+                    pprint(self.regions)
                     self.signal_dsr_updated_event.emit(self.regions)
                     return True
 
@@ -698,8 +738,8 @@ class GraphicsViewWidget(QGraphicsView):
 
 
     def draw_image(self):
-        print("viewport geometry:", self.viewport().geometry())
-        print("sceneRect geometry:", self.sceneRect())
+        # print("viewport geometry:", self.viewport().geometry())
+        # print("sceneRect geometry:", self.sceneRect())
         self.setSceneRect(
             0, 0,
             self.viewport().geometry().width(), self.viewport().geometry().height()
@@ -710,7 +750,7 @@ class GraphicsViewWidget(QGraphicsView):
             return
         self.is_repainting = True
 
-        print(yellow(f"replace app: {self.frame.img.shape}"))
+        # print(yellow(f"replace app: {self.frame.img.shape}"))
 
         # Use
         # if self.app_type == 'replace':

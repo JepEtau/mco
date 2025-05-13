@@ -41,7 +41,9 @@ class DsrRegion:
 
     def get(self, size: list[float, float] | None = None) -> Self:
         if size is None:
-            return DsrRegion(self.shape, self.center, self.axes, self.angle)
+            return DsrRegion(
+                self.shape, self.center, self.axes, self.angle, self.start, self.end,
+            )
 
         w, h = size
         return DsrRegion(
@@ -49,6 +51,8 @@ class DsrRegion:
             (int(self.center[0] * w + 0.5), int(self.center[1] * h + 0.5)),
             (int(self.axes[0] * w + 0.5), int(self.axes[1] * h + 0.5)),
             self.angle,
+            self.start,
+            self.end,
         )
 
     def hash(self):
@@ -74,11 +78,20 @@ class SceneDsr:
         """Returns a list of frame's patch
         if frame_no is None, returns all patches
         """
+        patches: list = []
         if frame_no is None:
-            return self.get_all()
+            patches = self.get_all()
+
         elif frame_no in self._frames:
-            return list([p.get(self._size) for p in self._frames[frame_no]])
-        return None
+            patches = list([p.get(self._size) for p in self._frames[frame_no]])
+
+        # frames sharing the same patch
+        if -1 in self._frames.keys():
+            for p in self._frames[-1]:
+                if p.start <= frame_no <= p.end:
+                    patches.append(p)
+
+        return patches if patches else None
 
 
     def has_patches(self) -> bool:
@@ -112,13 +125,52 @@ class SceneDsr:
                 center=coordinates,
                 axes=size,
                 angle=theta,
+                start=start,
+                end=end,
             )
         )
 
 
-    def set_regions(self, frame_no: int, regions: list[DsrRegion]) -> None:
+    def set_regions(
+        self,
+        frame_no: int,
+        regions: list[DsrRegion],
+        start: int = -1,
+        end: int = -1,
+    ) -> None:
         self._frames[frame_no] = []
-        print(lightcyan(f"set_regions: {len(regions)}"))
+        print(lightcyan(f"set_regions: count={len(regions)}"))
+
+        # Remove deleted shared patches
+        if -1 in self._frames.keys():
+            # This frame has shared patches
+            print("shared patches:")
+            pprint(self._frames[-1])
+            to_remove: list[int] = []
+            for i, p in enumerate(self._frames[-1]):
+                if p.start <= frame_no <= p.end:
+                    # this frame should contain this shared patch
+                    # if not, it has been removed
+                    found: bool = False
+                    for r in regions:
+                        if r == p:
+                            print(yellow(f"found"))
+                            found = True
+                            # remove the patch from the frame patches
+                            # because it is contained in the shared patches
+                            regions.remove(r)
+                            break
+                    if not found:
+                        # this shared patch has been removed
+                        to_remove.append(i)
+
+            if to_remove:
+                print(f"remove items: {to_remove}")
+                for i in sorted(to_remove, reverse=True):
+                    del self._frames[-1][i]
+
+        print(blue("new regions to set:"))
+        print(regions)
         for r in regions:
             self._frames[frame_no].append(
                 DsrRegion(
@@ -126,6 +178,8 @@ class SceneDsr:
                     center=r.center,
                     axes=r.axes,
                     angle=r.angle,
+                    start=start,
+                    end=end,
                 )
             )
 
@@ -183,8 +237,8 @@ def parse_dsr_file(k_ep_or_g: str, verbose: bool = False):
         for frame_no_str in config.options(k_section):
             if "_" in frame_no_str:
                 # Patch for a multiple frames
-                frame_no_str, _ = frame_no_str.split("_")
-                frame_no = int(frame_no_str)
+                _frame_no_str, _ = frame_no_str.split("_")
+                frame_no = int(_frame_no_str)
 
                 # frame_no is the first frame of the cene,
                 # Get scene from frame no.
@@ -221,6 +275,8 @@ def parse_dsr_file(k_ep_or_g: str, verbose: bool = False):
                             start=int(region.group(7)),
                             end=int(region.group(8)),
                         )
+                print(red("detected muliple frames sharing the same shape"))
+                pprint(scene_dsr.get_all())
 
             else:
                 # Patch for a single frame

@@ -44,6 +44,8 @@ class DsrSceneRegion:
     axes: list[float | int, float | int]
     angle: float
     item: QGraphicsEllipseItem | None = None
+    start: int = -1
+    end: int = -1
 
     def map_to_scene(self, size: list[float, float]) -> DsrSceneRegion:
         w, h = size
@@ -53,6 +55,8 @@ class DsrSceneRegion:
             axes=[int(self.axes[0] * w), int(self.axes[1] * h)],
             angle=self.angle,
             item=self.item,
+            start=self.start,
+            end=self.end,
         )
 
     def copy(self) -> DsrSceneRegion:
@@ -62,6 +66,8 @@ class DsrSceneRegion:
             axes=self.axes,
             angle=self.angle,
             item=self.item,
+            start=self.start,
+            end=self.end,
         )
 
 
@@ -71,6 +77,8 @@ def dsr_mask_to_scene(m: DsrRegion) -> DsrSceneRegion:
         center=m.center,
         axes=m.axes,
         angle=m.angle,
+        start=m.start,
+        end=m.end,
     )
 
 
@@ -265,6 +273,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
                     Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
                 )
 
+        print(lightblue(f"refresh_dsr_list:"),  f"event: {event}")
         if event:
             self._is_modified = True
 
@@ -275,10 +284,14 @@ class DsrWidget(QWidget, Ui_DsrWidget):
                         shape=p.shape,
                         center=p.center,
                         axes=p.axes,
-                        angle=p.angle
+                        angle=p.angle,
+                        start=p.start,
+                        end=p.end,
                     )
                 )
 
+            print(lightcyan("refresh_dsr_list:"), f"send signal_dsr_modified")
+            pprint(regions)
             self.signal_dsr_modified.emit(
                 DsrAction(
                     type='update',

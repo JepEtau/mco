@@ -212,10 +212,19 @@ class DsrDatabase:
                     region_str += f"{','.join(map(str, (region.center)))}"
                     region_str += f":{','.join(map(str, (region.axes)))}"
                     region_str += f":{region.angle}"
+                    if f_no == -1:
+                        # multiple frames sharing the same patch
+                        region_str += f":{region.start}"
+                        region_str += f":{region.end}"
 
                     scene_regions_str += region_str
 
-                config_dsr.set(k_section, f"{f_no}", scene_regions_str)
+                if f_no == -1:
+                    # multiple frames sharing the same patch, use the scene start f_no
+                    config_dsr.set(k_section, f"{_src_scene['start']}_scene", scene_regions_str)
+
+                else:
+                    config_dsr.set(k_section, f"{f_no}", scene_regions_str)
 
             # Write to the database
             with open(dsr_fp, 'w') as config_file:

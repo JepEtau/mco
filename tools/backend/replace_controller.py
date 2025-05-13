@@ -287,11 +287,22 @@ class ReplaceController(CommonController):
 
     # DSR
     def playlist_dsr(self, frame_no: int) -> list[DsrRegion]:
-        # print(f"playlist_dsr:")
-        # pprint(self.selection_dsr)
-        if frame_no in self.selection_dsr[self.current_scene_no]:
-            return self.selection_dsr[self.current_scene_no][frame_no]
-        return []
+        print(f"request playlist_dsr for frame: {frame_no}")
+        patches: list[DsrRegion] = []
+        scene_dsr: dict[int, list[DsrRegion]] = self.selection_dsr[self.current_scene_no]
+        if frame_no in scene_dsr:
+            patches = scene_dsr[frame_no]
+
+        if -1 in scene_dsr.keys():
+            print(f"add shared patches for frame: {frame_no}")
+            for p in scene_dsr[-1]:
+                if p.start <= frame_no <= p.end:
+                    if p not in patches:
+                        patches.append(p)
+
+        pprint(patches)
+        return patches
+
 
 
     @Slot(DsrAction)
