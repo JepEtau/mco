@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>822</width>
-    <height>84</height>
+    <width>880</width>
+    <height>89</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -49,6 +49,28 @@
      </item>
      <item>
       <layout class="QHBoxLayout" name="horizontalLayout">
+       <item>
+        <widget class="QPushButton" name="pushButton_speed_0_5">
+         <property name="maximumSize">
+          <size>
+           <width>40</width>
+           <height>24</height>
+          </size>
+         </property>
+         <property name="focusPolicy">
+          <enum>Qt::FocusPolicy::NoFocus</enum>
+         </property>
+         <property name="text">
+          <string>x 0.5</string>
+         </property>
+         <property name="checkable">
+          <bool>true</bool>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
        <item>
         <widget class="QPushButton" name="pushButton_play_pause">
          <property name="focusPolicy">

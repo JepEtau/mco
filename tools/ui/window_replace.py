@@ -263,46 +263,6 @@ class ReplaceWindow(CommonWindow):
         self.display_frame(f)
 
 
-    @Slot(str)
-    def event_control_button_pressed(self, action: str):
-        if action == 'play':
-            self.widget_selection.set_enabled(False)
-            log.info("start playing")
-            speed = self.widget_player_ctrl.get_playing_speed()
-            self.timer_delay = int(1000/(get_frame_rate()*speed))
-            self.timer.start(self.timer_delay, Qt.TimerType.PreciseTimer, self)
-            self.now = time.time()
-
-        elif action == 'pause':
-            self.timer.stop()
-            self.widget_selection.set_enabled(True)
-
-        elif action == 'stop':
-            self.timer.stop()
-            self.widget_selection.set_enabled(True)
-            self.event_move_to_frame_index(0)
-        return True
-
-    def timerEvent(self, e=None):
-        now = time.time()
-        elasped_time = 1000 * (now - self.now)
-        if elasped_time > 45:
-            print(int(elasped_time))
-        self.now = now
-
-        self.current_frame_index += 1
-        if self.current_frame_index >= self.playing_frame_count:
-            if self.widget_player_ctrl.is_loop_enabled():
-                # in loop mode restart from beginning
-                self.current_frame_index = 0
-            else:
-                self.timer.stop()
-                self.widget_player_ctrl.event_stop()
-                return
-        self.widget_player_ctrl.set_playing_frame_properties(self.current_frame_index)
-        self.display_frame()
-
-
     @Slot()
     def event_ready_to_play(self):
         log.info("ready to play")

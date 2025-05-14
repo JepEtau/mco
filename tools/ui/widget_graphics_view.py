@@ -600,7 +600,12 @@ class GraphicsViewWidget(QGraphicsView):
                 self.height = min(max(self.height + diff, 0), 0.25)
 
             elif self.modif_keys['angle']:
-                self.angle = min(max(self.angle - 5 * diff, -90), 90)
+                new_angle = self.angle - 2.5 * diff
+                if new_angle < -90:
+                    new_angle = 180 - new_angle
+                elif new_angle > 90:
+                    new_angle = -180 + new_angle
+                self.angle = new_angle
 
         self._scene.removeItem(self.new_region.item)
         self.new_region.item = None

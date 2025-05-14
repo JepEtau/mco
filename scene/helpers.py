@@ -41,6 +41,7 @@ _g_asuivre_previous_task: dict[str, str] = {
     'lr': 'initial',
     'upscale': 'initial',
     'hr': 'initial',
+    'tf': 'hr',
     'cg': 'hr',
     'final': 'cg',
 }

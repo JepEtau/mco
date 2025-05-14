@@ -84,7 +84,7 @@ class FrameCache:
                     in_video_fp = os.path.join(directory, f"{basename}{extension}")
                     start = src_start
 
-                if task_name in ('upscale', 'hr'):
+                if task_name in ('upscale', 'hr', 'tf'):
                     in_video_fp: str = scene['task'].video_file
 
                 if not os.path.exists(in_video_fp):
@@ -131,7 +131,7 @@ class FrameCache:
                         "-map", "[outv]"
                     ]
 
-                if task_name == 'hr':
+                if task_name in ('hr', 'tf'):
                     in_h, in_w = int(in_h - 2 * pad), int(in_w - 2 * pad)
                     filters: list[str] = [f"crop={in_w}:{in_h}:{pad}:{pad}"]
 

@@ -72,15 +72,9 @@ class CommonWindow(QMainWindow):
         self.centralwidget = QWidget(self)
 
         # Common widgets
-        self.widget_preview = PreviewWidget(
-            self.centralwidget, app_type=app_type
-        )
-        self.widget_player_ctrl = PlayerCtrlWidget(
-            self, controller, app_type=app_type
-        )
-        self.widget_selection = SelectionWidget(
-            self, controller, app_type=app_type
-        )
+        self.widget_preview = PreviewWidget(self.centralwidget, app_type=app_type)
+        self.widget_player_ctrl = PlayerCtrlWidget(self, controller, app_type=app_type)
+        self.widget_selection = SelectionWidget(self, controller, app_type=app_type)
 
         self.widgets['selection'] = self.widget_selection
 
@@ -90,9 +84,11 @@ class CommonWindow(QMainWindow):
         self.widget_player_ctrl.signal_slider_moved[int].connect(
             self.event_move_to_frame_index
         )
-
         self.widget_player_ctrl.signal_slider_moved[int].connect(
             self.event_move_to_frame_index
+        )
+        self.widget_player_ctrl.signal_speed_changed[float].connect(
+            self.event_speed_changed
         )
         self.controller.signal_ready_to_play.connect(self.event_ready_to_play)
         self.controller.signal_reload_frame.connect(self.event_reload_frame)
@@ -199,8 +195,8 @@ class CommonWindow(QMainWindow):
         if action == 'play':
             self.widget_selection.set_enabled(False)
             log.info("start playing")
-            speed = self.widget_player_ctrl.get_playing_speed()
-            self.timer_delay = int(1000/(get_frame_rate()*speed))
+            speed: float = self.widget_player_ctrl.get_playing_speed()
+            self.timer_delay = int(1000 / (get_frame_rate() * speed))
             self.timer.start(self.timer_delay, Qt.TimerType.PreciseTimer, self)
             self.now = time.time()
 
@@ -214,12 +210,17 @@ class CommonWindow(QMainWindow):
             self.event_move_to_frame_index(0)
 
 
+    def event_speed_changed(self, speed: float) -> None:
+        if self.timer.isActive():
+            self.event_control_button_pressed(action='play')
+
+
     def timerEvent(self, e=None):
-        now = time.time()
-        elasped_time = 1000 * (now - self.now)
-        if elasped_time > 45:
-            print(int(elasped_time))
-        self.now = now
+        # now = time.time()
+        # elasped_time = 1000 * (now - self.now)
+        # if elasped_time > 45:
+        #     print(int(elasped_time))
+        # self.now = now
 
         self.current_frame_index += 1
         if self.current_frame_index >= self.playing_frame_count:

@@ -25,7 +25,7 @@ class Ui_PlayerControlWidget(object):
     def setupUi(self, PlayerControlWidget):
         if not PlayerControlWidget.objectName():
             PlayerControlWidget.setObjectName(u"PlayerControlWidget")
-        PlayerControlWidget.resize(822, 84)
+        PlayerControlWidget.resize(880, 89)
         self.verticalLayout = QVBoxLayout(PlayerControlWidget)
         self.verticalLayout.setSpacing(9)
         self.verticalLayout.setObjectName(u"verticalLayout")
@@ -45,6 +45,15 @@ class Ui_PlayerControlWidget(object):
 
         self.horizontalLayout = QHBoxLayout()
         self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.pushButton_speed_0_5 = QPushButton(PlayerControlWidget)
+        self.pushButton_speed_0_5.setObjectName(u"pushButton_speed_0_5")
+        self.pushButton_speed_0_5.setMaximumSize(QSize(40, 24))
+        self.pushButton_speed_0_5.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_speed_0_5.setCheckable(True)
+        self.pushButton_speed_0_5.setFlat(True)
+
+        self.horizontalLayout.addWidget(self.pushButton_speed_0_5)
+
         self.pushButton_play_pause = QPushButton(PlayerControlWidget)
         self.pushButton_play_pause.setObjectName(u"pushButton_play_pause")
         self.pushButton_play_pause.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -148,6 +157,7 @@ class Ui_PlayerControlWidget(object):
 
     def retranslateUi(self, PlayerControlWidget):
         PlayerControlWidget.setWindowTitle(QCoreApplication.translate("PlayerControlWidget", u"Form", None))
+        self.pushButton_speed_0_5.setText(QCoreApplication.translate("PlayerControlWidget", u"x 0.5", None))
         self.pushButton_play_pause.setText("")
         self.pushButton_loop.setText("")
         self.label_ed_ep_part.setText(QCoreApplication.translate("PlayerControlWidget", u"s:ep11:g_doc:999", None))

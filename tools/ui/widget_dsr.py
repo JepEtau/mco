@@ -273,7 +273,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
                     Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
                 )
 
-        print(lightblue(f"refresh_dsr_list:"),  f"event: {event}")
+        # print(lightblue(f"refresh_dsr_list:"),  f"event: {event}")
         if event:
             self._is_modified = True
 

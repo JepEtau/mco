@@ -47,6 +47,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
     signal_button_pushed = Signal(str)
     signal_slider_moved = Signal(int)
     signal_flush_frame_cache = Signal()
+    signal_speed_changed = Signal(float)
 
 
     def __init__(
@@ -100,6 +101,7 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         # Signals
         self.pushButton_play_pause.toggled.connect(self.event_play_pause)
         self.pushButton_loop.toggled.connect(self.event_loop_toggled)
+        self.pushButton_speed_0_5.toggled.connect(self.event_speed_changed)
         self.slider_frames.valueChanged.connect(self.event_slider_moved)
 
         self.controller: ReplaceController | GeometryController = controller
@@ -113,6 +115,20 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         set_stylesheet(self)
         set_widget_stylesheet(self.label_ed_ep_part)
         self.slider_frames.update_stylesheet()
+
+        self.pushButton_speed_0_5.setStyleSheet("""
+            QPushButton {
+                background-color: rgb(35, 35, 35);
+                color: rgb(60, 60, 60);
+                font-weight: bold;
+                border: 0px;
+            }
+            QPushButton:checked {
+                color: rgb(51, 102, 204);
+                font-weight: bold;
+                border: 0px;
+            }
+        """)
 
         self.normal_style: str = self.lineEdit_frame_no.styleSheet()
         self.replaced_style: str = self.normal_style.replace("rgb(220, 220, 220)", "yellow")
@@ -223,8 +239,8 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
         self.move_slider_to(self.ticks[i+1])
 
 
-    def get_playing_speed(self):
-        return 1
+    def get_playing_speed(self) -> float:
+        return 0.5 if self.pushButton_speed_0_5.isChecked() else 1.
 
 
     @Slot()
@@ -333,6 +349,12 @@ class PlayerCtrlWidget(QWidget, Ui_PlayerControlWidget):
             self.slider_frames.blockSignals(True)
             self.signal_button_pushed.emit('play')
         self.pushButton_play_pause.blockSignals(False)
+
+
+    def event_speed_changed(self):
+        # if self.pushButton_speed_0_5.isChecked():
+        print(f"speed: {0.5 if self.pushButton_speed_0_5.isChecked() else 1}")
+        self.signal_speed_changed.emit(0.5)
 
 
     def event_loop_toggled(self, checked):
