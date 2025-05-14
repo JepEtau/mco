@@ -151,6 +151,10 @@ class ReplaceWindow(CommonWindow):
             self.event_dsr_list_updated
         )
 
+        self.widget_selection.signal_selected_scene_changed.connect(
+            self.selection_changed
+        )
+
         self.set_editing_patches(False)
 
         self.show()
@@ -438,6 +442,8 @@ class ReplaceWindow(CommonWindow):
         return super().eventFilter(watched, event)
 
 
+    def selection_changed(self) -> None:
+        self.widget_preview.clear()
 
 
     # DSR

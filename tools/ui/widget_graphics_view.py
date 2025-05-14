@@ -215,6 +215,11 @@ class GraphicsViewWidget(QGraphicsView):
         self.draw_image()
 
 
+    def clear(self) -> None:
+        for item in self._scene.items():
+            if isinstance(item, QGraphicsEllipseItem):
+                self._scene.removeItem(item)
+
 
     def add_region_to_scene(
         self,
@@ -249,6 +254,7 @@ class GraphicsViewWidget(QGraphicsView):
         if not enabled:
             self._scene.removeItem(self.new_region.item)
             self.new_region = None
+
 
     def append_dsr_region(self, recall: bool = False) -> None:
         if recall and self.previous_dsr_region is not None:
@@ -489,7 +495,7 @@ class GraphicsViewWidget(QGraphicsView):
             self.append_dsr_region()
             return True
 
-        elif key in (Qt.Key.Key_Z, Qt.Key.Key_8):
+        elif key in (Qt.Key.Key_Z, Qt.Key.Key_8, Qt.Key.Key_4):
             self.event_key_released(None)
             self.modif_keys['radius'] = True
             self.modif_keys['height'] = True
@@ -531,6 +537,7 @@ class GraphicsViewWidget(QGraphicsView):
 
                 self.cursor_offset = QPointF(0, 0)
                 self.setCursor(Qt.CursorShape.ArrowCursor)
+                self._scene.removeItem(self.new_region.item)
                 self.new_region.item = None
                 self.signal_dsr_updated_event.emit(self.regions)
                 self.shared_patch = None

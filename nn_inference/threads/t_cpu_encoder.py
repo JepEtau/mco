@@ -253,6 +253,8 @@ class CpuEncoderThread(BaseThread):
                 #     self.d_thread.set_produce_flag()
 
                 del frame.tensor
+                del frame.ccor_ref
+                del frame
                 if self.progress_thread is not None:
                     self.progress_thread.put(sent)
                 self._encoded += sent

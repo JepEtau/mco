@@ -166,7 +166,7 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
     TODO: it uses the first frame of a scene to identify the scene rather the index, so that
     a modification of scenes will not break anything
     """
-    verbose = False
+    verbose = True
     if verbose:
         print(lightgreen(f"parse_geometry_file: {k_ep_or_g}"))
 
@@ -195,7 +195,7 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
         return
 
 
-    # Parse the file
+    # Parse the geometry file
     config = configparser.ConfigParser()
     config.read(filepath)
     for section in config.sections():
@@ -260,7 +260,10 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
                 #     continue
 
                 properties = config.get(section, k_str)
-                src_scene['geometry'] = get_geometry_from_properties(properties)
+                try:
+                    src_scene['geometry'] = get_geometry_from_properties(properties)
+                except:
+                    print(red(f"failed getting geometry or assign to src scene: {scene_no_src}"))
 
         for scene in ch_video['scenes']:
             if 'geometry' not in scene:

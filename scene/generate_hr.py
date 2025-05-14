@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import gc
 import logging
 import math
 from pprint import pprint
@@ -185,10 +186,11 @@ class UpscalePipeline(object):
         print(f"  inpaint: mask: {in_max_sync_nbytes} bytes")
         print(f"  total scale: {scale}")
 
-        model_manager.opset = 20
-        model_manager.consolidate()
-        model_manager.set_in_out_max_nbytes(in_max_nbytes, out_nbytes)
+        if is_cuda_available():
+            model_manager.opset = 20
+            model_manager.set_in_out_max_nbytes(in_max_nbytes, out_nbytes)
 
+        model_manager.consolidate()
         print(model_manager)
 
 
@@ -317,11 +319,14 @@ class UpscalePipeline(object):
         )
         i_thread_dict = {'cpu': CpuInferenceThread(i_thread_config)}
 
-        return self._run(
+        stats = self._run(
             d_thread=d_thread,
             i_thread_dict=i_thread_dict,
             e_thread=e_thread
         )
+
+        gc.collect()
+        return stats
 
 
     def _run(

@@ -362,7 +362,7 @@ class CpuDecoderThread(BaseThread):
                     )
 
                     # Save tensor if this frame tensor will be used as ref
-                    frame = save_tensor_for_ccor_(frame)
+                    # frame = save_tensor_for_ccor_(frame)
 
                     if remaining_src_scenes == 0 and remaining == 1:
                         print(yellow(f"  Tag last frame: {frame.f_no}"))
@@ -399,23 +399,26 @@ class CpuDecoderThread(BaseThread):
                         print(f"all frames to be decoded have been decoded: {to_decode}")
 
                 print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
+
+                del frame_cache
+
+                if self.d_subprocess.poll() is None:
+                    timeout: int = 10
+                    while self.d_subprocess.poll() is None and timeout:
+                        time.sleep(0.1)
+                        timeout -= 1
+                    if not timeout:
+                        self.d_subprocess.kill()
+                    print(yellow(f"to decode was higher than what has to be decoded {_to_decode}"))
+
                 if remaining_src_scenes == 0:
                     break
                 print(lightgreen(f"[V][D] End of src scene {in_scene['no']}"))
 
             print(lightgreen(f"[V][D] End of scene {scene['no']}"))
-        del frame_cache
+
+
         print(lightgreen(f"[V][D] End of decoding, f_index={f_index}"))
-
-
-        if self.d_subprocess.poll() is None:
-            timeout: int = 10
-            while self.d_subprocess.poll() is None and timeout:
-                time.sleep(0.1)
-                timeout -= 1
-            if not timeout:
-                self.d_subprocess.kill()
-            print(yellow(f"to decode was higher than what has to be decoded {_to_decode}"))
 
 
 

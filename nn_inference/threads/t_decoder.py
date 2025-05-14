@@ -471,18 +471,18 @@ class DecoderThread(BaseThread):
                     break
                 print(lightgreen(f"[V][D] End of src scene {in_scene['no']}"))
 
+                if self.d_subprocess.poll() is None:
+                    timeout: int = 10
+                    while self.d_subprocess.poll() is None and timeout:
+                        time.sleep(0.1)
+                        timeout -= 1
+                    if not timeout:
+                        self.d_subprocess.kill()
+                    print(yellow(f"to decode was higher than what has to be decoded {_to_decode}"))
+
             print(lightgreen(f"[V][D] End of scene {scene['no']}"))
+
         print(lightgreen(f"[V][D] End of decoding, decoded: {src_count}"))
-
-
-        if self.d_subprocess.poll() is None:
-            timeout: int = 10
-            while self.d_subprocess.poll() is None and timeout:
-                time.sleep(0.1)
-                timeout -= 1
-            if not timeout:
-                self.d_subprocess.kill()
-            print(yellow(f"to decode was higher than what has to be decoded {_to_decode}"))
 
 
 

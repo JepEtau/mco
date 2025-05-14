@@ -63,7 +63,7 @@ class CpuInferenceThread(BaseThread):
             frame: NnFrame = input
 
             # Save tensor if this frame tensor will be used as ref
-            frame = save_tensor_for_ccor_(frame)
+            # frame = save_tensor_for_ccor_(frame)
 
             # Get model
             model_key: str = frame.sequence[frame.step_no]
