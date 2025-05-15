@@ -131,11 +131,13 @@ class CommonController(QObject, metaclass=QMeta):
 
 
         # Force refresh of preview options
-        p = self.user_preferences.get_preferences()
-        view.apply_user_preferences(p)
-        print("preferences: set_view")
+        # p = self.user_preferences.get_preferences()
+        # view.apply_user_preferences(p)
+        # print("preferences: set_view")
+        # pprint(p)
+        p = self.user_preferences.settings
         pprint(p)
-
+        view.apply_user_preferences(p)
 
         self.view.refresh_available_selection(
             self.get_available_episode_and_parts()

@@ -7,7 +7,12 @@ from PySide6.QtWidgets import QApplication
 sys.path.append(
     os.path.abspath(os.path.join(os.getcwd(), os.pardir))
 )
-from parsers import TASK_NAMES
+sys.path.append(
+    os.path.abspath(os.getcwd())
+)
+from parsers import (
+    TASK_NAMES,
+)
 
 if os.name == 'nt':
     import ctypes
@@ -25,13 +30,33 @@ def main():
         default='hr',
     )
 
+    parser.add_argument(
+        "--episode",
+        "-ep",
+        required=False,
+        type=int,
+        default=0,
+    )
+
+    parser.add_argument(
+        "--scene",
+        "-s",
+        required=False,
+        type=int,
+        default=0,
+    )
+
     arguments = parser.parse_args()
 
     application = QApplication(sys.argv)
     from logger import log
 
     from tools.backend.replace_controller import ReplaceController
-    controller = ReplaceController(task_name=arguments.task_name)
+    controller = ReplaceController(
+        task_name=arguments.task_name,
+        ep_no=arguments.episode,
+        scene=arguments.scene,
+    )
 
     from ui.window_replace import ReplaceWindow
     main_window = ReplaceWindow(controller=controller)

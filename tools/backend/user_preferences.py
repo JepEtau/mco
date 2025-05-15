@@ -29,7 +29,7 @@ class UserPreferences(QObject):
         self.tool = tool
 
         # Default
-        self.preferences = {
+        self._preferences = {
             'window': dict(),
             'selection': dict(),
         }
@@ -45,13 +45,13 @@ class UserPreferences(QObject):
 
         # (Mandatory) Main window
         if settings.contains('window/screen'):
-            self.preferences['window']['screen'] = settings.value('window/screen')
+            self._preferences['window']['screen'] = settings.value('window/screen')
         else:
-            self.preferences['window']['screen'] = 0
+            self._preferences['window']['screen'] = 0
 
-        self.preferences['window']['geometry'] = [0, 0, screen_width, screen_height]
+        self._preferences['window']['geometry'] = [0, 0, screen_width, screen_height]
         try:
-            self.preferences['window']['geometry'] = list(
+            self._preferences['window']['geometry'] = list(
                 map(lambda x: int(x), settings.value('window/geometry').split(':'))
             )
         except:
@@ -59,41 +59,41 @@ class UserPreferences(QObject):
 
         # Selection
         try:
-            self.preferences['selection']['edition'] = ''
+            self._preferences['selection']['edition'] = ''
             if settings.contains('selection/edition'):
-                self.preferences['selection']['edition'] = settings.value('selection/edition')
+                self._preferences['selection']['edition'] = settings.value('selection/edition')
         except:
-            self.preferences['selection']['edition'] = ''
+            self._preferences['selection']['edition'] = ''
 
-        self.preferences['selection']['episode'] = ''
+        self._preferences['selection']['episode'] = ''
         if settings.contains('selection/episode'):
             ep_no_str = settings.value('selection/episode')
-            self.preferences['selection']['episode'] = ep_no_str if ep_no_str == '' else int(ep_no_str)
+            self._preferences['selection']['episode'] = ep_no_str if ep_no_str == '' else int(ep_no_str)
 
-        self.preferences['selection']['k_ch'] = ''
+        self._preferences['selection']['k_ch'] = ''
         if settings.contains('selection/part'):
-            self.preferences['selection']['k_ch'] = settings.value('selection/part')
+            self._preferences['selection']['k_ch'] = settings.value('selection/part')
 
-        self.preferences['selection']['scene_no'] = 0
+        self._preferences['selection']['scene_no'] = 0
         if settings.contains('selection/scene_no'):
             if settings.value('selection/scene_no') != '':
-                self.preferences['selection']['scene_no'] = int(settings.value('selection/scene_no'))
+                self._preferences['selection']['scene_no'] = int(settings.value('selection/scene_no'))
 
 
         # use the preferences save in the file
         for editor in self.editors:
             try:
-                self.preferences[editor]['geometry'] = list(map(lambda x: int(x),
+                self._preferences[editor]['geometry'] = list(map(lambda x: int(x),
                     settings.value('%s/geometry' % (editor)).split(':')))
-                if self.preferences[editor]['geometry'][0] > screen_width and screens_count < 2:
-                    self.preferences[editor]['geometry'][0] -= screen_width
+                if self._preferences[editor]['geometry'][0] > screen_width and screens_count < 2:
+                    self._preferences[editor]['geometry'][0] -= screen_width
 
-                if self.preferences[editor]['geometry'][0] < 0:
-                    self.preferences[editor]['geometry'][0] = 0
-                if self.preferences[editor]['geometry'][1] < 0:
-                    self.preferences[editor]['geometry'][1] = 0
+                if self._preferences[editor]['geometry'][0] < 0:
+                    self._preferences[editor]['geometry'][0] = 0
+                if self._preferences[editor]['geometry'][1] < 0:
+                    self._preferences[editor]['geometry'][1] = 0
 
-                self.preferences[editor]['widget'] =  settings.value('%s/widget' % (editor))
+                self._preferences[editor]['widget'] =  settings.value('%s/widget' % (editor))
             except:
                 print("preferences for widget [%s]cannot be loaded" % (editor))
                 pass
@@ -102,16 +102,16 @@ class UserPreferences(QObject):
             if group in ('selection', 'window'):
                 continue
             settings.beginGroup(group)
-            self.preferences[group] = {}
+            self._preferences[group] = {}
             for k in settings.childKeys():
                 v: str = settings.value(k)
                 if v == 'true':
                     value = True
                 elif v == 'false':
                     value = False
-                self.preferences[group][k] = value
+                self._preferences[group][k] = value
         print("loaded preferences:")
-        pprint(self.preferences)
+        pprint(self._preferences)
 
 
 
@@ -162,4 +162,8 @@ class UserPreferences(QObject):
 
 
     def get_preferences(self):
-        return self.preferences
+        return self._preferences
+
+    @property
+    def settings(self) -> dict:
+        return self._preferences

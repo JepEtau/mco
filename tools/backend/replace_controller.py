@@ -21,7 +21,8 @@ from utils.p_print import *
 from parsers import (
     DsrRegion,
     SceneDsr,
-    TaskName
+    TaskName,
+    ep_key,
 )
 
 
@@ -33,6 +34,8 @@ class ReplaceController(CommonController):
     def __init__(
         self,
         task_name: bool = False,
+        ep_no: int = 0,
+        scene: int = -1,
     ):
         super().__init__()
 
@@ -52,6 +55,12 @@ class ReplaceController(CommonController):
         self.selection_replacements: dict[int, dict[int, int]] = {}
         # scene_no: dsr regions for each frame
         self.selection_dsr: dict[int, SceneDsr] = {}
+
+        if 1 <= ep_no <= 39:
+            self.user_preferences.settings['selection']['episode'] = ep_no
+            self.user_preferences.settings['selection']['scene_no'] = 0
+        if scene >= 0:
+            self.user_preferences.settings['selection']['scene_no'] = scene
 
 
     def set_view(self, view: ReplaceWindow):
