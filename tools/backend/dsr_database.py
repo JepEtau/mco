@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 from parsers import (
     db,
     SceneDsr,
-    DsrRegion,
+    DsrPatch,
     credit_chapter_keys,
 )
 
@@ -64,7 +64,7 @@ class DsrDatabase:
         src_scene: SrcScene,
         f_no: int,
         initial: bool = False
-    ) -> list[DsrRegion]:
+    ) -> list[DsrPatch]:
         scene: Scene = src_scene.in_scene
         try:
             if initial:
@@ -162,6 +162,10 @@ class DsrDatabase:
         if not self.is_modified(scene):
             return
 
+        def _format_float(f):
+            s = "{:.8f}".format(f).rstrip('0')
+            return s if s else "0."
+
         for src_scene in scene['src'].scenes():
             src_scene_key = self._key(src_scene)
             print(f"SRC scene_key: {src_scene_key}", end=' ')
@@ -209,9 +213,9 @@ class DsrDatabase:
                 scene_regions_str: str = ""
                 for region in regions:
                     region_str = f"\n{region.shape} = "
-                    region_str += f"{','.join(map(str, (region.center)))}"
-                    region_str += f":{','.join(map(str, (region.axes)))}"
-                    region_str += f":{region.angle}"
+                    region_str +=  f"{_format_float(region.center[0])},{_format_float(region.center[1])}"
+                    region_str += f":{_format_float(region.axes[0])},{_format_float(region.axes[1])}"
+                    region_str += f":{_format_float(region.angle)}"
                     if f_no == -1:
                         # multiple frames sharing the same patch
                         region_str += f":{region.start}"

@@ -211,16 +211,16 @@ class Ui_DsrWidget(object):
 
         self.horizontalLayout_3.addWidget(self.pushButton_ellipse)
 
-        self.pushButton_oblong = QPushButton(self.frame)
-        self.pushButton_oblong.setObjectName(u"pushButton_oblong")
-        self.pushButton_oblong.setMaximumSize(QSize(30, 16777215))
-        self.pushButton_oblong.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.pushButton_oblong.setText(u"oblong")
-        self.pushButton_oblong.setCheckable(True)
-        self.pushButton_oblong.setAutoExclusive(True)
-        self.pushButton_oblong.setFlat(False)
+        self.pushButton_line = QPushButton(self.frame)
+        self.pushButton_line.setObjectName(u"pushButton_line")
+        self.pushButton_line.setMaximumSize(QSize(30, 16777215))
+        self.pushButton_line.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pushButton_line.setText(u"oblong")
+        self.pushButton_line.setCheckable(True)
+        self.pushButton_line.setAutoExclusive(True)
+        self.pushButton_line.setFlat(False)
 
-        self.horizontalLayout_3.addWidget(self.pushButton_oblong)
+        self.horizontalLayout_3.addWidget(self.pushButton_line)
 
         self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 

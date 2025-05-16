@@ -16,7 +16,7 @@ from parsers import (
     db,
     VideoSettings,
     SceneDsr,
-    DsrRegion,
+    DsrPatch,
     get_frame_rate,
     Effect,
     get_loop_nframes,

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
         ChapterGeometry,
         DetectInnerRectParams,
         SceneGeometry,
-        DsrRegion,
+        DsrPatch,
     )
 
 AppType = Literal['replace', 'geometry', 'deshake']
@@ -35,7 +35,7 @@ class Frame:
     i: int
     no: int
     by: int
-    dsr: list[DsrRegion] = field(default_factory=list)
+    dsr: list[DsrPatch] = field(default_factory=list)
     img: np.ndarray | None = None
     qimage: QPixmap | None = None
     _k_ep_ch_no: tuple[str, str, int] = ("", "", 0)
@@ -131,7 +131,7 @@ DsrActionType = Literal['update', 'undo']
 class DsrAction:
     type: DsrActionType
     frame: Frame
-    regions: list[DsrRegion]
+    regions: list[DsrPatch]
 
 
 @dataclass(slots=True)

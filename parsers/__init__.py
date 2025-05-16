@@ -39,7 +39,7 @@ from .filters import (
 
 from .dsr import (
     SceneDsr,
-    DsrRegion,
+    DsrPatch,
     MaskShape,
 )
 
@@ -138,7 +138,7 @@ __all__ = [
     "ChGeometryStats",
 
     "SceneDsr",
-    "DsrRegion",
+    "DsrPatch",
     "MaskShape",
 
     "StabilizeSegment",

@@ -21,18 +21,20 @@ if TYPE_CHECKING:
     from utils.mco_types import Scene
 
 
-MaskShape = Literal['circle', 'ellipse', 'oblong']
+MaskShape = Literal['circle', 'ellipse', 'line']
 
 
 @dataclass(slots=True)
-class DsrRegion:
+class DsrPatch:
     shape: MaskShape
-    # x, y, theta
+    # center: x, y
     center: list[float | int, float | int]
     # w, h
+    # line: length, _
     axes: list[float | int, float | int]
     # in radian
     angle: float
+
     # When a patch is for multiple frames
     start: int = -1
     end: int = -1
@@ -41,12 +43,17 @@ class DsrRegion:
 
     def get(self, size: list[float, float] | None = None) -> Self:
         if size is None:
-            return DsrRegion(
-                self.shape, self.center, self.axes, self.angle, self.start, self.end,
+            return DsrPatch(
+                self.shape,
+                self.center,
+                self.axes,
+                self.angle,
+                self.start,
+                self.end,
             )
 
         w, h = size
-        return DsrRegion(
+        return DsrPatch(
             self.shape,
             (int(self.center[0] * w + 0.5), int(self.center[1] * h + 0.5)),
             (int(self.axes[0] * w + 0.5), int(self.axes[1] * h + 0.5)),
@@ -68,13 +75,13 @@ class DsrRegion:
 
 @dataclass
 class SceneDsr:
-    _frames: dict[int, list[DsrRegion]] = field(default_factory=dict)
+    _frames: dict[int, list[DsrPatch]] = field(default_factory=dict)
     _size: list[float, float] | None = None
 
     def get(
         self,
         frame_no: int | None = None
-    ) -> list[DsrRegion] | dict[int, list[DsrRegion]] | None:
+    ) -> list[DsrPatch] | dict[int, list[DsrPatch]] | None:
         """Returns a list of frame's patch
         if frame_no is None, returns all patches
         """
@@ -98,9 +105,9 @@ class SceneDsr:
         return bool(len(self._frames.keys()) > 0)
 
 
-    def get_all(self) -> dict[int, list[DsrRegion]] | None:
+    def get_all(self) -> dict[int, list[DsrPatch]] | None:
         """Returns a list of region for each frame of the scene"""
-        d: dict[int, list[DsrRegion]] = {}
+        d: dict[int, list[DsrPatch]] = {}
         for frame_no, l in self._frames.items():
             d.update({frame_no: list([p.get(self._size) for p in l])})
         return d
@@ -120,7 +127,7 @@ class SceneDsr:
             self._frames[frame_no] = []
 
         self._frames[frame_no].append(
-            DsrRegion(
+            DsrPatch(
                 shape=shape,
                 center=coordinates,
                 axes=size,
@@ -134,7 +141,7 @@ class SceneDsr:
     def set_regions(
         self,
         frame_no: int,
-        regions: list[DsrRegion],
+        regions: list[DsrPatch],
         start: int = -1,
         end: int = -1,
     ) -> None:
@@ -182,7 +189,7 @@ class SceneDsr:
 
             # Append to frame dsr list or shared list
             self._frames[_f_no].append(
-                DsrRegion(
+                DsrPatch(
                     shape=r.shape,
                     center=r.center,
                     axes=r.axes,
