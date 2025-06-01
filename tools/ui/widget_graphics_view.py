@@ -1,53 +1,39 @@
 from __future__ import annotations
-from copy import copy, deepcopy
+from copy import deepcopy
 from dataclasses import dataclass
+import math
 from pprint import pprint
-import time
 from logger import log
 
 from typing import TYPE_CHECKING
 from PySide6.QtCore import (
     Qt,
     Signal,
-    Slot,
     QPoint,
     QPointF,
-    QSize,
-    QRect,
     QRectF,
-    QEvent,
-    QObject,
+    QLineF,
 )
 from PySide6.QtGui import (
     QWheelEvent,
     QPixmap,
     QImage,
-    QPaintEvent,
     QPainter,
     QPen,
     QColor,
     QKeyEvent,
     QBrush,
-    QCursor,
-    QTransform,
     QMouseEvent,
 )
 from PySide6.QtWidgets import (
-    QTableWidgetItem,
     QWidget,
-    QCheckBox,
-    QHBoxLayout,
-    QVBoxLayout,
-    QSpacerItem,
-    QSizePolicy,
     QGraphicsView,
     QFrame,
     QGraphicsScene,
     QGraphicsPixmapItem,
     QGraphicsItem,
-    QApplication,
     QGraphicsEllipseItem,
-    QGraphicsPathItem,
+    QGraphicsLineItem,
 )
 
 import cv2
@@ -61,9 +47,9 @@ from backend._types import (
 from parsers import (
     SceneGeometry,
     MaskShape,
-    DsrRegion,
+    DsrPatch,
 )
-from .widget_dsr import DsrSceneRegion, dsr_mask_to_scene
+from .widget_dsr import DsrScenePatch, dsr_mask_to_scene
 from utils.p_print import *
 if TYPE_CHECKING:
     from backend.replace_controller import ReplaceController
@@ -90,7 +76,7 @@ FINAL_HEIGHT: int = 1080
 
 @dataclass(slots=True)
 class SharedPatch:
-    patch: DsrSceneRegion | None = None
+    patch: DsrScenePatch | None = None
     start: int = -1
     end: int = -1
 
@@ -157,36 +143,24 @@ class GraphicsViewWidget(QGraphicsView):
         self.radius: int = 0.015
         self.width: int = 0.025
         self.height: int = 0.015
-        self.angle: float = -45
-        # sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        # sizePolicy.setHorizontalStretch(0)
-        # sizePolicy.setVerticalStretch(0)
-        # sizePolicy.setHeightForWidth(self.sizePolicy().hasHeightForWidth())
+        self.angle: float = -45.
 
-        # self.setSizePolicy(sizePolicy)
-        # self.setMinimumSize(QSize(300, 300))
-        # self.setStyleSheet(u"background-color: rgb(0, 0, 0);")
-        # self.scene_geometry: TargetSceneGeometry | None = None
-        # self.preview_options: GeometryPreviewOptions | None = None
-
-        self.regions: list[DsrSceneRegion] = []
-        self.default_region: DsrSceneRegion = DsrSceneRegion(
+        self.regions: list[DsrScenePatch] = []
+        self.default_region: DsrScenePatch = DsrScenePatch(
             shape='circle',
             center=(0.5, 0.5),
             axes=(0.025, 0.015),
             angle=0,
             item=None
         )
-        self.new_region: DsrSceneRegion = deepcopy(self.default_region)
+        self.new_region: DsrScenePatch = deepcopy(self.default_region)
         self.modifying_shape: bool = False
-        self.previous_dsr_region: DsrSceneRegion = None
+        self.previous_dsr_region: DsrScenePatch = None
         self.shared_patch: SharedPatch | None = None
-
         self.modified: bool = False
 
-
-
         self.installEventFilter(self)
+
 
 
     @staticmethod
@@ -223,31 +197,55 @@ class GraphicsViewWidget(QGraphicsView):
 
     def add_region_to_scene(
         self,
-        region: DsrRegion | DsrSceneRegion
-    ) -> DsrSceneRegion:
+        patch: DsrPatch | DsrScenePatch
+    ) -> DsrScenePatch:
         # Convert from Mask to SceneSHape
-        if isinstance(region, DsrRegion):
-            region: DsrSceneRegion = dsr_mask_to_scene(region)
+        if isinstance(patch, DsrPatch):
+            patch: DsrScenePatch = dsr_mask_to_scene(patch)
 
         # Draw/Add item to scene
-        s = region.map_to_scene(self.img_size)
-        x, y = s.center
-        axes = s.axes if s.shape != 'circle' else [s.axes[0], s.axes[0]]
-        item: QGraphicsEllipseItem = QGraphicsEllipseItem(
-            QRectF(x - axes[0], y - axes[1], 2 * axes[0]+1, 2 * axes[1]+1)
-        )
-        # item.setRotation(self.angle)
+        p = patch.map_to_scene(self.img_size)
+        x, y = p.center
+        if p.shape == 'circle':
+            axes = [p.axes[0], p.axes[0]]
+        else:
+            axes = p.axes
+        
+        if p.shape == 'line':
+            length, angle = axes[0], math.radians(p.angle)
+            # print(f"   length: {length}, angle: {angle}")
+            dx = math.cos(angle) * length / 2
+            dy = math.sin(angle) * length / 2
+            # QGraphicsItem: "Assigning a negative value will rotate the item counter-clockwise.""
+            if angle > 0:
+                x1, y1 = x - dx, y - dy
+                x2, y2 = x + dx, y + dy
+            else:
+                x1, y1 = x + dx, y + dy
+                x2, y2 = x - dx, y - dy
+            item: QGraphicsLineItem = QGraphicsLineItem(QLineF(x1, y1, x2, y2))
+            pen = QPen(QColor("red"))
+            pen.setWidthF(axes[1])
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap) 
+            item.setPen(pen)
+
+        else:
+            item: QGraphicsEllipseItem = QGraphicsEllipseItem(
+                QRectF(x - axes[0], y - axes[1], 2 * axes[0] + 1, 2 * axes[1] + 1)
+            )
+            # item.setRotation(self.angle)
+            item.setPen(QPen(QColor("red")))
+            item.setBrush(QBrush(QColor("red")))
+            item.setRotation(p.angle)
+
         item.setOpacity(0.5)
         item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
-        item.setBrush(QBrush(QColor("red")))
-        item.setPen(QPen(QColor("red")))
         item.setTransformOriginPoint(x, y)
-        item.setRotation(s.angle)
 
-        region.item = item
-        self._scene.addItem(region.item)
+        patch.item = item
+        self._scene.addItem(patch.item)
 
-        return region
+        return patch
 
 
     def set_patch_edition(self, enabled: bool):
@@ -271,7 +269,7 @@ class GraphicsViewWidget(QGraphicsView):
         self.signal_dsr_updated_event.emit(self.regions)
 
 
-    def start_modifying_shape(self, selected: DsrSceneRegion) -> None:
+    def start_modifying_shape(self, selected: DsrScenePatch) -> None:
         print(lightcyan("start moving shape"))
         # Remove from scene and list of shapes
         self._scene.removeItem(self.new_region.item)
@@ -325,7 +323,7 @@ class GraphicsViewWidget(QGraphicsView):
         self.setCursor(Qt.CursorShape.ArrowCursor)
         self._scene.removeItem(self.new_region.item)
 
-        self.new_region: DsrSceneRegion = deepcopy(self.default_region)
+        self.new_region: DsrScenePatch = deepcopy(self.default_region)
         self.draw_new_region(current_position)
 
         self.signal_dsr_updated_event.emit(self.regions)
@@ -341,27 +339,52 @@ class GraphicsViewWidget(QGraphicsView):
             x, y = cursor_position.toTuple()
             w, h = self.img_size
 
-            shape_name: MaskShape = self.main_window.get_current_dsr_shape()
-            axes: tuple[float, float] = (
-                (self.radius, self.radius * w / h)
-                if shape_name == 'circle'
-                else (self.width, self.height)
-            )
+            shape: MaskShape = self.main_window.get_current_dsr_shape()
+            axes: tuple[float, float] = (self.width, self.height)
+            if shape == 'circle':
+                axes = (self.radius, self.radius * w / h)
 
             x0, y0 = x - axes[0] * w, y - axes[1] * h
-            item: QGraphicsEllipseItem = QGraphicsEllipseItem(
-                x0, y0, 2 * axes[0] * w, 2 * axes[1] * h
-            )
+            # print(f"draw: {shape}, center: ({x0}, {y0})")
+
+            if shape == 'line':
+                length, angle = self.width * w, math.radians(self.angle)
+                # print(f"   length: {length}, angle: {angle}")
+                dx = math.cos(angle) * length / 2
+                dy = math.sin(angle) * length / 2
+                # QGraphicsItem: "Assigning a negative value will rotate the item counter-clockwise.""
+                if angle > 0:
+                    x1, y1 = x - dx, y - dy
+                    x2, y2 = x + dx, y + dy
+                else:
+                    x1, y1 = x + dx, y + dy
+                    x2, y2 = x - dx, y - dy
+                item: QGraphicsLineItem = QGraphicsLineItem(QLineF(x1, y1, x2, y2))
+                # print(f"   length: {length}, angle: {self.angle:01f}, thickness: {self.height * h}")
+                # print(f"   ({x1}, {y1}) -> ({x2:01f}, {y2:01f})")
+                pen = QPen(QColor("red"))
+                pen.setWidthF(self.height * h)
+                pen.setCapStyle(Qt.PenCapStyle.RoundCap) 
+                item.setPen(pen)
+
+            else:
+                # print(f"   length: {self.width * w:01f}, height: {self.height * h:01f}, angle: {self.angle:01f}")
+                # print(f"   ({x0}, {y0}) -> ({2 * axes[0] * w:01f}, {2 * axes[1] * h:01f})")
+                item: QGraphicsEllipseItem = QGraphicsEllipseItem(
+                    x0, y0, 2 * axes[0] * w, 2 * axes[1] * h
+                )
+                item.setPen(QPen(QColor("red")))
+                # QGraphicsItem: "Assigning a negative value will rotate the item counter-clockwise.""
+                item.setRotation(self.angle)
+                item.setBrush(QBrush(QColor("red")))
+
             item.setOpacity(0.5)
             item.setFlags(QGraphicsItem.GraphicsItemFlag.ItemIsMovable)
-            item.setBrush(QBrush(QColor("red")))
-            item.setPen(QPen(QColor("red")))
             item.setTransformOriginPoint(x, y)
-            item.setRotation(self.angle)
 
             self.new_region.item = item
-            self.new_region.shape = shape_name
-            self.new_region.center = (x/w, y/h)
+            self.new_region.shape = shape
+            self.new_region.center = (x / w, y / h)
             self.new_region.axes = axes
             self.new_region.angle = self.angle
 
@@ -388,7 +411,7 @@ class GraphicsViewWidget(QGraphicsView):
         return super().mouseDoubleClickEvent(event)
 
 
-    def mouseMoveEvent(self, event):
+    def mouseMoveEvent(self, event: QMouseEvent):
         # print(f"mouseMoveEvent: {event.position()}")
         self.current_position = self.mapToScene(event.position().toPoint())
 
@@ -452,10 +475,7 @@ class GraphicsViewWidget(QGraphicsView):
 
             if is_mouse_over_shape:
                 print("selected a shape")
-
-
                 self.setCursor(Qt.CursorShape.OpenHandCursor)
-
                 return True
 
         return False
@@ -495,16 +515,16 @@ class GraphicsViewWidget(QGraphicsView):
             self.append_dsr_region()
             return True
 
-        elif key in (Qt.Key.Key_Z, Qt.Key.Key_8, Qt.Key.Key_4):
-            self.event_key_released(None)
-            self.modif_keys['radius'] = True
-            self.modif_keys['height'] = True
-            return True
-
-        elif key in (Qt.Key.Key_Q, Qt.Key.Key_6):
+        elif key in (Qt.Key.Key_Z, Qt.Key.Key_8):
             self.event_key_released(None)
             self.modif_keys['radius'] = True
             self.modif_keys['width'] = True
+            return True
+
+        elif key in (Qt.Key.Key_Q, Qt.Key.Key_6, Qt.Key.Key_4):
+            self.event_key_released(None)
+            self.modif_keys['radius'] = True
+            self.modif_keys['height'] = True
             return True
 
         elif key in (Qt.Key.Key_D, Qt.Key.Key_5):
@@ -574,7 +594,7 @@ class GraphicsViewWidget(QGraphicsView):
         is_editing: bool = any(self.modif_keys.values())
 
         if not is_editing:
-            print(f"\tnot for self: editing{self._parent.is_editing_patches()}, any key: {any(self.modif_keys.values())}")
+            # print(f"\tnot for self: editing{self._parent.is_editing_patches()}, any key: {any(self.modif_keys.values())}")
             return False
 
         # print(event.angleDelta().y())
@@ -593,14 +613,22 @@ class GraphicsViewWidget(QGraphicsView):
         elif shape_name != 'circle':
             if self.modif_keys['width']:
                 diff /= w
-                self.width = min(max(self.width + diff, 0), 0.25)
+                if shape_name == 'line':
+                    diff *= 2
+                    self.width = min(max(self.width + diff, 0.000001), 1)
+                else:
+                    self.width = min(max(self.width + diff, 0.000001), 0.5)
 
             elif self.modif_keys['height']:
                 diff /= h
-                self.height = min(max(self.height + diff, 0), 0.25)
+                if shape_name == 'ellipse':
+                    self.height = min(max(self.height + diff, 0.000001), 0.5)
 
             elif self.modif_keys['angle']:
-                new_angle = self.angle - 2.5 * diff
+                if shape_name == 'line':
+                    new_angle = self.angle - diff
+                else:
+                    new_angle = self.angle - 2.5 * diff
                 if new_angle < -90:
                     new_angle = 180 - new_angle
                 elif new_angle > 90:
@@ -615,20 +643,6 @@ class GraphicsViewWidget(QGraphicsView):
 
         return True
 
-
-    # def eventFilter(self, watched: QObject, event: QEvent) -> bool:
-    #     if event.type() == QEvent.Type.Wheel:
-    #         print(lightcyan(time.time()), f"graphics view, eventFilter: wheel")
-    #         if self.event_wheel(event):
-    #             # print(f"\twheel: accepted")
-    #             event.accept()
-    #             return True
-    #         # else:
-    #         #     if self._parent.event_wheel(event):
-    #         #         event.accept()
-    #         #         return
-
-    #     return super().eventFilter(watched, event)
 
 
     def event_shape_changed(self, shape_name: MaskShape) -> None:

@@ -19,7 +19,7 @@ from ui.window_replace import ReplaceWindow
 from utils.mco_types import Scene
 from utils.p_print import *
 from parsers import (
-    DsrRegion,
+    DsrPatch,
     SceneDsr,
     TaskName,
     ep_key,
@@ -295,10 +295,10 @@ class ReplaceController(CommonController):
 
 
     # DSR
-    def playlist_dsr(self, frame_no: int) -> list[DsrRegion]:
+    def playlist_dsr(self, frame_no: int) -> list[DsrPatch]:
         # print(f"request playlist_dsr for frame: {frame_no}")
-        patches: list[DsrRegion] = []
-        scene_dsr: dict[int, list[DsrRegion]] = self.selection_dsr[self.current_scene_no]
+        patches: list[DsrPatch] = []
+        scene_dsr: dict[int, list[DsrPatch]] = self.selection_dsr[self.current_scene_no]
         if frame_no in scene_dsr:
             patches = scene_dsr[frame_no]
 

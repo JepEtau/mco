@@ -32,7 +32,7 @@ from .stylesheet import (
 
 from .widget_player_ctrl import PlayerCtrlWidget
 # from .widget_preview import PreviewWidget
-from .widget_graphics_view import DsrSceneRegion, GraphicsViewWidget
+from .widget_graphics_view import DsrScenePatch, GraphicsViewWidget
 from .widget_replace import ReplaceWidget
 from .widget_dsr import DsrWidget
 from .widget_selection import SelectionWidget
@@ -415,7 +415,7 @@ class ReplaceWindow(CommonWindow):
         self.widget_dsr.force_current_shape(shape_name)
 
 
-    def event_dsr_list_updated(self, shapes: list[DsrSceneRegion]) -> None:
+    def event_dsr_list_updated(self, shapes: list[DsrScenePatch]) -> None:
         self.widget_dsr.refresh_dsr_list(shapes, event=True)
         # self.widget_player_ctrl.setDisabled(True)
 

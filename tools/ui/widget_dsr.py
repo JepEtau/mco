@@ -13,12 +13,10 @@ from PySide6.QtCore import (
 )
 from PySide6.QtGui import(
     QKeyEvent,
-    QWheelEvent,
 )
 from PySide6.QtWidgets import (
     QTableWidgetItem,
     QWidget,
-    QApplication,
     QPushButton,
     QGraphicsEllipseItem,
 )
@@ -30,15 +28,14 @@ if TYPE_CHECKING:
 from backend.frame_cache import Frame
 from backend._types import CurrentFrame, DsrAction
 from parsers import (
-    SceneGeometry,
     MaskShape,
-    DsrRegion,
+    DsrPatch,
 )
 
 
 
 @dataclass(slots=True)
-class DsrSceneRegion:
+class DsrScenePatch:
     shape: MaskShape
     center: list[float | int, float | int]
     axes: list[float | int, float | int]
@@ -47,9 +44,9 @@ class DsrSceneRegion:
     start: int = -1
     end: int = -1
 
-    def map_to_scene(self, size: list[float, float]) -> DsrSceneRegion:
+    def map_to_scene(self, size: list[float, float]) -> DsrScenePatch:
         w, h = size
-        return DsrSceneRegion(
+        return DsrScenePatch(
             shape=self.shape,
             center=[int(self.center[0] * w), int(self.center[1] * h)],
             axes=[int(self.axes[0] * w), int(self.axes[1] * h)],
@@ -59,8 +56,8 @@ class DsrSceneRegion:
             end=self.end,
         )
 
-    def copy(self) -> DsrSceneRegion:
-        return DsrSceneRegion(
+    def copy(self) -> DsrScenePatch:
+        return DsrScenePatch(
             shape=self.shape,
             center=self.center,
             axes=self.axes,
@@ -71,14 +68,14 @@ class DsrSceneRegion:
         )
 
 
-def dsr_mask_to_scene(m: DsrRegion) -> DsrSceneRegion:
-    return DsrSceneRegion(
-        shape=m.shape,
-        center=m.center,
-        axes=m.axes,
-        angle=m.angle,
-        start=m.start,
-        end=m.end,
+def dsr_mask_to_scene(p: DsrPatch) -> DsrScenePatch:
+    return DsrScenePatch(
+        shape=p.shape,
+        center=p.center,
+        axes=p.axes,
+        angle=p.angle,
+        start=p.start,
+        end=p.end,
     )
 
 
@@ -112,7 +109,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         self.shape_buttons: dict[MaskShape, QPushButton] = {
             'circle': self.pushButton_circle,
             'ellipse': self.pushButton_ellipse,
-            'oblong': self.pushButton_oblong,
+            'line': self.pushButton_line,
         }
         self.shape_buttons['circle'].setChecked(True)
         for shape_name, b in self.shape_buttons.items():
@@ -185,7 +182,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
 
 
     def event_shape_type_changed(self, shape_name: MaskShape):
-        print(f"current: shape: {shape_name}")
+        # print(f"current: shape: {shape_name}")
         self.signal_shape_changed.emit(shape_name)
 
 
@@ -218,8 +215,8 @@ class DsrWidget(QWidget, Ui_DsrWidget):
             self.pushButton_ellipse.click()
             return True
 
-        if key == Qt.Key.Key_O:
-            self.pushButton_oblong.click()
+        if key == Qt.Key.Key_1:
+            self.pushButton_line.click()
             return True
 
         return False
@@ -228,7 +225,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
     @Slot()
     def event_dsr_list_refreshed(self):
         # print(lightcyan("event_dsr_list_refreshed"))
-        dsr_shapes: list[ DsrSceneRegion] = []
+        dsr_shapes: list[ DsrScenePatch] = []
         if self.current_frame is not None:
             dsr_shapes = self.controller.playlist_dsr(
                 frame_no=self.current_frame.no
@@ -240,7 +237,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         )
 
 
-    def refresh_dsr_list(self, dsr_shapes: list[DsrSceneRegion], event: bool = False) -> None:
+    def refresh_dsr_list(self, dsr_shapes: list[DsrScenePatch], event: bool = False) -> None:
         self.tableWidget_dsr.clearContents()
         self.tableWidget_dsr.setRowCount(0)
         for i, region in enumerate(dsr_shapes):
@@ -277,10 +274,10 @@ class DsrWidget(QWidget, Ui_DsrWidget):
         if event:
             self._is_modified = True
 
-            regions: list[DsrRegion] = []
+            regions: list[DsrPatch] = []
             for p in dsr_shapes:
                 regions.append(
-                        DsrRegion(
+                        DsrPatch(
                         shape=p.shape,
                         center=p.center,
                         axes=p.axes,
