@@ -62,6 +62,7 @@ class UpscalePipeline(object):
         # ImageReaderParams
         self.device = device
         self.simulation: bool = simulation
+        self.debug = debug
         self.scene: Scene = scene
         self.f_progress_thread: ProgressThread = progress_thread
         self.model_manager: ModelManager = model_manager
@@ -352,11 +353,11 @@ class UpscalePipeline(object):
             return [0] * 4
 
         # Verbose
-        d_thread.verbose = False
+        d_thread.debug = self.debug
         for t in i_threads:
             if t is not None:
-                t.verbose = True
-        e_thread.verbose = False
+                t.debug = self.debug
+        e_thread.debug = self.debug
 
         # Start all threads
         d_thread.set_produce_flag()

@@ -69,8 +69,7 @@ class EncoderThread(BaseThread):
 
 
     def run(self) -> None:
-        verbose: bool = self.verbose
-        # verbose: bool = True
+        debug: bool = self.debug
 
         if not is_cuda_available():
             raise ModuleNotFoundError("No cuda device")
@@ -92,7 +91,7 @@ class EncoderThread(BaseThread):
         stdin_pixfmt: str = 'rgb24'
         stdin_dtype: np.dtype = np.uint8
         flip_r_b: bool = False
-        if verbose:
+        if debug:
             print(purple("[V][E] Encoder, config:"))
 
         self._encoded: int = 0
@@ -106,7 +105,7 @@ class EncoderThread(BaseThread):
                 # Wait for a frame or a poison pill
                 input = in_queue.get(block=True)
                 if input is None or self._stop_event.is_set():
-                    if verbose:
+                    if debug:
                         print(purple("[V][E] Received Null tensor"))
 
                     self.end_encoding(writer_subprocess)
@@ -132,7 +131,7 @@ class EncoderThread(BaseThread):
                     e_index: int = 0
                     print(purple(f"[V][E] output video file: {fp}"))
                     print(purple(f"[V][E] scene {scene['no']:03}: frames to produce: {to_produce}"))
-                    if verbose:
+                    if debug:
                         print(purple(f"[V][E] output video file: {fp}"))
                         print(purple(f"[V][E]Frames to produce: {to_produce}"))
 
@@ -185,7 +184,7 @@ class EncoderThread(BaseThread):
                             "-map", "[outv]"
                         ]
 
-                    if verbose:
+                    if debug:
                         print(purple(f"[V][E] fcomplex_str:"), fcomplex_str)
 
                     metadata: list[str] = ffmpeg_metadata(scene)
@@ -229,7 +228,7 @@ class EncoderThread(BaseThread):
                         print(f"[E] Unexpected error: {type(e)}", flush=True)
 
                 # Transform a 4D tensor to a 3D tensor (h, w, c)
-                if verbose:
+                if debug:
                     print(
                         purple(f"[V][E] Received {received}."),
                         f"{frame.tensor.shape}, {frame.tensor.dtype}, {frame.tensor.shape}"
@@ -255,22 +254,22 @@ class EncoderThread(BaseThread):
                     scene=scene,
                     src_scene_index=frame.src_scene_index,
                 )
-                if verbose:
+                if debug:
                     print(purple(f"\nreceived frame no. {in_frame.no}"))
 
-                if verbose:
-                    print(yellow(f"[V][E] {e_index}: send {frame.f_no}"), flush=True)
 
                 src_scene: SrcScene = frame.scene['src'].scenes()[frame.src_scene_index]
                 out_f_no: int = src_scene.start + e_index
+                if debug:
+                    print(yellow(f"[V][E] out_f_no: {out_f_no}, {e_index}: send {frame.f_no}"), flush=True)
                 out_frames: list[McoFrame] = apply_upscale_effects(
-                    out_f_no=out_f_no, frame=in_frame, out_i=e_index, verbose=verbose
+                    out_f_no=out_f_no, frame=in_frame, out_i=e_index, verbose=debug
                 )
                 [writer_subprocess.stdin.write(f.img) for f in out_frames]
-                e_index += len(out_frames)
+                e_index += 1
                 remaining -= len(out_frames)
                 sent = len(out_frames)
-                if verbose:
+                if debug:
                     print(yellow(f"[V][E] remaining: {remaining}"), flush=True)
 
                 if self.d_thread is not None and self.d_thread.is_alive():

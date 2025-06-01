@@ -25,11 +25,11 @@ if TYPE_CHECKING:
 
 
 @torch.inference_mode()
-def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> None:
+def perform_torch_inference(self: InferenceThread) -> None:
     print(blue(f"[V][I][TORCH] PyTorch InferenceThread"))
     in_queue: Queue = self.in_queue
     channels_last: bool = False
-    verbose = False
+    debug = self.debug
     # if channels_last:
     #     model = model.to(memory_format=torch.channels_last)
 
@@ -44,7 +44,7 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
 
     with torch.cuda.stream(infer_stream):
         while not self._stop_event.is_set():
-            if verbose:
+            if debug:
                 print(blue("[V][I][TORCH] waiting"))
             input = in_queue.get(block=True)
             if input is None or self._stop_event.is_set():
@@ -54,7 +54,7 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
 
             # Get model
             model_key: str = frame.sequence[frame.step_no]
-            if verbose:
+            if debug:
                 verbose_prefix: str = f"[V][I][TORCH][{frame.step_no}]"
                 print(blue(f"{verbose_prefix} model: {model_key}"))
 
@@ -69,12 +69,12 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
                 else:
                     in_tensor = frame.tensor
 
-                if verbose:
+                if debug:
                     print(blue(f"[V][I][TORCH] inference: {in_tensor.shape}, {in_tensor.dtype}"))
                 if channels_last:
                     in_tensor = in_tensor.to(memory_format=torch.channels_last)
 
-                if verbose:
+                if debug:
                     print(f"[V][I][TORCH] {model_manager.model(model_key).filepath}")
 
                 # Convert to correct datatype
@@ -143,7 +143,7 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
             # with torch.inference_mode():
             #     torch_cuda_stream = torch.cuda.Stream()
             #     with torch.cuda.stream(torch_cuda_stream):
-            apply_cuda_filters_(frame, verbose=verbose)
+            apply_cuda_filters_(frame, verbose=debug)
             time.sleep(0.0001)
             infer_stream.synchronize()
 
@@ -151,7 +151,7 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
             # TODO: study if it can be done before.
             verbose_prefix: str = f"[V][I][TORCH][{frame.step_no}]"
             if frame.step_no >= frame.encoder_step_no:
-                if verbose:
+                if debug:
                     print(blue(f"{verbose_prefix} ask decoder to produce after cuda filters"))
                 if d_thread is not None and d_thread.is_alive():
                     d_thread.set_produce_flag()
@@ -161,12 +161,12 @@ def perform_torch_inference(self: InferenceThread, verbose: bool = False) -> Non
 
             # Next filter: encoder or nn
             if frame.step_no >= frame.encoder_step_no:
-                if verbose:
+                if debug:
                     print(blue(f"[V][I][TORCH] send to encoder"))
                 consumer = e_thread
             else:
                 xprovider: str = model_manager.xprovider(frame.sequence[frame.step_no])
-                if verbose:
+                if debug:
                     print(blue(f"[V][I][TORCH] send to inference thread: {xprovider}"))
                 consumer = self.i_threads[xprovider]
 

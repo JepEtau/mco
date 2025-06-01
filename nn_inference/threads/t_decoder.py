@@ -107,7 +107,7 @@ class DecoderThread(BaseThread):
 
     @torch.inference_mode()
     def run(self) -> None:
-        verbose: bool = False
+        debug = self.debug
 
         model_manager: ModelManager = self.config.model_manager
         # Create a cuda stream and allocate Host memory
@@ -137,7 +137,7 @@ class DecoderThread(BaseThread):
                 src_scene_inputs: Inputs = in_scene['inputs']
                 in_video_fp: str = src_scene_inputs.progressive().filepath
 
-                if verbose or True:
+                if debug or True:
                     print(lightgreen(f"[V][D] scene {scene['no']}"))
                 in_video_info: VideoStreamInfo = src_scene_inputs.progressive().info
 
@@ -156,7 +156,7 @@ class DecoderThread(BaseThread):
                 remaining = src_count
                 src_end = src_start + to_decode
 
-                if verbose:
+                if debug:
                     print(lightgreen(f"[V][D] {to_decode} frames to extract"))
 
                 # TODO ensure to_decode is consistent for all scenes
@@ -203,6 +203,8 @@ class DecoderThread(BaseThread):
                             break
                         to_decode -= 1
                     _to_decode = to_decode
+                print(yellow(f"[V][D] new to_decode: {_to_decode}"))
+
 
                 # Get filters
                 task_name = scene['task'].name
@@ -291,7 +293,7 @@ class DecoderThread(BaseThread):
 
                     # Search the encoder step no.
                     encoder_step_no: int = get_encoder_step_no(filter_steps)
-                print(lightgreen(f"[V][D] encoder step no. -> {encoder_step_no}"))
+                print(lightgreen(f"[V][D] decoder step no. -> {encoder_step_no}"))
 
                 # Flow control
                 flip_r_b: bool = in_video_info.img_c_order != 'rgb'
@@ -334,7 +336,7 @@ class DecoderThread(BaseThread):
 
                     # Get frame_no to send to the consumer
                     f_no = frame_cache.get_out_f_no(_in_f_no)
-                    # print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, waiting for {f_no}"))
+                    print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, waiting for {f_no}"))
 
                     # if not cached, decode a new frame
                     img_buffer: Tensor = None
@@ -425,17 +427,17 @@ class DecoderThread(BaseThread):
                     # Execute synchronous filters.
                     # TODO: later, use a separate thread for this
                     # Apply cuda filters until next inference or decoder
-                    apply_cuda_filters_(frame, verbose=verbose)
+                    apply_cuda_filters_(frame, verbose=debug)
 
                     time.sleep(0.0001)
                     cuda_stream.synchronize()
 
-                    if verbose:
+                    if debug:
                         print(
                             f"[V][D] ({lightgreen(f_index)}) ({_in_f_no}), {remaining}. Tensor:",
                             f"{d_tensor.shape}, {d_tensor.dtype}"
                         )
-                        print(f"[V][D]     Step no.:{frame.step_no}") #, {frame.sequence[frame.step_no]}")
+                        # print(f"[V][D]     Step no.:{frame.step_no}") #, {frame.sequence[frame.step_no]}")
 
                     # Skip following model if inpainting and dsr
                     # patch_next_step_no_(frame=frame, model_manager=model_manager)
@@ -465,6 +467,8 @@ class DecoderThread(BaseThread):
                     if _to_decode == 0:
                         print(f"all frames to be decoded have been decoded: {to_decode}")
 
+                    if debug:
+                        print(f"[V][D] remaining _to_decode: {_to_decode}")
 
                 print(yellow(f"  remaining src scenes: {remaining_src_scenes}"))
                 if remaining_src_scenes == 0:
