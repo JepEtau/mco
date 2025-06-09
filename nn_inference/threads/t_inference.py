@@ -86,3 +86,141 @@ class InferenceThread(BaseThread):
 
     def ended(self) -> bool:
         return self.in_queue.empty()
+
+
+# class InferenceThread(Thread):
+#     def __init__(self, execution_provider, config) -> None:
+#         super().__init__()
+#         self.execution_provider = execution_provider
+#         self.config = config
+
+#     def run(self):
+#         try:
+#             inference_function = self.get_inference_function()
+#             inference_function(self)
+#         except NotImplementedError as e:
+#             print(f"[E][I] {str(e)}")
+
+#     def get_inference_function(self):
+#         inference_functions = {
+#             'cuda': perform_torch_inference,
+#             'trt': perform_tensorrt_inference,
+#         }
+        
+#         if self.execution_provider in inference_functions:
+#             return inference_functions[self.execution_provider]
+#         else:
+#             raise NotImplementedError(f"{self.execution_provider} is not supported")
+
+
+
+# from threading import Thread
+
+# # Assuming these are your original functions
+# from .trt_inference import perform_tensorrt_inference
+# from .torch_inference import perform_torch_inference
+
+# class InferenceThread(Thread):
+#     def __init__(self, execution_provider, config) -> None:
+#         super().__init__()
+#         self.execution_provider = execution_provider
+#         self.config = config
+
+#     def run(self):
+#         try:
+#             inference_provider = self.get_inference_provider()
+#             inference_provider.run_inference(self)
+#         except NotImplementedError as e:
+#             print(f"[E][I] {str(e)}")
+
+#     def get_inference_provider(self):
+#         """
+#         Return the appropriate inference provider subclass based on the execution provider.
+#         """
+#         if self.execution_provider == 'cuda':
+#             return CudaInference(self)
+#         elif self.execution_provider == 'trt':
+#             return TrtInference(self)
+#         else:
+#             raise NotImplementedError(f"{self.execution_provider} is not supported")
+
+
+# class InferenceProvider:
+#     def __init__(self, thread: InferenceThread):
+#         self.thread = thread
+
+#     def run_inference(self):
+#         raise NotImplementedError("Subclasses should implement this method.")
+
+
+# class CudaInference(InferenceProvider):
+#     def run_inference(self):
+#         # Perform CUDA-based inference (original `perform_torch_inference` logic here)
+#         perform_torch_inference(self.thread)
+
+
+# class TrtInference(InferenceProvider):
+#     def run_inference(self):
+#         # Perform TensorRT-based inference (original `perform_tensorrt_inference` logic here)
+#         perform_tensorrt_inference(self.thread)
+
+# from threading import Thread
+
+# # Assuming these are your original functions
+# from .torch_inference import perform_torch_inference
+
+# class InferenceThread(Thread):
+#     def __init__(self, execution_provider, config) -> None:
+#         super().__init__()
+#         self.execution_provider = execution_provider
+#         self.config = config
+
+#     def run(self):
+#         try:
+#             inference_provider = self.get_inference_provider()
+#             inference_provider.run_inference(self)
+#         except NotImplementedError as e:
+#             print(f"[E][I] {str(e)}")
+#         except ImportError as e:
+#             print(f"[E][I] Required library for {self.execution_provider} inference is missing: {str(e)}")
+
+#     def get_inference_provider(self):
+#         """
+#         Return the appropriate inference provider subclass based on the execution provider.
+#         """
+#         if self.execution_provider == 'cuda':
+#             return CudaInference(self)
+#         elif self.execution_provider == 'trt':
+#             # Try importing the TRT inference logic
+#             try:
+#                 from .trt_inference import perform_tensorrt_inference
+#                 return TrtInference(self, perform_tensorrt_inference)
+#             except ImportError as e:
+#                 raise ImportError("TensorRT is not supported on this machine or missing dependencies.") from e
+#         else:
+#             raise NotImplementedError(f"{self.execution_provider} is not supported")
+
+
+# class InferenceProvider:
+#     def __init__(self, thread: InferenceThread):
+#         self.thread = thread
+
+#     def run_inference(self):
+#         raise NotImplementedError("Subclasses should implement this method.")
+
+
+# class CudaInference(InferenceProvider):
+#     def run_inference(self):
+#         # Perform CUDA-based inference (original `perform_torch_inference` logic here)
+#         perform_torch_inference(self.thread)
+
+
+# class TrtInference(InferenceProvider):
+#     def __init__(self, thread: InferenceThread, perform_tensorrt_inference):
+#         super().__init__(thread)
+#         self.perform_tensorrt_inference = perform_tensorrt_inference  # Store the actual function for later use
+
+#     def run_inference(self):
+#         # Perform TensorRT-based inference (original `perform_tensorrt_inference` logic here)
+#         self.perform_tensorrt_inference(self.thread)
+
