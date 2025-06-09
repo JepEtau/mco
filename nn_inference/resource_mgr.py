@@ -48,7 +48,7 @@ class BaseThread(abc.ABC, Thread):
         super().__init__(group, target, name, args, kwargs, daemon=daemon)
         self._has_error: bool = False
         self._error_msg: str = ''
-        self._verbose: bool = False
+        self._debug: bool = False
 
         self.producer: Type[BaseThread] | None = None
         self.consumer: Type[BaseThread] | None = None
@@ -57,13 +57,13 @@ class BaseThread(abc.ABC, Thread):
 
 
     @property
-    def verbose(self) -> bool:
-        return self._verbose
+    def debug(self) -> bool:
+        return self._debug
 
 
-    @verbose.setter
-    def verbose(self, enabled: bool) -> None:
-        self._verbose = enabled
+    @debug.setter
+    def debug(self, enabled: bool) -> None:
+        self._debug = enabled
 
 
     def error_encountered(self) -> tuple[bool, str]:

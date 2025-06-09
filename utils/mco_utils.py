@@ -260,18 +260,29 @@ def calculate_scene_frame_count(scene: Scene) -> int:
         if scene['dst']['k_ch'] == 'episode':
             scene['dst']['count'] = count
 
-        if is_last_scene(scene):
+        if is_first_scene(scene):
+            if 'effects' in scene:
+                effects = scene['effects']
+                if e := effects.get_effect('loop_and_fadein'):
+                    count += e.loop
+                elif e := effects.get_effect('loop'):
+                    count += e.loop
+
+        elif is_last_scene(scene):
             # warn(red("calculate_scene_frame_count: debug last scene when in HR"))
             # pprint(scene)
             if 'effects' in scene:
                 effects = scene['effects']
                 if e := effects.get_effect('loop_and_fadeout'):
                     count += e.loop
+                elif e := effects.get_effect('loop'):
+                    count += e.loop
+
     else:
         warn(yellow(f"{task_name} is not used to calculate frame count"))
 
 
-    print(darkgrey(f"calculate_frame_count: scene no. {scene['no']}: {count}"))
+    print(darkgrey(f"calculate_frame_count: scene no. {scene['no']}, to produce:{count}"))
     # print(f"    when upscaling: {scene['src'].frame_count(exclude_loop=False)}")
     return count
 

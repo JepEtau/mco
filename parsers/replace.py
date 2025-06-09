@@ -19,11 +19,11 @@ if TYPE_CHECKING:
     from utils.mco_types import Scene
 
 
-def replace_scene_bounds_(k_ep: str, verbose: bool = False) -> None:
+def replace_scene_bounds_(k_ep: str, k_ed: str, verbose: bool = False) -> None:
+    # !!! This is for 'j' edition only
+
     if verbose:
         print(yellow("replace_scene_bounds_"), k_ep)
-    # edition 'j' only
-    k_ed: str = 'j'
     k_chapter: Chapter = 'episode'
     if 'scenes' not in db[k_ep]['video'][k_ed][k_chapter]:
         print(red(f"no scenes for {k_ed}:{k_ep}:{k_chapter}"))
@@ -128,7 +128,7 @@ def parse_replace_file(k_ep_or_g:str) -> None:
             not k_ep_or_g.startswith("g_")
             and ep_no(k_ep_or_g) < 40
         ):
-            replace_scene_bounds_(k_ep=k_ep_or_g, verbose=verbose)
+            replace_scene_bounds_(k_ep=k_ep_or_g, k_ed='j', verbose=verbose)
         return
 
     # Parse the file
@@ -188,7 +188,7 @@ def parse_replace_file(k_ep_or_g:str) -> None:
             and ep_no(k_ep) < 40
         ):
             print(yellow(f"replace bound:"), k_ep_or_g)
-            replace_scene_bounds_(k_ep=k_ep_or_g, verbose=verbose)
+            replace_scene_bounds_(k_ep=k_ep_or_g, k_ed=k_ed, verbose=verbose)
 
 
 

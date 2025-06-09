@@ -412,7 +412,7 @@ def apply_final_effects(
 
 
 
-def apply_upscale_effects(
+def   apply_upscale_effects(
     out_f_no: int,
     frame: McoFrame,
     out_i: int,

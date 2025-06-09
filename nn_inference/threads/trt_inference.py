@@ -20,7 +20,8 @@ if TYPE_CHECKING:
 
 
 @torch.inference_mode()
-def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
+def perform_tensorrt_inference(self: InferenceThread):
+    debug = self.debug
     print(cyan(f"[V][I][TRT] TensorRT InferenceThread"))
     in_queue: Queue = self.in_queue
     cuda_stream = self.model_manager.trt_cuda_stream
@@ -31,7 +32,7 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
 
     with torch.cuda.stream(cuda_stream):
         while not self._stop_event.is_set():
-            if verbose:
+            if debug:
                 print(cyan("[V][I][TRT] waiting"))
             input = in_queue.get(block=True)
             if input is None or self._stop_event.is_set():
@@ -50,7 +51,7 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             if session_dtype == torch.bfloat16:
                 session_dtype = torch.float32
 
-            if verbose:
+            if debug:
                 verbose_prefix: str = f"[V][I][TRT][{frame.step_no}]"
                 print(blue(f"{verbose_prefix} model: {model_key}, dtype:{session_dtype}"))
 
@@ -60,7 +61,7 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             n, c, in_h, in_w = in_tensor.shape
             in_tensor = in_tensor.to(dtype=session_dtype)
             in_tensor = torch.ravel(in_tensor)
-            if verbose:
+            if debug:
                 print(blue(f"{verbose_prefix} in tensor dtype:{in_tensor.dtype}"))
 
             # Prepare output tensor in same device
@@ -90,7 +91,7 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             # Apply cuda filters until next inference or decoder
             # torch_cuda_stream = torch.cuda.Stream()
             # with torch.cuda.stream(torch_cuda_stream):
-            apply_cuda_filters_(frame, verbose=verbose)
+            apply_cuda_filters_(frame, verbose=debug)
 
             time.sleep(0.0001)
             cuda_stream.synchronize()
@@ -100,7 +101,7 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
             # TODO: study if it can be done before.
             verbose_prefix: str = f"[V][I][TRT][{frame.step_no}]"
             if frame.step_no >= frame.encoder_step_no:
-                if verbose:
+                if debug:
                     print(blue(f"{verbose_prefix} ask decoder to produce after cuda filters"))
                 d_thread.set_produce_flag()
 
@@ -109,7 +110,7 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
 
             # Next filter: encoder or nn
             if frame.step_no >= frame.encoder_step_no:
-                if verbose:
+                if debug:
                     print(
                         cyan(f"{verbose_prefix} send to encoder"),
                         f"{type(frame.tensor)}{frame.tensor.data_ptr()}, {frame.tensor.shape}, {frame.tensor.dtype}"
@@ -118,7 +119,7 @@ def perform_tensorrt_inference(self: InferenceThread, verbose: bool = False):
 
             else:
                 xprovider: str = self.model_manager.xprovider(frame.sequence[frame.step_no])
-                if verbose:
+                if debug:
                     print(cyan(f"{verbose_prefix} send to inference thread: {xprovider}"))
                 consumer = self.i_threads[xprovider]
 

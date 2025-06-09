@@ -47,17 +47,16 @@ class InferenceThread(BaseThread):
 
 
     def run(self):
-        verbose: bool = False
         if self.config.execution_provider == 'cuda':
             if is_cuda_available():
-                perform_torch_inference(self, verbose)
+                perform_torch_inference(self)
             else:
                 raise NotImplementedError("A cuda device is mandatory")
 
         elif self.config.execution_provider == 'trt':
             if is_tensorrt_available():
                 from .trt_inference import perform_tensorrt_inference
-                perform_tensorrt_inference(self, verbose)
+                perform_tensorrt_inference(self)
 
         else:
             print(f"[E][I] {self.config.execution_provider} is not supported")
