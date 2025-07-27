@@ -48,8 +48,8 @@ def perform_tensorrt_inference(self: InferenceThread):
             session: TensorRtSession = self.model_manager.session(model_key)
             context, engine = session.context, session.engine
             session_dtype: torch.dtype = session.dtype
-            if session_dtype == torch.bfloat16:
-                session_dtype = torch.float32
+            # if session_dtype == torch.bfloat16:
+            #     session_dtype = torch.float32
 
             if debug:
                 verbose_prefix: str = f"[V][I][TRT][{frame.step_no}]"

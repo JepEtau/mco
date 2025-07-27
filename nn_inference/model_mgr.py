@@ -271,7 +271,7 @@ class ModelManager:
 
                 # Force to static or fixed
                 shape_strategy: ShapeStrategy = ShapeStrategy(
-                    static=model.static,
+                    type='static' if model.static else 'fixed',
                     opt_size = tuple(map(int, size_key.split('x')))
                 )
                 shape_strategy.min_size = shape_strategy.opt_size

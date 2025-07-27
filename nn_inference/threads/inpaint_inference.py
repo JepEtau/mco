@@ -35,7 +35,7 @@ def perform_inpaint_inference(
     if mask_img is None:
         return in_tensor
 
-    print(yellow(f"inpainting {frame.f_no}"))
+    # print(yellow(f"inpainting {frame.f_no}"))
 
     # Get session
     model_key: str = frame.sequence[frame.step_no]

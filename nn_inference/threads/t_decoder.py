@@ -336,7 +336,7 @@ class DecoderThread(BaseThread):
 
                     # Get frame_no to send to the consumer
                     f_no = frame_cache.get_out_f_no(_in_f_no)
-                    print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, waiting for {f_no}"))
+                    # print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, waiting for {f_no}"))
 
                     # if not cached, decode a new frame
                     img_buffer: Tensor = None
