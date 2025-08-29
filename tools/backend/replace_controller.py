@@ -303,7 +303,7 @@ class ReplaceController(CommonController):
             patches = scene_dsr[frame_no]
 
         if -1 in scene_dsr.keys():
-            print(f"add shared patches for frame: {frame_no}")
+            # print(f"add shared patches for frame: {frame_no}")
             for p in scene_dsr[-1]:
                 if p.start <= frame_no <= p.end:
                     if p not in patches:

@@ -234,8 +234,11 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
                 try:
                     src_scene: SrcScene = src_ch_video['scenes'][scene_no_src]
                 except:
-                    print(red(f"exception: parse_geometry_file: {k_ep_or_g}:{section}:{scene_no}"))
-                    print(red(f"    src scene: {k_ep_src}:{k_ed_src}:{k_ch_src}:{scene_no_src}"))
+                    # 2025-08-29
+                    #   disable this to avoid too many messages when using dsr/replace tool
+
+                    # print(red(f"exception: parse_geometry_file: {k_ep_or_g}:{section}:{scene_no}"))
+                    # print(red(f"    src scene: {k_ep_src}:{k_ed_src}:{k_ch_src}:{scene_no_src}"))
                     pass
                 # try:
                 #     scene: Scene = ch_video['scenes'][scene_no]
@@ -263,7 +266,9 @@ def parse_geometry_file(k_ep_or_g: str, k_ch: str = '') -> None:
                 try:
                     src_scene['geometry'] = get_geometry_from_properties(properties)
                 except:
-                    print(red(f"failed getting geometry or assign to src scene: {scene_no_src}"))
+                    # 2025-08-29 disable info to avoid too many messages
+                    # print(red(f"failed getting geometry or assign to src scene: {scene_no_src}"))
+                    pass
 
         for scene in ch_video['scenes']:
             if 'geometry' not in scene:
