@@ -210,7 +210,7 @@ class GraphicsViewWidget(QGraphicsView):
             axes = [p.axes[0], p.axes[0]]
         else:
             axes = p.axes
-        
+
         if p.shape == 'line':
             length, angle = axes[0], math.radians(p.angle)
             # print(f"   length: {length}, angle: {angle}")
@@ -226,7 +226,7 @@ class GraphicsViewWidget(QGraphicsView):
             item: QGraphicsLineItem = QGraphicsLineItem(QLineF(x1, y1, x2, y2))
             pen = QPen(QColor("red"))
             pen.setWidthF(axes[1])
-            pen.setCapStyle(Qt.PenCapStyle.RoundCap) 
+            pen.setCapStyle(Qt.PenCapStyle.RoundCap)
             item.setPen(pen)
 
         else:
@@ -364,7 +364,7 @@ class GraphicsViewWidget(QGraphicsView):
                 # print(f"   ({x1}, {y1}) -> ({x2:01f}, {y2:01f})")
                 pen = QPen(QColor("red"))
                 pen.setWidthF(self.height * h)
-                pen.setCapStyle(Qt.PenCapStyle.RoundCap) 
+                pen.setCapStyle(Qt.PenCapStyle.RoundCap)
                 item.setPen(pen)
 
             else:
@@ -621,7 +621,7 @@ class GraphicsViewWidget(QGraphicsView):
 
             elif self.modif_keys['height']:
                 diff /= h
-                if shape_name == 'ellipse':
+                if shape_name in ('ellipse', 'line'):
                     self.height = min(max(self.height + diff, 0.000001), 0.5)
 
             elif self.modif_keys['angle']:

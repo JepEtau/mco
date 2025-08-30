@@ -95,6 +95,7 @@ def parse_database(
 
         # Get dependencies for this episode
         dependencies_tmp = get_episode_dependencies(k_ep)
+        # print(lightcyan("dependencies_tmp: "), dependencies_tmp)
 
     if False:
         print("parse_episode")

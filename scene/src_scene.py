@@ -229,7 +229,7 @@ class SrcScenes:
         try:
             _src_scene: Scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][no]
         except:
-            pprint(db[k_ep]['video'][k_ed][k_ch]['scenes'])
+            # pprint(db[k_ep]['video'][k_ed][k_ch]['scenes'])
             raise ValueError(red(f"cannot access to scene no. {src_scene['k_ed_ep_ch_no']}"))
 
         start: int = (

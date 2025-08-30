@@ -193,7 +193,8 @@ def parse_episodes_target(ep_min: int = 1, ep_max: int = 39):
                         k_ch=k_ch,
                         language=language,
                     )
-
+                else:
+                    print(f"discard {k_ep}:{k_ch}, language differs: {language} != {db_audio_target['lang']}")
 
 #===========================================================================
 #

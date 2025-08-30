@@ -176,11 +176,11 @@ def parse_replace_file(k_ep_or_g:str) -> None:
                 if t > len(replace_list):
                     raise(red(f" circular reference"))
 
-        if verbose:
-            if k_ed == "j" and k_chapter == 'episode':
-                scenes: list[Scene] = db[k_ep]['video'][k_ed][k_chapter]['scenes']
-                for s in scenes:
-                    pprint(s["replace"])
+        # if verbose:
+        #     if not k_ep_or_g.startswith("g_") and k_ed == "j" and k_chapter == 'episode':
+        #         scenes: list[Scene] = db[k_ep]['video'][k_ed][k_chapter]['scenes']
+        #         for s in scenes:
+        #             pprint(s["replace"])
 
         if (
             not k_ep_or_g.startswith("g_")
