@@ -1,5 +1,7 @@
 ## HIGH priority
 
+stabilize 10:213 to see if frame replacement is necessary
+
 
 
 ## MIDDLE priority

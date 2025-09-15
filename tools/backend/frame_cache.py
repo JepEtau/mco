@@ -123,7 +123,8 @@ class FrameCache:
                         # screen is too small, resize to fit
                         in_w, in_h = 1280, 960
                     else:
-                        in_w, in_h = 1440, 1080
+                        # in_w, in_h = 1440, 1080
+                        in_w, in_h = 1536, 1152
                     # in_h, in_w = 1152, 1536
                     filter_complex = [
                         "-filter_complex",
