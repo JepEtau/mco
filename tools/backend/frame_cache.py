@@ -121,7 +121,7 @@ class FrameCache:
                 if task_name in ('lr', 'initial') and self.replace_db is not None:
                     if screen_height < 1440:
                         # screen is too small, resize to fit
-                        in_w, in_h = 1000, 750
+                        in_w, in_h = 1280, 960
                     else:
                         in_w, in_h = 1440, 1080
                     # in_h, in_w = 1152, 1536

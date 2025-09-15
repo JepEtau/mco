@@ -291,8 +291,8 @@ def parse_dsr_file(k_ep_or_g: str, verbose: bool = False):
                             start=int(region.group(7)),
                             end=int(region.group(8)),
                         )
-                print(red("detected muliple frames sharing the same shape"))
-                pprint(scene_dsr.get_all())
+                # print(red("detected muliple frames sharing the same shape"))
+                # pprint(scene_dsr.get_all())
 
             else:
                 # Patch for a single frame

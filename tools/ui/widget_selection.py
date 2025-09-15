@@ -692,7 +692,7 @@ class SelectionWidget(QWidget, Ui_SelectionWidget):
             return
         self.previous_selection = copy(selected_row_no)
 
-        log.info(f"event_selection_changed: {', '.join(map(lambda x: f"{x}", selected_row_no))}")
+        print(f"event_selection_changed: {', '.join(map(lambda x: f"{x}", selected_row_no))}")
 
         selected_scene_nos = list()
         for row_no in selected_row_no:
