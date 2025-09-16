@@ -122,6 +122,8 @@ class FrameCache:
                     if screen_height < 1440:
                         # screen is too small, resize to fit
                         in_w, in_h = 1280, 960
+                        # in_w, in_h = 1152, 864
+
                     else:
                         # in_w, in_h = 1440, 1080
                         in_w, in_h = 1536, 1152

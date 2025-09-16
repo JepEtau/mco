@@ -136,6 +136,7 @@ class CommonController(QObject, metaclass=QMeta):
         # print("preferences: set_view")
         # pprint(p)
         p = self.user_preferences.settings
+        print("set_view")
         pprint(p)
         view.apply_user_preferences(p)
 
@@ -157,6 +158,7 @@ class CommonController(QObject, metaclass=QMeta):
             new_selection.k_ep = self.forced_selection['k_ep']
             new_selection.k_ch = self.forced_selection['k_ch']
 
+        print("call k_ep_p_changed")
         self.k_ep_p_changed(new_selection)
 
 

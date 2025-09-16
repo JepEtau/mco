@@ -139,9 +139,8 @@ def consolidate_scene(
         scene['geometry'].chapter = ch_geometry
 
     else:
-        print(darkgrey(f"consolidate_scene: get geometry for {k_ep}:{k_ch}"))
         if verbose:
-            print(f"\t\t\tconsolidate_scene: get geometry for {k_ep}:{k_ch}")
+            print(f"\t\tconsolidate_scene: get geometry for {k_ep}:{k_ch}")
         chapter: ChapterVideo | None = None
         if k_ch in ('g_debut', 'g_fin'):
             chapter = db[k_ch]['video']
@@ -252,7 +251,8 @@ def consolidate_scene(
         dsr_hash = scene['src'].dsr_hash()
         t_hash = calc_hash(f"{t_hash};{dsr_hash}")
         scene_filters['dsr'].hash = t_hash
-        print(yellow(f"DSR hash: {dsr_hash}"))
+        if verbose:
+            print(yellow(f"DSR hash: {dsr_hash}"))
 
     scene_filters['upscale'].hash = t_hash
 

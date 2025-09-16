@@ -56,10 +56,12 @@ class ReplaceController(CommonController):
         # scene_no: dsr regions for each frame
         self.selection_dsr: dict[int, SceneDsr] = {}
 
+        print("ReplaceController::init", self.user_preferences.settings)
+        print(f"\tep_no={ep_no}, scene={scene}")
         if 1 <= ep_no <= 39:
             self.user_preferences.settings['selection']['episode'] = ep_no
             self.user_preferences.settings['selection']['scene_no'] = 0
-        if scene >= 0:
+        if scene > 0:
             self.user_preferences.settings['selection']['scene_no'] = scene
 
 
