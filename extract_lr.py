@@ -31,6 +31,13 @@ def main():
         help="debug"
     )
 
+    parser.add_argument(
+        "--img",
+        action="store_true",
+        required=False,
+        help="save as images"
+    )
+
     arguments = parser.parse_args()
 
     if arguments.debug:
@@ -75,7 +82,8 @@ def main():
         scene_max=arguments.scene_max,
         watermark=False,
         edition=arguments.edition,
-        debug=arguments.debug
+        debug=arguments.debug,
+        save_as_image=arguments.img
     )
 
 

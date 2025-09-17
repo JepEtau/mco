@@ -39,6 +39,7 @@ def extract_scenes(
     edition: str | None = None,
     debug: bool = False,
     compare: bool = False,
+    save_as_image: bool = False
 ):
     """
         compare: used for lr to set basename for source comparisons
@@ -111,11 +112,16 @@ def extract_scenes(
             if debug:
                 print(lightcyan("================================== Scene ======================================="))
                 pprint(ed_scene)
+                print(ed_scene['inputs'])
                 print(lightcyan("==============================================================================="))
 
             if not simulation:
                 result = extract_scene(
-                    scene=ed_scene, compare=compare, force=force, debug=debug
+                    scene=ed_scene,
+                    compare=compare,
+                    force=force,
+                    debug=debug,
+                    save_as_image=save_as_image,
                 )
                 if not result:
                     # pprint(ed_scene)
@@ -146,7 +152,8 @@ def extract_scenes(
         os.makedirs(path_split(concat_fp)[0], exist_ok=True)
         with open(concat_fp, "w") as concat_file:
             for scene in scenes:
-                concat_file.write(f"file \'{scene['task'].video_file}\' \n")
+                if 'task' in scene:
+                    concat_file.write(f"file \'{scene['task'].video_file}\' \n")
 
         vsettings: VideoSettings = db['vsettings'][task_name]
         ch_video['task'] = ProcessingTask(

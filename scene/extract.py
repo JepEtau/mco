@@ -26,6 +26,7 @@ from utils.media import VideoInfo, extract_media_info_mco, str_to_video_codec
 def extract_scene(
     scene: Scene,
     compare: bool = False,
+    save_as_image: bool = False,
     force: bool = False,
     debug: bool = False
 ) -> bool:

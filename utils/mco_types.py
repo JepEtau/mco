@@ -92,6 +92,9 @@ class Inputs:
         else:
             self.progressives[k_ch] = progressive
 
+    def __str__(self) -> str:
+        return str(self.progressives)
+
 
 # unless specified, timestamps and duration are in ms
 class AudioSrc(TypedDict):
