@@ -8,6 +8,8 @@ from pathlib import (
 from pprint import pprint
 from warnings import warn
 
+from utils.path_utils import absolute_path
+
 from .scenes import get_scene_from_frame_no
 from .helpers import nested_dict_set
 from utils.p_print import *
@@ -115,13 +117,13 @@ def parse_replace_file(k_ep_or_g:str) -> None:
 
 
     # Open configuration file
-    filepath: str = os.path.join(
-        db['common']['directories']['config'],
-        k_ep_or_g,
-        f"{k_ep_or_g}_replace.ini"
+    filepath: str = absolute_path(
+            os.path.join(
+            db['common']['directories']['config'],
+            k_ep_or_g,
+            f"{k_ep_or_g}_replace.ini"
+        )
     )
-    if filepath.startswith("~/"):
-        filepath = os.path.join(PosixPath(Path.home()), filepath[2:])
     if not os.path.exists(filepath):
         # print(f"warning: {filepath} does not exist, ignore")
         if (
