@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>292</width>
-    <height>222</height>
+    <height>242</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -147,7 +147,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QSpinBox" name="spinBox_knn_ratio">
+           <widget class="QSpinBox" name="spinBox_knn">
             <property name="maximumSize">
              <size>
               <width>80</width>
@@ -219,7 +219,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QDoubleSpinBox" name="doubleSpinBox_max_distance_ratio">
+           <widget class="QDoubleSpinBox" name="doubleSpinBox">
             <property name="maximum">
              <double>0.600000000000000</double>
             </property>
@@ -258,7 +258,7 @@
              <string>following</string>
             </property>
             <attribute name="buttonGroup">
-             <string notr="true">frame_ref</string>
+             <string notr="true">buttonGroup</string>
             </attribute>
            </widget>
           </item>
@@ -268,7 +268,7 @@
              <string>previous</string>
             </property>
             <attribute name="buttonGroup">
-             <string notr="true">frame_ref</string>
+             <string notr="true">buttonGroup</string>
             </attribute>
            </widget>
           </item>
@@ -311,6 +311,6 @@
  <connections/>
  <buttongroups>
   <buttongroup name="matching"/>
-  <buttongroup name="frame_ref"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>
