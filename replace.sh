@@ -11,6 +11,9 @@ python ./_utils/patch_ui.py --file ./ui/ui/ui_widget_replace.py
 pyside6-uic ./ui/ui/ui_widget_dsr.ui -o ./ui/ui/ui_widget_dsr.py
 python ./_utils/patch_ui.py --file ./ui/ui/ui_widget_dsr.py
 
+pyside6-uic ./ui/ui/ui_widget_warp.ui -o ./ui/ui/ui_widget_warp.py
+python ./_utils/patch_ui.py --file ./ui/ui/ui_widget_warp.py
+
 pyside6-uic ./ui/ui/ui_widget_selection.ui -o ./ui/ui/ui_widget_selection.py
 python ./_utils/patch_ui.py --file ./ui/ui/ui_widget_selection.py
 

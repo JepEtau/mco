@@ -8,7 +8,14 @@ from PySide6.QtCore import (
     Slot,
 )
 
-from ._types import DsrAction, DsrProcessParams, PlaylistProperties, ReplaceAction, Selection
+from ._types import (
+    DsrAction,
+    DsrProcessParams,
+    PlaylistProperties,
+    ReplaceAction,
+    Selection,
+    WarpAction,
+)
 from .replace_database import ReplaceDatabase
 from .dsr_database import DsrDatabase
 from .frame_cache import FrameCache, Frame
@@ -77,6 +84,9 @@ class ReplaceController(CommonController):
         self.view.widget_replace.signal_undo.connect(self.event_replace_undo)
         self.view.widget_replace.signal_save.connect(self.event_replace_dsr_save)
         self.view.widget_replace.signal_discard.connect(self.event_replace_discard)
+
+        # Warp
+        self.view.widget_warp.signal_warp_values_changed.connect(self.event_warp_modified)
 
         # Dsr
         self.view.widget_dsr.signal_dsr_modified.connect(self.event_dsr_modified)
@@ -413,4 +423,12 @@ class ReplaceController(CommonController):
         self.signal_is_saved.emit('replace')
         self.signal_is_saved.emit('dsr')
         self.send_modified_scene_signal()
+
+
+    @Slot()
+    def event_warp_modified(self, warp_action: WarpAction) -> None:
+        # warp_action.frame
+        print("event_warp_modified")
+        pprint(warp_action)
+
 

@@ -36,6 +36,7 @@ class Frame:
     no: int
     by: int
     dsr: list[DsrPatch] = field(default_factory=list)
+    warp: Warp = field(default_factory=list)
     img: np.ndarray | None = None
     qimage: QPixmap | None = None
     _k_ep_ch_no: tuple[str, str, int] = ("", "", 0)
@@ -139,3 +140,14 @@ class DsrPreviewOptions:
     final_preview: bool
     edition: bool
     mask: bool
+
+
+@dataclass(slots=True)
+class WarpAction:
+    frame: Frame
+    enabled: bool
+    matcher: Literal['knn', 'bf']
+    knn_ratio: int
+    max_distance_ratio: float
+    ref_frame: Literal['previous', 'next']
+

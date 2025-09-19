@@ -178,7 +178,8 @@ class DsrWidget(QWidget, Ui_DsrWidget):
 
 
     def set_edition(self, enabled: bool):
-        self.pushButton_set_edition.setEnabled(not enabled)
+        # self.pushButton_set_edition.setEnabled(not enabled)
+        pass
 
 
     def event_shape_type_changed(self, shape_name: MaskShape):

@@ -75,35 +75,6 @@ class Ui_DsrWidget(object):
 
         self.horizontalLayout.addWidget(self.shortcut)
 
-        self.horizontalSpacer_2 = QSpacerItem(22, 10, QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout.addItem(self.horizontalSpacer_2)
-
-        self.pushButton_set_edition = QPushButton(self.frame)
-        self.pushButton_set_edition.setObjectName(u"pushButton_set_edition")
-        sizePolicy.setHeightForWidth(self.pushButton_set_edition.sizePolicy().hasHeightForWidth())
-        self.pushButton_set_edition.setSizePolicy(sizePolicy)
-        self.pushButton_set_edition.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        icon1 = QIcon()
-        icon1.addFile(u"./icons/grey/edit_off.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        icon1.addFile(u"./icons/blue/edit.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        icon1.addFile(u"./icons/blue/edit.svg", QSize(), QIcon.Mode.Disabled, QIcon.State.Off)
-        icon1.addFile(u"./icons/blue/edit.svg", QSize(), QIcon.Mode.Disabled, QIcon.State.On)
-        self.pushButton_set_edition.setIcon(icon1)
-        self.pushButton_set_edition.setCheckable(True)
-        self.pushButton_set_edition.setFlat(True)
-
-        self.horizontalLayout.addWidget(self.pushButton_set_edition)
-
-        self.shortcut_3 = QLabel(self.frame)
-        self.shortcut_3.setObjectName(u"shortcut_3")
-        sizePolicy.setHeightForWidth(self.shortcut_3.sizePolicy().hasHeightForWidth())
-        self.shortcut_3.setSizePolicy(sizePolicy)
-        self.shortcut_3.setFont(font)
-        self.shortcut_3.setText(u"(F3)")
-
-        self.horizontalLayout.addWidget(self.shortcut_3)
-
         self.horizontalSpacer = QSpacerItem(5, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
@@ -113,9 +84,9 @@ class Ui_DsrWidget(object):
         sizePolicy.setHeightForWidth(self.pushButton_discard.sizePolicy().hasHeightForWidth())
         self.pushButton_discard.setSizePolicy(sizePolicy)
         self.pushButton_discard.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        icon2 = QIcon()
-        icon2.addFile(u"./icons/purple/undo.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.pushButton_discard.setIcon(icon2)
+        icon1 = QIcon()
+        icon1.addFile(u"./icons/purple/undo.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.pushButton_discard.setIcon(icon1)
         self.pushButton_discard.setCheckable(False)
         self.pushButton_discard.setAutoDefault(False)
         self.pushButton_discard.setFlat(True)
@@ -127,9 +98,9 @@ class Ui_DsrWidget(object):
         sizePolicy.setHeightForWidth(self.pushButton_save.sizePolicy().hasHeightForWidth())
         self.pushButton_save.setSizePolicy(sizePolicy)
         self.pushButton_save.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        icon3 = QIcon()
-        icon3.addFile(u"./icons/purple/save.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        self.pushButton_save.setIcon(icon3)
+        icon2 = QIcon()
+        icon2.addFile(u"./icons/purple/save.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        self.pushButton_save.setIcon(icon2)
         self.pushButton_save.setCheckable(False)
         self.pushButton_save.setAutoDefault(False)
         self.pushButton_save.setFlat(True)
@@ -142,6 +113,10 @@ class Ui_DsrWidget(object):
         self.gridLayout_2 = QGridLayout()
         self.gridLayout_2.setObjectName(u"gridLayout_2")
         self.gridLayout_2.setSizeConstraint(QLayout.SizeConstraint.SetDefaultConstraint)
+        self.horizontalSpacer_5 = QSpacerItem(20, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.gridLayout_2.addItem(self.horizontalSpacer_5, 0, 2, 1, 1)
+
         self.pushButton_mask_preview = QPushButton(self.frame)
         self.pushButton_mask_preview.setObjectName(u"pushButton_mask_preview")
         self.pushButton_mask_preview.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -159,19 +134,6 @@ class Ui_DsrWidget(object):
 
         self.gridLayout_2.addWidget(self.label_9, 0, 0, 1, 1)
 
-        self.shortcut_2 = QLabel(self.frame)
-        self.shortcut_2.setObjectName(u"shortcut_2")
-        font1 = QFont()
-        font1.setPointSize(8)
-        self.shortcut_2.setFont(font1)
-        self.shortcut_2.setText(u"(F3)")
-
-        self.gridLayout_2.addWidget(self.shortcut_2, 1, 1, 1, 1)
-
-        self.horizontalSpacer_5 = QSpacerItem(20, 10, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.gridLayout_2.addItem(self.horizontalSpacer_5, 1, 2, 1, 1)
-
 
         self.verticalLayout_2.addLayout(self.gridLayout_2)
 
@@ -186,10 +148,10 @@ class Ui_DsrWidget(object):
         self.pushButton_circle.setMaximumSize(QSize(30, 16777215))
         self.pushButton_circle.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.pushButton_circle.setText(u"")
-        icon4 = QIcon()
-        icon4.addFile(u"./icons/grey/circle.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        icon4.addFile(u"./icons/blue/circle.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        self.pushButton_circle.setIcon(icon4)
+        icon3 = QIcon()
+        icon3.addFile(u"./icons/grey/circle.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon3.addFile(u"./icons/blue/circle.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.pushButton_circle.setIcon(icon3)
         self.pushButton_circle.setCheckable(True)
         self.pushButton_circle.setAutoExclusive(True)
         self.pushButton_circle.setFlat(False)
@@ -201,10 +163,10 @@ class Ui_DsrWidget(object):
         self.pushButton_ellipse.setMaximumSize(QSize(30, 16777215))
         self.pushButton_ellipse.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.pushButton_ellipse.setText(u"")
-        icon5 = QIcon()
-        icon5.addFile(u"./icons/grey/ellipse.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
-        icon5.addFile(u"./icons/blue/ellipse.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
-        self.pushButton_ellipse.setIcon(icon5)
+        icon4 = QIcon()
+        icon4.addFile(u"./icons/grey/ellipse.svg", QSize(), QIcon.Mode.Normal, QIcon.State.Off)
+        icon4.addFile(u"./icons/blue/ellipse.svg", QSize(), QIcon.Mode.Normal, QIcon.State.On)
+        self.pushButton_ellipse.setIcon(icon4)
         self.pushButton_ellipse.setCheckable(True)
         self.pushButton_ellipse.setAutoExclusive(True)
         self.pushButton_ellipse.setFlat(False)
@@ -312,7 +274,6 @@ class Ui_DsrWidget(object):
 
     def retranslateUi(self, DsrWidget):
         self.pushButton_set_preview.setText("")
-        self.pushButton_set_edition.setText("")
         self.pushButton_discard.setText("")
         self.pushButton_save.setText("")
         ___qtablewidgetitem = self.tableWidget_dsr.horizontalHeaderItem(0)

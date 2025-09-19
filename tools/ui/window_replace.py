@@ -35,6 +35,7 @@ from .widget_player_ctrl import PlayerCtrlWidget
 from .widget_graphics_view import DsrScenePatch, GraphicsViewWidget
 from .widget_replace import ReplaceWidget
 from .widget_dsr import DsrWidget
+from .widget_warp import WarpWidget
 from .widget_selection import SelectionWidget
 
 from logger import log
@@ -100,6 +101,9 @@ class ReplaceWindow(CommonWindow):
         self.widgets['replace'] = self.widget_replace
         self.verticalLayout_tool.addWidget(self.widget_replace)
 
+        self.widget_warp: WarpWidget = WarpWidget(self, controller)
+        self.widgets['warp'] = self.widget_warp
+        self.verticalLayout_tool.addWidget(self.widget_warp)
 
         self.widget_dsr: DsrWidget = DsrWidget(self, controller)
         self.widgets['dsr'] = self.widget_dsr
@@ -245,6 +249,7 @@ class ReplaceWindow(CommonWindow):
         frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
         self.widget_replace.set_current_frame(frame, original_frame)
         self.widget_dsr.set_current_frame(frame, original_frame)
+        self.widget_warp.set_current_frame(frame, original_frame)
         self.widget_player_ctrl.refresh_values(frame, original_frame)
         self.widget_preview.display_frame(frame)
 
@@ -310,8 +315,8 @@ class ReplaceWindow(CommonWindow):
         # print(f"{__name__} received: {event.key()}")
         self.current_key_pressed = None
 
-        if event.key() in (Qt.Key.Key_F3, Qt.Key.Key_F):
-            self.toggle_editing_patches()
+        # if event.key() in (Qt.Key.Key_F3, Qt.Key.Key_F):
+        #     self.toggle_editing_patches()
 
         widgets = (
             self.widget_player_ctrl,
