@@ -16,15 +16,15 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QButtonGroup, QCheckBox,
-    QDoubleSpinBox, QFrame, QHBoxLayout, QLabel,
-    QPushButton, QRadioButton, QSizePolicy, QSpacerItem,
-    QSpinBox, QVBoxLayout, QWidget)
+    QFrame, QHBoxLayout, QLabel, QPushButton,
+    QRadioButton, QSizePolicy, QSpacerItem, QSpinBox,
+    QVBoxLayout, QWidget)
 
 class Ui_WarpWidget(object):
     def setupUi(self, WarpWidget):
         if not WarpWidget.objectName():
             WarpWidget.setObjectName(u"WarpWidget")
-        WarpWidget.resize(292, 222)
+        WarpWidget.resize(290, 220)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -84,6 +84,8 @@ class Ui_WarpWidget(object):
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(-1, -1, -1, 12)
+        self.horizontalLayout_6 = QHBoxLayout()
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
         self.checkBox_enabled = QCheckBox(self.frame)
         self.checkBox_enabled.setObjectName(u"checkBox_enabled")
         sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
@@ -92,7 +94,21 @@ class Ui_WarpWidget(object):
         sizePolicy2.setHeightForWidth(self.checkBox_enabled.sizePolicy().hasHeightForWidth())
         self.checkBox_enabled.setSizePolicy(sizePolicy2)
 
-        self.verticalLayout.addWidget(self.checkBox_enabled)
+        self.horizontalLayout_6.addWidget(self.checkBox_enabled)
+
+        self.horizontalSpacer_6 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_6.addItem(self.horizontalSpacer_6)
+
+        self.pushButton_default_values = QPushButton(self.frame)
+        self.pushButton_default_values.setObjectName(u"pushButton_default_values")
+        sizePolicy2.setHeightForWidth(self.pushButton_default_values.sizePolicy().hasHeightForWidth())
+        self.pushButton_default_values.setSizePolicy(sizePolicy2)
+
+        self.horizontalLayout_6.addWidget(self.pushButton_default_values)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout_6)
 
         self.horizontalLayout_2 = QHBoxLayout()
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
@@ -144,12 +160,18 @@ class Ui_WarpWidget(object):
 
         self.horizontalLayout_4.addWidget(self.label_2)
 
-        self.doubleSpinBox_max_distance_ratio = QDoubleSpinBox(self.frame)
-        self.doubleSpinBox_max_distance_ratio.setObjectName(u"doubleSpinBox_max_distance_ratio")
-        self.doubleSpinBox_max_distance_ratio.setMaximum(0.600000000000000)
-        self.doubleSpinBox_max_distance_ratio.setSingleStep(0.100000000000000)
+        self.spinBox_max_distance_ratio = QSpinBox(self.frame)
+        self.spinBox_max_distance_ratio.setObjectName(u"spinBox_max_distance_ratio")
+        self.spinBox_max_distance_ratio.setMaximumSize(QSize(80, 16777215))
+        self.spinBox_max_distance_ratio.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.spinBox_max_distance_ratio.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
+        self.spinBox_max_distance_ratio.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.PlusMinus)
+        self.spinBox_max_distance_ratio.setSuffix(u"")
+        self.spinBox_max_distance_ratio.setPrefix(u"")
+        self.spinBox_max_distance_ratio.setMaximum(100)
+        self.spinBox_max_distance_ratio.setValue(15)
 
-        self.horizontalLayout_4.addWidget(self.doubleSpinBox_max_distance_ratio)
+        self.horizontalLayout_4.addWidget(self.spinBox_max_distance_ratio)
 
         self.horizontalSpacer_4 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
@@ -166,15 +188,15 @@ class Ui_WarpWidget(object):
         self.horizontalLayout_3.addWidget(self.label)
 
         self.radioButton_next = QRadioButton(self.frame)
-        self.frame_ref = QButtonGroup(WarpWidget)
-        self.frame_ref.setObjectName(u"frame_ref")
-        self.frame_ref.addButton(self.radioButton_next)
+        self.buttonGroup = QButtonGroup(WarpWidget)
+        self.buttonGroup.setObjectName(u"buttonGroup")
+        self.buttonGroup.addButton(self.radioButton_next)
         self.radioButton_next.setObjectName(u"radioButton_next")
 
         self.horizontalLayout_3.addWidget(self.radioButton_next)
 
         self.radioButton_prev = QRadioButton(self.frame)
-        self.frame_ref.addButton(self.radioButton_prev)
+        self.buttonGroup.addButton(self.radioButton_prev)
         self.radioButton_prev.setObjectName(u"radioButton_prev")
 
         self.horizontalLayout_3.addWidget(self.radioButton_prev)
@@ -205,9 +227,10 @@ class Ui_WarpWidget(object):
     def retranslateUi(self, WarpWidget):
         self.pushButton_set_preview.setText("")
         self.checkBox_enabled.setText(QCoreApplication.translate("WarpWidget", u"enable (F3)", None))
+        self.pushButton_default_values.setText(QCoreApplication.translate("WarpWidget", u"default", None))
         self.radioButton_knn.setText(QCoreApplication.translate("WarpWidget", u"knn, filter ratio (%)", None))
         self.radioButton_bf.setText(QCoreApplication.translate("WarpWidget", u"Brute Force", None))
-        self.label_2.setText(QCoreApplication.translate("WarpWidget", u"max distance (ratio)", None))
+        self.label_2.setText(QCoreApplication.translate("WarpWidget", u"max distance ratio  (%)", None))
         self.label.setText(QCoreApplication.translate("WarpWidget", u"Ref.", None))
         self.radioButton_next.setText(QCoreApplication.translate("WarpWidget", u"following", None))
         self.radioButton_prev.setText(QCoreApplication.translate("WarpWidget", u"previous", None))

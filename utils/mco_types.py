@@ -5,7 +5,6 @@ from typing import Any, Literal, Optional, TypedDict, TYPE_CHECKING, overload
 
 import numpy as np
 
-
 if TYPE_CHECKING:
     from .images import Images
     from parsers import (
@@ -17,8 +16,8 @@ if TYPE_CHECKING:
         ChapterGeometry,
         StabilizeParams,
         SceneDsr,
+        Warp,
         Effects,
-        Effect
     )
     from nn_inference.threads.t_decoder import VideoStreamInfo
     from scene.src_scene import SrcScenes
@@ -218,6 +217,9 @@ class Scene(TypedDict):
 
     # list of frames to replace
     replace: dict[int, int]
+
+    # List of parameters used to warp some frames
+    warp: dict[int, Warp]
 
     # contains parameters to stabilize.
     stabilize: StabilizeParams

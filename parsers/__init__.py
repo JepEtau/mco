@@ -61,6 +61,10 @@ from .geometry import (
     FINAL_WIDTH,
 )
 
+from .warp import (
+    Warp,
+)
+
 from .geometry_stats import (
     SceneGeometryStat,
     ChGeometryStats,
@@ -140,6 +144,9 @@ __all__ = [
     "SceneDsr",
     "DsrPatch",
     "MaskShape",
+
+    "Warp",
+    "SceneWarp",
 
     "StabilizeSegment",
     "StabilizeMode",

@@ -192,7 +192,6 @@ class DsrDatabase:
             initial_scene_dsr: SceneDsr = _src_scene['dsr']
 
              # Remove dsr that are not used anymore
-            print("initial frames")
             if initial_scene_dsr is not None:
                 for f_no in initial_scene_dsr.get_all().keys():
                     if (

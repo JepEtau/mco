@@ -9,6 +9,7 @@ from pprint import pprint
 
 from .dsr_database import DsrDatabase
 from .replace_database import ReplaceDatabase
+from .warp_database import WarpDatabase
 from utils.mco_types import Scene
 from utils.media import VideoInfo, extract_media_info_mco, frame_rate_dec
 from utils.p_print import lightcyan, red, yellow
@@ -33,6 +34,7 @@ class FrameCache:
         self,
         replace_db: ReplaceDatabase | None = None,
         dsr_db: DsrDatabase | None = None,
+        warp_db: WarpDatabase | None = None,
     ):
         super().__init__()
         self.scenes: OrderedDict[str, list[Frame]] = {}
@@ -42,6 +44,7 @@ class FrameCache:
         self.video_infos: dict[str, VideoInfo] = {}
         self.replace_db: ReplaceDatabase | None = replace_db
         self.dsr_db: DsrDatabase | None = dsr_db
+        self.warp_db: DsrDatabase | None = warp_db
 
 
     @staticmethod

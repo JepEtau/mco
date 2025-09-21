@@ -32,6 +32,7 @@ from .geometry import parse_geometry_file
 from .replace import parse_replace_file
 from .dsr import parse_dsr_file
 from .stabilize import parse_stabilize_file
+from .warp import parse_warp_file
 from ._keys import (
     credit_chapter_keys,
     non_credit_chapter_keys,
@@ -142,6 +143,7 @@ def parse_database(
                 parse_replace_file(k_ep_or_g=k_ep_tmp)
                 parse_loop_file(k_ep=k_ep_tmp, verbose=False)
                 parse_dsr_file(k_ep_or_g=k_ep_tmp)
+                parse_warp_file(k_ep_or_g=k_ep_tmp)
 
                 # parse_geometry_file(k_ep_or_g=k_ep_tmp)
                 # parse_stabilize_configurations(k_ep_or_g=k_ep_tmp)

@@ -8,6 +8,7 @@ from PySide6.QtCore import (
     Slot,
 )
 
+
 from ._types import (
     DsrAction,
     DsrProcessParams,
@@ -18,9 +19,12 @@ from ._types import (
 )
 from .replace_database import ReplaceDatabase
 from .dsr_database import DsrDatabase
+from .warp_database import WarpDatabase
+
 from .frame_cache import FrameCache, Frame
 from .common_controller import CommonController
 from .user_preferences import UserPreferences
+
 from logger import log
 from ui.window_replace import ReplaceWindow
 from utils.mco_types import Scene
@@ -29,7 +33,7 @@ from parsers import (
     DsrPatch,
     SceneDsr,
     TaskName,
-    ep_key,
+    Warp,
 )
 
 
@@ -53,15 +57,18 @@ class ReplaceController(CommonController):
         self.task_name: TaskName = task_name
         self.replace_db = ReplaceDatabase()
         self.dsr_db = DsrDatabase()
+        self.warp_db = WarpDatabase()
         self.frame_cache: FrameCache = FrameCache(
             self.replace_db,
             self.dsr_db,
+            self.warp_db,
         )
 
         # scene_no: {frame_no: replaced_by}
         self.selection_replacements: dict[int, dict[int, int]] = {}
         # scene_no: dsr regions for each frame
         self.selection_dsr: dict[int, SceneDsr] = {}
+        self.selection_warp: dict[int, dict[int, Warp]] = {}
 
         print("ReplaceController::init", self.user_preferences.settings)
         print(f"\tep_no={ep_no}, scene={scene}")
@@ -78,13 +85,10 @@ class ReplaceController(CommonController):
 
         # Replace
         self.view.widget_replace.signal_replace_modified[ReplaceAction].connect(self.event_frame_replaced)
-        self.view.widget_replace.signal_replace_removed.connect(
-            self.event_replace_removed
-        )
+        self.view.widget_replace.signal_replace_removed.connect(self.event_replace_removed)
         self.view.widget_replace.signal_undo.connect(self.event_replace_undo)
         self.view.widget_replace.signal_save.connect(self.event_replace_dsr_save)
         self.view.widget_replace.signal_discard.connect(self.event_replace_discard)
-
         # Warp
         self.view.widget_warp.signal_warp_values_changed.connect(self.event_warp_modified)
 
@@ -154,15 +158,13 @@ class ReplaceController(CommonController):
         self.selection_replacements.clear()
         for scene_no in selected['scenes']:
             scene: Scene = self.scenes[scene_no]
-            self.selection_replacements.update(
-                self.replace_db.scene_replacements(scene)
-            )
-            self.selection_dsr.update(
-                self.dsr_db.get_scene_dsr(scene)
-            )
+            self.selection_replacements.update(self.replace_db.scene_replacements(scene))
+            self.selection_dsr.update(self.dsr_db.get_scene_dsr(scene))
+            self.selection_warp.update(self.warp_db.warps(scene))
 
         self.signal_replacements_refreshed.emit()
         self.signal_dsr_shapes_refreshed.emit()
+
         # self.signal_preview_options_consolidated.emit(self.preview_options)
         self.signal_ready_to_play.emit()
 
@@ -208,27 +210,27 @@ class ReplaceController(CommonController):
 
 
     @Slot(ReplaceAction)
-    def event_frame_replaced(self, replace: ReplaceAction):
+    def event_frame_replaced(self, replace_action: ReplaceAction):
         print(yellow("event_frame_replaced"))
 
-        scene_no: int = int(replace.current.scene_key.split(':')[-1])
+        scene_no: int = int(replace_action.current.scene_key.split(':')[-1])
         # if isinstance(replace.by, Frame):
-        log.info(f"replace: {replace.current.no} <- {replace.by.no}")
+        log.info(f"replace: {replace_action.current.no} <- {replace_action.by.no}")
         by: int = (
-            replace.by.by
-            if replace.by.by != replace.current.no
-            else replace.by.no
+            replace_action.by.by
+            if replace_action.by.by != replace_action.current.no
+            else replace_action.by.no
         )
-        log.info(f"replace (consolidated): {replace.current.no} <- {by}")
+        log.info(f"replace (consolidated): {replace_action.current.no} <- {by}")
 
         scene: Scene = self.scenes[scene_no]
         self.replace_db.add(
             scene,
-            replace.current.src_scene_key,
-            replace.current.no,
+            replace_action.current.src_scene_key,
+            replace_action.current.no,
             by
         )
-        replace.current.by = replace.by.no
+        replace_action.current.by = replace_action.by.no
 
         print(self.replace_db.modified_scene_nos())
         del self.selection_replacements[scene_no]
@@ -258,7 +260,6 @@ class ReplaceController(CommonController):
                 f.by = f.no
                 removed_frame_no.remove(f.by)
 
-        self.signal_dsr_shapes_refreshed.emit()
         self.signal_replacements_refreshed.emit()
         self.signal_dsr_shapes_refreshed.emit()
         self.signal_reload_frame.emit()
@@ -398,8 +399,9 @@ class ReplaceController(CommonController):
 
     def send_modified_scene_signal(self):
         modified_nos: list[int] = (
-            self.dsr_db.modified_scene_nos()
-            + self.replace_db.modified_scene_nos()
+            self.replace_db.modified_scene_nos()
+            + self.dsr_db.modified_scene_nos()
+            + self.warp_db.modified_scene_nos()
         )
         self.signal_modified_scenes.emit(list(set(modified_nos)))
 
@@ -413,15 +415,12 @@ class ReplaceController(CommonController):
             print(f"save no.{scene_no}")
             scene: Scene = self.current_selection.scenes[scene_no]
             self.replace_db.save(scene)
-
-        print(self.dsr_db.modified_scene_nos())
-        for scene_no in self.playlist_properties().scenes:
-            print(f"save no.{scene_no}")
-            scene: Scene = self.current_selection.scenes[scene_no]
             self.dsr_db.save(scene)
+            self.warp_db.save(scene)
 
         self.signal_is_saved.emit('replace')
         self.signal_is_saved.emit('dsr')
+        self.signal_is_saved.emit('warp')
         self.send_modified_scene_signal()
 
 
@@ -432,3 +431,28 @@ class ReplaceController(CommonController):
         pprint(warp_action)
 
 
+        scene_no: int = int(warp_action.frame.frame.scene_key.split(':')[-1])
+        scene: Scene = self.scenes[scene_no]
+
+        print(yellow("warp modification:"), f"warp: scene={scene_no}:{warp_action.frame.no}")
+        self.warp_db.modify(
+            scene=scene,
+            src_scene_key=warp_action.frame.frame.src_scene_key,
+            frame_no=warp_action.frame.no,
+            warp=warp_action.warp
+        )
+        print(yellow(f"refresh selection scene no. {scene_no}"))
+        del self.selection_warp[scene_no]
+        self.selection_warp.update(
+            self.warp_db.warps(scene=scene)
+        )
+
+        print(self.warp_db.modified_scene_nos())
+        del self.selection_warp[scene_no]
+        self.selection_warp.update(
+            self.warp_db.warps(scene)
+        )
+        self.signal_dsr_shapes_refreshed.emit()
+        # self.signal_reload_frame.emit()
+        print(f"modified_scenes: {self.warp_db.modified_scene_nos()}")
+        self.send_modified_scene_signal()

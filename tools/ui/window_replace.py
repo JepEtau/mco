@@ -323,6 +323,7 @@ class ReplaceWindow(CommonWindow):
             self.widget_replace,
             self.widget_preview,
             self.widget_dsr,
+            self.widget_warp,
             self.widget_selection,
         )
 
@@ -341,6 +342,7 @@ class ReplaceWindow(CommonWindow):
             self.widget_replace,
             self.widget_preview,
             self.widget_dsr,
+            self.widget_warp,
             self.widget_selection
         ):
             try:
