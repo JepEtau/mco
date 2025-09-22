@@ -39,6 +39,7 @@ class Frame:
     dsr: list[DsrPatch] = field(default_factory=list)
     warp: Warp | None = None
     img: np.ndarray | None = None
+    warped_img: np.ndarray | None = None
     qimage: QPixmap | None = None
     _k_ep_ch_no: tuple[str, str, int] = ("", "", 0)
 

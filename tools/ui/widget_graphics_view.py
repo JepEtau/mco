@@ -794,7 +794,17 @@ class GraphicsViewWidget(QGraphicsView):
         #     self.draw_widget_guides(painter)
         #     painter.end()
         #     return
-        img = self.frame.img
+
+        warp = self.controller.frame_warp(self.frame.no)
+        if warp is not None:
+            print(yellow("WARPED"))
+            img = self.frame.warped_img
+            self.is_repainting = False
+            return
+        else:
+            img = self.frame.img
+
+
         # print(red(f"draw image {self.frame.no}"))
         for shape in self.regions:
             self._scene.removeItem(shape.item)

@@ -233,6 +233,7 @@ class FrameCache:
                             scene_key=scene_key,
                             no=f_no,
                             img=img,
+                            warped_img=None,
                             by=(
                                 self.replace_db.get(src_scene=src_scene, f_no=f_no)
                                 if self.replace_db is not None
@@ -250,6 +251,14 @@ class FrameCache:
                             )
                         )
                     )
+
+                # Preprocess images that have to be modified
+                for i, frame in enumerate(self.scenes[scene_key]):
+                    if frame.warp is not None:
+                        print(lightcyan(f"{frame.warp}"))
+
+
+
                 # Convert the 1st image of the scene to fasten the display
                 np_img: np.ndarray = self.scenes[scene_key][0].img
                 self.scenes[scene_key][0].img = np_img

@@ -284,7 +284,6 @@ class WarpWidget(QWidget, Ui_WarpWidget):
             self.signal_warp_update.emit(self.current_frame)
 
 
-
     @Slot(QTableWidgetItem)
     def event_move_to_frame_no(self, item: QTableWidgetItem):
         # double-click to jump to the frame no.

@@ -441,6 +441,7 @@ class ReplaceController(CommonController):
         scene_warp: dict[int, Warp] = self.selection_warp[self.current_scene_no]
         return scene_warp
 
+
     def frame_warp(self, frame_no: int) -> Warp:
         print(f"request warp for frame: {frame_no}")
         scene_warp: dict[int, Warp] = self.selection_warp[self.current_scene_no]
