@@ -38,8 +38,6 @@ class WarpDatabase:
         """Returns the frame no. used to warp this frame
         """
         scene: Scene = src_scene.in_scene
-        pprint(scene)
-        print(f_no)
         try:
             if initial:
                 return scene['warp'][f_no]
@@ -59,7 +57,7 @@ class WarpDatabase:
 
         scene_warp = self._db[_key]
         return scene_warp[f_no] if f_no in scene_warp else None
-    
+
 
 
     def get_scene_warp(

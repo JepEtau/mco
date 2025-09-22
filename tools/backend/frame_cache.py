@@ -113,7 +113,6 @@ class FrameCache:
                 filter_complex: list[str] = []
                 in_h, in_w, in_c = vi['shape']
 
-                print(red("TODO: use task_name \'dsr\' in frame cache"))
                 hr_vsettings: VideoSettings = db['vsettings']['hr']
                 pad: int = hr_vsettings.pad
 
@@ -255,7 +254,13 @@ class FrameCache:
                 # Preprocess images that have to be modified
                 for i, frame in enumerate(self.scenes[scene_key]):
                     if frame.warp is not None:
-                        print(lightcyan(f"{frame.warp}"))
+                        print(lightcyan(f"{i}: {frame.no}"), f"{frame.warp}")
+                        ref_frame: Frame = self.scenes[scene_key][i + 1]
+                        while ref_frame.no != ref_frame.by:
+                            i += 1
+                            ref_frame: Frame = self.scenes[scene_key][i + 1]
+                        print(f"  frame: no: {frame.no} by {frame.by}")
+                        print(f"  ref: no: {ref_frame.no} by {ref_frame.by}")
 
 
 
