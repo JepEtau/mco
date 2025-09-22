@@ -238,6 +238,14 @@ def consolidate_scene(
             else "watermark"
         )
 
+    # Warp
+    if scene['src'].has_warp():
+        warp_hash = scene['src'].warp_hash()
+        t_hash = calc_hash(f"{t_hash};{warp_hash}")
+        if verbose:
+            print(yellow(f"WARP hash: {warp_hash}"))
+        scene_filters['lr'].hash = t_hash
+
     # upscale, hr
     sequence: str = scene['filters']['upscale'].sequence
     for i, f in enumerate(sequence.split(',')):

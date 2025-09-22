@@ -20,7 +20,7 @@ from utils.p_print import *
 class WarpDatabase:
 
     def __init__(self) -> None:
-        self._db: dict[str, dict[int, int]] = {}
+        self._db: dict[str, dict[int, Warp]] = {}
         self.modified_scenes: set[str] = set()
         self.modified_src_scenes: set[str] = set()
         self.history: list = []
@@ -34,32 +34,39 @@ class WarpDatabase:
         return f"{':'.join(key[:3])}:{key[-1]:03}"
 
 
-    def get(self, src_scene: SrcScene, f_no: int) -> Warp:
+    def get(self, src_scene: SrcScene, f_no: int, initial: bool = False) -> Warp:
         """Returns the frame no. used to warp this frame
         """
         scene: Scene = src_scene.in_scene
+        pprint(scene)
+        print(f_no)
+        try:
+            if initial:
+                return scene['warp'][f_no]
+        except:
+            pass
+
         _key = self._key(src_scene)
         try:
-            warp_dict = self._db[_key]
+            scene_warp = self._db[_key]
         except:
-            try:
-                self._db[_key] = deepcopy(scene['warp'])
-            except:
-                self._db[_key] = {}
-        warp_dict = self._db[_key]
+            if (
+                'warp' not in scene
+                or scene['warp'] is None
+            ):
+                return None
+            self._db[_key] = deepcopy(scene['warp'])
 
-        return (
-            warp_dict[f_no]
-            if f_no in warp_dict
-            else f_no
-        )
+        scene_warp = self._db[_key]
+        return scene_warp[f_no] if f_no in scene_warp else None
+    
 
 
-    def warps(
+    def get_scene_warp(
         self,
         scene: Scene,
     ) -> dict[int, dict[int, Warp]]:
-        """Returns all warpments for this scene
+        """Returns all warps for this scene
         """
         scene_warp: dict[int, int] = {}
         scene_no: int = scene['no']
@@ -175,7 +182,9 @@ class WarpDatabase:
             # Update the config file, select section
             k_section = '.'.join((k_ed, k_ep, k_ch))
             in_scene: Scene = db[k_ep]['video'][k_ed][k_ch]['scenes'][int(src_scene_no)]
-            initial_scene_warp = in_scene['warp']
+            initial_scene_warp: Warp = None
+            if 'warp' in in_scene:
+                initial_scene_warp = in_scene['warp']
 
             # Remove warps that are not used anymore
             if initial_scene_warp is not None:

@@ -44,7 +44,7 @@ class FrameCache:
         self.video_infos: dict[str, VideoInfo] = {}
         self.replace_db: ReplaceDatabase | None = replace_db
         self.dsr_db: DsrDatabase | None = dsr_db
-        self.warp_db: DsrDatabase | None = warp_db
+        self.warp_db: WarpDatabase | None = warp_db
 
 
     @staticmethod
@@ -243,6 +243,11 @@ class FrameCache:
                                 if self.dsr_db is not None
                                 else None
                             ),
+                            warp=(
+                                self.warp_db.get(src_scene=src_scene, f_no=f_no)
+                                if self.warp_db is not None
+                                else None
+                            )
                         )
                     )
                 # Convert the 1st image of the scene to fasten the display

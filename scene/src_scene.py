@@ -15,6 +15,7 @@ if TYPE_CHECKING:
         Effect,
         Effects,
         EffectName,
+        Warp,
     )
 
 
@@ -424,3 +425,26 @@ class SrcScenes:
             if 'dsr' in s.in_scene and s.in_scene['dsr'].has_patches():
                 hashes.append(f"{s.in_scene['dsr'].hash()}")
         return ";".join(hashes)
+
+
+    def has_warp(self) -> bool:
+        for s in self._scenes:
+            if (
+                'warp' in s.in_scene
+                and s.in_scene['warp'] is not None
+                and len(s.in_scene['warp']) > 0
+            ):
+                return True
+        return False
+
+
+    def warp_hash(self) -> str:
+        # hashes: list[str] = []
+        hashes: str = ""
+        for s in self._scenes:
+            if 'warp' in s.in_scene and len(s.in_scene['warp'].keys()) > 0:
+                warps: dict[int, Warp] = s.in_scene['warp']
+                hashes = ','.join([f"{k}:{v}" for k, v in warps.items()])                
+        return hashes
+
+

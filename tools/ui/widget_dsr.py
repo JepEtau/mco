@@ -226,7 +226,7 @@ class DsrWidget(QWidget, Ui_DsrWidget):
     @Slot()
     def event_dsr_list_refreshed(self):
         # print(lightcyan("event_dsr_list_refreshed"))
-        dsr_shapes: list[ DsrScenePatch] = []
+        dsr_shapes: list[DsrScenePatch] = []
         if self.current_frame is not None:
             dsr_shapes = self.controller.playlist_dsr(
                 frame_no=self.current_frame.no

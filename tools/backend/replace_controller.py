@@ -8,8 +8,11 @@ from PySide6.QtCore import (
     Slot,
 )
 
+from scene.src_scene import SrcScene
+
 
 from ._types import (
+    CurrentFrame,
     DsrAction,
     DsrProcessParams,
     PlaylistProperties,
@@ -41,6 +44,7 @@ class ReplaceController(CommonController):
     signal_preview_options_consolidated = Signal(dict)
     signal_replacements_refreshed = Signal()
     signal_dsr_shapes_refreshed = Signal()
+    signal_scene_warps_refreshed = Signal()
 
     def __init__(
         self,
@@ -89,8 +93,10 @@ class ReplaceController(CommonController):
         self.view.widget_replace.signal_undo.connect(self.event_replace_undo)
         self.view.widget_replace.signal_save.connect(self.event_replace_dsr_save)
         self.view.widget_replace.signal_discard.connect(self.event_replace_discard)
+
         # Warp
         self.view.widget_warp.signal_warp_values_changed.connect(self.event_warp_modified)
+        self.view.widget_warp.signal_warp_update.connect(self.event_warp_process)
 
         # Dsr
         self.view.widget_dsr.signal_dsr_modified.connect(self.event_dsr_modified)
@@ -160,10 +166,12 @@ class ReplaceController(CommonController):
             scene: Scene = self.scenes[scene_no]
             self.selection_replacements.update(self.replace_db.scene_replacements(scene))
             self.selection_dsr.update(self.dsr_db.get_scene_dsr(scene))
-            self.selection_warp.update(self.warp_db.warps(scene))
+            self.selection_warp.update(self.warp_db.get_scene_warp(scene))
 
+        # Update widgets' tables
         self.signal_replacements_refreshed.emit()
         self.signal_dsr_shapes_refreshed.emit()
+        self.signal_scene_warps_refreshed.emit()
 
         # self.signal_preview_options_consolidated.emit(self.preview_options)
         self.signal_ready_to_play.emit()
@@ -239,6 +247,7 @@ class ReplaceController(CommonController):
         )
         self.signal_replacements_refreshed.emit()
         self.signal_dsr_shapes_refreshed.emit()
+        self.signal_scene_warps_refreshed.emit()
         self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
         self.send_modified_scene_signal()
@@ -262,6 +271,7 @@ class ReplaceController(CommonController):
 
         self.signal_replacements_refreshed.emit()
         self.signal_dsr_shapes_refreshed.emit()
+        self.signal_scene_warps_refreshed.emit()
         self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
         self.send_modified_scene_signal()
@@ -279,6 +289,7 @@ class ReplaceController(CommonController):
             )
         self.signal_replacements_refreshed.emit()
         self.signal_dsr_shapes_refreshed.emit()
+        self.signal_scene_warps_refreshed.emit()
         self.signal_reload_frame.emit()
         self.send_modified_scene_signal()
 
@@ -296,6 +307,7 @@ class ReplaceController(CommonController):
             )
         self.signal_replacements_refreshed.emit()
         self.signal_dsr_shapes_refreshed.emit()
+        self.signal_scene_warps_refreshed.emit()
         self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.replace_db.modified_scene_nos()}")
         self.send_modified_scene_signal()
@@ -360,7 +372,7 @@ class ReplaceController(CommonController):
 
 
     @Slot(DsrProcessParams)
-    def event_process(self, params: DsrProcessParams) -> None:
+    def event_dsr_process(self, params: DsrProcessParams) -> None:
         scene_no: int = int(self.current_frame.scene_key.split(':')[-1])
         scene: Scene = self.scenes[scene_no]
         self.dsr_db.update_scene_dsr(
@@ -424,12 +436,23 @@ class ReplaceController(CommonController):
         self.send_modified_scene_signal()
 
 
+    # WARP
+    def playlist_warp(self) -> dict[int, Warp]:
+        scene_warp: dict[int, Warp] = self.selection_warp[self.current_scene_no]
+        return scene_warp
+
+    def frame_warp(self, frame_no: int) -> Warp:
+        print(f"request warp for frame: {frame_no}")
+        scene_warp: dict[int, Warp] = self.selection_warp[self.current_scene_no]
+        if frame_no in scene_warp:
+            return scene_warp[frame_no]
+        return None
+    
+
     @Slot()
     def event_warp_modified(self, warp_action: WarpAction) -> None:
         # warp_action.frame
         print("event_warp_modified")
-        pprint(warp_action)
-
 
         scene_no: int = int(warp_action.frame.frame.scene_key.split(':')[-1])
         scene: Scene = self.scenes[scene_no]
@@ -441,18 +464,60 @@ class ReplaceController(CommonController):
             frame_no=warp_action.frame.no,
             warp=warp_action.warp
         )
-        print(yellow(f"refresh selection scene no. {scene_no}"))
         del self.selection_warp[scene_no]
         self.selection_warp.update(
-            self.warp_db.warps(scene=scene)
+            self.warp_db.get_scene_warp(scene=scene)
         )
 
-        print(self.warp_db.modified_scene_nos())
         del self.selection_warp[scene_no]
         self.selection_warp.update(
-            self.warp_db.warps(scene)
+            self.warp_db.get_scene_warp(scene)
         )
-        self.signal_dsr_shapes_refreshed.emit()
+        self.signal_scene_warps_refreshed.emit()
         # self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.warp_db.modified_scene_nos()}")
         self.send_modified_scene_signal()
+
+
+    @Slot()
+    def event_warp_process(self, frame: CurrentFrame) -> None:
+        frame.frame.src_scene_key
+        scene_no: int = int(frame.frame.scene_key.split(':')[-1])
+        print(lightcyan(f"warp process: {scene_no}"))
+        if frame.frame.no != frame.frame.by:
+            print(f"   not to be warped")
+            return
+        else:
+            print("   warp")
+        # pprint(frame)
+
+        print(self.playlist_properties().count)
+
+        scene: Scene = self.scenes[scene_no]
+        if frame.frame.i > self.playlist_properties().count:
+            print(red(f"Cannot apply warp on next frame"))
+            return
+        
+        # Get warp
+        scene_no: int = int(frame.frame.scene_key.split(':')[-1])
+        scene: Scene = self.scenes[scene_no]
+        src_scene_key = frame.frame.src_scene_key
+        pprint(self.warp_db.get_scene_warp(scene))
+
+
+        # self.dsr_db.update_scene_dsr(
+        #     scene, DsrAction(type='set', parameter='detection', value=params)
+        # )
+
+        # print(lightgreen("DSR db: modify src scene:"), src_scene_key)
+        # if src_scene_key not in self._db:
+        #     self._db[src_scene_key] = SceneDsr()
+
+
+        # # self.scenes[frame.frame.src_scene_key]
+        # src_scene: SrcScene = scene['src']
+        # warp: Warp = self.warp_db.get_scene_warp(scene=scene, f_no=frame.frame.no)
+        # print(warp)
+
+
+

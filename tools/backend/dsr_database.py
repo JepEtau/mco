@@ -24,7 +24,6 @@ from parsers import (
     db,
     SceneDsr,
     DsrPatch,
-    credit_chapter_keys,
 )
 
 

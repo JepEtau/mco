@@ -15,21 +15,24 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QAbstractSpinBox, QApplication, QButtonGroup, QCheckBox,
-    QFrame, QHBoxLayout, QLabel, QPushButton,
-    QRadioButton, QSizePolicy, QSpacerItem, QSpinBox,
+from PySide6.QtWidgets import (QAbstractItemView, QAbstractSpinBox, QApplication, QButtonGroup,
+    QCheckBox, QFrame, QHBoxLayout, QHeaderView,
+    QLabel, QPushButton, QRadioButton, QSizePolicy,
+    QSpacerItem, QSpinBox, QTableWidget, QTableWidgetItem,
     QVBoxLayout, QWidget)
 
 class Ui_WarpWidget(object):
     def setupUi(self, WarpWidget):
         if not WarpWidget.objectName():
             WarpWidget.setObjectName(u"WarpWidget")
-        WarpWidget.resize(290, 220)
+        WarpWidget.resize(292, 310)
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(WarpWidget.sizePolicy().hasHeightForWidth())
         WarpWidget.setSizePolicy(sizePolicy)
+        WarpWidget.setMinimumSize(QSize(0, 280))
+        WarpWidget.setMaximumSize(QSize(16777215, 310))
         self.verticalLayout_3 = QVBoxLayout(WarpWidget)
         self.verticalLayout_3.setSpacing(3)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
@@ -83,7 +86,7 @@ class Ui_WarpWidget(object):
 
         self.verticalLayout = QVBoxLayout()
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.verticalLayout.setContentsMargins(-1, -1, -1, 12)
+        self.verticalLayout.setContentsMargins(-1, -1, -1, 0)
         self.horizontalLayout_6 = QHBoxLayout()
         self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
         self.checkBox_enabled = QCheckBox(self.frame)
@@ -208,9 +211,48 @@ class Ui_WarpWidget(object):
 
         self.verticalLayout.addLayout(self.horizontalLayout_3)
 
-        self.horizontalSpacer_5 = QSpacerItem(40, 3, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.tableWidget_warp = QTableWidget(self.frame)
+        if (self.tableWidget_warp.columnCount() < 2):
+            self.tableWidget_warp.setColumnCount(2)
+        __qtablewidgetitem = QTableWidgetItem()
+        self.tableWidget_warp.setHorizontalHeaderItem(0, __qtablewidgetitem)
+        __qtablewidgetitem1 = QTableWidgetItem()
+        self.tableWidget_warp.setHorizontalHeaderItem(1, __qtablewidgetitem1)
+        if (self.tableWidget_warp.rowCount() < 2):
+            self.tableWidget_warp.setRowCount(2)
+        __qtablewidgetitem2 = QTableWidgetItem()
+        self.tableWidget_warp.setItem(0, 0, __qtablewidgetitem2)
+        __qtablewidgetitem3 = QTableWidgetItem()
+        self.tableWidget_warp.setItem(0, 1, __qtablewidgetitem3)
+        __qtablewidgetitem4 = QTableWidgetItem()
+        self.tableWidget_warp.setItem(1, 0, __qtablewidgetitem4)
+        __qtablewidgetitem5 = QTableWidgetItem()
+        self.tableWidget_warp.setItem(1, 1, __qtablewidgetitem5)
+        self.tableWidget_warp.setObjectName(u"tableWidget_warp")
+        sizePolicy3 = QSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Maximum)
+        sizePolicy3.setHorizontalStretch(0)
+        sizePolicy3.setVerticalStretch(0)
+        sizePolicy3.setHeightForWidth(self.tableWidget_warp.sizePolicy().hasHeightForWidth())
+        self.tableWidget_warp.setSizePolicy(sizePolicy3)
+        self.tableWidget_warp.setMinimumSize(QSize(0, 25))
+        self.tableWidget_warp.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.tableWidget_warp.setFrameShape(QFrame.Shape.StyledPanel)
+        self.tableWidget_warp.setFrameShadow(QFrame.Shadow.Sunken)
+        self.tableWidget_warp.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.tableWidget_warp.setEditTriggers(QAbstractItemView.EditTrigger.SelectedClicked)
+        self.tableWidget_warp.setProperty(u"showDropIndicator", False)
+        self.tableWidget_warp.setDragDropOverwriteMode(False)
+        self.tableWidget_warp.setSelectionMode(QAbstractItemView.SelectionMode.ContiguousSelection)
+        self.tableWidget_warp.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.tableWidget_warp.setSortingEnabled(False)
+        self.tableWidget_warp.setRowCount(2)
+        self.tableWidget_warp.horizontalHeader().setDefaultSectionSize(90)
+        self.tableWidget_warp.horizontalHeader().setStretchLastSection(True)
+        self.tableWidget_warp.verticalHeader().setVisible(False)
+        self.tableWidget_warp.verticalHeader().setMinimumSectionSize(22)
+        self.tableWidget_warp.verticalHeader().setDefaultSectionSize(22)
 
-        self.verticalLayout.addItem(self.horizontalSpacer_5)
+        self.verticalLayout.addWidget(self.tableWidget_warp)
 
 
         self.verticalLayout_2.addLayout(self.verticalLayout)
@@ -234,6 +276,19 @@ class Ui_WarpWidget(object):
         self.label.setText(QCoreApplication.translate("WarpWidget", u"Ref.", None))
         self.radioButton_next.setText(QCoreApplication.translate("WarpWidget", u"following", None))
         self.radioButton_prev.setText(QCoreApplication.translate("WarpWidget", u"previous", None))
+        ___qtablewidgetitem = self.tableWidget_warp.horizontalHeaderItem(0)
+        ___qtablewidgetitem.setText(QCoreApplication.translate("WarpWidget", u"frame", None));
+        ___qtablewidgetitem1 = self.tableWidget_warp.horizontalHeaderItem(1)
+        ___qtablewidgetitem1.setText(QCoreApplication.translate("WarpWidget", u"params", None));
+
+        __sortingEnabled = self.tableWidget_warp.isSortingEnabled()
+        self.tableWidget_warp.setSortingEnabled(False)
+        ___qtablewidgetitem2 = self.tableWidget_warp.item(0, 0)
+        ___qtablewidgetitem2.setText(QCoreApplication.translate("WarpWidget", u"123456", None));
+        ___qtablewidgetitem3 = self.tableWidget_warp.item(0, 1)
+        ___qtablewidgetitem3.setText(QCoreApplication.translate("WarpWidget", u"knn, 75%, bf", None));
+        self.tableWidget_warp.setSortingEnabled(__sortingEnabled)
+
         pass
     # retranslateUi
 

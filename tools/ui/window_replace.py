@@ -137,9 +137,8 @@ class ReplaceWindow(CommonWindow):
         self.widget_replace.signal_preview_toggled[bool].connect(
             self.preview_modified
         )
-        self.widget_replace.signal_frame_selected[int].connect(
-            self.event_move_to_frame_no
-        )
+        self.widget_replace.signal_frame_selected[int].connect(self.event_move_to_frame_no)
+        self.widget_warp.signal_frame_selected[int].connect(self.event_move_to_frame_no)
 
         self.widget_player_ctrl.signal_slider_moved[int].connect(
             self.event_move_to_frame_index
@@ -255,7 +254,7 @@ class ReplaceWindow(CommonWindow):
 
     @Slot()
     def event_reload_frame(self):
-        log.info("reload frame")
+        # log.info("reload frame")
         self.display_frame()
 
     @Slot()
