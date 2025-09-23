@@ -140,9 +140,7 @@ class ReplaceWindow(CommonWindow):
         self.widget_replace.signal_frame_selected[int].connect(self.event_move_to_frame_no)
         self.widget_warp.signal_frame_selected[int].connect(self.event_move_to_frame_no)
 
-        self.widget_player_ctrl.signal_slider_moved[int].connect(
-            self.event_move_to_frame_index
-        )
+
         self.controller.signal_ready_to_play.connect(self.event_ready_to_play)
         self.controller.signal_reload_frame.connect(self.event_reload_frame)
         self.controller.signal_error[str].connect(self.error_message)
@@ -245,6 +243,7 @@ class ReplaceWindow(CommonWindow):
 
 
     def display_frame(self):
+        # print(f"{time.time()}: display image {self.current_frame_index}")
         frame, original_frame = self.controller.get_frame_at_index(self.current_frame_index)
         self.widget_replace.set_current_frame(frame, original_frame)
         self.widget_dsr.set_current_frame(frame, original_frame)
@@ -257,14 +256,14 @@ class ReplaceWindow(CommonWindow):
         # log.info("reload frame")
         self.display_frame()
 
-    @Slot()
-    def event_ready_to_play(self):
-        log.info("ready to play")
-        playlist_properties = self.controller.playlist_properties()
-        self.current_frame_index = 0
-        self.playing_frame_count = playlist_properties.count
-        f = self.controller.get_frame_at_index(self.current_frame_index)
-        self.display_frame(f)
+    # @Slot()
+    # def event_ready_to_play(self):
+    #     log.info("ready to play")
+    #     playlist_properties = self.controller.playlist_properties()
+    #     self.current_frame_index = 0
+    #     self.playing_frame_count = playlist_properties.count
+    #     f = self.controller.get_frame_at_index(self.current_frame_index)
+    #     self.display_frame(f)
 
 
     @Slot()

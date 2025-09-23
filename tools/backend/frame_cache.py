@@ -7,6 +7,8 @@ import numpy as np
 from collections import OrderedDict
 from pprint import pprint
 
+from processing.warp import warp_image
+
 from .dsr_database import DsrDatabase
 from .replace_database import ReplaceDatabase
 from .warp_database import WarpDatabase
@@ -261,8 +263,7 @@ class FrameCache:
                             ref_frame: Frame = self.scenes[scene_key][i + 1]
                         print(f"  frame: no: {frame.no} by {frame.by}")
                         print(f"  ref: no: {ref_frame.no} by {ref_frame.by}")
-
-
+                        frame.warped_img = warp_image(frame.img, ref_img=frame.img, warp=frame.warp)
 
                 # Convert the 1st image of the scene to fasten the display
                 np_img: np.ndarray = self.scenes[scene_key][0].img

@@ -18,7 +18,6 @@ from .homography import (
 
 
 def warp_image(img: np.ndarray, ref_img: np.ndarray, warp: Warp) -> np.ndarray:
-    print(f"warp_image: {img.dtype}")
     feature_matching = warp.matcher
 
     current_gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -69,7 +68,7 @@ def warp_image(img: np.ndarray, ref_img: np.ndarray, warp: Warp) -> np.ndarray:
     if feature_matching == 'bf':
         matches = match_keypoints_bf(
             keypoints, features, keypoints_ref, features_ref, method=feature_extractor,
-            max_disp = 90
+            max_disp = int(img.shape[0] * warp.max_distance_ratio)
         )
     elif feature_matching == 'knn':
         matches = match_keypoints_knn(
@@ -79,7 +78,7 @@ def warp_image(img: np.ndarray, ref_img: np.ndarray, warp: Warp) -> np.ndarray:
             matches,
             keypoints,
             keypoints_ref,
-            max_disp=int(img.shape(0) * warp.max_distance_ratio)
+            max_disp=int(img.shape[0] * warp.max_distance_ratio)
         )
         print(f"matches: {len(matches)}")
 
@@ -99,16 +98,17 @@ def warp_image(img: np.ndarray, ref_img: np.ndarray, warp: Warp) -> np.ndarray:
     (matches, H, status) = M
 
     # Apply the perspective transformation
-    img: np.ndarray = cv2.copyMakeBorder(
+    img: np.ndarray = np.ascontiguousarray(cv2.copyMakeBorder(
         img, top=border, bottom=border, left=border, right=border,
         borderType=cv2.BORDER_CONSTANT, value=[0, 0, 0]
-    )
+    ))
     img_stabilized = cv2.warpPerspective(img ,H, (img.shape[1], img.shape[0]))
 
-    img_stabilized = img_stabilized[
-        border:img_stabilized.shape[0] - border,
-        border:img_stabilized.shape[1] - border,
-        :
-    ]
-
+    img_stabilized = np.ascontiguousarray(
+        img_stabilized[
+            border:img_stabilized.shape[0] - border,
+            border:img_stabilized.shape[1] - border,
+            :
+        ]
+    )
     return img_stabilized

@@ -84,9 +84,6 @@ class CommonWindow(QMainWindow):
         self.widget_player_ctrl.signal_slider_moved[int].connect(
             self.event_move_to_frame_index
         )
-        self.widget_player_ctrl.signal_slider_moved[int].connect(
-            self.event_move_to_frame_index
-        )
         self.widget_player_ctrl.signal_speed_changed[float].connect(
             self.event_speed_changed
         )

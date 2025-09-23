@@ -122,6 +122,7 @@ class WarpWidget(QWidget, Ui_WarpWidget):
         self.radioButton_next.blockSignals(enabled)
         self.radioButton_prev.blockSignals(enabled)
         self.pushButton_default_values.blockSignals(enabled)
+        self.tableWidget_warp.blockSignals(enabled)
 
 
     def apply_user_preferences(self, preferences: dict):
@@ -221,7 +222,7 @@ class WarpWidget(QWidget, Ui_WarpWidget):
             frame=self.current_frame,
             warp=Warp(
                 enabled=self.checkBox_enabled.isChecked(),
-                matcher='knn' if self.radioButton_knn else 'bf',
+                matcher='knn' if self.radioButton_knn.isChecked() else 'bf',
                 knn_ratio=float(self.spinBox_knn_ratio.value()) / 100.,
                 max_distance_ratio=float(self.spinBox_max_distance_ratio.value()) / 100.,
                 ref_frame='previous' if self.radioButton_prev else 'next'
@@ -247,6 +248,7 @@ class WarpWidget(QWidget, Ui_WarpWidget):
     @Slot()
     def event_warp_list_refreshed(self):
         print(lightgreen("refresh list of frames to warp"))
+        self.block_signals(True)
         warps = self.controller.playlist_warp()
         self.tableWidget_warp.blockSignals(True)
 
@@ -270,6 +272,7 @@ class WarpWidget(QWidget, Ui_WarpWidget):
         self.tableWidget_warp.blockSignals(False)
         self.ui.set_focus()
         self.tableWidget_warp.setEnabled(True)
+        self.block_signals(False)
 
 
     def event_default_values(self) -> None:

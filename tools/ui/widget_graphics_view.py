@@ -796,14 +796,10 @@ class GraphicsViewWidget(QGraphicsView):
         #     return
 
         warp = self.controller.frame_warp(self.frame.no)
-        if warp is not None:
-            print(yellow("WARPED"))
+        if warp is not None and warp.enabled:
             img = self.frame.warped_img
-            self.is_repainting = False
-            return
         else:
             img = self.frame.img
-
 
         # print(red(f"draw image {self.frame.no}"))
         for shape in self.regions:

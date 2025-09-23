@@ -8,6 +8,7 @@ from PySide6.QtCore import (
     Slot,
 )
 
+from processing.warp import warp_image
 from scene.src_scene import SrcScene
 
 
@@ -443,7 +444,7 @@ class ReplaceController(CommonController):
 
 
     def frame_warp(self, frame_no: int) -> Warp:
-        print(f"request warp for frame: {frame_no}")
+        # print(f"request warp for frame: {frame_no}")
         scene_warp: dict[int, Warp] = self.selection_warp[self.current_scene_no]
         if frame_no in scene_warp:
             return scene_warp[frame_no]
@@ -453,7 +454,7 @@ class ReplaceController(CommonController):
     @Slot()
     def event_warp_modified(self, warp_action: WarpAction) -> None:
         # warp_action.frame
-        print("event_warp_modified")
+        print(purple(f"event_warp_modified: {warp_action.warp}"))
 
         scene_no: int = int(warp_action.frame.frame.scene_key.split(':')[-1])
         scene: Scene = self.scenes[scene_no]
@@ -470,10 +471,21 @@ class ReplaceController(CommonController):
             self.warp_db.get_scene_warp(scene=scene)
         )
 
-        del self.selection_warp[scene_no]
-        self.selection_warp.update(
-            self.warp_db.get_scene_warp(scene)
-        )
+        frame = warp_action.frame.frame
+        frame_warp = warp_action.warp
+        print(f"new warp: {frame_warp}")
+        if frame_warp is not None:
+            if not frame_warp.enabled:
+                warp_action.frame.frame.warped_img = None
+            else:
+                i = warp_action.frame.frame.i
+                print(lightcyan(f"{i}: {frame.no}"), f"{frame.warp}")
+                ref_frame: Frame = self.get_original_frame(i+1)
+                print(f"  frame: no: {frame.no} by {frame.by}")
+                print(f"  ref: no: {ref_frame.no} by {ref_frame.by}")
+                frame.warped_img = warp_image(frame.img, ref_img=frame.img, warp=frame.warp)
+
+        print(f"{frame_warp}")
         self.signal_scene_warps_refreshed.emit()
         # self.signal_reload_frame.emit()
         print(f"modified_scenes: {self.warp_db.modified_scene_nos()}")
