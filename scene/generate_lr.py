@@ -330,6 +330,7 @@ def generate_lr_scene(
         sent = 0
 
         # Loop until all frames have been sent to the encoder
+        wrap_f_ref_no: int = -1
         while remaining:
 
             _in_f_no = src_start + f_index
@@ -395,6 +396,39 @@ def generate_lr_scene(
                 scene=scene,
                 src_scene_index=src_index,
             )
+
+            # If this frame has to be warped using another frame,
+            # put it in a cache until the following frame is found
+            if wrap_f_ref_no != -1:
+                # waiting for the reference frame
+                if frame.f_no == wrap_f_ref_no:
+                    # let's use it for all frames that are in the queue
+                    while frame_cache_warp.get_frame_to_wrap(f_ref_no):
+                        
+
+
+
+            if frame.f_no in scene['warp']:
+                # wait for the frame no used as reference
+                f_ref_no = scene['warp'][frame.f_no][f_ref_no]
+                if f_ref_no not in frame_cache_warp:
+                    # put frame in the queue
+                    frame_cache_warp.append(frame)
+                else:
+                    # in queue
+                    frame = frame_cache_warp.get(f_ref_no)
+
+
+
+
+              
+              if f_ref_no not in frame_cache_warp:
+                  # let's wrap it
+                  warp_wait_for_ref = False
+            elif frame.f_no in scene['warp']:
+                  
+
+
 
             # Tag it as last frame if no other src scene to decode
             # and this is the last frame of this src scene

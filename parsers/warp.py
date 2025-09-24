@@ -31,6 +31,7 @@ class Warp:
     knn_ratio: float = .7
     max_distance_ratio: float = .2
     ref_frame: Literal['previous', 'next'] = 'next'
+    f_no_ref: int = -1
 
     def __str__(self) -> str:
         return ", ".join(
