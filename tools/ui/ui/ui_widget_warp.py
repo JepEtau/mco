@@ -96,6 +96,7 @@ class Ui_WarpWidget(object):
         sizePolicy2.setVerticalStretch(0)
         sizePolicy2.setHeightForWidth(self.checkBox_enabled.sizePolicy().hasHeightForWidth())
         self.checkBox_enabled.setSizePolicy(sizePolicy2)
+        self.checkBox_enabled.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.horizontalLayout_6.addWidget(self.checkBox_enabled)
 
@@ -107,6 +108,7 @@ class Ui_WarpWidget(object):
         self.pushButton_default_values.setObjectName(u"pushButton_default_values")
         sizePolicy2.setHeightForWidth(self.pushButton_default_values.sizePolicy().hasHeightForWidth())
         self.pushButton_default_values.setSizePolicy(sizePolicy2)
+        self.pushButton_default_values.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.horizontalLayout_6.addWidget(self.pushButton_default_values)
 
@@ -121,6 +123,7 @@ class Ui_WarpWidget(object):
         self.matching.setObjectName(u"matching")
         self.matching.addButton(self.radioButton_knn)
         self.radioButton_knn.setObjectName(u"radioButton_knn")
+        self.radioButton_knn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.horizontalLayout_2.addWidget(self.radioButton_knn)
 
@@ -133,6 +136,7 @@ class Ui_WarpWidget(object):
         self.spinBox_knn_ratio.setSuffix(u"")
         self.spinBox_knn_ratio.setPrefix(u"")
         self.spinBox_knn_ratio.setMaximum(100)
+        self.spinBox_knn_ratio.setSingleStep(5)
         self.spinBox_knn_ratio.setValue(15)
 
         self.horizontalLayout_2.addWidget(self.spinBox_knn_ratio)
@@ -150,6 +154,7 @@ class Ui_WarpWidget(object):
         self.radioButton_bf = QRadioButton(self.frame)
         self.matching.addButton(self.radioButton_bf)
         self.radioButton_bf.setObjectName(u"radioButton_bf")
+        self.radioButton_bf.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.horizontalLayout_5.addWidget(self.radioButton_bf)
 
@@ -172,6 +177,7 @@ class Ui_WarpWidget(object):
         self.spinBox_max_distance_ratio.setSuffix(u"")
         self.spinBox_max_distance_ratio.setPrefix(u"")
         self.spinBox_max_distance_ratio.setMaximum(100)
+        self.spinBox_max_distance_ratio.setSingleStep(5)
         self.spinBox_max_distance_ratio.setValue(15)
 
         self.horizontalLayout_4.addWidget(self.spinBox_max_distance_ratio)
@@ -195,12 +201,14 @@ class Ui_WarpWidget(object):
         self.buttonGroup.setObjectName(u"buttonGroup")
         self.buttonGroup.addButton(self.radioButton_next)
         self.radioButton_next.setObjectName(u"radioButton_next")
+        self.radioButton_next.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.horizontalLayout_3.addWidget(self.radioButton_next)
 
         self.radioButton_prev = QRadioButton(self.frame)
         self.buttonGroup.addButton(self.radioButton_prev)
         self.radioButton_prev.setObjectName(u"radioButton_prev")
+        self.radioButton_prev.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
         self.horizontalLayout_3.addWidget(self.radioButton_prev)
 

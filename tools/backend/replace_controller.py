@@ -474,16 +474,17 @@ class ReplaceController(CommonController):
         frame = warp_action.frame.frame
         frame_warp = warp_action.warp
         print(f"new warp: {frame_warp}")
+        # pprint(warp_action)
         if frame_warp is not None:
             if not frame_warp.enabled:
                 warp_action.frame.frame.warped_img = None
             else:
                 i = warp_action.frame.frame.i
-                print(lightcyan(f"{i}: {frame.no}"), f"{frame.warp}")
+                print(lightcyan(f"{i}: {frame.no}"), f"{frame_warp}")
                 ref_frame: Frame = self.get_original_frame(i+1)
                 print(f"  frame: no: {frame.no} by {frame.by}")
                 print(f"  ref: no: {ref_frame.no} by {ref_frame.by}")
-                frame.warped_img = warp_image(frame.img, ref_img=frame.img, warp=frame.warp)
+                frame.warped_img = warp_image(frame.img, ref_img=ref_frame.img, warp=frame_warp)
 
         print(f"{frame_warp}")
         self.signal_scene_warps_refreshed.emit()

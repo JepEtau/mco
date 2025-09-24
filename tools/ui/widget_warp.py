@@ -97,12 +97,16 @@ class WarpWidget(QWidget, Ui_WarpWidget):
 
 
         set_stylesheet(self)
+
+        self.spinBox_knn_ratio.setReadOnly(False)
+        self.spinBox_max_distance_ratio.setReadOnly(False)
+
         self.adjustSize()
 
 
     def set_default_values(self) -> None:
         self.radioButton_knn.setChecked(True)
-        self.spinBox_knn_ratio.setValue(75)
+        self.spinBox_knn_ratio.setValue(70)
         self.spinBox_max_distance_ratio.setValue(20)
         self.radioButton_next.setChecked(True)
 
@@ -192,16 +196,15 @@ class WarpWidget(QWidget, Ui_WarpWidget):
             self.current_frame = CurrentFrame(no=frame.no, frame=frame)
             self.set_enabled(True)
             self.checkBox_enabled.setEnabled(True)
-        print(red(
-            f"WARP: set_current_frame: {self.current_frame.frame.no}, by {self.current_frame.frame.by}"
-        ))
+        # print(red(
+        #     f"WARP: set_current_frame: {self.current_frame.frame.no}, by {self.current_frame.frame.by}"
+        # ))
 
         if self.current_frame.frame.no == self.current_frame.frame.by:
             # Frame is the original one
             self.block_signals(True)
             warp: Warp | None = self.controller.frame_warp(frame_no=self.current_frame.no)
             if warp is not None:
-                print(warp)
                 self.checkBox_enabled.setChecked(warp.enabled)
                 self.radioButton_knn.setChecked(bool(warp.matcher == 'knn'))
                 self.spinBox_knn_ratio.setValue(int(warp.knn_ratio * 100))

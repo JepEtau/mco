@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 class Warp:
     enabled: bool = False
     matcher: Literal['knn', 'bf'] = 'knn'
-    knn_ratio: float = .75
+    knn_ratio: float = .7
     max_distance_ratio: float = .2
     ref_frame: Literal['previous', 'next'] = 'next'
 
