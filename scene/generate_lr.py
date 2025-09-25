@@ -359,7 +359,7 @@ def generate_lr_scene(
             # Get frame_no to send to the consumer
             f_no = frame_cache.get_out_f_no(_in_f_no)
             # if f_no != d_f_no:
-            # print(lightcyan(f"  ({f_index}) decoded: {d_f_no}, _in_f_no: {_in_f_no}, waiting for {f_no}"))
+            print(lightcyan(f"  ({f_index}) waiting for {f_no}, _in_f_no: {_in_f_no}"))
 
             # if not cached, decode a new frame
             img_buffer: np.ndarray = None
@@ -371,7 +371,7 @@ def generate_lr_scene(
 
                 # Throw this frame away if replaced
                 if frame_cache.to_replace(d_f_no):
-                    # print(f"      discard: {d_f_no}")
+                    print(f"      discard: {d_f_no}")
                     pass
                 else:
                     # print(f"      add: {d_f_no}")
@@ -402,12 +402,8 @@ def generate_lr_scene(
                 src_scene_index=src_index,
             )
 
-            # frame_cache.to_replace(f_no=f_index)
-            # print(frame_cache.replacements.values())
-            # print(src_index)
-            # print(scene['src'].scenes()[src_index].in_scene)
-            # print("------------------------------------")
-            frames = []
+            print(f"\n{purple(f"f_no: ")} {f_no}")
+            frames: list[NnFrame] = []
             if (
                 'warp' in in_scene
                 and f_no in in_scene['warp']
@@ -439,10 +435,15 @@ def generate_lr_scene(
                 if f_no == wrap_f_ref_no:
                     print(f"This frame is the reference, wrap every frame in cache until")
                     ref_frame = frame
-                    pop_frame = frame_warp_cache.popleft()
-                    if pop_frame.f_no in in_scene['warp']:
-                        print(lightgreen(f"wrap {pop_frame.f_no} with ref {ref_frame.f_no}"))
-                        frames.append(pop_frame)
+                    while frame_warp_cache.cached:
+                        pop_frame = frame_warp_cache.popleft()
+                        if pop_frame.f_no in in_scene['warp']:
+                            print(lightgreen(f"wrap {pop_frame.f_no} with ref {ref_frame.f_no}"))
+                            frames.append(pop_frame)
+                    frames.append(ref_frame)
+                    f_index = f_index - len(frames) + 1
+                    wrap_f_ref_no = -1
+                    print(f"send {', '.join([f"{f.f_no}" for f in frames])}")
             else:
                 print(f"sending frame")
                 frames = [frame]
