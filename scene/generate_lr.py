@@ -20,8 +20,8 @@ from parsers import (
     get_frame_rate,
     Effect,
     get_loop_nframes,
+    Warp,
 )
-from parsers._helpers import get_chapter_video
 from processing.dsr import generate_dsr_mask
 from processing.effects import apply_final_effects, apply_upscale_effects
 from processing.frame_cache import FrameCache
@@ -49,7 +49,7 @@ from utils.tools import ffmpeg_exe
 from utils.media import (
     VideoInfo, extract_media_info_mco, frame_rate_dec, str_to_video_codec
 )
-
+from processing.frame_warp_cache import FrameWarpCache
 
 def generate_lr_scene(
     scene: Scene,
@@ -312,11 +312,16 @@ def generate_lr_scene(
             if ch_video['avsync'] != 0:
                 raise NotImplementedError("avsync not yet supported")
 
+        # Wrap
+        wrap_f_ref_no: int = -1
+        frame_warp_cache: FrameWarpCache = FrameWarpCache()
+
         # Decode
 
         # decoder frame no.
         d_f_no: int = src_start
         f_index: int = 0
+        f_in_index: int = 0
 
         # f_no is the frame no. to send to the encoder
         f_no: int = src_start
@@ -330,7 +335,6 @@ def generate_lr_scene(
         sent = 0
 
         # Loop until all frames have been sent to the encoder
-        wrap_f_ref_no: int = -1
         while remaining:
 
             _in_f_no = src_start + f_index
@@ -386,6 +390,7 @@ def generate_lr_scene(
                 raise ValueError(red("remaining < 0 or img_buffer is None"))
 
             img: np.ndarray = img_buffer.astype(img_dtype).reshape(img_shape)
+            # print(f"{img.shape}, {img.dtype}")
 
             # Create a frame object
             frame: NnFrame = NnFrame(
@@ -397,63 +402,82 @@ def generate_lr_scene(
                 src_scene_index=src_index,
             )
 
-            # If this frame has to be warped using another frame,
-            # put it in a cache until the following frame is found
-            if wrap_f_ref_no != -1:
-                # waiting for the reference frame
-                if frame.f_no == wrap_f_ref_no:
-                    # let's use it for all frames that are in the queue
-                    while frame_cache_warp.get_frame_to_wrap(f_ref_no):
-                        
-
-
-
-            if frame.f_no in scene['warp']:
-                # wait for the frame no used as reference
-                f_ref_no = scene['warp'][frame.f_no][f_ref_no]
-                if f_ref_no not in frame_cache_warp:
-                    # put frame in the queue
-                    frame_cache_warp.append(frame)
+            # frame_cache.to_replace(f_no=f_index)
+            # print(frame_cache.replacements.values())
+            # print(src_index)
+            # print(scene['src'].scenes()[src_index].in_scene)
+            # print("------------------------------------")
+            frames = []
+            if (
+                'warp' in in_scene
+                and f_no in in_scene['warp']
+            ):
+                warp: Warp = in_scene['warp'][f_no]
+                if warp.enabled:
+                    wrap_f_ref_no = f_no + 1
+                    while wrap_f_ref_no in frame_cache.replacements.keys():
+                        wrap_f_ref_no += 1
+                    print(f"warp: {f_no}, ref frame: {wrap_f_ref_no}")
+                    if wrap_f_ref_no in frame_warp_cache.cached:
+                        print("already in cache, do wrap")
+                        wrap_f_ref_no = -1
+                    else:
+                        print(f".... request new frame, wait for {wrap_f_ref_no}")
+                        frame_warp_cache.append(f_no, frame)
+                        f_index += 1
+                        continue
+                    print(frame_warp_cache.cached)
                 else:
-                    # in queue
-                    frame = frame_cache_warp.get(f_ref_no)
+                    wrap_f_ref_no = -1
+                    print("warp is disabled")
 
+            elif wrap_f_ref_no != -1:
+                if wrap_f_ref_no in frame_warp_cache.cached:
+                    raise ValueError("not supported)")
+                    wrap_f_ref_no = -1
 
-
-
-              
-              if f_ref_no not in frame_cache_warp:
-                  # let's wrap it
-                  warp_wait_for_ref = False
-            elif frame.f_no in scene['warp']:
-                  
-
-
-
-            # Tag it as last frame if no other src scene to decode
-            # and this is the last frame of this src scene
-            if remaining_src_scenes == 0 and remaining == 1:
-                # print(yellow(f"  Tag last frame: {frame.f_no}"))
-                frame.last = True
-
-
-            # Send to encoder...
-            #-----------------------------------------------
-            encoder.put_frame(frame)
-            if verbose:
-                sent += 1
-
-            #-----------------------------------------------
-
-            # back to decoder
-            # increment _in_f_no, because 'loop' frames have been sent to the encoder
-            loop = get_loop_nframes(src_scene, f_no=f_no)
-            if loop:
-                remaining -= loop
-                f_index += loop
+                if f_no == wrap_f_ref_no:
+                    print(f"This frame is the reference, wrap every frame in cache until")
+                    ref_frame = frame
+                    pop_frame = frame_warp_cache.popleft()
+                    if pop_frame.f_no in in_scene['warp']:
+                        print(lightgreen(f"wrap {pop_frame.f_no} with ref {ref_frame.f_no}"))
+                        frames.append(pop_frame)
             else:
-                remaining -= 1
-                f_index += 1
+                print(f"sending frame")
+                frames = [frame]
+            print(frame_warp_cache.cached)
+
+
+
+            for f in frames:
+                # Tag it as last frame if no other src scene to decode
+                # and this is the last frame of this src scene
+                if remaining_src_scenes == 0 and remaining == 1:
+                    # print(yellow(f"  Tag last frame: {frame.f_no}"))
+                    f.last = True
+
+
+                # Send to encoder...
+                #-----------------------------------------------
+                f_no = f.f_no
+                print(lightcyan(f"{sent}:"), f"{f_no}", end="\n")
+                encoder.put_frame(f)
+                if verbose:
+                    sent += 1
+
+                #-----------------------------------------------
+
+                # back to decoder
+                # increment _in_f_no, because 'loop' frames have been sent to the encoder
+                loop = get_loop_nframes(src_scene, f_no=f_no)
+                if loop:
+                    remaining -= loop
+                    f_index += loop
+                else:
+                    remaining -= 1
+                    f_index += 1
+            # f_in_index = f_index
 
             # All frames of the scene have been decoded and sent to consumer
             # if _to_decode == 0:
@@ -579,8 +603,8 @@ class Encoder(Thread):
                 # if out_frames is None:
                 #     self.e_subprocess.communicate(timeout=60)
                 #     raise
-
-                e_subprocess.stdin.write(np_to_uint8(out_frame.img))
+                out_img = np_to_uint8(out_frame.img)
+                e_subprocess.stdin.write(out_img)
 
                 self.e_index += 1
                 # print(f"sent {len(out_frames)} -> total = {self.e_index}")

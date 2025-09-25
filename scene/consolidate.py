@@ -204,8 +204,7 @@ def consolidate_scene(
     # elif task_name_index > TASK_NAMES.index('upscale'):
     else:
         task.video_settings = deepcopy(db['vsettings'].get(task_name, None))
-        vsettings = task.video_settings
-        vsettings.pad = 0
+        task.video_settings.pad = 0
 
     # pprint(task)
     # raise
