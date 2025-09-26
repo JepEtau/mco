@@ -25,6 +25,7 @@ from parsers import (
 from processing.dsr import generate_dsr_mask
 from processing.effects import apply_final_effects, apply_upscale_effects
 from processing.frame_cache import FrameCache
+from processing.warp import warp_image
 from processing.watermark import add_watermark
 from scene.filters import do_watermark
 from scene.src_scene import SrcScene, SrcScenes
@@ -402,6 +403,8 @@ def generate_lr_scene(
                 src_scene_index=src_index,
             )
 
+
+            # Wrap frame
             print(f"\n{purple(f"f_no: ")} {f_no}")
             frames: list[NnFrame] = []
             if (
@@ -416,6 +419,7 @@ def generate_lr_scene(
                     print(f"warp: {f_no}, ref frame: {wrap_f_ref_no}")
                     if wrap_f_ref_no in frame_warp_cache.cached:
                         print("already in cache, do wrap")
+                        raise
                         wrap_f_ref_no = -1
                     else:
                         print(f".... request new frame, wait for {wrap_f_ref_no}")
@@ -436,19 +440,24 @@ def generate_lr_scene(
                     print(f"This frame is the reference, wrap every frame in cache until")
                     ref_frame = frame
                     while frame_warp_cache.cached:
-                        pop_frame = frame_warp_cache.popleft()
+                        pop_frame: NnFrame = frame_warp_cache.popleft()
                         if pop_frame.f_no in in_scene['warp']:
                             print(lightgreen(f"wrap {pop_frame.f_no} with ref {ref_frame.f_no}"))
+
+                            pop_frame.tensor = warp_image(
+                                img=pop_frame.tensor,
+                                ref_img=ref_frame.tensor,
+                                warp=in_scene['warp'][pop_frame.f_no]
+                            )
+
                             frames.append(pop_frame)
                     frames.append(ref_frame)
                     f_index = f_index - len(frames) + 1
                     wrap_f_ref_no = -1
                     print(f"send {', '.join([f"{f.f_no}" for f in frames])}")
             else:
-                print(f"sending frame")
                 frames = [frame]
-            print(frame_warp_cache.cached)
-
+            # print(frame_warp_cache.cached)
 
 
             for f in frames:
@@ -458,7 +467,6 @@ def generate_lr_scene(
                     # print(yellow(f"  Tag last frame: {frame.f_no}"))
                     f.last = True
 
-
                 # Send to encoder...
                 #-----------------------------------------------
                 f_no = f.f_no
@@ -467,9 +475,6 @@ def generate_lr_scene(
                 if verbose:
                     sent += 1
 
-                #-----------------------------------------------
-
-                # back to decoder
                 # increment _in_f_no, because 'loop' frames have been sent to the encoder
                 loop = get_loop_nframes(src_scene, f_no=f_no)
                 if loop:
@@ -478,7 +483,6 @@ def generate_lr_scene(
                 else:
                     remaining -= 1
                     f_index += 1
-            # f_in_index = f_index
 
             # All frames of the scene have been decoded and sent to consumer
             # if _to_decode == 0:
