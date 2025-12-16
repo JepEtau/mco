@@ -209,7 +209,10 @@ class WarpWidget(QWidget, Ui_WarpWidget):
                 self.radioButton_knn.setChecked(bool(warp.matcher == 'knn'))
                 self.spinBox_knn_ratio.setValue(int(warp.knn_ratio * 100))
                 self.spinBox_max_distance_ratio.setValue(int(warp.max_distance_ratio * 100))
-                self.radioButton_next.setChecked(bool(warp.ref_frame == 'next'))
+                if warp.ref_frame == 'next':
+                    self.radioButton_next.setChecked(True)
+                else:
+                    self.radioButton_prev.setChecked(True)
 
             else:
                 self.set_default_values()

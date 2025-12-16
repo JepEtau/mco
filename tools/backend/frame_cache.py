@@ -256,14 +256,23 @@ class FrameCache:
                 # Preprocess images that have to be modified
                 for i, frame in enumerate(self.scenes[scene_key]):
                     if frame.warp is not None:
-                        print(lightcyan(f"{i}: {frame.no}"), f"{frame.warp}")
-                        ref_frame: Frame = self.scenes[scene_key][i + 1]
+                        print(lightcyan(f"{i}: {scene_key}: {frame.no}"), f"{frame.warp}")
+                        if frame.warp.ref_frame == 'previous':
+                            warp_ref_i = i - 1
+                        else:
+                            warp_ref_i = i + 1
+                        if warp_ref_i > len(self.scenes[scene_key]) - 1:
+                            print(red("wrong warp reference"))
+
+                        ref_frame: Frame = self.scenes[scene_key][warp_ref_i]
                         while ref_frame.no != ref_frame.by:
                             i += 1
-                            ref_frame: Frame = self.scenes[scene_key][i + 1]
+                            ref_frame: Frame = self.scenes[scene_key][warp_ref_i]
                         print(f"  frame: no: {frame.no} by {frame.by}")
                         print(f"  ref: no: {ref_frame.no} by {ref_frame.by}")
-                        frame.warped_img = warp_image(frame.img, ref_img=ref_frame.img, warp=frame.warp)
+                        frame.warped_img = warp_image(
+                            frame.img, ref_img=ref_frame.img, warp=frame.warp
+                        )
 
                 # Convert the 1st image of the scene to fasten the display
                 np_img: np.ndarray = self.scenes[scene_key][0].img
