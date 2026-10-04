@@ -165,7 +165,7 @@ class WarpWidget(QWidget, Ui_WarpWidget):
         elif key == Qt.Key.Key_F4:
             self.process_warp()
             return True
-        
+
         return False
 
 
@@ -209,7 +209,10 @@ class WarpWidget(QWidget, Ui_WarpWidget):
                 self.radioButton_knn.setChecked(bool(warp.matcher == 'knn'))
                 self.spinBox_knn_ratio.setValue(int(warp.knn_ratio * 100))
                 self.spinBox_max_distance_ratio.setValue(int(warp.max_distance_ratio * 100))
-                self.radioButton_next.setChecked(bool(warp.ref_frame == 'next'))
+                if warp.ref_frame == 'next':
+                    self.radioButton_next.setChecked(True)
+                else:
+                    self.radioButton_prev.setChecked(True)
 
             else:
                 self.set_default_values()
@@ -228,7 +231,7 @@ class WarpWidget(QWidget, Ui_WarpWidget):
                 matcher='knn' if self.radioButton_knn.isChecked() else 'bf',
                 knn_ratio=float(self.spinBox_knn_ratio.value()) / 100.,
                 max_distance_ratio=float(self.spinBox_max_distance_ratio.value()) / 100.,
-                ref_frame='previous' if self.radioButton_prev else 'next'
+                ref_frame='previous' if self.radioButton_prev.isChecked() else 'next'
             )
         )
         return values
@@ -270,7 +273,7 @@ class WarpWidget(QWidget, Ui_WarpWidget):
                         Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
                     )
                 row_no += 1
-        
+
         self.tableWidget_warp.selectionModel().clearSelection()
         self.tableWidget_warp.blockSignals(False)
         self.ui.set_focus()
