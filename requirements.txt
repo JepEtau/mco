@@ -1,16 +1,2 @@
-numpy
-requests
-rich
-scipy
-soundfile
-opencv-python
-PySide6_Essentials
-onnx
-onnxruntime
-einops
-scikit-image
-setuptools
-fastrlock
-tensorrt
-safetensors
-hydra-core
+-r requirements-common.txt
+pynnlib @ git+https://github.com/herlegon/pynnlib.git@main

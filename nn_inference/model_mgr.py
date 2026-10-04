@@ -7,7 +7,7 @@ from typing import Literal
 import numpy as np
 
 from pynnlib import (
-    Idtype,
+    Hdtype,
     nnlib,
     NnModel,
     NnModelSession,
@@ -49,7 +49,7 @@ def _nested_dict_set(d: dict, o: object, *keys) -> None:
 class ModelInfo:
     name: str
     path: str
-    dtype: Idtype
+    dtype: Hdtype
     xprovider: Literal['cuda', 'trt']
     key: str = ""
     model: NnModel | None = None

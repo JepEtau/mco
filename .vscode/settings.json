@@ -76,5 +76,15 @@
         //     "depth": 0
         // },
     ],
-    "python.REPL.enableREPLSmartSend": false
+    "python.REPL.enableREPLSmartSend": false,
+    "python-envs.pythonProjects": [
+        {
+            "path": ".",
+            "envManager": "ms-python.python:conda",
+            "packageManager": "ms-python.python:conda"
+        }
+    ],
+    "python.analysis.extraPaths": [
+        "../pynnlib"
+    ]
 }

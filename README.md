@@ -10,19 +10,13 @@
 
 ### Installation
 ```sh
-conda create -n e python==3.12.9
-conda activate e
+conda create -n m python==3.14
+conda activate m
 pip install -r requirements.txt
 python install.py
 ```
 
 
-pynnlib as a submodule
-```sh
-git submodule init
-git submodule add https://github.com/JepEtau/pynnlib.git
-git submodule update  --recursive
-```
 
 
 
@@ -46,9 +40,9 @@ python audio.py --episode 1
 
 - Simulate in lowres
 ```sh
-python lr.py --watermark --chapter g_debut
-python lr.py --watermark --chapter g_fin
-python lr.py --watermark --episode 1
+python sim-lr.py --watermark --chapter g_debut
+python sim-lr.py --watermark --chapter g_fin
+python sim-lr.py --watermark --episode 1
 ```
 
 - Simulate (1080p, no frame replace/upscale/deshake/color grading/geometry)
