@@ -1,6 +1,14 @@
 
 # MCO / MCoG: restoration
 
+Recherche, utilisation du Machine Learning (IA) pour la restauration / le remaster des Mystérieuses Cités d'Or.
+Utilisation de sources privées et à des fins pédagogiques.
+J'effectue celà à titre personnel et n'en tire aucun revenu
+
+il faut environ 8 heures à mon PC pour générer un épisode avec un modèle.
+Je teste environ 15/20 workflow par épisode; 1 ou plusieurs modèles par workflow.
+et mes prochaines expérimentations prendront environ 16 heures par épisode.
+
 
 - tasks:
     * extract: extract each scene from progressive and resize to 640x480, h264, yuv420p
