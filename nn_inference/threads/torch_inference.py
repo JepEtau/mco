@@ -9,13 +9,13 @@ from typing import TYPE_CHECKING
 
 from nn_inference.threads.inpaint_inference import perform_inpaint_inference
 from nn_inference.threads.temporal_inference import perform_temporal_inference
-from nn_inference.resource_mgr import NnFrame
+from nn_inference.resource_mgr import McoFrame
 from nn_inference.threads.t_encoder import EncoderThread
 from nn_inference.threads.t_helpers import patch_next_step_no_
 from nn_inference.toolbox.cuda_filters import save_tensor_for_ccor_
 from nn_inference.toolbox.filtering import apply_cuda_filters_
 from utils.p_print import *
-from pynnlib import (
+from nnarchs import (
     NnModelSession,
     NnModel
 )
@@ -50,7 +50,7 @@ def perform_torch_inference(self: InferenceThread) -> None:
             if input is None or self._stop_event.is_set():
                 print(yellow("input is none or stop required"))
                 break
-            frame: NnFrame = input
+            frame: McoFrame = input
 
             # Get model
             model_key: str = frame.sequence[frame.step_no]
@@ -181,10 +181,9 @@ def perform_torch_inference(self: InferenceThread) -> None:
             if action == 'last':
                 # Put the same frame except the tensor
                 # so that the inference will generate a new frame
-                frame = NnFrame(
+                frame = McoFrame(
                     f_no=out_f_no,
                     tensor=None,
-                    channel_last=frame.channel_last,
                     sequence=copy(frame.sequence),
                     step_no=saved_step_no,
                     encoder_step_no=frame.encoder_step_no,

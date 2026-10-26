@@ -10,11 +10,11 @@ import torch
 from typing import Callable
 
 from parsers import VideoSettings
-from nn_inference.resource_mgr import NnFrame, BaseThread
+from nn_inference.resource_mgr import McoFrame, BaseThread
 from nn_inference.toolbox.filtering import get_encoder_ffmpeg_filters
 from processing.effects import apply_upscale_effects
 from processing.frame_cache import FrameCache
-from pynnlib import is_cuda_available
+from nnarchs import is_cuda_available
 from scene.filters import do_watermark, get_ffmpeg_pad_filter, clean_fcomplex
 from scene.src_scene import SrcScene
 from utils.mco_types import McoFrame, Scene
@@ -59,7 +59,7 @@ class CpuEncoderThread(BaseThread):
         self._encoded: int = 0
         scene: Scene | None = None
         src_scene: SrcScene = None
-        frame: NnFrame = None
+        frame: McoFrame = None
         if True:
         # with torch.cuda.stream(cuda_stream):
             while not self._stop_event.is_set():
@@ -73,7 +73,7 @@ class CpuEncoderThread(BaseThread):
                     writer_subprocess = None
                     break
 
-                frame: NnFrame = input
+                frame: McoFrame = input
 
                 if scene is None:
                     # This is a different scene:
@@ -308,7 +308,7 @@ class CpuEncoderThread(BaseThread):
         self._processing = False
 
 
-    def put_frame(self, frame: NnFrame) -> bool:
+    def put_frame(self, frame: McoFrame) -> bool:
         if self._processing:
             self.in_queue.put(frame)
         return True

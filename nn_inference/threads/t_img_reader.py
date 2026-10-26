@@ -6,11 +6,11 @@ from threading import Event, Lock
 import time
 from typing import Any, TypedDict
 import torch
-from pynnlib import (
+from nnarchs import (
     flip_r_b_channels,
     to_nchw,
 )
-from ..resource_mgr import NnFrame, BaseThread
+from ..resource_mgr import McoFrame, BaseThread
 from utils.p_print import *
 from utils.images_io import load_image
 
@@ -68,7 +68,7 @@ class ImgReaderThread(BaseThread):
                 not self._stop_event.is_set()
                 and len(frames) > 0
             ):
-                frame: NnFrame = frames.popleft()
+                frame: McoFrame = frames.popleft()
                 img = load_image(frame.in_img_fp)
                 if verbose:
                     print(lightgreen(f"[V][D] Read image: {frame.in_img_fp}"))
@@ -163,7 +163,7 @@ class ImgReaderThread(BaseThread):
             not self._stop_event.is_set()
             and len(frames) > 0
         ):
-            frame: NnFrame = frames.popleft()
+            frame: McoFrame = frames.popleft()
             # print(lightgreen(f"[V][D] Read image: {frame.in_img_fp}"))
             img = load_image(frame.in_img_fp)
             img_shape, in_dtype = img.shape, img.dtype

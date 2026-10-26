@@ -10,7 +10,7 @@ from warnings import warn
 import cv2
 import numpy as np
 import time
-from nn_inference.resource_mgr import NnFrame
+from nn_inference.resource_mgr import McoFrame
 from nn_inference.threads.t_decoder import VideoStreamInfo
 from parsers import (
     db,
@@ -394,7 +394,7 @@ def generate_lr_scene(
             # print(f"{img.shape}, {img.dtype}")
 
             # Create a frame object
-            frame: NnFrame = NnFrame(
+            frame: McoFrame = McoFrame(
                 f_no=f_no,
                 tensor=img,
                 last=False,
@@ -406,7 +406,7 @@ def generate_lr_scene(
 
             # Wrap frame
             print(f"\n{purple(f"f_no: ")} {f_no}")
-            frames: list[NnFrame] = []
+            frames: list[McoFrame] = []
             if (
                 'warp' in in_scene
                 and f_no in in_scene['warp']
@@ -440,7 +440,7 @@ def generate_lr_scene(
                     print(f"This frame is the reference, wrap every frame in cache until")
                     ref_frame = frame
                     while frame_warp_cache.cached:
-                        pop_frame: NnFrame = frame_warp_cache.popleft()
+                        pop_frame: McoFrame = frame_warp_cache.popleft()
                         if pop_frame.f_no in in_scene['warp']:
                             print(lightgreen(f"wrap {pop_frame.f_no} with ref {ref_frame.f_no}"))
 
@@ -538,7 +538,7 @@ class Encoder(Thread):
         self._stop_event: Event = Event()
         self.in_queue: Queue = Queue(1)
 
-    def put_frame(self, frame: NnFrame) -> bool:
+    def put_frame(self, frame: McoFrame) -> bool:
         self.in_queue.put(frame)
         return True
 
@@ -556,7 +556,7 @@ class Encoder(Thread):
                     print(purple("[V][E] Received Null tensor"))
                 break
 
-            frame: NnFrame = input
+            frame: McoFrame = input
 
             # print(lightgreen(f"    ({self.e_index}) encode: {frame.f_no}, {frame.tensor.shape}, {frame.tensor.dtype}"))
 
@@ -673,7 +673,7 @@ class ImageWriter(Thread):
         )
         os.makedirs(self.img_directory, exist_ok=True)
 
-    def put_frame(self, frame: NnFrame) -> bool:
+    def put_frame(self, frame: McoFrame) -> bool:
         self.in_queue.put(frame)
         return True
 
@@ -691,7 +691,7 @@ class ImageWriter(Thread):
                     print(purple("[V][E] Received Null tensor"))
                 break
 
-            frame: NnFrame = input
+            frame: McoFrame = input
 
             print(lightgreen(f"    ({e_index}) write: {frame.f_no}, {frame.tensor.shape}, {frame.tensor.dtype}"))
 

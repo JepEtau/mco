@@ -5,7 +5,7 @@ from typing import Any
 
 import torch
 
-from nn_inference.resource_mgr import NnFrame
+from nn_inference.resource_mgr import McoFrame
 from .cuda_filters import (
     gaussian_noise_,
     darker_thinner_,
@@ -45,7 +45,7 @@ _cuda_functions: dict[str, Callable[..., object]] = {
 
 
 def apply_cuda_filters_(
-    frame: NnFrame,
+    frame: McoFrame,
     verbose: bool = False
 ) -> None:
     """Inline modification of the frame"""
@@ -80,7 +80,7 @@ def apply_cuda_filters_(
 
 
 def apply_cpu_filters_(
-    frame: NnFrame,
+    frame: McoFrame,
     verbose: bool = False
 ) -> None:
     """Inline modification of the frame: np.ndarray only"""

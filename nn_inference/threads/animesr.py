@@ -4,9 +4,9 @@ from torch import Tensor
 from typing import Literal
 import torch
 from nn_inference.model_mgr import ModelManager
-from nn_inference.resource_mgr import NnFrame, Singleton
+from nn_inference.resource_mgr import McoFrame, Singleton
 from utils.p_print import *
-from pynnlib import (
+from nnarchs import (
     NnModel,
 )
 
@@ -135,7 +135,7 @@ class TemporalFrameCache(metaclass=Singleton):
 
 @torch.inference_mode
 def animesr_inference(
-    frame: NnFrame,
+    frame: McoFrame,
     in_tensor: Tensor,
     model_manager: ModelManager,
 ) -> tuple[int, Tensor, Literal['request', 'last', 'none']]:

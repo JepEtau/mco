@@ -1,7 +1,7 @@
 import re
 import sys
 from typing import Any
-from pynnlib import (
+from nnarchs import (
     nnlib,
     NnModel,
     TrtModel,

@@ -8,10 +8,10 @@ from utils.p_print import *
 
 from nn_inference.model_mgr import ModelManager
 from nn_inference.threads.torch_inference import perform_torch_inference
-from nn_inference.resource_mgr import NnFrame, BaseThread
+from nn_inference.resource_mgr import McoFrame, BaseThread
 from nn_inference.threads.t_decoder import DecoderThread
 from nn_inference.threads.t_encoder import EncoderThread
-from pynnlib import (
+from nnarchs import (
     is_cuda_available,
     is_tensorrt_available,
 )
@@ -73,7 +73,7 @@ class InferenceThread(BaseThread):
         self.put_frame(None)
 
 
-    def put_frame(self, frame: NnFrame) -> bool:
+    def put_frame(self, frame: McoFrame) -> bool:
         try:
             self.in_queue.put(frame)
             return True
@@ -105,7 +105,7 @@ class InferenceThread(BaseThread):
 #             'cuda': perform_torch_inference,
 #             'trt': perform_tensorrt_inference,
 #         }
-        
+
 #         if self.execution_provider in inference_functions:
 #             return inference_functions[self.execution_provider]
 #         else:

@@ -13,25 +13,20 @@ if TYPE_CHECKING:
     from scene.src_scene import SrcScene
     from nn_inference.threads.t_progress import ProgressThread
 
+from denc import NnFrame
 
 @dataclass(slots=True)
-class NnFrame:
-    f_no: int = 0
-    tensor: Tensor = None
-    channel_last: bool = False
-
+class McoFrame(NnFrame):
+    # nodes are a sequence
     sequence: list[list | tuple | str] = field(default_factory=list)
     step_no: int = 0
     encoder_step_no: int = 0
 
     scene: Scene | None = None
     src_scene_index: int = 0
-    # src_scene: SrcScene | None = None
-    # last flag is used by temporal models
-    last: bool = False
 
     # save tensor used as ref for color correction
-    ccor_ref: Tensor = None
+    ccor_ref: Tensor | None = None
 
 
 
@@ -96,7 +91,7 @@ class BaseThread(abc.ABC, Thread):
         pass
 
 
-    def put_frame(self, frame: NnFrame) -> None:
+    def put_frame(self, frame: McoFrame) -> None:
         pass
 
 

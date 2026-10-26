@@ -10,11 +10,11 @@ import torch.nn.functional as F
 
 from nn_inference.model_mgr import ModelManager
 from nn_inference.threads.animesr import animesr_inference
-from nn_inference.resource_mgr import NnFrame, Singleton
+from nn_inference.resource_mgr import McoFrame, Singleton
 from processing.dsr import generate_dsr_mask
-from pynnlib.utils.torch_tensor import to_nchw
+from nnarchs.utils.torch_tensor import to_nchw
 from utils.p_print import *
-from pynnlib import (
+from nnarchs import (
     NnModelSession,
     NnModel,
 )
@@ -23,7 +23,7 @@ from pynnlib import (
 
 
 def perform_temporal_inference(
-    frame: NnFrame,
+    frame: McoFrame,
     in_tensor: Tensor,
     model_manager: ModelManager,
 ) -> tuple[int, Tensor, Literal['request', 'last', 'non']]:

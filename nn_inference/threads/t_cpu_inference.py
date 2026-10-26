@@ -11,7 +11,7 @@ import numpy as np
 from nn_inference.toolbox.cuda_filters import save_tensor_for_ccor_
 from utils.p_print import *
 
-from nn_inference.resource_mgr import NnFrame, BaseThread
+from nn_inference.resource_mgr import McoFrame, BaseThread
 from nn_inference.threads.t_cpu_decoder import CpuDecoderThread
 from nn_inference.threads.t_cpu_encoder import CpuEncoderThread
 
@@ -60,7 +60,7 @@ class CpuInferenceThread(BaseThread):
                 )
                 print(blue(f"[V][I][CPU] end of inference (reason: {reason})"))
                 break
-            frame: NnFrame = input
+            frame: McoFrame = input
 
             # Save tensor if this frame tensor will be used as ref
             # frame = save_tensor_for_ccor_(frame)
@@ -114,7 +114,7 @@ class CpuInferenceThread(BaseThread):
         self._stop_event.set()
 
 
-    def put_frame(self, frame: NnFrame) -> bool:
+    def put_frame(self, frame: McoFrame) -> bool:
         try:
             self.in_queue.put(frame)
             return True

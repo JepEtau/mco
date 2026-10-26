@@ -1,2 +1,2 @@
 -r requirements-common.txt
-pynnlib @ git+https://github.com/herlegon/pynnlib.git@main
+nnarchs @ git+https://github.com/herlegon/nnarchs.git

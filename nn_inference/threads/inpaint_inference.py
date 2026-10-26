@@ -7,11 +7,11 @@ from typing import TYPE_CHECKING
 import torch
 
 from nn_inference.model_mgr import ModelManager
-from nn_inference.resource_mgr import NnFrame
+from nn_inference.resource_mgr import McoFrame
 from processing.dsr import generate_dsr_mask
-from pynnlib.utils.torch_tensor import to_nchw
+from nnarchs.utils.torch_tensor import to_nchw
 from utils.p_print import *
-from pynnlib import (
+from nnarchs import (
     NnModelSession,
     NnModel,
 )
@@ -19,7 +19,7 @@ from pynnlib import (
 
 @torch.inference_mode
 def perform_inpaint_inference(
-    frame: NnFrame,
+    frame: McoFrame,
     in_tensor: Tensor,
     model_manager: ModelManager,
 ) -> Tensor:

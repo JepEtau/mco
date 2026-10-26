@@ -17,7 +17,7 @@ from nn_inference.toolbox.dh_transfers import (
 )
 from parsers import VideoSettings
 from nn_inference.model_mgr import ModelManager
-from nn_inference.resource_mgr import NnFrame, BaseThread
+from nn_inference.resource_mgr import McoFrame, BaseThread
 from nn_inference.toolbox.filtering import get_encoder_ffmpeg_filters
 from processing.effects import apply_upscale_effects
 from scene.filters import do_watermark, get_ffmpeg_pad_filter, clean_fcomplex
@@ -32,7 +32,7 @@ from utils.p_print import *
 from utils.path_utils import path_split
 from utils.pxl_fmt import PIXEL_FORMAT
 from utils.tools import ffmpeg_exe
-from pynnlib import (
+from nnarchs import (
     is_cuda_available,
     tensor_to_img,
 )
@@ -97,7 +97,7 @@ class EncoderThread(BaseThread):
         self._encoded: int = 0
         scene: Scene | None = None
         src_scene: SrcScene = None
-        frame: NnFrame = None
+        frame: McoFrame = None
         received: int = 0
         # try:
         with torch.cuda.stream(cuda_stream):
@@ -113,7 +113,7 @@ class EncoderThread(BaseThread):
                     break
 
                 received += 1
-                frame: NnFrame = input
+                frame: McoFrame = input
 
                 if scene is None:
                     # This is a different scene:
@@ -328,7 +328,7 @@ class EncoderThread(BaseThread):
         self._processing = False
 
 
-    def put_frame(self, frame: NnFrame) -> bool:
+    def put_frame(self, frame: McoFrame) -> bool:
         if self._processing:
             self.in_queue.put(frame)
         return True

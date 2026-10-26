@@ -5,13 +5,13 @@ from queue import Queue
 from threading import Event
 import torch
 from torch import Tensor
-from nn_inference.resource_mgr import NnFrame, BaseThread
+from nn_inference.resource_mgr import McoFrame, BaseThread
 from nn_inference.toolbox.dh_transfers import dtoh_transfer
 from utils.images_io import write_image
 from typing import Callable
 from utils.p_print import *
 from nn_inference.model_mgr import ModelManager
-from pynnlib import (
+from nnarchs import (
     tensor_to_img,
 )
 
@@ -64,7 +64,7 @@ class ImgWriterThread(BaseThread):
                         print(purple("[V][E] Received Null tensor"))
                     break
 
-                frame: NnFrame = input
+                frame: McoFrame = input
                 d_img: torch.tensor = tensor_to_img(
                     tensor=frame.tensor,
                     img_dtype=img_dtype,
@@ -93,7 +93,7 @@ class ImgWriterThread(BaseThread):
         self._processing = False
 
 
-    def put_frame(self, frame: NnFrame) -> bool:
+    def put_frame(self, frame: McoFrame) -> bool:
         if self._processing:
             self.in_queue.put(frame)
         return True

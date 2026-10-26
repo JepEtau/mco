@@ -4,15 +4,15 @@ from queue import Queue
 import torch
 from typing import TYPE_CHECKING
 
-from nn_inference.resource_mgr import NnFrame
+from nn_inference.resource_mgr import McoFrame
 from nn_inference.threads.t_decoder import DecoderThread
 from nn_inference.threads.t_encoder import EncoderThread
 from nn_inference.threads.t_helpers import patch_next_step_no_
 from nn_inference.toolbox.cuda_filters import save_tensor_for_ccor_
 from nn_inference.toolbox.filtering import apply_cuda_filters_
-from pynnlib import is_tensorrt_available
+from nnarchs import is_tensorrt_available
 if is_tensorrt_available():
-    from pynnlib.nn_tensor_rt.inference.session import TensorRtSession
+    from nnarchs.nn_tensor_rt.inference.session import TensorRtSession
     import tensorrt as trt
 from utils.p_print import *
 if TYPE_CHECKING:
@@ -37,7 +37,7 @@ def perform_tensorrt_inference(self: InferenceThread):
             input = in_queue.get(block=True)
             if input is None or self._stop_event.is_set():
                 break
-            frame: NnFrame = input
+            frame: McoFrame = input
 
 
             # Save tensor if this frame tensor will be used as ref

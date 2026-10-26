@@ -3,17 +3,17 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 
-from nn_inference.resource_mgr import NnFrame
+from nn_inference.resource_mgr import McoFrame
 from utils.p_print import *
 
 
 
 def gpu_resize_(
-    frame: NnFrame,
+    frame: McoFrame,
     scale_factor: Optional[float | int | list[float]] = None,
     out_size: Optional[list[int, int]] = None,
     interpolation_method: str = "bicubic",
-) -> NnFrame:
+) -> McoFrame:
     in_x: Tensor = frame.tensor
     if isinstance(scale_factor, float):
         out_size: list[int, int] = list(
@@ -34,10 +34,10 @@ def gpu_resize_(
 
 
 def gpu_resize_to_(
-    frame: NnFrame,
+    frame: McoFrame,
     params: str,
     interpolation_method: str = "bicubic",
-) -> NnFrame:
+) -> McoFrame:
     w, h = map(int, params.split("x")[:2])
     return gpu_resize_(
         frame,

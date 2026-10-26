@@ -1,2 +1,2 @@
 -r requirements-common.txt
--e ../pynnlib
+-e ../nnarchs

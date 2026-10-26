@@ -72,7 +72,7 @@
             "depth": 0
         },
         // {
-        //     "name": "pynnlib",
+        //     "name": "nnarchs",
         //     "depth": 0
         // },
     ],
@@ -85,6 +85,11 @@
         }
     ],
     "python.analysis.extraPaths": [
-        "../pynnlib"
-    ]
+        "../hytils",
+        "../hsys",
+        "../hinstall",
+        "../denc",
+        "../nnarchs",
+        "../heron",
+    ],
 }

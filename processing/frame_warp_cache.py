@@ -2,7 +2,7 @@ from collections import deque
 from pprint import pprint
 
 from typing import Any
-from nn_inference.resource_mgr import NnFrame
+from nn_inference.resource_mgr import McoFrame
 from utils.p_print import *
 
 
@@ -13,7 +13,7 @@ class FrameWarpCache(deque):
         super().__init__()
         self._cached_f_no: list[int] = []
 
-    def append(self, f_no: int, x: NnFrame) -> None:
+    def append(self, f_no: int, x: McoFrame) -> None:
         self._cached_f_no.append(f_no)
         super().append(x)
 
@@ -21,7 +21,7 @@ class FrameWarpCache(deque):
     def cached(self) -> list[int]:
         return self._cached_f_no
 
-    def popleft(self) -> NnFrame:
+    def popleft(self) -> McoFrame:
         self._cached_f_no.pop(0)
         return super().popleft()
 

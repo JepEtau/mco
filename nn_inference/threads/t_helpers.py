@@ -4,9 +4,9 @@ from utils.p_print import *
 from processing import (
     supported_ffmpeg_filters,
 )
-from nn_inference.resource_mgr import NnFrame
+from nn_inference.resource_mgr import McoFrame
 from nn_inference.model_mgr import ModelManager
-from pynnlib import (
+from nnarchs import (
     NnModel
 )
 
@@ -58,7 +58,7 @@ def get_last_nnmodel(filters: list[Any], model_manager: ModelManager) -> NnModel
 
 
 
-def patch_next_step_no_(frame: NnFrame, model_manager: ModelManager) -> None:
+def patch_next_step_no_(frame: McoFrame, model_manager: ModelManager) -> None:
     """Skip following model if possible: Inpaint model,
     """
     if frame.step_no < frame.encoder_step_no:

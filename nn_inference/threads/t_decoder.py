@@ -34,13 +34,13 @@ if TYPE_CHECKING:
     from .t_encoder import EncoderThread
     from scene.src_scene import SrcScene
     from parsers import Filter
-from pynnlib import (
+from nnarchs import (
     NnModelSession,
     np_dtype_to_torch,
     img_to_tensor,
 )
 from nn_inference.model_mgr import ModelManager
-from nn_inference.resource_mgr import NnFrame, BaseThread
+from nn_inference.resource_mgr import McoFrame, BaseThread
 from utils.mco_types import Scene, Inputs
 from utils.media import ChannelOrder, FShape
 from utils.p_print import *
@@ -401,7 +401,7 @@ class DecoderThread(BaseThread):
                     )
 
                     # Create a frame object
-                    frame: NnFrame = NnFrame(
+                    frame: McoFrame = McoFrame(
                         f_no=f_no,
                         tensor=d_tensor.clone(),
                         last=False,

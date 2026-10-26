@@ -6,7 +6,7 @@ import time
 from typing import Literal
 import numpy as np
 
-from pynnlib import (
+from nnarchs import (
     Hdtype,
     nnlib,
     NnModel,

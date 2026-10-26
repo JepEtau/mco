@@ -7,14 +7,14 @@ from torchvision.transforms.v2 import GaussianNoise
 from .color_correction import ColorCorrection
 from .darker_thinner import DarkerThinner
 
-from nn_inference.resource_mgr import NnFrame
+from nn_inference.resource_mgr import McoFrame
 from utils.p_print import *
 
 
 def gaussian_noise_(
-    frame: NnFrame,
+    frame: McoFrame,
     params: str | None,
-) -> NnFrame:
+) -> McoFrame:
 
     param_list: list[str] = params.split(":")
     mean, sigma = 0., 0.1
@@ -32,9 +32,9 @@ def gaussian_noise_(
 
 
 def darker_thinner_(
-    frame: NnFrame,
+    frame: McoFrame,
     params: str | None,
-) -> NnFrame:
+) -> McoFrame:
     args: dict[str, int] = {}
     verbose: bool = False
 
@@ -71,7 +71,7 @@ def darker_thinner_(
 
 
 
-def gpu_rotate_90_(frame: NnFrame, k: int | None = 1) -> NnFrame:
+def gpu_rotate_90_(frame: McoFrame, k: int | None = 1) -> McoFrame:
     if k is None:
         k = 1
     elif k < 0:
@@ -110,9 +110,9 @@ def _create_gaussian_kernel(
 
 
 def unsharp_mask_(
-    frame: NnFrame,
+    frame: McoFrame,
     params: str = ""
-) -> NnFrame:
+) -> McoFrame:
     """
     Apply unsharp masking to a tensor, inplace operation
 
@@ -158,7 +158,7 @@ def unsharp_mask_(
     return frame
 
 
-def save_tensor_for_ccor_(frame: NnFrame):
+def save_tensor_for_ccor_(frame: McoFrame):
     # print(f"save tensor for step={frame.step_no}?")
     ccorr_ref_step_no: int = -1
     for step in frame.sequence[frame.step_no:]:
@@ -177,9 +177,9 @@ def save_tensor_for_ccor_(frame: NnFrame):
 
 
 def color_correction_(
-    frame: NnFrame,
+    frame: McoFrame,
     params: str = "",
-) -> NnFrame:
+) -> McoFrame:
     if frame.ccor_ref is None:
         raise ValueError("Reference fraeme has not be saved for color correction")
 

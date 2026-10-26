@@ -2,13 +2,13 @@ import cv2
 import torch
 import numpy as np
 from torch import Tensor
-from pynnlib import (
+from nnarchs import (
     tensor_to_img,
     img_to_tensor,
 )
 from utils.media import FShape
 from utils.p_print import *
-from nn_inference.resource_mgr import NnFrame, Singleton
+from nn_inference.resource_mgr import McoFrame, Singleton
 from nn_inference.toolbox.dh_transfers import (
     dtoh_transfer_sync,
     htod_transfer_sync,
@@ -65,9 +65,9 @@ class _DHMemory(metaclass=Singleton):
 
 
 def cv2_nlmeans_(
-    frame: NnFrame,
+    frame: McoFrame,
     params: str | None,
-) -> NnFrame:
+) -> McoFrame:
     verbose : bool = False
 
     h: float = 3
@@ -118,9 +118,9 @@ def cv2_nlmeans_(
 
 
 def cv2_bilateral_(
-    frame: NnFrame,
+    frame: McoFrame,
     params: str | None,
-) -> NnFrame:
+) -> McoFrame:
     verbose : bool = False
 
     param_list: list[str] = params.split(":")

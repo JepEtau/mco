@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from .t_inference import InferenceThread
     from parsers import Filter
 
-from nn_inference.resource_mgr import NnFrame, BaseThread
+from nn_inference.resource_mgr import McoFrame, BaseThread
 from nn_inference.model_mgr import ModelManager
 
 from utils.mco_types import Scene, Inputs
@@ -349,7 +349,7 @@ class CpuDecoderThread(BaseThread):
                     d_tensor = np.ascontiguousarray(d_tensor.astype(tensor_dtype))
 
                     # Create a frame object
-                    frame: NnFrame = NnFrame(
+                    frame: McoFrame = McoFrame(
                         f_no=f_no,
                         tensor=d_tensor,
                         last=False,
